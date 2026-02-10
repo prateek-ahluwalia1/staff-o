@@ -6,12 +6,20 @@ export default function Copyright() {
           <div className="footer-copy">
             Copyright &copy; {new Date().getFullYear()} Jobs Portal. All rights reserved. 
             Design by:{' '}
-            <a href="https://www.piratestechnologies.com/" target="_blank" rel="noopener noreferrer">
+            <a 
+              href="https://www.piratestechnologies.com/" 
+              target="_blank" 
+              rel="noopener noreferrer"
+            >
               Pirates Technologies
             </a>
           </div>
+
           <div className="footer-payments">
-            <img src="/images/payment-icons.png" alt="Payment methods" />
+            <img 
+              src="/assets/images/payment-icons.png" 
+              alt="Payment methods" 
+            />
           </div>
         </div>
       </div>

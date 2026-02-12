@@ -31,7 +31,7 @@ export default function Sidebar() {
                     </NavLink>
                 </li>
                 <li>
-                    <NavLink to="/view-public-profile" className={({ isActive }) => (isActive ? "active" : "")}>
+                    <NavLink to="/public-profile" className={({ isActive }) => (isActive ? "active" : "")}>
                         <i className="fa-solid fa-eye"></i> View Public Profile
                     </NavLink>
                 </li>

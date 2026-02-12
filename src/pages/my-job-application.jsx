@@ -1,0 +1,164 @@
+import React from 'react';
+
+const applications = [
+    {
+        status: 'Interview',
+        statusClass: 'interview',
+        title: 'Lead Product Designer',
+        location: 'Remote · North America',
+        company: 'Skyline Digital',
+        role: 'Design Systems team',
+        pillIcon: 'fa-calendar-check',
+        pillText: 'Loop scheduled for Apr 20',
+        applied: 'Applied 12 days ago',
+        appliedVia: 'via Jobs Portal',
+        logo: 'emplogo1.jpg',
+        actionText: 'View thread',
+    },
+    {
+        status: 'Review',
+        statusClass: 'review',
+        title: 'Senior Frontend Engineer',
+        location: 'Berlin, Germany',
+        company: 'Bright Labs',
+        role: 'Platform squad',
+        pillIcon: 'fa-envelope-open-text',
+        pillText: 'Awaiting recruiter response',
+        applied: 'Applied 5 days ago',
+        appliedVia: 'Referral · Maya',
+        logo: 'emplogo7.jpg',
+        actionText: 'Send nudge',
+    },
+    {
+        status: 'Offer',
+        statusClass: 'offer',
+        title: 'Product Design Manager',
+        location: 'Toronto, Canada',
+        company: 'Northwind Commerce',
+        role: 'Growth org',
+        pillIcon: 'fa-badge-dollar',
+        pillText: 'Offer received · reviewing',
+        applied: 'Applied 22 days ago',
+        appliedVia: 'Recruiter: Alex Chen',
+        logo: 'emplogo4.jpg',
+        actionText: 'Open offer',
+    },
+    {
+        status: 'Archived',
+        statusClass: 'archived',
+        title: 'Staff UX Researcher',
+        location: 'Austin, USA',
+        company: 'CloudSync',
+        role: 'Platform strategy',
+        pillIcon: 'fa-circle-xmark',
+        pillText: 'Closed · keep warm',
+        applied: 'Applied Feb 03',
+        appliedVia: 'Feedback saved',
+        logo: 'emplogo9.jpg',
+        actionText: 'View notes',
+    },
+];
+
+export default function MyJobApplications() {
+    return (
+        <>
+            <div className="dashboard-main">
+                <div className="dashboard-page-header">
+                    <div>
+                        <h1>My Job Applications</h1>
+                        <p>
+                            Stay on top of every pipeline stage, feedback, and recruiter follow-up.
+                        </p>
+                    </div>
+
+                    <div className="d-flex flex-wrap gap-2">
+                        <a href="#" className="btn btn-outline-primary">
+                            <i className="fa-solid fa-filter" aria-hidden="true"></i> Filters
+                        </a>
+                        <a href="#" className="btn btn-primary">
+                            <i className="fa-solid fa-arrow-rotate-right" aria-hidden="true"></i> Sync updates
+                        </a>
+                    </div>
+                </div>
+
+                <div className="row row-cols-1 row-cols-lg-2 g-4 application-grid">
+                    {applications.map((app, index) => (
+                        <div className="col" key={index}>
+                            <div className="application-card">
+                                <div className="application-header">
+                                    <span className={`status-chip ${app.statusClass}`}>
+                                        {app.status}
+                                    </span>
+                                </div>
+
+                                <div className="application-title">
+                                    <h4>
+                                        <a href="#">{app.title}</a>
+                                    </h4>
+                                    <div className="application-location">
+                                        <i className="fa-solid fa-location-dot" aria-hidden="true"></i>
+                                        {app.location}
+                                    </div>
+                                    <p>
+                                        {app.company} · {app.role}
+                                    </p>
+                                </div>
+
+                                <div className="application-pill">
+                                    <i className={`fa-solid ${app.pillIcon}`} aria-hidden="true"></i>
+                                    {app.pillText}
+                                </div>
+
+                                <div className="application-footer">
+                                    <div className="application-meta">
+                                        <div className="meta-avatar">
+                                            <img src={`/assets/images/employers/${app.logo}`} alt={app.company} />
+                                        </div>
+                                        <div>
+                                            <span className="meta-label">{app.applied}</span>
+                                            <span className="meta-value">{app.appliedVia}</span>
+                                        </div>
+                                    </div>
+
+                                    <a href="#" className="btn btn-outline-primary btn-sm rounded-pill">
+                                        {app.actionText}
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+
+                {/* Next Steps */}
+                <div className="list-card mt-4">
+                    <h3>Next Steps</h3>
+                    <ul>
+                        <li>
+                            <div>
+                                <strong>Prepare for Skyline loop</strong>
+                                <p className="mb-0 text-muted">
+                                    Portfolio presentation + systems whiteboard.
+                                </p>
+                            </div>
+                            <a href="#" className="btn btn-outline-primary btn-sm rounded-3">
+                                Open prep kit
+                            </a>
+                        </li>
+
+                        <li>
+                            <div>
+                                <strong>Follow up with Bright Labs</strong>
+                                <p className="mb-0 text-muted">
+                                    Send quick note if no update by Apr 18.
+                                </p>
+                            </div>
+                            <a href="#" className="btn btn-outline-secondary btn-sm rounded-3">
+                                Send reminder
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </>
+    );
+}

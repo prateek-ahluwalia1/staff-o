@@ -55,23 +55,8 @@ export default function Header() {
 
             <ul className="navbar-nav mx-auto align-items-lg-center main-menu">
               {/* Home Dropdown */}
-              <li className="nav-item dropdown">
-                <a
-                  className="nav-link dropdown-toggle"
-                  href="#"
-                  id="homeDropdown"
-                  role="button"
-                  data-bs-toggle="dropdown"
-                  aria-expanded="false"
-                >
-                  Home
-                </a>
-                <ul className="dropdown-menu dropdown-menu-lg" aria-labelledby="homeDropdown">
-                  <li><Link className="dropdown-item" to="/">Home Page 1</Link></li>
-                  <li><Link className="dropdown-item" to="/index2">Home Page 2</Link></li>
-                  <li><Link className="dropdown-item" to="/index3">Home Page 3</Link></li>
-                  <li><Link className="dropdown-item" to="/index-rtl">Home RTL</Link></li>
-                </ul>
+              <li className="nav-item">
+                <Link className="nav-link" to="/home">Home</Link>
               </li>
 
               {/* Jobs Dropdown */}
@@ -204,10 +189,6 @@ export default function Header() {
                 <ul className="dropdown-menu dropdown-menu-end">
                   <li><Link className="dropdown-item" to="/dashboard">Dashboard</Link></li>
                   <li><Link className="dropdown-item" to="/edit-profile">Edit Profile</Link></li>
-                  <li><Link className="dropdown-item" to="/build-resume">Build Resume</Link></li>
-                  <li><Link className="dropdown-item" to="/download-cv">Download CV</Link></li>
-                  <li><Link className="dropdown-item" to="/manage-resume">Manage Resume</Link></li>
-                  <li><Link className="dropdown-item" to="/my-messages">My Messages</Link></li>
                   <li><Link className="dropdown-item" to="/my-followings">My Followings</Link></li>
                   <li><Link className="dropdown-item" to="/user-packages">Packages</Link></li>
                   <li><Link className="dropdown-item" to="/payment-history">Payment History</Link></li>

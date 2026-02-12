@@ -7846,7 +7846,7 @@ Large Mobile Screen
     font-weight: 600;
     text-decoration: none;
 }
-.dashboard-nav li.active a,
+.dashboard-nav li a.active,
 .dashboard-nav li a:hover {
     background: rgba(37, 99, 235, 0.1);
     color: #1d4ed8;

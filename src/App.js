@@ -1,78 +1,87 @@
+import React, { lazy, Suspense } from "react";
 import {
   BrowserRouter as Router,
   Routes,
   Route,
   Navigate,
 } from "react-router-dom";
-import Login from "./auth/login";
-import Register from "./auth/register";
-import Home from "./pages/home";
-import Dashboard from "./pages/dashboard";
-import DashboardLayout from "./components/dashboardlayout";
-import EditProfile from "./pages/edit-profile";
-import PublicProfilePreview from "./pages/public-profile-view";
-import MyJobApplications from "./pages/my-job-application";
-import MyFavouriteJobs from "./pages/my-favourite-jobs";
-import JobAlerts from "./pages/job-alerts";
-import MyFollowings from "./pages/my-followings";
-import UserPackages from "./pages/user-packages";
-import PaymentHistory from "./pages/payment-history";
 import ProtectedRoute from "./components/ProtectedRoute";
+import Loader from "./components/Loader";
+
+// Lazy-loaded route components for code splitting
+const Login = lazy(() => import("./auth/login"));
+const Register = lazy(() => import("./auth/register"));
+const Home = lazy(() => import("./pages/home"));
+const DashboardLayout = lazy(() => import("./components/dashboardlayout"));
+const Dashboard = lazy(() => import("./pages/dashboard"));
+const EditProfile = lazy(() => import("./pages/edit-profile"));
+const PublicProfilePreview = lazy(() => import("./pages/public-profile-view"));
+const MyJobApplications = lazy(() => import("./pages/my-job-application"));
+const MyFavouriteJobs = lazy(() => import("./pages/my-favourite-jobs"));
+const JobAlerts = lazy(() => import("./pages/job-alerts"));
+const MyFollowings = lazy(() => import("./pages/my-followings"));
+const UserPackages = lazy(() => import("./pages/user-packages"));
+const PaymentHistory = lazy(() => import("./pages/payment-history"));
 
 function App() {
   return (
     <Router>
       <div className="App">
-        <Routes>
-          <Route path="/" element={<Navigate to="/login" replace />} />
-          <Route
-            path="/login"
-            element={
-              <ProtectedRoute guestOnly>
-                <Login />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/register"
-            element={
-              <ProtectedRoute guestOnly>
-                <Register />
-              </ProtectedRoute>
-            }
-          />
-
-          <Route
-            path="/home"
-            element={
-              <ProtectedRoute>
-                <Home />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            element={
-              <ProtectedRoute>
-                <DashboardLayout />
-              </ProtectedRoute>
-            }
-          >
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/edit-profile" element={<EditProfile />} />
-            <Route path="/public-profile" element={<PublicProfilePreview />} />
+        <Suspense fallback={<Loader fullPage size="lg" />}>
+          <Routes>
+            <Route path="/" element={<Navigate to="/login" replace />} />
             <Route
-              path="/my-job-applications"
-              element={<MyJobApplications />}
+              path="/login"
+              element={
+                <ProtectedRoute guestOnly>
+                  <Login />
+                </ProtectedRoute>
+              }
             />
-            <Route path="/my-favourite-jobs" element={<MyFavouriteJobs />} />
-            <Route path="/job-alerts" element={<JobAlerts />} />
-            <Route path="/my-followings" element={<MyFollowings />} />
-            <Route path="/user-packages" element={<UserPackages />} />
-            <Route path="/payment-history" element={<PaymentHistory />} />
-          </Route>
+            <Route
+              path="/register"
+              element={
+                <ProtectedRoute guestOnly>
+                  <Register />
+                </ProtectedRoute>
+              }
+            />
 
-          <Route path="*" element={<Navigate to="/login" replace />} />
-        </Routes>
+            <Route
+              path="/home"
+              element={
+                <ProtectedRoute>
+                  <Home />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              element={
+                <ProtectedRoute>
+                  <DashboardLayout />
+                </ProtectedRoute>
+              }
+            >
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/edit-profile" element={<EditProfile />} />
+              <Route
+                path="/public-profile"
+                element={<PublicProfilePreview />}
+              />
+              <Route
+                path="/my-job-applications"
+                element={<MyJobApplications />}
+              />
+              <Route path="/my-favourite-jobs" element={<MyFavouriteJobs />} />
+              <Route path="/job-alerts" element={<JobAlerts />} />
+              <Route path="/my-followings" element={<MyFollowings />} />
+              <Route path="/user-packages" element={<UserPackages />} />
+              <Route path="/payment-history" element={<PaymentHistory />} />
+            </Route>
+
+            <Route path="*" element={<Navigate to="/login" replace />} />
+          </Routes>
+        </Suspense>
       </div>
     </Router>
   );

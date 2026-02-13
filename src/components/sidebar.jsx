@@ -1,12 +1,21 @@
-import React from "react";
+import React, { memo, useCallback } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { NavLink, useNavigate } from "react-router-dom";
 import { logOut } from "../store/slices/authSlice";
 
-export default function Sidebar() {
+const Sidebar = memo(function Sidebar() {
   const { userdata } = useSelector((state) => state.auth);
   const dispatch = useDispatch();
   const navigate = useNavigate();
+
+  const handleLogout = useCallback(
+    (e) => {
+      e.preventDefault();
+      dispatch(logOut());
+      navigate("/login");
+    },
+    [dispatch, navigate],
+  );
   return (
     <aside className="dashboard-sidebar">
       <div className="sidebar-header">
@@ -102,18 +111,13 @@ export default function Sidebar() {
           </NavLink>
         </li>
         <li>
-          <a
-            href="#"
-            onClick={(e) => {
-              e.preventDefault();
-              dispatch(logOut());
-              navigate("/login");
-            }}
-          >
+          <a href="#" onClick={handleLogout}>
             <i className="fa-solid fa-right-from-bracket"></i> Logout
           </a>
         </li>
       </ul>
     </aside>
   );
-}
+});
+
+export default Sidebar;

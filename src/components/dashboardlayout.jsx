@@ -1,25 +1,27 @@
-import React from 'react';
-import { Outlet } from 'react-router-dom';
-import Header from '../components/header';
-import Sidebar from '../components/sidebar';
-import Footer from './footer';
+import React, { memo } from "react";
+import { Outlet } from "react-router-dom";
+import Header from "../components/header";
+import Sidebar from "../components/sidebar";
+import Footer from "./footer";
 
-export default function DashboardLayout() {
-    return (
-        <>
-            <Header />
-            <section className="dashboard-section">
-                <div className="container">
-                    <div className="dashboard-layout">
-                        <Sidebar />
+const DashboardLayout = memo(function DashboardLayout() {
+  return (
+    <>
+      <Header />
+      <section className="dashboard-section">
+        <div className="container">
+          <div className="dashboard-layout">
+            <Sidebar />
 
-                        <div className="dashboard-main">
-                            <Outlet />
-                        </div>
-                    </div>
-                </div>
-            </section>
-            <Footer />
-        </>
-    );
-}
+            <div className="dashboard-main">
+              <Outlet />
+            </div>
+          </div>
+        </div>
+      </section>
+      <Footer />
+    </>
+  );
+});
+
+export default DashboardLayout;

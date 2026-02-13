@@ -10,7 +10,12 @@ import React from "react";
  */
 const SIZES = { sm: "1rem", md: "2rem", lg: "3rem" };
 
-const Loader = ({ variant = "primary", size = "md", className = "", fullPage = false }) => {
+const Loader = ({
+  variant = "primary",
+  size = "md",
+  className = "",
+  fullPage = false,
+}) => {
   const dimension = SIZES[size] || SIZES.md;
 
   const spinner = (

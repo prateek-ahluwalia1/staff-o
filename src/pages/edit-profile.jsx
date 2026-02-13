@@ -26,8 +26,8 @@ export default function EditProfile() {
   const { userdata } = useSelector((state) => state.auth);
 
   const endpoint = useMemo(
-    () => (userdata?.data?.id ? `api/user-edit/${userdata.data.id}` : null),
-    [userdata?.data?.id],
+    () => (userdata?.date?.id ? `api/user-edit/${userdata.date.id}` : null),
+    [userdata?.date?.id],
   );
 
   const {

@@ -1,21 +1,21 @@
-import React, { useState } from "react";
+import React, { memo, useState, useCallback } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { Link, useNavigate } from "react-router-dom";
 import { logOut } from "../store/slices/authSlice";
 
-export default function Header() {
+const Header = memo(function Header() {
   const { token } = useSelector((state) => state.auth);
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 
-  const toggleMobileMenu = () => {
-    setIsMobileOpen(!isMobileOpen);
-  };
+  const toggleMobileMenu = useCallback(() => {
+    setIsMobileOpen((prev) => !prev);
+  }, []);
 
-  const closeMobileMenu = () => {
+  const closeMobileMenu = useCallback(() => {
     setIsMobileOpen(false);
-  };
+  }, []);
 
   return (
     <div className="header">
@@ -353,4 +353,6 @@ export default function Header() {
       </nav>
     </div>
   );
-}
+});
+
+export default Header;

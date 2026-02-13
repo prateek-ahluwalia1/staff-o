@@ -1,8 +1,8 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
-import Copyright from '../components/copyright';
+import React, { memo } from "react";
+import { Link } from "react-router-dom";
+import Copyright from "../components/copyright";
 
-export default function Footer() {
+const Footer = memo(function Footer() {
   return (
     <footer className="footer-modern">
       <div className="footer-main">
@@ -12,11 +12,21 @@ export default function Footer() {
             <div className="col-sm-6 col-lg-3">
               <h5 className="footer-title">Quick Links</h5>
               <ul className="footer-links">
-                <li><Link to="/home">Home</Link></li>
-                <li><Link to="/contact-us">Contact Us</Link></li>
-                <li><Link to="/faqs">FAQs</Link></li>
-                <li><Link to="/about-us">About Us</Link></li>
-                <li><a href="#">Terms Of Use</a></li>
+                <li>
+                  <Link to="/home">Home</Link>
+                </li>
+                <li>
+                  <Link to="/contact-us">Contact Us</Link>
+                </li>
+                <li>
+                  <Link to="/faqs">FAQs</Link>
+                </li>
+                <li>
+                  <Link to="/about-us">About Us</Link>
+                </li>
+                <li>
+                  <a href="#">Terms Of Use</a>
+                </li>
               </ul>
             </div>
 
@@ -24,14 +34,30 @@ export default function Footer() {
             <div className="col-sm-6 col-lg-3">
               <h5 className="footer-title">Jobs By Functional Area</h5>
               <ul className="footer-links">
-                <li><a href="#">Marketing</a></li>
-                <li><a href="#">Graphic Design</a></li>
-                <li><a href="#">Business Management</a></li>
-                <li><a href="#">Software &amp; Web Development</a></li>
-                <li><a href="#">Admin</a></li>
-                <li><a href="#">Database Administration</a></li>
-                <li><a href="#">Advertising</a></li>
-                <li><a href="#">Web Developer</a></li>
+                <li>
+                  <a href="#">Marketing</a>
+                </li>
+                <li>
+                  <a href="#">Graphic Design</a>
+                </li>
+                <li>
+                  <a href="#">Business Management</a>
+                </li>
+                <li>
+                  <a href="#">Software &amp; Web Development</a>
+                </li>
+                <li>
+                  <a href="#">Admin</a>
+                </li>
+                <li>
+                  <a href="#">Database Administration</a>
+                </li>
+                <li>
+                  <a href="#">Advertising</a>
+                </li>
+                <li>
+                  <a href="#">Web Developer</a>
+                </li>
               </ul>
             </div>
 
@@ -39,14 +65,30 @@ export default function Footer() {
             <div className="col-sm-6 col-lg-3">
               <h5 className="footer-title">Jobs By Industry</h5>
               <ul className="footer-links">
-                <li><a href="#">Courier/Logistics</a></li>
-                <li><a href="#">Travel/Tourism/Transportation</a></li>
-                <li><a href="#">Fashion</a></li>
-                <li><a href="#">Electronics</a></li>
-                <li><a href="#">Automobile</a></li>
-                <li><a href="#">Advertising/PR</a></li>
-                <li><a href="#">Health &amp; Fitness</a></li>
-                <li><a href="#">Information Technology</a></li>
+                <li>
+                  <a href="#">Courier/Logistics</a>
+                </li>
+                <li>
+                  <a href="#">Travel/Tourism/Transportation</a>
+                </li>
+                <li>
+                  <a href="#">Fashion</a>
+                </li>
+                <li>
+                  <a href="#">Electronics</a>
+                </li>
+                <li>
+                  <a href="#">Automobile</a>
+                </li>
+                <li>
+                  <a href="#">Advertising/PR</a>
+                </li>
+                <li>
+                  <a href="#">Health &amp; Fitness</a>
+                </li>
+                <li>
+                  <a href="#">Information Technology</a>
+                </li>
               </ul>
             </div>
 
@@ -56,8 +98,8 @@ export default function Footer() {
               <ul className="footer-contact">
                 <li>
                   <i className="fa fa-map-marker" aria-hidden="true"></i>
-                  651 N Broad St, Suite 201, Middletown, Zip Code 19709, New Castle,
-                  Delaware, USA.
+                  651 N Broad St, Suite 201, Middletown, Zip Code 19709, New
+                  Castle, Delaware, USA.
                 </li>
                 <li>
                   <i className="fa fa-envelope" aria-hidden="true"></i>
@@ -93,4 +135,6 @@ export default function Footer() {
       <Copyright />
     </footer>
   );
-}
+});
+
+export default Footer;

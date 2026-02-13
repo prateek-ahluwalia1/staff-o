@@ -1,7 +1,78 @@
-// src/auth/register.jsx
-import React from 'react';
+import React, { useState } from "react";
+import useSubmit from "../hooks/useSubmit";
 
 export default function Register() {
+  const { submit, loading, error } = useSubmit();
+  // Staff state
+  const [staffForm, setStaffForm] = useState({
+    name: "",
+    email: "",
+    password: "",
+    password_confirmation: "",
+    company_name: "",
+    phone: "",
+    city: "",
+  });
+
+  // Customer state
+  const [customerForm, setCustomerForm] = useState({
+    name: "",
+    email: "",
+    password: "",
+    password_confirmation: "",
+    city: "",
+    phone: "",
+  });
+
+  // Sub Contractor state
+  const [subContractorForm, setSubContractorForm] = useState({
+    first_name: "",
+    last_name: "",
+    email: "",
+    password: "",
+    password_confirmation: "",
+    city: "",
+  });
+
+  const handleStaffChange = (e) => {
+    setStaffForm({ ...staffForm, [e.target.name]: e.target.value });
+  };
+
+  const handleCustomerChange = (e) => {
+    setCustomerForm({ ...customerForm, [e.target.name]: e.target.value });
+  };
+
+  const handleSubContractorChange = (e) => {
+    setSubContractorForm({
+      ...subContractorForm,
+      [e.target.name]: e.target.value,
+    });
+  };
+
+  const handleStaffSubmit = async (e) => {
+    e.preventDefault();
+    const res = await submit("api/register/staff", staffForm);
+    if (res.success) {
+      alert("Staff account created successfully!");
+    }
+  };
+
+  const handleCustomerSubmit = async (e) => {
+    e.preventDefault();
+    const res = await submit("api/register/customer", customerForm);
+    if (res.success) {
+      alert("Customer account created successfully!");
+    }
+  };
+
+  const handleSubContractorSubmit = async (e) => {
+    e.preventDefault();
+    const res = await submit("api/register/contractor", subContractorForm);
+    if (res.success) {
+      alert("Sub Contractor account created successfully!");
+    }
+  };
+
   return (
     <section className="auth-section auth-signup">
       <div className="container">
@@ -43,22 +114,36 @@ export default function Register() {
                 Start as a candidate or an employer. Switch anytime.
               </p>
 
-              {/* Social signup buttons */}
-              <div className="auth-social">
-                <a href="#" className="auth-social-btn google">
-                  <i className="fa-brands fa-google"></i> Sign up with Google
-                </a>
-                <a href="#" className="auth-social-btn linkedin">
-                  <i className="fa-brands fa-linkedin"></i> Sign up with LinkedIn
-                </a>
-              </div>
-
-              <div className="auth-divider">
-                <span>or</span>
-              </div>
-
-              {/* Tabs: Candidate / Employer */}
-              <div className="auth-toggle nav nav-pills" id="registerTab" role="tablist">
+              {/* Tabs: Staff / Customer / Sub Contractor */}
+              <div
+                className="auth-toggle nav nav-pills"
+                id="registerTab"
+                role="tablist"
+              >
+                <button
+                  className="auth-toggle-btn nav-link"
+                  id="staff-tab"
+                  data-bs-toggle="pill"
+                  data-bs-target="#registerStaff"
+                  type="button"
+                  role="tab"
+                  aria-controls="registerStaff"
+                  aria-selected="false"
+                >
+                  Staff
+                </button>
+                <button
+                  className="auth-toggle-btn nav-link"
+                  id="customer-tab"
+                  data-bs-toggle="pill"
+                  data-bs-target="#registerCustomer"
+                  type="button"
+                  role="tab"
+                  aria-controls="registerCustomer"
+                  aria-selected="false"
+                >
+                  Customer
+                </button>
                 <button
                   className="auth-toggle-btn nav-link active"
                   id="candidate-tab"
@@ -69,32 +154,316 @@ export default function Register() {
                   aria-controls="registerCandidate"
                   aria-selected="true"
                 >
-                  Candidate
-                </button>
-                <button
-                  className="auth-toggle-btn nav-link"
-                  id="employer-tab"
-                  data-bs-toggle="pill"
-                  data-bs-target="#registerEmployer"
-                  type="button"
-                  role="tab"
-                  aria-controls="registerEmployer"
-                  aria-selected="false"
-                >
-                  Employer
+                  Sub Contractor
                 </button>
               </div>
 
               {/* Tab content */}
               <div className="tab-content" id="registerTabContent">
-                {/* Candidate Form */}
+                {/* Staff Form */}
+                <div
+                  className="tab-pane fade"
+                  id="registerStaff"
+                  role="tabpanel"
+                  aria-labelledby="staff-tab"
+                >
+                  <form className="auth-form" onSubmit={handleStaffSubmit}>
+                    <div className="row g-3">
+                      <div className="col-sm-12">
+                        <label htmlFor="staffName" className="form-label">
+                          Name
+                        </label>
+                        <input
+                          type="text"
+                          className="form-control"
+                          id="staffName"
+                          name="name"
+                          value={staffForm.name}
+                          onChange={handleStaffChange}
+                          placeholder="John Doe"
+                        />
+                      </div>
+                      <div className="col-sm-12">
+                        <label htmlFor="staffEmail" className="form-label">
+                          Email address
+                        </label>
+                        <input
+                          type="email"
+                          className="form-control"
+                          id="staffEmail"
+                          name="email"
+                          value={staffForm.email}
+                          onChange={handleStaffChange}
+                          placeholder="name@email.com"
+                        />
+                      </div>
+                      <div className="col-sm-6">
+                        <label htmlFor="staffPassword" className="form-label">
+                          Password
+                        </label>
+                        <input
+                          type="password"
+                          className="form-control"
+                          id="staffPassword"
+                          name="password"
+                          value={staffForm.password}
+                          onChange={handleStaffChange}
+                          placeholder="Create a password"
+                        />
+                      </div>
+                      <div className="col-sm-6">
+                        <label
+                          htmlFor="staffPasswordConfirmation"
+                          className="form-label"
+                        >
+                          Confirm Password
+                        </label>
+                        <input
+                          type="password"
+                          className="form-control"
+                          id="staffPasswordConfirmation"
+                          name="password_confirmation"
+                          value={staffForm.password_confirmation}
+                          onChange={handleStaffChange}
+                          placeholder="Confirm password"
+                        />
+                      </div>
+                      <div className="col-sm-12">
+                        <label
+                          htmlFor="staffCompanyName"
+                          className="form-label"
+                        >
+                          Company name
+                        </label>
+                        <input
+                          type="text"
+                          className="form-control"
+                          id="staffCompanyName"
+                          name="company_name"
+                          value={staffForm.company_name}
+                          onChange={handleStaffChange}
+                          placeholder="Acme Studios"
+                        />
+                      </div>
+                      <div className="col-sm-6">
+                        <label htmlFor="staffPhone" className="form-label">
+                          Phone
+                        </label>
+                        <input
+                          type="tel"
+                          className="form-control"
+                          id="staffPhone"
+                          name="phone"
+                          value={staffForm.phone}
+                          onChange={handleStaffChange}
+                          placeholder="+1 234 567 890"
+                        />
+                      </div>
+                      <div className="col-sm-6">
+                        <label htmlFor="staffCity" className="form-label">
+                          City
+                        </label>
+                        <input
+                          type="text"
+                          className="form-control"
+                          id="staffCity"
+                          name="city"
+                          value={staffForm.city}
+                          onChange={handleStaffChange}
+                          placeholder="New York"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="form-check auth-policy mt-4">
+                      <input
+                        className="form-check-input"
+                        type="checkbox"
+                        id="staffPolicy"
+                      />
+                      <label className="form-check-label" htmlFor="staffPolicy">
+                        I accept the{" "}
+                        <a href="#" className="auth-link">
+                          Terms
+                        </a>{" "}
+                        and{" "}
+                        <a href="#" className="auth-link">
+                          Privacy Policy
+                        </a>
+                        .
+                      </label>
+                    </div>
+
+                    {error && (
+                      <div className="alert alert-danger mt-3">
+                        {typeof error === "object"
+                          ? Object.values(error).flat().join(", ")
+                          : error}
+                      </div>
+                    )}
+
+                    <button
+                      type="submit"
+                      className="btn btn-primary w-100 mt-4"
+                      disabled={loading}
+                    >
+                      {loading ? "Creating..." : "Create Staff Account"}
+                    </button>
+                  </form>
+                </div>
+
+                {/* Customer Form */}
+                <div
+                  className="tab-pane fade"
+                  id="registerCustomer"
+                  role="tabpanel"
+                  aria-labelledby="customer-tab"
+                >
+                  <form className="auth-form" onSubmit={handleCustomerSubmit}>
+                    <div className="row g-3">
+                      <div className="col-sm-12">
+                        <label htmlFor="customerName" className="form-label">
+                          Name
+                        </label>
+                        <input
+                          type="text"
+                          className="form-control"
+                          id="customerName"
+                          name="name"
+                          value={customerForm.name}
+                          onChange={handleCustomerChange}
+                          placeholder="John Doe"
+                        />
+                      </div>
+                      <div className="col-sm-12">
+                        <label htmlFor="customerEmail" className="form-label">
+                          Email address
+                        </label>
+                        <input
+                          type="email"
+                          className="form-control"
+                          id="customerEmail"
+                          name="email"
+                          value={customerForm.email}
+                          onChange={handleCustomerChange}
+                          placeholder="name@email.com"
+                        />
+                      </div>
+                      <div className="col-sm-6">
+                        <label
+                          htmlFor="customerPassword"
+                          className="form-label"
+                        >
+                          Password
+                        </label>
+                        <input
+                          type="password"
+                          className="form-control"
+                          id="customerPassword"
+                          name="password"
+                          value={customerForm.password}
+                          onChange={handleCustomerChange}
+                          placeholder="Create a password"
+                        />
+                      </div>
+                      <div className="col-sm-6">
+                        <label
+                          htmlFor="customerPasswordConfirmation"
+                          className="form-label"
+                        >
+                          Confirm Password
+                        </label>
+                        <input
+                          type="password"
+                          className="form-control"
+                          id="customerPasswordConfirmation"
+                          name="password_confirmation"
+                          value={customerForm.password_confirmation}
+                          onChange={handleCustomerChange}
+                          placeholder="Confirm password"
+                        />
+                      </div>
+                      <div className="col-sm-6">
+                        <label htmlFor="customerCity" className="form-label">
+                          City
+                        </label>
+                        <input
+                          type="text"
+                          className="form-control"
+                          id="customerCity"
+                          name="city"
+                          value={customerForm.city}
+                          onChange={handleCustomerChange}
+                          placeholder="New York"
+                        />
+                      </div>
+                      <div className="col-sm-6">
+                        <label htmlFor="customerPhone" className="form-label">
+                          Phone
+                        </label>
+                        <input
+                          type="tel"
+                          className="form-control"
+                          id="customerPhone"
+                          name="phone"
+                          value={customerForm.phone}
+                          onChange={handleCustomerChange}
+                          placeholder="+1 234 567 890"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="form-check auth-policy mt-4">
+                      <input
+                        className="form-check-input"
+                        type="checkbox"
+                        id="customerPolicy"
+                      />
+                      <label
+                        className="form-check-label"
+                        htmlFor="customerPolicy"
+                      >
+                        I agree to the{" "}
+                        <a href="#" className="auth-link">
+                          Terms of Service
+                        </a>{" "}
+                        and{" "}
+                        <a href="#" className="auth-link">
+                          Privacy Policy
+                        </a>
+                        .
+                      </label>
+                    </div>
+
+                    {error && (
+                      <div className="alert alert-danger mt-3">
+                        {typeof error === "object"
+                          ? Object.values(error).flat().join(", ")
+                          : error}
+                      </div>
+                    )}
+
+                    <button
+                      type="submit"
+                      className="btn btn-primary w-100 mt-4"
+                      disabled={loading}
+                    >
+                      {loading ? "Creating..." : "Create Customer Account"}
+                    </button>
+                  </form>
+                </div>
+
+                {/* Sub Contractor Form */}
                 <div
                   className="tab-pane fade show active"
                   id="registerCandidate"
                   role="tabpanel"
                   aria-labelledby="candidate-tab"
                 >
-                  <form className="auth-form">
+                  <form
+                    className="auth-form"
+                    onSubmit={handleSubContractorSubmit}
+                  >
                     <div className="row g-3">
                       <div className="col-sm-6">
                         <label htmlFor="candidateFirst" className="form-label">
@@ -104,6 +473,9 @@ export default function Register() {
                           type="text"
                           className="form-control"
                           id="candidateFirst"
+                          name="first_name"
+                          value={subContractorForm.first_name}
+                          onChange={handleSubContractorChange}
                           placeholder="Samantha"
                         />
                       </div>
@@ -115,6 +487,9 @@ export default function Register() {
                           type="text"
                           className="form-control"
                           id="candidateLast"
+                          name="last_name"
+                          value={subContractorForm.last_name}
+                          onChange={handleSubContractorChange}
                           placeholder="Jenkins"
                         />
                       </div>
@@ -126,31 +501,59 @@ export default function Register() {
                           type="email"
                           className="form-control"
                           id="candidateEmail"
+                          name="email"
+                          value={subContractorForm.email}
+                          onChange={handleSubContractorChange}
                           placeholder="name@email.com"
                         />
                       </div>
-                      <div className="col-sm-12">
-                        <label htmlFor="candidatePassword" className="form-label">
+                      <div className="col-sm-6">
+                        <label
+                          htmlFor="candidatePassword"
+                          className="form-label"
+                        >
                           Password
                         </label>
                         <input
                           type="password"
                           className="form-control"
                           id="candidatePassword"
+                          name="password"
+                          value={subContractorForm.password}
+                          onChange={handleSubContractorChange}
                           placeholder="Create a strong password"
                         />
                       </div>
-                      <div className="col-sm-12">
-                        <label htmlFor="candidateRole" className="form-label">
-                          Desired role
+                      <div className="col-sm-6">
+                        <label
+                          htmlFor="candidatePasswordConfirmation"
+                          className="form-label"
+                        >
+                          Confirm Password
                         </label>
-                        <select className="form-select" id="candidateRole">
-                          <option selected>Product Designer</option>
-                          <option>Frontend Developer</option>
-                          <option>Data Analyst</option>
-                          <option>Marketing Specialist</option>
-                          <option>Customer Success</option>
-                        </select>
+                        <input
+                          type="password"
+                          className="form-control"
+                          id="candidatePasswordConfirmation"
+                          name="password_confirmation"
+                          value={subContractorForm.password_confirmation}
+                          onChange={handleSubContractorChange}
+                          placeholder="Confirm password"
+                        />
+                      </div>
+                      <div className="col-sm-12">
+                        <label htmlFor="candidateCity" className="form-label">
+                          City
+                        </label>
+                        <input
+                          type="text"
+                          className="form-control"
+                          id="candidateCity"
+                          name="city"
+                          value={subContractorForm.city}
+                          onChange={handleSubContractorChange}
+                          placeholder="New York"
+                        />
                       </div>
                     </div>
 
@@ -160,100 +563,38 @@ export default function Register() {
                         type="checkbox"
                         id="candidatePolicy"
                       />
-                      <label className="form-check-label" htmlFor="candidatePolicy">
-                        I agree to the{' '}
-                        <a href="#" className="auth-link">Terms of Service</a> and{' '}
-                        <a href="#" className="auth-link">Privacy Policy</a>.
+                      <label
+                        className="form-check-label"
+                        htmlFor="candidatePolicy"
+                      >
+                        I agree to the{" "}
+                        <a href="#" className="auth-link">
+                          Terms of Service
+                        </a>{" "}
+                        and{" "}
+                        <a href="#" className="auth-link">
+                          Privacy Policy
+                        </a>
+                        .
                       </label>
                     </div>
 
-                    <button type="submit" className="btn btn-primary w-100 mt-4">
-                      Create Candidate Account
-                    </button>
-                  </form>
-                </div>
+                    {error && (
+                      <div className="alert alert-danger mt-3">
+                        {typeof error === "object"
+                          ? Object.values(error).flat().join(", ")
+                          : error}
+                      </div>
+                    )}
 
-                {/* Employer Form */}
-                <div
-                  className="tab-pane fade"
-                  id="registerEmployer"
-                  role="tabpanel"
-                  aria-labelledby="employer-tab"
-                >
-                  <form className="auth-form">
-                    <div className="row g-3">
-                      <div className="col-sm-12">
-                        <label htmlFor="companyName" className="form-label">
-                          Company name
-                        </label>
-                        <input
-                          type="text"
-                          className="form-control"
-                          id="companyName"
-                          placeholder="Acme Studios"
-                        />
-                      </div>
-                      <div className="col-sm-12">
-                        <label htmlFor="companyWebsite" className="form-label">
-                          Website
-                        </label>
-                        <input
-                          type="url"
-                          className="form-control"
-                          id="companyWebsite"
-                          placeholder="https://yourcompany.com/"
-                        />
-                      </div>
-                      <div className="col-sm-12">
-                        <label htmlFor="companyEmail" className="form-label">
-                          Work email
-                        </label>
-                        <input
-                          type="email"
-                          className="form-control"
-                          id="companyEmail"
-                          placeholder="you@company.com"
-                        />
-                      </div>
-                      <div className="col-sm-6">
-                        <label htmlFor="employerPassword" className="form-label">
-                          Password
-                        </label>
-                        <input
-                          type="password"
-                          className="form-control"
-                          id="employerPassword"
-                          placeholder="Create a password"
-                        />
-                      </div>
-                      <div className="col-sm-6">
-                        <label htmlFor="employerTeamSize" className="form-label">
-                          Team size
-                        </label>
-                        <select className="form-select" id="employerTeamSize">
-                          <option selected>1-10 employees</option>
-                          <option>11-50 employees</option>
-                          <option>51-200 employees</option>
-                          <option>200+ employees</option>
-                        </select>
-                      </div>
-                    </div>
-
-                    <div className="form-check auth-policy mt-4">
-                      <input
-                        className="form-check-input"
-                        type="checkbox"
-                        id="employerPolicy"
-                      />
-                      <label className="form-check-label" htmlFor="employerPolicy">
-                        I accept the{' '}
-                        <a href="#" className="auth-link">Terms</a> and confirm I
-                        have hiring authority.
-                      </label>
-                    </div>
-
-                    <button type="submit" className="btn btn-primary w-100 mt-4">
-                      Create Employer Account
+                    <button
+                      type="submit"
+                      className="btn btn-primary w-100 mt-4"
+                      disabled={loading}
+                    >
+                      {loading
+                        ? "Creating..."
+                        : "Create Sub Contractor Account"}
                     </button>
                   </form>
                 </div>

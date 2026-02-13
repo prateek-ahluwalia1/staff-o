@@ -27,14 +27,14 @@ const Sidebar = memo(function Sidebar() {
           <label className="status-switch" aria-label="Toggle open to work">
             <input
               type="checkbox"
-              checked={!!userdata?.date?.is_active}
+              checked={!!userdata?.data?.is_active}
               disabled
             />
             <span className="status-slider"></span>
           </label>
         </div>
-        <h2>{userdata?.date?.name || "Job Seeker"}</h2>
-        <p>{userdata?.date?.email || "jobseeker@jobsportal.com"}</p>
+        <h2>{userdata?.data?.name || "Job Seeker"}</h2>
+        <p>{userdata?.data?.email || "jobseeker@jobsportal.com"}</p>
       </div>
 
       <ul className="dashboard-nav">

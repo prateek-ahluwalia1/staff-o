@@ -92,7 +92,7 @@ export default function EditProfile() {
       }
 
       const result = await submit(
-        `api/user-edit/${userdata.data.id}`,
+        `api/user-update/${userdata.data.id}`,
         payload,
         { method: "POST" },
       );
@@ -127,202 +127,197 @@ export default function EditProfile() {
   }
 
   return (
-    <>
-      <div className="dashboard-main">
-        <div className="settings-header">
-          <div className="avatar-upload">
-            <img
-              src={profilePhoto || "/assets/images/candidates/01.jpg"}
-              alt={formData.name || "Staff"}
-            />
-            <label className="upload-label">
-              <input
-                type="file"
-                onChange={handlePhotoChange}
-                accept="image/*"
-              />
-              <i
-                className="fa-solid fa-arrow-up-from-bracket"
-                aria-hidden="true"
-              ></i>
-              Update Photo
-            </label>
-          </div>
-
-          <div className="settings-header-content">
-            <span>Staff Profile</span>
-            <h2>{formData.name || "Staff Member"}</h2>
-            <p>
-              Keep your information up to date so your profile stays accurate
-              and complete.
-            </p>
-            <div className="settings-header-meta">
-              <span>
-                <i className="fa-solid fa-envelope" aria-hidden="true"></i>
-                {formData.email || "No email"}
-              </span>
-              <span>
-                <i className="fa-solid fa-location-dot" aria-hidden="true"></i>
-                {formData.city || "No location"}
-              </span>
-              <span>
-                <i className="fa-solid fa-user" aria-hidden="true"></i>
-                {formData.gender || "Not specified"}
-              </span>
-            </div>
-          </div>
+    <div className="dashboard-main">
+      <div className="settings-header">
+        <div className="avatar-upload">
+          <img
+            src={profilePhoto || "/assets/images/candidates/01.jpg"}
+            alt={formData.name || "Staff"}
+          />
+          <label className="upload-label">
+            <input type="file" onChange={handlePhotoChange} accept="image/*" />
+            <i
+              className="fa-solid fa-arrow-up-from-bracket"
+              aria-hidden="true"
+            ></i>
+            Update Photo
+          </label>
         </div>
 
-        {submitSuccess && (
-          <div className="alert alert-success mt-3">
-            Profile updated successfully!
+        <div className="settings-header-content">
+          <span>{userdata?.data?.user_type || "Staff"} Profile</span>
+          <h2>{formData.name || "Staff Member"}</h2>
+          <p>
+            Keep your information up to date so your profile stays accurate and
+            complete.
+          </p>
+          <div className="settings-header-meta">
+            <span>
+              <i className="fa-solid fa-envelope" aria-hidden="true"></i>
+              {formData.email || "No email"}
+            </span>
+            <span>
+              <i className="fa-solid fa-location-dot" aria-hidden="true"></i>
+              {formData.city || "No location"}
+            </span>
+            <span>
+              <i className="fa-solid fa-user" aria-hidden="true"></i>
+              {formData.gender || "Not specified"}
+            </span>
           </div>
-        )}
-
-        {submitError && (
-          <div className="alert alert-danger mt-3">
-            {typeof submitError === "string"
-              ? submitError
-              : typeof submitError === "object"
-                ? Object.values(submitError).flat().join(", ")
-                : "Something went wrong"}
-          </div>
-        )}
-
-        <form className="settings-form" onSubmit={handleSubmit}>
-          <div className="settings-card">
-            <div className="settings-card-header">
-              <div>
-                <p className="text-uppercase text-muted small fw-semibold mb-1">
-                  Profile
-                </p>
-                <h3>Personal Information</h3>
-                <p>
-                  These details power your profile and keep your account
-                  information current.
-                </p>
-              </div>
-            </div>
-
-            <div className="settings-grid">
-              <div>
-                <label htmlFor="name" className="form-label">
-                  Full Name
-                </label>
-                <input
-                  type="text"
-                  className="form-control"
-                  id="name"
-                  placeholder="Muhammad Nauman"
-                  value={formData.name}
-                  onChange={handleChange}
-                />
-              </div>
-
-              <div>
-                <label htmlFor="email" className="form-label">
-                  Email Address
-                </label>
-                <input
-                  type="email"
-                  className="form-control"
-                  id="email"
-                  placeholder="you@example.com"
-                  value={formData.email}
-                  onChange={handleChange}
-                />
-              </div>
-
-              <div>
-                <label htmlFor="phone" className="form-label">
-                  Phone
-                </label>
-                <input
-                  type="tel"
-                  className="form-control"
-                  id="phone"
-                  placeholder="+92 300 0000000"
-                  value={formData.phone}
-                  onChange={handleChange}
-                />
-              </div>
-
-              <div>
-                <label htmlFor="gender" className="form-label">
-                  Gender
-                </label>
-                <select
-                  className="form-control"
-                  id="gender"
-                  value={formData.gender}
-                  onChange={handleChange}
-                >
-                  <option value="">Select Gender</option>
-                  <option value="male">Male</option>
-                  <option value="female">Female</option>
-                  <option value="other">Other</option>
-                </select>
-              </div>
-
-              <div>
-                <label htmlFor="city" className="form-label">
-                  City
-                </label>
-                <input
-                  type="text"
-                  className="form-control"
-                  id="city"
-                  placeholder="Lahore"
-                  value={formData.city}
-                  onChange={handleChange}
-                />
-              </div>
-
-              <div>
-                <label htmlFor="staff_document_type" className="form-label">
-                  Document Type
-                </label>
-                <input
-                  type="text"
-                  className="form-control"
-                  id="staff_document_type"
-                  placeholder="e.g. CNIC, Passport"
-                  value={formData.staff_document_type}
-                  onChange={handleChange}
-                />
-              </div>
-
-              <div className="grid-span-2">
-                <label htmlFor="address" className="form-label">
-                  Address
-                </label>
-                <textarea
-                  className="form-control"
-                  id="address"
-                  placeholder="Enter your full address"
-                  value={formData.address}
-                  onChange={handleChange}
-                />
-              </div>
-            </div>
-
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "flex-end",
-              }}
-            >
-              <button
-                type="submit"
-                className="btn btn-primary"
-                disabled={submitLoading}
-              >
-                {submitLoading ? "Saving..." : "Save changes"}
-              </button>
-            </div>
-          </div>
-        </form>
+        </div>
       </div>
-    </>
+
+      {submitSuccess && (
+        <div className="alert alert-success mt-3">
+          Profile updated successfully!
+        </div>
+      )}
+
+      {submitError && (
+        <div className="alert alert-danger mt-3">
+          {typeof submitError === "string"
+            ? submitError
+            : typeof submitError === "object"
+              ? Object.values(submitError).flat().join(", ")
+              : "Something went wrong"}
+        </div>
+      )}
+
+      <form className="settings-form" onSubmit={handleSubmit}>
+        <div className="settings-card">
+          <div className="settings-card-header">
+            <div>
+              <p className="text-uppercase text-muted small fw-semibold mb-1">
+                Profile
+              </p>
+              <h3>Personal Information</h3>
+              <p>
+                These details power your profile and keep your account
+                information current.
+              </p>
+            </div>
+          </div>
+
+          <div className="settings-grid">
+            <div>
+              <label htmlFor="name" className="form-label">
+                Full Name
+              </label>
+              <input
+                type="text"
+                className="form-control"
+                id="name"
+                placeholder="Muhammad Nauman"
+                value={formData.name}
+                onChange={handleChange}
+              />
+            </div>
+
+            <div>
+              <label htmlFor="email" className="form-label">
+                Email Address
+              </label>
+              <input
+                type="email"
+                className="form-control"
+                id="email"
+                placeholder="you@example.com"
+                value={formData.email}
+                onChange={handleChange}
+              />
+            </div>
+
+            <div>
+              <label htmlFor="phone" className="form-label">
+                Phone
+              </label>
+              <input
+                type="tel"
+                className="form-control"
+                id="phone"
+                placeholder="+92 300 0000000"
+                value={formData.phone}
+                onChange={handleChange}
+              />
+            </div>
+
+            <div>
+              <label htmlFor="gender" className="form-label">
+                Gender
+              </label>
+              <select
+                className="form-control"
+                id="gender"
+                value={formData.gender}
+                onChange={handleChange}
+              >
+                <option value="">Select Gender</option>
+                <option value="male">Male</option>
+                <option value="female">Female</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+
+            <div>
+              <label htmlFor="city" className="form-label">
+                City
+              </label>
+              <input
+                type="text"
+                className="form-control"
+                id="city"
+                placeholder="Lahore"
+                value={formData.city}
+                onChange={handleChange}
+              />
+            </div>
+
+            <div>
+              <label htmlFor="staff_document_type" className="form-label">
+                Residential Status
+              </label>
+              <select
+                className="form-control"
+                id="staff_document_type"
+                value={formData.staff_document_type}
+                onChange={handleChange}
+              >
+                <option value="">Select Residential Status</option>
+                <option value="student_visa">Student Visa</option>
+                <option value="bridging_visa">Bridging Visa</option>
+                <option value="citizen">Citizen</option>
+                <option value="permanent_residence">Permanent Residence</option>
+                <option value="visa_485">Visa Subclass 485</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+
+            <div className="grid-span-2">
+              <label htmlFor="address" className="form-label">
+                Address
+              </label>
+              <textarea
+                className="form-control"
+                id="address"
+                placeholder="Enter your full address"
+                value={formData.address}
+                onChange={handleChange}
+              />
+            </div>
+          </div>
+
+          <div className="settings-card-footer">
+            <button
+              type="submit"
+              className="btn btn-primary"
+              disabled={submitLoading}
+            >
+              {submitLoading ? "Saving..." : "Save changes"}
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
   );
 }

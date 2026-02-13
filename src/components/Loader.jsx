@@ -32,7 +32,17 @@ const Loader = ({
     return (
       <div
         className="d-flex justify-content-center align-items-center"
-        style={{ minHeight: "60vh" }}
+        style={{
+          Height: "100vh",
+          width: "100vw",
+          position: "fixed",
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: "white",
+          zIndex: 9999,
+        }}
       >
         {spinner}
       </div>

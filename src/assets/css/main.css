@@ -11730,12 +11730,33 @@ Large Mobile Screen
 
 .settings-grid {
     display: grid;
-    gap: 18px;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 20px;
+    grid-template-columns: repeat(2, 1fr);
 }
 
 .settings-grid .grid-span-2 {
-    grid-column: span 2;
+    grid-column: 1 / -1;
+}
+
+.settings-card-footer {
+    display: flex;
+    justify-content: flex-end;
+    padding-top: 8px;
+}
+
+@media (max-width: 640px) {
+    .settings-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .settings-grid .grid-span-2 {
+        grid-column: span 1;
+    }
+
+    .settings-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
 }
 
 .settings-grid .form-label {

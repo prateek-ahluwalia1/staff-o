@@ -4,19 +4,6 @@ import { useDispatch } from "react-redux";
 import { setToken, setUser } from "../store/slices/authSlice";
 import useSubmit from "../hooks/useSubmit";
 
-// {
-//     "token": "25|7Pk1pNvniahys36jO9I2L7nqtI4iAYp7UI8Can8Eafbff392",
-//     "user": {
-//         "name": "Muhammad Nauman",
-//         "email": "na.uman33183@gmail.com",
-//         "user_type": "contractor",
-//         "is_active": false,
-//         "updated_at": "2026-02-13T09:50:33.000000Z",
-//         "created_at": "2026-02-13T09:50:33.000000Z",
-//         "id": 18
-//     }
-// }
-
 export default function Register() {
   const navigate = useNavigate();
   const dispatch = useDispatch();

@@ -1,9 +1,12 @@
 import React, { useState } from "react";
-import { useSelector } from "react-redux";
-import { Link } from "react-router-dom";
+import { useSelector, useDispatch } from "react-redux";
+import { Link, useNavigate } from "react-router-dom";
+import { logOut } from "../store/slices/authSlice";
 
 export default function Header() {
   const { token } = useSelector((state) => state.auth);
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 
   const toggleMobileMenu = () => {
@@ -330,7 +333,15 @@ export default function Header() {
                     </Link>
                   </li>
                   <li>
-                    <a className="dropdown-item" href="#">
+                    <a
+                      className="dropdown-item"
+                      href="#"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        dispatch(logOut());
+                        navigate("/login");
+                      }}
+                    >
                       Logout
                     </a>
                   </li>

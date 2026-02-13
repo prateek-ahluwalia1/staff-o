@@ -1,12 +1,13 @@
 // src/auth/Login.jsx
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { setToken, setUser } from "../store/slices/authSlice";
 import useSubmit from "../hooks/useSubmit";
 
 export default function Login() {
   const navigate = useNavigate();
+  const location = useLocation();
   const dispatch = useDispatch();
   const { submit, loading, error: submitError } = useSubmit();
 
@@ -30,7 +31,8 @@ export default function Login() {
       const { token, user } = res.data;
       dispatch(setToken({ token }));
       dispatch(setUser({ userdata: user }));
-      navigate("/dashboard");
+      const redirectTo = location.state?.from?.pathname || "/dashboard";
+      navigate(redirectTo, { replace: true });
     } else {
       setError(res.message || "Login failed. Please try again.");
     }

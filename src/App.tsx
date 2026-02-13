@@ -1,12 +1,18 @@
-import React from "react";
-import { Button } from "./components/ui/button";
+import React, { lazy, Suspense } from "react";
+import { Routes, Route } from "react-router-dom";
+//UnAuth pages
+const Login = lazy(() => import("./pages/UnAuthenticated/Login"));
+//Auth pages
+const Home = lazy(() => import("./pages/Authenticated/Home"));
 
 const App: React.FC = () => {
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center">
-      <h1 className="text-2xl font-bold mb-4">Hello, World!</h1>
-      <Button>Click Me</Button>
-    </div>
+    <Suspense fallback={<div>Loading...</div>}>
+      <Routes>
+        <Route path="/login" element={<Login />} />
+        <Route path="/" element={<Home />} />
+      </Routes>
+    </Suspense>
   );
 };
 

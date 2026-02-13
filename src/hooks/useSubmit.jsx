@@ -1,8 +1,9 @@
 import { useState, useCallback } from "react";
+import { useSelector } from "react-redux";
 import { apiURL } from "../utils/exports";
 
 const useSubmit = ({ isAuth = false } = {}) => {
-  const token = "token";
+  const token = useSelector((state) => state.auth.token);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [data, setData] = useState(null);
@@ -20,7 +21,6 @@ const useSubmit = ({ isAuth = false } = {}) => {
       try {
         const headers = {
           Accept: "application/json",
-          credentials: "include",
         };
 
         if (!isFormData) {
@@ -34,6 +34,7 @@ const useSubmit = ({ isAuth = false } = {}) => {
         const res = await fetch(`${apiURL}${endpoint}`, {
           method,
           headers,
+          credentials: "include",
           body: isFormData ? body : JSON.stringify(body),
         });
 

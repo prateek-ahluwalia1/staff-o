@@ -1,41 +1,39 @@
-// src/auth/Login.jsx   (note: file name should be Login.jsx with capital L)
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+// src/auth/Login.jsx
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useDispatch } from "react-redux";
+import { setToken, setUser } from "../store/slices/authSlice";
+import useSubmit from "../hooks/useSubmit";
 
 export default function Login() {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const { submit, loading, error: submitError } = useSubmit();
 
   // State for form inputs
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');           // optional: show error message
-  const [loading, setLoading] = useState(false);    // optional: disable button during "login"
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Basic validation (you can make it stricter)
     if (!email || !password) {
-      setError('Please fill in all fields');
+      setError("Please fill in all fields");
       return;
     }
 
-    setError('');
-    setLoading(true);
+    setError("");
+    const res = await submit("api/login", { email, password });
 
-    // ───────────────────────────────────────────────
-    // Here you would normally call your backend API
-    // For now, we simulate a successful login
-    setTimeout(() => {
-      // Fake successful login
-      console.log('Login attempted with:', { email, password });
-
-      // Redirect to home page after "successful" login
-      navigate('/home');   // or '/' or '/dashboard' — whatever your home route is
-
-      setLoading(false);
-    }, 1000); // simulate network delay
-    // ───────────────────────────────────────────────
+    if (res.success) {
+      const { token, user } = res.data;
+      dispatch(setToken({ token }));
+      dispatch(setUser({ userdata: user }));
+      navigate("/dashboard");
+    } else {
+      setError(res.message || "Login failed. Please try again.");
+    }
   };
 
   return (
@@ -51,9 +49,18 @@ export default function Login() {
                 and stay ahead with instant updates from top employers.
               </p>
               <ul className="auth-benefits">
-                <li><i className="fa-solid fa-check-circle"></i> Track your applications in real time</li>
-                <li><i className="fa-solid fa-check-circle"></i> Discover openings tailored to your skills</li>
-                <li><i className="fa-solid fa-check-circle"></i> Save jobs and set alerts in one dashboard</li>
+                <li>
+                  <i className="fa-solid fa-check-circle"></i> Track your
+                  applications in real time
+                </li>
+                <li>
+                  <i className="fa-solid fa-check-circle"></i> Discover openings
+                  tailored to your skills
+                </li>
+                <li>
+                  <i className="fa-solid fa-check-circle"></i> Save jobs and set
+                  alerts in one dashboard
+                </li>
               </ul>
             </div>
           </div>
@@ -64,8 +71,8 @@ export default function Login() {
               <p className="auth-subtitle">
                 Enter your details below or continue with a social account.
               </p>
-
-              <div className="auth-social">
+              {/*
+                <div className="auth-social">
                 <a href="#" className="auth-social-btn google">
                   <i className="fa-brands fa-google"></i> Login with Google
                 </a>
@@ -75,6 +82,7 @@ export default function Login() {
               </div>
 
               <div className="auth-divider"><span>or</span></div>
+  */}
 
               {error && (
                 <div className="alert alert-danger" role="alert">
@@ -103,7 +111,9 @@ export default function Login() {
                     <label htmlFor="loginPassword" className="form-label">
                       Password
                     </label>
-                    <a href="#" className="auth-link">Forgot password?</a>
+                    <a href="#" className="auth-link">
+                      Forgot password?
+                    </a>
                   </div>
                   <input
                     type="password"
@@ -132,7 +142,7 @@ export default function Login() {
                   className="btn btn-primary w-100"
                   disabled={loading}
                 >
-                  {loading ? 'Signing in...' : 'Sign In'}
+                  {loading ? "Signing in..." : "Sign In"}
                 </button>
               </form>
 

@@ -17,6 +17,7 @@ import JobAlerts from "./pages/job-alerts";
 import MyFollowings from "./pages/my-followings";
 import UserPackages from "./pages/user-packages";
 import PaymentHistory from "./pages/payment-history";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 function App() {
   return (
@@ -27,8 +28,21 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
 
-          <Route path="/home" element={<Home />} />
-          <Route element={<DashboardLayout />}>
+          <Route
+            path="/home"
+            element={
+              <ProtectedRoute>
+                <Home />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            element={
+              <ProtectedRoute>
+                <DashboardLayout />
+              </ProtectedRoute>
+            }
+          >
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/edit-profile" element={<EditProfile />} />
             <Route path="/public-profile" element={<PublicProfilePreview />} />

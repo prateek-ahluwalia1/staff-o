@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
-import { Link, NavLink } from 'react-router-dom';
+import React, { useState } from "react";
+import { useSelector } from "react-redux";
+import { Link } from "react-router-dom";
 
 export default function Header() {
+  const { token } = useSelector((state) => state.auth);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 
   const toggleMobileMenu = () => {
@@ -15,7 +17,7 @@ export default function Header() {
   return (
     <div className="header">
       <div
-        className={`mobile-menu-overlay ${isMobileOpen ? 'show' : ''}`}
+        className={`mobile-menu-overlay ${isMobileOpen ? "show" : ""}`}
         onClick={closeMobileMenu}
       ></div>
 
@@ -39,7 +41,7 @@ export default function Header() {
           {/* Menu + actions */}
           <div
             className={`collapse navbar-collapse mobile-menu ${
-              isMobileOpen ? 'show' : ''
+              isMobileOpen ? "show" : ""
             }`}
             id="navMain"
           >
@@ -56,7 +58,9 @@ export default function Header() {
             <ul className="navbar-nav mx-auto align-items-lg-center main-menu">
               {/* Home Dropdown */}
               <li className="nav-item">
-                <Link className="nav-link" to="/home">Home</Link>
+                <Link className="nav-link" to="/home">
+                  Home
+                </Link>
               </li>
 
               {/* Jobs Dropdown */}
@@ -71,9 +75,21 @@ export default function Header() {
                   Jobs
                 </a>
                 <ul className="dropdown-menu dropdown-menu-lg">
-                  <li><Link className="dropdown-item" to="/job-grid">Jobs Grid View</Link></li>
-                  <li><Link className="dropdown-item" to="/job-listing">Jobs List View</Link></li>
-                  <li><Link className="dropdown-item" to="/job-detail">Job Single</Link></li>
+                  <li>
+                    <Link className="dropdown-item" to="/job-grid">
+                      Jobs Grid View
+                    </Link>
+                  </li>
+                  <li>
+                    <Link className="dropdown-item" to="/job-listing">
+                      Jobs List View
+                    </Link>
+                  </li>
+                  <li>
+                    <Link className="dropdown-item" to="/job-detail">
+                      Job Single
+                    </Link>
+                  </li>
                 </ul>
               </li>
 
@@ -89,11 +105,31 @@ export default function Header() {
                   Employer
                 </a>
                 <ul className="dropdown-menu dropdown-menu-lg">
-                  <li><Link className="dropdown-item" to="/employer-listing">Employer List</Link></li>
-                  <li><Link className="dropdown-item" to="/employer-grid">Employer Grid</Link></li>
-                  <li><Link className="dropdown-item" to="/company-detail">Employer Single</Link></li>
-                  <li><Link className="dropdown-item" to="/company-dashboard">Employer Dashboard</Link></li>
-                  <li><Link className="dropdown-item" to="/post-job">Post Job</Link></li>
+                  <li>
+                    <Link className="dropdown-item" to="/employer-listing">
+                      Employer List
+                    </Link>
+                  </li>
+                  <li>
+                    <Link className="dropdown-item" to="/employer-grid">
+                      Employer Grid
+                    </Link>
+                  </li>
+                  <li>
+                    <Link className="dropdown-item" to="/company-detail">
+                      Employer Single
+                    </Link>
+                  </li>
+                  <li>
+                    <Link className="dropdown-item" to="/company-dashboard">
+                      Employer Dashboard
+                    </Link>
+                  </li>
+                  <li>
+                    <Link className="dropdown-item" to="/post-job">
+                      Post Job
+                    </Link>
+                  </li>
                 </ul>
               </li>
 
@@ -109,11 +145,34 @@ export default function Header() {
                   Candidate
                 </a>
                 <ul className="dropdown-menu dropdown-menu-lg">
-                  <li><Link className="dropdown-item" to="/candidate-listing-list">Candidate List</Link></li>
-                  <li><Link className="dropdown-item" to="/candidate-listing">Candidate Grid View</Link></li>
-                  <li><Link className="dropdown-item" to="/candidate-detail">Candidate Single</Link></li>
-                  <li><Link className="dropdown-item" to="/dashboard">Candidate Dashboard</Link></li>
-                  <li><Link className="dropdown-item" to="/edit-profile">Edit Profile</Link></li>
+                  <li>
+                    <Link
+                      className="dropdown-item"
+                      to="/candidate-listing-list"
+                    >
+                      Candidate List
+                    </Link>
+                  </li>
+                  <li>
+                    <Link className="dropdown-item" to="/candidate-listing">
+                      Candidate Grid View
+                    </Link>
+                  </li>
+                  <li>
+                    <Link className="dropdown-item" to="/candidate-detail">
+                      Candidate Single
+                    </Link>
+                  </li>
+                  <li>
+                    <Link className="dropdown-item" to="/dashboard">
+                      Candidate Dashboard
+                    </Link>
+                  </li>
+                  <li>
+                    <Link className="dropdown-item" to="/edit-profile">
+                      Edit Profile
+                    </Link>
+                  </li>
                   {/* ... add remaining items ... */}
                 </ul>
               </li>
@@ -130,15 +189,33 @@ export default function Header() {
                   Blog
                 </a>
                 <ul className="dropdown-menu dropdown-menu-lg">
-                  <li><Link className="dropdown-item" to="/blog-grid">Blog Grid</Link></li>
-                  <li><Link className="dropdown-item" to="/blog">Blog List</Link></li>
-                  <li><Link className="dropdown-item" to="/blog-full-width">Blog Full Width</Link></li>
-                  <li><Link className="dropdown-item" to="/blog-detail">Blog Detail</Link></li>
+                  <li>
+                    <Link className="dropdown-item" to="/blog-grid">
+                      Blog Grid
+                    </Link>
+                  </li>
+                  <li>
+                    <Link className="dropdown-item" to="/blog">
+                      Blog List
+                    </Link>
+                  </li>
+                  <li>
+                    <Link className="dropdown-item" to="/blog-full-width">
+                      Blog Full Width
+                    </Link>
+                  </li>
+                  <li>
+                    <Link className="dropdown-item" to="/blog-detail">
+                      Blog Detail
+                    </Link>
+                  </li>
                 </ul>
               </li>
 
               <li className="nav-item">
-                <Link className="nav-link" to="/contact-us">Contact Us</Link>
+                <Link className="nav-link" to="/contact-us">
+                  Contact Us
+                </Link>
               </li>
 
               {/* Pages Dropdown */}
@@ -153,25 +230,65 @@ export default function Header() {
                   Pages
                 </a>
                 <ul className="dropdown-menu dropdown-menu-lg">
-                  <li><Link className="dropdown-item" to="/about-us">About Us</Link></li>
-                  <li><Link className="dropdown-item" to="/login">Login</Link></li>
-                  <li><Link className="dropdown-item" to="/register">Register</Link></li>
-                  <li><Link className="dropdown-item" to="/packages">Packages</Link></li>
-                  <li><Link className="dropdown-item" to="/faqs">FAQs</Link></li>
-                  <li><Link className="dropdown-item" to="/404">404 Page</Link></li>
-                  <li><Link className="dropdown-item" to="/typography">Typography</Link></li>
+                  <li>
+                    <Link className="dropdown-item" to="/about-us">
+                      About Us
+                    </Link>
+                  </li>
+                  {!token && (
+                    <>
+                      <li>
+                        <Link className="dropdown-item" to="/login">
+                          Login
+                        </Link>
+                      </li>
+                      <li>
+                        <Link className="dropdown-item" to="/register">
+                          Register
+                        </Link>
+                      </li>
+                    </>
+                  )}
+
+                  <li>
+                    <Link className="dropdown-item" to="/packages">
+                      Packages
+                    </Link>
+                  </li>
+                  <li>
+                    <Link className="dropdown-item" to="/faqs">
+                      FAQs
+                    </Link>
+                  </li>
+                  <li>
+                    <Link className="dropdown-item" to="/404">
+                      404 Page
+                    </Link>
+                  </li>
+                  <li>
+                    <Link className="dropdown-item" to="/typography">
+                      Typography
+                    </Link>
+                  </li>
                 </ul>
               </li>
             </ul>
 
             {/* Right side buttons + user dropdown */}
             <div className="navbar-actions d-flex align-items-center gap-2">
-              <Link to="/login" className="btn btn-outline-primary signin-btn">
-                Sign in
-              </Link>
-              <Link to="/register" className="btn btn-primary register-btn">
-                Register
-              </Link>
+              {!token && (
+                <>
+                  <Link
+                    to="/login"
+                    className="btn btn-outline-primary signin-btn"
+                  >
+                    Sign in
+                  </Link>
+                  <Link to="/register" className="btn btn-primary register-btn">
+                    Register
+                  </Link>
+                </>
+              )}
 
               {/* Logged-in user dropdown (you can show conditionally) */}
               <div className="dropdown user-dropdown">
@@ -187,12 +304,36 @@ export default function Header() {
                   />
                 </button>
                 <ul className="dropdown-menu dropdown-menu-end">
-                  <li><Link className="dropdown-item" to="/dashboard">Dashboard</Link></li>
-                  <li><Link className="dropdown-item" to="/edit-profile">Edit Profile</Link></li>
-                  <li><Link className="dropdown-item" to="/my-followings">My Followings</Link></li>
-                  <li><Link className="dropdown-item" to="/user-packages">Packages</Link></li>
-                  <li><Link className="dropdown-item" to="/payment-history">Payment History</Link></li>
-                  <li><a className="dropdown-item" href="#">Logout</a></li>
+                  <li>
+                    <Link className="dropdown-item" to="/dashboard">
+                      Dashboard
+                    </Link>
+                  </li>
+                  <li>
+                    <Link className="dropdown-item" to="/edit-profile">
+                      Edit Profile
+                    </Link>
+                  </li>
+                  <li>
+                    <Link className="dropdown-item" to="/my-followings">
+                      My Followings
+                    </Link>
+                  </li>
+                  <li>
+                    <Link className="dropdown-item" to="/user-packages">
+                      Packages
+                    </Link>
+                  </li>
+                  <li>
+                    <Link className="dropdown-item" to="/payment-history">
+                      Payment History
+                    </Link>
+                  </li>
+                  <li>
+                    <a className="dropdown-item" href="#">
+                      Logout
+                    </a>
+                  </li>
                 </ul>
               </div>
             </div>

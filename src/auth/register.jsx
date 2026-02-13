@@ -1,7 +1,25 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useDispatch } from "react-redux";
+import { setToken, setUser } from "../store/slices/authSlice";
 import useSubmit from "../hooks/useSubmit";
 
+// {
+//     "token": "25|7Pk1pNvniahys36jO9I2L7nqtI4iAYp7UI8Can8Eafbff392",
+//     "user": {
+//         "name": "Muhammad Nauman",
+//         "email": "na.uman33183@gmail.com",
+//         "user_type": "contractor",
+//         "is_active": false,
+//         "updated_at": "2026-02-13T09:50:33.000000Z",
+//         "created_at": "2026-02-13T09:50:33.000000Z",
+//         "id": 18
+//     }
+// }
+
 export default function Register() {
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
   const { submit, loading, error } = useSubmit();
   // Staff state
   const [staffForm, setStaffForm] = useState({
@@ -26,11 +44,12 @@ export default function Register() {
 
   // Sub Contractor state
   const [subContractorForm, setSubContractorForm] = useState({
-    first_name: "",
-    last_name: "",
+    name: "",
     email: "",
     password: "",
     password_confirmation: "",
+    company_name: "",
+    registration_number: "",
     city: "",
   });
 
@@ -53,7 +72,10 @@ export default function Register() {
     e.preventDefault();
     const res = await submit("api/register/staff", staffForm);
     if (res.success) {
-      alert("Staff account created successfully!");
+      const { token, user } = res.data;
+      dispatch(setToken({ token }));
+      dispatch(setUser({ userdata: user }));
+      navigate("/dashboard");
     }
   };
 
@@ -61,7 +83,10 @@ export default function Register() {
     e.preventDefault();
     const res = await submit("api/register/customer", customerForm);
     if (res.success) {
-      alert("Customer account created successfully!");
+      const { token, user } = res.data;
+      dispatch(setToken({ token }));
+      dispatch(setUser({ userdata: user }));
+      navigate("/dashboard");
     }
   };
 
@@ -69,7 +94,10 @@ export default function Register() {
     e.preventDefault();
     const res = await submit("api/register/contractor", subContractorForm);
     if (res.success) {
-      alert("Sub Contractor account created successfully!");
+      const { token, user } = res.data;
+      dispatch(setToken({ token }));
+      dispatch(setUser({ userdata: user }));
+      navigate("/dashboard");
     }
   };
 
@@ -153,6 +181,7 @@ export default function Register() {
                   role="tab"
                   aria-controls="registerCandidate"
                   aria-selected="true"
+                  style={{ fontSize: "12px", fontWeight: "500" }}
                 >
                   Sub Contractor
                 </button>
@@ -465,30 +494,16 @@ export default function Register() {
                     onSubmit={handleSubContractorSubmit}
                   >
                     <div className="row g-3">
-                      <div className="col-sm-6">
-                        <label htmlFor="candidateFirst" className="form-label">
-                          First name
+                      <div className="col-sm-12">
+                        <label htmlFor="candidateName" className="form-label">
+                          Name
                         </label>
                         <input
                           type="text"
                           className="form-control"
-                          id="candidateFirst"
-                          name="first_name"
-                          value={subContractorForm.first_name}
-                          onChange={handleSubContractorChange}
-                          placeholder="Samantha"
-                        />
-                      </div>
-                      <div className="col-sm-6">
-                        <label htmlFor="candidateLast" className="form-label">
-                          Last name
-                        </label>
-                        <input
-                          type="text"
-                          className="form-control"
-                          id="candidateLast"
-                          name="last_name"
-                          value={subContractorForm.last_name}
+                          id="candidateName"
+                          name="name"
+                          value={subContractorForm.name}
                           onChange={handleSubContractorChange}
                           placeholder="Jenkins"
                         />
@@ -542,6 +557,40 @@ export default function Register() {
                         />
                       </div>
                       <div className="col-sm-12">
+                        <label
+                          htmlFor="candidateCompanyName"
+                          className="form-label"
+                        >
+                          Company Name
+                        </label>
+                        <input
+                          type="text"
+                          className="form-control"
+                          id="candidateCompanyName"
+                          name="company_name"
+                          value={subContractorForm.company_name}
+                          onChange={handleSubContractorChange}
+                          placeholder="Acme Studios"
+                        />
+                      </div>
+                      <div className="col-sm-6">
+                        <label
+                          htmlFor="candidateRegistrationNumber"
+                          className="form-label"
+                        >
+                          Registration Number
+                        </label>
+                        <input
+                          type="text"
+                          className="form-control"
+                          id="candidateRegistrationNumber"
+                          name="registration_number"
+                          value={subContractorForm.registration_number}
+                          onChange={handleSubContractorChange}
+                          placeholder="REG-123456"
+                        />
+                      </div>
+                      <div className="col-sm-6">
                         <label htmlFor="candidateCity" className="form-label">
                           City
                         </label>

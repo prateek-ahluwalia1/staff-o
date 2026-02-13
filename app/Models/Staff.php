@@ -10,17 +10,10 @@ class Staff extends Model
 
     protected $fillable = [
         'user_id',
-        'customer_id',
-        'contractor_id',
-        'employee_code',
-        'designation',
-        'joining_date',
-        'salary',
-    ];
-
-    protected $casts = [
-        'joining_date' => 'date',
-        'salary' => 'decimal:2',
+        'address',
+        'profile_image',
+        'gender',
+        'city'
     ];
 
     /* ======================

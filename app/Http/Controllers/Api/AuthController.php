@@ -68,10 +68,6 @@ class AuthController extends Controller
             'name' => 'required|string',
             'email' => 'required|email|unique:users',
             'password' => 'required|confirmed|min:6',
-            'company_name' => 'required',
-            'registration_number' => 'nullable',
-            'phone' => 'nullable',
-            'address' => 'nullable',
         ]);
 
         $user = User::create([
@@ -84,10 +80,11 @@ class AuthController extends Controller
 
         Contractor::create([
             'user_id' => $user->id,
-            'company_name' => $data['company_name'],
-            'registration_number' => $data['registration_number'] ?? null,
-            'phone' => $data['phone'] ?? null,
-            'address' => $data['address'] ?? null,
+            'company_name' => $request->company_name,
+            'registration_number' => $request->registration_number ?? null,
+            'phone' => $request->phone ?? null,
+            'address' => $request->address ?? null,
+            'city' => $request->city ?? null,
         ]);
 
         return response()->json([
@@ -96,16 +93,49 @@ class AuthController extends Controller
         ], 201);
     }
 
+    public function logout(Request $request)
+    {
+        $token = $request->bearerToken();
+        if (!$token) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Access token not provided',
+                'code' => 400
+            ], 400);
+        }
+
+        try {
+            JWTAuth::setToken($token)->invalidate();
+            $customer = Customer::where('auth_token', $token)->first();
+            if ($customer) {
+                $customer->auth_token = null;
+                $customer->save();
+            }
+            return response()->json([
+                'success' => true,
+                'message' => 'Customer logged out successfully',
+                'code' => 200
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid or expired token',
+                'code' => 401
+            ], 401);
+        }
+    }
+
     public function registerStaff(Request $request)
     {
         $data = $request->validate([
             'name' => 'required|string',
             'email' => 'required|email|unique:users',
             'password' => 'required|confirmed|min:6',
-            'employee_code' => 'nullable|string',
-            'designation' => 'nullable|string',
-            'joining_date' => 'nullable|date',
-            'salary' => 'nullable|numeric',
+            // New validation rules
+            'address' => 'nullable|string',
+            'profile_image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048', // Optional: if uploading image
+            'gender' => 'nullable|in:male,female,other',
+            'city' => 'nullable|string',
         ]);
 
         $capitalUser = User::where('user_type', 'customer')
@@ -119,15 +149,20 @@ class AuthController extends Controller
             'user_type' => 'staff',
             'user_id' => $capitalUser->id,
             'is_active' => 0,
-
         ]);
+
+        $profileImagePath = null;
+        if ($request->hasFile('profile_image')) {
+            $profileImagePath = $request->file('profile_image')->store('staff-profiles', 'public');
+        }
 
         Staff::create([
             'user_id' => $user->id,
-            'employee_code' => $data['employee_code'] ?? null,
-            'designation' => $data['designation'] ?? null,
-            'joining_date' => $data['joining_date'] ?? null,
-            'salary' => $data['salary'] ?? null,
+            'address' => $data['address'] ?? null,
+            'profile_image' => $profileImagePath ?? $data['profile_image'] ?? null,
+            'gender' => $data['gender'] ?? null,
+            'city' => $data['city'] ?? null,
+            'phone' => $data['phone'] ?? null,
         ]);
 
         return response()->json([
@@ -152,11 +187,11 @@ class AuthController extends Controller
             ], 401);
         }
 
-        if (! $user->is_active) {
-            return response()->json([
-                'message' => 'Your account is inactive'
-            ], 403);
-        }
+        // if (! $user->is_active) {
+        //     return response()->json([
+        //         'message' => 'Your account is inactive'
+        //     ], 403);
+        // }
 
         $token = $user->createToken('api')->plainTextToken;
 
@@ -173,10 +208,7 @@ class AuthController extends Controller
         return response()->json([
             'token' => $token,
             'user' => [
-                'id' => $user->id,
-                'name' => $user->name,
-                'email' => $user->email,
-                'user_type' => $user->user_type,
+                'date' => $user,
                 'parent' => $parent,
             ]
         ], 200);

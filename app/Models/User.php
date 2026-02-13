@@ -33,17 +33,19 @@ class User extends Authenticatable
 
      public function customer()
     {
-        return $this->hasOne(customer::class);
+        return $this->hasOne(Customer::class, 'user_id', 'id');
+
     }
 
     public function contractor()
     {
-        return $this->hasOne(contractor::class);
+        return $this->hasOne(Contractor::class, 'user_id', 'id');
+
     }
 
     public function staff()
     {
-        return $this->hasOne(staff::class);
+        return $this->hasOne(Staff::class, 'user_id', 'id');
     }
 
     public function documents()

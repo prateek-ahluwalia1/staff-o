@@ -294,7 +294,7 @@ export default function EditProfile() {
       </div>
 
       {/* Tabs */}
-      <div style={{ display: "flex", gap: 16, margin: "32px 0 16px 0" }}>
+      <div style={{ display: "flex", gap: 16 }}>
         <button
           type="button"
           className={`btn ${activeTab === "personal" ? "btn-primary" : "btn-outline-primary"}`}

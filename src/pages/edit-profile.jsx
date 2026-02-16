@@ -153,12 +153,16 @@ export default function EditProfile() {
         document_name: selectedDoc.document_name,
       };
     } else {
-      // For new document, ask user to select document type/name (could be improved with a dropdown)
-      // For now, show alert and return if not implemented
-      alert(
-        "Please select a document type/name. Implement document selection UI as needed.",
-      );
-      return;
+      // For new document, require user to select document type/name
+      if (!docForm.document_name || docForm.document_name === "") {
+        alert("Please select a document type/name.");
+        return;
+      }
+      payload = {
+        ...payload,
+        document_type: docForm.document_name, // or map to a type if needed
+        document_name: docForm.document_name,
+      };
     }
 
     // Format date if present
@@ -174,10 +178,10 @@ export default function EditProfile() {
     }
 
     // Decide API endpoint and method
-    let apiEndpoint = "api/document-update";
+    let apiEndpoint = "api/guard-update-documents";
     let method = "POST";
     if (!selectedDoc) {
-      apiEndpoint = "api/document-add";
+      apiEndpoint = "api/guard-add-documents";
     }
 
     // Submit
@@ -379,6 +383,7 @@ export default function EditProfile() {
                 value={docForm.document_name || ""}
                 onChange={handleDocFormChange}
                 style={{ background: "#fff", color: "#333", marginBottom: 8 }}
+                required
               >
                 <option value="">Select Document</option>
                 <option value="Casual Contract Form">

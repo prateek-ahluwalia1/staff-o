@@ -92,9 +92,17 @@ export default function EditProfile() {
           method: "POST",
         });
         if (result.success && result.url) {
-          setDocForm((prev) => ({ ...prev, file_path: result.path || (result.data && result.data.path) || '', file_url: result.url || (result.data && result.data.url) || '' }));
+          setDocForm((prev) => ({
+            ...prev,
+            file_path: result.path || (result.data && result.data.path) || "",
+            file_url: result.url || (result.data && result.data.url) || "",
+          }));
         } else if (result.success && result.data && result.data.url) {
-          setDocForm((prev) => ({ ...prev, file_path: result.data.path, file_url: result.data.url }));
+          setDocForm((prev) => ({
+            ...prev,
+            file_path: result.data.path,
+            file_url: result.data.url,
+          }));
         } else if (result.success && result.path) {
           setDocForm((prev) => ({ ...prev, file_path: result.path }));
         }
@@ -329,15 +337,43 @@ export default function EditProfile() {
                 overflow: "hidden",
               }}
             >
-              {docForm.file_url || docForm.file ? (
-                <img
-                  src={docForm.file_url
-                    ? docForm.file_url
-                    : docForm.file && URL.createObjectURL(docForm.file)}
-                  alt="preview"
-                  style={{ maxWidth: "100%", maxHeight: "100%" }}
-                  onError={e => { e.target.onerror = null; e.target.src = "/assets/images/no-image.png"; }}
-                />
+              {docForm.file_url ? (
+                (() => {
+                  const ext = docForm.file_url.split(".").pop().toLowerCase();
+                  if (
+                    ["jpg", "jpeg", "png", "gif", "webp", "bmp"].includes(ext)
+                  ) {
+                    return (
+                      <img
+                        src={docForm.file_url}
+                        alt="preview"
+                        style={{ maxWidth: "100%", maxHeight: "100%" }}
+                        onError={(e) => {
+                          e.target.style.display = "none";
+                        }}
+                      />
+                    );
+                  } else if (["pdf"].includes(ext)) {
+                    return (
+                      <iframe
+                        src={docForm.file_url}
+                        title="Document Preview"
+                        style={{ width: "100%", height: "100%", border: 0 }}
+                      />
+                    );
+                  } else {
+                    return (
+                      <a
+                        href={docForm.file_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{ color: "#007bff", fontWeight: 500 }}
+                      >
+                        View/Download Document
+                      </a>
+                    );
+                  }
+                })()
               ) : (
                 <img
                   src="/assets/images/no-image.png"

@@ -35,7 +35,7 @@ export default function DocumentTable({ documents, onAddFile, onAddDocument }) {
             All documents associated with your profile.
           </p>
         </div>
-        <button
+        {/* <button
           type="button"
           className="btn btn-success"
           onClick={onAddDocument}
@@ -52,7 +52,7 @@ export default function DocumentTable({ documents, onAddFile, onAddDocument }) {
             style={{ marginRight: 8, fontSize: 17 }}
           ></i>
           Add Document
-        </button>
+        </button> */}
       </div>
       <div style={{ overflowX: "auto", padding: 24 }}>
         <table
@@ -97,16 +97,6 @@ export default function DocumentTable({ documents, onAddFile, onAddDocument }) {
                 }}
               >
                 Expiration Date
-              </th>
-              <th
-                style={{
-                  fontWeight: 750,
-                  color: "#333",
-                  border: "none",
-                  padding: "12px 16px",
-                }}
-              >
-                Notes
               </th>
               <th
                 style={{
@@ -175,15 +165,6 @@ export default function DocumentTable({ documents, onAddFile, onAddDocument }) {
                     }}
                   >
                     {doc.document_expiry || "-"}
-                  </td>
-                  <td
-                    style={{
-                      padding: "10px 16px",
-                      verticalAlign: "middle",
-                      border: "none",
-                    }}
-                  >
-                    {doc.notes || "-"}
                   </td>
                   <td
                     style={{

@@ -61,7 +61,7 @@ export default function EditProfile() {
     no: false,
     exp: false,
     document_no: "",
-    document_expire: "",
+    document_expiry: "",
     file: null,
     file_path: "",
   });
@@ -74,7 +74,7 @@ export default function EditProfile() {
       no: !!doc.document_no,
       exp: !!doc.document_expiry,
       document_no: doc.document_no || "",
-      document_expire: doc.document_expiry || "",
+      document_expiry: doc.document_expiry || "",
       file: null,
       file_path: doc.file || "",
       file_url: doc.file ? doc.file : "",
@@ -90,7 +90,7 @@ export default function EditProfile() {
       no: false,
       exp: false,
       document_no: "",
-      document_expire: "",
+      document_expiry: "",
       file: null,
       file_path: "",
       file_url: "",
@@ -140,11 +140,11 @@ export default function EditProfile() {
     e.preventDefault();
     // Compose payload
     let payload = {
-      notes: docForm.notes,
+      user_id: userdata.data.id,
       no: docForm.no,
       exp: docForm.exp,
       document_no: docForm.document_no,
-      document_expire: docForm.document_expire,
+      document_expiry: docForm.document_expiry,
       file: docForm.file_path,
     };
     // Add document_name and document_type for both add and update
@@ -171,14 +171,14 @@ export default function EditProfile() {
     }
 
     // Format date if present
-    if (payload.document_expire) {
+    if (payload.document_expiry) {
       // Convert to MM-DD-YYYY if needed
-      const d = new Date(payload.document_expire);
+      const d = new Date(payload.document_expiry);
       if (!isNaN(d)) {
         const mm = String(d.getMonth() + 1).padStart(2, "0");
         const dd = String(d.getDate()).padStart(2, "0");
         const yyyy = d.getFullYear();
-        payload.document_expire = `${mm}-${dd}-${yyyy}`;
+        payload.document_expiry = `${mm}-${dd}-${yyyy}`;
       }
     }
 
@@ -429,19 +429,6 @@ export default function EditProfile() {
               </select>
             )}
           </div>
-          {/* Description/Notes */}
-          <div className="mb-2">
-            <label style={{ fontWeight: 500, fontSize: 13 }}>
-              Description (Optional)
-            </label>
-            <textarea
-              className="form-control"
-              name="notes"
-              value={docForm.notes}
-              onChange={handleDocFormChange}
-              style={{ minHeight: 40, marginBottom: 8 }}
-            />
-          </div>
           {/* File/Image Preview and Actions */}
           <div
             className="mb-2"
@@ -635,10 +622,10 @@ export default function EditProfile() {
             {docForm.exp && (
               <input
                 className="form-control"
-                name="document_expire"
+                name="document_expiry"
                 type="date"
                 placeholder="Expiration Date"
-                value={docForm.document_expire}
+                value={docForm.document_expiry}
                 onChange={handleDocFormChange}
                 style={{ marginBottom: 8, marginTop: 4 }}
               />

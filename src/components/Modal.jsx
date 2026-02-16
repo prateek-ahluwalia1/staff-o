@@ -10,7 +10,7 @@ export default function Modal({ open, onClose, children }) {
         left: 0,
         width: "100vw",
         height: "100vh",
-        background: "rgba(0,0,0,0.3)",
+        background: "rgba(0,0,0,0.7)",
         zIndex: 1000,
         display: "flex",
         alignItems: "center",

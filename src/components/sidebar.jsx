@@ -21,8 +21,9 @@ const Sidebar = memo(function Sidebar() {
       <div className="sidebar-header">
         <div className="status-toggle">
           <div>
-            <span className="status-label">Open to Work</span>
-            <small className="status-note">Visible to recruiters</small>
+            <span className="status-label">
+              {userdata.data.is_active ? "Active" : "Inactive"}
+            </span>
           </div>
           <label className="status-switch" aria-label="Toggle open to work">
             <input
@@ -70,23 +71,23 @@ const Sidebar = memo(function Sidebar() {
             <i className="fa-solid fa-briefcase"></i> My Job Applications
           </NavLink>
         </li>
-        <li>
+        {/* <li>
           <NavLink
             to="/my-favourite-jobs"
             className={({ isActive }) => (isActive ? "active" : "")}
           >
             <i className="fa-solid fa-heart"></i> My Favourite Jobs
           </NavLink>
-        </li>
-        <li>
+        </li> */}
+        {/* <li>
           <NavLink
             to="/job-alerts"
             className={({ isActive }) => (isActive ? "active" : "")}
           >
             <i className="fa-solid fa-bell"></i> Job Alerts
           </NavLink>
-        </li>
-        <li>
+        </li> */}
+        {/* <li>
           <NavLink
             to="/my-followings"
             className={({ isActive }) => (isActive ? "active" : "")}
@@ -101,7 +102,7 @@ const Sidebar = memo(function Sidebar() {
           >
             <i className="fa-solid fa-boxes-stacked"></i> Packages
           </NavLink>
-        </li>
+        </li> */}
         <li>
           <NavLink
             to="/payment-history"

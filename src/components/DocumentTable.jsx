@@ -1,4 +1,5 @@
 import React from "react";
+import { apiURL } from "../utils/exports";
 
 export default function DocumentTable({ documents, onAddFile, onAddDocument }) {
   return (
@@ -175,7 +176,7 @@ export default function DocumentTable({ documents, onAddFile, onAddDocument }) {
                   >
                     {doc.file ? (
                       <a
-                        href={doc.file}
+                        href={`${apiURL}staff_documents/${doc.file}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         title="View file"

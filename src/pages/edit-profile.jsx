@@ -10,6 +10,7 @@ import ProfileForm from "../components/ProfileForm";
 import AvatarUpload from "../components/AvatarUpload";
 import SettingsHeaderContent from "../components/SettingsHeaderContent";
 import fallbackImage from "../assets/images/notfound.jpeg";
+import { apiURL } from "../utils/exports";
 
 const INITIAL_FORM_STATE = {
   name: "",
@@ -461,7 +462,7 @@ export default function EditProfile() {
                   ) {
                     return (
                       <img
-                        src={docForm.file_url}
+                        src={`${apiURL}staff_documents/${docForm.file_url}`}
                         alt="preview"
                         style={{ maxWidth: "100%", maxHeight: "100%" }}
                         onError={(e) => {
@@ -472,7 +473,7 @@ export default function EditProfile() {
                   } else if (["pdf"].includes(ext)) {
                     return (
                       <iframe
-                        src={docForm.file_url}
+                        src={`${apiURL}staff_documents/${docForm.file_url}`}
                         title="Document Preview"
                         style={{ width: "100%", height: "100%", border: 0 }}
                       />
@@ -480,7 +481,7 @@ export default function EditProfile() {
                   } else {
                     return (
                       <a
-                        href={docForm.file_url}
+                        href={`${apiURL}staff_documents/${docForm.file_url}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         style={{ color: "#007bff", fontWeight: 500 }}

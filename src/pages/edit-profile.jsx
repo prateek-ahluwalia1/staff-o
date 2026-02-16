@@ -9,6 +9,7 @@ import DocumentTable from "../components/DocumentTable";
 import ProfileForm from "../components/ProfileForm";
 import AvatarUpload from "../components/AvatarUpload";
 import SettingsHeaderContent from "../components/SettingsHeaderContent";
+import fallbackImage from "../assets/images/notfound.jpeg";
 
 const INITIAL_FORM_STATE = {
   name: "",
@@ -465,9 +466,9 @@ export default function EditProfile() {
                 })()
               ) : (
                 <img
-                  src="/assets/images/no-image.png"
+                  src={fallbackImage}
                   alt="No image"
-                  style={{ width: "100%", opacity: 0.5 }}
+                  style={{ width: "100%", height: "100%", opacity: 0.5 }}
                 />
               )}
               {uploadLoading && (

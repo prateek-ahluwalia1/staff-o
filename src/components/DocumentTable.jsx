@@ -27,7 +27,7 @@ export default function DocumentTable({ documents, onAddFile, onAddDocument }) {
       >
         <div>
           <h3
-            style={{ margin: 0, fontWeight: 600, fontSize: 22, color: "#222" }}
+            style={{ margin: 0, fontWeight: 750, fontSize: 22, color: "#222" }}
           >
             Documents
           </h3>
@@ -70,7 +70,7 @@ export default function DocumentTable({ documents, onAddFile, onAddDocument }) {
             <tr>
               <th
                 style={{
-                  fontWeight: 600,
+                  fontWeight: 750,
                   color: "#333",
                   border: "none",
                   padding: "12px 16px",
@@ -80,7 +80,7 @@ export default function DocumentTable({ documents, onAddFile, onAddDocument }) {
               </th>
               <th
                 style={{
-                  fontWeight: 600,
+                  fontWeight: 750,
                   color: "#333",
                   border: "none",
                   padding: "12px 16px",
@@ -90,7 +90,7 @@ export default function DocumentTable({ documents, onAddFile, onAddDocument }) {
               </th>
               <th
                 style={{
-                  fontWeight: 600,
+                  fontWeight: 750,
                   color: "#333",
                   border: "none",
                   padding: "12px 16px",
@@ -100,7 +100,7 @@ export default function DocumentTable({ documents, onAddFile, onAddDocument }) {
               </th>
               <th
                 style={{
-                  fontWeight: 600,
+                  fontWeight: 750,
                   color: "#333",
                   border: "none",
                   padding: "12px 16px",
@@ -110,7 +110,7 @@ export default function DocumentTable({ documents, onAddFile, onAddDocument }) {
               </th>
               <th
                 style={{
-                  fontWeight: 600,
+                  fontWeight: 750,
                   color: "#333",
                   border: "none",
                   padding: "12px 16px",
@@ -120,7 +120,7 @@ export default function DocumentTable({ documents, onAddFile, onAddDocument }) {
               </th>
               <th
                 style={{
-                  fontWeight: 600,
+                  fontWeight: 750,
                   color: "#333",
                   border: "none",
                   padding: "12px 16px",

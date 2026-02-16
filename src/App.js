@@ -22,6 +22,8 @@ const JobAlerts = lazy(() => import("./pages/job-alerts"));
 const MyFollowings = lazy(() => import("./pages/my-followings"));
 const UserPackages = lazy(() => import("./pages/user-packages"));
 const PaymentHistory = lazy(() => import("./pages/payment-history"));
+const PayChargeRate = lazy(() => import("./pages/PayChargerate"));
+const RatesList = lazy(() => import("./pages/RatesList"));
 
 function App() {
   return (
@@ -77,6 +79,9 @@ function App() {
               <Route path="/my-followings" element={<MyFollowings />} />
               <Route path="/user-packages" element={<UserPackages />} />
               <Route path="/payment-history" element={<PaymentHistory />} />
+              <Route path="/pay-charge-rate" element={<PayChargeRate />} />
+              <Route path="/rates/charge" element={<RatesList />} />
+              <Route path="/rates/pay" element={<RatesList />} />
             </Route>
 
             <Route path="*" element={<Navigate to="/login" replace />} />

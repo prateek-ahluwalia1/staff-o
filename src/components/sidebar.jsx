@@ -59,10 +59,10 @@ const Sidebar = memo(function Sidebar() {
         </li>
         <li>
           <NavLink
-            to="/public-profile"
+            to="/pay-charge-rate"
             className={({ isActive }) => (isActive ? "active" : "")}
           >
-            <i className="fa-solid fa-eye"></i> View Public Profile
+            <i className="fa-solid fa-money-bill-wave"></i> Pay & Charge Rate
           </NavLink>
         </li>
         <li>

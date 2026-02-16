@@ -4,6 +4,11 @@ import useSubmit from "../hooks/useSubmit";
 import { useSelector, useDispatch } from "react-redux";
 import { setUser } from "../store/slices/authSlice";
 import Loader from "../components/Loader";
+import Modal from "../components/Modal";
+import DocumentTable from "../components/DocumentTable";
+import ProfileForm from "../components/ProfileForm";
+import AvatarUpload from "../components/AvatarUpload";
+import SettingsHeaderContent from "../components/SettingsHeaderContent";
 
 const INITIAL_FORM_STATE = {
   name: "",
@@ -32,12 +37,84 @@ export default function EditProfile() {
   } = useFetch(endpoint, { isAuth: true });
 
   const { submit, loading: submitLoading } = useSubmit({ isAuth: true });
+  const { submit: uploadFile, loading: uploadLoading } = useSubmit({
+    isAuth: true,
+  });
 
   const [profilePhoto, setProfilePhoto] = useState(null);
   const [profilePhotoFile, setProfilePhotoFile] = useState(null);
   const [formData, setFormData] = useState(INITIAL_FORM_STATE);
   const [submitError, setSubmitError] = useState(null);
   const [submitSuccess, setSubmitSuccess] = useState(false);
+  const [activeTab, setActiveTab] = useState("personal");
+  // Modal state for document upload
+  const [showDocModal, setShowDocModal] = useState(false);
+  const [selectedDoc, setSelectedDoc] = useState(null);
+  const [docForm, setDocForm] = useState({
+    notes: "",
+    no: false,
+    exp: false,
+    document_no: "",
+    document_expire: "",
+    file: null,
+    file_path: "",
+  });
+
+  // Open modal and set selected document
+  const handleAddFile = (doc) => {
+    setSelectedDoc(doc);
+    setDocForm({
+      notes: "",
+      no: false,
+      exp: false,
+      document_no: "",
+      document_expire: "",
+      file: null,
+      file_path: "",
+    });
+    setShowDocModal(true);
+  };
+
+  // Handle modal form changes
+  const handleDocFormChange = async (e) => {
+    const { name, value, type, checked, files } = e.target;
+    if (type === "checkbox") {
+      setDocForm((prev) => ({ ...prev, [name]: checked }));
+    } else if (type === "file") {
+      const file = files[0];
+      setDocForm((prev) => ({ ...prev, file }));
+      if (file) {
+        // Upload file to server
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("folder", "staff_documents");
+        const result = await uploadFile("api/upload-file", formData, {
+          method: "POST",
+        });
+        if (result.success && result.url) {
+          setDocForm((prev) => ({ ...prev, file_path: result.path || (result.data && result.data.path) || '', file_url: result.url || (result.data && result.data.url) || '' }));
+        } else if (result.success && result.data && result.data.url) {
+          setDocForm((prev) => ({ ...prev, file_path: result.data.path, file_url: result.data.url }));
+        } else if (result.success && result.path) {
+          setDocForm((prev) => ({ ...prev, file_path: result.path }));
+        }
+      }
+    } else {
+      setDocForm((prev) => ({ ...prev, [name]: value }));
+    }
+  };
+
+  // Handle modal submit (implement actual API as needed)
+  const handleDocSubmit = (e) => {
+    e.preventDefault();
+    // Here you would send docForm + selectedDoc info to backend
+    // Use docForm.file_path as the file path to send
+    // Example payload:
+    // { ...docForm, file: docForm.file_path, document_name: selectedDoc.document_name, document_type: selectedDoc.document_type, ... }
+    setShowDocModal(false);
+    // Optionally refetch documents
+    // refetch();
+  };
 
   useEffect(() => {
     if (!profileData?.data) return;
@@ -129,195 +206,297 @@ export default function EditProfile() {
   return (
     <div className="dashboard-main">
       <div className="settings-header">
-        <div className="avatar-upload">
-          <img
-            src={profilePhoto || "/assets/images/candidates/01.jpg"}
-            alt={formData.name || "Staff"}
-          />
-          <label className="upload-label">
-            <input type="file" onChange={handlePhotoChange} accept="image/*" />
-            <i
-              className="fa-solid fa-arrow-up-from-bracket"
-              aria-hidden="true"
-            ></i>
-            Update Photo
-          </label>
-        </div>
-
-        <div className="settings-header-content">
-          <span>{userdata?.data?.user_type || "Staff"} Profile</span>
-          <h2>{formData.name || "Staff Member"}</h2>
-          <p>
-            Keep your information up to date so your profile stays accurate and
-            complete.
-          </p>
-          <div className="settings-header-meta">
-            <span>
-              <i className="fa-solid fa-envelope" aria-hidden="true"></i>
-              {formData.email || "No email"}
-            </span>
-            <span>
-              <i className="fa-solid fa-location-dot" aria-hidden="true"></i>
-              {formData.city || "No location"}
-            </span>
-            <span>
-              <i className="fa-solid fa-user" aria-hidden="true"></i>
-              {formData.gender || "Not specified"}
-            </span>
-          </div>
-        </div>
+        <AvatarUpload
+          profilePhoto={profilePhoto}
+          name={formData.name}
+          onPhotoChange={handlePhotoChange}
+        />
+        <SettingsHeaderContent
+          userType={userdata?.data?.user_type}
+          name={formData.name}
+          email={formData.email}
+          city={formData.city}
+          gender={formData.gender}
+        />
       </div>
 
-      {submitSuccess && (
-        <div className="alert alert-success mt-3">
-          Profile updated successfully!
-        </div>
+      {/* Tabs */}
+      <div style={{ display: "flex", gap: 16, margin: "32px 0 16px 0" }}>
+        <button
+          type="button"
+          className={`btn ${activeTab === "personal" ? "btn-primary" : "btn-outline-primary"}`}
+          onClick={() => setActiveTab("personal")}
+        >
+          Personal Information
+        </button>
+        <button
+          type="button"
+          className={`btn ${activeTab === "documents" ? "btn-primary" : "btn-outline-primary"}`}
+          onClick={() => setActiveTab("documents")}
+        >
+          Documents
+        </button>
+      </div>
+
+      {/* Tab Content */}
+      {activeTab === "personal" && (
+        <>
+          {submitSuccess && (
+            <div className="alert alert-success mt-3">
+              Profile updated successfully!
+            </div>
+          )}
+          {submitError && (
+            <div className="alert alert-danger mt-3">
+              {typeof submitError === "string"
+                ? submitError
+                : typeof submitError === "object"
+                  ? Object.values(submitError).flat().join(", ")
+                  : "Something went wrong"}
+            </div>
+          )}
+          <ProfileForm
+            formData={formData}
+            onChange={handleChange}
+            onSubmit={handleSubmit}
+            loading={submitLoading}
+          />
+        </>
       )}
 
-      {submitError && (
-        <div className="alert alert-danger mt-3">
-          {typeof submitError === "string"
-            ? submitError
-            : typeof submitError === "object"
-              ? Object.values(submitError).flat().join(", ")
-              : "Something went wrong"}
-        </div>
+      {activeTab === "documents" && (
+        <DocumentTable
+          documents={profileData?.data?.documents || []}
+          onAddFile={handleAddFile}
+          onAddDocument={() => {}}
+        />
       )}
 
-      <form className="settings-form" onSubmit={handleSubmit}>
-        <div className="settings-card">
-          <div className="settings-card-header">
-            <div>
-              <p className="text-uppercase text-muted small fw-semibold mb-1">
-                Profile
-              </p>
-              <h3>Personal Information</h3>
-              <p>
-                These details power your profile and keep your account
-                information current.
-              </p>
+      {/* Document Upload Modal */}
+      <Modal open={showDocModal} onClose={() => setShowDocModal(false)}>
+        <form
+          onSubmit={handleDocSubmit}
+          style={{ display: "flex", flexDirection: "column", height: "100%" }}
+        >
+          {/* Document Name Dropdown (disabled) */}
+          <div className="mb-2">
+            <label style={{ fontWeight: 500, fontSize: 13 }}>
+              Document Name
+            </label>
+            <select
+              className="form-control"
+              value={selectedDoc?.document_name || ""}
+              disabled
+              style={{ background: "#f5f5f5", color: "#333", marginBottom: 8 }}
+            >
+              <option>{selectedDoc?.document_name || ""}</option>
+            </select>
+          </div>
+          {/* Description/Notes */}
+          <div className="mb-2">
+            <label style={{ fontWeight: 500, fontSize: 13 }}>
+              Description (Optional)
+            </label>
+            <textarea
+              className="form-control"
+              name="notes"
+              value={docForm.notes}
+              onChange={handleDocFormChange}
+              style={{ minHeight: 40, marginBottom: 8 }}
+            />
+          </div>
+          {/* File/Image Preview and Actions */}
+          <div
+            className="mb-2"
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              marginBottom: 16,
+            }}
+          >
+            <div
+              style={{
+                width: 180,
+                height: 180,
+                background: "#f5f5f5",
+                borderRadius: 8,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                marginBottom: 10,
+                position: "relative",
+                overflow: "hidden",
+              }}
+            >
+              {docForm.file_url || docForm.file ? (
+                <img
+                  src={docForm.file_url
+                    ? docForm.file_url
+                    : docForm.file && URL.createObjectURL(docForm.file)}
+                  alt="preview"
+                  style={{ maxWidth: "100%", maxHeight: "100%" }}
+                  onError={e => { e.target.onerror = null; e.target.src = "/assets/images/no-image.png"; }}
+                />
+              ) : (
+                <img
+                  src="/assets/images/no-image.png"
+                  alt="No image"
+                  style={{ width: "100%", opacity: 0.5 }}
+                />
+              )}
+              {uploadLoading && (
+                <div
+                  style={{
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    width: "100%",
+                    height: "100%",
+                    background: "rgba(255,255,255,0.7)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    zIndex: 2,
+                  }}
+                >
+                  <span style={{ color: "#2980b9", fontWeight: 500 }}>
+                    Uploading...
+                  </span>
+                </div>
+              )}
+              {/* Action buttons */}
+              <div
+                style={{
+                  position: "absolute",
+                  bottom: 10,
+                  left: 0,
+                  width: "100%",
+                  display: "flex",
+                  justifyContent: "center",
+                  gap: 16,
+                }}
+              >
+                <label
+                  style={{
+                    cursor: "pointer",
+                    background: "#e74c3c",
+                    borderRadius: "50%",
+                    width: 36,
+                    height: 36,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                  title="Add/Change File"
+                >
+                  <i
+                    className="fa fa-plus"
+                    style={{ color: "#fff", fontSize: 18 }}
+                  ></i>
+                  <input
+                    type="file"
+                    name="file"
+                    style={{ display: "none" }}
+                    onChange={handleDocFormChange}
+                  />
+                </label>
+                <button
+                  type="button"
+                  style={{
+                    background: "#2980b9",
+                    border: "none",
+                    borderRadius: "50%",
+                    width: 36,
+                    height: 36,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                  title="Remove"
+                  onClick={() =>
+                    setDocForm((prev) => ({ ...prev, file: null }))
+                  }
+                  disabled={!docForm.file}
+                >
+                  <i
+                    className="fa fa-trash"
+                    style={{ color: "#fff", fontSize: 18 }}
+                  ></i>
+                </button>
+              </div>
             </div>
           </div>
-
-          <div className="settings-grid">
-            <div>
-              <label htmlFor="name" className="form-label">
-                Full Name
-              </label>
+          {/* Checkboxes and Conditional Inputs */}
+          <div
+            className="mb-2"
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: 6,
+              marginBottom: 12,
+            }}
+          >
+            <label style={{ fontWeight: 400, fontSize: 14 }}>
               <input
-                type="text"
-                className="form-control"
-                id="name"
-                placeholder="Muhammad Nauman"
-                value={formData.name}
-                onChange={handleChange}
+                type="checkbox"
+                name="no"
+                checked={docForm.no}
+                onChange={handleDocFormChange}
+                style={{ marginRight: 6 }}
               />
-            </div>
-
-            <div>
-              <label htmlFor="email" className="form-label">
-                Email Address
-              </label>
+              Add Document Number
+            </label>
+            {docForm.no && (
               <input
-                type="email"
                 className="form-control"
-                id="email"
-                placeholder="you@example.com"
-                value={formData.email}
-                onChange={handleChange}
+                name="document_no"
+                placeholder="Document Number"
+                value={docForm.document_no}
+                onChange={handleDocFormChange}
+                style={{ marginBottom: 8, marginTop: 4 }}
               />
-            </div>
-
-            <div>
-              <label htmlFor="phone" className="form-label">
-                Phone
-              </label>
+            )}
+            <label style={{ fontWeight: 400, fontSize: 14 }}>
               <input
-                type="tel"
-                className="form-control"
-                id="phone"
-                placeholder="+92 300 0000000"
-                value={formData.phone}
-                onChange={handleChange}
+                type="checkbox"
+                name="exp"
+                checked={docForm.exp}
+                onChange={handleDocFormChange}
+                style={{ marginRight: 6 }}
               />
-            </div>
-
-            <div>
-              <label htmlFor="gender" className="form-label">
-                Gender
-              </label>
-              <select
-                className="form-control"
-                id="gender"
-                value={formData.gender}
-                onChange={handleChange}
-              >
-                <option value="">Select Gender</option>
-                <option value="male">Male</option>
-                <option value="female">Female</option>
-                <option value="other">Other</option>
-              </select>
-            </div>
-
-            <div>
-              <label htmlFor="city" className="form-label">
-                City
-              </label>
+              Set Expiration date
+            </label>
+            {docForm.exp && (
               <input
-                type="text"
                 className="form-control"
-                id="city"
-                placeholder="Lahore"
-                value={formData.city}
-                onChange={handleChange}
+                name="document_expire"
+                type="date"
+                placeholder="Expiration Date"
+                value={docForm.document_expire}
+                onChange={handleDocFormChange}
+                style={{ marginBottom: 8, marginTop: 4 }}
               />
-            </div>
-
-            <div>
-              <label htmlFor="staff_document_type" className="form-label">
-                Residential Status
-              </label>
-              <select
-                className="form-control"
-                id="staff_document_type"
-                value={formData.staff_document_type}
-                onChange={handleChange}
-              >
-                <option value="">Select Residential Status</option>
-                <option value="student_visa">Student Visa</option>
-                <option value="bridging_visa">Bridging Visa</option>
-                <option value="citizen">Citizen</option>
-                <option value="permanent_residence">Permanent Residence</option>
-                <option value="visa_485">Visa Subclass 485</option>
-                <option value="other">Other</option>
-              </select>
-            </div>
-
-            <div className="grid-span-2">
-              <label htmlFor="address" className="form-label">
-                Address
-              </label>
-              <textarea
-                className="form-control"
-                id="address"
-                placeholder="Enter your full address"
-                value={formData.address}
-                onChange={handleChange}
-              />
-            </div>
+            )}
           </div>
-
-          <div className="settings-card-footer">
+          {/* Save Button */}
+          <div
+            style={{
+              marginTop: "auto",
+              display: "flex",
+              justifyContent: "flex-end",
+            }}
+          >
             <button
               type="submit"
-              className="btn btn-primary"
-              disabled={submitLoading}
+              className="btn btn-success"
+              style={{ minWidth: 80 }}
             >
-              {submitLoading ? "Saving..." : "Save changes"}
+              Save
             </button>
           </div>
-        </div>
-      </form>
+        </form>
+      </Modal>
     </div>
   );
 }

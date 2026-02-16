@@ -13,7 +13,9 @@ class Staff extends Model
         'address',
         'profile_image',
         'gender',
-        'city'
+        'city',
+        'phone',
+        'staff_document_type'
     ];
 
     /* ======================

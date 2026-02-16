@@ -7,12 +7,9 @@ use App\Models\Customer;
 use App\Http\Controllers\Controller;
 use App\Models\Document;
 use App\Models\DocumentCategory;
-use App\Models\Site;
 use App\Models\Staff;
 use App\Models\User;
-use Carbon\Carbon;
 use Illuminate\Http\Request;
-use DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Validator;
@@ -399,9 +396,9 @@ class StaffController extends Controller
             $request->folder = 'uploads';
         }
         if ($request->has('upload')) {
-            $image = fileUpload($request->upload, '/'.$request->folder.'/');     
+            $image = \fileUpload($request->upload, '/'.$request->folder.'/');     
         }else{
-            $image = fileUpload($request->file, '/'.$request->folder.'/');
+            $image = \fileUpload($request->file, '/'.$request->folder.'/');
         }
              if ($image != '') {
                 $url = asset('').$request->folder.'/'. $image;
@@ -526,6 +523,8 @@ class StaffController extends Controller
                     'profile_image' => 'sometimes|nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
                     'gender' => 'sometimes|nullable|in:male,female,other',
                     'city' => 'sometimes|nullable|string',
+                    'phone' => 'sometimes|nullable|string',
+                    'staff_document_type' => 'sometimes|nullable|string',
                 ]);
             }
 
@@ -586,7 +585,9 @@ class StaffController extends Controller
                 $staffData = collect($data)->only([
                     'address',
                     'gender',
-                    'city'
+                    'city',
+                    'phone',
+                    'staff_document_type'
                 ])->toArray();
 
                 if ($request->hasFile('profile_image')) {

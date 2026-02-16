@@ -136,6 +136,7 @@ class AuthController extends Controller
             'profile_image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048', // Optional: if uploading image
             'gender' => 'nullable|in:male,female,other',
             'city' => 'nullable|string',
+            'phone' => 'nullable|string',
         ]);
 
         $capitalUser = User::where('user_type', 'customer')
@@ -156,7 +157,7 @@ class AuthController extends Controller
             $profileImagePath = $request->file('profile_image')->store('staff-profiles', 'public');
         }
 
-        Staff::create([
+        $staff = Staff::create([
             'user_id' => $user->id,
             'address' => $data['address'] ?? null,
             'profile_image' => $profileImagePath ?? $data['profile_image'] ?? null,
@@ -167,7 +168,10 @@ class AuthController extends Controller
 
         return response()->json([
             'message' => 'Staff registered under Capital Security',
-            'user' => $user,
+            'data' => [
+                'user' => $user,
+                'staff' => $staff,
+            ],
             'token' => $user->createToken('api')->plainTextToken,
         ], 201);
     }
@@ -179,7 +183,7 @@ class AuthController extends Controller
             'password' => 'required|string',
         ]);
 
-        $user = User::where('email', $request->email)->first();
+        $user = User::where('email', $request->email)->with(['staff'])->first();
 
         if (! $user || ! Hash::check($request->password, $user->password)) {
             return response()->json([
@@ -208,7 +212,7 @@ class AuthController extends Controller
         return response()->json([
             'token' => $token,
             'user' => [
-                'date' => $user,
+                'data' => $user,
                 'parent' => $parent,
             ]
         ], 200);

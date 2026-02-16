@@ -4,13 +4,13 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\RolesPermissionController;
-use App\Http\Controllers\ChargeRateController;
-use App\Http\Controllers\PayRateController;
-use App\Http\Controllers\PermissionController;
-use App\Http\Controllers\RoleController;
-use App\Http\Controllers\StaffController;
-use App\Http\Controllers\UserController;
-use App\Http\Controllers\UserRoleController;
+use App\Http\Controllers\Api\ChargeRateController;
+use App\Http\Controllers\Api\PayRateController;
+use App\Http\Controllers\Api\PermissionController;
+use App\Http\Controllers\Api\RoleController;
+use App\Http\Controllers\Api\StaffController;
+use App\Http\Controllers\Api\UserController;
+use App\Http\Controllers\Api\UserRoleController;
 
 /*
 |--------------------------------------------------------------------------
@@ -30,13 +30,13 @@ Route::post('/register/staff', [AuthController::class, 'registerStaff']);
 Route::post('/login', [AuthController::class, 'login']);
 
 
-Route::prefix('user')->group(function () {
-    Route::get('/all', [UserController::class, 'index']);
-    Route::get('show/{id}', [UserController::class, 'show']);    
-    Route::post('/store', [UserController::class, 'store']);      
-    Route::post('update/{id}', [UserController::class, 'update']);  
-    Route::delete('delete/{id}', [UserController::class, 'destroy']); 
-});
+// Route::prefix('user')->group(function () {
+//     Route::get('/all', [UserController::class, 'index']);
+//     Route::get('show/{id}', [UserController::class, 'show']);    
+//     Route::post('/store', [UserController::class, 'store']);      
+//     Route::post('update/{id}', [UserController::class, 'update']);  
+//     Route::delete('delete/{id}', [UserController::class, 'destroy']); 
+// });
 
 
 Route::middleware('auth:sanctum')->group(function () {
@@ -76,6 +76,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::any('customers/{id}/update', [StaffController::class, 'customerUpdate'])->name('customer.update');
     Route::any('user-update/{id}', [StaffController::class, 'updateUser'])->name('user.update');
     Route::any('user-edit/{id}', [StaffController::class, 'editUser'])->name('user.edit');
+    Route::any('upload-file', [StaffController::class, 'uploadFile'])->name('upload.file');
 });
 
 

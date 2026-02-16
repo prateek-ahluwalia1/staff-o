@@ -50,7 +50,7 @@ const RatesList = ({ forcedType } = {}) => {
   const [showAddModal, setShowAddModal] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
 
-  const rateCategories = ["def", "eba", "award"];
+  const rateCategories = ["def", "eba"];
   const timeKeys = [
     "metro_mon_to_fri_day_rate",
     "reg_mon_to_fri_day_rate",
@@ -170,8 +170,10 @@ const RatesList = ({ forcedType } = {}) => {
       e.preventDefault();
       // coerce numeric fields where applicable
       const body = { ...form };
-      // attach current user id
+      // attach current user id for both charge and pay rates
       body.user_id = userdata?.data?.id || userdata?.id || null;
+      // ensure customer_id is not sent
+      if (body.customer_id !== undefined) delete body.customer_id;
       ["ot_base_rate"].forEach((k) => {
         if (body[k] !== undefined && body[k] !== "") body[k] = Number(body[k]);
       });
@@ -462,7 +464,7 @@ const RatesList = ({ forcedType } = {}) => {
                       width: 10,
                       height: 34,
                       background:
-                        "linear-gradient(180deg,#27ae60 0%, #16a085 100%)",
+                        "linear-gradient(180deg,#3b82f6 0%, #1e40af 100%)",
                       borderRadius: 6,
                     }}
                   />
@@ -535,11 +537,16 @@ const RatesList = ({ forcedType } = {}) => {
                   </label>
                   <input
                     id="ot_base_rate"
+                    type="number"
+                    min={1}
+                    step="any"
                     value={form.ot_base_rate}
                     onChange={handleFormChange}
                     className="form-control"
                   />
                 </div>
+
+                {/* customer_id removed — not used for pay rate payloads */}
 
                 {rateCategories.map((cat) => (
                   <div
@@ -614,11 +621,14 @@ const RatesList = ({ forcedType } = {}) => {
                             <div key={`${metroId}-metro`}>
                               <input
                                 id={metroId}
+                                type="number"
+                                min={1}
+                                step="any"
                                 value={form[metroId]}
                                 onChange={handleFormChange}
                                 className="form-control"
                                 style={{
-                                  background: "#f5e9f5",
+                                  background: "#e6f4ff",
                                   border: "none",
                                   borderRadius: 6,
                                   textAlign: "center",
@@ -641,11 +651,14 @@ const RatesList = ({ forcedType } = {}) => {
                             >
                               <input
                                 id={regId}
+                                type="number"
+                                min={1}
+                                step="any"
                                 value={form[regId]}
                                 onChange={handleFormChange}
                                 className="form-control"
                                 style={{
-                                  background: "#f5e9f5",
+                                  background: "#e6f4ff",
                                   border: "none",
                                   borderRadius: 6,
                                   textAlign: "center",

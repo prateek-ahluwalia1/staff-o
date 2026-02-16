@@ -62,7 +62,7 @@ const Sidebar = memo(function Sidebar() {
             to="/pay-charge-rate"
             className={({ isActive }) => (isActive ? "active" : "")}
           >
-            <i className="fa-solid fa-money-bill-wave"></i> Pay & Charge Rate
+            <i className="fa-solid fa-money-bill-wave"></i> Accounts
           </NavLink>
         </li>
         <li>

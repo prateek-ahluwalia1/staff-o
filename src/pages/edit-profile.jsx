@@ -254,8 +254,14 @@ export default function EditProfile() {
       payload.append("email", formData.email);
       payload.append("phone", formData.phone);
       payload.append("address", formData.address);
-      payload.append("gender", formData.gender);
-      payload.append("city", formData.city);
+      // Gender is not applicable for contractors
+      if (userType !== "contractor" && formData.gender) {
+        payload.append("gender", formData.gender);
+      }
+      // City is not applicable for contractors
+      if (userType !== "contractor" && formData.city) {
+        payload.append("city", formData.city);
+      }
       if (formData.staff_document_type) {
         payload.append("staff_document_type", formData.staff_document_type);
       }

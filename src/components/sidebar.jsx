@@ -22,13 +22,15 @@ const Sidebar = memo(function Sidebar() {
         <div className="status-toggle">
           <div>
             <span className="status-label">
-              {userdata.data.is_active ? "Active" : "Inactive"}
+              {userdata?.data?.is_active || userdata?.is_active
+                ? "Active"
+                : "Inactive"}
             </span>
           </div>
           <label className="status-switch" aria-label="Toggle open to work">
             <input
               type="checkbox"
-              checked={!!userdata?.data?.is_active}
+              checked={!!userdata?.data?.is_active || !!userdata?.is_active}
               disabled
             />
             <span className="status-slider"></span>

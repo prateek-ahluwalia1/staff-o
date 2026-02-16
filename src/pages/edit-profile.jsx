@@ -60,9 +60,25 @@ export default function EditProfile() {
     file_path: "",
   });
 
-  // Open modal and set selected document
+  // Open modal and set selected document (for update)
   const handleAddFile = (doc) => {
     setSelectedDoc(doc);
+    setDocForm({
+      notes: doc.notes || "",
+      no: !!doc.document_no,
+      exp: !!doc.document_expiry,
+      document_no: doc.document_no || "",
+      document_expire: doc.document_expiry || "",
+      file: null,
+      file_path: doc.file || "",
+      file_url: doc.file ? doc.file : "",
+    });
+    setShowDocModal(true);
+  };
+
+  // Open modal for adding a new document
+  const handleAddDocument = () => {
+    setSelectedDoc(null);
     setDocForm({
       notes: "",
       no: false,
@@ -71,6 +87,7 @@ export default function EditProfile() {
       document_expire: "",
       file: null,
       file_path: "",
+      file_url: "",
     });
     setShowDocModal(true);
   };
@@ -112,16 +129,64 @@ export default function EditProfile() {
     }
   };
 
-  // Handle modal submit (implement actual API as needed)
-  const handleDocSubmit = (e) => {
+  // Handle modal submit for add/update document
+  const handleDocSubmit = async (e) => {
     e.preventDefault();
-    // Here you would send docForm + selectedDoc info to backend
-    // Use docForm.file_path as the file path to send
-    // Example payload:
-    // { ...docForm, file: docForm.file_path, document_name: selectedDoc.document_name, document_type: selectedDoc.document_type, ... }
-    setShowDocModal(false);
-    // Optionally refetch documents
-    // refetch();
+    // Compose payload
+    let payload = {
+      notes: docForm.notes,
+      no: docForm.no,
+      exp: docForm.exp,
+      document_no: docForm.document_no,
+      document_expire: docForm.document_expire,
+      file: docForm.file_path,
+    };
+    // Add document_name and document_type for both add and update
+    if (selectedDoc) {
+      payload = {
+        ...payload,
+        id: selectedDoc.id,
+        admin_id: selectedDoc.admin_id,
+        guard_id: selectedDoc.guard_id,
+        document_type: selectedDoc.document_type,
+        document_name: selectedDoc.document_name,
+      };
+    } else {
+      // For new document, ask user to select document type/name (could be improved with a dropdown)
+      // For now, show alert and return if not implemented
+      alert(
+        "Please select a document type/name. Implement document selection UI as needed.",
+      );
+      return;
+    }
+
+    // Format date if present
+    if (payload.document_expire) {
+      // Convert to MM-DD-YYYY if needed
+      const d = new Date(payload.document_expire);
+      if (!isNaN(d)) {
+        const mm = String(d.getMonth() + 1).padStart(2, "0");
+        const dd = String(d.getDate()).padStart(2, "0");
+        const yyyy = d.getFullYear();
+        payload.document_expire = `${mm}-${dd}-${yyyy}`;
+      }
+    }
+
+    // Decide API endpoint and method
+    let apiEndpoint = "api/document-update";
+    let method = "POST";
+    if (!selectedDoc) {
+      apiEndpoint = "api/document-add";
+    }
+
+    // Submit
+    const result = await submit(apiEndpoint, payload, { method });
+    if (result.success) {
+      setShowDocModal(false);
+      refetch();
+    } else {
+      alert(result.message || "Failed to save document");
+    }
   };
 
   useEffect(() => {
@@ -276,7 +341,7 @@ export default function EditProfile() {
         <DocumentTable
           documents={profileData?.data?.documents || []}
           onAddFile={handleAddFile}
-          onAddDocument={() => {}}
+          onAddDocument={handleAddDocument}
         />
       )}
 
@@ -286,19 +351,43 @@ export default function EditProfile() {
           onSubmit={handleDocSubmit}
           style={{ display: "flex", flexDirection: "column", height: "100%" }}
         >
-          {/* Document Name Dropdown (disabled) */}
+          {/* Document Name Dropdown (enabled for add, disabled for update) */}
           <div className="mb-2">
             <label style={{ fontWeight: 500, fontSize: 13 }}>
               Document Name
             </label>
-            <select
-              className="form-control"
-              value={selectedDoc?.document_name || ""}
-              disabled
-              style={{ background: "#f5f5f5", color: "#333", marginBottom: 8 }}
-            >
-              <option>{selectedDoc?.document_name || ""}</option>
-            </select>
+            {selectedDoc ? (
+              <select
+                className="form-control"
+                value={selectedDoc.document_name || ""}
+                disabled
+                style={{
+                  background: "#f5f5f5",
+                  color: "#333",
+                  marginBottom: 8,
+                }}
+              >
+                <option value={selectedDoc.document_name || ""}>
+                  {selectedDoc.document_name || ""}
+                </option>
+              </select>
+            ) : (
+              <select
+                className="form-control"
+                name="document_name"
+                value={docForm.document_name || ""}
+                onChange={handleDocFormChange}
+                style={{ background: "#fff", color: "#333", marginBottom: 8 }}
+              >
+                <option value="">Select Document</option>
+                <option value="Casual Contract Form">
+                  Casual Contract Form
+                </option>
+                <option value="Passport">Passport</option>
+                <option value="Visa">Visa</option>
+                <option value="Other">Other</option>
+              </select>
+            )}
           </div>
           {/* Description/Notes */}
           <div className="mb-2">

@@ -339,7 +339,7 @@ export default function EditProfile() {
         >
           Personal Information
         </button>
-        {userType === "staff" && (
+        {(userType === "staff" || userType === "contractor") && (
           <button
             type="button"
             className={`btn ${activeTab === "documents" ? "btn-primary" : "btn-outline-primary"}`}
@@ -377,13 +377,14 @@ export default function EditProfile() {
         </>
       )}
 
-      {activeTab === "documents" && userType === "staff" && (
-        <DocumentTable
-          documents={profileData?.data?.documents || []}
-          onAddFile={handleAddFile}
-          onAddDocument={handleAddDocument}
-        />
-      )}
+      {activeTab === "documents" &&
+        (userType === "staff" || userType === "contractor") && (
+          <DocumentTable
+            documents={profileData?.data?.documents || []}
+            onAddFile={handleAddFile}
+            onAddDocument={handleAddDocument}
+          />
+        )}
 
       {/* Document Upload Modal */}
       <Modal open={showDocModal} onClose={() => setShowDocModal(false)}>

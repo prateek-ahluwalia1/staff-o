@@ -261,7 +261,7 @@ export default function DocumentTable({ documents, onAddFile, onAddDocument }) {
             ) : (
               <tr>
                 <td
-                  colSpan={6}
+                  colSpan={5}
                   className="text-center"
                   style={{
                     padding: 32,

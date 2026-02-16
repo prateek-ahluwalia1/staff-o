@@ -1,6 +1,6 @@
 import React from "react";
 
-export default function ProfileForm({ formData, onChange, onSubmit, loading }) {
+export default function ProfileForm({ formData, onChange, onSubmit, loading, userType }) {
   return (
     <form className="settings-form" onSubmit={onSubmit}>
       <div className="settings-card">
@@ -87,7 +87,7 @@ export default function ProfileForm({ formData, onChange, onSubmit, loading }) {
           </div>
           <div>
             <label htmlFor="staff_document_type" className="form-label">
-              Residential Status
+              {userType === "staff" ? "Residential Status" : userType === "contractor" ? "Contractor Type" : "Residential Status"}
             </label>
             <select
               className="form-control"
@@ -95,13 +95,26 @@ export default function ProfileForm({ formData, onChange, onSubmit, loading }) {
               value={formData.staff_document_type}
               onChange={onChange}
             >
-              <option value="">Select Residential Status</option>
-              <option value="student_visa">Student Visa</option>
-              <option value="bridging_visa">Bridging Visa</option>
-              <option value="citizen">Citizen</option>
-              <option value="permanent_residence">Permanent Residence</option>
-              <option value="visa_485">Visa Subclass 485</option>
-              <option value="other">Other</option>
+              {userType === "contractor" ? (
+                <>
+                  <option value="">Select Contractor Type</option>
+                  <option value="local_contractor">Local Contractor</option>
+                  <option value="international_contractor">International Contractor</option>
+                  <option value="company_based">Company Based</option>
+                  <option value="self_employed">Self Employed</option>
+                  <option value="other">Other</option>
+                </>
+              ) : (
+                <>
+                  <option value="">Select Residential Status</option>
+                  <option value="student_visa">Student Visa</option>
+                  <option value="bridging_visa">Bridging Visa</option>
+                  <option value="citizen">Citizen</option>
+                  <option value="permanent_residence">Permanent Residence</option>
+                  <option value="visa_485">Visa Subclass 485</option>
+                  <option value="other">Other</option>
+                </>
+              )}
             </select>
           </div>
           <div className="grid-span-2">

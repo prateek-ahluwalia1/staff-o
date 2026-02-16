@@ -25,6 +25,8 @@ export default function EditProfile() {
   const dispatch = useDispatch();
   const { userdata } = useSelector((state) => state.auth);
 
+  const userType = userdata?.data?.user_type;
+
   const endpoint = useMemo(
     () => (userdata?.data?.id ? `api/user-edit/${userdata.data.id}` : null),
     [userdata?.data?.id],
@@ -307,13 +309,15 @@ export default function EditProfile() {
         >
           Personal Information
         </button>
-        <button
-          type="button"
-          className={`btn ${activeTab === "documents" ? "btn-primary" : "btn-outline-primary"}`}
-          onClick={() => setActiveTab("documents")}
-        >
-          Documents
-        </button>
+        {userType === "staff" && (
+          <button
+            type="button"
+            className={`btn ${activeTab === "documents" ? "btn-primary" : "btn-outline-primary"}`}
+            onClick={() => setActiveTab("documents")}
+          >
+            Documents
+          </button>
+        )}
       </div>
 
       {/* Tab Content */}
@@ -338,11 +342,12 @@ export default function EditProfile() {
             onChange={handleChange}
             onSubmit={handleSubmit}
             loading={submitLoading}
+            userType={userType}
           />
         </>
       )}
 
-      {activeTab === "documents" && (
+      {activeTab === "documents" && userType === "staff" && (
         <DocumentTable
           documents={profileData?.data?.documents || []}
           onAddFile={handleAddFile}

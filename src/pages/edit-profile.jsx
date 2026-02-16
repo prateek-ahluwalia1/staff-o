@@ -19,6 +19,9 @@ const INITIAL_FORM_STATE = {
   gender: "",
   city: "",
   staff_document_type: "",
+  // contractor-specific
+  company_name: "",
+  registration_number: "",
 };
 
 export default function EditProfile() {
@@ -201,18 +204,30 @@ export default function EditProfile() {
 
     const d = profileData.data;
     const staff = d.staff || {};
+    const contractor = d.contractor || staff.contractor || {};
 
     setFormData({
       name: d.name || "",
       email: d.email || "",
-      phone: staff.phone || "",
-      address: staff.address || "",
-      gender: staff.gender || "",
-      city: staff.city || "",
+      phone: staff.phone || contractor.phone || "",
+      address: staff.address || contractor.address || "",
+      gender: staff.gender || contractor.gender || "",
+      city: staff.city || contractor.city || "",
       staff_document_type: staff.staff_document_type || "",
+      company_name:
+        d.company_name || contractor.company_name || staff.company_name || "",
+      registration_number:
+        d.registration_number ||
+        contractor.registration_number ||
+        staff.registration_number ||
+        "",
     });
 
+    // prefer staff profile image, then contractor, then top-level
     if (staff.profile_image) setProfilePhoto(staff.profile_image);
+    else if (contractor.profile_image)
+      setProfilePhoto(contractor.profile_image);
+    else if (d.profile_image) setProfilePhoto(d.profile_image);
   }, [profileData]);
 
   const handleChange = useCallback((e) => {
@@ -243,6 +258,13 @@ export default function EditProfile() {
       payload.append("city", formData.city);
       if (formData.staff_document_type) {
         payload.append("staff_document_type", formData.staff_document_type);
+      }
+      // contractor-specific fields
+      if (userType === "contractor") {
+        if (formData.company_name)
+          payload.append("company_name", formData.company_name);
+        if (formData.registration_number)
+          payload.append("registration_number", formData.registration_number);
       }
       if (profilePhotoFile) {
         payload.append("profile_image", profilePhotoFile);

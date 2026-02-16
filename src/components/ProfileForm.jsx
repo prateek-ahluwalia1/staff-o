@@ -1,6 +1,12 @@
 import React from "react";
 
-export default function ProfileForm({ formData, onChange, onSubmit, loading, userType }) {
+export default function ProfileForm({
+  formData,
+  onChange,
+  onSubmit,
+  loading,
+  userType,
+}) {
   return (
     <form className="settings-form" onSubmit={onSubmit}>
       <div className="settings-card">
@@ -85,9 +91,43 @@ export default function ProfileForm({ formData, onChange, onSubmit, loading, use
               onChange={onChange}
             />
           </div>
+          {userType === "contractor" && (
+            <>
+              <div>
+                <label htmlFor="company_name" className="form-label">
+                  Company Name
+                </label>
+                <input
+                  type="text"
+                  className="form-control"
+                  id="company_name"
+                  placeholder="Company Name"
+                  value={formData.company_name || ""}
+                  onChange={onChange}
+                />
+              </div>
+              <div>
+                <label htmlFor="registration_number" className="form-label">
+                  Registration Number
+                </label>
+                <input
+                  type="text"
+                  className="form-control"
+                  id="registration_number"
+                  placeholder="REG-XXXX"
+                  value={formData.registration_number || ""}
+                  onChange={onChange}
+                />
+              </div>
+            </>
+          )}
           <div>
             <label htmlFor="staff_document_type" className="form-label">
-              {userType === "staff" ? "Residential Status" : userType === "contractor" ? "Contractor Type" : "Residential Status"}
+              {userType === "staff"
+                ? "Residential Status"
+                : userType === "contractor"
+                  ? "Contractor Type"
+                  : "Residential Status"}
             </label>
             <select
               className="form-control"
@@ -99,7 +139,9 @@ export default function ProfileForm({ formData, onChange, onSubmit, loading, use
                 <>
                   <option value="">Select Contractor Type</option>
                   <option value="local_contractor">Local Contractor</option>
-                  <option value="international_contractor">International Contractor</option>
+                  <option value="international_contractor">
+                    International Contractor
+                  </option>
                   <option value="company_based">Company Based</option>
                   <option value="self_employed">Self Employed</option>
                   <option value="other">Other</option>
@@ -110,7 +152,9 @@ export default function ProfileForm({ formData, onChange, onSubmit, loading, use
                   <option value="student_visa">Student Visa</option>
                   <option value="bridging_visa">Bridging Visa</option>
                   <option value="citizen">Citizen</option>
-                  <option value="permanent_residence">Permanent Residence</option>
+                  <option value="permanent_residence">
+                    Permanent Residence
+                  </option>
                   <option value="visa_485">Visa Subclass 485</option>
                   <option value="other">Other</option>
                 </>

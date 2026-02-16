@@ -325,6 +325,7 @@ export default function EditProfile() {
           email={formData.email}
           city={formData.city}
           gender={formData.gender}
+          company_name={formData.company_name}
         />
       </div>
 

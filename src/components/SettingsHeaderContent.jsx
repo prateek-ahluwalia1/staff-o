@@ -6,6 +6,7 @@ export default function SettingsHeaderContent({
   email,
   city,
   gender,
+  company_name,
 }) {
   return (
     <div className="settings-header-content">
@@ -20,14 +21,25 @@ export default function SettingsHeaderContent({
           <i className="fa-solid fa-envelope" aria-hidden="true"></i>
           {email || "No email"}
         </span>
-        <span>
-          <i className="fa-solid fa-location-dot" aria-hidden="true"></i>
-          {city || "No location"}
-        </span>
-        <span>
-          <i className="fa-solid fa-user" aria-hidden="true"></i>
-          {gender || "Not specified"}
-        </span>
+        {userType !== "contractor" ? (
+          <>
+            <span>
+              <i className="fa-solid fa-location-dot" aria-hidden="true"></i>
+              {city || "No location"}
+            </span>
+            <span>
+              <i className="fa-solid fa-user" aria-hidden="true"></i>
+              {gender || "Not specified"}
+            </span>
+          </>
+        ) : (
+          <>
+            <span>
+              <i className="fa-solid fa-briefcase" aria-hidden="true"></i>
+              {company_name || "No company name"}
+            </span>
+          </>
+        )}
       </div>
     </div>
   );

@@ -242,6 +242,20 @@ export default function EditProfile() {
     }
   };
 
+  // Resolve preview URL: if server returned a full URL use it, otherwise
+  // build using `apiURL` and the `staff_documents` folder.
+  const resolveFileUrl = (url) => {
+    if (!url) return "";
+    try {
+      if (url.startsWith("http://") || url.startsWith("https://")) {
+        return url;
+      }
+    } catch (err) {
+      // ignore and fallback
+    }
+    return `${apiURL}staff_documents/${url}`;
+  };
+
   useEffect(() => {
     if (!profileData?.data) return;
 
@@ -510,7 +524,7 @@ export default function EditProfile() {
                   ) {
                     return (
                       <img
-                        src={`${apiURL}staff_documents/${docForm.file_url}`}
+                        src={resolveFileUrl(docForm.file_url)}
                         alt="preview"
                         style={{ maxWidth: "100%", maxHeight: "100%" }}
                         onError={(e) => {
@@ -521,7 +535,7 @@ export default function EditProfile() {
                   } else if (["pdf"].includes(ext)) {
                     return (
                       <iframe
-                        src={`${apiURL}staff_documents/${docForm.file_url}`}
+                        src={resolveFileUrl(docForm.file_url)}
                         title="Document Preview"
                         style={{ width: "100%", height: "100%", border: 0 }}
                       />
@@ -529,7 +543,7 @@ export default function EditProfile() {
                   } else {
                     return (
                       <a
-                        href={`${apiURL}staff_documents/${docForm.file_url}`}
+                        href={resolveFileUrl(docForm.file_url)}
                         target="_blank"
                         rel="noopener noreferrer"
                         style={{ color: "#007bff", fontWeight: 500 }}

@@ -137,7 +137,7 @@ const Sidebar = memo(function Sidebar() {
             <li key={item.label}>
               {disabled ? (
                 <a
-                  href="#"
+                  href="/"
                   onClick={(e) => e.preventDefault()}
                   className="disabled-nav"
                   aria-disabled="true"
@@ -173,7 +173,7 @@ const Sidebar = memo(function Sidebar() {
         })}
 
         <li>
-          <a href="#" onClick={handleLogout}>
+          <a href="/" onClick={handleLogout}>
             <i className="fa-solid fa-right-from-bracket"></i> Logout
           </a>
         </li>

@@ -1,5 +1,5 @@
 import { useSelector } from "react-redux";
-
+import { NavLink } from "react-router-dom";
 const APPLIED_JOBS = [
   {
     type: "Full Time",
@@ -131,7 +131,7 @@ export default function Dashboard() {
       <section className="dashboard-panel">
         <div className="panel-heading">
           <h3>My Applied Jobs</h3>
-          <a href="#">View All</a>
+          <NavLink to="/applied-jobs">View All</NavLink>
         </div>
 
         <div className="row g-3">
@@ -185,7 +185,7 @@ export default function Dashboard() {
       <section className="dashboard-panel">
         <div className="panel-heading">
           <h3>Recommended Jobs</h3>
-          <a href="#">View All</a>
+          <NavLink to="/recommended-jobs">View All</NavLink>
         </div>
 
         <div className="row g-3">

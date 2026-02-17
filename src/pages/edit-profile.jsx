@@ -350,7 +350,7 @@ export default function EditProfile() {
         setSubmitError(result.errors || result.message || "Update failed");
       }
     },
-    [formData, profilePhotoFile, submit, userdata, dispatch, refetch],
+    [formData, profilePhotoFile, submit, userdata, dispatch, refetch, userType],
   );
 
   if (fetchLoading) {
@@ -525,7 +525,7 @@ export default function EditProfile() {
                     return (
                       <img
                         src={resolveFileUrl(docForm.file_url)}
-                        alt="preview"
+                        alt={docForm.document_name || "Document preview"}
                         style={{ maxWidth: "100%", maxHeight: "100%" }}
                         onError={(e) => {
                           e.target.style.display = "none";
@@ -556,7 +556,7 @@ export default function EditProfile() {
               ) : (
                 <img
                   src={fallbackImage}
-                  alt="No image"
+                  alt="No preview available"
                   style={{ width: "100%", height: "100%", opacity: 0.5 }}
                 />
               )}

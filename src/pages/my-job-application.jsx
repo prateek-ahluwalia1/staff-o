@@ -92,7 +92,9 @@ export default function MyJobApplications() {
 
                 <div className="application-title">
                   <h4>
-                    <a href="#">{app.title}</a>
+                    <button type="button" className="btn btn-link p-0">
+                      {app.title}
+                    </button>
                   </h4>
                   <div className="application-location">
                     <i
@@ -128,12 +130,12 @@ export default function MyJobApplications() {
                     </div>
                   </div>
 
-                  <a
-                    href="#"
+                  <button
+                    type="button"
                     className="btn btn-outline-primary btn-sm rounded-pill"
                   >
                     {app.actionText}
-                  </a>
+                  </button>
                 </div>
               </div>
             </div>

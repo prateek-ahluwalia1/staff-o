@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { setToken, setUser } from "../store/slices/authSlice";
 import useSubmit from "../hooks/useSubmit";
@@ -299,13 +299,13 @@ export default function Register() {
                       />
                       <label className="form-check-label" htmlFor="staffPolicy">
                         I accept the{" "}
-                        <a href="#" className="auth-link">
+                        <NavLink to="/terms" className="auth-link">
                           Terms
-                        </a>{" "}
+                        </NavLink>{" "}
                         and{" "}
-                        <a href="#" className="auth-link">
+                        <NavLink to="/privacy-policy" className="auth-link">
                           Privacy Policy
-                        </a>
+                        </NavLink>
                         .
                       </label>
                     </div>
@@ -440,13 +440,13 @@ export default function Register() {
                         htmlFor="customerPolicy"
                       >
                         I agree to the{" "}
-                        <a href="#" className="auth-link">
+                        <NavLink to="/terms" className="auth-link">
                           Terms of Service
-                        </a>{" "}
+                        </NavLink>{" "}
                         and{" "}
-                        <a href="#" className="auth-link">
+                        <NavLink to="/privacy-policy" className="auth-link">
                           Privacy Policy
-                        </a>
+                        </NavLink>
                         .
                       </label>
                     </div>
@@ -604,13 +604,13 @@ export default function Register() {
                         htmlFor="candidatePolicy"
                       >
                         I agree to the{" "}
-                        <a href="#" className="auth-link">
+                        <NavLink to="/terms" className="auth-link">
                           Terms of Service
-                        </a>{" "}
+                        </NavLink>{" "}
                         and{" "}
-                        <a href="#" className="auth-link">
+                        <NavLink to="/privacy-policy" className="auth-link">
                           Privacy Policy
-                        </a>
+                        </NavLink>
                         .
                       </label>
                     </div>
@@ -637,7 +637,7 @@ export default function Register() {
               </div>
 
               <p className="auth-switch">
-                Already have an account? <a href="/login">Sign in</a>
+                Already have an account? <NavLink to="/login">Sign in</NavLink>
               </p>
             </div>
           </div>

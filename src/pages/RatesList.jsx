@@ -170,6 +170,32 @@ const RatesList = ({ forcedType } = {}) => {
 
   if (loading) return <Loader fullPage />;
 
+  if (error) {
+    const errMsg =
+      typeof error === "string"
+        ? error
+        : error?.message || JSON.stringify(error) || "An error occurred";
+
+    return (
+      <div className="container-fluid py-4">
+        <div className="alert alert-danger">
+          <div className="fw-bold">Error</div>
+          <div className="small text-break">{errMsg}</div>
+          <div className="mt-2">
+            <button
+              className="btn btn-sm btn-primary"
+              onClick={() =>
+                refetch(showArchived ? archiveListEndpoint : listEndpoint)
+              }
+            >
+              Retry
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="container-fluid py-4">
       {/* Header */}

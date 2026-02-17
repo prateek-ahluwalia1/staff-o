@@ -1,6 +1,6 @@
 // src/auth/Login.jsx
 import React, { useState } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation, NavLink } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { setToken, setUser } from "../store/slices/authSlice";
 import useSubmit from "../hooks/useSubmit";
@@ -9,7 +9,7 @@ export default function Login() {
   const navigate = useNavigate();
   const location = useLocation();
   const dispatch = useDispatch();
-  const { submit, loading, error: submitError } = useSubmit();
+  const { submit, loading } = useSubmit();
 
   // State for form inputs
   const [email, setEmail] = useState("");
@@ -113,9 +113,9 @@ export default function Login() {
                     <label htmlFor="loginPassword" className="form-label">
                       Password
                     </label>
-                    <a href="#" className="auth-link">
+                    <NavLink to="/forgot-password" className="auth-link">
                       Forgot password?
-                    </a>
+                    </NavLink>
                   </div>
                   <input
                     type="password"
@@ -149,7 +149,8 @@ export default function Login() {
               </form>
 
               <p className="auth-switch">
-                New to JobsPortal? <a href="/register">Create an account</a>
+                New to JobsPortal?{" "}
+                <NavLink to="/register">Create an account</NavLink>
               </p>
             </div>
           </div>

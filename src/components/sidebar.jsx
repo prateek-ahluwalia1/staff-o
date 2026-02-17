@@ -34,14 +34,14 @@ const Sidebar = memo(function Sidebar() {
       label: "Accounts",
     },
     {
-      to: "/my-job-applications",
-      icon: "fa-solid fa-briefcase",
-      label: "My Jobs",
-    },
-    {
       to: "/add-job",
       icon: "fa-solid fa-briefcase",
       label: "Post a Job",
+    },
+    {
+      to: "/my-job-applications",
+      icon: "fa-solid fa-briefcase",
+      label: "My Jobs",
     },
     {
       to: "/payment-history",
@@ -63,14 +63,14 @@ const Sidebar = memo(function Sidebar() {
       label: "Accounts",
     },
     {
-      to: "/my-job-applications",
-      icon: "fa-solid fa-briefcase",
-      label: "My Job Applications",
-    },
-    {
       to: "/add-job",
       icon: "fa-solid fa-briefcase",
       label: "Post a Job",
+    },
+    {
+      to: "/my-job-applications",
+      icon: "fa-solid fa-briefcase",
+      label: "My Job Applications",
     },
     {
       to: "/payment-history",

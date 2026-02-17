@@ -75,7 +75,7 @@ export default function MyJobApplications() {
 
           <div className="d-flex flex-wrap gap-2">
             <NavLink to="/add-job" className="btn btn-primary">
-              <i className="fa-solid fa-plus" aria-hidden="true"></i> Add job
+              <i className="fa-solid fa-plus" aria-hidden="true"></i> Post a Job
             </NavLink>
           </div>
         </div>

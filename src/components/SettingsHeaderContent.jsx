@@ -8,12 +8,25 @@ export default function SettingsHeaderContent({
   gender,
   company_name,
   profileCompletion = 0,
-  missingItems = [],
 }) {
-  const pct = Number(profileCompletion) || 0;
-  let progressClass = "bg-success";
-  if (pct < 40) progressClass = "bg-danger";
-  else if (pct < 80) progressClass = "bg-warning";
+  const pct = Math.min(100, Math.max(0, Number(profileCompletion) || 0));
+
+  // Circle config
+  const radius = 38;
+  const stroke = 8;
+  const normalizedRadius = radius - stroke / 2;
+  const circumference = normalizedRadius * 2 * Math.PI;
+  const strokeDashoffset = circumference - (pct / 100) * circumference;
+
+  // Dynamic colors
+  const getColor = () => {
+    if (pct < 40) return "#dc3545"; // red
+    if (pct < 80) return "#f59e0b"; // orange
+    return "#16a34a"; // green
+  };
+
+  const progressColor = getColor();
+
   return (
     <div className="settings-header-content" style={{ position: "relative" }}>
       <span>{userType || "Staff"} Profile</span>
@@ -22,39 +35,76 @@ export default function SettingsHeaderContent({
         Keep your information up to date so your profile stays accurate and
         complete.
       </p>
+
+      {/* RIGHT SIDE STATUS */}
       <div
         style={{
           position: "absolute",
-          top: 8,
+          top: -30,
           right: 0,
           display: "flex",
           alignItems: "center",
-          gap: 8,
-          paddingLeft: 8,
+          gap: 16,
         }}
       >
-        <div className="d-none d-sm-block" style={{ minWidth: 140 }}>
-          <div className="progress" style={{ height: 8 }}>
-            <div
-              className={`progress-bar ${progressClass}`}
-              role="progressbar"
-              style={{ width: `${pct}%` }}
-              aria-valuenow={pct}
-              aria-valuemin="0"
-              aria-valuemax="100"
+        {/* Circular Progress */}
+        <div
+          style={{
+            width: 90,
+            height: 90,
+            position: "relative",
+          }}
+        >
+          <svg height={radius * 2} width={radius * 2}>
+            <circle
+              stroke="#e5e7eb"
+              fill="transparent"
+              strokeWidth={stroke}
+              r={normalizedRadius}
+              cx={radius}
+              cy={radius}
             />
+            <circle
+              stroke={progressColor}
+              fill="transparent"
+              strokeWidth={stroke}
+              strokeLinecap="round"
+              strokeDasharray={circumference + " " + circumference}
+              style={{
+                strokeDashoffset,
+                transition: "stroke-dashoffset 0.6s ease",
+                transform: "rotate(-90deg)",
+                transformOrigin: "50% 50%",
+              }}
+              r={normalizedRadius}
+              cx={radius}
+              cy={radius}
+            />
+          </svg>
+          {/* Percentage Text */}
+          <div
+            style={{
+              position: "absolute",
+              top: "50%",
+              left: "50%",
+              transform: "translate(-70%, -90%)",
+              fontWeight: "600",
+              fontSize: 16,
+              color: progressColor,
+            }}
+          >
+            {pct}%
           </div>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <small className="text-muted">Profile Completion</small>
-          <small className="text-muted">{pct}%</small>
-        </div>
       </div>
+
+      {/* META INFO */}
       <div className="settings-header-meta">
         <span>
           <i className="fa-solid fa-envelope" aria-hidden="true"></i>
           {email || "No email"}
         </span>
+
         {userType !== "contractor" ? (
           <>
             <span>
@@ -67,12 +117,10 @@ export default function SettingsHeaderContent({
             </span>
           </>
         ) : (
-          <>
-            <span>
-              <i className="fa-solid fa-briefcase" aria-hidden="true"></i>
-              {company_name || "No company name"}
-            </span>
-          </>
+          <span>
+            <i className="fa-solid fa-briefcase" aria-hidden="true"></i>
+            {company_name || "No company name"}
+          </span>
         )}
       </div>
     </div>

@@ -46,6 +46,45 @@ export default function EditProfile() {
     refetch,
   } = useFetch(endpoint, { isAuth: true });
 
+  // derive missing fields for profile completion tooltip
+  const getMissingFields = (d) => {
+    if (!d) return [];
+    const missing = [];
+    const staff = d.staff || {};
+    const contractor = d.contractor || staff.contractor || {};
+
+    if (!d.name) missing.push("Name");
+    if (!d.email) missing.push("Email");
+
+    const phone = staff.phone || contractor.phone || d.phone;
+    if (!phone) missing.push("Phone");
+
+    const address = staff.address || contractor.address || d.address;
+    if (!address) missing.push("Address");
+
+    if ((d.user_type || userType) !== "contractor") {
+      const gender = staff.gender || contractor.gender || d.gender;
+      if (!gender) missing.push("Gender");
+      const city = staff.city || contractor.city || d.city;
+      if (!city) missing.push("City");
+    } else {
+      const company = contractor.company_name || d.company_name;
+      if (!company) missing.push("Company Name");
+      const reg = contractor.registration_number || d.registration_number;
+      if (!reg) missing.push("Registration Number");
+    }
+
+    const hasImage =
+      staff.profile_image || contractor.profile_image || d.profile_image;
+    if (!hasImage) missing.push("Profile Photo");
+
+    if (!d.documents || d.documents.length === 0) missing.push("Documents");
+
+    return missing;
+  };
+
+  const missingFields = getMissingFields(profileData?.data);
+
   const { submit, loading: submitLoading } = useSubmit({ isAuth: true });
   const { submit: uploadFile, loading: uploadLoading } = useSubmit({
     isAuth: true,
@@ -330,6 +369,12 @@ export default function EditProfile() {
           city={formData.city}
           gender={formData.gender}
           company_name={formData.company_name}
+          profileCompletion={
+            profileData?.data?.profile_completion_percentage ||
+            profileData?.profile_completion_percentage ||
+            0
+          }
+          missingItems={missingFields}
         />
       </div>
 

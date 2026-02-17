@@ -144,7 +144,7 @@ const Sidebar = memo(function Sidebar() {
                       right: "10px",
                       top: "6px",
                       fontSize: "0.7em",
-                      opacity: 0.85,
+                      opacity: 0.5,
                     }}
                   >
                     <i className="fa-solid fa-lock"></i>

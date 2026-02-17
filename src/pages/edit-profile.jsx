@@ -29,11 +29,14 @@ export default function EditProfile() {
   const dispatch = useDispatch();
   const { userdata } = useSelector((state) => state.auth);
 
-  const userType = userdata?.data?.user_type;
+  const userType = userdata?.data?.user_type || userdata?.user_type;
 
   const endpoint = useMemo(
-    () => (userdata?.data?.id ? `api/user-edit/${userdata.data.id}` : null),
-    [userdata?.data?.id],
+    () =>
+      userdata?.data?.id || userdata?.id
+        ? `api/user-edit/${userdata?.data?.id || userdata?.id}`
+        : null,
+    [userdata?.data?.id, userdata?.id],
   );
 
   const {
@@ -278,7 +281,7 @@ export default function EditProfile() {
       }
 
       const result = await submit(
-        `api/user-update/${userdata.data.id}`,
+        `api/user-update/${userdata.data.id || userdata.id}`,
         payload,
         { method: "POST" },
       );
@@ -321,7 +324,7 @@ export default function EditProfile() {
           onPhotoChange={handlePhotoChange}
         />
         <SettingsHeaderContent
-          userType={userdata?.data?.user_type}
+          userType={userdata?.data?.user_type || userdata?.user_type}
           name={formData.name}
           email={formData.email}
           city={formData.city}
@@ -339,15 +342,14 @@ export default function EditProfile() {
         >
           Personal Information
         </button>
-        {(userType === "staff" || userType === "contractor") && (
-          <button
-            type="button"
-            className={`btn ${activeTab === "documents" ? "btn-primary" : "btn-outline-primary"}`}
-            onClick={() => setActiveTab("documents")}
-          >
-            Documents
-          </button>
-        )}
+
+        <button
+          type="button"
+          className={`btn ${activeTab === "documents" ? "btn-primary" : "btn-outline-primary"}`}
+          onClick={() => setActiveTab("documents")}
+        >
+          Documents
+        </button>
       </div>
 
       {/* Tab Content */}
@@ -378,7 +380,7 @@ export default function EditProfile() {
       )}
 
       {activeTab === "documents" &&
-        (userType === "staff" || userType === "contractor") && (
+        ["staff", "contractor", "customer", "admin"].includes(userType) && (
           <DocumentTable
             documents={profileData?.data?.documents || []}
             onAddFile={handleAddFile}

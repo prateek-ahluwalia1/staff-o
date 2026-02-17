@@ -4,73 +4,9 @@ import useFetch from "../hooks/useFetch";
 import useSubmit from "../hooks/useSubmit";
 import { useSelector } from "react-redux";
 import Loader from "../components/Loader";
+import { TIME_KEYS, SLOT_ROWS } from "../utils/exports";
 
-// Top-level static constants — keep stable to satisfy hook dependency checks
 const RATE_CATEGORIES = ["def", "eba"];
-const TIME_KEYS = [
-  "metro_mon_to_fri_day_rate",
-  "reg_mon_to_fri_day_rate",
-  "metro_mon_to_fri_night_rate",
-  "reg_mon_to_fri_night_rate",
-
-  "metro_sat_day_rate",
-  "reg_sat_day_rate",
-  "metro_sat_night_rate",
-  "reg_sat_night_rate",
-
-  "metro_sun_day_rate",
-  "reg_sun_day_rate",
-  "metro_sun_night_rate",
-  "reg_sun_night_rate",
-
-  "metro_pub_holi_day_rate",
-  "reg_pub_holi_day_rate",
-  "metro_pub_holi_night_rate",
-  "reg_pub_holi_night_rate",
-];
-
-const SLOT_ROWS = [
-  {
-    label: "Mon-Fri (Day 06:00 - 18:00)",
-    metro: "metro_mon_to_fri_day_rate",
-    reg: "reg_mon_to_fri_day_rate",
-  },
-  {
-    label: "Mon-Fri (Night 18:00 - 06:00)",
-    metro: "metro_mon_to_fri_night_rate",
-    reg: "reg_mon_to_fri_night_rate",
-  },
-  {
-    label: "Saturday (Day)",
-    metro: "metro_sat_day_rate",
-    reg: "reg_sat_day_rate",
-  },
-  {
-    label: "Saturday (Night)",
-    metro: "metro_sat_night_rate",
-    reg: "reg_sat_night_rate",
-  },
-  {
-    label: "Sunday (Day)",
-    metro: "metro_sun_day_rate",
-    reg: "reg_sun_day_rate",
-  },
-  {
-    label: "Sunday (Night)",
-    metro: "metro_sun_night_rate",
-    reg: "reg_sun_night_rate",
-  },
-  {
-    label: "Public Holiday (Day)",
-    metro: "metro_pub_holi_day_rate",
-    reg: "reg_pub_holi_day_rate",
-  },
-  {
-    label: "Public Holiday (Night)",
-    metro: "metro_pub_holi_night_rate",
-    reg: "reg_pub_holi_night_rate",
-  },
-];
 
 const RatesList = ({ forcedType } = {}) => {
   const location = useLocation();
@@ -114,11 +50,9 @@ const RatesList = ({ forcedType } = {}) => {
   );
   const { submit, loading: submitting } = useSubmit({ isAuth: true });
 
-  // Add Rate modal state + form
   const [showAddModal, setShowAddModal] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
 
-  // Use top-level constants (defined below) for stability
   const rateCategories = RATE_CATEGORIES;
   const slotRows = SLOT_ROWS;
 
@@ -130,7 +64,6 @@ const RatesList = ({ forcedType } = {}) => {
       state: "",
       ot_base_rate: "",
       id: null,
-      // user_id will be injected from auth state on submit
     };
 
     RATE_CATEGORIES.forEach((c) => {
@@ -164,7 +97,6 @@ const RatesList = ({ forcedType } = {}) => {
 
   const handleEditOpen = useCallback(
     (rate) => {
-      // prefills the form with the provided rate object
       setForm((_) => ({ ...makeInitialForm(), ...rate }));
       setIsEditing(true);
       setShowAddModal(true);

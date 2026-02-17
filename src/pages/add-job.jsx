@@ -1,5 +1,7 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useSelector } from "react-redux";
+import useSubmit from "../hooks/useSubmit";
 import StepProgress from "../components/job/StepProgress";
 import LocationStep from "../components/job/LocationStep";
 import ScheduleStep from "../components/job/ScheduleStep";
@@ -8,10 +10,11 @@ import ReviewStep from "../components/job/ReviewStep";
 
 const STEP_TITLES = ["Location", "Schedule", "Details", "Review & Confirm"];
 
-// using Bootstrap utility classes only; custom stylesheet removed
-
 export default function AddJob() {
   const navigate = useNavigate();
+  const { userdata } = useSelector((state) => state.auth);
+  const { submit: submitJob } = useSubmit({ isAuth: true });
+  const { submit: uploadFile } = useSubmit({ isAuth: true });
   const [step, setStep] = useState(0);
   const [form, setForm] = useState({
     title: "",
@@ -116,15 +119,76 @@ export default function AddJob() {
     else navigate(-1);
   }
 
-  function handleConfirm(e) {
+  async function handleConfirm(e) {
     e.preventDefault();
     if (!form.termsAccepted) {
       alert("Please accept the Terms & Conditions before posting the job.");
       return;
     }
-    // TODO: wire POST to API
-    console.log("Posting job:", form);
-    navigate("/my-job-applications");
+
+    try {
+      // upload attachments (if any)
+      const document_list = [];
+      if (form.attachments && form.attachments.length > 0) {
+        for (const file of form.attachments) {
+          try {
+            const fd = new FormData();
+            fd.append("file", file);
+            fd.append("folder", "job_documents");
+            const res = await uploadFile("api/upload-file", fd, {
+              method: "POST",
+            });
+            if (res && res.success) {
+              const path =
+                (res.data && (res.data.path || res.data.url)) ||
+                res.path ||
+                res.url;
+              if (path) document_list.push(path);
+            }
+          } catch (err) {
+            console.warn("attachment upload failed", err);
+          }
+        }
+      }
+
+      const coordsMatch = String(form.location || "").match(
+        /(-?\d+(?:\.\d+)?),\s*(-?\d+(?:\.\d+)?)/,
+      );
+      const coordinates = coordsMatch
+        ? `${coordsMatch[1]},${coordsMatch[2]}`
+        : "";
+
+      const payload = {
+        user_id: userdata?.data?.id || userdata?.id || null,
+        title: form.title,
+        description: form.description,
+        address: form.location,
+        coordinates,
+        state: "open",
+        numberOfGuards: Number(form.numGuards) || 1,
+        startTime:
+          form.startDate && form.startTime
+            ? `${form.startDate}T${form.startTime}`
+            : "",
+        endTime:
+          form.endDate && form.endTime ? `${form.endDate}T${form.endTime}` : "",
+        is_document: document_list.length > 0,
+        document_list,
+        job_instruction: form.description || "",
+      };
+
+      const result = await submitJob("api/job-post", payload, {
+        method: "POST",
+      });
+      if (result && result.success) {
+        navigate("/my-job-applications");
+      } else {
+        alert(result.message || "Failed to post job");
+      }
+    } catch (err) {
+      console.error(err);
+      alert(err.message || "Failed to post job");
+    }
   }
 
   const mapSrc = useMemo(() => {

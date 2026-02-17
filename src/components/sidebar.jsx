@@ -19,12 +19,14 @@ const Sidebar = memo(function Sidebar() {
   return (
     <aside className="dashboard-sidebar">
       <div className="sidebar-header">
-        <div className="status-toggle">
+        <div
+          className={`status-toggle ${userdata?.data?.is_active || userdata?.is_active ? "status-toggle-active" : "status-toggle-inactive"}`}
+        >
           <div>
-            <span className="status-label">
+            <span style={{ fontSize: "12px", fontWeight: "600" }}>
               {userdata?.data?.is_active || userdata?.is_active
-                ? "Active"
-                : "Inactive"}
+                ? "Profile Complete"
+                : "Profile Incomplete"}
             </span>
           </div>
           <label className="status-switch" aria-label="Toggle open to work">
@@ -36,8 +38,12 @@ const Sidebar = memo(function Sidebar() {
             <span className="status-slider"></span>
           </label>
         </div>
-        <h2>{userdata?.data?.name || "Job Seeker"}</h2>
-        <p>{userdata?.data?.email || "jobseeker@jobsportal.com"}</p>
+        <h2>{userdata?.data?.name || userdata?.name || "Job Seeker"}</h2>
+        <p>
+          {userdata?.data?.email ||
+            userdata?.email ||
+            "jobseeker@jobsportal.com"}
+        </p>
       </div>
 
       <ul className="dashboard-nav">

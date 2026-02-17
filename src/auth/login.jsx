@@ -31,7 +31,7 @@ export default function Login() {
       const { token, user } = res.data;
       dispatch(setToken({ token }));
       dispatch(setUser({ userdata: user }));
-      const redirectTo = location.state?.from?.pathname || "/dashboard";
+      const redirectTo = location.state?.from?.pathname || "/edit-profile";
       navigate(redirectTo, { replace: true });
     } else {
       setError(res.message || "Login failed. Please try again.");

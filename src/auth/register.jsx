@@ -62,7 +62,7 @@ export default function Register() {
       const { token, user } = res.data;
       dispatch(setToken({ token }));
       dispatch(setUser({ userdata: user }));
-      navigate("/dashboard");
+      navigate("/edit-profile");
     }
   };
 
@@ -73,7 +73,7 @@ export default function Register() {
       const { token, user } = res.data;
       dispatch(setToken({ token }));
       dispatch(setUser({ userdata: user }));
-      navigate("/dashboard");
+      navigate("/edit-profile");
     }
   };
 
@@ -84,7 +84,7 @@ export default function Register() {
       const { token, user } = res.data;
       dispatch(setToken({ token }));
       dispatch(setUser({ userdata: user }));
-      navigate("/dashboard");
+      navigate("/edit-profile");
     }
   };
 

@@ -19,6 +19,7 @@ const Sidebar = memo(function Sidebar() {
   );
 
   const type = (userType || "").toString().toLowerCase();
+  const isProfileActive = !!(userdata?.data?.is_active || userdata?.is_active);
 
   const customerNav = [
     { to: "/dashboard", icon: "fa-solid fa-gauge", label: "Dashboard" },
@@ -120,16 +121,46 @@ const Sidebar = memo(function Sidebar() {
       </div>
 
       <ul className="dashboard-nav">
-        {navItems.map((item) => (
-          <li key={item.label}>
-            <NavLink
-              to={item.to}
-              className={({ isActive }) => (isActive ? "active" : "")}
-            >
-              <i className={item.icon}></i> {item.label}
-            </NavLink>
-          </li>
-        ))}
+        {navItems.map((item) => {
+          const disabled = !isProfileActive && item.label !== "Edit Profile";
+          return (
+            <li key={item.label}>
+              {disabled ? (
+                <a
+                  href="#"
+                  onClick={(e) => e.preventDefault()}
+                  className="disabled-nav"
+                  aria-disabled="true"
+                  title="Complete your profile to access this"
+                  style={{ position: "relative" }}
+                >
+                  <i className={item.icon}></i> {item.label}
+                  <span
+                    className="lock-badge"
+                    aria-hidden="true"
+                    title="Locked"
+                    style={{
+                      position: "absolute",
+                      right: "10px",
+                      top: "6px",
+                      fontSize: "0.7em",
+                      opacity: 0.85,
+                    }}
+                  >
+                    <i className="fa-solid fa-lock"></i>
+                  </span>
+                </a>
+              ) : (
+                <NavLink
+                  to={item.to}
+                  className={({ isActive }) => (isActive ? "active" : "")}
+                >
+                  <i className={item.icon}></i> {item.label}
+                </NavLink>
+              )}
+            </li>
+          );
+        })}
 
         <li>
           <a href="#" onClick={handleLogout}>

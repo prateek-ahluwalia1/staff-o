@@ -17,7 +17,7 @@ const ProtectedRoute = ({ children, guestOnly = false, redirectTo }) => {
 
   // Guest-only routes (login, register) — redirect authenticated users away
   if (guestOnly && isAuthenticated) {
-    const destination = redirectTo || "/dashboard";
+    const destination = redirectTo || "/edit-profile";
     return <Navigate to={destination} replace />;
   }
 

@@ -25,6 +25,7 @@ const RatesList = ({ forcedType } = {}) => {
   const [showArchived, setShowArchived] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [isViewing, setIsViewing] = useState(false);
 
   const listEndpoint = useMemo(
     () => (isCharge ? "api/get-all-chargerates" : "api/get-all-payrates"),
@@ -84,6 +85,7 @@ const RatesList = ({ forcedType } = {}) => {
   const openAddModal = useCallback(() => {
     setForm(makeInitialForm());
     setIsEditing(false);
+    setIsViewing(false);
     setShowAddModal(true);
   }, [makeInitialForm]);
 
@@ -96,10 +98,28 @@ const RatesList = ({ forcedType } = {}) => {
     [makeInitialForm],
   );
 
-  const closeAddModal = () => setShowAddModal(false);
+  const handleViewOpen = useCallback(
+    (rate) => {
+      setForm({ ...makeInitialForm(), ...rate });
+      setIsEditing(false);
+      setIsViewing(true);
+      setShowAddModal(true);
+    },
+    [makeInitialForm],
+  );
+
+  const closeAddModal = () => {
+    setShowAddModal(false);
+    setIsViewing(false);
+    setIsEditing(false);
+  };
 
   const handleAddSubmit = async (e) => {
     e.preventDefault();
+    if (isViewing) {
+      closeAddModal();
+      return;
+    }
     const body = { ...form };
     body.user_id = userdata?.data?.id || userdata?.id || null;
 
@@ -234,18 +254,29 @@ const RatesList = ({ forcedType } = {}) => {
                     </td>
                     <td>
                       <div className="d-flex gap-2">
-                        <button
-                          className="btn btn-sm btn-outline-primary"
-                          onClick={() => handleEditOpen(r)}
-                        >
-                          <i className="fa fa-edit" />
-                        </button>
-                        <button
-                          className="btn btn-sm btn-outline-secondary"
-                          onClick={() => handleArchive(r)}
-                        >
-                          <i className="fa fa-archive" />
-                        </button>
+                        {showArchived ? (
+                          <button
+                            className="btn btn-sm btn-outline-primary"
+                            onClick={() => handleViewOpen(r)}
+                          >
+                            <i className="fa fa-eye" />
+                          </button>
+                        ) : (
+                          <>
+                            <button
+                              className="btn btn-sm btn-outline-primary"
+                              onClick={() => handleEditOpen(r)}
+                            >
+                              <i className="fa fa-edit" />
+                            </button>
+                            <button
+                              className="btn btn-sm btn-outline-secondary"
+                              onClick={() => handleArchive(r)}
+                            >
+                              <i className="fa fa-archive" />
+                            </button>
+                          </>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -258,152 +289,195 @@ const RatesList = ({ forcedType } = {}) => {
 
       {/* Modal */}
       {showAddModal && (
-        <div className="modal d-block" tabIndex="-1">
-          <div className="modal-dialog modal-lg modal-dialog-centered">
-            <div className="modal-content shadow-lg border-0 rounded-4">
-              <div className="modal-header">
-                <h5 className="modal-title fw-bold">
-                  {isEditing ? "Edit Rate" : addButton}
-                </h5>
-                <button
-                  type="button"
-                  className="btn-close"
-                  onClick={closeAddModal}
-                />
-              </div>
-
-              <form onSubmit={handleAddSubmit}>
-                <div className="modal-body">
-                  <div className="row g-3 mb-3">
-                    <div className="col-md-6">
-                      <label className="form-label">Title</label>
-                      <input
-                        id="title"
-                        value={form.title}
-                        onChange={handleFormChange}
-                        className="form-control"
-                      />
-                    </div>
-
-                    <div className="col-md-6">
-                      <label className="form-label">Rate</label>
-                      <input
-                        id="rate"
-                        type="number"
-                        value={form.rate}
-                        onChange={handleFormChange}
-                        className="form-control"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="row g-3 mb-3">
-                    <div className="col-md-4">
-                      <label className="form-label">Position</label>
-                      <input
-                        id="position"
-                        value={form.position}
-                        onChange={handleFormChange}
-                        className="form-control"
-                      />
-                    </div>
-
-                    <div className="col-md-4">
-                      <label className="form-label">Level</label>
-                      <input
-                        id="level"
-                        value={form.level}
-                        onChange={handleFormChange}
-                        className="form-control"
-                      />
-                    </div>
-
-                    <div className="col-md-4">
-                      <label className="form-label">OT Base Rate</label>
-                      <input
-                        id="ot_base_rate"
-                        type="number"
-                        value={form.ot_base_rate}
-                        onChange={handleFormChange}
-                        className="form-control"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="row g-3 mb-3">
-                    <div className="col-md-6">
-                      <label className="form-label">State</label>
-                      <input
-                        id="state"
-                        value={form.state}
-                        onChange={handleFormChange}
-                        className="form-control"
-                      />
-                    </div>
-                  </div>
-
-                  {RATE_CATEGORIES.map((cat) => (
-                    <div
-                      key={cat}
-                      className="border rounded-3 p-3 mb-3 bg-light"
-                    >
-                      <h6 className="fw-bold mb-3 text-capitalize">
-                        {cat === "def" ? "Default" : "EBA"} Rates
-                      </h6>
-
-                      {SLOT_ROWS.map((row) => {
-                        const metroId = `${cat}_${row.metro}`;
-                        const regId = `${cat}_${row.reg}`;
-                        return (
-                          <div className="row g-2 mb-2" key={metroId}>
-                            <div className="col-md-4">
-                              <input
-                                id={metroId}
-                                value={form[metroId]}
-                                onChange={handleFormChange}
-                                className="form-control"
-                                placeholder="Metro"
-                              />
-                            </div>
-                            <div className="col-md-4 text-center small text-muted align-self-center">
-                              {row.label}
-                            </div>
-                            <div className="col-md-4">
-                              <input
-                                id={regId}
-                                value={form[regId]}
-                                onChange={handleFormChange}
-                                className="form-control"
-                                placeholder="Regional"
-                              />
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  ))}
-                </div>
-
-                <div className="modal-footer">
+        <>
+          <div
+            className="modal-backdrop show"
+            style={{ backgroundColor: "rgba(0,0,0,0.75)" }}
+          />
+          <div className="modal d-block" tabIndex="-1" style={{ zIndex: 1060 }}>
+            <div className="modal-dialog modal-lg modal-dialog-centered">
+              <div className="modal-content shadow-lg border-0 rounded-4">
+                <div className="modal-header">
+                  <h5 className="modal-title fw-bold">
+                    {isViewing
+                      ? "View Rate"
+                      : isEditing
+                        ? "Edit Rate"
+                        : addButton}
+                  </h5>
                   <button
                     type="button"
-                    className="btn btn-outline-secondary"
+                    className="btn-close"
                     onClick={closeAddModal}
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    className="btn btn-success"
-                    disabled={submitting}
-                  >
-                    {submitting ? "Saving..." : isEditing ? "Update" : "Submit"}
-                  </button>
+                  />
                 </div>
-              </form>
+
+                <form
+                  onSubmit={
+                    isViewing
+                      ? (e) => {
+                          e.preventDefault();
+                          closeAddModal();
+                        }
+                      : handleAddSubmit
+                  }
+                >
+                  <div className="modal-body">
+                    <div className="row g-3 mb-3">
+                      <div className="col-md-6">
+                        <label className="form-label">Title</label>
+                        <input
+                          id="title"
+                          value={form.title}
+                          onChange={handleFormChange}
+                          disabled={isViewing}
+                          className="form-control"
+                        />
+                      </div>
+
+                      <div className="col-md-6">
+                        <label className="form-label">Rate</label>
+                        <input
+                          id="rate"
+                          type="number"
+                          value={form.rate}
+                          onChange={handleFormChange}
+                          disabled={isViewing}
+                          className="form-control"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="row g-3 mb-3">
+                      <div className="col-md-4">
+                        <label className="form-label">Position</label>
+                        <input
+                          id="position"
+                          value={form.position}
+                          onChange={handleFormChange}
+                          disabled={isViewing}
+                          className="form-control"
+                        />
+                      </div>
+
+                      <div className="col-md-4">
+                        <label className="form-label">Level</label>
+                        <input
+                          id="level"
+                          value={form.level}
+                          onChange={handleFormChange}
+                          disabled={isViewing}
+                          className="form-control"
+                        />
+                      </div>
+
+                      <div className="col-md-4">
+                        <label className="form-label">OT Base Rate</label>
+                        <input
+                          id="ot_base_rate"
+                          type="number"
+                          value={form.ot_base_rate}
+                          onChange={handleFormChange}
+                          disabled={isViewing}
+                          className="form-control"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="row g-3 mb-3">
+                      <div className="col-md-6">
+                        <label className="form-label">State</label>
+                        <input
+                          id="state"
+                          value={form.state}
+                          onChange={handleFormChange}
+                          disabled={isViewing}
+                          className="form-control"
+                        />
+                      </div>
+                    </div>
+
+                    {RATE_CATEGORIES.map((cat) => (
+                      <div
+                        key={cat}
+                        className="border rounded-3 p-3 mb-3 bg-light"
+                      >
+                        <h6 className="fw-bold mb-3 text-capitalize">
+                          {cat === "def" ? "Default" : "EBA"} Rates
+                        </h6>
+
+                        {SLOT_ROWS.map((row) => {
+                          const metroId = `${cat}_${row.metro}`;
+                          const regId = `${cat}_${row.reg}`;
+                          return (
+                            <div className="row g-2 mb-2" key={metroId}>
+                              <div className="col-md-4">
+                                <input
+                                  id={metroId}
+                                  value={form[metroId]}
+                                  onChange={handleFormChange}
+                                  disabled={isViewing}
+                                  className="form-control"
+                                  placeholder="Metro"
+                                />
+                              </div>
+                              <div className="col-md-4 text-center small text-muted align-self-center">
+                                {row.label}
+                              </div>
+                              <div className="col-md-4">
+                                <input
+                                  id={regId}
+                                  value={form[regId]}
+                                  onChange={handleFormChange}
+                                  disabled={isViewing}
+                                  className="form-control"
+                                  placeholder="Regional"
+                                />
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="modal-footer">
+                    {isViewing ? (
+                      <button
+                        type="button"
+                        className="btn btn-outline-secondary"
+                        onClick={closeAddModal}
+                      >
+                        Close
+                      </button>
+                    ) : (
+                      <>
+                        <button
+                          type="button"
+                          className="btn btn-outline-secondary"
+                          onClick={closeAddModal}
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          type="submit"
+                          className="btn btn-success"
+                          disabled={submitting}
+                        >
+                          {submitting
+                            ? "Saving..."
+                            : isEditing
+                              ? "Update"
+                              : "Submit"}
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </form>
+              </div>
             </div>
           </div>
-        </div>
+        </>
       )}
     </div>
   );

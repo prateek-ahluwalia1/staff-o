@@ -193,10 +193,10 @@ const RatesList = ({ forcedType } = {}) => {
       </div>
 
       {/* Table Card */}
-      <div className="card border-0 shadow-sm">
+      <div className="card border-0 shadow-lg">
         <div className="card-body p-0">
-          <div className="table-responsive">
-            <table className="table table-hover align-middle mb-0">
+          <div className="table-responsive ">
+            <table className="table  table-hover align-middle mb-0">
               <thead className="table-light">
                 <tr>
                   <th>{firstColumn}</th>
@@ -224,7 +224,7 @@ const RatesList = ({ forcedType } = {}) => {
                       </small>
                     </td>
                     <td className="fw-bold text-primary">
-                      ${Number(r.rate || 0).toFixed(2)}
+                      ${Number(r.ot_base_rate || 0).toFixed(2)}
                     </td>
                     <td>{r.level}</td>
                     <td>

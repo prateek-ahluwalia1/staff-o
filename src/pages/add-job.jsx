@@ -22,6 +22,11 @@ export default function AddJob() {
     location: "",
     role: "",
     description: "",
+    address: "",
+    city: "",
+    state: "",
+    postcode: "",
+    coordinates: "",
     startDate: "",
     startTime: "",
     endDate: "",
@@ -87,12 +92,25 @@ export default function AddJob() {
           });
           if (!res.ok) throw new Error("reverse geocode failed");
           const data = await res.json();
-          const address = data.display_name || `${lat}, ${lon}`;
-          setField("location", address);
+          // populate useful form fields from reverse geocode response
+          const display = data.display_name || `${lat}, ${lon}`;
+          const addr = data.address || {};
+          setField("location", display);
+          setField("address", display);
+          if (addr.city || addr.town || addr.village) {
+            setField("city", addr.city || addr.town || addr.village);
+          }
+          if (addr.state) setField("state", addr.state);
+          if (addr.postcode) setField("postcode", addr.postcode);
+          setField("coordinates", `${lat},${lon}`);
         } catch (err) {
           setField(
             "location",
             `${pos.coords.latitude}, ${pos.coords.longitude}`,
+          );
+          setField(
+            "coordinates",
+            `${pos.coords.latitude},${pos.coords.longitude}`,
           );
           console.warn(err);
           alert("Could not resolve address. Coordinates were used instead.");
@@ -151,12 +169,21 @@ export default function AddJob() {
         }
       }
 
-      const coordsMatch = String(form.location || "").match(
-        /(-?\d+(?:\.\d+)?),\s*(-?\d+(?:\.\d+)?)/,
-      );
-      const coordinates = coordsMatch
-        ? `${coordsMatch[1]},${coordsMatch[2]}`
-        : "";
+      const coordinates = form.coordinates
+        ? String(form.coordinates)
+        : (
+              String(form.location || "").match(
+                /(-?\d+(?:\.\d+)?),\s*(-?\d+(?:\.\d+)?)/,
+              ) || []
+            ).slice(1, 3).length
+          ? (
+              String(form.location || "").match(
+                /(-?\d+(?:\.\d+)?),\s*(-?\d+(?:\.\d+)?)/,
+              ) || []
+            )
+              .slice(1, 3)
+              .join(",")
+          : "";
 
       const payload = {
         user_id: userdata?.data?.id || userdata?.id || null,
@@ -164,7 +191,7 @@ export default function AddJob() {
         description: form.description,
         address: form.location,
         coordinates,
-        state: "open",
+        state: form.state || "open",
         numberOfGuards: Number(form.numGuards) || 1,
         startTime:
           form.startDate && form.startTime
@@ -299,13 +326,17 @@ export default function AddJob() {
             )}
 
             <div className="d-flex justify-content-between align-items-center mt-4">
-              <button
-                type="button"
-                className="btn btn-outline-secondary"
-                onClick={back}
-              >
-                ← Back
-              </button>
+              {step < STEP_TITLES.length - 1 ? (
+                <button
+                  type="button"
+                  className="btn btn-outline-secondary"
+                  onClick={back}
+                >
+                  ← Back
+                </button>
+              ) : (
+                <div />
+              )}
               {step < STEP_TITLES.length - 1 ? (
                 <button
                   type="button"

@@ -68,15 +68,14 @@ const Header = memo(function Header() {
 
               {/* Jobs Dropdown */}
               <li className="nav-item dropdown">
-                <a
+                <button
                   className="nav-link dropdown-toggle"
-                  href="#"
-                  role="button"
+                  type="button"
                   data-bs-toggle="dropdown"
                   aria-expanded="false"
                 >
                   Jobs
-                </a>
+                </button>
                 <ul className="dropdown-menu dropdown-menu-lg">
                   <li>
                     <Link className="dropdown-item" to="/job-grid">
@@ -98,15 +97,14 @@ const Header = memo(function Header() {
 
               {/* Employer Dropdown */}
               <li className="nav-item dropdown">
-                <a
+                <button
                   className="nav-link dropdown-toggle"
-                  href="#"
-                  role="button"
+                  type="button"
                   data-bs-toggle="dropdown"
                   aria-expanded="false"
                 >
                   Employer
-                </a>
+                </button>
                 <ul className="dropdown-menu dropdown-menu-lg">
                   <li>
                     <Link className="dropdown-item" to="/employer-listing">
@@ -138,15 +136,14 @@ const Header = memo(function Header() {
 
               {/* Candidate Dropdown */}
               <li className="nav-item dropdown">
-                <a
+                <button
                   className="nav-link dropdown-toggle"
-                  href="#"
-                  role="button"
+                  type="button"
                   data-bs-toggle="dropdown"
                   aria-expanded="false"
                 >
                   Candidate
-                </a>
+                </button>
                 <ul className="dropdown-menu dropdown-menu-lg">
                   <li>
                     <Link
@@ -182,15 +179,14 @@ const Header = memo(function Header() {
 
               {/* Blog Dropdown */}
               <li className="nav-item dropdown">
-                <a
+                <button
                   className="nav-link dropdown-toggle"
-                  href="#"
-                  role="button"
+                  type="button"
                   data-bs-toggle="dropdown"
                   aria-expanded="false"
                 >
                   Blog
-                </a>
+                </button>
                 <ul className="dropdown-menu dropdown-menu-lg">
                   <li>
                     <Link className="dropdown-item" to="/blog-grid">
@@ -223,15 +219,14 @@ const Header = memo(function Header() {
 
               {/* Pages Dropdown */}
               <li className="nav-item dropdown">
-                <a
+                <button
                   className="nav-link dropdown-toggle"
-                  href="#"
-                  role="button"
+                  type="button"
                   data-bs-toggle="dropdown"
                   aria-expanded="false"
                 >
                   Pages
-                </a>
+                </button>
                 <ul className="dropdown-menu dropdown-menu-lg">
                   <li>
                     <Link className="dropdown-item" to="/about-us">
@@ -318,32 +313,21 @@ const Header = memo(function Header() {
                     </Link>
                   </li>
                   <li>
-                    <Link className="dropdown-item" to="/my-followings">
-                      My Followings
-                    </Link>
-                  </li>
-                  <li>
-                    <Link className="dropdown-item" to="/user-packages">
-                      Packages
-                    </Link>
-                  </li>
-                  <li>
                     <Link className="dropdown-item" to="/payment-history">
                       Payment History
                     </Link>
                   </li>
                   <li>
-                    <a
+                    <button
+                      type="button"
                       className="dropdown-item"
-                      href="#"
-                      onClick={(e) => {
-                        e.preventDefault();
+                      onClick={() => {
                         dispatch(logOut());
                         navigate("/login");
                       }}
                     >
                       Logout
-                    </a>
+                    </button>
                   </li>
                 </ul>
               </div>

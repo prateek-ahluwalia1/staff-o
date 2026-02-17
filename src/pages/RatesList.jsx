@@ -23,6 +23,8 @@ const RatesList = ({ forcedType } = {}) => {
   const firstColumn = isCharge ? "Charged Rate" : "Pay Rate";
 
   const [showArchived, setShowArchived] = useState(false);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
 
   const listEndpoint = useMemo(
     () => (isCharge ? "api/get-all-chargerates" : "api/get-all-payrates"),
@@ -43,18 +45,17 @@ const RatesList = ({ forcedType } = {}) => {
     () => (isCharge ? "api/charge_rate/update" : "api/payrate/update"),
     [isCharge],
   );
+  const createEndpoint = useMemo(
+    () => (isCharge ? "api/charge_rate/store" : "api/payrate/store"),
+    [isCharge],
+  );
 
   const { data, loading, error, refetch } = useFetch(
     showArchived ? archiveListEndpoint : listEndpoint,
     { isAuth: true, immediate: true },
   );
   const { submit, loading: submitting } = useSubmit({ isAuth: true });
-
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
-
-  const rateCategories = RATE_CATEGORIES;
-  const slotRows = SLOT_ROWS;
+  const { userdata } = useSelector((state) => state.auth || {});
 
   const makeInitialForm = useCallback(() => {
     const f = {
@@ -63,26 +64,17 @@ const RatesList = ({ forcedType } = {}) => {
       level: "",
       state: "",
       ot_base_rate: "",
+      rate: "",
+      name: "",
       id: null,
     };
-
-    RATE_CATEGORIES.forEach((c) => {
-      TIME_KEYS.forEach((t) => {
-        f[`${c}_${t}`] = "";
-      });
-    });
-
+    RATE_CATEGORIES.forEach((c) =>
+      TIME_KEYS.forEach((t) => (f[`${c}_${t}`] = "")),
+    );
     return f;
   }, []);
 
   const [form, setForm] = useState(makeInitialForm());
-
-  const { userdata } = useSelector((state) => state.auth || {});
-
-  const createEndpoint = useMemo(
-    () => (isCharge ? "api/charge_rate/store" : "api/payrate/store"),
-    [isCharge],
-  );
 
   const handleFormChange = useCallback((e) => {
     const { id, value } = e.target;
@@ -97,256 +89,160 @@ const RatesList = ({ forcedType } = {}) => {
 
   const handleEditOpen = useCallback(
     (rate) => {
-      setForm((_) => ({ ...makeInitialForm(), ...rate }));
+      setForm({ ...makeInitialForm(), ...rate });
       setIsEditing(true);
       setShowAddModal(true);
     },
     [makeInitialForm],
   );
 
-  const closeAddModal = useCallback(() => setShowAddModal(false), []);
+  const closeAddModal = () => setShowAddModal(false);
 
-  const handleAddSubmit = useCallback(
-    async (e) => {
-      e.preventDefault();
-      const body = { ...form };
-      body.user_id = userdata?.data?.id || userdata?.id || null;
-      if (body.customer_id !== undefined) delete body.customer_id;
-      ["ot_base_rate"].forEach((k) => {
-        if (body[k] !== undefined && body[k] !== "") body[k] = Number(body[k]);
-      });
-      RATE_CATEGORIES.forEach((c) => {
-        TIME_KEYS.forEach((t) => {
-          const k = `${c}_${t}`;
-          if (body[k] !== undefined && body[k] !== "")
-            body[k] = Number(body[k]);
-        });
-      });
+  const handleAddSubmit = async (e) => {
+    e.preventDefault();
+    const body = { ...form };
+    body.user_id = userdata?.data?.id || userdata?.id || null;
 
-      let res;
-      if (isEditing) {
-        res = await submit(updateEndpoint, body, { method: "POST" });
-      } else {
-        res = await submit(createEndpoint, body, { method: "POST" });
-      }
+    ["ot_base_rate", "rate"].forEach((k) => {
+      if (body[k] !== "") body[k] = Number(body[k]);
+    });
 
-      if (res && res.success) {
-        setIsEditing(false);
-        closeAddModal();
-        await refetch(listEndpoint);
-      } else {
-        alert(res?.message || (isEditing ? "Update failed" : "Create failed"));
-      }
-    },
-    [
-      form,
-      submit,
-      createEndpoint,
-      closeAddModal,
-      refetch,
-      listEndpoint,
-      isEditing,
-      updateEndpoint,
-      userdata,
-    ],
-  );
+    RATE_CATEGORIES.forEach((c) =>
+      TIME_KEYS.forEach((t) => {
+        const k = `${c}_${t}`;
+        if (body[k] !== "") body[k] = Number(body[k]);
+      }),
+    );
 
-  const rows = useMemo(() => {
-    if (!data) return [];
-    if (Array.isArray(data)) return data;
-    if (Array.isArray(data.data)) return data.data;
-    if (Array.isArray(data.items)) return data.items;
-    return [];
-  }, [data]);
+    const res = await submit(
+      isEditing ? updateEndpoint : createEndpoint,
+      body,
+      { method: "POST" },
+    );
 
-  if (loading) {
-    return <Loader fullPage />;
-  }
+    if (res?.success) {
+      closeAddModal();
+      setIsEditing(false);
+      await refetch(listEndpoint);
+    } else {
+      alert(res?.message || "Operation failed");
+    }
+  };
+
+  const handleArchive = async (rate) => {
+    if (!window.confirm("Archive this rate?")) return;
+    const payload = isCharge
+      ? { chargerate_id: rate.id }
+      : { payrate_id: rate.id };
+    const res = await submit(removeEndpoint, payload, { method: "POST" });
+    if (res?.success) {
+      await refetch(showArchived ? archiveListEndpoint : listEndpoint);
+    } else {
+      alert(res?.message || "Operation failed");
+    }
+  };
+
+  const rows = Array.isArray(data?.data)
+    ? data.data
+    : Array.isArray(data)
+      ? data
+      : [];
+
+  if (loading) return <Loader fullPage />;
 
   return (
-    <div className="dashboard-main" style={{ padding: 24 }}>
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          gap: 12,
-          marginBottom: 12,
-        }}
-      >
-        <div>
-          <h3 style={{ margin: 0 }}>{title}</h3>
-          <small className="text-muted">
-            Manage {isCharge ? "charges" : "payments"} by location and job
-            level.
-          </small>
-        </div>
-        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-          <div className="btn-group" role="tablist" aria-label="Rate tabs">
-            <button
-              type="button"
-              className={`btn btn-${!showArchived ? "primary" : "outline-secondary"}`}
-              onClick={async () => {
-                if (showArchived) {
-                  setShowArchived(false);
-                  await refetch(listEndpoint);
-                }
-              }}
-            >
-              Active
-            </button>
-            <button
-              type="button"
-              className={`btn btn-${showArchived ? "primary" : "outline-secondary"}`}
-              onClick={async () => {
-                if (!showArchived) {
-                  setShowArchived(true);
-                  await refetch(archiveListEndpoint);
-                }
-              }}
-            >
-              Archived
-            </button>
+    <div className="container-fluid py-4">
+      {/* Header */}
+      <div className="card border-0 shadow-sm mb-4">
+        <div className="card-body d-flex justify-content-between align-items-center">
+          <div>
+            <h4 className="fw-bold mb-1">{title}</h4>
+            <p className="text-muted mb-0 small">
+              Manage {isCharge ? "charges" : "payments"} by job level and state
+            </p>
           </div>
 
-          <div style={{ width: 12 }} />
-          <button className="btn btn-success" onClick={openAddModal}>
-            {addButton}
-          </button>
+          <div className="d-flex align-items-center gap-2">
+            <div className="btn-group">
+              <button
+                className={`btn btn-sm ${
+                  !showArchived ? "btn-primary" : "btn-outline-secondary"
+                }`}
+                onClick={() => setShowArchived(false)}
+              >
+                Active
+              </button>
+              <button
+                className={`btn btn-sm ${
+                  showArchived ? "btn-primary" : "btn-outline-secondary"
+                }`}
+                onClick={() => setShowArchived(true)}
+              >
+                Archived
+              </button>
+            </div>
+
+            <button
+              className="btn btn-success btn-sm px-3"
+              onClick={openAddModal}
+            >
+              + {addButton}
+            </button>
+          </div>
         </div>
       </div>
 
-      <div
-        className="card"
-        style={{
-          borderRadius: 12,
-          boxShadow: "0 8px 24px rgba(15,23,42,0.06)",
-        }}
-      >
+      {/* Table Card */}
+      <div className="card border-0 shadow-sm">
         <div className="card-body p-0">
-          <div style={{ overflowX: "auto" }}>
-            <table
-              className="table mb-0 align-middle"
-              style={{ minWidth: 720 }}
-            >
-              <thead>
-                <tr className="table-light">
-                  <th style={{ minWidth: 280 }}>{firstColumn}</th>
-                  <th style={{ width: 140 }}>Rate</th>
-                  <th style={{ width: 120 }}>Job Level</th>
-                  <th style={{ width: 160 }}>State</th>
-                  <th style={{ width: 150 }}>Action</th>
+          <div className="table-responsive">
+            <table className="table table-hover align-middle mb-0">
+              <thead className="table-light">
+                <tr>
+                  <th>{firstColumn}</th>
+                  <th>Rate</th>
+                  <th>Level</th>
+                  <th>State</th>
+                  <th width="120">Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {loading && (
+                {rows.length === 0 && (
                   <tr>
-                    <td colSpan={5} className="text-center py-4 text-muted">
-                      Loading...
-                    </td>
-                  </tr>
-                )}
-
-                {error && (
-                  <tr>
-                    <td colSpan={5} className="text-center py-4 text-danger">
-                      {String(error)}
-                    </td>
-                  </tr>
-                )}
-
-                {(!rows || rows.length === 0) && !loading && !error && (
-                  <tr>
-                    <td colSpan={5} className="text-center py-4 text-muted">
-                      No rates found.
+                    <td colSpan="5" className="text-center py-4 text-muted">
+                      No rates available
                     </td>
                   </tr>
                 )}
 
                 {rows.map((r) => (
-                  <tr
-                    key={r.id}
-                    style={{ borderBottom: "1px solid rgba(0,0,0,0.04)" }}
-                  >
+                  <tr key={r.id}>
                     <td>
-                      <div style={{ display: "flex", flexDirection: "column" }}>
-                        <strong style={{ fontSize: 15 }}>
-                          {r.title || r.name}
-                        </strong>
-                        <small className="text-muted">
-                          {isCharge ? "Customer charge" : "Staff pay"}
-                        </small>
-                      </div>
+                      <div className="fw-semibold">{r.title || r.name}</div>
+                      <small className="text-muted">
+                        {isCharge ? "Customer charge" : "Staff pay"}
+                      </small>
                     </td>
-                    <td>
-                      <div style={{ fontWeight: 600 }}>
-                        $
-                        {Number(
-                          r.rate || r.def_metro_mon_to_fri_day_rate || 0,
-                        ).toFixed(2)}
-                      </div>
-                      <small className="text-muted">per hour</small>
+                    <td className="fw-bold text-primary">
+                      ${Number(r.rate || 0).toFixed(2)}
                     </td>
                     <td>{r.level}</td>
                     <td>
-                      <span
-                        className="badge bg-primary"
-                        style={{ fontSize: 12 }}
-                      >
+                      <span className="badge bg-primary-subtle text-primary">
                         {r.state}
                       </span>
                     </td>
                     <td>
-                      <div style={{ display: "flex", gap: 8 }}>
+                      <div className="d-flex gap-2">
                         <button
                           className="btn btn-sm btn-outline-primary"
-                          title="Edit"
                           onClick={() => handleEditOpen(r)}
-                          disabled={submitting}
                         >
                           <i className="fa fa-edit" />
                         </button>
-
                         <button
                           className="btn btn-sm btn-outline-secondary"
-                          title={showArchived ? "Restore" : "Archive"}
-                          onClick={async () => {
-                            if (
-                              !window.confirm(
-                                showArchived
-                                  ? "Restore this rate?"
-                                  : "Archive this rate?",
-                              )
-                            )
-                              return;
-                            // Use remove endpoint for archive/unarchive
-                            let payload;
-                            if (isCharge) {
-                              payload = {
-                                chargerate_id: r.id,
-                                user_id:
-                                  userdata?.data?.id || userdata?.id || null,
-                              };
-                            } else {
-                              payload = {
-                                id: r.id,
-                                archived: !showArchived,
-                              };
-                            }
-                            const res = await submit(removeEndpoint, payload, {
-                              method: "POST",
-                            });
-                            if (res && res.success) {
-                              await refetch(
-                                showArchived
-                                  ? archiveListEndpoint
-                                  : listEndpoint,
-                              );
-                            } else {
-                              alert(res.message || "Action failed");
-                            }
-                          }}
-                          disabled={submitting}
+                          onClick={() => handleArchive(r)}
                         >
                           <i className="fa fa-archive" />
                         </button>
@@ -359,265 +255,136 @@ const RatesList = ({ forcedType } = {}) => {
           </div>
         </div>
       </div>
-      {/* Add Rate Modal */}
+
+      {/* Modal */}
       {showAddModal && (
-        <div
-          style={{
-            position: "fixed",
-            left: 0,
-            top: 0,
-            right: 0,
-            bottom: 0,
-            background: "rgba(0,0,0,0.4)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            zIndex: 9999,
-          }}
-          onClick={closeAddModal}
-        >
-          <div
-            className="card"
-            onClick={(e) => e.stopPropagation()}
-            style={{
-              width: 520,
-              maxHeight: "90%",
-              overflow: "auto",
-              borderRadius: 8,
-            }}
-          >
-            <div className="card-body" style={{ padding: 12 }}>
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  marginBottom: 8,
-                }}
-              >
-                <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-                  <div
-                    style={{
-                      width: 10,
-                      height: 34,
-                      background:
-                        "linear-gradient(180deg,#3b82f6 0%, #1e40af 100%)",
-                      borderRadius: 6,
-                    }}
-                  />
-                  <div>
-                    <div style={{ fontSize: 14, fontWeight: 700 }}>
-                      {isEditing ? `Edit ${addButton}` : `Add ${addButton}`}
-                    </div>
-                    <small className="text-muted">
-                      Fill rates by location and time slots
-                    </small>
-                  </div>
-                </div>
+        <div className="modal d-block" tabIndex="-1">
+          <div className="modal-dialog modal-lg modal-dialog-centered">
+            <div className="modal-content shadow-lg border-0 rounded-4">
+              <div className="modal-header">
+                <h5 className="modal-title fw-bold">
+                  {isEditing ? "Edit Rate" : addButton}
+                </h5>
                 <button
-                  className="btn btn-sm btn-outline-secondary"
+                  type="button"
+                  className="btn-close"
                   onClick={closeAddModal}
-                  title="Close"
-                >
-                  ✕
-                </button>
+                />
               </div>
 
               <form onSubmit={handleAddSubmit}>
-                <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
-                  <input
-                    id="title"
-                    value={form.title}
-                    onChange={handleFormChange}
-                    placeholder="Title"
-                    className="form-control"
-                  />
-                  <select
-                    className="form-control"
-                    disabled
-                    style={{ maxWidth: 220 }}
-                    title="Current user"
-                  >
-                    <option>
-                      {userdata?.data?.name || userdata?.name || "Your Account"}
-                    </option>
-                  </select>
-                </div>
-
-                <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
-                  <input
-                    id="position"
-                    value={form.position}
-                    onChange={handleFormChange}
-                    placeholder="Position"
-                    className="form-control"
-                  />
-                  <input
-                    id="level"
-                    value={form.level}
-                    onChange={handleFormChange}
-                    placeholder="Level"
-                    className="form-control"
-                  />
-                  <input
-                    id="state"
-                    value={form.state}
-                    onChange={handleFormChange}
-                    placeholder="State"
-                    className="form-control"
-                  />
-                </div>
-
-                <div style={{ marginBottom: 12 }}>
-                  <label style={{ fontSize: 12, color: "#6b7280" }}>
-                    OT Base Rate
-                  </label>
-                  <input
-                    id="ot_base_rate"
-                    type="number"
-                    min={0}
-                    step="any"
-                    value={form.ot_base_rate}
-                    onChange={handleFormChange}
-                    className="form-control"
-                  />
-                </div>
-
-                {rateCategories.map((cat) => (
-                  <div
-                    key={cat}
-                    style={{
-                      marginBottom: 18,
-                      borderRadius: 8,
-                      padding: 10,
-                      background: "#ffffff",
-                      boxShadow: "0 6px 18px rgba(26,26,26,0.04)",
-                    }}
-                  >
-                    <div
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                        marginBottom: 8,
-                      }}
-                    >
-                      <strong style={{ textTransform: "capitalize" }}>
-                        {cat === "def"
-                          ? "Default"
-                          : cat === "eba"
-                            ? "EBA"
-                            : cat}
-                      </strong>
-                      <div style={{ fontSize: 12, color: "#6b7280" }}>
-                        Rates
-                      </div>
+                <div className="modal-body">
+                  <div className="row g-3 mb-3">
+                    <div className="col-md-6">
+                      <label className="form-label">Title</label>
+                      <input
+                        id="title"
+                        value={form.title}
+                        onChange={handleFormChange}
+                        className="form-control"
+                      />
                     </div>
 
-                    <div
-                      style={{
-                        display: "grid",
-                        gridTemplateColumns: "1fr 2fr 1fr",
-                        gap: 8,
-                        alignItems: "center",
-                      }}
-                    >
-                      <div
-                        style={{
-                          fontSize: 12,
-                          fontWeight: 600,
-                          color: "#374151",
-                        }}
-                      >
-                        Metro
-                      </div>
-                      <div
-                        style={{
-                          fontSize: 12,
-                          fontWeight: 600,
-                          color: "#374151",
-                          textAlign: "center",
-                        }}
-                      >
-                        Time Slots
-                      </div>
-                      <div
-                        style={{
-                          fontSize: 12,
-                          fontWeight: 600,
-                          color: "#374151",
-                          textAlign: "right",
-                        }}
-                      >
-                        Regional
-                      </div>
+                    <div className="col-md-6">
+                      <label className="form-label">Rate</label>
+                      <input
+                        id="rate"
+                        type="number"
+                        value={form.rate}
+                        onChange={handleFormChange}
+                        className="form-control"
+                      />
+                    </div>
+                  </div>
 
-                      {slotRows.map((row) => {
+                  <div className="row g-3 mb-3">
+                    <div className="col-md-4">
+                      <label className="form-label">Position</label>
+                      <input
+                        id="position"
+                        value={form.position}
+                        onChange={handleFormChange}
+                        className="form-control"
+                      />
+                    </div>
+
+                    <div className="col-md-4">
+                      <label className="form-label">Level</label>
+                      <input
+                        id="level"
+                        value={form.level}
+                        onChange={handleFormChange}
+                        className="form-control"
+                      />
+                    </div>
+
+                    <div className="col-md-4">
+                      <label className="form-label">OT Base Rate</label>
+                      <input
+                        id="ot_base_rate"
+                        type="number"
+                        value={form.ot_base_rate}
+                        onChange={handleFormChange}
+                        className="form-control"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="row g-3 mb-3">
+                    <div className="col-md-6">
+                      <label className="form-label">State</label>
+                      <input
+                        id="state"
+                        value={form.state}
+                        onChange={handleFormChange}
+                        className="form-control"
+                      />
+                    </div>
+                  </div>
+
+                  {RATE_CATEGORIES.map((cat) => (
+                    <div
+                      key={cat}
+                      className="border rounded-3 p-3 mb-3 bg-light"
+                    >
+                      <h6 className="fw-bold mb-3 text-capitalize">
+                        {cat === "def" ? "Default" : "EBA"} Rates
+                      </h6>
+
+                      {SLOT_ROWS.map((row) => {
                         const metroId = `${cat}_${row.metro}`;
                         const regId = `${cat}_${row.reg}`;
                         return (
-                          <>
-                            <div key={`${metroId}-metro`}>
+                          <div className="row g-2 mb-2" key={metroId}>
+                            <div className="col-md-4">
                               <input
                                 id={metroId}
-                                type="number"
-                                min={0}
-                                step="any"
                                 value={form[metroId]}
                                 onChange={handleFormChange}
                                 className="form-control"
-                                style={{
-                                  background: "#e6f4ff",
-                                  border: "none",
-                                  borderRadius: 6,
-                                  textAlign: "center",
-                                }}
+                                placeholder="Metro"
                               />
                             </div>
-                            <div
-                              key={`${metroId}-label`}
-                              style={{
-                                textAlign: "center",
-                                color: "#6b7280",
-                                fontSize: 12,
-                              }}
-                            >
+                            <div className="col-md-4 text-center small text-muted align-self-center">
                               {row.label}
                             </div>
-                            <div
-                              key={`${regId}-reg`}
-                              style={{ textAlign: "right" }}
-                            >
+                            <div className="col-md-4">
                               <input
                                 id={regId}
-                                type="number"
-                                min={0}
-                                step="any"
                                 value={form[regId]}
                                 onChange={handleFormChange}
                                 className="form-control"
-                                style={{
-                                  background: "#e6f4ff",
-                                  border: "none",
-                                  borderRadius: 6,
-                                  textAlign: "center",
-                                }}
+                                placeholder="Regional"
                               />
                             </div>
-                          </>
+                          </div>
                         );
                       })}
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
 
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "flex-end",
-                    gap: 8,
-                  }}
-                >
+                <div className="modal-footer">
                   <button
                     type="button"
                     className="btn btn-outline-secondary"

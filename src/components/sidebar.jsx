@@ -7,6 +7,7 @@ const Sidebar = memo(function Sidebar() {
   const { userdata } = useSelector((state) => state.auth);
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const userType = userdata?.data?.user_type || userdata?.user_type;
 
   const handleLogout = useCallback(
     (e) => {
@@ -16,6 +17,78 @@ const Sidebar = memo(function Sidebar() {
     },
     [dispatch, navigate],
   );
+
+  const type = (userType || "").toString().toLowerCase();
+
+  const customerNav = [
+    { to: "/dashboard", icon: "fa-solid fa-gauge", label: "Dashboard" },
+    {
+      to: "/edit-profile",
+      icon: "fa-solid fa-user-pen",
+      label: "Edit Profile",
+    },
+    {
+      to: "/pay-charge-rate",
+      icon: "fa-solid fa-money-bill-wave",
+      label: "Accounts",
+    },
+    {
+      to: "/my-job-applications",
+      icon: "fa-solid fa-briefcase",
+      label: "My Jobs",
+    },
+    {
+      to: "/payment-history",
+      icon: "fa-solid fa-credit-card",
+      label: "Payment History",
+    },
+  ];
+
+  const contractorNav = [
+    { to: "/dashboard", icon: "fa-solid fa-gauge", label: "Dashboard" },
+    {
+      to: "/edit-profile",
+      icon: "fa-solid fa-user-pen",
+      label: "Edit Profile",
+    },
+    {
+      to: "/pay-charge-rate",
+      icon: "fa-solid fa-money-bill-wave",
+      label: "Accounts",
+    },
+    {
+      to: "/my-job-applications",
+      icon: "fa-solid fa-briefcase",
+      label: "My Job Applications",
+    },
+    {
+      to: "/payment-history",
+      icon: "fa-solid fa-credit-card",
+      label: "Payment History",
+    },
+  ];
+
+  const staffNav = [
+    { to: "/dashboard", icon: "fa-solid fa-gauge", label: "Dashboard" },
+    {
+      to: "/edit-profile",
+      icon: "fa-solid fa-user-pen",
+      label: "Edit Profile",
+    },
+    {
+      to: "/my-job-applications",
+      icon: "fa-solid fa-briefcase",
+      label: "My Job Applications",
+    },
+  ];
+
+  const navItems =
+    type === "customer"
+      ? customerNav
+      : type === "staff"
+        ? staffNav
+        : contractorNav;
+
   return (
     <aside className="dashboard-sidebar">
       <div className="sidebar-header">
@@ -47,78 +120,17 @@ const Sidebar = memo(function Sidebar() {
       </div>
 
       <ul className="dashboard-nav">
-        <li>
-          <NavLink
-            to="/dashboard"
-            className={({ isActive }) => (isActive ? "active" : "")}
-          >
-            <i className="fa-solid fa-gauge"></i> Dashboard
-          </NavLink>
-        </li>
-        <li>
-          <NavLink
-            to="/edit-profile"
-            className={({ isActive }) => (isActive ? "active" : "")}
-          >
-            <i className="fa-solid fa-user-pen"></i> Edit Profile
-          </NavLink>
-        </li>
-        <li>
-          <NavLink
-            to="/pay-charge-rate"
-            className={({ isActive }) => (isActive ? "active" : "")}
-          >
-            <i className="fa-solid fa-money-bill-wave"></i> Accounts
-          </NavLink>
-        </li>
-        <li>
-          <NavLink
-            to="/my-job-applications"
-            className={({ isActive }) => (isActive ? "active" : "")}
-          >
-            <i className="fa-solid fa-briefcase"></i> My Job Applications
-          </NavLink>
-        </li>
-        {/* <li>
-          <NavLink
-            to="/my-favourite-jobs"
-            className={({ isActive }) => (isActive ? "active" : "")}
-          >
-            <i className="fa-solid fa-heart"></i> My Favourite Jobs
-          </NavLink>
-        </li> */}
-        {/* <li>
-          <NavLink
-            to="/job-alerts"
-            className={({ isActive }) => (isActive ? "active" : "")}
-          >
-            <i className="fa-solid fa-bell"></i> Job Alerts
-          </NavLink>
-        </li> */}
-        {/* <li>
-          <NavLink
-            to="/my-followings"
-            className={({ isActive }) => (isActive ? "active" : "")}
-          >
-            <i className="fa-solid fa-people-group"></i> My Followings
-          </NavLink>
-        </li>
-        <li>
-          <NavLink
-            to="/user-packages"
-            className={({ isActive }) => (isActive ? "active" : "")}
-          >
-            <i className="fa-solid fa-boxes-stacked"></i> Packages
-          </NavLink>
-        </li> */}
-        <li>
-          <NavLink
-            to="/payment-history"
-            className={({ isActive }) => (isActive ? "active" : "")}
-          >
-            <i className="fa-solid fa-credit-card"></i> Payment History
-          </NavLink>
-        </li>
+        {navItems.map((item) => (
+          <li key={item.label}>
+            <NavLink
+              to={item.to}
+              className={({ isActive }) => (isActive ? "active" : "")}
+            >
+              <i className={item.icon}></i> {item.label}
+            </NavLink>
+          </li>
+        ))}
+
         <li>
           <a href="#" onClick={handleLogout}>
             <i className="fa-solid fa-right-from-bracket"></i> Logout

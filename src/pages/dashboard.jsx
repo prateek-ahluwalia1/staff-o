@@ -1,3 +1,5 @@
+import { useSelector } from "react-redux";
+
 const APPLIED_JOBS = [
   {
     type: "Full Time",
@@ -62,28 +64,8 @@ const RECOMMENDED_JOBS = [
   },
 ];
 
-const FOLLOWINGS = [
-  {
-    name: "Web Design Studio",
-    industry: "Information Technology",
-    location: "Your Location Address USA",
-    openJobs: "8 Open Jobs",
-  },
-  {
-    name: "Multimedia Design",
-    industry: "Manufacturing",
-    location: "Your Location Address USA",
-    openJobs: "5 Open Jobs",
-  },
-  {
-    name: "Connect People",
-    industry: "Technology Services",
-    location: "Your Location Address USA",
-    openJobs: "5 Open Jobs",
-  },
-];
-
 export default function Dashboard() {
+  const { userdata } = useSelector((state) => state.auth);
   return (
     <div className="dashboard-main">
       {/* Stats */}
@@ -127,14 +109,18 @@ export default function Dashboard() {
             <img src="/assets/images/candidates/01.jpg" alt="Job Seeker" />
           </div>
           <div>
-            <h3>Job Seeker</h3>
+            <h3>{userdata?.data?.name || userdata?.name || "Job Seeker"}</h3>
             <p>Bainbridge Island, Washington, United States of America</p>
             <ul>
               <li>
-                <i className="fa-solid fa-phone"></i> +1 234 567 890
+                <i className="fa-solid fa-phone"></i>{" "}
+                {userdata?.data?.phone || userdata?.phone || "No Phone"}
               </li>
               <li>
-                <i className="fa-solid fa-envelope"></i> seeker@jobsportal.com
+                <i className="fa-solid fa-envelope"></i>{" "}
+                {userdata?.data?.email ||
+                  userdata?.email ||
+                  "seeker@jobsportal.com"}
               </li>
             </ul>
           </div>
@@ -216,29 +202,6 @@ export default function Dashboard() {
                   <span>Salary: {job.salary}</span>
                   <span>{job.date}</span>
                 </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <section className="dashboard-panel">
-        <div className="panel-heading">
-          <h3>My Followings</h3>
-          <a href="#">View All</a>
-        </div>
-
-        <div className="row g-3">
-          {FOLLOWINGS.map((company, index) => (
-            <div className="col-md-4" key={index}>
-              <div className="following-card">
-                <h4>{company.name}</h4>
-                <p>
-                  {company.industry}
-                  <br />
-                  {company.location}
-                </p>
-                <span>{company.openJobs}</span>
               </div>
             </div>
           ))}

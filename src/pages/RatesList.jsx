@@ -3,6 +3,7 @@ import { useLocation } from "react-router-dom";
 import useFetch from "../hooks/useFetch";
 import useSubmit from "../hooks/useSubmit";
 import { useSelector } from "react-redux";
+import Loader from "../components/Loader";
 
 const RatesList = ({ forcedType } = {}) => {
   const location = useLocation();
@@ -168,11 +169,8 @@ const RatesList = ({ forcedType } = {}) => {
   const handleAddSubmit = useCallback(
     async (e) => {
       e.preventDefault();
-      // coerce numeric fields where applicable
       const body = { ...form };
-      // attach current user id for both charge and pay rates
       body.user_id = userdata?.data?.id || userdata?.id || null;
-      // ensure customer_id is not sent
       if (body.customer_id !== undefined) delete body.customer_id;
       ["ot_base_rate"].forEach((k) => {
         if (body[k] !== undefined && body[k] !== "") body[k] = Number(body[k]);
@@ -210,6 +208,10 @@ const RatesList = ({ forcedType } = {}) => {
     if (Array.isArray(data.items)) return data.items;
     return [];
   }, [data]);
+
+  if (loading) {
+    return <Loader fullPage />;
+  }
 
   return (
     <div className="dashboard-main" style={{ padding: 24 }}>
@@ -367,8 +369,21 @@ const RatesList = ({ forcedType } = {}) => {
                               )
                             )
                               return;
-                            const body = { id: r.id, archived: !showArchived };
-                            const res = await submit(updateEndpoint, body, {
+                            // Use remove endpoint for archive/unarchive
+                            let payload;
+                            if (isCharge) {
+                              payload = {
+                                chargerate_id: r.id,
+                                user_id:
+                                  userdata?.data?.id || userdata?.id || null,
+                              };
+                            } else {
+                              payload = {
+                                id: r.id,
+                                archived: !showArchived,
+                              };
+                            }
+                            const res = await submit(removeEndpoint, payload, {
                               method: "POST",
                             });
                             if (res && res.success) {
@@ -384,34 +399,6 @@ const RatesList = ({ forcedType } = {}) => {
                           disabled={submitting}
                         >
                           <i className="fa fa-archive" />
-                        </button>
-
-                        <button
-                          className="btn btn-sm btn-outline-danger"
-                          title="Delete"
-                          onClick={async () => {
-                            if (
-                              !window.confirm("Delete this rate permanently?")
-                            )
-                              return;
-                            const res = await submit(
-                              removeEndpoint,
-                              { id: r.id },
-                              { method: "POST" },
-                            );
-                            if (res && res.success) {
-                              await refetch(
-                                showArchived
-                                  ? archiveListEndpoint
-                                  : listEndpoint,
-                              );
-                            } else {
-                              alert(res.message || "Delete failed");
-                            }
-                          }}
-                          disabled={submitting}
-                        >
-                          <i className="fa fa-trash" />
                         </button>
                       </div>
                     </td>
@@ -538,15 +525,13 @@ const RatesList = ({ forcedType } = {}) => {
                   <input
                     id="ot_base_rate"
                     type="number"
-                    min={1}
+                    min={0}
                     step="any"
                     value={form.ot_base_rate}
                     onChange={handleFormChange}
                     className="form-control"
                   />
                 </div>
-
-                {/* customer_id removed — not used for pay rate payloads */}
 
                 {rateCategories.map((cat) => (
                   <div
@@ -568,7 +553,11 @@ const RatesList = ({ forcedType } = {}) => {
                       }}
                     >
                       <strong style={{ textTransform: "capitalize" }}>
-                        {cat}
+                        {cat === "def"
+                          ? "Default"
+                          : cat === "eba"
+                            ? "EBA"
+                            : cat}
                       </strong>
                       <div style={{ fontSize: 12, color: "#6b7280" }}>
                         Rates
@@ -622,7 +611,7 @@ const RatesList = ({ forcedType } = {}) => {
                               <input
                                 id={metroId}
                                 type="number"
-                                min={1}
+                                min={0}
                                 step="any"
                                 value={form[metroId]}
                                 onChange={handleFormChange}
@@ -652,7 +641,7 @@ const RatesList = ({ forcedType } = {}) => {
                               <input
                                 id={regId}
                                 type="number"
-                                min={1}
+                                min={0}
                                 step="any"
                                 value={form[regId]}
                                 onChange={handleFormChange}

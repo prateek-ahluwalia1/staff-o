@@ -1,0 +1,95 @@
+import React from "react";
+import RateBreakdown from "./RateBreakdown";
+
+export default function ReviewStep({
+  form,
+  rate,
+  setField,
+  handleConfirm,
+  setStep,
+}) {
+  return (
+    <div className="mb-4">
+      <h5 className="mb-2">Review & Confirm</h5>
+      <p className="text-muted small">Review your job and confirm to post.</p>
+
+      <div className="row">
+        <div className="col-md-6 mb-2">
+          <div className="border rounded p-2 bg-light">
+            <strong>Job Title</strong>
+            <div className="text-muted small">{form.title || "-"}</div>
+          </div>
+        </div>
+        <div className="col-md-6 mb-2">
+          <div className="border rounded p-2 bg-light">
+            <strong>Job Type</strong>
+            <div className="text-muted small">{form.jobType || "-"}</div>
+          </div>
+        </div>
+      </div>
+
+      <div className="row mt-3">
+        <div className="col-md-6 mb-2">
+          <div className="border rounded p-2 bg-light">
+            <strong>Start</strong>
+            <div className="text-muted small">
+              {form.startDate} {form.startTime}
+            </div>
+          </div>
+        </div>
+        <div className="col-md-6 mb-2">
+          <div className="border rounded p-2 bg-light">
+            <strong>End</strong>
+            <div className="text-muted small">
+              {form.endDate} {form.endTime}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-3">
+        <div className="border rounded p-3">
+          <strong>Location</strong>
+          <div className="text-muted small">{form.location || "-"}</div>
+        </div>
+      </div>
+
+      {rate && <RateBreakdown rate={rate} numGuards={form.numGuards} />}
+
+      <div
+        className="list-card mt-3 p-3 bg-white"
+        style={{ background: "#fff" }}
+      >
+        <h6>Terms & Conditions</h6>
+        <p className="text-muted small">
+          By posting this job you agree to our terms.
+        </p>
+        <div className="form-check">
+          <input
+            id="terms"
+            className="form-check-input"
+            type="checkbox"
+            checked={form.termsAccepted}
+            onChange={(e) => setField("termsAccepted", e.target.checked)}
+          />
+          <label htmlFor="terms" className="form-check-label">
+            I agree to the Terms & Conditions
+          </label>
+        </div>
+      </div>
+
+      <div className="mt-3 d-flex justify-content-end gap-2">
+        <button className="btn btn-success btn-lg" onClick={handleConfirm}>
+          Confirm & Post Job
+        </button>
+        <button
+          type="button"
+          className="btn btn-outline-secondary btn-lg"
+          onClick={() => setStep(0)}
+        >
+          Edit Job
+        </button>
+      </div>
+    </div>
+  );
+}

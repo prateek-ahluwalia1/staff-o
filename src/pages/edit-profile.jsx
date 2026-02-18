@@ -1,506 +1,717 @@
-import React, { useState } from 'react';
+import { useState, useEffect, useCallback, useMemo } from "react";
+import useFetch from "../hooks/useFetch";
+import useSubmit from "../hooks/useSubmit";
+import { useSelector, useDispatch } from "react-redux";
+import { setUser } from "../store/slices/authSlice";
+import Loader from "../components/Loader";
+import Modal from "../components/Modal";
+import DocumentTable from "../components/DocumentTable";
+import ProfileForm from "../components/ProfileForm";
+import AvatarUpload from "../components/AvatarUpload";
+import SettingsHeaderContent from "../components/SettingsHeaderContent";
+import fallbackImage from "../assets/images/notfound.jpeg";
+import { apiURL } from "../utils/exports";
+
+const INITIAL_FORM_STATE = {
+  name: "",
+  email: "",
+  phone: "",
+  address: "",
+  gender: "",
+  city: "",
+  staff_document_type: "",
+  // contractor-specific
+  company_name: "",
+  registration_number: "",
+};
 
 export default function EditProfile() {
-  const [profilePhoto, setProfilePhoto] = useState(null);
-  const [formData, setFormData] = useState({
-    fullName: '',
-    title: '',
-    email: '',
-    phone: '',
-    location: '',
-    preferredLocations: '',
-    website: '',
-    portfolio: '',
-    summary: '',
-    experienceLevel: '10+ years',
-    currentCompany: '',
-    noticePeriod: '2 weeks',
-    employmentType: 'Full-time',
-    salaryRange: '',
-    workPreference: 'Remote friendly',
-    dreamRoles: '',
-  });
+  const dispatch = useDispatch();
+  const { userdata } = useSelector((state) => state.auth);
 
-  const handleChange = (e) => {
-    const { id, value } = e.target;
-    setFormData((prev) => ({ ...prev, [id]: value }));
+  const userType = userdata?.data?.user_type || userdata?.user_type;
+
+  const endpoint = useMemo(
+    () =>
+      userdata?.data?.id || userdata?.id
+        ? `api/user-edit/${userdata?.data?.id || userdata?.id}`
+        : null,
+    [userdata?.data?.id, userdata?.id],
+  );
+
+  const {
+    data: profileData,
+    loading: fetchLoading,
+    error: fetchError,
+    refetch,
+  } = useFetch(endpoint, { isAuth: true });
+
+  // derive missing fields for profile completion tooltip
+  const getMissingFields = (d) => {
+    if (!d) return [];
+    const missing = [];
+    const staff = d.staff || {};
+    const contractor = d.contractor || staff.contractor || {};
+
+    if (!d.name) missing.push("Name");
+    if (!d.email) missing.push("Email");
+
+    const phone = staff.phone || contractor.phone || d.phone;
+    if (!phone) missing.push("Phone");
+
+    const address = staff.address || contractor.address || d.address;
+    if (!address) missing.push("Address");
+
+    if ((d.user_type || userType) !== "contractor") {
+      const gender = staff.gender || contractor.gender || d.gender;
+      if (!gender) missing.push("Gender");
+      const city = staff.city || contractor.city || d.city;
+      if (!city) missing.push("City");
+    } else {
+      const company = contractor.company_name || d.company_name;
+      if (!company) missing.push("Company Name");
+      const reg = contractor.registration_number || d.registration_number;
+      if (!reg) missing.push("Registration Number");
+    }
+
+    const hasImage =
+      staff.profile_image || contractor.profile_image || d.profile_image;
+    if (!hasImage) missing.push("Profile Photo");
+
+    if (!d.documents || d.documents.length === 0) missing.push("Documents");
+
+    return missing;
   };
 
-  const handlePhotoChange = (e) => {
-    if (e.target.files[0]) {
-      setProfilePhoto(URL.createObjectURL(e.target.files[0]));
+  const missingFields = getMissingFields(profileData?.data);
+
+  const { submit, loading: submitLoading } = useSubmit({ isAuth: true });
+  const { submit: uploadFile, loading: uploadLoading } = useSubmit({
+    isAuth: true,
+  });
+
+  const [profilePhoto, setProfilePhoto] = useState(null);
+  const [profilePhotoFile, setProfilePhotoFile] = useState(null);
+  const [formData, setFormData] = useState(INITIAL_FORM_STATE);
+  const [submitError, setSubmitError] = useState(null);
+  const [submitSuccess, setSubmitSuccess] = useState(false);
+  const [activeTab, setActiveTab] = useState("personal");
+  // Modal state for document upload
+  const [showDocModal, setShowDocModal] = useState(false);
+  const [selectedDoc, setSelectedDoc] = useState(null);
+  const [docForm, setDocForm] = useState({
+    notes: "",
+    no: false,
+    exp: false,
+    document_no: "",
+    document_expiry: "",
+    file: null,
+    file_path: "",
+  });
+
+  // Open modal and set selected document (for update)
+  const handleAddFile = (doc) => {
+    setSelectedDoc(doc);
+    setDocForm({
+      notes: doc.notes || "",
+      no: !!doc.document_no,
+      exp: !!doc.document_expiry,
+      document_no: doc.document_no || "",
+      document_expiry: doc.document_expiry || "",
+      file: null,
+      file_path: doc.file || "",
+      file_url: doc.file ? doc.file : "",
+    });
+    setShowDocModal(true);
+  };
+
+  // Open modal for adding a new document
+  const handleAddDocument = () => {
+    setSelectedDoc(null);
+    setDocForm({
+      notes: "",
+      no: false,
+      exp: false,
+      document_no: "",
+      document_expiry: "",
+      file: null,
+      file_path: "",
+      file_url: "",
+    });
+    setShowDocModal(true);
+  };
+
+  // Handle modal form changes
+  const handleDocFormChange = async (e) => {
+    const { name, value, type, checked, files } = e.target;
+    if (type === "checkbox") {
+      setDocForm((prev) => ({ ...prev, [name]: checked }));
+    } else if (type === "file") {
+      const file = files[0];
+      setDocForm((prev) => ({ ...prev, file }));
+      if (file) {
+        // Upload file to server
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("folder", "staff_documents");
+        const result = await uploadFile("api/upload-file", formData, {
+          method: "POST",
+        });
+        if (result.success && result.url) {
+          setDocForm((prev) => ({
+            ...prev,
+            file_path: result.path || (result.data && result.data.path) || "",
+            file_url: result.url || (result.data && result.data.url) || "",
+          }));
+        } else if (result.success && result.data && result.data.url) {
+          setDocForm((prev) => ({
+            ...prev,
+            file_path: result.data.path,
+            file_url: result.data.url,
+          }));
+        } else if (result.success && result.path) {
+          setDocForm((prev) => ({ ...prev, file_path: result.path }));
+        }
+      }
+    } else {
+      setDocForm((prev) => ({ ...prev, [name]: value }));
     }
   };
 
-  const handleSubmit = (e) => {
+  // Handle modal submit for add/update document
+  const handleDocSubmit = async (e) => {
     e.preventDefault();
-    console.log('Form submitted:', formData);
-    // Here you can send data to backend later
-    alert('Profile changes saved! (Demo)');
+    // Compose payload
+    let payload = {
+      user_id: userdata.data.id,
+      no: docForm.no,
+      exp: docForm.exp,
+      document_no: docForm.document_no,
+      document_expiry: docForm.document_expiry,
+      file: docForm.file_path,
+    };
+    // Add document_name and document_type for both add and update
+    if (selectedDoc) {
+      payload = {
+        ...payload,
+        id: selectedDoc.id,
+        admin_id: selectedDoc.admin_id,
+        guard_id: selectedDoc.guard_id,
+        document_type: selectedDoc.document_type,
+        document_name: selectedDoc.document_name,
+      };
+    } else {
+      // For new document, require user to select document type/name
+      if (!docForm.document_name || docForm.document_name === "") {
+        alert("Please select a document type/name.");
+        return;
+      }
+      payload = {
+        ...payload,
+        document_type: docForm.document_name, // or map to a type if needed
+        document_name: docForm.document_name,
+      };
+    }
+
+    // Format date if present
+    if (payload.document_expiry) {
+      // Convert to MM-DD-YYYY if needed
+      const d = new Date(payload.document_expiry);
+      if (!isNaN(d)) {
+        const mm = String(d.getMonth() + 1).padStart(2, "0");
+        const dd = String(d.getDate()).padStart(2, "0");
+        const yyyy = d.getFullYear();
+        payload.document_expiry = `${mm}-${dd}-${yyyy}`;
+      }
+    }
+
+    // Decide API endpoint and method
+    let apiEndpoint = "api/guard-update-documents";
+    let method = "POST";
+    if (!selectedDoc) {
+      apiEndpoint = "api/guard-add-documents";
+    }
+
+    // Submit
+    const result = await submit(apiEndpoint, payload, { method });
+    if (result.success) {
+      setShowDocModal(false);
+      refetch();
+    } else {
+      alert(result.message || "Failed to save document");
+    }
   };
 
+  // Resolve preview URL: if server returned a full URL use it, otherwise
+  // build using `apiURL` and the `staff_documents` folder.
+  const resolveFileUrl = (url) => {
+    if (!url) return "";
+    try {
+      if (url.startsWith("http://") || url.startsWith("https://")) {
+        return url;
+      }
+    } catch (err) {
+      // ignore and fallback
+    }
+    return `${apiURL}staff_documents/${url}`;
+  };
+
+  useEffect(() => {
+    if (!profileData?.data) return;
+
+    const d = profileData.data;
+    const staff = d.staff || {};
+    const contractor = d.contractor || staff.contractor || {};
+
+    setFormData({
+      name: d.name || "",
+      email: d.email || "",
+      phone: staff.phone || contractor.phone || "",
+      address: staff.address || contractor.address || "",
+      gender: staff.gender || contractor.gender || "",
+      city: staff.city || contractor.city || "",
+      staff_document_type: staff.staff_document_type || "",
+      company_name:
+        d.company_name || contractor.company_name || staff.company_name || "",
+      registration_number:
+        d.registration_number ||
+        contractor.registration_number ||
+        staff.registration_number ||
+        "",
+    });
+
+    // prefer staff profile image, then contractor, then top-level
+    if (staff.profile_image) setProfilePhoto(staff.profile_image);
+    else if (contractor.profile_image)
+      setProfilePhoto(contractor.profile_image);
+    else if (d.profile_image) setProfilePhoto(d.profile_image);
+  }, [profileData]);
+
+  const handleChange = useCallback((e) => {
+    const { id, value } = e.target;
+    setFormData((prev) => ({ ...prev, [id]: value }));
+  }, []);
+
+  const handlePhotoChange = useCallback((e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setProfilePhotoFile(file);
+      setProfilePhoto(URL.createObjectURL(file));
+    }
+  }, []);
+
+  const handleSubmit = useCallback(
+    async (e) => {
+      e.preventDefault();
+      setSubmitError(null);
+      setSubmitSuccess(false);
+
+      const payload = new FormData();
+      payload.append("name", formData.name);
+      payload.append("email", formData.email);
+      payload.append("phone", formData.phone);
+      payload.append("address", formData.address);
+      // Gender is not applicable for contractors
+      if (userType !== "contractor" && formData.gender) {
+        payload.append("gender", formData.gender);
+      }
+      // City is not applicable for contractors
+      if (userType !== "contractor" && formData.city) {
+        payload.append("city", formData.city);
+      }
+      if (formData.staff_document_type) {
+        payload.append("staff_document_type", formData.staff_document_type);
+      }
+      // contractor-specific fields
+      if (userType === "contractor") {
+        if (formData.company_name)
+          payload.append("company_name", formData.company_name);
+        if (formData.registration_number)
+          payload.append("registration_number", formData.registration_number);
+      }
+      if (profilePhotoFile) {
+        payload.append("profile_image", profilePhotoFile);
+      }
+
+      const result = await submit(
+        `api/user-update/${userdata.data.id || userdata.id}`,
+        payload,
+        { method: "POST" },
+      );
+
+      if (result.success) {
+        setSubmitSuccess(true);
+        if (result.data) {
+          dispatch(setUser({ userdata: result.data }));
+        }
+        refetch();
+        setTimeout(() => setSubmitSuccess(false), 3000);
+      } else {
+        setSubmitError(result.errors || result.message || "Update failed");
+      }
+    },
+    [formData, profilePhotoFile, submit, userdata, dispatch, refetch, userType],
+  );
+
+  if (fetchLoading) {
+    return <Loader fullPage />;
+  }
+
+  if (fetchError) {
+    return (
+      <div className="dashboard-main">
+        <p className="text-danger">
+          Error loading profile:{" "}
+          {typeof fetchError === "string" ? fetchError : "Something went wrong"}
+        </p>
+      </div>
+    );
+  }
+
   return (
-    <>
+    <div className="dashboard-main">
+      <div className="settings-header">
+        <AvatarUpload
+          profilePhoto={profilePhoto}
+          name={formData.name}
+          onPhotoChange={handlePhotoChange}
+        />
+        <SettingsHeaderContent
+          userType={userdata?.data?.user_type || userdata?.user_type}
+          name={formData.name}
+          email={formData.email}
+          city={formData.city}
+          gender={formData.gender}
+          company_name={formData.company_name}
+          profileCompletion={
+            profileData?.data?.profile_completion_percentage ||
+            profileData?.profile_completion_percentage ||
+            0
+          }
+          missingItems={missingFields}
+        />
+      </div>
 
-            {/* Main Content */}
-            <div className="dashboard-main">
-              <div className="settings-header">
-                <div className="avatar-upload">
-                  <img
-                    src={profilePhoto || "/assets/images/candidates/01.jpg"}
-                    alt="Job Seeker"
-                  />
-                  <label className="upload-label">
-                    <input type="file" onChange={handlePhotoChange} accept="image/*" />
-                    <i className="fa-solid fa-arrow-up-from-bracket" aria-hidden="true"></i>
-                    Update Photo
-                  </label>
-                </div>
+      {/* Tabs */}
+      <div style={{ display: "flex", gap: 16 }}>
+        <button
+          type="button"
+          className={`btn ${activeTab === "personal" ? "btn-primary" : "btn-outline-primary"}`}
+          onClick={() => setActiveTab("personal")}
+        >
+          Personal Information
+        </button>
 
-                <div className="settings-header-content">
-                  <span>Candidate Profile</span>
-                  <h2>Job Seeker</h2>
-                  <p>
-                    Keep your information fresh so hiring teams understand your
-                    intent, availability and the type of roles you’re excited
-                    about.
-                  </p>
-                  <div className="settings-header-meta">
-                    <span>
-                      <i className="fa-solid fa-briefcase" aria-hidden="true"></i>
-                      Product Design Lead
-                    </span>
-                    <span>
-                      <i className="fa-solid fa-location-dot" aria-hidden="true"></i>
-                      Remote · USA
-                    </span>
-                    <span>
-                      <i className="fa-solid fa-clock" aria-hidden="true"></i>
-                      Updated 2 days ago
-                    </span>
-                  </div>
-                </div>
-              </div>
+        <button
+          type="button"
+          className={`btn ${activeTab === "documents" ? "btn-primary" : "btn-outline-primary"}`}
+          onClick={() => setActiveTab("documents")}
+        >
+          Documents
+        </button>
+      </div>
 
-              <form className="settings-form" onSubmit={handleSubmit}>
-                {/* Personal Information */}
-                <div className="settings-card">
-                  <div className="settings-card-header">
-                    <div>
-                      <p className="text-uppercase text-muted small fw-semibold mb-1">
-                        Profile
-                      </p>
-                      <h3>Personal Information</h3>
-                      <p>
-                        These details power your public profile and application
-                        cards.
-                      </p>
-                    </div>
-                    <button
-                      type="button"
-                      className="btn btn-outline-primary btn-sm rounded-3"
-                    >
-                      <i className="fa-solid fa-file-arrow-up" aria-hidden="true"></i>
-                      Upload résumé
-                    </button>
-                  </div>
-
-                  <div className="settings-grid">
-                    <div>
-                      <label htmlFor="fullName" className="form-label">Full name</label>
-                      <input
-                        type="text"
-                        className="form-control"
-                        id="fullName"
-                        placeholder="Jordan Blake"
-                        value={formData.fullName}
-                        onChange={handleChange}
-                      />
-                    </div>
-
-                    <div>
-                      <label htmlFor="title" className="form-label">Professional title</label>
-                      <input
-                        type="text"
-                        className="form-control"
-                        id="title"
-                        placeholder="Lead Product Designer"
-                        value={formData.title}
-                        onChange={handleChange}
-                      />
-                    </div>
-
-                    <div>
-                      <label htmlFor="email" className="form-label">Email address</label>
-                      <input
-                        type="email"
-                        className="form-control"
-                        id="email"
-                        placeholder="you@company.com"
-                        value={formData.email}
-                        onChange={handleChange}
-                      />
-                    </div>
-
-                    <div>
-                      <label htmlFor="phone" className="form-label">Phone</label>
-                      <input
-                        type="tel"
-                        className="form-control"
-                        id="phone"
-                        placeholder="+1 234 567 890"
-                        value={formData.phone}
-                        onChange={handleChange}
-                      />
-                    </div>
-
-                    <div>
-                      <label htmlFor="location" className="form-label">Primary location</label>
-                      <input
-                        type="text"
-                        className="form-control"
-                        id="location"
-                        placeholder="Seattle, USA"
-                        value={formData.location}
-                        onChange={handleChange}
-                      />
-                    </div>
-
-                    <div>
-                      <label htmlFor="preferredLocations" className="form-label">Preferred locations</label>
-                      <input
-                        type="text"
-                        className="form-control"
-                        id="preferredLocations"
-                        placeholder="Remote · San Francisco · Berlin"
-                        value={formData.preferredLocations}
-                        onChange={handleChange}
-                      />
-                    </div>
-
-                    <div>
-                      <label htmlFor="website" className="form-label">Website</label>
-                      <input
-                        type="url"
-                        className="form-control"
-                        id="website"
-                        placeholder="https://www.personal-site.com/"
-                        value={formData.website}
-                        onChange={handleChange}
-                      />
-                    </div>
-
-                    <div>
-                      <label htmlFor="portfolio" className="form-label">Portfolio / Case study</label>
-                      <input
-                        type="url"
-                        className="form-control"
-                        id="portfolio"
-                        placeholder="https://dribbble.com/jordan"
-                        value={formData.portfolio}
-                        onChange={handleChange}
-                      />
-                    </div>
-
-                    <div className="grid-span-2">
-                      <label htmlFor="summary" className="form-label">About you</label>
-                      <textarea
-                        className="form-control"
-                        id="summary"
-                        placeholder="Summarize your superpowers, recent wins, and what you’re looking for next."
-                        value={formData.summary}
-                        onChange={handleChange}
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Professional Snapshot */}
-                <div className="settings-card">
-                  <div className="settings-card-header">
-                    <div>
-                      <p className="text-uppercase text-muted small fw-semibold mb-1">
-                        Career
-                      </p>
-                      <h3>Professional Snapshot</h3>
-                      <p>Showcase your current standing and ideal role.</p>
-                    </div>
-                  </div>
-
-                  <div className="settings-grid">
-                    <div>
-                      <label htmlFor="experienceLevel" className="form-label">Experience level</label>
-                      <select
-                        className="form-select"
-                        id="experienceLevel"
-                        value={formData.experienceLevel}
-                        onChange={handleChange}
-                      >
-                        <option>10+ years</option>
-                        <option>8-10 years</option>
-                        <option>5-7 years</option>
-                        <option>2-4 years</option>
-                        <option>Entry level</option>
-                      </select>
-                    </div>
-
-                    <div>
-                      <label htmlFor="currentCompany" className="form-label">Current company</label>
-                      <input
-                        type="text"
-                        className="form-control"
-                        id="currentCompany"
-                        placeholder="Skyline Digital"
-                        value={formData.currentCompany}
-                        onChange={handleChange}
-                      />
-                    </div>
-
-                    <div>
-                      <label htmlFor="noticePeriod" className="form-label">Notice period</label>
-                      <select
-                        className="form-select"
-                        id="noticePeriod"
-                        value={formData.noticePeriod}
-                        onChange={handleChange}
-                      >
-                        <option>2 weeks</option>
-                        <option>1 week</option>
-                        <option>30 days</option>
-                        <option>45 days</option>
-                        <option>Immediately available</option>
-                      </select>
-                    </div>
-
-                    <div>
-                      <label htmlFor="employmentType" className="form-label">Desired employment</label>
-                      <select
-                        className="form-select"
-                        id="employmentType"
-                        value={formData.employmentType}
-                        onChange={handleChange}
-                      >
-                        <option>Full-time</option>
-                        <option>Contract</option>
-                        <option>Freelance</option>
-                        <option>Internship</option>
-                        <option>Part-time</option>
-                      </select>
-                    </div>
-
-                    <div>
-                      <label htmlFor="salaryRange" className="form-label">Salary expectation</label>
-                      <input
-                        type="text"
-                        className="form-control"
-                        id="salaryRange"
-                        placeholder="USD 120k – 150k / year"
-                        value={formData.salaryRange}
-                        onChange={handleChange}
-                      />
-                    </div>
-
-                    <div>
-                      <label htmlFor="workPreference" className="form-label">Work preference</label>
-                      <select
-                        className="form-select"
-                        id="workPreference"
-                        value={formData.workPreference}
-                        onChange={handleChange}
-                      >
-                        <option>Remote friendly</option>
-                        <option>On-site only</option>
-                        <option>Hybrid</option>
-                      </select>
-                    </div>
-
-                    <div className="grid-span-2">
-                      <label htmlFor="dreamRoles" className="form-label">Target roles</label>
-                      <textarea
-                        className="form-control"
-                        id="dreamRoles"
-                        placeholder="Principal Product Designer, Product Design Manager, Design Lead"
-                        value={formData.dreamRoles}
-                        onChange={handleChange}
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Skills */}
-                <div className="settings-card">
-                  <div className="settings-card-header">
-                    <div>
-                      <p className="text-uppercase text-muted small fw-semibold mb-1">
-                        Skills
-                      </p>
-                      <h3>Skills & Tools</h3>
-                      <p>Highlight stacks, frameworks, and certifications.</p>
-                    </div>
-                  </div>
-
-                  <div className="skill-tags">
-                    <span className="skill-tag">Product Strategy</span>
-                    <span className="skill-tag">Design Systems</span>
-                    <span className="skill-tag">Figma</span>
-                    <span className="skill-tag">React</span>
-                    <span className="skill-tag">UX Research</span>
-                  </div>
-
-                  <button type="button" className="add-skill-btn">
-                    <i className="fa-solid fa-plus" aria-hidden="true"></i> Add skill
-                  </button>
-                </div>
-
-                {/* Experience & Education */}
-                <div className="settings-card">
-                  <div className="settings-card-header">
-                    <div>
-                      <p className="text-uppercase text-muted small fw-semibold mb-1">
-                        Experience
-                      </p>
-                      <h3>Experience & Education</h3>
-                      <p>Keep your latest role and flagship education updated.</p>
-                    </div>
-                    <button
-                      type="button"
-                      className="btn btn-outline-secondary btn-sm rounded-3"
-                    >
-                      <i className="fa-solid fa-circle-plus" aria-hidden="true"></i>
-                      Add entry
-                    </button>
-                  </div>
-
-                  <div className="settings-grid">
-                    <div>
-                      <label htmlFor="expCompany" className="form-label">Company</label>
-                      <input
-                        type="text"
-                        className="form-control"
-                        id="expCompany"
-                        placeholder="Skyline Digital"
-                      />
-                    </div>
-
-                    <div>
-                      <label htmlFor="expRole" className="form-label">Role</label>
-                      <input
-                        type="text"
-                        className="form-control"
-                        id="expRole"
-                        placeholder="Lead Product Designer"
-                      />
-                    </div>
-
-                    <div>
-                      <label htmlFor="expStart" className="form-label">Start date</label>
-                      <input type="month" className="form-control" id="expStart" />
-                    </div>
-
-                    <div>
-                      <label htmlFor="expEnd" className="form-label">End date</label>
-                      <input type="month" className="form-control" id="expEnd" />
-                    </div>
-
-                    <div className="grid-span-2">
-                      <label htmlFor="expHighlights" className="form-label">Key highlights</label>
-                      <textarea
-                        className="form-control"
-                        id="expHighlights"
-                        placeholder="Scaled design system, mentored 6 designers, partnered with research to ship 4 product lines."
-                      />
-                    </div>
-
-                    <div>
-                      <label htmlFor="eduSchool" className="form-label">Education</label>
-                      <input
-                        type="text"
-                        className="form-control"
-                        id="eduSchool"
-                        placeholder="Stanford · BSc Human Computer Interaction"
-                      />
-                    </div>
-
-                    <div>
-                      <label htmlFor="eduYear" className="form-label">Graduation year</label>
-                      <input
-                        type="text"
-                        className="form-control"
-                        id="eduYear"
-                        placeholder="2014"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Social & Contact Links */}
-                <div className="settings-card">
-                  <div className="settings-card-header">
-                    <div>
-                      <p className="text-uppercase text-muted small fw-semibold mb-1">
-                        Links
-                      </p>
-                      <h3>Social & Contact Links</h3>
-                      <p>
-                        Share channels where hiring teams can follow your work.
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="settings-grid">
-                    <div>
-                      <label htmlFor="linkLinkedIn" className="form-label">LinkedIn</label>
-                      <input
-                        type="url"
-                        className="form-control"
-                        id="linkLinkedIn"
-                        placeholder="https://www.linkedin.com/in/username"
-                      />
-                    </div>
-
-                    <div>
-                      <label htmlFor="linkDribbble" className="form-label">Dribbble</label>
-                      <input
-                        type="url"
-                        className="form-control"
-                        id="linkDribbble"
-                        placeholder="https://dribbble.com/username"
-                      />
-                    </div>
-
-                    <div>
-                      <label htmlFor="linkGithub" className="form-label">GitHub / Code</label>
-                      <input
-                        type="url"
-                        className="form-control"
-                        id="linkGithub"
-                        placeholder="https://github.com/username"
-                      />
-                    </div>
-
-                    <div>
-                      <label htmlFor="linkTwitter" className="form-label">Twitter / X</label>
-                      <input
-                        type="url"
-                        className="form-control"
-                        id="linkTwitter"
-                        placeholder="https://twitter.com/username"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Form Actions */}
-                <div className="form-actions">
-                  <button type="button" className="btn btn-outline-secondary">
-                    Cancel
-                  </button>
-                  <button type="submit" className="btn btn-primary">
-                    Save changes
-                  </button>
-                </div>
-              </form>
+      {/* Tab Content */}
+      {activeTab === "personal" && (
+        <>
+          {submitSuccess && (
+            <div className="alert alert-success mt-3">
+              Profile updated successfully!
             </div>
-    </>
+          )}
+          {submitError && (
+            <div className="alert alert-danger mt-3">
+              {typeof submitError === "string"
+                ? submitError
+                : typeof submitError === "object"
+                  ? Object.values(submitError).flat().join(", ")
+                  : "Something went wrong"}
+            </div>
+          )}
+          <ProfileForm
+            formData={formData}
+            onChange={handleChange}
+            onSubmit={handleSubmit}
+            loading={submitLoading}
+            userType={userType}
+          />
+        </>
+      )}
+
+      {activeTab === "documents" &&
+        ["staff", "contractor", "customer", "admin"].includes(userType) && (
+          <DocumentTable
+            documents={profileData?.data?.documents || []}
+            onAddFile={handleAddFile}
+            onAddDocument={handleAddDocument}
+          />
+        )}
+
+      {/* Document Upload Modal */}
+      <Modal open={showDocModal} onClose={() => setShowDocModal(false)}>
+        <form
+          onSubmit={handleDocSubmit}
+          style={{ display: "flex", flexDirection: "column", height: "100%" }}
+        >
+          {/* Document Name Dropdown (enabled for add, disabled for update) */}
+          <div className="mb-2">
+            <label style={{ fontWeight: 500, fontSize: 13 }}>
+              Document Name
+            </label>
+            {selectedDoc ? (
+              <select
+                className="form-control"
+                value={selectedDoc.document_name || ""}
+                disabled
+                style={{
+                  background: "#f5f5f5",
+                  color: "#333",
+                  marginBottom: 8,
+                }}
+              >
+                <option value={selectedDoc.document_name || ""}>
+                  {selectedDoc.document_name || ""}
+                </option>
+              </select>
+            ) : (
+              <select
+                className="form-control"
+                name="document_name"
+                value={docForm.document_name || ""}
+                onChange={handleDocFormChange}
+                style={{ background: "#fff", color: "#333", marginBottom: 8 }}
+                required
+              >
+                <option value="">Select Document</option>
+                <option value="Casual Contract Form">
+                  Casual Contract Form
+                </option>
+                <option value="Passport">Passport</option>
+                <option value="Visa">Visa</option>
+                <option value="Other">Other</option>
+              </select>
+            )}
+          </div>
+          {/* File/Image Preview and Actions */}
+          <div
+            className="mb-2"
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              marginBottom: 16,
+            }}
+          >
+            <div
+              style={{
+                width: 180,
+                height: 180,
+                background: "#f5f5f5",
+                borderRadius: 8,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                marginBottom: 10,
+                position: "relative",
+                overflow: "hidden",
+              }}
+            >
+              {docForm.file_url ? (
+                (() => {
+                  const ext = docForm.file_url.split(".").pop().toLowerCase();
+                  if (
+                    ["jpg", "jpeg", "png", "gif", "webp", "bmp"].includes(ext)
+                  ) {
+                    return (
+                      <img
+                        src={resolveFileUrl(docForm.file_url)}
+                        alt={docForm.document_name || "Document preview"}
+                        style={{ maxWidth: "100%", maxHeight: "100%" }}
+                        onError={(e) => {
+                          e.target.style.display = "none";
+                        }}
+                      />
+                    );
+                  } else if (["pdf"].includes(ext)) {
+                    return (
+                      <iframe
+                        src={resolveFileUrl(docForm.file_url)}
+                        title="Document Preview"
+                        style={{ width: "100%", height: "100%", border: 0 }}
+                      />
+                    );
+                  } else {
+                    return (
+                      <a
+                        href={resolveFileUrl(docForm.file_url)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{ color: "#007bff", fontWeight: 500 }}
+                      >
+                        View/Download Document
+                      </a>
+                    );
+                  }
+                })()
+              ) : (
+                <img
+                  src={fallbackImage}
+                  alt="No preview available"
+                  style={{ width: "100%", height: "100%", opacity: 0.5 }}
+                />
+              )}
+              {uploadLoading && (
+                <div
+                  style={{
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    width: "100%",
+                    height: "100%",
+                    background: "rgba(255,255,255,0.7)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    zIndex: 2,
+                  }}
+                >
+                  <span style={{ color: "#2980b9", fontWeight: 500 }}>
+                    Uploading...
+                  </span>
+                </div>
+              )}
+              {/* Action buttons */}
+              <div
+                style={{
+                  position: "absolute",
+                  bottom: 10,
+                  left: 0,
+                  width: "100%",
+                  display: "flex",
+                  justifyContent: "center",
+                  gap: 16,
+                }}
+              >
+                <label
+                  style={{
+                    cursor: "pointer",
+                    background: "#e74c3c",
+                    borderRadius: "50%",
+                    width: 36,
+                    height: 36,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                  title="Add/Change File"
+                >
+                  <i
+                    className="fa fa-plus"
+                    style={{ color: "#fff", fontSize: 18 }}
+                  ></i>
+                  <input
+                    type="file"
+                    name="file"
+                    style={{ display: "none" }}
+                    onChange={handleDocFormChange}
+                  />
+                </label>
+                <button
+                  type="button"
+                  style={{
+                    background: "#2980b9",
+                    border: "none",
+                    borderRadius: "50%",
+                    width: 36,
+                    height: 36,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                  title="Remove"
+                  onClick={() =>
+                    setDocForm((prev) => ({ ...prev, file: null }))
+                  }
+                  disabled={!docForm.file}
+                >
+                  <i
+                    className="fa fa-trash"
+                    style={{ color: "#fff", fontSize: 18 }}
+                  ></i>
+                </button>
+              </div>
+            </div>
+          </div>
+          {/* Checkboxes and Conditional Inputs */}
+          <div
+            className="mb-2"
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: 6,
+              marginBottom: 12,
+            }}
+          >
+            <label style={{ fontWeight: 400, fontSize: 14 }}>
+              <input
+                type="checkbox"
+                name="no"
+                checked={docForm.no}
+                onChange={handleDocFormChange}
+                style={{ marginRight: 6 }}
+              />
+              Add Document Number
+            </label>
+            {docForm.no && (
+              <input
+                className="form-control"
+                name="document_no"
+                placeholder="Document Number"
+                value={docForm.document_no}
+                onChange={handleDocFormChange}
+                style={{ marginBottom: 8, marginTop: 4 }}
+              />
+            )}
+            <label style={{ fontWeight: 400, fontSize: 14 }}>
+              <input
+                type="checkbox"
+                name="exp"
+                checked={docForm.exp}
+                onChange={handleDocFormChange}
+                style={{ marginRight: 6 }}
+              />
+              Set Expiration date
+            </label>
+            {docForm.exp && (
+              <input
+                className="form-control"
+                name="document_expiry"
+                type="date"
+                placeholder="Expiration Date"
+                value={docForm.document_expiry}
+                onChange={handleDocFormChange}
+                style={{ marginBottom: 8, marginTop: 4 }}
+              />
+            )}
+          </div>
+          {/* Save Button */}
+          <div
+            style={{
+              marginTop: "auto",
+              display: "flex",
+              justifyContent: "flex-end",
+            }}
+          >
+            <button
+              type="submit"
+              className="btn btn-success"
+              style={{ minWidth: 80 }}
+            >
+              Save
+            </button>
+          </div>
+        </form>
+      </Modal>
+    </div>
   );
 }

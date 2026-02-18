@@ -8,7 +8,6 @@ import {
 import ProtectedRoute from "./components/ProtectedRoute";
 import Loader from "./components/Loader";
 
-// Lazy-loaded route components for code splitting
 const Login = lazy(() => import("./auth/login"));
 const Register = lazy(() => import("./auth/register"));
 const Home = lazy(() => import("./pages/home"));
@@ -17,6 +16,7 @@ const Dashboard = lazy(() => import("./pages/dashboard"));
 const EditProfile = lazy(() => import("./pages/edit-profile"));
 const PublicProfilePreview = lazy(() => import("./pages/public-profile-view"));
 const MyJobApplications = lazy(() => import("./pages/my-job-application"));
+const RosterPage = lazy(() => import("./pages/roster"));
 const MyFavouriteJobs = lazy(() => import("./pages/my-favourite-jobs"));
 const JobAlerts = lazy(() => import("./pages/job-alerts"));
 const MyFollowings = lazy(() => import("./pages/my-followings"));
@@ -74,6 +74,10 @@ function App() {
               <Route
                 path="/my-job-applications"
                 element={<MyJobApplications />}
+              />
+              <Route
+                path="/roster"
+                element={<RosterPage />}
               />
               <Route path="/my-favourite-jobs" element={<MyFavouriteJobs />} />
               <Route path="/job-alerts" element={<JobAlerts />} />

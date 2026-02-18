@@ -12,6 +12,7 @@ import JobAlerts from './pages/job-alerts';
 import MyFollowings from './pages/my-followings';
 import UserPackages from './pages/user-packages';
 import PaymentHistory from './pages/payment-history';
+import RosterPage from './pages/roster';
 
 function App() {
   return (
@@ -33,6 +34,7 @@ function App() {
             <Route path="/my-followings" element={<MyFollowings />} />
             <Route path="/user-packages" element={<UserPackages />} />
             <Route path="/payment-history" element={<PaymentHistory />} />
+            <Route path="/roster" element={<RosterPage />} />
           </Route>
 
           <Route path="*" element={<Navigate to="/login" replace />} />

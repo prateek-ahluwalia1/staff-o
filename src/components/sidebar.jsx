@@ -21,6 +21,11 @@ export default function Sidebar() {
 
             <ul className="dashboard-nav">
                 <li>
+                    <NavLink to="/roster" className={({ isActive }) => (isActive ? "active" : "")}>
+                        <i className="fa-solid fa-credit-card"></i> Roster
+                    </NavLink>
+                </li>
+                <li>
                     <NavLink to="/dashboard" className={({ isActive }) => (isActive ? "active" : "")}>
                         <i className="fa-solid fa-gauge"></i> Dashboard
                     </NavLink>

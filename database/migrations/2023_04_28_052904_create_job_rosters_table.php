@@ -21,6 +21,9 @@ return new class extends Migration
             $table->string('end');
             $table->enum('shift_payable', ['yes', 'no'])->default('yes');
             $table->enum('shift_chargeable', ['yes', 'no'])->default('yes');
+            $table->integer('is_document')->default(0);
+            $table->text('document_list')->nullable();
+
             // $table->string('payrate_level')->nullable();
             // $table->string('payrate')->nullable();
             // $table->string('chargerate_level')->nullable();

@@ -1,7 +1,8 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Api;
 
+use App\Http\Controllers\Controller;
 use App\Models\Site;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -11,7 +12,7 @@ use App\Models\JobRoster;
 use App\Models\User;
 use DateTime;
 
-class GetDataFromApiController extends Controller
+class JobRosterController extends Controller
 {
     public function jobData(Request $request)
     {
@@ -49,6 +50,10 @@ class GetDataFromApiController extends Controller
             ], 404);
         }
 
+        $radiusValue = is_array($request->radius) ? json_encode($request->radius) : $request->radius;
+        $documentListValue = is_array($request->document_list) ? json_encode($request->document_list) : $request->document_list;
+        $jobInstructionsValue = is_array($request->job_instrcutions) ? json_encode($request->job_instrcutions) : $request->job_instrcutions;
+
         for ($i = 0; $i < $request->numberOfGuards; $i++) {
 
             $roster = [
@@ -60,10 +65,12 @@ class GetDataFromApiController extends Controller
                 'shift_create_status'   => 'pending',
                 'job_status'            => 'pending',
                 'asap'                  => 1,
-                'radius'                => $request->radius,
+                'radius'                => $radiusValue,
+                'is_document'           => $request->is_document,
+                'document_list'         => $documentListValue,
                 'publish_status'        => 1,
                 'roster_id'             => $jobNewRoster->id,
-                'job_instrcutions' => json_encode($request->job_instrcutions),
+                'job_instrcutions'      => $jobInstructionsValue,
             ];
 
             $hours = $this->getShiftHours($roster['start'], $roster['end'], $roster['site_id']);
@@ -85,52 +92,23 @@ class GetDataFromApiController extends Controller
             $inserted = JobRoster::insert($roster);
         }
 
-        $lat = floatval($request->lat);
-        $lng = floatval($request->lng);
-        $radius = $request->radius > 0 ? floatval($request->radius) : 100000000;
-        $qry = "
-            SELECT id, name, coordinates, profile_image,
-            (
-                6371 * acos(
-                    cos(radians($lat)) *
-                    cos(radians(latitude)) *
-                    cos(radians($lng) - radians(longitude)) +
-                    sin(radians($lat)) * sin(radians(latitude))
-                )
-            ) AS distance
-            FROM users
-            WHERE admin_approval_status = 'active'
-            AND admin_approved = 1
-            AND coordinates != ''
-            HAVING distance < $radius
-            ORDER BY distance ASC
-        ";
+        $guards = User::where('user_id', 1)->where('is_active', 1)->select('id', 'name')->get();
 
-        $guards = DB::select($qry);
-
-        if (count($guards) > 0) {
-            foreach ($guards as $q) {
-                $cod = explode(',', $q->coordinates);
-                $q->lat = trim($cod[0]);
-                $q->lng = trim($cod[1]);
-
-                if ($q->profile_image) {
-                    $q->profile_image = returnImgPath('guard', $q->profile_image);
-                }
-            }
-        } else {
-            return response()->json(['success' => false, 'msg' => 'No Staff found!', 'data' => $guards]);
+        if(!$guards){
+        $guards = User::whereNotIn('user_id', $request->user_id)
+            ->where('user_type', 'contractor')->where('is_active', 1)
+            ->get();
         }
 
         foreach ($guards as $grd) {
-            $guard = User::where('id', $grd->id)->where('guard_status', 'active')->select('id', 'notification_token')->first();
+            $guard = User::where('id', $grd->id)->where('is_active', 1)->select('id', 'notification_token')->first();
             if ($guard && $guard->notification_token) {
-                // send_push_notification([
-                //     'notification_token' => $guard->notification_token,
-                //     'message'            => "ASAP job has been published. Please check your app.",
-                //     'title'              => 'ASAP Job',
-                //     'page'               => 'asap-job-list'
-                // ]);
+                send_push_notification([
+                    'notification_token' => $guard->notification_token,
+                    'message'            => "ASAP job has been published. Please check your app.",
+                    'title'              => 'ASAP Job',
+                    'page'               => 'asap-job-list'
+                ]);
             }
         }
 
@@ -206,76 +184,56 @@ class GetDataFromApiController extends Controller
         } else {
             $state = 'vic';
         }
-        $public_holiday_start = DB::table('public_holidays')->where('date', date('Ymd', $start))->where('state', $state)->first();
-        if ($public_holiday != null && $public_holiday == 1) {
-            $start_in_public_holiday = true;
-        } elseif (!empty($public_holiday_start)) {
-            $start_in_public_holiday = true;
-        }
+        // $public_holiday_start = DB::table('public_holidays')->where('date', date('Ymd', $start))->where('state', $state)->first();
+        // if ($public_holiday != null && $public_holiday == 1) {
+        //     $start_in_public_holiday = true;
+        // } elseif (!empty($public_holiday_start)) {
+        //     $start_in_public_holiday = true;
+        // }
 
-        $public_holiday_end = DB::table('public_holidays')->where('date', date('Ymd', $end))->where('state', $state)->first();
-        if (!empty($public_holiday_end)) {
-            $end_in_public_holiday = true;
-        } elseif ($public_holiday != null && $public_holiday == 1 && $ph_duration == 1) {
-            $end_in_public_holiday = true;
-        }
+        // $public_holiday_end = DB::table('public_holidays')->where('date', date('Ymd', $end))->where('state', $state)->first();
+        // if (!empty($public_holiday_end)) {
+        //     $end_in_public_holiday = true;
+        // } elseif ($public_holiday != null && $public_holiday == 1 && $ph_duration == 1) {
+        //     $end_in_public_holiday = true;
+        // }
 
-        if ($start_in_public_holiday && $end_in_public_holiday) {
-            $total_ph_hours = $hours;
-            $hours = 0;
-            $ph_start = $shift_start;
-            $ph_end = $shift_end;
-            $shift_start = 0;
-            $shift_end = 0;
-            // echo 'whole day in PH - ';
+        // if ($start_in_public_holiday && $end_in_public_holiday) {
+        //     $total_ph_hours = $hours;
+        //     $hours = 0;
+        //     $ph_start = $shift_start;
+        //     $ph_end = $shift_end;
+        //     $shift_start = 0;
+        //     $shift_end = 0;
+        //     // echo 'whole day in PH - ';
 
-        } elseif ($start_in_public_holiday && !$end_in_public_holiday) {
-            $ph_end = strtotime(date('m/d/Y 23:59:59', $start));
-            $diff = $ph_end - $start;
-            $total_ph_hours = round($diff / (60 * 60), 2);
-            $ph_start = $this->convert_into_fraction($start);
-            $ph_end = $this->convert_into_fraction($ph_end);
-            $start = $public_holiday_start ? strtotime($public_holiday_start->date) + (60 * 60 * 24) : $start + (60 * 60 * 24);
-            $day_start = Carbon::parse(date('m/d/Y', $end))->format('l');
-            $hours = $hours - $total_ph_hours;
-            $shift_start = 0;
-            // echo 'Start in PH - '.$day_start;
-        } elseif (!$start_in_public_holiday && $end_in_public_holiday) {
-            $ph_start = strtotime(date('m/d/Y 00:00:00', strtotime($public_holiday_end->date)));
-            $diff = $end - $ph_start;
-            $total_ph_hours = round($diff / (60 * 60), 2);
-            $ph_start = $this->convert_into_fraction($ph_start);
-            // $ph_end = $this->convert_into_fraction($ph_end);
-            $end = $this->convert_into_fraction($end);
-            $shift_end = 0;
-            $ph_end = $end;
-            $end = $ph_start;
-            $hours = $hours - $total_ph_hours;
+        // } elseif ($start_in_public_holiday && !$end_in_public_holiday) {
+        //     $ph_end = strtotime(date('m/d/Y 23:59:59', $start));
+        //     $diff = $ph_end - $start;
+        //     $total_ph_hours = round($diff / (60 * 60), 2);
+        //     $ph_start = $this->convert_into_fraction($start);
+        //     $ph_end = $this->convert_into_fraction($ph_end);
+        //     $start = $public_holiday_start ? strtotime($public_holiday_start->date) + (60 * 60 * 24) : $start + (60 * 60 * 24);
+        //     $day_start = Carbon::parse(date('m/d/Y', $end))->format('l');
+        //     $hours = $hours - $total_ph_hours;
+        //     $shift_start = 0;
+        //     // echo 'Start in PH - '.$day_start;
+        // } elseif (!$start_in_public_holiday && $end_in_public_holiday) {
+        //     $ph_start = strtotime(date('m/d/Y 00:00:00', strtotime($public_holiday_end->date)));
+        //     $diff = $end - $ph_start;
+        //     $total_ph_hours = round($diff / (60 * 60), 2);
+        //     $ph_start = $this->convert_into_fraction($ph_start);
+        //     // $ph_end = $this->convert_into_fraction($ph_end);
+        //     $end = $this->convert_into_fraction($end);
+        //     $shift_end = 0;
+        //     $ph_end = $end;
+        //     $end = $ph_start;
+        //     $hours = $hours - $total_ph_hours;
 
 
-            // echo $hours;
-        }
-        // $day_start = Carbon::parse($start)->format('l');
-        // $day_end = Carbon::parse($end)->format('l');
-        // print_r(expression)
-        // print_r(date('m/d/Y H:i', $end));
-        // print('<br>-');
-        // print_r($end_in_public_holiday);
-        // print('<br>total sat: ');   
-        // print_r($total_saturday_hours);
-        // print('<br>start: ');   
-        // print_r($shift_start);
-        // print('<br>end:     ');   
-        // print_r($shift_end);
-        // print('<br>hours : ');   
-        // print_r($hours);
-        // exit();
-        // print('<br>');
-        // print_r($night_end);
-        // exit();
-
-        // end of public holiday calculation
-        // return $shift_start;
+        //     // echo $hours;
+        // }
+        
         if ($day_start == 'Saturday' && $day_end == 'Saturday') {
             $total_saturday_hours = $hours;
             $saturday_start = $shift_start;
@@ -1233,26 +1191,7 @@ class GetDataFromApiController extends Controller
             ]
         ]);
     }
-    // public function uploadFile(Request $request)
-    // {
-    //     if ($request->folder == '') {
-    //         $request->folder = 'uploads';
-    //     }
-    //     if ($request->has('upload')) {
-    //         $image = fileUpload($request->upload, '/' . $request->folder . '/');
-    //     } else {
-    //         $image = fileUpload($request->file, '/' . $request->folder . '/');
-    //     }
-    //     if ($image != '') {
-    //         $url = asset('') . $request->folder . '/' . $image;
-    //         if ($request->folder == '') {
-    //             $url = asset('uploads') . '/' . $image;
-    //         }
-    //         return response()->json(array('success' => true, 'path' => $image, 'url' => $url));
-    //     } else {
-    //         return response()->json(array('success' => false, 'path' => '', 'url' => ''));
-    //     }
-    // }
+   
 
     public function uploadFile(Request $request)
     {

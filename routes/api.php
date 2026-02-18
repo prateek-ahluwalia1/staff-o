@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\RolesPermissionController;
 use App\Http\Controllers\Api\ChargeRateController;
+use App\Http\Controllers\Api\JobRosterController;
 use App\Http\Controllers\Api\PayRateController;
 use App\Http\Controllers\Api\PermissionController;
 use App\Http\Controllers\Api\RoleController;
@@ -77,6 +78,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::any('user-update/{id}', [StaffController::class, 'updateUser'])->name('user.update');
     Route::any('user-edit/{id}', [StaffController::class, 'editUser'])->name('user.edit');
     Route::any('upload-file', [StaffController::class, 'uploadFile'])->name('upload.file');
+
+    Route::any('job-post', [JobRosterController::class, 'jobData'])->name('job.post');
+
 });
 
 

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Resources\GetAllGuardDocuments;
 use App\Models\Customer;
 use App\Http\Controllers\Controller;
+use App\Models\Contractor;
 use App\Models\Document;
 use App\Models\DocumentCategory;
 use App\Models\Staff;
@@ -16,6 +17,37 @@ use Illuminate\Validation\Validator;
 
 class StaffController extends Controller
 {
+    private function calculateProfileCompletion(User $user): int
+    {
+        $baseFields = ['name', 'email', 'user_type'];
+        $baseWeight = 50;
+        $documentWeight = 50;
+
+        $filledBase = 0;
+        foreach ($baseFields as $field) {
+            if (!empty($user->{$field})) {
+                $filledBase++;
+            }
+        }
+        $baseScore = ($filledBase / count($baseFields)) * $baseWeight;
+
+        $totalDocuments = $user->documents ? $user->documents->count() : 0;
+        $filledDocuments = 0;
+        if ($totalDocuments > 0) {
+            $filledDocuments = $user->documents->filter(function ($doc) {
+                return !empty($doc->document_no);
+            })->count();
+        }
+
+        $documentScore = 0;
+        if ($totalDocuments > 0) {
+            $documentScore = ($filledDocuments / $totalDocuments) * $documentWeight;
+        }
+
+        $percentage = (int) round($baseScore + $documentScore);
+
+        return min($percentage, 100);
+    }
    
     public function createStaff(Request $request)
     {
@@ -396,9 +428,9 @@ class StaffController extends Controller
             $request->folder = 'uploads';
         }
         if ($request->has('upload')) {
-            $image = \fileUpload($request->upload, '/'.$request->folder.'/');     
+            $image = fileUpload($request->upload, '/'.$request->folder.'/');     
         }else{
-            $image = \fileUpload($request->file, '/'.$request->folder.'/');
+            $image = fileUpload($request->file, '/'.$request->folder.'/');
         }
              if ($image != '') {
                 $url = asset('').$request->folder.'/'. $image;
@@ -448,11 +480,11 @@ class StaffController extends Controller
         $old_data = $updateDocuments;
         $updateDocuments->document_name = $request->document_name;
         $updateDocuments->user_id = $request->user_id;
-        if(!empty($request->document_expire) && $request->document_expire == 'current, pending renewal')
+        if(!empty($request->document_expiry) && $request->document_expiry == 'current, pending renewal')
         {
-        $updateDocuments->document_expire = $request->document_expire;
+        $updateDocuments->document_expiry = $request->document_expiry;
         }else{
-        $updateDocuments->document_expire = !empty($request->document_expire) ? dbFormate($request->document_expire) : '' ;
+        $updateDocuments->document_expiry = !empty($request->document_expiry) ? dbFormate($request->document_expiry) : '' ;
         }
         $updateDocuments->document_no = (!empty($request->document_no) && $request->has('document_no') ? $request->document_no : '');
         $updateDocuments->document_type = (!empty($request->document_type) && $request->has('document_type') ? $request->document_type : '');
@@ -473,10 +505,12 @@ class StaffController extends Controller
         if ($user->user_type === 'customer') {
             $user->load(['customer', 'documents']);
         } elseif ($user->user_type === 'contractor') {
-            $user->load('contractor');
+            $user->load('contractor', 'documents');
         } elseif ($user->user_type === 'staff') {
             $user->load('staff', 'documents');
         }
+
+        $user->profile_completion_percentage = $this->calculateProfileCompletion($user);
 
         return response()->json(['success' => true, 'code' => 200, 'data' => $user]);
     }
@@ -484,7 +518,6 @@ class StaffController extends Controller
     public function updateUser(Request $request, $id)
     {
         try {
-
             $user = User::findOrFail($id);
 
             $rules = [
@@ -496,7 +529,6 @@ class StaffController extends Controller
             ];
 
             if ($user->user_type === 'customer') {
-
                 $rules = array_merge($rules, [
                     'phone' => 'nullable|string',
                     'company_name' => 'nullable|string',
@@ -507,7 +539,6 @@ class StaffController extends Controller
             }
 
             if ($user->user_type === 'contractor') {
-
                 $rules = array_merge($rules, [
                     'company_name' => 'sometimes|required|string|max:255',
                     'registration_number' => 'nullable|string|max:255',
@@ -517,7 +548,6 @@ class StaffController extends Controller
             }
 
             if ($user->user_type === 'staff') {
-
                 $rules = array_merge($rules, [
                     'address' => 'sometimes|nullable|string',
                     'profile_image' => 'sometimes|nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
@@ -542,7 +572,6 @@ class StaffController extends Controller
             ])->toArray());
 
             if ($user->user_type === 'customer') {
-
                 $profileData = collect($data)->only([
                     'phone',
                     'company_name',
@@ -562,7 +591,6 @@ class StaffController extends Controller
             }
 
             if ($user->user_type === 'contractor') {
-
                 $profileData = collect($data)->only([
                     'company_name',
                     'registration_number',
@@ -577,17 +605,107 @@ class StaffController extends Controller
                     Contractor::create($profileData);
                 }
 
-                $user->load('contractor');
+                $user->load('contractor', 'documents');
             }
 
             if ($user->user_type === 'staff') {
+                // Get the staff record FIRST before any updates
+                $staff = Staff::where('user_id', $user->id)->first();
+                
+                // Process document changes BEFORE updating staff
+                if (!empty($data['staff_document_type'])) {
+                    $check_old_data_exist = Document::where('user_id', $user->id)
+                        ->where('document_category', '!=', 'other-doc')
+                        ->first();
+                    
+                    // Case 1: First time setting up documents
+                    if (!$staff || !$check_old_data_exist) {
+                        $document_categories = DocumentCategory::where('document_category', $request->staff_document_type)->first();
+                        if ($document_categories) {
+                            foreach (json_decode($document_categories->document_type) as $key => $value) {
+                                $guard_documents = new Document();
+                                $guard_documents->user_id = $user->id;
+                                $guard_documents->document_category = ($document_categories->document_category != '' ? $document_categories->document_category : 'other');
+                                $guard_documents->document_type = $key;
+                                $guard_documents->document_name = $value;
+                                $guard_documents->save();
+                            }
+                        }
+                    } 
+                    // Case 2: Updating existing documents
+                    else if ($staff && $staff->staff_document_type != $request->staff_document_type) {
+                        $document_categories = DocumentCategory::where('document_category', $request->staff_document_type)->first();
+                        
+                        if ($document_categories) {
+                            $old_docs = Document::where('user_id', $user->id)
+                                ->where('document_category', '!=', 'other-doc')
+                                ->get()
+                                ->keyBy('document_type');
+                            
+                            $new_doc_types = json_decode($document_categories->document_type, true);
+                            $new_document_category = $document_categories->document_category ?: 'other';
+                            
+                            $old_doc_types = $old_docs->keys()->toArray();
+                            $new_doc_keys = array_keys($new_doc_types);
+                            
+                            $to_delete_types = array_diff($old_doc_types, $new_doc_keys);
+                            $to_add_types = array_diff($new_doc_keys, $old_doc_types);
+                            $common_types = array_intersect($old_doc_types, $new_doc_keys);
+                            
+                            // Update common types
+                            if (!empty($common_types)) {
+                                $common_doc_ids = [];
+                                foreach ($common_types as $doc_type) {
+                                    if ($old_docs->has($doc_type)) {
+                                        $common_doc_ids[] = $old_docs[$doc_type]->id;
+                                    }
+                                }
+                                
+                                Document::whereIn('id', $common_doc_ids)
+                                    ->update(['document_category' => $new_document_category]);
+                            }
+                            
+                            // Delete old types that have no files
+                            if (!empty($to_delete_types)) {
+                                Document::where('user_id', $user->id)
+                                    ->where('document_category', '!=', 'other-doc')
+                                    ->whereNull('file')
+                                    ->whereIn('document_type', $to_delete_types)
+                                    ->delete();
+                            }
+                            
+                            // Add new types
+                            if (!empty($to_add_types)) {
+                                $documents_to_insert = [];
+                                
+                                foreach ($to_add_types as $doc_type) {
+                                    if (!Document::where(['user_id' => $user->id, 'document_type' => $doc_type])->exists()) {
+                                        $documents_to_insert[] = [
+                                            'user_id' => $user->id,
+                                            'document_category' => $new_document_category,
+                                            'document_type' => $doc_type,
+                                            'document_name' => $new_doc_types[$doc_type],
+                                            'created_at' => now(),
+                                            'updated_at' => now()
+                                        ];
+                                    }
+                                }
+                                
+                                if (!empty($documents_to_insert)) {
+                                    Document::insert($documents_to_insert);
+                                }
+                            }
+                        }
+                    }
+                }
 
+                // Now update the staff record with ALL data including the document type
                 $staffData = collect($data)->only([
                     'address',
                     'gender',
                     'city',
                     'phone',
-                    'staff_document_type'
+                    'staff_document_type'  // This will now be saved
                 ])->toArray();
 
                 if ($request->hasFile('profile_image')) {
@@ -596,56 +714,41 @@ class StaffController extends Controller
                     $staffData['profile_image'] = $data['profile_image'];
                 }
 
-                if ($user->staff) {
-                    $user->staff->update($staffData);
+                if ($staff) {
+                    $staff->update($staffData);
                 } else {
                     $staffData['user_id'] = $user->id;
                     Staff::create($staffData);
                 }
-            }
-
-            if ($user->user_type === 'staff' && !empty($data['staff_document_type'])) {
-                $document_categories = DocumentCategory::where('document_category', $data['staff_document_type'])->first();
-
-                if ($document_categories && is_array(json_decode($document_categories->document_type, true))) {
-                    foreach (json_decode($document_categories->document_type) as $key => $value) {
-
-                        $guard_documents = new Document();
-                        $guard_documents->user_id = $user->id;
-                        $guard_documents->document_category = ($document_categories->document_category != '' ? $document_categories->document_category : 'other');
-                        $guard_documents->document_type = $key;
-                        $guard_documents->document_name = $value;
-                        $guard_documents->save();
-                    }
-                }
-            }
-
-            if ($user->user_type === 'staff') {
+                
                 $user->load(['staff', 'documents']);
             }
 
-        return response()->json(['success' => true, 'code' => 200, 'data' => $user]);
+            $percentage = $this->calculateProfileCompletion($user);
+
+            if ($percentage === 100 && (int) $user->is_active !== 1) {
+                $user->is_active = 1;
+                $user->save();
+            }
+            
+            $user->profile_completion_percentage = $percentage;
+
+            return response()->json(['success' => true, 'code' => 200, 'data' => $user]);
 
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
-
             return response()->json([
                 'message' => 'User not found'
             ], 404);
-
         } catch (\Illuminate\Validation\ValidationException $e) {
-
             return response()->json([
                 'message' => 'Validation failed',
                 'errors' => $e->errors()
             ], 422);
-
         } catch (\Exception $e) {
-
             return response()->json([
                 'message' => 'Failed to update user',
                 'error' => $e->getMessage()
             ], 500);
         }
     }
-    
 }

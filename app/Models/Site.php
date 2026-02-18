@@ -8,6 +8,16 @@ use Illuminate\Database\Eloquent\Model;
 class Site extends Model
 {
     use HasFactory;
+
     protected $table = 'sites';
+
+    protected $fillable = [
+        'user_id',
+        'site_name',
+        'site_description',
+        'address',
+        'coordinates',
+        'state',
+    ];
 
 }

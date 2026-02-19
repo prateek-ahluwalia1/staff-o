@@ -20,16 +20,7 @@ export default function DetailsStep({
     "working_with_children",
     "first_aid",
     "cpr",
-    "citizen_ship",
   ];
-
-  function toggleDocType(type) {
-    const prev = Array.isArray(form.document_types) ? form.document_types : [];
-    const next = prev.includes(type)
-      ? prev.filter((t) => t !== type)
-      : [...prev, type];
-    setField("document_types", next);
-  }
 
   return (
     <div className="mb-4">

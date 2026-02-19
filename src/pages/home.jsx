@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useState } from "react";
 import Header from "../components/header";
 import Footer from "../components/footer";
 import { Swiper, SwiperSlide } from "swiper/react";
@@ -512,7 +512,7 @@ export default function Home() {
           <div className="row">
             <div className="col-md-6">
               <a
-                href="#"
+                href="/"
                 data-bs-toggle="modal"
                 data-bs-target="#preresume"
                 className="userloginbox"
@@ -527,7 +527,7 @@ export default function Home() {
             </div>
             <div className="col-md-6">
               <a
-                href="#"
+                href="/"
                 data-bs-toggle="modal"
                 data-bs-target="#prejobpost"
                 className="userloginbox postjobbox"
@@ -573,7 +573,7 @@ export default function Home() {
             </div>
 
             <div className="col-12 col-sm-6 col-lg-3">
-              <a href="company-detail.html" className="company-card">
+              <a href="/" className="company-card">
                 <div className="company-logo">
                   <img
                     src="/assets/images/employers/emplogo2.jpg"
@@ -593,7 +593,7 @@ export default function Home() {
             </div>
 
             <div className="col-12 col-sm-6 col-lg-3">
-              <a href="company-detail.html" className="company-card">
+              <a href="/" className="company-card">
                 <div className="company-logo">
                   <img
                     src="/assets/images/employers/emplogo3.jpg"
@@ -613,7 +613,7 @@ export default function Home() {
             </div>
 
             <div className="col-12 col-sm-6 col-lg-3">
-              <a href="company-detail.html" className="company-card">
+              <a href="/" className="company-card">
                 <div className="company-logo">
                   <img
                     src="/assets/images/employers/emplogo4.jpg"
@@ -633,7 +633,7 @@ export default function Home() {
             </div>
 
             <div className="col-12 col-sm-6 col-lg-3">
-              <a href="company-detail.html" className="company-card">
+              <a href="/" className="company-card">
                 <div className="company-logo">
                   <img
                     src="/assets/images/employers/emplogo5.jpg"
@@ -653,7 +653,7 @@ export default function Home() {
             </div>
 
             <div className="col-12 col-sm-6 col-lg-3">
-              <a href="company-detail.html" className="company-card">
+              <a href="/" className="company-card">
                 <div className="company-logo">
                   <img
                     src="/assets/images/employers/emplogo6.jpg"
@@ -673,7 +673,7 @@ export default function Home() {
             </div>
 
             <div className="col-12 col-sm-6 col-lg-3">
-              <a href="company-detail.html" className="company-card">
+              <a href="/" className="company-card">
                 <div className="company-logo">
                   <img
                     src="/assets/images/employers/emplogo7.jpg"
@@ -693,7 +693,7 @@ export default function Home() {
             </div>
 
             <div className="col-12 col-sm-6 col-lg-3">
-              <a href="company-detail.html" className="company-card">
+              <a href="/" className="company-card">
                 <div className="company-logo">
                   <img
                     src="/assets/images/employers/emplogo8.jpg"
@@ -764,7 +764,7 @@ export default function Home() {
                       />
                     </div>
                     <h5 className="mb-2">{cat.title}</h5>
-                    <a href="#" className="category-jobs d-block">
+                    <a href="/" className="category-jobs d-block">
                       <i
                         className="fa fa-briefcase me-1"
                         aria-hidden="true"
@@ -778,7 +778,7 @@ export default function Home() {
           </div>
 
           <div className="category-viewall text-center mt-5">
-            <a href="#" className="btn btn-primary px-5 py-3">
+            <a href="/" className="btn btn-primary px-5 py-3">
               View All Categories
             </a>
           </div>
@@ -794,7 +794,7 @@ export default function Home() {
 
           <div className="industries-grid">
             {industries.map((item, index) => (
-              <a href="#." className="industry-chip" key={index}>
+              <a href="/" className="industry-chip" key={index}>
                 <span className="chip-icon">
                   <i className={`fa ${item.icon}`} aria-hidden="true"></i>
                 </span>
@@ -850,7 +850,7 @@ export default function Home() {
                   </div>
 
                   <h4 className="job-card-title">
-                    <a href="#.">{job.title}</a>
+                    <a href="/">{job.title}</a>
                   </h4>
 
                   <div className="job-card-location">
@@ -997,13 +997,13 @@ export default function Home() {
                     <span className={`badge badge-status ${job.badgeClass}`}>
                       {job.type}
                     </span>
-                    <a href="#." className="bookmark">
+                    <a href="/" className="bookmark">
                       <i className="fa fa-heart-o" aria-hidden="true"></i>
                     </a>
                   </div>
 
                   <h4>
-                    <a href="#.">{job.title}</a>
+                    <a href="/">{job.title}</a>
                   </h4>
 
                   <div className="latest-job-meta">
@@ -1029,7 +1029,7 @@ export default function Home() {
                       </div>
                     </div>
 
-                    <a href="#." className="btn btn-outline-primary btn-sm">
+                    <a href="/" className="btn btn-outline-primary btn-sm">
                       Apply Now
                     </a>
                   </div>
@@ -1040,7 +1040,7 @@ export default function Home() {
 
           {/* View All Button */}
           <div className="category-viewall text-center">
-            <a href="#." className="btn btn-primary">
+            <a href="/" className="btn btn-primary">
               View All Latest Jobs
             </a>
           </div>
@@ -1057,7 +1057,7 @@ export default function Home() {
           <div className="row g-4 cities-grid">
             {cities.map((city, index) => (
               <div className="col-12 col-md-6 col-lg-3" key={index}>
-                <a href="#." className="city-card">
+                <a href="/" className="city-card">
                   <div className="city-image">
                     <img
                       src={`/assets/images/cities/${city.image}`}
@@ -1166,13 +1166,13 @@ export default function Home() {
               </p>
 
               <div className="appbtn">
-                <a href="#">
+                <a href="/">
                   <img
                     src="/assets/images/apple-btn.png"
                     alt="Download on App Store"
                   />
                 </a>
-                <a href="#">
+                <a href="/">
                   <img
                     src="/assets/images/andriod-btn.png"
                     alt="Get it on Google Play"

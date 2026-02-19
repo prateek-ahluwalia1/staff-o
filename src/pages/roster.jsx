@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo } from "react";
 import {
   startOfWeek,
   addWeeks,
@@ -6,9 +6,9 @@ import {
   format,
   addDays,
   isToday,
-} from 'date-fns';
+} from "date-fns";
 
-const DAYS_OF_WEEK = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+const DAYS_OF_WEEK = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
 const mockData = [
   {
@@ -21,7 +21,7 @@ const mockData = [
       "16/02": [{ guard: "Ali Raza (C)" }],
       "17/02": [{ guard: "Atinderpal Singh (C)" }],
       "18/02": [{ guard: "Muhammad Fawaz (M)" }],
-    }
+    },
   },
   {
     id: 2,
@@ -31,24 +31,24 @@ const mockData = [
     hours: "29.25 Hrs",
     shifts: {
       "16/02": [{ guard: "Haroon Sarfraz (C)" }],
-    }
+    },
   },
 ];
 
 export default function RosterPage() {
   const [monday, setMonday] = useState(() =>
-    startOfWeek(new Date(), { weekStartsOn: 1 })
+    startOfWeek(new Date(), { weekStartsOn: 1 }),
   );
 
-  // const [modal, setModal] = useState(null); 
+  // const [modal, setModal] = useState(null);
 
   const weekDays = useMemo(() => {
     return Array.from({ length: 7 }, (_, i) => {
       const d = addDays(monday, i);
       return {
         label: DAYS_OF_WEEK[i],
-        dateStr: format(d, 'dd/MM'),
-        key: format(d, 'dd/MM'),
+        dateStr: format(d, "dd/MM"),
+        key: format(d, "dd/MM"),
         isToday: isToday(d),
         isWeekend: i >= 5,
       };
@@ -56,12 +56,13 @@ export default function RosterPage() {
   }, [monday]);
 
   const weekTitle = useMemo(() => {
-    return `${format(monday, 'd MMM')} – ${format(addDays(monday, 6), 'd MMM yyyy')}`;
+    return `${format(monday, "d MMM")} – ${format(addDays(monday, 6), "d MMM yyyy")}`;
   }, [monday]);
 
   const prevWeek = () => setMonday((prev) => subWeeks(prev, 1));
   const nextWeek = () => setMonday((prev) => addWeeks(prev, 1));
-  const goToThisWeek = () => setMonday(startOfWeek(new Date(), { weekStartsOn: 1 }));
+  const goToThisWeek = () =>
+    setMonday(startOfWeek(new Date(), { weekStartsOn: 1 }));
 
   // const openAssignModal = (site, dateKey, dateLabel) => {
   //   setModal({ site, dateKey, dateLabel });
@@ -337,9 +338,13 @@ export default function RosterPage() {
       <div className="roster-page">
         <header className="roster-header">
           <div className="week-nav">
-            <button onClick={prevWeek} className="nav-btn">←</button>
+            <button onClick={prevWeek} className="nav-btn">
+              ←
+            </button>
             <div className="week-title">{weekTitle}</div>
-            <button onClick={nextWeek} className="nav-btn">→</button>
+            <button onClick={nextWeek} className="nav-btn">
+              →
+            </button>
             <button onClick={goToThisWeek} className="btn-today">
               This Week
             </button>
@@ -355,8 +360,8 @@ export default function RosterPage() {
                   {weekDays.map((day) => (
                     <th
                       key={day.key}
-                      className={`day-header ${day.isToday ? 'today' : ''} ${
-                        day.isWeekend ? 'weekend' : ''
+                      className={`day-header ${day.isToday ? "today" : ""} ${
+                        day.isWeekend ? "weekend" : ""
                       }`}
                     >
                       <div className="day-label">{day.label}</div>
@@ -383,16 +388,18 @@ export default function RosterPage() {
                       return (
                         <td
                           key={day.key}
-                          className={`shift-cell ${day.isToday ? 'today' : ''} ${
-                            day.isWeekend ? 'weekend' : ''
+                          className={`shift-cell ${day.isToday ? "today" : ""} ${
+                            day.isWeekend ? "weekend" : ""
                           }`}
                         >
                           <div className="shift-container">
                             {/* Existing shifts */}
                             {shifts.map((shift, idx) => {
-                              let tagClass = 'shift-tag shift-default';
-                              if (shift.guard.includes('(C)')) tagClass += ' shift-c';
-                              if (shift.guard.includes('(M)')) tagClass += ' shift-m';
+                              let tagClass = "shift-tag shift-default";
+                              if (shift.guard.includes("(C)"))
+                                tagClass += " shift-c";
+                              if (shift.guard.includes("(M)"))
+                                tagClass += " shift-m";
 
                               return (
                                 <div key={idx} className={tagClass}>

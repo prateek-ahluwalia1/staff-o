@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Document;
+use App\Models\DocumentCategory;
 use App\Models\Site;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -11,6 +13,8 @@ use Carbon\Carbon;
 use App\Models\JobRoster;
 use App\Models\User;
 use DateTime;
+use Exception;
+use Illuminate\Support\Str;
 
 class JobRosterController extends Controller
 {
@@ -29,6 +33,7 @@ class JobRosterController extends Controller
                     'site_name'         => $request->title,
                     'site_description'  => $request->description,
                     'address'           => $request->address,
+                    'signin_radius'     => 300,
                     'coordinates'       => $coordinates,
                     'state'             => $request->state,
                 ]);
@@ -71,6 +76,8 @@ class JobRosterController extends Controller
                 'publish_status'        => 1,
                 'roster_id'             => $jobNewRoster->id,
                 'job_instrcutions'      => $jobInstructionsValue,
+                'created_by'            => $request->user_id,
+                'assigned_to'           => null,
             ];
 
             $hours = $this->getShiftHours($roster['start'], $roster['end'], $roster['site_id']);
@@ -90,6 +97,38 @@ class JobRosterController extends Controller
             $roster['hours']                    = $guardWorkingHours;
 
             $inserted = JobRoster::insert($roster);
+            
+            // Check if is_document is 1
+            if ($request->is_document == 1) {
+                $document_types = $request->document_types;
+
+                $document_category = DocumentCategory::where('document_category', 'other')->first();
+
+                if ($document_category && !empty($document_types)) {
+                    $all_documents = json_decode($document_category->document_type, true);
+
+                    foreach ($all_documents as $doc_key => $doc_name) {
+                        if (in_array($doc_key, $document_types)) {
+
+                            $already_exists = Document::where([
+                                'user_id'       => $user->id,
+                                'document_type' => $doc_key,
+                            ])->first();
+
+                            if ($already_exists) {
+                                continue;
+                            }
+
+                            $guard_document                    = new Document();
+                            $guard_document->user_id           = $user->id;
+                            $guard_document->document_category = $document_category->document_category;
+                            $guard_document->document_type     = $doc_key;
+                            $guard_document->document_name     = $doc_name;
+                            $guard_document->save();
+                        }
+                    }
+                }
+            }
         }
 
         $guards = User::where('user_id', 1)->where('is_active', 1)->select('id', 'name')->get();
@@ -133,30 +172,23 @@ class JobRosterController extends Controller
         $diff = $end - $start;
         $hours = round($diff / (60 * 60), 2);
         $hoursCond = round($diff / (60 * 60), 2);
-        // if ($hoursCond <= 4 && $continuation == false) {
-        //     $additionalHours = 4 - $hoursCond;
-        //     $end = strtotime("+$additionalHours hours", $end);
-        //     $hours = 4;
-        // }
+        
         $morning_start = 6;
         $morning_end = 18;
-
-        /*$afternoon_start = strtotime("15:00");
-        $afternoon_end = strtotime("23:00");*/
 
         $night_start = 18;
         $night_end = 6;
 
         $shift_start = $this->convert_into_fraction($start);
         $shift_end = $this->convert_into_fraction($end);
-        // return [$shift_start,$shift_end];
+
         if ($shift_end < $shift_start) {
             $diff_new = $shift_end + 24 - $shift_start;
             if ($diff > $diff_new) {
                 $hours = $diff_new;
             }
         }
-        // saturday calcultions
+        
         $saturday_start = 0;
         $saturday_end = 0;
         $total_saturday_hours = 0;
@@ -184,55 +216,6 @@ class JobRosterController extends Controller
         } else {
             $state = 'vic';
         }
-        // $public_holiday_start = DB::table('public_holidays')->where('date', date('Ymd', $start))->where('state', $state)->first();
-        // if ($public_holiday != null && $public_holiday == 1) {
-        //     $start_in_public_holiday = true;
-        // } elseif (!empty($public_holiday_start)) {
-        //     $start_in_public_holiday = true;
-        // }
-
-        // $public_holiday_end = DB::table('public_holidays')->where('date', date('Ymd', $end))->where('state', $state)->first();
-        // if (!empty($public_holiday_end)) {
-        //     $end_in_public_holiday = true;
-        // } elseif ($public_holiday != null && $public_holiday == 1 && $ph_duration == 1) {
-        //     $end_in_public_holiday = true;
-        // }
-
-        // if ($start_in_public_holiday && $end_in_public_holiday) {
-        //     $total_ph_hours = $hours;
-        //     $hours = 0;
-        //     $ph_start = $shift_start;
-        //     $ph_end = $shift_end;
-        //     $shift_start = 0;
-        //     $shift_end = 0;
-        //     // echo 'whole day in PH - ';
-
-        // } elseif ($start_in_public_holiday && !$end_in_public_holiday) {
-        //     $ph_end = strtotime(date('m/d/Y 23:59:59', $start));
-        //     $diff = $ph_end - $start;
-        //     $total_ph_hours = round($diff / (60 * 60), 2);
-        //     $ph_start = $this->convert_into_fraction($start);
-        //     $ph_end = $this->convert_into_fraction($ph_end);
-        //     $start = $public_holiday_start ? strtotime($public_holiday_start->date) + (60 * 60 * 24) : $start + (60 * 60 * 24);
-        //     $day_start = Carbon::parse(date('m/d/Y', $end))->format('l');
-        //     $hours = $hours - $total_ph_hours;
-        //     $shift_start = 0;
-        //     // echo 'Start in PH - '.$day_start;
-        // } elseif (!$start_in_public_holiday && $end_in_public_holiday) {
-        //     $ph_start = strtotime(date('m/d/Y 00:00:00', strtotime($public_holiday_end->date)));
-        //     $diff = $end - $ph_start;
-        //     $total_ph_hours = round($diff / (60 * 60), 2);
-        //     $ph_start = $this->convert_into_fraction($ph_start);
-        //     // $ph_end = $this->convert_into_fraction($ph_end);
-        //     $end = $this->convert_into_fraction($end);
-        //     $shift_end = 0;
-        //     $ph_end = $end;
-        //     $end = $ph_start;
-        //     $hours = $hours - $total_ph_hours;
-
-
-        //     // echo $hours;
-        // }
         
         if ($day_start == 'Saturday' && $day_end == 'Saturday') {
             $total_saturday_hours = $hours;
@@ -1225,5 +1208,648 @@ class JobRosterController extends Controller
             'success' => true,
             'data'    => count($uploadedFiles) === 1 ? $uploadedFiles[0] : $uploadedFiles
         ]);
+    }
+
+    public function accept_asap_job(Request $request, $id)
+    {
+        $a = null;
+        $b = '';
+        $roster = DB::table('job_rosters')
+        ->join('sites', 'sites.id', '=', 'job_rosters.site_id')
+        ->where('job_rosters.asap', '=', '1')
+        ->where('job_rosters.id', '=', $request->input('roster_id'))->where(
+        function ($query) use ($a, $b) {
+            return $query->where('job_rosters.assigned_to', '=', $a)
+            ->orWhere('job_rosters.assigned_to', '=', $b);
+        })
+        ->select('job_rosters.*', 'sites.id as jobId', 'sites.address', 'sites.coordinates')
+        ->first();
+        
+        if($roster != null){
+            $flag = 0;
+            $is_already_assign = DB::table('job_rosters')
+            ->where('assigned_to', $id)
+            ->whereBetween('start', [$roster->start, $roster->end])
+            ->select('job_rosters.*')->first();
+            if($is_already_assign != null){
+                $flag = 1;
+            }else{
+                $is_already_assign = DB::table('job_rosters')
+                ->where('created_by', $id)
+                ->whereBetween('end', [$roster->start, $roster->end])
+                ->select('job_rosters.*')->first();
+                if($is_already_assign != null){
+                    $flag = 1;
+                }
+            }
+            if($flag == 0){
+
+                if (isset($id) && $id > 0 && (int) $roster->is_document === 1) {
+                    $guardUser = User::where('id', $id)->with('documents')->first();
+                    if (!$guardUser) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'Guard not found.',
+                        ], 200);
+                    }
+
+                    if ($guardUser->documents->count() === 0) {
+                        return response()->json([
+                        'success' => false,
+                        'message' => 'Please add document first.',
+                        ], 200);
+                    }
+
+                    $hasEmptyDocumentNo = $guardUser->documents->contains(function ($document) {
+                        return is_null($document->document_no) || trim((string) $document->document_no) === '' || is_null($document->file);
+                    });
+
+                    if ($hasEmptyDocumentNo) {
+                         return response()->json([
+                        'success' => false,
+                        'message' => 'Please add document number first.',
+                        ], 200);
+                    }
+                }
+                
+                DB::table('job_rosters')
+                ->where('id', '=', $request->input('roster_id'))
+                ->update(['assigned_to' => $id, 'publish_status' => 1, 'job_status' => 'confirmed', 'last_update' => time()]);
+                $guard = DB::table('users')->where('id', $id)->first();
+
+                //push notification
+                $admins = DB::table('users')->where('notification_token', '!=', '')->where('id', '=', $roster->created_by)->select('notification_token')->get();
+                foreach($admins as $a)
+                {
+                    $notification_data = [
+                        'message' => $guard->name.' accepted and confirmed the job.',
+                        'title' => 'Job Signin',
+                        'fcm_token' => $a->notification_token,
+                        'page' => 'homepage',
+                        'roster_id' =>  $id
+                    ]; 
+                     
+                    send_push_notification($notification_data);
+
+                }
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Job accept successfully.',
+                ], 200);
+            }else{
+                return response()->json([
+                    'success' => false,
+                    'message' => 'These timings are contradicting with other site timings because this guard is already added in another site.'
+                ], 200);
+            }
+        }else{
+            return response()->json([
+                 'success' => false,
+                 'message' => 'Job already accepted!'
+                ], 200);
+            
+        }
+    }
+
+    public function jobSignin(Request $request, $id) {
+
+        // $this->request = $request;
+        // $this->setValidationRules(['time' => 'required', 'selfie' => 'required', 'location' => 'required']);
+        // if ($this->isValidRequest()) {
+        // $this->response = ['success' => false, 'error' => $this->getErrors()];
+        // $this->statusCode = self::STATUS_CODE_200;
+        // return $this->sendResponse();
+        // }
+        
+        $job = JobRoster::where('id', $id)->with('site')->first();
+
+        $roster_data = DB::table('job_rosters')->where('id',$id)->first();
+        $job_start_time = $roster_data->start;
+        $job_start_time = strtotime($job_start_time);
+      
+        if ($request->has('signin_time')) {
+        $current_time = $request->input('signin_time');
+        $current_time = strtotime($current_time);
+        }else{
+        $current_time = time();
+        }
+        $diff = round(($job_start_time - $current_time) / 60,2);
+
+        if($request->input('location') == null || $request->input('location') == ''){
+
+        return response()->json([ 'success' => false, 'message' => 'Please send coordinates.' , 'code' => 404 ]);
+        }
+
+        $coordinates = explode(',', $request->input('location'));
+
+
+        if($job->site->coordinates == null ||  $job->site->coordinates == ''){
+        return response()->json([ 'success' => false, 'message' => 'Location coordinates not set.' , 'code' => 404 ]);
+        }
+
+        $coordinates1 = explode(',', $job->site->coordinates);
+
+        $distance = $this->distance(trim($coordinates[0]), trim($coordinates[1]), trim($coordinates1[0]), trim($coordinates1[1]) );
+        if($job->site->signin_radius > 0){
+        $signin_radius = $job->site->signin_radius/1000;
+        }else{
+        $signin_radius = 0.31;
+        }
+        if($distance > $signin_radius){
+        return response()->json([ 'success' => false, 'error' => 'You are '.number_format($distance, 2).' km away from your job!', 'message' => 'You are '.number_format($distance, 2).' km away from your job!', 'code' => 404 ]);
+        }
+        $is_already_signin = DB::table('job_roster_activites')->where(['job_roster_id' => $id])->first();
+        if (!empty($is_already_signin)) {
+          return response()->json([ 'success' => false, 'error' => 'You are already signin in this job!', 'message' => 'You are already signin in this job!', 'code' => 404 ]);
+        }
+        
+        $field = 'selfie'; 
+        $media = '';
+       
+        $media = $this->uploader_base64($request->input($field));
+        
+        $update_status = DB::table('job_roster_activites')
+            ->where('job_roster_id', $id)
+            ->where('guard_id', $roster_data->assigned_to)
+            ->where('status', 1)
+            ->first();
+
+        if ($update_status) {
+            DB::table('job_roster_activites')
+                ->where('job_roster_id', $id)
+                ->where('guard_id', $roster_data->assigned_to)
+                ->update(['status' => 0]);
+        }
+
+        $dateTime = DateTime::createFromFormat('d-m-Y H:i', $request->input('time'));
+        $usFormat = $dateTime->format('m/d/Y h:i A');
+        $model = DB::table('job_roster_activites')->insert([
+            'guard_id' => $roster_data->assigned_to,
+            'job_roster_id' => $id,
+            'job_incident_report_id' => null,
+            'signin_time' => $usFormat,
+            'signin_selfie' => $media,
+            'location' => $request->input('location'),
+            'status' => 1,
+            'signin_notes' => $request->filled('notes') ? $request->input('notes') : null,
+            'created_at' => now(),
+            'updated_at' => now()
+        ]);
+
+        DB::table('job_rosters')->where(['id' => $id])->update(['update_status' => 1, 'signin_status' => 1, 'last_update' => time()]);
+        $guard = DB::table('users')->where('id', $roster_data->assigned_to)->first();
+        $inputTime = DateTime::createFromFormat('d-m-Y H:i', $request->input('time'));
+        $inputTimeFormatted = $inputTime->format('Y-m-d H:i');
+        if($inputTimeFormatted <= $roster_data->start){
+        DB::table('job_rosters')->where(['id' => $id])->update(['in_paysheet' => 1]);
+        }
+        
+        if ($model) {
+
+        $roster = DB::table('job_rosters')->where('id', $id)->first();
+        $main_roster = DB::table('job_new_roster')->where('id', $roster->roster_id)->first();
+
+        $admins = DB::table('users')->where('notification_token', '!=', '')->where('id', $roster->created_by)->select('notification_token')->get();
+        foreach($admins as $a)
+        {
+        $notification_data = [
+        'message' => $guard->name.' signin in their job.',
+        'title' => 'Job Signin',
+        'fcm_token' => $a->notification_token,
+        'page' => 'homepage',
+        'roster_id' =>  $id
+        ]; 
+        send_push_notification($notification_data);
+
+        }
+            return response()->json([
+            'success' => true,
+            'message' => 'Clocked-in Successfully!'
+            ], 200);
+        }
+       
+         return response()->json([
+        'success' => true,
+        'message' => 'You are not Check-in your job.'
+        ], 200);
+    }
+
+    function distance($lat1, $lon1, $lat2, $lon2)
+    {   
+        $lat1 = doubleval($lat1);
+        $lon1 = doubleval($lon1);
+        $lat2 = doubleval($lat2);
+        $lon2 = doubleval($lon2);
+
+        $theta = $lon1 - $lon2;
+        $dist = sin(deg2rad($lat1)) * sin(deg2rad($lat2)) + cos(deg2rad($lat1)) * cos(deg2rad($lat2)) * cos(deg2rad($theta));
+        $dist = acos($dist);
+        $dist = rad2deg($dist);
+        $miles = $dist * 60 * 1.1515;
+        $miles = $miles * 1.609;
+        return $miles;
+    }
+
+    private function uploader_base64($file, $folder = 'uploads') {
+    try {
+            // $destinationPath =  rtrim('../../uploads/');
+            $public_path =  rtrim(app()->basePath('public/'), '');
+                    $public_path = str_replace('portal/public', '', $public_path);
+                    $public_path = str_replace('apis/public', '', $public_path);
+                    $public_path = str_replace('https://appapi.thescouts.com.au/', 'apis.247staffingsolutions.com.au/public', $public_path);
+                    $destinationPath = $public_path.$folder.'/';
+
+            $newName = Str::random(25);
+
+            $fileName = $newName . '.jpg';
+
+            
+            $file = base64_decode(preg_replace('#^data:image/\w+;base64,#i', '', $file));
+            file_put_contents($destinationPath.$fileName, $file);
+
+            return $fileName;
+        } catch (Exception $e) {
+            echo $e->getMessage();
+        }
+    }
+
+    public function getGuardJobs(Request $request, $type, $duration) {
+        $week    = ($request->input('week_no') != null) ? $request->input('week_no') : 0;
+        $guardId = $request->input('guard_id');
+
+        $model = JobRoster::with('guards', 'rosterActivity', 'site');
+
+        if ($week < 0) {
+            $model->where(['publish_status' => 1, 'assigned_to' => $guardId]);
+        } else {
+            $model->where(['publish_status' => 1, 'job_status' => $type, 'assigned_to' => $guardId]);
+        }
+
+        switch ($duration) {
+            case 'today':
+                if ($type == 'confirmed') {
+                    $now   = date('Y-m-d H:i:s');
+                    $start = strtotime($now) - (60 * 60 * 15);
+                    if (date('d', time()) == date('d', $start)) {
+                        $start = date('Y-m-d 00:00:00', time());
+                        $end   = date('Y-m-d 23:59:59', time());
+                        $model->whereBetween('start', [$start, $end]);
+                    } else {
+                        $start = date('Y-m-d 00:00:00', time());
+                        $end   = date('Y-m-d 23:59:59', time());
+                        $model->where(function ($query) use ($start, $end) {
+                            $query->whereBetween('start', [$start, $end])
+                                ->orWhereBetween('end', [$start, $end]);
+                        });
+                    }
+                } else {
+                    $model->whereDate('start', Carbon::today());
+                }
+                break;
+
+            case 'week':
+                if ($type == 'completed') {
+                    if ($week == 0) {
+                        $model->whereBetween('start', [
+                            Carbon::now()->startOfWeek(),
+                            Carbon::parse('next monday')->toDateString()
+                        ]);
+                    } else {
+                        $startofweek = strtotime(Carbon::now()->startOfWeek()) + (60 * 60 * 24 * 7 * $week) + 3600;
+                        $endofweek   = strtotime(Carbon::now()->endOfWeek())   + (60 * 60 * 24 * 7 * $week) + 3600;
+                        $model->where('start', '>=', date('Y-m-d 00:00:00', $startofweek));
+                        $model->where('start', '<=', date('Y-m-d 23:59:59', $endofweek));
+                    }
+                } else {
+                    if ($week == 0) {
+                        $model->whereBetween('start', [
+                            Carbon::now(),
+                            Carbon::parse('next monday')->toDateString()
+                        ]);
+                        $model->whereDate('start', '!=', Carbon::now()->toDateString());
+                    } else {
+                        $startofweek = strtotime(Carbon::now()->startOfWeek()) + (60 * 60 * 24 * 7 * $week) + 3600;
+                        if ($week > 0) {
+                            $endofweek = strtotime(Carbon::now()->endOfWeek()) + (60 * 60 * 24 * 7 * $week);
+                        } else {
+                            $endofweek = strtotime(Carbon::now()->endOfWeek()) + (60 * 60 * 24 * 7 * $week) + 3600;
+                        }
+                        $model->where('start', '>=', date('Y-m-d 00:00:00', $startofweek));
+                        $model->where('start', '<=', date('Y-m-d 23:59:59', $endofweek));
+                        $model->whereDate('start', '!=', Carbon::now()->toDateString());
+                    }
+                }
+                break;
+
+            case 'month':
+            default:
+                $model->whereMonth('start', date('m'));
+                $model->whereYear('start', date('Y'));
+                break;
+        }
+
+        $model->orderBy('start', 'asc');
+        $results = $model->paginate(15);
+
+        $data = $results->map(function ($item) {
+            if (!$item) return [];
+
+            $roster = DB::table('job_roster_activites')
+                ->where(['guard_id' => $item->assigned_to, 'job_roster_id' => $item->id])
+                ->get();
+
+            $signin_status    = 0;
+            $signout_time     = null;
+            $completed_status = 0;
+
+            foreach ($roster as $ros) {
+                $signin_status = $ros->status;
+                $signout_time  = $ros->signout_time;
+                if ($signout_time != null) {
+                    $completed_status = 1;
+                }
+            }
+
+            if (!empty($item->rosterActivity) && $item->rosterActivity->signin_selfie != null) {
+                $item->rosterActivity->signin_selfie = 'https://appapi.thescouts.com.au/uploads/' . $item->rosterActivity->signin_selfie;
+            }
+            if (!empty($item->rosterActivity) && $item->rosterActivity->signout_selfie != null) {
+                $item->rosterActivity->signout_selfie = 'https://appapi.thescouts.com.au/uploads/' . $item->rosterActivity->signout_selfie;
+            }
+
+            $signin_timez = !empty($item->rosterActivity) ? strtotime($item->rosterActivity->signin_time) : null;
+
+            return [
+                'id'                    => $item->id,
+                'event_id'              => $item->id,
+                'guard_id'              => $item->guard_id,
+                'job_id'                => $item->site_id,
+                'break_status'          => $item->break_status,
+                'instructions_file'     => $item->instructions_file != '' ? 'https://' . request()->getHttpHost() . '/uploads/' . $item->instructions_file : "",
+                'job_start_day'         => date('d', strtotime($item->start)),
+                'job_start_date'        => date('D', strtotime($item->start)),
+                'job_start_month'       => date('M', strtotime($item->start)),
+                'job_start_year'        => date('Y', strtotime($item->start)),
+                'job_end_day'           => date('d', strtotime($item->end)),
+                'job_end_date'          => date('D', strtotime($item->end)),
+                'job_end_month'         => date('M', strtotime($item->end)),
+                'job_end_year'          => date('Y', strtotime($item->end)),
+                'temp_date'             => $item->start,
+                'start'                 => date('d-m-Y H:i:s', strtotime($item->start)),
+                'end'                   => date('d-m-Y H:i:s', strtotime($item->end)),
+                'publish_status'        => $item->publish_status,
+                'add_status'            => $item->add_status,
+                'job_status'            => $item->job_status,
+                'shift_instructions'    => $item->shift_instructions ?? '',
+                'signin_status'         => $signin_status,
+                'completed_status'      => $completed_status,
+                'job'                   => $item->job,
+                'guard'                 => $item->guards,
+                'job_roster_activities' => $item->rosterActivity,
+                'signin_time'           => $signin_status == 1 ? date("m-d-Y H:i", $signin_timez) : null,
+            ];
+        });
+
+        $week_start = strtotime(Carbon::now()->startOfWeek());
+        $week_end   = strtotime(Carbon::now()->endOfWeek());
+
+        if ($week != 0) {
+            $week_start = strtotime(Carbon::now()->startOfWeek()) + (60 * 60 * 24 * 7 * $week) + 3600;
+            $week_end   = strtotime(Carbon::now()->endOfWeek())   + (60 * 60 * 24 * 7 * $week) - 3600;
+        }
+
+        $count   = $results->total();
+        $message = $count == 0 ? 'No Record Found.' : 'Data Received';
+
+        return response()->json([
+            'data'       => $data,
+            'message'    => $message,
+            'start_date' => date('Y-m-d H:i:s', $week_start),
+            'end_data'   => date('Y-m-d H:i:s', $week_end),
+            'now'        => Carbon::now()->startOfWeek(),
+            'end'        => Carbon::now()->endOfWeek(),
+            'success'    => true,
+            'code'       => 200,
+            'meta'       => [
+                'host_url'     => url('/'),
+                'total'        => $count,
+                'request_time' => time(),
+            ],
+        ], 200);
+    }
+
+    public function jobSpecificDetail(Request $request, $id) {
+        // $results = $this->jobRosterRepo->jobSpecificDetail(($this->currentUser) ? $this->currentUser->id : [], $id);
+        // return new JobRosterCollection(JobRosterResource::collection($results));
+    }
+
+    public function reportIncidentNew(Request $request, $id) 
+    {
+        $media = array();
+        if ($request->input('photo')) {
+            $photo = json_decode($request->input('photo'), true);
+            if (is_array($photo) && !empty($photo)) {
+                foreach ($photo as $key => $value) {
+                    $newObject = new \stdClass();
+                    $newObject->imgPath = $this->uploader_base64($value['imgPath'], 'incident');
+                    $newObject->timestamp = $value['timestamp'];
+                    $media[] = $newObject;
+                }
+            }
+        }
+        $signature = '';
+        if ($request->input('signature')) {
+            $signature = $this->uploader_base64($request->input('signature'), 'incident');
+        }
+        $data = array(
+            'job_id' => $id,
+            'guard_id' => $request->input('guard_id'),
+            'roster_id' => $request->input('roster_id'),
+            'incident_date' => $request->input('date'),
+            'incident_time' => $request->input('time'),
+            'site_name' => $request->input('site_name'), 
+            'injury_type' => $request->input('injury_type'), 
+            'injury_detail' => $request->input('incident_detail'),
+            'people_involved' => $request->input('people_involved'), 
+            'vehicle' => $request->input('vehicle'), 
+            'emergency_services' => $request->input('emergency_services'), 
+            'wittness' => $request->input('wittness'), 
+            'photo' => json_encode($media),
+            'signature' => $signature
+        );
+        $data['people_involved'] = str_replace('[{}]', '[]', $data['people_involved']);
+        $data['emergency_services'] = str_replace('[{}]', '[]', $data['emergency_services']);
+        $data['vehicle'] = str_replace('[{}]', '[]', $data['vehicle']);
+        $data['wittness'] = str_replace('[{}]', '[]', $data['wittness']);
+        $job_incident_report_id = DB::table('incident_reports')->insertGetId($data);
+
+        $guard = DB::table('guards')->where('id', $request->input('guard_id'))->first();
+        $job = DB::table('sites')->where('id', $id)->first();
+        $roster = DB::table('job_rosters')->where('id', $request->input('roster_id'))->first();
+        $main_roster = DB::table('job_new_roster')->where('id', $roster->roster_id)->first();
+
+        DB::table('job_roster_activites')->where('job_roster_id', $request->input('roster_id'))->where('guard_id', $request->input('guard_id'))->update(['job_incident_report_id' => $job_incident_report_id]);
+
+        DB::table('roster_complete_activity')->insert([
+        'roster_id' => $request->input('roster_id'),
+        'activity' => $guard->first_name.' '.$guard->last_name.' report new incident',
+        'type' => 'incident_report',
+        'record_id' => $job_incident_report_id,
+        'activity_time' => time(),
+        'activity_by' => $request->input('guard_id')
+        ]);
+
+        //push notification
+        $admins = DB::table('users')->where('notification_token', '!=', '')->where('id', $roster->created_by)->select('notification_token')->get();
+        foreach($admins as $a)
+        {
+            $notification_data = [
+                'message' => $guard->first_name.' '.$guard->last_name.' report new incident.',
+                'title' => 'Incident Report',
+                'fcm_token' => $a->notification_token,
+                'page' => 'homepage',
+                'roster_id' =>  $id
+            ]; 
+            send_push_notification($notification_data);
+        }
+
+         return response()->json([
+        'success' => true,
+        'message' => 'Incident reported successfully!'
+        ], 200);
+    }
+
+    public function footPatrolReport(Request $request, $id) 
+    {
+        if(!isset($id) || $id == 0){
+            return response()->json([
+                'success' => false,
+                'message' => 'Site not found'
+            ], 500);
+        }
+
+        $media = array();
+        if ($request->input('photo')) {
+            $photo = json_decode($request->input('photo'), true);
+            if (is_array($photo) && !empty($photo)) {
+                foreach ($photo as $key => $value) {
+                    $newObject = new \stdClass();
+                    $newObject->imgPath = $this->uploader_base64($value['imgPath'], 'footpatrol');
+                    $newObject->timestamp = $value['timestamp'];
+                    $media[] = $newObject;
+                }
+            }
+        }
+        $signature = '';
+        if ($request->input('signature')) {
+            $signature = $this->uploader_base64($request->input('signature'), 'footpatrol');
+        }
+        $data = array(
+            'job_id' => $id,
+            'guard_id' => $request->input('guard_id'),
+            'roster_id' => $request->input('roster_id'),
+            'date' => $request->input('date'),
+            'time' => $request->input('time'),
+            'patrolling_detail' => $request->input('patrolling_detail'),
+            'site_name' => $request->input('site_name'), 
+            'photo' => json_encode($media),
+            'signature' => $signature
+        );
+        $job_patrol_report_id = DB::table('foot_patrol_reports')->insertGetId($data);
+
+        $guard = DB::table('guards')->where('id', $request->input('guard_id'))->first();
+        $job = DB::table('sites')->where('id', $id)->first();
+        $roster = DB::table('job_rosters')->where('id', $request->input('roster_id'))->first();
+        $main_roster = DB::table('job_new_roster')->where('id', $roster->roster_id)->first();
+        
+        DB::table('job_roster_activites')->where('job_roster_id', $request->input('roster_id'))->where('guard_id', $request->input('guard_id'))->update(['job_patrol_report_id' => $job_patrol_report_id]);
+        
+        //push notification
+        $admins = DB::table('users')->where('notification_token', '!=', '')->where('id', $roster->created_by)->select('notification_token')->get();
+        foreach($admins as $a)
+        {
+            $notification_data = [
+                'message' => $guard->name.' report new foot patrol.',
+                'title' => 'Foot Patrol Report',
+                'fcm_token' => $a->notification_token,
+                'page' => 'homepage',
+                'roster_id' =>  $id
+            ]; 
+            send_push_notification($notification_data);
+        }  
+        
+        return response()->json([
+        'success' => true,
+        'message' => 'Foot Patrol reported successfully!'
+        ], 200);
+    }
+
+    public function jobSignout(Request $request, $id) {
+        
+        $field = 'selfie'; $media = '';
+            
+        $media = $this->uploader_base64($request->input($field));
+        
+        $signout_location = '';
+
+        if ($request->has('location') && $request->location != '') {
+            $signout_location = $request->location;
+        }
+
+        $dateTime = DateTime::createFromFormat('d-m-Y H:i', $request->input('time'));
+        $usFormat = $dateTime->format('m/d/Y h:i A');
+        $roster = DB::table('job_rosters')->where('id', $id)->first();
+
+        $model = DB::table('job_roster_activites')
+            ->updateOrInsert(
+            [
+                'guard_id' => $roster->assigned_to, 
+                'job_roster_id' => $id
+            ],
+            [
+            'signout_time' => $usFormat,
+            'signout_selfie' => $media,
+            'status' => 0,
+            'signout_location' => $signout_location,
+            'signout_notes' => (!empty($request->input('notes')) && $request->input('notes') != null && $request->input('notes') != '') ? $request->input('notes') : '',
+            'updated_at' => now()
+            ]
+        );
+
+        if ($model) {
+            DB::table('job_rosters')->where('id', $id)->update(['job_status' => 'completed', 'update_status' => 1, 'signin_status' => 0, 'last_update' => time()]);
+            $guard = DB::table('users')->where('id',$roster->assigned_to)->first();
+            $roster = DB::table('job_rosters')->where('id', $id)->first();
+            # CALCULATE TIME DIFFERENCE SO THAT UPDATE THE VARIABLE USE IN COMPLETE PATSHEET
+            $inputTime = DateTime::createFromFormat('d-m-Y H:i', $request->input('time'));
+            $inputTimeFormatted = $inputTime->format('Y-m-d H:i');
+            if($inputTimeFormatted >= $roster->end && $roster->in_paysheet == 1){
+                DB::table('job_rosters')->where(['id' => $id])->update(['in_paysheet' => 1]);
+            }else{
+                DB::table('job_rosters')->where(['id' => $id])->update(['in_paysheet' => 0]);
+            }
+
+            $admins = DB::table('users')->where('notification_token', '!=', '')->where('id', $roster->created_by)->select('notification_token')->get();
+            foreach($admins as $a)
+            {
+                $notification_data = [
+                    'message' => $guard->first_name.' '.$guard->last_name.' signout in their job.',
+                    'title' => 'Job Signout',
+                    'fcm_token' => $a->notification_token,
+                    'page' => 'homepage',
+                    'roster_id' =>  $id
+                ]; 
+                send_push_notification($notification_data);
+            }
+        
+            return response()->json([
+            'success' => true,
+            'message' => 'Clocked-out Successfully!'
+            ], 200);
+        }
+            return response()->json([
+            'success' => true,
+            'message' => 'You are not Check-out your job.'
+            ], 200);
     }
 }

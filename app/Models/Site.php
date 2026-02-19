@@ -15,6 +15,7 @@ class Site extends Model
         'user_id',
         'site_name',
         'site_description',
+        'signin_radius',
         'address',
         'coordinates',
         'state',

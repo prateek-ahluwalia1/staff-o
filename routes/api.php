@@ -80,6 +80,22 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::any('upload-file', [StaffController::class, 'uploadFile'])->name('upload.file');
 
     Route::any('job-post', [JobRosterController::class, 'jobData'])->name('job.post');
+    Route::any('/asap-jobs/accept/{id}', [JobRosterController::class, 'accept_asap_job'])->name('accept.asap.job');
+    Route::any('/signin/{id}', [JobRosterController::class, 'jobSignin'])->name('job.signin');
+    Route::any('/signout/{id}', [JobRosterController::class, 'jobSignout'])->name('job.signout');
+
+    Route::any('/jobDetails/{id}', [JobRosterController::class, 'jobSpecificDetail'])->name('job.detail');
+    Route::any('/guard/jobs/{type}/{duration}', [JobRosterController::class, 'getGuardJobs'])->name('guard.job.detail');
+    Route::any('/report-incident/{id}', [JobRosterController::class, 'reportIncidentNew']);
+    Route::any('/foot-patrol-report/{id}', [JobRosterController::class, 'footPatrolReport']);
+
+
+
+
+
+
+
+
 
 });
 

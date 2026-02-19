@@ -17,4 +17,13 @@ class JobRoster extends Model
         return $this->belongsTo(Site::class, 'site_id', 'id');
     }
 
+    public function rosterActivity()
+    {
+        return $this->hasOne(JobRosterActivity::class, 'job_roster_id', 'id');
+    }
+
+    public function guards() {
+        return $this->belongsTo(User::class, 'assigned_to', 'id');
+    }
+
 }

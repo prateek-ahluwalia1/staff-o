@@ -25,7 +25,7 @@ const Footer = memo(function Footer() {
                   <Link to="/about-us">About Us</Link>
                 </li>
                 <li>
-                  <a href="#">Terms Of Use</a>
+                  <a href="/">Terms Of Use</a>
                 </li>
               </ul>
             </div>
@@ -35,28 +35,28 @@ const Footer = memo(function Footer() {
               <h5 className="footer-title">Jobs By Functional Area</h5>
               <ul className="footer-links">
                 <li>
-                  <a href="#">Marketing</a>
+                  <a href="/">Marketing</a>
                 </li>
                 <li>
-                  <a href="#">Graphic Design</a>
+                  <a href="/">Graphic Design</a>
                 </li>
                 <li>
-                  <a href="#">Business Management</a>
+                  <a href="/">Business Management</a>
                 </li>
                 <li>
-                  <a href="#">Software &amp; Web Development</a>
+                  <a href="/">Software &amp; Web Development</a>
                 </li>
                 <li>
-                  <a href="#">Admin</a>
+                  <a href="/">Admin</a>
                 </li>
                 <li>
-                  <a href="#">Database Administration</a>
+                  <a href="/">Database Administration</a>
                 </li>
                 <li>
-                  <a href="#">Advertising</a>
+                  <a href="/">Advertising</a>
                 </li>
                 <li>
-                  <a href="#">Web Developer</a>
+                  <a href="/">Web Developer</a>
                 </li>
               </ul>
             </div>
@@ -66,28 +66,28 @@ const Footer = memo(function Footer() {
               <h5 className="footer-title">Jobs By Industry</h5>
               <ul className="footer-links">
                 <li>
-                  <a href="#">Courier/Logistics</a>
+                  <a href="/">Courier/Logistics</a>
                 </li>
                 <li>
-                  <a href="#">Travel/Tourism/Transportation</a>
+                  <a href="/">Travel/Tourism/Transportation</a>
                 </li>
                 <li>
-                  <a href="#">Fashion</a>
+                  <a href="/">Fashion</a>
                 </li>
                 <li>
-                  <a href="#">Electronics</a>
+                  <a href="/">Electronics</a>
                 </li>
                 <li>
-                  <a href="#">Automobile</a>
+                  <a href="/">Automobile</a>
                 </li>
                 <li>
-                  <a href="#">Advertising/PR</a>
+                  <a href="/">Advertising/PR</a>
                 </li>
                 <li>
-                  <a href="#">Health &amp; Fitness</a>
+                  <a href="/">Health &amp; Fitness</a>
                 </li>
                 <li>
-                  <a href="#">Information Technology</a>
+                  <a href="/">Information Technology</a>
                 </li>
               </ul>
             </div>
@@ -112,19 +112,19 @@ const Footer = memo(function Footer() {
               </ul>
 
               <div className="footer-social">
-                <a href="#" aria-label="Facebook">
+                <a href="/" aria-label="Facebook">
                   <i className="fab fa-facebook" aria-hidden="true"></i>
                 </a>
-                <a href="#" aria-label="X">
+                <a href="/" aria-label="X">
                   <i className="fab fa-x-twitter" aria-hidden="true"></i>
                 </a>
-                <a href="#" aria-label="Instagram">
+                <a href="/" aria-label="Instagram">
                   <i className="fab fa-instagram" aria-hidden="true"></i>
                 </a>
-                <a href="#" aria-label="LinkedIn">
+                <a href="/" aria-label="LinkedIn">
                   <i className="fab fa-linkedin" aria-hidden="true"></i>
                 </a>
-                <a href="#" aria-label="YouTube">
+                <a href="/" aria-label="YouTube">
                   <i className="fab fa-youtube" aria-hidden="true"></i>
                 </a>
               </div>

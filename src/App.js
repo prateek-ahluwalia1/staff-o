@@ -75,10 +75,7 @@ function App() {
                 path="/my-job-applications"
                 element={<MyJobApplications />}
               />
-              <Route
-                path="/roster"
-                element={<RosterPage />}
-              />
+              <Route path="/roster" element={<RosterPage />} />
               <Route path="/my-favourite-jobs" element={<MyFavouriteJobs />} />
               <Route path="/job-alerts" element={<JobAlerts />} />
               <Route path="/my-followings" element={<MyFollowings />} />

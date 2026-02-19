@@ -102,8 +102,13 @@ export default function ReviewStep({
       </div>
 
       <div className="mt-3 d-flex justify-content-end gap-2">
-        <button className="btn btn-success btn-lg" onClick={handleConfirm}>
-          Confirm & Post Job
+        <button
+          className="btn btn-success btn-lg"
+          onClick={handleConfirm}
+          disabled={!form.termsAccepted}
+          style={{ opacity: form.termsAccepted ? 1 : 0.6 }}
+        >
+          Post Job
         </button>
         <button
           type="button"

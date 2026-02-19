@@ -1,4 +1,5 @@
 import React from "react";
+import Select from "react-select";
 import AttachmentGrid from "./AttachmentGrid";
 
 export default function DetailsStep({
@@ -8,6 +9,28 @@ export default function DetailsStep({
   attachmentPreviews,
   removeAttachment,
 }) {
+  const DOC_OPTIONS = [
+    "passport",
+    "visa",
+    "vaccination",
+    "security_license",
+    "driver_license_front",
+    "driver_license_back",
+    "application_form",
+    "working_with_children",
+    "first_aid",
+    "cpr",
+    "citizen_ship",
+  ];
+
+  function toggleDocType(type) {
+    const prev = Array.isArray(form.document_types) ? form.document_types : [];
+    const next = prev.includes(type)
+      ? prev.filter((t) => t !== type)
+      : [...prev, type];
+    setField("document_types", next);
+  }
+
   return (
     <div className="mb-4">
       <h5 className="mb-2">Details</h5>
@@ -66,15 +89,21 @@ export default function DetailsStep({
         </div>
         <div className="col-md-3">
           <label className="form-label">Job Type</label>
-          <select
-            className="form-select"
-            value={form.jobType}
-            onChange={(e) => setField("jobType", e.target.value)}
-          >
-            <option value="">Select type</option>
-            <option value="site-patrol">Site Patrol Security</option>
-            <option value="event">Event Security</option>
-          </select>
+          <Select
+            options={[
+              { value: "", label: "Select type" },
+              { value: "site-patrol", label: "Site Patrol Security" },
+              { value: "event", label: "Event Security" },
+            ]}
+            value={
+              form.jobType ? { value: form.jobType, label: form.jobType } : null
+            }
+            onChange={(opt) =>
+              setField("jobType", opt && opt.value ? opt.value : "")
+            }
+            isClearable
+            classNamePrefix="react-select"
+          />
         </div>
       </div>
 
@@ -87,6 +116,51 @@ export default function DetailsStep({
           className="form-control"
           rows={4}
         />
+      </div>
+
+      <div className="mb-3">
+        <label className="form-label">Document</label>
+        <div className="mb-2">
+          <button
+            type="button"
+            className={`btn ${form.document ? "btn-primary" : "btn-outline-primary"}`}
+            onClick={() => setField("document", !form.document)}
+            aria-pressed={Boolean(form.document)}
+          >
+            {form.document ? "Document Required" : "Document Required?"}
+          </button>
+        </div>
+
+        {form.document && (
+          <div className="card p-2">
+            <div className="small text-muted mb-2">
+              Select required documents
+            </div>
+            <Select
+              isMulti
+              options={DOC_OPTIONS.map((d) => ({
+                value: d,
+                label: d.replace(/_/g, " "),
+              }))}
+              value={
+                Array.isArray(form.document_types)
+                  ? form.document_types.map((d) => ({
+                      value: d,
+                      label: d.replace(/_/g, " "),
+                    }))
+                  : []
+              }
+              onChange={(opts) =>
+                setField(
+                  "document_types",
+                  Array.isArray(opts) ? opts.map((o) => o.value) : [],
+                )
+              }
+              classNamePrefix="react-select"
+              placeholder="Select required documents"
+            />
+          </div>
+        )}
       </div>
 
       <div className="mb-3">

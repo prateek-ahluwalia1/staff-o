@@ -34,6 +34,9 @@ export default function AddJob() {
     jobType: "",
     numGuards: 1,
     attachments: [],
+    // new document flag and selected types
+    document: false,
+    document_types: [],
     termsAccepted: false,
   });
 
@@ -199,8 +202,9 @@ export default function AddJob() {
             : "",
         endTime:
           form.endDate && form.endTime ? `${form.endDate}T${form.endTime}` : "",
-        is_document: document_list.length > 0,
+        is_document: Boolean(form.document) || document_list.length > 0,
         document_list,
+        document_types: form.document_types || [],
         job_instruction: form.description || "",
       };
 

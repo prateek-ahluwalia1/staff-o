@@ -8,6 +8,13 @@ export default function ReviewStep({
   handleConfirm,
   setStep,
 }) {
+  const JOB_TYPE_LABELS = {
+    "site-patrol": "Site Patrol Security",
+    event: "Event Security",
+  };
+
+  const jobTypeLabel = JOB_TYPE_LABELS[form.jobType] || form.jobType || "-";
+
   return (
     <div className="mb-4">
       <h5 className="mb-2">Review & Confirm</h5>
@@ -23,7 +30,7 @@ export default function ReviewStep({
         <div className="col-md-6 mb-2">
           <div className="border rounded p-2 bg-light">
             <strong>Job Type</strong>
-            <div className="text-muted small">{form.jobType || "-"}</div>
+            <div className="text-muted small">{jobTypeLabel}</div>
           </div>
         </div>
       </div>
@@ -53,6 +60,22 @@ export default function ReviewStep({
           <div className="text-muted small">{form.location || "-"}</div>
         </div>
       </div>
+
+      {form.document && (
+        <div className="mt-3">
+          <div className="border rounded p-3 bg-light">
+            <strong>Required Documents</strong>
+            <div className="text-muted small">
+              {Array.isArray(form.document_types) &&
+              form.document_types.length > 0
+                ? form.document_types
+                    .map((d) => d.replace(/_/g, " "))
+                    .join(", ")
+                : "None selected"}
+            </div>
+          </div>
+        </div>
+      )}
 
       {rate && <RateBreakdown rate={rate} numGuards={form.numGuards} />}
 

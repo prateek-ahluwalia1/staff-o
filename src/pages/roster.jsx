@@ -7,6 +7,7 @@ import {
   addDays,
   isToday,
 } from "date-fns";
+import useFetch from "../hooks/useFetch";
 
 const DAYS_OF_WEEK = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
@@ -36,11 +37,12 @@ const mockData = [
 ];
 
 export default function RosterPage() {
+  const { data: sites, loading, error } = useFetch("/api/fetch-customer-sites");
   const [monday, setMonday] = useState(() =>
     startOfWeek(new Date(), { weekStartsOn: 1 }),
   );
 
-  // const [modal, setModal] = useState(null);
+  const [modal, setModal] = useState(null);
 
   const weekDays = useMemo(() => {
     return Array.from({ length: 7 }, (_, i) => {
@@ -64,11 +66,11 @@ export default function RosterPage() {
   const goToThisWeek = () =>
     setMonday(startOfWeek(new Date(), { weekStartsOn: 1 }));
 
-  // const openAssignModal = (site, dateKey, dateLabel) => {
-  //   setModal({ site, dateKey, dateLabel });
-  // };
+  const openAssignModal = (site, dateKey, dateLabel) => {
+    setModal({ site, dateKey, dateLabel });
+  };
 
-  // const closeModal = () => setModal(null);
+  const closeModal = () => setModal(null);
 
   return (
     <>
@@ -411,8 +413,10 @@ export default function RosterPage() {
                             {/* + button always at bottom */}
                             <div
                               className="add-shift-btn"
-                              // onClick={() => openAssignModal(row, day.key, day.dateStr)}
-                              // title="Add new shift"
+                              onClick={() =>
+                                openAssignModal(row, day.key, day.dateStr)
+                              }
+                              title="Add new shift"
                             >
                               +
                             </div>
@@ -428,7 +432,7 @@ export default function RosterPage() {
         </main>
 
         {/* Modal */}
-        {/* {modal && (
+        {modal && (
           <div className="modal-overlay" onClick={closeModal}>
             <div className="modal-content" onClick={(e) => e.stopPropagation()}>
               <span className="modal-close" onClick={closeModal}>
@@ -444,21 +448,22 @@ export default function RosterPage() {
                 <strong>Date:</strong> {modal.dateLabel} (Week of {weekTitle})
               </div>
 
-              <div style={{ marginTop: '24px', color: '#64748b' }}>
+              <div style={{ marginTop: "24px", color: "#64748b" }}>
                 <p>Here you would normally see:</p>
-                <ul style={{ paddingLeft: '20px', margin: '12px 0' }}>
+                <ul style={{ paddingLeft: "20px", margin: "12px 0" }}>
                   <li>List of available guards</li>
                   <li>Shift type selector (C/M/other)</li>
                   <li>Time picker (start/end)</li>
                   <li>Save / Cancel buttons</li>
                 </ul>
-                <p style={{ fontSize: '0.9rem', marginTop: '16px' }}>
-                  (This is a placeholder — implement your guard selection logic here)
+                <p style={{ fontSize: "0.9rem", marginTop: "16px" }}>
+                  (This is a placeholder — implement your guard selection logic
+                  here)
                 </p>
               </div>
             </div>
           </div>
-        )} */}
+        )}
       </div>
     </>
   );

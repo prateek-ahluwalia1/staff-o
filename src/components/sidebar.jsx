@@ -23,6 +23,7 @@ const Sidebar = memo(function Sidebar() {
 
   const customerNav = [
     { to: "/dashboard", icon: "fa-solid fa-gauge", label: "Dashboard" },
+    { to: "/roster", icon: "fa-solid fa-users", label: "Roster" },
     {
       to: "/edit-profile",
       icon: "fa-solid fa-user-pen",
@@ -52,6 +53,7 @@ const Sidebar = memo(function Sidebar() {
 
   const contractorNav = [
     { to: "/dashboard", icon: "fa-solid fa-gauge", label: "Dashboard" },
+    { to: "/roster", icon: "fa-solid fa-users", label: "Roster" },
     {
       to: "/edit-profile",
       icon: "fa-solid fa-user-pen",
@@ -81,6 +83,7 @@ const Sidebar = memo(function Sidebar() {
 
   const staffNav = [
     { to: "/dashboard", icon: "fa-solid fa-gauge", label: "Dashboard" },
+    { to: "/roster", icon: "fa-solid fa-users", label: "Roster" },
     {
       to: "/edit-profile",
       icon: "fa-solid fa-user-pen",

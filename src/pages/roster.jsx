@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, useCallback } from "react";
 import { useSelector } from "react-redux";
 import {
   startOfWeek,
@@ -13,6 +13,7 @@ import {
 } from "date-fns";
 import useSubmit from "../hooks/useSubmit";
 import Loader from "../components/Loader";
+import useFetch from "../hooks/useFetch";
 
 const DAYS_OF_WEEK = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 const API_DATE_FORMAT = "yyyy-MM-dd HH:mm";
@@ -28,18 +29,38 @@ function parseApiDate(dateValue) {
 }
 
 export default function RosterPage() {
-  const { submit, loading, data } = useSubmit({ isAuth: true });
   const { userdata } = useSelector((state) => state.auth);
+  const userType = userdata?.data?.user_type || userdata?.user_type;
+  const userId = userdata?.data?.id || userdata?.id;
+
+  const {
+    data: staffData,
+    loading: staffLoading,
+    error: staffError,
+  } = useFetch(`api/get-contractor-staff/${userId}`, {
+    method: "POST",
+    isAuth: true,
+  });
+
+  const {
+    submit,
+    loading: submitLoading,
+    data: submitData,
+  } = useSubmit({ isAuth: true });
+
+  const { submit: saveUserAssignment, loading: saveLoading } = useSubmit({
+    isAuth: true,
+  });
 
   const [monday, setMonday] = useState(() =>
     startOfWeek(new Date(), { weekStartsOn: 1 }),
   );
 
-  // Modal state now includes a "type" to differentiate between 'add' and 'details'
   const [modal, setModal] = useState(null);
+  const [selectedUserId, setSelectedUserId] = useState("");
 
-  useEffect(() => {
-    const userId = userdata?.data?.id || userdata?.id;
+  // 1. Extracted fetch logic into a reusable function
+  const fetchCustomerSites = useCallback(() => {
     if (!userId) return;
 
     const payload = {
@@ -51,7 +72,12 @@ export default function RosterPage() {
     };
 
     submit("api/fetch-customer-sites", payload, { method: "POST" });
-  }, [monday, userdata]);
+  }, [userId, monday, submit]);
+
+  // 2. Call the function inside useEffect
+  useEffect(() => {
+    fetchCustomerSites();
+  }, [fetchCustomerSites]);
 
   const weekDays = useMemo(() => {
     return Array.from({ length: 7 }, (_, i) => {
@@ -72,9 +98,9 @@ export default function RosterPage() {
   }, [monday]);
 
   const sites = useMemo(() => {
-    if (!data?.data) return [];
+    if (!submitData?.data) return [];
 
-    return data.data.map((site) => {
+    return submitData.data.map((site) => {
       const roster = (site.job_roster || [])
         .map((shift) => {
           const startDate = parseApiDate(shift.start);
@@ -102,22 +128,64 @@ export default function RosterPage() {
         jobRoster: roster,
       };
     });
-  }, [data]);
+  }, [submitData]);
+
+  const guards = staffData?.guards || [];
 
   const prevWeek = () => setMonday((prev) => subWeeks(prev, 1));
   const nextWeek = () => setMonday((prev) => addWeeks(prev, 1));
   const goToThisWeek = () =>
     setMonday(startOfWeek(new Date(), { weekStartsOn: 1 }));
 
-  const openDetailsModal = (site, shift, dateStr) =>
+  const openDetailsModal = (site, shift, dateStr) => {
+    setSelectedUserId(shift.assigned_to || "");
     setModal({ type: "details", site, shift, dateStr });
-  const openAddModal = (site, dateStr) =>
-    setModal({ type: "add", site, dateStr });
-  const closeModal = () => setModal(null);
+  };
+
+  const closeModal = () => {
+    setModal(null);
+    setSelectedUserId("");
+  };
 
   const handleActivityClick = (shiftId) => {
     alert(`Activity clicked for shift ID: ${shiftId}`);
   };
+
+  const handleSave = async () => {
+    if (modal?.type !== "details") {
+      closeModal();
+      return;
+    }
+
+    if (!selectedUserId) {
+      alert("Please select a user to assign.");
+      return;
+    }
+
+    const endpoint = `api/asap-jobs/accept/${selectedUserId}`;
+    const payload = {
+      roster_id: modal.shift.id,
+    };
+
+    try {
+      // Wait for the save operation to finish
+      await saveUserAssignment(endpoint, payload, { method: "POST" });
+
+      // 3. Re-fetch the customer sites to update the UI with new data
+      fetchCustomerSites();
+
+      closeModal();
+    } catch (error) {
+      console.error("Failed to save assignment:", error);
+      // Optional: Add a toast notification here if the save fails
+    }
+  };
+
+  // ... (rest of the render JSX remains exactly the same)
+
+  if (staffLoading || submitLoading) {
+    return <Loader fullPage message="Loading roster data..." />;
+  }
 
   return (
     <div className="roster-page">
@@ -137,70 +205,64 @@ export default function RosterPage() {
       </header>
 
       <main className="roster-container">
-        {loading ? (
-          <Loader />
-        ) : (
-          <div className="table-card">
-            <table className="roster-table">
-              <thead>
+        <div className="table-card">
+          <table className="roster-table">
+            <thead>
+              <tr>
+                <th>Site</th>
+                {weekDays.map((day) => (
+                  <th key={day.key} className={day.isToday ? "today-head" : ""}>
+                    {day.label}
+                    <div className="date-subtext">{day.dateStr}</div>
+                  </th>
+                ))}
+              </tr>
+            </thead>
+
+            <tbody>
+              {sites.length === 0 ? (
                 <tr>
-                  <th>Site</th>
-                  {weekDays.map((day) => (
-                    <th
-                      key={day.key}
-                      className={day.isToday ? "today-head" : ""}
-                    >
-                      {day.label}
-                      <div className="date-subtext">{day.dateStr}</div>
-                    </th>
-                  ))}
+                  <td className="no-sites" colSpan={8}>
+                    No sites found for this week.
+                  </td>
                 </tr>
-              </thead>
+              ) : (
+                sites.map((site) => {
+                  return (
+                    <tr key={site.id}>
+                      <td className="site-cell">
+                        <div className="site-name">{site.displayName}</div>
+                        <div className="site-type">{site.type}</div>
+                        <div className="hours">Total: {site.hours}</div>
+                      </td>
 
-              <tbody>
-                {sites.length === 0 ? (
-                  <tr>
-                    <td className="no-sites" colSpan={8}>
-                      No sites found for this week.
-                    </td>
-                  </tr>
-                ) : (
-                  sites.map((site) => {
-                    return (
-                      <tr key={site.id}>
-                        <td className="site-cell">
-                          <div className="site-name">{site.displayName}</div>
-                          <div className="site-type">{site.type}</div>
-                          <div className="hours">Total: {site.hours}</div>
-                        </td>
+                      {weekDays.map((day) => {
+                        const shifts = site.jobRoster.filter((shift) =>
+                          isSameDay(shift.startDate, day.dateObj),
+                        );
+                        const isEmpty = shifts.length === 0;
 
-                        {weekDays.map((day) => {
-                          const shifts = site.jobRoster.filter((shift) =>
-                            isSameDay(shift.startDate, day.dateObj),
-                          );
-                          const isEmpty = shifts.length === 0;
-
-                          return (
-                            <td
-                              key={day.key}
-                              data-label={day.dateLabel}
-                              className={isEmpty ? "empty-day" : "active-day"}
-                            >
-                              <div className="shift-container">
-                                {shifts.map((shift) => (
-                                  <div
-                                    key={shift.id}
-                                    className={`shift-card ${
-                                      shift.job_status === "confirmed"
-                                        ? "shift-confirmed"
-                                        : "shift-pending"
-                                    }`}
-                                  >
-                                    <div className="shift-time">
-                                      {format(shift.startDate, "HH:mm")} -{" "}
-                                      {format(shift.endDate, "HH:mm")}
-                                    </div>
-
+                        return (
+                          <td
+                            key={day.key}
+                            data-label={day.dateLabel}
+                            className={isEmpty ? "empty-day" : "active-day"}
+                          >
+                            <div className="shift-container">
+                              {shifts.map((shift) => (
+                                <div
+                                  key={shift.id}
+                                  className={`shift-card ${
+                                    shift.job_status === "confirmed"
+                                      ? "shift-confirmed"
+                                      : "shift-pending"
+                                  }`}
+                                >
+                                  <div className="shift-time">
+                                    {format(shift.startDate, "HH:mm")} -{" "}
+                                    {format(shift.endDate, "HH:mm")}
+                                  </div>
+                                  {userType === "contractor" && (
                                     <div className="shift-actions">
                                       <button
                                         className="action-btn details-btn"
@@ -225,35 +287,26 @@ export default function RosterPage() {
                                         Activity
                                       </button>
                                     </div>
-                                  </div>
-                                ))}
+                                  )}
+                                </div>
+                              ))}
 
-                                {/* Restored Add Shift Button */}
-                                <button
-                                  type="button"
-                                  className="add-shift-btn"
-                                  onClick={() =>
-                                    openAddModal(site, day.dateLabel)
-                                  }
-                                  aria-label={`Add shift for ${site.displayName} on ${day.dateLabel}`}
-                                >
-                                  +
-                                </button>
-                              </div>
-                            </td>
-                          );
-                        })}
-                      </tr>
-                    );
-                  })
-                )}
-              </tbody>
-            </table>
-          </div>
-        )}
+                              <button type="button" className="add-shift-btn">
+                                +
+                              </button>
+                            </div>
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
       </main>
 
-      {/* Dynamic Modal handles both Add and Details */}
       {modal && (
         <div className="modal-overlay" onClick={closeModal}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
@@ -291,21 +344,40 @@ export default function RosterPage() {
             </div>
 
             {modal.type === "details" && (
-              <div className="form-group">
+              <div className="form-group" style={{ padding: "0 16px" }}>
                 <label htmlFor="user-select">Assign User</label>
-                <select
-                  id="user-select"
-                  className="user-select"
-                  defaultValue={modal.shift.assigned_to || ""}
-                >
-                  <option value="" disabled>
-                    Select a user...
-                  </option>
-                  <option value="11">John Doe (ID: 11)</option>
-                  <option value="12">Jane Smith (ID: 12)</option>
-                  <option value="13">Ali Khan (ID: 13)</option>
-                  <option value="14">Sarah Connor (ID: 14)</option>
-                </select>
+
+                {staffLoading ? (
+                  <p
+                    className="loading-text"
+                    style={{ fontSize: "14px", color: "#666" }}
+                  >
+                    Loading staff list...
+                  </p>
+                ) : staffError ? (
+                  <p
+                    className="error-text"
+                    style={{ fontSize: "14px", color: "red" }}
+                  >
+                    Failed to load staff list.
+                  </p>
+                ) : (
+                  <select
+                    id="user-select"
+                    className="user-select"
+                    value={selectedUserId}
+                    onChange={(e) => setSelectedUserId(e.target.value)}
+                  >
+                    <option value="" disabled>
+                      Select a user...
+                    </option>
+                    {guards.map((guard) => (
+                      <option key={guard.id} value={guard.id}>
+                        {guard.name} (ID: {guard.id})
+                      </option>
+                    ))}
+                  </select>
+                )}
               </div>
             )}
 
@@ -313,8 +385,17 @@ export default function RosterPage() {
               <button className="close-btn" onClick={closeModal} type="button">
                 Cancel
               </button>
-              <button className="save-btn" onClick={closeModal} type="button">
-                {modal.type === "add" ? "Create Shift" : "Save Changes"}
+              <button
+                className="save-btn"
+                onClick={handleSave}
+                type="button"
+                disabled={saveLoading}
+              >
+                {saveLoading
+                  ? "Saving..."
+                  : modal.type === "add"
+                    ? "Create Shift"
+                    : "Save Changes"}
               </button>
             </div>
           </div>

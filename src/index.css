@@ -150,7 +150,7 @@ code {
 .site-cell {
   background: var(--surface);
   text-align: left;
-  min-width: 220px;
+  min-width: 120px;
   max-width: 220px;
   position: sticky;
   left: 0;

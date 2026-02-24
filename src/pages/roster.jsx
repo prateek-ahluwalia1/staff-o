@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
+import { useSelector } from "react-redux";
 import {
   startOfWeek,
   addWeeks,
@@ -6,465 +7,319 @@ import {
   format,
   addDays,
   isToday,
+  parse,
+  isValid,
+  isSameDay,
 } from "date-fns";
-import useFetch from "../hooks/useFetch";
+import useSubmit from "../hooks/useSubmit";
+import Loader from "../components/Loader";
 
 const DAYS_OF_WEEK = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+const API_DATE_FORMAT = "yyyy-MM-dd HH:mm";
 
-const mockData = [
-  {
-    id: 1,
-    name: "Autodesk Australia - Kilsyth South",
-    displayName: "Autodesk... Kilsyth South",
-    type: "Static Guard",
-    hours: "34 Hrs",
-    shifts: {
-      "16/02": [{ guard: "Ali Raza (C)" }],
-      "17/02": [{ guard: "Atinderpal Singh (C)" }],
-      "18/02": [{ guard: "Muhammad Fawaz (M)" }],
-    },
-  },
-  {
-    id: 2,
-    name: "The Department Of Treasury and Finance (DFFH) SUNSHINE",
-    displayName: "Treasury and Finance SUNSHINE",
-    type: "Static Guard",
-    hours: "29.25 Hrs",
-    shifts: {
-      "16/02": [{ guard: "Haroon Sarfraz (C)" }],
-    },
-  },
-];
+function parseApiDate(dateValue) {
+  if (!dateValue) return null;
+
+  const parsed = parse(String(dateValue), API_DATE_FORMAT, new Date());
+  if (isValid(parsed)) return parsed;
+
+  const fallback = new Date(dateValue);
+  return isValid(fallback) ? fallback : null;
+}
 
 export default function RosterPage() {
-  const { data: sites, loading, error } = useFetch("/api/fetch-customer-sites");
+  const { submit, loading, data } = useSubmit({ isAuth: true });
+  const { userdata } = useSelector((state) => state.auth);
+
   const [monday, setMonday] = useState(() =>
     startOfWeek(new Date(), { weekStartsOn: 1 }),
   );
 
+  // Modal state now includes a "type" to differentiate between 'add' and 'details'
   const [modal, setModal] = useState(null);
+
+  useEffect(() => {
+    const userId = userdata?.data?.id || userdata?.id;
+    if (!userId) return;
+
+    const payload = {
+      user_id: [userId],
+      state: "Victoria",
+      start: format(monday, "MM-dd-yyyy"),
+      end: format(addDays(monday, 6), "MM-dd-yyyy"),
+      roster_id: "1",
+    };
+
+    submit("api/fetch-customer-sites", payload, { method: "POST" });
+  }, [monday, userdata]);
 
   const weekDays = useMemo(() => {
     return Array.from({ length: 7 }, (_, i) => {
       const d = addDays(monday, i);
       return {
         label: DAYS_OF_WEEK[i],
+        dateObj: d,
         dateStr: format(d, "dd/MM"),
-        key: format(d, "dd/MM"),
+        dateLabel: format(d, "EEE, dd MMM"),
+        key: format(d, "yyyy-MM-dd"),
         isToday: isToday(d),
-        isWeekend: i >= 5,
       };
     });
   }, [monday]);
 
   const weekTitle = useMemo(() => {
-    return `${format(monday, "d MMM")} – ${format(addDays(monday, 6), "d MMM yyyy")}`;
+    return `${format(monday, "d MMM")} - ${format(addDays(monday, 6), "d MMM yyyy")}`;
   }, [monday]);
+
+  const sites = useMemo(() => {
+    if (!data?.data) return [];
+
+    return data.data.map((site) => {
+      const roster = (site.job_roster || [])
+        .map((shift) => {
+          const startDate = parseApiDate(shift.start);
+          const endDate = parseApiDate(shift.end);
+          if (!startDate || !endDate) return null;
+
+          return {
+            ...shift,
+            startDate,
+            endDate,
+          };
+        })
+        .filter(Boolean);
+
+      const totalHours = roster.reduce(
+        (sum, shift) => sum + Number(shift.hours || 0),
+        0,
+      );
+
+      return {
+        id: site.id,
+        displayName: site.site_name,
+        type: "Static Guard",
+        hours: `${totalHours.toFixed(2)} hrs`,
+        jobRoster: roster,
+      };
+    });
+  }, [data]);
 
   const prevWeek = () => setMonday((prev) => subWeeks(prev, 1));
   const nextWeek = () => setMonday((prev) => addWeeks(prev, 1));
   const goToThisWeek = () =>
     setMonday(startOfWeek(new Date(), { weekStartsOn: 1 }));
 
-  const openAssignModal = (site, dateKey, dateLabel) => {
-    setModal({ site, dateKey, dateLabel });
-  };
-
+  const openDetailsModal = (site, shift, dateStr) =>
+    setModal({ type: "details", site, shift, dateStr });
+  const openAddModal = (site, dateStr) =>
+    setModal({ type: "add", site, dateStr });
   const closeModal = () => setModal(null);
 
+  const handleActivityClick = (shiftId) => {
+    alert(`Activity clicked for shift ID: ${shiftId}`);
+  };
+
   return (
-    <>
-      <style>{`
-        .roster-page {
-          min-height: 100vh;
-          background: #f8fafc;
-          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-          color: #1e293b;
-        }
+    <div className="roster-page">
+      <header className="roster-header">
+        <div className="week-nav">
+          <button onClick={prevWeek} className="nav-btn" type="button">
+            ←
+          </button>
+          <div className="week-title">{weekTitle}</div>
+          <button onClick={nextWeek} className="nav-btn" type="button">
+            →
+          </button>
+          <button onClick={goToThisWeek} className="btn-today" type="button">
+            This Week
+          </button>
+        </div>
+      </header>
 
-        .roster-header {
-          background: white;
-          border-bottom: 1px solid #e2e8f0;
-          box-shadow: 0 2px 6px rgba(0,0,0,0.04);
-          padding: 16px 24px;
-        }
-
-        .week-nav {
-          display: flex;
-          align-items: center;
-          gap: 14px;
-          flex-wrap: wrap;
-        }
-
-        .nav-btn {
-          width: 42px;
-          height: 42px;
-          border: 1px solid #cbd5e1;
-          border-radius: 10px;
-          background: white;
-          font-size: 1.3rem;
-          color: #64748b;
-          cursor: pointer;
-          transition: all 0.14s ease;
-        }
-
-        .nav-btn:hover {
-          background: #f1f5f9;
-          color: #334155;
-          border-color: #94a3b8;
-        }
-
-        .week-title {
-          font-size: 1.18rem;
-          font-weight: 600;
-          min-width: 180px;
-          text-align: center;
-          color: #1e293b;
-        }
-
-        .btn-today {
-          padding: 9px 20px;
-          background: #6366f1;
-          color: white;
-          border: none;
-          border-radius: 10px;
-          font-weight: 500;
-          font-size: 0.95rem;
-          cursor: pointer;
-          transition: all 0.16s ease;
-        }
-
-        .btn-today:hover {
-          background: #4f46e5;
-          transform: translateY(-1px);
-        }
-
-        .roster-container {
-          padding: 24px;
-          overflow-x: auto;
-        }
-
-        .table-card {
-          background: white;
-          border-radius: 12px;
-          border: 1px solid #e2e8f0;
-          box-shadow: 0 6px 16px rgba(0,0,0,0.06);
-          overflow: hidden;
-        }
-
-        .roster-table {
-          width: 100%;
-          border-collapse: collapse;
-          font-size: 14px;
-        }
-
-        .roster-table th,
-        .roster-table td {
-          border-right: 1px solid #f1f5f9;
-        }
-
-        .roster-table th:last-child,
-        .roster-table td:last-child {
-          border-right: none;
-        }
-
-        .roster-table tbody tr {
-          border-bottom: 1px solid #e2e8f0;
-        }
-
-        .roster-table tbody tr:last-child {
-          border-bottom: none;
-        }
-
-        .site-header {
-          width: 300px;
-          padding: 16px 24px;
-          text-align: left;
-          font-weight: 600;
-          color: #475569;
-          background: linear-gradient(to bottom, #f8fafc, #f1f5f9);
-          border-bottom: 1px solid #cbd5e1;
-        }
-
-        .day-header {
-          padding: 12px 8px;
-          text-align: center;
-          background: linear-gradient(to bottom, #f8fafc, #f1f5f9);
-          border-bottom: 1px solid #cbd5e1;
-        }
-
-        .day-label {
-          font-weight: 600;
-          color: #1e293b;
-        }
-
-        .day-date {
-          font-size: 0.82rem;
-          color: #64748b;
-          margin-top: 3px;
-        }
-
-        .site-cell {
-          padding: 20px 18px;
-          background: #f8fafc;
-          border-right: 1px solid #e2e8f0;
-          vertical-align: top;
-        }
-
-        .site-name {
-          font-weight: 600;
-          font-size: 1.05rem;
-          color: #1e293b;
-          margin-bottom: 6px;
-        }
-
-        .site-type {
-          font-size: 0.84rem;
-          color: #64748b;
-          margin-bottom: 14px;
-        }
-
-        .hours {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          color: #10b981;
-          font-weight: 500;
-        }
-
-        .shift-cell {
-          padding: 12px 8px;
-          text-align: center;
-          vertical-align: top;
-          transition: background 0.14s ease;
-          min-height: 110px;
-          min-width: 100px;
-        }
-
-        .shift-container {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          gap: 6px;
-          min-height: 100px;       
-          padding: 4px 0;
-        }
-
-        .shift-tag {
-          margin: 2px auto;
-          padding: 7px 13px;
-          border-radius: 8px;
-          font-size: 0.83rem;
-          font-weight: 500;
-          max-width: 160px;
-          width: 100%;
-          border: 1px solid;
-          box-shadow: 0 1px 2px rgba(0,0,0,0.04);
-        }
-
-        .shift-default { background: #f1f5f9; border-color: #cbd5e1; color: #475569; }
-        .shift-c      { background: #ecfeff; border-color: #a5f3fc; color: #0e7490; }
-        .shift-m      { background: #f3e8ff; border-color: #c4b5fd; color: #6d28d9; }
-
-        .add-shift-btn {
-          margin-top: auto; 
-          width: 30px;
-          height: 30px;
-          font-size: 1.5rem;
-          line-height: 28px;
-          color: #94a3b8;
-          background: #f8fafc;
-          border: 1px dashed #cbd5e1;
-          border-radius: 50%;
-          cursor: pointer;
-          user-select: none;
-          transition: all 0.14s ease;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        }
-
-        .add-shift-btn:hover {
-          color: #6366f1;
-          background: #eef2ff;
-          border-color: #a5b4fc;
-          transform: scale(1.1);
-        }
-
-        .modal-overlay {
-          position: fixed;
-          inset: 0;
-          background: rgba(0,0,0,0.5);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          z-index: 1000;
-        }
-
-        .modal-content {
-          background: white;
-          border-radius: 12px;
-          width: 90%;
-          max-width: 480px;
-          padding: 24px;
-          box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-          position: relative;
-        }
-
-        .modal-close {
-          position: absolute;
-          top: 12px;
-          right: 16px;
-          font-size: 1.6rem;
-          color: #64748b;
-          cursor: pointer;
-        }
-
-        .modal-title {
-          margin: 0 0 20px 0;
-          font-size: 1.3rem;
-          font-weight: 600;
-          color: #1e293b;
-        }
-
-        .modal-info {
-          margin-bottom: 16px;
-          color: #475569;
-        }
-
-        .modal-info strong {
-          color: #1e293b;
-        }
-      `}</style>
-
-      <div className="roster-page">
-        <header className="roster-header">
-          <div className="week-nav">
-            <button onClick={prevWeek} className="nav-btn">
-              ←
-            </button>
-            <div className="week-title">{weekTitle}</div>
-            <button onClick={nextWeek} className="nav-btn">
-              →
-            </button>
-            <button onClick={goToThisWeek} className="btn-today">
-              This Week
-            </button>
-          </div>
-        </header>
-
-        <main className="roster-container">
+      <main className="roster-container">
+        {loading ? (
+          <Loader />
+        ) : (
           <div className="table-card">
             <table className="roster-table">
               <thead>
                 <tr>
-                  <th className="site-header">Site</th>
+                  <th>Site</th>
                   {weekDays.map((day) => (
                     <th
                       key={day.key}
-                      className={`day-header ${day.isToday ? "today" : ""} ${
-                        day.isWeekend ? "weekend" : ""
-                      }`}
+                      className={day.isToday ? "today-head" : ""}
                     >
-                      <div className="day-label">{day.label}</div>
-                      <div className="day-date">{day.dateStr}</div>
+                      {day.label}
+                      <div className="date-subtext">{day.dateStr}</div>
                     </th>
                   ))}
                 </tr>
               </thead>
 
               <tbody>
-                {mockData.map((row) => (
-                  <tr key={row.id}>
-                    <td className="site-cell">
-                      <div className="site-name">{row.displayName}</div>
-                      <div className="site-type">{row.type}</div>
-                      <div className="hours">
-                        <span>🕒</span> {row.hours}
-                      </div>
+                {sites.length === 0 ? (
+                  <tr>
+                    <td className="no-sites" colSpan={8}>
+                      No sites found for this week.
                     </td>
-
-                    {weekDays.map((day) => {
-                      const shifts = row.shifts[day.key] || [];
-
-                      return (
-                        <td
-                          key={day.key}
-                          className={`shift-cell ${day.isToday ? "today" : ""} ${
-                            day.isWeekend ? "weekend" : ""
-                          }`}
-                        >
-                          <div className="shift-container">
-                            {/* Existing shifts */}
-                            {shifts.map((shift, idx) => {
-                              let tagClass = "shift-tag shift-default";
-                              if (shift.guard.includes("(C)"))
-                                tagClass += " shift-c";
-                              if (shift.guard.includes("(M)"))
-                                tagClass += " shift-m";
-
-                              return (
-                                <div key={idx} className={tagClass}>
-                                  {shift.guard}
-                                </div>
-                              );
-                            })}
-
-                            {/* + button always at bottom */}
-                            <div
-                              className="add-shift-btn"
-                              onClick={() =>
-                                openAssignModal(row, day.key, day.dateStr)
-                              }
-                              title="Add new shift"
-                            >
-                              +
-                            </div>
-                          </div>
-                        </td>
-                      );
-                    })}
                   </tr>
-                ))}
+                ) : (
+                  sites.map((site) => {
+                    return (
+                      <tr key={site.id}>
+                        <td className="site-cell">
+                          <div className="site-name">{site.displayName}</div>
+                          <div className="site-type">{site.type}</div>
+                          <div className="hours">Total: {site.hours}</div>
+                        </td>
+
+                        {weekDays.map((day) => {
+                          const shifts = site.jobRoster.filter((shift) =>
+                            isSameDay(shift.startDate, day.dateObj),
+                          );
+                          const isEmpty = shifts.length === 0;
+
+                          return (
+                            <td
+                              key={day.key}
+                              data-label={day.dateLabel}
+                              className={isEmpty ? "empty-day" : "active-day"}
+                            >
+                              <div className="shift-container">
+                                {shifts.map((shift) => (
+                                  <div
+                                    key={shift.id}
+                                    className={`shift-card ${
+                                      shift.job_status === "confirmed"
+                                        ? "shift-confirmed"
+                                        : "shift-pending"
+                                    }`}
+                                  >
+                                    <div className="shift-time">
+                                      {format(shift.startDate, "HH:mm")} -{" "}
+                                      {format(shift.endDate, "HH:mm")}
+                                    </div>
+
+                                    <div className="shift-actions">
+                                      <button
+                                        className="action-btn details-btn"
+                                        onClick={() =>
+                                          openDetailsModal(
+                                            site,
+                                            shift,
+                                            day.dateLabel,
+                                          )
+                                        }
+                                        type="button"
+                                      >
+                                        Details
+                                      </button>
+                                      <button
+                                        className="action-btn activity-btn"
+                                        onClick={() =>
+                                          handleActivityClick(shift.id)
+                                        }
+                                        type="button"
+                                      >
+                                        Activity
+                                      </button>
+                                    </div>
+                                  </div>
+                                ))}
+
+                                {/* Restored Add Shift Button */}
+                                <button
+                                  type="button"
+                                  className="add-shift-btn"
+                                  onClick={() =>
+                                    openAddModal(site, day.dateLabel)
+                                  }
+                                  aria-label={`Add shift for ${site.displayName} on ${day.dateLabel}`}
+                                >
+                                  +
+                                </button>
+                              </div>
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    );
+                  })
+                )}
               </tbody>
             </table>
           </div>
-        </main>
+        )}
+      </main>
 
-        {/* Modal */}
-        {modal && (
-          <div className="modal-overlay" onClick={closeModal}>
-            <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-              <span className="modal-close" onClick={closeModal}>
-                ×
-              </span>
+      {/* Dynamic Modal handles both Add and Details */}
+      {modal && (
+        <div className="modal-overlay" onClick={closeModal}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>
+                {modal.type === "add" ? "Assign New Shift" : "Shift Details"}
+              </h3>
+              {modal.type === "details" && (
+                <span
+                  className={`status-badge ${modal.shift.job_status === "confirmed" ? "badge-confirmed" : "badge-pending"}`}
+                >
+                  {modal.shift.job_status}
+                </span>
+              )}
+            </div>
 
-              <h2 className="modal-title">Assign Shift</h2>
-
-              <div className="modal-info">
+            <div className="modal-body" style={{ padding: "16px" }}>
+              <p>
                 <strong>Site:</strong> {modal.site.displayName}
-              </div>
-              <div className="modal-info">
-                <strong>Date:</strong> {modal.dateLabel} (Week of {weekTitle})
-              </div>
-
-              <div style={{ marginTop: "24px", color: "#64748b" }}>
-                <p>Here you would normally see:</p>
-                <ul style={{ paddingLeft: "20px", margin: "12px 0" }}>
-                  <li>List of available guards</li>
-                  <li>Shift type selector (C/M/other)</li>
-                  <li>Time picker (start/end)</li>
-                  <li>Save / Cancel buttons</li>
-                </ul>
-                <p style={{ fontSize: "0.9rem", marginTop: "16px" }}>
-                  (This is a placeholder — implement your guard selection logic
-                  here)
+              </p>
+              <p>
+                <strong>Date:</strong> {modal.dateStr}
+              </p>
+              {modal.type === "details" && (
+                <p>
+                  <strong>Time:</strong>{" "}
+                  {format(modal.shift.startDate, "HH:mm")} -{" "}
+                  {format(modal.shift.endDate, "HH:mm")}
+                  <span className="modal-hours">
+                    {" "}
+                    ({modal.shift.hours} hrs)
+                  </span>
                 </p>
+              )}
+            </div>
+
+            {modal.type === "details" && (
+              <div className="form-group">
+                <label htmlFor="user-select">Assign User</label>
+                <select
+                  id="user-select"
+                  className="user-select"
+                  defaultValue={modal.shift.assigned_to || ""}
+                >
+                  <option value="" disabled>
+                    Select a user...
+                  </option>
+                  <option value="11">John Doe (ID: 11)</option>
+                  <option value="12">Jane Smith (ID: 12)</option>
+                  <option value="13">Ali Khan (ID: 13)</option>
+                  <option value="14">Sarah Connor (ID: 14)</option>
+                </select>
               </div>
+            )}
+
+            <div className="modal-footer">
+              <button className="close-btn" onClick={closeModal} type="button">
+                Cancel
+              </button>
+              <button className="save-btn" onClick={closeModal} type="button">
+                {modal.type === "add" ? "Create Shift" : "Save Changes"}
+              </button>
             </div>
           </div>
-        )}
-      </div>
-    </>
+        </div>
+      )}
+    </div>
   );
 }

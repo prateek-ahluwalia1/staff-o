@@ -11,3 +11,581 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
+
+.roster-page {
+  --bg-main: #f8f9fa;
+  --surface: #ffffff;
+  --line: #dee2e6;
+  --text: #212529;
+  --text-soft: #6c757d;
+  --brand: #0d6efd;
+  --brand-dark: #0b5ed7;
+
+  --pending-bg: #fff3cd;
+  --pending-border: #ffe69c;
+  --pending-text: #664d03;
+  --confirmed-bg: #d1e7dd;
+  --confirmed-border: #a3cfbb;
+  --confirmed-text: #0f5132;
+
+  min-height: 100vh;
+  background: var(--bg-main);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  color: var(--text);
+}
+
+.roster-header {
+  background: var(--surface);
+  border-bottom: 1px solid var(--line);
+  padding: 14px 20px;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+}
+
+.week-nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.nav-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: 6px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+  font-size: 1.1rem;
+  transition: all 0.15s ease-in-out;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.nav-btn:hover {
+  background: #e9ecef;
+}
+
+.week-title {
+  font-size: 1rem;
+  font-weight: 600;
+  min-width: 170px;
+  text-align: center;
+}
+
+.btn-today {
+  padding: 8px 16px;
+  background: var(--brand);
+  color: white;
+  border-radius: 6px;
+  border: 1px solid var(--brand);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease-in-out;
+  font-size: 0.9rem;
+}
+
+.btn-today:hover {
+  background: var(--brand-dark);
+  border-color: #0a58ca;
+}
+
+.roster-container {
+  padding: 24px 16px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.table-card {
+  background: var(--surface);
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.roster-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 1000px;
+}
+
+.roster-table th {
+  background: #f8f9fa;
+  padding: 14px 12px;
+  font-weight: 600;
+  font-size: 0.85rem;
+  text-align: center;
+  color: var(--text);
+  white-space: nowrap;
+  border-bottom: 2px solid var(--line);
+}
+
+.date-subtext {
+  font-size: 0.75rem;
+  color: var(--text-soft);
+  margin-top: 4px;
+  font-weight: 400;
+}
+
+.roster-table th.today-head {
+  background: #e7f1ff;
+  color: #0c63e4;
+  border-bottom: 2px solid #0c63e4;
+}
+
+.roster-table td {
+  padding: 12px;
+  border-top: 1px solid var(--line);
+  text-align: center;
+  vertical-align: top;
+}
+
+.site-cell {
+  background: var(--surface);
+  text-align: left;
+  min-width: 220px;
+  max-width: 220px;
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  border-right: 1px solid var(--line);
+}
+
+.site-name {
+  font-weight: 600;
+  font-size: 0.95rem;
+  margin-bottom: 4px;
+  color: var(--text);
+}
+
+.site-type {
+  font-size: 0.75rem;
+  color: var(--text-soft);
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.hours {
+  font-size: 0.8rem;
+  color: var(--text-soft);
+  font-weight: 500;
+}
+
+.shift-container {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: center;
+  min-height: 40px;
+  /* Ensures the cell has enough height even if empty */
+}
+
+.shift-card {
+  display: flex;
+  flex-direction: column;
+  padding: 10px;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  min-width: 110px;
+  width: 100%;
+  background: var(--surface);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.shift-confirmed {
+  background: var(--confirmed-bg);
+  border-color: var(--confirmed-border);
+}
+
+.shift-pending {
+  background: var(--pending-bg);
+  border-color: var(--pending-border);
+}
+
+.shift-time {
+  font-size: 0.8rem;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: var(--text);
+  white-space: nowrap;
+}
+
+.shift-actions {
+  display: flex;
+  gap: 6px;
+  width: 100%;
+}
+
+.action-btn {
+  flex: 1;
+  font-size: 0.7rem;
+  padding: 5px 4px;
+  border-radius: 4px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.15s ease-in-out;
+}
+
+.details-btn {
+  background: var(--surface);
+  color: var(--brand);
+  border-color: var(--brand);
+}
+
+.details-btn:hover {
+  background: var(--brand);
+  color: white;
+}
+
+.activity-btn {
+  background: var(--surface);
+  color: var(--text-soft);
+  border-color: var(--line);
+}
+
+.activity-btn:hover {
+  background: #e9ecef;
+  color: var(--text);
+}
+
+/* Restored Add Shift Button */
+.add-shift-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px dashed var(--brand);
+  background: transparent;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  font-weight: 300;
+  color: var(--brand);
+  transition: all 0.2s ease;
+  margin-top: 4px;
+}
+
+.add-shift-btn:hover {
+  background: #e7f1ff;
+  border-style: solid;
+  transform: scale(1.05);
+}
+
+/* Modal Styles */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.95);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1050;
+  padding: 20px;
+}
+
+.modal-content {
+  background: var(--surface);
+  padding: 28px;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 420px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.12);
+  animation: modalPop 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.modal-header h3 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.02em;
+}
+
+.status-badge {
+  font-size: 0.75rem;
+  padding: 5px 12px;
+  border-radius: 99px;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.badge-confirmed {
+  background: var(--confirmed-bg);
+  color: var(--confirmed-text);
+  border: 1px solid var(--confirmed-border);
+}
+
+.badge-pending {
+  background: var(--pending-bg);
+  color: var(--pending-text);
+  border: 1px solid var(--pending-border);
+}
+
+.modal-body {
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid var(--brand);
+  margin-bottom: 20px;
+}
+
+.modal-body p {
+  margin: 6px 0;
+  color: var(--text);
+  font-size: 0.95rem;
+}
+
+.modal-body p strong {
+  color: var(--text-soft);
+  font-weight: 600;
+  display: inline-block;
+  min-width: 50px;
+}
+
+.modal-hours {
+  color: var(--brand);
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-left: 4px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.form-group label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.user-select {
+  width: 100%;
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  font-size: 0.95rem;
+  background-color: var(--surface);
+  color: var(--text);
+  outline: none;
+  cursor: pointer;
+  transition: all 0.15s ease-in-out;
+}
+
+.user-select:focus {
+  border-color: #86b7fe;
+  box-shadow: 0 0 0 4px rgba(13, 110, 253, 0.1);
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.close-btn,
+.save-btn {
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease-in-out;
+  border: 1px solid transparent;
+}
+
+.close-btn {
+  background: #ffffff;
+  color: var(--text-soft);
+  border-color: var(--line);
+}
+
+.close-btn:hover {
+  background: #f8f9fa;
+  color: var(--text);
+  border-color: #cdd3d8;
+}
+
+.save-btn {
+  background: var(--brand);
+  color: white;
+}
+
+.save-btn:hover {
+  background: var(--brand-dark);
+  transform: translateY(-1px);
+}
+
+@keyframes modalPop {
+  0% {
+    opacity: 0;
+    transform: scale(0.96) translateY(10px);
+  }
+
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.no-sites {
+  padding: 48px 16px;
+  text-align: center;
+  color: var(--text-soft);
+  font-weight: 500;
+  background: #f8f9fa;
+}
+
+/* Responsive Mobile Card View */
+@media (max-width: 900px) {
+  .roster-header {
+    padding: 12px;
+  }
+
+  .week-nav {
+    justify-content: space-between;
+  }
+
+  .week-title {
+    order: -1;
+    width: 100%;
+    margin-bottom: 8px;
+  }
+
+  .btn-today {
+    margin-left: auto;
+  }
+
+  .table-card {
+    background: transparent;
+    border: none;
+    box-shadow: none;
+  }
+
+  .roster-table,
+  .roster-table tbody,
+  .roster-table tr,
+  .roster-table td {
+    display: block;
+    width: 100%;
+    min-width: auto;
+  }
+
+  .roster-table thead {
+    display: none;
+  }
+
+  .roster-table tr {
+    margin-bottom: 20px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+    overflow: hidden;
+  }
+
+  .site-cell {
+    max-width: 100%;
+    position: static;
+    border-right: none;
+    border-bottom: 2px solid var(--line);
+    background: #f8f9fa;
+    padding: 16px;
+  }
+
+  .roster-table td {
+    padding: 12px 16px;
+    border-top: none;
+    border-bottom: 1px solid #f0f0f0;
+    text-align: left;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .roster-table td:last-child {
+    border-bottom: none;
+  }
+
+  .roster-table td::before {
+    content: attr(data-label);
+    font-weight: 700;
+    font-size: 0.9rem;
+    color: var(--text-soft);
+    display: block;
+  }
+
+  /* Empty days stay visible but compact so the "+" button can be used */
+  .roster-table td.empty-day .shift-container {
+    min-height: auto;
+    flex-direction: row;
+    justify-content: flex-start;
+  }
+
+  .shift-container {
+    align-items: stretch;
+  }
+
+  .shift-card {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px;
+  }
+
+  .shift-time {
+    margin-bottom: 0;
+    font-size: 0.9rem;
+  }
+
+  .shift-actions {
+    width: auto;
+    gap: 8px;
+  }
+
+  .action-btn {
+    padding: 6px 12px;
+    font-size: 0.75rem;
+  }
+
+  /* Keep the add button aligned nicely on mobile */
+  .add-shift-btn {
+    align-self: center;
+    margin-top: 8px;
+  }
+
+  /* If the day is empty, put the add button right next to the header on mobile */
+  .roster-table td.empty-day {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .roster-table td.empty-day::before {
+    margin-bottom: 0;
+  }
+
+  .roster-table td.empty-day .add-shift-btn {
+    margin-top: 0;
+  }
+}

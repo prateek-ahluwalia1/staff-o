@@ -218,6 +218,14 @@ code {
   white-space: nowrap;
 }
 
+.shift-name {
+  font-size: 0.7rem;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: var(--text);
+  white-space: nowrap;
+}
+
 .shift-actions {
   display: flex;
   gap: 6px;

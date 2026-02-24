@@ -262,6 +262,9 @@ export default function RosterPage() {
                                     {format(shift.startDate, "HH:mm")} -{" "}
                                     {format(shift.endDate, "HH:mm")}
                                   </div>
+                                  <div className="shift-name">
+                                    {shift?.guards?.name || "Unassigned"}
+                                  </div>
                                   {userType === "contractor" && (
                                     <div className="shift-actions">
                                       <button
@@ -290,10 +293,6 @@ export default function RosterPage() {
                                   )}
                                 </div>
                               ))}
-
-                              <button type="button" className="add-shift-btn">
-                                +
-                              </button>
                             </div>
                           </td>
                         );

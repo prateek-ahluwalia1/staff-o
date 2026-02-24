@@ -30,7 +30,7 @@ function App() {
   return (
     <Router>
       <div className="App">
-        <Suspense fallback={<Loader fullPage size="lg" />}>
+        <Suspense fallback={<Loader fullPage />}>
           <Routes>
             <Route path="/" element={<Navigate to="/login" replace />} />
             <Route

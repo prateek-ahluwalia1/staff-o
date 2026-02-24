@@ -1,50 +1,102 @@
 import React from "react";
 
-/**
- * Reusable spinner / loader component.
- *
- * @param {"primary"|"secondary"|"success"|"danger"|"warning"|"info"|"light"|"dark"} [variant="primary"]
- * @param {"sm"|"md"|"lg"} [size="md"]
- * @param {string}  [className]  Extra CSS classes.
- * @param {boolean} [fullPage]   Center the spinner in the viewport.
- */
-const SIZES = { sm: "1rem", md: "2rem", lg: "3rem" };
+const SIZE = "72px";
+const PRIMARY_COLOR = "#0d6efd";
 
-const Loader = ({
-  variant = "primary",
-  size = "md",
-  className = "",
-  fullPage = false,
-}) => {
-  const dimension = SIZES[size] || SIZES.md;
+const SpinnerSVG = ({ color = PRIMARY_COLOR, dimension = SIZE }) => (
+  <svg
+    width={dimension}
+    height={dimension}
+    viewBox="0 0 50 50"
+    aria-hidden="true"
+    style={{ display: "block" }}
+  >
+    <circle
+      cx="25"
+      cy="25"
+      r="20"
+      fill="none"
+      stroke="#e9ecef"
+      strokeWidth="5"
+    />
+    <circle
+      cx="25"
+      cy="25"
+      r="20"
+      fill="none"
+      stroke={color}
+      strokeWidth="5"
+      strokeLinecap="round"
+      strokeDasharray="31.415,125.66"
+    >
+      <animateTransform
+        attributeName="transform"
+        type="rotate"
+        from="0 25 25"
+        to="360 25 25"
+        dur="0.9s"
+        repeatCount="indefinite"
+      />
+    </circle>
+  </svg>
+);
+
+const Loader = ({ className = "", fullPage = false, message = "" }) => {
+  const dimension = SIZE;
+  const color = PRIMARY_COLOR;
 
   const spinner = (
     <div
-      className={`spinner-border text-${variant} ${className}`}
       role="status"
-      style={{ width: dimension, height: dimension }}
+      aria-live="polite"
+      className={className}
+      style={{
+        display: "inline-flex",
+        flexDirection: "column",
+        alignItems: "center",
+        gap: 8,
+      }}
     >
-      <span className="visually-hidden">Loading...</span>
+      <SpinnerSVG color={color} dimension={dimension} />
+      {message ? (
+        <small style={{ color: "#6c757d", fontSize: "0.9rem" }}>
+          {message}
+        </small>
+      ) : null}
     </div>
   );
 
   if (fullPage) {
     return (
       <div
-        className="d-flex justify-content-center align-items-center"
+        role="status"
+        aria-live="polite"
         style={{
-          Height: "100vh",
+          height: "100vh",
           width: "100vw",
           position: "fixed",
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: "white",
+          inset: 0,
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          backgroundColor: "rgba(255,255,255,0.75)",
+          backdropFilter: "blur(4px)",
           zIndex: 9999,
         }}
       >
-        {spinner}
+        <div
+          style={{
+            display: "inline-flex",
+            flexDirection: "column",
+            alignItems: "center",
+            padding: 18,
+            borderRadius: 12,
+            boxShadow: "0 6px 24px rgba(0,0,0,0.08)",
+            background: "rgba(255,255,255,0.85)",
+          }}
+        >
+          {spinner}
+        </div>
       </div>
     );
   }

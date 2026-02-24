@@ -510,8 +510,15 @@ class StaffController extends Controller
             $user->load('staff', 'documents');
         }
 
-        $user->profile_completion_percentage = $this->calculateProfileCompletion($user);
+        $percentage = $this->calculateProfileCompletion($user);
 
+        if ($percentage === 100 && (int) $user->is_active !== 1) {
+            $user->is_active = 1;
+            $user->save();
+        }
+        
+        $user->profile_completion_percentage = $percentage;
+        
         return response()->json(['success' => true, 'code' => 200, 'data' => $user]);
     }
 

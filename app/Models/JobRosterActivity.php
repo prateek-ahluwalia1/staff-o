@@ -8,5 +8,5 @@ use Illuminate\Database\Eloquent\Model;
 class JobRosterActivity extends Model
 {
     use HasFactory;
-    protected $table = 'job_roster_activites';
+    protected $table = 'job_roster_activities';
 }

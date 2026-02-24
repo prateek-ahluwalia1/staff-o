@@ -21,4 +21,9 @@ class Site extends Model
         'state',
     ];
 
+    public function jobRoster()
+    {
+        return $this->hasMany(JobRoster::class, 'site_id', 'id');
+    }
+
 }

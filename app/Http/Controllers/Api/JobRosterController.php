@@ -56,8 +56,8 @@ class JobRosterController extends Controller
         }
 
         $radiusValue = is_array($request->radius) ? json_encode($request->radius) : $request->radius;
-        $documentListValue = is_array($request->document_list) ? json_encode($request->document_list) : $request->document_list;
-        $jobInstructionsValue = is_array($request->job_instrcutions) ? json_encode($request->job_instrcutions) : $request->job_instrcutions;
+        $documentListValue = is_array($request->document_types) ? json_encode($request->document_types) : $request->document_types;
+        $jobInstructionsValue = is_array($request->document_list) ? json_encode($request->document_list) : $request->document_list;
 
         for ($i = 0; $i < $request->numberOfGuards; $i++) {
 
@@ -126,6 +126,26 @@ class JobRosterController extends Controller
         ]);
     }
 
+    public function getContractorStaff($id)
+    {
+        $guards = User::where('user_id', $id)->where('is_active', 1)->select('id', 'name')->where('user_type', 'staff')->get();
+
+        if(!$guards){
+            return response()->json([
+                'code' => 200,
+                'success' => false,
+                'message' => 'Staff Not Found.',
+                'guards' => null
+            ]);
+        }
+
+        return response()->json([
+            'code' => 200,
+            'success' => true,
+            'message' => 'Staff Found.',
+            'guards' => $guards
+        ]);
+    }
     public function getShiftHours($start, $end, $siteID = null, $continuation = false, $public_holiday = null, $ph_duration = null)
     {
         $actual_start = $start;
@@ -1019,13 +1039,6 @@ class JobRosterController extends Controller
 
     function calCulateGuardWeekHours($start, $end)
     {
-        // $datetime1 = new DateTime($start);
-        // $datetime2 = new DateTime($end);
-        // $interval = $datetime1->diff($datetime2);
-        // //$minuts = $interval->format('%i')/100;
-        // $minuts = $interval->format('%i');
-        // return $interval->format('%h') . '.'. $minuts;
-
         $datetime1 = new DateTime($start);
         $datetime2 = new DateTime($end);
         $interval = $datetime1->diff($datetime2);
@@ -1140,7 +1153,6 @@ class JobRosterController extends Controller
         ]);
     }
    
-
     public function uploadFile(Request $request)
     {
         $folder = $request->folder ?: 'uploads';
@@ -1210,24 +1222,24 @@ class JobRosterController extends Controller
             if($flag == 0){
                 
                 if ($roster->is_document == 1) {
-                    $document_types = $roster->document_types;
+                    $document_types = $roster->document_list;
 
                     $document_category = DocumentCategory::where('document_category', 'other')->first();
 
                     if ($document_category && !empty($document_types)) {
-                        
-                        foreach (json_decode($document_category->document_type) as $doc_key => $doc_name) {  
-                            if (in_array($doc_key, $document_types)) {
+                    foreach (json_decode($document_category->document_type) as $doc_key => $doc_name) {  
+                            $document_types_array = json_decode($document_types, true) ?? [];
+                            if (in_array($doc_key, $document_types_array)) {
 
                                 $already_exists = Document::where([
                                     'user_id'       => $id,
                                     'document_type' => $doc_key,
                                 ])->first();
-
+                                
                                 if ($already_exists) {
                                     continue;
                                 }
-
+                        
                                 $guard_document                    = new Document();
                                 $guard_document->user_id           = $id;
                                 $guard_document->document_category = $document_category->document_category;
@@ -1239,37 +1251,10 @@ class JobRosterController extends Controller
                     }
                 }
 
-                if (isset($id) && $id > 0 && (int) $roster->is_document === 1) {
-                    $guardUser = User::where('id', $id)->with('documents')->first();
-                    if (!$guardUser) {
-                        return response()->json([
-                            'success' => false,
-                            'message' => 'Guard not found.',
-                        ], 200);
-                    }
-
-                    if ($guardUser->documents->count() === 0) {
-                        return response()->json([
-                        'success' => false,
-                        'message' => 'Please add document first.',
-                        ], 200);
-                    }
-
-                    $hasEmptyDocumentNo = $guardUser->documents->contains(function ($document) {
-                        return is_null($document->document_no) || trim((string) $document->document_no) === '' || is_null($document->file);
-                    });
-
-                    if ($hasEmptyDocumentNo) {
-                         return response()->json([
-                        'success' => false,
-                        'message' => 'Please add document number first.',
-                        ], 200);
-                    }
-                }
                 
                 DB::table('job_rosters')
                 ->where('id', '=', $request->input('roster_id'))
-                ->update(['assigned_to' => $id, 'publish_status' => 1, 'job_status' => 'confirmed', 'last_update' => time()]);
+                ->update(['assigned_to' => $id, 'publish_status' => 1, 'job_status' => 'confirmed']);
                 $guard = DB::table('users')->where('id', $id)->first();
 
                 //push notification
@@ -1559,7 +1544,7 @@ class JobRosterController extends Controller
         $data = $results->map(function ($item) {
             if (!$item) return [];
 
-            $roster = DB::table('job_roster_activites')
+            $roster = DB::table('job_roster_activities')
                 ->where(['guard_id' => $item->assigned_to, 'job_roster_id' => $item->id])
                 ->get();
 
@@ -1576,10 +1561,10 @@ class JobRosterController extends Controller
             }
 
             if (!empty($item->rosterActivity) && $item->rosterActivity->signin_selfie != null) {
-                $item->rosterActivity->signin_selfie = 'https://appapi.thescouts.com.au/uploads/' . $item->rosterActivity->signin_selfie;
+                $item->rosterActivity->signin_selfie = 'https://staffo.arrowbyte.com.au/uploads/' . $item->rosterActivity->signin_selfie;
             }
             if (!empty($item->rosterActivity) && $item->rosterActivity->signout_selfie != null) {
-                $item->rosterActivity->signout_selfie = 'https://appapi.thescouts.com.au/uploads/' . $item->rosterActivity->signout_selfie;
+                $item->rosterActivity->signout_selfie = 'https://staffo.arrowbyte.com.au/uploads/' . $item->rosterActivity->signout_selfie;
             }
 
             $signin_timez = !empty($item->rosterActivity) ? strtotime($item->rosterActivity->signin_time) : null;
@@ -1587,9 +1572,9 @@ class JobRosterController extends Controller
             return [
                 'id'                    => $item->id,
                 'event_id'              => $item->id,
-                'guard_id'              => $item->guard_id,
+                'guard_id'              => $item->assigned_to,
                 'job_id'                => $item->site_id,
-                'break_status'          => $item->break_status,
+                // 'break_status'          => $item->break_status,
                 'instructions_file'     => $item->instructions_file != '' ? 'https://' . request()->getHttpHost() . '/uploads/' . $item->instructions_file : "",
                 'job_start_day'         => date('d', strtotime($item->start)),
                 'job_start_date'        => date('D', strtotime($item->start)),
@@ -1892,122 +1877,206 @@ class JobRosterController extends Controller
 
     public function fetchCustomerSites(Request $request)
     {
+        if (!$request->has('user_id') || empty($request->user_id)) {
+            return response()->json([
+                'success' => false,
+                'data' => null,
+                'code' => 404
+            ]);
+        }
+
+        $user = User::where('id', $request->user_id)->first();
+
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'data' => null,
+                'code' => 404
+            ]);
+        }
+
+        // Date Range
+        $start = $request->has('start') && $request->start != ''
+            ? dbFormate($request->start) . ' 00:00'
+            : Carbon::now()->startOfWeek()->format('Y-m-d 00:00');
+
+        $end = $request->has('end') && $request->end != ''
+            ? dbFormate($request->end) . ' 23:59'
+            : Carbon::now()->endOfWeek()->format('Y-m-d 23:59');
+
+        $roster_id = $request->roster_id;
+
+        /*
+        |--------------------------------------------------------------------------
+        | Main Query
+        |--------------------------------------------------------------------------
+        */
+
+        $sites = Site::whereHas('jobRoster', function ($q) use ($start, $end, $roster_id, $user) {
+
+                $q->whereBetween('start', [$start, $end])
+                ->where('roster_id', $roster_id);
+
+                if ($user->user_type === 'staff') {
+                    $q->where('assigned_to', $user->id);
+                }
+
+                if ($user->user_type === 'customer') {
+                    $q->where('created_by', $user->id);
+                }
+
+            })
+            ->with(['jobRoster' => function ($q) use ($start, $end, $roster_id, $user) {
+
+                $q->whereBetween('start', [$start, $end])
+                ->where('roster_id', $roster_id)
+                ->orderBy('start', 'asc')
+                ->with('guards');
+
+
+                if ($user->user_type === 'staff') {
+                    $q->where('assigned_to', $user->id);
+                }
+
+                if ($user->user_type === 'customer') {
+                    $q->where('created_by', $user->id);
+                }
+
+            }])
+            ->when($request->has('state'), function ($query) use ($request) {
+                $query->where('state', $request->state);
+            })
+            ->get();
+
+        if ($sites->isEmpty()) {
+            return response()->json([
+                'success' => false,
+                'data' => null,
+                'code' => 404
+            ]);
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Unpublished Shift Count
+        |--------------------------------------------------------------------------
+        */
+
+        $unpublishCount = JobRoster::whereBetween('start', [$start, $end])
+            ->where('roster_id', $roster_id)
+            ->whereNotNull('assigned_to')
+            ->where('publish_status', 0)
+            ->when($user->user_type === 'staff', function ($q) use ($user) {
+                $q->where('assigned_to', $user->id);
+            })
+            ->when($user->user_type === 'customer', function ($q) use ($user) {
+                $q->where('created_by', $user->id);
+            })
+            ->count();
+
+        /*
+        |--------------------------------------------------------------------------
+        | Daily Hours Calculation
+        |--------------------------------------------------------------------------
+        */
 
         $data_arry = [];
-        $total_count = 0;
+        $total_hours = 0;
 
-        if($request->has('user_id') && !empty($request->user_id)){
+        $dateRange = getDatesFromRange(
+            dbFormate($request->start),
+            dbFormate($request->end)
+        );
+
+        if ($dateRange) {
+            foreach ($dateRange as $date) {
+
+                $hours = JobRoster::whereDate('start', $date)
+                    ->where('roster_id', $roster_id)
+                    ->when($user->user_type === 'staff', function ($q) use ($user) {
+                        $q->where('assigned_to', $user->id);
+                    })
+                    ->when($user->user_type === 'customer', function ($q) use ($user) {
+                        $q->where('created_by', $user->id);
+                    })
+                    ->sum('hours');
+
+                $data_arry[dateFormat($date)] = round($hours, 2);
+                $total_hours += $hours;
+            }
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => $sites,
+            'unpublish_shift_count' => $unpublishCount,
+            'days_hours' => $data_arry,
+            'total_hours' => round($total_hours, 2),
+            'code' => 200
+        ]);
+    }
+
+    public function getJobs(Request $request, $type, $duration, $id) {
+        $week = ($request->input('week_no') != null) ? $request->input('week_no') : 0;
         
-        if($request->has('start') && $request->start != '')
-        {
-            $start = dbFormate($request->start). ' 00:00';
-            
-        }else{
-            $start = Carbon::now()->startOfWeek()->toDateString(); 
-            $start = date('Y-m-d 00:00', strtotime($start));
-        }
-        if($request->has('end') && $request->end != '')
-        {
-            $end = dbFormate($request->end). ' 23:59';
-        }else{
-            $end = Carbon::now()->endOfWeek()->toDateString();
-            $end = date('Y-m-d 23:59', strtotime($end));
-        }
-
-        $query ='';
-        $roster_id = $request->roster_id;
-            
-        $query = Site::with(['jobRoster' => function ($que) use ($start, $end, $roster_id){
-            $que->where('start', '>=', $start)
-            ->where('start', '<=', $end)->where('roster_id', $roster_id)->orderBy('job_rosters.start', 'asc')->orderBy('job_rosters.end', 'desc');
-            $que->with('jobRosterTask');
-
-        }]);
-
-        if ($request->has('user_id') && !empty($request->user_id)) {
-            $query->whereIn('created_by', $request->user_id);
-        }
-
-        if ($request->has('state')) {
-            $query->where('sites.state', $request->state);
-        }
-
-        $query->join('job_rosters', 'job_rosters.site_id', '=', 'sites.id');
-        $query->where('job_rosters.start', '>=', $start)
-        ->where('job_rosters.start', '<=', $end)->where('roster_id', $roster_id)->orderBy('job_rosters.start', 'asc')->orderBy('job_rosters.end', 'desc');
-        $query->select('sites.id', 'sites.site_name', 'sites.site_description', 'sites.user_id', DB::raw("COUNT(job_rosters.id) count"))
-        ->groupBy('sites.id')
-        ->groupBy('sites.site_description')
-        ->groupBy('sites.user_id')
-        ->orderBy('sites.site_name');
-        $sites = $query->get();
-
-            
-        if(empty($sites)){
-            return response()->json(['success' => false, 'data' => null, 'code' => 404]); 
-        }
-
-        $publishCount = JobRoster::query()
-            ->join('sites', 'sites.id', '=', 'job_rosters.site_id')
-            ->where('job_rosters.start', '>=', $start)
-            ->where('job_rosters.start', '<=', $end)
-            ->whereNotNull('job_rosters.assigned_to')
-            ->where('job_rosters.assigned_to', '!=', '')
-            ->where('job_rosters.assigned_to', '!=', 'NULL')
-            ->where('job_rosters.publish_status', 0)
-            ->where('job_rosters.roster_id', $request->roster_id);
-
-        if ($request->has('user_id') && !empty($request->user_id)) {
-            $publishCount->where(function ($que) use ($request) {
-            foreach ($request->user_id as $key => $cId) {
-                    if ($key == 0) {
-                        $que->where('sites.user_id', $cId);
-                    } else {
-                        $que->orWhere('sites.user_id', $cId);
-                    }
+        // Define constants if not defined elsewhere
+        $DURATION_TODAY = 'today';
+        $DURATION_WEEK = 'week';
+        $DURATION_MONTH = 'month';
+        $DEFULT_PAGES = 15; // or whatever your default pagination is
+        
+            $model = JobRoster::with('guards', 'rosterActivity', 'site')
+            ->where(['publish_status' => 1, 'guard_id' => $id, 'un_published_shift' => 0])
+            ->where(function($que) use ($type){
+                if ($type == 'incompleted') {
+                    $que->orWhere('job_status', 'confirmed');
+                    $que->orWhere('job_status', 'pending');
+                } else {
+                    $que->orWhere('job_status', $type);
                 }
             });
-        }
-
-        $queryCount = $publishCount->count();
-
-            $dateRange = getDatesFromRange(dbFormate($request->start),dbFormate($request->end));
-            if($dateRange){
-                if($request->has('site_id') && !empty($request->site_id)){
-                    foreach ($dateRange as $key => $value) {
-                        $record = JobRoster::whereIn('site_id', $request->site_id)
-                            ->whereDate('job_rosters.start', $value)
-                            ->where(function ($q) {
-                                $q->orWhere('job_rosters.shift_type', '!=', 'template');
-                                $q->orWhereNull('job_rosters.shift_type');
-                            })
-                            ->where('job_rosters.roster_id', $roster_id)
-                            ->sum('job_rosters.hours');
+            
+        switch ($duration) {
+            case $DURATION_TODAY:
+                $model->whereDate('start', Carbon::today());
+                break;
+                
+            case $DURATION_WEEK:
+                if($week == 0){
+                    $model->whereBetween('start', [
+                        Carbon::now()->startOfWeek(), 
+                        Carbon::parse('next monday')->toDateString()
+                    ]);
+                } else {
+                    $startofweek = Carbon::now()->startOfWeek();
+                    $endofweek = Carbon::parse('next monday')->toDateString();
                     
-                        $data_arry[dateFormat($value)] = $record;
-                        $total_count = $total_count + $record;
+                    if ($week > 0) {
+                        $startofweek = strtotime("+".$week." week", strtotime($startofweek));
+                    } else {
+                        $startofweek = strtotime("-".$week." week", strtotime($startofweek));
                     }
-                }else{
-                    foreach ($dateRange as $key => $value) {
-                        $record = JobRoster::join('sites', 'job_rosters.site_id', '=', 'sites.id')
-                            ->whereIn('sites.user_id', $request->user_id)
-                            ->whereDate('job_rosters.start', $value)
-                            ->where('job_rosters.roster_id', $roster_id)
-                            ->sum('job_rosters.hours');
+
+                    if ($week > 0) {
+                        $endofweek = strtotime("+".$week." week", strtotime($endofweek));
+                    } else {
+                        $endofweek = strtotime("-".$week." week", strtotime($endofweek));
+                    }
                     
-                        $data_arry[dateFormat($value)] = round($record, 2);
-                        $total_count = $total_count + $record;
-                    }
+                    $startofweek = date('Y-m-d H:i', $startofweek);
+                    $endofweek = date('Y-m-d H:i', $endofweek);
+                    $model->whereBetween('start', [$startofweek, $endofweek]);
                 }
-            }
-
-            $total_count = round($total_count, 2);
-
-            return response()->json(['success' => true, 'data' => $sites, 'unpublish_shift_count' => $queryCount,
-                'days_hours' => $data_arry, 'total_hours' => $total_count,
-                'code' => 200]);
-     }
-        return response()->json(['success' => false, 'data' => null, 'code' => 404]); 
-
+                break;
+                
+            case $DURATION_MONTH:
+                $model->whereMonth('start', date('m'));
+                $model->whereYear('start', date('Y'));
+                break;
+        }
+        
+        $results = $model->orderBy('start', 'asc')->paginate($DEFULT_PAGES);
+        
+        return $results;
     }
 }

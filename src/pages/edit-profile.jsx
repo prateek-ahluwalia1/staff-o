@@ -19,6 +19,9 @@ const INITIAL_FORM_STATE = {
   address: "",
   gender: "",
   city: "",
+  state: "",
+  country: "",
+  coordinates: "",
   staff_document_type: "",
   // contractor-specific
   company_name: "",
@@ -46,7 +49,6 @@ export default function EditProfile() {
     refetch,
   } = useFetch(endpoint, { isAuth: true });
 
-  // derive missing fields for profile completion tooltip
   const getMissingFields = (d) => {
     if (!d) return [];
     const missing = [];
@@ -59,20 +61,21 @@ export default function EditProfile() {
     const phone = staff.phone || contractor.phone || d.phone;
     if (!phone) missing.push("Phone");
 
-    const address = staff.address || contractor.address || d.address;
+    const address = d.address || staff.address || contractor.address;
     if (!address) missing.push("Address");
 
     if ((d.user_type || userType) !== "contractor") {
       const gender = staff.gender || contractor.gender || d.gender;
       if (!gender) missing.push("Gender");
-      const city = staff.city || contractor.city || d.city;
-      if (!city) missing.push("City");
     } else {
       const company = contractor.company_name || d.company_name;
       if (!company) missing.push("Company Name");
       const reg = contractor.registration_number || d.registration_number;
       if (!reg) missing.push("Registration Number");
     }
+
+    const city = d.city || staff.city || contractor.city;
+    if (!city) missing.push("City");
 
     const hasImage =
       staff.profile_image || contractor.profile_image || d.profile_image;
@@ -96,6 +99,7 @@ export default function EditProfile() {
   const [submitError, setSubmitError] = useState(null);
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const [activeTab, setActiveTab] = useState("personal");
+
   // Modal state for document upload
   const [showDocModal, setShowDocModal] = useState(false);
   const [selectedDoc, setSelectedDoc] = useState(null);
@@ -109,7 +113,75 @@ export default function EditProfile() {
     file_path: "",
   });
 
-  // Open modal and set selected document (for update)
+  useEffect(() => {
+    if (activeTab !== "personal" || fetchLoading) return;
+
+    let autocomplete;
+    let listener;
+
+    const initMap = () => {
+      const addressInput = document.getElementById("address");
+
+      if (!addressInput || !window.google || !window.google.maps) return;
+
+      if (addressInput.getAttribute("data-gmaps-initialized")) return;
+
+      autocomplete = new window.google.maps.places.Autocomplete(addressInput, {
+        fields: ["address_components", "geometry", "formatted_address"],
+        types: ["address"],
+      });
+
+      addressInput.setAttribute("data-gmaps-initialized", "true");
+
+      listener = autocomplete.addListener("place_changed", () => {
+        const place = autocomplete.getPlace();
+        if (!place.geometry) return;
+
+        let newCity = "";
+        let newState = "";
+        let newCountry = "";
+
+        place.address_components?.forEach((component) => {
+          const types = component.types;
+          if (types.includes("locality")) newCity = component.long_name;
+          if (types.includes("administrative_area_level_1"))
+            newState = component.long_name;
+          if (types.includes("country")) newCountry = component.long_name;
+        });
+
+        const lat = place.geometry.location.lat();
+        const lng = place.geometry.location.lng();
+
+        setFormData((prev) => ({
+          ...prev,
+          address: place.formatted_address,
+          city: newCity || prev.city,
+          state: newState,
+          country: newCountry,
+          coordinates: `${lat},${lng}`,
+        }));
+      });
+    };
+
+    const checkGoogleMaps = setInterval(() => {
+      if (window.google && window.google.maps) {
+        clearInterval(checkGoogleMaps);
+        initMap();
+      }
+    }, 500);
+
+    return () => {
+      clearInterval(checkGoogleMaps);
+      if (listener && window.google) {
+        window.google.maps.event.removeListener(listener);
+      }
+      const addressInput = document.getElementById("address");
+      if (addressInput) {
+        addressInput.removeAttribute("data-gmaps-initialized");
+      }
+    };
+  }, [activeTab, fetchLoading]);
+
   const handleAddFile = (doc) => {
     setSelectedDoc(doc);
     setDocForm({
@@ -181,7 +253,6 @@ export default function EditProfile() {
   // Handle modal submit for add/update document
   const handleDocSubmit = async (e) => {
     e.preventDefault();
-    // Compose payload
     let payload = {
       user_id: userdata.data.id,
       no: docForm.no,
@@ -190,7 +261,6 @@ export default function EditProfile() {
       document_expiry: docForm.document_expiry,
       file: docForm.file_path,
     };
-    // Add document_name and document_type for both add and update
     if (selectedDoc) {
       payload = {
         ...payload,
@@ -201,21 +271,18 @@ export default function EditProfile() {
         document_name: selectedDoc.document_name,
       };
     } else {
-      // For new document, require user to select document type/name
       if (!docForm.document_name || docForm.document_name === "") {
         alert("Please select a document type/name.");
         return;
       }
       payload = {
         ...payload,
-        document_type: docForm.document_name, // or map to a type if needed
+        document_type: docForm.document_name,
         document_name: docForm.document_name,
       };
     }
 
-    // Format date if present
     if (payload.document_expiry) {
-      // Convert to MM-DD-YYYY if needed
       const d = new Date(payload.document_expiry);
       if (!isNaN(d)) {
         const mm = String(d.getMonth() + 1).padStart(2, "0");
@@ -225,14 +292,12 @@ export default function EditProfile() {
       }
     }
 
-    // Decide API endpoint and method
     let apiEndpoint = "api/guard-update-documents";
     let method = "POST";
     if (!selectedDoc) {
       apiEndpoint = "api/guard-add-documents";
     }
 
-    // Submit
     const result = await submit(apiEndpoint, payload, { method });
     if (result.success) {
       setShowDocModal(false);
@@ -242,17 +307,13 @@ export default function EditProfile() {
     }
   };
 
-  // Resolve preview URL: if server returned a full URL use it, otherwise
-  // build using `apiURL` and the `staff_documents` folder.
   const resolveFileUrl = (url) => {
     if (!url) return "";
     try {
       if (url.startsWith("http://") || url.startsWith("https://")) {
         return url;
       }
-    } catch (err) {
-      // ignore and fallback
-    }
+    } catch (err) {}
     return `${apiURL}staff_documents/${url}`;
   };
 
@@ -266,10 +327,14 @@ export default function EditProfile() {
     setFormData({
       name: d.name || "",
       email: d.email || "",
-      phone: staff.phone || contractor.phone || "",
-      address: staff.address || contractor.address || "",
-      gender: staff.gender || contractor.gender || "",
-      city: staff.city || contractor.city || "",
+      phone: staff.phone || contractor.phone || d.phone || "",
+      address: d.address || staff.address || contractor.address || "",
+      city: d.city || staff.city || contractor.city || "",
+      state: d.state || staff.state || contractor.state || "",
+      country: d.country || staff.country || contractor.country || "",
+      coordinates:
+        d.coordinates || staff.coordinates || contractor.coordinates || "",
+      gender: staff.gender || contractor.gender || d.gender || "",
       staff_document_type: staff.staff_document_type || "",
       company_name:
         d.company_name || contractor.company_name || staff.company_name || "",
@@ -280,7 +345,6 @@ export default function EditProfile() {
         "",
     });
 
-    // prefer staff profile image, then contractor, then top-level
     if (staff.profile_image) setProfilePhoto(staff.profile_image);
     else if (contractor.profile_image)
       setProfilePhoto(contractor.profile_image);
@@ -310,19 +374,22 @@ export default function EditProfile() {
       payload.append("name", formData.name);
       payload.append("email", formData.email);
       payload.append("phone", formData.phone);
-      payload.append("address", formData.address);
-      // Gender is not applicable for contractors
+
+      // Send location data for all users now
+      if (formData.address) payload.append("address", formData.address);
+      if (formData.city) payload.append("city", formData.city);
+      if (formData.state) payload.append("state", formData.state);
+      if (formData.country) payload.append("country", formData.country);
+      if (formData.coordinates)
+        payload.append("coordinates", formData.coordinates);
+
       if (userType !== "contractor" && formData.gender) {
         payload.append("gender", formData.gender);
       }
-      // City is not applicable for contractors
-      if (userType !== "contractor" && formData.city) {
-        payload.append("city", formData.city);
-      }
+
       if (formData.staff_document_type) {
         payload.append("staff_document_type", formData.staff_document_type);
       }
-      // contractor-specific fields
       if (userType === "contractor") {
         if (formData.company_name)
           payload.append("company_name", formData.company_name);
@@ -392,7 +459,6 @@ export default function EditProfile() {
         />
       </div>
 
-      {/* Tabs */}
       <div style={{ display: "flex", gap: 16 }}>
         <button
           type="button"
@@ -411,7 +477,6 @@ export default function EditProfile() {
         </button>
       </div>
 
-      {/* Tab Content */}
       {activeTab === "personal" && (
         <>
           {submitSuccess && (

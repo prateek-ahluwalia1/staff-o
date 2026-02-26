@@ -32,7 +32,7 @@ export default function ProfileForm({
               className="form-control"
               id="name"
               placeholder="Muhammad Nauman"
-              value={formData.name}
+              value={formData.name || ""}
               onChange={onChange}
             />
           </div>
@@ -45,7 +45,7 @@ export default function ProfileForm({
               className="form-control"
               id="email"
               placeholder="you@example.com"
-              value={formData.email}
+              value={formData.email || ""}
               onChange={onChange}
             />
           </div>
@@ -58,43 +58,45 @@ export default function ProfileForm({
               className="form-control"
               id="phone"
               placeholder="+92 300 0000000"
-              value={formData.phone}
+              value={formData.phone || ""}
               onChange={onChange}
             />
           </div>
+
           {userType !== "contractor" && (
-            <div>
-              <label htmlFor="gender" className="form-label">
-                Gender
-              </label>
-              <select
-                className="form-control"
-                id="gender"
-                value={formData.gender}
-                onChange={onChange}
-              >
-                <option value="">Select Gender</option>
-                <option value="male">Male</option>
-                <option value="female">Female</option>
-                <option value="other">Other</option>
-              </select>
-            </div>
+            <>
+              <div>
+                <label htmlFor="gender" className="form-label">
+                  Gender
+                </label>
+                <select
+                  className="form-control"
+                  id="gender"
+                  value={formData.gender || ""}
+                  onChange={onChange}
+                >
+                  <option value="">Select Gender</option>
+                  <option value="male">Male</option>
+                  <option value="female">Female</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+              <div>
+                <label htmlFor="city" className="form-label">
+                  City
+                </label>
+                <input
+                  type="text"
+                  className="form-control"
+                  id="city"
+                  placeholder="Lahore"
+                  value={formData.city || ""}
+                  onChange={onChange}
+                />
+              </div>
+            </>
           )}
-          {userType !== "contractor" && (
-            <div>
-              <label htmlFor="city" className="form-label">
-                City
-              </label>
-              <input
-                type="text"
-                className="form-control"
-                id="city"
-                placeholder="Lahore"
-                value={formData.city}
-                onChange={onChange}
-              />
-            </div>
-          )}
+
           {userType === "contractor" && (
             <>
               <div>
@@ -125,6 +127,23 @@ export default function ProfileForm({
               </div>
             </>
           )}
+
+          {/* Address field placed immediately after registration number for contractors.
+              It is visible to all user types. */}
+          <div>
+            <label htmlFor="address" className="form-label">
+              Address
+            </label>
+            <input
+              type="text"
+              className="form-control"
+              id="address"
+              placeholder="Start typing your address..."
+              value={formData.address || ""}
+              onChange={onChange}
+            />
+          </div>
+
           {userType === "staff" && (
             <div>
               <label htmlFor="staff_document_type" className="form-label">
@@ -133,7 +152,7 @@ export default function ProfileForm({
               <select
                 className="form-control"
                 id="staff_document_type"
-                value={formData.staff_document_type}
+                value={formData.staff_document_type || ""}
                 onChange={onChange}
               >
                 <option value="">Select Residential Status</option>
@@ -146,18 +165,6 @@ export default function ProfileForm({
               </select>
             </div>
           )}
-          <div className="grid-span-2">
-            <label htmlFor="address" className="form-label">
-              Address
-            </label>
-            <textarea
-              className="form-control"
-              id="address"
-              placeholder="Enter your full address"
-              value={formData.address}
-              onChange={onChange}
-            />
-          </div>
         </div>
         <div className="settings-card-footer">
           <button type="submit" className="btn btn-primary" disabled={loading}>

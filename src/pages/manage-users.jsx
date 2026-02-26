@@ -1,6 +1,5 @@
 import React, { useState, useMemo } from "react";
 
-// Mock initial data - Replace this with data from your Redux store/API
 const initialUsers = [
   {
     id: 1,
@@ -45,7 +44,6 @@ const ManageUsers = () => {
     status: "Active",
   });
 
-  // Filter users based on the currently selected tab
   const filteredUsers = useMemo(
     () => users.filter((user) => user.role === activeTab),
     [users, activeTab],
@@ -53,7 +51,6 @@ const ManageUsers = () => {
 
   const handleTabChange = (role) => setActiveTab(role);
 
-  // Open Modal for Add or Edit
   const openModal = (user = null) => {
     if (user) {
       setEditingUser(user);
@@ -76,7 +73,6 @@ const ManageUsers = () => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  // Handle Submit (Create & Update)
   const handleSubmit = (e) => {
     e.preventDefault();
     if (editingUser) {
@@ -94,7 +90,6 @@ const ManageUsers = () => {
     closeModal();
   };
 
-  // Handle Delete
   const handleDelete = (id) => {
     if (window.confirm("Are you sure you want to delete this user?")) {
       setUsers(users.filter((user) => user.id !== id));
@@ -112,7 +107,7 @@ const ManageUsers = () => {
         </button>
       </div>
 
-      {/* Bootstrap Tabs */}
+      {/* All Tabs */}
       <ul className="nav nav-tabs mb-4">
         {["customer", "staff", "sub_contractor"].map((role) => (
           <li className="nav-item" key={role}>
@@ -127,7 +122,7 @@ const ManageUsers = () => {
         ))}
       </ul>
 
-      {/* Bootstrap Table */}
+      {/* Table of users */}
       <div className="table-responsive shadow-sm rounded">
         <table className="table table-hover table-bordered mb-0 align-middle">
           <thead className="table-light">
@@ -180,7 +175,7 @@ const ManageUsers = () => {
         </table>
       </div>
 
-      {/* Bootstrap Modal */}
+      {/* Modal for Edit User */}
       {isModalOpen && (
         <div
           className="modal show d-block"

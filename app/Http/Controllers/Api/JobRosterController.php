@@ -23,9 +23,7 @@ class JobRosterController extends Controller
         $user = User::findOrFail($request->user_id);
         $user = User::where('email', $user->email)->first();
 
-        $coordinates = $request->lat . ',' . $request->lng;
-
-        $site = Site::where('coordinates', $coordinates)->first();
+        $site = Site::where('coordinates', $request->coordinates)->first();
         if (!$site) {
             try {
                 $site = Site::create([
@@ -34,7 +32,7 @@ class JobRosterController extends Controller
                     'site_description'  => $request->description,
                     'address'           => $request->address,
                     'signin_radius'     => 300,
-                    'coordinates'       => $coordinates,
+                    'coordinates'       => $request->coordinates,
                     'state'             => $request->state,
                 ]);
             } catch (\Exception $e) {
@@ -47,7 +45,6 @@ class JobRosterController extends Controller
 
         $jobNewRoster = JobNewRoster::where('id', 1)->first();
 
-
         if (!$jobNewRoster) {
             return response()->json([
                 'success' => false,
@@ -59,8 +56,9 @@ class JobRosterController extends Controller
         $documentListValue = is_array($request->document_types) ? json_encode($request->document_types) : $request->document_types;
         $jobInstructionsValue = is_array($request->document_list) ? json_encode($request->document_list) : $request->document_list;
 
+        $createdJobIds = [];
+        
         for ($i = 0; $i < $request->numberOfGuards; $i++) {
-
             $roster = [
                 'site_id'               => $site->id,
                 'start'                 => dbFormateDateTime($request->startTime),
@@ -77,6 +75,7 @@ class JobRosterController extends Controller
                 'job_instrcutions'      => $jobInstructionsValue,
                 'created_by'            => $request->user_id,
                 'assigned_to'           => null,
+                'notified_users'        => json_encode([]), // Initialize empty notified users array
             ];
 
             $hours = $this->getShiftHours($roster['start'], $roster['end'], $roster['site_id']);
@@ -95,35 +94,132 @@ class JobRosterController extends Controller
             $roster['ph_night_hours']           = $hours['ph_night'];
             $roster['hours']                    = $guardWorkingHours;
 
-            $inserted = JobRoster::insert($roster);
+            $jobId = JobRoster::insertGetId($roster);
+            $createdJobIds[] = $jobId;
+            $notifiedUsers = $this->sendNotificationsWithinRadius($site->coordinates, $createdJobIds, $request->user_id, $roster);
         }
 
-        $guards = User::where('user_id', 1)->where('is_active', 1)->select('id', 'name')->get();
-
-        if(!$guards){
-        $guards = User::whereNotIn('user_id', $request->user_id)
-            ->where('user_type', 'contractor')->where('is_active', 1)
-            ->get();
-        }
-
-        foreach ($guards as $grd) {
-            $guard = User::where('id', $grd->id)->where('is_active', 1)->select('id', 'notification_token')->first();
-            if ($guard && $guard->notification_token) {
-                send_push_notification([
-                    'notification_token' => $guard->notification_token,
-                    'message'            => "ASAP job has been published. Please check your app.",
-                    'title'              => 'ASAP Job',
-                    'page'               => 'asap-job-list'
-                ]);
-            }
-        }
+        // Get staff within 5km radius
+        // $notifiedUsers = $this->sendNotificationsWithinRadius($site->coordinates, $createdJobIds, $request->user_id);
 
         return response()->json([
             'code' => 200,
             'success' => true,
             'message' => 'ASAP Job Published.',
-            'guards' => $guards
+            'notified_users' => $notifiedUsers,
+            'total_jobs_created' => count($createdJobIds)
         ]);
+    }
+
+    /**
+     * Send notifications to staff (user_id=1) within 5km radius
+     */
+    private function sendNotificationsWithinRadius($siteCoordinates, $jobIds, $userId, $roster)
+    {
+        $radiusKm = 5; // 5km radius
+        $notifiedUsers = [];
+        
+        // Get all staff with user_id = 1
+        $staff = User::where('user_id', 1)
+            ->where('is_active', 1)
+            ->where('user_type', 'staff')
+            ->whereNotNull('coordinates')
+            ->select('id', 'name', 'coordinates', 'notification_token')
+            ->get();
+
+        if(!$staff){
+        $staff = User::where('is_active', 1)
+            ->whereNotIn('user_id', $userId)
+            ->where('user_type', 'contractor')
+            ->whereNotNull('coordinates')
+            ->select('id', 'name', 'coordinates', 'notification_token')
+            ->get();
+        }
+        
+        foreach ($staff as $staffMember) {
+            // Calculate distance between site and staff
+            $distance = $this->calculateDistance($siteCoordinates, $staffMember->coordinates);
+            
+            // Check if within 5km radius
+            if ($distance <= $radiusKm) {
+                // Send notification if token exists
+                if ($staffMember->notification_token) {
+                    $notificationSent = send_push_notification([
+                        'notification_token' => $staffMember->notification_token,
+                        'message'            => "New ASAP job available within 5km of your location. Please check your app.",
+                        'title'              => 'ASAP Job Nearby',
+                        'page'               => 'asap-job-list',
+                        'data'               => [
+                            'distance' => round($distance, 2),
+                            'radius' => $radiusKm,
+                            'job_ids' => $jobIds,
+                            'roster' => $roster
+                        ]
+                    ]);
+                    
+                    if ($notificationSent) {
+                        $notifiedUsers[] = [
+                            'user_id' => $staffMember->id,
+                            'name' => $staffMember->name,
+                            'distance' => round($distance, 2) . ' km'
+                        ];
+                    }
+                }
+            }
+        }
+        
+        // Update each job roster with notified users
+        $this->updateJobRosterWithNotifiedUsers($jobIds, $notifiedUsers, $radiusKm);
+        
+        return $notifiedUsers;
+    }
+
+    /**
+     * Calculate distance between two coordinates using Haversine formula
+     */
+    private function calculateDistance($coord1, $coord2)
+    {
+        list($lat1, $lng1) = explode(',', $coord1);
+        list($lat2, $lng2) = explode(',', $coord2);
+        
+        $earthRadius = 6371;
+        
+        $latDelta = deg2rad($lat2 - $lat1);
+        $lngDelta = deg2rad($lng2 - $lng1);
+        
+        $a = sin($latDelta/2) * sin($latDelta/2) +
+            cos(deg2rad($lat1)) * cos(deg2rad($lat2)) *
+            sin($lngDelta/2) * sin($lngDelta/2);
+        
+        $c = 2 * atan2(sqrt($a), sqrt(1-$a));
+        
+        return $earthRadius * $c;
+    }
+
+    /**
+     * Update job roster with notified users
+     */
+    private function updateJobRosterWithNotifiedUsers($jobIds, $notifiedUsers, $radiusKm)
+    {
+        $notificationData = [
+            'radius' => $radiusKm,
+            'type' => 'staff',
+            'user_ids' => array_column($notifiedUsers, 'user_id'),
+            'notified_at' => now()->toDateTimeString(),
+            'user_details' => $notifiedUsers
+        ];
+        
+        foreach ($jobIds as $jobId) {
+            $jobRoster = JobRoster::find($jobId);
+            
+            if ($jobRoster) {
+                $existingNotified = json_decode($jobRoster->notified_users ?? '[]', true);
+                $existingNotified[] = $notificationData;
+                
+                $jobRoster->notified_users = json_encode($existingNotified);
+                $jobRoster->save();
+            }
+        }
     }
 
     public function getContractorStaff($id)
@@ -187,22 +283,22 @@ class JobRosterController extends Controller
         // publid holiday calculation start here
         $start_in_public_holiday = false;
         $end_in_public_holiday = false;
-        if ($siteID != null) {
-            $site_state = DB::table('sites')->where('id', $siteID)->select('state')->first();
-            $states_array = array(
-                'Victoria' => 'vic',
-                'New South Wales' => 'nsw',
-                'NSW' => 'nsw',
-                'Queensland' => 'qld',
-                'Tasmania' => 'tas',
-                'Western Australia' => 'wa',
-                'South Australia' => 'sa',
-                'ACT' => 'act'
-            );
-            $state = $site_state->state != '' ? $states_array[$site_state->state] : 'vic';
-        } else {
+        // if ($siteID != null) {
+        //     $site_state = Site::where('id', $siteID)->select('state')->first();
+        //     $states_array = array(
+        //         'Victoria' => 'vic',
+        //         'New South Wales' => 'nsw',
+        //         'NSW' => 'nsw',
+        //         'Queensland' => 'qld',
+        //         'Tasmania' => 'tas',
+        //         'Western Australia' => 'wa',
+        //         'South Australia' => 'sa',
+        //         'ACT' => 'act'
+        //     );
+        //     $state = $site_state->state != '' ? $states_array[$site_state->state] : 'vic';
+        // } else {
             $state = 'vic';
-        }
+        // }
         
         if ($day_start == 'Saturday' && $day_end == 'Saturday') {
             $total_saturday_hours = $hours;
@@ -1227,7 +1323,7 @@ class JobRosterController extends Controller
                     $document_category = DocumentCategory::where('document_category', 'other')->first();
 
                     if ($document_category && !empty($document_types)) {
-                    foreach (json_decode($document_category->document_type) as $doc_key => $doc_name) {  
+                       foreach (json_decode($document_category->document_type) as $doc_key => $doc_name) {  
                             $document_types_array = json_decode($document_types, true) ?? [];
                             if (in_array($doc_key, $document_types_array)) {
 
@@ -2026,7 +2122,7 @@ class JobRosterController extends Controller
         $DEFULT_PAGES = 15; // or whatever your default pagination is
         
             $model = JobRoster::with('guards', 'rosterActivity', 'site')
-            ->where(['publish_status' => 1, 'guard_id' => $id, 'un_published_shift' => 0])
+            ->where(['publish_status' => 1, 'assigned_to' => $id])
             ->where(function($que) use ($type){
                 if ($type == 'incompleted') {
                     $que->orWhere('job_status', 'confirmed');

@@ -24,26 +24,45 @@ export default function ScheduleStep({ form, setField }) {
     padding: "0 12px",
     fontSize: "14px",
     transition: "all 0.2s ease",
+    width: "100%",
   };
 
-  const sectionTitleStyle = {
-    fontWeight: 700,
-    fontSize: "18px",
-    marginBottom: 4,
+  // Generate 24-hour format options (00 to 23)
+  const hours = Array.from({ length: 24 }, (_, i) =>
+    String(i).padStart(2, "0"),
+  );
+
+  // Generate minutes in 5-minute increments (00, 05, 10, 15... 55)
+  // Note: If you want every single minute (00-59), change `length: 12` to `length: 60` and `i * 5` to `i`
+  const minutes = Array.from({ length: 12 }, (_, i) =>
+    String(i * 5).padStart(2, "0"),
+  );
+
+  // Helper to safely extract hour or minute from "HH:mm" string
+  const getPart = (timeStr, part) => {
+    if (!timeStr) return "";
+    const split = timeStr.split(":");
+    return part === "hour" ? split[0] : split[1];
   };
 
-  const subtitleStyle = {
-    fontSize: "13px",
-    color: "#6b7280",
-    marginBottom: 20,
+  // Helper to handle updating just the hour or minute portion
+  const handleTimeChange = (field, currentVal, type, newVal) => {
+    let h = getPart(currentVal, "hour") || "00";
+    let m = getPart(currentVal, "minute") || "00";
+
+    if (type === "hour") h = newVal;
+    if (type === "minute") m = newVal;
+
+    setField(field, `${h}:${m}`);
   };
 
   return (
     <div style={cardStyle}>
-      {/* Header */}
       <div className="mb-3">
-        <div style={sectionTitleStyle}>Schedule</div>
-        <div style={subtitleStyle}>Select when the job starts and ends</div>
+        <h5 style={{ fontWeight: 700, marginBottom: 4 }}>Schedule</h5>
+        <p className="text-muted" style={{ fontSize: "13px" }}>
+          Select when the job starts and ends
+        </p>
       </div>
 
       {/* Start Section */}
@@ -72,27 +91,59 @@ export default function ScheduleStep({ form, setField }) {
           </div>
 
           <div className="col-md-6">
-            <label style={labelStyle}>Start Time</label>
-            <input
-              type="time"
-              value={form.startTime || ""}
-              onChange={(e) => setField("startTime", e.target.value)}
-              className="form-control"
-              style={inputStyle}
-            />
-            <small className="text-muted">Choose any preferred time</small>
+            <label style={labelStyle}>Start Time (24h)</label>
+            <div className="d-flex gap-2">
+              <select
+                className="form-select"
+                style={inputStyle}
+                value={getPart(form.startTime, "hour")}
+                onChange={(e) =>
+                  handleTimeChange(
+                    "startTime",
+                    form.startTime,
+                    "hour",
+                    e.target.value,
+                  )
+                }
+              >
+                <option value="" disabled>
+                  HH
+                </option>
+                {hours.map((h) => (
+                  <option key={h} value={h}>
+                    {h}
+                  </option>
+                ))}
+              </select>
+              <span className="d-flex align-items-center fw-bold">:</span>
+              <select
+                className="form-select"
+                style={inputStyle}
+                value={getPart(form.startTime, "minute")}
+                onChange={(e) =>
+                  handleTimeChange(
+                    "startTime",
+                    form.startTime,
+                    "minute",
+                    e.target.value,
+                  )
+                }
+              >
+                <option value="" disabled>
+                  MM
+                </option>
+                {minutes.map((m) => (
+                  <option key={m} value={m}>
+                    {m}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Divider */}
-      <div
-        style={{
-          height: 1,
-          background: "#f1f1f1",
-          margin: "20px 0",
-        }}
-      />
+      <div style={{ height: 1, background: "#f1f1f1", margin: "20px 0" }} />
 
       {/* End Section */}
       <div>
@@ -120,15 +171,54 @@ export default function ScheduleStep({ form, setField }) {
           </div>
 
           <div className="col-md-6">
-            <label style={labelStyle}>End Time</label>
-            <input
-              type="time"
-              value={form.endTime || ""}
-              onChange={(e) => setField("endTime", e.target.value)}
-              className="form-control"
-              style={inputStyle}
-            />
-            <small className="text-muted">Must be after start time</small>
+            <label style={labelStyle}>End Time (24h)</label>
+            <div className="d-flex gap-2">
+              <select
+                className="form-select"
+                style={inputStyle}
+                value={getPart(form.endTime, "hour")}
+                onChange={(e) =>
+                  handleTimeChange(
+                    "endTime",
+                    form.endTime,
+                    "hour",
+                    e.target.value,
+                  )
+                }
+              >
+                <option value="" disabled>
+                  HH
+                </option>
+                {hours.map((h) => (
+                  <option key={h} value={h}>
+                    {h}
+                  </option>
+                ))}
+              </select>
+              <span className="d-flex align-items-center fw-bold">:</span>
+              <select
+                className="form-select"
+                style={inputStyle}
+                value={getPart(form.endTime, "minute")}
+                onChange={(e) =>
+                  handleTimeChange(
+                    "endTime",
+                    form.endTime,
+                    "minute",
+                    e.target.value,
+                  )
+                }
+              >
+                <option value="" disabled>
+                  MM
+                </option>
+                {minutes.map((m) => (
+                  <option key={m} value={m}>
+                    {m}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
         </div>
       </div>

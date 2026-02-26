@@ -7,6 +7,7 @@ export default function ReviewStep({
   setField,
   handleConfirm,
   setStep,
+  isSubmitting, // Passed down from AddJob
 }) {
   const JOB_TYPE_LABELS = {
     "site-patrol": "Site Patrol Security",
@@ -94,6 +95,7 @@ export default function ReviewStep({
             type="checkbox"
             checked={form.termsAccepted}
             onChange={(e) => setField("termsAccepted", e.target.checked)}
+            disabled={isSubmitting} // Disable toggle while loading
           />
           <label htmlFor="terms" className="form-check-label">
             I agree to the Terms & Conditions
@@ -103,17 +105,29 @@ export default function ReviewStep({
 
       <div className="mt-3 d-flex justify-content-end gap-2">
         <button
-          className="btn btn-success btn-lg"
+          className="btn btn-success btn-lg d-flex align-items-center"
           onClick={handleConfirm}
-          disabled={!form.termsAccepted}
-          style={{ opacity: form.termsAccepted ? 1 : 0.6 }}
+          disabled={!form.termsAccepted || isSubmitting}
+          style={{ opacity: !form.termsAccepted || isSubmitting ? 0.6 : 1 }}
         >
-          Post Job
+          {isSubmitting ? (
+            <>
+              <span
+                className="spinner-border spinner-border-sm me-2"
+                role="status"
+                aria-hidden="true"
+              ></span>
+              Posting...
+            </>
+          ) : (
+            "Post Job"
+          )}
         </button>
         <button
           type="button"
           className="btn btn-outline-secondary btn-lg"
           onClick={() => setStep(0)}
+          disabled={isSubmitting} // Disable editing while loading
         >
           Edit Job
         </button>

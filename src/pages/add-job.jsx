@@ -13,8 +13,16 @@ const STEP_TITLES = ["Location", "Schedule", "Details", "Review & Confirm"];
 export default function AddJob() {
   const navigate = useNavigate();
   const { userdata } = useSelector((state) => state.auth);
-  const { submit: submitJob } = useSubmit({ isAuth: true });
-  const { submit: uploadFile } = useSubmit({ isAuth: true });
+  const { submit: submitJob, loading: submitLoading } = useSubmit({
+    isAuth: true,
+  });
+  const { submit: uploadFile, loading: uploadLoading } = useSubmit({
+    isAuth: true,
+  });
+
+  // Derived submitting state
+  const isSubmitting = submitLoading || uploadLoading;
+
   const [step, setStep] = useState(0);
   const [form, setForm] = useState({
     title: "",
@@ -28,13 +36,12 @@ export default function AddJob() {
     postcode: "",
     coordinates: "",
     startDate: "",
-    startTime: "",
+    startTime: "", // Will be stored in HH:mm 24-hour format
     endDate: "",
-    endTime: "",
+    endTime: "", // Will be stored in HH:mm 24-hour format
     jobType: "",
     numGuards: 1,
     attachments: [],
-    // new document flag and selected types
     document: false,
     document_types: [],
     termsAccepted: false,
@@ -60,7 +67,6 @@ export default function AddJob() {
 
   useEffect(() => {
     return () => {
-      // revoke object URLs on unmount
       attachmentPreviews.forEach((p) => p.url && URL.revokeObjectURL(p.url));
     };
   }, [attachmentPreviews]);
@@ -95,7 +101,6 @@ export default function AddJob() {
           });
           if (!res.ok) throw new Error("reverse geocode failed");
           const data = await res.json();
-          // populate useful form fields from reverse geocode response
           const display = data.display_name || `${lat}, ${lon}`;
           const addr = data.address || {};
           setField("location", display);
@@ -148,7 +153,6 @@ export default function AddJob() {
     }
 
     try {
-      // upload attachments (if any)
       const document_list = [];
       if (form.attachments && form.attachments.length > 0) {
         for (const file of form.attachments) {
@@ -229,11 +233,10 @@ export default function AddJob() {
   }, [form.location]);
 
   function computeRateSummary() {
-    // rates and thresholds (example values)
-    const DAY_START = 6; // 6:00
-    const DAY_END = 18; // 18:00
-    const DAY_RATE = 10; // $/hr
-    const NIGHT_RATE = 12; // $/hr
+    const DAY_START = 6;
+    const DAY_END = 18;
+    const DAY_RATE = 10;
+    const NIGHT_RATE = 12;
     const GST = 0.1;
 
     if (!form.startDate || !form.startTime || !form.endDate || !form.endTime) {
@@ -244,7 +247,6 @@ export default function AddJob() {
     const end = new Date(`${form.endDate}T${form.endTime}`);
     if (isNaN(start) || isNaN(end) || end <= start) return null;
 
-    // iterate in 15-minute steps and classify day/night
     const stepMs = 15 * 60 * 1000;
     let t = start.getTime();
     let dayMinutes = 0;
@@ -326,6 +328,7 @@ export default function AddJob() {
                 setField={setField}
                 handleConfirm={handleConfirm}
                 setStep={setStep}
+                isSubmitting={isSubmitting} // Pass loading state here
               />
             )}
 
@@ -335,6 +338,7 @@ export default function AddJob() {
                   type="button"
                   className="btn btn-outline-secondary"
                   onClick={back}
+                  disabled={isSubmitting}
                 >
                   ← Back
                 </button>
@@ -346,6 +350,7 @@ export default function AddJob() {
                   type="button"
                   className="btn btn-primary btn-lg rounded-pill px-4"
                   onClick={next}
+                  disabled={isSubmitting}
                 >
                   Next
                 </button>

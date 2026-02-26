@@ -10,10 +10,8 @@ class Staff extends Model
 
     protected $fillable = [
         'user_id',
-        'address',
         'profile_image',
         'gender',
-        'city',
         'phone',
         'staff_document_type'
     ];

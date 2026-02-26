@@ -56,11 +56,13 @@ class StaffController extends Controller
             'email' => 'required|email|unique:users,email', // Check in users table
             'phone' => 'nullable|string',
             'password' => 'required|min:6|confirmed', // Added confirmed for password confirmation
-            'address' => 'nullable|string',
             'profile_image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'gender' => 'nullable|in:male,female,other',
+            'address' => 'nullable',
             'city' => 'nullable|string',
-            // 'user_id' is not needed as we'll get it from the authenticated user or set automatically
+            'state' => 'nullable|string',
+            'country' => 'nullable|string',
+            'coordinates' => 'nullable|string',
         ], [
             'email.unique' => 'This email address is already taken. Please use a different email.',
             'password.confirmed' => 'Password confirmation does not match.',
@@ -82,6 +84,11 @@ class StaffController extends Controller
             'password' => Hash::make($request->password),
             'user_type' => 'staff',
             'user_id' => $request->user_id,
+            'address' => $data['address'] ?? null,
+            'city' => $data['city'] ?? null,
+            'state' => $data['state'] ?? null,
+            'country' => $data['state'] ?? null,
+            'coordinates' => $data['coordinates'] ?? null,
             'is_active' => 0,
         ]);
 
@@ -92,10 +99,8 @@ class StaffController extends Controller
 
         $staff = Staff::create([
             'user_id' => $user->id,
-            'address' => $request->address,
             'profile_image' => $profileImagePath ?? $request->profile_image,
             'gender' => $request->gender,
-            'city' => $request->city,
         ]);
         $old_data = Staff::where('user_id', $user->id)->first();
 
@@ -225,11 +230,14 @@ class StaffController extends Controller
             'email' => 'sometimes|required|email|unique:users,email,' . $userId,
             'phone' => 'nullable|string',
             'password' => 'nullable|min:6|confirmed',
-            'address' => 'nullable|string',
             'profile_image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'gender' => 'nullable|in:male,female,other',
-            'city' => 'nullable|string',
             'is_active' => 'nullable|in:0,1',
+            'address' => 'nullable',
+            'city' => 'nullable|string',
+            'state' => 'nullable|string',
+            'country' => 'nullable|string',
+            'coordinates' => 'nullable|string',
         ], [
             'email.unique' => 'This email address is already taken. Please use a different email.',
             'password.confirmed' => 'Password confirmation does not match.',
@@ -266,7 +274,28 @@ class StaffController extends Controller
         if ($request->has('is_active')) {
             $userData['is_active'] = $request->is_active;
         }
+
+        if ($request->has('address')) {
+            $userData['address'] = $request->address;
+        }
+
+        if ($request->has('state')) {
+             $userData['state'] = $request->state;
+        }
+
+        if ($request->has('city')) {
+            $userData['city'] = $request->city;
+        }
+
+        if ($request->has('country')) {
+         $userData['country'] = $request->country;
+        }
         
+        
+        if ($request->has('coordinates')) {
+         $userData['coordinates'] = $request->coordinates;
+        }
+
         if (!empty($userData)) {
             $user->update($userData);
         }
@@ -284,16 +313,10 @@ class StaffController extends Controller
             $staff->profile_image = $request->profile_image;
         }
 
-        if ($request->has('address')) {
-            $staff->address = $request->address;
-        }
+        
         
         if ($request->has('gender')) {
             $staff->gender = $request->gender;
-        }
-        
-        if ($request->has('city')) {
-            $staff->city = $request->city;
         }
 
         $staff->save();
@@ -518,7 +541,7 @@ class StaffController extends Controller
         }
         
         $user->profile_completion_percentage = $percentage;
-        
+
         return response()->json(['success' => true, 'code' => 200, 'data' => $user]);
     }
 
@@ -533,15 +556,17 @@ class StaffController extends Controller
                 'password' => 'nullable|confirmed|min:6',
                 'is_active' => 'sometimes|boolean',
                 'staff_document_type' => 'nullable|string',
+                'address' => 'nullable',
+                'city' => 'nullable|string',
+                'state' => 'nullable|string',
+                'country' => 'nullable|string',
+                'coordinates' => 'nullable|string',
             ];
 
             if ($user->user_type === 'customer') {
                 $rules = array_merge($rules, [
                     'phone' => 'nullable|string',
                     'company_name' => 'nullable|string',
-                    'address' => 'nullable|string',
-                    'city' => 'nullable|string',
-                    'country' => 'nullable|string',
                 ]);
             }
 
@@ -550,16 +575,13 @@ class StaffController extends Controller
                     'company_name' => 'sometimes|required|string|max:255',
                     'registration_number' => 'nullable|string|max:255',
                     'phone' => 'nullable|string|max:20',
-                    'address' => 'nullable|string|max:500',
                 ]);
             }
 
             if ($user->user_type === 'staff') {
                 $rules = array_merge($rules, [
-                    'address' => 'sometimes|nullable|string',
                     'profile_image' => 'sometimes|nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
                     'gender' => 'sometimes|nullable|in:male,female,other',
-                    'city' => 'sometimes|nullable|string',
                     'phone' => 'sometimes|nullable|string',
                     'staff_document_type' => 'sometimes|nullable|string',
                 ]);
@@ -575,16 +597,18 @@ class StaffController extends Controller
                 'name',
                 'email',
                 'password',
-                'is_active'
+                'is_active',
+                'city',
+                'state',
+                'country',
+                'address',
+                'coordinates'
             ])->toArray());
 
             if ($user->user_type === 'customer') {
                 $profileData = collect($data)->only([
                     'phone',
                     'company_name',
-                    'address',
-                    'city',
-                    'country'
                 ])->toArray();
 
                 if ($user->customer) {
@@ -602,7 +626,6 @@ class StaffController extends Controller
                     'company_name',
                     'registration_number',
                     'phone',
-                    'address'
                 ])->toArray();
 
                 if ($user->contractor) {
@@ -708,11 +731,9 @@ class StaffController extends Controller
 
                 // Now update the staff record with ALL data including the document type
                 $staffData = collect($data)->only([
-                    'address',
                     'gender',
-                    'city',
                     'phone',
-                    'staff_document_type'  // This will now be saved
+                    'staff_document_type'
                 ])->toArray();
 
                 if ($request->hasFile('profile_image')) {

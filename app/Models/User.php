@@ -18,6 +18,11 @@ class User extends Authenticatable
             'user_type',
             'is_active',
             'user_id',
+            'city',
+            'country',
+            'state',
+            'coordinates',
+            'address'
         ];
     
         protected $hidden = [

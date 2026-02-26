@@ -23,8 +23,10 @@ class AuthController extends Controller
             'phone' => 'nullable',
             'company_name' => 'nullable',
             'address' => 'nullable',
-            'city' => 'nullable',
-            'country' => 'nullable',
+            'city' => 'nullable|string',
+            'state' => 'nullable|string',
+            'country' => 'nullable|string',
+            'coordinates' => 'nullable|string',
         ]);
 
         $user = User::create([
@@ -33,15 +35,17 @@ class AuthController extends Controller
             'password' => Hash::make($data['password']),
             'user_type' => 'customer',
             'is_active' => 0,
+            'address' => $data['address'] ?? null,
+            'city' => $data['city'] ?? null,
+            'state' => $data['state'] ?? null,
+            'country' => $data['country'] ?? null,
+            'coordinates' => $data['coordinates'] ?? null,
         ]);
 
         Customer::create([
             'user_id' => $user->id,
             'phone' => $data['phone'] ?? null,
             'company_name' => $data['company_name'] ?? null,
-            'address' => $data['address'] ?? null,
-            'city' => $data['city'] ?? null,
-            'country' => $data['country'] ?? null,
         ]);
 
         $document_categories = DocumentCategory::where('document_category', 'customer_document')->first();
@@ -68,6 +72,11 @@ class AuthController extends Controller
             'name' => 'required|string',
             'email' => 'required|email|unique:users',
             'password' => 'required|confirmed|min:6',
+            'address' => 'nullable',
+            'city' => 'nullable|string',
+            'state' => 'nullable|string',
+            'country' => 'nullable|string',
+            'coordinates' => 'nullable|string',
         ]);
 
         $user = User::create([
@@ -76,6 +85,11 @@ class AuthController extends Controller
             'password' => Hash::make($data['password']),
             'user_type' => 'contractor',
             'is_active' => 0,
+            'address' => $data['address'] ?? null,
+            'city' => $data['city'] ?? null,
+            'state' => $data['state'] ?? null,
+            'country' => $data['country'] ?? null,
+            'coordinates' => $data['coordinates'] ?? null,
         ]);
 
         Contractor::create([
@@ -83,8 +97,6 @@ class AuthController extends Controller
             'company_name' => $request->company_name,
             'registration_number' => $request->registration_number ?? null,
             'phone' => $request->phone ?? null,
-            'address' => $request->address ?? null,
-            'city' => $request->city ?? null,
         ]);
 
         $document_categories = DocumentCategory::where('document_category', 'contractor_document')->first();
@@ -143,11 +155,13 @@ class AuthController extends Controller
             'name' => 'required|string',
             'email' => 'required|email|unique:users',
             'password' => 'required|confirmed|min:6',
-            // New validation rules
             'address' => 'nullable|string',
             'profile_image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048', // Optional: if uploading image
             'gender' => 'nullable|in:male,female,other',
             'city' => 'nullable|string',
+            'state' => 'nullable|string',
+            'country' => 'nullable|string',
+            'coordinates' => 'nullable|string',
             'phone' => 'nullable|string',
         ]);
 
@@ -161,6 +175,11 @@ class AuthController extends Controller
             'password' => Hash::make($data['password']),
             'user_type' => 'staff',
             'user_id' => $capitalUser->id,
+            'address' => $data['address'] ?? null,
+            'city' => $data['city'] ?? null,
+            'state' => $data['state'] ?? null,
+            'country' => $data['state'] ?? null,
+            'coordinates' => $data['coordinates'] ?? null,
             'is_active' => 0,
         ]);
 
@@ -171,10 +190,8 @@ class AuthController extends Controller
 
         $staff = Staff::create([
             'user_id' => $user->id,
-            'address' => $data['address'] ?? null,
             'profile_image' => $profileImagePath ?? $data['profile_image'] ?? null,
             'gender' => $data['gender'] ?? null,
-            'city' => $data['city'] ?? null,
             'phone' => $data['phone'] ?? null,
         ]);
 
@@ -228,6 +245,18 @@ class AuthController extends Controller
                 'parent' => $parent,
             ]
         ], 200);
+    }
+
+    public function storeNotificationToken(Request $request)
+    {
+        $user = User::where('id', $request->id)->first();
+        if($user){
+            $user->notification_token = $request->notification_token;
+            $user->update();
+            return response()->json(['success' => true, 'msg' => 'notification token create successfully!']);
+        }else{
+            return response()->json(['success' => true, 'msg' => 'admin not found!']);
+        }
     }
 
 }

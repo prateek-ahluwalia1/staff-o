@@ -43,6 +43,7 @@ Route::post('/login', [AuthController::class, 'login']);
 Route::middleware('auth:sanctum')->group(function () {
 
     Route::post('/logout', [AuthController::class, 'logout']);
+    Route::any('store-notification-token', [AuthController::class, 'storeNotificationToken'])->name('store.notification.token');
     
     //roles and permission
     Route::any('/store-permission',  [RolesPermissionController::class, 'store']);
@@ -92,7 +93,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::any('/get-all-jobs', [JobRosterController::class, 'getAllJobs'])->name('get.all.jobs');
     Route::any('/get-staff/{id}', [JobRosterController::class, 'getStaff'])->name('get.staff');
     Route::any('fetch-customer-sites', [JobRosterController::class, 'fetchCustomerSites'])->name('fetch.customer.sites');
-    Route::any('get-contractor-staff', [JobRosterController::class, 'getContractorStaff'])->name('get.contractor.');
+    Route::any('get-contractor-staff', [JobRosterController::class, 'getContractorStaff'])->name('get.contractor');
 
 });
 

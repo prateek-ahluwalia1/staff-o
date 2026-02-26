@@ -504,7 +504,7 @@ export default function EditProfile() {
       )}
 
       {activeTab === "documents" &&
-        ["staff", "contractor", "customer", "admin"].includes(userType) && (
+        ["staff", "contractor", "customer"].includes(userType) && (
           <DocumentTable
             documents={profileData?.data?.documents || []}
             onAddFile={handleAddFile}

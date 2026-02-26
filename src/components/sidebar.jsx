@@ -34,11 +34,7 @@ const Sidebar = memo(function Sidebar() {
       icon: "fa-solid fa-money-bill-wave",
       label: "Accounts",
     },
-    {
-      to: "/add-job",
-      icon: "fa-solid fa-briefcase",
-      label: "Post a Job",
-    },
+    { to: "/add-job", icon: "fa-solid fa-briefcase", label: "Post a Job" },
     {
       to: "/my-job-applications",
       icon: "fa-solid fa-briefcase",
@@ -64,11 +60,7 @@ const Sidebar = memo(function Sidebar() {
       icon: "fa-solid fa-money-bill-wave",
       label: "Accounts",
     },
-    {
-      to: "/add-job",
-      icon: "fa-solid fa-briefcase",
-      label: "Post a Job",
-    },
+    { to: "/add-job", icon: "fa-solid fa-briefcase", label: "Post a Job" },
     {
       to: "/my-job-applications",
       icon: "fa-solid fa-briefcase",
@@ -96,32 +88,52 @@ const Sidebar = memo(function Sidebar() {
     },
   ];
 
-  const navItems =
-    type === "customer"
-      ? customerNav
-      : type === "staff"
-        ? staffNav
-        : contractorNav;
+  // Added Admin Navigation
+  const adminNav = [
+    { to: "/dashboard", icon: "fa-solid fa-gauge", label: "Admin Dashboard" },
+    {
+      to: "/manage-users",
+      icon: "fa-solid fa-users-gear",
+      label: "Manage Users",
+    },
+    {
+      to: "/my-job-applications",
+      icon: "fa-solid fa-list-check",
+      label: "All Jobs",
+    },
+    {
+      to: "/payment-history",
+      icon: "fa-solid fa-chart-line",
+      label: "Financials",
+    },
+    { to: "/edit-profile", icon: "fa-solid fa-user-pen", label: "Settings" },
+  ];
+
+  // Simplified routing logic using an object map
+  const navConfig = {
+    customer: customerNav,
+    staff: staffNav,
+    admin: adminNav,
+    contractor: contractorNav,
+    // contractor: adminNav,
+  };
+
+  // Selects the matching array, defaulting to contractorNav if no match is found
+  const navItems = navConfig[type] || contractorNav;
 
   return (
     <aside className="dashboard-sidebar">
       <div className="sidebar-header">
         <div
-          className={`status-toggle ${userdata?.data?.is_active || userdata?.is_active ? "status-toggle-active" : "status-toggle-inactive"}`}
+          className={`status-toggle ${isProfileActive ? "status-toggle-active" : "status-toggle-inactive"}`}
         >
           <div>
             <span style={{ fontSize: "12px", fontWeight: "600" }}>
-              {userdata?.data?.is_active || userdata?.is_active
-                ? "Profile Complete"
-                : "Profile Incomplete"}
+              {isProfileActive ? "Profile Complete" : "Profile Incomplete"}
             </span>
           </div>
           <label className="status-switch" aria-label="Toggle open to work">
-            <input
-              type="checkbox"
-              checked={!!userdata?.data?.is_active || !!userdata?.is_active}
-              disabled
-            />
+            <input type="checkbox" checked={isProfileActive} disabled />
             <span className="status-slider"></span>
           </label>
         </div>
@@ -135,6 +147,7 @@ const Sidebar = memo(function Sidebar() {
 
       <ul className="dashboard-nav">
         {navItems.map((item) => {
+          // You may want to bypass this lock logic for admins, but it's currently left as-is
           const disabled = !isProfileActive && item.label !== "Edit Profile";
           return (
             <li key={item.label}>

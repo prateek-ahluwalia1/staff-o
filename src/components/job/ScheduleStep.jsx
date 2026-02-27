@@ -23,29 +23,39 @@ export default function ScheduleStep({ form, setField }) {
     border: "1px solid #e5e7eb",
     padding: "0 12px",
     fontSize: "14px",
-    transition: "all 0.2s ease",
     width: "100%",
   };
 
-  // Generate 24-hour format options (00 to 23)
+  // ✅ Convert yyyy-MM-dd string to LOCAL Date object
+  const parseLocalDate = (dateStr) => {
+    if (!dateStr) return null;
+    const [year, month, day] = dateStr.split("-").map(Number);
+    return new Date(year, month - 1, day); // local time
+  };
+
+  // ✅ Convert Date object to yyyy-MM-dd (LOCAL)
+  const formatLocalDate = (date) => {
+    if (!date) return "";
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, "0");
+    const d = String(date.getDate()).padStart(2, "0");
+    return `${y}-${m}-${d}`;
+  };
+
   const hours = Array.from({ length: 24 }, (_, i) =>
     String(i).padStart(2, "0"),
   );
 
-  // Generate minutes in 5-minute increments (00, 05, 10, 15... 55)
-  // Note: If you want every single minute (00-59), change `length: 12` to `length: 60` and `i * 5` to `i`
   const minutes = Array.from({ length: 12 }, (_, i) =>
     String(i * 5).padStart(2, "0"),
   );
 
-  // Helper to safely extract hour or minute from "HH:mm" string
   const getPart = (timeStr, part) => {
     if (!timeStr) return "";
     const split = timeStr.split(":");
     return part === "hour" ? split[0] : split[1];
   };
 
-  // Helper to handle updating just the hour or minute portion
   const handleTimeChange = (field, currentVal, type, newVal) => {
     let h = getPart(currentVal, "hour") || "00";
     let m = getPart(currentVal, "minute") || "00";
@@ -58,30 +68,14 @@ export default function ScheduleStep({ form, setField }) {
 
   return (
     <div style={cardStyle}>
-      <div className="mb-3">
-        <h5 style={{ fontWeight: 700, marginBottom: 4 }}>Schedule</h5>
-        <p className="text-muted" style={{ fontSize: "13px" }}>
-          Select when the job starts and ends
-        </p>
-      </div>
-
-      {/* Start Section */}
       <div className="mb-4">
-        <h6 className="mb-3" style={{ fontWeight: 600 }}>
-          Start
-        </h6>
+        <h6 style={{ fontWeight: 600 }}>Start</h6>
         <div className="row g-3">
           <div className="col-md-6">
             <label style={labelStyle}>Start Date</label>
             <DatePicker
-              selected={form.startDate ? new Date(form.startDate) : null}
-              onChange={(date) =>
-                setField(
-                  "startDate",
-                  date ? date.toISOString().split("T")[0] : "",
-                )
-              }
-              className="form-control"
+              selected={parseLocalDate(form.startDate)}
+              onChange={(date) => setField("startDate", formatLocalDate(date))}
               dateFormat="yyyy-MM-dd"
               placeholderText="Select start date"
               minDate={new Date()}
@@ -115,7 +109,9 @@ export default function ScheduleStep({ form, setField }) {
                   </option>
                 ))}
               </select>
+
               <span className="d-flex align-items-center fw-bold">:</span>
+
               <select
                 className="form-select"
                 style={inputStyle}
@@ -145,26 +141,19 @@ export default function ScheduleStep({ form, setField }) {
 
       <div style={{ height: 1, background: "#f1f1f1", margin: "20px 0" }} />
 
-      {/* End Section */}
       <div>
-        <h6 className="mb-3" style={{ fontWeight: 600 }}>
-          End
-        </h6>
+        <h6 style={{ fontWeight: 600 }}>End</h6>
         <div className="row g-3">
           <div className="col-md-6">
             <label style={labelStyle}>End Date</label>
             <DatePicker
-              selected={form.endDate ? new Date(form.endDate) : null}
-              onChange={(date) =>
-                setField(
-                  "endDate",
-                  date ? date.toISOString().split("T")[0] : "",
-                )
-              }
-              className="form-control"
+              selected={parseLocalDate(form.endDate)}
+              onChange={(date) => setField("endDate", formatLocalDate(date))}
               dateFormat="yyyy-MM-dd"
               placeholderText="Select end date"
-              minDate={form.startDate ? new Date(form.startDate) : new Date()}
+              minDate={
+                form.startDate ? parseLocalDate(form.startDate) : new Date()
+              }
               wrapperClassName="w-100"
               customInput={<input style={inputStyle} />}
             />
@@ -195,7 +184,9 @@ export default function ScheduleStep({ form, setField }) {
                   </option>
                 ))}
               </select>
+
               <span className="d-flex align-items-center fw-bold">:</span>
+
               <select
                 className="form-select"
                 style={inputStyle}

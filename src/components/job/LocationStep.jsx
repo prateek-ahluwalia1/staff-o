@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 
 export default function LocationStep({
   form,
@@ -12,6 +12,49 @@ export default function LocationStep({
   const [map, setMap] = useState(null);
   const [googleReady, setGoogleReady] = useState(false);
 
+  // 1. Wrap helper functions in useCallback to stabilize their references
+  const fillAddress = useCallback(
+    (place) => {
+      let block = "",
+        area = "",
+        city = "",
+        state = "",
+        postcode = "";
+      place.address_components?.forEach((component) => {
+        const types = component.types;
+        if (types.includes("sublocality_level_1")) block = component.long_name;
+        if (types.includes("sublocality")) area = component.long_name;
+        if (types.includes("locality")) city = component.long_name;
+        if (types.includes("administrative_area_level_1"))
+          state = component.long_name;
+        if (types.includes("postal_code")) postcode = component.long_name;
+      });
+      const finalAddress = [block, area, city, state, postcode]
+        .filter(Boolean)
+        .join(", ");
+
+      setField("location", finalAddress || place.formatted_address);
+      setField("address", finalAddress || place.formatted_address);
+      if (city) setField("city", city);
+      if (state) setField("state", state);
+      if (postcode) setField("postcode", postcode);
+    },
+    [setField],
+  );
+
+  const reverseGeocode = useCallback(
+    (lat, lng) => {
+      const geocoder = new window.google.maps.Geocoder();
+      geocoder.geocode({ location: { lat, lng } }, (results, status) => {
+        if (status === "OK" && results && results.length > 0) {
+          fillAddress(results[0]);
+        }
+      });
+    },
+    [fillAddress],
+  );
+
+  // Wait for Google Maps to load
   useEffect(() => {
     const interval = setInterval(() => {
       if (window.google?.maps) {
@@ -22,8 +65,10 @@ export default function LocationStep({
     return () => clearInterval(interval);
   }, []);
 
+  // Initialize Map
   useEffect(() => {
-    if (!googleReady || !mapRef.current) return;
+    // Prevent re-initialization if the map is already created
+    if (!googleReady || !mapRef.current || map) return;
 
     const initialLatLng = form.coordinates
       ? form.coordinates.split(",").map(Number)
@@ -50,8 +95,9 @@ export default function LocationStep({
 
     setMap(gmap);
     markerRef.current = marker;
-  }, [googleReady]);
+  }, [googleReady, map, form.coordinates, setField, reverseGeocode]); // Dependencies added
 
+  // Initialize Autocomplete
   useEffect(() => {
     if (!googleReady || !inputRef.current) return;
 
@@ -64,7 +110,7 @@ export default function LocationStep({
       },
     );
 
-    autocomplete.addListener("place_changed", () => {
+    const listener = autocomplete.addListener("place_changed", () => {
       const place = autocomplete.getPlace();
       if (!place.geometry) return;
 
@@ -76,40 +122,14 @@ export default function LocationStep({
       if (markerRef.current) markerRef.current.setPosition({ lat, lng });
       if (map) map.setCenter({ lat, lng });
     });
-  }, [googleReady, map]);
 
-  const reverseGeocode = (lat, lng) => {
-    const geocoder = new window.google.maps.Geocoder();
-    geocoder.geocode({ location: { lat, lng } }, (results, status) => {
-      if (status === "OK" && results && results.length > 0)
-        fillAddress(results[0]);
-    });
-  };
-
-  const fillAddress = (place) => {
-    let block = "",
-      area = "",
-      city = "",
-      state = "",
-      postcode = "";
-    place.address_components?.forEach((component) => {
-      const types = component.types;
-      if (types.includes("sublocality_level_1")) block = component.long_name;
-      if (types.includes("sublocality")) area = component.long_name;
-      if (types.includes("locality")) city = component.long_name;
-      if (types.includes("administrative_area_level_1"))
-        state = component.long_name;
-      if (types.includes("postal_code")) postcode = component.long_name;
-    });
-    const finalAddress = [block, area, city, state, postcode]
-      .filter(Boolean)
-      .join(", ");
-    setField("location", finalAddress || place.formatted_address);
-    setField("address", finalAddress || place.formatted_address);
-    if (city) setField("city", city);
-    if (state) setField("state", state);
-    if (postcode) setField("postcode", postcode);
-  };
+    // Cleanup listener on unmount or dependency change
+    return () => {
+      if (listener && typeof listener.remove === "function") {
+        listener.remove();
+      }
+    };
+  }, [googleReady, map, setField, fillAddress]); // Dependencies added
 
   const handleUseCurrent = () => {
     if (!navigator.geolocation) {

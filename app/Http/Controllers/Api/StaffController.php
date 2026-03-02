@@ -101,7 +101,9 @@ class StaffController extends Controller
             'user_id' => $user->id,
             'profile_image' => $profileImagePath ?? $request->profile_image,
             'gender' => $request->gender,
+            'staff_document_type' => $request->staff_document_type
         ]);
+        
         $old_data = Staff::where('user_id', $user->id)->first();
 
         $capitalUser = User::where('id', $request->user_id)

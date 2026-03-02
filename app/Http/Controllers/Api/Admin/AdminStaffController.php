@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Validator;
 
-class StaffController extends Controller
+class AdminStaffController extends Controller
 {
     public function createStaff(Request $request)
     {

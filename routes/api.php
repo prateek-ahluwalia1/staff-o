@@ -1,7 +1,8 @@
 <?php
 
-use App\Http\Controllers\Admin\ContractorController;
-use App\Http\Controllers\Admin\CustomerController;
+use App\Http\Controllers\Api\Admin\ContractorController;
+use App\Http\Controllers\Api\Admin\CustomerController;
+use App\Http\Controllers\Api\Admin\AdminStaffController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
@@ -114,8 +115,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('customers-delete/{id}', [CustomerController::class, 'destroy']);
         Route::patch('customers/{id}/toggle-status', [CustomerController::class, 'toggleStatus']);
 
-        Route::any('create-staff',  [StaffController::class, 'createStaff'])->name('create.staff');
-        Route::any('update-staff/{id}',  [StaffController::class, 'updateStaff'])->name('update.staff');
+        Route::any('create-staff',  [AdminStaffController::class, 'createStaff'])->name('create.staff');
+        Route::any('update-staff/{id}',  [AdminStaffController::class, 'updateStaff'])->name('update.staff');
     });
 
 });

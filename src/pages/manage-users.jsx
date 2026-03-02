@@ -58,7 +58,7 @@ const ManageUsers = () => {
 
   const handleTabChange = (role) => {
     setActiveTab(role);
-    setPage(1); // Reset to first page
+    setPage(1);
     setUsers([]);
   };
 
@@ -131,11 +131,7 @@ const ManageUsers = () => {
     }
 
     const payload = { ...formData };
-
-    if (editingUser && !payload.password) {
-      delete payload.password;
-    }
-
+    if (editingUser && !payload.password) delete payload.password;
     payload.is_active = payload.is_active ? 1 : 0;
 
     try {
@@ -167,123 +163,169 @@ const ManageUsers = () => {
   if (loading && users.length === 0)
     return <Loader fullPage message="Loading Users..." />;
 
-  const colSpanCount =
-    activeTab === "sub_contractor" ? 6 : activeTab === "staff" ? 4 : 5;
-
   return (
-    <div className="container mt-4">
-      <div className="d-flex justify-content-between align-items-center mb-4">
-        <h2 className="mb-0 fw-bold text-dark">User Management</h2>
+    <div className="container mt-4 pb-5">
+      <style>{`
+        .full-screen-modal {
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100vw;
+          height: 100vh;
+          z-index: 1060;
+          background: rgba(255, 255, 255, 0.9);
+          backdrop-filter: blur(12px);
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          animation: modalFadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes modalFadeIn {
+          from { opacity: 0; transform: translateY(20px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+
+        .modal-inner-content {
+          width: 95%;
+          max-width: 1000px;
+          height: 90vh;
+          background: #fff;
+          border-radius: 24px;
+          box-shadow: 0 40px 100px -20px rgba(0, 0, 0, 0.2);
+          display: flex;
+          flex-direction: column;
+          overflow: hidden;
+          border: 1px solid rgba(0,0,0,0.05);
+        }
+
+        .form-label {
+          font-size: 0.75rem;
+          font-weight: 700;
+          color: #6c757d;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+        }
+
+        .section-divider {
+          font-size: 1.1rem;
+          font-weight: 800;
+          color: #1a1a1a;
+          margin: 30px 0 15px;
+          padding-left: 12px;
+          border-left: 4px solid #0d6efd;
+        }
+      `}</style>
+
+      {/* Header Section */}
+      <div className="d-flex justify-content-between align-items-end mb-4">
+        <div>
+          <h2 className="fw-bold text-dark mb-1">User Management</h2>
+          <p className="text-muted mb-0">
+            Manage permissions and details for all account types.
+          </p>
+        </div>
         <button
-          className="btn btn-primary px-4 shadow-sm"
+          className="btn btn-primary rounded-pill px-4 py-2 shadow-sm fw-bold"
           onClick={() => openModal()}
         >
-          <i className="fa-solid fa-plus me-2"></i>
-          Add {activeTab.replace("_", " ")}
+          <i className="fa-solid fa-plus me-2"></i> Add{" "}
+          {activeTab.replace("_", " ")}
         </button>
       </div>
 
-      <ul className="nav nav-pills mb-4 bg-white p-2 rounded shadow-sm">
+      {/* Tabs */}
+      <div className="bg-white p-2 rounded-4 shadow-sm border d-inline-flex mb-4">
         {["customer", "sub_contractor", "staff"].map((role) => (
-          <li className="nav-item" key={role}>
-            <button
-              className={`nav-link text-capitalize px-4 ${activeTab === role ? "active shadow-sm" : "text-muted"}`}
-              onClick={() => handleTabChange(role)}
-            >
-              {role.replace("_", " ")}
-            </button>
-          </li>
+          <button
+            key={role}
+            className={`btn rounded-pill px-4 fw-bold text-capitalize border-0 ${activeTab === role ? "btn-primary shadow" : "btn-light text-muted"}`}
+            onClick={() => handleTabChange(role)}
+            style={{ marginRight: role !== "staff" ? "8px" : "0" }}
+          >
+            {role.replace("_", " ")}
+          </button>
         ))}
-      </ul>
+      </div>
 
+      {/* Error Alert */}
       {error && (
-        <div className="alert alert-danger shadow-sm">
-          Error: {error.message}
+        <div className="alert alert-danger rounded-3 shadow-sm border-0 d-flex align-items-center mb-4">
+          <i className="fa-solid fa-circle-exclamation me-3"></i>
+          <div>
+            <strong>Error:</strong> {error.message}
+          </div>
         </div>
       )}
 
-      <div className="card border-0 shadow-sm rounded-3">
+      {/* Table Card */}
+      <div className="card border-0 shadow-sm rounded-4 overflow-hidden">
         <div className="table-responsive">
           <table
-            className={`table table-hover align-middle mb-0 ${submitLoading || loading ? "opacity-50" : ""}`}
+            className={`table table-hover align-middle mb-0 ${loading ? "opacity-50" : ""}`}
           >
-            <thead className="bg-light text-secondary">
-              <tr>
-                <th className="ps-4">Name / Email</th>
-                {activeTab !== "staff" && <th>Company / Phone</th>}
-                {activeTab === "sub_contractor" && <th>Reg. Number</th>}
-                <th>Location</th>
-                <th>Status</th>
-                <th className="text-center pe-4">Actions</th>
+            <thead className="bg-light">
+              <tr className="text-muted small">
+                <th className="ps-4 py-3">NAME & EMAIL</th>
+                {activeTab !== "staff" && <th>BUSINESS & PHONE</th>}
+                <th>LOCATION</th>
+                <th>STATUS</th>
+                <th className="text-center pe-4">ACTIONS</th>
               </tr>
             </thead>
             <tbody>
               {users.length > 0 ? (
-                users.map((user) => {
-                  const extra = getNestedData(user);
-                  return (
-                    <tr key={user.id}>
-                      <td className="ps-4">
-                        <div className="fw-bold text-dark">{user.name}</div>
-                        <small className="text-muted">{user.email}</small>
-                      </td>
-
-                      {activeTab !== "staff" && (
-                        <td>
-                          <div className="text-dark">
-                            {extra.company_name || "—"}
-                          </div>
-                          <small className="text-muted">
-                            {user.phone || extra.phone || "No Phone"}
-                          </small>
-                        </td>
-                      )}
-
-                      {activeTab === "sub_contractor" && (
-                        <td>
-                          <span className="badge bg-light text-dark border">
-                            {extra.registration_number || "N/A"}
-                          </span>
-                        </td>
-                      )}
-
+                users.map((user) => (
+                  <tr key={user.id}>
+                    <td className="ps-4">
+                      <div className="fw-bold text-dark">{user.name}</div>
+                      <div className="text-muted small">{user.email}</div>
+                    </td>
+                    {activeTab !== "staff" && (
                       <td>
-                        <div className="text-dark">{user.city || "—"}</div>
-                        <small className="text-muted">
-                          {user.country || ""}
-                        </small>
+                        <div className="fw-medium text-dark">
+                          {getNestedData(user).company_name || "—"}
+                        </div>
+                        <div className="text-muted small">
+                          {user.phone || getNestedData(user).phone || "N/A"}
+                        </div>
                       </td>
-                      <td>
-                        <span
-                          className={`badge rounded-pill ${user.is_active ? "bg-success-subtle text-success" : "bg-danger-subtle text-danger"}`}
-                        >
-                          {user.is_active ? "Active" : "Inactive"}
-                        </span>
-                      </td>
-                      <td className="text-center pe-4">
+                    )}
+                    <td>
+                      {user.city || "—"}{" "}
+                      <span className="text-muted small">
+                        ({user.country || "N/A"})
+                      </span>
+                    </td>
+                    <td>
+                      <span
+                        className={`badge rounded-pill px-3 ${user.is_active ? "bg-success-subtle text-success" : "bg-danger-subtle text-danger"}`}
+                      >
+                        {user.is_active ? "Active" : "Inactive"}
+                      </span>
+                    </td>
+                    <td className="text-center pe-4">
+                      <div className="btn-group">
                         <button
-                          className="btn btn-outline-warning btn-sm border-0 me-1"
+                          className="btn btn-outline-primary btn-sm rounded-circle me-2 border-0"
                           onClick={() => openModal(user)}
                         >
                           <i className="fa-solid fa-pen"></i>
                         </button>
                         <button
-                          className="btn btn-outline-danger btn-sm border-0"
+                          className="btn btn-outline-danger btn-sm rounded-circle border-0"
                           onClick={() => handleDelete(user.id)}
                         >
                           <i className="fa-solid fa-trash"></i>
                         </button>
-                      </td>
-                    </tr>
-                  );
-                })
+                      </div>
+                    </td>
+                  </tr>
+                ))
               ) : (
                 <tr>
-                  <td
-                    colSpan={colSpanCount}
-                    className="text-center py-5 text-muted"
-                  >
-                    No {activeTab.replace("_", " ")}s found.
+                  <td colSpan="5" className="text-center py-5 text-muted">
+                    No records found for this category.
                   </td>
                 </tr>
               )}
@@ -291,113 +333,112 @@ const ManageUsers = () => {
           </table>
         </div>
 
-        {/* Pagination Controls - Now Always Visible */}
-        <div className="card-footer bg-white border-top py-3 d-flex justify-content-between align-items-center">
-          <span className="text-muted small ps-3">
-            Page {page} of {totalPages} <span className="mx-1">•</span>{" "}
-            {totalItems} Total Records
-          </span>
-          <div className="pe-3">
+        {/* Pagination Footer - Fixed Warning */}
+        <div className="card-footer bg-white border-top py-3 px-4 d-flex justify-content-between align-items-center">
+          <div className="text-muted small">
+            Showing Page <strong>{page}</strong> of{" "}
+            <strong>{totalPages}</strong>
+            <span className="mx-2">•</span>
+            Total <strong>{totalItems}</strong> records
+          </div>
+          <div className="d-flex gap-2">
             <button
-              className="btn btn-sm btn-outline-secondary me-2"
+              className="btn btn-sm btn-outline-secondary rounded-pill px-3"
               onClick={() => handlePageChange(page - 1)}
               disabled={page === 1}
             >
-              Previous
+              <i className="fa-solid fa-chevron-left me-1"></i> Prev
             </button>
             <button
-              className="btn btn-sm btn-outline-secondary"
+              className="btn btn-sm btn-outline-secondary rounded-pill px-3"
               onClick={() => handlePageChange(page + 1)}
               disabled={page === totalPages || totalPages === 0}
             >
-              Next
+              Next <i className="fa-solid fa-chevron-right ms-1"></i>
             </button>
           </div>
         </div>
       </div>
 
+      {/* FULL SCREEN MODAL */}
       {isModalOpen && (
-        <div
-          className="modal show d-block"
-          style={{
-            backgroundColor: "rgba(0,0,0,0.6)",
-            backdropFilter: "blur(4px)",
-          }}
-        >
-          <div className="modal-dialog modal-dialog-centered modal-lg">
-            <div className="modal-content border-0 shadow-lg">
-              <div className="modal-header bg-white border-bottom-0">
-                <h5 className="modal-title fw-bold">
-                  {editingUser ? "Edit" : "Create New"}{" "}
-                  {activeTab.replace("_", " ")}
-                </h5>
-                <button
-                  type="button"
-                  className="btn-close"
-                  onClick={closeModal}
-                ></button>
+        <div className="full-screen-modal">
+          <div className="modal-inner-content">
+            <div className="p-4 border-bottom bg-light d-flex justify-content-between align-items-center">
+              <div>
+                <h4 className="fw-bold mb-0">
+                  {editingUser ? "Update Profile" : "Create New User"}
+                </h4>
+                <p className="text-muted small mb-0">
+                  Role:{" "}
+                  <span className="text-primary fw-bold text-uppercase">
+                    {activeTab.replace("_", " ")}
+                  </span>
+                </p>
               </div>
+              <button className="btn-close" onClick={closeModal}></button>
+            </div>
 
-              <form onSubmit={handleSubmit}>
-                <div className="modal-body p-4">
-                  <div className="row g-3">
-                    <div className="col-md-6">
-                      <label className="form-label fw-semibold">
-                        Full Name *
-                      </label>
-                      <input
-                        type="text"
-                        className="form-control"
-                        name="name"
-                        value={formData.name}
-                        onChange={handleInputChange}
-                        required
-                      />
-                    </div>
-                    <div className="col-md-6">
-                      <label className="form-label fw-semibold">
-                        Email Address *
-                      </label>
-                      <input
-                        type="email"
-                        className="form-control"
-                        name="email"
-                        value={formData.email}
-                        onChange={handleInputChange}
-                        required
-                      />
-                    </div>
-                    <div className="col-md-6">
-                      <label className="form-label fw-semibold">
-                        Password{" "}
-                        {editingUser && "(Leave blank to keep current)"}{" "}
-                        {!editingUser && "*"}
-                      </label>
-                      <input
-                        type="password"
-                        className="form-control"
-                        name="password"
-                        onChange={handleInputChange}
-                        required={!editingUser}
-                      />
-                    </div>
+            <div className="flex-grow-1 overflow-auto p-4 p-md-5">
+              <form id="userForm" onSubmit={handleSubmit}>
+                <div className="row g-4">
+                  <div className="col-12">
+                    <h6 className="section-divider mt-0">Personal Details</h6>
+                  </div>
+                  <div className="col-md-6">
+                    <label className="form-label">Full Name *</label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      name="name"
+                      value={formData.name}
+                      onChange={handleInputChange}
+                      required
+                    />
+                  </div>
+                  <div className="col-md-6">
+                    <label className="form-label">Email Address *</label>
+                    <input
+                      type="email"
+                      className="form-control"
+                      name="email"
+                      value={formData.email}
+                      onChange={handleInputChange}
+                      required
+                    />
+                  </div>
+                  <div className="col-md-6">
+                    <label className="form-label">
+                      Password {editingUser && "(Leave blank to keep)"}
+                    </label>
+                    <input
+                      type="password"
+                      className="form-control"
+                      name="password"
+                      onChange={handleInputChange}
+                      required={!editingUser}
+                    />
+                  </div>
+                  <div className="col-md-6">
+                    <label className="form-label">Phone</label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      name="phone"
+                      value={formData.phone}
+                      onChange={handleInputChange}
+                    />
+                  </div>
 
-                    <div className="col-md-6">
-                      <label className="form-label fw-semibold">
-                        Phone Number
-                      </label>
-                      <input
-                        type="text"
-                        className="form-control"
-                        name="phone"
-                        value={formData.phone}
-                        onChange={handleInputChange}
-                      />
-                    </div>
-
-                    {activeTab !== "staff" && (
+                  {activeTab !== "staff" && (
+                    <>
+                      <div className="col-12">
+                        <h6 className="section-divider">
+                          Professional Information
+                        </h6>
+                      </div>
                       <div className="col-md-6">
-                        <label className="form-label fw-semibold">
+                        <label className="form-label">
                           Company Name {activeTab === "sub_contractor" && "*"}
                         </label>
                         <input
@@ -409,112 +450,110 @@ const ManageUsers = () => {
                           required={activeTab === "sub_contractor"}
                         />
                       </div>
-                    )}
+                      {activeTab === "sub_contractor" && (
+                        <div className="col-md-6">
+                          <label className="form-label">Registration No.</label>
+                          <input
+                            type="text"
+                            className="form-control"
+                            name="registration_number"
+                            value={formData.registration_number}
+                            onChange={handleInputChange}
+                          />
+                        </div>
+                      )}
+                    </>
+                  )}
 
-                    {activeTab === "sub_contractor" && (
-                      <div className="col-md-6">
-                        <label className="form-label fw-semibold">
-                          Registration Number
-                        </label>
-                        <input
-                          type="text"
-                          className="form-control"
-                          name="registration_number"
-                          value={formData.registration_number}
-                          onChange={handleInputChange}
-                        />
+                  <div className="col-12">
+                    <h6 className="section-divider">Address Information</h6>
+                  </div>
+                  <div className="col-md-4">
+                    <label className="form-label">City</label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      name="city"
+                      value={formData.city}
+                      onChange={handleInputChange}
+                    />
+                  </div>
+                  <div className="col-md-4">
+                    <label className="form-label">State</label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      name="state"
+                      value={formData.state}
+                      onChange={handleInputChange}
+                    />
+                  </div>
+                  <div className="col-md-4">
+                    <label className="form-label">Country</label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      name="country"
+                      value={formData.country}
+                      onChange={handleInputChange}
+                    />
+                  </div>
+                  <div className="col-12">
+                    <label className="form-label">Full Address</label>
+                    <textarea
+                      className="form-control"
+                      rows="2"
+                      name="address"
+                      value={formData.address}
+                      onChange={handleInputChange}
+                    ></textarea>
+                  </div>
+
+                  <div className="col-12 mt-5">
+                    <div className="bg-light p-4 rounded-4 border d-flex justify-content-between align-items-center">
+                      <div>
+                        <div className="fw-bold">Active Status</div>
+                        <div className="text-muted small">
+                          Toggle to enable or disable system access.
+                        </div>
                       </div>
-                    )}
-
-                    <div className="col-md-4">
-                      <label className="form-label fw-semibold">City</label>
-                      <input
-                        type="text"
-                        className="form-control"
-                        name="city"
-                        value={formData.city}
-                        onChange={handleInputChange}
-                      />
-                    </div>
-                    <div className="col-md-4">
-                      <label className="form-label fw-semibold">State</label>
-                      <input
-                        type="text"
-                        className="form-control"
-                        name="state"
-                        value={formData.state}
-                        onChange={handleInputChange}
-                      />
-                    </div>
-                    <div className="col-md-4">
-                      <label className="form-label fw-semibold">Country</label>
-                      <input
-                        type="text"
-                        className="form-control"
-                        name="country"
-                        value={formData.country}
-                        onChange={handleInputChange}
-                      />
-                    </div>
-
-                    <div className="col-12">
-                      <label className="form-label fw-semibold">
-                        Physical Address
-                      </label>
-                      <textarea
-                        className="form-control"
-                        rows="2"
-                        name="address"
-                        value={formData.address}
-                        onChange={handleInputChange}
-                      ></textarea>
-                    </div>
-
-                    <div className="col-12">
-                      <div className="form-check form-switch mt-2">
+                      <div className="form-check form-switch">
                         <input
-                          className="form-check-input cursor-pointer"
+                          className="form-check-input"
                           type="checkbox"
                           role="switch"
                           name="is_active"
-                          id="isActiveCheck"
                           checked={formData.is_active}
                           onChange={handleInputChange}
-                          style={{ cursor: "pointer" }}
+                          style={{ width: "2.5em", height: "1.25em" }}
                         />
-                        <label
-                          className="form-check-label fw-semibold"
-                          htmlFor="isActiveCheck"
-                          style={{ cursor: "pointer" }}
-                        >
-                          Active Account Status
-                        </label>
                       </div>
                     </div>
                   </div>
                 </div>
-                <div className="modal-footer border-top-0 px-4 pb-4">
-                  <button
-                    type="button"
-                    className="btn btn-light px-4"
-                    onClick={closeModal}
-                    disabled={submitLoading}
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    className="btn btn-primary px-4"
-                    disabled={submitLoading}
-                  >
-                    {submitLoading
-                      ? "Please wait..."
-                      : editingUser
-                        ? "Update User"
-                        : "Save User"}
-                  </button>
-                </div>
               </form>
+            </div>
+
+            <div className="p-4 border-top bg-white d-flex gap-3 justify-content-end">
+              <button
+                type="button"
+                className="btn btn-light rounded-pill px-5 fw-bold text-muted"
+                onClick={closeModal}
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                form="userForm"
+                className="btn btn-primary rounded-pill px-5 fw-bold shadow"
+                disabled={submitLoading}
+              >
+                {submitLoading
+                  ? "Saving..."
+                  : editingUser
+                    ? "Update Profile"
+                    : "Create User"}
+              </button>
             </div>
           </div>
         </div>

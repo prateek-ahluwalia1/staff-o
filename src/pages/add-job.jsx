@@ -1,7 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import useSubmit from "../hooks/useSubmit";
+import { computeShiftBreakdown } from "../utils/rateCalculator";
 import StepProgress from "../components/job/StepProgress";
 import LocationStep from "../components/job/LocationStep";
 import ScheduleStep from "../components/job/ScheduleStep";
@@ -47,6 +48,24 @@ export default function AddJob() {
   });
 
   const [attachmentPreviews, setAttachmentPreviews] = useState([]);
+
+  const breakdown = useMemo(
+    () =>
+      computeShiftBreakdown(
+        form.startDate,
+        form.startTime,
+        form.endDate,
+        form.endTime,
+        form.numGuards,
+      ),
+    [
+      form.startDate,
+      form.startTime,
+      form.endDate,
+      form.endTime,
+      form.numGuards,
+    ],
+  );
 
   function setField(name, value) {
     setForm((f) => ({ ...f, [name]: value }));
@@ -179,6 +198,7 @@ export default function AddJob() {
             {step === 3 && (
               <ReviewStep
                 form={form}
+                rate={breakdown}
                 setField={setField}
                 handleConfirm={handleConfirm}
                 isSubmitting={isSubmitting}

@@ -7,7 +7,7 @@ export default function ReviewStep({
   setField,
   handleConfirm,
   setStep,
-  isSubmitting, // Passed down from AddJob
+  isSubmitting,
 }) {
   const JOB_TYPE_LABELS = {
     "site-patrol": "Site Patrol Security",

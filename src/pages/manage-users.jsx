@@ -13,24 +13,27 @@ const ManageUsers = () => {
   };
 
   const {
-    data: apiData,
+    data: apiResponse,
     loading,
     error,
     refetch,
   } = useFetch(endpointMap[activeTab], { isAuth: true });
-  const { submit, loading: submitLoading } = useSubmit();
+
+  const { submit, loading: submitLoading } = useSubmit({ isAuth: true });
 
   const [users, setUsers] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
 
   useEffect(() => {
-    if (apiData) {
-      setUsers(Array.isArray(apiData) ? apiData : apiData.users || []);
+    if (apiResponse?.success && apiResponse?.data?.data) {
+      setUsers(apiResponse.data.data);
+    } else {
+      setUsers([]);
     }
-  }, [apiData]);
+  }, [apiResponse]);
 
-  const [formData, setFormData] = useState({
+  const defaultFormState = {
     name: "",
     email: "",
     password: "",
@@ -41,35 +44,42 @@ const ManageUsers = () => {
     state: "",
     country: "",
     registration_number: "",
-  });
+    is_active: false,
+  };
+
+  const [formData, setFormData] = useState(defaultFormState);
 
   const handleTabChange = (role) => {
     setActiveTab(role);
     setUsers([]);
   };
 
+  const getNestedData = (user) => {
+    if (activeTab === "customer") return user.customer || {};
+    if (activeTab === "sub_contractor") return user.contractor || {};
+    return {};
+  };
+
   const openModal = (user = null) => {
     if (user) {
+      const extraInfo = getNestedData(user);
       setEditingUser(user);
       setFormData({
-        ...user,
+        name: user.name || "",
+        email: user.email || "",
         password: "",
-        is_active: user.status === "Active" || user.is_active,
+        phone: extraInfo.phone || "",
+        company_name: extraInfo.company_name || "",
+        address: user.address || "",
+        city: user.city || "",
+        state: user.state || "",
+        country: user.country || "",
+        registration_number: extraInfo.registration_number || "",
+        is_active: user.is_active || false,
       });
     } else {
       setEditingUser(null);
-      setFormData({
-        name: "",
-        email: "",
-        password: "",
-        phone: "",
-        company_name: "",
-        address: "",
-        city: "",
-        state: "",
-        country: "",
-        registration_number: "",
-      });
+      setFormData(defaultFormState);
     }
     setIsModalOpen(true);
   };
@@ -95,19 +105,27 @@ const ManageUsers = () => {
     if (activeTab === "customer") {
       url = editingUser
         ? `api/admin/customers-update/${editingUser.id}`
-        : "api/admin/customers-store";
+        : `api/admin/customers-store`;
     } else if (activeTab === "sub_contractor") {
       url = editingUser
         ? `api/admin/contractors-update/${editingUser.id}`
-        : "api/admin/contractors-store";
-    } else {
+        : `api/admin/contractors-store`;
+    } else if (activeTab === "staff") {
       url = editingUser
-        ? `api/admin/staff-update/${editingUser.id}`
-        : "api/admin/staff-store";
+        ? `api/admin/update-staff/${editingUser.id}`
+        : `api/admin/create-staff`;
     }
 
+    const payload = { ...formData };
+
+    if (editingUser && !payload.password) {
+      delete payload.password;
+    }
+
+    payload.is_active = payload.is_active ? 1 : 0;
+
     try {
-      await submit(url, method, formData);
+      await submit(url, payload, { method });
       refetch();
       closeModal();
     } catch (err) {
@@ -117,13 +135,14 @@ const ManageUsers = () => {
 
   const handleDelete = async (id) => {
     if (window.confirm("Are you sure you want to delete this user?")) {
-      const url =
-        activeTab === "customer"
-          ? `/admin/customers-delete/${id}`
-          : `/admin/contractors-delete/${id}`;
+      let url = "";
+      if (activeTab === "customer") url = `api/admin/customers-delete/${id}`;
+      else if (activeTab === "sub_contractor")
+        url = `api/admin/contractors-delete/${id}`;
+      else url = `api/admin/staff-delete/${id}`;
 
       try {
-        await submit(url, "DELETE");
+        await submit(url, null, { method: "DELETE" });
         refetch();
       } catch (err) {
         alert("Delete failed: " + err.message);
@@ -131,37 +150,27 @@ const ManageUsers = () => {
     }
   };
 
-  const toggleStatus = async (id) => {
-    const url =
-      activeTab === "customer"
-        ? `/admin/customers/${id}/toggle-status`
-        : `/admin/contractors/${id}/toggle-status`;
-
-    try {
-      await submit(url, "POST");
-      refetch();
-    } catch (err) {
-      alert("Status update failed");
-    }
-  };
-
-  if (loading && users.length === 0) return <Loader />;
+  if (loading && users.length === 0)
+    return <Loader fullPage message="Loading Users..." />;
 
   return (
     <div className="container mt-4">
       <div className="d-flex justify-content-between align-items-center mb-4">
-        <h2 className="mb-0">Manage Users</h2>
-        <button className="btn btn-primary" onClick={() => openModal()}>
+        <h2 className="mb-0 fw-bold text-dark">User Management</h2>
+        <button
+          className="btn btn-primary px-4 shadow-sm"
+          onClick={() => openModal()}
+        >
           <i className="fa-solid fa-plus me-2"></i>
           Add {activeTab.replace("_", " ")}
         </button>
       </div>
 
-      <ul className="nav nav-tabs mb-4">
-        {["customer", "staff", "sub_contractor"].map((role) => (
+      <ul className="nav nav-pills mb-4 bg-white p-2 rounded shadow-sm">
+        {["customer", "sub_contractor", "staff"].map((role) => (
           <li className="nav-item" key={role}>
             <button
-              className={`nav-link text-capitalize ${activeTab === role ? "active fw-bold" : "text-muted"}`}
+              className={`nav-link text-capitalize px-4 ${activeTab === role ? "active shadow-sm" : "text-muted"}`}
               onClick={() => handleTabChange(role)}
             >
               {role.replace("_", " ")}
@@ -171,96 +180,107 @@ const ManageUsers = () => {
       </ul>
 
       {error && (
-        <div className="alert alert-danger">
-          Error loading users: {error.message}
+        <div className="alert alert-danger shadow-sm">
+          Error: {error.message}
         </div>
       )}
 
-      <div className="table-responsive shadow-sm rounded position-relative">
-        {submitLoading && (
-          <div
-            className="position-absolute top-50 start-50 translate-middle"
-            style={{ zIndex: 10 }}
+      <div className="card border-0 shadow-sm rounded-3">
+        <div className="table-responsive">
+          <table
+            className={`table table-hover align-middle mb-0 ${submitLoading ? "opacity-50" : ""}`}
           >
-            <Loader />
-          </div>
-        )}
-
-        <table
-          className={`table table-hover table-bordered mb-0 align-middle ${submitLoading ? "opacity-50" : ""}`}
-        >
-          <thead className="table-light">
-            <tr>
-              <th>Name / Email</th>
-              <th>Company</th>
-              <th>Status</th>
-              <th className="text-center">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {users.length > 0 ? (
-              users.map((user) => (
-                <tr key={user.id}>
-                  <td>
-                    <div className="fw-bold">{user.name}</div>
-                    <small className="text-muted">{user.email}</small>
-                  </td>
-                  <td>{user.company_name || "N/A"}</td>
-                  <td>
-                    <div className="form-check form-switch">
-                      <input
-                        className="form-check-input"
-                        type="checkbox"
-                        checked={user.is_active || user.status === "Active"}
-                        onChange={() => toggleStatus(user.id)}
-                      />
-                      <span
-                        className={`badge ${user.is_active || user.status === "Active" ? "bg-success" : "bg-danger"}`}
-                      >
-                        {user.is_active || user.status === "Active"
-                          ? "Active"
-                          : "Inactive"}
-                      </span>
-                    </div>
-                  </td>
-                  <td className="text-center">
-                    <button
-                      className="btn btn-warning btn-sm me-2"
-                      onClick={() => openModal(user)}
-                    >
-                      <i className="fa-solid fa-pen-to-square"></i>
-                    </button>
-                    <button
-                      className="btn btn-danger btn-sm"
-                      onClick={() => handleDelete(user.id)}
-                    >
-                      <i className="fa-solid fa-trash"></i>
-                    </button>
+            <thead className="bg-light text-secondary">
+              <tr>
+                <th className="ps-4">Name / Email</th>
+                <th>Company / Phone</th>
+                {activeTab === "sub_contractor" && <th>Reg. Number</th>}
+                <th>Location</th>
+                <th>Status</th>
+                <th className="text-center pe-4">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {users.length > 0 ? (
+                users.map((user) => {
+                  const extra = getNestedData(user);
+                  return (
+                    <tr key={user.id}>
+                      <td className="ps-4">
+                        <div className="fw-bold text-dark">{user.name}</div>
+                        <small className="text-muted">{user.email}</small>
+                      </td>
+                      <td>
+                        <div className="text-dark">
+                          {extra.company_name || "—"}
+                        </div>
+                        <small className="text-muted">
+                          {extra.phone || "No Phone"}
+                        </small>
+                      </td>
+                      {activeTab === "sub_contractor" && (
+                        <td>
+                          <span className="badge bg-light text-dark border">
+                            {extra.registration_number || "N/A"}
+                          </span>
+                        </td>
+                      )}
+                      <td>
+                        <div className="text-dark">{user.city || "—"}</div>
+                        <small className="text-muted">
+                          {user.country || ""}
+                        </small>
+                      </td>
+                      <td>
+                        <span
+                          className={`badge rounded-pill ${user.is_active ? "bg-success-subtle text-success" : "bg-danger-subtle text-danger"}`}
+                        >
+                          {user.is_active ? "Active" : "Inactive"}
+                        </span>
+                      </td>
+                      <td className="text-center pe-4">
+                        <button
+                          className="btn btn-outline-warning btn-sm border-0 me-1"
+                          onClick={() => openModal(user)}
+                        >
+                          <i className="fa-solid fa-pen"></i>
+                        </button>
+                        <button
+                          className="btn btn-outline-danger btn-sm border-0"
+                          onClick={() => handleDelete(user.id)}
+                        >
+                          <i className="fa-solid fa-trash"></i>
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })
+              ) : (
+                <tr>
+                  <td colSpan="7" className="text-center py-5 text-muted">
+                    No {activeTab.replace("_", " ")}s found.
                   </td>
                 </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan="4" className="text-center py-4 text-muted">
-                  No {activeTab}s found.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
-      {/* Modal */}
       {isModalOpen && (
         <div
           className="modal show d-block"
-          style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
+          style={{
+            backgroundColor: "rgba(0,0,0,0.6)",
+            backdropFilter: "blur(4px)",
+          }}
         >
           <div className="modal-dialog modal-dialog-centered modal-lg">
-            <div className="modal-content">
-              <div className="modal-header">
-                <h5 className="modal-title">
-                  {editingUser ? "Edit" : "Add"} {activeTab}
+            <div className="modal-content border-0 shadow-lg">
+              <div className="modal-header bg-white border-bottom-0">
+                <h5 className="modal-title fw-bold">
+                  {editingUser ? "Edit" : "Create New"}{" "}
+                  {activeTab.replace("_", " ")}
                 </h5>
                 <button
                   type="button"
@@ -270,10 +290,12 @@ const ManageUsers = () => {
               </div>
 
               <form onSubmit={handleSubmit}>
-                <div className="modal-body">
-                  <div className="row">
-                    <div className="col-md-6 mb-3">
-                      <label className="form-label">Full Name</label>
+                <div className="modal-body p-4">
+                  <div className="row g-3">
+                    <div className="col-md-6">
+                      <label className="form-label fw-semibold">
+                        Full Name *
+                      </label>
                       <input
                         type="text"
                         className="form-control"
@@ -283,8 +305,10 @@ const ManageUsers = () => {
                         required
                       />
                     </div>
-                    <div className="col-md-6 mb-3">
-                      <label className="form-label">Email</label>
+                    <div className="col-md-6">
+                      <label className="form-label fw-semibold">
+                        Email Address *
+                      </label>
                       <input
                         type="email"
                         className="form-control"
@@ -294,20 +318,24 @@ const ManageUsers = () => {
                         required
                       />
                     </div>
-                    {!editingUser && (
-                      <div className="col-md-6 mb-3">
-                        <label className="form-label">Password</label>
-                        <input
-                          type="password"
-                          className="form-control"
-                          name="password"
-                          onChange={handleInputChange}
-                          required
-                        />
-                      </div>
-                    )}
-                    <div className="col-md-6 mb-3">
-                      <label className="form-label">Phone</label>
+                    <div className="col-md-6">
+                      <label className="form-label fw-semibold">
+                        Password{" "}
+                        {editingUser && "(Leave blank to keep current)"}{" "}
+                        {!editingUser && "*"}
+                      </label>
+                      <input
+                        type="password"
+                        className="form-control"
+                        name="password"
+                        onChange={handleInputChange}
+                        required={!editingUser}
+                      />
+                    </div>
+                    <div className="col-md-6">
+                      <label className="form-label fw-semibold">
+                        Phone Number
+                      </label>
                       <input
                         type="text"
                         className="form-control"
@@ -316,19 +344,26 @@ const ManageUsers = () => {
                         onChange={handleInputChange}
                       />
                     </div>
-                    <div className="col-md-6 mb-3">
-                      <label className="form-label">Company Name</label>
+
+                    <div className="col-md-6">
+                      <label className="form-label fw-semibold">
+                        Company Name {activeTab === "sub_contractor" && "*"}
+                      </label>
                       <input
                         type="text"
                         className="form-control"
                         name="company_name"
                         value={formData.company_name}
                         onChange={handleInputChange}
+                        required={activeTab === "sub_contractor"}
                       />
                     </div>
+
                     {activeTab === "sub_contractor" && (
-                      <div className="col-md-6 mb-3">
-                        <label className="form-label">Reg Number</label>
+                      <div className="col-md-6">
+                        <label className="form-label fw-semibold">
+                          Registration Number
+                        </label>
                         <input
                           type="text"
                           className="form-control"
@@ -338,21 +373,78 @@ const ManageUsers = () => {
                         />
                       </div>
                     )}
-                    <div className="col-12 mb-3">
-                      <label className="form-label">Address</label>
+
+                    <div className="col-md-4">
+                      <label className="form-label fw-semibold">City</label>
+                      <input
+                        type="text"
+                        className="form-control"
+                        name="city"
+                        value={formData.city}
+                        onChange={handleInputChange}
+                      />
+                    </div>
+                    <div className="col-md-4">
+                      <label className="form-label fw-semibold">State</label>
+                      <input
+                        type="text"
+                        className="form-control"
+                        name="state"
+                        value={formData.state}
+                        onChange={handleInputChange}
+                      />
+                    </div>
+                    <div className="col-md-4">
+                      <label className="form-label fw-semibold">Country</label>
+                      <input
+                        type="text"
+                        className="form-control"
+                        name="country"
+                        value={formData.country}
+                        onChange={handleInputChange}
+                      />
+                    </div>
+
+                    <div className="col-12">
+                      <label className="form-label fw-semibold">
+                        Physical Address
+                      </label>
                       <textarea
                         className="form-control"
+                        rows="2"
                         name="address"
                         value={formData.address}
                         onChange={handleInputChange}
                       ></textarea>
                     </div>
+
+                    <div className="col-12">
+                      <div className="form-check form-switch mt-2">
+                        <input
+                          className="form-check-input cursor-pointer"
+                          type="checkbox"
+                          role="switch"
+                          name="is_active"
+                          id="isActiveCheck"
+                          checked={formData.is_active}
+                          onChange={handleInputChange}
+                          style={{ cursor: "pointer" }}
+                        />
+                        <label
+                          className="form-check-label fw-semibold"
+                          htmlFor="isActiveCheck"
+                          style={{ cursor: "pointer" }}
+                        >
+                          Active Account Status
+                        </label>
+                      </div>
+                    </div>
                   </div>
                 </div>
-                <div className="modal-footer">
+                <div className="modal-footer border-top-0 px-4 pb-4">
                   <button
                     type="button"
-                    className="btn btn-secondary"
+                    className="btn btn-light px-4"
                     onClick={closeModal}
                     disabled={submitLoading}
                   >
@@ -360,14 +452,14 @@ const ManageUsers = () => {
                   </button>
                   <button
                     type="submit"
-                    className="btn btn-primary"
+                    className="btn btn-primary px-4"
                     disabled={submitLoading}
                   >
                     {submitLoading
-                      ? "Processing..."
+                      ? "Please wait..."
                       : editingUser
-                        ? "Update"
-                        : "Save"}
+                        ? "Update User"
+                        : "Save User"}
                   </button>
                 </div>
               </form>

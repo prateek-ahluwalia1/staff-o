@@ -109,8 +109,10 @@ export default function Dashboard() {
             <img src="/assets/images/candidates/01.jpg" alt="Job Seeker" />
           </div>
           <div>
-            <h3>{userdata?.data?.name || userdata?.name || "Job Seeker"}</h3>
-            <p>Bainbridge Island, Washington, United States of America</p>
+            <h3>{userdata?.data?.name || userdata?.name || "No Name"}</h3>
+            <p>
+              {userdata?.data?.address || userdata?.address || "No Location"}
+            </p>
             <ul>
               <li>
                 <i className="fa-solid fa-phone"></i>{" "}
@@ -118,9 +120,7 @@ export default function Dashboard() {
               </li>
               <li>
                 <i className="fa-solid fa-envelope"></i>{" "}
-                {userdata?.data?.email ||
-                  userdata?.email ||
-                  "seeker@jobsportal.com"}
+                {userdata?.data?.email || userdata?.email || "No Email"}
               </li>
             </ul>
           </div>

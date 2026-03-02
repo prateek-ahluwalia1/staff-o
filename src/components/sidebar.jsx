@@ -114,8 +114,8 @@ const Sidebar = memo(function Sidebar() {
     customer: customerNav,
     staff: staffNav,
     admin: adminNav,
-    contractor: contractorNav,
-    // contractor: adminNav,
+    // contractor: contractorNav,
+    contractor: adminNav,
   };
 
   // Selects the matching array, defaulting to contractorNav if no match is found

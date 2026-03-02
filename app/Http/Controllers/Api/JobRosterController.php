@@ -12,6 +12,7 @@ use Illuminate\Support\Str;
 use App\Models\JobNewRoster;
 use Carbon\Carbon;
 use App\Models\JobRoster;
+use App\Models\JobRosterActivity;
 use App\Models\User;
 use DateTime;
 use Exception;
@@ -95,8 +96,9 @@ class JobRosterController extends Controller
             $roster['hours']                    = $guardWorkingHours;
 
             $jobId = JobRoster::insertGetId($roster);
+            $createdJob = JobRoster::find($jobId);
             $createdJobIds[] = $jobId;
-            $notifiedUsers = $this->sendNotificationsWithinRadius($site->coordinates, $createdJobIds, $request->user_id, $roster);
+            $notifiedUsers = $this->sendNotificationsWithinRadius($site->coordinates, $createdJobIds, $request->user_id, $createdJob);
         }
 
         // Get staff within 5km radius
@@ -242,6 +244,7 @@ class JobRosterController extends Controller
             'guards' => $guards
         ]);
     }
+
     public function getShiftHours($start, $end, $siteID = null, $continuation = false, $public_holiday = null, $ph_duration = null)
     {
         $actual_start = $start;
@@ -400,7 +403,7 @@ class JobRosterController extends Controller
         $sunday_morning = round($this->calculateHoursMorning($sunday_start, $sunday_end, $morning_start, $morning_end, $actual_start, $actual_end), 2);
 
         $ph_morning = round($this->calculateHoursMorning($ph_start, $ph_end, $morning_start, $morning_end, $actual_start, $actual_end), 2);
-        if ($hoursCond < 4) {
+        if ($hoursCond > 40) {
             $startedDate = Carbon::parse($actual_start);
             $startedTime = $startedDate->format('H.i');
             $endedDate = Carbon::parse($actual_end);
@@ -1406,7 +1409,7 @@ class JobRosterController extends Controller
             ], 404);
         }
 
-        $roster_data = DB::table('job_rosters')->where('id',$id)->first();
+        $roster_data = JobRoster::where('id',$id)->first();
         $job_start_time = $roster_data->start;
         $job_start_time = strtotime($job_start_time);
       
@@ -1441,7 +1444,7 @@ class JobRosterController extends Controller
         if($distance > $signin_radius){
         return response()->json([ 'success' => false, 'error' => 'You are '.number_format($distance, 2).' km away from your job!', 'message' => 'You are '.number_format($distance, 2).' km away from your job!', 'code' => 404 ]);
         }
-        $is_already_signin = DB::table('job_roster_activites')->where(['job_roster_id' => $id])->first();
+        $is_already_signin = JobRosterActivity::where(['job_roster_id' => $id])->first();
         if (!empty($is_already_signin)) {
           return response()->json([ 'success' => false, 'error' => 'You are already signin in this job!', 'message' => 'You are already signin in this job!', 'code' => 404 ]);
         }
@@ -1451,22 +1454,20 @@ class JobRosterController extends Controller
        
         $media = $this->uploader_base64($request->input($field));
         
-        $update_status = DB::table('job_roster_activites')
-            ->where('job_roster_id', $id)
+        $update_status = JobRosterActivity::where('job_roster_id', $id)
             ->where('guard_id', $roster_data->assigned_to)
             ->where('status', 1)
             ->first();
 
         if ($update_status) {
-            DB::table('job_roster_activites')
-                ->where('job_roster_id', $id)
+                JobRosterActivity::where('job_roster_id', $id)
                 ->where('guard_id', $roster_data->assigned_to)
                 ->update(['status' => 0]);
         }
 
         $dateTime = DateTime::createFromFormat('d-m-Y H:i', $request->input('time'));
         $usFormat = $dateTime->format('m/d/Y h:i A');
-        $model = DB::table('job_roster_activites')->insert([
+        $model = JobRosterActivity::insert([
             'guard_id' => $roster_data->assigned_to,
             'job_roster_id' => $id,
             'job_incident_report_id' => null,
@@ -1640,8 +1641,7 @@ class JobRosterController extends Controller
         $data = $results->map(function ($item) {
             if (!$item) return [];
 
-            $roster = DB::table('job_roster_activities')
-                ->where(['guard_id' => $item->assigned_to, 'job_roster_id' => $item->id])
+            $roster = JobRosterActivity::where(['guard_id' => $item->assigned_to, 'job_roster_id' => $item->id])
                 ->get();
 
             $signin_status    = 0;

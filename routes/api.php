@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\Admin\ContractorController;
+use App\Http\Controllers\Admin\CustomerController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
@@ -93,7 +95,28 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::any('/get-all-jobs', [JobRosterController::class, 'getAllJobs'])->name('get.all.jobs');
     Route::any('/get-staff/{id}', [JobRosterController::class, 'getStaff'])->name('get.staff');
     Route::any('fetch-customer-sites', [JobRosterController::class, 'fetchCustomerSites'])->name('fetch.customer.sites');
-    Route::any('get-contractor-staff', [JobRosterController::class, 'getContractorStaff'])->name('get.contractor');
+    Route::any('get-contractor-staff/{id}', [JobRosterController::class, 'getContractorStaff'])->name('get.contractor');
+
+    Route::prefix('admin')->group(function () {
+
+        Route::get('get-contractors', [ContractorController::class, 'index']);
+        Route::post('contractors-store', [ContractorController::class, 'store']);
+        Route::get('contractors-edit/{id}', [ContractorController::class, 'show']);
+        Route::put('contractors-update/{id}', [ContractorController::class, 'update']);
+        Route::delete('contractors-delete/{id}', [ContractorController::class, 'destroy']);
+        Route::patch('contractors/{id}/toggle-status', [ContractorController::class, 'toggleStatus']);
+
+        // Customer CRUD
+        Route::get('get-customers', [CustomerController::class, 'index']);
+        Route::post('customers-store', [CustomerController::class, 'store']);
+        Route::get('customers-edit/{id}', [CustomerController::class, 'show']);
+        Route::put('customers-update/{id}', [CustomerController::class, 'update']);
+        Route::delete('customers-delete/{id}', [CustomerController::class, 'destroy']);
+        Route::patch('customers/{id}/toggle-status', [CustomerController::class, 'toggleStatus']);
+
+        Route::any('create-staff',  [StaffController::class, 'createStaff'])->name('create.staff');
+        Route::any('update-staff/{id}',  [StaffController::class, 'updateStaff'])->name('update.staff');
+    });
 
 });
 

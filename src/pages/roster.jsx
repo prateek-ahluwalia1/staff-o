@@ -59,7 +59,6 @@ export default function RosterPage() {
   const [modal, setModal] = useState(null);
   const [selectedUserId, setSelectedUserId] = useState("");
 
-  // 1. Extracted fetch logic into a reusable function
   const fetchCustomerSites = useCallback(() => {
     if (!userId) return;
 
@@ -74,7 +73,6 @@ export default function RosterPage() {
     submit("api/fetch-customer-sites", payload, { method: "POST" });
   }, [userId, monday, submit]);
 
-  // 2. Call the function inside useEffect
   useEffect(() => {
     fetchCustomerSites();
   }, [fetchCustomerSites]);
@@ -168,23 +166,17 @@ export default function RosterPage() {
     };
 
     try {
-      // Wait for the save operation to finish
       await saveUserAssignment(endpoint, payload, { method: "POST" });
-
-      // 3. Re-fetch the customer sites to update the UI with new data
       fetchCustomerSites();
 
       closeModal();
     } catch (error) {
       console.error("Failed to save assignment:", error);
-      // Optional: Add a toast notification here if the save fails
     }
   };
 
-  // ... (rest of the render JSX remains exactly the same)
-
   if (staffLoading || submitLoading) {
-    return <Loader fullPage message="Loading roster data..." />;
+    return <Loader fullPage />;
   }
 
   return (

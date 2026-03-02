@@ -31,9 +31,7 @@ function App() {
   return (
     <Router>
       <div className="App">
-        <Suspense
-          fallback={<Loader fullPage message="Loading application..." />}
-        >
+        <Suspense fallback={<Loader fullPage />}>
           <Routes>
             <Route path="/" element={<Navigate to="/login" replace />} />
             <Route

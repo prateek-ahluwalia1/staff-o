@@ -3,9 +3,7 @@
 namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Resources\GetAllGuardDocuments;
-use App\Models\Customer;
 use App\Http\Controllers\Controller;
-use App\Models\Contractor;
 use App\Models\Document;
 use App\Models\DocumentCategory;
 use App\Models\Staff;
@@ -13,51 +11,72 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Validation\Validator;
 
 class AdminStaffController extends Controller
 {
-    public function createStaff(Request $request)
-    {
-        $validator = Validator::make($request->all(), [
-            'name' => 'required|string',
-            'email' => 'required|email|unique:users,email', // Check in users table
-            'phone' => 'nullable|string',
-            'password' => 'required|min:6|confirmed', // Added confirmed for password confirmation
-            'profile_image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'gender' => 'nullable|in:male,female,other',
-            'address' => 'nullable',
-            'city' => 'nullable|string',
-            'state' => 'nullable|string',
-            'country' => 'nullable|string',
-            'coordinates' => 'nullable|string',
-            'staff_document_type' => 'nullable|string',
-        ], [
-            'email.unique' => 'This email address is already taken. Please use a different email.',
-            'password.confirmed' => 'Password confirmation does not match.',
-        ]);
 
-        if ($validator->fails()) {
-            $firstErrorMessage = $validator->errors()->first();
-            
-            return response()->json([
-                'success' => false,
-                'message' => $firstErrorMessage,
-                'code' => 200
-            ], 200);
+     /**
+     * Display a listing of customers
+     */
+    public function index(Request $request)
+    {
+        $query = User::where('user_type', 'staff')
+            ->with('customer');
+
+        // Search functionality
+        if ($request->has('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%");
+            });
         }
 
+        // Filter by status
+        if ($request->has('status')) {
+            if ($request->status === 'active') {
+                $query->where('is_active', 1);
+            } elseif ($request->status === 'inactive') {
+                $query->where('is_active', 0);
+            }
+        }
+
+        // Filter by city/state/country
+        if ($request->has('city')) {
+            $query->where('city', $request->city);
+        }
+        
+        if ($request->has('state')) {
+            $query->where('state', $request->state);
+        }
+        
+        if ($request->has('country')) {
+            $query->where('country', $request->country);
+        }
+
+        // Pagination
+        $customers = $query->paginate($request->get('per_page', 15));
+
+        return response()->json([
+            'success' => true,
+            'data' => $customers,
+            'message' => 'Staff retrieved successfully'
+        ]);
+    }
+
+    public function createStaff(Request $request)
+    {
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
             'user_type' => 'staff',
             'user_id' => $request->user_id,
-            'address' => $data['address'] ?? null,
-            'city' => $data['city'] ?? null,
-            'state' => $data['state'] ?? null,
-            'country' => $data['state'] ?? null,
-            'coordinates' => $data['coordinates'] ?? null,
+            'address' => $request->address ?? null,
+            'city' => $request->city ?? null,
+            'state' => $request->state ?? null,
+            'country' => $request->state ?? null,
+            'coordinates' => $request->coordinates ?? null,
             'is_active' => 0,
         ]);
 
@@ -196,32 +215,6 @@ class AdminStaffController extends Controller
 
     public function updateStaff(Request $request, $userId)
     {
-        $validator = Validator::make($request->all(), [
-            'name' => 'sometimes|required|string',
-            'email' => 'sometimes|required|email|unique:users,email,' . $userId,
-            'phone' => 'nullable|string',
-            'password' => 'nullable|min:6|confirmed',
-            'profile_image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'gender' => 'nullable|in:male,female,other',
-            'is_active' => 'nullable|in:0,1',
-            'address' => 'nullable',
-            'city' => 'nullable|string',
-            'state' => 'nullable|string',
-            'country' => 'nullable|string',
-            'coordinates' => 'nullable|string',
-        ], [
-            'email.unique' => 'This email address is already taken. Please use a different email.',
-            'password.confirmed' => 'Password confirmation does not match.',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'message' => $validator->errors()->first(),
-                'code' => 200
-            ], 200);
-        }
-
         $user = User::findOrFail($userId);
         
         $userData = [];
@@ -489,239 +482,4 @@ class AdminStaffController extends Controller
 
         return response()->json(['success' => true, 'code' => 200, 'data' => $user]);
     }
-
-    // public function updateUser(Request $request, $id)
-    // {
-    //     try {
-    //         $user = User::findOrFail($id);
-
-    //         $rules = [
-    //             'name' => 'sometimes|required|string|max:255',
-    //             'email' => 'sometimes|required|email|unique:users,email,' . $user->id,
-    //             'password' => 'nullable|confirmed|min:6',
-    //             'is_active' => 'sometimes|boolean',
-    //             'staff_document_type' => 'nullable|string',
-    //             'address' => 'nullable',
-    //             'city' => 'nullable|string',
-    //             'state' => 'nullable|string',
-    //             'country' => 'nullable|string',
-    //             'coordinates' => 'nullable|string',
-    //         ];
-
-    //         if ($user->user_type === 'customer') {
-    //             $rules = array_merge($rules, [
-    //                 'phone' => 'nullable|string',
-    //                 'company_name' => 'nullable|string',
-    //             ]);
-    //         }
-
-    //         if ($user->user_type === 'contractor') {
-    //             $rules = array_merge($rules, [
-    //                 'company_name' => 'sometimes|required|string|max:255',
-    //                 'registration_number' => 'nullable|string|max:255',
-    //                 'phone' => 'nullable|string|max:20',
-    //             ]);
-    //         }
-
-    //         if ($user->user_type === 'staff') {
-    //             $rules = array_merge($rules, [
-    //                 'profile_image' => 'sometimes|nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-    //                 'gender' => 'sometimes|nullable|in:male,female,other',
-    //                 'phone' => 'sometimes|nullable|string',
-    //                 'staff_document_type' => 'sometimes|nullable|string',
-    //             ]);
-    //         }
-
-    //         $data = $request->validate($rules);
-
-    //         if (isset($data['password'])) {
-    //             $data['password'] = \Hash::make($data['password']);
-    //         }
-
-    //         $user->update(collect($data)->only([
-    //             'name',
-    //             'email',
-    //             'password',
-    //             'is_active',
-    //             'city',
-    //             'state',
-    //             'country',
-    //             'address',
-    //             'coordinates'
-    //         ])->toArray());
-
-    //         if ($user->user_type === 'customer') {
-    //             $profileData = collect($data)->only([
-    //                 'phone',
-    //                 'company_name',
-    //             ])->toArray();
-
-    //             if ($user->customer) {
-    //                 $user->customer->update($profileData);
-    //             } else {
-    //                 $profileData['user_id'] = $user->id;
-    //                 Customer::create($profileData);
-    //             }
-
-    //             $user->load(['customer', 'documents']);
-    //         }
-
-    //         if ($user->user_type === 'contractor') {
-    //             $profileData = collect($data)->only([
-    //                 'company_name',
-    //                 'registration_number',
-    //                 'phone',
-    //             ])->toArray();
-
-    //             if ($user->contractor) {
-    //                 $user->contractor->update($profileData);
-    //             } else {
-    //                 $profileData['user_id'] = $user->id;
-    //                 Contractor::create($profileData);
-    //             }
-
-    //             $user->load('contractor', 'documents');
-    //         }
-
-    //         if ($user->user_type === 'staff') {
-    //             // Get the staff record FIRST before any updates
-    //             $staff = Staff::where('user_id', $user->id)->first();
-                
-    //             // Process document changes BEFORE updating staff
-    //             if (!empty($data['staff_document_type'])) {
-    //                 $check_old_data_exist = Document::where('user_id', $user->id)
-    //                     ->where('document_category', '!=', 'other-doc')
-    //                     ->first();
-                    
-    //                 // Case 1: First time setting up documents
-    //                 if (!$staff || !$check_old_data_exist) {
-    //                     $document_categories = DocumentCategory::where('document_category', $request->staff_document_type)->first();
-    //                     if ($document_categories) {
-    //                         foreach (json_decode($document_categories->document_type) as $key => $value) {
-    //                             $guard_documents = new Document();
-    //                             $guard_documents->user_id = $user->id;
-    //                             $guard_documents->document_category = ($document_categories->document_category != '' ? $document_categories->document_category : 'other');
-    //                             $guard_documents->document_type = $key;
-    //                             $guard_documents->document_name = $value;
-    //                             $guard_documents->save();
-    //                         }
-    //                     }
-    //                 } 
-    //                 // Case 2: Updating existing documents
-    //                 else if ($staff && $staff->staff_document_type != $request->staff_document_type) {
-    //                     $document_categories = DocumentCategory::where('document_category', $request->staff_document_type)->first();
-                        
-    //                     if ($document_categories) {
-    //                         $old_docs = Document::where('user_id', $user->id)
-    //                             ->where('document_category', '!=', 'other-doc')
-    //                             ->get()
-    //                             ->keyBy('document_type');
-                            
-    //                         $new_doc_types = json_decode($document_categories->document_type, true);
-    //                         $new_document_category = $document_categories->document_category ?: 'other';
-                            
-    //                         $old_doc_types = $old_docs->keys()->toArray();
-    //                         $new_doc_keys = array_keys($new_doc_types);
-                            
-    //                         $to_delete_types = array_diff($old_doc_types, $new_doc_keys);
-    //                         $to_add_types = array_diff($new_doc_keys, $old_doc_types);
-    //                         $common_types = array_intersect($old_doc_types, $new_doc_keys);
-                            
-    //                         // Update common types
-    //                         if (!empty($common_types)) {
-    //                             $common_doc_ids = [];
-    //                             foreach ($common_types as $doc_type) {
-    //                                 if ($old_docs->has($doc_type)) {
-    //                                     $common_doc_ids[] = $old_docs[$doc_type]->id;
-    //                                 }
-    //                             }
-                                
-    //                             Document::whereIn('id', $common_doc_ids)
-    //                                 ->update(['document_category' => $new_document_category]);
-    //                         }
-                            
-    //                         // Delete old types that have no files
-    //                         if (!empty($to_delete_types)) {
-    //                             Document::where('user_id', $user->id)
-    //                                 ->where('document_category', '!=', 'other-doc')
-    //                                 ->whereNull('file')
-    //                                 ->whereIn('document_type', $to_delete_types)
-    //                                 ->delete();
-    //                         }
-                            
-    //                         // Add new types
-    //                         if (!empty($to_add_types)) {
-    //                             $documents_to_insert = [];
-                                
-    //                             foreach ($to_add_types as $doc_type) {
-    //                                 if (!Document::where(['user_id' => $user->id, 'document_type' => $doc_type])->exists()) {
-    //                                     $documents_to_insert[] = [
-    //                                         'user_id' => $user->id,
-    //                                         'document_category' => $new_document_category,
-    //                                         'document_type' => $doc_type,
-    //                                         'document_name' => $new_doc_types[$doc_type],
-    //                                         'created_at' => now(),
-    //                                         'updated_at' => now()
-    //                                     ];
-    //                                 }
-    //                             }
-                                
-    //                             if (!empty($documents_to_insert)) {
-    //                                 Document::insert($documents_to_insert);
-    //                             }
-    //                         }
-    //                     }
-    //                 }
-    //             }
-
-    //             // Now update the staff record with ALL data including the document type
-    //             $staffData = collect($data)->only([
-    //                 'gender',
-    //                 'phone',
-    //                 'staff_document_type'
-    //             ])->toArray();
-
-    //             if ($request->hasFile('profile_image')) {
-    //                 $staffData['profile_image'] = $request->file('profile_image')->store('staff-profiles', 'public');
-    //             } elseif (array_key_exists('profile_image', $data)) {
-    //                 $staffData['profile_image'] = $data['profile_image'];
-    //             }
-
-    //             if ($staff) {
-    //                 $staff->update($staffData);
-    //             } else {
-    //                 $staffData['user_id'] = $user->id;
-    //                 Staff::create($staffData);
-    //             }
-                
-    //             $user->load(['staff', 'documents']);
-    //         }
-
-    //         $percentage = $this->calculateProfileCompletion($user);
-
-    //         if ($percentage === 100 && (int) $user->is_active !== 1) {
-    //             $user->is_active = 1;
-    //             $user->save();
-    //         }
-            
-    //         $user->profile_completion_percentage = $percentage;
-
-    //         return response()->json(['success' => true, 'code' => 200, 'data' => $user]);
-
-    //     } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
-    //         return response()->json([
-    //             'message' => 'User not found'
-    //         ], 404);
-    //     } catch (\Illuminate\Validation\ValidationException $e) {
-    //         return response()->json([
-    //             'message' => 'Validation failed',
-    //             'errors' => $e->errors()
-    //         ], 422);
-    //     } catch (\Exception $e) {
-    //         return response()->json([
-    //             'message' => 'Failed to update user',
-    //             'error' => $e->getMessage()
-    //         ], 500);
-    //     }
-    // }
 }

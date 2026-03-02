@@ -115,6 +115,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('customers-delete/{id}', [CustomerController::class, 'destroy']);
         Route::patch('customers/{id}/toggle-status', [CustomerController::class, 'toggleStatus']);
 
+        Route::get('get-staff', [AdminStaffController::class, 'index']);
         Route::any('create-staff',  [AdminStaffController::class, 'createStaff'])->name('create.staff');
         Route::any('update-staff/{id}',  [AdminStaffController::class, 'updateStaff'])->name('update.staff');
     });

@@ -88,7 +88,6 @@ const Sidebar = memo(function Sidebar() {
     },
   ];
 
-  // Added Admin Navigation
   const adminNav = [
     { to: "/dashboard", icon: "fa-solid fa-gauge", label: "Admin Dashboard" },
     {
@@ -109,7 +108,6 @@ const Sidebar = memo(function Sidebar() {
     { to: "/edit-profile", icon: "fa-solid fa-user-pen", label: "Settings" },
   ];
 
-  // Simplified routing logic using an object map
   const navConfig = {
     customer: customerNav,
     staff: staffNav,
@@ -118,7 +116,6 @@ const Sidebar = memo(function Sidebar() {
     // contractor: adminNav,
   };
 
-  // Selects the matching array, defaulting to contractorNav if no match is found
   const navItems = navConfig[type] || contractorNav;
 
   return (
@@ -147,7 +144,6 @@ const Sidebar = memo(function Sidebar() {
 
       <ul className="dashboard-nav">
         {navItems.map((item) => {
-          // You may want to bypass this lock logic for admins, but it's currently left as-is
           const disabled = !isProfileActive && item.label !== "Edit Profile";
           return (
             <li key={item.label}>

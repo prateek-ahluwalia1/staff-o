@@ -5,6 +5,7 @@ import Loader from "../components/Loader";
 
 const ManageUsers = () => {
   const [activeTab, setActiveTab] = useState("customer");
+  const [page, setPage] = useState(1);
 
   const endpointMap = {
     customer: "api/admin/get-customers",
@@ -17,19 +18,25 @@ const ManageUsers = () => {
     loading,
     error,
     refetch,
-  } = useFetch(endpointMap[activeTab], { isAuth: true });
+  } = useFetch(`${endpointMap[activeTab]}?page=${page}`, { isAuth: true });
 
   const { submit, loading: submitLoading } = useSubmit({ isAuth: true });
 
   const [users, setUsers] = useState([]);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
 
   useEffect(() => {
     if (apiResponse?.success && apiResponse?.data?.data) {
       setUsers(apiResponse.data.data);
+      setTotalPages(apiResponse.data.last_page || 1);
+      setTotalItems(apiResponse.data.total || 0);
     } else {
       setUsers([]);
+      setTotalPages(1);
+      setTotalItems(0);
     }
   }, [apiResponse]);
 
@@ -51,7 +58,14 @@ const ManageUsers = () => {
 
   const handleTabChange = (role) => {
     setActiveTab(role);
+    setPage(1); // Reset to first page
     setUsers([]);
+  };
+
+  const handlePageChange = (newPage) => {
+    if (newPage >= 1 && newPage <= totalPages) {
+      setPage(newPage);
+    }
   };
 
   const getNestedData = (user) => {
@@ -68,7 +82,7 @@ const ManageUsers = () => {
         name: user.name || "",
         email: user.email || "",
         password: "",
-        phone: extraInfo.phone || "",
+        phone: user.phone || extraInfo.phone || "",
         company_name: extraInfo.company_name || "",
         address: user.address || "",
         city: user.city || "",
@@ -153,6 +167,9 @@ const ManageUsers = () => {
   if (loading && users.length === 0)
     return <Loader fullPage message="Loading Users..." />;
 
+  const colSpanCount =
+    activeTab === "sub_contractor" ? 6 : activeTab === "staff" ? 4 : 5;
+
   return (
     <div className="container mt-4">
       <div className="d-flex justify-content-between align-items-center mb-4">
@@ -188,12 +205,12 @@ const ManageUsers = () => {
       <div className="card border-0 shadow-sm rounded-3">
         <div className="table-responsive">
           <table
-            className={`table table-hover align-middle mb-0 ${submitLoading ? "opacity-50" : ""}`}
+            className={`table table-hover align-middle mb-0 ${submitLoading || loading ? "opacity-50" : ""}`}
           >
             <thead className="bg-light text-secondary">
               <tr>
                 <th className="ps-4">Name / Email</th>
-                <th>Company / Phone</th>
+                {activeTab !== "staff" && <th>Company / Phone</th>}
                 {activeTab === "sub_contractor" && <th>Reg. Number</th>}
                 <th>Location</th>
                 <th>Status</th>
@@ -210,14 +227,18 @@ const ManageUsers = () => {
                         <div className="fw-bold text-dark">{user.name}</div>
                         <small className="text-muted">{user.email}</small>
                       </td>
-                      <td>
-                        <div className="text-dark">
-                          {extra.company_name || "—"}
-                        </div>
-                        <small className="text-muted">
-                          {extra.phone || "No Phone"}
-                        </small>
-                      </td>
+
+                      {activeTab !== "staff" && (
+                        <td>
+                          <div className="text-dark">
+                            {extra.company_name || "—"}
+                          </div>
+                          <small className="text-muted">
+                            {user.phone || extra.phone || "No Phone"}
+                          </small>
+                        </td>
+                      )}
+
                       {activeTab === "sub_contractor" && (
                         <td>
                           <span className="badge bg-light text-dark border">
@@ -225,6 +246,7 @@ const ManageUsers = () => {
                           </span>
                         </td>
                       )}
+
                       <td>
                         <div className="text-dark">{user.city || "—"}</div>
                         <small className="text-muted">
@@ -257,13 +279,40 @@ const ManageUsers = () => {
                 })
               ) : (
                 <tr>
-                  <td colSpan="7" className="text-center py-5 text-muted">
+                  <td
+                    colSpan={colSpanCount}
+                    className="text-center py-5 text-muted"
+                  >
                     No {activeTab.replace("_", " ")}s found.
                   </td>
                 </tr>
               )}
             </tbody>
           </table>
+        </div>
+
+        {/* Pagination Controls - Now Always Visible */}
+        <div className="card-footer bg-white border-top py-3 d-flex justify-content-between align-items-center">
+          <span className="text-muted small ps-3">
+            Page {page} of {totalPages} <span className="mx-1">•</span>{" "}
+            {totalItems} Total Records
+          </span>
+          <div className="pe-3">
+            <button
+              className="btn btn-sm btn-outline-secondary me-2"
+              onClick={() => handlePageChange(page - 1)}
+              disabled={page === 1}
+            >
+              Previous
+            </button>
+            <button
+              className="btn btn-sm btn-outline-secondary"
+              onClick={() => handlePageChange(page + 1)}
+              disabled={page === totalPages || totalPages === 0}
+            >
+              Next
+            </button>
+          </div>
         </div>
       </div>
 
@@ -332,6 +381,7 @@ const ManageUsers = () => {
                         required={!editingUser}
                       />
                     </div>
+
                     <div className="col-md-6">
                       <label className="form-label fw-semibold">
                         Phone Number
@@ -345,19 +395,21 @@ const ManageUsers = () => {
                       />
                     </div>
 
-                    <div className="col-md-6">
-                      <label className="form-label fw-semibold">
-                        Company Name {activeTab === "sub_contractor" && "*"}
-                      </label>
-                      <input
-                        type="text"
-                        className="form-control"
-                        name="company_name"
-                        value={formData.company_name}
-                        onChange={handleInputChange}
-                        required={activeTab === "sub_contractor"}
-                      />
-                    </div>
+                    {activeTab !== "staff" && (
+                      <div className="col-md-6">
+                        <label className="form-label fw-semibold">
+                          Company Name {activeTab === "sub_contractor" && "*"}
+                        </label>
+                        <input
+                          type="text"
+                          className="form-control"
+                          name="company_name"
+                          value={formData.company_name}
+                          onChange={handleInputChange}
+                          required={activeTab === "sub_contractor"}
+                        />
+                      </div>
+                    )}
 
                     {activeTab === "sub_contractor" && (
                       <div className="col-md-6">

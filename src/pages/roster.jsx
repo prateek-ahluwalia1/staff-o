@@ -16,6 +16,7 @@ import {
 import useSubmit from "../hooks/useSubmit";
 import Loader from "../components/Loader";
 import useFetch from "../hooks/useFetch";
+import ActivityDashboardModal from "../components/roster/ActivityDashboardModal";
 
 const DAYS_OF_WEEK = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 const API_DATE_FORMAT = "yyyy-MM-dd HH:mm";
@@ -184,10 +185,6 @@ export default function RosterPage() {
   const closeModal = () => {
     setModal(null);
     setSelectedUserId("");
-  };
-
-  const handleActivityClick = (shiftId) => {
-    alert(`Activity clicked for shift ID: ${shiftId}`);
   };
 
   const handleTimeChange = (field, currentVal, type, newVal) => {
@@ -395,10 +392,17 @@ export default function RosterPage() {
                                       Change Time
                                     </button>
                                   )}
+
+                                  {/* UPDATED ACTIVITY BUTTON */}
                                   <button
                                     className="action-btn activity-btn"
                                     onClick={() =>
-                                      handleActivityClick(shift.id)
+                                      openModalAction(
+                                        site,
+                                        shift,
+                                        day.dateLabel,
+                                        "activity",
+                                      )
                                     }
                                     type="button"
                                     style={{ marginLeft: "4px" }}
@@ -420,12 +424,29 @@ export default function RosterPage() {
         </div>
       </main>
 
-      {/* MODAL SYSTEM */}
-      {modal && (
+      {/* --- MODAL SYSTEM --- */}
+
+      {/* 1. NEW MODULAR ACTIVITY DASHBOARD */}
+      {modal && modal.type === "activity" && (
+        <ActivityDashboardModal
+          modal={modal}
+          closeModal={closeModal}
+          userRole={userRole}
+        />
+      )}
+
+      {/* 2. EXISTING MODALS (Details, Time Edit, Admin Assign) */}
+      {modal && modal.type !== "activity" && (
         <div
           className="modal-overlay"
           onClick={closeModal}
-          style={{ zIndex: 9999, backgroundColor: "rgba(0,0,0,0.6)" }}
+          style={{
+            zIndex: 9999,
+            backgroundColor: "rgba(0,0,0,0.6)",
+            position: "fixed",
+            inset: 0,
+            display: "flex",
+          }}
         >
           <div
             className="modal-content"
@@ -443,10 +464,16 @@ export default function RosterPage() {
                     display: "flex",
                     flexDirection: "column",
                   }
-                : {}
+                : {
+                    margin: "auto",
+                    background: "#fff",
+                    padding: "20px",
+                    borderRadius: "8px",
+                    minWidth: "400px",
+                  }
             }
           >
-            {/* Primary Blue Header */}
+            {/* Modal Header */}
             <div
               className="modal-header"
               style={{
@@ -542,7 +569,7 @@ export default function RosterPage() {
                     </div>
                   </div>
 
-                  {/* Details Grid Section Using JSON Payload */}
+                  {/* Details Grid Section */}
                   <div className="row g-5">
                     <div className="col-md-6">
                       <h5
@@ -633,7 +660,7 @@ export default function RosterPage() {
                     </div>
                   </div>
 
-                  {/* Guard Shift Details (Horizontal Cards like Main Roster) */}
+                  {/* Guard Shift Details */}
                   <div>
                     <div
                       style={{
@@ -1060,7 +1087,7 @@ export default function RosterPage() {
               )}
             </div>
 
-            {/* MODAL FOOTER - Primary Blue Save Button */}
+            {/* MODAL FOOTER - Save Actions */}
             {(modal.type === "time" || modal.type === "admin_assign") && (
               <div
                 className="modal-footer"

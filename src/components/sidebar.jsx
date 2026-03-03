@@ -24,6 +24,7 @@ const Sidebar = memo(function Sidebar() {
   const customerNav = [
     { to: "/dashboard", icon: "fa-solid fa-gauge", label: "Dashboard" },
     { to: "/roster", icon: "fa-solid fa-users", label: "Roster" },
+    { to: "/add-job", icon: "fa-solid fa-briefcase", label: "Post a Job" },
     {
       to: "/edit-profile",
       icon: "fa-solid fa-user-pen",
@@ -34,7 +35,6 @@ const Sidebar = memo(function Sidebar() {
       icon: "fa-solid fa-money-bill-wave",
       label: "Accounts",
     },
-    { to: "/add-job", icon: "fa-solid fa-briefcase", label: "Post a Job" },
     {
       to: "/my-job-applications",
       icon: "fa-solid fa-briefcase",
@@ -60,7 +60,6 @@ const Sidebar = memo(function Sidebar() {
       icon: "fa-solid fa-money-bill-wave",
       label: "Accounts",
     },
-    { to: "/add-job", icon: "fa-solid fa-briefcase", label: "Post a Job" },
     {
       to: "/my-job-applications",
       icon: "fa-solid fa-briefcase",

@@ -1,135 +1,45 @@
 import React, { useState } from "react";
+import SignInOutDetails from "./SignInOutDetails";
+import BreakDetails from "./BreakDetails";
+import IncidentReport from "./IncidentReport";
+import ShiftActivity from "./ShiftActivity";
+import FootPatrolReport from "./FootPatrolReport";
+import RatingComponent from "./RatingComponent";
 
 const SIDEBAR_TABS = [
-  { id: "signin", label: "Sign In / Sign Out Details" },
-  { id: "break", label: "Break Details" },
-  { id: "incident", label: "Incident Report" },
-  { id: "shift_activity", label: "Shift Activity" },
-  { id: "food_petrol", label: "Food & Petrol Report" },
-  { id: "rating", label: "Rating" },
+  { id: "signin", label: "Sign In/Out Details", bg: "#e0f7fa" },
+  { id: "break", label: "Break Details", bg: "#fff9c4" },
+  { id: "incident", label: "Incident Report", bg: "#ffcdd2" },
+  { id: "shift_activity", label: "Shift Activity", bg: "#c8e6c9" },
+  { id: "foot_petrol", label: "Foot Patrol Report", bg: "#ffcdd2" },
+  { id: "rating", label: "Rating", bg: "#fff9c4" },
 ];
 
-export default function ActivityDashboardModal({
-  modal,
-  closeModal,
-  userRole,
-}) {
+export default function ActivityDashboardModal({ modal, closeModal }) {
   const [activeTab, setActiveTab] = useState("signin");
-  const { site, shift } = modal;
 
   const renderTabContent = () => {
     switch (activeTab) {
       case "signin":
-        return (
-          <div>
-            <h4
-              style={{
-                color: "#333",
-                borderBottom: "1px solid #eee",
-                paddingBottom: "10px",
-                marginBottom: "20px",
-              }}
-            >
-              Sign In / Sign Out Details
-            </h4>
-            <p style={{ color: "#666" }}>
-              Loading sign-in logs for shift ID: {shift?.id}...
-            </p>
-          </div>
-        );
+        return <SignInOutDetails />;
       case "break":
-        return (
-          <div>
-            <h4
-              style={{
-                color: "#333",
-                borderBottom: "1px solid #eee",
-                paddingBottom: "10px",
-                marginBottom: "20px",
-              }}
-            >
-              Break Details
-            </h4>
-            <p style={{ color: "#666" }}>No break data recorded yet.</p>
-          </div>
-        );
+        return <BreakDetails />;
       case "incident":
-        return (
-          <div>
-            <h4
-              style={{
-                color: "#333",
-                borderBottom: "1px solid #eee",
-                paddingBottom: "10px",
-                marginBottom: "20px",
-              }}
-            >
-              Incident Report
-            </h4>
-            <p style={{ color: "#666" }}>
-              No incidents reported for this shift.
-            </p>
-          </div>
-        );
+        return <IncidentReport />;
       case "shift_activity":
-        return (
-          <div>
-            <h4
-              style={{
-                color: "#333",
-                borderBottom: "1px solid #eee",
-                paddingBottom: "10px",
-                marginBottom: "20px",
-              }}
-            >
-              Shift Activity
-            </h4>
-            <p style={{ color: "#666" }}>
-              General shift logs will appear here.
-            </p>
-          </div>
-        );
-      case "food_petrol":
-        return (
-          <div>
-            <h4
-              style={{
-                color: "#333",
-                borderBottom: "1px solid #eee",
-                paddingBottom: "10px",
-                marginBottom: "20px",
-              }}
-            >
-              Food & Petrol Report
-            </h4>
-            <p style={{ color: "#666" }}>No expenses submitted.</p>
-          </div>
-        );
+        return <ShiftActivity />;
+      case "foot_petrol":
+        return <FootPatrolReport />;
       case "rating":
-        return (
-          <div>
-            <h4
-              style={{
-                color: "#333",
-                borderBottom: "1px solid #eee",
-                paddingBottom: "10px",
-                marginBottom: "20px",
-              }}
-            >
-              Rating
-            </h4>
-            <p style={{ color: "#666" }}>
-              Guard has not been rated for this shift yet.
-            </p>
-          </div>
-        );
+        return <RatingComponent />;
       default:
-        return (
-          <div>
-            <h4>Select an option</h4>
-          </div>
-        );
+        return <div>Select an option</div>;
     }
+  };
+
+  const getActiveTabLabel = () => {
+    const tab = SIDEBAR_TABS.find((t) => t.id === activeTab);
+    return tab ? tab.label : "";
   };
 
   return (
@@ -142,69 +52,40 @@ export default function ActivityDashboardModal({
         width: "100vw",
         height: "100vh",
         backgroundColor: "rgba(0,0,0,0.5)",
-        zIndex: 99999, // Extremely high z-index to ensure it covers everything
+        zIndex: 99999,
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
       }}
     >
       <div
-        onClick={(e) => e.stopPropagation()} // Prevent closing when clicking inside modal
+        onClick={(e) => e.stopPropagation()}
         style={{
-          width: "100vw",
-          height: "100vh",
+          width: "85vw",
+          height: "85vh",
+          maxWidth: "1200px",
           backgroundColor: "#fff",
           display: "flex",
-          flexDirection: "column",
-          overflow: "hidden", // Prevents full-page scrolling
+          overflow: "hidden",
+          borderRadius: "8px",
+          boxShadow: "0 4px 20px rgba(0,0,0,0.15)",
         }}
       >
-        {/* Header */}
+        {/* Left Sidebar */}
         <div
           style={{
-            background: userRole === "customer" ? "#007bff" : "#fff",
-            color: userRole === "customer" ? "#fff" : "#333",
-            padding: "16px 24px",
-            borderBottom:
-              userRole === "customer" ? "none" : "1px solid #eaeaea",
+            width: "260px",
+            minWidth: "260px",
+            backgroundColor: "#fff",
+            borderRight: "1px solid #eaeaea",
             display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            flexShrink: 0, // Prevents the header from collapsing
+            flexDirection: "column",
           }}
         >
-          <h3 style={{ margin: 0, fontSize: "20px", fontWeight: "600" }}>
-            Activity Dashboard - {site?.displayName}
-          </h3>
-          <button
-            onClick={closeModal}
-            style={{
-              background: "transparent",
-              border: "none",
-              fontSize: "28px",
-              cursor: "pointer",
-              color: userRole === "customer" ? "#fff" : "#666",
-              lineHeight: 1,
-            }}
-          >
-            &times;
-          </button>
-        </div>
-
-        {/* Dashboard Body */}
-        <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
-          {/* Sidebar */}
-          <div
-            style={{
-              width: "280px",
-              minWidth: "280px", // Forces the sidebar to stay exactly 280px
-              backgroundColor: "#f8f9fa",
-              borderRight: "1px solid #eaeaea",
-              overflowY: "auto",
-              padding: "20px 0",
-              flexShrink: 0, // Prevents flexbox from squishing the sidebar
-            }}
-          >
+          <div className="p-4 border-bottom">
+            <h4 className="m-0 fw-bold text-center">Job Activity</h4>
+          </div>
+          <div className="overflow-auto py-2">
             {SIDEBAR_TABS.map((tab) => {
               const isActive = activeTab === tab.id;
               return (
@@ -212,15 +93,20 @@ export default function ActivityDashboardModal({
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
                   style={{
-                    padding: "14px 24px",
+                    padding: "16px 20px",
                     cursor: "pointer",
-                    backgroundColor: isActive ? "#e9ecef" : "transparent",
-                    borderLeft: isActive
-                      ? "4px solid #007bff"
-                      : "4px solid transparent",
+                    backgroundColor: isActive ? "transparent" : "#f8f9fa",
+                    border: isActive
+                      ? `2px solid ${tab.bg}`
+                      : "2px solid transparent",
+                    background: isActive ? tab.bg : "transparent",
+                    color: isActive ? "#000" : "#555",
                     fontWeight: isActive ? "600" : "500",
-                    color: isActive ? "#007bff" : "#555",
-                    fontSize: "15px",
+                    margin: "4px 12px",
+                    borderRadius: "6px",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "10px",
                   }}
                 >
                   {tab.label}
@@ -228,16 +114,36 @@ export default function ActivityDashboardModal({
               );
             })}
           </div>
+        </div>
 
-          {/* Right Content */}
-          <div
-            style={{
-              flex: 1,
-              padding: "32px 40px",
-              overflowY: "auto",
-              backgroundColor: "#fff",
-            }}
-          >
+        {/* Right Content Area */}
+        <div
+          style={{
+            flex: 1,
+            display: "flex",
+            flexDirection: "column",
+            backgroundColor: "#fff",
+          }}
+        >
+          {/* Header inside the right panel */}
+          <div className="d-flex justify-content-between align-items-center p-4 border-bottom">
+            <h3 className="m-0 fw-bold">{getActiveTabLabel()}</h3>
+            <button
+              onClick={closeModal}
+              className="btn btn-danger text-white rounded-circle d-flex align-items-center justify-content-center p-0"
+              style={{
+                width: "32px",
+                height: "32px",
+                fontSize: "18px",
+                border: "none",
+              }}
+            >
+              &times;
+            </button>
+          </div>
+
+          {/* Dynamic Component Content */}
+          <div className="p-4 overflow-auto flex-grow-1">
             {renderTabContent()}
           </div>
         </div>

@@ -199,6 +199,7 @@ export default function AddJob() {
               <ReviewStep
                 form={form}
                 rate={breakdown}
+                setStep={setStep}
                 setField={setField}
                 handleConfirm={handleConfirm}
                 isSubmitting={isSubmitting}

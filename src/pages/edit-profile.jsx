@@ -23,7 +23,6 @@ const INITIAL_FORM_STATE = {
   country: "",
   coordinates: "",
   staff_document_type: "",
-  // contractor-specific
   company_name: "",
   registration_number: "",
 };
@@ -31,7 +30,6 @@ const INITIAL_FORM_STATE = {
 export default function EditProfile() {
   const dispatch = useDispatch();
   const { userdata } = useSelector((state) => state.auth);
-
   const userType = userdata?.data?.user_type || userdata?.user_type;
 
   const endpoint = useMemo(
@@ -49,45 +47,6 @@ export default function EditProfile() {
     refetch,
   } = useFetch(endpoint, { isAuth: true });
 
-  const getMissingFields = (d) => {
-    if (!d) return [];
-    const missing = [];
-    const staff = d.staff || {};
-    const contractor = d.contractor || staff.contractor || {};
-
-    if (!d.name) missing.push("Name");
-    if (!d.email) missing.push("Email");
-
-    const phone = staff.phone || contractor.phone || d.phone;
-    if (!phone) missing.push("Phone");
-
-    const address = d.address || staff.address || contractor.address;
-    if (!address) missing.push("Address");
-
-    if ((d.user_type || userType) !== "contractor") {
-      const gender = staff.gender || contractor.gender || d.gender;
-      if (!gender) missing.push("Gender");
-    } else {
-      const company = contractor.company_name || d.company_name;
-      if (!company) missing.push("Company Name");
-      const reg = contractor.registration_number || d.registration_number;
-      if (!reg) missing.push("Registration Number");
-    }
-
-    const city = d.city || staff.city || contractor.city;
-    if (!city) missing.push("City");
-
-    const hasImage =
-      staff.profile_image || contractor.profile_image || d.profile_image;
-    if (!hasImage) missing.push("Profile Photo");
-
-    if (!d.documents || d.documents.length === 0) missing.push("Documents");
-
-    return missing;
-  };
-
-  const missingFields = getMissingFields(profileData?.data);
-
   const { submit, loading: submitLoading } = useSubmit({ isAuth: true });
   const { submit: uploadFile, loading: uploadLoading } = useSubmit({
     isAuth: true,
@@ -100,7 +59,7 @@ export default function EditProfile() {
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const [activeTab, setActiveTab] = useState("personal");
 
-  // Modal state for document upload
+  // Document Modal States
   const [showDocModal, setShowDocModal] = useState(false);
   const [selectedDoc, setSelectedDoc] = useState(null);
   const [docForm, setDocForm] = useState({
@@ -111,215 +70,38 @@ export default function EditProfile() {
     document_expiry: "",
     file: null,
     file_path: "",
+    file_url: "",
+    document_name: "",
   });
 
-  useEffect(() => {
-    if (activeTab !== "personal" || fetchLoading) return;
+  // Card Modal States
+  const [showCardModal, setShowCardModal] = useState(false);
+  const [cardForm, setCardForm] = useState({
+    card_holder_name: "",
+    card_number: "",
+    expiry_month: "",
+    expiry_year: "",
+    cvv: "",
+  });
 
-    let autocomplete;
-    let listener;
-
-    const initMap = () => {
-      const addressInput = document.getElementById("address");
-
-      if (!addressInput || !window.google || !window.google.maps) return;
-
-      if (addressInput.getAttribute("data-gmaps-initialized")) return;
-
-      autocomplete = new window.google.maps.places.Autocomplete(addressInput, {
-        fields: ["address_components", "geometry", "formatted_address"],
-        types: ["address"],
-      });
-
-      addressInput.setAttribute("data-gmaps-initialized", "true");
-
-      listener = autocomplete.addListener("place_changed", () => {
-        const place = autocomplete.getPlace();
-        if (!place.geometry) return;
-
-        let newCity = "";
-        let newState = "";
-        let newCountry = "";
-
-        place.address_components?.forEach((component) => {
-          const types = component.types;
-          if (types.includes("locality")) newCity = component.long_name;
-          if (types.includes("administrative_area_level_1"))
-            newState = component.long_name;
-          if (types.includes("country")) newCountry = component.long_name;
-        });
-
-        const lat = place.geometry.location.lat();
-        const lng = place.geometry.location.lng();
-
-        setFormData((prev) => ({
-          ...prev,
-          address: place.formatted_address,
-          city: newCity || prev.city,
-          state: newState,
-          country: newCountry,
-          coordinates: `${lat},${lng}`,
-        }));
-      });
-    };
-
-    const checkGoogleMaps = setInterval(() => {
-      if (window.google && window.google.maps) {
-        clearInterval(checkGoogleMaps);
-        initMap();
-      }
-    }, 500);
-
-    return () => {
-      clearInterval(checkGoogleMaps);
-      if (listener && window.google) {
-        window.google.maps.event.removeListener(listener);
-      }
-      const addressInput = document.getElementById("address");
-      if (addressInput) {
-        addressInput.removeAttribute("data-gmaps-initialized");
-      }
-    };
-  }, [activeTab, fetchLoading]);
-
-  const handleAddFile = (doc) => {
-    setSelectedDoc(doc);
-    setDocForm({
-      notes: doc.notes || "",
-      no: !!doc.document_no,
-      exp: !!doc.document_expiry,
-      document_no: doc.document_no || "",
-      document_expiry: doc.document_expiry || "",
-      file: null,
-      file_path: doc.file || "",
-      file_url: doc.file ? doc.file : "",
-    });
-    setShowDocModal(true);
+  const getMissingFields = (d) => {
+    if (!d) return [];
+    const missing = [];
+    const staff = d.staff || {};
+    const contractor = d.contractor || staff.contractor || {};
+    if (!d.name) missing.push("Name");
+    if (!d.email) missing.push("Email");
+    if (!(staff.phone || contractor.phone || d.phone)) missing.push("Phone");
+    if (!(d.address || staff.address || contractor.address))
+      missing.push("Address");
+    if (userType === "contractor" && !contractor.company_name)
+      missing.push("Company Name");
+    return missing;
   };
-
-  // Open modal for adding a new document
-  const handleAddDocument = () => {
-    setSelectedDoc(null);
-    setDocForm({
-      notes: "",
-      no: false,
-      exp: false,
-      document_no: "",
-      document_expiry: "",
-      file: null,
-      file_path: "",
-      file_url: "",
-    });
-    setShowDocModal(true);
-  };
-
-  // Handle modal form changes
-  const handleDocFormChange = async (e) => {
-    const { name, value, type, checked, files } = e.target;
-    if (type === "checkbox") {
-      setDocForm((prev) => ({ ...prev, [name]: checked }));
-    } else if (type === "file") {
-      const file = files[0];
-      setDocForm((prev) => ({ ...prev, file }));
-      if (file) {
-        // Upload file to server
-        const formData = new FormData();
-        formData.append("file", file);
-        formData.append("folder", "staff_documents");
-        const result = await uploadFile("api/upload-file", formData, {
-          method: "POST",
-        });
-        if (result.success && result.url) {
-          setDocForm((prev) => ({
-            ...prev,
-            file_path: result.path || (result.data && result.data.path) || "",
-            file_url: result.url || (result.data && result.data.url) || "",
-          }));
-        } else if (result.success && result.data && result.data.url) {
-          setDocForm((prev) => ({
-            ...prev,
-            file_path: result.data.path,
-            file_url: result.data.url,
-          }));
-        } else if (result.success && result.path) {
-          setDocForm((prev) => ({ ...prev, file_path: result.path }));
-        }
-      }
-    } else {
-      setDocForm((prev) => ({ ...prev, [name]: value }));
-    }
-  };
-
-  // Handle modal submit for add/update document
-  const handleDocSubmit = async (e) => {
-    e.preventDefault();
-    let payload = {
-      user_id: userdata.data.id,
-      no: docForm.no,
-      exp: docForm.exp,
-      document_no: docForm.document_no,
-      document_expiry: docForm.document_expiry,
-      file: docForm.file_path,
-    };
-    if (selectedDoc) {
-      payload = {
-        ...payload,
-        id: selectedDoc.id,
-        admin_id: selectedDoc.admin_id,
-        guard_id: selectedDoc.guard_id,
-        document_type: selectedDoc.document_type,
-        document_name: selectedDoc.document_name,
-      };
-    } else {
-      if (!docForm.document_name || docForm.document_name === "") {
-        alert("Please select a document type/name.");
-        return;
-      }
-      payload = {
-        ...payload,
-        document_type: docForm.document_name,
-        document_name: docForm.document_name,
-      };
-    }
-
-    if (payload.document_expiry) {
-      const d = new Date(payload.document_expiry);
-      if (!isNaN(d)) {
-        const mm = String(d.getMonth() + 1).padStart(2, "0");
-        const dd = String(d.getDate()).padStart(2, "0");
-        const yyyy = d.getFullYear();
-        payload.document_expiry = `${mm}-${dd}-${yyyy}`;
-      }
-    }
-
-    let apiEndpoint = "api/guard-update-documents";
-    let method = "POST";
-    if (!selectedDoc) {
-      apiEndpoint = "api/guard-add-documents";
-    }
-
-    const result = await submit(apiEndpoint, payload, { method });
-    if (result.success) {
-      setShowDocModal(false);
-      refetch();
-    } else {
-      alert(result.message || "Failed to save document");
-    }
-  };
-
-  const resolveFileUrl = (url) => {
-    if (!url) return "";
-    try {
-      if (url.startsWith("http://") || url.startsWith("https://")) {
-        return url;
-      }
-    } catch (err) {}
-    return `${apiURL}staff_documents/${url}`;
-  };
+  const missingFields = getMissingFields(profileData?.data);
 
   useEffect(() => {
     if (!profileData?.data) return;
-
     const d = profileData.data;
     const staff = d.staff || {};
     const contractor = d.contractor || staff.contractor || {};
@@ -351,89 +133,164 @@ export default function EditProfile() {
     else if (d.profile_image) setProfilePhoto(d.profile_image);
   }, [profileData]);
 
-  const handleChange = useCallback((e) => {
-    const { id, value } = e.target;
-    setFormData((prev) => ({ ...prev, [id]: value }));
-  }, []);
+  useEffect(() => {
+    if (activeTab !== "personal" || fetchLoading) return;
+    let autocomplete;
+    let listener;
+    const initMap = () => {
+      const addressInput = document.getElementById("address");
+      if (!addressInput || !window.google || !window.google.maps) return;
+      if (addressInput.getAttribute("data-gmaps-initialized")) return;
+      autocomplete = new window.google.maps.places.Autocomplete(addressInput, {
+        fields: ["address_components", "geometry", "formatted_address"],
+        types: ["address"],
+      });
+      addressInput.setAttribute("data-gmaps-initialized", "true");
+      listener = autocomplete.addListener("place_changed", () => {
+        const place = autocomplete.getPlace();
+        if (!place.geometry) return;
+        let newCity = "",
+          newState = "",
+          newCountry = "";
+        place.address_components?.forEach((c) => {
+          if (c.types.includes("locality")) newCity = c.long_name;
+          if (c.types.includes("administrative_area_level_1"))
+            newState = c.long_name;
+          if (c.types.includes("country")) newCountry = c.long_name;
+        });
+        setFormData((prev) => ({
+          ...prev,
+          address: place.formatted_address,
+          city: newCity || prev.city,
+          state: newState,
+          country: newCountry,
+          coordinates: `${place.geometry.location.lat()},${place.geometry.location.lng()}`,
+        }));
+      });
+    };
+    const checkGoogleMaps = setInterval(() => {
+      if (window.google && window.google.maps) {
+        clearInterval(checkGoogleMaps);
+        initMap();
+      }
+    }, 500);
+    return () => {
+      clearInterval(checkGoogleMaps);
+      if (listener && window.google)
+        window.google.maps.event.removeListener(listener);
+    };
+  }, [activeTab, fetchLoading]);
 
-  const handlePhotoChange = useCallback((e) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setProfilePhotoFile(file);
-      setProfilePhoto(URL.createObjectURL(file));
+  const handleDocFormChange = async (e) => {
+    const { name, value, type, checked, files } = e.target;
+    if (type === "checkbox") {
+      setDocForm((prev) => ({ ...prev, [name]: checked }));
+    } else if (type === "file") {
+      const file = files[0];
+      if (file) {
+        const fd = new FormData();
+        fd.append("file", file);
+        fd.append("folder", "staff_documents");
+        const res = await uploadFile("api/upload-file", fd, { method: "POST" });
+        if (res.success) {
+          setDocForm((prev) => ({
+            ...prev,
+            file_path: res.path || res.data?.path || "",
+            file_url: res.url || res.data?.url || "",
+          }));
+        }
+      }
+    } else {
+      setDocForm((prev) => ({ ...prev, [name]: value }));
     }
-  }, []);
+  };
+
+  const handleDocSubmit = async (e) => {
+    e.preventDefault();
+    let payload = {
+      user_id: userdata.data.id,
+      no: docForm.no,
+      exp: docForm.exp,
+      document_no: docForm.document_no,
+      document_expiry: docForm.document_expiry,
+      file: docForm.file_path,
+    };
+    if (selectedDoc) {
+      payload = {
+        ...payload,
+        id: selectedDoc.id,
+        document_type: selectedDoc.document_type,
+        document_name: selectedDoc.document_name,
+      };
+    } else {
+      payload = {
+        ...payload,
+        document_type: docForm.document_name,
+        document_name: docForm.document_name,
+      };
+    }
+    const res = await submit(
+      selectedDoc ? "api/guard-update-documents" : "api/guard-add-documents",
+      payload,
+      { method: "POST" },
+    );
+    if (res.success) {
+      setShowDocModal(false);
+      refetch();
+    }
+  };
+
+  const handleCardSubmit = async (e) => {
+    e.preventDefault();
+    const res = await submit("api/customer-add-card", cardForm, {
+      method: "POST",
+    });
+    if (res.success) {
+      setShowCardModal(false);
+      setCardForm({
+        card_holder_name: "",
+        card_number: "",
+        expiry_month: "",
+        expiry_year: "",
+        cvv: "",
+      });
+      refetch();
+    }
+  };
 
   const handleSubmit = useCallback(
     async (e) => {
       e.preventDefault();
       setSubmitError(null);
-      setSubmitSuccess(false);
-
       const payload = new FormData();
-      payload.append("name", formData.name);
-      payload.append("email", formData.email);
-      payload.append("phone", formData.phone);
-
-      // Send location data for all users now
-      if (formData.address) payload.append("address", formData.address);
-      if (formData.city) payload.append("city", formData.city);
-      if (formData.state) payload.append("state", formData.state);
-      if (formData.country) payload.append("country", formData.country);
-      if (formData.coordinates)
-        payload.append("coordinates", formData.coordinates);
-
-      if (userType !== "contractor" && formData.gender) {
-        payload.append("gender", formData.gender);
-      }
-
-      if (formData.staff_document_type) {
-        payload.append("staff_document_type", formData.staff_document_type);
-      }
-      if (userType === "contractor") {
-        if (formData.company_name)
-          payload.append("company_name", formData.company_name);
-        if (formData.registration_number)
-          payload.append("registration_number", formData.registration_number);
-      }
-      if (profilePhotoFile) {
-        payload.append("profile_image", profilePhotoFile);
-      }
-
-      const result = await submit(
+      Object.keys(formData).forEach((key) =>
+        payload.append(key, formData[key]),
+      );
+      if (profilePhotoFile) payload.append("profile_image", profilePhotoFile);
+      const res = await submit(
         `api/user-update/${userdata.data.id || userdata.id}`,
         payload,
         { method: "POST" },
       );
-
-      if (result.success) {
+      if (res.success) {
         setSubmitSuccess(true);
-        if (result.data) {
-          dispatch(setUser({ userdata: result.data }));
-        }
+        if (res.data) dispatch(setUser({ userdata: res.data }));
         refetch();
         setTimeout(() => setSubmitSuccess(false), 3000);
       } else {
-        setSubmitError(result.errors || result.message || "Update failed");
+        setSubmitError(res.errors || res.message || "Update failed");
       }
     },
-    [formData, profilePhotoFile, submit, userdata, dispatch, refetch, userType],
+    [formData, profilePhotoFile, submit, userdata, dispatch, refetch],
   );
 
-  if (fetchLoading) {
-    return <Loader fullPage />;
-  }
-
-  if (fetchError) {
+  if (fetchLoading) return <Loader fullPage />;
+  if (fetchError)
     return (
-      <div className="dashboard-main">
-        <p className="text-danger">
-          Error loading profile:{" "}
-          {typeof fetchError === "string" ? fetchError : "Something went wrong"}
-        </p>
+      <div className="dashboard-main text-danger">
+        Error: {fetchError.toString()}
       </div>
     );
-  }
 
   return (
     <div className="dashboard-main">
@@ -441,61 +298,72 @@ export default function EditProfile() {
         <AvatarUpload
           profilePhoto={profilePhoto}
           name={formData.name}
-          onPhotoChange={handlePhotoChange}
+          onPhotoChange={(e) => {
+            const file = e.target.files?.[0];
+            if (file) {
+              setProfilePhotoFile(file);
+              setProfilePhoto(URL.createObjectURL(file));
+            }
+          }}
         />
         <SettingsHeaderContent
-          userType={userdata?.data?.user_type || userdata?.user_type}
+          userType={userType}
           name={formData.name}
           email={formData.email}
           city={formData.city}
-          gender={formData.gender}
-          company_name={formData.company_name}
           profileCompletion={
-            profileData?.data?.profile_completion_percentage ||
-            profileData?.profile_completion_percentage ||
-            0
+            profileData?.data?.profile_completion_percentage || 0
           }
           missingItems={missingFields}
         />
       </div>
 
-      <div style={{ display: "flex", gap: 16 }}>
+      <div style={{ display: "flex", gap: 16, marginBottom: 20 }}>
         <button
-          type="button"
           className={`btn ${activeTab === "personal" ? "btn-primary" : "btn-outline-primary"}`}
           onClick={() => setActiveTab("personal")}
         >
           Personal Information
         </button>
-
-        <button
-          type="button"
-          className={`btn ${activeTab === "documents" ? "btn-primary" : "btn-outline-primary"}`}
-          onClick={() => setActiveTab("documents")}
-        >
-          Documents
-        </button>
+        {userType === "customer" ? (
+          <button
+            className={`btn ${activeTab === "cards" ? "btn-primary" : "btn-outline-primary"}`}
+            onClick={() => setActiveTab("cards")}
+          >
+            Cards
+          </button>
+        ) : (
+          <button
+            className={`btn ${activeTab === "documents" ? "btn-primary" : "btn-outline-primary"}`}
+            onClick={() => setActiveTab("documents")}
+          >
+            Documents
+          </button>
+        )}
       </div>
 
       {activeTab === "personal" && (
         <>
           {submitSuccess && (
-            <div className="alert alert-success mt-3">
+            <div className="alert alert-success">
               Profile updated successfully!
             </div>
           )}
           {submitError && (
-            <div className="alert alert-danger mt-3">
+            <div className="alert alert-danger">
               {typeof submitError === "string"
                 ? submitError
-                : typeof submitError === "object"
-                  ? Object.values(submitError).flat().join(", ")
-                  : "Something went wrong"}
+                : JSON.stringify(submitError)}
             </div>
           )}
           <ProfileForm
             formData={formData}
-            onChange={handleChange}
+            onChange={(e) =>
+              setFormData((prev) => ({
+                ...prev,
+                [e.target.id]: e.target.value,
+              }))
+            }
             onSubmit={handleSubmit}
             loading={submitLoading}
             userType={userType}
@@ -503,278 +371,198 @@ export default function EditProfile() {
         </>
       )}
 
-      {activeTab === "documents" &&
-        ["staff", "contractor", "customer"].includes(userType) && (
-          <DocumentTable
-            documents={profileData?.data?.documents || []}
-            onAddFile={handleAddFile}
-            onAddDocument={handleAddDocument}
-          />
-        )}
-
-      {/* Document Upload Modal */}
-      <Modal open={showDocModal} onClose={() => setShowDocModal(false)}>
-        <form
-          onSubmit={handleDocSubmit}
-          style={{ display: "flex", flexDirection: "column", height: "100%" }}
-        >
-          {/* Document Name Dropdown (enabled for add, disabled for update) */}
-          <div className="mb-2">
-            <label style={{ fontWeight: 500, fontSize: 13 }}>
-              Document Name
-            </label>
-            {selectedDoc ? (
-              <select
-                className="form-control"
-                value={selectedDoc.document_name || ""}
-                disabled
-                style={{
-                  background: "#f5f5f5",
-                  color: "#333",
-                  marginBottom: 8,
-                }}
-              >
-                <option value={selectedDoc.document_name || ""}>
-                  {selectedDoc.document_name || ""}
-                </option>
-              </select>
-            ) : (
-              <select
-                className="form-control"
-                name="document_name"
-                value={docForm.document_name || ""}
-                onChange={handleDocFormChange}
-                style={{ background: "#fff", color: "#333", marginBottom: 8 }}
-                required
-              >
-                <option value="">Select Document</option>
-                <option value="Casual Contract Form">
-                  Casual Contract Form
-                </option>
-                <option value="Passport">Passport</option>
-                <option value="Visa">Visa</option>
-                <option value="Other">Other</option>
-              </select>
-            )}
-          </div>
-          {/* File/Image Preview and Actions */}
-          <div
-            className="mb-2"
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              marginBottom: 16,
-            }}
-          >
-            <div
-              style={{
-                width: 180,
-                height: 180,
-                background: "#f5f5f5",
-                borderRadius: 8,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                marginBottom: 10,
-                position: "relative",
-                overflow: "hidden",
-              }}
-            >
-              {docForm.file_url ? (
-                (() => {
-                  const ext = docForm.file_url.split(".").pop().toLowerCase();
-                  if (
-                    ["jpg", "jpeg", "png", "gif", "webp", "bmp"].includes(ext)
-                  ) {
-                    return (
-                      <img
-                        src={resolveFileUrl(docForm.file_url)}
-                        alt={docForm.document_name || "Document preview"}
-                        style={{ maxWidth: "100%", maxHeight: "100%" }}
-                        onError={(e) => {
-                          e.target.style.display = "none";
-                        }}
-                      />
-                    );
-                  } else if (["pdf"].includes(ext)) {
-                    return (
-                      <iframe
-                        src={resolveFileUrl(docForm.file_url)}
-                        title="Document Preview"
-                        style={{ width: "100%", height: "100%", border: 0 }}
-                      />
-                    );
-                  } else {
-                    return (
-                      <a
-                        href={resolveFileUrl(docForm.file_url)}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        style={{ color: "#007bff", fontWeight: 500 }}
-                      >
-                        View/Download Document
-                      </a>
-                    );
-                  }
-                })()
-              ) : (
-                <img
-                  src={fallbackImage}
-                  alt="No preview available"
-                  style={{ width: "100%", height: "100%", opacity: 0.5 }}
-                />
-              )}
-              {uploadLoading && (
-                <div
-                  style={{
-                    position: "absolute",
-                    top: 0,
-                    left: 0,
-                    width: "100%",
-                    height: "100%",
-                    background: "rgba(255,255,255,0.7)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    zIndex: 2,
-                  }}
-                >
-                  <span style={{ color: "#2980b9", fontWeight: 500 }}>
-                    Uploading...
-                  </span>
-                </div>
-              )}
-              {/* Action buttons */}
-              <div
-                style={{
-                  position: "absolute",
-                  bottom: 10,
-                  left: 0,
-                  width: "100%",
-                  display: "flex",
-                  justifyContent: "center",
-                  gap: 16,
-                }}
-              >
-                <label
-                  style={{
-                    cursor: "pointer",
-                    background: "#e74c3c",
-                    borderRadius: "50%",
-                    width: 36,
-                    height: 36,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                  title="Add/Change File"
-                >
-                  <i
-                    className="fa fa-plus"
-                    style={{ color: "#fff", fontSize: 18 }}
-                  ></i>
-                  <input
-                    type="file"
-                    name="file"
-                    style={{ display: "none" }}
-                    onChange={handleDocFormChange}
-                  />
-                </label>
-                <button
-                  type="button"
-                  style={{
-                    background: "#2980b9",
-                    border: "none",
-                    borderRadius: "50%",
-                    width: 36,
-                    height: 36,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                  title="Remove"
-                  onClick={() =>
-                    setDocForm((prev) => ({ ...prev, file: null }))
-                  }
-                  disabled={!docForm.file}
-                >
-                  <i
-                    className="fa fa-trash"
-                    style={{ color: "#fff", fontSize: 18 }}
-                  ></i>
-                </button>
-              </div>
-            </div>
-          </div>
-          {/* Checkboxes and Conditional Inputs */}
-          <div
-            className="mb-2"
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              gap: 6,
-              marginBottom: 12,
-            }}
-          >
-            <label style={{ fontWeight: 400, fontSize: 14 }}>
-              <input
-                type="checkbox"
-                name="no"
-                checked={docForm.no}
-                onChange={handleDocFormChange}
-                style={{ marginRight: 6 }}
-              />
-              Add Document Number
-            </label>
-            {docForm.no && (
-              <input
-                className="form-control"
-                name="document_no"
-                placeholder="Document Number"
-                value={docForm.document_no}
-                onChange={handleDocFormChange}
-                style={{ marginBottom: 8, marginTop: 4 }}
-              />
-            )}
-            <label style={{ fontWeight: 400, fontSize: 14 }}>
-              <input
-                type="checkbox"
-                name="exp"
-                checked={docForm.exp}
-                onChange={handleDocFormChange}
-                style={{ marginRight: 6 }}
-              />
-              Set Expiration date
-            </label>
-            {docForm.exp && (
-              <input
-                className="form-control"
-                name="document_expiry"
-                type="date"
-                placeholder="Expiration Date"
-                value={docForm.document_expiry}
-                onChange={handleDocFormChange}
-                style={{ marginBottom: 8, marginTop: 4 }}
-              />
-            )}
-          </div>
-          {/* Save Button */}
-          <div
-            style={{
-              marginTop: "auto",
-              display: "flex",
-              justifyContent: "flex-end",
-            }}
-          >
+      {activeTab === "cards" && userType === "customer" && (
+        <div className="card-section">
+          <div className="d-flex justify-content-between mb-3">
+            <h3>Your Saved Cards</h3>
             <button
-              type="submit"
               className="btn btn-success"
-              style={{ minWidth: 80 }}
+              onClick={() => setShowCardModal(true)}
             >
-              Save
+              + Add New Card
             </button>
           </div>
+          <div className="row">
+            {(profileData?.data?.cards || []).map((card, i) => (
+              <div key={i} className="col-md-4 mb-3">
+                <div
+                  className="card p-3 shadow-sm border-0"
+                  style={{
+                    background: "#2c3e50",
+                    color: "#fff",
+                    borderRadius: "12px",
+                  }}
+                >
+                  <p className="mb-1">
+                    **** **** **** {card.card_number.slice(-4)}
+                  </p>
+                  <small className="d-block">{card.card_holder_name}</small>
+                  <small>
+                    {card.expiry_month}/{card.expiry_year}
+                  </small>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {activeTab === "documents" && userType !== "customer" && (
+        <DocumentTable
+          documents={profileData?.data?.documents || []}
+          onAddFile={(doc) => {
+            setSelectedDoc(doc);
+            setDocForm((prev) => ({
+              ...prev,
+              file_url: doc.file,
+              document_name: doc.document_name,
+            }));
+            setShowDocModal(true);
+          }}
+          onAddDocument={() => {
+            setSelectedDoc(null);
+            setDocForm((prev) => ({
+              ...prev,
+              file_url: "",
+              document_name: "",
+            }));
+            setShowDocModal(true);
+          }}
+        />
+      )}
+
+      {/* Card Modal */}
+      <Modal open={showCardModal} onClose={() => setShowCardModal(false)}>
+        <form onSubmit={handleCardSubmit} className="p-3">
+          <h4 className="mb-3">Add Payment Card</h4>
+          <input
+            type="text"
+            className="form-control mb-2"
+            placeholder="Card Holder Name"
+            onChange={(e) =>
+              setCardForm((p) => ({ ...p, card_holder_name: e.target.value }))
+            }
+            required
+          />
+          <input
+            type="text"
+            className="form-control mb-2"
+            placeholder="Card Number"
+            maxLength="16"
+            onChange={(e) =>
+              setCardForm((p) => ({ ...p, card_number: e.target.value }))
+            }
+            required
+          />
+          <div className="row mb-3">
+            <div className="col-4">
+              <input
+                type="text"
+                className="form-control"
+                placeholder="MM"
+                onChange={(e) =>
+                  setCardForm((p) => ({ ...p, expiry_month: e.target.value }))
+                }
+                required
+              />
+            </div>
+            <div className="col-4">
+              <input
+                type="text"
+                className="form-control"
+                placeholder="YY"
+                onChange={(e) =>
+                  setCardForm((p) => ({ ...p, expiry_year: e.target.value }))
+                }
+                required
+              />
+            </div>
+            <div className="col-4">
+              <input
+                type="password"
+                className="form-control"
+                placeholder="CVV"
+                maxLength="3"
+                onChange={(e) =>
+                  setCardForm((p) => ({ ...p, cvv: e.target.value }))
+                }
+                required
+              />
+            </div>
+          </div>
+          <button
+            type="submit"
+            className="btn btn-primary w-100"
+            disabled={submitLoading}
+          >
+            Save Card
+          </button>
+        </form>
+      </Modal>
+
+      {/* Document Modal with uploadLoading feedback */}
+      <Modal open={showDocModal} onClose={() => setShowDocModal(false)}>
+        <form onSubmit={handleDocSubmit} className="p-3 position-relative">
+          <h5>{selectedDoc ? "Edit Document" : "Add New Document"}</h5>
+          <select
+            className="form-control mb-3"
+            name="document_name"
+            value={docForm.document_name}
+            onChange={handleDocFormChange}
+            required={!selectedDoc}
+            disabled={!!selectedDoc}
+          >
+            <option value="">Select Type</option>
+            <option value="Passport">Passport</option>
+            <option value="Visa">Visa</option>
+            <option value="Casual Contract Form">Casual Contract Form</option>
+          </select>
+
+          <div
+            className="text-center mb-3 position-relative"
+            style={{ minHeight: "150px" }}
+          >
+            <img
+              src={
+                docForm.file_url
+                  ? docForm.file_url.startsWith("http")
+                    ? docForm.file_url
+                    : `${apiURL}staff_documents/${docForm.file_url}`
+                  : fallbackImage
+              }
+              alt="Document Preview"
+              style={{
+                width: 150,
+                height: 150,
+                objectFit: "cover",
+                borderRadius: "8px",
+                opacity: uploadLoading ? 0.3 : 1,
+              }}
+            />
+            {uploadLoading && (
+              <div className="position-absolute top-50 start-50 translate-middle">
+                <div
+                  className="spinner-border text-primary"
+                  role="status"
+                ></div>
+                <p className="small mt-1">Uploading...</p>
+              </div>
+            )}
+          </div>
+
+          <input
+            type="file"
+            className="form-control mb-3"
+            onChange={handleDocFormChange}
+            name="file"
+          />
+          <button
+            type="submit"
+            className="btn btn-success w-100"
+            disabled={uploadLoading || submitLoading}
+          >
+            {submitLoading ? "Saving..." : "Save Document"}
+          </button>
         </form>
       </Modal>
     </div>

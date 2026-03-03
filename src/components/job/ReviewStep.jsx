@@ -95,7 +95,7 @@ export default function ReviewStep({
             type="checkbox"
             checked={form.termsAccepted}
             onChange={(e) => setField("termsAccepted", e.target.checked)}
-            disabled={isSubmitting} // Disable toggle while loading
+            disabled={isSubmitting}
           />
           <label htmlFor="terms" className="form-check-label">
             I agree to the Terms & Conditions
@@ -127,7 +127,7 @@ export default function ReviewStep({
           type="button"
           className="btn btn-outline-secondary btn-lg"
           onClick={() => setStep(0)}
-          disabled={isSubmitting} // Disable editing while loading
+          disabled={isSubmitting}
         >
           Edit Job
         </button>

@@ -185,7 +185,6 @@ code {
   gap: 10px;
   align-items: center;
   min-height: 40px;
-  /* Ensures the cell has enough height even if empty */
 }
 
 .shift-card {
@@ -194,8 +193,7 @@ code {
   padding: 10px;
   border-radius: 6px;
   border: 1px solid transparent;
-  min-width: 110px;
-  width: 100%;
+  min-width: 50px;
   background: var(--surface);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
@@ -552,23 +550,44 @@ code {
 
   .shift-container {
     align-items: stretch;
+    width: 50px;
   }
 
   .shift-card {
-    flex-direction: row;
-    justify-content: space-between;
-    align-items: center;
-    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    padding: 4px;
+    border-radius: 4px;
+    border: 1px solid transparent;
+    background: var(--surface);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    line-height: 1.1;
   }
 
   .shift-time {
-    margin-bottom: 0;
-    font-size: 0.9rem;
+    font-size: 0.7rem;
+    font-weight: 700;
+    margin-bottom: 2px;
+    color: var(--text);
+    white-space: nowrap;
+  }
+
+  .shift-name {
+    font-size: 0.65rem;
+    font-weight: 500;
+    margin-bottom: 4px;
+    color: var(--text-soft);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .shift-actions {
-    width: auto;
-    gap: 8px;
+    display: flex;
+    gap: 2px;
+    margin-top: 0;
+    flex-wrap: wrap;
+    width: 100%;
   }
 
   .action-btn {
@@ -576,13 +595,11 @@ code {
     font-size: 0.75rem;
   }
 
-  /* Keep the add button aligned nicely on mobile */
   .add-shift-btn {
     align-self: center;
     margin-top: 8px;
   }
 
-  /* If the day is empty, put the add button right next to the header on mobile */
   .roster-table td.empty-day {
     flex-direction: row;
     justify-content: space-between;
@@ -596,4 +613,39 @@ code {
   .roster-table td.empty-day .add-shift-btn {
     margin-top: 0;
   }
+}
+
+.shift-actions {
+  display: flex;
+  gap: 4px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+  width: 100%;
+}
+
+.action-badge {
+  font-size: 10px;
+  padding: 2px 6px;
+  border: none;
+  border-radius: 2px;
+  color: #fff;
+  cursor: pointer;
+  font-weight: 600;
+  transition: opacity 0.2s ease;
+}
+
+.action-badge:hover {
+  opacity: 0.85;
+}
+
+.badge-activity {
+  background-color: #007fad;
+}
+
+.badge-detail {
+  background-color: #20c997;
+}
+
+.badge-time {
+  background-color: var(--brand);
 }

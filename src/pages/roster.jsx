@@ -354,9 +354,24 @@ export default function RosterPage() {
                                 <div className="shift-name">
                                   {shift?.guards?.name || "Unassigned"}
                                 </div>
+
                                 <div className="shift-actions">
                                   <button
-                                    className="action-btn details-btn"
+                                    onClick={() =>
+                                      openModalAction(
+                                        site,
+                                        shift,
+                                        day.dateLabel,
+                                        "activity",
+                                      )
+                                    }
+                                    type="button"
+                                    className="action-badge badge-activity"
+                                  >
+                                    Activity
+                                  </button>
+
+                                  <button
                                     onClick={() =>
                                       openModalAction(
                                         site,
@@ -368,12 +383,13 @@ export default function RosterPage() {
                                       )
                                     }
                                     type="button"
+                                    className="action-badge badge-detail"
                                   >
-                                    Details
+                                    Detail
                                   </button>
+
                                   {userRole === "customer" && (
                                     <button
-                                      className="action-btn time-btn"
                                       onClick={() =>
                                         openModalAction(
                                           site,
@@ -383,32 +399,11 @@ export default function RosterPage() {
                                         )
                                       }
                                       type="button"
-                                      style={{
-                                        marginLeft: "4px",
-                                        background: "#f8f9fa",
-                                        border: "1px solid #ddd",
-                                      }}
+                                      className="action-badge badge-time"
                                     >
-                                      Change Time
+                                      Time
                                     </button>
                                   )}
-
-                                  {/* UPDATED ACTIVITY BUTTON */}
-                                  <button
-                                    className="action-btn activity-btn"
-                                    onClick={() =>
-                                      openModalAction(
-                                        site,
-                                        shift,
-                                        day.dateLabel,
-                                        "activity",
-                                      )
-                                    }
-                                    type="button"
-                                    style={{ marginLeft: "4px" }}
-                                  >
-                                    Activity
-                                  </button>
                                 </div>
                               </div>
                             ))}

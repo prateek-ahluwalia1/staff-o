@@ -51,12 +51,15 @@ const RatesList = ({ forcedType } = {}) => {
     [isCharge],
   );
 
+  const { userdata } = useSelector((state) => state.auth || {});
+  const userType = userdata?.data?.user_type || userdata?.user_type;
+  const isCustomer = userType === "customer";
+
   const { data, loading, error, refetch } = useFetch(
     showArchived ? archiveListEndpoint : listEndpoint,
     { isAuth: true, immediate: true },
   );
   const { submit, loading: submitting } = useSubmit({ isAuth: true });
-  const { userdata } = useSelector((state) => state.auth || {});
 
   const makeInitialForm = useCallback(() => {
     const f = {
@@ -209,31 +212,35 @@ const RatesList = ({ forcedType } = {}) => {
           </div>
 
           <div className="d-flex align-items-center gap-2">
-            <div className="btn-group">
-              <button
-                className={`btn btn-sm ${
-                  !showArchived ? "btn-primary" : "btn-outline-secondary"
-                }`}
-                onClick={() => setShowArchived(false)}
-              >
-                Active
-              </button>
-              <button
-                className={`btn btn-sm ${
-                  showArchived ? "btn-primary" : "btn-outline-secondary"
-                }`}
-                onClick={() => setShowArchived(true)}
-              >
-                Archived
-              </button>
-            </div>
+            {!isCustomer && (
+              <div className="btn-group">
+                <button
+                  className={`btn btn-sm ${
+                    !showArchived ? "btn-primary" : "btn-outline-secondary"
+                  }`}
+                  onClick={() => setShowArchived(false)}
+                >
+                  Active
+                </button>
+                <button
+                  className={`btn btn-sm ${
+                    showArchived ? "btn-primary" : "btn-outline-secondary"
+                  }`}
+                  onClick={() => setShowArchived(true)}
+                >
+                  Archived
+                </button>
+              </div>
+            )}
 
-            <button
-              className="btn btn-success btn-sm px-3"
-              onClick={openAddModal}
-            >
-              + {addButton}
-            </button>
+            {!isCustomer && (
+              <button
+                className="btn btn-success btn-sm px-3"
+                onClick={openAddModal}
+              >
+                + {addButton}
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -280,10 +287,19 @@ const RatesList = ({ forcedType } = {}) => {
                     </td>
                     <td>
                       <div className="d-flex gap-2">
-                        {showArchived ? (
+                        {isCustomer ? (
+                          <button
+                            className="btn btn-sm btn-outline-primary"
+                            onClick={() => handleEditOpen(r)}
+                            title="Edit Rate"
+                          >
+                            <i className="fa fa-edit" />
+                          </button>
+                        ) : showArchived ? (
                           <button
                             className="btn btn-sm btn-outline-primary"
                             onClick={() => handleViewOpen(r)}
+                            title="View Rate"
                           >
                             <i className="fa fa-eye" />
                           </button>
@@ -292,12 +308,14 @@ const RatesList = ({ forcedType } = {}) => {
                             <button
                               className="btn btn-sm btn-outline-primary"
                               onClick={() => handleEditOpen(r)}
+                              title="Edit Rate"
                             >
                               <i className="fa fa-edit" />
                             </button>
                             <button
                               className="btn btn-sm btn-outline-secondary"
                               onClick={() => handleArchive(r)}
+                              title="Archive Rate"
                             >
                               <i className="fa fa-archive" />
                             </button>

@@ -59,6 +59,8 @@ class ChargeRateController extends Controller
         $charge_rate->eba_reg_pub_holi_day_rate = ($request->eba_reg_pub_holi_day_rate ? $request->eba_reg_pub_holi_day_rate : 0);
         $charge_rate->eba_reg_pub_holi_night_rate = ($request->eba_reg_pub_holi_night_rate ? $request->eba_reg_pub_holi_night_rate : 0);
         $charge_rate->ot_base_rate = ($request->ot_base_rate ? $request->ot_base_rate : 0);
+        $charge_rate->effective_from = $request->effective_from;
+
         $charge_rate->save();
 
         return response()->json(['message' => "Charge rate added" ,  'code' => 200, 'success' => true]);
@@ -142,6 +144,8 @@ class ChargeRateController extends Controller
         $charge_rate->eba_reg_pub_holi_day_rate = ($request->eba_reg_pub_holi_day_rate ? $request->eba_reg_pub_holi_day_rate : 0);
         $charge_rate->eba_reg_pub_holi_night_rate = ($request->eba_reg_pub_holi_night_rate ? $request->eba_reg_pub_holi_night_rate : 0);
         $charge_rate->ot_base_rate = ($request->ot_base_rate ? $request->ot_base_rate : 0);
+        $charge_rate->effective_from = $request->effective_from;
+        
         $charge_rate->save();
         if($is_check == 1){
         return response()->json(['message' => "Charge rate added" ,  'code' => 200, 'success' => true]);

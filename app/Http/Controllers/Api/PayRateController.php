@@ -59,8 +59,7 @@ class PayRateController extends Controller
             $payrates->eba_reg_pub_holi_day_rate = ($request->eba_reg_pub_holi_day_rate ? $request->eba_reg_pub_holi_day_rate : 0);
             $payrates->eba_reg_pub_holi_night_rate = ($request->eba_reg_pub_holi_night_rate ? $request->eba_reg_pub_holi_night_rate : 0);
 
-            $payrates->ot_base_rate = ($request->ot_base_rate ? $request->ot_base_rate : 0);
-            // $payrates->effective_from = $request->effective_from;
+            $payrates->effective_from = $request->effective_from;
             $payrates->save();
 
             return response()->json(['message' => "Payrates Added", 'code' => 200, 'success' => true]);
@@ -105,7 +104,6 @@ class PayRateController extends Controller
     public function update(Request $request)
     {
         $is_check =0;
-        // $payrate = Payrate::where('customer_id', $request->customer_id)->where('level', $request->level)->first();
         $payrate = Payrate::find($request->id);
         $old_data = $payrate;
         if(!empty($payrate)) {
@@ -152,7 +150,7 @@ class PayRateController extends Controller
         $payrates->eba_reg_pub_holi_night_rate = ($request->eba_reg_pub_holi_night_rate ? $request->eba_reg_pub_holi_night_rate : 0);
          
         $payrates->ot_base_rate = ($request->ot_base_rate ? $request->ot_base_rate : 0);
-        // $payrates->effective_from = $request->effective_from;
+        $payrates->effective_from = $request->effective_from;
         $payrates->save();
 
         if($is_check == 1){

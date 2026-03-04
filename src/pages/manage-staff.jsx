@@ -2,8 +2,11 @@ import React, { useState, useEffect } from "react";
 import useFetch from "../hooks/useFetch";
 import useSubmit from "../hooks/useSubmit";
 import Loader from "../components/Loader";
+import { useSelector } from "react-redux";
 
 const ManageStaff = () => {
+  const { userdata } = useSelector((state) => state.auth);
+  const loggedInContractorId = userdata?.id || userdata?.data?.id || null;
   const [page, setPage] = useState(1);
 
   const {
@@ -89,6 +92,7 @@ const ManageStaff = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     const method = editingUser ? "PUT" : "POST";
     const url = editingUser
       ? `api/admin/update-staff/${editingUser.id}`
@@ -97,6 +101,9 @@ const ManageStaff = () => {
     const payload = { ...formData };
     if (editingUser && !payload.password) delete payload.password;
     payload.is_active = payload.is_active ? 1 : 0;
+
+    // Attach the contractor's ID here
+    payload.user_id = loggedInContractorId;
 
     try {
       await submit(url, payload, { method });

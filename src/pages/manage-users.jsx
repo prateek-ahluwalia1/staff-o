@@ -13,12 +13,23 @@ const ManageUsers = () => {
     staff: "api/admin/get-staff",
   };
 
+  // Fetch paginated users based on the active tab
   const {
     data: apiResponse,
     loading,
     error,
     refetch,
   } = useFetch(`${endpointMap[activeTab]}?page=${page}`, { isAuth: true });
+
+  // Fetch all contractors for the dropdown when adding staff
+  // Note: Adjust this endpoint if you have a specific one for getting a flat list without pagination
+  const { data: contractorsResponse } = useFetch(
+    "api/admin/get-contractors?limit=1000",
+    {
+      isAuth: true,
+    },
+  );
+  const contractorsList = contractorsResponse?.data?.data || [];
 
   const { submit, loading: submitLoading } = useSubmit({ isAuth: true });
 
@@ -52,6 +63,7 @@ const ManageUsers = () => {
     country: "",
     registration_number: "",
     is_active: false,
+    user_id: "", // Used to associate staff with a contractor
   };
 
   const [formData, setFormData] = useState(defaultFormState);
@@ -90,6 +102,7 @@ const ManageUsers = () => {
         country: user.country || "",
         registration_number: extraInfo.registration_number || "",
         is_active: user.is_active || false,
+        user_id: user.user_id || "",
       });
     } else {
       setEditingUser(null);
@@ -132,6 +145,9 @@ const ManageUsers = () => {
 
     const payload = { ...formData };
     if (editingUser && !payload.password) delete payload.password;
+
+    // Clean up payload based on role
+    if (activeTab !== "staff") delete payload.user_id;
     payload.is_active = payload.is_active ? 1 : 0;
 
     try {
@@ -332,7 +348,7 @@ const ManageUsers = () => {
           </table>
         </div>
 
-        {/* Pagination Footer - Fixed Warning */}
+        {/* Pagination Footer */}
         <div className="card-footer bg-white border-top py-3 px-4 d-flex justify-content-between align-items-center">
           <div className="text-muted small">
             Showing Page <strong>{page}</strong> of{" "}
@@ -384,6 +400,37 @@ const ManageUsers = () => {
                   <div className="col-12">
                     <h6 className="section-divider mt-0">Personal Details</h6>
                   </div>
+
+                  {/* Contractor Selection Dropdown - Only for Staff */}
+                  {activeTab === "staff" && (
+                    <div className="col-12 mb-2">
+                      <div className="p-3 bg-primary-subtle rounded-3 border border-primary-subtle">
+                        <label className="form-label text-primary">
+                          Assign to Contractor *
+                        </label>
+                        <select
+                          className="form-select shadow-sm"
+                          name="user_id"
+                          value={formData.user_id}
+                          onChange={handleInputChange}
+                          required
+                        >
+                          <option value="" disabled>
+                            Select a Contractor
+                          </option>
+                          {contractorsList.map((contractor) => (
+                            <option key={contractor.id} value={contractor.id}>
+                              {contractor.name}{" "}
+                              {contractor.company_name
+                                ? `(${contractor.company_name})`
+                                : ""}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                  )}
+
                   <div className="col-md-6">
                     <label className="form-label">Full Name *</label>
                     <input

@@ -2,15 +2,18 @@ import React, { useEffect } from "react";
 import useSubmit from "../../hooks/useSubmit";
 import Loader from "../Loader";
 
-export default function FootPatrolReport({ rosterId, shift, site }) {
+export default function FootPatrolReport({ rosterId, guardId, shift, site }) {
   const { submit, loading, data, error } = useSubmit({ isAuth: true });
 
   useEffect(() => {
     if (rosterId) {
-      submit("api/guard-foot-patrol-report", { roster_id: rosterId });
+      submit("api/guard-foot-patrol-report", {
+        guard_id: guardId,
+        roster_id: rosterId,
+      });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rosterId]);
+  }, [rosterId, guardId]);
 
   if (loading) {
     return (
@@ -38,8 +41,12 @@ export default function FootPatrolReport({ rosterId, shift, site }) {
     );
   }
 
-  const report = data?.data || data?.report || null;
-  const checkpoints = report?.checkpoints || data?.checkpoints || [];
+  const patrols = data?.data || [];
+  const staff = data?.staff;
+  const location = data?.loaction;
+  const customer = data?.customer;
+  const shiftStart = data?.shift_start;
+  const shiftEnd = data?.shift_end;
 
   return (
     <div>
@@ -49,23 +56,21 @@ export default function FootPatrolReport({ rosterId, shift, site }) {
 
       <div className="row border-bottom pb-3 mb-3">
         <div className="col-md-6 mb-2">
-          <strong>Customer Name:</strong>{" "}
-          {report?.customer_name || site?.displayName || "N/A"}
+          <strong>Customer:</strong> {customer || "N/A"}
         </div>
         <div className="col-md-6 mb-2">
-          <strong>Staff Name:</strong>{" "}
-          {report?.staff_name || shift?.guards?.name || "N/A"}
+          <strong>Staff:</strong> {staff || "N/A"}
         </div>
         <div className="col-md-6 mb-2">
-          <strong>Location:</strong>{" "}
-          {report?.location || site?.address || "N/A"}
+          <strong>Location:</strong> {location || "N/A"}
         </div>
         <div className="col-md-6 mb-2">
-          <strong>Shift Timings:</strong> {report?.shift_timings || "N/A"}
+          <strong>Shift:</strong>{" "}
+          {shiftStart && shiftEnd ? `${shiftStart} – ${shiftEnd}` : "N/A"}
         </div>
       </div>
 
-      {checkpoints.length > 0 ? (
+      {patrols.length > 0 ? (
         <table className="table table-bordered table-sm">
           <thead className="table-light">
             <tr>
@@ -77,8 +82,8 @@ export default function FootPatrolReport({ rosterId, shift, site }) {
             </tr>
           </thead>
           <tbody>
-            {checkpoints.map((cp, i) => (
-              <tr key={i}>
+            {patrols.map((cp, i) => (
+              <tr key={cp.id || i}>
                 <td>{i + 1}</td>
                 <td>{cp.name || cp.checkpoint || "N/A"}</td>
                 <td>{cp.time || "N/A"}</td>

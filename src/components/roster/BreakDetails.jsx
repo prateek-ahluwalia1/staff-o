@@ -2,15 +2,18 @@ import React, { useEffect } from "react";
 import useSubmit from "../../hooks/useSubmit";
 import Loader from "../Loader";
 
-export default function BreakDetails({ rosterId }) {
+export default function BreakDetails({ rosterId, guardId }) {
   const { submit, loading, data, error } = useSubmit({ isAuth: true });
 
   useEffect(() => {
     if (rosterId) {
-      submit("api/guard-break-details", { roster_id: rosterId });
+      submit("api/guard-break-details", {
+        guard_id: guardId,
+        roster_id: rosterId,
+      });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rosterId]);
+  }, [rosterId, guardId]);
 
   if (loading) {
     return (
@@ -38,7 +41,22 @@ export default function BreakDetails({ rosterId }) {
     );
   }
 
-  const breaks = data?.data || data?.breaks || [];
+  const breaks = data?.data || [];
+
+  const formatUnix = (ts) => {
+    if (!ts) return "N/A";
+    const num = Number(ts);
+    if (isNaN(num)) return ts;
+    const d = new Date(num * 1000);
+    return d.toLocaleString("en-AU", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+    });
+  };
 
   return (
     <div>
@@ -59,12 +77,12 @@ export default function BreakDetails({ rosterId }) {
               </td>
             </tr>
           ) : (
-            breaks.map((b, i) => (
-              <tr key={i}>
-                <td>{b.start_time || b.startTime || "N/A"}</td>
-                <td>{b.end_time || b.endTime || "N/A"}</td>
-                <td>{b.informed_to || b.informedTo || "N/A"}</td>
-                <td>{b.notes || b.note || "N/A"}</td>
+            breaks.map((b) => (
+              <tr key={b.id}>
+                <td>{formatUnix(b.start_time)}</td>
+                <td>{b.end_time ? formatUnix(b.end_time) : "Ongoing"}</td>
+                <td>{b.inform_to || "N/A"}</td>
+                <td>{b.notes || "N/A"}</td>
               </tr>
             ))
           )}

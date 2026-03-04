@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import useSubmit from "../../hooks/useSubmit";
 import Loader from "../Loader";
 
-export default function RatingComponent({ rosterId }) {
+export default function RatingComponent({ rosterId, guardId }) {
   const [selectedRating, setSelectedRating] = useState(0);
   const [hoveredRating, setHoveredRating] = useState(0);
   const [description, setDescription] = useState("");
@@ -21,34 +21,41 @@ export default function RatingComponent({ rosterId }) {
 
   useEffect(() => {
     if (rosterId) {
-      fetchRating("api/get-jobroster-rating", { roster_id: rosterId });
+      fetchRating("api/get-jobroster-rating", {
+        guard_id: guardId,
+        roster_id: rosterId,
+      });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rosterId]);
+  }, [rosterId, guardId]);
 
   // Pre-fill if rating already exists
   useEffect(() => {
-    const existing = fetchData?.data || fetchData?.rating;
-    if (existing) {
+    const existing = fetchData?.data;
+    if (existing && existing.rating) {
       setSelectedRating(Number(existing.rating) || 0);
-      setDescription(existing.description || existing.comment || "");
+      setDescription(existing.rating_desc || "");
     }
   }, [fetchData]);
 
   const handleSubmit = async () => {
     if (!selectedRating || !rosterId) return;
     const res = await submitRating("api/jobroster-give-rating", {
+      guard_id: guardId,
       roster_id: rosterId,
       rating: selectedRating,
       description: description.trim(),
     });
     if (res?.success) {
       setSubmitted(true);
-      fetchRating("api/get-jobroster-rating", { roster_id: rosterId });
+      fetchRating("api/get-jobroster-rating", {
+        guard_id: guardId,
+        roster_id: rosterId,
+      });
     }
   };
 
-  const existingRating = fetchData?.data || fetchData?.rating;
+  const existingRating = fetchData?.data;
 
   if (fetchLoading) {
     return (
@@ -174,7 +181,7 @@ export default function RatingComponent({ rosterId }) {
         </button>
       </div>
 
-      {existingRating && (
+      {existingRating?.rating && (
         <div
           style={{
             marginTop: "24px",
@@ -202,9 +209,7 @@ export default function RatingComponent({ rosterId }) {
               </span>
             ))}
           </div>
-          <div>
-            {existingRating.description || existingRating.comment || "—"}
-          </div>
+          <div>{existingRating.rating_desc || "—"}</div>
         </div>
       )}
     </div>

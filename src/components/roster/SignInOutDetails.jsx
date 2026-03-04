@@ -62,14 +62,17 @@ const ImageBox = ({ src, label }) => (
   </div>
 );
 
-export default function SignInOutDetails({ rosterId, shift, site }) {
+export default function SignInOutDetails({ rosterId, guardId, shift, site }) {
   const { submit, loading, data, error } = useSubmit({ isAuth: true });
 
   useEffect(() => {
     if (rosterId) {
-      submit("api/get-jobSignIn-jobSignOut", { roster_id: rosterId });
+      submit("api/get-jobSignIn-jobSignOut", {
+        guard_id: guardId,
+        roster_id: rosterId,
+      });
     }
-  }, [rosterId, submit]);
+  }, [rosterId, guardId, submit]);
 
   if (loading) {
     return (
@@ -97,8 +100,20 @@ export default function SignInOutDetails({ rosterId, shift, site }) {
     );
   }
 
-  const signIn = data?.data?.sign_in || data?.sign_in || {};
-  const signOut = data?.data?.sign_out || data?.sign_out || {};
+  const d = data?.data || {};
+
+  // Location strings come as "lat,lng"
+  const parseLocation = (locStr) => {
+    if (!locStr) return null;
+    const parts = locStr.split(",");
+    if (parts.length === 2 && parts[0].trim() && parts[1].trim()) {
+      return { lat: parts[0].trim(), lng: parts[1].trim() };
+    }
+    return null;
+  };
+
+  const signInLoc = parseLocation(d.signin_location);
+  const signOutLoc = parseLocation(d.signout_location);
 
   return (
     <div className="row mb-4">
@@ -119,16 +134,10 @@ export default function SignInOutDetails({ rosterId, shift, site }) {
           Sign In
         </div>
 
-        <Field label="Sign In Date" value={signIn.date || signIn.signin_date} />
-        <Field label="Sign In Time" value={signIn.time || signIn.signin_time} />
-        <Field
-          label="Sign In Notes"
-          value={signIn.notes || signIn.signin_notes}
-        />
-        <ImageBox
-          src={signIn.picture || signIn.signin_picture}
-          label="Sign In Picture"
-        />
+        <Field label="Sign In Date" value={d.signin_date} />
+        <Field label="Sign In Time" value={d.signin_time} />
+        <Field label="Sign In Notes" value={d.signin_notes} />
+        <ImageBox src={d.signin_selfie} label="Sign In Selfie" />
 
         <div
           style={{
@@ -140,9 +149,9 @@ export default function SignInOutDetails({ rosterId, shift, site }) {
         >
           Sign In Location
         </div>
-        {signIn.latitude && signIn.longitude ? (
+        {signInLoc ? (
           <a
-            href={`https://maps.google.com/?q=${signIn.latitude},${signIn.longitude}`}
+            href={`https://maps.google.com/?q=${signInLoc.lat},${signInLoc.lng}`}
             target="_blank"
             rel="noopener noreferrer"
             className="btn btn-primary btn-sm"
@@ -173,22 +182,10 @@ export default function SignInOutDetails({ rosterId, shift, site }) {
           Sign Out
         </div>
 
-        <Field
-          label="Sign Out Date"
-          value={signOut.date || signOut.signout_date}
-        />
-        <Field
-          label="Sign Out Time"
-          value={signOut.time || signOut.signout_time}
-        />
-        <Field
-          label="Sign Out Notes"
-          value={signOut.notes || signOut.signout_notes}
-        />
-        <ImageBox
-          src={signOut.picture || signOut.signout_picture}
-          label="Sign Out Picture"
-        />
+        <Field label="Sign Out Date" value={d.signout_date} />
+        <Field label="Sign Out Time" value={d.signout_time} />
+        <Field label="Sign Out Notes" value={d.signout_notes} />
+        <ImageBox src={d.signout_selfie} label="Sign Out Selfie" />
 
         <div
           style={{
@@ -200,9 +197,9 @@ export default function SignInOutDetails({ rosterId, shift, site }) {
         >
           Sign Out Location
         </div>
-        {signOut.latitude && signOut.longitude ? (
+        {signOutLoc ? (
           <a
-            href={`https://maps.google.com/?q=${signOut.latitude},${signOut.longitude}`}
+            href={`https://maps.google.com/?q=${signOutLoc.lat},${signOutLoc.lng}`}
             target="_blank"
             rel="noopener noreferrer"
             className="btn btn-primary btn-sm"

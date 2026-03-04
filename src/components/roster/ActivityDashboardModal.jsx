@@ -6,6 +6,7 @@ import IncidentReport from "./IncidentReport";
 import ShiftActivity from "./ShiftActivity";
 import FootPatrolReport from "./FootPatrolReport";
 import RatingComponent from "./RatingComponent";
+import OperationNotes from "./OperationNotes";
 
 const SIDEBAR_TABS = [
   { id: "signin", label: "Sign In/Out Details", bg: "#e0f7fa" },
@@ -13,6 +14,7 @@ const SIDEBAR_TABS = [
   { id: "incident", label: "Incident Report", bg: "#ffcdd2" },
   { id: "shift_activity", label: "Shift Activity", bg: "#c8e6c9" },
   { id: "foot_petrol", label: "Foot Patrol Report", bg: "#ffe0b2" },
+  { id: "operation_notes", label: "Operation Notes", bg: "#e8f5e9" },
   { id: "rating", label: "Rating", bg: "#f3e5f5" },
 ];
 
@@ -24,6 +26,7 @@ export default function ActivityDashboardModal({
   const [activeTab, setActiveTab] = useState("signin");
 
   const rosterId = modal?.shift?.id;
+  const guardId = modal?.shift?.assigned_to;
   const shift = modal?.shift;
   const site = modal?.site;
 
@@ -31,20 +34,46 @@ export default function ActivityDashboardModal({
     switch (activeTab) {
       case "signin":
         return (
-          <SignInOutDetails rosterId={rosterId} shift={shift} site={site} />
+          <SignInOutDetails
+            rosterId={rosterId}
+            guardId={guardId}
+            shift={shift}
+            site={site}
+          />
         );
       case "break":
-        return <BreakDetails rosterId={rosterId} />;
+        return <BreakDetails rosterId={rosterId} guardId={guardId} />;
       case "incident":
-        return <IncidentReport rosterId={rosterId} shift={shift} site={site} />;
+        return (
+          <IncidentReport
+            rosterId={rosterId}
+            guardId={guardId}
+            shift={shift}
+            site={site}
+          />
+        );
       case "shift_activity":
-        return <ShiftActivity rosterId={rosterId} shift={shift} site={site} />;
+        return (
+          <ShiftActivity
+            rosterId={rosterId}
+            guardId={guardId}
+            shift={shift}
+            site={site}
+          />
+        );
       case "foot_petrol":
         return (
-          <FootPatrolReport rosterId={rosterId} shift={shift} site={site} />
+          <FootPatrolReport
+            rosterId={rosterId}
+            guardId={guardId}
+            shift={shift}
+            site={site}
+          />
         );
+      case "operation_notes":
+        return <OperationNotes rosterId={rosterId} guardId={guardId} />;
       case "rating":
-        return <RatingComponent rosterId={rosterId} />;
+        return <RatingComponent rosterId={rosterId} guardId={guardId} />;
       default:
         return <div>Select an option</div>;
     }

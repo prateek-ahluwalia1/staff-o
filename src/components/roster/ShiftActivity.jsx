@@ -1,288 +1,231 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import useSubmit from "../../hooks/useSubmit";
 import Loader from "../Loader";
 
-export default function ShiftActivity({ rosterId, shift, site }) {
-  const [activeSection, setActiveSection] = useState("notes");
-  const [noteText, setNoteText] = useState("");
+const ACTIVITY_ICONS = {
+  add_shift: "📋",
+  job_confirm: "✅",
+  job_signin: "🔑",
+  job_signout: "🔒",
+  internet: "📡",
+  welfare_call: "📞",
+  leave_location: "📍",
+  incident_report: "⚠️",
+  break_start: "☕",
+  break_end: "▶️",
+  auto_signout: "🔄",
+};
 
-  // Fetch existing operation notes
-  const {
-    submit: fetchNotes,
-    loading: notesLoading,
-    data: notesData,
-    error: notesError,
-  } = useSubmit({ isAuth: true });
+const ACTIVITY_COLORS = {
+  add_shift: "#e3f2fd",
+  job_confirm: "#e8f5e9",
+  job_signin: "#e8f5e9",
+  job_signout: "#fff3e0",
+  internet: "#fff8e1",
+  welfare_call: "#f3e5f5",
+  leave_location: "#fce4ec",
+  incident_report: "#ffebee",
+  break_start: "#e0f7fa",
+  break_end: "#e0f7fa",
+  auto_signout: "#fff3e0",
+};
 
-  // Store a new operation note
-  const { submit: storeNote, loading: storeLoading } = useSubmit({
-    isAuth: true,
-  });
+const ACTIVITY_BORDER = {
+  add_shift: "#1976d2",
+  job_confirm: "#388e3c",
+  job_signin: "#388e3c",
+  job_signout: "#f57c00",
+  internet: "#f9a825",
+  welfare_call: "#7b1fa2",
+  leave_location: "#c62828",
+  incident_report: "#d32f2f",
+  break_start: "#0097a7",
+  break_end: "#0097a7",
+  auto_signout: "#e65100",
+};
 
-  // Fetch job tasks
-  const {
-    submit: fetchTasks,
-    loading: tasksLoading,
-    data: tasksData,
-    error: tasksError,
-  } = useSubmit({ isAuth: true });
+export default function ShiftActivity({ rosterId, guardId }) {
+  const { submit, loading, data, error } = useSubmit({ isAuth: true });
 
   useEffect(() => {
     if (rosterId) {
-      fetchNotes("api/get-operation-notes", { roster_id: rosterId });
-      fetchTasks("api/get-job-tasks", { roster_id: rosterId });
+      submit("api/get-shift-activity", {
+        guard_id: guardId,
+        roster_id: rosterId,
+      });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rosterId]);
+  }, [rosterId, guardId]);
 
-  const handleAddNote = async () => {
-    if (!noteText.trim() || !rosterId) return;
-    const res = await storeNote("api/store-operation-notes", {
-      roster_id: rosterId,
-      notes: noteText.trim(),
-    });
-    if (res?.success) {
-      setNoteText("");
-      fetchNotes("api/get-operation-notes", { roster_id: rosterId });
-    }
-  };
+  const activities = data?.data || [];
+  const staff = data?.staff;
+  const location = data?.loaction;
+  const customer = data?.customer;
+  const shiftStart = data?.shift_start;
+  const shiftEnd = data?.shift_end;
 
-  const notes = notesData?.data || notesData?.notes || [];
-  const tasks = tasksData?.data || tasksData?.tasks || [];
+  if (loading) {
+    return (
+      <div
+        style={{ display: "flex", justifyContent: "center", padding: "40px" }}
+      >
+        <Loader message="Loading shift activities..." />
+      </div>
+    );
+  }
 
-  const sectionStyle = (id) => ({
-    padding: "10px 16px",
-    cursor: "pointer",
-    borderRadius: "6px",
-    fontWeight: activeSection === id ? 700 : 500,
-    background: activeSection === id ? "#c8e6c9" : "transparent",
-    color: activeSection === id ? "#1b5e20" : "#555",
-    fontSize: "14px",
-    marginBottom: "4px",
-  });
-
-  return (
-    <div style={{ display: "flex", gap: "20px", height: "100%" }}>
-      {/* Mini sub-nav */}
+  if (error) {
+    return (
       <div
         style={{
-          width: "140px",
-          minWidth: "140px",
-          borderRight: "1px solid #eee",
-          paddingRight: "12px",
+          padding: "20px",
+          background: "#fff3f3",
+          borderRadius: "8px",
+          color: "#c0392b",
+          fontSize: "14px",
         }}
       >
-        <div
-          style={sectionStyle("notes")}
-          onClick={() => setActiveSection("notes")}
-        >
-          📝 Notes
-        </div>
-        <div
-          style={sectionStyle("tasks")}
-          onClick={() => setActiveSection("tasks")}
-        >
-          ✅ Tasks
-        </div>
+        Failed to load shift activities. Please try again.
       </div>
+    );
+  }
 
-      {/* Content */}
-      <div style={{ flex: 1, overflow: "auto" }}>
-        {activeSection === "notes" && (
-          <div>
-            <h6 className="fw-bold mb-3">Operation Notes</h6>
+  return (
+    <div>
+      {/* Shift Meta */}
+      {(staff || location || customer || shiftStart) && (
+        <div
+          style={{
+            background: "#f8f9fa",
+            borderRadius: "8px",
+            padding: "12px 16px",
+            marginBottom: "20px",
+            fontSize: "13px",
+            display: "flex",
+            flexWrap: "wrap",
+            gap: "16px",
+          }}
+        >
+          {staff && (
+            <span>
+              <strong>Staff:</strong> {staff}
+            </span>
+          )}
+          {customer && (
+            <span>
+              <strong>Customer:</strong> {customer}
+            </span>
+          )}
+          {location && (
+            <span>
+              <strong>Location:</strong> {location}
+            </span>
+          )}
+          {shiftStart && shiftEnd && (
+            <span>
+              <strong>Shift:</strong> {shiftStart} – {shiftEnd}
+            </span>
+          )}
+        </div>
+      )}
 
-            {notesLoading ? (
-              <Loader message="Loading notes..." />
-            ) : notesError ? (
-              <div style={{ color: "#c0392b", fontSize: "13px" }}>
-                Failed to load notes.
-              </div>
-            ) : notes.length === 0 ? (
-              <div
-                style={{
-                  color: "#888",
-                  fontSize: "13px",
-                  padding: "16px",
-                  background: "#f8f9fa",
-                  borderRadius: "8px",
-                  marginBottom: "16px",
-                }}
-              >
-                No operation notes yet.
-              </div>
-            ) : (
-              <div
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "10px",
-                  marginBottom: "20px",
-                }}
-              >
-                {notes.map((note, i) => (
+      {activities.length === 0 ? (
+        <div
+          style={{
+            textAlign: "center",
+            padding: "48px 20px",
+            color: "#888",
+            fontSize: "14px",
+            background: "#f8f9fa",
+            borderRadius: "8px",
+          }}
+        >
+          No activity records found for this shift.
+        </div>
+      ) : (
+        <div style={{ position: "relative" }}>
+          {/* Timeline line */}
+          <div
+            style={{
+              position: "absolute",
+              left: "20px",
+              top: 0,
+              bottom: 0,
+              width: "2px",
+              background: "#e0e0e0",
+            }}
+          />
+
+          <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+            {activities.map((item) => {
+              const bgColor = ACTIVITY_COLORS[item.type] || "#f8f9fa";
+              const borderColor = ACTIVITY_BORDER[item.type] || "#bbb";
+              const icon = ACTIVITY_ICONS[item.type] || "•";
+
+              return (
+                <div
+                  key={item.id}
+                  style={{
+                    display: "flex",
+                    alignItems: "flex-start",
+                    gap: "12px",
+                  }}
+                >
+                  {/* Dot */}
                   <div
-                    key={i}
                     style={{
-                      padding: "12px 16px",
-                      background: "#f0fdf4",
-                      borderLeft: "3px solid #4caf50",
-                      borderRadius: "6px",
-                      fontSize: "13px",
-                      color: "#333",
+                      width: "40px",
+                      minWidth: "40px",
+                      height: "40px",
+                      borderRadius: "50%",
+                      background: bgColor,
+                      border: `2px solid ${borderColor}`,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontSize: "16px",
+                      zIndex: 1,
+                      position: "relative",
                     }}
                   >
-                    <div style={{ marginBottom: "4px" }}>
-                      {note.notes || note.note || note.content || "—"}
-                    </div>
-                    {note.created_at && (
-                      <div style={{ fontSize: "11px", color: "#888" }}>
-                        {note.created_at}
-                      </div>
-                    )}
+                    {icon}
                   </div>
-                ))}
-              </div>
-            )}
 
-            {/* Add Note */}
-            <div style={{ marginTop: "12px" }}>
-              <label
-                style={{
-                  fontWeight: 600,
-                  fontSize: "13px",
-                  marginBottom: "8px",
-                  display: "block",
-                  color: "#444",
-                }}
-              >
-                Add Operation Note
-              </label>
-              <textarea
-                className="form-control"
-                rows={3}
-                value={noteText}
-                onChange={(e) => setNoteText(e.target.value)}
-                placeholder="Write a note..."
-                style={{
-                  fontSize: "13px",
-                  borderRadius: "8px",
-                  resize: "vertical",
-                }}
-              />
-              <div style={{ textAlign: "right", marginTop: "8px" }}>
-                <button
-                  className="btn btn-success btn-sm px-4"
-                  onClick={handleAddNote}
-                  disabled={storeLoading || !noteText.trim()}
-                >
-                  {storeLoading ? "Saving..." : "Add Note"}
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {activeSection === "tasks" && (
-          <div>
-            <h6 className="fw-bold mb-3">Job Tasks</h6>
-
-            {tasksLoading ? (
-              <Loader message="Loading tasks..." />
-            ) : tasksError ? (
-              <div style={{ color: "#c0392b", fontSize: "13px" }}>
-                Failed to load tasks.
-              </div>
-            ) : tasks.length === 0 ? (
-              <div
-                style={{
-                  color: "#888",
-                  fontSize: "13px",
-                  padding: "16px",
-                  background: "#f8f9fa",
-                  borderRadius: "8px",
-                }}
-              >
-                No tasks found for this shift.
-              </div>
-            ) : (
-              <div
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "10px",
-                }}
-              >
-                {tasks.map((task, i) => {
-                  const isDone =
-                    task.status === "completed" ||
-                    task.status === "done" ||
-                    task.is_completed;
-                  return (
+                  {/* Content */}
+                  <div
+                    style={{
+                      flex: 1,
+                      background: bgColor,
+                      borderLeft: `3px solid ${borderColor}`,
+                      borderRadius: "6px",
+                      padding: "8px 12px",
+                    }}
+                  >
                     <div
-                      key={i}
                       style={{
-                        padding: "12px 16px",
-                        background: isDone ? "#f0fdf4" : "#fff9f9",
-                        border: `1px solid ${isDone ? "#c3e6cb" : "#f0dede"}`,
-                        borderRadius: "8px",
-                        display: "flex",
-                        alignItems: "flex-start",
-                        gap: "10px",
+                        fontSize: "13px",
+                        color: "#333",
+                        fontWeight: 500,
                       }}
                     >
-                      <span style={{ fontSize: "16px" }}>
-                        {isDone ? "✅" : "⬜"}
-                      </span>
-                      <div>
-                        <div
-                          style={{
-                            fontSize: "14px",
-                            fontWeight: 600,
-                            color: "#333",
-                          }}
-                        >
-                          {task.title ||
-                            task.task_name ||
-                            task.name ||
-                            `Task ${i + 1}`}
-                        </div>
-                        {task.description && (
-                          <div
-                            style={{
-                              fontSize: "12px",
-                              color: "#666",
-                              marginTop: "3px",
-                            }}
-                          >
-                            {task.description}
-                          </div>
-                        )}
-                        {task.status && (
-                          <span
-                            style={{
-                              display: "inline-block",
-                              marginTop: "6px",
-                              fontSize: "11px",
-                              padding: "2px 8px",
-                              borderRadius: "10px",
-                              background: isDone ? "#c3e6cb" : "#ffeeba",
-                              color: isDone ? "#155724" : "#856404",
-                              textTransform: "capitalize",
-                            }}
-                          >
-                            {task.status}
-                          </span>
-                        )}
-                      </div>
+                      {item.activity}
                     </div>
-                  );
-                })}
-              </div>
-            )}
+                    <div
+                      style={{
+                        fontSize: "11px",
+                        color: "#888",
+                        marginTop: "3px",
+                      }}
+                    >
+                      {item.activity_time}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -2,7 +2,8 @@ import React, { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import useSubmit from "../hooks/useSubmit";
-import { computeShiftBreakdown } from "../utils/rateCalculator";
+import useFetch from "../hooks/useFetch";
+import { computeShiftBreakdown, mapApiRates } from "../utils/rateCalculator";
 import StepProgress from "../components/job/StepProgress";
 import LocationStep from "../components/job/LocationStep";
 import ScheduleStep from "../components/job/ScheduleStep";
@@ -14,6 +15,20 @@ const STEP_TITLES = ["Location", "Schedule", "Details", "Review & Confirm"];
 export default function AddJob() {
   const navigate = useNavigate();
   const { userdata } = useSelector((state) => state.auth);
+  const {
+    data: chargeratesData,
+    loading: chargeratesLoading,
+    error: chargeratesError,
+  } = useFetch("api/get-chargerates", {
+    isAuth: true,
+  });
+  const {
+    data: payrateData,
+    loading: payratesLoading,
+    error: payratesError,
+  } = useFetch("api/get-payrate", {
+    isAuth: true,
+  });
   const { submit: submitJob, loading: submitLoading } = useSubmit({
     isAuth: true,
   });
@@ -23,6 +38,10 @@ export default function AddJob() {
 
   const [step, setStep] = useState(0);
   const [resolvingLocation, setResolvingLocation] = useState(false);
+  const [locationError, setLocationError] = useState("");
+
+  const ratesLoading = chargeratesLoading || payratesLoading;
+  const ratesError = chargeratesError || payratesError;
 
   const isSubmitting = submitLoading || uploadLoading;
 
@@ -49,6 +68,14 @@ export default function AddJob() {
 
   const [attachmentPreviews, setAttachmentPreviews] = useState([]);
 
+  // Build a dynamic rates object from the API responses whenever they arrive.
+  // Falls back to STATIC_RATES automatically when data is not yet loaded.
+  const dynamicRates = useMemo(() => {
+    const chargeRecord = chargeratesData?.data?.[0];
+    const payRecord = payrateData?.data;
+    return mapApiRates(chargeRecord, payRecord);
+  }, [chargeratesData, payrateData]);
+
   const breakdown = useMemo(
     () =>
       computeShiftBreakdown(
@@ -57,6 +84,7 @@ export default function AddJob() {
         form.endDate,
         form.endTime,
         form.numGuards,
+        dynamicRates,
       ),
     [
       form.startDate,
@@ -64,6 +92,7 @@ export default function AddJob() {
       form.endDate,
       form.endTime,
       form.numGuards,
+      dynamicRates,
     ],
   );
 
@@ -98,6 +127,13 @@ export default function AddJob() {
   }
 
   function next() {
+    if (step === 0) {
+      if (!form.location || !form.coordinates) {
+        setLocationError("Please select a valid location before continuing.");
+        return;
+      }
+      setLocationError("");
+    }
     if (step < STEP_TITLES.length - 1) setStep(step + 1);
   }
 
@@ -175,58 +211,85 @@ export default function AddJob() {
 
       <div className="card shadow-sm list-card mt-4">
         <div className="card-body">
-          <StepProgress step={step} titles={STEP_TITLES} />
-          <form onSubmit={handleConfirm}>
-            {step === 0 && (
-              <LocationStep
-                form={form}
-                setField={setField}
-                resolvingLocation={resolvingLocation}
-                setResolvingLocation={setResolvingLocation}
+          {ratesLoading ? (
+            <div className="d-flex justify-content-center align-items-center py-5">
+              <span
+                className="spinner-border text-primary me-3"
+                role="status"
+                aria-hidden="true"
               />
-            )}
-            {step === 1 && <ScheduleStep form={form} setField={setField} />}
-            {step === 2 && (
-              <DetailsStep
-                form={form}
-                setField={setField}
-                handleFile={handleFile}
-                attachmentPreviews={attachmentPreviews}
-                removeAttachment={removeAttachment}
-              />
-            )}
-            {step === 3 && (
-              <ReviewStep
-                form={form}
-                rate={breakdown}
-                setStep={setStep}
-                setField={setField}
-                handleConfirm={handleConfirm}
-                isSubmitting={isSubmitting}
-              />
-            )}
-
-            <div className="d-flex justify-content-between align-items-center mt-4">
-              <button
-                type="button"
-                className="btn btn-outline-secondary"
-                onClick={back}
-                disabled={isSubmitting}
-              >
-                ← Back
-              </button>
-              {step < STEP_TITLES.length - 1 && (
-                <button
-                  type="button"
-                  className="btn btn-primary btn-lg rounded-pill px-4"
-                  onClick={next}
-                  disabled={isSubmitting}
-                >
-                  Next
-                </button>
-              )}
+              <span className="text-muted">Loading rates, please wait…</span>
             </div>
-          </form>
+          ) : ratesError ? (
+            <div
+              className="alert alert-danger d-flex align-items-center gap-2"
+              role="alert"
+            >
+              <i className="fa fa-exclamation-circle" />
+              <div>
+                <strong>Failed to load rates.</strong>{" "}
+                {ratesError?.message ||
+                  "Please refresh the page and try again."}
+              </div>
+            </div>
+          ) : (
+            <>
+              <StepProgress step={step} titles={STEP_TITLES} />
+              <form onSubmit={handleConfirm}>
+                {step === 0 && (
+                  <LocationStep
+                    form={form}
+                    setField={setField}
+                    resolvingLocation={resolvingLocation}
+                    setResolvingLocation={setResolvingLocation}
+                    locationError={locationError}
+                    setLocationError={setLocationError}
+                  />
+                )}
+                {step === 1 && <ScheduleStep form={form} setField={setField} />}
+                {step === 2 && (
+                  <DetailsStep
+                    form={form}
+                    setField={setField}
+                    handleFile={handleFile}
+                    attachmentPreviews={attachmentPreviews}
+                    removeAttachment={removeAttachment}
+                  />
+                )}
+                {step === 3 && (
+                  <ReviewStep
+                    form={form}
+                    rate={breakdown}
+                    setStep={setStep}
+                    setField={setField}
+                    handleConfirm={handleConfirm}
+                    isSubmitting={isSubmitting}
+                  />
+                )}
+
+                <div className="d-flex justify-content-between align-items-center mt-4">
+                  <button
+                    type="button"
+                    className="btn btn-outline-secondary"
+                    onClick={back}
+                    disabled={isSubmitting}
+                  >
+                    ← Back
+                  </button>
+                  {step < STEP_TITLES.length - 1 && (
+                    <button
+                      type="button"
+                      className="btn btn-primary btn-lg rounded-pill px-4"
+                      onClick={next}
+                      disabled={isSubmitting}
+                    >
+                      Next
+                    </button>
+                  )}
+                </div>
+              </form>
+            </>
+          )}
         </div>
       </div>
     </div>

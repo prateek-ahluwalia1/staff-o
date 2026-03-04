@@ -5,6 +5,8 @@ export default function LocationStep({
   setField,
   resolvingLocation,
   setResolvingLocation,
+  locationError,
+  setLocationError,
 }) {
   const inputRef = useRef(null);
   const mapRef = useRef(null);
@@ -38,8 +40,9 @@ export default function LocationStep({
       if (city) setField("city", city);
       if (state) setField("state", state);
       if (postcode) setField("postcode", postcode);
+      if (setLocationError) setLocationError("");
     },
-    [setField],
+    [setField, setLocationError],
   );
 
   const reverseGeocode = useCallback(
@@ -176,8 +179,15 @@ export default function LocationStep({
             <input
               ref={inputRef}
               value={form.location || ""}
-              onChange={(e) => setField("location", e.target.value)}
-              className="form-control form-control-lg"
+              onChange={(e) => {
+                setField("location", e.target.value);
+                // clear coordinates when user manually edits the field
+                setField("coordinates", "");
+                if (setLocationError) setLocationError("");
+              }}
+              className={`form-control form-control-lg${
+                locationError ? " is-invalid" : ""
+              }`}
               placeholder="Search address"
             />
             <button
@@ -187,6 +197,7 @@ export default function LocationStep({
                 setField("location", "");
                 setField("address", "");
                 setField("coordinates", "");
+                if (setLocationError) setLocationError("");
               }}
             >
               Clear
@@ -203,6 +214,14 @@ export default function LocationStep({
             {resolvingLocation ? "Resolving..." : "Use Current"}
           </button>
         </div>
+        {locationError && (
+          <div className="col-12">
+            <div className="alert alert-warning py-2 mb-0 small d-flex align-items-center gap-2">
+              <i className="fa fa-map-marker" />
+              {locationError}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

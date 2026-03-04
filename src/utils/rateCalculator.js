@@ -12,15 +12,16 @@
  * The shift is split at midnight, 06:00, and 18:00 so each segment is billed
  * at the correct day-type + slot rate.
  *
- * STATIC_RATES – replace with API payload in the future.
- * Just pass a compatible `rates` object to computeShiftBreakdown().
+ * FALLBACK_RATES – used only when API data is unavailable (e.g. still loading
+ * or the request failed). In normal operation the rates from mapApiRates() are
+ * passed to computeShiftBreakdown() and these values are never used.
  *
  * Shape:
  *   { pay: { <dayType>: { day: number, night: number } },
  *     charge: { <dayType>: { day: number, night: number } } }
  */
 
-export const STATIC_RATES = {
+export const FALLBACK_RATES = {
   pay: {
     weekday: { day: 25.0, night: 30.0 },
     fri: { day: 28.0, night: 33.0 },
@@ -85,6 +86,64 @@ function nextBoundary(t) {
   return next;
 }
 
+// ─── API → rates mapper ────────────────────────────────────────────────────
+
+/**
+ * Convert the API chargerate/payrate response records into the rates object
+ * expected by computeShiftBreakdown().
+ *
+ * @param {object} chargeRecord  One item from chargeratesData.data[]
+ * @param {object} payRecord     The object at payrateData.data
+ * @param {string} [prefix]      Rate-set prefix: 'def_metro' | 'def_reg' |
+ *                                'eba_metro' | 'eba_reg'  (default: 'def_metro')
+ * @returns {object}  { pay: {...}, charge: {...} }  or FALLBACK_RATES on failure
+ */
+export function mapApiRates(chargeRecord, payRecord, prefix = "def_metro") {
+  if (!chargeRecord || !payRecord) return FALLBACK_RATES;
+
+  const r = (record, key) => parseFloat(record?.[key]) || 0;
+
+  return {
+    pay: {
+      // API uses mon_to_fri; map to both weekday (Mon-Thu) and fri
+      weekday: {
+        day: r(payRecord, `${prefix}_mon_to_fri_day_rate`),
+        night: r(payRecord, `${prefix}_mon_to_fri_night_rate`),
+      },
+      fri: {
+        day: r(payRecord, `${prefix}_mon_to_fri_day_rate`),
+        night: r(payRecord, `${prefix}_mon_to_fri_night_rate`),
+      },
+      sat: {
+        day: r(payRecord, `${prefix}_sat_day_rate`),
+        night: r(payRecord, `${prefix}_sat_night_rate`),
+      },
+      sun: {
+        day: r(payRecord, `${prefix}_sun_day_rate`),
+        night: r(payRecord, `${prefix}_sun_night_rate`),
+      },
+    },
+    charge: {
+      weekday: {
+        day: r(chargeRecord, `${prefix}_mon_to_fri_day_rate`),
+        night: r(chargeRecord, `${prefix}_mon_to_fri_night_rate`),
+      },
+      fri: {
+        day: r(chargeRecord, `${prefix}_mon_to_fri_day_rate`),
+        night: r(chargeRecord, `${prefix}_mon_to_fri_night_rate`),
+      },
+      sat: {
+        day: r(chargeRecord, `${prefix}_sat_day_rate`),
+        night: r(chargeRecord, `${prefix}_sat_night_rate`),
+      },
+      sun: {
+        day: r(chargeRecord, `${prefix}_sun_day_rate`),
+        night: r(chargeRecord, `${prefix}_sun_night_rate`),
+      },
+    },
+  };
+}
+
 // ─── main export ────────────────────────────────────────────────────────────
 
 /**
@@ -114,7 +173,7 @@ export function computeShiftBreakdown(
   endDate,
   endTime,
   numGuards = 1,
-  rates = STATIC_RATES,
+  rates = FALLBACK_RATES,
 ) {
   // ── validation ──────────────────────────────────────────────────────────
   if (!startDate || !startTime || !endDate || !endTime) return null;
@@ -192,11 +251,21 @@ export function computeShiftBreakdown(
   const payTotal = paySubtotalPerGuard * guards;
   const chargeTotal = chargeSubtotalPerGuard * guards;
 
+  const GST_RATE = 0.1;
+  const payGst = payTotal * GST_RATE;
+  const chargeGst = chargeTotal * GST_RATE;
+  const payTotalIncGst = payTotal + payGst;
+  const chargeTotalIncGst = chargeTotal + chargeGst;
+
   return {
     segments,
     totalHours: Math.round(totalHours * 100) / 100,
     payTotal,
     chargeTotal,
+    payGst,
+    chargeGst,
+    payTotalIncGst,
+    chargeTotalIncGst,
     numGuards: guards,
   };
 }

@@ -21,7 +21,17 @@ export default function RateBreakdown({ rate }) {
     return null;
   }
 
-  const { segments, payTotal, chargeTotal, numGuards, totalHours } = rate;
+  const {
+    segments,
+    payTotal,
+    chargeTotal,
+    payGst,
+    chargeGst,
+    payTotalIncGst,
+    chargeTotalIncGst,
+    numGuards,
+    totalHours,
+  } = rate;
   const guardLabel = `${numGuards} guard${numGuards > 1 ? "s" : ""}`;
 
   return (
@@ -75,7 +85,27 @@ export default function RateBreakdown({ rate }) {
         </div>
       ))}
 
-      {/* Total highlight */}
+      {/* Subtotal row */}
+      <div className="row g-0 border-bottom py-2">
+        <div className="col-6 small fw-semibold text-muted">
+          Subtotal (ex. GST)
+        </div>
+        <div className="col-3 small text-end fw-semibold text-success">
+          {fmt(payTotal)}
+        </div>
+        <div className="col-3 small text-end fw-semibold text-primary">
+          {fmt(chargeTotal)}
+        </div>
+      </div>
+
+      {/* GST row */}
+      <div className="row g-0 border-bottom py-2">
+        <div className="col-6 small text-muted">GST (10%)</div>
+        <div className="col-3 small text-end text-muted">{fmt(payGst)}</div>
+        <div className="col-3 small text-end text-muted">{fmt(chargeGst)}</div>
+      </div>
+
+      {/* Total inc-GST highlight */}
       <div
         className="row g-0 mt-2 p-2 rounded"
         style={{
@@ -83,18 +113,18 @@ export default function RateBreakdown({ rate }) {
             "linear-gradient(90deg, rgba(13,110,253,0.07), rgba(25,135,84,0.04))",
         }}
       >
-        <div className="col-6 fw-bold">Total</div>
+        <div className="col-6 fw-bold">Total (inc. GST)</div>
         <div className="col-3 text-end">
           <div className="x-small text-muted" style={{ fontSize: "0.7rem" }}>
             Pay Rate
           </div>
-          <div className="fw-bold text-success">{fmt(payTotal)}</div>
+          <div className="fw-bold text-success">{fmt(payTotalIncGst)}</div>
         </div>
         <div className="col-3 text-end">
           <div className="x-small text-muted" style={{ fontSize: "0.7rem" }}>
             Charge Rate
           </div>
-          <div className="fw-bold text-primary">{fmt(chargeTotal)}</div>
+          <div className="fw-bold text-primary">{fmt(chargeTotalIncGst)}</div>
         </div>
       </div>
     </div>

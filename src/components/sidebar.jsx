@@ -31,11 +31,6 @@ const Sidebar = memo(function Sidebar() {
       label: "Edit Profile",
     },
     {
-      to: "/pay-charge-rate",
-      icon: "fa-solid fa-money-bill-wave",
-      label: "Accounts",
-    },
-    {
       to: "/my-job-applications",
       icon: "fa-solid fa-briefcase",
       label: "My Jobs",
@@ -112,7 +107,6 @@ const Sidebar = memo(function Sidebar() {
     staff: staffNav,
     admin: adminNav,
     contractor: contractorNav,
-    // contractor: adminNav,
   };
 
   const navItems = navConfig[type] || contractorNav;

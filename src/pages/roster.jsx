@@ -1,7 +1,5 @@
 import React, { useState, useMemo, useEffect, useCallback } from "react";
 import { useSelector } from "react-redux";
-import DatePicker from "react-datepicker";
-import "react-datepicker/dist/react-datepicker.css";
 import {
   startOfWeek,
   addWeeks,
@@ -17,6 +15,8 @@ import useSubmit from "../hooks/useSubmit";
 import Loader from "../components/Loader";
 import useFetch from "../hooks/useFetch";
 import ActivityDashboardModal from "../components/roster/ActivityDashboardModal";
+import TimeEditModal from "../components/roster/TimeEditModal";
+import DetailsModal from "../components/roster/DetailsModal";
 
 const DAYS_OF_WEEK = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 const API_DATE_FORMAT = "yyyy-MM-dd HH:mm";
@@ -28,33 +28,6 @@ function parseApiDate(dateValue) {
   const fallback = new Date(dateValue);
   return isValid(fallback) ? fallback : null;
 }
-
-const parseLocalDate = (dateStr) => {
-  if (!dateStr) return null;
-  const [year, month, day] = dateStr.split("-").map(Number);
-  return new Date(year, month - 1, day);
-};
-
-const formatLocalDate = (date) => {
-  if (!date) return "";
-  const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, "0");
-  const d = String(date.getDate()).padStart(2, "0");
-  return `${y}-${m}-${d}`;
-};
-
-const hoursOptions = Array.from({ length: 24 }, (_, i) =>
-  String(i).padStart(2, "0"),
-);
-const minutesOptions = Array.from({ length: 12 }, (_, i) =>
-  String(i * 5).padStart(2, "0"),
-);
-
-const getPart = (timeStr, part) => {
-  if (!timeStr) return "";
-  const split = timeStr.split(":");
-  return part === "hour" ? split[0] : split[1];
-};
 
 export default function RosterPage() {
   const { userdata } = useSelector((state) => state.auth);
@@ -187,14 +160,6 @@ export default function RosterPage() {
     setSelectedUserId("");
   };
 
-  const handleTimeChange = (field, currentVal, type, newVal) => {
-    let h = getPart(currentVal, "hour") || "00";
-    let m = getPart(currentVal, "minute") || "00";
-    if (type === "hour") h = newVal;
-    if (type === "minute") m = newVal;
-    setEditForm((prev) => ({ ...prev, [field]: `${h}:${m}` }));
-  };
-
   const handleSave = async () => {
     if (!modal) return;
 
@@ -255,31 +220,6 @@ export default function RosterPage() {
     fontSize: "14px",
     width: "100%",
   };
-
-  const InfoRow = ({ label, value }) => (
-    <div
-      style={{
-        display: "flex",
-        justifyContent: "space-between",
-        padding: "12px 0",
-        borderBottom: "1px solid #f0f0f0",
-      }}
-    >
-      <span style={{ fontWeight: 600, color: "#333", fontSize: "14px" }}>
-        {label}
-      </span>
-      <span
-        style={{
-          color: "#666",
-          fontSize: "14px",
-          textAlign: "right",
-          maxWidth: "60%",
-        }}
-      >
-        {value || "N/A"}
-      </span>
-    </div>
-  );
 
   return (
     <div className="roster-page">
@@ -421,8 +361,8 @@ export default function RosterPage() {
 
       {/* --- MODAL SYSTEM --- */}
 
-      {/* 1. NEW MODULAR ACTIVITY DASHBOARD */}
-      {modal && modal.type === "activity" && (
+      {/* 1. ACTIVITY DASHBOARD */}
+      {modal?.type === "activity" && (
         <ActivityDashboardModal
           modal={modal}
           closeModal={closeModal}
@@ -430,8 +370,30 @@ export default function RosterPage() {
         />
       )}
 
-      {/* 2. EXISTING MODALS (Details, Time Edit, Admin Assign) */}
-      {modal && modal.type !== "activity" && (
+      {/* 2. TIME EDIT MODAL */}
+      {modal?.type === "time" && userRole === "customer" && (
+        <TimeEditModal
+          modal={modal}
+          closeModal={closeModal}
+          editForm={editForm}
+          setEditForm={setEditForm}
+          handleSave={handleSave}
+          saveLoading={saveLoading}
+        />
+      )}
+
+      {/* 3. DETAILS MODAL */}
+      {modal?.type === "details" && userRole === "customer" && (
+        <DetailsModal
+          modal={modal}
+          closeModal={closeModal}
+          guardShiftsList={guardShiftsList}
+          totalGuardHours={totalGuardHours}
+        />
+      )}
+
+      {/* 4. ADMIN ASSIGN MODAL */}
+      {modal?.type === "admin_assign" && (
         <div
           className="modal-overlay"
           onClick={closeModal}
@@ -446,44 +408,26 @@ export default function RosterPage() {
           <div
             className="modal-content"
             onClick={(e) => e.stopPropagation()}
-            style={
-              userRole === "customer"
-                ? {
-                    width: "95vw",
-                    height: "95vh",
-                    margin: "auto",
-                    borderRadius: "12px",
-                    maxWidth: "none",
-                    overflowY: "auto",
-                    background: "#fff",
-                    display: "flex",
-                    flexDirection: "column",
-                  }
-                : {
-                    margin: "auto",
-                    background: "#fff",
-                    padding: "20px",
-                    borderRadius: "8px",
-                    minWidth: "400px",
-                  }
-            }
+            style={{
+              margin: "auto",
+              background: "#fff",
+              padding: "20px",
+              borderRadius: "8px",
+              minWidth: "400px",
+            }}
           >
             {/* Modal Header */}
             <div
               className="modal-header"
               style={{
-                background: userRole === "customer" ? "#007bff" : "#fff",
-                color: userRole === "customer" ? "#fff" : "#333",
+                background: "#fff",
+                color: "#333",
                 padding: "16px 24px",
                 borderBottom: "none",
               }}
             >
               <h3 style={{ margin: 0, fontSize: "20px", fontWeight: "600" }}>
-                {modal.type === "time"
-                  ? "Update Shift Schedule"
-                  : modal.type === "admin_assign"
-                    ? "Assign Shift"
-                    : "Staff Detail"}
+                Assign Shift
               </h3>
               <button
                 onClick={closeModal}
@@ -492,7 +436,7 @@ export default function RosterPage() {
                   border: "none",
                   fontSize: "28px",
                   cursor: "pointer",
-                  color: userRole === "customer" ? "#fff" : "#666",
+                  color: "#666",
                 }}
               >
                 &times;
@@ -501,638 +445,110 @@ export default function RosterPage() {
 
             <div
               className="modal-body"
-              style={{
-                padding: userRole === "customer" ? "32px 40px" : "16px",
-                flex: 1,
-                width: "100%",
-              }}
+              style={{ padding: "16px", flex: 1, width: "100%" }}
             >
-              {/* --- CUSTOMER DETAILS MODAL --- */}
-              {modal.type === "details" && userRole === "customer" && (
-                <div
+              <div style={{ marginBottom: "20px" }}>
+                <p>
+                  <strong>Site:</strong> {modal.site.displayName}
+                </p>
+                <p>
+                  <strong>Date:</strong> {modal.dateStr}
+                </p>
+                <p>
+                  <strong>Time:</strong>{" "}
+                  {format(modal.shift.startDate, "HH:mm")} -{" "}
+                  {format(modal.shift.endDate, "HH:mm")}
+                  <span className="modal-hours">
+                    {" "}
+                    ({modal.shift.hours} hrs)
+                  </span>
+                </p>
+              </div>
+
+              <div className="form-group">
+                <label
+                  htmlFor="user-select"
                   style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "40px",
-                    maxWidth: "1200px",
-                    margin: "0 auto",
+                    fontWeight: "bold",
+                    marginBottom: "8px",
+                    display: "block",
                   }}
                 >
-                  {/* Profile Section */}
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "20px",
-                    }}
-                  >
-                    <div
-                      style={{
-                        width: "80px",
-                        height: "80px",
-                        borderRadius: "50%",
-                        background: "#f0f2f5",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        fontSize: "24px",
-                        color: "#666",
-                        overflow: "hidden",
-                      }}
-                    >
-                      {modal.shift.guards
-                        ? modal.shift.guards.name.charAt(0).toUpperCase()
-                        : "?"}
-                    </div>
-                    <div>
-                      <h2
-                        style={{
-                          margin: "0 0 4px 0",
-                          fontSize: "22px",
-                          color: "#333",
-                        }}
-                      >
-                        {modal.shift.guards
-                          ? modal.shift.guards.name
-                          : "Unassigned Shift"}
-                      </h2>
-                      <p style={{ margin: 0, color: "#666", fontSize: "15px" }}>
-                        {modal.shift.guards
-                          ? modal.shift.guards.email
-                          : "Please assign a guard to see details"}
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Details Grid Section */}
-                  <div className="row g-5">
-                    <div className="col-md-6">
-                      <h5
-                        style={{
-                          borderBottom: "1px solid #eee",
-                          paddingBottom: "10px",
-                          marginBottom: "16px",
-                          color: "#333",
-                          fontSize: "16px",
-                        }}
-                      >
-                        Guard Information
-                      </h5>
-                      <InfoRow
-                        label="Internal ID"
-                        value={modal.shift.guards?.user_id}
-                      />
-                      <InfoRow
-                        label="Address"
-                        value={modal.shift.guards?.address}
-                      />
-                      <InfoRow
-                        label="Location"
-                        value={`${modal.shift.guards?.city || ""}, ${modal.shift.guards?.state || ""}`}
-                      />
-                      <InfoRow
-                        label="Account Status"
-                        value={
-                          modal.shift.guards?.is_active ? (
-                            <span style={{ color: "#2e7d32" }}>Active</span>
-                          ) : (
-                            <span style={{ color: "#d32f2f" }}>Inactive</span>
-                          )
-                        }
-                      />
-                      <InfoRow
-                        label="Staff Type"
-                        value={modal.shift.guards?.user_type}
-                      />
-                    </div>
-                    <div className="col-md-6">
-                      <h5
-                        style={{
-                          borderBottom: "1px solid #eee",
-                          paddingBottom: "10px",
-                          marginBottom: "16px",
-                          color: "#333",
-                          fontSize: "16px",
-                        }}
-                      >
-                        Shift Information
-                      </h5>
-                      <InfoRow
-                        label="Shift Location"
-                        value={modal.site.displayName}
-                      />
-                      <InfoRow
-                        label="Shift Status"
-                        value={
-                          <span
-                            style={{
-                              textTransform: "capitalize",
-                              padding: "4px 8px",
-                              background:
-                                modal.shift.job_status === "confirmed"
-                                  ? "#e8f5e9"
-                                  : "#fff3cd",
-                              color:
-                                modal.shift.job_status === "confirmed"
-                                  ? "#2e7d32"
-                                  : "#856404",
-                              borderRadius: "4px",
-                            }}
-                          >
-                            {modal.shift.job_status}
-                          </span>
-                        }
-                      />
-                      <InfoRow label="Date" value={modal.dateStr} />
-                      <InfoRow
-                        label="Scheduled Time"
-                        value={`${format(modal.shift.startDate, "HH:mm")} - ${format(modal.shift.endDate, "HH:mm")}`}
-                      />
-                      <InfoRow
-                        label="Payable / Chargeable"
-                        value={`${modal.shift.shift_payable === "yes" ? "Yes" : "No"} / ${modal.shift.shift_chargeable === "yes" ? "Yes" : "No"}`}
-                      />
-                    </div>
-                  </div>
-
-                  {/* Guard Shift Details */}
-                  <div>
-                    <div
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "flex-end",
-                        marginBottom: "16px",
-                      }}
-                    >
-                      <h4
-                        style={{ margin: 0, fontSize: "18px", color: "#333" }}
-                      >
-                        Guard Shift Details
-                      </h4>
-                      <span
-                        style={{
-                          fontSize: "15px",
-                          fontWeight: "600",
-                          color: "#333",
-                        }}
-                      >
-                        Total Hours ({totalGuardHours.toFixed(2)})
-                      </span>
-                    </div>
-
-                    {guardShiftsList.length > 0 ? (
-                      <div
-                        style={{
-                          display: "flex",
-                          gap: "16px",
-                          overflowX: "auto",
-                          paddingBottom: "16px",
-                          flexWrap: "nowrap",
-                        }}
-                      >
-                        {guardShiftsList.map((s, index) => {
-                          const sDate = parseApiDate(s.start);
-                          const eDate = parseApiDate(s.end);
-                          const isConfirmed = s.job_status === "confirmed";
-
-                          return (
-                            <div
-                              key={index}
-                              className={`shift-card ${isConfirmed ? "shift-confirmed" : "shift-pending"}`}
-                              style={{
-                                minWidth: "200px",
-                                flexShrink: 0,
-                                padding: "16px",
-                                borderRadius: "8px",
-                                border: `1px solid ${isConfirmed ? "#c3e6cb" : "#ffeeba"}`,
-                                backgroundColor: isConfirmed
-                                  ? "#d4edda"
-                                  : "#fff3cd",
-                                boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
-                              }}
-                            >
-                              <div
-                                style={{
-                                  fontSize: "13px",
-                                  color: isConfirmed ? "#155724" : "#856404",
-                                  marginBottom: "4px",
-                                  fontWeight: "600",
-                                }}
-                              >
-                                {sDate ? format(sDate, "EEE, dd MMM") : ""}
-                              </div>
-                              <div
-                                className="shift-time"
-                                style={{
-                                  fontSize: "15px",
-                                  fontWeight: "bold",
-                                  color: "#333",
-                                  marginBottom: "8px",
-                                }}
-                              >
-                                {sDate ? format(sDate, "HH:mm") : s.start} -{" "}
-                                {eDate ? format(eDate, "HH:mm") : s.end}
-                              </div>
-                              <div
-                                className="shift-name"
-                                style={{
-                                  fontSize: "14px",
-                                  color: "#555",
-                                  whiteSpace: "nowrap",
-                                  overflow: "hidden",
-                                  textOverflow: "ellipsis",
-                                }}
-                                title={s.siteName}
-                              >
-                                {s.siteName}
-                              </div>
-                              <div style={{ marginTop: "12px" }}>
-                                <span
-                                  className={`status-badge ${isConfirmed ? "badge-confirmed" : "badge-pending"}`}
-                                  style={{
-                                    fontSize: "11px",
-                                    padding: "4px 8px",
-                                  }}
-                                >
-                                  {s.job_status}
-                                </span>
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    ) : (
-                      <div
-                        style={{
-                          background: "#f8f9fa",
-                          padding: "20px",
-                          borderRadius: "8px",
-                          textAlign: "center",
-                          color: "#666",
-                        }}
-                      >
-                        No other shifts found for this guard.
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {/* --- CUSTOMER TIME EDITING MODAL --- */}
-              {modal.type === "time" && userRole === "customer" && (
-                <div
-                  style={{
-                    background: "#fff",
-                    padding: "10px",
-                    maxWidth: "800px",
-                    margin: "0 auto",
-                  }}
-                >
-                  <p
-                    style={{
-                      color: "#666",
-                      marginBottom: "24px",
-                      fontSize: "16px",
-                    }}
-                  >
-                    Modify the start and end timings for the shift at{" "}
-                    <strong>{modal.site.displayName}</strong>.
+                  Assign User
+                </label>
+                {staffLoading ? (
+                  <p style={{ fontSize: "14px", color: "#666" }}>
+                    Loading staff list...
                   </p>
-
-                  {/* START TIME */}
-                  <div className="mb-4">
-                    <h5
-                      style={{
-                        fontWeight: 600,
-                        marginBottom: "16px",
-                        color: "#333",
-                        borderBottom: "1px solid #eee",
-                        paddingBottom: "10px",
-                      }}
-                    >
-                      Start Date & Time
-                    </h5>
-                    <div className="row g-3">
-                      <div className="col-md-6">
-                        <label
-                          style={{
-                            fontWeight: 600,
-                            marginBottom: 8,
-                            fontSize: 14,
-                            color: "#555",
-                          }}
-                        >
-                          Start Date
-                        </label>
-                        <DatePicker
-                          selected={parseLocalDate(editForm.startDate)}
-                          onChange={(date) =>
-                            setEditForm({
-                              ...editForm,
-                              startDate: formatLocalDate(date),
-                            })
-                          }
-                          dateFormat="yyyy-MM-dd"
-                          placeholderText="Select start date"
-                          wrapperClassName="w-100"
-                          customInput={<input style={inputStyle} />}
-                        />
-                      </div>
-                      <div className="col-md-6">
-                        <label
-                          style={{
-                            fontWeight: 600,
-                            marginBottom: 8,
-                            fontSize: 14,
-                            color: "#555",
-                          }}
-                        >
-                          Start Time (24h)
-                        </label>
-                        <div className="d-flex gap-2">
-                          <select
-                            className="form-select"
-                            style={inputStyle}
-                            value={getPart(editForm.startTime, "hour")}
-                            onChange={(e) =>
-                              handleTimeChange(
-                                "startTime",
-                                editForm.startTime,
-                                "hour",
-                                e.target.value,
-                              )
-                            }
-                          >
-                            <option value="" disabled>
-                              HH
-                            </option>
-                            {hoursOptions.map((h) => (
-                              <option key={h} value={h}>
-                                {h}
-                              </option>
-                            ))}
-                          </select>
-                          <span className="d-flex align-items-center fw-bold">
-                            :
-                          </span>
-                          <select
-                            className="form-select"
-                            style={inputStyle}
-                            value={getPart(editForm.startTime, "minute")}
-                            onChange={(e) =>
-                              handleTimeChange(
-                                "startTime",
-                                editForm.startTime,
-                                "minute",
-                                e.target.value,
-                              )
-                            }
-                          >
-                            <option value="" disabled>
-                              MM
-                            </option>
-                            {minutesOptions.map((m) => (
-                              <option key={m} value={m}>
-                                {m}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* END TIME */}
-                  <div style={{ marginTop: "40px" }}>
-                    <h5
-                      style={{
-                        fontWeight: 600,
-                        marginBottom: "16px",
-                        color: "#333",
-                        borderBottom: "1px solid #eee",
-                        paddingBottom: "10px",
-                      }}
-                    >
-                      End Date & Time
-                    </h5>
-                    <div className="row g-3">
-                      <div className="col-md-6">
-                        <label
-                          style={{
-                            fontWeight: 600,
-                            marginBottom: 8,
-                            fontSize: 14,
-                            color: "#555",
-                          }}
-                        >
-                          End Date
-                        </label>
-                        <DatePicker
-                          selected={parseLocalDate(editForm.endDate)}
-                          onChange={(date) =>
-                            setEditForm({
-                              ...editForm,
-                              endDate: formatLocalDate(date),
-                            })
-                          }
-                          dateFormat="yyyy-MM-dd"
-                          placeholderText="Select end date"
-                          minDate={
-                            editForm.startDate
-                              ? parseLocalDate(editForm.startDate)
-                              : null
-                          }
-                          wrapperClassName="w-100"
-                          customInput={<input style={inputStyle} />}
-                        />
-                      </div>
-                      <div className="col-md-6">
-                        <label
-                          style={{
-                            fontWeight: 600,
-                            marginBottom: 8,
-                            fontSize: 14,
-                            color: "#555",
-                          }}
-                        >
-                          End Time (24h)
-                        </label>
-                        <div className="d-flex gap-2">
-                          <select
-                            className="form-select"
-                            style={inputStyle}
-                            value={getPart(editForm.endTime, "hour")}
-                            onChange={(e) =>
-                              handleTimeChange(
-                                "endTime",
-                                editForm.endTime,
-                                "hour",
-                                e.target.value,
-                              )
-                            }
-                          >
-                            <option value="" disabled>
-                              HH
-                            </option>
-                            {hoursOptions.map((h) => (
-                              <option key={h} value={h}>
-                                {h}
-                              </option>
-                            ))}
-                          </select>
-                          <span className="d-flex align-items-center fw-bold">
-                            :
-                          </span>
-                          <select
-                            className="form-select"
-                            style={inputStyle}
-                            value={getPart(editForm.endTime, "minute")}
-                            onChange={(e) =>
-                              handleTimeChange(
-                                "endTime",
-                                editForm.endTime,
-                                "minute",
-                                e.target.value,
-                              )
-                            }
-                          >
-                            <option value="" disabled>
-                              MM
-                            </option>
-                            {minutesOptions.map((m) => (
-                              <option key={m} value={m}>
-                                {m}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* --- STANDARD NON-CUSTOMER VIEW --- */}
-              {modal.type === "admin_assign" && userRole !== "customer" && (
-                <>
-                  <div style={{ marginBottom: "20px" }}>
-                    <p>
-                      <strong>Site:</strong> {modal.site.displayName}
-                    </p>
-                    <p>
-                      <strong>Date:</strong> {modal.dateStr}
-                    </p>
-                    <p>
-                      <strong>Time:</strong>{" "}
-                      {format(modal.shift.startDate, "HH:mm")} -{" "}
-                      {format(modal.shift.endDate, "HH:mm")}
-                      <span className="modal-hours">
-                        {" "}
-                        ({modal.shift.hours} hrs)
-                      </span>
-                    </p>
-                  </div>
-
-                  <div className="form-group">
-                    <label
-                      htmlFor="user-select"
-                      style={{
-                        fontWeight: "bold",
-                        marginBottom: "8px",
-                        display: "block",
-                      }}
-                    >
-                      Assign User
-                    </label>
-                    {staffLoading ? (
-                      <p
-                        className="loading-text"
-                        style={{ fontSize: "14px", color: "#666" }}
-                      >
-                        Loading staff list...
-                      </p>
-                    ) : staffError ? (
-                      <p
-                        className="error-text"
-                        style={{ fontSize: "14px", color: "red" }}
-                      >
-                        Failed to load staff list.
-                      </p>
-                    ) : (
-                      <select
-                        id="user-select"
-                        className="form-select"
-                        style={inputStyle}
-                        value={selectedUserId}
-                        onChange={(e) => setSelectedUserId(e.target.value)}
-                      >
-                        <option value="" disabled>
-                          Select a user...
-                        </option>
-                        {guards.map((guard) => (
-                          <option key={guard.id} value={guard.id}>
-                            {guard.name} (ID: {guard.id})
-                          </option>
-                        ))}
-                      </select>
-                    )}
-                  </div>
-                </>
-              )}
+                ) : staffError ? (
+                  <p style={{ fontSize: "14px", color: "red" }}>
+                    Failed to load staff list.
+                  </p>
+                ) : (
+                  <select
+                    id="user-select"
+                    className="form-select"
+                    style={inputStyle}
+                    value={selectedUserId}
+                    onChange={(e) => setSelectedUserId(e.target.value)}
+                  >
+                    <option value="" disabled>
+                      Select a user...
+                    </option>
+                    {guards.map((guard) => (
+                      <option key={guard.id} value={guard.id}>
+                        {guard.name} (ID: {guard.id})
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </div>
             </div>
 
-            {/* MODAL FOOTER - Save Actions */}
-            {(modal.type === "time" || modal.type === "admin_assign") && (
-              <div
-                className="modal-footer"
+            {/* Footer */}
+            <div
+              className="modal-footer"
+              style={{
+                background: "#f8f9fa",
+                padding: "16px 24px",
+                borderTop: "1px solid #eaeaea",
+                justifyContent: "flex-end",
+                borderBottomLeftRadius: "8px",
+                borderBottomRightRadius: "8px",
+              }}
+            >
+              <button
+                onClick={closeModal}
+                type="button"
                 style={{
-                  background: "#f8f9fa",
-                  padding: "20px 30px",
-                  borderTop: "1px solid #eaeaea",
-                  justifyContent:
-                    userRole === "customer" ? "center" : "flex-end",
-                  borderBottomLeftRadius: "12px",
-                  borderBottomRightRadius: "12px",
+                  padding: "10px 22px",
+                  fontSize: "14px",
+                  marginRight: "12px",
+                  border: "1px solid #ddd",
+                  background: "#fff",
+                  borderRadius: "6px",
+                  cursor: "pointer",
                 }}
               >
-                <button
-                  className="close-btn"
-                  onClick={closeModal}
-                  type="button"
-                  style={{
-                    padding: "12px 24px",
-                    fontSize: "15px",
-                    marginRight: "12px",
-                    border: "1px solid #ddd",
-                    background: "#fff",
-                    borderRadius: "8px",
-                  }}
-                >
-                  Cancel
-                </button>
-                <button
-                  className="save-btn"
-                  onClick={handleSave}
-                  type="button"
-                  disabled={saveLoading}
-                  style={{
-                    padding: "12px 30px",
-                    fontSize: "16px",
-                    borderRadius: "8px",
-                    background: userRole === "customer" ? "#007bff" : "#007bff",
-                    color: "#fff",
-                    border: "none",
-                  }}
-                >
-                  {saveLoading
-                    ? "Saving..."
-                    : userRole === "customer"
-                      ? "Save Schedule Changes"
-                      : "Save Assignment"}
-                </button>
-              </div>
-            )}
+                Cancel
+              </button>
+              <button
+                onClick={handleSave}
+                type="button"
+                disabled={saveLoading}
+                style={{
+                  padding: "10px 24px",
+                  fontSize: "14px",
+                  borderRadius: "6px",
+                  background: "#007bff",
+                  color: "#fff",
+                  border: "none",
+                  cursor: "pointer",
+                }}
+              >
+                {saveLoading ? "Saving..." : "Save Assignment"}
+              </button>
+            </div>
           </div>
         </div>
       )}

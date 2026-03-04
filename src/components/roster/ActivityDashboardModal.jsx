@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { format } from "date-fns";
 import SignInOutDetails from "./SignInOutDetails";
 import BreakDetails from "./BreakDetails";
 import IncidentReport from "./IncidentReport";
@@ -11,27 +12,39 @@ const SIDEBAR_TABS = [
   { id: "break", label: "Break Details", bg: "#fff9c4" },
   { id: "incident", label: "Incident Report", bg: "#ffcdd2" },
   { id: "shift_activity", label: "Shift Activity", bg: "#c8e6c9" },
-  { id: "foot_petrol", label: "Foot Patrol Report", bg: "#ffcdd2" },
-  { id: "rating", label: "Rating", bg: "#fff9c4" },
+  { id: "foot_petrol", label: "Foot Patrol Report", bg: "#ffe0b2" },
+  { id: "rating", label: "Rating", bg: "#f3e5f5" },
 ];
 
-export default function ActivityDashboardModal({ modal, closeModal }) {
+export default function ActivityDashboardModal({
+  modal,
+  closeModal,
+  userRole,
+}) {
   const [activeTab, setActiveTab] = useState("signin");
+
+  const rosterId = modal?.shift?.id;
+  const shift = modal?.shift;
+  const site = modal?.site;
 
   const renderTabContent = () => {
     switch (activeTab) {
       case "signin":
-        return <SignInOutDetails />;
+        return (
+          <SignInOutDetails rosterId={rosterId} shift={shift} site={site} />
+        );
       case "break":
-        return <BreakDetails />;
+        return <BreakDetails rosterId={rosterId} />;
       case "incident":
-        return <IncidentReport />;
+        return <IncidentReport rosterId={rosterId} shift={shift} site={site} />;
       case "shift_activity":
-        return <ShiftActivity />;
+        return <ShiftActivity rosterId={rosterId} shift={shift} site={site} />;
       case "foot_petrol":
-        return <FootPatrolReport />;
+        return (
+          <FootPatrolReport rosterId={rosterId} shift={shift} site={site} />
+        );
       case "rating":
-        return <RatingComponent />;
+        return <RatingComponent rosterId={rosterId} />;
       default:
         return <div>Select an option</div>;
     }
@@ -85,6 +98,43 @@ export default function ActivityDashboardModal({ modal, closeModal }) {
           <div className="p-4 border-bottom">
             <h4 className="m-0 fw-bold text-center">Job Activity</h4>
           </div>
+
+          {/* Shift summary in sidebar */}
+          {shift && (
+            <div
+              style={{
+                padding: "12px 16px",
+                borderBottom: "1px solid #eaeaea",
+              }}
+            >
+              <div
+                style={{
+                  background: "#f8f9fa",
+                  borderRadius: "8px",
+                  padding: "10px 12px",
+                  fontSize: "12px",
+                  color: "#555",
+                }}
+              >
+                <div
+                  style={{ fontWeight: 700, color: "#222", marginBottom: 3 }}
+                >
+                  {site?.displayName || "—"}
+                </div>
+                <div style={{ marginBottom: 2 }}>{modal?.dateStr}</div>
+                {shift?.startDate && shift?.endDate && (
+                  <div style={{ color: "#007bff", fontWeight: 600 }}>
+                    {format(shift.startDate, "HH:mm")} –{" "}
+                    {format(shift.endDate, "HH:mm")}
+                  </div>
+                )}
+                <div style={{ marginTop: 4, color: "#888" }}>
+                  {shift?.guards?.name || "Unassigned"}
+                </div>
+              </div>
+            </div>
+          )}
+
           <div className="overflow-auto py-2">
             {SIDEBAR_TABS.map((tab) => {
               const isActive = activeTab === tab.id;

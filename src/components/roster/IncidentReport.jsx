@@ -2,6 +2,11 @@ import React, { useState, useEffect } from "react";
 import useSubmit from "../../hooks/useSubmit";
 import Loader from "../Loader";
 
+function fixUrl(url) {
+  if (!url) return "";
+  return url.replace("/uploads/", "/incident/");
+}
+
 function IncidentDetail({ report, onBack, meta }) {
   return (
     <div style={{ overflowY: "auto" }}>
@@ -198,9 +203,13 @@ function IncidentDetail({ report, onBack, meta }) {
           <div className="d-flex flex-wrap gap-2 mb-3">
             {report.photo.map((ph, i) => (
               <div key={i} style={{ position: "relative" }}>
-                <a href={ph.imgPath} target="_blank" rel="noopener noreferrer">
+                <a
+                  href={fixUrl(ph.imgPath)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
                   <img
-                    src={ph.imgPath}
+                    src={fixUrl(ph.imgPath)}
                     alt={`Incident scene ${i + 1}`}
                     style={{
                       width: "120px",
@@ -233,7 +242,7 @@ function IncidentDetail({ report, onBack, meta }) {
         <>
           <h6 className="fw-bold mb-2">Signature</h6>
           <img
-            src={report.signature}
+            src={fixUrl(report.signature)}
             alt="Signature"
             style={{
               maxWidth: "200px",

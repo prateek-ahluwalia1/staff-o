@@ -3,7 +3,7 @@ import useSubmit from "../../hooks/useSubmit";
 import Loader from "../Loader";
 import { apiURL } from "../../utils/exports";
 
-const BASE_URL = `${apiURL}uploads/`;
+const BASE_URL = `${apiURL}footpatrol/`;
 
 function parsePhotos(photoField) {
   if (!photoField) return [];

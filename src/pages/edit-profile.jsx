@@ -108,15 +108,17 @@ export default function EditProfile() {
     const d = profileData.data;
     const staff = d.staff || {};
     const contractor = d.contractor || staff.contractor || {};
+    const customer = d.customer || {};
 
-    // Parse existing bank details and ensure it becomes an array
+    const rawBankDetails = customer.bank_details ?? d.bank_details ?? null;
+
     let existingBankDetails = [];
-    if (d.bank_details) {
+    if (rawBankDetails) {
       try {
         const parsed =
-          typeof d.bank_details === "string"
-            ? JSON.parse(d.bank_details)
-            : d.bank_details;
+          typeof rawBankDetails === "string"
+            ? JSON.parse(rawBankDetails)
+            : rawBankDetails;
 
         // Wrap in array if legacy data was saved as a single object
         existingBankDetails = Array.isArray(parsed) ? parsed : [parsed];
@@ -128,7 +130,7 @@ export default function EditProfile() {
     setFormData({
       name: d.name || "",
       email: d.email || "",
-      phone: staff.phone || contractor.phone || d.phone || "",
+      phone: staff.phone || contractor.phone || customer.phone || d.phone || "",
       address: d.address || staff.address || contractor.address || "",
       city: d.city || staff.city || contractor.city || "",
       state: d.state || staff.state || contractor.state || "",
@@ -138,7 +140,11 @@ export default function EditProfile() {
       gender: staff.gender || contractor.gender || d.gender || "",
       staff_document_type: staff.staff_document_type || "",
       company_name:
-        d.company_name || contractor.company_name || staff.company_name || "",
+        d.company_name ||
+        contractor.company_name ||
+        staff.company_name ||
+        customer.company_name ||
+        "",
       registration_number:
         d.registration_number ||
         contractor.registration_number ||
@@ -227,7 +233,10 @@ export default function EditProfile() {
       if (res.success) {
         setSubmitSuccess(true);
         if (res.data) dispatch(setUser({ userdata: res.data }));
-        refetch();
+        const refetchRes = await refetch();
+        if (refetchRes?.success && refetchRes?.data) {
+          dispatch(setUser({ userdata: refetchRes.data }));
+        }
         setTimeout(() => setSubmitSuccess(false), 3000);
       } else {
         setSubmitError(res.errors || res.message || "Update failed");
@@ -236,7 +245,6 @@ export default function EditProfile() {
     [formData, profilePhotoFile, submit, userdata, dispatch, refetch],
   );
 
-  // Multi-card Handlers
   const handleCardNumberChange = (e) => {
     let value = e.target.value.replace(/\D/g, "");
     let formattedValue = value.replace(/(.{4})/g, "$1 ").trim();
@@ -250,10 +258,8 @@ export default function EditProfile() {
     e.preventDefault();
     setSubmitError(null);
 
-    // Append the new card to the existing array
     const updatedCards = [...formData.bank_details, cardForm];
 
-    // Create direct payload to save immediately
     const payload = new FormData();
     Object.keys(formData).forEach((key) => {
       if (key === "bank_details") {
@@ -286,7 +292,6 @@ export default function EditProfile() {
     if (!window.confirm("Are you sure you want to remove this card?")) return;
     setSubmitError(null);
 
-    // Filter out the deleted card
     const updatedCards = formData.bank_details.filter(
       (_, i) => i !== indexToRemove,
     );

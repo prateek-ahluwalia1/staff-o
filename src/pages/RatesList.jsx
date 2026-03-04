@@ -337,7 +337,10 @@ const RatesList = ({ forcedType } = {}) => {
         <>
           <div
             className="modal-backdrop show"
-            style={{ backgroundColor: "rgba(15,23,42,0.65)", backdropFilter: "blur(4px)" }}
+            style={{
+              backgroundColor: "rgba(15,23,42,0.65)",
+              backdropFilter: "blur(4px)",
+            }}
           />
           <div className="modal d-block" tabIndex="-1" style={{ zIndex: 1060 }}>
             <div className="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
@@ -365,7 +368,9 @@ const RatesList = ({ forcedType } = {}) => {
                     justifyContent: "space-between",
                   }}
                 >
-                  <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                  <div
+                    style={{ display: "flex", alignItems: "center", gap: 14 }}
+                  >
                     <div
                       style={{
                         width: 42,
@@ -398,9 +403,19 @@ const RatesList = ({ forcedType } = {}) => {
                           letterSpacing: 0.3,
                         }}
                       >
-                        {isViewing ? "View Rate" : isEditing ? "Edit Rate" : addButton}
+                        {isViewing
+                          ? "View Rate"
+                          : isEditing
+                            ? "Edit Rate"
+                            : addButton}
                       </h5>
-                      <p style={{ color: "rgba(255,255,255,0.65)", margin: 0, fontSize: 12 }}>
+                      <p
+                        style={{
+                          color: "rgba(255,255,255,0.65)",
+                          margin: 0,
+                          fontSize: 12,
+                        }}
+                      >
                         {isViewing
                           ? "Read-only view of rate details"
                           : isEditing
@@ -426,8 +441,14 @@ const RatesList = ({ forcedType } = {}) => {
                       fontSize: 14,
                       transition: "background 0.2s",
                     }}
-                    onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.25)")}
-                    onMouseLeave={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.15)")}
+                    onMouseEnter={(e) =>
+                      (e.currentTarget.style.background =
+                        "rgba(255,255,255,0.25)")
+                    }
+                    onMouseLeave={(e) =>
+                      (e.currentTarget.style.background =
+                        "rgba(255,255,255,0.15)")
+                    }
                   >
                     <i className="fa-solid fa-xmark" />
                   </button>
@@ -436,7 +457,10 @@ const RatesList = ({ forcedType } = {}) => {
                 <form
                   onSubmit={
                     isViewing
-                      ? (e) => { e.preventDefault(); closeAddModal(); }
+                      ? (e) => {
+                          e.preventDefault();
+                          closeAddModal();
+                        }
                       : handleAddSubmit
                   }
                 >
@@ -465,15 +489,29 @@ const RatesList = ({ forcedType } = {}) => {
                           borderBottom: "1px solid #f1f5f9",
                         }}
                       >
-                        <i className="fa-solid fa-circle-info" style={{ color: "#2563eb", fontSize: 14 }} />
-                        <span style={{ fontWeight: 700, fontSize: 13, color: "#1e293b", letterSpacing: 0.4, textTransform: "uppercase" }}>
+                        <i
+                          className="fa-solid fa-circle-info"
+                          style={{ color: "#2563eb", fontSize: 14 }}
+                        />
+                        <span
+                          style={{
+                            fontWeight: 700,
+                            fontSize: 13,
+                            color: "#1e293b",
+                            letterSpacing: 0.4,
+                            textTransform: "uppercase",
+                          }}
+                        >
                           Basic Information
                         </span>
                       </div>
 
                       <div className="row g-3">
                         <div className="col-md-6">
-                          <label className="form-label fw-semibold" style={{ fontSize: 13, color: "#475569" }}>
+                          <label
+                            className="form-label fw-semibold"
+                            style={{ fontSize: 13, color: "#475569" }}
+                          >
                             Title
                           </label>
                           <input
@@ -483,17 +521,29 @@ const RatesList = ({ forcedType } = {}) => {
                             disabled={isViewing}
                             className="form-control"
                             placeholder="e.g. Senior Engineer Rate"
-                            style={{ borderRadius: 10, border: "1px solid #e2e8f0", fontSize: 14 }}
+                            style={{
+                              borderRadius: 10,
+                              border: "1px solid #e2e8f0",
+                              fontSize: 14,
+                            }}
                           />
                         </div>
                         <div className="col-md-6">
-                          <label className="form-label fw-semibold" style={{ fontSize: 13, color: "#475569" }}>
+                          <label
+                            className="form-label fw-semibold"
+                            style={{ fontSize: 13, color: "#475569" }}
+                          >
                             Rate ($)
                           </label>
                           <div className="input-group">
                             <span
                               className="input-group-text"
-                              style={{ borderRadius: "10px 0 0 10px", background: "#f1f5f9", border: "1px solid #e2e8f0", color: "#64748b" }}
+                              style={{
+                                borderRadius: "10px 0 0 10px",
+                                background: "#f1f5f9",
+                                border: "1px solid #e2e8f0",
+                                color: "#64748b",
+                              }}
                             >
                               $
                             </span>
@@ -505,12 +555,19 @@ const RatesList = ({ forcedType } = {}) => {
                               disabled={isViewing}
                               className="form-control"
                               placeholder="0.00"
-                              style={{ borderRadius: "0 10px 10px 0", border: "1px solid #e2e8f0", fontSize: 14 }}
+                              style={{
+                                borderRadius: "0 10px 10px 0",
+                                border: "1px solid #e2e8f0",
+                                fontSize: 14,
+                              }}
                             />
                           </div>
                         </div>
                         <div className="col-md-4">
-                          <label className="form-label fw-semibold" style={{ fontSize: 13, color: "#475569" }}>
+                          <label
+                            className="form-label fw-semibold"
+                            style={{ fontSize: 13, color: "#475569" }}
+                          >
                             Position
                           </label>
                           <input
@@ -520,11 +577,18 @@ const RatesList = ({ forcedType } = {}) => {
                             disabled={isViewing}
                             className="form-control"
                             placeholder="e.g. Guard"
-                            style={{ borderRadius: 10, border: "1px solid #e2e8f0", fontSize: 14 }}
+                            style={{
+                              borderRadius: 10,
+                              border: "1px solid #e2e8f0",
+                              fontSize: 14,
+                            }}
                           />
                         </div>
                         <div className="col-md-4">
-                          <label className="form-label fw-semibold" style={{ fontSize: 13, color: "#475569" }}>
+                          <label
+                            className="form-label fw-semibold"
+                            style={{ fontSize: 13, color: "#475569" }}
+                          >
                             Level
                           </label>
                           <input
@@ -534,17 +598,29 @@ const RatesList = ({ forcedType } = {}) => {
                             disabled={isViewing}
                             className="form-control"
                             placeholder="e.g. 1"
-                            style={{ borderRadius: 10, border: "1px solid #e2e8f0", fontSize: 14 }}
+                            style={{
+                              borderRadius: 10,
+                              border: "1px solid #e2e8f0",
+                              fontSize: 14,
+                            }}
                           />
                         </div>
                         <div className="col-md-4">
-                          <label className="form-label fw-semibold" style={{ fontSize: 13, color: "#475569" }}>
+                          <label
+                            className="form-label fw-semibold"
+                            style={{ fontSize: 13, color: "#475569" }}
+                          >
                             OT Base Rate ($)
                           </label>
                           <div className="input-group">
                             <span
                               className="input-group-text"
-                              style={{ borderRadius: "10px 0 0 10px", background: "#f1f5f9", border: "1px solid #e2e8f0", color: "#64748b" }}
+                              style={{
+                                borderRadius: "10px 0 0 10px",
+                                background: "#f1f5f9",
+                                border: "1px solid #e2e8f0",
+                                color: "#64748b",
+                              }}
                             >
                               $
                             </span>
@@ -556,12 +632,19 @@ const RatesList = ({ forcedType } = {}) => {
                               disabled={isViewing}
                               className="form-control"
                               placeholder="0.00"
-                              style={{ borderRadius: "0 10px 10px 0", border: "1px solid #e2e8f0", fontSize: 14 }}
+                              style={{
+                                borderRadius: "0 10px 10px 0",
+                                border: "1px solid #e2e8f0",
+                                fontSize: 14,
+                              }}
                             />
                           </div>
                         </div>
                         <div className="col-md-6">
-                          <label className="form-label fw-semibold" style={{ fontSize: 13, color: "#475569" }}>
+                          <label
+                            className="form-label fw-semibold"
+                            style={{ fontSize: 13, color: "#475569" }}
+                          >
                             State
                           </label>
                           <input
@@ -571,7 +654,11 @@ const RatesList = ({ forcedType } = {}) => {
                             disabled={isViewing}
                             className="form-control"
                             placeholder="e.g. Victoria"
-                            style={{ borderRadius: 10, border: "1px solid #e2e8f0", fontSize: 14 }}
+                            style={{
+                              borderRadius: 10,
+                              border: "1px solid #e2e8f0",
+                              fontSize: 14,
+                            }}
                           />
                         </div>
                       </div>
@@ -616,7 +703,15 @@ const RatesList = ({ forcedType } = {}) => {
                           >
                             {catIdx + 1}
                           </span>
-                          <span style={{ fontWeight: 700, fontSize: 13, color: "#1e293b", letterSpacing: 0.4, textTransform: "uppercase" }}>
+                          <span
+                            style={{
+                              fontWeight: 700,
+                              fontSize: 13,
+                              color: "#1e293b",
+                              letterSpacing: 0.4,
+                              textTransform: "uppercase",
+                            }}
+                          >
                             {cat === "def" ? "Default" : "EBA"} Rates
                           </span>
                           <span
@@ -656,7 +751,16 @@ const RatesList = ({ forcedType } = {}) => {
                                 }}
                               >
                                 <div>
-                                  <div style={{ fontSize: 11, color: "#94a3b8", marginBottom: 4, fontWeight: 600 }}>METRO</div>
+                                  <div
+                                    style={{
+                                      fontSize: 11,
+                                      color: "#94a3b8",
+                                      marginBottom: 4,
+                                      fontWeight: 600,
+                                    }}
+                                  >
+                                    METRO
+                                  </div>
                                   <input
                                     id={metroId}
                                     value={form[metroId]}
@@ -664,7 +768,11 @@ const RatesList = ({ forcedType } = {}) => {
                                     disabled={isViewing}
                                     className="form-control form-control-sm"
                                     placeholder="0.00"
-                                    style={{ borderRadius: 8, border: "1px solid #e2e8f0", fontSize: 13 }}
+                                    style={{
+                                      borderRadius: 8,
+                                      border: "1px solid #e2e8f0",
+                                      fontSize: 13,
+                                    }}
                                   />
                                 </div>
                                 <div
@@ -682,7 +790,16 @@ const RatesList = ({ forcedType } = {}) => {
                                   {row.label}
                                 </div>
                                 <div>
-                                  <div style={{ fontSize: 11, color: "#94a3b8", marginBottom: 4, fontWeight: 600 }}>REGIONAL</div>
+                                  <div
+                                    style={{
+                                      fontSize: 11,
+                                      color: "#94a3b8",
+                                      marginBottom: 4,
+                                      fontWeight: 600,
+                                    }}
+                                  >
+                                    REGIONAL
+                                  </div>
                                   <input
                                     id={regId}
                                     value={form[regId]}
@@ -690,7 +807,11 @@ const RatesList = ({ forcedType } = {}) => {
                                     disabled={isViewing}
                                     className="form-control form-control-sm"
                                     placeholder="0.00"
-                                    style={{ borderRadius: 8, border: "1px solid #e2e8f0", fontSize: 13 }}
+                                    style={{
+                                      borderRadius: 8,
+                                      border: "1px solid #e2e8f0",
+                                      fontSize: 13,
+                                    }}
                                   />
                                 </div>
                               </div>
@@ -771,9 +892,15 @@ const RatesList = ({ forcedType } = {}) => {
                               Saving...
                             </>
                           ) : isEditing ? (
-                            <><i className="fa-solid fa-pen-to-square me-2" />Update Rate</>
+                            <>
+                              <i className="fa-solid fa-pen-to-square me-2" />
+                              Update Rate
+                            </>
                           ) : (
-                            <><i className="fa-solid fa-plus me-2" />Create Rate</>
+                            <>
+                              <i className="fa-solid fa-plus me-2" />
+                              Create Rate
+                            </>
                           )}
                         </button>
                       </>

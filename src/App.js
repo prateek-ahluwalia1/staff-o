@@ -26,6 +26,7 @@ const PayChargeRate = lazy(() => import("./pages/PayChargerate"));
 const RatesList = lazy(() => import("./pages/RatesList"));
 const AddJob = lazy(() => import("./pages/add-job"));
 const ManageUsers = lazy(() => import("./pages/manage-users"));
+const ManageStaff = lazy(() => import("./pages/manage-staff"));
 
 function App() {
   return (
@@ -87,6 +88,7 @@ function App() {
               <Route path="/rates/pay" element={<RatesList />} />
               <Route path="/add-job" element={<AddJob />} />
               <Route path="/manage-users" element={<ManageUsers />} />
+              <Route path="/manage-staff" element={<ManageStaff />} />
             </Route>
 
             <Route path="*" element={<Navigate to="/login" replace />} />

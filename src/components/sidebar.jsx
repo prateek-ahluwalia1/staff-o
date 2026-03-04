@@ -51,6 +51,11 @@ const Sidebar = memo(function Sidebar() {
     { to: "/dashboard", icon: "fa-solid fa-gauge", label: "Dashboard" },
     { to: "/roster", icon: "fa-solid fa-users", label: "Roster" },
     {
+      to: "/manage-staff",
+      icon: "fa-solid fa-users-gear",
+      label: "Staff Management",
+    },
+    {
       to: "/edit-profile",
       icon: "fa-solid fa-user-pen",
       label: "Edit Profile",

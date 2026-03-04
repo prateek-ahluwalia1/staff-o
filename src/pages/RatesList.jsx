@@ -22,24 +22,12 @@ const RatesList = ({ forcedType } = {}) => {
   const addButton = isCharge ? "Add Charge Rate" : "Add Pay Rate";
   const firstColumn = isCharge ? "Charged Rate" : "Pay Rate";
 
-  const [showArchived, setShowArchived] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [isViewing, setIsViewing] = useState(false);
 
   const listEndpoint = useMemo(
     () => (isCharge ? "api/get-all-chargerates" : "api/get-all-payrates"),
-    [isCharge],
-  );
-  const archiveListEndpoint = useMemo(
-    () =>
-      isCharge
-        ? "api/get-all-archive-chargerates"
-        : "api/get-all-archive-payrates",
-    [isCharge],
-  );
-  const removeEndpoint = useMemo(
-    () => (isCharge ? "api/charge_rate/remove" : "api/payrate/remove"),
     [isCharge],
   );
   const updateEndpoint = useMemo(
@@ -53,12 +41,12 @@ const RatesList = ({ forcedType } = {}) => {
 
   const { userdata } = useSelector((state) => state.auth || {});
   const userType = userdata?.data?.user_type || userdata?.user_type;
-  const isCustomer = userType === "customer";
+  const isAdmin = userType === "admin";
 
-  const { data, loading, error, refetch } = useFetch(
-    showArchived ? archiveListEndpoint : listEndpoint,
-    { isAuth: true, immediate: true },
-  );
+  const { data, loading, error, refetch } = useFetch(listEndpoint, {
+    isAuth: true,
+    immediate: true,
+  });
   const { submit, loading: submitting } = useSubmit({ isAuth: true });
 
   const makeInitialForm = useCallback(() => {
@@ -68,8 +56,6 @@ const RatesList = ({ forcedType } = {}) => {
       level: "",
       state: "",
       ot_base_rate: "",
-      rate: "",
-      name: "",
       id: null,
     };
     RATE_CATEGORIES.forEach((c) =>
@@ -93,19 +79,17 @@ const RatesList = ({ forcedType } = {}) => {
   }, [makeInitialForm]);
 
   const handleEditOpen = useCallback(
-    (rate) => {
-      setForm({ ...makeInitialForm(), ...rate });
-      setIsEditing(true);
-      setShowAddModal(true);
-    },
-    [makeInitialForm],
-  );
+    (rateObj) => {
+      // Create a clean copy of the incoming rate object
+      const cleanRate = { ...rateObj };
 
-  const handleViewOpen = useCallback(
-    (rate) => {
-      setForm({ ...makeInitialForm(), ...rate });
-      setIsEditing(false);
-      setIsViewing(true);
+      // Scrub old keys out so they don't infect the React state
+      delete cleanRate.name;
+      delete cleanRate.rate;
+      delete cleanRate.user_id;
+
+      setForm({ ...makeInitialForm(), ...cleanRate });
+      setIsEditing(true);
       setShowAddModal(true);
     },
     [makeInitialForm],
@@ -124,11 +108,14 @@ const RatesList = ({ forcedType } = {}) => {
       return;
     }
     const body = { ...form };
-    body.user_id = userdata?.data?.id || userdata?.id || null;
 
-    ["ot_base_rate", "rate"].forEach((k) => {
-      if (body[k] !== "") body[k] = Number(body[k]);
-    });
+    // Explicitly set customer_id
+    body.customer_id = userdata?.data?.id || userdata?.id || null;
+
+    // Convert ot_base_rate to a number
+    if (body.ot_base_rate !== "") {
+      body.ot_base_rate = Number(body.ot_base_rate);
+    }
 
     RATE_CATEGORIES.forEach((c) =>
       TIME_KEYS.forEach((t) => {
@@ -136,6 +123,11 @@ const RatesList = ({ forcedType } = {}) => {
         if (body[k] !== "") body[k] = Number(body[k]);
       }),
     );
+
+    // Final scrub to guarantee no static/old keys go to the API
+    delete body.name;
+    delete body.rate;
+    delete body.user_id;
 
     const res = await submit(
       isEditing ? updateEndpoint : createEndpoint,
@@ -152,24 +144,22 @@ const RatesList = ({ forcedType } = {}) => {
     }
   };
 
-  const handleArchive = async (rate) => {
-    if (!window.confirm("Archive this rate?")) return;
-    const payload = isCharge
-      ? { chargerate_id: rate.id }
-      : { payrate_id: rate.id };
-    const res = await submit(removeEndpoint, payload, { method: "POST" });
-    if (res?.success) {
-      await refetch(showArchived ? archiveListEndpoint : listEndpoint);
-    } else {
-      alert(res?.message || "Operation failed");
-    }
-  };
-
   const rows = Array.isArray(data?.data)
     ? data.data
     : Array.isArray(data)
       ? data
       : [];
+
+  if (!isAdmin) {
+    return (
+      <div className="container-fluid py-4">
+        <div className="alert alert-danger">
+          <i className="fa fa-lock me-2"></i>
+          You do not have permission to access rates management.
+        </div>
+      </div>
+    );
+  }
 
   if (loading) return <Loader fullPage />;
 
@@ -187,9 +177,7 @@ const RatesList = ({ forcedType } = {}) => {
           <div className="mt-2">
             <button
               className="btn btn-sm btn-primary"
-              onClick={() =>
-                refetch(showArchived ? archiveListEndpoint : listEndpoint)
-              }
+              onClick={() => refetch(listEndpoint)}
             >
               Retry
             </button>
@@ -212,58 +200,38 @@ const RatesList = ({ forcedType } = {}) => {
           </div>
 
           <div className="d-flex align-items-center gap-2">
-            {!isCustomer && (
-              <div className="btn-group">
-                <button
-                  className={`btn btn-sm ${
-                    !showArchived ? "btn-primary" : "btn-outline-secondary"
-                  }`}
-                  onClick={() => setShowArchived(false)}
-                >
-                  Active
-                </button>
-                <button
-                  className={`btn btn-sm ${
-                    showArchived ? "btn-primary" : "btn-outline-secondary"
-                  }`}
-                  onClick={() => setShowArchived(true)}
-                >
-                  Archived
-                </button>
-              </div>
+            {rows.length === 0 && (
+              <button
+                className="btn btn-success btn-sm px-3 shadow-sm"
+                onClick={openAddModal}
+              >
+                <i className="fa fa-plus me-1"></i> {addButton}
+              </button>
             )}
-
-            {!isCustomer &&
-              !(userType === "contractor" && rows.length >= 1) && (
-                <button
-                  className="btn btn-success btn-sm px-3"
-                  onClick={openAddModal}
-                >
-                  + {addButton}
-                </button>
-              )}
           </div>
         </div>
       </div>
 
       {/* Table Card */}
-      <div className="card border-0 shadow-lg">
+      <div className="card border-0 shadow-sm">
         <div className="card-body p-0">
           <div className="table-responsive ">
-            <table className="table  table-hover align-middle mb-0">
+            <table className="table table-hover align-middle mb-0">
               <thead className="table-light">
                 <tr>
-                  <th>{firstColumn}</th>
+                  <th className="ps-4 py-3">{firstColumn}</th>
                   <th>Rate</th>
                   <th>Level</th>
                   <th>State</th>
-                  <th width="120">Actions</th>
+                  <th width="120" className="pe-4">
+                    Actions
+                  </th>
                 </tr>
               </thead>
               <tbody>
                 {rows.length === 0 && (
                   <tr>
-                    <td colSpan="5" className="text-center py-4 text-muted">
+                    <td colSpan="5" className="text-center py-5 text-muted">
                       No rates available
                     </td>
                   </tr>
@@ -271,57 +239,32 @@ const RatesList = ({ forcedType } = {}) => {
 
                 {rows.map((r) => (
                   <tr key={r.id}>
-                    <td>
-                      <div className="fw-semibold">{r.title || r.name}</div>
+                    <td className="ps-4">
+                      <div className="fw-semibold text-dark">
+                        {r.title || r.name}
+                      </div>
                       <small className="text-muted">
                         {isCharge ? "Customer charge" : "Staff pay"}
                       </small>
                     </td>
-                    <td className="fw-bold text-primary">
+                    <td className="fw-bold text-success">
                       ${Number(r.ot_base_rate || 0).toFixed(2)}
                     </td>
                     <td>{r.level}</td>
                     <td>
-                      <span className="badge bg-primary-subtle text-primary">
+                      <span className="badge bg-primary-subtle text-primary px-3 py-2 rounded-pill">
                         {r.state}
                       </span>
                     </td>
-                    <td>
+                    <td className="pe-4">
                       <div className="d-flex gap-2">
-                        {isCustomer ? (
-                          <button
-                            className="btn btn-sm btn-outline-primary"
-                            onClick={() => handleEditOpen(r)}
-                            title="Edit Rate"
-                          >
-                            <i className="fa fa-edit" />
-                          </button>
-                        ) : showArchived ? (
-                          <button
-                            className="btn btn-sm btn-outline-primary"
-                            onClick={() => handleViewOpen(r)}
-                            title="View Rate"
-                          >
-                            <i className="fa fa-eye" />
-                          </button>
-                        ) : (
-                          <>
-                            <button
-                              className="btn btn-sm btn-outline-primary"
-                              onClick={() => handleEditOpen(r)}
-                              title="Edit Rate"
-                            >
-                              <i className="fa fa-edit" />
-                            </button>
-                            <button
-                              className="btn btn-sm btn-outline-secondary"
-                              onClick={() => handleArchive(r)}
-                              title="Archive Rate"
-                            >
-                              <i className="fa fa-archive" />
-                            </button>
-                          </>
-                        )}
+                        <button
+                          className="btn btn-sm btn-light text-primary border-0 rounded-circle"
+                          onClick={() => handleEditOpen(r)}
+                          title="Edit Rate"
+                        >
+                          <i className="fa fa-edit" />
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -332,585 +275,387 @@ const RatesList = ({ forcedType } = {}) => {
         </div>
       </div>
 
-      {/* Modal */}
+      {/* FULL SCREEN MODAL STYLING */}
+      <style>{`
+        .full-screen-modal {
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100vw;
+          height: 100vh;
+          z-index: 1060;
+          background: rgba(15, 23, 42, 0.4);
+          backdrop-filter: blur(8px);
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          animation: modalFadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes modalFadeIn {
+          from { opacity: 0; transform: scale(0.98) translateY(10px); }
+          to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        .modal-inner-content {
+          width: 96%;
+          max-width: 1400px;
+          height: 92vh;
+          background: #f8fafc;
+          border-radius: 24px;
+          box-shadow: 0 40px 100px -20px rgba(0, 0, 0, 0.3);
+          display: flex;
+          flex-direction: column;
+          overflow: hidden;
+          border: 1px solid rgba(255,255,255,0.5);
+        }
+
+        .modal-header-custom {
+          background-color: #ffffff;
+          padding: 1.5rem 2.5rem;
+          border-bottom: 1px solid #e2e8f0;
+        }
+
+        .modal-body-scrollable {
+          flex-grow: 1;
+          overflow-y: auto;
+          padding: 2.5rem;
+        }
+
+        .modal-footer-custom {
+          background-color: #ffffff;
+          padding: 1.25rem 2.5rem;
+          border-top: 1px solid #e2e8f0;
+        }
+
+        .form-control {
+          border-radius: 10px;
+          border: 1px solid #cbd5e1;
+          padding: 0.7rem 1rem;
+          font-size: 0.95rem;
+          transition: all 0.2s ease;
+          background-color: #ffffff;
+        }
+        
+        .form-control:focus {
+          border-color: #3b82f6;
+          box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+          outline: none;
+        }
+        
+        .form-control:disabled {
+          background-color: #f1f5f9;
+          color: #64748b;
+        }
+
+        .form-label {
+          font-size: 0.75rem;
+          font-weight: 700;
+          color: #475569;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+          margin-bottom: 0.5rem;
+        }
+
+        .section-card {
+          background: #ffffff;
+          border: 1px solid #e2e8f0;
+          border-radius: 16px;
+          padding: 2rem;
+          margin-bottom: 1.5rem;
+          box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.02);
+        }
+
+        .section-title {
+          font-size: 1.15rem;
+          font-weight: 700;
+          color: #0f172a;
+          margin-bottom: 1.5rem;
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          border-bottom: 2px solid #f1f5f9;
+          padding-bottom: 1rem;
+        }
+
+        .rate-grid-header {
+          display: grid;
+          grid-template-columns: 2fr 1.2fr 1.2fr;
+          gap: 1.5rem;
+          padding-bottom: 0.75rem;
+          border-bottom: 2px solid #e2e8f0;
+          margin-bottom: 1.25rem;
+          font-size: 0.8rem;
+          font-weight: 700;
+          color: #64748b;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+        }
+
+        .rate-grid-row {
+          display: grid;
+          grid-template-columns: 2fr 1.2fr 1.2fr;
+          gap: 1.5rem;
+          align-items: center;
+          padding: 0.85rem 0;
+          border-bottom: 1px dashed #e2e8f0;
+        }
+
+        .rate-grid-row:last-child {
+          border-bottom: none;
+        }
+
+        .rate-label {
+          font-size: 0.95rem;
+          font-weight: 600;
+          color: #334155;
+          line-height: 1.4;
+        }
+
+        .input-icon-wrapper {
+          position: relative;
+        }
+
+        .input-icon-wrapper i {
+          position: absolute;
+          left: 1.2rem;
+          top: 50%;
+          transform: translateY(-50%);
+          color: #94a3b8;
+        }
+
+        .input-icon-wrapper input {
+          padding-left: 2.8rem;
+        }
+      `}</style>
+
+      {/* FULL SCREEN MODAL */}
       {showAddModal && (
-        <>
-          <div
-            className="modal-backdrop show"
-            style={{
-              backgroundColor: "rgba(15,23,42,0.65)",
-              backdropFilter: "blur(4px)",
-            }}
-          />
-          <div className="modal d-block" tabIndex="-1" style={{ zIndex: 1060 }}>
-            <div className="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
-              <div
-                className="modal-content border-0"
-                style={{
-                  borderRadius: 20,
-                  boxShadow: "0 32px 80px rgba(15,23,42,0.25)",
-                  overflow: "hidden",
-                }}
+        <div className="full-screen-modal">
+          <div className="modal-inner-content">
+            {/* Header */}
+            <div className="modal-header-custom d-flex justify-content-between align-items-center">
+              <div>
+                <h4 className="fw-bold mb-0 text-dark">
+                  <i
+                    className={`fa ${isViewing ? "fa-eye" : isEditing ? "fa-pen-to-square" : "fa-plus-circle"} text-primary me-3`}
+                  ></i>
+                  {isViewing
+                    ? "View Rate Details"
+                    : isEditing
+                      ? "Edit Rate Details"
+                      : addButton}
+                </h4>
+                <p className="text-muted small mb-0 mt-1 ms-5">
+                  Ensure all hourly rates are accurate for Metro and Regional
+                  areas.
+                </p>
+              </div>
+              <button
+                className="btn-close shadow-none fs-5"
+                onClick={closeAddModal}
+                aria-label="Close"
+              ></button>
+            </div>
+
+            {/* Scrollable Body */}
+            <div className="modal-body-scrollable">
+              <form
+                id="rateForm"
+                onSubmit={
+                  isViewing
+                    ? (e) => {
+                        e.preventDefault();
+                        closeAddModal();
+                      }
+                    : handleAddSubmit
+                }
               >
-                {/* Gradient Header */}
-                <div
-                  style={{
-                    background: isViewing
-                      ? "linear-gradient(135deg,#1e3a5f,#2563eb)"
-                      : isEditing
-                        ? "linear-gradient(135deg,#1e3a5f,#7c3aed)"
-                        : isCharge
-                          ? "linear-gradient(135deg,#065f46,#059669)"
-                          : "linear-gradient(135deg,#1e3a5f,#0ea5e9)",
-                    padding: "24px 28px",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                  }}
-                >
-                  <div
-                    style={{ display: "flex", alignItems: "center", gap: 14 }}
-                  >
-                    <div
-                      style={{
-                        width: 42,
-                        height: 42,
-                        borderRadius: 12,
-                        background: "rgba(255,255,255,0.15)",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                      }}
-                    >
-                      <i
-                        className={
-                          isViewing
-                            ? "fa-solid fa-eye"
-                            : isEditing
-                              ? "fa-solid fa-pen-to-square"
-                              : "fa-solid fa-plus"
-                        }
-                        style={{ color: "#fff", fontSize: 16 }}
+                {/* General Information Section */}
+                <div className="section-card">
+                  <div className="section-title">
+                    <i className="fa fa-info-circle text-primary"></i> General
+                    Information
+                  </div>
+
+                  <div className="row g-4 mb-4">
+                    <div className="col-md-6">
+                      <label className="form-label">Title / Role Name *</label>
+                      <input
+                        id="title"
+                        value={form.title}
+                        onChange={handleFormChange}
+                        disabled={isViewing}
+                        className="form-control"
+                        placeholder="e.g. Senior Electrician"
+                        required
                       />
                     </div>
-                    <div>
-                      <h5
-                        style={{
-                          color: "#fff",
-                          fontWeight: 700,
-                          margin: 0,
-                          fontSize: 18,
-                          letterSpacing: 0.3,
-                        }}
-                      >
-                        {isViewing
-                          ? "View Rate"
-                          : isEditing
-                            ? "Edit Rate"
-                            : addButton}
-                      </h5>
-                      <p
-                        style={{
-                          color: "rgba(255,255,255,0.65)",
-                          margin: 0,
-                          fontSize: 12,
-                        }}
-                      >
-                        {isViewing
-                          ? "Read-only view of rate details"
-                          : isEditing
-                            ? "Update the rate information below"
-                            : "Fill in the details to create a new rate"}
-                      </p>
+
+                    <div className="col-md-6">
+                      <label className="form-label">Base Rate ($) *</label>
+                      <div className="input-icon-wrapper">
+                        <i className="fa fa-dollar-sign"></i>
+                        <input
+                          id="ot_base_rate"
+                          type="number"
+                          step="0.01"
+                          value={form.ot_base_rate}
+                          onChange={handleFormChange}
+                          disabled={isViewing}
+                          className="form-control"
+                          placeholder="0.00"
+                          required
+                        />
+                      </div>
                     </div>
                   </div>
-                  <button
-                    type="button"
-                    onClick={closeAddModal}
-                    style={{
-                      background: "rgba(255,255,255,0.15)",
-                      border: "none",
-                      borderRadius: 10,
-                      width: 36,
-                      height: 36,
-                      cursor: "pointer",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      color: "#fff",
-                      fontSize: 14,
-                      transition: "background 0.2s",
-                    }}
-                    onMouseEnter={(e) =>
-                      (e.currentTarget.style.background =
-                        "rgba(255,255,255,0.25)")
-                    }
-                    onMouseLeave={(e) =>
-                      (e.currentTarget.style.background =
-                        "rgba(255,255,255,0.15)")
-                    }
-                  >
-                    <i className="fa-solid fa-xmark" />
-                  </button>
-                </div>
 
-                <form
-                  onSubmit={
-                    isViewing
-                      ? (e) => {
-                          e.preventDefault();
-                          closeAddModal();
-                        }
-                      : handleAddSubmit
-                  }
-                >
-                  <div
-                    className="modal-body"
-                    style={{ padding: "28px", background: "#f8fafc" }}
-                  >
-                    {/* Basic Info Section */}
-                    <div
-                      style={{
-                        background: "#fff",
-                        borderRadius: 14,
-                        padding: "20px 22px",
-                        marginBottom: 18,
-                        boxShadow: "0 1px 6px rgba(15,23,42,0.06)",
-                        border: "1px solid #e2e8f0",
-                      }}
-                    >
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 8,
-                          marginBottom: 16,
-                          paddingBottom: 12,
-                          borderBottom: "1px solid #f1f5f9",
-                        }}
-                      >
-                        <i
-                          className="fa-solid fa-circle-info"
-                          style={{ color: "#2563eb", fontSize: 14 }}
-                        />
-                        <span
-                          style={{
-                            fontWeight: 700,
-                            fontSize: 13,
-                            color: "#1e293b",
-                            letterSpacing: 0.4,
-                            textTransform: "uppercase",
-                          }}
-                        >
-                          Basic Information
-                        </span>
-                      </div>
-
-                      <div className="row g-3">
-                        <div className="col-md-6">
-                          <label
-                            className="form-label fw-semibold"
-                            style={{ fontSize: 13, color: "#475569" }}
-                          >
-                            Title
-                          </label>
-                          <input
-                            id="title"
-                            value={form.title}
-                            onChange={handleFormChange}
-                            disabled={isViewing}
-                            className="form-control"
-                            placeholder="e.g. Senior Engineer Rate"
-                            style={{
-                              borderRadius: 10,
-                              border: "1px solid #e2e8f0",
-                              fontSize: 14,
-                            }}
-                          />
-                        </div>
-                        <div className="col-md-6">
-                          <label
-                            className="form-label fw-semibold"
-                            style={{ fontSize: 13, color: "#475569" }}
-                          >
-                            Rate ($)
-                          </label>
-                          <div className="input-group">
-                            <span
-                              className="input-group-text"
-                              style={{
-                                borderRadius: "10px 0 0 10px",
-                                background: "#f1f5f9",
-                                border: "1px solid #e2e8f0",
-                                color: "#64748b",
-                              }}
-                            >
-                              $
-                            </span>
-                            <input
-                              id="rate"
-                              type="number"
-                              value={form.rate}
-                              onChange={handleFormChange}
-                              disabled={isViewing}
-                              className="form-control"
-                              placeholder="0.00"
-                              style={{
-                                borderRadius: "0 10px 10px 0",
-                                border: "1px solid #e2e8f0",
-                                fontSize: 14,
-                              }}
-                            />
-                          </div>
-                        </div>
-                        <div className="col-md-4">
-                          <label
-                            className="form-label fw-semibold"
-                            style={{ fontSize: 13, color: "#475569" }}
-                          >
-                            Position
-                          </label>
-                          <input
-                            id="position"
-                            value={form.position}
-                            onChange={handleFormChange}
-                            disabled={isViewing}
-                            className="form-control"
-                            placeholder="e.g. Guard"
-                            style={{
-                              borderRadius: 10,
-                              border: "1px solid #e2e8f0",
-                              fontSize: 14,
-                            }}
-                          />
-                        </div>
-                        <div className="col-md-4">
-                          <label
-                            className="form-label fw-semibold"
-                            style={{ fontSize: 13, color: "#475569" }}
-                          >
-                            Level
-                          </label>
-                          <input
-                            id="level"
-                            value={form.level}
-                            onChange={handleFormChange}
-                            disabled={isViewing}
-                            className="form-control"
-                            placeholder="e.g. 1"
-                            style={{
-                              borderRadius: 10,
-                              border: "1px solid #e2e8f0",
-                              fontSize: 14,
-                            }}
-                          />
-                        </div>
-                        <div className="col-md-4">
-                          <label
-                            className="form-label fw-semibold"
-                            style={{ fontSize: 13, color: "#475569" }}
-                          >
-                            OT Base Rate ($)
-                          </label>
-                          <div className="input-group">
-                            <span
-                              className="input-group-text"
-                              style={{
-                                borderRadius: "10px 0 0 10px",
-                                background: "#f1f5f9",
-                                border: "1px solid #e2e8f0",
-                                color: "#64748b",
-                              }}
-                            >
-                              $
-                            </span>
-                            <input
-                              id="ot_base_rate"
-                              type="number"
-                              value={form.ot_base_rate}
-                              onChange={handleFormChange}
-                              disabled={isViewing}
-                              className="form-control"
-                              placeholder="0.00"
-                              style={{
-                                borderRadius: "0 10px 10px 0",
-                                border: "1px solid #e2e8f0",
-                                fontSize: 14,
-                              }}
-                            />
-                          </div>
-                        </div>
-                        <div className="col-md-6">
-                          <label
-                            className="form-label fw-semibold"
-                            style={{ fontSize: 13, color: "#475569" }}
-                          >
-                            State
-                          </label>
-                          <input
-                            id="state"
-                            value={form.state}
-                            onChange={handleFormChange}
-                            disabled={isViewing}
-                            className="form-control"
-                            placeholder="e.g. Victoria"
-                            style={{
-                              borderRadius: 10,
-                              border: "1px solid #e2e8f0",
-                              fontSize: 14,
-                            }}
-                          />
-                        </div>
-                      </div>
+                  <div className="row g-4">
+                    <div className="col-md-4">
+                      <label className="form-label">Position / Category</label>
+                      <input
+                        id="position"
+                        value={form.position}
+                        onChange={handleFormChange}
+                        disabled={isViewing}
+                        className="form-control"
+                        placeholder="e.g. Technician"
+                      />
                     </div>
 
-                    {/* Rate Categories */}
-                    {RATE_CATEGORIES.map((cat, catIdx) => (
-                      <div
-                        key={cat}
-                        style={{
-                          background: "#fff",
-                          borderRadius: 14,
-                          padding: "20px 22px",
-                          marginBottom: 18,
-                          boxShadow: "0 1px 6px rgba(15,23,42,0.06)",
-                          border: "1px solid #e2e8f0",
-                        }}
-                      >
-                        <div
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 8,
-                            marginBottom: 16,
-                            paddingBottom: 12,
-                            borderBottom: "1px solid #f1f5f9",
-                          }}
-                        >
-                          <span
-                            style={{
-                              display: "inline-flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              width: 24,
-                              height: 24,
-                              borderRadius: 6,
-                              background: cat === "def" ? "#dbeafe" : "#ede9fe",
-                              color: cat === "def" ? "#2563eb" : "#7c3aed",
-                              fontSize: 11,
-                              fontWeight: 700,
-                            }}
-                          >
-                            {catIdx + 1}
-                          </span>
-                          <span
-                            style={{
-                              fontWeight: 700,
-                              fontSize: 13,
-                              color: "#1e293b",
-                              letterSpacing: 0.4,
-                              textTransform: "uppercase",
-                            }}
-                          >
-                            {cat === "def" ? "Default" : "EBA"} Rates
-                          </span>
-                          <span
-                            style={{
-                              marginLeft: "auto",
-                              fontSize: 11,
-                              color: "#94a3b8",
-                              fontStyle: "italic",
-                            }}
-                          >
-                            Metro / Regional
-                          </span>
+                    <div className="col-md-4">
+                      <label className="form-label">Job Level</label>
+                      <input
+                        id="level"
+                        value={form.level}
+                        onChange={handleFormChange}
+                        disabled={isViewing}
+                        className="form-control"
+                        placeholder="e.g. Lvl 2"
+                      />
+                    </div>
+
+                    <div className="col-md-4">
+                      <label className="form-label">Location State</label>
+                      <input
+                        id="state"
+                        value={form.state}
+                        onChange={handleFormChange}
+                        disabled={isViewing}
+                        className="form-control"
+                        placeholder="e.g. NSW"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Rates Matrices - Side by Side on Large Screens */}
+                <div className="row g-4">
+                  {RATE_CATEGORIES.map((cat) => (
+                    <div className="col-xl-6" key={cat}>
+                      <div className="section-card h-100 mb-0">
+                        <div className="section-title text-capitalize">
+                          <i
+                            className={`fa ${cat === "def" ? "fa-clock" : "fa-briefcase"} text-primary`}
+                          ></i>
+                          {cat === "def"
+                            ? "Default Schedule Rates"
+                            : "EBA Agreement Rates"}
                         </div>
 
-                        <div
-                          style={{
-                            display: "grid",
-                            gridTemplateColumns: "1fr",
-                            gap: 10,
-                          }}
-                        >
-                          {SLOT_ROWS.map((row) => {
-                            const metroId = `${cat}_${row.metro}`;
-                            const regId = `${cat}_${row.reg}`;
-                            return (
-                              <div
-                                key={metroId}
-                                style={{
-                                  display: "grid",
-                                  gridTemplateColumns: "1fr auto 1fr",
-                                  gap: 10,
-                                  alignItems: "center",
-                                  background: "#f8fafc",
-                                  borderRadius: 10,
-                                  padding: "10px 14px",
-                                  border: "1px solid #f1f5f9",
-                                }}
-                              >
-                                <div>
-                                  <div
-                                    style={{
-                                      fontSize: 11,
-                                      color: "#94a3b8",
-                                      marginBottom: 4,
-                                      fontWeight: 600,
-                                    }}
-                                  >
-                                    METRO
-                                  </div>
+                        <div className="rate-grid-header">
+                          <div>Time Slot</div>
+                          <div>Metro Area ($)</div>
+                          <div>Regional Area ($)</div>
+                        </div>
+
+                        {SLOT_ROWS.map((row) => {
+                          const metroId = `${cat}_${row.metro}`;
+                          const regId = `${cat}_${row.reg}`;
+                          return (
+                            <div className="rate-grid-row" key={metroId}>
+                              <div className="rate-label">{row.label}</div>
+                              <div>
+                                <div className="input-icon-wrapper">
+                                  <i className="fa fa-dollar-sign small"></i>
                                   <input
                                     id={metroId}
+                                    type="number"
+                                    step="0.01"
                                     value={form[metroId]}
                                     onChange={handleFormChange}
                                     disabled={isViewing}
-                                    className="form-control form-control-sm"
+                                    className="form-control bg-light-subtle"
                                     placeholder="0.00"
-                                    style={{
-                                      borderRadius: 8,
-                                      border: "1px solid #e2e8f0",
-                                      fontSize: 13,
-                                    }}
-                                  />
-                                </div>
-                                <div
-                                  style={{
-                                    textAlign: "center",
-                                    fontSize: 11,
-                                    color: "#64748b",
-                                    fontWeight: 600,
-                                    whiteSpace: "nowrap",
-                                    lineHeight: 1.3,
-                                    padding: "0 4px",
-                                    marginTop: 14,
-                                  }}
-                                >
-                                  {row.label}
-                                </div>
-                                <div>
-                                  <div
-                                    style={{
-                                      fontSize: 11,
-                                      color: "#94a3b8",
-                                      marginBottom: 4,
-                                      fontWeight: 600,
-                                    }}
-                                  >
-                                    REGIONAL
-                                  </div>
-                                  <input
-                                    id={regId}
-                                    value={form[regId]}
-                                    onChange={handleFormChange}
-                                    disabled={isViewing}
-                                    className="form-control form-control-sm"
-                                    placeholder="0.00"
-                                    style={{
-                                      borderRadius: 8,
-                                      border: "1px solid #e2e8f0",
-                                      fontSize: 13,
-                                    }}
                                   />
                                 </div>
                               </div>
-                            );
-                          })}
-                        </div>
+                              <div>
+                                <div className="input-icon-wrapper">
+                                  <i className="fa fa-dollar-sign small"></i>
+                                  <input
+                                    id={regId}
+                                    type="number"
+                                    step="0.01"
+                                    value={form[regId]}
+                                    onChange={handleFormChange}
+                                    disabled={isViewing}
+                                    className="form-control bg-light-subtle"
+                                    placeholder="0.00"
+                                  />
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
                       </div>
-                    ))}
-                  </div>
+                    </div>
+                  ))}
+                </div>
+              </form>
+            </div>
 
-                  <div
-                    className="modal-footer"
-                    style={{
-                      background: "#fff",
-                      borderTop: "1px solid #e2e8f0",
-                      padding: "16px 28px",
-                      gap: 10,
-                    }}
+            {/* Footer */}
+            <div className="modal-footer-custom d-flex gap-3 justify-content-end">
+              {isViewing ? (
+                <button
+                  type="button"
+                  className="btn btn-secondary px-5 py-2 rounded-pill fw-bold"
+                  onClick={closeAddModal}
+                >
+                  Close
+                </button>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    className="btn btn-light px-5 py-2 rounded-pill fw-bold border text-muted"
+                    onClick={closeAddModal}
                   >
-                    {isViewing ? (
-                      <button
-                        type="button"
-                        className="btn"
-                        onClick={closeAddModal}
-                        style={{
-                          borderRadius: 10,
-                          padding: "9px 24px",
-                          fontWeight: 600,
-                          fontSize: 14,
-                          background: "#f1f5f9",
-                          border: "none",
-                          color: "#475569",
-                        }}
-                      >
-                        Close
-                      </button>
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    form="rateForm"
+                    className="btn btn-primary px-5 py-2 rounded-pill fw-bold shadow"
+                    disabled={submitting}
+                  >
+                    {submitting ? (
+                      <span>
+                        <i className="fa fa-spinner fa-spin me-2"></i>Saving...
+                      </span>
+                    ) : isEditing ? (
+                      "Save Changes"
                     ) : (
-                      <>
-                        <button
-                          type="button"
-                          className="btn"
-                          onClick={closeAddModal}
-                          style={{
-                            borderRadius: 10,
-                            padding: "9px 24px",
-                            fontWeight: 600,
-                            fontSize: 14,
-                            background: "#f1f5f9",
-                            border: "none",
-                            color: "#475569",
-                          }}
-                        >
-                          Cancel
-                        </button>
-                        <button
-                          type="submit"
-                          className="btn"
-                          disabled={submitting}
-                          style={{
-                            borderRadius: 10,
-                            padding: "9px 28px",
-                            fontWeight: 600,
-                            fontSize: 14,
-                            background: isEditing
-                              ? "linear-gradient(135deg,#7c3aed,#6d28d9)"
-                              : "linear-gradient(135deg,#059669,#047857)",
-                            border: "none",
-                            color: "#fff",
-                            boxShadow: "0 4px 14px rgba(5,150,105,0.3)",
-                          }}
-                        >
-                          {submitting ? (
-                            <>
-                              <span
-                                className="spinner-border spinner-border-sm me-2"
-                                role="status"
-                              />
-                              Saving...
-                            </>
-                          ) : isEditing ? (
-                            <>
-                              <i className="fa-solid fa-pen-to-square me-2" />
-                              Update Rate
-                            </>
-                          ) : (
-                            <>
-                              <i className="fa-solid fa-plus me-2" />
-                              Create Rate
-                            </>
-                          )}
-                        </button>
-                      </>
+                      "Create Rate"
                     )}
-                  </div>
-                </form>
-              </div>
+                  </button>
+                </>
+              )}
             </div>
           </div>
-        </>
+        </div>
       )}
     </div>
   );

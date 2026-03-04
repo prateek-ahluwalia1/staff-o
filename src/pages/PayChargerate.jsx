@@ -10,11 +10,12 @@ const PayChargerate = () => {
   const { userdata } = useSelector((state) => state.auth);
   const userType = userdata?.data?.user_type || userdata?.user_type;
 
-  if (userType === "customer") {
+  if (userType !== "admin") {
     return (
       <div className="dashboard-main" style={{ padding: 32 }}>
-        <div className="alert alert-info">
-          You do not have access to rates management.
+        <div className="alert alert-danger">
+          <i className="fa fa-lock me-2"></i>
+          You do not have permission to access rates management.
         </div>
       </div>
     );
@@ -30,20 +31,18 @@ const PayChargerate = () => {
       </div>
 
       <div className="row g-4">
-        {userType !== "customer" && (
-          <div className="col-12 col-md-6 col-lg-4">
-            <Card
-              title="Charge Rates"
-              description="Manage what customers are charged per location."
-              accent="linear-gradient(135deg,#27ae60,#16a085)"
-              image={chargerateimg}
-              type="charge"
-              onClick={() =>
-                navigate("/rates/charge", { state: { rateType: "charge" } })
-              }
-            />
-          </div>
-        )}
+        <div className="col-12 col-md-6 col-lg-4">
+          <Card
+            title="Charge Rates"
+            description="Manage what customers are charged per location."
+            accent="linear-gradient(135deg,#27ae60,#16a085)"
+            image={chargerateimg}
+            type="charge"
+            onClick={() =>
+              navigate("/rates/charge", { state: { rateType: "charge" } })
+            }
+          />
+        </div>
 
         <div className="col-12 col-md-6 col-lg-4">
           <Card

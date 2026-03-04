@@ -55,11 +55,11 @@ const Sidebar = memo(function Sidebar() {
       icon: "fa-solid fa-user-pen",
       label: "Edit Profile",
     },
-    {
-      to: "/pay-charge-rate",
-      icon: "fa-solid fa-money-bill-wave",
-      label: "Accounts",
-    },
+    // {
+    //   to: "/pay-charge-rate",
+    //   icon: "fa-solid fa-money-bill-wave",
+    //   label: "Accounts",
+    // },
     {
       to: "/payment-history",
       icon: "fa-solid fa-credit-card",
@@ -93,6 +93,11 @@ const Sidebar = memo(function Sidebar() {
       to: "/my-job-applications",
       icon: "fa-solid fa-list-check",
       label: "All Jobs",
+    },
+    {
+      to: "/pay-charge-rate",
+      icon: "fa-solid fa-money-bill-wave",
+      label: "Accounts",
     },
     {
       to: "/payment-history",

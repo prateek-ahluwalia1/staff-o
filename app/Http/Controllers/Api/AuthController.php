@@ -48,17 +48,17 @@ class AuthController extends Controller
             'company_name' => $data['company_name'] ?? null,
         ]);
 
-        $document_categories = DocumentCategory::where('document_category', 'customer_document')->first();
+        // $document_categories = DocumentCategory::where('document_category', 'customer_document')->first();
         
-        foreach (json_decode($document_categories->document_type) as $key => $value) {  
+        // foreach (json_decode($document_categories->document_type) as $key => $value) {  
 
-            $guard_documents = new Document();
-            $guard_documents->user_id = $user->id;
-            $guard_documents->document_category = ($document_categories->document_category != '' ? $document_categories->document_category : 'other');
-            $guard_documents->document_type = $key;
-            $guard_documents->document_name = $value;
-            $guard_documents->save();
-        }
+        //     $guard_documents = new Document();
+        //     $guard_documents->user_id = $user->id;
+        //     $guard_documents->document_category = ($document_categories->document_category != '' ? $document_categories->document_category : 'other');
+        //     $guard_documents->document_type = $key;
+        //     $guard_documents->document_name = $value;
+        //     $guard_documents->save();
+        // }
 
         return response()->json([
             'token' => $user->createToken('api')->plainTextToken,

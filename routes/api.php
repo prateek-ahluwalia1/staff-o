@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\RolesPermissionController;
 use App\Http\Controllers\Api\ChargeRateController;
+use App\Http\Controllers\Api\JobRosterActiviteController;
 use App\Http\Controllers\Api\JobRosterController;
 use App\Http\Controllers\Api\PayRateController;
 use App\Http\Controllers\Api\PermissionController;
@@ -83,6 +84,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::any('user-edit/{id}', [StaffController::class, 'editUser'])->name('user.edit');
     Route::any('upload-file', [StaffController::class, 'uploadFile'])->name('upload.file');
 
+    Route::any('/confirm_task/{id}', [JobRosterController::class, 'confirm_task']);
+    Route::any('/start_task/{id}', [JobRosterController::class, 'start_task']);
+    Route::any('/end_task/{id}', [JobRosterController::class, 'end_task']);
+    Route::any('/break/{id}', [JobRosterController::class, 'start_break']);
+    Route::any('/end_break/{id}', [JobRosterController::class, 'end_break']);
+
     Route::any('job-post', [JobRosterController::class, 'jobData'])->name('job.post');
     Route::any('/asap-jobs/accept/{id}', [JobRosterController::class, 'accept_asap_job'])->name('accept.asap.job');
     Route::any('/signin/{id}', [JobRosterController::class, 'jobSignin'])->name('job.signin');
@@ -91,12 +98,30 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::any('/jobDetails/{id}', [JobRosterController::class, 'jobSpecificDetail'])->name('job.detail');
     Route::any('/guard/jobs/{type}/{duration}', [JobRosterController::class, 'getGuardJobs'])->name('guard.job.detail');
     Route::any('/guard/other/jobs/{type}/{duration}/{id}', [JobRosterController::class, 'getJobs'])->name('guard.job');
-    Route::any('/report-incident/{id}', [JobRosterController::class, 'reportIncidentNew']);
-    Route::any('/foot-patrol-report/{id}', [JobRosterController::class, 'footPatrolReport']);
+    Route::any('/report-incident/{id}', [JobRosterController::class, 'reportIncident']);
+    Route::any('/add-foot-patrol-report/{id}', [JobRosterController::class, 'addFootPatrolReport']);
     Route::any('/get-all-jobs', [JobRosterController::class, 'getAllJobs'])->name('get.all.jobs');
     Route::any('/get-staff/{id}', [JobRosterController::class, 'getStaff'])->name('get.staff');
     Route::any('fetch-customer-sites', [JobRosterController::class, 'fetchCustomerSites'])->name('fetch.customer.sites');
     Route::any('get-contractor-staff/{id}', [JobRosterController::class, 'getContractorStaff'])->name('get.contractor');
+
+
+    // JobRosterActivity
+    Route::any('get-jobSignIn-jobSignOut', [JobRosterActiviteController::class, 'JobSignInSignOut'])->name('job.signIn.signout');
+    Route::any('guard-break-details', [JobRosterActiviteController::class, 'guardBreakDetails'])->name('guard.break.details');
+    Route::any('guard-incident-report', [JobRosterActiviteController::class, 'guardIncidentReport'])->name('guard.incident.report');
+    Route::any('guard-foot-patrol-report', [JobRosterActiviteController::class, 'guardFootPatrolReport'])->name('guard.foot_patrol.report');
+    Route::any('jobroster-give-rating', [JobRosterActiviteController::class, 'giveRatingJobRoster'])->name('giveRatingJobRoster');
+    Route::any('get-jobroster-rating', [JobRosterActiviteController::class, 'getJobrosterRating'])->name('getJobrosterRating');
+    Route::any('store-operation-notes', [JobRosterActiviteController::class, 'storeOperationNotes'])->name('store.operation.notes');
+    Route::any('get-operation-notes', [JobRosterActiviteController::class, 'getOperationNotes'])->name('get.operation.notes');
+    Route::any('get-job-tasks', [JobRosterActiviteController::class, 'getJobTasks'])->name('get.job.tasks');
+
+    // Route::any('get-shift-activity', [JobRosterActiviteController::class, 'getShiftActivity'])->name('get.shift.activity');
+    // Route::any('generateJobTaskReport', [JobRosterActiviteController::class, 'generateJobTaskReport']);
+    // Route::post('update-shift-task', [JobRosterController::class, 'updateShfitTask'])->name('guard.updateShfitTask');
+    // Route::post('update-incident-report', [JobRosterController::class, 'updateIncidentReport'])->name('guard.updateIncidentReport');
+    // Route::post('update-foot-patrol-report', [JobRosterController::class, 'updateFootPatrolReport'])->name('guard.updateFootPatrolReport');
 
     Route::prefix('admin')->group(function () {
 
@@ -120,6 +145,45 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::any('update-staff/{id}',  [AdminStaffController::class, 'updateStaff'])->name('update.staff');
     });
 
+});
+
+Route::get('/clear-all-cache', function() {
+    try {
+        // Clear application cache
+        Artisan::call('cache:clear');
+        $messages[] = 'Application cache cleared';
+        
+        // Clear route cache
+        Artisan::call('route:clear');
+        $messages[] = 'Route cache cleared';
+        
+        // Clear config cache
+        Artisan::call('config:clear');
+        $messages[] = 'Config cache cleared';
+        
+        // Clear view cache
+        Artisan::call('view:clear');
+        $messages[] = 'View cache cleared';
+        
+        // Clear compiled files
+        Artisan::call('clear-compiled');
+        $messages[] = 'Compiled files cleared';
+        
+        // Optimize (recreate cache)
+        Artisan::call('optimize:clear');
+        $messages[] = 'Optimization cleared';
+        
+        return response()->json([
+            'status' => 'success',
+            'message' => 'All caches cleared successfully',
+            'details' => $messages
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'status' => 'error',
+            'message' => 'Error clearing cache: ' . $e->getMessage()
+        ], 500);
+    }
 });
 
 

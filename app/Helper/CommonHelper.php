@@ -1,5 +1,8 @@
 <?php
 
+use App\Models\Site;
+use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Support\Str;
 
 function returnImgPath($type, $image)
@@ -10,6 +13,14 @@ function returnImgPath($type, $image)
             return null;
         }     
 }
+
+function dateFormat($date)
+{
+    $date1 = str_replace('-', '/', $date);
+    $usfromat = date("D , d/m", strtotime(($date1)));
+    return $usfromat; 
+}
+
 
 function usaToAus($date)
 {
@@ -69,3 +80,102 @@ function calCulateGuardWeekHours($start, $end)
     // Use $totalHours as needed
     return $totalHours;
 }
+
+function send_push_notification($data){
+
+        $content = array(
+          "en" => $data['message']
+          );
+    
+        $heading = array(
+          "en" => $data['title']
+          );
+    
+        $fields = array(
+          'app_id' => '940cf8ed-4206-43a0-b542-cb93cc11e58e',
+          'include_player_ids' => array($data['notification_token']),
+                  'data' => array(
+                  'page' => $data['page'],
+                  'roster' => isset($data['data']) ? $data['data']: null ,
+
+                  ),
+          'contents' => $content,
+          'headings' => $heading
+        );
+         //dd($fields);
+    
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, "https://onesignal.com/api/v1/notifications");
+        curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: application/json; charset=utf-8',
+                  'Authorization: Basic '.'NjIxNzJmZDUtMjMzOS00ZmZjLWIwM2EtZWU2MTU5ZWFkNzBh'));
+                //   config('custom.server_key')
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
+        curl_setopt($ch, CURLOPT_HEADER, FALSE);
+        curl_setopt($ch, CURLOPT_POST, TRUE);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($fields));
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, FALSE);
+    
+        $result = curl_exec($ch);
+        //dd($result);
+        if ($result === FALSE) {
+          die('FCM Send Error: ' . curl_error($ch));
+        }
+        curl_close($ch);
+        return $result;
+
+      }
+      function getDatesFromRange($date_time_from, $date_time_to)
+    {
+        //dd($date_time_to);
+
+        $start = Carbon::createFromFormat('Y-m-d', substr($date_time_from, 0, 10));
+        $end = Carbon::createFromFormat('Y-m-d', substr($date_time_to, 0, 10));
+        $dates = [];
+        while ($start->lte($end)) {
+            $dates[] = $start->copy()->format('Y-m-d');
+            $start->addDay();
+        }
+        return $dates;
+    }
+    
+      function getSiteName($id)
+    {
+        $site = Site::where('id', $id)->first();
+        if(!empty($site)){
+            return $site->site_name;
+        }else{
+            return 'N/A';
+        }
+        
+    }
+
+     function usaToAusDateTime($date)
+    {
+        $date1 = str_replace('-', '/', $date);
+        $usfromat = date("d-m-Y H:i", strtotime(($date1)));
+        return $usfromat;
+    }
+
+     function getUserName($id)
+    {
+        $user = User::where('id', $id)->first();
+        if($user){
+            return $user->name;
+        }else{
+            return 'N/A';
+        }
+        
+    }
+
+     function timeStampToAus($timestamp)
+    {
+        $dateTime = new DateTime("@$timestamp");
+        $dateTime->setTimezone(new DateTimeZone('Australia/Sydney'));
+        $australianFormat = $dateTime->format('d-m-Y H:i');
+        return $australianFormat;
+    }
+
+    function returnImgPathCheck($folder, $filename) {
+    $baseUrl = 'https://app-apis.amgsystem.com.au/';
+    return $baseUrl . $folder . '/' . $filename;
+    }

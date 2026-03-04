@@ -1480,18 +1480,17 @@ class JobRosterController extends Controller
             'updated_at' => now()
         ]);
 
-        DB::table('job_rosters')->where(['id' => $id])->update(['update_status' => 1, 'signin_status' => 1, 'last_update' => time()]);
+        DB::table('job_rosters')->where(['id' => $id])->update(['signin_status' => 1]);
         $guard = DB::table('users')->where('id', $roster_data->assigned_to)->first();
         $inputTime = DateTime::createFromFormat('d-m-Y H:i', $request->input('time'));
         $inputTimeFormatted = $inputTime->format('Y-m-d H:i');
         if($inputTimeFormatted <= $roster_data->start){
-        DB::table('job_rosters')->where(['id' => $id])->update(['in_paysheet' => 1]);
+        // DB::table('job_rosters')->where(['id' => $id])->update(['in_paysheet' => 1]);
         }
         
         if ($model) {
 
         $roster = DB::table('job_rosters')->where('id', $id)->first();
-        $main_roster = DB::table('job_new_roster')->where('id', $roster->roster_id)->first();
 
         $admins = DB::table('users')->where('notification_token', '!=', '')->where('id', $roster->created_by)->select('notification_token')->get();
         foreach($admins as $a)
@@ -1689,7 +1688,7 @@ class JobRosterController extends Controller
                 'shift_instructions'    => $item->shift_instructions ?? '',
                 'signin_status'         => $signin_status,
                 'completed_status'      => $completed_status,
-                'job'                   => $item->job,
+                'site'                   => $item->site,
                 'guard'                 => $item->guards,
                 'job_roster_activities' => $item->rosterActivity,
                 'signin_time'           => $signin_status == 1 ? date("m-d-Y H:i", $signin_timez) : null,
@@ -1729,68 +1728,69 @@ class JobRosterController extends Controller
         // return new JobRosterCollection(JobRosterResource::collection($results));
     }
 
-    public function reportIncidentNew(Request $request, $id) 
-    {
-        $media = array();
-        if ($request->input('photo')) {
-            $photo = json_decode($request->input('photo'), true);
-            if (is_array($photo) && !empty($photo)) {
-                foreach ($photo as $key => $value) {
-                    $newObject = new \stdClass();
-                    $newObject->imgPath = $this->uploader_base64($value['imgPath'], 'incident');
-                    $newObject->timestamp = $value['timestamp'];
-                    $media[] = $newObject;
-                }
+public function reportIncident(Request $request, $id) 
+{
+    $media = array();
+    if ($request->input('photo')) {
+        $photo = $request->input('photo');
+        if (is_array($photo) && !empty($photo)) {
+            foreach ($photo as $key => $value) {
+                $newObject = new \stdClass();
+                $newObject->imgPath = $this->uploader_base64($value['imgPath'], 'incident');
+                $newObject->timestamp = $value['timestamp'];
+                $media[] = $newObject;
             }
         }
-        $signature = '';
-        if ($request->input('signature')) {
-            $signature = $this->uploader_base64($request->input('signature'), 'incident');
-        }
-        $data = array(
-            'job_id' => $id,
-            'guard_id' => $request->input('guard_id'),
-            'roster_id' => $request->input('roster_id'),
-            'incident_date' => $request->input('date'),
-            'incident_time' => $request->input('time'),
-            'site_name' => $request->input('site_name'), 
-            'injury_type' => $request->input('injury_type'), 
-            'injury_detail' => $request->input('incident_detail'),
-            'people_involved' => $request->input('people_involved'), 
-            'vehicle' => $request->input('vehicle'), 
-            'emergency_services' => $request->input('emergency_services'), 
-            'wittness' => $request->input('wittness'), 
-            'photo' => json_encode($media),
-            'signature' => $signature
-        );
-        $data['people_involved'] = str_replace('[{}]', '[]', $data['people_involved']);
-        $data['emergency_services'] = str_replace('[{}]', '[]', $data['emergency_services']);
-        $data['vehicle'] = str_replace('[{}]', '[]', $data['vehicle']);
-        $data['wittness'] = str_replace('[{}]', '[]', $data['wittness']);
+    }
+    
+    $signature = '';
+    if ($request->input('signature')) {
+        $signature = $this->uploader_base64($request->input('signature'), 'incident');
+    }
+    
+    // Prepare data with proper JSON encoding for array/object fields
+    $data = array(
+        'job_id' => $id,
+        'guard_id' => $request->input('guard_id'),
+        'roster_id' => $request->input('roster_id'),
+        'incident_date' => $request->input('date'),
+        'incident_time' => $request->input('time'),
+        'site_name' => $request->input('site_name'), 
+        'injury_type' => $request->input('injury_type'), 
+        'injury_detail' => $request->input('incident_detail'),
+        'people_involved' => $this->encodeJsonField($request->input('people_involved')),
+        'vehicle' => $this->encodeJsonField($request->input('vehicle')),
+        'emergency_services' => $this->encodeJsonField($request->input('emergency_services')),
+        'wittness' => $this->encodeJsonField($request->input('wittness')),
+        'photo' => $this->encodeJsonField($media),
+        'signature' => $signature
+    );
+    
+    // Insert the data
+    try {
         $job_incident_report_id = DB::table('incident_reports')->insertGetId($data);
-
-        $guard = DB::table('guards')->where('id', $request->input('guard_id'))->first();
+        
+        // Rest of your code remains the same
+        $guard = DB::table('users')->where('id', $request->input('guard_id'))->first();
         $job = DB::table('sites')->where('id', $id)->first();
         $roster = DB::table('job_rosters')->where('id', $request->input('roster_id'))->first();
         $main_roster = DB::table('job_new_roster')->where('id', $roster->roster_id)->first();
 
-        DB::table('job_roster_activites')->where('job_roster_id', $request->input('roster_id'))->where('guard_id', $request->input('guard_id'))->update(['job_incident_report_id' => $job_incident_report_id]);
+        DB::table('job_roster_activities')
+            ->where('job_roster_id', $request->input('roster_id'))
+            ->where('guard_id', $request->input('guard_id'))
+            ->update(['job_incident_report_id' => $job_incident_report_id]);
 
-        DB::table('roster_complete_activity')->insert([
-        'roster_id' => $request->input('roster_id'),
-        'activity' => $guard->first_name.' '.$guard->last_name.' report new incident',
-        'type' => 'incident_report',
-        'record_id' => $job_incident_report_id,
-        'activity_time' => time(),
-        'activity_by' => $request->input('guard_id')
-        ]);
-
-        //push notification
-        $admins = DB::table('users')->where('notification_token', '!=', '')->where('id', $roster->created_by)->select('notification_token')->get();
-        foreach($admins as $a)
-        {
+        // Push notification
+        $admins = DB::table('users')
+            ->where('notification_token', '!=', '')
+            ->where('id', $roster->created_by)
+            ->select('notification_token')
+            ->get();
+            
+        foreach($admins as $a) {
             $notification_data = [
-                'message' => $guard->first_name.' '.$guard->last_name.' report new incident.',
+                'message' => $guard->name.' report new incident.',
                 'title' => 'Incident Report',
                 'fcm_token' => $a->notification_token,
                 'page' => 'homepage',
@@ -1799,13 +1799,45 @@ class JobRosterController extends Controller
             send_push_notification($notification_data);
         }
 
-         return response()->json([
-        'success' => true,
-        'message' => 'Incident reported successfully!'
+        return response()->json([
+            'success' => true,
+            'message' => 'Incident reported successfully!'
         ], 200);
+        
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Error creating incident report',
+            'error' => $e->getMessage(),
+            'data' => $data // For debugging
+        ], 500);
     }
+}
 
-    public function footPatrolReport(Request $request, $id) 
+/**
+ * Helper function to properly encode fields that might be arrays/objects
+ */
+private function encodeJsonField($field)
+{
+    if (is_null($field)) {
+        return json_encode([]);
+    }
+    
+    if (is_array($field) || is_object($field)) {
+        return json_encode($field);
+    }
+    
+    // If it's already a string, check if it needs cleaning
+    if (is_string($field)) {
+        // Clean up empty array strings
+        $cleaned = str_replace(['[{}]', '{}'], '[]', $field);
+        return $cleaned;
+    }
+    
+    return json_encode([]);
+}
+
+    public function addFootPatrolReport(Request $request, $id) 
     {
         if(!isset($id) || $id == 0){
             return response()->json([
@@ -1843,12 +1875,12 @@ class JobRosterController extends Controller
         );
         $job_patrol_report_id = DB::table('foot_patrol_reports')->insertGetId($data);
 
-        $guard = DB::table('guards')->where('id', $request->input('guard_id'))->first();
+        $guard = DB::table('users')->where('id', $request->input('guard_id'))->first();
         $job = DB::table('sites')->where('id', $id)->first();
         $roster = DB::table('job_rosters')->where('id', $request->input('roster_id'))->first();
         $main_roster = DB::table('job_new_roster')->where('id', $roster->roster_id)->first();
         
-        DB::table('job_roster_activites')->where('job_roster_id', $request->input('roster_id'))->where('guard_id', $request->input('guard_id'))->update(['job_patrol_report_id' => $job_patrol_report_id]);
+        DB::table('job_roster_activities')->where('job_roster_id', $request->input('roster_id'))->where('guard_id', $request->input('guard_id'))->update(['job_patrol_report_id' => $job_patrol_report_id]);
         
         //push notification
         $admins = DB::table('users')->where('notification_token', '!=', '')->where('id', $roster->created_by)->select('notification_token')->get();
@@ -1886,7 +1918,7 @@ class JobRosterController extends Controller
         $usFormat = $dateTime->format('m/d/Y h:i A');
         $roster = DB::table('job_rosters')->where('id', $id)->first();
 
-        $model = DB::table('job_roster_activites')
+        $model = DB::table('job_roster_activities')
             ->updateOrInsert(
             [
                 'guard_id' => $roster->assigned_to, 
@@ -1919,7 +1951,7 @@ class JobRosterController extends Controller
             foreach($admins as $a)
             {
                 $notification_data = [
-                    'message' => $guard->first_name.' '.$guard->last_name.' signout in their job.',
+                    'message' => $guard->name.' signout in their job.',
                     'title' => 'Job Signout',
                     'fcm_token' => $a->notification_token,
                     'page' => 'homepage',
@@ -2039,9 +2071,9 @@ class JobRosterController extends Controller
                 }
 
             }])
-            ->when($request->has('state'), function ($query) use ($request) {
-                $query->where('state', $request->state);
-            })
+            // ->when($request->has('state'), function ($query) use ($request) {
+            //     $query->where('state', $request->state);
+            // })
             ->get();
 
         if ($sites->isEmpty()) {
@@ -2174,5 +2206,296 @@ class JobRosterController extends Controller
         $results = $model->orderBy('start', 'asc')->paginate($DEFULT_PAGES);
         
         return $results;
+    }
+
+    public function start_task(Request $request,$id)
+    {
+        // $this->setValidationRules(['task_id' => 'required', 'roster_id' => 'required', 'start_time' => 'required', 'location' => 'required']);
+        // if ($this->isValidRequest()) {
+        //     $this->response = ['success' => false, 'error' => $this->getErrors()];
+        //     $this->statusCode = self::STATUS_CODE_200;
+        //     return $this->sendResponse();
+        // }
+        $task = DB::table('job_roster_tasks')->where(['id' => $request->task_id, 'job_roster_id' => $request->roster_id])->first();
+        $guard = User::where('id', $id)->first();
+        // if ($guard->state != '') {
+        //     config(['app.timezone' => $this->timezone[$guard->state]]);
+        //     date_default_timezone_set($this->timezone[$guard->state]);
+        // }
+
+        $current_time = $this->time_into_decimal(date('H:i', time()));
+        $task_time = $this->time_into_decimal(date('H:i', strtotime($task->task_start)));
+        $diff = ($current_time - $task_time) * 60;
+        if ($diff > 30) {
+            return response()->json([
+                'success' => false,
+                'error' => 'You can\'t start a task!',
+                'code' => 200
+            ]);
+        }
+        $active_task = DB::table('job_roster_tasks')->where('start_time','!=', '')->where('end_time', '=', '')
+        ->where('job_roster_id', '=', $request->input('roster_id'))->first();
+        if (!empty($active_task)) {
+            return response()->json([
+                'success' => false,
+                'error' => 'Please complete you previous task first!',
+                'code' => 200
+            ]);
+        }
+
+            DB::table('job_roster_tasks')
+            ->where(['job_roster_id' => $request->input('roster_id'), 'id' => $request->input('task_id')])
+            ->update([
+                'start_time' => $request->input('start_time'),
+                'start_location' => $request->input('location')
+            ]);
+
+        $guard = User::where('id', $id)->first();
+
+        $notification = array(
+            'guard_id' => $id, 
+            'record_id' => $request->input('roster_id'),
+            'message' => $guard->name.' start its task.',
+            'type' => 'task',
+            'send_time' => time(),
+            'title' => 'Task start'
+        );
+
+        DB::table('roster_complete_activity')->insert([
+        'roster_id' => $request->input('roster_id'),
+        'activity' => $guard->name.' start its task.',
+        'type' => 'start_task',
+        'record_id' => $request->input('task_id'),
+        'activity_time' => time(),
+        'activity_by' => $id
+        ]);
+
+        $roster = DB::table('job_rosters')->where('id', $request->input('roster_id'))->first();
+        $admins = DB::table('users')->where('notification_token', '!=', '')->where('id', $roster->created_by)->select('notification_token')->get();
+        foreach($admins as $a)
+        {
+            $notification_data = [
+                'message' => $guard->name.' start its task.',
+                'title' => 'start_task',
+                'fcm_token' => $a->notification_token,
+                'page' => 'homepage',
+                'roster_id' =>  $id
+            ]; 
+            send_push_notification($notification_data);
+        }
+    
+        return response()->json([
+                'success' => true,
+                'message' => 'Task start successfully!',
+                'code' => 200
+            ]);
+    }
+
+    public function end_task(Request $request,$id)
+    {
+
+        $imageArray = $request->input('images');
+
+        // $this->setValidationRules(['task_id' => 'required', 'roster_id' => 'required', 'end_time' => 'required', 'location' => 'required']);
+        // if ($this->isValidRequest()) {
+        //     $this->response = ['success' => false, 'error' => $this->getErrors()];
+        //     $this->statusCode = self::STATUS_CODE_200;
+        //     return $this->sendResponse();
+        // }
+            // DB::table('job_new_roster')->where('roster_id', )->update(['job_status' => 'completed']);
+        DB::table('job_roster_tasks')
+        ->where(['job_roster_id' => $request->input('roster_id'), 'id' => $request->input('task_id')])
+        ->update(['end_time' => $request->input('end_time'), 'status' => 'completed', 'end_location' => $request->input('location'), 'note' => $request->input('task_message'), 'task_end_imgs' => !empty($imageArray) ? json_encode($imageArray): null ]);
+
+        $roster = DB::table('job_rosters')->where('id', $request->roster_id)->first();
+        $main_roster = DB::table('job_new_roster')->where('id', $roster->roster_id)->first();
+        $guard = DB::table('users')->where('id', $id)->first();
+       
+        $notification = array(
+            'roster' => !empty($main_roster->id) ? $main_roster->id : null,
+            'guard_id' => $id, 
+            'record_id' => $request->input('roster_id'),
+            'message' => $guard->name.' completed its task.',
+            'type' => 'end_task',
+            'send_time' => time(),
+            'title' => 'Task Completion'
+        );
+        // DB::table('portal_notifications')->insert($notification);
+
+        DB::table('roster_complete_activity')->insert([
+        'roster_id' => $request->input('roster_id'),
+        'activity' => $guard->name.' completed its task.',
+        'type' => 'end_task',
+        'record_id' => $request->input('task_id'),
+        'activity_time' => time(),
+        'activity_by' => $id
+        ]);
+
+        $admins = DB::table('users')->where('notification_token', '!=', '')->where('id', $roster->created_by)->select('notification_token')->get();
+        foreach($admins as $a)
+        {
+            $notification_data = [
+                'message' => $guard->name.' completed its task.',
+                'title' => 'end_task',
+                'fcm_token' => $a->notification_token,
+                'page' => 'homepage',
+                'roster_id' =>  $id
+            ]; 
+            send_push_notification($notification_data);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Task completed successfully!',
+            'code' => 200
+        ]);
+    }
+
+    public function start_break(Request $request, $id)
+    {
+        // $this->setValidationRules(['notes' => 'required', 'roster_id' => 'required']);
+        // if ($this->isValidRequest()) {
+        //     $this->response = ['success' => false, 'error' => $this->getErrors()];
+        //     $this->statusCode = self::STATUS_CODE_200;
+        //     return $this->sendResponse();
+        // }
+        $guard = DB::table('users')->where('id', $id)->first();
+        // if ($guard->state != '') {
+        //     config(['app.timezone' => $this->timezone[$guard->state]]);
+        //     date_default_timezone_set($this->timezone[$guard->state]);
+        // }
+        $job_signin_details = DB::table('job_roster_activites')->where(['guard_id' => $id, 'job_roster_id' => $request->input('roster_id')])->first();
+
+        if ($job_signin_details) {
+            if ($job_signin_details->status == 0) { 
+                return response()->json([
+                    'success' => false,
+                    'error' => 'You can\'t take a break!',
+                    'code' => 200
+                ]);  
+            }else{
+                $job_start_time = $job_signin_details->signin_time;
+                $job_start_time = explode('GMT', $job_start_time);
+                $job_start_time = strtotime($job_start_time[0]);
+                $current_time = time();
+                $diff = round(($current_time - $job_start_time) / (60 *60),2);
+            }
+
+        }else{
+            return response()->json([
+                    'success' => false,
+                    'error' => 'You must be signin into you job to start break!',
+                    'code' => 200
+                ]); 
+        }
+
+        $already_break = DB::table('job_breaks')->where(['guard_id' => $id, 'roster_id' => $request->input('roster_id')])->orderBy('id', 'desc')->first();
+        if ($already_break) {
+            if ($already_break->job_status == 1) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'You are already on a break!',
+                    'code' => 200
+                ]); 
+            }else{
+                $job_start_time = $already_break->end_time;
+                $job_start_time = strtotime($job_start_time);
+                $current_time = time();
+                $diff = round(($job_start_time - $current_time) / (60 *60),2);
+                if ($diff < 4) {
+                      return response()->json([
+                            'success' => false,
+                            'error' => 'You can take a break after 4 hours!',
+                            'code' => 200
+                       ]); 
+                }
+            }
+        }
+        $data = array(
+            'roster_id' => $request->input('roster_id'),
+            'guard_id' => $id,
+            'start_time' => time(),
+            'notes' => $request->input('notes'),
+            'inform_to' => $request->input('inform'),
+            'job_status' => 1, 
+            'break_start_time' => time());
+        DB::table('job_breaks')->insert($data);
+        DB::table('job_rosters')->where(['id' => $request->input('roster_id'), 'guard_id' => $id])->update(['break_status' => 1]);
+
+            DB::table('roster_complete_activity')->insert([
+                'roster_id' => $request->input('roster_id'),
+                'activity' => $guard->first_name.' '.$guard->middle_name.' '.$guard->last_name.' start break.',
+                'type' => 'start_break',
+                'record_id' => $request->input('roster_id'),
+                'activity_time' => time(),
+                'activity_by' => $id
+                ]);
+
+            //push notification
+            $admins = DB::table('users')->where('notification_token', '!=', '')->select('notification_token')->get();
+            foreach($admins as $a)
+            {
+                $notification_data = [
+                    'message' => $guard->name. 'start break.',
+                    'title' => 'start_break',
+                    'fcm_token' => $a->notification_token,
+                    'page' => 'homepage',
+                    'roster_id' =>  $id
+                ]; 
+                send_push_notification($notification_data);
+            }
+        return response()->json([
+            'success' => true,
+            'message' => 'Break start successfully.',
+            'code' => 200
+        ]); 
+    }
+public function end_break(Request $request, $id)
+    {
+        // $this->setValidationRules(['roster_id' => 'required']);
+        // if ($this->isValidRequest()) {
+        //     $this->response = ['success' => false, 'error' => $this->getErrors()];
+        //     $this->statusCode = self::STATUS_CODE_200;
+        //     return $this->sendResponse();
+        // }
+        $guard = DB::table('users')->where('id', $id)->first();
+        // if ($guard->state != '') {
+        //     config(['app.timezone' => $this->timezone[$guard->state]]);
+        //     date_default_timezone_set($this->timezone[$guard->state]);
+        // }
+
+        DB::table('job_breaks')->where(['roster_id' => $request->input('roster_id'), 'guard_id' => $id, 'job_status' => 1])->update(['job_status' => 0, 'end_time' => time(), 'break_end_time' => time(), 'break_end_notes' => ($request->has('notes') ? $request->notes : '')]);
+
+        DB::table('job_rosters')->where(['id' => $request->input('roster_id'), 'guard_id' => $id])->update(['break_status' => 0]);
+
+            DB::table('roster_complete_activity')->insert([
+                'roster_id' => $request->input('roster_id'),
+                'activity' => $guard->first_name.' '.$guard->middle_name.' '.$guard->last_name.' end its break.',
+                'type' => 'end_break',
+                'record_id' => $request->input('roster_id'),
+                'activity_time' => time(),
+                'activity_by' => $id
+                ]);
+
+            //push notification
+            $admins = DB::table('users')->where('notification_token', '!=', '')->select('notification_token')->get();
+            foreach($admins as $a)
+            {
+                $notification_data = [
+                    'message' => $guard->name.' end its break.',
+                    'title' => 'end_break',
+                    'fcm_token' => $a->notification_token,
+                    'page' => 'homepage',
+                    'roster_id' =>  $id
+                ]; 
+                send_push_notification($notification_data);
+            }
+
+         return response()->json([
+            'success' => true,
+            'message' => 'Break Completed.',
+            'code' => 200
+        ]); 
+
     }
 }

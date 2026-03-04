@@ -10,6 +10,16 @@ const PayChargerate = () => {
   const { userdata } = useSelector((state) => state.auth);
   const userType = userdata?.data?.user_type || userdata?.user_type;
 
+  if (userType === "customer") {
+    return (
+      <div className="dashboard-main" style={{ padding: 32 }}>
+        <div className="alert alert-info">
+          You do not have access to rates management.
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="dashboard-main" style={{ padding: 32 }}>
       <div style={{ marginBottom: 32 }}>

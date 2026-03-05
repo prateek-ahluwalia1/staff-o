@@ -10,6 +10,7 @@ class Customer extends Model
         'user_id',
         'phone',
         'company_name',
+        'bank_details',
     ];
 
     /* ======================

@@ -67,14 +67,13 @@ class ChargeRateController extends Controller
         } 
     }
 
-    public function getAllChargeRate()
+    public function getChargeRate()
     {
-        $charge_rate = ChargeRate::where('status', 'active')
+        $charge_rate = ChargeRate::where('status', 'active')->where('id', 1)
             ->orderBy('title', 'asc')
             ->get();
 
-        $chrt = ChargeRateResource::collection($charge_rate);
-        return response()->json(['success' => true, 'data' => $chrt]);  
+        return response()->json(['success' => true, 'data' => $charge_rate]);  
     }
 
      public function getAllArchiveChargeRate()

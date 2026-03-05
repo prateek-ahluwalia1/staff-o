@@ -569,6 +569,7 @@ class StaffController extends Controller
                 $rules = array_merge($rules, [
                     'phone' => 'nullable|string',
                     'company_name' => 'nullable|string',
+                    'bank_details' => 'nullable'
                 ]);
             }
 
@@ -611,6 +612,7 @@ class StaffController extends Controller
                 $profileData = collect($data)->only([
                     'phone',
                     'company_name',
+                    'bank_details',
                 ])->toArray();
 
                 if ($user->customer) {
@@ -620,7 +622,7 @@ class StaffController extends Controller
                     Customer::create($profileData);
                 }
 
-                $user->load(['customer', 'documents']);
+                $user->load(['customer']);
             }
 
             if ($user->user_type === 'contractor') {

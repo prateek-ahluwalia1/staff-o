@@ -106,7 +106,7 @@ class JobRosterActiviteController extends Controller
         
     }
 
-       public function getJobTasks(Request $request) {
+   public function getJobTasks(Request $request) {
     $tasks = JobRosterTask::where('job_roster_id', $request->roster_id)->with('shift')->get();
     // $ts = getjobRosterTaskResource::collection($tasks);
 
@@ -125,7 +125,7 @@ class JobRosterActiviteController extends Controller
         $customer = !empty($customer_id) ? getUserName($customer_id) : null;
     }
 
-    return response()->json(['success' => true, 'data' => $ts, 
+    return response()->json(['success' => true, 'data' => $tasks, 
     'staff' => $staff, 'loaction' => $loaction, 
     'customer' =>  $customer,
     'shift_start' => $shift_start,
@@ -161,13 +161,13 @@ class JobRosterActiviteController extends Controller
 
    public function getJobrosterRating(Request $request)
    {
-    $getRating = JobRoster::where('guard_id', $request->guard_id)
+    $getRating = JobRoster::where('assigned_to', $request->guard_id)
     ->where('id', $request->roster_id)->select('rating', 'rating_desc')->first();
     return response()->json(['success' => true, 'data' => $getRating]);
    }
    public function getOperationNotes(Request $request)
    {
-    $getOperationNotes = JobRoster::where('guard_id', $request->guard_id)
+    $getOperationNotes = JobRoster::where('assigned_to', $request->guard_id)
     ->where('id', $request->roster_id)->select('operation_notes','id')->first();
     return response()->json(['success' => true, 'data' => $getOperationNotes]);
    }

@@ -16,6 +16,7 @@ use App\Http\Controllers\Api\RoleController;
 use App\Http\Controllers\Api\StaffController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\UserRoleController;
+use Illuminate\Support\Facades\Artisan;
 
 /*
 |--------------------------------------------------------------------------
@@ -59,14 +60,14 @@ Route::middleware('auth:sanctum')->group(function () {
      //chargeRate routes
      Route::any('charge_rate/store',  [ChargeRateController::class, 'store'])->name('charge_rate.store');
      Route::any('charge_rate/update',  [ChargeRateController::class, 'update'])->name('charge_rate.update');
-     Route::any('get-all-chargerates',  [ChargeRateController::class, 'getAllChargeRate'])->name('get.all.charge_rate');
+     Route::any('get-chargerates',  [ChargeRateController::class, 'getChargeRate'])->name('get.all.charge_rate');
      Route::any('get-all-archive-chargerates',  [ChargeRateController::class, 'getAllArchiveChargeRate'])->name('get.all.archive_charge_rate');
      Route::any('charge_rate/remove',  [ChargeRateController::class, 'removeChargeRate'])->name('charge_rate.remove');
 
     //payrate routes
     Route::any('payrate/store',  [PayRateController::class, 'store'])->name('payrate.store');
     Route::any('payrate/update',  [PayRateController::class, 'update'])->name('payrate.update');
-    Route::any('get-all-payrates',  [PayRateController::class, 'getAllPayrate'])->name('get.all.payrates');
+    Route::any('get-All-payrates',  [PayRateController::class, 'getAllPayrate'])->name('get.all.payrates');
     Route::any('get-payrate',  [PayRateController::class, 'getPayrate'])->name('get.payrate');
     Route::any('get-all-archive-payrates',  [PayRateController::class, 'getAllArchivePayrate'])->name('get.all.archive_payrates');
     Route::any('payrate/remove',  [PayRateController::class, 'removePayrate'])->name('payrate.remove');
@@ -104,6 +105,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::any('/get-staff/{id}', [JobRosterController::class, 'getStaff'])->name('get.staff');
     Route::any('fetch-customer-sites', [JobRosterController::class, 'fetchCustomerSites'])->name('fetch.customer.sites');
     Route::any('get-contractor-staff/{id}', [JobRosterController::class, 'getContractorStaff'])->name('get.contractor');
+    Route::any('update-roster-time', [JobRosterController::class, 'updateRosterTime'])->name('update.roster.time');
+
 
 
     // JobRosterActivity

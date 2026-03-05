@@ -1323,7 +1323,7 @@ class JobRosterController extends Controller
                 if ($roster->is_document == 1) {
                     $document_types = $roster->document_list;
 
-                    $document_category = DocumentCategory::where('document_category', 'other')->first();
+                    $document_category = DocumentCategory::where('document_category', 'job_doc')->first();
 
                     if ($document_category && !empty($document_types)) {
                        foreach (json_decode($document_category->document_type) as $doc_key => $doc_name) {  
@@ -2364,7 +2364,7 @@ private function encodeJsonField($field)
         //     config(['app.timezone' => $this->timezone[$guard->state]]);
         //     date_default_timezone_set($this->timezone[$guard->state]);
         // }
-        $job_signin_details = DB::table('job_roster_activites')->where(['guard_id' => $id, 'job_roster_id' => $request->input('roster_id')])->first();
+        $job_signin_details = DB::table('job_roster_activities')->where(['guard_id' => $id, 'job_roster_id' => $request->input('roster_id')])->first();
 
         if ($job_signin_details) {
             if ($job_signin_details->status == 0) { 
@@ -2466,11 +2466,11 @@ public function end_break(Request $request, $id)
 
         DB::table('job_breaks')->where(['roster_id' => $request->input('roster_id'), 'guard_id' => $id, 'job_status' => 1])->update(['job_status' => 0, 'end_time' => time(), 'break_end_time' => time(), 'break_end_notes' => ($request->has('notes') ? $request->notes : '')]);
 
-        DB::table('job_rosters')->where(['id' => $request->input('roster_id'), 'guard_id' => $id])->update(['break_status' => 0]);
+        DB::table('job_rosters')->where(['id' => $request->input('roster_id'), 'assigned_to' => $id])->update(['break_status' => 0]);
 
             DB::table('roster_complete_activity')->insert([
                 'roster_id' => $request->input('roster_id'),
-                'activity' => $guard->first_name.' '.$guard->middle_name.' '.$guard->last_name.' end its break.',
+                'activity' => $guard->name.' end its break.',
                 'type' => 'end_break',
                 'record_id' => $request->input('roster_id'),
                 'activity_time' => time(),
@@ -2478,18 +2478,18 @@ public function end_break(Request $request, $id)
                 ]);
 
             //push notification
-            $admins = DB::table('users')->where('notification_token', '!=', '')->select('notification_token')->get();
-            foreach($admins as $a)
-            {
-                $notification_data = [
-                    'message' => $guard->name.' end its break.',
-                    'title' => 'end_break',
-                    'fcm_token' => $a->notification_token,
-                    'page' => 'homepage',
-                    'roster_id' =>  $id
-                ]; 
-                send_push_notification($notification_data);
-            }
+            // $admins = DB::table('users')->where('notification_token', '!=', '')->select('notification_token')->get();
+            // foreach($admins as $a)
+            // {
+            //     $notification_data = [
+            //         'message' => $guard->name.' end its break.',
+            //         'title' => 'end_break',
+            //         'fcm_token' => $a->notification_token,
+            //         'page' => 'homepage',
+            //         'roster_id' =>  $id
+            //     ]; 
+            //     send_push_notification($notification_data);
+            // }
 
          return response()->json([
             'success' => true,
@@ -2497,5 +2497,42 @@ public function end_break(Request $request, $id)
             'code' => 200
         ]); 
 
+    }
+
+    public function updateRosterTime(Request $request)
+    {
+    $jobRosterTime = JobRoster::where('id', $request->id)->first();
+    $old_data = $jobRosterTime;
+    $hours = $this->getShiftHours(dbFormateDateTime($request->start), dbFormateDateTime($request->end), $jobRosterTime->site_id, 0);
+    $guardWorkingHours =  calCulateGuardWeekHours(dbFormateDateTime($request->start),dbFormateDateTime($request->end));
+    if($jobRosterTime){
+        $jobRosterTime->start = dbFormateDateTime($request->start);
+        $jobRosterTime->end = dbFormateDateTime($request->end);
+        $jobRosterTime->hours = $guardWorkingHours;
+        $jobRosterTime->morning_hours = (!empty($hours['morning']) ? $hours['morning'] : 0.0);
+        $jobRosterTime->night_hours = (!empty($hours['night']) ? $hours['night'] : 0.0);
+        $jobRosterTime->saturday_morning_hours = (!empty($hours['saturday_morning']) ? $hours['saturday_morning'] : 0.0);
+        $jobRosterTime->saturday_night_hours = (!empty($hours['saturday_night']) ? $hours['saturday_night'] : 0.0);
+        $jobRosterTime->sunday_morning_hours = (!empty($hours['sunday_morning']) ? $hours['sunday_morning'] : 0.0);
+        $jobRosterTime->sunday_night_hours = (!empty($hours['sunday_night']) ? $hours['sunday_night'] : 0.0);
+        $jobRosterTime->ph_morning_hours = (!empty($hours['ph_morning']) ? $hours['ph_morning'] : 0.0);
+        $jobRosterTime->ph_night_hours = (!empty($hours['ph_night']) ? $hours['ph_night'] : 0.0);
+        $jobRosterTime->update();
+        $check = checkGuardShiftTimingUpdate($request->start, $request->end, $jobRosterTime->assigned_to, $jobRosterTime->roster_id);
+        $jobRosterTime->conf_start = (!empty($check['start']) ? dbFormateDateTime($check['start']) : '');
+        $jobRosterTime->conf_end = (!empty($check['end']) ? dbFormateDateTime($check['end']) : '');
+        $jobRosterTime->conflict =  (!empty($check['conf']) ? $check['conf'] : '');
+        $jobRosterTime->update();
+        $updatedjobRosterTime = $jobRosterTime->getChanges();
+        // jobRosterActions($request->admin_id,'update_shift_time',$jobRosterTime->id, 'job_roster',$old_data, $updatedjobRosterTime);
+
+        $admin_name = getUserName($request->admin_id);
+        $currnet_time = time();
+        // shiftCompleteActivity($jobRosterTime->id, $admin_name. ' Update Time of this Shift', 'update_shift_time', $jobRosterTime->id, $currnet_time, $request->admin_id);
+
+        return response()->json(['message' => "Shift Time Updated" ,  'code' => 200, 'success' => true]);
+    }else{
+        return response()->json(['message' => "Shift not Found!" ,  'code' => 404, 'success' => false]);
+    }
     }
 }

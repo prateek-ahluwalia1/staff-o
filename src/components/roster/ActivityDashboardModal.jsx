@@ -3,7 +3,7 @@ import { format } from "date-fns";
 import SignInOutDetails from "./SignInOutDetails";
 import BreakDetails from "./BreakDetails";
 import IncidentReport from "./IncidentReport";
-import ShiftActivity from "./ShiftActivity";
+import ShiftTasks from "./ShiftTasks";
 import FootPatrolReport from "./FootPatrolReport";
 import RatingComponent from "./RatingComponent";
 import OperationNotes from "./OperationNotes";
@@ -12,7 +12,7 @@ const SIDEBAR_TABS = [
   { id: "signin", label: "Sign In/Out Details", bg: "#e0f7fa" },
   { id: "break", label: "Break Details", bg: "#fff9c4" },
   { id: "incident", label: "Incident Report", bg: "#ffcdd2" },
-  { id: "shift_activity", label: "Shift Activity", bg: "#c8e6c9" },
+  { id: "shift_tasks", label: "Shift Tasks", bg: "#c8e6c9" },
   { id: "foot_petrol", label: "Foot Patrol Report", bg: "#ffe0b2" },
   { id: "operation_notes", label: "Operation Notes", bg: "#e8f5e9" },
   { id: "rating", label: "Rating", bg: "#f3e5f5" },
@@ -52,9 +52,9 @@ export default function ActivityDashboardModal({
             site={site}
           />
         );
-      case "shift_activity":
+      case "shift_tasks":
         return (
-          <ShiftActivity
+          <ShiftTasks
             rosterId={rosterId}
             guardId={guardId}
             shift={shift}

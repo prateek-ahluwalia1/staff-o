@@ -8,9 +8,16 @@ import StepProgress from "../components/job/StepProgress";
 import LocationStep from "../components/job/LocationStep";
 import ScheduleStep from "../components/job/ScheduleStep";
 import DetailsStep from "../components/job/DetailsStep";
+import TasksStep from "../components/job/TasksStep";
 import ReviewStep from "../components/job/ReviewStep";
 
-const STEP_TITLES = ["Location", "Schedule", "Details", "Review & Confirm"];
+const STEP_TITLES = [
+  "Location",
+  "Schedule",
+  "Details",
+  "Tasks",
+  "Review & Confirm",
+];
 
 export default function AddJob() {
   const navigate = useNavigate();
@@ -63,6 +70,7 @@ export default function AddJob() {
     attachments: [],
     document: false,
     document_types: [],
+    tasks: [],
     termsAccepted: false,
   });
 
@@ -187,6 +195,11 @@ export default function AddJob() {
         document_list,
         document_types: form.document_types || [],
         job_instruction: form.description || "",
+        tasks: (form.tasks || []).map((t) => ({
+          task: t.task,
+          task_start: t.task_start,
+          task_end: t.task_end,
+        })),
       };
 
       const result = await submitJob("api/job-post", payload, {
@@ -256,7 +269,8 @@ export default function AddJob() {
                     removeAttachment={removeAttachment}
                   />
                 )}
-                {step === 3 && (
+                {step === 3 && <TasksStep form={form} setField={setField} />}
+                {step === 4 && (
                   <ReviewStep
                     form={form}
                     rate={breakdown}

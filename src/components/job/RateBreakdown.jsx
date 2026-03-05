@@ -42,7 +42,7 @@ export default function RateBreakdown({ rate }) {
       {/* Header */}
       <div className="d-flex justify-content-between align-items-start mb-3">
         <div>
-          <h6 className="mb-0">Rate Breakdown</h6>
+          <h6 className="mb-2">Rate Breakdown</h6>
           <small className="text-muted">
             {fmtH(totalHours)} total &middot; {guardLabel}
           </small>

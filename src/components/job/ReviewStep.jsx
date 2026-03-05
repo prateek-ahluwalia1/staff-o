@@ -25,13 +25,13 @@ export default function ReviewStep({
         <div className="col-md-6 mb-2">
           <div className="border rounded p-2 bg-light">
             <strong>Job Title</strong>
-            <div className="text-muted small">{form.title || "-"}</div>
+            <div className="text-muted small mt-2">{form.title || "-"}</div>
           </div>
         </div>
         <div className="col-md-6 mb-2">
           <div className="border rounded p-2 bg-light">
             <strong>Job Type</strong>
-            <div className="text-muted small">{jobTypeLabel}</div>
+            <div className="text-muted small mt-2">{jobTypeLabel}</div>
           </div>
         </div>
       </div>
@@ -40,7 +40,7 @@ export default function ReviewStep({
         <div className="col-md-6 mb-2">
           <div className="border rounded p-2 bg-light">
             <strong>Start</strong>
-            <div className="text-muted small">
+            <div className="text-muted small mt-2">
               {form.startDate} {form.startTime}
             </div>
           </div>
@@ -48,7 +48,7 @@ export default function ReviewStep({
         <div className="col-md-6 mb-2">
           <div className="border rounded p-2 bg-light">
             <strong>End</strong>
-            <div className="text-muted small">
+            <div className="text-muted small mt-2">
               {form.endDate} {form.endTime}
             </div>
           </div>
@@ -58,7 +58,7 @@ export default function ReviewStep({
       <div className="mt-3">
         <div className="border rounded p-3">
           <strong>Location</strong>
-          <div className="text-muted small">{form.location || "-"}</div>
+          <div className="text-muted small mt-2">{form.location || "-"}</div>
         </div>
       </div>
 

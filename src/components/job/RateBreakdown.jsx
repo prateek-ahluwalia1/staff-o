@@ -23,11 +23,11 @@ export default function RateBreakdown({ rate }) {
 
   const {
     segments,
-    payTotal,
+    // payTotal,
     chargeTotal,
-    payGst,
+    // payGst,
     chargeGst,
-    payTotalIncGst,
+    // payTotalIncGst,
     chargeTotalIncGst,
     numGuards,
     totalHours,
@@ -52,12 +52,12 @@ export default function RateBreakdown({ rate }) {
 
       {/* Column headers */}
       <div className="row g-0 border-bottom pb-1 mb-1">
-        <div className="col-5 small fw-semibold text-muted">Period</div>
-        <div className="col-1 small fw-semibold text-muted text-end">Hrs</div>
-        <div className="col-3 small fw-semibold text-muted text-end">
+        <div className="col-6 small fw-semibold text-muted">Period</div>
+        <div className="col-2 small fw-semibold text-muted text-end">Hrs</div>
+        {/* <div className="col-3 small fw-semibold text-muted text-end">
           Pay/hr → Total
-        </div>
-        <div className="col-3 small fw-semibold text-muted text-end">
+        </div> */}
+        <div className="col-4 small fw-semibold text-muted text-end">
           Charge/hr → Total
         </div>
       </div>
@@ -68,16 +68,16 @@ export default function RateBreakdown({ rate }) {
           key={seg.key}
           className="row g-0 align-items-center border-bottom py-1"
         >
-          <div className="col-5 small">{seg.label}</div>
-          <div className="col-1 small text-end text-muted">
+          <div className="col-6 small">{seg.label}</div>
+          <div className="col-2 small text-end text-muted">
             {Number(seg.hours).toFixed(2)}
           </div>
-          <div className="col-3 small text-end">
+          {/* <div className="col-3 small text-end">
             <span className="text-muted">{fmt(seg.payRate)}</span>
             <span className="mx-1 text-muted">→</span>
             <span className="fw-semibold">{fmt(seg.payAmount)}</span>
-          </div>
-          <div className="col-3 small text-end">
+          </div> */}
+          <div className="col-4 small text-end">
             <span className="text-muted">{fmt(seg.chargeRate)}</span>
             <span className="mx-1 text-muted">→</span>
             <span className="fw-semibold">{fmt(seg.chargeAmount)}</span>
@@ -87,22 +87,22 @@ export default function RateBreakdown({ rate }) {
 
       {/* Subtotal row */}
       <div className="row g-0 border-bottom py-2">
-        <div className="col-6 small fw-semibold text-muted">
+        <div className="col-8 small fw-semibold text-muted">
           Subtotal (ex. GST)
         </div>
-        <div className="col-3 small text-end fw-semibold text-success">
+        {/* <div className="col-3 small text-end fw-semibold text-success">
           {fmt(payTotal)}
-        </div>
-        <div className="col-3 small text-end fw-semibold text-primary">
+        </div> */}
+        <div className="col-4 small text-end fw-semibold text-primary">
           {fmt(chargeTotal)}
         </div>
       </div>
 
       {/* GST row */}
       <div className="row g-0 border-bottom py-2">
-        <div className="col-6 small text-muted">GST (10%)</div>
-        <div className="col-3 small text-end text-muted">{fmt(payGst)}</div>
-        <div className="col-3 small text-end text-muted">{fmt(chargeGst)}</div>
+        <div className="col-8 small text-muted">GST (10%)</div>
+        {/* <div className="col-3 small text-end text-muted">{fmt(payGst)}</div> */}
+        <div className="col-4 small text-end text-muted">{fmt(chargeGst)}</div>
       </div>
 
       {/* Total inc-GST highlight */}
@@ -113,14 +113,14 @@ export default function RateBreakdown({ rate }) {
             "linear-gradient(90deg, rgba(13,110,253,0.07), rgba(25,135,84,0.04))",
         }}
       >
-        <div className="col-6 fw-bold">Total (inc. GST)</div>
-        <div className="col-3 text-end">
+        <div className="col-8 fw-bold">Total (inc. GST)</div>
+        {/* <div className="col-3 text-end">
           <div className="x-small text-muted" style={{ fontSize: "0.7rem" }}>
             Pay Rate
           </div>
           <div className="fw-bold text-success">{fmt(payTotalIncGst)}</div>
-        </div>
-        <div className="col-3 text-end">
+        </div> */}
+        <div className="col-4 text-end">
           <div className="x-small text-muted" style={{ fontSize: "0.7rem" }}>
             Charge Rate
           </div>

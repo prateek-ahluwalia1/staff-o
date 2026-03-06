@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
-import { NavLink } from "react-router-dom";
+// import { NavLink } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { startOfWeek, addDays, format, parse } from "date-fns";
 import useSubmit from "../hooks/useSubmit";
@@ -144,11 +144,11 @@ export default function MyJobApplications() {
             </p>
           </div>
 
-          <div className="d-flex flex-wrap gap-2">
+          {/* <div className="d-flex flex-wrap gap-2">
             <NavLink to="/add-job" className="btn btn-primary">
               <i className="fa-solid fa-plus" aria-hidden="true"></i> Post a Job
             </NavLink>
-          </div>
+          </div> */}
         </div>
 
         {/* --- CARDS GRID --- */}

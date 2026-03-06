@@ -2,6 +2,7 @@ import React, { memo, useState, useCallback } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { Link, useNavigate } from "react-router-dom";
 import { logOut } from "../store/slices/authSlice";
+import staffologo from "../assets/images/staffo.png";
 
 const Header = memo(function Header() {
   const { token } = useSelector((state) => state.auth);
@@ -28,7 +29,13 @@ const Header = memo(function Header() {
         <div className="container">
           {/* Logo */}
           <Link to="/" className="navbar-brand logo d-flex align-items-center">
-            <img src="/assets/images/jobs-portal-logo.png" alt="Jobs Portal" />
+            <img
+              src={staffologo}
+              alt="Staffo"
+              style={{
+                height: "50px",
+              }}
+            />
           </Link>
 
           {/* Mobile toggle */}

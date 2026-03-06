@@ -1,6 +1,9 @@
 import React, { useEffect } from "react";
 import useSubmit from "../../hooks/useSubmit";
 import Loader from "../Loader";
+import { apiURL } from "../../utils/exports";
+
+const SELFIE_BASE = `${apiURL}uploads/`;
 
 const Field = ({ label, value }) => (
   <div style={{ marginBottom: "16px" }}>
@@ -112,7 +115,19 @@ export default function SignInOutDetails({ rosterId, guardId, shift, site }) {
     return null;
   };
 
-  const signInLoc = parseLocation(d.signin_location);
+  // signin_time / signout_time come as "MM/DD/YYYY HH:MM AM/PM"
+  const splitDateTime = (val) => {
+    if (!val) return { date: null, time: null };
+    const idx = val.indexOf(" ");
+    if (idx === -1) return { date: val, time: null };
+    return { date: val.substring(0, idx), time: val.substring(idx + 1) };
+  };
+
+  const signIn = splitDateTime(d.signin_time);
+  const signOut = splitDateTime(d.signout_time);
+
+  // sign-in location is stored in `location`, sign-out in `signout_location`
+  const signInLoc = parseLocation(d.location);
   const signOutLoc = parseLocation(d.signout_location);
 
   return (
@@ -134,10 +149,13 @@ export default function SignInOutDetails({ rosterId, guardId, shift, site }) {
           Sign In
         </div>
 
-        <Field label="Sign In Date" value={d.signin_date} />
-        <Field label="Sign In Time" value={d.signin_time} />
+        <Field label="Sign In Date" value={signIn.date} />
+        <Field label="Sign In Time" value={signIn.time} />
         <Field label="Sign In Notes" value={d.signin_notes} />
-        <ImageBox src={d.signin_selfie} label="Sign In Selfie" />
+        <ImageBox
+          src={d.signin_selfie ? `${SELFIE_BASE}${d.signin_selfie}` : null}
+          label="Sign In Selfie"
+        />
 
         <div
           style={{
@@ -182,10 +200,13 @@ export default function SignInOutDetails({ rosterId, guardId, shift, site }) {
           Sign Out
         </div>
 
-        <Field label="Sign Out Date" value={d.signout_date} />
-        <Field label="Sign Out Time" value={d.signout_time} />
+        <Field label="Sign Out Date" value={signOut.date} />
+        <Field label="Sign Out Time" value={signOut.time} />
         <Field label="Sign Out Notes" value={d.signout_notes} />
-        <ImageBox src={d.signout_selfie} label="Sign Out Selfie" />
+        <ImageBox
+          src={d.signout_selfie ? `${SELFIE_BASE}${d.signout_selfie}` : null}
+          label="Sign Out Selfie"
+        />
 
         <div
           style={{

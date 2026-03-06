@@ -1,6 +1,4 @@
 import React, { useState } from "react";
-import DatePicker from "react-datepicker";
-import "react-datepicker/dist/react-datepicker.css";
 import { format } from "date-fns";
 
 const hoursOptions = Array.from({ length: 24 }, (_, i) =>
@@ -9,20 +7,6 @@ const hoursOptions = Array.from({ length: 24 }, (_, i) =>
 const minutesOptions = Array.from({ length: 12 }, (_, i) =>
   String(i * 5).padStart(2, "0"),
 );
-
-const parseLocalDate = (dateStr) => {
-  if (!dateStr) return null;
-  const [year, month, day] = dateStr.split("-").map(Number);
-  return new Date(year, month - 1, day);
-};
-
-const formatLocalDate = (date) => {
-  if (!date) return "";
-  const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, "0");
-  const d = String(date.getDate()).padStart(2, "0");
-  return `${y}-${m}-${d}`;
-};
 
 const getPart = (timeStr, part) => {
   if (!timeStr) return "";
@@ -197,7 +181,7 @@ export default function TimeEditModal({
         >
           {/* Header */}
           <div className="d-flex justify-content-between align-items-center p-4 border-bottom">
-            <h3 className="m-0 fw-bold">Update Shift Schedule</h3>
+            <h3 className="m-0 fw-bold">Update Shift Times</h3>
             <button
               onClick={closeModal}
               className="btn btn-danger text-white rounded-circle d-flex align-items-center justify-content-center p-0"
@@ -217,7 +201,7 @@ export default function TimeEditModal({
             <p
               style={{ color: "#666", marginBottom: "28px", fontSize: "15px" }}
             >
-              Modify the start and end timings for the shift at{" "}
+              Modify the start and end times for the shift at{" "}
               <strong>{site?.displayName}</strong>.
             </p>
 
@@ -232,35 +216,9 @@ export default function TimeEditModal({
                   paddingBottom: "10px",
                 }}
               >
-                Start Date &amp; Time
+                Start Time
               </h5>
               <div className="row g-3">
-                <div className="col-md-6">
-                  <label
-                    style={{
-                      fontWeight: 600,
-                      marginBottom: 8,
-                      fontSize: 14,
-                      color: "#555",
-                      display: "block",
-                    }}
-                  >
-                    Start Date
-                  </label>
-                  <DatePicker
-                    selected={parseLocalDate(editForm.startDate)}
-                    onChange={(date) =>
-                      setEditForm((prev) => ({
-                        ...prev,
-                        startDate: formatLocalDate(date),
-                      }))
-                    }
-                    dateFormat="yyyy-MM-dd"
-                    placeholderText="Select start date"
-                    wrapperClassName="w-100"
-                    customInput={<input style={inputStyle} />}
-                  />
-                </div>
                 <div className="col-md-6">
                   <label
                     style={{
@@ -335,40 +293,9 @@ export default function TimeEditModal({
                   paddingBottom: "10px",
                 }}
               >
-                End Date &amp; Time
+                End Time
               </h5>
               <div className="row g-3">
-                <div className="col-md-6">
-                  <label
-                    style={{
-                      fontWeight: 600,
-                      marginBottom: 8,
-                      fontSize: 14,
-                      color: "#555",
-                      display: "block",
-                    }}
-                  >
-                    End Date
-                  </label>
-                  <DatePicker
-                    selected={parseLocalDate(editForm.endDate)}
-                    onChange={(date) =>
-                      setEditForm((prev) => ({
-                        ...prev,
-                        endDate: formatLocalDate(date),
-                      }))
-                    }
-                    dateFormat="yyyy-MM-dd"
-                    placeholderText="Select end date"
-                    minDate={
-                      editForm.startDate
-                        ? parseLocalDate(editForm.startDate)
-                        : null
-                    }
-                    wrapperClassName="w-100"
-                    customInput={<input style={inputStyle} />}
-                  />
-                </div>
                 <div className="col-md-6">
                   <label
                     style={{

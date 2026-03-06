@@ -59,9 +59,7 @@ export default function RosterPage() {
   const [selectedUserId, setSelectedUserId] = useState("");
 
   const [editForm, setEditForm] = useState({
-    startDate: "",
     startTime: "",
-    endDate: "",
     endTime: "",
   });
 
@@ -142,14 +140,9 @@ export default function RosterPage() {
     setSelectedUserId(shift.assigned_to || "");
 
     if (modalType === "time") {
-      const [startD, startT] = (shift.start || "").split(" ");
-      const [endD, endT] = (shift.end || "").split(" ");
-      setEditForm({
-        startDate: startD || "",
-        startTime: startT || "00:00",
-        endDate: endD || "",
-        endTime: endT || "00:00",
-      });
+      const startT = (shift.start || "").split(" ")[1] || "00:00";
+      const endT = (shift.end || "").split(" ")[1] || "00:00";
+      setEditForm({ startTime: startT, endTime: endT });
     }
 
     setModal({ type: modalType, site, shift, dateStr });
@@ -165,10 +158,11 @@ export default function RosterPage() {
 
     try {
       if (modal.type === "time" && userRole === "customer") {
-        const endpoint = `api/update-shift-time/${modal.shift.id}`;
+        const endpoint = `api/update-roster-time`;
         const payload = {
-          start: `${editForm.startDate} ${editForm.startTime}`,
-          end: `${editForm.endDate} ${editForm.endTime}`,
+          id: modal.shift.id,
+          start: editForm.startTime,
+          end: editForm.endTime,
         };
         await saveUserAssignment(endpoint, payload, { method: "POST" });
       } else if (modal.type === "admin_assign") {

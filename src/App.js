@@ -7,6 +7,7 @@ import {
 } from "react-router-dom";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Loader from "./components/Loader";
+import OneSignal from "react-onesignal";
 
 const Login = lazy(() => import("./auth/login"));
 const Register = lazy(() => import("./auth/register"));
@@ -29,6 +30,13 @@ const ManageUsers = lazy(() => import("./pages/manage-users"));
 const ManageStaff = lazy(() => import("./pages/manage-staff"));
 
 function App() {
+  useEffect(() => {
+    OneSignal.init({
+      appId: "<YOUR_APP_ID>",
+    }).then(() => {
+      OneSignal.Debug.setLogLevel("trace");
+    });
+  }, []);
   return (
     <Router>
       <div className="App">

@@ -23,7 +23,6 @@ const Sidebar = memo(function Sidebar() {
 
   const customerNav = [
     { to: "/dashboard", icon: "fa-solid fa-gauge", label: "Dashboard" },
-    { to: "/roster", icon: "fa-solid fa-users", label: "Roster" },
     { to: "/add-job", icon: "fa-solid fa-briefcase", label: "Post a Job" },
     {
       to: "/edit-profile",
@@ -84,6 +83,7 @@ const Sidebar = memo(function Sidebar() {
 
   const adminNav = [
     { to: "/dashboard", icon: "fa-solid fa-gauge", label: "Admin Dashboard" },
+    { to: "/roster", icon: "fa-solid fa-users", label: "Roster" },
     {
       to: "/manage-users",
       icon: "fa-solid fa-users-gear",

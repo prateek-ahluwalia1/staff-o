@@ -136,7 +136,7 @@ export default function AddJob() {
 
   function next() {
     if (step === 0) {
-      if (!form.location || !form.coordinates) {
+      if (!form.coordinates) {
         setLocationError("Please select a valid location before continuing.");
         return;
       }
@@ -181,7 +181,7 @@ export default function AddJob() {
         user_id: userdata?.data?.id || userdata?.id || null,
         title: form.title,
         description: form.description,
-        address: form.location,
+        address: form.location || form.address,
         coordinates,
         state: form.state || "open",
         numberOfGuards: Number(form.numGuards) || 1,

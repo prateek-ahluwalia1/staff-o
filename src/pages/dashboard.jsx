@@ -31,45 +31,12 @@ const APPLIED_JOBS = [
   },
 ];
 
-const PACKAGE_DETAILS = [
-  { label: "Package Name", value: "Basic Jobs View" },
-  { label: "Price", value: "USD 10" },
-  { label: "Applications", value: "02 / 20" },
-  { label: "Started On", value: "N/A" },
-  { label: "Expires On", value: "31 Dec, 2025", isDanger: true },
-];
-
-const RECOMMENDED_JOBS = [
-  {
-    type: "Full Time",
-    title: "UI/UX Designer",
-    locationCompany: "Islamabad · Power Color",
-    salary: "$6000 - $9000/Monthly",
-    date: "Mar 07, 2025",
-  },
-  {
-    type: "Full Time",
-    title: "iOS Developer",
-    locationCompany: "Atlanta · Multimedia Design",
-    salary: "$6000 - $9000/Monthly",
-    date: "Mar 07, 2025",
-  },
-  {
-    type: "Contract",
-    badgeClass: "danger",
-    title: "Electrical Engineer",
-    locationCompany: "Denver · Power Wave",
-    salary: "$5000 - $9000/Monthly",
-    date: "Mar 07, 2025",
-  },
-];
-
 export default function Dashboard() {
   const { userdata } = useSelector((state) => state.auth);
   return (
     <div className="dashboard-main">
       {/* Stats */}
-      <div className="row g-3 dashboard-stats">
+      {/* <div className="row g-3 dashboard-stats">
         <div className="col-6 col-md-3">
           <div className="stat-card stat-purple">
             <span>Profile Views</span>
@@ -94,13 +61,13 @@ export default function Dashboard() {
             <strong>0</strong>
           </div>
         </div>
-      </div>
+      </div> */}
 
       {/* Cover Card / Profile Info */}
       <div className="dashboard-cover-card">
         <div className="dashboard-cover-media">
           <img
-            src="/assets/images/user-cover.jpg"
+            src="./assets/images/dashboard-bg.webp"
             alt="Workspace collaboration"
           />
         </div>
@@ -157,50 +124,6 @@ export default function Dashboard() {
                     src={`/assets/images/employers/${job.logo}`}
                     alt={job.company}
                   />
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <section className="dashboard-panel">
-        <div className="panel-heading">
-          <h3>Active Package Details</h3>
-        </div>
-
-        <div className="package-grid">
-          {PACKAGE_DETAILS.map((item, index) => (
-            <div
-              key={index}
-              className={`package-chip ${item.isDanger ? "danger" : ""}`}
-            >
-              <span className="label">{item.label}</span>
-              <strong>{item.value}</strong>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <section className="dashboard-panel">
-        <div className="panel-heading">
-          <h3>Recommended Jobs</h3>
-          <NavLink to="/recommended-jobs">View All</NavLink>
-        </div>
-
-        <div className="row g-3">
-          {RECOMMENDED_JOBS.map((job, index) => (
-            <div className="col-md-4" key={index}>
-              <div className="recommended-card">
-                <span className={`badge-status ${job.badgeClass || ""}`}>
-                  {job.type}
-                </span>
-                <h4>{job.title}</h4>
-                <p>{job.locationCompany}</p>
-
-                <div className="recommended-meta">
-                  <span>Salary: {job.salary}</span>
-                  <span>{job.date}</span>
                 </div>
               </div>
             </div>

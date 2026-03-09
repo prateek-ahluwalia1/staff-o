@@ -180,7 +180,6 @@ const Header = memo(function Header() {
                       Edit Profile
                     </Link>
                   </li>
-                  {/* ... add remaining items ... */}
                 </ul>
               </li>
 

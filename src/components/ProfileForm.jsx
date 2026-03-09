@@ -47,6 +47,7 @@ export default function ProfileForm({
               placeholder="you@example.com"
               value={formData.email || ""}
               onChange={onChange}
+              readOnly
             />
           </div>
           <div>
@@ -60,6 +61,7 @@ export default function ProfileForm({
               placeholder="+92 300 0000000"
               value={formData.phone || ""}
               onChange={onChange}
+              readOnly
             />
           </div>
 

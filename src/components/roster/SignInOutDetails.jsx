@@ -9,15 +9,15 @@ const Field = ({ label, value }) => (
   <div style={{ marginBottom: "16px" }}>
     <div
       style={{
-        fontWeight: 600,
-        fontSize: "13px",
-        color: "#444",
+        fontWeight: 700,
+        fontSize: "14px",
+        color: "#111",
         marginBottom: "4px",
       }}
     >
       {label}
     </div>
-    <div style={{ fontSize: "14px", color: "#666" }}>{value || "N/A"}</div>
+    <div style={{ fontSize: "14px", color: "#444" }}>{value || "N/A"}</div>
   </div>
 );
 
@@ -25,9 +25,9 @@ const ImageBox = ({ src, label }) => (
   <div style={{ marginBottom: "16px" }}>
     <div
       style={{
-        fontWeight: 600,
-        fontSize: "13px",
-        color: "#444",
+        fontWeight: 700,
+        fontSize: "14px",
+        color: "#111",
         marginBottom: "8px",
       }}
     >
@@ -37,7 +37,6 @@ const ImageBox = ({ src, label }) => (
       style={{
         width: "100%",
         height: "180px",
-        borderRadius: "8px",
         border: "1px solid #ddd",
         overflow: "hidden",
         background: "#f8f9fa",
@@ -93,7 +92,6 @@ export default function SignInOutDetails({ rosterId, guardId, shift, site }) {
         style={{
           padding: "20px",
           background: "#fff3f3",
-          borderRadius: "8px",
           color: "#c0392b",
           fontSize: "14px",
         }}
@@ -130,108 +128,103 @@ export default function SignInOutDetails({ rosterId, guardId, shift, site }) {
   const signInLoc = parseLocation(d.location);
   const signOutLoc = parseLocation(d.signout_location);
 
-  return (
-    <div className="row mb-4">
-      {/* Sign In Column */}
-      <div className="col-md-6 mb-3">
-        <div
-          style={{
-            background: "#e8f8f0",
-            borderRadius: "8px",
-            padding: "5px 14px",
-            marginBottom: "16px",
-            fontWeight: 700,
-            color: "#2e7d32",
-            fontSize: "13px",
-            display: "inline-block",
-          }}
-        >
-          Sign In
-        </div>
+  const MapButton = ({ loc }) =>
+    loc ? (
+      <a
+        href={`https://maps.google.com/?q=${loc.lat},${loc.lng}`}
+        target="_blank"
+        rel="noopener noreferrer"
+        style={{
+          display: "inline-flex",
+          alignItems: "center",
+          gap: "6px",
+          padding: "7px 16px",
+          background: "#1976d2",
+          color: "#fff",
+          fontSize: "13px",
+          fontWeight: 600,
+          textDecoration: "none",
+          border: "none",
+        }}
+      >
+        <i className="fa fa-map-marker" style={{ fontSize: "14px" }} />
+        Show Map
+      </a>
+    ) : (
+      <button
+        disabled
+        style={{
+          display: "inline-flex",
+          alignItems: "center",
+          gap: "6px",
+          padding: "7px 16px",
+          background: "#e0e0e0",
+          color: "#9e9e9e",
+          fontSize: "13px",
+          fontWeight: 600,
+          border: "none",
+          cursor: "not-allowed",
+        }}
+      >
+        <i className="fa fa-map-marker" style={{ fontSize: "14px" }} />
+        Show Map
+      </button>
+    );
 
-        <Field label="Sign In Date" value={signIn.date} />
-        <Field label="Sign In Time" value={signIn.time} />
-        <Field label="Sign In Notes" value={d.signin_notes} />
+  return (
+    <div
+      style={{
+        display: "grid",
+        gridTemplateColumns: "1fr 1fr",
+        gap: "0 28px",
+      }}
+    >
+      {/* ── Sign In Column ── */}
+      <div>
+        <Field label="SignIn Date" value={signIn.date} />
+        <Field label="SignIn Time" value={signIn.time} />
+        <Field label="SignIn Notes" value={d.signin_notes} />
         <ImageBox
           src={d.signin_selfie ? `${SELFIE_BASE}${d.signin_selfie}` : null}
-          label="Sign In Selfie"
+          label="Sign In Picture"
         />
-
-        <div
-          style={{
-            fontWeight: 600,
-            fontSize: "13px",
-            color: "#444",
-            marginBottom: "8px",
-          }}
-        >
-          Sign In Location
-        </div>
-        {signInLoc ? (
-          <a
-            href={`https://maps.google.com/?q=${signInLoc.lat},${signInLoc.lng}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="btn btn-primary btn-sm"
+        <div style={{ marginBottom: "20px" }}>
+          <div
+            style={{
+              fontWeight: 700,
+              fontSize: "14px",
+              color: "#111",
+              marginBottom: "10px",
+            }}
           >
-            📍 Show Map
-          </a>
-        ) : (
-          <button className="btn btn-secondary btn-sm" disabled>
-            📍 Location N/A
-          </button>
-        )}
+            SignIN Location
+          </div>
+          <MapButton loc={signInLoc} />
+        </div>
       </div>
 
-      {/* Sign Out Column */}
-      <div className="col-md-6 mb-3">
-        <div
-          style={{
-            background: "#fff3e0",
-            borderRadius: "8px",
-            padding: "5px 14px",
-            marginBottom: "16px",
-            fontWeight: 700,
-            color: "#e65100",
-            fontSize: "13px",
-            display: "inline-block",
-          }}
-        >
-          Sign Out
-        </div>
-
-        <Field label="Sign Out Date" value={signOut.date} />
-        <Field label="Sign Out Time" value={signOut.time} />
-        <Field label="Sign Out Notes" value={d.signout_notes} />
+      {/* ── Sign Out Column ── */}
+      <div>
+        <Field label="SignOut Date" value={signOut.date} />
+        <Field label="SignOut Time" value={signOut.time} />
+        <Field label="SignOut Notes" value={d.signout_notes} />
         <ImageBox
           src={d.signout_selfie ? `${SELFIE_BASE}${d.signout_selfie}` : null}
-          label="Sign Out Selfie"
+          label="Sign Out Picture"
         />
-
-        <div
-          style={{
-            fontWeight: 600,
-            fontSize: "13px",
-            color: "#444",
-            marginBottom: "8px",
-          }}
-        >
-          Sign Out Location
-        </div>
-        {signOutLoc ? (
-          <a
-            href={`https://maps.google.com/?q=${signOutLoc.lat},${signOutLoc.lng}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="btn btn-primary btn-sm"
+        <div style={{ marginBottom: "20px" }}>
+          <div
+            style={{
+              fontWeight: 700,
+              fontSize: "14px",
+              color: "#111",
+              marginBottom: "10px",
+            }}
           >
-            📍 Show Map
-          </a>
-        ) : (
-          <button className="btn btn-secondary btn-sm" disabled>
-            📍 Location N/A
-          </button>
-        )}
+            SignOut Location
+          </div>
+          <MapButton loc={signOutLoc} />
+        </div>
       </div>
     </div>
   );

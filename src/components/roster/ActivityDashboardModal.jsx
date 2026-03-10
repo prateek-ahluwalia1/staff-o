@@ -9,13 +9,55 @@ import RatingComponent from "./RatingComponent";
 import OperationNotes from "./OperationNotes";
 
 const SIDEBAR_TABS = [
-  { id: "signin", label: "Sign In/Out Details", bg: "#e0f7fa" },
-  { id: "break", label: "Break Details", bg: "#fff9c4" },
-  { id: "incident", label: "Incident Report", bg: "#ffcdd2" },
-  { id: "shift_tasks", label: "Shift Tasks", bg: "#c8e6c9" },
-  { id: "foot_petrol", label: "Foot Patrol Report", bg: "#ffe0b2" },
-  { id: "operation_notes", label: "Operation Notes", bg: "#e8f5e9" },
-  { id: "rating", label: "Rating", bg: "#f3e5f5" },
+  {
+    id: "signin",
+    label: "Sign In/Out Details",
+    bg: "#b2ebf2",
+    activeBg: "#00acc1",
+    icon: "fa-exchange",
+  },
+  {
+    id: "break",
+    label: "Break Details",
+    bg: "#fff9c4",
+    activeBg: "#f9a825",
+    icon: "fa-coffee",
+  },
+  {
+    id: "incident",
+    label: "Incident Report",
+    bg: "#ffcdd2",
+    activeBg: "#e53935",
+    icon: "fa-exclamation-triangle",
+  },
+  {
+    id: "shift_tasks",
+    label: "Shift Task",
+    bg: "#e0f7fa",
+    activeBg: "#0097a7",
+    icon: "fa-tasks",
+  },
+  {
+    id: "foot_petrol",
+    label: "Foot Patrol Report",
+    bg: "#ffccbc",
+    activeBg: "#bf360c",
+    icon: "fa-exclamation-circle",
+  },
+  {
+    id: "operation_notes",
+    label: "Operation Notes",
+    bg: "#f0f4c3",
+    activeBg: "#9e9d24",
+    icon: "fa-clipboard",
+  },
+  {
+    id: "rating",
+    label: "Rating",
+    bg: "#f3e5f5",
+    activeBg: "#7b1fa2",
+    icon: "fa-star",
+  },
 ];
 
 export default function ActivityDashboardModal({
@@ -109,7 +151,6 @@ export default function ActivityDashboardModal({
           backgroundColor: "#fff",
           display: "flex",
           overflow: "hidden",
-          borderRadius: "8px",
           boxShadow: "0 4px 20px rgba(0,0,0,0.15)",
         }}
       >
@@ -139,7 +180,6 @@ export default function ActivityDashboardModal({
               <div
                 style={{
                   background: "#f8f9fa",
-                  borderRadius: "8px",
                   padding: "10px 12px",
                   fontSize: "12px",
                   color: "#555",
@@ -164,7 +204,7 @@ export default function ActivityDashboardModal({
             </div>
           )}
 
-          <div className="overflow-auto py-2">
+          <div style={{ overflowY: "auto", flex: 1, padding: "8px 0" }}>
             {SIDEBAR_TABS.map((tab) => {
               const isActive = activeTab === tab.id;
               return (
@@ -172,22 +212,36 @@ export default function ActivityDashboardModal({
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
                   style={{
-                    padding: "16px 20px",
+                    padding: "11px 16px",
                     cursor: "pointer",
-                    backgroundColor: isActive ? "transparent" : "#f8f9fa",
-                    border: isActive
-                      ? `2px solid ${tab.bg}`
-                      : "2px solid transparent",
-                    background: isActive ? tab.bg : "transparent",
-                    color: isActive ? "#000" : "#555",
-                    fontWeight: isActive ? "600" : "500",
-                    margin: "4px 12px",
-                    borderRadius: "6px",
+                    backgroundColor: tab.bg,
+                    borderLeft: isActive
+                      ? `4px solid ${tab.activeBg}`
+                      : "4px solid transparent",
+                    opacity: isActive ? 1 : 0.82,
+                    color: "#222",
+                    fontWeight: isActive ? "700" : "500",
+                    margin: "4px 10px",
                     display: "flex",
                     alignItems: "center",
                     gap: "10px",
+                    boxShadow: isActive
+                      ? `0 2px 6px ${tab.activeBg}55`
+                      : "none",
+                    fontSize: "13.5px",
+                    transition: "opacity 0.15s, box-shadow 0.15s",
                   }}
                 >
+                  <i
+                    className={`fa ${tab.icon}`}
+                    style={{
+                      fontSize: "15px",
+                      color: tab.activeBg,
+                      width: "18px",
+                      textAlign: "center",
+                      flexShrink: 0,
+                    }}
+                  />
                   {tab.label}
                 </div>
               );

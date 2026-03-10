@@ -1951,17 +1951,17 @@ private function encodeJsonField($field)
         );
 
         if ($model) {
-            DB::table('job_rosters')->where('id', $id)->update(['job_status' => 'completed', 'update_status' => 1, 'signin_status' => 0, 'last_update' => time()]);
+            DB::table('job_rosters')->where('id', $id)->update(['job_status' => 'completed', 'signin_status' => 0]);
             $guard = DB::table('users')->where('id',$roster->assigned_to)->first();
             $roster = DB::table('job_rosters')->where('id', $id)->first();
             # CALCULATE TIME DIFFERENCE SO THAT UPDATE THE VARIABLE USE IN COMPLETE PATSHEET
             $inputTime = DateTime::createFromFormat('d-m-Y H:i', $request->input('time'));
             $inputTimeFormatted = $inputTime->format('Y-m-d H:i');
-            if($inputTimeFormatted >= $roster->end && $roster->in_paysheet == 1){
-                DB::table('job_rosters')->where(['id' => $id])->update(['in_paysheet' => 1]);
-            }else{
-                DB::table('job_rosters')->where(['id' => $id])->update(['in_paysheet' => 0]);
-            }
+            // if($inputTimeFormatted >= $roster->end && $roster->in_paysheet == 1){
+            //     DB::table('job_rosters')->where(['id' => $id])->update(['in_paysheet' => 1]);
+            // }else{
+            //     DB::table('job_rosters')->where(['id' => $id])->update(['in_paysheet' => 0]);
+            // }
 
             $admins = DB::table('users')->where('notification_token', '!=', '')->where('id', $roster->created_by)->select('notification_token')->get();
             foreach($admins as $a)

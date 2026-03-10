@@ -37,9 +37,9 @@ export default function SettingsHeaderContent({
         {name || "Staff Member"}
         {isVerified && (
           <i
-            className="fa-solid fa-circle-check"
+            className="fa-solid fa-circle-check text-primary"
             aria-hidden="true"
-            style={{ color: "#1d9bf0", fontSize: "0.8em" }}
+            style={{ fontSize: "0.8em" }}
             title="Verified Profile"
           ></i>
         )}

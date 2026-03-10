@@ -29,13 +29,6 @@ export default function AddJob() {
   } = useFetch("api/get-chargerates", {
     isAuth: true,
   });
-  const {
-    data: payrateData,
-    loading: payratesLoading,
-    error: payratesError,
-  } = useFetch("api/get-payrate", {
-    isAuth: true,
-  });
   const { submit: submitJob, loading: submitLoading } = useSubmit({
     isAuth: true,
   });
@@ -47,8 +40,8 @@ export default function AddJob() {
   const [resolvingLocation, setResolvingLocation] = useState(false);
   const [locationError, setLocationError] = useState("");
 
-  const ratesLoading = chargeratesLoading || payratesLoading;
-  const ratesError = chargeratesError || payratesError;
+  const ratesLoading = chargeratesLoading;
+  const ratesError = chargeratesError;
 
   const isSubmitting = submitLoading || uploadLoading;
 
@@ -80,9 +73,8 @@ export default function AddJob() {
   // Falls back to STATIC_RATES automatically when data is not yet loaded.
   const dynamicRates = useMemo(() => {
     const chargeRecord = chargeratesData?.data?.[0];
-    const payRecord = payrateData?.data;
-    return mapApiRates(chargeRecord, payRecord);
-  }, [chargeratesData, payrateData]);
+    return mapApiRates(chargeRecord);
+  }, [chargeratesData]);
 
   const breakdown = useMemo(
     () =>

@@ -12,29 +12,9 @@
  * The shift is split at midnight, 06:00, and 18:00 so each segment is billed
  * at the correct day-type + slot rate.
  *
- * FALLBACK_RATES – used only when API data is unavailable (e.g. still loading
- * or the request failed). In normal operation the rates from mapApiRates() are
- * passed to computeShiftBreakdown() and these values are never used.
- *
- * Shape:
- *   { pay: { <dayType>: { day: number, night: number } },
- *     charge: { <dayType>: { day: number, night: number } } }
+ * Rates must always come from the API via mapApiRates().
+ * computeShiftBreakdown() returns null when no rates are provided.
  */
-
-export const FALLBACK_RATES = {
-  pay: {
-    weekday: { day: 25.0, night: 30.0 },
-    fri: { day: 28.0, night: 33.0 },
-    sat: { day: 32.0, night: 38.0 },
-    sun: { day: 32.0, night: 38.0 },
-  },
-  charge: {
-    weekday: { day: 35.0, night: 42.0 },
-    fri: { day: 40.0, night: 47.0 },
-    sat: { day: 45.0, night: 52.0 },
-    sun: { day: 45.0, night: 52.0 },
-  },
-};
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -96,12 +76,12 @@ function nextBoundary(t) {
  * @param {object} payRecord     The object at payrateData.data
  * @param {string} [prefix]      Rate-set prefix: 'def_metro' | 'def_reg' |
  *                                'eba_metro' | 'eba_reg'  (default: 'def_metro')
- * @returns {object}  { pay: {...}, charge: {...} }  or FALLBACK_RATES on failure
+ * @returns {object|null}  { pay: {...}, charge: {...} }  or null when chargeRecord is absent
  */
-export function mapApiRates(chargeRecord, payRecord, prefix = "def_metro") {
-  if (!chargeRecord || !payRecord) return FALLBACK_RATES;
+export function mapApiRates(chargeRecord, payRecord = null, prefix = "def_metro") {
+  if (!chargeRecord) return null;
 
-  const r = (record, key) => parseFloat(record?.[key]) || 0;
+  const r = (record, key) => (record ? parseFloat(record?.[key]) || 0 : 0);
 
   return {
     pay: {
@@ -154,9 +134,9 @@ export function mapApiRates(chargeRecord, payRecord, prefix = "def_metro") {
  * @param {string} endDate    "YYYY-MM-DD"
  * @param {string} endTime    "HH:MM"
  * @param {number} numGuards
- * @param {object} [rates]    Defaults to STATIC_RATES. Pass API data here later.
+ * @param {object} rates      Rates from mapApiRates(). Returns null when not provided.
  *
- * @returns {object|null}  null when input is incomplete or shift has no duration.
+ * @returns {object|null}  null when input is incomplete, rates are missing, or shift has no duration.
  *
  * Return shape:
  * {
@@ -173,10 +153,10 @@ export function computeShiftBreakdown(
   endDate,
   endTime,
   numGuards = 1,
-  rates = FALLBACK_RATES,
+  rates = null,
 ) {
   // ── validation ──────────────────────────────────────────────────────────
-  if (!startDate || !startTime || !endDate || !endTime) return null;
+  if (!startDate || !startTime || !endDate || !endTime || !rates) return null;
 
   const [sy, sm, sd] = startDate.split("-").map(Number);
   const [sh, smin] = startTime.split(":").map(Number);

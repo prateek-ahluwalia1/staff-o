@@ -48,16 +48,18 @@ export default function ProfileForm({
                 className="form-control"
                 id="email"
                 value={formData.email || ""}
-                readOnly
+                readOnly={userType !== "customer"}
                 style={{ background: "#f8f9fa", cursor: "default" }}
               />
-              <button
-                type="button"
-                className="btn btn-outline-primary btn-sm text-nowrap"
-                onClick={onChangeEmail}
-              >
-                Change Email
-              </button>
+              {userType === "customer" && (
+                <button
+                  type="button"
+                  className="btn btn-outline-primary btn-sm text-nowrap"
+                  onClick={onChangeEmail}
+                >
+                  Change Email
+                </button>
+              )}
             </div>
           </div>
           <div>
@@ -70,16 +72,16 @@ export default function ProfileForm({
                 className="form-control"
                 id="phone"
                 value={formData.phone || ""}
-                readOnly
                 style={{ background: "#f8f9fa", cursor: "default" }}
+                readOnly={userType !== "customer"}
               />
-              <button
+              {/* <button
                 type="button"
                 className="btn btn-outline-primary btn-sm text-nowrap"
                 onClick={onChangePhone}
               >
                 Change Phone
-              </button>
+              </button> */}
             </div>
           </div>
 

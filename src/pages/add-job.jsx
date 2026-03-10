@@ -36,6 +36,17 @@ export default function AddJob() {
     isAuth: true,
   });
 
+  const userType = userdata?.data?.user_type || userdata?.user_type;
+  const isAdmin = userType === "admin";
+
+  const { data: contractorsResponse } = useFetch(
+    isAdmin ? "api/admin/get-active-contractors" : null,
+    { isAuth: true },
+  );
+  const contractorsList = contractorsResponse?.data || [];
+
+  const [selectedContractorId, setSelectedContractorId] = useState("");
+
   const [step, setStep] = useState(0);
   const [resolvingLocation, setResolvingLocation] = useState(false);
   const [locationError, setLocationError] = useState("");
@@ -144,6 +155,10 @@ export default function AddJob() {
 
   async function handleConfirm(e) {
     e.preventDefault();
+    if (isAdmin && !selectedContractorId) {
+      alert("Please select a contractor before posting the job.");
+      return;
+    }
     if (!form.termsAccepted) {
       alert("Please accept Terms & Conditions.");
       return;
@@ -170,7 +185,9 @@ export default function AddJob() {
 
       const coordinates = form.coordinates || "";
       const payload = {
-        user_id: userdata?.data?.id || userdata?.id || null,
+        user_id: isAdmin
+          ? selectedContractorId || null
+          : userdata?.data?.id || userdata?.id || null,
         title: form.title,
         description: form.description,
         address: form.location || form.address,
@@ -213,6 +230,38 @@ export default function AddJob() {
           <p className="text-muted mb-0">Follow the steps to add a new job</p>
         </div>
       </div>
+
+      {isAdmin && (
+        <div className="card shadow-sm">
+          <div className="card-body">
+            <div className="row align-items-center g-3">
+              <div className="col-auto">
+                <span className="fw-semibold text-dark">
+                  <i className="fa fa-user-tie me-2 text-primary" />
+                  Post on behalf of Contractor
+                </span>
+              </div>
+              <div className="col">
+                <select
+                  className="form-select"
+                  value={selectedContractorId}
+                  onChange={(e) => setSelectedContractorId(e.target.value)}
+                >
+                  <option value="">-- Select a Contractor --</option>
+                  {contractorsList.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name || c.email}
+                      {c.contractor?.company_name
+                        ? ` — ${c.contractor.company_name}`
+                        : ""}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="card shadow-sm list-card mt-4">
         <div className="card-body">

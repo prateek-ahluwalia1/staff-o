@@ -24,4 +24,9 @@ class JobRoster extends Model
         return $this->belongsTo(User::class, 'assigned_to', 'id');
     }
 
+     public function jobRosterTask()
+    {
+        return $this->hasMany(JobRosterTask::class, 'job_roster_id', 'id');
+    }
+
 }

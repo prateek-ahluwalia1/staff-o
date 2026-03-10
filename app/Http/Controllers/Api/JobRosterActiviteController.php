@@ -16,7 +16,7 @@ class JobRosterActiviteController extends Controller
    
     public function JobSignInSignOut(Request $request)
     {
-        $guard_activites = JobRosterActivity::where('guard_id', $request->guard_id)->where('job_roster_id', $request->job_id)->first();
+        $guard_activites = JobRosterActivity::where('guard_id', $request->guard_id)->where('job_roster_id', $request->roster_id)->first();
         if($guard_activites){
             return response()->json(['success' => true,'code' => 200 , 'data' => $guard_activites]);
         }else{

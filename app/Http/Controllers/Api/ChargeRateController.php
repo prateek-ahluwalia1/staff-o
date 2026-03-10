@@ -76,6 +76,15 @@ class ChargeRateController extends Controller
         return response()->json(['success' => true, 'data' => $charge_rate]);  
     }
 
+    public function getAllChargeRate()
+    {
+        $charge_rate = ChargeRate::where('status', 'active')
+            ->orderBy('title', 'asc')
+            ->get();
+
+        return response()->json(['success' => true, 'data' => $charge_rate]);  
+    }
+
      public function getAllArchiveChargeRate()
     {
         $charge_rate = ChargeRate::where('status', 'archive')->orderBy('title', 'asc')->get();
@@ -98,15 +107,15 @@ class ChargeRateController extends Controller
     public function update(Request $request)
     {
         $is_check =0;
-        $charge_rate = ChargeRate::where('customer_id', $request->customer_id)->where('level', $request->level)->first();
-        if(!empty($charge_rate)){
-        $charge_rate = ChargeRate::where('customer_id', $request->customer_id)->where('level', $request->level)->update(['status' => 'archive']);
-        }
+        $charge_rate = ChargeRate::where('id', 1)->first();
+        // if(!empty($charge_rate)){
+        // $charge_rate = ChargeRate::where('user_id', 14)->where('level', $request->level)->update(['status' => 'archive']);
+        // }
         
-        $charge_rate = new ChargeRate();
-        $is_check =1;
+        // $charge_rate = new ChargeRate();
+        // $is_check =1;
         $charge_rate->title = $request->title;
-        $charge_rate->user_id = $request->user_id;
+        // $charge_rate->user_id = $request->user_id;
         $charge_rate->position = $request->position;
         $charge_rate->level = $request->level;
         $charge_rate->state = $request->state;

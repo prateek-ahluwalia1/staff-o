@@ -68,7 +68,7 @@ class PayRateController extends Controller
 
     public function getAllPayrate()
     {
-        $payrates = Payrate::where('status', 'active')->where('id', 1)->orderBy('title', 'asc')->get();
+        $payrates = Payrate::where('status', 'active')->orderBy('title', 'asc')->get();
         $prt = AllPayRateResource::collection($payrates);
         return response()->json(['success' => true, 'data' => $prt]);  
     }
@@ -104,15 +104,15 @@ class PayRateController extends Controller
     public function update(Request $request)
     {
         $is_check =0;
-        $payrate = Payrate::find($request->id);
-        $old_data = $payrate;
-        if(!empty($payrate)) {
-            Payrate::where('id', $request->id)->update(['status' => 'archive']);
-        }
-        $payrates = new Payrate();
-        $is_check =1;
+        $payrates = Payrate::where('id', 1)->first();
+        $old_data = $payrates;
+        // if(!empty($payrate)) {
+        //     Payrate::where('id', $request->id)->update(['status' => 'archive']);
+        // }
+        // $payrates = new Payrate();
+        // $is_check =1;
         $payrates->title = $request->title;
-        $payrates->user_id = $request->user_id;
+        // $payrates->user_id = $request->user_id;
         $payrates->position = $request->position;
         $payrates->level = $request->level;
         $payrates->state = $request->state;

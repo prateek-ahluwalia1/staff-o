@@ -13,6 +13,7 @@ use App\Models\JobNewRoster;
 use Carbon\Carbon;
 use App\Models\JobRoster;
 use App\Models\JobRosterActivity;
+use App\Models\JobRosterTask;
 use App\Models\User;
 use DateTime;
 use Exception;
@@ -96,7 +97,19 @@ class JobRosterController extends Controller
             $roster['hours']                    = $guardWorkingHours;
 
             $jobId = JobRoster::insertGetId($roster);
-            $createdJob = JobRoster::find($jobId);
+
+            if($request->has('tasks') && !empty($request->tasks)){
+                foreach ($request->tasks as $key => $task) {
+                    $newTask =  new JobRosterTask();
+                    $newTask->job_roster_id = $jobId;
+                    $newTask->task = $task['task'];
+                    $newTask->task_start = dbFormateDateTime($task['task_start']);
+                    $newTask->task_end = dbFormateDateTime($task['task_end']);
+                    $newTask->save();
+                }
+            }
+
+            $createdJob = JobRoster::with('site')->find($jobId);
             $createdJobIds[] = $jobId;
             $notifiedUsers = $this->sendNotificationsWithinRadius($site->coordinates, $createdJobIds, $request->user_id, $createdJob);
         }
@@ -118,32 +131,34 @@ class JobRosterController extends Controller
      */
     private function sendNotificationsWithinRadius($siteCoordinates, $jobIds, $userId, $roster)
     {
-        $radiusKm = 5; // 5km radius
+        $radiusKm = 500; // 5km radius
         $notifiedUsers = [];
         
         // Get all staff with user_id = 1
-        $staff = User::where('user_id', 1)
-            ->where('is_active', 1)
-            ->where('user_type', 'staff')
-            ->whereNotNull('coordinates')
-            ->select('id', 'name', 'coordinates', 'notification_token')
-            ->get();
+        // $staff = User::where('user_id', 1)
+        //     ->where('is_active', 1)
+        //     ->where('user_type', 'staff')
+        //     ->whereNotNull('coordinates')
+        //     ->select('id', 'name', 'coordinates', 'notification_token')
+        //     ->get();
 
-        if(!$staff){
+        // if(!$staff){
         $staff = User::where('is_active', 1)
-            ->whereNotIn('user_id', $userId)
+            // ->whereNotIn('user_id', $userId)
             ->where('user_type', 'contractor')
             ->whereNotNull('coordinates')
             ->select('id', 'name', 'coordinates', 'notification_token')
             ->get();
-        }
+        // }
         
+
         foreach ($staff as $staffMember) {
             // Calculate distance between site and staff
             $distance = $this->calculateDistance($siteCoordinates, $staffMember->coordinates);
-            
+        
             // Check if within 5km radius
             if ($distance <= $radiusKm) {
+                
                 // Send notification if token exists
                 if ($staffMember->notification_token) {
                     $notificationSent = send_push_notification([
@@ -1363,7 +1378,7 @@ class JobRosterController extends Controller
                     $notification_data = [
                         'message' => $guard->name.' accepted and confirmed the job.',
                         'title' => 'Job Signin',
-                        'fcm_token' => $a->notification_token,
+                        'notification_token' => $a->notification_token,
                         'page' => 'homepage',
                         'roster_id' =>  $id
                     ]; 
@@ -1498,7 +1513,7 @@ class JobRosterController extends Controller
         $notification_data = [
         'message' => $guard->name.' signin in their job.',
         'title' => 'Job Signin',
-        'fcm_token' => $a->notification_token,
+        'notification_token' => $a->notification_token,
         'page' => 'homepage',
         'roster_id' =>  $id
         ]; 
@@ -1563,7 +1578,7 @@ class JobRosterController extends Controller
         $week    = ($request->input('week_no') != null) ? $request->input('week_no') : 0;
         $guardId = $request->input('guard_id');
 
-        $model = JobRoster::with('guards', 'rosterActivity', 'site');
+        $model = JobRoster::with('guards', 'rosterActivity', 'site', 'jobRosterTask');
 
         if ($week < 0) {
             $model->where(['publish_status' => 1, 'assigned_to' => $guardId]);
@@ -1691,6 +1706,7 @@ class JobRosterController extends Controller
                 'site'                   => $item->site,
                 'guard'                 => $item->guards,
                 'job_roster_activities' => $item->rosterActivity,
+                'job_roster_task'       => $item->jobRosterTask,
                 'signin_time'           => $signin_status == 1 ? date("m-d-Y H:i", $signin_timez) : null,
             ];
         });
@@ -1792,7 +1808,7 @@ public function reportIncident(Request $request, $id)
             $notification_data = [
                 'message' => $guard->name.' report new incident.',
                 'title' => 'Incident Report',
-                'fcm_token' => $a->notification_token,
+                'notification_token' => $a->notification_token,
                 'page' => 'homepage',
                 'roster_id' =>  $id
             ]; 
@@ -1889,7 +1905,7 @@ private function encodeJsonField($field)
             $notification_data = [
                 'message' => $guard->name.' report new foot patrol.',
                 'title' => 'Foot Patrol Report',
-                'fcm_token' => $a->notification_token,
+                'notification_token' => $a->notification_token,
                 'page' => 'homepage',
                 'roster_id' =>  $id
             ]; 
@@ -1953,7 +1969,7 @@ private function encodeJsonField($field)
                 $notification_data = [
                     'message' => $guard->name.' signout in their job.',
                     'title' => 'Job Signout',
-                    'fcm_token' => $a->notification_token,
+                    'notification_token' => $a->notification_token,
                     'page' => 'homepage',
                     'roster_id' =>  $id
                 ]; 
@@ -2277,7 +2293,7 @@ private function encodeJsonField($field)
             $notification_data = [
                 'message' => $guard->name.' start its task.',
                 'title' => 'start_task',
-                'fcm_token' => $a->notification_token,
+                'notification_token' => $a->notification_token,
                 'page' => 'homepage',
                 'roster_id' =>  $id
             ]; 
@@ -2337,7 +2353,7 @@ private function encodeJsonField($field)
             $notification_data = [
                 'message' => $guard->name.' completed its task.',
                 'title' => 'end_task',
-                'fcm_token' => $a->notification_token,
+                'notification_token' => $a->notification_token,
                 'page' => 'homepage',
                 'roster_id' =>  $id
             ]; 
@@ -2349,6 +2365,17 @@ private function encodeJsonField($field)
             'message' => 'Task completed successfully!',
             'code' => 200
         ]);
+    }
+
+    function time_into_decimal($time)
+    {
+        $time = explode(':', $time);
+        if (isset($time[1])) {
+            $time[1] = $time[1]/60;
+        }else{
+            $time[1] = 0;
+        }
+        return ($time[0] * 1) + $time[1];
     }
 
     public function start_break(Request $request, $id)
@@ -2420,11 +2447,11 @@ private function encodeJsonField($field)
             'job_status' => 1, 
             'break_start_time' => time());
         DB::table('job_breaks')->insert($data);
-        DB::table('job_rosters')->where(['id' => $request->input('roster_id'), 'guard_id' => $id])->update(['break_status' => 1]);
+        DB::table('job_rosters')->where(['id' => $request->input('roster_id'), 'assigned_to' => $id])->update(['break_status' => 1]);
 
             DB::table('roster_complete_activity')->insert([
                 'roster_id' => $request->input('roster_id'),
-                'activity' => $guard->first_name.' '.$guard->middle_name.' '.$guard->last_name.' start break.',
+                'activity' => $guard->name.' start break.',
                 'type' => 'start_break',
                 'record_id' => $request->input('roster_id'),
                 'activity_time' => time(),
@@ -2438,7 +2465,7 @@ private function encodeJsonField($field)
                 $notification_data = [
                     'message' => $guard->name. 'start break.',
                     'title' => 'start_break',
-                    'fcm_token' => $a->notification_token,
+                    'notification_token' => $a->notification_token,
                     'page' => 'homepage',
                     'roster_id' =>  $id
                 ]; 
@@ -2484,7 +2511,7 @@ public function end_break(Request $request, $id)
             //     $notification_data = [
             //         'message' => $guard->name.' end its break.',
             //         'title' => 'end_break',
-            //         'fcm_token' => $a->notification_token,
+            //         'notification_token' => $a->notification_token,
             //         'page' => 'homepage',
             //         'roster_id' =>  $id
             //     ]; 

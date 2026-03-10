@@ -6,6 +6,8 @@ export default function ProfileForm({
   onSubmit,
   loading,
   userType,
+  onChangeEmail,
+  onChangePhone,
 }) {
   return (
     <form className="settings-form" onSubmit={onSubmit}>
@@ -40,29 +42,45 @@ export default function ProfileForm({
             <label htmlFor="email" className="form-label">
               Email Address
             </label>
-            <input
-              type="email"
-              className="form-control"
-              id="email"
-              placeholder="you@example.com"
-              value={formData.email || ""}
-              onChange={onChange}
-              readOnly
-            />
+            <div className="d-flex gap-2 align-items-center">
+              <input
+                type="email"
+                className="form-control"
+                id="email"
+                value={formData.email || ""}
+                readOnly
+                style={{ background: "#f8f9fa", cursor: "default" }}
+              />
+              <button
+                type="button"
+                className="btn btn-outline-primary btn-sm text-nowrap"
+                onClick={onChangeEmail}
+              >
+                Change Email
+              </button>
+            </div>
           </div>
           <div>
             <label htmlFor="phone" className="form-label">
               Phone
             </label>
-            <input
-              type="tel"
-              className="form-control"
-              id="phone"
-              placeholder="+92 300 0000000"
-              value={formData.phone || ""}
-              onChange={onChange}
-              readOnly
-            />
+            <div className="d-flex gap-2 align-items-center">
+              <input
+                type="tel"
+                className="form-control"
+                id="phone"
+                value={formData.phone || ""}
+                readOnly
+                style={{ background: "#f8f9fa", cursor: "default" }}
+              />
+              <button
+                type="button"
+                className="btn btn-outline-primary btn-sm text-nowrap"
+                onClick={onChangePhone}
+              >
+                Change Phone
+              </button>
+            </div>
           </div>
 
           {userType !== "contractor" && (

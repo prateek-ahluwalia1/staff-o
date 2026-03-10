@@ -78,7 +78,11 @@ function nextBoundary(t) {
  *                                'eba_metro' | 'eba_reg'  (default: 'def_metro')
  * @returns {object|null}  { pay: {...}, charge: {...} }  or null when chargeRecord is absent
  */
-export function mapApiRates(chargeRecord, payRecord = null, prefix = "def_metro") {
+export function mapApiRates(
+  chargeRecord,
+  payRecord = null,
+  prefix = "def_metro",
+) {
   if (!chargeRecord) return null;
 
   const r = (record, key) => (record ? parseFloat(record?.[key]) || 0 : 0);

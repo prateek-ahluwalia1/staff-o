@@ -60,6 +60,12 @@ export default function EditProfile() {
   const { submit: uploadFile, loading: uploadLoading } = useSubmit({
     isAuth: true,
   });
+  const { submit: emailSubmit, loading: emailSubmitLoading } = useSubmit({
+    isAuth: true,
+  });
+  const { submit: phoneSubmit, loading: phoneSubmitLoading } = useSubmit({
+    isAuth: true,
+  });
 
   const [profilePhoto, setProfilePhoto] = useState(null);
   const [profilePhotoFile, setProfilePhotoFile] = useState(null);
@@ -71,6 +77,22 @@ export default function EditProfile() {
   // Multi-Card States
   const [isAddingCard, setIsAddingCard] = useState(false);
   const [cardForm, setCardForm] = useState(INITIAL_CARD_STATE);
+
+  // Email OTP Modal States
+  const [showEmailModal, setShowEmailModal] = useState(false);
+  const [emailStep, setEmailStep] = useState("input"); // 'input' | 'otp'
+  const [newEmailInput, setNewEmailInput] = useState("");
+  const [emailOtp, setEmailOtp] = useState("");
+  const [emailChangeError, setEmailChangeError] = useState(null);
+  const [emailChangeSuccess, setEmailChangeSuccess] = useState(false);
+
+  // Phone OTP Modal States
+  const [showPhoneModal, setShowPhoneModal] = useState(false);
+  const [phoneStep, setPhoneStep] = useState("input"); // 'input' | 'otp'
+  const [newPhoneInput, setNewPhoneInput] = useState("");
+  const [phoneOtp, setPhoneOtp] = useState("");
+  const [phoneChangeError, setPhoneChangeError] = useState(null);
+  const [phoneChangeSuccess, setPhoneChangeSuccess] = useState(false);
 
   // Document Modal States
   const [showDocModal, setShowDocModal] = useState(false);
@@ -218,6 +240,10 @@ export default function EditProfile() {
         if (key === "bank_details") {
           // Stringify the array of cards
           payload.append("bank_details", JSON.stringify(formData.bank_details));
+        } else if (key === "email") {
+          // Email is updated via separate OTP verification flow
+        } else if (key === "phone") {
+          // Phone is updated via separate OTP verification flow
         } else {
           payload.append(key, formData[key]);
         }
@@ -245,6 +271,100 @@ export default function EditProfile() {
     [formData, profilePhotoFile, submit, userdata, dispatch, refetch],
   );
 
+  const handleCloseEmailModal = () => {
+    setShowEmailModal(false);
+    setEmailStep("input");
+    setNewEmailInput("");
+    setEmailOtp("");
+    setEmailChangeError(null);
+    setEmailChangeSuccess(false);
+  };
+
+  const handleRequestEmailOtp = async (e) => {
+    e.preventDefault();
+    setEmailChangeError(null);
+    const res = await emailSubmit(
+      `api/user-update/${userdata.data?.id || userdata.id}`,
+      { email: newEmailInput },
+      { method: "POST" },
+    );
+    if (res.success) {
+      setEmailStep("otp");
+    } else {
+      setEmailChangeError(res.errors || res.message || "Failed to send OTP");
+    }
+  };
+
+  const handleVerifyEmailOtp = async (e) => {
+    e.preventDefault();
+    setEmailChangeError(null);
+    const res = await emailSubmit(
+      `api/user-update/${userdata.data?.id || userdata.id}`,
+      { email: newEmailInput, email_otp: emailOtp },
+      { method: "POST" },
+    );
+    if (res.success) {
+      setEmailChangeSuccess(true);
+      setFormData((prev) => ({ ...prev, email: newEmailInput }));
+      if (res.data) dispatch(setUser({ userdata: res.data }));
+      refetch();
+      setTimeout(() => {
+        handleCloseEmailModal();
+      }, 2000);
+    } else {
+      setEmailChangeError(
+        res.errors || res.message || "Invalid OTP. Please try again.",
+      );
+    }
+  };
+
+  const handleClosePhoneModal = () => {
+    setShowPhoneModal(false);
+    setPhoneStep("input");
+    setNewPhoneInput("");
+    setPhoneOtp("");
+    setPhoneChangeError(null);
+    setPhoneChangeSuccess(false);
+  };
+
+  const handleRequestPhoneOtp = async (e) => {
+    e.preventDefault();
+    setPhoneChangeError(null);
+    const res = await phoneSubmit(
+      `api/user-update/${userdata.data?.id || userdata.id}`,
+      { phone: newPhoneInput },
+      { method: "POST" },
+    );
+    if (res.success) {
+      setPhoneStep("otp");
+    } else {
+      setPhoneChangeError(res.errors || res.message || "Failed to send OTP");
+    }
+  };
+
+  const handleVerifyPhoneOtp = async (e) => {
+    e.preventDefault();
+    setPhoneChangeError(null);
+    const res = await phoneSubmit(
+      `api/user-update/${userdata.data?.id || userdata.id}`,
+      { phone: newPhoneInput, phone_otp: phoneOtp },
+      { method: "POST" },
+    );
+    if (res.success) {
+      setPhoneChangeSuccess(true);
+      setFormData((prev) => ({ ...prev, phone: newPhoneInput }));
+      if (res.data) dispatch(setUser({ userdata: res.data }));
+      refetch();
+      setTimeout(() => {
+        handleClosePhoneModal();
+      }, 2000);
+    } else {
+      setPhoneChangeError(
+        res.errors || res.message || "Invalid OTP. Please try again.",
+      );
+    }
+  };
+
   const handleCardNumberChange = (e) => {
     let value = e.target.value.replace(/\D/g, "");
     let formattedValue = value.replace(/(.{4})/g, "$1 ").trim();
@@ -264,6 +384,10 @@ export default function EditProfile() {
     Object.keys(formData).forEach((key) => {
       if (key === "bank_details") {
         payload.append("bank_details", JSON.stringify(updatedCards));
+      } else if (key === "email") {
+        // Email is updated via separate OTP verification flow
+      } else if (key === "phone") {
+        // Phone is updated via separate OTP verification flow
       } else {
         payload.append(key, formData[key]);
       }
@@ -300,6 +424,10 @@ export default function EditProfile() {
     Object.keys(formData).forEach((key) => {
       if (key === "bank_details") {
         payload.append("bank_details", JSON.stringify(updatedCards));
+      } else if (key === "email") {
+        // Email is updated via separate OTP verification flow
+      } else if (key === "phone") {
+        // Phone is updated via separate OTP verification flow
       } else {
         payload.append(key, formData[key]);
       }
@@ -465,6 +593,20 @@ export default function EditProfile() {
           onSubmit={handleSubmit}
           loading={submitLoading}
           userType={userType}
+          onChangeEmail={() => {
+            setNewEmailInput("");
+            setEmailStep("input");
+            setEmailChangeError(null);
+            setEmailChangeSuccess(false);
+            setShowEmailModal(true);
+          }}
+          onChangePhone={() => {
+            setNewPhoneInput("");
+            setPhoneStep("input");
+            setPhoneChangeError(null);
+            setPhoneChangeSuccess(false);
+            setShowPhoneModal(true);
+          }}
         />
       )}
 
@@ -872,6 +1014,218 @@ export default function EditProfile() {
           }}
         />
       )}
+
+      {/* Email Change Modal */}
+      <Modal open={showEmailModal} onClose={handleCloseEmailModal}>
+        <div className="p-3">
+          <h5 className="mb-1">Change Email Address</h5>
+          <p className="text-muted small mb-4">
+            {emailStep === "input"
+              ? "Enter your new email address. An OTP will be sent to verify it."
+              : `Enter the OTP sent to ${newEmailInput}`}
+          </p>
+
+          {emailChangeSuccess && (
+            <div className="alert alert-success py-2">
+              Email updated successfully!
+            </div>
+          )}
+          {emailChangeError && (
+            <div className="alert alert-danger py-2">{emailChangeError}</div>
+          )}
+
+          {emailStep === "input" ? (
+            <form onSubmit={handleRequestEmailOtp}>
+              <div className="mb-3">
+                <label className="form-label fw-semibold">
+                  New Email Address
+                </label>
+                <input
+                  type="email"
+                  className="form-control"
+                  placeholder="newemail@example.com"
+                  value={newEmailInput}
+                  onChange={(e) => setNewEmailInput(e.target.value)}
+                  required
+                  autoFocus
+                />
+              </div>
+              <div className="d-flex gap-2">
+                <button
+                  type="button"
+                  className="btn btn-outline-secondary w-50"
+                  onClick={handleCloseEmailModal}
+                  disabled={emailSubmitLoading}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="btn btn-primary w-50"
+                  disabled={emailSubmitLoading}
+                >
+                  {emailSubmitLoading ? "Sending OTP..." : "Send OTP"}
+                </button>
+              </div>
+            </form>
+          ) : (
+            <form onSubmit={handleVerifyEmailOtp}>
+              <div className="mb-3">
+                <label className="form-label fw-semibold">Enter OTP</label>
+                <input
+                  type="text"
+                  className="form-control text-center fw-bold"
+                  placeholder="Enter OTP"
+                  value={emailOtp}
+                  onChange={(e) =>
+                    setEmailOtp(e.target.value.replace(/\D/g, ""))
+                  }
+                  maxLength={8}
+                  required
+                  autoFocus
+                />
+                <div className="mt-2 text-end">
+                  <button
+                    type="button"
+                    className="btn btn-link btn-sm p-0 text-muted"
+                    onClick={() => {
+                      setEmailStep("input");
+                      setEmailOtp("");
+                      setEmailChangeError(null);
+                    }}
+                    disabled={emailSubmitLoading}
+                  >
+                    Change email / Resend OTP
+                  </button>
+                </div>
+              </div>
+              <div className="d-flex gap-2">
+                <button
+                  type="button"
+                  className="btn btn-outline-secondary w-50"
+                  onClick={handleCloseEmailModal}
+                  disabled={emailSubmitLoading}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="btn btn-primary w-50"
+                  disabled={emailSubmitLoading || emailChangeSuccess}
+                >
+                  {emailSubmitLoading ? "Verifying..." : "Verify & Update"}
+                </button>
+              </div>
+            </form>
+          )}
+        </div>
+      </Modal>
+
+      {/* Phone Change Modal */}
+      <Modal open={showPhoneModal} onClose={handleClosePhoneModal}>
+        <div className="p-3">
+          <h5 className="mb-1">Change Phone Number</h5>
+          <p className="text-muted small mb-4">
+            {phoneStep === "input"
+              ? "Enter your new phone number. An OTP will be sent to verify it."
+              : `Enter the OTP sent to ${newPhoneInput}`}
+          </p>
+
+          {phoneChangeSuccess && (
+            <div className="alert alert-success py-2">
+              Phone number updated successfully!
+            </div>
+          )}
+          {phoneChangeError && (
+            <div className="alert alert-danger py-2">{phoneChangeError}</div>
+          )}
+
+          {phoneStep === "input" ? (
+            <form onSubmit={handleRequestPhoneOtp}>
+              <div className="mb-3">
+                <label className="form-label fw-semibold">
+                  New Phone Number
+                </label>
+                <input
+                  type="tel"
+                  className="form-control"
+                  placeholder="+92 300 0000000"
+                  value={newPhoneInput}
+                  onChange={(e) => setNewPhoneInput(e.target.value)}
+                  required
+                  autoFocus
+                />
+              </div>
+              <div className="d-flex gap-2">
+                <button
+                  type="button"
+                  className="btn btn-outline-secondary w-50"
+                  onClick={handleClosePhoneModal}
+                  disabled={phoneSubmitLoading}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="btn btn-primary w-50"
+                  disabled={phoneSubmitLoading}
+                >
+                  {phoneSubmitLoading ? "Sending OTP..." : "Send OTP"}
+                </button>
+              </div>
+            </form>
+          ) : (
+            <form onSubmit={handleVerifyPhoneOtp}>
+              <div className="mb-3">
+                <label className="form-label fw-semibold">Enter OTP</label>
+                <input
+                  type="text"
+                  className="form-control text-center fw-bold"
+                  placeholder="Enter OTP"
+                  value={phoneOtp}
+                  onChange={(e) =>
+                    setPhoneOtp(e.target.value.replace(/\D/g, ""))
+                  }
+                  maxLength={8}
+                  required
+                  autoFocus
+                />
+                <div className="mt-2 text-end">
+                  <button
+                    type="button"
+                    className="btn btn-link btn-sm p-0 text-muted"
+                    onClick={() => {
+                      setPhoneStep("input");
+                      setPhoneOtp("");
+                      setPhoneChangeError(null);
+                    }}
+                    disabled={phoneSubmitLoading}
+                  >
+                    Change number / Resend OTP
+                  </button>
+                </div>
+              </div>
+              <div className="d-flex gap-2">
+                <button
+                  type="button"
+                  className="btn btn-outline-secondary w-50"
+                  onClick={handleClosePhoneModal}
+                  disabled={phoneSubmitLoading}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="btn btn-primary w-50"
+                  disabled={phoneSubmitLoading || phoneChangeSuccess}
+                >
+                  {phoneSubmitLoading ? "Verifying..." : "Verify & Update"}
+                </button>
+              </div>
+            </form>
+          )}
+        </div>
+      </Modal>
 
       {/* Document Modal */}
       <Modal open={showDocModal} onClose={() => setShowDocModal(false)}>

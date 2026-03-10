@@ -1,0 +1,507 @@
+/* Roster.css */
+.roster-page-wrapper {
+    padding: 20px;
+    background-color: white;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    color: #333;
+    overflow-x: scroll;
+    max-width: 1000px;
+}
+
+
+.roster-main-card {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+/* --- Toolbar & Controls --- */
+.roster-toolbar {
+    padding: 12px 16px;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.toolbar-row-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.top-left-group {
+    display: flex;
+    align-items: center;
+    gap: 32px;
+    flex-wrap: wrap;
+}
+
+.tabs {
+    display: flex;
+    gap: 24px;
+    font-weight: 500;
+}
+
+.tab {
+    cursor: pointer;
+    padding-bottom: 4px;
+    color: #6b7280;
+}
+
+.tab.active {
+    color: #0f766e;
+    border-bottom: 2px solid #0f766e;
+}
+
+.date-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #f3f4f6;
+    padding: 4px;
+    border-radius: 6px;
+}
+
+.date-controls button {
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    padding: 4px 8px;
+    font-weight: 500;
+    color: #374151;
+}
+
+.date-range-text {
+    font-size: 14px;
+    font-weight: 600;
+    padding: 0 8px;
+}
+
+.today-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: #e6f4f1 !important;
+    color: #0f766e !important;
+    border-radius: 4px;
+    padding: 6px 12px !important;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.icon-btn,
+.text-btn {
+    border: 1px solid #d1d5db;
+    background: white;
+    border-radius: 4px;
+    font-size: 13px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #4b5563;
+    transition: all 0.2s;
+}
+
+.icon-btn {
+    padding: 8px 10px;
+}
+
+.text-btn {
+    padding: 6px 12px;
+    gap: 6px;
+}
+
+.icon-btn:hover,
+.text-btn:hover {
+    background: #f9fafb;
+}
+
+.text-btn.disabled {
+    background: #f3f4f6;
+    color: #9ca3af;
+    cursor: not-allowed;
+}
+
+/* --- Status Legend Bar --- */
+.status-legend-bar {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 12px 16px;
+    background: #fff;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.status-legend-row {
+    display: flex;
+    gap: 4px;
+    width: 100%;
+}
+
+.status-box {
+    flex: 1;
+    text-align: center;
+    padding: 10px 4px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #111;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1.2;
+}
+
+.status-confirmed-full {
+    width: 100%;
+    padding: 14px 4px;
+    font-size: 13px;
+    letter-spacing: 1px;
+}
+
+.status-pending {
+    background-color: #e6ced3;
+}
+
+.status-rejected {
+    background-color: #ff66ff;
+}
+
+.status-publish {
+    background-color: #f5e5cc;
+}
+
+.status-unpublish {
+    background-color: #40e0d0;
+}
+
+.status-mock {
+    background-color: #66ffff;
+}
+
+.status-missed {
+    background-color: #ff6b6b;
+    color: white;
+}
+
+.status-uncoverd {
+    background-color: #ffff00;
+}
+
+.status-op-notes {
+    background-color: #d2b48c;
+}
+
+.status-completed {
+    background-color: #7b68ee;
+    color: white;
+}
+
+.status-confirmed {
+    background-color: #10b981;
+    color: white;
+}
+
+/* --- Table styling --- */
+.roster-grid-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    width: 100%;
+    max-width: 100%;
+}
+
+.roster-grid {
+    width: 100%;
+    border-collapse: collapse;
+    /* min-width is only applied on smaller screens via media query */
+}
+
+.roster-grid th,
+.roster-grid td {
+    border: 1px solid #e5e7eb;
+    padding: 12px;
+    vertical-align: top;
+}
+
+.roster-grid th {
+    text-align: left;
+    background: white;
+    font-weight: 600;
+    font-size: 14px;
+    color: #111827;
+    white-space: nowrap;
+}
+
+.search-cell {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 140px;
+}
+
+.search-cell i {
+    color: #9ca3af;
+}
+
+.search-input {
+    width: 100%;
+    border: none;
+    outline: none;
+    font-size: 14px;
+    color: #6b7280;
+}
+
+.location-td {
+    position: relative;
+    min-height: 100px;
+}
+
+.location-cell-content {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.loc-header {
+    display: flex;
+    justify-content: space-between;
+    font-weight: 500;
+    color: #374151;
+}
+
+.loc-name {
+    color: #0d9488;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+}
+
+.loc-name:hover {
+    color: #0f766e;
+    text-decoration: underline;
+}
+
+.loc-badge {
+    position: absolute;
+    bottom: 12px;
+    right: 12px;
+    background: #d1fae5;
+    color: #065f46;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+/* Shift Cells */
+.day-cell {
+    width: 11%;
+    position: relative;
+    padding-bottom: 35px !important;
+}
+
+.shift-block {
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    font-size: 11px;
+    margin-bottom: 6px;
+    cursor: pointer;
+    color: #111;
+    overflow: hidden;
+}
+
+.shift-pending {
+    background-color: #e6ced3;
+    color: #111;
+}
+
+.shift-rejected {
+    background-color: #ff66ff;
+    color: #111;
+}
+
+.shift-published {
+    background-color: #f5e5cc;
+    color: #111;
+}
+
+.shift-unpublished {
+    background-color: #40e0d0;
+    color: #111;
+}
+
+.shift-mock {
+    background-color: #66ffff;
+    color: #111;
+}
+
+.shift-missed {
+    background-color: #ff6b6b;
+    color: white;
+}
+
+.shift-uncovered {
+    background-color: #ffff00;
+    color: #111;
+}
+
+.shift-op-notes {
+    background-color: #d2b48c;
+    color: #111;
+}
+
+.shift-completed {
+    background-color: #7b68ee;
+    color: white;
+}
+
+.shift-confirmed {
+    background-color: #10b981;
+    color: white;
+}
+
+.shift-time {
+    font-weight: 900;
+    margin-bottom: 5px;
+    padding: 4px 6px 0;
+}
+
+.shift-name {
+    margin-bottom: 0;
+    margin-left: 10px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 10px;
+    padding: 0 6px 4px;
+}
+
+.shift-tags {
+    display: flex;
+    border-top: 1px solid rgba(0, 0, 0, 0.15);
+    width: 100%;
+}
+
+.s-tag {
+    flex: 1;
+    font-size: 9px;
+    padding: 3px 2px;
+    font-weight: 600;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    border-right: 1px solid rgba(0, 0, 0, 0.15);
+}
+
+.s-tag:last-child {
+    border-right: none;
+}
+
+.s-tag-activity {
+    background: #1f2937;
+    color: white;
+}
+
+.s-tag-detail {
+    background: #0d9488;
+    color: white;
+}
+
+.s-tag-time {
+    background: #ec4899;
+    color: white;
+}
+
+.s-tag-assign {
+    background: #f59e0b;
+    color: white;
+}
+
+.roster-footer {
+    background: #eef7f1;
+    font-weight: 600;
+    font-size: 13px;
+    color: #111;
+}
+
+.roster-footer td {
+    text-align: center;
+    padding: 16px 12px;
+    border: 1px solid #dcf0e3;
+}
+
+.footer-total-label {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+}
+
+/* --- Responsive Media Queries --- */
+
+/* Always allow horizontal scroll so shift tags are never hidden */
+.roster-grid {
+    min-width: 900px;
+}
+
+.day-cell {
+    min-width: 130px;
+}
+
+@media screen and (max-width: 1024px) {
+    .top-left-group {
+        gap: 16px;
+    }
+}
+
+@media screen and (max-width: 768px) {
+    .roster-page-wrapper {
+        padding: 10px;
+    }
+
+    .toolbar-row-top,
+    .toolbar-row-bottom {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .filters {
+        width: 100%;
+    }
+
+    .filter-select {
+        flex: 1;
+        min-width: 120px;
+    }
+
+    .action-buttons {
+        width: 100%;
+        justify-content: flex-start;
+    }
+
+    .status-legend-bar {
+        justify-content: center;
+    }
+
+    .status-box {
+        flex: 0 1 calc(33% - 4px);
+        /* 3 items per row on mobile */
+    }
+}
+
+@media screen and (max-width: 480px) {
+    .status-box {
+        flex: 0 1 calc(50% - 4px);
+        /* 2 items per row on very small screens */
+    }
+}

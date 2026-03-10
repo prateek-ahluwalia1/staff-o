@@ -8,6 +8,7 @@ export default function SettingsHeaderContent({
   gender,
   company_name,
   profileCompletion = 0,
+  isVerified = false,
 }) {
   const pct = Math.min(100, Math.max(0, Number(profileCompletion) || 0));
 
@@ -30,7 +31,20 @@ export default function SettingsHeaderContent({
   return (
     <div className="settings-header-content" style={{ position: "relative" }}>
       <span>{userType || "Staff"} Profile</span>
-      <h2>{name || "Staff Member"}</h2>
+
+      {/* Name and Verification Badge */}
+      <h2 style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+        {name || "Staff Member"}
+        {isVerified && (
+          <i
+            className="fa-solid fa-circle-check"
+            aria-hidden="true"
+            style={{ color: "#1d9bf0", fontSize: "0.8em" }}
+            title="Verified Profile"
+          ></i>
+        )}
+      </h2>
+
       <p>
         Keep your information up to date so your profile stays accurate and
         complete.

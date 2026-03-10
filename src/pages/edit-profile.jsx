@@ -40,6 +40,9 @@ export default function EditProfile() {
   const dispatch = useDispatch();
   const { userdata } = useSelector((state) => state.auth);
   const userType = userdata?.data?.user_type || userdata?.user_type;
+  const isverified =
+    userdata?.data?.customer?.verify_profile ||
+    userdata?.customer?.verify_profile;
 
   const endpoint = useMemo(
     () =>
@@ -532,6 +535,7 @@ export default function EditProfile() {
           }}
         />
         <SettingsHeaderContent
+          isVerified={isverified}
           userType={userType}
           name={formData.name}
           email={formData.email}

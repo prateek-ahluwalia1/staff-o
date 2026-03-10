@@ -47,12 +47,11 @@ export default function MyJobApplications() {
     if (!userId) return;
     const payload = {
       user_id: [userId],
-      state: "Victoria", // Update state if needed dynamically
+      state: "Victoria",
       start: format(monday, "MM-dd-yyyy"),
       end: format(addDays(monday, 6), "MM-dd-yyyy"),
       roster_id: "1",
     };
-    // Make sure this matches your actual API route
     submit("api/fetch-customer-sites", payload, { method: "POST" });
   }, [userId, monday, submit]);
 
@@ -78,10 +77,10 @@ export default function MyJobApplications() {
           : "pending";
 
         if (currentStatus === "confirmed") {
-          statusClass = "offer"; // Usually green in UI kits
+          statusClass = "offer";
           pillIcon = "fa-calendar-check";
         } else if (currentStatus === "pending") {
-          statusClass = "review"; // Usually yellow/orange
+          statusClass = "review";
           pillIcon = "fa-envelope-open-text";
         }
 

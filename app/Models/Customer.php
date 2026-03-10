@@ -11,6 +11,10 @@ class Customer extends Model
         'phone',
         'company_name',
         'bank_details',
+        'otp_expires_at',
+        'phone_otp',
+        'email_otp',
+        'verify_profile',
     ];
 
     /* ======================

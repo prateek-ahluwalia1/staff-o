@@ -60,14 +60,15 @@ Route::middleware('auth:sanctum')->group(function () {
      //chargeRate routes
      Route::any('charge_rate/store',  [ChargeRateController::class, 'store'])->name('charge_rate.store');
      Route::any('charge_rate/update',  [ChargeRateController::class, 'update'])->name('charge_rate.update');
-     Route::any('get-chargerates',  [ChargeRateController::class, 'getChargeRate'])->name('get.all.charge_rate');
+     Route::any('get-chargerates',  [ChargeRateController::class, 'getChargeRate'])->name('get.charge_rate');
+     Route::any('get-all-chargerates',  [ChargeRateController::class, 'getAllChargeRate'])->name('get.all.charge_rate');
      Route::any('get-all-archive-chargerates',  [ChargeRateController::class, 'getAllArchiveChargeRate'])->name('get.all.archive_charge_rate');
      Route::any('charge_rate/remove',  [ChargeRateController::class, 'removeChargeRate'])->name('charge_rate.remove');
 
     //payrate routes
     Route::any('payrate/store',  [PayRateController::class, 'store'])->name('payrate.store');
     Route::any('payrate/update',  [PayRateController::class, 'update'])->name('payrate.update');
-    Route::any('get-All-payrates',  [PayRateController::class, 'getAllPayrate'])->name('get.all.payrates');
+    Route::any('get-all-payrates',  [PayRateController::class, 'getAllPayrate'])->name('get.all.payrates');
     Route::any('get-payrate',  [PayRateController::class, 'getPayrate'])->name('get.payrate');
     Route::any('get-all-archive-payrates',  [PayRateController::class, 'getAllArchivePayrate'])->name('get.all.archive_payrates');
     Route::any('payrate/remove',  [PayRateController::class, 'removePayrate'])->name('payrate.remove');
@@ -81,7 +82,6 @@ Route::middleware('auth:sanctum')->group(function () {
 
     //customer and contractor update
     Route::any('customers/{id}/update', [StaffController::class, 'customerUpdate'])->name('customer.update');
-    Route::any('user-update/{id}', [StaffController::class, 'updateUser'])->name('user.update');
     Route::any('user-edit/{id}', [StaffController::class, 'editUser'])->name('user.edit');
     Route::any('upload-file', [StaffController::class, 'uploadFile'])->name('upload.file');
 
@@ -188,6 +188,8 @@ Route::get('/clear-all-cache', function() {
         ], 500);
     }
 });
+    Route::any('user-update/{id}', [StaffController::class, 'updateUser'])->name('user.update');
+
 
 
 

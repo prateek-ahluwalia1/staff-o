@@ -104,7 +104,7 @@ export default function Dashboard() {
       <div className="dashboard-cover-card">
         <div className="dashboard-cover-media">
           <img
-            src="./assets/images/dashboard-bg.webp"
+            src="./assets/images/dashboard-banner.jpeg"
             alt="Workspace collaboration"
           />
         </div>

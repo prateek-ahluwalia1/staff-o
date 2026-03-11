@@ -30,6 +30,7 @@ const AddJob = lazy(() => import("./pages/add-job"));
 const ManageUsers = lazy(() => import("./pages/manage-users"));
 const ManageStaff = lazy(() => import("./pages/manage-staff"));
 const ChatPage = lazy(() => import("./pages/Chat"));
+const ChatRoom = lazy(() => import("./pages/ChatRoom"));
 
 function App() {
   useEcho();
@@ -96,6 +97,7 @@ function App() {
               <Route path="/manage-users" element={<ManageUsers />} />
               <Route path="/manage-staff" element={<ManageStaff />} />
               <Route path="/chat" element={<ChatPage />} />
+              <Route path="/chat/:category" element={<ChatRoom />} />
             </Route>
 
             <Route path="*" element={<Navigate to="/login" replace />} />

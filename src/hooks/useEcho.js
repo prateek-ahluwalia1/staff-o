@@ -1,11 +1,7 @@
 import { useEffect } from "react";
-import Echo from "laravel-echo";
-import Pusher from "pusher-js";
 import { useDispatch, useSelector } from "react-redux";
 import { addNotification } from "../store/slices/notificationSlice";
-import { apiURL } from "../utils/exports";
-
-window.Pusher = Pusher;
+import { getEchoInstance, destroyEchoInstance } from "../echo";
 
 export const useEcho = () => {
   const dispatch = useDispatch();
@@ -13,41 +9,63 @@ export const useEcho = () => {
   const userId = userdata?.id || userdata?.data?.id;
 
   useEffect(() => {
-    if (token && userId) {
-      const echo = new Echo({
-        broadcaster: "pusher",
-        key: "443c8c0a97a80fc51fe8",
-        cluster: "mt1",
-        forceTLS: true,
-        authorizer: (channel) => {
-          return {
-            authorize: (socketId, callback) => {
-              fetch(`${apiURL}api/broadcasting/auth`, {
-                method: "POST",
-                headers: {
-                  Authorization: `Bearer ${token}`,
-                  "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                  socket_id: socketId,
-                  channel_name: channel.name,
-                }),
-              })
-                .then((res) => res.json())
-                .then((data) => callback(false, data))
-                .catch((err) => callback(true, err));
-            },
-          };
-        },
+    if (!token || !userId) return;
+
+    const echo = getEchoInstance(token);
+    const pusherConn = echo.connector.pusher.connection;
+
+    console.log("[Echo] Connecting... current state:", pusherConn.state);
+
+    const onConnected = () => {
+      console.log(
+        "%c🟢 Pusher connected — ready to receive notifications",
+        "color: #22c55e; font-weight: bold;",
+      );
+    };
+    const onFailed = () =>
+      console.error("[Echo] ❌ Connection FAILED — check your Pusher key");
+    const onError = (err) => {
+      console.error("[Echo] ❌ Connection error:", JSON.stringify(err));
+      console.error(
+        "[Echo] ❌ Error detail:",
+        err?.error?.message || err?.error || err,
+      );
+    };
+
+    if (pusherConn.state === "connected") {
+      onConnected();
+    } else {
+      pusherConn.bind("connected", onConnected);
+    }
+    pusherConn.bind("failed", onFailed);
+    pusherConn.bind("error", onError);
+
+    echo
+      .private(`notifications.${userId}`)
+      .listen(".push.notification", (data) => {
+        console.log("✅ Notification received:", data);
+        dispatch(addNotification(data));
+      })
+      .error((error) => {
+        console.error("[Echo] Channel error:", error);
       });
 
+    return () => {
+      pusherConn.unbind("connected", onConnected);
+      pusherConn.unbind("failed", onFailed);
+      pusherConn.unbind("error", onError);
+      // Use stopListening instead of leaveChannel so StrictMode's fake unmount
+      // doesn't disconnect the underlying Pusher WebSocket.
       echo
         .private(`notifications.${userId}`)
-        .listen(".push.notification", (notification) => {
-          dispatch(addNotification(notification));
-        });
-
-      return () => echo.disconnect();
-    }
+        .stopListening(".push.notification");
+    };
   }, [token, userId, dispatch]);
+
+  // Disconnect the singleton when the user logs out
+  useEffect(() => {
+    if (!token) {
+      destroyEchoInstance();
+    }
+  }, [token]);
 };

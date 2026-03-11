@@ -1,12 +1,8 @@
-import React, { memo, useState, useCallback, useEffect } from "react";
+import React, { memo, useState, useCallback } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { Link, useNavigate } from "react-router-dom";
 import { logOut } from "../store/slices/authSlice";
-import {
-  setNotifications,
-  clearUnreadCount,
-} from "../store/slices/notificationSlice";
-import useFetch from "../hooks/useFetch";
+import { clearUnreadCount } from "../store/slices/notificationSlice";
 import useSubmit from "../hooks/useSubmit";
 import staffologo from "../assets/images/staffo.png";
 
@@ -19,18 +15,7 @@ const Header = memo(function Header() {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
 
-  // --- API HOOKS (Utilizing your existing hooks) ---
-  const { data: initialNotifs } = useFetch("api/notifications", {
-    isAuth: true,
-  });
   const { submit: markAsReadApi } = useSubmit({ isAuth: true });
-
-  // Sync initial fetch data to Redux Store when component mounts or data arrives
-  useEffect(() => {
-    if (initialNotifs) {
-      dispatch(setNotifications(initialNotifs));
-    }
-  }, [initialNotifs, dispatch]);
 
   const toggleNotifications = async () => {
     const nextState = !showNotifications;

@@ -7,7 +7,196 @@
     border: 1px solid #dee2e6;
 }
 
-/* Sidebar Styling */
+/* ── CHAT LANDING PAGE ── */
+.chat-landing-header {
+    padding-bottom: 8px;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.chat-category-card {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.07);
+    overflow: hidden;
+    transition: box-shadow 0.2s, transform 0.2s;
+    display: flex;
+    flex-direction: column;
+}
+
+.chat-category-card:hover {
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.13);
+    transform: translateY(-2px);
+}
+
+.chat-category-icon-wrapper {
+    background: #111;
+    height: 160px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    position: relative;
+}
+
+.chat-category-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.chat-category-placeholder {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.chat-category-body {
+    padding: 20px 20px 24px;
+}
+
+/* ── CHATROOM PAGE ── */
+.chatroom-page {
+    display: flex;
+    height: calc(100vh - 80px);
+    min-height: 500px;
+    background: #f5f6fa;
+    overflow: hidden;
+}
+
+.chatroom-sidebar {
+    width: 320px;
+    min-width: 260px;
+    max-width: 340px;
+    background: #fff;
+    border-right: 1px solid #e8e8e8;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.chatroom-sidebar-header {
+    display: flex;
+    align-items: center;
+    padding: 14px 16px;
+    border-bottom: 1px solid #f0f0f0;
+    background: #fafafa;
+    gap: 8px;
+}
+
+.chatroom-sidebar-username {
+    font-size: 0.95rem;
+}
+
+.chatroom-plus-btn {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50% !important;
+    flex-shrink: 0;
+}
+
+.chatroom-search {
+    padding: 8px 12px;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.chatroom-search .form-control {
+    border-radius: 20px;
+    background: #f5f6fa;
+    border: 1px solid #e8e8e8;
+    font-size: 0.85rem;
+}
+
+.chatroom-conv-list {
+    flex: 1;
+    overflow-y: auto;
+}
+
+.chatroom-conv-item {
+    cursor: pointer;
+    transition: background 0.15s;
+    border-bottom: 1px solid #f8f8f8;
+}
+
+.chatroom-conv-item:hover {
+    background: #f5f6fa;
+}
+
+.chatroom-conv-active {
+    background: #f0f4ff !important;
+    border-left: 3px solid #4f6ef7;
+}
+
+/* User picker dropdown */
+.chatroom-user-picker {
+    position: absolute;
+    top: 38px;
+    right: 0;
+    width: 280px;
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 10px;
+    z-index: 9999;
+    overflow: hidden;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+}
+
+.chatroom-user-picker-list {
+    max-height: 280px;
+    overflow-y: auto;
+}
+
+.chatroom-user-picker-item {
+    cursor: pointer;
+    transition: background 0.12s;
+}
+
+.chatroom-user-picker-item:hover {
+    background: #f5f6fa;
+}
+
+/* Main chat area */
+.chatroom-main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background: #fff;
+    overflow: hidden;
+}
+
+.chatroom-main-header {
+    border-bottom: 1px solid #f0f0f0;
+    background: #fafafa;
+    min-height: 60px;
+}
+
+.chatroom-messages {
+    background-image: url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png');
+    background-attachment: fixed;
+}
+
+.chatroom-footer {
+    background: #fff;
+}
+
+.chatroom-footer .form-control {
+    font-size: 0.9rem;
+}
+
+.chatroom-send-btn {
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+/* Sidebar Styling (legacy) */
 .chat-sidebar {
     background: #f8f9fa;
     overflow-y: auto;
@@ -23,14 +212,12 @@
     background-color: #fff !important;
     color: #000 !important;
     border-left-color: #0d6efd;
-    /* Bootstrap Primary */
     border-bottom: 1px solid #dee2e6 !important;
 }
 
 /* Message Area */
 .chat-messages {
     background-image: url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png');
-    /* Subtle pattern */
     background-attachment: fixed;
 }
 

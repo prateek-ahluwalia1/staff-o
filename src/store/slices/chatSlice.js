@@ -8,10 +8,17 @@ const chatSlice = createSlice({
     messages: [], // The messages in the current open chat
     unreadTotal: 0,
     loading: false,
+    activeCategory: null, // 'admins' | 'staff' | 'customers' | 'contractors'
   },
   reducers: {
     setConversations: (state, action) => {
       state.conversations = action.payload;
+    },
+    setActiveCategory: (state, action) => {
+      state.activeCategory = action.payload;
+      state.activeConversation = null;
+      state.messages = [];
+      state.conversations = [];
     },
     setActiveChat: (state, action) => {
       state.activeConversation = action.payload;
@@ -35,9 +42,23 @@ const chatSlice = createSlice({
         conv.updated_at = new Date().toISOString();
       }
     },
+    prependConversation: (state, action) => {
+      const exists = state.conversations.find(
+        (c) => c.id === action.payload.id,
+      );
+      if (!exists) {
+        state.conversations.unshift(action.payload);
+      }
+    },
   },
 });
 
-export const { setConversations, setActiveChat, setMessages, addMessage } =
-  chatSlice.actions;
+export const {
+  setConversations,
+  setActiveChat,
+  setMessages,
+  addMessage,
+  setActiveCategory,
+  prependConversation,
+} = chatSlice.actions;
 export default chatSlice.reducer;

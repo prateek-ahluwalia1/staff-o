@@ -39,6 +39,7 @@ const Sidebar = memo(function Sidebar() {
       icon: "fa-solid fa-credit-card",
       label: "Payment History",
     },
+    { to: "/chat", icon: "fa-solid fa-comments", label: "Communications" },
   ];
 
   const contractorNav = [
@@ -59,6 +60,7 @@ const Sidebar = memo(function Sidebar() {
       icon: "fa-solid fa-credit-card",
       label: "Payment History",
     },
+    { to: "/chat", icon: "fa-solid fa-comments", label: "Communications" },
   ];
 
   const staffNav = [
@@ -74,13 +76,14 @@ const Sidebar = memo(function Sidebar() {
       icon: "fa-solid fa-briefcase",
       label: "My Job Applications",
     },
+    { to: "/chat", icon: "fa-solid fa-comments", label: "Communications" },
   ];
 
   const adminNav = [
     { to: "/dashboard", icon: "fa-solid fa-gauge", label: "Admin Dashboard" },
     { to: "/roster", icon: "fa-solid fa-users", label: "Roster" },
     { to: "/add-job", icon: "fa-solid fa-briefcase", label: "Post a Job" },
-    { to: "/chat", icon: "fa-solid fa-comments", label: "Chat" },
+    { to: "/chat", icon: "fa-solid fa-comments", label: "Communications" },
     {
       to: "/manage-users",
       icon: "fa-solid fa-users-gear",

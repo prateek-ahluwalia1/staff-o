@@ -7,10 +7,6 @@ window.Pusher = Pusher;
 let echoInstance = null;
 let activeToken = null;
 
-/**
- * Returns the singleton Echo instance, creating it on first call.
- * Keeps `activeToken` current so the authorizer always uses the latest token.
- */
 export function getEchoInstance(token) {
   activeToken = token;
 
@@ -74,8 +70,6 @@ export function getEchoInstance(token) {
       }),
     });
   } else {
-    // If the singleton exists but the underlying Pusher connection is in a
-    // terminal/failed state (e.g. from StrictMode's fake unmount), reconnect it.
     const state = echoInstance.connector.pusher.connection.state;
     if (state === "disconnected" || state === "failed") {
       echoInstance.connector.pusher.connect();
@@ -85,7 +79,6 @@ export function getEchoInstance(token) {
   return echoInstance;
 }
 
-/** Disconnect and destroy the singleton (call on logout). */
 export function destroyEchoInstance() {
   if (echoInstance) {
     echoInstance.disconnect();

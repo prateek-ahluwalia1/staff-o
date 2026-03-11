@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef, useCallback } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import {
   setConversations,
   setActiveChat,
@@ -71,6 +71,7 @@ const Avatar = ({ src, name, size = 40 }) => {
 const ChatRoom = () => {
   const { category } = useParams();
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const { user, userdata, token } = useSelector((state) => state.auth);
   const { conversations, activeConversation, messages } = useSelector(
     (state) => state.chat,
@@ -185,6 +186,38 @@ const ChatRoom = () => {
     return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
   };
 
+  const formatDate = (iso) => {
+    if (!iso) return "";
+    const d = new Date(iso);
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(today.getDate() - 1);
+    if (d.toDateString() === today.toDateString()) return "Today";
+    if (d.toDateString() === yesterday.toDateString()) return "Yesterday";
+    return d.toLocaleDateString([], {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+  };
+
+  // Group messages by date
+  const groupedMessages = messages.reduce((groups, msg, idx) => {
+    const dateKey = msg.created_at
+      ? new Date(msg.created_at).toDateString()
+      : "Unknown";
+    if (!groups.length || groups[groups.length - 1].dateKey !== dateKey) {
+      groups.push({
+        dateKey,
+        label: formatDate(msg.created_at),
+        messages: [{ ...msg, _idx: idx }],
+      });
+    } else {
+      groups[groups.length - 1].messages.push({ ...msg, _idx: idx });
+    }
+    return groups;
+  }, []);
+
   // Filter conversations by search
   const filteredConvs = (conversations || []).filter((conv) => {
     const name = conv?.user?.name || conv?.other_user?.name || "";
@@ -210,8 +243,30 @@ const ChatRoom = () => {
     <div className="chatroom-page">
       {/* ── LEFT PANEL ── */}
       <div className="chatroom-sidebar">
-        {/* Header row: current user avatar + name + plus button */}
+        {/* Header row: back + current user avatar + name + plus button */}
         <div className="chatroom-sidebar-header">
+          <button
+            className="btn btn-sm me-1 flex-shrink-0"
+            style={{
+              background: "rgba(255,255,255,0.15)",
+              border: "1px solid rgba(255,255,255,0.25)",
+              color: "#fff",
+              borderRadius: "50%",
+              width: 32,
+              height: 32,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: 0,
+            }}
+            title="Back to Chats"
+            onClick={() => navigate("/chat")}
+          >
+            <i
+              className="fa-solid fa-arrow-left"
+              style={{ fontSize: "0.8rem" }}
+            ></i>
+          </button>
           <Avatar
             src={currentUser?.avatar || currentUser?.profile_image}
             name={currentUser?.name || "Me"}
@@ -352,63 +407,125 @@ const ChatRoom = () => {
         {activeConversation ? (
           <>
             {/* Header */}
-            <div className="chatroom-main-header d-flex align-items-center px-4 py-3">
+            <div className="chatroom-main-header">
               <Avatar
                 src={
                   otherUser(activeConversation)?.avatar ||
                   otherUser(activeConversation)?.profile_image
                 }
                 name={otherUser(activeConversation)?.name}
-                size={38}
+                size={40}
               />
-              <h6 className="mb-0 fw-semibold ms-3">
-                {otherUser(activeConversation)?.name || "Conversation"}
-              </h6>
+              <div className="ms-3">
+                <h6
+                  className="mb-0 fw-bold"
+                  style={{
+                    fontFamily: "Montserrat, sans-serif",
+                    color: "#1a1a2e",
+                    fontSize: "0.97rem",
+                  }}
+                >
+                  {otherUser(activeConversation)?.name || "Conversation"}
+                </h6>
+                <span
+                  className="d-flex align-items-center gap-1"
+                  style={{ fontSize: "0.74rem", color: "#17d27c" }}
+                >
+                  <span
+                    style={{
+                      width: 7,
+                      height: 7,
+                      borderRadius: "50%",
+                      background: "#17d27c",
+                      display: "inline-block",
+                    }}
+                  ></span>
+                  Online
+                </span>
+              </div>
             </div>
 
             {/* Messages */}
-            <div className="chatroom-messages flex-grow-1 overflow-auto p-4">
+            <div className="chatroom-messages">
               {loadingMessages ? (
-                <div className="text-center text-muted py-4">Loading…</div>
+                <div className="text-center text-muted py-5">
+                  <i
+                    className="fa fa-spinner fa-spin fa-2x mb-3"
+                    style={{ color: "#263bd6" }}
+                  ></i>
+                  <p className="small mb-0">Loading messages…</p>
+                </div>
               ) : messages.length === 0 ? (
-                <div className="text-center text-muted py-4 small">
-                  No messages yet. Say hello!
+                <div className="text-center py-5">
+                  <div
+                    className="mx-auto mb-3 d-flex align-items-center justify-content-center"
+                    style={{
+                      width: 64,
+                      height: 64,
+                      borderRadius: "50%",
+                      background: "rgba(38,59,214,0.08)",
+                    }}
+                  >
+                    <i
+                      className="fa-regular fa-comment-dots fa-2x"
+                      style={{ color: "#263bd6" }}
+                    ></i>
+                  </div>
+                  <p className="text-muted small mb-0">
+                    No messages yet. Say hello! 👋
+                  </p>
                 </div>
               ) : (
-                messages.map((m, i) => {
-                  const isMe =
-                    m.sender_id === user?.id || m.sender_id === currentUser?.id;
-                  return (
-                    <div
-                      key={i}
-                      className={`d-flex mb-3 ${isMe ? "justify-content-end" : "justify-content-start"}`}
-                    >
-                      <div
-                        className={`message-bubble shadow-sm ${isMe ? "message-sent" : "message-received"}`}
-                      >
-                        {m.message}
+                groupedMessages.map((group) => (
+                  <div key={group.dateKey}>
+                    <div className="chat-date-separator">{group.label}</div>
+                    {group.messages.map((m) => {
+                      const isMe =
+                        m.sender_id === user?.id ||
+                        m.sender_id === currentUser?.id;
+                      return (
                         <div
-                          className={`chat-timestamp text-end ${isMe ? "text-white-50" : "text-muted"}`}
+                          key={m._idx}
+                          className={`d-flex mb-3 align-items-end gap-2 ${isMe ? "justify-content-end" : "justify-content-start"}`}
                         >
-                          {formatTime(m.created_at)}
+                          {!isMe && (
+                            <Avatar
+                              src={
+                                otherUser(activeConversation)?.avatar ||
+                                otherUser(activeConversation)?.profile_image
+                              }
+                              name={otherUser(activeConversation)?.name}
+                              size={28}
+                            />
+                          )}
+                          <div
+                            className={`message-bubble ${isMe ? "message-sent" : "message-received"}`}
+                          >
+                            {m.message}
+                            <div
+                              className={`chat-timestamp text-end ${isMe ? "text-white-50" : "text-muted"}`}
+                            >
+                              {formatTime(m.created_at)}
+                            </div>
+                          </div>
                         </div>
-                      </div>
-                    </div>
-                  );
-                })
+                      );
+                    })}
+                  </div>
+                ))
               )}
               <div ref={scrollRef} />
             </div>
 
             {/* Footer Input */}
-            <div className="chatroom-footer px-3 py-2 border-top">
+            <div className="chatroom-footer">
               <form
                 onSubmit={onSend}
                 className="d-flex align-items-center gap-2"
               >
                 <button
                   type="button"
-                  className="btn btn-light btn-sm rounded-circle"
+                  className="chatroom-attach-btn"
                   title="Attach file"
                 >
                   <i className="fa-solid fa-paperclip"></i>
@@ -436,22 +553,25 @@ const ChatRoom = () => {
             </div>
           </>
         ) : (
-          <div className="m-auto text-center px-4">
-            <div
-              className="d-flex align-items-center justify-content-center rounded-circle mx-auto mb-4"
-              style={{
-                width: 80,
-                height: 80,
-                background: "rgba(108,99,255,0.1)",
-              }}
-            >
+          <div className="chatroom-empty-state">
+            <div className="chatroom-empty-icon">
               <i
                 className="fa-regular fa-comments"
-                style={{ fontSize: 36, color: "#6c63ff" }}
+                style={{ fontSize: 38, color: "#263bd6" }}
               ></i>
             </div>
-            <p className="text-muted">
-              Select a conversation or start a new chat
+            <h6
+              className="fw-bold mb-1"
+              style={{ fontFamily: "Montserrat, sans-serif", color: "#1a1a2e" }}
+            >
+              No Conversation Selected
+            </h6>
+            <p
+              className="text-muted small text-center mb-0"
+              style={{ maxWidth: 260 }}
+            >
+              Pick a conversation from the left, or press <strong>+</strong> to
+              start a new one.
             </p>
           </div>
         )}

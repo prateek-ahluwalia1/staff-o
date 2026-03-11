@@ -1,0 +1,62 @@
+/* Chat Container Heights */
+.chat-app {
+    height: 75vh;
+    min-height: 500px;
+    overflow: hidden;
+    border-radius: 12px;
+    border: 1px solid #dee2e6;
+}
+
+/* Sidebar Styling */
+.chat-sidebar {
+    background: #f8f9fa;
+    overflow-y: auto;
+}
+
+.list-group-item {
+    border-left: 4px solid transparent;
+    transition: all 0.2s;
+    cursor: pointer;
+}
+
+.list-group-item.active {
+    background-color: #fff !important;
+    color: #000 !important;
+    border-left-color: #0d6efd;
+    /* Bootstrap Primary */
+    border-bottom: 1px solid #dee2e6 !important;
+}
+
+/* Message Area */
+.chat-messages {
+    background-image: url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png');
+    /* Subtle pattern */
+    background-attachment: fixed;
+}
+
+.message-bubble {
+    padding: 10px 15px;
+    border-radius: 18px;
+    max-width: 75%;
+    font-size: 0.95rem;
+    line-height: 1.4;
+    position: relative;
+}
+
+.message-sent {
+    background-color: #0d6efd;
+    color: white;
+    border-bottom-right-radius: 2px;
+}
+
+.message-received {
+    background-color: #f1f0f0;
+    color: #333;
+    border-bottom-left-radius: 2px;
+}
+
+.chat-timestamp {
+    font-size: 0.7rem;
+    margin-top: 4px;
+    opacity: 0.8;
+}

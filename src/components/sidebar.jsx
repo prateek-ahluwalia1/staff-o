@@ -54,11 +54,6 @@ const Sidebar = memo(function Sidebar() {
       icon: "fa-solid fa-user-pen",
       label: "Edit Profile",
     },
-    // {
-    //   to: "/pay-charge-rate",
-    //   icon: "fa-solid fa-money-bill-wave",
-    //   label: "Accounts",
-    // },
     {
       to: "/payment-history",
       icon: "fa-solid fa-credit-card",
@@ -85,6 +80,7 @@ const Sidebar = memo(function Sidebar() {
     { to: "/dashboard", icon: "fa-solid fa-gauge", label: "Admin Dashboard" },
     { to: "/roster", icon: "fa-solid fa-users", label: "Roster" },
     { to: "/add-job", icon: "fa-solid fa-briefcase", label: "Post a Job" },
+    { to: "/chat", icon: "fa-solid fa-comments", label: "Chat" },
     {
       to: "/manage-users",
       icon: "fa-solid fa-users-gear",

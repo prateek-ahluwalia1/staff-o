@@ -20,7 +20,9 @@ const Header = memo(function Header() {
   const [showNotifications, setShowNotifications] = useState(false);
 
   // --- API HOOKS (Utilizing your existing hooks) ---
-  const { data: initialNotifs } = useFetch("/notifications", { isAuth: true });
+  const { data: initialNotifs } = useFetch("api/notifications", {
+    isAuth: true,
+  });
   const { submit: markAsReadApi } = useSubmit({ isAuth: true });
 
   // Sync initial fetch data to Redux Store when component mounts or data arrives
@@ -353,7 +355,10 @@ const Header = memo(function Header() {
                                 className="p-3 border-bottom dropdown-item"
                                 style={{ whiteSpace: "normal" }}
                               >
-                                <div className="small text-dark">
+                                <div className="small text-dark fw-semibold">
+                                  {notif.title || notif.data?.title}
+                                </div>
+                                <div className="small text-muted">
                                   {notif.message || notif.data?.message}
                                 </div>
                                 <div

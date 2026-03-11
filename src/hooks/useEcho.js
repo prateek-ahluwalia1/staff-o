@@ -3,15 +3,17 @@ import Echo from "laravel-echo";
 import Pusher from "pusher-js";
 import { useDispatch, useSelector } from "react-redux";
 import { addNotification } from "../store/slices/notificationSlice";
+import { apiURL } from "../utils/exports";
 
 window.Pusher = Pusher;
 
 export const useEcho = () => {
   const dispatch = useDispatch();
-  const { token, user } = useSelector((state) => state.auth);
+  const { token, userdata } = useSelector((state) => state.auth);
+  const userId = userdata?.id || userdata?.data?.id;
 
   useEffect(() => {
-    if (token && user) {
+    if (token && userId) {
       const echo = new Echo({
         broadcaster: "pusher",
         key: "443c8c0a97a80fc51fe8",
@@ -20,7 +22,7 @@ export const useEcho = () => {
         authorizer: (channel) => {
           return {
             authorize: (socketId, callback) => {
-              fetch("http://your-api.com/api/broadcasting/auth", {
+              fetch(`${apiURL}api/broadcasting/auth`, {
                 method: "POST",
                 headers: {
                   Authorization: `Bearer ${token}`,
@@ -40,12 +42,12 @@ export const useEcho = () => {
       });
 
       echo
-        .private(`App.Models.User.${user.id}`)
-        .notification((notification) => {
+        .private(`notifications.${userId}`)
+        .listen(".push.notification", (notification) => {
           dispatch(addNotification(notification));
         });
 
       return () => echo.disconnect();
     }
-  }, [token, user, dispatch]);
+  }, [token, userId, dispatch]);
 };

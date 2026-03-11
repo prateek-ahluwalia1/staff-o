@@ -7,6 +7,8 @@ import {
 } from "react-router-dom";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Loader from "./components/Loader";
+import NotificationToast from "./components/NotificationToast";
+import { useEcho } from "./hooks/useEcho";
 
 const Login = lazy(() => import("./auth/login"));
 const Register = lazy(() => import("./auth/register"));
@@ -27,11 +29,15 @@ const RatesList = lazy(() => import("./pages/RatesList"));
 const AddJob = lazy(() => import("./pages/add-job"));
 const ManageUsers = lazy(() => import("./pages/manage-users"));
 const ManageStaff = lazy(() => import("./pages/manage-staff"));
+const ChatPage = lazy(() => import("./pages/Chat"));
 
 function App() {
+  useEcho();
+
   return (
     <Router>
       <div className="App">
+        <NotificationToast />
         <Suspense fallback={<Loader fullPage />}>
           <Routes>
             <Route path="/" element={<Navigate to="/login" replace />} />
@@ -89,6 +95,7 @@ function App() {
               <Route path="/add-job" element={<AddJob />} />
               <Route path="/manage-users" element={<ManageUsers />} />
               <Route path="/manage-staff" element={<ManageStaff />} />
+              <Route path="/chat" element={<ChatPage />} />
             </Route>
 
             <Route path="*" element={<Navigate to="/login" replace />} />

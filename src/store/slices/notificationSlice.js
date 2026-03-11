@@ -5,6 +5,7 @@ const notificationSlice = createSlice({
   initialState: {
     items: [],
     unreadCount: 0,
+    latestNotification: null,
   },
   reducers: {
     setNotifications: (state, action) => {
@@ -18,6 +19,7 @@ const notificationSlice = createSlice({
     addNotification: (state, action) => {
       state.items.unshift(action.payload);
       state.unreadCount += 1;
+      state.latestNotification = action.payload;
     },
     clearUnreadCount: (state) => {
       state.unreadCount = 0;

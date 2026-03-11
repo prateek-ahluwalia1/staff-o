@@ -42,11 +42,29 @@ export function getEchoInstance(token) {
           })
             .then((res) => {
               console.log("[Echo] Auth response status:", res.status);
-              if (!res.ok) {
-                console.error(`[Echo] Auth endpoint returned ${res.status}`);
-                return res.json().then((data) => callback(true, data));
-              }
-              return res.json().then((data) => callback(false, data));
+              return res.text().then((text) => {
+                let data = {};
+                console.log(
+                  "[Echo] Auth raw response body:",
+                  JSON.stringify(text),
+                );
+                try {
+                  if (text) data = JSON.parse(text);
+                } catch (parseErr) {
+                  console.error(
+                    "[Echo] Auth response body is not valid JSON:",
+                    text,
+                  );
+                  return callback(true, {
+                    error: "Invalid JSON in auth response",
+                  });
+                }
+                if (!res.ok) {
+                  console.error(`[Echo] Auth endpoint returned ${res.status}`);
+                  return callback(true, data);
+                }
+                return callback(false, data);
+              });
             })
             .catch((err) => {
               console.error("[Echo] Auth fetch threw:", err?.message || err);

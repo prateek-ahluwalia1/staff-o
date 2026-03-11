@@ -1,11 +1,11 @@
 import { useState, useCallback } from "react";
 import { useSelector } from "react-redux";
 import { apiURL } from "../utils/exports";
+import { toast } from "react-toastify";
 
 const useSubmit = ({ isAuth = false } = {}) => {
   const token = useSelector((state) => state.auth.token);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
   const [data, setData] = useState(null);
 
   const submit = useCallback(
@@ -15,7 +15,6 @@ const useSubmit = ({ isAuth = false } = {}) => {
       const isFormData = body instanceof FormData;
 
       setLoading(true);
-      setError(null);
       setData(null);
 
       try {
@@ -41,16 +40,16 @@ const useSubmit = ({ isAuth = false } = {}) => {
         const json = await res.json();
 
         if (!res.ok) {
-          setError(json.errors || json.message || "Something went wrong");
-          return { success: false, errors: json.errors, message: json.message };
+          toast.error(json.errors || json.message || "Something went wrong");
+          return;
         }
 
         setData(json);
-        return { success: true, data: json };
+        return json;
       } catch (err) {
         const message = err.message || "Network error";
-        setError(message);
-        return { success: false, message };
+        toast.error(message);
+        return;
       } finally {
         setLoading(false);
       }
@@ -58,7 +57,7 @@ const useSubmit = ({ isAuth = false } = {}) => {
     [isAuth, token],
   );
 
-  return { submit, loading, error, data };
+  return { submit, loading, data };
 };
 
 export default useSubmit;

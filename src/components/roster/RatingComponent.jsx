@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import useSubmit from "../../hooks/useSubmit";
 import Loader from "../Loader";
+import { toast } from "react-toastify";
 
 export default function RatingComponent({ rosterId, guardId }) {
   const [selectedRating, setSelectedRating] = useState(0);
@@ -47,11 +48,14 @@ export default function RatingComponent({ rosterId, guardId }) {
       description: description.trim(),
     });
     if (res?.success) {
+      toast.success("Rating submitted successfully!");
       setSubmitted(true);
       fetchRating("api/get-jobroster-rating", {
         guard_id: guardId,
         roster_id: rosterId,
       });
+    } else {
+      toast.error(res?.message || "Failed to submit rating");
     }
   };
 

@@ -11,6 +11,7 @@ import AvatarUpload from "../components/AvatarUpload";
 import SettingsHeaderContent from "../components/SettingsHeaderContent";
 import fallbackImage from "../assets/images/notfound.jpeg";
 import { apiURL } from "../utils/exports";
+import { toast } from "react-toastify";
 
 const INITIAL_CARD_STATE = {
   card_holder_name: "",
@@ -55,7 +56,6 @@ export default function EditProfile() {
   const {
     data: profileData,
     loading: fetchLoading,
-    error: fetchError,
     refetch,
   } = useFetch(endpoint, { isAuth: true });
 
@@ -73,8 +73,6 @@ export default function EditProfile() {
   const [profilePhoto, setProfilePhoto] = useState(null);
   const [profilePhotoFile, setProfilePhotoFile] = useState(null);
   const [formData, setFormData] = useState(INITIAL_FORM_STATE);
-  const [submitError, setSubmitError] = useState(null);
-  const [submitSuccess, setSubmitSuccess] = useState(false);
   const [activeTab, setActiveTab] = useState("personal");
 
   // Multi-Card States
@@ -236,7 +234,6 @@ export default function EditProfile() {
   const handleSubmit = useCallback(
     async (e) => {
       if (e) e.preventDefault();
-      setSubmitError(null);
       const payload = new FormData();
 
       Object.keys(formData).forEach((key) => {
@@ -259,16 +256,12 @@ export default function EditProfile() {
         payload,
         { method: "POST" },
       );
-      if (res.success) {
-        setSubmitSuccess(true);
-        if (res.data) dispatch(setUser({ userdata: res.data }));
-        const refetchRes = await refetch();
-        if (refetchRes?.success && refetchRes?.data) {
-          dispatch(setUser({ userdata: refetchRes.data }));
-        }
-        setTimeout(() => setSubmitSuccess(false), 3000);
-      } else {
-        setSubmitError(res.errors || res.message || "Update failed");
+      if (res === undefined) return;
+      toast.success("Profile updated successfully!");
+      if (res.data) dispatch(setUser({ userdata: res.data }));
+      const refetchRes = await refetch();
+      if (refetchRes?.success && refetchRes?.data) {
+        dispatch(setUser({ userdata: refetchRes.data }));
       }
     },
     [formData, profilePhotoFile, submit, userdata, dispatch, refetch],
@@ -291,6 +284,7 @@ export default function EditProfile() {
       { email: newEmailInput },
       { method: "POST" },
     );
+    if (!res) return;
     if (res.success) {
       setEmailStep("otp");
     } else {
@@ -306,14 +300,15 @@ export default function EditProfile() {
       { email: newEmailInput, email_otp: emailOtp },
       { method: "POST" },
     );
+    if (!res) return;
     if (res.success) {
-      setEmailChangeSuccess(true);
+      toast.success("Email updated successfully!");
       setFormData((prev) => ({ ...prev, email: newEmailInput }));
       if (res.data) dispatch(setUser({ userdata: res.data }));
       refetch();
       setTimeout(() => {
         handleCloseEmailModal();
-      }, 2000);
+      }, 1500);
     } else {
       setEmailChangeError(
         res.errors || res.message || "Invalid OTP. Please try again.",
@@ -338,6 +333,7 @@ export default function EditProfile() {
       { phone: newPhoneInput },
       { method: "POST" },
     );
+    if (!res) return;
     if (res.success) {
       setPhoneStep("otp");
     } else {
@@ -353,14 +349,15 @@ export default function EditProfile() {
       { phone: newPhoneInput, phone_otp: phoneOtp },
       { method: "POST" },
     );
+    if (!res) return;
     if (res.success) {
-      setPhoneChangeSuccess(true);
+      toast.success("Phone updated successfully!");
       setFormData((prev) => ({ ...prev, phone: newPhoneInput }));
       if (res.data) dispatch(setUser({ userdata: res.data }));
       refetch();
       setTimeout(() => {
         handleClosePhoneModal();
-      }, 2000);
+      }, 1500);
     } else {
       setPhoneChangeError(
         res.errors || res.message || "Invalid OTP. Please try again.",
@@ -379,7 +376,6 @@ export default function EditProfile() {
 
   const handleSaveNewCard = async (e) => {
     e.preventDefault();
-    setSubmitError(null);
 
     const updatedCards = [...formData.bank_details, cardForm];
 
@@ -403,21 +399,18 @@ export default function EditProfile() {
       payload,
       { method: "POST" },
     );
+    if (res === undefined) return;
 
-    if (res.success) {
-      setFormData((prev) => ({ ...prev, bank_details: updatedCards }));
-      setIsAddingCard(false);
-      setCardForm(INITIAL_CARD_STATE);
-      if (res.data) dispatch(setUser({ userdata: res.data }));
-      refetch();
-    } else {
-      setSubmitError(res.errors || res.message || "Failed to save card");
-    }
+    setFormData((prev) => ({ ...prev, bank_details: updatedCards }));
+    setIsAddingCard(false);
+    setCardForm(INITIAL_CARD_STATE);
+    if (res.data) dispatch(setUser({ userdata: res.data }));
+    refetch();
+    toast.success("Card added successfully!");
   };
 
   const handleRemoveCard = async (indexToRemove) => {
     if (!window.confirm("Are you sure you want to remove this card?")) return;
-    setSubmitError(null);
 
     const updatedCards = formData.bank_details.filter(
       (_, i) => i !== indexToRemove,
@@ -443,14 +436,12 @@ export default function EditProfile() {
       payload,
       { method: "POST" },
     );
+    if (res === undefined) return;
 
-    if (res.success) {
-      setFormData((prev) => ({ ...prev, bank_details: updatedCards }));
-      if (res.data) dispatch(setUser({ userdata: res.data }));
-      refetch();
-    } else {
-      setSubmitError(res.errors || res.message || "Failed to remove card");
-    }
+    setFormData((prev) => ({ ...prev, bank_details: updatedCards }));
+    if (res.data) dispatch(setUser({ userdata: res.data }));
+    refetch();
+    toast.success("Card removed successfully!");
   };
 
   const handleDocFormChange = async (e) => {
@@ -464,7 +455,7 @@ export default function EditProfile() {
         fd.append("file", file);
         fd.append("folder", "staff_documents");
         const res = await uploadFile("api/upload-file", fd, { method: "POST" });
-        if (res.success) {
+        if (res?.success) {
           setDocForm((prev) => ({
             ...prev,
             file_path: res.path || res.data?.path || "",
@@ -506,19 +497,17 @@ export default function EditProfile() {
       payload,
       { method: "POST" },
     );
+    if (!res) return;
     if (res.success) {
+      toast.success("Document saved successfully!");
       setShowDocModal(false);
       refetch();
+    } else {
+      toast.error(res.message || "Failed to save document");
     }
   };
 
   if (fetchLoading) return <Loader fullPage />;
-  if (fetchError)
-    return (
-      <div className="dashboard-main text-danger">
-        Error: {fetchError.toString()}
-      </div>
-    );
 
   return (
     <div className="dashboard-main">
@@ -573,17 +562,6 @@ export default function EditProfile() {
           </button>
         )}
       </div>
-
-      {submitSuccess && (
-        <div className="alert alert-success">Profile updated successfully!</div>
-      )}
-      {submitError && (
-        <div className="alert alert-danger">
-          {typeof submitError === "string"
-            ? submitError
-            : JSON.stringify(submitError)}
-        </div>
-      )}
 
       {activeTab === "personal" && (
         <ProfileForm

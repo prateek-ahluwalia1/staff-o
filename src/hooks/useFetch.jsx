@@ -1,11 +1,11 @@
 import { useState, useEffect, useCallback } from "react";
 import { useSelector } from "react-redux";
 import { apiURL } from "../utils/exports";
+import { toast } from "react-toastify";
 
 const useFetch = (endpoint, { isAuth = false, immediate = true } = {}) => {
   const token = useSelector((state) => state.auth.token);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
   const [data, setData] = useState(null);
 
   const fetchData = useCallback(
@@ -14,7 +14,6 @@ const useFetch = (endpoint, { isAuth = false, immediate = true } = {}) => {
       if (!url) return;
 
       setLoading(true);
-      setError(null);
 
       try {
         const headers = {
@@ -35,16 +34,14 @@ const useFetch = (endpoint, { isAuth = false, immediate = true } = {}) => {
         const json = await res.json();
 
         if (!res.ok) {
-          setError(json.errors || json.message || "Something went wrong");
-          return { success: false, errors: json.errors, message: json.message };
+          toast.error(json.errors || json.message || "Something went wrong");
+          return;
         }
 
         setData(json);
-        return { success: true, data: json };
       } catch (err) {
         const message = err.message || "Network error";
-        setError(message);
-        return { success: false, message };
+        toast.error(message);
       } finally {
         setLoading(false);
       }
@@ -58,7 +55,7 @@ const useFetch = (endpoint, { isAuth = false, immediate = true } = {}) => {
     }
   }, [immediate, endpoint, fetchData]);
 
-  return { data, loading, error, refetch: fetchData };
+  return { data, loading, refetch: fetchData };
 };
 
 export default useFetch;

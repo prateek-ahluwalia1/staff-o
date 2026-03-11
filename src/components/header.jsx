@@ -10,6 +10,24 @@ const Header = memo(function Header() {
   const navigate = useNavigate();
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 
+  // State for Notification Dropdown
+  const [showNotifications, setShowNotifications] = useState(false);
+
+  // Mock Notification Data
+  const notifications = [
+    {
+      id: 1,
+      text: "Your application for 'UI Designer' was viewed.",
+      time: "2 mins ago",
+    },
+    {
+      id: 2,
+      text: "New job match: Senior React Developer",
+      time: "1 hour ago",
+    },
+    { id: 3, text: "Password changed successfully", time: "Yesterday" },
+  ];
+
   const toggleMobileMenu = useCallback(() => {
     setIsMobileOpen((prev) => !prev);
   }, []);
@@ -17,6 +35,10 @@ const Header = memo(function Header() {
   const closeMobileMenu = useCallback(() => {
     setIsMobileOpen(false);
   }, []);
+
+  const toggleNotifications = () => {
+    setShowNotifications(!showNotifications);
+  };
 
   return (
     <div className="header">
@@ -66,7 +88,7 @@ const Header = memo(function Header() {
             </button>
 
             <ul className="navbar-nav mx-auto align-items-lg-center main-menu">
-              {/* Home Dropdown */}
+              {/* Home */}
               <li className="nav-item">
                 <Link className="nav-link" to="/home">
                   Home
@@ -79,7 +101,6 @@ const Header = memo(function Header() {
                   className="nav-link dropdown-toggle"
                   type="button"
                   data-bs-toggle="dropdown"
-                  aria-expanded="false"
                 >
                   Jobs
                 </button>
@@ -108,7 +129,6 @@ const Header = memo(function Header() {
                   className="nav-link dropdown-toggle"
                   type="button"
                   data-bs-toggle="dropdown"
-                  aria-expanded="false"
                 >
                   Employer
                 </button>
@@ -147,7 +167,6 @@ const Header = memo(function Header() {
                   className="nav-link dropdown-toggle"
                   type="button"
                   data-bs-toggle="dropdown"
-                  aria-expanded="false"
                 >
                   Candidate
                 </button>
@@ -189,7 +208,6 @@ const Header = memo(function Header() {
                   className="nav-link dropdown-toggle"
                   type="button"
                   data-bs-toggle="dropdown"
-                  aria-expanded="false"
                 >
                   Blog
                 </button>
@@ -229,7 +247,6 @@ const Header = memo(function Header() {
                   className="nav-link dropdown-toggle"
                   type="button"
                   data-bs-toggle="dropdown"
-                  aria-expanded="false"
                 >
                   Pages
                 </button>
@@ -253,7 +270,6 @@ const Header = memo(function Header() {
                       </li>
                     </>
                   )}
-
                   <li>
                     <Link className="dropdown-item" to="/packages">
                       Packages
@@ -279,8 +295,8 @@ const Header = memo(function Header() {
             </ul>
 
             {/* Right side buttons + user dropdown */}
-            <div className="navbar-actions d-flex align-items-center gap-2">
-              {!token && (
+            <div className="navbar-actions d-flex align-items-center gap-3">
+              {!token ? (
                 <>
                   <Link
                     to="/login"
@@ -292,51 +308,119 @@ const Header = memo(function Header() {
                     Register
                   </Link>
                 </>
-              )}
-
-              {/* Logged-in user dropdown (you can show conditionally) */}
-              <div className="dropdown user-dropdown">
-                <button
-                  className="btn btn-secondary dropdown-toggle"
-                  type="button"
-                  data-bs-toggle="dropdown"
-                  aria-expanded="false"
-                >
-                  <img
-                    src="/assets/images/candidates/01.jpg"
-                    alt="Candidate Profile"
-                  />
-                </button>
-                <ul className="dropdown-menu dropdown-menu-end">
-                  <li>
-                    <Link className="dropdown-item" to="/dashboard">
-                      Dashboard
-                    </Link>
-                  </li>
-                  <li>
-                    <Link className="dropdown-item" to="/edit-profile">
-                      Edit Profile
-                    </Link>
-                  </li>
-                  <li>
-                    <Link className="dropdown-item" to="/payment-history">
-                      Payment History
-                    </Link>
-                  </li>
-                  <li>
+              ) : (
+                <>
+                  {/* --- NOTIFICATION BELL START --- */}
+                  <div className="notification-wrapper position-relative">
                     <button
-                      type="button"
-                      className="dropdown-item"
-                      onClick={() => {
-                        dispatch(logOut());
-                        navigate("/login");
-                      }}
+                      className="btn position-relative p-0 border-0 bg-transparent"
+                      onClick={toggleNotifications}
+                      style={{ fontSize: "20px", color: "#666" }}
                     >
-                      Logout
+                      <i className="fa fa-bell"></i>
+                      <span
+                        className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+                        style={{ fontSize: "10px" }}
+                      >
+                        {notifications.length}
+                      </span>
                     </button>
-                  </li>
-                </ul>
-              </div>
+
+                    {showNotifications && (
+                      <div
+                        className="dropdown-menu dropdown-menu-end show shadow"
+                        style={{
+                          position: "absolute",
+                          right: 0,
+                          top: "40px",
+                          width: "280px",
+                          display: "block",
+                          padding: "0",
+                        }}
+                      >
+                        <div className="p-2 border-bottom fw-bold text-center">
+                          Notifications
+                        </div>
+                        <ul
+                          className="list-unstyled mb-0"
+                          style={{ maxHeight: "300px", overflowY: "auto" }}
+                        >
+                          {notifications.map((notif) => (
+                            <li
+                              key={notif.id}
+                              className="p-3 border-bottom dropdown-item"
+                              style={{ whiteSpace: "normal" }}
+                            >
+                              <div className="small text-dark">
+                                {notif.text}
+                              </div>
+                              <div
+                                className="text-muted"
+                                style={{ fontSize: "11px" }}
+                              >
+                                {notif.time}
+                              </div>
+                            </li>
+                          ))}
+                        </ul>
+                        <div className="p-2 text-center border-top">
+                          <Link
+                            to="/notifications"
+                            className="small text-primary text-decoration-none"
+                            onClick={() => setShowNotifications(false)}
+                          >
+                            View All
+                          </Link>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  {/* --- NOTIFICATION BELL END --- */}
+
+                  {/* Logged-in user dropdown */}
+                  <div className="dropdown user-dropdown">
+                    <button
+                      className="btn btn-secondary dropdown-toggle"
+                      type="button"
+                      data-bs-toggle="dropdown"
+                    >
+                      <img
+                        src="/assets/images/candidates/01.jpg"
+                        alt="Profile"
+                      />
+                    </button>
+                    <ul className="dropdown-menu dropdown-menu-end">
+                      <li>
+                        <Link className="dropdown-item" to="/dashboard">
+                          Dashboard
+                        </Link>
+                      </li>
+                      <li>
+                        <Link className="dropdown-item" to="/edit-profile">
+                          Edit Profile
+                        </Link>
+                      </li>
+                      <li>
+                        <Link className="dropdown-item" to="/payment-history">
+                          Payment History
+                        </Link>
+                      </li>
+                      <li>
+                        <button
+                          type="button"
+                          className="dropdown-item text-danger"
+                          onClick={() => {
+                            dispatch(logOut());
+                            navigate("/login");
+                          }}
+                        >
+                          Logout
+                        </button>
+                      </li>
+                    </ul>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </div>

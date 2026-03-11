@@ -3,11 +3,12 @@ import { NavLink, useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { setToken, setUser } from "../store/slices/authSlice";
 import useSubmit from "../hooks/useSubmit";
+import { toast } from "react-toastify";
 
 export default function Register() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const { submit, loading, error } = useSubmit();
+  const { submit, loading } = useSubmit();
   // Staff state
   const [staffForm, setStaffForm] = useState({
     name: "",
@@ -58,33 +59,42 @@ export default function Register() {
   const handleStaffSubmit = async (e) => {
     e.preventDefault();
     const res = await submit("api/register/staff", staffForm);
-    if (res.success) {
-      const { token, user } = res.data;
-      dispatch(setToken({ token }));
-      dispatch(setUser({ userdata: user }));
+    if (!res) return;
+    if (res.token) {
+      dispatch(setToken({ token: res.token }));
+      dispatch(setUser({ userdata: res.user }));
+      toast.success("Staff Registration successful!");
       navigate("/edit-profile");
+    } else {
+      toast.error(res.message || "Registration failed. Please try again.");
     }
   };
 
   const handleCustomerSubmit = async (e) => {
     e.preventDefault();
     const res = await submit("api/register/customer", customerForm);
-    if (res.success) {
-      const { token, user } = res.data;
-      dispatch(setToken({ token }));
-      dispatch(setUser({ userdata: user }));
+    if (!res) return;
+    if (res.token) {
+      dispatch(setToken({ token: res.token }));
+      dispatch(setUser({ userdata: res.user }));
+      toast.success("Customer Registration successful!");
       navigate("/edit-profile");
+    } else {
+      toast.error(res.message || "Registration failed. Please try again.");
     }
   };
 
   const handleSubContractorSubmit = async (e) => {
     e.preventDefault();
     const res = await submit("api/register/contractor", subContractorForm);
-    if (res.success) {
-      const { token, user } = res.data;
-      dispatch(setToken({ token }));
-      dispatch(setUser({ userdata: user }));
+    if (!res) return;
+    if (res.token) {
+      dispatch(setToken({ token: res.token }));
+      dispatch(setUser({ userdata: res.user }));
+      toast.success("Sub Contractor Registration successful!");
       navigate("/edit-profile");
+    } else {
+      toast.error(res.message || "Registration failed. Please try again.");
     }
   };
 
@@ -310,14 +320,6 @@ export default function Register() {
                       </label>
                     </div>
 
-                    {error && (
-                      <div className="alert alert-danger mt-3">
-                        {typeof error === "object"
-                          ? Object.values(error).flat().join(", ")
-                          : error}
-                      </div>
-                    )}
-
                     <button
                       type="submit"
                       className="btn btn-primary w-100 mt-4"
@@ -450,14 +452,6 @@ export default function Register() {
                         .
                       </label>
                     </div>
-
-                    {error && (
-                      <div className="alert alert-danger mt-3">
-                        {typeof error === "object"
-                          ? Object.values(error).flat().join(", ")
-                          : error}
-                      </div>
-                    )}
 
                     <button
                       type="submit"
@@ -614,14 +608,6 @@ export default function Register() {
                         .
                       </label>
                     </div>
-
-                    {error && (
-                      <div className="alert alert-danger mt-3">
-                        {typeof error === "object"
-                          ? Object.values(error).flat().join(", ")
-                          : error}
-                      </div>
-                    )}
 
                     <button
                       type="submit"

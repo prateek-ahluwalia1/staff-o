@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
+import { toast } from "react-toastify";
 import useSubmit from "../hooks/useSubmit";
 import useFetch from "../hooks/useFetch";
 import { computeShiftBreakdown, mapApiRates } from "../utils/rateCalculator";
@@ -22,13 +23,12 @@ const STEP_TITLES = [
 export default function AddJob() {
   const navigate = useNavigate();
   const { userdata } = useSelector((state) => state.auth);
-  const {
-    data: chargeratesData,
-    loading: chargeratesLoading,
-    error: chargeratesError,
-  } = useFetch("api/get-chargerates", {
-    isAuth: true,
-  });
+  const { data: chargeratesData, loading: chargeratesLoading } = useFetch(
+    "api/get-chargerates",
+    {
+      isAuth: true,
+    },
+  );
   const { submit: submitJob, loading: submitLoading } = useSubmit({
     isAuth: true,
   });
@@ -52,7 +52,6 @@ export default function AddJob() {
   const [locationError, setLocationError] = useState("");
 
   const ratesLoading = chargeratesLoading;
-  const ratesError = chargeratesError;
 
   const isSubmitting = submitLoading || uploadLoading;
 
@@ -156,11 +155,11 @@ export default function AddJob() {
   async function handleConfirm(e) {
     e.preventDefault();
     if (isAdmin && !selectedContractorId) {
-      alert("Please select a contractor before posting the job.");
+      toast.error("Please select a contractor before posting the job.");
       return;
     }
     if (!form.termsAccepted) {
-      alert("Please accept Terms & Conditions.");
+      toast.error("Please accept Terms & Conditions.");
       return;
     }
 
@@ -214,11 +213,15 @@ export default function AddJob() {
       const result = await submitJob("api/job-post", payload, {
         method: "POST",
       });
-      if (result?.success) navigate("/my-job-applications");
-      else alert(result.message || "Failed to post job");
+      if (result === undefined) return;
+      if (result?.success) {
+        toast.success("Job posted successfully!");
+        navigate("/my-job-applications");
+      } else {
+        toast.error(result.message || "Failed to post job");
+      }
     } catch (err) {
-      console.error(err);
-      alert(err.message || "Failed to post job");
+      toast.error(err.message || "Failed to post job");
     }
   }
 
@@ -273,18 +276,6 @@ export default function AddJob() {
                 aria-hidden="true"
               />
               <span className="text-muted">Loading rates, please wait…</span>
-            </div>
-          ) : ratesError ? (
-            <div
-              className="alert alert-danger d-flex align-items-center gap-2"
-              role="alert"
-            >
-              <i className="fa fa-exclamation-circle" />
-              <div>
-                <strong>Failed to load rates.</strong>{" "}
-                {ratesError?.message ||
-                  "Please refresh the page and try again."}
-              </div>
             </div>
           ) : (
             <>

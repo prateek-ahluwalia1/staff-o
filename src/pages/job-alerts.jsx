@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { toast } from "react-toastify";
 
 export default function JobAlerts() {
   const [alerts, setAlerts] = useState([
@@ -47,8 +48,7 @@ export default function JobAlerts() {
 
   const handleCreateAlert = (e) => {
     e.preventDefault();
-    console.log("New alert created:", newAlert);
-    alert("Alert saved! (Demo)");
+    toast.success("Alert saved successfully!");
     // Reset form
     setNewAlert({
       roleKeywords: "",

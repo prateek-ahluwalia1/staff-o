@@ -4,6 +4,7 @@ import { useNavigate, useLocation, NavLink } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { setToken, setUser } from "../store/slices/authSlice";
 import useSubmit from "../hooks/useSubmit";
+import { toast } from "react-toastify";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -14,27 +15,26 @@ export default function Login() {
   // State for form inputs
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!email || !password) {
-      setError("Please fill in all fields");
+      toast.error("Please fill in all fields");
       return;
     }
 
-    setError("");
     const res = await submit("api/login", { email, password });
+    if (!res) return;
 
-    if (res.success) {
-      const { token, user } = res.data;
-      dispatch(setToken({ token }));
-      dispatch(setUser({ userdata: user }));
+    if (res.token) {
+      dispatch(setToken({ token: res.token }));
+      dispatch(setUser({ userdata: res.user }));
+      toast.success("Login successful!");
       const redirectTo = location.state?.from?.pathname || "/edit-profile";
       navigate(redirectTo, { replace: true });
     } else {
-      setError(res.message || "Login failed. Please try again.");
+      toast.error(res.message || "Login failed. Please try again.");
     }
   };
 
@@ -85,12 +85,6 @@ export default function Login() {
 
               <div className="auth-divider"><span>or</span></div>
   */}
-
-              {error && (
-                <div className="alert alert-danger" role="alert">
-                  {error}
-                </div>
-              )}
 
               <form className="auth-form" onSubmit={handleSubmit}>
                 <div className="mb-3">

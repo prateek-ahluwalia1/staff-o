@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { toast } from "react-toastify";
 import Header from "../components/header";
 import Footer from "../components/footer";
 import { Swiper, SwiperSlide } from "swiper/react";
@@ -284,9 +285,8 @@ export default function Home() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log("Subscribe email:", email);
     setEmail("");
-    alert("Thank you for subscribing! (This is a demo)");
+    toast.success("Thank you for subscribing!");
   };
 
   const blogPosts = [

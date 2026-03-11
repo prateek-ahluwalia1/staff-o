@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect, useCallback } from "react";
 import { useSelector } from "react-redux";
+import { toast } from "react-toastify";
 import {
   startOfWeek,
   addWeeks,
@@ -184,6 +185,7 @@ export default function RosterPage() {
     if (!modal) return;
 
     try {
+      let res;
       if (modal.type === "time") {
         const endpoint = `api/update-roster-time`;
         const payload = {
@@ -191,21 +193,25 @@ export default function RosterPage() {
           start: editForm.startTime,
           end: editForm.endTime,
         };
-        await saveUserAssignment(endpoint, payload, { method: "POST" });
+        res = await saveUserAssignment(endpoint, payload, { method: "POST" });
       } else if (modal.type === "admin_assign") {
         if (!selectedUserId) {
-          alert("Please select a user to assign.");
+          toast.error("Please select a user to assign.");
           return;
         }
         const endpoint = `api/asap-jobs/accept/${selectedUserId}`;
         const payload = { roster_id: modal.shift.id };
-        await saveUserAssignment(endpoint, payload, { method: "POST" });
+        res = await saveUserAssignment(endpoint, payload, { method: "POST" });
       }
 
+      // useSubmit returns undefined when the request fails (it toasts the error itself)
+      if (res === undefined) return;
+
       fetchCustomerSites();
+      toast.success("Saved successfully!");
       closeModal();
     } catch (error) {
-      console.error("Failed to save assignment:", error);
+      toast.error(error.message || "Failed to save. Please try again.");
     }
   };
 

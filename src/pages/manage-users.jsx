@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import useFetch from "../hooks/useFetch";
 import useSubmit from "../hooks/useSubmit";
 import Loader from "../components/Loader";
+import { toast } from "react-toastify";
 
 const ManageUsers = () => {
   const [activeTab, setActiveTab] = useState("customer");
@@ -151,11 +152,17 @@ const ManageUsers = () => {
     payload.is_active = payload.is_active ? 1 : 0;
 
     try {
-      await submit(url, payload, { method });
+      const res = await submit(url, payload, { method });
+      if (res === undefined) return;
+      toast.success(
+        editingUser
+          ? "User updated successfully!"
+          : "User created successfully!",
+      );
       refetch();
       closeModal();
     } catch (err) {
-      console.error("Submission failed", err);
+      toast.error(err.message || "Submission failed");
     }
   };
 
@@ -168,10 +175,12 @@ const ManageUsers = () => {
       else url = `api/admin/staff-delete/${id}`;
 
       try {
-        await submit(url, null, { method: "DELETE" });
+        const res = await submit(url, null, { method: "DELETE" });
+        if (res === undefined) return;
+        toast.success("User deleted successfully!");
         refetch();
       } catch (err) {
-        alert("Delete failed: " + err.message);
+        toast.error("Delete failed: " + err.message);
       }
     }
   };

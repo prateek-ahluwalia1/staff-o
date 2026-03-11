@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
+import { toast } from "react-toastify";
 
 export default function LocationStep({
   form,
@@ -136,7 +137,7 @@ export default function LocationStep({
 
   const handleUseCurrent = () => {
     if (!navigator.geolocation) {
-      alert("Geolocation not supported");
+      toast.error("Geolocation is not supported by your browser.");
       return;
     }
     setResolvingLocation(true);
@@ -154,7 +155,7 @@ export default function LocationStep({
       },
       (err) => {
         setResolvingLocation(false);
-        alert("Location error: " + err.message);
+        toast.error("Location error: " + err.message);
       },
       { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 },
     );

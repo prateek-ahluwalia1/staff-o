@@ -4,6 +4,7 @@ import useFetch from "../hooks/useFetch";
 import useSubmit from "../hooks/useSubmit";
 import { useSelector } from "react-redux";
 import Loader from "../components/Loader";
+import { toast } from "react-toastify";
 import { TIME_KEYS, SLOT_ROWS } from "../utils/exports";
 
 const RATE_CATEGORIES = ["def", "eba"];
@@ -134,13 +135,17 @@ const RatesList = ({ forcedType } = {}) => {
       body,
       { method: "POST" },
     );
+    if (res === undefined) return;
 
     if (res?.success) {
+      toast.success(
+        isEditing ? "Rate updated successfully!" : "Rate created successfully!",
+      );
       closeAddModal();
       setIsEditing(false);
       await refetch(listEndpoint);
     } else {
-      alert(res?.message || "Operation failed");
+      toast.error(res?.message || "Operation failed");
     }
   };
 

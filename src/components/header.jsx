@@ -1,32 +1,45 @@
-import React, { memo, useState, useCallback } from "react";
+import React, { memo, useState, useCallback, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { Link, useNavigate } from "react-router-dom";
 import { logOut } from "../store/slices/authSlice";
+import {
+  setNotifications,
+  clearUnreadCount,
+} from "../store/slices/notificationSlice";
+import useFetch from "../hooks/useFetch";
+import useSubmit from "../hooks/useSubmit";
 import staffologo from "../assets/images/staffo.png";
 
 const Header = memo(function Header() {
   const { token } = useSelector((state) => state.auth);
+  const { items, unreadCount } = useSelector((state) => state.notifications);
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const [isMobileOpen, setIsMobileOpen] = useState(false);
 
-  // State for Notification Dropdown
+  const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
 
-  // Mock Notification Data
-  const notifications = [
-    {
-      id: 1,
-      text: "Your application for 'UI Designer' was viewed.",
-      time: "2 mins ago",
-    },
-    {
-      id: 2,
-      text: "New job match: Senior React Developer",
-      time: "1 hour ago",
-    },
-    { id: 3, text: "Password changed successfully", time: "Yesterday" },
-  ];
+  // --- API HOOKS (Utilizing your existing hooks) ---
+  const { data: initialNotifs } = useFetch("/notifications", { isAuth: true });
+  const { submit: markAsReadApi } = useSubmit({ isAuth: true });
+
+  // Sync initial fetch data to Redux Store when component mounts or data arrives
+  useEffect(() => {
+    if (initialNotifs) {
+      dispatch(setNotifications(initialNotifs));
+    }
+  }, [initialNotifs, dispatch]);
+
+  const toggleNotifications = async () => {
+    const nextState = !showNotifications;
+    setShowNotifications(nextState);
+
+    // If opening the dropdown and there are unread items, clear count and notify backend
+    if (nextState && unreadCount > 0) {
+      dispatch(clearUnreadCount());
+      await markAsReadApi("/notifications/mark-read", {});
+    }
+  };
 
   const toggleMobileMenu = useCallback(() => {
     setIsMobileOpen((prev) => !prev);
@@ -35,10 +48,6 @@ const Header = memo(function Header() {
   const closeMobileMenu = useCallback(() => {
     setIsMobileOpen(false);
   }, []);
-
-  const toggleNotifications = () => {
-    setShowNotifications(!showNotifications);
-  };
 
   return (
     <div className="header">
@@ -51,13 +60,7 @@ const Header = memo(function Header() {
         <div className="container">
           {/* Logo */}
           <Link to="/" className="navbar-brand logo d-flex align-items-center">
-            <img
-              src={staffologo}
-              alt="Staffo"
-              style={{
-                height: "50px",
-              }}
-            />
+            <img src={staffologo} alt="Staffo" style={{ height: "50px" }} />
           </Link>
 
           {/* Mobile toggle */}
@@ -72,12 +75,9 @@ const Header = memo(function Header() {
 
           {/* Menu + actions */}
           <div
-            className={`collapse navbar-collapse mobile-menu ${
-              isMobileOpen ? "show" : ""
-            }`}
+            className={`collapse navbar-collapse mobile-menu ${isMobileOpen ? "show" : ""}`}
             id="navMain"
           >
-            {/* Close button for mobile */}
             <button
               className="mobile-menu-close"
               type="button"
@@ -294,7 +294,6 @@ const Header = memo(function Header() {
               </li>
             </ul>
 
-            {/* Right side buttons + user dropdown */}
             <div className="navbar-actions d-flex align-items-center gap-3">
               {!token ? (
                 <>
@@ -310,7 +309,7 @@ const Header = memo(function Header() {
                 </>
               ) : (
                 <>
-                  {/* --- NOTIFICATION BELL START --- */}
+                  {/* REAL-TIME NOTIFICATION BELL */}
                   <div className="notification-wrapper position-relative">
                     <button
                       className="btn position-relative p-0 border-0 bg-transparent"
@@ -318,12 +317,14 @@ const Header = memo(function Header() {
                       style={{ fontSize: "20px", color: "#666" }}
                     >
                       <i className="fa fa-bell"></i>
-                      <span
-                        className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
-                        style={{ fontSize: "10px" }}
-                      >
-                        {notifications.length}
-                      </span>
+                      {unreadCount > 0 && (
+                        <span
+                          className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+                          style={{ fontSize: "10px" }}
+                        >
+                          {unreadCount}
+                        </span>
+                      )}
                     </button>
 
                     {showNotifications && (
@@ -345,23 +346,29 @@ const Header = memo(function Header() {
                           className="list-unstyled mb-0"
                           style={{ maxHeight: "300px", overflowY: "auto" }}
                         >
-                          {notifications.map((notif) => (
-                            <li
-                              key={notif.id}
-                              className="p-3 border-bottom dropdown-item"
-                              style={{ whiteSpace: "normal" }}
-                            >
-                              <div className="small text-dark">
-                                {notif.text}
-                              </div>
-                              <div
-                                className="text-muted"
-                                style={{ fontSize: "11px" }}
+                          {items.length > 0 ? (
+                            items.map((notif, index) => (
+                              <li
+                                key={notif.id || index}
+                                className="p-3 border-bottom dropdown-item"
+                                style={{ whiteSpace: "normal" }}
                               >
-                                {notif.time}
-                              </div>
+                                <div className="small text-dark">
+                                  {notif.message || notif.data?.message}
+                                </div>
+                                <div
+                                  className="text-muted"
+                                  style={{ fontSize: "11px" }}
+                                >
+                                  {notif.created_at || "Just now"}
+                                </div>
+                              </li>
+                            ))
+                          ) : (
+                            <li className="p-3 text-center text-muted small">
+                              No new notifications
                             </li>
-                          ))}
+                          )}
                         </ul>
                         <div className="p-2 text-center border-top">
                           <Link
@@ -375,7 +382,6 @@ const Header = memo(function Header() {
                       </div>
                     )}
                   </div>
-                  {/* --- NOTIFICATION BELL END --- */}
 
                   {/* Logged-in user dropdown */}
                   <div className="dropdown user-dropdown">

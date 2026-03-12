@@ -31,6 +31,7 @@ const ManageUsers = lazy(() => import("./pages/manage-users"));
 const ManageStaff = lazy(() => import("./pages/manage-staff"));
 const ChatPage = lazy(() => import("./pages/Chat"));
 const ChatRoom = lazy(() => import("./pages/ChatRoom"));
+const AllNotifications = lazy(() => import("./pages/AllNotifications"));
 
 function App() {
   useEcho();
@@ -98,6 +99,7 @@ function App() {
               <Route path="/manage-staff" element={<ManageStaff />} />
               <Route path="/chat" element={<ChatPage />} />
               <Route path="/chat/:category" element={<ChatRoom />} />
+              <Route path="/notifications" element={<AllNotifications />} />
             </Route>
 
             <Route path="*" element={<Navigate to="/login" replace />} />

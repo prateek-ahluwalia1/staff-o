@@ -54,15 +54,12 @@ export const useEcho = () => {
       pusherConn.unbind("connected", onConnected);
       pusherConn.unbind("failed", onFailed);
       pusherConn.unbind("error", onError);
-      // Use stopListening instead of leaveChannel so StrictMode's fake unmount
-      // doesn't disconnect the underlying Pusher WebSocket.
       echo
         .private(`notifications.${userId}`)
         .stopListening(".push.notification");
     };
   }, [token, userId, dispatch]);
 
-  // Disconnect the singleton when the user logs out
   useEffect(() => {
     if (!token) {
       destroyEchoInstance();

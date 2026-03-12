@@ -13,17 +13,12 @@ const ManageUsers = () => {
     sub_contractor: "api/admin/get-contractors",
     staff: "api/admin/get-staff",
   };
-
-  // Fetch paginated users based on the active tab
   const {
     data: apiResponse,
     loading,
     error,
     refetch,
   } = useFetch(`${endpointMap[activeTab]}?page=${page}`, { isAuth: true });
-
-  // Fetch all contractors for the dropdown when adding staff
-  // Note: Adjust this endpoint if you have a specific one for getting a flat list without pagination
   const { data: contractorsResponse } = useFetch(
     "api/admin/get-contractors?limit=1000",
     {
@@ -64,7 +59,7 @@ const ManageUsers = () => {
     country: "",
     registration_number: "",
     is_active: false,
-    user_id: "", // Used to associate staff with a contractor
+    user_id: "",
   };
 
   const [formData, setFormData] = useState(defaultFormState);
@@ -147,7 +142,6 @@ const ManageUsers = () => {
     const payload = { ...formData };
     if (editingUser && !payload.password) delete payload.password;
 
-    // Clean up payload based on role
     if (activeTab !== "staff") delete payload.user_id;
     payload.is_active = payload.is_active ? 1 : 0;
 
@@ -250,7 +244,7 @@ const ManageUsers = () => {
           </p>
         </div>
         <button
-          className="btn btn-primary rounded-pill px-4 py-2 shadow-sm fw-bold"
+          className="btn btn-primary rounded-3 px-4 py-2 shadow-sm fw-bold"
           onClick={() => openModal()}
         >
           <i className="fa-solid fa-plus me-2"></i> Add{" "}
@@ -259,11 +253,11 @@ const ManageUsers = () => {
       </div>
 
       {/* Tabs */}
-      <div className="bg-white p-2 rounded-4 shadow-sm border d-inline-flex mb-4">
+      <div className="bg-white p-2 rounded-3 shadow-sm border d-inline-flex mb-4">
         {["customer", "sub_contractor", "staff"].map((role) => (
           <button
             key={role}
-            className={`btn rounded-pill px-4 fw-bold text-capitalize border-0 ${activeTab === role ? "btn-primary shadow" : "btn-light text-muted"}`}
+            className={`btn rounded-3 px-4 fw-bold text-capitalize border-0 ${activeTab === role ? "btn-primary shadow" : "btn-light text-muted"}`}
             onClick={() => handleTabChange(role)}
             style={{ marginRight: role !== "staff" ? "8px" : "0" }}
           >

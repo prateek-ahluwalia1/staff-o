@@ -17,11 +17,11 @@ const socketMiddleware = (store) => (next) => (action) => {
     echoInstance = new Echo({
       broadcaster: "pusher",
       key: "443c8c0a97a80fc51fe8",
-      cluster: "mt1",
+      cluster: "ap2",
       forceTLS: true,
       authorizer: (channel) => ({
         authorize: (socketId, callback) => {
-          fetch(`${apiURL}/broadcasting/auth`, {
+          fetch(`${apiURL}broadcasting/auth`, {
             method: "POST",
             headers: {
               Authorization: `Bearer ${token}`,

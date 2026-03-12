@@ -65,6 +65,10 @@ export default function NotificationToast() {
     if (lastShownRef.current === sig) return;
     lastShownRef.current = sig;
 
+    // Play notification bell sound
+    const audio = new Audio("/assets/notification-bell.wav");
+    audio.play().catch(() => {});
+
     const { title, message, data, page, type } = latestNotification;
     const toastType = TYPE_MAP[type] || "info";
 

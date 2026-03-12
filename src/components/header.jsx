@@ -7,6 +7,7 @@ import useSubmit from "../hooks/useSubmit";
 import staffologo from "../assets/images/staffo.png";
 
 const Header = memo(function Header() {
+  //info, success, warning, error
   const { token } = useSelector((state) => state.auth);
   const { items, unreadCount } = useSelector((state) => state.notifications);
   const dispatch = useDispatch();
@@ -21,7 +22,6 @@ const Header = memo(function Header() {
     const nextState = !showNotifications;
     setShowNotifications(nextState);
 
-    // If opening the dropdown and there are unread items, clear count and notify backend
     if (nextState && unreadCount > 0) {
       dispatch(clearUnreadCount());
       await markAsReadApi("/notifications/mark-read", {});

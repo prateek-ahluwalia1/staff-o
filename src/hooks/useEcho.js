@@ -3,26 +3,17 @@ import { useDispatch, useSelector } from "react-redux";
 import { addNotification } from "../store/slices/notificationSlice";
 import { getEchoInstance, destroyEchoInstance } from "../echo";
 
-/**
- * useEcho
- *
- * Subscribes to the authenticated user's private Pusher channel and
- * dispatches incoming notifications into Redux.
- *
- * Channel  : private-notifications.{userId}   (matches channels.php)
- * Event    : .push.notification               (matches broadcastAs() in the Event class)
- */
 export const useEcho = () => {
   const dispatch = useDispatch();
-  const { token, userdata } = useSelector((state) => state.auth); // Support both flat { id } and nested { data: { id } } shapes
+  const { token, userdata } = useSelector((state) => state.auth);
 
-  const userId = userdata?.id ?? userdata?.data?.id; // ── Subscribe / unsubscribe when token or userId changes ──────────────────
+  const userId = userdata?.id ?? userdata?.data?.id;
 
   useEffect(() => {
     if (!token || !userId) return;
 
     const echo = getEchoInstance(token);
-    const pusherConn = echo.connector.pusher.connection; // ── Connection lifecycle handlers ──────────────────────────────────────
+    const pusherConn = echo.connector.pusher.connection;
 
     const onConnected = () =>
       console.log(

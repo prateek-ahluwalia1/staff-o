@@ -212,7 +212,15 @@ class AuthController extends Controller
             'password' => 'required|string',
         ]);
 
-        $user = User::where('email', $request->email)->with(['staff'])->first();
+        $user = User::where('email', $request->email)->first();
+
+         if ($user->user_type === 'customer') {
+            $user->load(['customer']);
+        } elseif ($user->user_type === 'contractor') {
+            $user->load('contractor', 'documents');
+        } elseif ($user->user_type === 'staff') {
+            $user->load('staff', 'documents');
+        }
 
         if (! $user || ! Hash::check($request->password, $user->password)) {
             return response()->json([

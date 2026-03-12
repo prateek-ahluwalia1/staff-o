@@ -11,11 +11,7 @@ use App\Http\Controllers\Api\ChargeRateController;
 use App\Http\Controllers\Api\JobRosterActiviteController;
 use App\Http\Controllers\Api\JobRosterController;
 use App\Http\Controllers\Api\PayRateController;
-use App\Http\Controllers\Api\PermissionController;
-use App\Http\Controllers\Api\RoleController;
 use App\Http\Controllers\Api\StaffController;
-use App\Http\Controllers\Api\UserController;
-use App\Http\Controllers\Api\UserRoleController;
 use Illuminate\Support\Facades\Artisan;
 
 /*
@@ -129,6 +125,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::prefix('admin')->group(function () {
 
         Route::get('get-contractors', [ContractorController::class, 'index']);
+        Route::get('get-active-contractors', [ContractorController::class, 'activeContractor']);
         Route::post('contractors-store', [ContractorController::class, 'store']);
         Route::get('contractors-edit/{id}', [ContractorController::class, 'show']);
         Route::put('contractors-update/{id}', [ContractorController::class, 'update']);

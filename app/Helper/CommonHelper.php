@@ -1,6 +1,5 @@
 <?php
 
-use App\Models\JobRoster;
 use App\Models\Site;
 use App\Models\User;
 use Carbon\Carbon;
@@ -177,35 +176,6 @@ function send_push_notification($data){
     }
 
     function returnImgPathCheck($folder, $filename) {
-    $baseUrl = 'https://app-apis.amgsystem.com.au/';
+    $baseUrl = 'https://staffo.arrowbyte.com.au/';
     return $baseUrl . $folder . '/' . $filename;
-    }
-
-    function checkGuardShiftTimingUpdate($start, $end, $guard_id, $roster_id)
-    {
-        $start_time = dbFormateDateTime($start);
-        $end_time   = dbFormateDateTime($end);
-        $guardTiming = JobRoster::where(function ($que) use ($start_time, $end_time, $roster_id) {
-        $r_id = $roster_id;
-        $que->orWhere(function ($que1) use ($start_time, $end_time, $r_id) {
-            // temp start is grater then actual start and less then actual end
-            $que1->where('start', '<=', $start_time)->where('end', '>', $start_time);
-            //$que1->where('roster_id', $r_id);
-        });
-        $que->orWhere(function ($que1) use ($start_time, $end_time, $r_id) {
-            // temp end is b/w actual start and end..
-            $que1->where('start', '<=', $end_time)->where('end', '>=', $end_time);
-            //$que1->where('roster_id', $r_id);
-        });
-        $que->orWhere(function ($que1) use ($start_time, $end_time, $r_id) {
-            // is any shift lie b/w temp shift
-            $que1->where('start', '>=', $start_time)->where('end', '<=', $end_time);
-            //$que1->where('roster_id', $r_id);
-        });
-        })->where('guard_id', $guard_id)->where('start', '!=', $start_time)->where('end', '!=', $end )->first();
-        if(!empty($guardTiming)){
-            return ['start'=> $guardTiming->start, 'end' =>$guardTiming->end, 'conf' => 'conflict', 'roster' => $guardTiming->roster_id];
-        }else{
-            return 0; 
-        }
     }

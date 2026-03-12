@@ -311,4 +311,22 @@ class ContractorController extends Controller
             }
         }
     }
+
+     public function activeContractor(Request $request)
+    {
+        $query = User::where('user_type', 'contractor')->where('is_active', 1)
+            ->with('contractor');
+
+        $query->orderBy('created_at', 'desc');
+
+
+        // Pagination
+        $contractors = $query->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => $contractors,
+            'message' => 'Contractors retrieved successfully'
+        ]);
+    }
 }

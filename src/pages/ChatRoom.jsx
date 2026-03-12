@@ -13,17 +13,13 @@ import useSubmit from "../hooks/useSubmit";
 import { apiURL } from "../utils/exports";
 import "../assets/css/chat.css";
 
-// Map route param -> API endpoint for fetching users
 const USER_ENDPOINTS = {
-  admins: "api/admin/get-users?role=admin&limit=500",
   staff: "api/admin/get-staff?limit=500",
   customers: "api/admin/get-customers?limit=500",
   contractors: "api/admin/get-contractors?limit=500",
 };
 
-// Map route param -> display label
 const CATEGORY_LABELS = {
-  admins: "Admins",
   staff: "Staff",
   customers: "Customers",
   contractors: "Contractors",
@@ -87,13 +83,11 @@ const ChatRoom = () => {
   const scrollRef = useRef();
   const pickerRef = useRef();
 
-  // Fetch conversations for this category
   const { data: convData, loading: loadingConv } = useFetch(
     `chat/conversations?type=${category}`,
     { isAuth: true },
   );
 
-  // Fetch users for the + picker (endpoint is null when picker is closed)
   const userEndpoint = USER_ENDPOINTS[category];
   const { data: usersData, loading: loadingUsers } = useFetch(
     showUserPicker && userEndpoint ? userEndpoint : null,
@@ -105,12 +99,10 @@ const ChatRoom = () => {
   });
   const { submit: startConversation } = useSubmit({ isAuth: true });
 
-  // Set active category on mount / category change
   useEffect(() => {
     dispatch(setActiveCategory(category));
   }, [category, dispatch]);
 
-  // Load conversations when data arrives
   useEffect(() => {
     if (convData) {
       const list = convData?.data || convData || [];
@@ -118,12 +110,10 @@ const ChatRoom = () => {
     }
   }, [convData, dispatch]);
 
-  // Auto-scroll on new messages
   useEffect(() => {
     scrollRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // Close picker on outside click
   useEffect(() => {
     const handler = (e) => {
       if (pickerRef.current && !pickerRef.current.contains(e.target)) {
@@ -143,8 +133,8 @@ const ChatRoom = () => {
         });
         const data = await res.json();
         dispatch(setMessages(data?.data || data || []));
-      } catch {
-        // ignore
+      } catch (error) {
+        console.error("Error fetching messages:", error);
       } finally {
         setLoadingMessages(false);
       }
@@ -176,7 +166,6 @@ const ChatRoom = () => {
     const payload = { conversation_id: activeConversation.id, message: text };
     setText("");
     await sendMessageApi("chat/send", payload);
-    // Re-fetch messages after send
     fetchMessages(activeConversation.id);
   };
 
@@ -201,7 +190,6 @@ const ChatRoom = () => {
     });
   };
 
-  // Group messages by date
   const groupedMessages = messages.reduce((groups, msg, idx) => {
     const dateKey = msg.created_at
       ? new Date(msg.created_at).toDateString()
@@ -218,13 +206,11 @@ const ChatRoom = () => {
     return groups;
   }, []);
 
-  // Filter conversations by search
   const filteredConvs = (conversations || []).filter((conv) => {
     const name = conv?.user?.name || conv?.other_user?.name || "";
     return name.toLowerCase().includes(search.toLowerCase());
   });
 
-  // Users for picker
   const allUsers = usersData?.data?.data || usersData?.data || usersData || [];
   const filteredUsers = (Array.isArray(allUsers) ? allUsers : []).filter(
     (u) => {

@@ -4,12 +4,6 @@ import "../assets/css/chat.css";
 
 const CATEGORIES = [
   {
-    key: "admins",
-    label: "Admins",
-    desc: "Communicate directly with system administrators",
-    icon: "fa-solid fa-user-shield",
-  },
-  {
     key: "staff",
     label: "Staff",
     desc: "Chat with your team members in real-time",

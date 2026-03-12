@@ -44,7 +44,7 @@ export const useEcho = () => {
       pusherConn.bind("connected", onConnected);
     }
     pusherConn.bind("failed", onFailed);
-    pusherConn.bind("error", onError); // ── Subscribe to private channel ───────────────────────────────────────
+    pusherConn.bind("error", onError);
 
     const channelName = `notifications.${userId}`;
     const eventName = ".push.notification";
@@ -59,7 +59,7 @@ export const useEcho = () => {
       })
       .error((error) => {
         console.error("[Echo] Channel subscription error:", error);
-      }); // ── Cleanup ────────────────────────────────────────────────────────────
+      });
 
     return () => {
       pusherConn.unbind("connected", onConnected);
@@ -68,7 +68,7 @@ export const useEcho = () => {
       echo.private(channelName).stopListening(eventName);
       console.log(`[Echo] Unsubscribed from ${channelName}`);
     };
-  }, [token, userId, dispatch]); // ── Destroy Echo when the user logs out ───────────────────────────────────
+  }, [token, userId, dispatch]);
 
   useEffect(() => {
     if (!token) {

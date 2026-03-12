@@ -7,14 +7,7 @@ window.Pusher = Pusher;
 let echoInstance = null;
 let activeToken = null;
 
-/**
- * Returns a shared Echo instance.
- * - Creates it on the first call.
- * - On subsequent calls just updates the active token (used by the authorizer).
- * - If Pusher dropped the connection it reconnects automatically.
- */
 export function getEchoInstance(token) {
-  // Always keep the token fresh so the authorizer uses the latest one
   activeToken = token;
 
   if (!echoInstance) {
@@ -22,8 +15,7 @@ export function getEchoInstance(token) {
       broadcaster: "pusher",
       key: "443c8c0a97a80fc51fe8",
       cluster: "ap2",
-      forceTLS: true, // Custom authorizer sends the Bearer token to /broadcasting/auth
-      // which is protected by auth:sanctum on the Laravel side.
+      forceTLS: true,
 
       authorizer: (channel) => ({
         authorize: (socketId, callback) => {
@@ -83,7 +75,6 @@ export function getEchoInstance(token) {
       }),
     });
   } else {
-    // Instance already exists — reconnect if it dropped
     const state = echoInstance.connector.pusher.connection.state;
     if (state === "disconnected" || state === "failed") {
       console.log("[Echo] Reconnecting (state was:", state, ")");

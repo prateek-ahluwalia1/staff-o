@@ -45,8 +45,6 @@ export const useEcho = () => {
     }
     pusherConn.bind("failed", onFailed);
     pusherConn.bind("error", onError); // ── Subscribe to private channel ───────────────────────────────────────
-    // Channel name must match: PrivateChannel("notifications.{$userId}") in Laravel
-    // Event name must match:   broadcastAs() → 'push.notification' (dot prefix = no namespace)
 
     const channelName = `notifications.${userId}`;
     const eventName = ".push.notification";

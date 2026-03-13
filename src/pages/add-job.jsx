@@ -1,5 +1,5 @@
-import React, { useState, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { toast } from "react-toastify";
 import useSubmit from "../hooks/useSubmit";
@@ -20,8 +20,11 @@ const STEP_TITLES = [
   "Review & Confirm",
 ];
 
+const JOB_PAYMENT_DRAFT_KEY = "job_payment_draft_v1";
+
 export default function AddJob() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { userdata } = useSelector((state) => state.auth);
   const { data: chargeratesData, loading: chargeratesLoading } = useFetch(
     "api/get-chargerates",
@@ -78,6 +81,8 @@ export default function AddJob() {
   });
 
   const [attachmentPreviews, setAttachmentPreviews] = useState([]);
+  const [verifyingPayment, setVerifyingPayment] = useState(false);
+  const handledPaymentRef = useRef("");
 
   // Build a dynamic rates object from the API responses whenever they arrive.
   // Falls back to STATIC_RATES automatically when data is not yet loaded.
@@ -152,6 +157,187 @@ export default function AddJob() {
     else navigate(-1);
   }
 
+  function buildJobPayload(document_list = []) {
+    const coordinates = form.coordinates || "";
+
+    return {
+      user_id: isAdmin
+        ? selectedContractorId || null
+        : userdata?.data?.id || userdata?.id || null,
+      title: form.title,
+      description: form.description,
+      address: form.location || form.address,
+      coordinates,
+      state: form.state || "open",
+      numberOfGuards: Number(form.numGuards) || 1,
+      startTime:
+        form.startDate && form.startTime
+          ? `${form.startDate}T${form.startTime}`
+          : "",
+      endTime:
+        form.endDate && form.endTime ? `${form.endDate}T${form.endTime}` : "",
+      is_document: Boolean(form.document) || document_list.length > 0,
+      document_list,
+      document_types: form.document_types || [],
+      job_instruction: form.description || "",
+      tasks: (form.tasks || []).map((t) => ({
+        task: t.task,
+        task_start: t.task_start,
+        task_end: t.task_end,
+      })),
+    };
+  }
+
+  async function uploadAllAttachments() {
+    const document_list = [];
+
+    for (const file of form.attachments || []) {
+      try {
+        const fd = new FormData();
+        fd.append("file", file);
+        fd.append("folder", "job_documents");
+        const res = await uploadFile("api/upload-file", fd, {
+          method: "POST",
+        });
+        if (res?.success) {
+          const path = res.data?.path || res.data?.url || res.path || res.url;
+          if (path) document_list.push(path);
+        }
+      } catch (err) {
+        console.warn("attachment upload failed", err);
+      }
+    }
+
+    return document_list;
+  }
+
+  async function startStripeCheckout(payload, amountInCents) {
+    const success_url = `${window.location.origin}/add-job?payment=success&session_id={CHECKOUT_SESSION_ID}`;
+    const cancel_url = `${window.location.origin}/add-job?payment=cancelled`;
+
+    const checkoutPayload = {
+      amount: amountInCents,
+      currency: "aud",
+      title: form.title || "Job posting",
+      metadata: {
+        flow: "job_post",
+        user_id: String(payload.user_id || ""),
+      },
+      success_url,
+      cancel_url,
+    };
+
+    const checkoutRes = await submitJob(
+      "api/stripe/create-job-checkout-session",
+      checkoutPayload,
+      {
+        method: "POST",
+      },
+    );
+
+    if (checkoutRes === undefined) return false;
+
+    const checkoutUrl =
+      checkoutRes?.data?.url ||
+      checkoutRes?.data?.checkout_url ||
+      checkoutRes?.url ||
+      checkoutRes?.checkout_url;
+
+    if (!checkoutRes?.success || !checkoutUrl) {
+      toast.error(checkoutRes?.message || "Unable to start Stripe checkout");
+      return false;
+    }
+
+    window.location.assign(checkoutUrl);
+    return true;
+  }
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const paymentState = params.get("payment");
+    const sessionId = params.get("session_id");
+
+    if (paymentState === "cancelled") {
+      toast.error("Payment was cancelled. Job has not been posted.");
+      navigate("/add-job", { replace: true });
+      return;
+    }
+
+    if (paymentState !== "success") return;
+    if (!sessionId) {
+      toast.error("Payment session missing. Job has not been posted.");
+      navigate("/add-job", { replace: true });
+      return;
+    }
+    if (handledPaymentRef.current === sessionId) return;
+
+    handledPaymentRef.current = sessionId;
+
+    const finalizePaidJob = async () => {
+      setVerifyingPayment(true);
+      try {
+        const draftRaw = sessionStorage.getItem(JOB_PAYMENT_DRAFT_KEY);
+        if (!draftRaw) {
+          toast.error(
+            "No pending job draft found. Please create the job again.",
+          );
+          navigate("/add-job", { replace: true });
+          return;
+        }
+
+        const draft = JSON.parse(draftRaw);
+        const verifyRes = await submitJob(
+          "api/stripe/verify-job-checkout",
+          {
+            session_id: sessionId,
+            amount: draft.amount,
+            currency: "aud",
+          },
+          { method: "POST" },
+        );
+
+        if (verifyRes === undefined) return;
+
+        const paid = Boolean(
+          verifyRes?.data?.paid ?? verifyRes?.paid ?? verifyRes?.success,
+        );
+
+        if (!verifyRes?.success || !paid) {
+          toast.error(
+            verifyRes?.message ||
+              "Payment verification failed. Job not posted.",
+          );
+          navigate("/add-job", { replace: true });
+          return;
+        }
+
+        const postRes = await submitJob("api/job-post", draft.payload, {
+          method: "POST",
+        });
+
+        if (postRes === undefined) return;
+
+        if (postRes?.success) {
+          sessionStorage.removeItem(JOB_PAYMENT_DRAFT_KEY);
+          toast.success("Payment received and job posted successfully!");
+          navigate("/my-job-applications", { replace: true });
+        } else {
+          toast.error(
+            postRes?.message || "Payment captured, but job posting failed",
+          );
+          navigate("/add-job", { replace: true });
+        }
+      } catch (err) {
+        toast.error(err.message || "Failed to verify payment");
+        navigate("/add-job", { replace: true });
+      } finally {
+        setVerifyingPayment(false);
+      }
+    };
+
+    finalizePaidJob();
+  }, [location.search, navigate, submitJob]);
+
   async function handleConfirm(e) {
     e.preventDefault();
     if (isAdmin && !selectedContractorId) {
@@ -163,62 +349,34 @@ export default function AddJob() {
       return;
     }
 
+    if (!breakdown?.chargeTotalIncGst || breakdown.chargeTotalIncGst <= 0) {
+      toast.error("Unable to calculate payment amount for this job.");
+      return;
+    }
+
     try {
-      const document_list = [];
-      for (const file of form.attachments || []) {
-        try {
-          const fd = new FormData();
-          fd.append("file", file);
-          fd.append("folder", "job_documents");
-          const res = await uploadFile("api/upload-file", fd, {
-            method: "POST",
-          });
-          if (res?.success) {
-            const path = res.data?.path || res.data?.url || res.path || res.url;
-            if (path) document_list.push(path);
-          }
-        } catch (err) {
-          console.warn("attachment upload failed", err);
-        }
+      const document_list = await uploadAllAttachments();
+      const payload = buildJobPayload(document_list);
+
+      const amountInCents = Math.round(
+        Number(breakdown.chargeTotalIncGst) * 100,
+      );
+      if (!Number.isFinite(amountInCents) || amountInCents <= 0) {
+        toast.error("Invalid payment amount. Job has not been posted.");
+        return;
       }
 
-      const coordinates = form.coordinates || "";
-      const payload = {
-        user_id: isAdmin
-          ? selectedContractorId || null
-          : userdata?.data?.id || userdata?.id || null,
-        title: form.title,
-        description: form.description,
-        address: form.location || form.address,
-        coordinates,
-        state: form.state || "open",
-        numberOfGuards: Number(form.numGuards) || 1,
-        startTime:
-          form.startDate && form.startTime
-            ? `${form.startDate}T${form.startTime}`
-            : "",
-        endTime:
-          form.endDate && form.endTime ? `${form.endDate}T${form.endTime}` : "",
-        is_document: Boolean(form.document) || document_list.length > 0,
-        document_list,
-        document_types: form.document_types || [],
-        job_instruction: form.description || "",
-        tasks: (form.tasks || []).map((t) => ({
-          task: t.task,
-          task_start: t.task_start,
-          task_end: t.task_end,
-        })),
-      };
+      sessionStorage.setItem(
+        JOB_PAYMENT_DRAFT_KEY,
+        JSON.stringify({
+          payload,
+          amount: amountInCents,
+        }),
+      );
 
-      const result = await submitJob("api/job-post", payload, {
-        method: "POST",
-      });
-      if (result === undefined) return;
-      if (result?.success) {
-        toast.success("Job posted successfully!");
-        navigate("/my-job-applications");
-      } else {
-        toast.error(result.message || "Failed to post job");
+      const started = await startStripeCheckout(payload, amountInCents);
+      if (!started) {
+        sessionStorage.removeItem(JOB_PAYMENT_DRAFT_KEY);
       }
     } catch (err) {
       toast.error(err.message || "Failed to post job");
@@ -309,7 +467,8 @@ export default function AddJob() {
                     setStep={setStep}
                     setField={setField}
                     handleConfirm={handleConfirm}
-                    isSubmitting={isSubmitting}
+                    isSubmitting={isSubmitting || verifyingPayment}
+                    paymentAmount={breakdown?.chargeTotalIncGst || 0}
                   />
                 )}
 

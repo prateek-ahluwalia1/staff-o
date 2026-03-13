@@ -8,6 +8,7 @@ export default function ReviewStep({
   handleConfirm,
   setStep,
   isSubmitting,
+  paymentAmount,
 }) {
   const JOB_TYPE_LABELS = {
     "site-patrol": "Site Patrol Security",
@@ -84,9 +85,21 @@ export default function ReviewStep({
         className="list-card mt-3 p-3 bg-white"
         style={{ background: "#fff" }}
       >
+        <div className="alert alert-info py-2 px-3 mb-3" role="alert">
+          <strong>Payment required:</strong> You will be redirected to Stripe to
+          pay{" "}
+          <strong>
+            {new Intl.NumberFormat("en-AU", {
+              style: "currency",
+              currency: "AUD",
+              maximumFractionDigits: 2,
+            }).format(Number(paymentAmount) || 0)}
+          </strong>{" "}
+          before this job is posted.
+        </div>
         <h6>Terms & Conditions</h6>
         <p className="text-muted small">
-          By posting this job you agree to our terms.
+          By paying and posting this job you agree to our terms.
         </p>
         <div className="form-check">
           <input
@@ -117,10 +130,10 @@ export default function ReviewStep({
                 role="status"
                 aria-hidden="true"
               ></span>
-              Posting...
+              Processing...
             </>
           ) : (
-            "Post Job"
+            "Pay with Stripe & Post Job"
           )}
         </button>
         <button

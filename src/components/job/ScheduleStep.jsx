@@ -2,7 +2,7 @@ import React from "react";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 
-export default function ScheduleStep({ form, setField }) {
+export default function ScheduleStep({ form, setField, scheduleError = "" }) {
   const cardStyle = {
     background: "#ffffff",
     borderRadius: "16px",
@@ -68,6 +68,12 @@ export default function ScheduleStep({ form, setField }) {
 
   return (
     <div style={cardStyle}>
+      {scheduleError ? (
+        <div className="alert alert-danger py-2 px-3 mb-3" role="alert">
+          {scheduleError}
+        </div>
+      ) : null}
+
       <div className="mb-4">
         <h6 style={{ fontWeight: 600 }}>Start</h6>
         <div className="row g-3">

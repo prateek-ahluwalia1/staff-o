@@ -21,6 +21,8 @@ const STEP_TITLES = [
 ];
 
 const JOB_PAYMENT_DRAFT_KEY = "job_payment_draft_v1";
+const MIN_SHIFT_HOURS = 4;
+const MAX_SHIFT_HOURS = 12;
 
 export default function AddJob() {
   const navigate = useNavigate();
@@ -53,6 +55,7 @@ export default function AddJob() {
   const [step, setStep] = useState(0);
   const [resolvingLocation, setResolvingLocation] = useState(false);
   const [locationError, setLocationError] = useState("");
+  const [scheduleError, setScheduleError] = useState("");
 
   const ratesLoading = chargeratesLoading;
 
@@ -111,6 +114,59 @@ export default function AddJob() {
 
   function setField(name, value) {
     setForm((f) => ({ ...f, [name]: value }));
+
+    if (
+      scheduleError &&
+      ["startDate", "startTime", "endDate", "endTime"].includes(name)
+    ) {
+      setScheduleError("");
+    }
+  }
+
+  function getShiftDurationHours() {
+    const { startDate, startTime, endDate, endTime } = form;
+    if (!startDate || !startTime || !endDate || !endTime) return null;
+
+    const [sy, sm, sd] = startDate.split("-").map(Number);
+    const [sh, smin] = startTime.split(":").map(Number);
+    const [ey, em, ed] = endDate.split("-").map(Number);
+    const [eh, emin] = endTime.split(":").map(Number);
+
+    const start = new Date(sy, sm - 1, sd, sh, smin, 0, 0);
+    const end = new Date(ey, em - 1, ed, eh, emin, 0, 0);
+
+    const diffMs = end - start;
+    if (Number.isNaN(diffMs)) return NaN;
+
+    return diffMs / 3_600_000;
+  }
+
+  function validateSchedule(showToast = false) {
+    if (!form.startDate || !form.startTime || !form.endDate || !form.endTime) {
+      const msg = "Please select start and end date/time.";
+      setScheduleError(msg);
+      if (showToast) toast.error(msg);
+      return false;
+    }
+
+    const durationHours = getShiftDurationHours();
+
+    if (!Number.isFinite(durationHours) || durationHours <= 0) {
+      const msg = "End date/time must be after start date/time.";
+      setScheduleError(msg);
+      if (showToast) toast.error(msg);
+      return false;
+    }
+
+    if (durationHours < MIN_SHIFT_HOURS || durationHours > MAX_SHIFT_HOURS) {
+      const msg = `Shift duration must be between ${MIN_SHIFT_HOURS} and ${MAX_SHIFT_HOURS} hours.`;
+      setScheduleError(msg);
+      if (showToast) toast.error(msg);
+      return false;
+    }
+
+    setScheduleError("");
+    return true;
   }
 
   function handleFile(e) {
@@ -147,6 +203,11 @@ export default function AddJob() {
       }
       setLocationError("");
     }
+
+    if (step === 1 && !validateSchedule()) {
+      return;
+    }
+
     if (step < STEP_TITLES.length - 1) setStep(step + 1);
   }
 
@@ -347,6 +408,11 @@ export default function AddJob() {
       return;
     }
 
+    if (!validateSchedule(true)) {
+      if (step !== 1) setStep(1);
+      return;
+    }
+
     if (!breakdown?.chargeTotalIncGst || breakdown.chargeTotalIncGst <= 0) {
       toast.error("Unable to calculate payment amount for this job.");
       return;
@@ -447,7 +513,13 @@ export default function AddJob() {
                     setLocationError={setLocationError}
                   />
                 )}
-                {step === 1 && <ScheduleStep form={form} setField={setField} />}
+                {step === 1 && (
+                  <ScheduleStep
+                    form={form}
+                    setField={setField}
+                    scheduleError={scheduleError}
+                  />
+                )}
                 {step === 2 && (
                   <DetailsStep
                     form={form}

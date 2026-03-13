@@ -69,7 +69,12 @@ export default function NotificationToast() {
     const audio = new Audio("/assets/notification-bell.wav");
     audio.play().catch(() => {});
 
-    const { title, message, data, page, type } = latestNotification;
+    const title = latestNotification?.title || latestNotification?.data?.title;
+    const message =
+      latestNotification?.message || latestNotification?.data?.message;
+    const data = latestNotification?.data;
+    const page = latestNotification?.page || latestNotification?.data?.page;
+    const type = latestNotification?.type || latestNotification?.data?.type;
     const toastType = TYPE_MAP[type] || "info";
 
     toast[toastType](
@@ -78,7 +83,11 @@ export default function NotificationToast() {
         message={message}
         data={data}
         page={page}
-        onNavigate={() => navigate(`/${page}`)}
+        onNavigate={() => {
+          if (!page) return;
+          const normalizedPage = String(page).replace(/^\/+/, "");
+          navigate(`/${normalizedPage}`);
+        }}
       />,
       { autoClose: 5000 },
     );

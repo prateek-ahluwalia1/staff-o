@@ -84,8 +84,6 @@ export default function AddJob() {
   const [verifyingPayment, setVerifyingPayment] = useState(false);
   const handledPaymentRef = useRef("");
 
-  // Build a dynamic rates object from the API responses whenever they arrive.
-  // Falls back to STATIC_RATES automatically when data is not yet loaded.
   const dynamicRates = useMemo(() => {
     const chargeRecord = chargeratesData?.data?.[0];
     return mapApiRates(chargeRecord);

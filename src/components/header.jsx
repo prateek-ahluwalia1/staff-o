@@ -1,30 +1,94 @@
-import React, { memo, useState, useCallback } from "react";
+import React, { memo, useState, useCallback, useMemo, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { Link, useNavigate } from "react-router-dom";
 import { logOut } from "../store/slices/authSlice";
-import { clearUnreadCount } from "../store/slices/notificationSlice";
+import {
+  setNotifications,
+  setUnreadCount,
+  markNotificationRead,
+  markAllRead,
+} from "../store/slices/notificationSlice";
 import useSubmit from "../hooks/useSubmit";
+import useFetch from "../hooks/useFetch";
 import staffologo from "../assets/images/staffo.png";
 
 const Header = memo(function Header() {
   //info, success, warning, error
-  const { token } = useSelector((state) => state.auth);
+  const { token, userdata } = useSelector((state) => state.auth);
   const { items, unreadCount } = useSelector((state) => state.notifications);
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const userId = userdata?.id ?? userdata?.data?.id;
+
+  const notificationsEndpoint = useMemo(
+    () => (userId ? `api/notifications/user/${userId}` : null),
+    [userId],
+  );
+
+  const unreadEndpoint = useMemo(
+    () => (userId ? `api/notifications/unread/${userId}` : null),
+    [userId],
+  );
 
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
 
-  const { submit: markAsReadApi } = useSubmit({ isAuth: true });
+  const { submit } = useSubmit({ isAuth: true });
+  const { data: notificationsData, refetch: refetchNotifications } = useFetch(
+    notificationsEndpoint,
+    {
+      isAuth: true,
+      immediate: Boolean(notificationsEndpoint),
+    },
+  );
+  const { data: unreadData, refetch: refetchUnreadCount } = useFetch(
+    unreadEndpoint,
+    {
+      isAuth: true,
+      immediate: Boolean(unreadEndpoint),
+    },
+  );
+
+  useEffect(() => {
+    if (notificationsData) {
+      dispatch(setNotifications(notificationsData));
+    }
+  }, [dispatch, notificationsData]);
+
+  useEffect(() => {
+    if (unreadData !== null && unreadData !== undefined) {
+      dispatch(setUnreadCount(unreadData));
+    }
+  }, [dispatch, unreadData]);
+
+  const getNotificationTitle = (notif) =>
+    notif?.title || notif?.data?.title || "Notification";
+
+  const getNotificationMessage = (notif) =>
+    notif?.message || notif?.data?.message || "";
+
+  const markSingleNotificationRead = async (notif) => {
+    if (!notif?.id || notif.read_at) return;
+
+    dispatch(markNotificationRead(notif.id));
+    await submit(`/notifications/read/${notif.id}`, {}, { method: "POST" });
+  };
 
   const toggleNotifications = async () => {
     const nextState = !showNotifications;
     setShowNotifications(nextState);
 
-    if (nextState && unreadCount > 0) {
-      dispatch(clearUnreadCount());
-      await markAsReadApi("/notifications/mark-read", {});
+    if (nextState) {
+      await Promise.all([refetchNotifications(), refetchUnreadCount()]);
+    }
+
+    if (nextState && userId) {
+      dispatch(markAllRead());
+      await submit(
+        `api/notifications/mark-all-read/${userId}`,
+        {},
+        { method: "POST" },
+      );
     }
   };
 
@@ -339,12 +403,16 @@ const Header = memo(function Header() {
                                 key={notif.id || index}
                                 className="p-3 border-bottom dropdown-item"
                                 style={{ whiteSpace: "normal" }}
+                                role="button"
+                                onClick={() =>
+                                  markSingleNotificationRead(notif)
+                                }
                               >
                                 <div className="small text-dark fw-semibold">
-                                  {notif.title || notif.data?.title}
+                                  {getNotificationTitle(notif)}
                                 </div>
                                 <div className="small text-muted">
-                                  {notif.message || notif.data?.message}
+                                  {getNotificationMessage(notif)}
                                 </div>
                                 <div
                                   className="text-muted"

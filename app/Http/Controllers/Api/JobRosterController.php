@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\ChargeRate;
 use App\Models\Document;
 use App\Models\DocumentCategory;
 use App\Models\Site;
@@ -17,6 +18,11 @@ use App\Models\JobRosterTask;
 use App\Models\User;
 use DateTime;
 use Exception;
+use Illuminate\Support\Facades\Validator;
+use Stripe\Customer;
+use Stripe\PaymentIntent;
+use Stripe\PaymentMethod;
+use Stripe\Stripe;
 
 class JobRosterController extends Controller
 {
@@ -259,7 +265,209 @@ class JobRosterController extends Controller
             'guards' => $guards
         ]);
     }
+    
+    public function holdPayment(Request $request)
+    {
+        // ─── 1. VALIDATE ─────────────────────────────────────────────────────
+        // No raw card fields — only payment_method_id from Stripe.js
+        $validator = Validator::make($request->all(), [
+            'start'             => 'required|date',
+            'end'               => 'required|date|after:start',
+            'site_id'           => 'required|integer|exists:sites,id',
+            'user_id'           => 'required|integer|exists:users,id',
+            'card_holder_name'  => 'required|string',
+            'payment_method_id' => 'required|string|starts_with:pm_',
+        ]);
 
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors'  => $validator->errors(),
+            ], 422);
+        }
+
+        try {
+            Stripe::setApiKey(config('services.stripe.secret'));
+
+            // ─── 3. CALCULATE HOURS ──────────────────────────────────────────
+            $hours = $this->getShiftHours(
+                dbFormateDateTime($request->start),
+                dbFormateDateTime($request->end),
+                1,
+                0
+            );
+
+            $guardWorkingHours = calCulateGuardWeekHours(
+                dbFormateDateTime($request->start),
+                dbFormateDateTime($request->end)
+            );
+
+            // ─── 4. MAP HOURS ─────────────────────────────────────────────────
+            $roster['hours']                  = $guardWorkingHours;
+            $roster['morning_hours']          = $hours['morning']          ?? 0.0;
+            $roster['night_hours']            = $hours['night']            ?? 0.0;
+            $roster['saturday_morning_hours'] = $hours['saturday_morning'] ?? 0.0;
+            $roster['saturday_night_hours']   = $hours['saturday_night']   ?? 0.0;
+            $roster['sunday_morning_hours']   = $hours['sunday_morning']   ?? 0.0;
+            $roster['sunday_night_hours']     = $hours['sunday_night']     ?? 0.0;
+            $roster['ph_morning_hours']       = $hours['ph_morning']       ?? 0.0;
+            $roster['ph_night_hours']         = $hours['ph_night']         ?? 0.0;
+
+            // ─── 5. GET CHARGE RATES ─────────────────────────────────────────
+            $chargeRate = ChargeRate::where('id', 1)->first();
+
+            if (!$chargeRate) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Charge rate not found.',
+                ], 404);
+            }
+
+            $roster['day_rate']            = $chargeRate->def_metro_mon_to_fri_day_rate;
+            $roster['night_rate']          = $chargeRate->def_metro_mon_to_fri_night_rate;
+            $roster['public_holiday_rate'] = $chargeRate->def_metro_pub_holi_day_rate;
+            $roster['saturday_rate']       = $chargeRate->def_metro_sat_day_rate;
+            $roster['sunday_rate']         = $chargeRate->def_metro_sun_day_rate;
+
+            // ─── 6. CALCULATE TOTAL AMOUNT ───────────────────────────────────
+            $roster['total_amount'] =
+                ($roster['day_rate']            * $roster['morning_hours']) +
+                ($roster['night_rate']          * $roster['night_hours']) +
+                ($roster['public_holiday_rate'] * ($roster['ph_morning_hours'] + $roster['ph_night_hours'])) +
+                ($roster['saturday_rate']       * ($roster['saturday_morning_hours'] + $roster['saturday_night_hours'])) +
+                ($roster['sunday_rate']         * ($roster['sunday_morning_hours'] + $roster['sunday_night_hours']));
+
+            // ─── 7. ADD 10% SERVICE FEE ──────────────────────────────────────
+            $roster['service_fee'] = round($roster['total_amount'] * 0.10, 2);
+            $roster['grand_total'] = round($roster['total_amount'] + $roster['service_fee'], 2);
+
+            // ─── 8. GET USER ─────────────────────────────────────────────────
+            $user = User::findOrFail($request->user_id);
+
+            // ─── 9. CREATE OR REUSE STRIPE CUSTOMER ──────────────────────────
+            $stripeCustomerId = $user->stripe_customer_id ?? null;
+
+            if (empty($stripeCustomerId)) {
+                $customer = Customer::create([
+                    'name'     => $request->card_holder_name,
+                    'email'    => $user->email,
+                    'metadata' => ['user_id' => $user->id],
+                ]);
+
+                $stripeCustomerId         = $customer->id;
+                $user->stripe_customer_id = $stripeCustomerId;
+                $user->save();
+            }
+
+            // ─── 10. ATTACH PAYMENT METHOD (from Stripe.js pm_xxx) ───────────
+            // No raw card handling — Stripe.js already tokenized it securely
+            $paymentMethodId = $request->payment_method_id;
+
+            PaymentMethod::retrieve($paymentMethodId)
+                ->attach(['customer' => $stripeCustomerId]);
+
+            // ─── 11. CREATE PAYMENT INTENT (HOLD) ────────────────────────────
+            $amountInCents     = (int) round($roster['grand_total'] * 100);
+            $serviceFeeInCents = (int) round($roster['service_fee'] * 100);
+            $stripeAccountId   = $jobRosterTime->site->stripe_account_id
+                                    ?? config('services.stripe.express_account_id');
+
+            $paymentIntent = PaymentIntent::create([
+                'amount'                 => $amountInCents,
+                'currency'               => 'aud',
+                'customer'               => $stripeCustomerId,
+                'payment_method'         => $paymentMethodId,
+                'confirmation_method'    => 'automatic',
+                'capture_method'         => 'manual',
+                'confirm'                => true,
+                'description'            => "Hold for time | {$request->start} to {$request->end}",
+                'metadata'               => [
+                    'user_id'   => $request->user_id,
+                    'site_id'   => $request->site_id,
+                    'start'     => $request->start,
+                    'end'       => $request->end,
+                ],
+                'transfer_data'          => [
+                    'destination' => $stripeAccountId,
+                ],
+                'application_fee_amount' => $serviceFeeInCents,
+            ]);
+
+            // ─── 12. RETURN RESPONSE ─────────────────────────────────────────
+            return response()->json([
+                'success' => true,
+                'message' => 'Payment held successfully. Funds authorized and pending capture.',
+                'payment_breakdown' => [
+                    'hours_summary' => [
+                        'total_working_hours'    => $roster['hours'],
+                        'morning_hours'          => $roster['morning_hours'],
+                        'night_hours'            => $roster['night_hours'],
+                        'saturday_morning_hours' => $roster['saturday_morning_hours'],
+                        'saturday_night_hours'   => $roster['saturday_night_hours'],
+                        'sunday_morning_hours'   => $roster['sunday_morning_hours'],
+                        'sunday_night_hours'     => $roster['sunday_night_hours'],
+                        'ph_morning_hours'       => $roster['ph_morning_hours'],
+                        'ph_night_hours'         => $roster['ph_night_hours'],
+                    ],
+                    'rate_summary' => [
+                        'day_rate'            => $roster['day_rate'],
+                        'night_rate'          => $roster['night_rate'],
+                        'public_holiday_rate' => $roster['public_holiday_rate'],
+                        'saturday_rate'       => $roster['saturday_rate'],
+                        'sunday_rate'         => $roster['sunday_rate'],
+                    ],
+                    'amount_breakdown' => [
+                        'day_amount'            => round($roster['day_rate'] * $roster['morning_hours'], 2),
+                        'night_amount'          => round($roster['night_rate'] * $roster['night_hours'], 2),
+                        'public_holiday_amount' => round($roster['public_holiday_rate'] * ($roster['ph_morning_hours'] + $roster['ph_night_hours']), 2),
+                        'saturday_amount'       => round($roster['saturday_rate'] * ($roster['saturday_morning_hours'] + $roster['saturday_night_hours']), 2),
+                        'sunday_amount'         => round($roster['sunday_rate'] * ($roster['sunday_morning_hours'] + $roster['sunday_night_hours']), 2),
+                    ],
+                    'totals' => [
+                        'subtotal'          => round($roster['total_amount'], 2),
+                        'service_fee_10pct' => $roster['service_fee'],
+                        'grand_total'       => $roster['grand_total'],
+                        'currency'          => 'AUD',
+                    ],
+                    'stripe' => [
+                        'payment_intent_id'  => $paymentIntent->id,
+                        'payment_method_id'  => $paymentMethodId,
+                        'stripe_customer_id' => $stripeCustomerId,
+                        'status'             => $paymentIntent->status, // requires_capture
+                        'amount_held_cents'  => $amountInCents,
+                        'capture_method'     => 'manual',
+                    ],
+                ],
+            ], 200);
+
+        } catch (\Stripe\Exception\CardException $e) {
+            return response()->json([
+                'success'      => false,
+                'message'      => 'Card declined: ' . $e->getMessage(),
+                'code'         => $e->getStripeCode(),
+                'decline_code' => $e->getDeclineCode(),
+            ], 402);
+
+        } catch (\Stripe\Exception\InvalidRequestException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid request: ' . $e->getMessage(),
+            ], 400);
+
+        } catch (\Stripe\Exception\ApiErrorException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Stripe API error: ' . $e->getMessage(),
+            ], 500);
+
+        } catch (Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Server error: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
     public function getShiftHours($start, $end, $siteID = null, $continuation = false, $public_holiday = null, $ph_duration = null)
     {
         $actual_start = $start;

@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\RolesPermissionController;
 use App\Http\Controllers\Api\ChargeRateController;
 use App\Http\Controllers\Api\JobRosterActiviteController;
 use App\Http\Controllers\Api\JobRosterController;
+use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\PayRateController;
 use App\Http\Controllers\Api\StaffController;
 use Illuminate\Support\Facades\Artisan;
@@ -75,6 +76,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::any('guard-all-documents', [StaffController::class, 'getAllGuardDocument'])->name('guard.all.documents');
     Route::any('guard-add-documents', [StaffController::class, 'addGuardDocuments'])->name('guard.add.documents');
     Route::any('guard-update-documents', [StaffController::class, 'updateGuardDocuments'])->name('guard.update.documents');
+    Route::any('user-update/{id}', [StaffController::class, 'updateUser'])->name('user.update');
 
     //customer and contractor update
     Route::any('customers/{id}/update', [StaffController::class, 'customerUpdate'])->name('customer.update');
@@ -104,7 +106,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::any('update-roster-time', [JobRosterController::class, 'updateRosterTime'])->name('update.roster.time');
 
 
-
     // JobRosterActivity
     Route::any('get-jobSignIn-jobSignOut', [JobRosterActiviteController::class, 'JobSignInSignOut'])->name('job.signIn.signout');
     Route::any('guard-break-details', [JobRosterActiviteController::class, 'guardBreakDetails'])->name('guard.break.details');
@@ -115,12 +116,16 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::any('store-operation-notes', [JobRosterActiviteController::class, 'storeOperationNotes'])->name('store.operation.notes');
     Route::any('get-operation-notes', [JobRosterActiviteController::class, 'getOperationNotes'])->name('get.operation.notes');
     Route::any('get-job-tasks', [JobRosterActiviteController::class, 'getJobTasks'])->name('get.job.tasks');
-
-    // Route::any('get-shift-activity', [JobRosterActiviteController::class, 'getShiftActivity'])->name('get.shift.activity');
-    // Route::any('generateJobTaskReport', [JobRosterActiviteController::class, 'generateJobTaskReport']);
-    // Route::post('update-shift-task', [JobRosterController::class, 'updateShfitTask'])->name('guard.updateShfitTask');
-    // Route::post('update-incident-report', [JobRosterController::class, 'updateIncidentReport'])->name('guard.updateIncidentReport');
-    // Route::post('update-foot-patrol-report', [JobRosterController::class, 'updateFootPatrolReport'])->name('guard.updateFootPatrolReport');
+ 
+    // Notifications
+    Route::prefix('notifications')->group(function () {
+        Route::get('/user/{userId}', [NotificationController::class, 'getUserNotifications']);
+        Route::get('/unread/{userId}', [NotificationController::class, 'getUnreadCount']);
+        Route::post('/read/{id}', [NotificationController::class, 'markAsRead']);
+        Route::post('/mark-all-read/{userId}', [NotificationController::class, 'markAllAsRead']);
+        Route::post('/send',      [NotificationController::class, 'send']);
+        Route::post('/send-self', [NotificationController::class, 'sendSelf']);
+    });
 
     Route::prefix('admin')->group(function () {
 
@@ -143,6 +148,12 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('get-staff', [AdminStaffController::class, 'index']);
         Route::any('create-staff',  [AdminStaffController::class, 'createStaff'])->name('create.staff');
         Route::any('update-staff/{id}',  [AdminStaffController::class, 'updateStaff'])->name('update.staff');
+    });
+
+    Route::prefix('payment')->group(function () {
+        Route::post('/hold',    [JobRosterController::class, 'holdPayment']);
+        Route::post('/capture', [JobRosterController::class, 'capturePayment']);
+        Route::post('/cancel',  [JobRosterController::class, 'cancelHold']);
     });
 
 });
@@ -185,8 +196,3 @@ Route::get('/clear-all-cache', function() {
         ], 500);
     }
 });
-    Route::any('user-update/{id}', [StaffController::class, 'updateUser'])->name('user.update');
-
-
-
-

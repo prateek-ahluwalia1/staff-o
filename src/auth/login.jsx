@@ -6,20 +6,15 @@ import useSubmit from "../hooks/useSubmit";
 import { toast } from "react-toastify";
 import { useGoogleLogin } from "@react-oauth/google";
 
-// Client ID: 423205543558-ematljacmhiuoh2ftenk5diu5ntpn6ss.apps.googleusercontent.com
-// REMINDER: Move your Client Secret to your Laravel .env file. Do not keep it here.
-
 export default function Login() {
   const navigate = useNavigate();
   const location = useLocation();
   const dispatch = useDispatch();
   const { submit, loading } = useSubmit();
 
-  // State for form inputs
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  // Standard Email/Password Login
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -42,7 +37,6 @@ export default function Login() {
     }
   };
 
-  // Google Login Handler
   const handleGoogleLogin = useGoogleLogin({
     flow: "implicit",
     onSuccess: async (tokenResponse) => {
@@ -61,7 +55,6 @@ export default function Login() {
 
         if (!res) return;
 
-        // Use the exact same logic as your standard login to store tokens and redirect
         if (res.token) {
           dispatch(setToken({ token: res.token }));
           dispatch(setUser({ userdata: res.user }));

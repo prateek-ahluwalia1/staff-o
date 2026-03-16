@@ -41,7 +41,13 @@ export const Card = ({ title, description, onClick, accent, image, type }) => {
               letterSpacing: 0.5,
             }}
           >
-            {type === "charge" ? "Charged Rate" : "Pay Rate"}
+            {type === "invoice"
+              ? "Invoice"
+              : type === "charge"
+                ? "Charge Rate"
+                : type === "pay"
+                  ? "Pay Rate"
+                  : ""}
           </div>
         )}
 
@@ -70,7 +76,7 @@ export const Card = ({ title, description, onClick, accent, image, type }) => {
               onClick();
             }}
           >
-            View Rates
+            Access Now
           </button>
         </div>
       </div>

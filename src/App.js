@@ -26,6 +26,7 @@ const UserPackages = lazy(() => import("./pages/user-packages"));
 const PaymentHistory = lazy(() => import("./pages/payment-history"));
 const PayChargeRate = lazy(() => import("./pages/PayChargerate"));
 const RatesList = lazy(() => import("./pages/RatesList"));
+const Invoice = lazy(() => import("./pages/Invoice"));
 const AddJob = lazy(() => import("./pages/add-job"));
 const ManageUsers = lazy(() => import("./pages/manage-users"));
 const ManageStaff = lazy(() => import("./pages/manage-staff"));
@@ -94,6 +95,7 @@ function App() {
               <Route path="/pay-charge-rate" element={<PayChargeRate />} />
               <Route path="/rates/charge" element={<RatesList />} />
               <Route path="/rates/pay" element={<RatesList />} />
+              <Route path="/accounts/invoice" element={<Invoice />} />
               <Route path="/add-job" element={<AddJob />} />
               <Route path="/manage-users" element={<ManageUsers />} />
               <Route path="/manage-staff" element={<ManageStaff />} />

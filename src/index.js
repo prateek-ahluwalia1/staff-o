@@ -10,15 +10,21 @@ import { PersistGate } from "redux-persist/integration/react";
 import store, { persistor } from "./store/store";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { GoogleOAuthProvider } from "@react-oauth/google";
+
+//423205543558-ematljacmhiuoh2ftenk5diu5ntpn6ss.apps.googleusercontent.com        --> Client ID
+//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             --> Client Secret
 
 const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(
   <React.StrictMode>
-    <Provider store={store}>
-      <PersistGate loading={null} persistor={persistor}>
-        <App />
-        <ToastContainer />
-      </PersistGate>
-    </Provider>
+    <GoogleOAuthProvider clientId="423205543558-ematljacmhiuoh2ftenk5diu5ntpn6ss.apps.googleusercontent.com ">
+      <Provider store={store}>
+        <PersistGate loading={null} persistor={persistor}>
+          <App />
+          <ToastContainer />
+        </PersistGate>
+      </Provider>
+    </GoogleOAuthProvider>
   </React.StrictMode>,
 );

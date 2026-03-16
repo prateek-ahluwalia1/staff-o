@@ -1,10 +1,13 @@
-// src/auth/Login.jsx
 import React, { useState } from "react";
 import { useNavigate, useLocation, NavLink } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { setToken, setUser } from "../store/slices/authSlice";
 import useSubmit from "../hooks/useSubmit";
 import { toast } from "react-toastify";
+import { useGoogleLogin } from "@react-oauth/google";
+
+// Client ID: 423205543558-ematljacmhiuoh2ftenk5diu5ntpn6ss.apps.googleusercontent.com
+// REMINDER: Move your Client Secret to your Laravel .env file. Do not keep it here.
 
 export default function Login() {
   const navigate = useNavigate();
@@ -16,6 +19,7 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
+  // Standard Email/Password Login
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -37,6 +41,36 @@ export default function Login() {
       toast.error(res.message || "Login failed. Please try again.");
     }
   };
+
+  // Google Login Handler
+  const handleGoogleLogin = useGoogleLogin({
+    onSuccess: async (tokenResponse) => {
+      try {
+        // Send the Google access token to your Laravel backend
+        const res = await submit("api/auth/google", {
+          token: tokenResponse.access_token,
+        });
+
+        if (!res) return;
+
+        // Use the exact same logic as your standard login to store tokens and redirect
+        if (res.token) {
+          dispatch(setToken({ token: res.token }));
+          dispatch(setUser({ userdata: res.user }));
+          toast.success("Google Login successful!");
+          const redirectTo = location.state?.from?.pathname || "/edit-profile";
+          navigate(redirectTo, { replace: true });
+        } else {
+          toast.error(res.message || "Google Login failed on the server.");
+        }
+      } catch (error) {
+        toast.error("An error occurred connecting to the server.");
+      }
+    },
+    onError: () => {
+      toast.error("Google Login Failed. Please try again.");
+    },
+  });
 
   return (
     <section className="auth-section">
@@ -73,18 +107,22 @@ export default function Login() {
               <p className="auth-subtitle">
                 Enter your details below or continue with a social account.
               </p>
-              {/*
-                <div className="auth-social">
-                <a href="#" className="auth-social-btn google">
-                  <i className="fa-brands fa-google"></i> Login with Google
-                </a>
-                <a href="#" className="auth-social-btn linkedin">
-                  <i className="fa-brands fa-linkedin"></i> Login with LinkedIn
-                </a>
+
+              <div className="auth-social">
+                <button
+                  type="button"
+                  onClick={() => handleGoogleLogin()}
+                  className="auth-social-btn google"
+                  disabled={loading}
+                >
+                  <i className="fa-brands fa-google"></i>{" "}
+                  {loading ? "Please wait..." : "Login with Google"}
+                </button>
               </div>
 
-              <div className="auth-divider"><span>or</span></div>
-  */}
+              <div className="auth-divider">
+                <span>or</span>
+              </div>
 
               <form className="auth-form" onSubmit={handleSubmit}>
                 <div className="mb-3">

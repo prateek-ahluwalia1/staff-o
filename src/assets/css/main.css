@@ -7321,6 +7321,7 @@ Large Mobile Screen
     font-weight: 600;
     text-decoration: none;
     transition: transform 0.2s ease, box-shadow 0.2s ease;
+    width: 100%;
 }
 
 .auth-social-btn:hover {
@@ -7333,9 +7334,6 @@ Large Mobile Screen
     border-color: rgba(37, 99, 235, 0.25);
 }
 
-.auth-social-btn.linkedin {
-    border-color: rgba(37, 99, 235, 0.35);
-}
 
 .auth-divider {
     display: flex;
@@ -12382,6 +12380,84 @@ Large Mobile Screen
     border-bottom: none;
 }
 
+.invoice-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 320px;
+    gap: 20px;
+}
+
+.invoice-page .list-card {
+    padding: 24px;
+}
+
+.invoice-block-title {
+    font-size: 1.05rem;
+    margin-bottom: 12px;
+}
+
+.invoice-form-grid {
+    display: grid;
+    gap: 10px;
+}
+
+.invoice-side-panel {
+    position: sticky;
+    top: 14px;
+    align-self: flex-start;
+}
+
+.invoice-radio {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 500;
+    color: #334155;
+}
+
+.invoice-toggle-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+.invoice-total-box {
+    margin-top: 16px;
+    border-radius: 14px;
+    background: #f8fafc;
+    border: 1px solid rgba(148, 163, 184, 0.2);
+    padding: 12px 14px;
+}
+
+.invoice-total-box div {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    font-size: 0.95rem;
+}
+
+.invoice-grand-total {
+    border-top: 1px solid rgba(148, 163, 184, 0.24);
+    margin-top: 4px;
+    font-weight: 700;
+}
+
+.invoice-preview-grid {
+    display: grid;
+    gap: 12px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.preview-caption {
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    color: #64748b;
+    letter-spacing: 0.04em;
+    margin-bottom: 4px;
+}
+
 .toggle-switch {
     position: relative;
     width: 48px;
@@ -12426,6 +12502,18 @@ Large Mobile Screen
 
 @media (max-width: 991px) {
     .message-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .invoice-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .invoice-side-panel {
+        position: static;
+    }
+
+    .invoice-preview-grid {
         grid-template-columns: 1fr;
     }
 

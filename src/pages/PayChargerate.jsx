@@ -4,6 +4,7 @@ import { useSelector } from "react-redux";
 import { Card } from "../components/Card";
 import payrateimg from "../assets/images/pay.png";
 import chargerateimg from "../assets/images/charge.png";
+import invoiceimg from "../assets/images/invoice.png";
 
 const PayChargerate = () => {
   const navigate = useNavigate();
@@ -34,7 +35,7 @@ const PayChargerate = () => {
         <div className="col-12 col-md-6 col-lg-4">
           <Card
             title="Charge Rates"
-            description="Manage what customers are charged per location."
+            description="The amount which is charged from the customer."
             accent="linear-gradient(135deg,#27ae60,#16a085)"
             image={chargerateimg}
             type="charge"
@@ -47,13 +48,23 @@ const PayChargerate = () => {
         <div className="col-12 col-md-6 col-lg-4">
           <Card
             title="Pay Rates"
-            description="Configure how staff members are paid."
+            description="The amount which is paid to the staff."
             accent="linear-gradient(135deg,#1abc9c,#2ecc71)"
             image={payrateimg}
             type="pay"
             onClick={() =>
               navigate("/rates/pay", { state: { rateType: "pay" } })
             }
+          />
+        </div>
+        <div className="col-12 col-md-6 col-lg-4">
+          <Card
+            title="Invoice"
+            description="It is used to send an invoice to the customer and other users of the system."
+            accent="linear-gradient(135deg,#1abc9c,#2ecc71)"
+            image={invoiceimg}
+            type="invoice"
+            onClick={() => navigate("/accounts/invoice")}
           />
         </div>
       </div>

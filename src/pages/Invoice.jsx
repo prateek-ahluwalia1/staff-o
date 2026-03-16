@@ -12,7 +12,6 @@ const Invoice = () => {
   const isAdmin = userType === "admin";
   const { submit, loading: sending } = useSubmit({ isAuth: true });
 
-  // Fetch customers for the dropdown
   const { data: customersResponse } = useFetch(
     "api/admin/get-customers?limit=1000",
     { isAuth: true },
@@ -25,7 +24,6 @@ const Invoice = () => {
 
   const [currency, setCurrency] = useState("AUD");
 
-  // Date range state
   const [startDate, setStartDate] = useState(
     new Date().toISOString().split("T")[0],
   );
@@ -64,7 +62,6 @@ const Invoice = () => {
   const [showPreview, setShowPreview] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
 
-  // Auto-fill "Invoice From" using Redux Userdata
   useEffect(() => {
     if (userdata) {
       const uData = userdata?.data || userdata;
@@ -78,7 +75,6 @@ const Invoice = () => {
     }
   }, [userdata]);
 
-  // Auto-fill "Invoice To" when a customer is selected
   const handleCustomerChange = (e) => {
     const id = e.target.value;
     setSelectedCustomerId(id);
@@ -179,7 +175,6 @@ const Invoice = () => {
     },
   });
 
-  // Action for the Search Details button
   const handleSearch = async () => {
     if (!selectedCustomerId) {
       toast.error("Please select a customer first.");
@@ -421,7 +416,7 @@ const Invoice = () => {
               </div>
             </div>
 
-            {/* Search Button (Pushed to the right) */}
+            {/* Search Button */}
             <div className="ms-auto">
               <button
                 type="button"

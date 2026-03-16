@@ -1,5 +1,5 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import React, { useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { toast } from "react-toastify";
 import useSubmit from "../hooks/useSubmit";
@@ -11,6 +11,7 @@ import ScheduleStep from "../components/job/ScheduleStep";
 import DetailsStep from "../components/job/DetailsStep";
 import TasksStep from "../components/job/TasksStep";
 import ReviewStep from "../components/job/ReviewStep";
+import PaymentModal from "../components/job/PaymentModal";
 
 const STEP_TITLES = [
   "Location",
@@ -20,14 +21,29 @@ const STEP_TITLES = [
   "Review & Confirm",
 ];
 
-const JOB_PAYMENT_DRAFT_KEY = "job_payment_draft_v1";
 const MIN_SHIFT_HOURS = 4;
 const MAX_SHIFT_HOURS = 12;
 
 export default function AddJob() {
   const navigate = useNavigate();
-  const location = useLocation();
   const { userdata } = useSelector((state) => state.auth);
+  const bankDetails =
+    userdata?.customer?.bank_details ||
+    userdata?.data?.customer?.bank_details ||
+    userdata?.contractor?.bank_details ||
+    userdata?.data?.contractor?.bank_details ||
+    null;
+  const savedCards = useMemo(() => {
+    if (!bankDetails) return [];
+    try {
+      const parsed =
+        typeof bankDetails === "string" ? JSON.parse(bankDetails) : bankDetails;
+      if (!Array.isArray(parsed)) return [];
+      return parsed;
+    } catch {
+      return [];
+    }
+  }, [bankDetails]);
   const { data: chargeratesData, loading: chargeratesLoading } = useFetch(
     "api/get-chargerates",
     {
@@ -84,8 +100,9 @@ export default function AddJob() {
   });
 
   const [attachmentPreviews, setAttachmentPreviews] = useState([]);
-  const [verifyingPayment, setVerifyingPayment] = useState(false);
-  const handledPaymentRef = useRef("");
+  const [paymentModalOpen, setPaymentModalOpen] = useState(false);
+  const [pendingDraft, setPendingDraft] = useState(null); // { payload, amountAud }
+  const [postingJob, setPostingJob] = useState(false);
 
   const dynamicRates = useMemo(() => {
     const chargeRecord = chargeratesData?.data?.[0];
@@ -270,132 +287,115 @@ export default function AddJob() {
     return document_list;
   }
 
-  async function startStripeCheckout(payload, amountInCents) {
-    const success_url = `${window.location.origin}/add-job?payment=success&session_id={CHECKOUT_SESSION_ID}`;
-    const cancel_url = `${window.location.origin}/add-job?payment=cancelled`;
+  /**
+   * Called by PaymentModal after card tokenization to hold payment in backend.
+   */
+  async function handleHoldPayment({
+    paymentMethodId,
+    cardHolderName,
+    savedCard,
+    savedCardIndex,
+  }) {
+    if (!pendingDraft?.payload) {
+      return {
+        success: false,
+        message: "Missing job draft. Please review and try again.",
+      };
+    }
 
-    const checkoutPayload = {
+    const amountInCents = Math.round(Number(pendingDraft.amountAud) * 100);
+
+    const holdBody = {
+      start: pendingDraft.payload.startTime,
+      end: pendingDraft.payload.endTime,
+      site_id: form.site_id || null,
+      user_id: pendingDraft.payload.user_id,
+      card_holder_name: cardHolderName || savedCard?.card_holder_name || "",
+      payment_method_id:
+        paymentMethodId || savedCard?.payment_method_id || null,
+      use_saved_card: Boolean(savedCard),
+      saved_card_index:
+        typeof savedCardIndex === "number" ? savedCardIndex : null,
+      saved_card: savedCard || null,
       amount: amountInCents,
       currency: "aud",
-      title: form.title || "Job posting",
-      metadata: {
-        flow: "job_post",
-        user_id: String(payload.user_id || ""),
-      },
-      success_url,
-      cancel_url,
     };
 
-    const checkoutRes = await submitJob(
-      "api/stripe/create-job-checkout-session",
-      checkoutPayload,
-      {
-        method: "POST",
-      },
-    );
+    const holdRes = await submitJob("api/payment/hold", holdBody, {
+      method: "POST",
+    });
 
-    if (checkoutRes === undefined) return false;
-
-    const checkoutUrl =
-      checkoutRes?.data?.url ||
-      checkoutRes?.data?.checkout_url ||
-      checkoutRes?.url ||
-      checkoutRes?.checkout_url;
-
-    if (!checkoutRes?.success || !checkoutUrl) {
-      toast.error(checkoutRes?.message || "Unable to start Stripe checkout");
-      return false;
+    if (holdRes === undefined) {
+      return {
+        success: false,
+        message: "Unable to process payment hold. Please try again.",
+      };
     }
 
-    window.location.assign(checkoutUrl);
-    return true;
+    if (!holdRes?.success) {
+      return {
+        success: false,
+        message: holdRes?.message || "Payment hold failed.",
+      };
+    }
+
+    return {
+      success: true,
+      message: holdRes?.message,
+      data: holdRes?.data || holdRes,
+      paymentBreakdown:
+        holdRes?.payment_breakdown || holdRes?.data?.payment_breakdown || null,
+    };
   }
 
-  useEffect(() => {
-    const params = new URLSearchParams(location.search);
-    const paymentState = params.get("payment");
-    const sessionId = params.get("session_id");
-
-    if (paymentState === "cancelled") {
-      toast.error("Payment was cancelled. Job has not been posted.");
-      navigate("/add-job", { replace: true });
+  /**
+   * Called by PaymentModal after Stripe confirms the card payment.
+   * Verifies with backend then posts the job.
+   */
+  async function handlePaymentSuccess(holdResult) {
+    if (!pendingDraft?.payload) {
+      toast.error("Missing job draft. Please create the job again.");
       return;
     }
 
-    if (paymentState !== "success") return;
-    if (!sessionId) {
-      toast.error("Payment session missing. Job has not been posted.");
-      navigate("/add-job", { replace: true });
-      return;
-    }
-    if (handledPaymentRef.current === sessionId) return;
+    setPaymentModalOpen(false);
+    setPostingJob(true);
 
-    handledPaymentRef.current = sessionId;
+    try {
+      const paymentBreakdown =
+        holdResult?.paymentBreakdown || holdResult?.data?.payment_breakdown;
+      const paymentIntentId =
+        paymentBreakdown?.stripe?.payment_intent_id ||
+        holdResult?.data?.payment_intent_id ||
+        holdResult?.data?.stripe_payment_intent_id ||
+        null;
 
-    const finalizePaidJob = async () => {
-      setVerifyingPayment(true);
-      try {
-        const draftRaw = sessionStorage.getItem(JOB_PAYMENT_DRAFT_KEY);
-        if (!draftRaw) {
-          toast.error(
-            "No pending job draft found. Please create the job again.",
-          );
-          navigate("/add-job", { replace: true });
-          return;
-        }
+      const payloadToPost = {
+        ...pendingDraft.payload,
+        payment_intent_id: paymentIntentId,
+      };
 
-        const draft = JSON.parse(draftRaw);
-        const verifyRes = await submitJob(
-          "api/stripe/verify-job-checkout",
-          {
-            session_id: sessionId,
-            amount: draft.amount,
-            currency: "aud",
-          },
-          { method: "POST" },
+      const postRes = await submitJob("api/job-post", payloadToPost, {
+        method: "POST",
+      });
+
+      if (postRes === undefined) return;
+
+      if (postRes?.success) {
+        setPendingDraft(null);
+        toast.success("Payment held and job posted successfully!");
+        navigate("/my-job-applications");
+      } else {
+        toast.error(
+          postRes?.message || "Payment hold succeeded but job posting failed.",
         );
-
-        if (verifyRes === undefined) return;
-
-        const paid = Boolean(
-          verifyRes?.data?.paid ?? verifyRes?.paid ?? verifyRes?.success,
-        );
-
-        if (!verifyRes?.success || !paid) {
-          toast.error(
-            verifyRes?.message ||
-              "Payment verification failed. Job not posted.",
-          );
-          navigate("/add-job", { replace: true });
-          return;
-        }
-
-        const postRes = await submitJob("api/job-post", draft.payload, {
-          method: "POST",
-        });
-
-        if (postRes === undefined) return;
-
-        if (postRes?.success) {
-          sessionStorage.removeItem(JOB_PAYMENT_DRAFT_KEY);
-          toast.success("Payment received and job posted successfully!");
-          navigate("/my-job-applications", { replace: true });
-        } else {
-          toast.error(
-            postRes?.message || "Payment captured, but job posting failed",
-          );
-          navigate("/add-job", { replace: true });
-        }
-      } catch (err) {
-        toast.error(err.message || "Failed to verify payment");
-        navigate("/add-job", { replace: true });
-      } finally {
-        setVerifyingPayment(false);
       }
-    };
-
-    finalizePaidJob();
-  }, [location.search, navigate, submitJob]);
+    } catch (err) {
+      toast.error(err.message || "Failed to post job after payment hold.");
+    } finally {
+      setPostingJob(false);
+    }
+  }
 
   async function handleConfirm(e) {
     e.preventDefault();
@@ -422,151 +422,178 @@ export default function AddJob() {
       const document_list = await uploadAllAttachments();
       const payload = buildJobPayload(document_list);
 
-      const amountInCents = Math.round(
-        Number(breakdown.chargeTotalIncGst) * 100,
-      );
-      if (!Number.isFinite(amountInCents) || amountInCents <= 0) {
-        toast.error("Invalid payment amount. Job has not been posted.");
+      const amountAud = Number(breakdown.chargeTotalIncGst);
+      if (!Number.isFinite(amountAud) || amountAud <= 0) {
+        toast.error("Invalid payment amount. Please check the schedule.");
         return;
       }
 
-      sessionStorage.setItem(
-        JOB_PAYMENT_DRAFT_KEY,
-        JSON.stringify({
-          payload,
-          amount: amountInCents,
-        }),
-      );
-
-      const started = await startStripeCheckout(payload, amountInCents);
-      if (!started) {
-        sessionStorage.removeItem(JOB_PAYMENT_DRAFT_KEY);
-      }
+      setPendingDraft({ payload, amountAud });
+      setPaymentModalOpen(true);
     } catch (err) {
       toast.error(err.message || "Failed to post job");
     }
   }
 
   return (
-    <div className="dashboard-main">
-      <div className="dashboard-page-header mb-1">
-        <div>
-          <h1 className="h4">Create Job</h1>
-          <p className="text-muted mb-0">Follow the steps to add a new job</p>
+    <>
+      <div className="dashboard-main">
+        <div className="dashboard-page-header mb-1">
+          <div>
+            <h1 className="h4">Create Job</h1>
+            <p className="text-muted mb-0">Follow the steps to add a new job</p>
+          </div>
         </div>
-      </div>
 
-      {isAdmin && (
-        <div className="card shadow-sm">
-          <div className="card-body">
-            <div className="row align-items-center g-3">
-              <div className="col-auto">
-                <span className="fw-semibold text-dark">
-                  <i className="fa fa-user-tie me-2 text-primary" />
-                  Post on behalf of Contractor
-                </span>
-              </div>
-              <div className="col">
-                <select
-                  className="form-select"
-                  value={selectedContractorId}
-                  onChange={(e) => setSelectedContractorId(e.target.value)}
-                >
-                  <option value="">-- Select a Contractor --</option>
-                  {contractorsList.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name || c.email}
-                      {c.contractor?.company_name
-                        ? ` — ${c.contractor.company_name}`
-                        : ""}
-                    </option>
-                  ))}
-                </select>
+        {isAdmin && (
+          <div className="card shadow-sm">
+            <div className="card-body">
+              <div className="row align-items-center g-3">
+                <div className="col-auto">
+                  <span className="fw-semibold text-dark">
+                    <i className="fa fa-user-tie me-2 text-primary" />
+                    Post on behalf of Contractor
+                  </span>
+                </div>
+                <div className="col">
+                  <select
+                    className="form-select"
+                    value={selectedContractorId}
+                    onChange={(e) => setSelectedContractorId(e.target.value)}
+                  >
+                    <option value="">-- Select a Contractor --</option>
+                    {contractorsList.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name || c.email}
+                        {c.contractor?.company_name
+                          ? ` — ${c.contractor.company_name}`
+                          : ""}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
 
-      <div className="card shadow-sm list-card mt-4">
-        <div className="card-body">
-          {ratesLoading ? (
-            <div className="d-flex justify-content-center align-items-center py-5">
-              <span
-                className="spinner-border text-primary me-3"
-                role="status"
-                aria-hidden="true"
-              />
-              <span className="text-muted">Loading rates, please wait…</span>
-            </div>
-          ) : (
-            <>
-              <StepProgress step={step} titles={STEP_TITLES} />
-              <form onSubmit={handleConfirm}>
-                {step === 0 && (
-                  <LocationStep
-                    form={form}
-                    setField={setField}
-                    resolvingLocation={resolvingLocation}
-                    setResolvingLocation={setResolvingLocation}
-                    locationError={locationError}
-                    setLocationError={setLocationError}
-                  />
-                )}
-                {step === 1 && (
-                  <ScheduleStep
-                    form={form}
-                    setField={setField}
-                    scheduleError={scheduleError}
-                  />
-                )}
-                {step === 2 && (
-                  <DetailsStep
-                    form={form}
-                    setField={setField}
-                    handleFile={handleFile}
-                    attachmentPreviews={attachmentPreviews}
-                    removeAttachment={removeAttachment}
-                  />
-                )}
-                {step === 3 && <TasksStep form={form} setField={setField} />}
-                {step === 4 && (
-                  <ReviewStep
-                    form={form}
-                    rate={breakdown}
-                    setStep={setStep}
-                    setField={setField}
-                    handleConfirm={handleConfirm}
-                    isSubmitting={isSubmitting || verifyingPayment}
-                    paymentAmount={breakdown?.chargeTotalIncGst || 0}
-                  />
-                )}
+        <div className="card shadow-sm list-card mt-4">
+          <div className="card-body">
+            {ratesLoading ? (
+              <div className="d-flex justify-content-center align-items-center py-5">
+                <span
+                  className="spinner-border text-primary me-3"
+                  role="status"
+                  aria-hidden="true"
+                />
+                <span className="text-muted">Loading rates, please wait…</span>
+              </div>
+            ) : (
+              <>
+                <StepProgress step={step} titles={STEP_TITLES} />
+                <form onSubmit={handleConfirm}>
+                  {step === 0 && (
+                    <LocationStep
+                      form={form}
+                      setField={setField}
+                      resolvingLocation={resolvingLocation}
+                      setResolvingLocation={setResolvingLocation}
+                      locationError={locationError}
+                      setLocationError={setLocationError}
+                    />
+                  )}
+                  {step === 1 && (
+                    <ScheduleStep
+                      form={form}
+                      setField={setField}
+                      scheduleError={scheduleError}
+                    />
+                  )}
+                  {step === 2 && (
+                    <DetailsStep
+                      form={form}
+                      setField={setField}
+                      handleFile={handleFile}
+                      attachmentPreviews={attachmentPreviews}
+                      removeAttachment={removeAttachment}
+                    />
+                  )}
+                  {step === 3 && <TasksStep form={form} setField={setField} />}
+                  {step === 4 && (
+                    <ReviewStep
+                      form={form}
+                      rate={breakdown}
+                      setStep={setStep}
+                      setField={setField}
+                      handleConfirm={handleConfirm}
+                      isSubmitting={isSubmitting || postingJob}
+                      paymentAmount={breakdown?.chargeTotalIncGst || 0}
+                    />
+                  )}
 
-                <div className="d-flex justify-content-between align-items-center mt-4">
-                  <button
-                    type="button"
-                    className="btn btn-outline-secondary"
-                    onClick={back}
-                    disabled={isSubmitting}
-                  >
-                    ← Back
-                  </button>
-                  {step < STEP_TITLES.length - 1 && (
+                  <div className="d-flex justify-content-between align-items-center mt-4">
                     <button
                       type="button"
-                      className="btn btn-primary btn-lg rounded-pill px-4"
-                      onClick={next}
+                      className="btn btn-outline-secondary"
+                      onClick={back}
                       disabled={isSubmitting}
                     >
-                      Next
+                      ← Back
                     </button>
-                  )}
-                </div>
-              </form>
-            </>
-          )}
+                    {step < STEP_TITLES.length - 1 && (
+                      <button
+                        type="button"
+                        className="btn btn-primary btn-lg rounded-pill px-4"
+                        onClick={next}
+                        disabled={isSubmitting}
+                      >
+                        Next
+                      </button>
+                    )}
+                  </div>
+                </form>
+              </>
+            )}
+          </div>
         </div>
       </div>
-    </div>
+
+      {/* Inline Stripe payment modal */}
+      <PaymentModal
+        open={paymentModalOpen}
+        onClose={() => !postingJob && setPaymentModalOpen(false)}
+        amountAud={pendingDraft?.amountAud || 0}
+        jobTitle={form.title}
+        onHoldPayment={handleHoldPayment}
+        onSuccess={handlePaymentSuccess}
+        savedCards={savedCards}
+      />
+
+      {/* Full-screen overlay while posting job after payment */}
+      {postingJob && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.55)",
+            zIndex: 1060,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            color: "#fff",
+            gap: 16,
+          }}
+        >
+          <span
+            className="spinner-border"
+            role="status"
+            aria-hidden="true"
+            style={{ width: 48, height: 48 }}
+          />
+          <span className="fw-semibold fs-5">Posting your job…</span>
+        </div>
+      )}
+    </>
   );
 }

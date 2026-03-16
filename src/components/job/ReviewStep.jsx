@@ -86,8 +86,7 @@ export default function ReviewStep({
         style={{ background: "#fff" }}
       >
         <div className="alert alert-info py-2 px-3 mb-3" role="alert">
-          <strong>Payment required:</strong> You will be redirected to Stripe to
-          pay{" "}
+          <strong>Payment required:</strong> A secure card payment of{" "}
           <strong>
             {new Intl.NumberFormat("en-AU", {
               style: "currency",
@@ -95,7 +94,8 @@ export default function ReviewStep({
               maximumFractionDigits: 2,
             }).format(Number(paymentAmount) || 0)}
           </strong>{" "}
-          before this job is posted.
+          is required to post this job. You will enter card details in a secure
+          Stripe form on this page.
         </div>
         <h6>Terms & Conditions</h6>
         <p className="text-muted small">

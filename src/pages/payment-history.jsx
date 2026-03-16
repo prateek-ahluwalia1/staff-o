@@ -1,4 +1,6 @@
 import React from "react";
+import { useSelector } from "react-redux";
+import { NavLink } from "react-router-dom";
 
 const transactions = [
   {
@@ -36,6 +38,8 @@ const transactions = [
 ];
 
 export default function PaymentHistory() {
+  const { userdata } = useSelector((state) => state.auth);
+  const user_type = userdata?.user_type || userdata?.data?.user_type;
   return (
     <>
       <div className="dashboard-main">
@@ -43,21 +47,18 @@ export default function PaymentHistory() {
           <div>
             <h1>Payment History</h1>
             <p>
-              All package renewals, one-off purchases, and receipts in a single
-              place.
+              All shift payments, transactions, and receipts in a single place.
             </p>
           </div>
 
-          <div className="d-flex flex-wrap gap-2">
-            <a href="/" className="btn btn-outline-primary">
-              <i className="fa-solid fa-download" aria-hidden="true"></i>
-              Export CSV
-            </a>
-            <a href="/" className="btn btn-primary">
-              <i className="fa-solid fa-credit-card" aria-hidden="true"></i>
-              Update card
-            </a>
-          </div>
+          {user_type === "customer" && (
+            <div className="d-flex flex-wrap gap-2">
+              <NavLink to="/edit-profile" className="btn btn-primary">
+                <i className="fa-solid fa-credit-card" aria-hidden="true"></i>
+                Update card
+              </NavLink>
+            </div>
+          )}
         </div>
 
         {/* Recent Transactions */}

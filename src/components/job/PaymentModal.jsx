@@ -42,7 +42,6 @@ function fmt(v) {
   }
 }
 
-/** Inner form — must live inside <Elements> so hooks are available */
 function CardForm({
   amountAud,
   jobTitle,
@@ -118,7 +117,6 @@ function CardForm({
         return;
       }
 
-      // Create PaymentMethod client-side so raw card numbers never touch our backend.
       const { paymentMethod, error } = await stripe.createPaymentMethod({
         type: "card",
         card: cardElement,
@@ -355,19 +353,6 @@ function CardForm({
   );
 }
 
-/**
- * PaymentModal
- *
- * Props:
- *  open            {boolean}
- *  onClose         {() => void}
- *  amountAud       {number}    Amount in AUD dollars (inc. GST)
- *  jobTitle        {string}
- *  onCreateIntent  {(amountAud: number) => Promise<string|null>}
- *                  Must call backend, return Stripe client_secret or null on failure
- *  onSuccess       {(paymentIntentId: string) => void}
- *                  Called after Stripe confirms payment; parent should verify + post job
- */
 export default function PaymentModal({
   open,
   onClose,

@@ -1,7 +1,8 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import { useSelector } from "react-redux";
 import { toast } from "react-toastify";
 import useSubmit from "../hooks/useSubmit";
+import useFetch from "../hooks/useFetch";
 
 const makeLineItem = () => ({ description: "", qty: 1, rate: "" });
 
@@ -11,15 +12,28 @@ const Invoice = () => {
   const isAdmin = userType === "admin";
   const { submit, loading: sending } = useSubmit({ isAuth: true });
 
+  // Fetch customers for the dropdown
+  const { data: customersResponse } = useFetch(
+    "api/admin/get-customers?limit=1000",
+    { isAuth: true },
+  );
+  const customersList = customersResponse?.data?.data || [];
+
   const [invoiceNo, setInvoiceNo] = useState(
     `INV-${new Date().getFullYear()}-${String(Date.now()).slice(-5)}`,
   );
-  const [invoiceMode, setInvoiceMode] = useState("normal");
+
   const [currency, setCurrency] = useState("AUD");
-  const [invoiceDate, setInvoiceDate] = useState(
+
+  // Date range state
+  const [startDate, setStartDate] = useState(
     new Date().toISOString().split("T")[0],
   );
+  const [endDate, setEndDate] = useState("");
   const [dueDate, setDueDate] = useState("");
+
+  const [selectedCustomerId, setSelectedCustomerId] = useState("");
+
   const [from, setFrom] = useState({
     name: "",
     email: "",
@@ -34,17 +48,54 @@ const Invoice = () => {
     abn: "",
     description: "",
   });
+
   const [paymentMethods, setPaymentMethods] = useState({
     bankTransfer: true,
     bpay: false,
   });
+
   const [lateFees, setLateFees] = useState(false);
+  const [lateFeeValue, setLateFeeValue] = useState(0);
   const [includeNotes, setIncludeNotes] = useState(false);
   const [includeGst, setIncludeGst] = useState(true);
   const [gstPercent, setGstPercent] = useState(10);
   const [notes, setNotes] = useState("");
   const [lineItems, setLineItems] = useState([makeLineItem()]);
   const [showPreview, setShowPreview] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
+
+  // Auto-fill "Invoice From" using Redux Userdata
+  useEffect(() => {
+    if (userdata) {
+      const uData = userdata?.data || userdata;
+      setFrom({
+        name: uData?.name || uData?.company_name || "The Scouts",
+        email: uData?.email || "",
+        phone: uData?.phone || "",
+        abn: uData?.registration_number || "",
+        description: "",
+      });
+    }
+  }, [userdata]);
+
+  // Auto-fill "Invoice To" when a customer is selected
+  const handleCustomerChange = (e) => {
+    const id = e.target.value;
+    setSelectedCustomerId(id);
+    const customer = customersList.find((c) => c.id.toString() === id);
+
+    if (customer) {
+      setTo({
+        name: customer.name || "",
+        email: customer.email || "",
+        phone: customer.phone || customer.customer?.phone || "",
+        abn: customer.customer?.registration_number || "",
+        description: "",
+      });
+    } else {
+      setTo({ name: "", email: "", phone: "", abn: "", description: "" });
+    }
+  };
 
   const subtotal = useMemo(
     () =>
@@ -61,10 +112,9 @@ const Invoice = () => {
     return subtotal * ((Number(gstPercent) || 0) / 100);
   }, [includeGst, gstPercent, subtotal]);
 
-  const lateFeeAmount = useMemo(
-    () => (lateFees ? subtotal * 0.015 : 0),
-    [lateFees, subtotal],
-  );
+  const lateFeeAmount = useMemo(() => {
+    return lateFees ? Number(lateFeeValue) || 0 : 0;
+  }, [lateFees, lateFeeValue]);
 
   const grandTotal = subtotal + gstAmount + lateFeeAmount;
 
@@ -95,6 +145,7 @@ const Invoice = () => {
 
   const validateInvoice = () => {
     if (!invoiceNo.trim()) return "Invoice number is required";
+    if (!selectedCustomerId) return "Please select a customer";
     if (!from.name.trim()) return "Invoice from name is required";
     if (!to.name.trim()) return "Invoice to name is required";
     if (!to.email.trim()) return "Invoice recipient email is required";
@@ -104,14 +155,17 @@ const Invoice = () => {
 
   const getPayload = () => ({
     invoice_no: invoiceNo,
-    invoice_mode: invoiceMode,
+    invoice_mode: "normal",
     currency,
-    invoice_date: invoiceDate,
+    start_date: startDate,
+    end_date: endDate,
     due_date: dueDate,
+    customer_id: selectedCustomerId,
     from,
     to,
     payment_methods: paymentMethods,
     include_late_fees: lateFees,
+    late_fee_amount: lateFeeAmount,
     include_notes: includeNotes,
     include_gst: includeGst,
     gst_percent: Number(gstPercent) || 0,
@@ -124,6 +178,44 @@ const Invoice = () => {
       total: grandTotal,
     },
   });
+
+  // Action for the Search Details button
+  const handleSearch = async () => {
+    if (!selectedCustomerId) {
+      toast.error("Please select a customer first.");
+      return;
+    }
+    if (!startDate || !endDate) {
+      toast.error("Please select a full date range.");
+      return;
+    }
+
+    setIsSearching(true);
+    try {
+      const res = await submit(
+        "api/invoice/search-details",
+        {
+          customer_id: selectedCustomerId,
+          start_date: startDate,
+          end_date: endDate,
+        },
+        { method: "POST" },
+      );
+
+      if (res?.success) {
+        toast.success("Details fetched successfully!");
+        if (res?.data?.items && res.data.items.length > 0) {
+          setLineItems(res.data.items);
+        }
+      } else {
+        toast.info("Ready to build invoice. Please enter details.");
+      }
+    } catch (err) {
+      toast.error(err.message || "Failed to search API.");
+    } finally {
+      setIsSearching(false);
+    }
+  };
 
   const handlePreview = () => {
     const error = validateInvoice();
@@ -174,8 +266,8 @@ const Invoice = () => {
         </head>
         <body>
           <h1>Invoice ${invoiceNo}</h1>
-          <div class="muted">Mode: ${invoiceMode === "normal" ? "Normal" : "Detailed"} | Currency: ${currency}</div>
-          <div class="muted">Invoice Date: ${invoiceDate || "-"} | Due Date: ${dueDate || "-"}</div>
+          <div class="muted">Currency: ${currency}</div>
+          <div class="muted">Period: ${startDate || "-"} to ${endDate || "-"} | Due Date: ${dueDate || "-"}</div>
 
           <h3>Invoice From</h3>
           <div>${from.name || "-"}</div>
@@ -256,16 +348,14 @@ const Invoice = () => {
             className="btn btn-outline-primary"
             onClick={handlePreview}
           >
-            <i className="fa-solid fa-eye me-2"></i>
-            Preview
+            <i className="fa-solid fa-eye me-2"></i> Preview
           </button>
           <button
             type="button"
             className="btn btn-outline-primary"
             onClick={handleDownload}
           >
-            <i className="fa-solid fa-download me-2"></i>
-            Download
+            <i className="fa-solid fa-download me-2"></i> Download
           </button>
           <button
             type="button"
@@ -275,13 +365,11 @@ const Invoice = () => {
           >
             {sending ? (
               <>
-                <i className="fa fa-spinner fa-spin me-2"></i>
-                Sending...
+                <i className="fa fa-spinner fa-spin me-2"></i> Sending...
               </>
             ) : (
               <>
-                <i className="fa-solid fa-paper-plane me-2"></i>
-                Send Invoice
+                <i className="fa-solid fa-paper-plane me-2"></i> Send Invoice
               </>
             )}
           </button>
@@ -290,32 +378,69 @@ const Invoice = () => {
 
       <div className="invoice-layout mt-4">
         <div className="list-card">
-          <div className="invoice-toolbar row g-3 mb-3">
-            <div className="col-lg-4">
-              <label className="form-label">Invoice #</label>
-              <input
-                className="form-control"
-                value={invoiceNo}
-                onChange={(e) => setInvoiceNo(e.target.value)}
-              />
+          {/* Top Selection Toolbar */}
+          <div className="invoice-toolbar d-flex flex-wrap align-items-end gap-3 mb-4 pb-4 border-bottom">
+            {/* Customer Dropdown */}
+            <div className="flex-grow-1" style={{ maxWidth: "300px" }}>
+              <label className="form-label text-muted small fw-bold text-uppercase mb-1">
+                Select Customer
+              </label>
+              <select
+                className="form-select shadow-sm"
+                value={selectedCustomerId}
+                onChange={handleCustomerChange}
+              >
+                <option value="">-- Choose Customer --</option>
+                {customersList.map((customer) => (
+                  <option key={customer.id} value={customer.id}>
+                    {customer.id} - {customer.name}
+                  </option>
+                ))}
+              </select>
             </div>
-            <div className="col-lg-4">
-              <label className="form-label">Invoice Date</label>
-              <input
-                type="date"
-                className="form-control"
-                value={invoiceDate}
-                onChange={(e) => setInvoiceDate(e.target.value)}
-              />
+
+            {/* Date Range */}
+            <div className="flex-grow-1" style={{ maxWidth: "400px" }}>
+              <label className="form-label text-muted small fw-bold text-uppercase mb-1">
+                Date Range
+              </label>
+              <div className="d-flex align-items-center gap-2">
+                <input
+                  type="date"
+                  className="form-control shadow-sm"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                />
+                <span className="text-muted fw-bold px-1">to</span>
+                <input
+                  type="date"
+                  className="form-control shadow-sm"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                />
+              </div>
             </div>
-            <div className="col-lg-4">
-              <label className="form-label">Due Date</label>
-              <input
-                type="date"
-                className="form-control"
-                value={dueDate}
-                onChange={(e) => setDueDate(e.target.value)}
-              />
+
+            {/* Search Button (Pushed to the right) */}
+            <div className="ms-auto">
+              <button
+                type="button"
+                className="btn text-white px-4 py-2 shadow-sm d-flex align-items-center gap-2"
+                style={{
+                  backgroundColor: "#20c997",
+                  borderRadius: "8px",
+                  fontWeight: "600",
+                }}
+                onClick={handleSearch}
+                disabled={isSearching}
+              >
+                {isSearching ? (
+                  <i className="fa fa-spinner fa-spin"></i>
+                ) : (
+                  <i className="fa-solid fa-magnifying-glass"></i>
+                )}
+                Search Details
+              </button>
             </div>
           </div>
 
@@ -426,8 +551,7 @@ const Invoice = () => {
                 className="btn btn-outline-primary btn-sm"
                 onClick={addLineItem}
               >
-                <i className="fa-solid fa-plus me-2"></i>
-                Add Item
+                <i className="fa-solid fa-plus me-2"></i> Add Item
               </button>
             </div>
 
@@ -505,6 +629,25 @@ const Invoice = () => {
           <h3>Invoice Settings</h3>
 
           <div className="mb-3">
+            <label className="form-label">Invoice #</label>
+            <input
+              className="form-control"
+              value={invoiceNo}
+              onChange={(e) => setInvoiceNo(e.target.value)}
+            />
+          </div>
+
+          <div className="mb-3">
+            <label className="form-label">Due Date</label>
+            <input
+              type="date"
+              className="form-control"
+              value={dueDate}
+              onChange={(e) => setDueDate(e.target.value)}
+            />
+          </div>
+
+          <div className="mb-3">
             <label className="form-label">Currency</label>
             <select
               className="form-select"
@@ -515,28 +658,6 @@ const Invoice = () => {
               <option value="USD">USD</option>
               <option value="NZD">NZD</option>
             </select>
-          </div>
-
-          <div className="mb-3">
-            <label className="form-label d-block">Invoice Type</label>
-            <div className="d-flex flex-column gap-2">
-              <label className="invoice-radio">
-                <input
-                  type="radio"
-                  checked={invoiceMode === "normal"}
-                  onChange={() => setInvoiceMode("normal")}
-                />
-                <span>Normal Invoice</span>
-              </label>
-              <label className="invoice-radio">
-                <input
-                  type="radio"
-                  checked={invoiceMode === "detailed"}
-                  onChange={() => setInvoiceMode("detailed")}
-                />
-                <span>Detailed Invoice</span>
-              </label>
-            </div>
           </div>
 
           <div className="mb-3">
@@ -572,6 +693,19 @@ const Invoice = () => {
               <span className="toggle-slider"></span>
             </label>
           </div>
+
+          {lateFees && (
+            <div className="mb-3 mt-2">
+              <input
+                type="number"
+                className="form-control"
+                placeholder="Late Fee Amount"
+                value={lateFeeValue}
+                min="0"
+                onChange={(e) => setLateFeeValue(e.target.value)}
+              />
+            </div>
+          )}
 
           <div className="invoice-toggle-row">
             <span>Notes</span>

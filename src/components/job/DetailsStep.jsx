@@ -22,6 +22,26 @@ export default function DetailsStep({
     "cpr",
   ];
 
+  const JOB_TYPE_OPTIONS = [
+    { value: "", label: "Select type" },
+    { label: "Security License", value: "security_license" },
+    { label: "MISC Time License", value: "misc_time_license" },
+    { label: "Working With Children", value: "working_with_children" },
+    { label: "First Aid", value: "first_aid" },
+    { label: "CPR", value: "cpr" },
+    { label: "White Card", value: "white_card" },
+    { label: "Traffic Controller", value: "traffic_controller" },
+    { label: "Others", value: "others" },
+  ];
+
+  // Helper to find the correct label for the selected job type
+  const selectedJobTypeOption = form.jobType
+    ? JOB_TYPE_OPTIONS.find((opt) => opt.value === form.jobType) || {
+        value: form.jobType,
+        label: form.jobType,
+      }
+    : null;
+
   return (
     <div className="mb-4">
       <h5 className="mb-2">Details</h5>
@@ -81,20 +101,32 @@ export default function DetailsStep({
         <div className="col-md-3">
           <label className="form-label">Job Type</label>
           <Select
-            options={[
-              { value: "", label: "Select type" },
-              { value: "site-patrol", label: "Site Patrol Security" },
-              { value: "event", label: "Event Security" },
-            ]}
-            value={
-              form.jobType ? { value: form.jobType, label: form.jobType } : null
-            }
-            onChange={(opt) =>
-              setField("jobType", opt && opt.value ? opt.value : "")
-            }
+            options={JOB_TYPE_OPTIONS}
+            value={selectedJobTypeOption}
+            onChange={(opt) => {
+              setField("jobType", opt && opt.value ? opt.value : "");
+              // Clear custom input if they switch away from "others"
+              if (opt?.value !== "others") {
+                setField("customJobType", "");
+              }
+            }}
             isClearable
             classNamePrefix="react-select"
           />
+          {/* Custom Job Type Input when "Others" is selected */}
+          {form.jobType === "others" && (
+            <div className="mt-2">
+              <input
+                type="text"
+                name="customJobType"
+                value={form.customJobType || ""}
+                onChange={(e) => setField("customJobType", e.target.value)}
+                className="form-control"
+                placeholder="Enter custom job type"
+                required
+              />
+            </div>
+          )}
         </div>
       </div>
 
@@ -114,7 +146,9 @@ export default function DetailsStep({
         <div className="mb-2">
           <button
             type="button"
-            className={`btn ${form.document ? "btn-primary" : "btn-outline-primary"}`}
+            className={`btn ${
+              form.document ? "btn-primary" : "btn-outline-primary"
+            }`}
             onClick={() => setField("document", !form.document)}
             aria-pressed={Boolean(form.document)}
           >
@@ -169,6 +203,7 @@ export default function DetailsStep({
         <label
           htmlFor="attachments-input"
           className="d-flex align-items-center gap-3 p-3 rounded border bg-white"
+          style={{ cursor: "pointer" }}
         >
           <i
             className="fa-solid fa-cloud-arrow-up fa-lg text-secondary"

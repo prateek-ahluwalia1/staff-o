@@ -44,11 +44,19 @@ export default function Login() {
 
   // Google Login Handler
   const handleGoogleLogin = useGoogleLogin({
+    flow: "implicit",
     onSuccess: async (tokenResponse) => {
+      console.log("Google login successful, token response:", tokenResponse);
       try {
-        // Send the Google access token to your Laravel backend
-        const res = await submit("api/auth/google", {
-          token: tokenResponse.access_token,
+        const googleToken = tokenResponse?.access_token || tokenResponse?.code;
+
+        if (!googleToken) {
+          toast.error("Google login response was invalid. Please try again.");
+          return;
+        }
+
+        const res = await submit("api/auth/google/callback", {
+          credential: googleToken,
         });
 
         if (!res) return;
@@ -69,6 +77,9 @@ export default function Login() {
     },
     onError: () => {
       toast.error("Google Login Failed. Please try again.");
+    },
+    onNonOAuthError: () => {
+      toast.error("Google popup was blocked or closed. Please try again.");
     },
   });
 

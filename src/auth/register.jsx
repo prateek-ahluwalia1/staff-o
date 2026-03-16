@@ -4,11 +4,16 @@ import { useDispatch } from "react-redux";
 import { setToken, setUser } from "../store/slices/authSlice";
 import useSubmit from "../hooks/useSubmit";
 import { toast } from "react-toastify";
+import { useGoogleLogin } from "@react-oauth/google";
 
 export default function Register() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const { submit, loading } = useSubmit();
+
+  // Track which user type is currently selected for Google Registration
+  const [userType, setUserType] = useState("contractor");
+
   // Staff state
   const [staffForm, setStaffForm] = useState({
     name: "",
@@ -41,62 +46,93 @@ export default function Register() {
     city: "",
   });
 
-  const handleStaffChange = (e) => {
+  const handleStaffChange = (e) =>
     setStaffForm({ ...staffForm, [e.target.name]: e.target.value });
-  };
-
-  const handleCustomerChange = (e) => {
+  const handleCustomerChange = (e) =>
     setCustomerForm({ ...customerForm, [e.target.name]: e.target.value });
-  };
-
-  const handleSubContractorChange = (e) => {
+  const handleSubContractorChange = (e) =>
     setSubContractorForm({
       ...subContractorForm,
       [e.target.name]: e.target.value,
     });
-  };
 
+  // Standard Form Submissions
   const handleStaffSubmit = async (e) => {
     e.preventDefault();
     const res = await submit("api/register/staff", staffForm);
     if (!res) return;
-    if (res.token) {
-      dispatch(setToken({ token: res.token }));
-      dispatch(setUser({ userdata: res.user }));
-      toast.success("Staff Registration successful!");
-      navigate("/edit-profile");
-    } else {
-      toast.error(res.message || "Registration failed. Please try again.");
-    }
+    handleSuccess(res, "Staff Registration successful!");
   };
 
   const handleCustomerSubmit = async (e) => {
     e.preventDefault();
     const res = await submit("api/register/customer", customerForm);
     if (!res) return;
-    if (res.token) {
-      dispatch(setToken({ token: res.token }));
-      dispatch(setUser({ userdata: res.user }));
-      toast.success("Customer Registration successful!");
-      navigate("/edit-profile");
-    } else {
-      toast.error(res.message || "Registration failed. Please try again.");
-    }
+    handleSuccess(res, "Customer Registration successful!");
   };
 
   const handleSubContractorSubmit = async (e) => {
     e.preventDefault();
     const res = await submit("api/register/contractor", subContractorForm);
     if (!res) return;
+    handleSuccess(res, "Sub Contractor Registration successful!");
+  };
+
+  // Helper to handle successful standard registration
+  const handleSuccess = (res, successMessage) => {
     if (res.token) {
       dispatch(setToken({ token: res.token }));
       dispatch(setUser({ userdata: res.user }));
-      toast.success("Sub Contractor Registration successful!");
+      toast.success(successMessage);
       navigate("/edit-profile");
     } else {
       toast.error(res.message || "Registration failed. Please try again.");
     }
   };
+
+  // Google Registration Handler
+  const handleGoogleRegister = useGoogleLogin({
+    flow: "implicit",
+    onSuccess: async (tokenResponse) => {
+      try {
+        const googleToken = tokenResponse?.access_token || tokenResponse?.code;
+
+        if (!googleToken) {
+          toast.error(
+            "Google registration response was invalid. Please try again.",
+          );
+          return;
+        }
+
+        // Send both the credential AND the selected user_type to the backend
+        const res = await submit("api/auth/google/callback", {
+          credential: googleToken,
+          user_type: userType,
+        });
+
+        if (!res) return;
+
+        if (res.token) {
+          dispatch(setToken({ token: res.token }));
+          dispatch(setUser({ userdata: res.user }));
+          // Format the userType to have a capital first letter for the toast
+          const formattedType =
+            userType.charAt(0).toUpperCase() + userType.slice(1);
+          toast.success(`${formattedType} Google Registration successful!`);
+          navigate("/edit-profile");
+        } else {
+          toast.error(
+            res.message || "Google Registration failed on the server.",
+          );
+        }
+      } catch (error) {
+        toast.error("An error occurred connecting to the server.");
+      }
+    },
+    onError: () => toast.error("Google Registration Failed. Please try again."),
+    onNonOAuthError: () =>
+      toast.error("Google popup was blocked or closed. Please try again."),
+  });
 
   return (
     <section className="auth-section auth-signup">
@@ -116,16 +152,16 @@ export default function Register() {
               </p>
               <ul className="auth-benefits">
                 <li>
-                  <i className="fa-solid fa-check-circle"></i>
-                  Access curated jobs from verified companies
+                  <i className="fa-solid fa-check-circle"></i> Access curated
+                  jobs from verified companies
                 </li>
                 <li>
-                  <i className="fa-solid fa-check-circle"></i>
-                  Showcase your portfolio and skill badges
+                  <i className="fa-solid fa-check-circle"></i> Showcase your
+                  portfolio and skill badges
                 </li>
                 <li>
-                  <i className="fa-solid fa-check-circle"></i>
-                  Collaborate with hiring teams in real time
+                  <i className="fa-solid fa-check-circle"></i> Collaborate with
+                  hiring teams in real time
                 </li>
               </ul>
             </div>
@@ -141,7 +177,7 @@ export default function Register() {
 
               {/* Tabs: Staff / Customer / Sub Contractor */}
               <div
-                className="auth-toggle nav nav-pills"
+                className="auth-toggle nav nav-pills mb-4"
                 id="registerTab"
                 role="tablist"
               >
@@ -152,8 +188,7 @@ export default function Register() {
                   data-bs-target="#registerStaff"
                   type="button"
                   role="tab"
-                  aria-controls="registerStaff"
-                  aria-selected="false"
+                  onClick={() => setUserType("staff")}
                 >
                   Staff
                 </button>
@@ -164,8 +199,7 @@ export default function Register() {
                   data-bs-target="#registerCustomer"
                   type="button"
                   role="tab"
-                  aria-controls="registerCustomer"
-                  aria-selected="false"
+                  onClick={() => setUserType("customer")}
                 >
                   Customer
                 </button>
@@ -176,12 +210,30 @@ export default function Register() {
                   data-bs-target="#registerCandidate"
                   type="button"
                   role="tab"
-                  aria-controls="registerCandidate"
-                  aria-selected="true"
                   style={{ fontSize: "12px", fontWeight: "500" }}
+                  onClick={() => setUserType("contractor")}
                 >
                   Sub Contractor
                 </button>
+              </div>
+
+              {/* Google Registration Button (Dynamic text based on selected tab) */}
+              <div className="auth-social">
+                <button
+                  type="button"
+                  onClick={() => handleGoogleRegister()}
+                  className="auth-social-btn google"
+                  disabled={loading}
+                >
+                  <i className="fa-brands fa-google"></i>{" "}
+                  {loading
+                    ? "Please wait..."
+                    : `Sign up as ${userType.charAt(0).toUpperCase() + userType.slice(1)} with Google`}
+                </button>
+              </div>
+
+              <div className="auth-divider">
+                <span>or fill details manually</span>
               </div>
 
               {/* Tab content */}
@@ -191,80 +243,62 @@ export default function Register() {
                   className="tab-pane fade"
                   id="registerStaff"
                   role="tabpanel"
-                  aria-labelledby="staff-tab"
                 >
                   <form className="auth-form" onSubmit={handleStaffSubmit}>
                     <div className="row g-3">
                       <div className="col-sm-12">
-                        <label htmlFor="staffName" className="form-label">
-                          Name
-                        </label>
+                        <label className="form-label">Name</label>
                         <input
                           type="text"
                           className="form-control"
-                          id="staffName"
                           name="name"
                           value={staffForm.name}
                           onChange={handleStaffChange}
                           placeholder="John Doe"
+                          required
                         />
                       </div>
                       <div className="col-sm-12">
-                        <label htmlFor="staffEmail" className="form-label">
-                          Email address
-                        </label>
+                        <label className="form-label">Email address</label>
                         <input
                           type="email"
                           className="form-control"
-                          id="staffEmail"
                           name="email"
                           value={staffForm.email}
                           onChange={handleStaffChange}
                           placeholder="name@email.com"
+                          required
                         />
                       </div>
                       <div className="col-sm-6">
-                        <label htmlFor="staffPassword" className="form-label">
-                          Password
-                        </label>
+                        <label className="form-label">Password</label>
                         <input
                           type="password"
                           className="form-control"
-                          id="staffPassword"
                           name="password"
                           value={staffForm.password}
                           onChange={handleStaffChange}
                           placeholder="Create a password"
+                          required
                         />
                       </div>
                       <div className="col-sm-6">
-                        <label
-                          htmlFor="staffPasswordConfirmation"
-                          className="form-label"
-                        >
-                          Confirm Password
-                        </label>
+                        <label className="form-label">Confirm Password</label>
                         <input
                           type="password"
                           className="form-control"
-                          id="staffPasswordConfirmation"
                           name="password_confirmation"
                           value={staffForm.password_confirmation}
                           onChange={handleStaffChange}
                           placeholder="Confirm password"
+                          required
                         />
                       </div>
                       <div className="col-sm-12">
-                        <label
-                          htmlFor="staffCompanyName"
-                          className="form-label"
-                        >
-                          Company name
-                        </label>
+                        <label className="form-label">Company name</label>
                         <input
                           type="text"
                           className="form-control"
-                          id="staffCompanyName"
                           name="company_name"
                           value={staffForm.company_name}
                           onChange={handleStaffChange}
@@ -272,13 +306,10 @@ export default function Register() {
                         />
                       </div>
                       <div className="col-sm-6">
-                        <label htmlFor="staffPhone" className="form-label">
-                          Phone
-                        </label>
+                        <label className="form-label">Phone</label>
                         <input
                           type="tel"
                           className="form-control"
-                          id="staffPhone"
                           name="phone"
                           value={staffForm.phone}
                           onChange={handleStaffChange}
@@ -286,13 +317,10 @@ export default function Register() {
                         />
                       </div>
                       <div className="col-sm-6">
-                        <label htmlFor="staffCity" className="form-label">
-                          City
-                        </label>
+                        <label className="form-label">City</label>
                         <input
                           type="text"
                           className="form-control"
-                          id="staffCity"
                           name="city"
                           value={staffForm.city}
                           onChange={handleStaffChange}
@@ -300,26 +328,6 @@ export default function Register() {
                         />
                       </div>
                     </div>
-
-                    <div className="form-check auth-policy mt-4">
-                      <input
-                        className="form-check-input"
-                        type="checkbox"
-                        id="staffPolicy"
-                      />
-                      <label className="form-check-label" htmlFor="staffPolicy">
-                        I accept the{" "}
-                        <NavLink to="/terms" className="auth-link">
-                          Terms
-                        </NavLink>{" "}
-                        and{" "}
-                        <NavLink to="/privacy-policy" className="auth-link">
-                          Privacy Policy
-                        </NavLink>
-                        .
-                      </label>
-                    </div>
-
                     <button
                       type="submit"
                       className="btn btn-primary w-100 mt-4"
@@ -335,80 +343,62 @@ export default function Register() {
                   className="tab-pane fade"
                   id="registerCustomer"
                   role="tabpanel"
-                  aria-labelledby="customer-tab"
                 >
                   <form className="auth-form" onSubmit={handleCustomerSubmit}>
                     <div className="row g-3">
                       <div className="col-sm-12">
-                        <label htmlFor="customerName" className="form-label">
-                          Name
-                        </label>
+                        <label className="form-label">Name</label>
                         <input
                           type="text"
                           className="form-control"
-                          id="customerName"
                           name="name"
                           value={customerForm.name}
                           onChange={handleCustomerChange}
                           placeholder="John Doe"
+                          required
                         />
                       </div>
                       <div className="col-sm-12">
-                        <label htmlFor="customerEmail" className="form-label">
-                          Email address
-                        </label>
+                        <label className="form-label">Email address</label>
                         <input
                           type="email"
                           className="form-control"
-                          id="customerEmail"
                           name="email"
                           value={customerForm.email}
                           onChange={handleCustomerChange}
                           placeholder="name@email.com"
+                          required
                         />
                       </div>
                       <div className="col-sm-6">
-                        <label
-                          htmlFor="customerPassword"
-                          className="form-label"
-                        >
-                          Password
-                        </label>
+                        <label className="form-label">Password</label>
                         <input
                           type="password"
                           className="form-control"
-                          id="customerPassword"
                           name="password"
                           value={customerForm.password}
                           onChange={handleCustomerChange}
                           placeholder="Create a password"
+                          required
                         />
                       </div>
                       <div className="col-sm-6">
-                        <label
-                          htmlFor="customerPasswordConfirmation"
-                          className="form-label"
-                        >
-                          Confirm Password
-                        </label>
+                        <label className="form-label">Confirm Password</label>
                         <input
                           type="password"
                           className="form-control"
-                          id="customerPasswordConfirmation"
                           name="password_confirmation"
                           value={customerForm.password_confirmation}
                           onChange={handleCustomerChange}
                           placeholder="Confirm password"
+                          required
                         />
                       </div>
                       <div className="col-sm-6">
-                        <label htmlFor="customerCity" className="form-label">
-                          City
-                        </label>
+                        <label className="form-label">City</label>
                         <input
                           type="text"
                           className="form-control"
-                          id="customerCity"
                           name="city"
                           value={customerForm.city}
                           onChange={handleCustomerChange}
@@ -416,13 +406,10 @@ export default function Register() {
                         />
                       </div>
                       <div className="col-sm-6">
-                        <label htmlFor="customerPhone" className="form-label">
-                          Phone
-                        </label>
+                        <label className="form-label">Phone</label>
                         <input
                           type="tel"
                           className="form-control"
-                          id="customerPhone"
                           name="phone"
                           value={customerForm.phone}
                           onChange={handleCustomerChange}
@@ -430,29 +417,6 @@ export default function Register() {
                         />
                       </div>
                     </div>
-
-                    <div className="form-check auth-policy mt-4">
-                      <input
-                        className="form-check-input"
-                        type="checkbox"
-                        id="customerPolicy"
-                      />
-                      <label
-                        className="form-check-label"
-                        htmlFor="customerPolicy"
-                      >
-                        I agree to the{" "}
-                        <NavLink to="/terms" className="auth-link">
-                          Terms of Service
-                        </NavLink>{" "}
-                        and{" "}
-                        <NavLink to="/privacy-policy" className="auth-link">
-                          Privacy Policy
-                        </NavLink>
-                        .
-                      </label>
-                    </div>
-
                     <button
                       type="submit"
                       className="btn btn-primary w-100 mt-4"
@@ -468,7 +432,6 @@ export default function Register() {
                   className="tab-pane fade show active"
                   id="registerCandidate"
                   role="tabpanel"
-                  aria-labelledby="candidate-tab"
                 >
                   <form
                     className="auth-form"
@@ -476,78 +439,58 @@ export default function Register() {
                   >
                     <div className="row g-3">
                       <div className="col-sm-12">
-                        <label htmlFor="candidateName" className="form-label">
-                          Name
-                        </label>
+                        <label className="form-label">Name</label>
                         <input
                           type="text"
                           className="form-control"
-                          id="candidateName"
                           name="name"
                           value={subContractorForm.name}
                           onChange={handleSubContractorChange}
                           placeholder="Jenkins"
+                          required
                         />
                       </div>
                       <div className="col-sm-12">
-                        <label htmlFor="candidateEmail" className="form-label">
-                          Email address
-                        </label>
+                        <label className="form-label">Email address</label>
                         <input
                           type="email"
                           className="form-control"
-                          id="candidateEmail"
                           name="email"
                           value={subContractorForm.email}
                           onChange={handleSubContractorChange}
                           placeholder="name@email.com"
+                          required
                         />
                       </div>
                       <div className="col-sm-6">
-                        <label
-                          htmlFor="candidatePassword"
-                          className="form-label"
-                        >
-                          Password
-                        </label>
+                        <label className="form-label">Password</label>
                         <input
                           type="password"
                           className="form-control"
-                          id="candidatePassword"
                           name="password"
                           value={subContractorForm.password}
                           onChange={handleSubContractorChange}
                           placeholder="Create a strong password"
+                          required
                         />
                       </div>
                       <div className="col-sm-6">
-                        <label
-                          htmlFor="candidatePasswordConfirmation"
-                          className="form-label"
-                        >
-                          Confirm Password
-                        </label>
+                        <label className="form-label">Confirm Password</label>
                         <input
                           type="password"
                           className="form-control"
-                          id="candidatePasswordConfirmation"
                           name="password_confirmation"
                           value={subContractorForm.password_confirmation}
                           onChange={handleSubContractorChange}
                           placeholder="Confirm password"
+                          required
                         />
                       </div>
                       <div className="col-sm-12">
-                        <label
-                          htmlFor="candidateCompanyName"
-                          className="form-label"
-                        >
-                          Company Name
-                        </label>
+                        <label className="form-label">Company Name</label>
                         <input
                           type="text"
                           className="form-control"
-                          id="candidateCompanyName"
                           name="company_name"
                           value={subContractorForm.company_name}
                           onChange={handleSubContractorChange}
@@ -555,16 +498,12 @@ export default function Register() {
                         />
                       </div>
                       <div className="col-sm-6">
-                        <label
-                          htmlFor="candidateRegistrationNumber"
-                          className="form-label"
-                        >
+                        <label className="form-label">
                           Registration Number
                         </label>
                         <input
                           type="text"
                           className="form-control"
-                          id="candidateRegistrationNumber"
                           name="registration_number"
                           value={subContractorForm.registration_number}
                           onChange={handleSubContractorChange}
@@ -572,13 +511,10 @@ export default function Register() {
                         />
                       </div>
                       <div className="col-sm-6">
-                        <label htmlFor="candidateCity" className="form-label">
-                          City
-                        </label>
+                        <label className="form-label">City</label>
                         <input
                           type="text"
                           className="form-control"
-                          id="candidateCity"
                           name="city"
                           value={subContractorForm.city}
                           onChange={handleSubContractorChange}
@@ -586,29 +522,6 @@ export default function Register() {
                         />
                       </div>
                     </div>
-
-                    <div className="form-check auth-policy mt-4">
-                      <input
-                        className="form-check-input"
-                        type="checkbox"
-                        id="candidatePolicy"
-                      />
-                      <label
-                        className="form-check-label"
-                        htmlFor="candidatePolicy"
-                      >
-                        I agree to the{" "}
-                        <NavLink to="/terms" className="auth-link">
-                          Terms of Service
-                        </NavLink>{" "}
-                        and{" "}
-                        <NavLink to="/privacy-policy" className="auth-link">
-                          Privacy Policy
-                        </NavLink>
-                        .
-                      </label>
-                    </div>
-
                     <button
                       type="submit"
                       className="btn btn-primary w-100 mt-4"
@@ -622,7 +535,7 @@ export default function Register() {
                 </div>
               </div>
 
-              <p className="auth-switch">
+              <p className="auth-switch mt-4">
                 Already have an account? <NavLink to="/login">Sign in</NavLink>
               </p>
             </div>

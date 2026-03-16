@@ -154,16 +154,13 @@ export default function RosterPage() {
 
   const guards = staffData?.guards || [];
 
-  /* --- Navigation Controls --- */
   const prevWeek = () => setMonday((prev) => subWeeks(prev, 1));
   const nextWeek = () => setMonday((prev) => addWeeks(prev, 1));
   const goToThisWeek = () =>
     setMonday(startOfWeek(new Date(), { weekStartsOn: 1 }));
 
-  /* --- Toolbar Icon Handlers --- */
   const handleRefresh = () => fetchCustomerSites();
 
-  /* --- Modal Logic --- */
   const openModalAction = (site, shift, dateStr, modalType) => {
     setSelectedUserId(shift.assigned_to || "");
 
@@ -204,7 +201,6 @@ export default function RosterPage() {
         res = await saveUserAssignment(endpoint, payload, { method: "POST" });
       }
 
-      // useSubmit returns undefined when the request fails (it toasts the error itself)
       if (res === undefined) return;
 
       fetchCustomerSites();
@@ -249,7 +245,6 @@ export default function RosterPage() {
   return (
     <div className="roster-page-wrapper">
       <div className="roster-main-card">
-        {/* --- Toolbar Header --- */}
         <div className="roster-toolbar">
           <div className="toolbar-row-top">
             <div className="date-controls">
@@ -289,7 +284,6 @@ export default function RosterPage() {
           </div>
         </div>
 
-        {/* --- Status Legend Bar (Shown when Stats is active) --- */}
         {showStats && (
           <div className="status-legend-bar">
             <div className="status-legend-row">
@@ -345,7 +339,6 @@ export default function RosterPage() {
           </div>
         )}
 
-        {/* --- Table Grid --- */}
         <div className="roster-grid-wrapper">
           <table className="roster-grid">
             <thead>
@@ -532,7 +525,6 @@ export default function RosterPage() {
         </div>
       </div>
 
-      {/* --- MODAL SYSTEM --- */}
       {modal?.type === "activity" && (
         <ActivityDashboardModal
           modal={modal}
@@ -572,7 +564,7 @@ export default function RosterPage() {
             position: "fixed",
             inset: 0,
             display: "flex",
-            padding: "16px" /* Adds safety padding on tiny screens */,
+            padding: "16px",
           }}
         >
           <div
@@ -583,7 +575,7 @@ export default function RosterPage() {
               background: "#fff",
               padding: "20px",
               borderRadius: "8px",
-              width: "100%" /* Responsive adjustments */,
+              width: "100%",
               maxWidth: "400px",
             }}
           >

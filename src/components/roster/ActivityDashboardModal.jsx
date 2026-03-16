@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { format } from "date-fns";
 import SignInOutDetails from "./SignInOutDetails";
-import BreakDetails from "./BreakDetails";
+// import BreakDetails from "./BreakDetails";
 import IncidentReport from "./IncidentReport";
 import ShiftTasks from "./ShiftTasks";
 import FootPatrolReport from "./FootPatrolReport";
@@ -16,13 +16,13 @@ const SIDEBAR_TABS = [
     activeBg: "#00acc1",
     icon: "fa-exchange",
   },
-  {
-    id: "break",
-    label: "Break Details",
-    bg: "#fff9c4",
-    activeBg: "#f9a825",
-    icon: "fa-coffee",
-  },
+  // {
+  //   id: "break",
+  //   label: "Break Details",
+  //   bg: "#fff9c4",
+  //   activeBg: "#f9a825",
+  //   icon: "fa-coffee",
+  // },
   {
     id: "incident",
     label: "Incident Report",
@@ -60,11 +60,7 @@ const SIDEBAR_TABS = [
   },
 ];
 
-export default function ActivityDashboardModal({
-  modal,
-  closeModal,
-  userRole,
-}) {
+export default function ActivityDashboardModal({ modal, closeModal }) {
   const [activeTab, setActiveTab] = useState("signin");
 
   const rosterId = modal?.shift?.id;
@@ -83,8 +79,8 @@ export default function ActivityDashboardModal({
             site={site}
           />
         );
-      case "break":
-        return <BreakDetails rosterId={rosterId} guardId={guardId} />;
+      // case "break":
+      //   return <BreakDetails rosterId={rosterId} guardId={guardId} />;
       case "incident":
         return (
           <IncidentReport

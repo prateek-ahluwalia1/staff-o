@@ -34,7 +34,7 @@ const INITIAL_FORM_STATE = {
   staff_document_type: "",
   company_name: "",
   registration_number: "",
-  bank_details: [], // Now initialized as an array
+  bank_details: [],
 };
 
 export default function EditProfile() {

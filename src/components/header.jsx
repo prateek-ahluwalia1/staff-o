@@ -1,6 +1,6 @@
 import React, { memo, useState, useCallback, useMemo, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import { Link, useNavigate } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import { logOut } from "../store/slices/authSlice";
 import {
   setNotifications,
@@ -110,9 +110,12 @@ const Header = memo(function Header() {
       <nav className="navbar navbar-expand-lg navbar-light main-navbar">
         <div className="container">
           {/* Logo */}
-          <Link to="/" className="navbar-brand logo d-flex align-items-center">
+          <NavLink
+            to="/"
+            className="navbar-brand logo d-flex align-items-center"
+          >
             <img src={staffologo} alt="Staffo" style={{ height: "50px" }} />
-          </Link>
+          </NavLink>
 
           {/* Mobile toggle */}
           <button
@@ -141,41 +144,20 @@ const Header = memo(function Header() {
             <ul className="navbar-nav mx-auto align-items-lg-center main-menu">
               {/* Home */}
               <li className="nav-item">
-                <Link className="nav-link" to="/home">
+                <NavLink className="nav-link" to="/home">
                   Home
-                </Link>
+                </NavLink>
               </li>
 
               {/* Jobs Dropdown */}
               <li className="nav-item dropdown">
-                <button
-                  className="nav-link dropdown-toggle"
-                  type="button"
-                  data-bs-toggle="dropdown"
-                >
+                <NavLink className="nav-link" to="/jobs">
                   Jobs
-                </button>
-                <ul className="dropdown-menu dropdown-menu-lg">
-                  <li>
-                    <Link className="dropdown-item" to="/job-grid">
-                      Jobs Grid View
-                    </Link>
-                  </li>
-                  <li>
-                    <Link className="dropdown-item" to="/job-listing">
-                      Jobs List View
-                    </Link>
-                  </li>
-                  <li>
-                    <Link className="dropdown-item" to="/job-detail">
-                      Job Single
-                    </Link>
-                  </li>
-                </ul>
+                </NavLink>
               </li>
 
               {/* Employer Dropdown */}
-              <li className="nav-item dropdown">
+              {/* <li className="nav-item dropdown">
                 <button
                   className="nav-link dropdown-toggle"
                   type="button"
@@ -185,35 +167,35 @@ const Header = memo(function Header() {
                 </button>
                 <ul className="dropdown-menu dropdown-menu-lg">
                   <li>
-                    <Link className="dropdown-item" to="/employer-listing">
+                    <NavLink className="dropdown-item" to="/employer-listing">
                       Employer List
-                    </Link>
+                    </NavLink>
                   </li>
                   <li>
-                    <Link className="dropdown-item" to="/employer-grid">
+                    <NavLink className="dropdown-item" to="/employer-grid">
                       Employer Grid
-                    </Link>
+                    </NavLink>
                   </li>
                   <li>
-                    <Link className="dropdown-item" to="/company-detail">
+                    <NavLink className="dropdown-item" to="/company-detail">
                       Employer Single
-                    </Link>
+                    </NavLink>
                   </li>
                   <li>
-                    <Link className="dropdown-item" to="/company-dashboard">
+                    <NavLink className="dropdown-item" to="/company-dashboard">
                       Employer Dashboard
-                    </Link>
+                    </NavLink>
                   </li>
                   <li>
-                    <Link className="dropdown-item" to="/post-job">
+                    <NavLink className="dropdown-item" to="/post-job">
                       Post Job
-                    </Link>
+                    </NavLink>
                   </li>
                 </ul>
-              </li>
+              </li> */}
 
               {/* Candidate Dropdown */}
-              <li className="nav-item dropdown">
+              {/* <li className="nav-item dropdown">
                 <button
                   className="nav-link dropdown-toggle"
                   type="button"
@@ -223,38 +205,38 @@ const Header = memo(function Header() {
                 </button>
                 <ul className="dropdown-menu dropdown-menu-lg">
                   <li>
-                    <Link
+                    <NavLink
                       className="dropdown-item"
                       to="/candidate-listing-list"
                     >
                       Candidate List
-                    </Link>
+                    </NavLink>
                   </li>
                   <li>
-                    <Link className="dropdown-item" to="/candidate-listing">
+                    <NavLink className="dropdown-item" to="/candidate-listing">
                       Candidate Grid View
-                    </Link>
+                    </NavLink>
                   </li>
                   <li>
-                    <Link className="dropdown-item" to="/candidate-detail">
+                    <NavLink className="dropdown-item" to="/candidate-detail">
                       Candidate Single
-                    </Link>
+                    </NavLink>
                   </li>
                   <li>
-                    <Link className="dropdown-item" to="/dashboard">
+                    <NavLink className="dropdown-item" to="/dashboard">
                       Candidate Dashboard
-                    </Link>
+                    </NavLink>
                   </li>
                   <li>
-                    <Link className="dropdown-item" to="/edit-profile">
+                    <NavLink className="dropdown-item" to="/edit-profile">
                       Edit Profile
-                    </Link>
+                    </NavLink>
                   </li>
                 </ul>
-              </li>
+              </li> */}
 
               {/* Blog Dropdown */}
-              <li className="nav-item dropdown">
+              {/* <li className="nav-item dropdown">
                 <button
                   className="nav-link dropdown-toggle"
                   type="button"
@@ -264,36 +246,36 @@ const Header = memo(function Header() {
                 </button>
                 <ul className="dropdown-menu dropdown-menu-lg">
                   <li>
-                    <Link className="dropdown-item" to="/blog-grid">
+                    <NavLink className="dropdown-item" to="/blog-grid">
                       Blog Grid
-                    </Link>
+                    </NavLink>
                   </li>
                   <li>
-                    <Link className="dropdown-item" to="/blog">
+                    <NavLink className="dropdown-item" to="/blog">
                       Blog List
-                    </Link>
+                    </NavLink>
                   </li>
                   <li>
-                    <Link className="dropdown-item" to="/blog-full-width">
+                    <NavLink className="dropdown-item" to="/blog-full-width">
                       Blog Full Width
-                    </Link>
+                    </NavLink>
                   </li>
                   <li>
-                    <Link className="dropdown-item" to="/blog-detail">
+                    <NavLink className="dropdown-item" to="/blog-detail">
                       Blog Detail
-                    </Link>
+                    </NavLink>
                   </li>
                 </ul>
-              </li>
+              </li> */}
 
               <li className="nav-item">
-                <Link className="nav-link" to="/contact-us">
+                <NavLink className="nav-link" to="/contact-us">
                   Contact Us
-                </Link>
+                </NavLink>
               </li>
 
               {/* Pages Dropdown */}
-              <li className="nav-item dropdown">
+              {/* <li className="nav-item dropdown">
                 <button
                   className="nav-link dropdown-toggle"
                   type="button"
@@ -303,60 +285,60 @@ const Header = memo(function Header() {
                 </button>
                 <ul className="dropdown-menu dropdown-menu-lg">
                   <li>
-                    <Link className="dropdown-item" to="/about-us">
+                    <NavLink className="dropdown-item" to="/about-us">
                       About Us
-                    </Link>
+                    </NavLink>
                   </li>
                   {!token && (
                     <>
                       <li>
-                        <Link className="dropdown-item" to="/login">
+                        <NavLink className="dropdown-item" to="/login">
                           Login
-                        </Link>
+                        </NavLink>
                       </li>
                       <li>
-                        <Link className="dropdown-item" to="/register">
+                        <NavLink className="dropdown-item" to="/register">
                           Register
-                        </Link>
+                        </NavLink>
                       </li>
                     </>
                   )}
                   <li>
-                    <Link className="dropdown-item" to="/packages">
+                    <NavLink className="dropdown-item" to="/packages">
                       Packages
-                    </Link>
+                    </NavLink>
                   </li>
                   <li>
-                    <Link className="dropdown-item" to="/faqs">
+                    <NavLink className="dropdown-item" to="/faqs">
                       FAQs
-                    </Link>
+                    </NavLink>
                   </li>
                   <li>
-                    <Link className="dropdown-item" to="/404">
+                    <NavLink className="dropdown-item" to="/404">
                       404 Page
-                    </Link>
+                    </NavLink>
                   </li>
                   <li>
-                    <Link className="dropdown-item" to="/typography">
+                    <NavLink className="dropdown-item" to="/typography">
                       Typography
-                    </Link>
+                    </NavLink>
                   </li>
                 </ul>
-              </li>
+              </li> */}
             </ul>
 
             <div className="navbar-actions d-flex align-items-center gap-3">
               {!token ? (
                 <>
-                  <Link
-                    to="/login"
-                    className="btn btn-outline-primary signin-btn"
-                  >
+                  <NavLink to="/login" className="btn signin-btn">
                     Sign in
-                  </Link>
-                  <Link to="/register" className="btn btn-primary register-btn">
+                  </NavLink>
+                  <NavLink
+                    to="/register"
+                    className="btn btn-primary register-btn"
+                  >
                     Register
-                  </Link>
+                  </NavLink>
                 </>
               ) : (
                 <>
@@ -429,13 +411,13 @@ const Header = memo(function Header() {
                           )}
                         </ul>
                         <div className="p-2 text-center border-top">
-                          <Link
+                          <NavLink
                             to="/notifications"
                             className="small text-primary text-decoration-none"
                             onClick={() => setShowNotifications(false)}
                           >
                             View All
-                          </Link>
+                          </NavLink>
                         </div>
                       </div>
                     )}
@@ -455,19 +437,22 @@ const Header = memo(function Header() {
                     </button>
                     <ul className="dropdown-menu dropdown-menu-end">
                       <li>
-                        <Link className="dropdown-item" to="/dashboard">
+                        <NavLink className="dropdown-item" to="/dashboard">
                           Dashboard
-                        </Link>
+                        </NavLink>
                       </li>
                       <li>
-                        <Link className="dropdown-item" to="/edit-profile">
+                        <NavLink className="dropdown-item" to="/edit-profile">
                           Edit Profile
-                        </Link>
+                        </NavLink>
                       </li>
                       <li>
-                        <Link className="dropdown-item" to="/payment-history">
+                        <NavLink
+                          className="dropdown-item"
+                          to="/payment-history"
+                        >
                           Payment History
-                        </Link>
+                        </NavLink>
                       </li>
                       <li>
                         <button

@@ -33,6 +33,7 @@ const ManageStaff = lazy(() => import("./pages/manage-staff"));
 const ChatPage = lazy(() => import("./pages/Chat"));
 const ChatRoom = lazy(() => import("./pages/ChatRoom"));
 const AllNotifications = lazy(() => import("./pages/AllNotifications"));
+const NotFound = lazy(() => import("./pages/NotFound"));
 
 function App() {
   useEcho();
@@ -126,7 +127,7 @@ function App() {
             </Route>
 
             {/* ===== CATCH-ALL - 404 handler ===== */}
-            <Route path="*" element={<Navigate to="/home" replace />} />
+            <Route path="*" element={<NotFound />} />
           </Routes>
         </Suspense>
       </div>

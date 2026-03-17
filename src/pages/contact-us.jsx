@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useState } from "react";
 import { toast } from "react-toastify";
 import Header from "../components/header";
 import Footer from "../components/footer";
@@ -22,11 +22,6 @@ export default function ContactUs() {
   const [form, setForm] = useState(initialForm);
   const [errors, setErrors] = useState({});
   const { submit, loading } = useSubmit();
-
-  const contactEndpoint = useMemo(
-    () => process.env.REACT_APP_CONTACT_ENDPOINT || "api/contact-us",
-    [],
-  );
 
   const handleChange = (event) => {
     const { name, value, type, checked } = event.target;
@@ -94,7 +89,9 @@ export default function ContactUs() {
       submitted_at: new Date().toISOString(),
     };
 
-    const response = await submit(contactEndpoint, payload, { method: "POST" });
+    const response = await submit("api/contact-us", payload, {
+      method: "POST",
+    });
 
     if (response) {
       toast.success(

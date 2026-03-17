@@ -6,6 +6,7 @@ import useSubmit from "../hooks/useSubmit";
 import { toast } from "react-toastify";
 import { useGoogleLogin } from "@react-oauth/google";
 import Header from "../components/header";
+import { apiURL } from "../utils/exports";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -15,6 +16,42 @@ export default function Login() {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+
+  const fetchLatestUserProfile = async (token, authUser) => {
+    const userId = authUser?.data?.id || authUser?.id;
+
+    if (!userId) {
+      return authUser;
+    }
+
+    try {
+      const profileRes = await fetch(`${apiURL}api/user-edit/${userId}`, {
+        method: "GET",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        credentials: "include",
+      });
+
+      const profileJson = await profileRes.json();
+
+      if (!profileRes.ok) {
+        toast.error(
+          profileJson.errors ||
+            profileJson.message ||
+            "Failed to load latest profile data.",
+        );
+        return authUser;
+      }
+
+      return profileJson?.data || authUser;
+    } catch (error) {
+      toast.error("Failed to refresh profile data.");
+      return authUser;
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -29,7 +66,8 @@ export default function Login() {
 
     if (res.token) {
       dispatch(setToken({ token: res.token }));
-      dispatch(setUser({ userdata: res.user }));
+      const latestProfile = await fetchLatestUserProfile(res.token, res.user);
+      dispatch(setUser({ userdata: latestProfile }));
       toast.success("Login successful!");
       const redirectTo = location.state?.from?.pathname || "/edit-profile";
       navigate(redirectTo, { replace: true });
@@ -58,7 +96,11 @@ export default function Login() {
 
         if (res.token) {
           dispatch(setToken({ token: res.token }));
-          dispatch(setUser({ userdata: res.user }));
+          const latestProfile = await fetchLatestUserProfile(
+            res.token,
+            res.user,
+          );
+          dispatch(setUser({ userdata: latestProfile }));
           toast.success("Google Login successful!");
           const redirectTo = location.state?.from?.pathname || "/edit-profile";
           navigate(redirectTo, { replace: true });

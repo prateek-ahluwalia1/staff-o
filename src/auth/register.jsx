@@ -6,6 +6,7 @@ import useSubmit from "../hooks/useSubmit";
 import { toast } from "react-toastify";
 import { useGoogleLogin } from "@react-oauth/google";
 import Header from "../components/header";
+import { apiURL } from "../utils/exports";
 
 export default function Register() {
   const navigate = useNavigate();
@@ -14,6 +15,42 @@ export default function Register() {
 
   // Track which user type is currently selected for Google Registration
   const [userType, setUserType] = useState("contractor");
+
+  const fetchLatestUserProfile = async (token, authUser) => {
+    const userId = authUser?.data?.id || authUser?.id;
+
+    if (!userId) {
+      return authUser;
+    }
+
+    try {
+      const profileRes = await fetch(`${apiURL}api/user-edit/${userId}`, {
+        method: "GET",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        credentials: "include",
+      });
+
+      const profileJson = await profileRes.json();
+
+      if (!profileRes.ok) {
+        toast.error(
+          profileJson.errors ||
+            profileJson.message ||
+            "Failed to load latest profile data.",
+        );
+        return authUser;
+      }
+
+      return profileJson?.data || authUser;
+    } catch (error) {
+      toast.error("Failed to refresh profile data.");
+      return authUser;
+    }
+  };
 
   // Staff state
   const [staffForm, setStaffForm] = useState({
@@ -62,28 +99,29 @@ export default function Register() {
     e.preventDefault();
     const res = await submit("api/register/staff", staffForm);
     if (!res) return;
-    handleSuccess(res, "Staff Registration successful!");
+    await handleSuccess(res, "Staff Registration successful!");
   };
 
   const handleCustomerSubmit = async (e) => {
     e.preventDefault();
     const res = await submit("api/register/customer", customerForm);
     if (!res) return;
-    handleSuccess(res, "Customer Registration successful!");
+    await handleSuccess(res, "Customer Registration successful!");
   };
 
   const handleSubContractorSubmit = async (e) => {
     e.preventDefault();
     const res = await submit("api/register/contractor", subContractorForm);
     if (!res) return;
-    handleSuccess(res, "Sub Contractor Registration successful!");
+    await handleSuccess(res, "Sub Contractor Registration successful!");
   };
 
   // Helper to handle successful standard registration
-  const handleSuccess = (res, successMessage) => {
+  const handleSuccess = async (res, successMessage) => {
     if (res.token) {
       dispatch(setToken({ token: res.token }));
-      dispatch(setUser({ userdata: res.user }));
+      const latestProfile = await fetchLatestUserProfile(res.token, res.user);
+      dispatch(setUser({ userdata: latestProfile }));
       toast.success(successMessage);
       navigate("/edit-profile");
     } else {
@@ -115,7 +153,11 @@ export default function Register() {
 
         if (res.token) {
           dispatch(setToken({ token: res.token }));
-          dispatch(setUser({ userdata: res.user }));
+          const latestProfile = await fetchLatestUserProfile(
+            res.token,
+            res.user,
+          );
+          dispatch(setUser({ userdata: latestProfile }));
           // Format the userType to have a capital first letter for the toast
           const formattedType =
             userType.charAt(0).toUpperCase() + userType.slice(1);

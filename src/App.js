@@ -43,7 +43,28 @@ function App() {
         <NotificationToast />
         <Suspense fallback={<Loader fullPage />}>
           <Routes>
-            <Route path="/" element={<Navigate to="/login" replace />} />
+            {/* Root redirect - goes to home for public access or login for unauthenticated flow */}
+            <Route path="/" element={<Navigate to="/home" replace />} />
+
+            {/* ===== PUBLIC ROUTES - Accessible without authentication ===== */}
+            <Route
+              path="/home"
+              element={
+                <ProtectedRoute public>
+                  <Home />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/public-profile"
+              element={
+                <ProtectedRoute public>
+                  <PublicProfilePreview />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* ===== AUTHENTICATION ROUTES - Guest-only (redirects authenticated users) ===== */}
             <Route
               path="/login"
               element={
@@ -61,14 +82,7 @@ function App() {
               }
             />
 
-            <Route
-              path="/home"
-              element={
-                <ProtectedRoute>
-                  <Home />
-                </ProtectedRoute>
-              }
-            />
+            {/* ===== PROTECTED ROUTES - Requires authentication ===== */}
             <Route
               element={
                 <ProtectedRoute>
@@ -76,35 +90,43 @@ function App() {
                 </ProtectedRoute>
               }
             >
+              {/* Dashboard & Profile */}
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/edit-profile" element={<EditProfile />} />
-              <Route
-                path="/public-profile"
-                element={<PublicProfilePreview />}
-              />
+
+              {/* Job Management */}
+              <Route path="/add-job" element={<AddJob />} />
               <Route
                 path="/my-job-applications"
                 element={<MyJobApplications />}
               />
-              <Route path="/roster" element={<RosterPage />} />
               <Route path="/my-favourite-jobs" element={<MyFavouriteJobs />} />
               <Route path="/job-alerts" element={<JobAlerts />} />
+
+              {/* User & Staff Management */}
+              <Route path="/roster" element={<RosterPage />} />
+              <Route path="/manage-users" element={<ManageUsers />} />
+              <Route path="/manage-staff" element={<ManageStaff />} />
               <Route path="/my-followings" element={<MyFollowings />} />
+
+              {/* Packages & Payments */}
               <Route path="/user-packages" element={<UserPackages />} />
               <Route path="/payment-history" element={<PaymentHistory />} />
               <Route path="/pay-charge-rate" element={<PayChargeRate />} />
               <Route path="/rates/charge" element={<RatesList />} />
               <Route path="/rates/pay" element={<RatesList />} />
+
+              {/* Financial & Accounting */}
               <Route path="/accounts/invoice" element={<Invoice />} />
-              <Route path="/add-job" element={<AddJob />} />
-              <Route path="/manage-users" element={<ManageUsers />} />
-              <Route path="/manage-staff" element={<ManageStaff />} />
+
+              {/* Communications */}
               <Route path="/chat" element={<ChatPage />} />
               <Route path="/chat/:category" element={<ChatRoom />} />
               <Route path="/notifications" element={<AllNotifications />} />
             </Route>
 
-            <Route path="*" element={<Navigate to="/login" replace />} />
+            {/* ===== CATCH-ALL - 404 handler ===== */}
+            <Route path="*" element={<Navigate to="/home" replace />} />
           </Routes>
         </Suspense>
       </div>

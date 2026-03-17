@@ -475,7 +475,7 @@ const Header = memo(function Header() {
                           className="dropdown-item text-danger"
                           onClick={() => {
                             dispatch(logOut());
-                            navigate("/login");
+                            navigate("/");
                           }}
                         >
                           Logout

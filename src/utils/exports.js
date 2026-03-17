@@ -1,4 +1,4 @@
-export const apiURL = "https://staffo.arrowbyte.com.au/";
+export const apiURL = "https://apis.staffoo.com.au/";
 export const STRIPE_PUBLISHABLE_KEY =
   "pk_test_51Np4MPFJ5N43kFcuW1U6rOJvpOyY0AQff8kK5WcBiACFpf3M8xlA1yERmQ1ABoB5DljOCOkOJ1lHqToApUftB9mv00rRe4i2M8";
 

@@ -112,7 +112,7 @@ export default function ContactUs() {
       <section className="contact-banner">
         <div className="container">
           <div className="contact-banner-wrapper">
-            <span className="contact-badge">
+            <span className="contact-badge mb-3">
               <i className="fa fa-envelope-open" aria-hidden="true"></i>
               Contact Staffo
             </span>

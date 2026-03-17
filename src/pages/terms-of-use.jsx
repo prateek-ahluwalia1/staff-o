@@ -42,7 +42,7 @@ export default function TermsOfUse() {
 
       <section className="content-hero">
         <div className="container text-center">
-          <span className="contact-badge">
+          <span className="contact-badge mb-3">
             <i className="fa fa-file-text" aria-hidden="true"></i>
             Legal
           </span>

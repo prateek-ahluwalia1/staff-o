@@ -42,7 +42,7 @@ export default function Faqs() {
 
       <section className="content-hero">
         <div className="container text-center">
-          <span className="contact-badge">
+          <span className="contact-badge mb-3">
             <i className="fa fa-question-circle" aria-hidden="true"></i>
             Help Center
           </span>

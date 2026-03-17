@@ -27,7 +27,7 @@ export default function AboutUs() {
 
       <section className="content-hero">
         <div className="container text-center">
-          <span className="contact-badge">
+          <span className="contact-badge mb-3">
             <i className="fa fa-building" aria-hidden="true"></i>
             About Staffo
           </span>

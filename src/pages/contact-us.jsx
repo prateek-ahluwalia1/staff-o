@@ -145,10 +145,7 @@ export default function ContactUs() {
                     </span>
                     <div>
                       <h5>Head Office</h5>
-                      <p>
-                        651 N Broad St, Suite 201, Middletown, Delaware 19709,
-                        USA
-                      </p>
+                      <p>21 Tanglewood Bvd Truganina VIC 3029</p>
                     </div>
                   </li>
                   <li>
@@ -157,8 +154,8 @@ export default function ContactUs() {
                     </span>
                     <div>
                       <h5>Email</h5>
-                      <a href="mailto:info@jobsportal.com">
-                        info@jobsportal.com
+                      <a href="mailto:staffoapp@gmail.com">
+                        staffoapp@gmail.com
                       </a>
                     </div>
                   </li>
@@ -173,7 +170,7 @@ export default function ContactUs() {
                   </li>
                   <li>
                     <span className="icon">
-                      <i className="fa fa-clock-o" aria-hidden="true"></i>
+                      <i className="fa fa-clock" aria-hidden="true"></i>
                     </span>
                     <div>
                       <h5>Business Hours</h5>
@@ -183,16 +180,28 @@ export default function ContactUs() {
                 </ul>
 
                 <div className="contact-social" aria-label="Social links">
-                  <a href="/" aria-label="Facebook">
+                  <a
+                    href="https://www.facebook.com/profile.php?id=61582204185867"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="Facebook"
+                  >
                     <i className="fab fa-facebook" aria-hidden="true"></i>
                   </a>
-                  <a href="/" aria-label="X">
-                    <i className="fab fa-x-twitter" aria-hidden="true"></i>
-                  </a>
-                  <a href="/" aria-label="Instagram">
+                  <a
+                    href="https://www.instagram.com/staffoapp/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="Instagram"
+                  >
                     <i className="fab fa-instagram" aria-hidden="true"></i>
                   </a>
-                  <a href="/" aria-label="LinkedIn">
+                  <a
+                    href="https://www.linkedin.com/company/staff-o/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="LinkedIn"
+                  >
                     <i className="fab fa-linkedin" aria-hidden="true"></i>
                   </a>
                 </div>
@@ -401,61 +410,11 @@ export default function ContactUs() {
         </div>
       </section>
 
-      <section className="contact-offices">
-        <div className="container">
-          <div className="row g-4">
-            <div className="col-md-6 col-xl-3">
-              <article className="office-card">
-                <h3>Delaware</h3>
-                <p>651 N Broad St, Suite 201, Middletown, DE 19709</p>
-                <a href="tel:+13025550123">
-                  <i className="fa fa-phone" aria-hidden="true"></i>
-                  +1 (302) 555-0123
-                </a>
-              </article>
-            </div>
-
-            <div className="col-md-6 col-xl-3">
-              <article className="office-card">
-                <h3>New York</h3>
-                <p>245 Park Avenue, 39th Floor, New York, NY 10167</p>
-                <a href="mailto:ny@jobsportal.com">
-                  <i className="fa fa-envelope" aria-hidden="true"></i>
-                  ny@jobsportal.com
-                </a>
-              </article>
-            </div>
-
-            <div className="col-md-6 col-xl-3">
-              <article className="office-card">
-                <h3>Texas</h3>
-                <p>2030 Main St, Suite 1300, Dallas, TX 75201</p>
-                <a href="mailto:texas@jobsportal.com">
-                  <i className="fa fa-envelope" aria-hidden="true"></i>
-                  texas@jobsportal.com
-                </a>
-              </article>
-            </div>
-
-            <div className="col-md-6 col-xl-3">
-              <article className="office-card">
-                <h3>California</h3>
-                <p>505 Howard St, Floor 2, San Francisco, CA 94105</p>
-                <a href="mailto:west@jobsportal.com">
-                  <i className="fa fa-envelope" aria-hidden="true"></i>
-                  west@jobsportal.com
-                </a>
-              </article>
-            </div>
-          </div>
-        </div>
-      </section>
-
       <section className="contact-map">
         <div className="container">
           <iframe
             title="Staffo office map"
-            src="https://www.google.com/maps?q=651+N+Broad+St+Middletown+DE+19709&output=embed"
+            src="https://www.google.com/maps?q=21+Tanglewood+Bvd+Truganina+VIC+3029&output=embed"
             width="100%"
             height="420"
             loading="lazy"

@@ -9,7 +9,12 @@ import InvoiceSettings from "../components/invoice/InvoiceSettings";
 import InvoiceToolbar from "../components/invoice/InvoiceToolbar";
 import PDFGenerator from "../utils/PDFGenerator";
 
-const makeLineItem = () => ({ description: "", qty: 1, rate: "" });
+const formatDateForRange = (dateStr) => {
+  if (!dateStr) return "";
+  const [year, month, day] = dateStr.split("-");
+  if (!year || !month || !day) return "";
+  return `${day}/${month}/${year}`;
+};
 
 const Invoice = () => {
   const { userdata } = useSelector((state) => state.auth || {});
@@ -63,7 +68,7 @@ const Invoice = () => {
   const [includeGst, setIncludeGst] = useState(true);
   const [gstPercent, setGstPercent] = useState(10);
   const [notes, setNotes] = useState("");
-  const [lineItems, setLineItems] = useState([makeLineItem()]);
+  const [lineItems, setLineItems] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
 
   useEffect(() => {
@@ -103,23 +108,6 @@ const Invoice = () => {
   };
 
   // ===== HANDLERS FOR LINE ITEMS =====
-  const updateLineItem = (index, field, value) => {
-    setLineItems((prev) =>
-      prev.map((item, i) => (i === index ? { ...item, [field]: value } : item)),
-    );
-  };
-
-  const addLineItem = () => {
-    setLineItems((prev) => [...prev, makeLineItem()]);
-  };
-
-  const removeLineItem = (index) => {
-    setLineItems((prev) => {
-      if (prev.length === 1) return prev;
-      return prev.filter((_, i) => i !== index);
-    });
-  };
-
   // ===== HANDLERS FOR SETTINGS =====
   const togglePaymentMethod = (key) => {
     setPaymentMethods((prev) => ({ ...prev, [key]: !prev[key] }));
@@ -146,9 +134,7 @@ const Invoice = () => {
 
   const grandTotal = subtotal + gstAmount + lateFeeAmount;
 
-  const hasValidLineItems = lineItems.some(
-    (item) => item.description.trim() && Number(item.qty) > 0,
-  );
+  const hasValidLineItems = lineItems.some((item) => item.description.trim());
 
   // ===== VALIDATION & PAYLOAD =====
   const validateInvoice = () => {
@@ -178,7 +164,11 @@ const Invoice = () => {
     include_gst: includeGst,
     gst_percent: Number(gstPercent) || 0,
     notes,
-    items: lineItems,
+    items: lineItems.map((item) => ({
+      description: item.description,
+      qty: item.qty,
+      rate: item.rate,
+    })),
     totals: {
       subtotal,
       gst_amount: gstAmount,
@@ -200,23 +190,37 @@ const Invoice = () => {
 
     setIsSearching(true);
     try {
+      const formattedStartDate = formatDateForRange(startDate);
+      const formattedEndDate = formatDateForRange(endDate);
+
       const res = await submit(
-        "api/invoice/search-details",
+        "api/get-roaster-hour-sum",
         {
+          type: "normal",
           customer_id: selectedCustomerId,
-          start_date: startDate,
-          end_date: endDate,
+          date: `${formattedStartDate} - ${formattedEndDate}`,
         },
         { method: "POST" },
       );
 
-      if (res?.success) {
-        toast.success("Details fetched successfully!");
-        if (res?.data?.items && res.data.items.length > 0) {
-          setLineItems(res.data.items);
+      const rosterItems = Array.isArray(res?.data)
+        ? res.data.map((item) => ({
+            description: item?.name || "",
+            qty: Number(item?.hours) || 0,
+            rate: Number(item?.payrate) || 0,
+          }))
+        : [];
+
+      if (rosterItems.length > 0) {
+        setLineItems(rosterItems);
+        if (res?.success) {
+          toast.success("Roster hours loaded into invoice items.");
+        } else {
+          toast.info("Roster hours loaded from response data.");
         }
       } else {
-        toast.info("Ready to build invoice. Please enter details.");
+        setLineItems([]);
+        toast.info("No roster hour items found for this date range.");
       }
     } catch (err) {
       toast.error(err.message || "Failed to search API.");
@@ -402,12 +406,7 @@ const Invoice = () => {
           />
 
           {/* Line Items Section */}
-          <InvoiceLineItems
-            lineItems={lineItems}
-            onUpdateLineItem={updateLineItem}
-            onAddLineItem={addLineItem}
-            onRemoveLineItem={removeLineItem}
-          />
+          <InvoiceLineItems lineItems={lineItems} />
         </div>
 
         {/* Settings Sidebar */}

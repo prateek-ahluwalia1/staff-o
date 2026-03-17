@@ -167,7 +167,7 @@ const PDFGenerator = {
 
     autoTable(doc, {
       startY: yPosition,
-      head: [["Description", "Qty", "Rate", "Amount"]],
+      head: [["Item", "Hours", "Price", "Total"]],
       body: tableData,
       theme: "plain", // Removes the heavy grid blocks
       headStyles: {

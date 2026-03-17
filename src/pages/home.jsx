@@ -1,15 +1,70 @@
 // import React, { useState } from "react";
 // import { toast } from "react-toastify";
-import React from "react";
+import React, { useMemo } from "react";
+import { Link } from "react-router-dom";
 import Header from "../components/header";
 import Footer from "../components/footer";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Navigation } from "swiper/modules";
-
+import useFetch from "../hooks/useFetch";
+import Loader from "../components/Loader";
 import "swiper/css";
 import "swiper/css/navigation";
 
+function formatDate(value) {
+  if (!value) return "-";
+
+  const normalized = String(value).replace(" ", "T");
+  const parsed = new Date(normalized);
+  if (Number.isNaN(parsed.getTime())) return "-";
+
+  return parsed.toLocaleDateString("en-AU", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+}
+
+function formatDateTime(value) {
+  if (!value) return "-";
+
+  const normalized = String(value).replace(" ", "T");
+  const parsed = new Date(normalized);
+  if (Number.isNaN(parsed.getTime())) return "-";
+
+  return parsed.toLocaleString("en-AU", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+function mapJobToCard(job, index) {
+  const status = String(job?.job_status || "pending").toLowerCase();
+  const badgeClass =
+    status === "completed"
+      ? "fulltime"
+      : status === "assigned"
+        ? "freelance"
+        : "parttime";
+
+  return {
+    id: job?.id || `job-${index}`,
+    type: status.charAt(0).toUpperCase() + status.slice(1),
+    badgeClass,
+    title: `Job #${job?.id || "N/A"}`,
+    company: `Site #${job?.site_id || "N/A"}`,
+    schedule: `${formatDateTime(job?.start)} - ${formatDateTime(job?.end)}`,
+    hours: Number(job?.hours || 0),
+    posted: formatDate(job?.updated_at || job?.created_at || job?.start),
+    logo: "emplogo1.jpg",
+  };
+}
+
 export default function Home() {
+  const { data: latestJobResponse, loading } = useFetch("api/get-all-jobs");
   const categories = [
     {
       title: "Security License",
@@ -68,6 +123,11 @@ export default function Home() {
         "Apply to your preferred jobs or hire top talent effortlessly.",
     },
   ];
+  const latestJobs = useMemo(() => {
+    const jobs = latestJobResponse?.data;
+    if (!Array.isArray(jobs)) return [];
+    return jobs.slice(0, 6).map((job, index) => mapJobToCard(job, index));
+  }, [latestJobResponse]);
 
   // const featuredJobs = [
   //   {
@@ -159,90 +219,6 @@ export default function Home() {
   //   },
   // ];
 
-  const latestJobs = [
-    {
-      type: "Full Time",
-      badgeClass: "fulltime",
-      title: "Technical Database Engineer",
-      company: "Datebase Management Company",
-      location: "New York",
-      posted: "Mar 07, 2025",
-      logo: "emplogo1.jpg",
-    },
-    {
-      type: "Freelance",
-      badgeClass: "freelance",
-      title: "Front-end Developer",
-      company: "Creative Studio",
-      location: "Boston",
-      posted: "Mar 05, 2025",
-      logo: "emplogo11.jpg",
-    },
-    {
-      type: "Part Time",
-      badgeClass: "parttime",
-      title: "Product Designer",
-      company: "Bright Agency",
-      location: "Chicago",
-      posted: "Mar 04, 2025",
-      logo: "emplogo12.jpg",
-    },
-    {
-      type: "Freelance",
-      badgeClass: "freelance",
-      title: "Mobile Developer",
-      company: "Appify Labs",
-      location: "Remote",
-      posted: "Mar 02, 2025",
-      logo: "emplogo13.jpg",
-    },
-    {
-      type: "Full Time",
-      badgeClass: "fulltime",
-      title: "Senior UX Researcher",
-      company: "Insights Co.",
-      location: "San Francisco",
-      posted: "Feb 28, 2025",
-      logo: "emplogo14.jpg",
-    },
-    {
-      type: "Full Time",
-      badgeClass: "fulltime",
-      title: "Systems Administrator",
-      company: "Sphere Networks",
-      location: "Austin",
-      posted: "Feb 26, 2025",
-      logo: "emplogo15.jpg",
-    },
-    {
-      type: "Part Time",
-      badgeClass: "parttime",
-      title: "Social Media Strategist",
-      company: "Connect Agency",
-      location: "Denver",
-      posted: "Feb 25, 2025",
-      logo: "emplogo16.jpg",
-    },
-    {
-      type: "Remote",
-      badgeClass: "remote",
-      title: "Support Engineer",
-      company: "Helpline Inc.",
-      location: "Remote",
-      posted: "Feb 23, 2025",
-      logo: "emplogo2.jpg",
-    },
-    {
-      type: "Full Time",
-      badgeClass: "fulltime",
-      title: "Backend Engineer",
-      company: "Rapid Systems",
-      location: "Phoenix",
-      posted: "Feb 22, 2025",
-      logo: "emplogo3.jpg",
-    },
-  ];
-
   const testimonials = [
     {
       text: "JobsPortal helped me land my dream role within weeks. The process was clean, seamless, and the support team was always ready to assist.",
@@ -319,6 +295,10 @@ export default function Home() {
   //     authorRole: "People Programs",
   //   },
   // ];
+
+  if (loading) {
+    return <Loader fullPage />;
+  }
 
   return (
     <>
@@ -968,8 +948,8 @@ export default function Home() {
 
           {/* Latest Jobs Grid */}
           <div className="row g-4 latest-jobs">
-            {latestJobs.map((job, index) => (
-              <div className="col-12 col-md-6 col-lg-4" key={index}>
+            {latestJobs.map((job) => (
+              <div className="col-12 col-md-6 col-lg-4" key={job.id}>
                 <div className="latest-job-card">
                   <div className="latest-job-header">
                     <span className={`badge badge-status ${job.badgeClass}`}>
@@ -990,8 +970,8 @@ export default function Home() {
                       {job.company}
                     </span>
                     <span>
-                      <i className="fa fa-map-marker" aria-hidden="true"></i>{" "}
-                      {job.location}
+                      <i className="fa fa-clock-o" aria-hidden="true"></i>{" "}
+                      {job.schedule}
                     </span>
                   </div>
 
@@ -1002,8 +982,10 @@ export default function Home() {
                         alt="Company logo"
                       />
                       <div>
-                        <span className="label">Posted on</span>
-                        <span className="value">{job.posted}</span>
+                        <span className="label">Updated</span>
+                        <span className="value">
+                          {job.posted} | {job.hours}h
+                        </span>
                       </div>
                     </div>
 
@@ -1014,13 +996,23 @@ export default function Home() {
                 </div>
               </div>
             ))}
+
+            {!latestJobs.length && (
+              <div className="col-12">
+                <div className="latest-job-card text-center py-4">
+                  <p className="text-muted mb-0">
+                    No jobs available right now.
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* View All Button */}
           <div className="category-viewall text-center">
-            <a href="/" className="btn btn-primary">
+            <Link to="/latest-jobs" className="btn btn-primary">
               View All Latest Jobs
-            </a>
+            </Link>
           </div>
         </div>
       </div>

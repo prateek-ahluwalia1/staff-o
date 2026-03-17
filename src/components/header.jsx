@@ -151,7 +151,7 @@ const Header = memo(function Header() {
 
               {/* Jobs Dropdown */}
               <li className="nav-item dropdown">
-                <NavLink className="nav-link" to="/jobs">
+                <NavLink className="nav-link" to="/latest-jobs">
                   Jobs
                 </NavLink>
               </li>

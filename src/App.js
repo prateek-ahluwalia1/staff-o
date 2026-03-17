@@ -13,6 +13,7 @@ import { useEcho } from "./hooks/useEcho";
 const Login = lazy(() => import("./auth/login"));
 const Register = lazy(() => import("./auth/register"));
 const Home = lazy(() => import("./pages/home"));
+const LatestJobs = lazy(() => import("./pages/latest-jobs"));
 const DashboardLayout = lazy(() => import("./components/dashboardlayout"));
 const Dashboard = lazy(() => import("./pages/dashboard"));
 const EditProfile = lazy(() => import("./pages/edit-profile"));
@@ -58,6 +59,14 @@ function App() {
               element={
                 <ProtectedRoute public>
                   <Home />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/latest-jobs"
+              element={
+                <ProtectedRoute public>
+                  <LatestJobs />
                 </ProtectedRoute>
               }
             />

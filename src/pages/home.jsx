@@ -57,7 +57,7 @@ function mapJobToCard(job, index) {
     schedule: `${formatDateTime(job?.start)} - ${formatDateTime(job?.end)}`,
     hours: Number(job?.hours || 0),
     posted: formatDate(job?.updated_at || job?.created_at || job?.start),
-    raw: job, // Kept raw job data so the modal has access to everything
+    raw: job,
   };
 }
 
@@ -269,87 +269,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Categories Section */}
-      <section className="section category-section">
-        <div className="container">
-          <div className="titleTop text-center">
-            <div className="subtitle">Find Your Path</div>
-            <h3>Browse Jobs By Categories</h3>
-          </div>
-
-          <div className="category-carousel-wrap position-relative">
-            <div className="category-nav category-prev">
-              <i className="fa fa-angle-left" aria-hidden="true"></i>
-            </div>
-            <div className="category-nav category-next">
-              <i className="fa fa-angle-right" aria-hidden="true"></i>
-            </div>
-
-            <Swiper
-              modules={[Navigation]}
-              spaceBetween={20}
-              slidesPerView={1}
-              navigation={{
-                prevEl: ".category-prev",
-                nextEl: ".category-next",
-              }}
-              loop={true}
-              breakpoints={{
-                0: { slidesPerView: 1 },
-                576: { slidesPerView: 2 },
-                768: { slidesPerView: 3 },
-                992: { slidesPerView: 4 },
-                1200: { slidesPerView: 5 },
-              }}
-            >
-              {categories.map((cat, index) => (
-                <SwiperSlide key={index}>
-                  <div className="category-card text-center">
-                    <div className="category-icon mb-3">
-                      <img
-                        src={`/assets/images/categories/${cat.icon}`}
-                        alt={cat.title}
-                      />
-                    </div>
-                    <h5 className="mb-2">{cat.title}</h5>
-                    <a href="/" className="category-jobs d-block">
-                      <i
-                        className="fa fa-briefcase me-1"
-                        aria-hidden="true"
-                      ></i>
-                      {cat.jobs}
-                    </a>
-                  </div>
-                </SwiperSlide>
-              ))}
-            </Swiper>
-          </div>
-        </div>
-      </section>
-
-      <section className="section howit-section">
-        <div className="container">
-          <div className="titleTop text-center">
-            <div className="subtitle">Simple Steps</div>
-            <h3>How It Works</h3>
-          </div>
-
-          <div className="row g-4 justify-content-center howit-grid">
-            {steps.map((step, index) => (
-              <div className="col-12 col-md-4" key={index}>
-                <div className="howit-card">
-                  <div className="howit-icon">
-                    <i className={step.icon}></i>
-                  </div>
-                  <h4>{step.title}</h4>
-                  <p>{step.description}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* LATEST JOBS SECTION (UPDATED UI) */}
       <section className="section bg-light-grey py-5">
         <div className="container">
@@ -450,6 +369,87 @@ export default function Home() {
             >
               View All Latest Jobs
             </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* Categories Section */}
+      <section className="section category-section">
+        <div className="container">
+          <div className="titleTop text-center">
+            <div className="subtitle">Find Your Path</div>
+            <h3>Browse Jobs By Categories</h3>
+          </div>
+
+          <div className="category-carousel-wrap position-relative">
+            <div className="category-nav category-prev">
+              <i className="fa fa-angle-left" aria-hidden="true"></i>
+            </div>
+            <div className="category-nav category-next">
+              <i className="fa fa-angle-right" aria-hidden="true"></i>
+            </div>
+
+            <Swiper
+              modules={[Navigation]}
+              spaceBetween={20}
+              slidesPerView={1}
+              navigation={{
+                prevEl: ".category-prev",
+                nextEl: ".category-next",
+              }}
+              loop={true}
+              breakpoints={{
+                0: { slidesPerView: 1 },
+                576: { slidesPerView: 2 },
+                768: { slidesPerView: 3 },
+                992: { slidesPerView: 4 },
+                1200: { slidesPerView: 5 },
+              }}
+            >
+              {categories.map((cat, index) => (
+                <SwiperSlide key={index}>
+                  <div className="category-card text-center">
+                    <div className="category-icon mb-3">
+                      <img
+                        src={`/assets/images/categories/${cat.icon}`}
+                        alt={cat.title}
+                      />
+                    </div>
+                    <h5 className="mb-2">{cat.title}</h5>
+                    <a href="/" className="category-jobs d-block">
+                      <i
+                        className="fa fa-briefcase me-1"
+                        aria-hidden="true"
+                      ></i>
+                      {cat.jobs}
+                    </a>
+                  </div>
+                </SwiperSlide>
+              ))}
+            </Swiper>
+          </div>
+        </div>
+      </section>
+
+      <section className="section howit-section">
+        <div className="container">
+          <div className="titleTop text-center">
+            <div className="subtitle">Simple Steps</div>
+            <h3>How It Works</h3>
+          </div>
+
+          <div className="row g-4 justify-content-center howit-grid">
+            {steps.map((step, index) => (
+              <div className="col-12 col-md-4" key={index}>
+                <div className="howit-card">
+                  <div className="howit-icon">
+                    <i className={step.icon}></i>
+                  </div>
+                  <h4>{step.title}</h4>
+                  <p>{step.description}</p>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </section>

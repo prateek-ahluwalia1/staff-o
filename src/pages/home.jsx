@@ -1,5 +1,6 @@
-import React, { useState } from "react";
-import { toast } from "react-toastify";
+// import React, { useState } from "react";
+// import { toast } from "react-toastify";
+import React from "react";
 import Header from "../components/header";
 import Footer from "../components/footer";
 import { Swiper, SwiperSlide } from "swiper/react";
@@ -11,54 +12,42 @@ import "swiper/css/navigation";
 export default function Home() {
   const categories = [
     {
-      icon: "business-management.png",
-      title: "Business Management",
-      jobs: "(2) Jobs",
-    },
-    {
+      title: "Security License",
+      jobs: "(5) Jobs",
       icon: "admin.png",
-      title: "Admin",
-      jobs: "(2) Jobs",
     },
     {
+      title: "MISC Time License",
+      jobs: "(3) Jobs",
       icon: "it.png",
-      title: "Information Technology",
-      jobs: "(1) Jobs",
     },
     {
-      icon: "development-web.png",
-      title: "Software & Web Development",
-      jobs: "(1) Jobs",
-    },
-    {
-      icon: "electrician.png",
-      title: "Electronics Technician",
-      jobs: "(1) Jobs",
-    },
-    {
+      title: "Working With Children",
+      jobs: "(2) Jobs",
       icon: "developer.png",
-      title: "Web Developer",
-      jobs: "(1) Jobs",
     },
+    { title: "First Aid", jobs: "(2) Jobs", icon: "data-admin.png" },
+    { title: "CPR", jobs: "(2) Jobs", icon: "electrician.png" },
+    { title: "White Card", jobs: "(2) Jobs", icon: "development-web.png" },
     {
-      icon: "data-admin.png",
-      title: "Database Administration",
-      jobs: "(1) Jobs",
+      title: "Traffic Controller",
+      jobs: "(2) Jobs",
+      icon: "business-management.png",
     },
   ];
 
-  const industries = [
-    { icon: "fa-industry", label: "Manufacturing (5)" },
-    { icon: "fa-female", label: "Fashion (2)" },
-    { icon: "fa-plug", label: "Electronics (2)" },
-    { icon: "fa-bullhorn", label: "Advertising/PR (2)" },
-    { icon: "fa-desktop", label: "Information Technology (2)" },
-    { icon: "fa-truck", label: "Courier/Logistics (1)" },
-    { icon: "fa-car", label: "Automobile (1)" },
-    { icon: "fa-graduation-cap", label: "Education/Training (1)" },
-    { icon: "fa-university", label: "Banking/Financial Services (1)" },
-    { icon: "fa-heartbeat", label: "Health & Fitness (1)" },
-  ];
+  // const industries = [
+  //   { icon: "fa-industry", label: "Manufacturing (5)" },
+  //   { icon: "fa-female", label: "Fashion (2)" },
+  //   { icon: "fa-plug", label: "Electronics (2)" },
+  //   { icon: "fa-bullhorn", label: "Advertising/PR (2)" },
+  //   { icon: "fa-desktop", label: "Information Technology (2)" },
+  //   { icon: "fa-truck", label: "Courier/Logistics (1)" },
+  //   { icon: "fa-car", label: "Automobile (1)" },
+  //   { icon: "fa-graduation-cap", label: "Education/Training (1)" },
+  //   { icon: "fa-university", label: "Banking/Financial Services (1)" },
+  //   { icon: "fa-heartbeat", label: "Health & Fitness (1)" },
+  // ];
 
   const steps = [
     {
@@ -80,95 +69,95 @@ export default function Home() {
     },
   ];
 
-  const featuredJobs = [
-    {
-      type: "Full Time/Permanent",
-      title: "Full Stack Designer",
-      location: "Barrington",
-      date: "Mar 07, 2025",
-      company: "Connect People",
-      logo: "emplogo7.jpg",
-    },
-    {
-      type: "Part Time",
-      title: "Marketing Specialist",
-      location: "New York",
-      date: "Mar 10, 2025",
-      company: "Power Wave",
-      logo: "emplogo2.jpg",
-    },
-    {
-      type: "Freelance",
-      title: "UI Engineer",
-      location: "Los Angeles",
-      date: "Mar 12, 2025",
-      company: "Design Studio",
-      logo: "emplogo4.jpg",
-    },
-    {
-      type: "Contract",
-      title: "Data Analyst",
-      location: "Chicago",
-      date: "Mar 15, 2025",
-      company: "Sphere Tech",
-      logo: "emplogo9.jpg",
-    },
-    {
-      type: "Internship",
-      title: "Junior QA Engineer",
-      location: "Austin",
-      date: "Mar 18, 2025",
-      company: "Media Wave",
-      logo: "emplogo10.jpg",
-    },
-    {
-      type: "Remote",
-      title: "Product Manager",
-      location: "Remote",
-      date: "Mar 20, 2025",
-      company: "Power Color",
-      logo: "emplogo6.jpg",
-    },
-    {
-      type: "Hybrid",
-      title: "DevOps Engineer",
-      location: "Seattle",
-      date: "Mar 22, 2025",
-      company: "Surf Wave",
-      logo: "emplogo8.jpg",
-    },
-    {
-      type: "Full Time",
-      title: "Mobile App Developer",
-      location: "Miami",
-      date: "Mar 24, 2025",
-      company: "Power Wave",
-      logo: "emplogo2.jpg",
-    },
-  ];
+  // const featuredJobs = [
+  //   {
+  //     type: "Full Time/Permanent",
+  //     title: "Full Stack Designer",
+  //     location: "Barrington",
+  //     date: "Mar 07, 2025",
+  //     company: "Connect People",
+  //     logo: "emplogo7.jpg",
+  //   },
+  //   {
+  //     type: "Part Time",
+  //     title: "Marketing Specialist",
+  //     location: "New York",
+  //     date: "Mar 10, 2025",
+  //     company: "Power Wave",
+  //     logo: "emplogo2.jpg",
+  //   },
+  //   {
+  //     type: "Freelance",
+  //     title: "UI Engineer",
+  //     location: "Los Angeles",
+  //     date: "Mar 12, 2025",
+  //     company: "Design Studio",
+  //     logo: "emplogo4.jpg",
+  //   },
+  //   {
+  //     type: "Contract",
+  //     title: "Data Analyst",
+  //     location: "Chicago",
+  //     date: "Mar 15, 2025",
+  //     company: "Sphere Tech",
+  //     logo: "emplogo9.jpg",
+  //   },
+  //   {
+  //     type: "Internship",
+  //     title: "Junior QA Engineer",
+  //     location: "Austin",
+  //     date: "Mar 18, 2025",
+  //     company: "Media Wave",
+  //     logo: "emplogo10.jpg",
+  //   },
+  //   {
+  //     type: "Remote",
+  //     title: "Product Manager",
+  //     location: "Remote",
+  //     date: "Mar 20, 2025",
+  //     company: "Power Color",
+  //     logo: "emplogo6.jpg",
+  //   },
+  //   {
+  //     type: "Hybrid",
+  //     title: "DevOps Engineer",
+  //     location: "Seattle",
+  //     date: "Mar 22, 2025",
+  //     company: "Surf Wave",
+  //     logo: "emplogo8.jpg",
+  //   },
+  //   {
+  //     type: "Full Time",
+  //     title: "Mobile App Developer",
+  //     location: "Miami",
+  //     date: "Mar 24, 2025",
+  //     company: "Power Wave",
+  //     logo: "emplogo2.jpg",
+  //   },
+  // ];
 
-  const cities = [
-    {
-      name: "Atlanta",
-      jobs: "18 Jobs",
-      image: "atlanta.jpg",
-    },
-    {
-      name: "Barrington",
-      jobs: "9 Jobs",
-      image: "barrington.jpg",
-    },
-    {
-      name: "Durant",
-      jobs: "12 Jobs",
-      image: "durant.jpg",
-    },
-    {
-      name: "Bessemer",
-      jobs: "6 Jobs",
-      image: "bessemer.jpg",
-    },
-  ];
+  // const cities = [
+  //   {
+  //     name: "Atlanta",
+  //     jobs: "18 Jobs",
+  //     image: "atlanta.jpg",
+  //   },
+  //   {
+  //     name: "Barrington",
+  //     jobs: "9 Jobs",
+  //     image: "barrington.jpg",
+  //   },
+  //   {
+  //     name: "Durant",
+  //     jobs: "12 Jobs",
+  //     image: "durant.jpg",
+  //   },
+  //   {
+  //     name: "Bessemer",
+  //     jobs: "6 Jobs",
+  //     image: "bessemer.jpg",
+  //   },
+  // ];
 
   const latestJobs = [
     {
@@ -281,55 +270,55 @@ export default function Home() {
     },
   ];
 
-  const [email, setEmail] = useState("");
+  // const [email, setEmail] = useState("");
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    setEmail("");
-    toast.success("Thank you for subscribing!");
-  };
+  // const handleSubmit = (e) => {
+  //   e.preventDefault();
+  //   setEmail("");
+  //   toast.success("Thank you for subscribing!");
+  // };
 
-  const blogPosts = [
-    {
-      image: "blog/1.jpg",
-      tag: "Hiring",
-      tagClass: "",
-      date: "17 Sep",
-      readTime: "7 min read",
-      title: "How to design a candidate experience that actually converts",
-      excerpt:
-        "From first touch to offer, here’s the messaging stack and automation playbook we use to keep talent engaged.",
-      authorImage: "coment-avatar-1.jpg",
-      authorName: "Samira Hodge",
-      authorRole: "Employer Brand Lead",
-    },
-    {
-      image: "blog/2.jpg",
-      tag: "Leadership",
-      tagClass: "teal",
-      date: "15 Sep",
-      readTime: "5 min read",
-      title: "7 rituals our leadership team uses to stay aligned remotely",
-      excerpt:
-        "Weekly dashboards, async standups, and lightweight rituals that keep strategic bets on track.",
-      authorImage: "coment-avatar-2.jpg",
-      authorName: "Devon Marks",
-      authorRole: "Chief of Staff",
-    },
-    {
-      image: "blog/3.jpg",
-      tag: "Culture",
-      tagClass: "orange",
-      date: "12 Sep",
-      readTime: "6 min read",
-      title: "Inside the onboarding sprint that ramps new hires in 10 days",
-      excerpt:
-        "A look at how we bundle product education, values training, and buddy systems into a cohesive journey.",
-      authorImage: "coment-avatar-3.jpg",
-      authorName: "Lily Ortega",
-      authorRole: "People Programs",
-    },
-  ];
+  // const blogPosts = [
+  //   {
+  //     image: "blog/1.jpg",
+  //     tag: "Hiring",
+  //     tagClass: "",
+  //     date: "17 Sep",
+  //     readTime: "7 min read",
+  //     title: "How to design a candidate experience that actually converts",
+  //     excerpt:
+  //       "From first touch to offer, here’s the messaging stack and automation playbook we use to keep talent engaged.",
+  //     authorImage: "coment-avatar-1.jpg",
+  //     authorName: "Samira Hodge",
+  //     authorRole: "Employer Brand Lead",
+  //   },
+  //   {
+  //     image: "blog/2.jpg",
+  //     tag: "Leadership",
+  //     tagClass: "teal",
+  //     date: "15 Sep",
+  //     readTime: "5 min read",
+  //     title: "7 rituals our leadership team uses to stay aligned remotely",
+  //     excerpt:
+  //       "Weekly dashboards, async standups, and lightweight rituals that keep strategic bets on track.",
+  //     authorImage: "coment-avatar-2.jpg",
+  //     authorName: "Devon Marks",
+  //     authorRole: "Chief of Staff",
+  //   },
+  //   {
+  //     image: "blog/3.jpg",
+  //     tag: "Culture",
+  //     tagClass: "orange",
+  //     date: "12 Sep",
+  //     readTime: "6 min read",
+  //     title: "Inside the onboarding sprint that ramps new hires in 10 days",
+  //     excerpt:
+  //       "A look at how we bundle product education, values training, and buddy systems into a cohesive journey.",
+  //     authorImage: "coment-avatar-3.jpg",
+  //     authorName: "Lily Ortega",
+  //     authorRole: "People Programs",
+  //   },
+  // ];
 
   return (
     <>
@@ -545,7 +534,7 @@ export default function Home() {
       </div> */}
 
       {/* Top Companies */}
-      <section className="section company-section">
+      {/* <section className="section company-section">
         <div className="container">
           <div className="titleTop text-center">
             <div className="subtitle">Here You Can See</div>
@@ -718,7 +707,7 @@ export default function Home() {
             </a>
           </div>
         </div>
-      </section>
+      </section> */}
 
       {/* Categories Section */}
       <section className="section category-section">
@@ -776,16 +765,10 @@ export default function Home() {
               ))}
             </Swiper>
           </div>
-
-          <div className="category-viewall text-center mt-5">
-            <a href="/" className="btn btn-primary px-5 py-3">
-              View All Categories
-            </a>
-          </div>
         </div>
       </section>
 
-      <section className="section industries-section">
+      {/* <section className="section industries-section">
         <div className="container">
           <div className="titleTop text-center">
             <div className="subtitle">Explore Sectors</div>
@@ -803,7 +786,7 @@ export default function Home() {
             ))}
           </div>
         </div>
-      </section>
+      </section> */}
 
       <section className="section howit-section">
         <div className="container">
@@ -828,7 +811,7 @@ export default function Home() {
         </div>
       </section>
 
-      <div className="section">
+      {/* <div className="section">
         <div className="container">
           <div className="titleTop">
             <div className="subtitle">Here You Can See</div>
@@ -836,8 +819,6 @@ export default function Home() {
               Featured <span>Jobs</span>
             </h3>
           </div>
-
-          {/* Featured Jobs Grid */}
           <div className="row g-4 featured-jobs">
             {featuredJobs.map((job, index) => (
               <div className="col-12 col-md-6 col-lg-3" key={index}>
@@ -876,16 +857,15 @@ export default function Home() {
             ))}
           </div>
 
-          {/* View All Button */}
           <div className="category-viewall text-center">
             <a href="/job-listing" className="btn btn-primary">
               View All Featured Jobs
             </a>
           </div>
         </div>
-      </div>
+      </div> */}
 
-      <section className="section video-section-v2">
+      {/* <section className="section video-section-v2">
         <div className="container">
           <div className="row align-items-center g-5">
             <div className="col-lg-6">
@@ -917,7 +897,6 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Right - Video Thumbnail + Play Button */}
             <div className="col-lg-6">
               <div className="video-wrapper-v2">
                 <div className="video-thumbnail-v2">
@@ -928,7 +907,6 @@ export default function Home() {
                   />
                   <div className="video-overlay-v2"></div>
 
-                  {/* Play button - opens modal */}
                   <button
                     className="video-play-btn-v2"
                     type="button"
@@ -945,10 +923,10 @@ export default function Home() {
             </div>
           </div>
         </div>
-      </section>
+      </section> */}
 
       {/* Video Modal */}
-      <div
+      {/* <div
         className="modal fade"
         id="videoModalV2"
         tabIndex="-1"
@@ -977,7 +955,7 @@ export default function Home() {
             </div>
           </div>
         </div>
-      </div>
+      </div> */}
 
       <div className="section greybg">
         <div className="container">
@@ -1047,7 +1025,7 @@ export default function Home() {
         </div>
       </div>
 
-      <section className="section cities-section">
+      {/* <section className="section cities-section">
         <div className="container">
           <div className="titleTop text-center">
             <div className="subtitle">Choose Your Location</div>
@@ -1076,7 +1054,7 @@ export default function Home() {
             ))}
           </div>
         </div>
-      </section>
+      </section> */}
 
       <section className="section testimonials-section">
         <div className="container">
@@ -1184,10 +1162,9 @@ export default function Home() {
         </div>
       </div>
 
-      <section className="section subscribe-section">
+      {/* <section className="section subscribe-section">
         <div className="container">
           <div className="subscribe-wrapper">
-            {/* Left side - Text */}
             <div className="subscribe-copy">
               <span className="subscribe-badge">Stay in the loop</span>
               <h3>Subscribe To Our Newsletter</h3>
@@ -1197,7 +1174,6 @@ export default function Home() {
               </p>
             </div>
 
-            {/* Right side - Form */}
             <form className="subscribe-form" onSubmit={handleSubmit}>
               <div className="input-group">
                 <span className="input-group-text">
@@ -1222,9 +1198,9 @@ export default function Home() {
             </form>
           </div>
         </div>
-      </section>
+      </section> */}
 
-      <section className="section">
+      {/* <section className="section">
         <div className="container">
           <div className="titleTop text-center">
             <div className="subtitle">Our Blog</div>
@@ -1275,7 +1251,7 @@ export default function Home() {
             ))}
           </div>
         </div>
-      </section>
+      </section> */}
 
       <Footer />
     </>

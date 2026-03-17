@@ -6,15 +6,8 @@ const Copyright = memo(function Copyright() {
       <div className="container">
         <div className="footer-bottom-content">
           <div className="footer-copy">
-            Copyright &copy; {new Date().getFullYear()} Jobs Portal. All rights
-            reserved. Design by:{" "}
-            <a
-              href="https://www.piratestechnologies.com/"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Pirates Technologies
-            </a>
+            Copyright &copy; {new Date().getFullYear()} Staffoo. All rights
+            reserved. Design by: <a href="/">STAFFOO</a>
           </div>
 
           <div className="footer-payments">

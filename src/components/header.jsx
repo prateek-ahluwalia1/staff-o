@@ -273,6 +273,11 @@ const Header = memo(function Header() {
                   Contact Us
                 </NavLink>
               </li>
+              <li className="nav-item">
+                <NavLink className="nav-link" to="/about-us">
+                  About Us
+                </NavLink>
+              </li>
 
               {/* Pages Dropdown */}
               {/* <li className="nav-item dropdown">

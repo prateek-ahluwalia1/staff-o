@@ -6475,8 +6475,8 @@ Large Mobile Screen
 }
 
 .footer-payments img {
-    max-height: 24px;
-    width: auto;
+    max-height: 30px;
+    width: 500px;
     display: block;
 }
 

@@ -291,15 +291,17 @@ function CardForm({
                 pointerEvents: processing ? "none" : "auto",
               }}
             >
-              <CardElement
-                key={`card-element-${paymentMode}`}
-                options={CARD_ELEMENT_OPTIONS}
-                style={{ width: "100%" }}
-                onChange={(e) => {
-                  setCardComplete(e.complete);
-                  setCardError(e.error ? e.error.message : "");
-                }}
-              />
+              {/* Added div wrapper with width: "100%" to fix flexbox collapse */}
+              <div style={{ width: "100%" }}>
+                <CardElement
+                  key={`card-element-${paymentMode}`}
+                  options={CARD_ELEMENT_OPTIONS}
+                  onChange={(e) => {
+                    setCardComplete(e.complete);
+                    setCardError(e.error ? e.error.message : "");
+                  }}
+                />
+              </div>
             </div>
           </div>
         </>

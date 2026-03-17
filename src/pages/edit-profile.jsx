@@ -40,17 +40,15 @@ const INITIAL_FORM_STATE = {
 export default function EditProfile() {
   const dispatch = useDispatch();
   const { userdata } = useSelector((state) => state.auth);
+  const userId = userdata?.data?.id || userdata?.id;
   const userType = userdata?.data?.user_type || userdata?.user_type;
   const isverified =
     userdata?.data?.customer?.verify_profile ||
     userdata?.customer?.verify_profile;
 
   const endpoint = useMemo(
-    () =>
-      userdata?.data?.id || userdata?.id
-        ? `api/user-edit/${userdata?.data?.id || userdata?.id}`
-        : null,
-    [userdata?.data?.id, userdata?.id],
+    () => (userId ? `api/user-edit/${userId}` : null),
+    [userId],
   );
 
   const {
@@ -75,27 +73,23 @@ export default function EditProfile() {
   const [formData, setFormData] = useState(INITIAL_FORM_STATE);
   const [activeTab, setActiveTab] = useState("personal");
 
-  // Multi-Card States
   const [isAddingCard, setIsAddingCard] = useState(false);
   const [cardForm, setCardForm] = useState(INITIAL_CARD_STATE);
 
-  // Email OTP Modal States
   const [showEmailModal, setShowEmailModal] = useState(false);
-  const [emailStep, setEmailStep] = useState("input"); // 'input' | 'otp'
+  const [emailStep, setEmailStep] = useState("input");
   const [newEmailInput, setNewEmailInput] = useState("");
   const [emailOtp, setEmailOtp] = useState("");
   const [emailChangeError, setEmailChangeError] = useState(null);
   const [emailChangeSuccess, setEmailChangeSuccess] = useState(false);
 
-  // Phone OTP Modal States
   const [showPhoneModal, setShowPhoneModal] = useState(false);
-  const [phoneStep, setPhoneStep] = useState("input"); // 'input' | 'otp'
+  const [phoneStep, setPhoneStep] = useState("input");
   const [newPhoneInput, setNewPhoneInput] = useState("");
   const [phoneOtp, setPhoneOtp] = useState("");
   const [phoneChangeError, setPhoneChangeError] = useState(null);
   const [phoneChangeSuccess, setPhoneChangeSuccess] = useState(false);
 
-  // Document Modal States
   const [showDocModal, setShowDocModal] = useState(false);
   const [selectedDoc, setSelectedDoc] = useState(null);
   const [docForm, setDocForm] = useState({
@@ -143,7 +137,6 @@ export default function EditProfile() {
             ? JSON.parse(rawBankDetails)
             : rawBankDetails;
 
-        // Wrap in array if legacy data was saved as a single object
         existingBankDetails = Array.isArray(parsed) ? parsed : [parsed];
       } catch (e) {
         console.error("Failed to parse bank details", e);
@@ -234,6 +227,10 @@ export default function EditProfile() {
   const handleSubmit = useCallback(
     async (e) => {
       if (e) e.preventDefault();
+      if (!userId) {
+        toast.error("Unable to update profile. Missing user id.");
+        return;
+      }
       const payload = new FormData();
 
       Object.keys(formData).forEach((key) => {
@@ -251,11 +248,9 @@ export default function EditProfile() {
 
       if (profilePhotoFile) payload.append("profile_image", profilePhotoFile);
 
-      const res = await submit(
-        `api/user-update/${userdata.data.id || userdata.id}`,
-        payload,
-        { method: "POST" },
-      );
+      const res = await submit(`api/user-update/${userId}`, payload, {
+        method: "POST",
+      });
       if (res === undefined) return;
       toast.success("Profile updated successfully!");
       if (res.data) dispatch(setUser({ userdata: res.data }));
@@ -264,7 +259,7 @@ export default function EditProfile() {
         dispatch(setUser({ userdata: refetchRes.data }));
       }
     },
-    [formData, profilePhotoFile, submit, userdata, dispatch, refetch],
+    [formData, profilePhotoFile, submit, userId, dispatch, refetch],
   );
 
   const handleCloseEmailModal = () => {
@@ -278,9 +273,13 @@ export default function EditProfile() {
 
   const handleRequestEmailOtp = async (e) => {
     e.preventDefault();
+    if (!userId) {
+      setEmailChangeError("Unable to send OTP. Missing user id.");
+      return;
+    }
     setEmailChangeError(null);
     const res = await emailSubmit(
-      `api/user-update/${userdata.data?.id || userdata.id}`,
+      `api/user-update/${userId}`,
       { email: newEmailInput },
       { method: "POST" },
     );
@@ -294,9 +293,13 @@ export default function EditProfile() {
 
   const handleVerifyEmailOtp = async (e) => {
     e.preventDefault();
+    if (!userId) {
+      setEmailChangeError("Unable to verify OTP. Missing user id.");
+      return;
+    }
     setEmailChangeError(null);
     const res = await emailSubmit(
-      `api/user-update/${userdata.data?.id || userdata.id}`,
+      `api/user-update/${userId}`,
       { email: newEmailInput, email_otp: emailOtp },
       { method: "POST" },
     );
@@ -327,9 +330,13 @@ export default function EditProfile() {
 
   const handleRequestPhoneOtp = async (e) => {
     e.preventDefault();
+    if (!userId) {
+      setPhoneChangeError("Unable to send OTP. Missing user id.");
+      return;
+    }
     setPhoneChangeError(null);
     const res = await phoneSubmit(
-      `api/user-update/${userdata.data?.id || userdata.id}`,
+      `api/user-update/${userId}`,
       { phone: newPhoneInput },
       { method: "POST" },
     );
@@ -343,9 +350,13 @@ export default function EditProfile() {
 
   const handleVerifyPhoneOtp = async (e) => {
     e.preventDefault();
+    if (!userId) {
+      setPhoneChangeError("Unable to verify OTP. Missing user id.");
+      return;
+    }
     setPhoneChangeError(null);
     const res = await phoneSubmit(
-      `api/user-update/${userdata.data?.id || userdata.id}`,
+      `api/user-update/${userId}`,
       { phone: newPhoneInput, phone_otp: phoneOtp },
       { method: "POST" },
     );
@@ -376,6 +387,10 @@ export default function EditProfile() {
 
   const handleSaveNewCard = async (e) => {
     e.preventDefault();
+    if (!userId) {
+      toast.error("Unable to add card. Missing user id.");
+      return;
+    }
 
     const updatedCards = [...formData.bank_details, cardForm];
 
@@ -394,11 +409,9 @@ export default function EditProfile() {
 
     if (profilePhotoFile) payload.append("profile_image", profilePhotoFile);
 
-    const res = await submit(
-      `api/user-update/${userdata.data.id || userdata.id}`,
-      payload,
-      { method: "POST" },
-    );
+    const res = await submit(`api/user-update/${userId}`, payload, {
+      method: "POST",
+    });
     if (res === undefined) return;
 
     setFormData((prev) => ({ ...prev, bank_details: updatedCards }));
@@ -411,6 +424,10 @@ export default function EditProfile() {
 
   const handleRemoveCard = async (indexToRemove) => {
     if (!window.confirm("Are you sure you want to remove this card?")) return;
+    if (!userId) {
+      toast.error("Unable to remove card. Missing user id.");
+      return;
+    }
 
     const updatedCards = formData.bank_details.filter(
       (_, i) => i !== indexToRemove,
@@ -431,11 +448,9 @@ export default function EditProfile() {
 
     if (profilePhotoFile) payload.append("profile_image", profilePhotoFile);
 
-    const res = await submit(
-      `api/user-update/${userdata.data.id || userdata.id}`,
-      payload,
-      { method: "POST" },
-    );
+    const res = await submit(`api/user-update/${userId}`, payload, {
+      method: "POST",
+    });
     if (res === undefined) return;
 
     setFormData((prev) => ({ ...prev, bank_details: updatedCards }));
@@ -470,8 +485,12 @@ export default function EditProfile() {
 
   const handleDocSubmit = async (e) => {
     e.preventDefault();
+    if (!userId) {
+      toast.error("Unable to save document. Missing user id.");
+      return;
+    }
     let payload = {
-      user_id: userdata.data.id,
+      user_id: userId,
       no: docForm.no,
       exp: docForm.exp,
       document_no: docForm.document_no,

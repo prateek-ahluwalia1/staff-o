@@ -33,6 +33,10 @@ const ManageStaff = lazy(() => import("./pages/manage-staff"));
 const ChatPage = lazy(() => import("./pages/Chat"));
 const ChatRoom = lazy(() => import("./pages/ChatRoom"));
 const AllNotifications = lazy(() => import("./pages/AllNotifications"));
+const ContactUs = lazy(() => import("./pages/contact-us"));
+const Faqs = lazy(() => import("./pages/faqs"));
+const AboutUs = lazy(() => import("./pages/about-us"));
+const TermsOfUse = lazy(() => import("./pages/terms-of-use"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 function App() {
@@ -61,6 +65,38 @@ function App() {
               element={
                 <ProtectedRoute public>
                   <PublicProfilePreview />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/contact-us"
+              element={
+                <ProtectedRoute public>
+                  <ContactUs />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/faqs"
+              element={
+                <ProtectedRoute public>
+                  <Faqs />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/about-us"
+              element={
+                <ProtectedRoute public>
+                  <AboutUs />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/terms-of-use"
+              element={
+                <ProtectedRoute public>
+                  <TermsOfUse />
                 </ProtectedRoute>
               }
             />

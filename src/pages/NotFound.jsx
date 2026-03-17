@@ -55,7 +55,7 @@ const NotFound = () => {
             Take Me Home
           </NavLink>
           <NavLink
-            to="/contact"
+            to="/contact-us"
             className="btn btn-outline-secondary btn-lg"
             style={{ width: "240px" }}
           >

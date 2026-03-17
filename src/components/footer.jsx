@@ -25,7 +25,7 @@ const Footer = memo(function Footer() {
                   <Link to="/about-us">About Us</Link>
                 </li>
                 <li>
-                  <a href="/">Terms Of Use</a>
+                  <Link to="/terms-of-use">Terms Of Use</Link>
                 </li>
               </ul>
             </div>

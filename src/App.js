@@ -37,6 +37,7 @@ const ContactUs = lazy(() => import("./pages/contact-us"));
 const Faqs = lazy(() => import("./pages/faqs"));
 const AboutUs = lazy(() => import("./pages/about-us"));
 const TermsOfUse = lazy(() => import("./pages/terms-of-use"));
+const PrivacyPolicy = lazy(() => import("./pages/privacy-policy"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 function App() {
@@ -97,6 +98,14 @@ function App() {
               element={
                 <ProtectedRoute public>
                   <TermsOfUse />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/privacy-policy"
+              element={
+                <ProtectedRoute public>
+                  <PrivacyPolicy />
                 </ProtectedRoute>
               }
             />

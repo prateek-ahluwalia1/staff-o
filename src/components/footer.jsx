@@ -24,70 +24,60 @@ const Footer = memo(function Footer() {
                 <li>
                   <Link to="/about-us">About Us</Link>
                 </li>
+              </ul>
+            </div>
+
+            {/* Resources */}
+            <div className="col-sm-6 col-lg-3">
+              <h5 className="footer-title">Resources</h5>
+              <ul className="footer-links">
+                {/* <li>
+                  <Link to="/blog">Our Blog</Link>
+                </li> */}
+                {/* <li>
+                  <Link to="/career-advice">Career Advice</Link>
+                </li> */}
+                {/* <li>
+                  <Link to="/help-center">Help Center</Link>
+                </li> */}
+                <li>
+                  <Link to="/privacy-policy">Privacy Policy</Link>
+                </li>
                 <li>
                   <Link to="/terms-of-use">Terms Of Use</Link>
                 </li>
+                {/* <li>
+                  <Link to="/employers">For Employers</Link>
+                </li> */}
               </ul>
             </div>
 
-            {/* Jobs By Functional Area */}
+            {/* Job Types */}
             <div className="col-sm-6 col-lg-3">
-              <h5 className="footer-title">Jobs By Functional Area</h5>
+              <h5 className="footer-title">Job Types</h5>
               <ul className="footer-links">
                 <li>
-                  <a href="/">Marketing</a>
+                  <Link to="/jobs/security-license">Security License</Link>
                 </li>
                 <li>
-                  <a href="/">Graphic Design</a>
+                  <Link to="/jobs/misc-time-license">MISC Time License</Link>
                 </li>
                 <li>
-                  <a href="/">Business Management</a>
+                  <Link to="/jobs/working-with-children">
+                    Working With Children
+                  </Link>
                 </li>
                 <li>
-                  <a href="/">Software &amp; Web Development</a>
+                  <Link to="/jobs/first-aid">First Aid</Link>
                 </li>
                 <li>
-                  <a href="/">Admin</a>
+                  <Link to="/jobs/cpr">CPR</Link>
                 </li>
                 <li>
-                  <a href="/">Database Administration</a>
+                  <Link to="/jobs/white-card">White Card</Link>
                 </li>
                 <li>
-                  <a href="/">Advertising</a>
-                </li>
-                <li>
-                  <a href="/">Web Developer</a>
-                </li>
-              </ul>
-            </div>
-
-            {/* Jobs By Industry */}
-            <div className="col-sm-6 col-lg-3">
-              <h5 className="footer-title">Jobs By Industry</h5>
-              <ul className="footer-links">
-                <li>
-                  <a href="/">Courier/Logistics</a>
-                </li>
-                <li>
-                  <a href="/">Travel/Tourism/Transportation</a>
-                </li>
-                <li>
-                  <a href="/">Fashion</a>
-                </li>
-                <li>
-                  <a href="/">Electronics</a>
-                </li>
-                <li>
-                  <a href="/">Automobile</a>
-                </li>
-                <li>
-                  <a href="/">Advertising/PR</a>
-                </li>
-                <li>
-                  <a href="/">Health &amp; Fitness</a>
-                </li>
-                <li>
-                  <a href="/">Information Technology</a>
+                  <Link to="/jobs/traffic-controller">Traffic Controller</Link>
                 </li>
               </ul>
             </div>

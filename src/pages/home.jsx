@@ -1,6 +1,4 @@
-// import React, { useState } from "react";
-// import { toast } from "react-toastify";
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import Header from "../components/header";
 import Footer from "../components/footer";
@@ -59,28 +57,18 @@ function mapJobToCard(job, index) {
     schedule: `${formatDateTime(job?.start)} - ${formatDateTime(job?.end)}`,
     hours: Number(job?.hours || 0),
     posted: formatDate(job?.updated_at || job?.created_at || job?.start),
-    logo: "emplogo1.jpg",
+    raw: job, // Kept raw job data so the modal has access to everything
   };
 }
 
 export default function Home() {
   const { data: latestJobResponse, loading } = useFetch("api/get-all-jobs");
+  const [selectedJob, setSelectedJob] = useState(null);
+
   const categories = [
-    {
-      title: "Security License",
-      jobs: "(5) Jobs",
-      icon: "admin.png",
-    },
-    {
-      title: "MISC Time License",
-      jobs: "(3) Jobs",
-      icon: "it.png",
-    },
-    {
-      title: "Working With Children",
-      jobs: "(2) Jobs",
-      icon: "developer.png",
-    },
+    { title: "Security License", jobs: "(5) Jobs", icon: "admin.png" },
+    { title: "MISC Time License", jobs: "(3) Jobs", icon: "it.png" },
+    { title: "Working With Children", jobs: "(2) Jobs", icon: "developer.png" },
     { title: "First Aid", jobs: "(2) Jobs", icon: "data-admin.png" },
     { title: "CPR", jobs: "(2) Jobs", icon: "electrician.png" },
     { title: "White Card", jobs: "(2) Jobs", icon: "development-web.png" },
@@ -90,19 +78,6 @@ export default function Home() {
       icon: "business-management.png",
     },
   ];
-
-  // const industries = [
-  //   { icon: "fa-industry", label: "Manufacturing (5)" },
-  //   { icon: "fa-female", label: "Fashion (2)" },
-  //   { icon: "fa-plug", label: "Electronics (2)" },
-  //   { icon: "fa-bullhorn", label: "Advertising/PR (2)" },
-  //   { icon: "fa-desktop", label: "Information Technology (2)" },
-  //   { icon: "fa-truck", label: "Courier/Logistics (1)" },
-  //   { icon: "fa-car", label: "Automobile (1)" },
-  //   { icon: "fa-graduation-cap", label: "Education/Training (1)" },
-  //   { icon: "fa-university", label: "Banking/Financial Services (1)" },
-  //   { icon: "fa-heartbeat", label: "Health & Fitness (1)" },
-  // ];
 
   const steps = [
     {
@@ -123,101 +98,12 @@ export default function Home() {
         "Apply to your preferred jobs or hire top talent effortlessly.",
     },
   ];
+
   const latestJobs = useMemo(() => {
     const jobs = latestJobResponse?.data;
     if (!Array.isArray(jobs)) return [];
     return jobs.slice(0, 6).map((job, index) => mapJobToCard(job, index));
   }, [latestJobResponse]);
-
-  // const featuredJobs = [
-  //   {
-  //     type: "Full Time/Permanent",
-  //     title: "Full Stack Designer",
-  //     location: "Barrington",
-  //     date: "Mar 07, 2025",
-  //     company: "Connect People",
-  //     logo: "emplogo7.jpg",
-  //   },
-  //   {
-  //     type: "Part Time",
-  //     title: "Marketing Specialist",
-  //     location: "New York",
-  //     date: "Mar 10, 2025",
-  //     company: "Power Wave",
-  //     logo: "emplogo2.jpg",
-  //   },
-  //   {
-  //     type: "Freelance",
-  //     title: "UI Engineer",
-  //     location: "Los Angeles",
-  //     date: "Mar 12, 2025",
-  //     company: "Design Studio",
-  //     logo: "emplogo4.jpg",
-  //   },
-  //   {
-  //     type: "Contract",
-  //     title: "Data Analyst",
-  //     location: "Chicago",
-  //     date: "Mar 15, 2025",
-  //     company: "Sphere Tech",
-  //     logo: "emplogo9.jpg",
-  //   },
-  //   {
-  //     type: "Internship",
-  //     title: "Junior QA Engineer",
-  //     location: "Austin",
-  //     date: "Mar 18, 2025",
-  //     company: "Media Wave",
-  //     logo: "emplogo10.jpg",
-  //   },
-  //   {
-  //     type: "Remote",
-  //     title: "Product Manager",
-  //     location: "Remote",
-  //     date: "Mar 20, 2025",
-  //     company: "Power Color",
-  //     logo: "emplogo6.jpg",
-  //   },
-  //   {
-  //     type: "Hybrid",
-  //     title: "DevOps Engineer",
-  //     location: "Seattle",
-  //     date: "Mar 22, 2025",
-  //     company: "Surf Wave",
-  //     logo: "emplogo8.jpg",
-  //   },
-  //   {
-  //     type: "Full Time",
-  //     title: "Mobile App Developer",
-  //     location: "Miami",
-  //     date: "Mar 24, 2025",
-  //     company: "Power Wave",
-  //     logo: "emplogo2.jpg",
-  //   },
-  // ];
-
-  // const cities = [
-  //   {
-  //     name: "Atlanta",
-  //     jobs: "18 Jobs",
-  //     image: "atlanta.jpg",
-  //   },
-  //   {
-  //     name: "Barrington",
-  //     jobs: "9 Jobs",
-  //     image: "barrington.jpg",
-  //   },
-  //   {
-  //     name: "Durant",
-  //     jobs: "12 Jobs",
-  //     image: "durant.jpg",
-  //   },
-  //   {
-  //     name: "Bessemer",
-  //     jobs: "6 Jobs",
-  //     image: "bessemer.jpg",
-  //   },
-  // ];
 
   const testimonials = [
     {
@@ -246,55 +132,15 @@ export default function Home() {
     },
   ];
 
-  // const [email, setEmail] = useState("");
+  const handleOpenModal = (jobData) => {
+    setSelectedJob(jobData);
+    document.body.style.overflow = "hidden";
+  };
 
-  // const handleSubmit = (e) => {
-  //   e.preventDefault();
-  //   setEmail("");
-  //   toast.success("Thank you for subscribing!");
-  // };
-
-  // const blogPosts = [
-  //   {
-  //     image: "blog/1.jpg",
-  //     tag: "Hiring",
-  //     tagClass: "",
-  //     date: "17 Sep",
-  //     readTime: "7 min read",
-  //     title: "How to design a candidate experience that actually converts",
-  //     excerpt:
-  //       "From first touch to offer, here’s the messaging stack and automation playbook we use to keep talent engaged.",
-  //     authorImage: "coment-avatar-1.jpg",
-  //     authorName: "Samira Hodge",
-  //     authorRole: "Employer Brand Lead",
-  //   },
-  //   {
-  //     image: "blog/2.jpg",
-  //     tag: "Leadership",
-  //     tagClass: "teal",
-  //     date: "15 Sep",
-  //     readTime: "5 min read",
-  //     title: "7 rituals our leadership team uses to stay aligned remotely",
-  //     excerpt:
-  //       "Weekly dashboards, async standups, and lightweight rituals that keep strategic bets on track.",
-  //     authorImage: "coment-avatar-2.jpg",
-  //     authorName: "Devon Marks",
-  //     authorRole: "Chief of Staff",
-  //   },
-  //   {
-  //     image: "blog/3.jpg",
-  //     tag: "Culture",
-  //     tagClass: "orange",
-  //     date: "12 Sep",
-  //     readTime: "6 min read",
-  //     title: "Inside the onboarding sprint that ramps new hires in 10 days",
-  //     excerpt:
-  //       "A look at how we bundle product education, values training, and buddy systems into a cohesive journey.",
-  //     authorImage: "coment-avatar-3.jpg",
-  //     authorName: "Lily Ortega",
-  //     authorRole: "People Programs",
-  //   },
-  // ];
+  const handleCloseModal = () => {
+    setSelectedJob(null);
+    document.body.style.overflow = "auto";
+  };
 
   if (loading) {
     return <Loader fullPage />;
@@ -303,91 +149,41 @@ export default function Home() {
   return (
     <>
       <style>{`
-                .category-carousel-wrap {
-                    position: relative;
-                    padding: 0 40px;
-                }
+        /* Existing Carousel & Testimonial Styles */
+        .category-carousel-wrap { position: relative; padding: 0 40px; }
+        .category-nav { position: absolute; top: 50%; transform: translateY(-50%); width: 45px; height: 45px; background: white; border-radius: 50%; box-shadow: 0 4px 12px rgba(0,0,0,0.1); display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 10; transition: all 0.3s; }
+        .category-nav:hover { background: #f8f9fa; box-shadow: 0 6px 16px rgba(0,0,0,0.15); }
+        .category-prev { left: 0; }
+        .category-next { right: 0; }
+        .category-card { background: white; border-radius: 12px; padding: 50px 25px; text-align: center; box-shadow: 0 5px 15px rgba(0,0,0,0.06); transition: all 0.3s ease; border: 1px solid #f0f0f0; }
+        .category-card:hover { transform: translateY(-6px); box-shadow: 0 15px 30px rgba(0,0,0,0.1); }
+        .category-icon img { max-width: 65px; height: auto; margin-bottom: 15px; }
+        .category-jobs { color: #6c757d; font-size: 0.95rem; }
+        .category-jobs:hover { color: #0d6efd; text-decoration: none; }
+        .testimonial-card { background: white; border-radius: 16px; padding: 40px 30px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); transition: all 0.4s ease; border: 1px solid #eef0f4; }
+        .testimonial-quote { color: #e9ecef; opacity: 0.6; line-height: 1; margin-bottom: 15px; }
+        .testimonial-card p { font-size: 1.1rem; line-height: 1.7; color: #495057; margin-bottom: 30px; }
 
-                .category-nav {
-                    position: absolute;
-                    top: 50%;
-                    transform: translateY(-50%);
-                    width: 45px;
-                    height: 45px;
-                    background: white;
-                    border-radius: 50%;
-                    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    cursor: pointer;
-                    z-index: 10;
-                    transition: all 0.3s;
-                }
-
-                .category-nav:hover {
-                    background: #f8f9fa;
-                    box-shadow: 0 6px 16px rgba(0,0,0,0.15);
-                }
-
-                .category-prev { left: 0; }
-                .category-next { right: 0; }
-
-                .category-card {
-                    background: white;
-                    border-radius: 12px;
-                    padding: 50px 25px;
-                    text-align: center;
-                    box-shadow: 0 5px 15px rgba(0,0,0,0.06);
-                    transition: all 0.3s ease;
-                    border: 1px solid #f0f0f0;
-                }
-
-                .category-card:hover {
-                    transform: translateY(-6px);
-                    box-shadow: 0 15px 30px rgba(0,0,0,0.1);
-                }
-
-                .category-icon img {
-                    max-width: 65px;
-                    height: auto;
-                    margin-bottom: 15px;
-                }
-
-                .category-jobs {
-                    color: #6c757d;
-                    font-size: 0.95rem;
-                }
-
-                .category-jobs:hover {
-                    color: #0d6efd;
-                    text-decoration: none;
-                }
-
-                .testimonial-card {
-                    background: white;
-                    border-radius: 16px;
-                    padding: 40px 30px;
-                    box-shadow: 0 10px 30px rgba(0,0,0,0.08);
-                    transition: all 0.4s ease;
-                    border: 1px solid #eef0f4;
-                }
-
-                .testimonial-quote {
-                    color: #e9ecef;
-                    opacity: 0.6;
-                    line-height: 1;
-                    margin-bottom: 15px;
-                }
-
-                .testimonial-card p {
-                    font-size: 1.1rem;
-                    line-height: 1.7;
-                    color: #495057;
-                    margin-bottom: 30px;
-                }
-
-            `}</style>
+        /* Modern Job Card Styles (Imported from LatestJobs component) */
+        .bg-light-grey { background-color: #f8f9fa; }
+        .job-card { transition: all 0.3s ease; border: 1px solid rgba(0,0,0,0.05); }
+        .job-card:hover { transform: translateY(-4px); box-shadow: 0 12px 24px rgba(0,0,0,0.08) !important; border-color: rgba(13, 110, 253, 0.2); }
+        .icon-box { width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; background: #e9ecef; border-radius: 8px; color: #0d6efd; }
+        .badge-soft-primary { background-color: rgba(13, 110, 253, 0.1); color: #0d6efd; border-radius: 6px; padding: 6px 10px; font-weight: 600; font-size: 0.8rem; }
+        
+        /* Modal Styles */
+        .custom-modal-backdrop { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(0,0,0,0.5); z-index: 1050; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(4px); animation: fadeIn 0.2s ease-in-out; padding: 1rem; }
+        .custom-modal-content { background: white; border-radius: 16px; width: 100%; max-width: 650px; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 40px rgba(0,0,0,0.2); animation: slideUp 0.3s ease-out; display: flex; flex-direction: column; }
+        .custom-modal-header { padding: 1.5rem; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; background: white; z-index: 10; border-radius: 16px 16px 0 0; }
+        .custom-modal-body { padding: 1.5rem; }
+        .custom-modal-footer { padding: 1.5rem; border-top: 1px solid #eee; display: flex; justify-content: flex-end; position: sticky; bottom: 0; background: white; border-radius: 0 0 16px 16px; z-index: 10; }
+        .close-btn { background: none; border: none; font-size: 1.5rem; color: #6c757d; cursor: pointer; transition: color 0.2s; }
+        .close-btn:hover { color: #dc3545; }
+        .detail-group { background: #f8f9fa; padding: 1rem; border-radius: 12px; margin-bottom: 1rem; border: 1px solid #eee; }
+        
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+      `}</style>
 
       <Header />
 
@@ -416,18 +212,16 @@ export default function Home() {
                       placeholder="Enter skills or job title"
                     />
                   </label>
-
                   <label className="hero-field select-field">
                     <i className="fa fa-map-marker" aria-hidden="true"></i>
                     <select className="form-select" name="category">
-                      <option selected>Select Category</option>
+                      <option defaultValue>Select Category</option>
                       <option>Marketing</option>
                       <option>Teaching & Education</option>
                       <option>Design</option>
                       <option>Development</option>
                     </select>
                   </label>
-
                   <button
                     type="submit"
                     className="btn hero-submit"
@@ -475,220 +269,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Info Data Wrap (Search Job / Post Job boxes) */}
-      {/* <div className="infodatawrap">
-        <div className="container">
-          <div className="row">
-            <div className="col-md-6">
-              <a
-                href="/"
-                data-bs-toggle="modal"
-                data-bs-target="#preresume"
-                className="userloginbox"
-              >
-                <h3>Search your desired Job</h3>
-                <p>Discover a career you are passionate about</p>
-                <img
-                  src="/assets/images/icons/search-job-icon.png"
-                  alt="Search your desired Job"
-                />
-              </a>
-            </div>
-            <div className="col-md-6">
-              <a
-                href="/"
-                data-bs-toggle="modal"
-                data-bs-target="#prejobpost"
-                className="userloginbox postjobbox"
-              >
-                <h3>Post a Job Today</h3>
-                <p>Discover the ideal candidate for your team</p>
-                <img
-                  src="/assets/images/icons/postjob.png"
-                  alt="Post a Job Today"
-                />
-              </a>
-            </div>
-          </div>
-        </div>
-      </div> */}
-
-      {/* Top Companies */}
-      {/* <section className="section company-section">
-        <div className="container">
-          <div className="titleTop text-center">
-            <div className="subtitle">Here You Can See</div>
-            <h3>Top Companies are Hiring</h3>
-          </div>
-          <div className="row g-4 company-grid">
-            <div className="col-12 col-sm-6 col-lg-3">
-              <a href="/company-detail" className="company-card">
-                <div className="company-logo">
-                  <img
-                    src="/assets/images/employers/emplogo1.jpg"
-                    alt="Multimedia Design"
-                  />
-                </div>
-                <h5>Multimedia Design</h5>
-                <div className="company-meta">
-                  <i className="fa fa-map-marker" aria-hidden="true"></i> United
-                  States of America
-                </div>
-                <div className="company-openings">
-                  <i className="fa fa-briefcase" aria-hidden="true"></i> 5 Open
-                  Jobs
-                </div>
-              </a>
-            </div>
-
-            <div className="col-12 col-sm-6 col-lg-3">
-              <a href="/" className="company-card">
-                <div className="company-logo">
-                  <img
-                    src="/assets/images/employers/emplogo2.jpg"
-                    alt="Power Wave"
-                  />
-                </div>
-                <h5>Power Wave</h5>
-                <div className="company-meta">
-                  <i className="fa fa-map-marker" aria-hidden="true"></i> United
-                  States of America
-                </div>
-                <div className="company-openings">
-                  <i className="fa fa-briefcase" aria-hidden="true"></i> 2 Open
-                  Jobs
-                </div>
-              </a>
-            </div>
-
-            <div className="col-12 col-sm-6 col-lg-3">
-              <a href="/" className="company-card">
-                <div className="company-logo">
-                  <img
-                    src="/assets/images/employers/emplogo3.jpg"
-                    alt="Travel Advisor"
-                  />
-                </div>
-                <h5>Travel Advisor</h5>
-                <div className="company-meta">
-                  <i className="fa fa-map-marker" aria-hidden="true"></i> United
-                  States of America
-                </div>
-                <div className="company-openings">
-                  <i className="fa fa-briefcase" aria-hidden="true"></i> 0 Open
-                  Jobs
-                </div>
-              </a>
-            </div>
-
-            <div className="col-12 col-sm-6 col-lg-3">
-              <a href="/" className="company-card">
-                <div className="company-logo">
-                  <img
-                    src="/assets/images/employers/emplogo4.jpg"
-                    alt="New Design Studio"
-                  />
-                </div>
-                <h5>New Design Studio</h5>
-                <div className="company-meta">
-                  <i className="fa fa-map-marker" aria-hidden="true"></i> United
-                  States of America
-                </div>
-                <div className="company-openings">
-                  <i className="fa fa-briefcase" aria-hidden="true"></i> 1 Open
-                  Job
-                </div>
-              </a>
-            </div>
-
-            <div className="col-12 col-sm-6 col-lg-3">
-              <a href="/" className="company-card">
-                <div className="company-logo">
-                  <img
-                    src="/assets/images/employers/emplogo5.jpg"
-                    alt="Net Design"
-                  />
-                </div>
-                <h5>Net Design</h5>
-                <div className="company-meta">
-                  <i className="fa fa-map-marker" aria-hidden="true"></i> United
-                  States of America
-                </div>
-                <div className="company-openings">
-                  <i className="fa fa-briefcase" aria-hidden="true"></i> 1 Open
-                  Job
-                </div>
-              </a>
-            </div>
-
-            <div className="col-12 col-sm-6 col-lg-3">
-              <a href="/" className="company-card">
-                <div className="company-logo">
-                  <img
-                    src="/assets/images/employers/emplogo6.jpg"
-                    alt="Power Color"
-                  />
-                </div>
-                <h5>Power Color</h5>
-                <div className="company-meta">
-                  <i className="fa fa-map-marker" aria-hidden="true"></i> United
-                  States of America
-                </div>
-                <div className="company-openings">
-                  <i className="fa fa-briefcase" aria-hidden="true"></i> 2 Open
-                  Jobs
-                </div>
-              </a>
-            </div>
-
-            <div className="col-12 col-sm-6 col-lg-3">
-              <a href="/" className="company-card">
-                <div className="company-logo">
-                  <img
-                    src="/assets/images/employers/emplogo7.jpg"
-                    alt="Connect People"
-                  />
-                </div>
-                <h5>Connect People</h5>
-                <div className="company-meta">
-                  <i className="fa fa-map-marker" aria-hidden="true"></i> United
-                  States of America
-                </div>
-                <div className="company-openings">
-                  <i className="fa fa-briefcase" aria-hidden="true"></i> 2 Open
-                  Jobs
-                </div>
-              </a>
-            </div>
-
-            <div className="col-12 col-sm-6 col-lg-3">
-              <a href="/" className="company-card">
-                <div className="company-logo">
-                  <img
-                    src="/assets/images/employers/emplogo8.jpg"
-                    alt="Surf Wave"
-                  />
-                </div>
-                <h5>Surf Wave</h5>
-                <div className="company-meta">
-                  <i className="fa fa-map-marker" aria-hidden="true"></i> United
-                  States of America
-                </div>
-                <div className="company-openings">
-                  <i className="fa fa-briefcase" aria-hidden="true"></i> 1 Open
-                  Job
-                </div>
-              </a>
-            </div>
-          </div>
-          <div className="company-viewall text-center">
-            <a href="/companies" className="btn btn-primary">
-              View All Featured Companies
-            </a>
-          </div>
-        </div>
-      </section> */}
-
       {/* Categories Section */}
       <section className="section category-section">
         <div className="container">
@@ -701,7 +281,6 @@ export default function Home() {
             <div className="category-nav category-prev">
               <i className="fa fa-angle-left" aria-hidden="true"></i>
             </div>
-
             <div className="category-nav category-next">
               <i className="fa fa-angle-right" aria-hidden="true"></i>
             </div>
@@ -748,26 +327,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* <section className="section industries-section">
-        <div className="container">
-          <div className="titleTop text-center">
-            <div className="subtitle">Explore Sectors</div>
-            <h3>Popular Industries</h3>
-          </div>
-
-          <div className="industries-grid">
-            {industries.map((item, index) => (
-              <a href="/" className="industry-chip" key={index}>
-                <span className="chip-icon">
-                  <i className={`fa ${item.icon}`} aria-hidden="true"></i>
-                </span>
-                {item.label}
-              </a>
-            ))}
-          </div>
-        </div>
-      </section> */}
-
       <section className="section howit-section">
         <div className="container">
           <div className="titleTop text-center">
@@ -791,207 +350,77 @@ export default function Home() {
         </div>
       </section>
 
-      {/* <div className="section">
+      {/* LATEST JOBS SECTION (UPDATED UI) */}
+      <section className="section bg-light-grey py-5">
         <div className="container">
-          <div className="titleTop">
-            <div className="subtitle">Here You Can See</div>
-            <h3>
-              Featured <span>Jobs</span>
-            </h3>
-          </div>
-          <div className="row g-4 featured-jobs">
-            {featuredJobs.map((job, index) => (
-              <div className="col-12 col-md-6 col-lg-3" key={index}>
-                <div className="job-card">
-                  <div className="job-card-status">
-                    <span className="job-card-status-icon">
-                      <i className="fa fa-briefcase" aria-hidden="true"></i>
-                    </span>
-                    {job.type}
-                  </div>
-
-                  <h4 className="job-card-title">
-                    <a href="/">{job.title}</a>
-                  </h4>
-
-                  <div className="job-card-location">
-                    <i className="fa fa-map-marker" aria-hidden="true"></i>{" "}
-                    {job.location}
-                  </div>
-
-                  <div className="job-card-footer">
-                    <div className="job-card-meta">
-                      <span className="job-card-date">{job.date}</span>
-                      <span className="job-card-company">{job.company}</span>
-                    </div>
-
-                    <div className="job-card-logo">
-                      <img
-                        src={`/assets/images/employers/${job.logo}`}
-                        alt={job.company}
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <div className="category-viewall text-center">
-            <a href="/job-listing" className="btn btn-primary">
-              View All Featured Jobs
-            </a>
-          </div>
-        </div>
-      </div> */}
-
-      {/* <section className="section video-section-v2">
-        <div className="container">
-          <div className="row align-items-center g-5">
-            <div className="col-lg-6">
-              <div className="video-content-v2">
-                <span className="video-badge-v2">Here You Can See</span>
-                <h2 className="video-title-v2">
-                  Watch Our <span className="video-highlight-v2">Video</span>
-                </h2>
-                <p className="video-text-v2">
-                  Aliquam vestibulum cursus felis. In iaculis iaculis sapien ac
-                  condimentum. Vestibulum congue posuere lacus, id tincidunt
-                  nisi porta sit amet. Suspendisse et sapien varius,
-                  pellentesque dui non.
-                </p>
-                <ul className="video-features-v2">
-                  <li>
-                    <i className="fa fa-check-circle" aria-hidden="true"></i>{" "}
-                    Learn about our platform
-                  </li>
-                  <li>
-                    <i className="fa fa-check-circle" aria-hidden="true"></i>{" "}
-                    Discover success stories
-                  </li>
-                  <li>
-                    <i className="fa fa-check-circle" aria-hidden="true"></i>{" "}
-                    See how it works
-                  </li>
-                </ul>
-              </div>
-            </div>
-
-            <div className="col-lg-6">
-              <div className="video-wrapper-v2">
-                <div className="video-thumbnail-v2">
-                  <img
-                    src="/assets/images/video-thumbnail.jpg"
-                    alt="Video thumbnail"
-                    className="video-image-v2"
-                  />
-                  <div className="video-overlay-v2"></div>
-
-                  <button
-                    className="video-play-btn-v2"
-                    type="button"
-                    data-bs-toggle="modal"
-                    data-bs-target="#videoModalV2"
-                    aria-label="Play video"
-                  >
-                    <div className="play-btn-circle-v2">
-                      <i className="fa fa-play" aria-hidden="true"></i>
-                    </div>
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section> */}
-
-      {/* Video Modal */}
-      {/* <div
-        className="modal fade"
-        id="videoModalV2"
-        tabIndex="-1"
-        aria-labelledby="videoModalV2Label"
-        aria-hidden="true"
-      >
-        <div className="modal-dialog modal-dialog-centered modal-lg">
-          <div className="modal-content video-modal-content-v2">
-            <button
-              type="button"
-              className="btn-close video-modal-close-v2"
-              data-bs-dismiss="modal"
-              aria-label="Close"
-            ></button>
-
-            <div className="video-modal-body-v2">
-              <div className="ratio ratio-16x9">
-                <iframe
-                  src="https://www.youtube.com/embed/dQw4w9WgXcQ"
-                  title="Video player"
-                  frameBorder="0"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen
-                ></iframe>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div> */}
-
-      <div className="section greybg">
-        <div className="container">
-          <div className="titleTop">
-            <div className="subtitle">Here You Can See</div>
+          <div className="titleTop text-center mb-5">
+            <div className="subtitle">Discover Opportunities</div>
             <h3>
               Latest <span>Jobs</span>
             </h3>
           </div>
 
-          {/* Latest Jobs Grid */}
-          <div className="row g-4 latest-jobs">
+          <div className="row g-4">
             {latestJobs.map((job) => (
-              <div className="col-12 col-md-6 col-lg-4" key={job.id}>
-                <div className="latest-job-card">
-                  <div className="latest-job-header">
-                    <span className={`badge badge-status ${job.badgeClass}`}>
-                      {job.type}
-                    </span>
-                    <a href="/" className="bookmark">
-                      <i className="fa fa-heart-o" aria-hidden="true"></i>
-                    </a>
-                  </div>
-
-                  <h4>
-                    <a href="/">{job.title}</a>
-                  </h4>
-
-                  <div className="latest-job-meta">
-                    <span>
-                      <i className="fa fa-building" aria-hidden="true"></i>{" "}
-                      {job.company}
-                    </span>
-                    <span>
-                      <i className="fa fa-clock-o" aria-hidden="true"></i>{" "}
-                      {job.schedule}
+              <div className="col-12 col-md-6 col-xl-4" key={job.id}>
+                <div className="card h-100 job-card bg-white rounded-4 p-4 shadow-sm border-0">
+                  <div className="d-flex justify-content-between align-items-start mb-3">
+                    <span className="badge-soft-primary">{job.title}</span>
+                    <span className="badge bg-light text-dark border">
+                      <i className="fa fa-clock-o me-1"></i> {job.hours}h
                     </span>
                   </div>
 
-                  <div className="latest-job-footer">
-                    <div className="latest-job-company">
-                      <img
-                        src={`/assets/images/employers/${job.logo}`}
-                        alt="Company logo"
-                      />
-                      <div>
-                        <span className="label">Updated</span>
-                        <span className="value">
-                          {job.posted} | {job.hours}h
-                        </span>
+                  <h4 className="fw-bold mb-3 text-dark">{job.company}</h4>
+
+                  <div className="d-flex flex-column gap-2 mb-4 text-secondary small">
+                    <div className="d-flex align-items-center gap-2">
+                      <div
+                        className="icon-box"
+                        style={{ width: "28px", height: "28px" }}
+                      >
+                        <i className="fa fa-calendar"></i>
                       </div>
+                      <span>
+                        <strong>Starts:</strong>{" "}
+                        {formatDateTime(job.raw?.start)}
+                      </span>
                     </div>
+                    <div className="d-flex align-items-center gap-2">
+                      <div
+                        className="icon-box"
+                        style={{ width: "28px", height: "28px" }}
+                      >
+                        <i className="fa fa-flag-checkered"></i>
+                      </div>
+                      <span>
+                        <strong>Ends:</strong> {formatDateTime(job.raw?.end)}
+                      </span>
+                    </div>
+                  </div>
 
-                    <a href="/" className="btn btn-outline-primary btn-sm">
-                      Apply Now
-                    </a>
+                  <div className="mt-auto pt-3 border-top d-flex justify-content-between align-items-center">
+                    <div className="d-flex flex-column">
+                      <span
+                        className="text-muted"
+                        style={{
+                          fontSize: "0.7rem",
+                          textTransform: "uppercase",
+                        }}
+                      >
+                        Status
+                      </span>
+                      <span className="fw-semibold small text-dark text-capitalize">
+                        {job.type}
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      className="btn btn-outline-primary rounded-pill px-3 btn-sm fw-semibold"
+                      onClick={() => handleOpenModal(job.raw)}
+                    >
+                      View Full Details
+                    </button>
                   </div>
                 </div>
               </div>
@@ -999,55 +428,33 @@ export default function Home() {
 
             {!latestJobs.length && (
               <div className="col-12">
-                <div className="latest-job-card text-center py-4">
-                  <p className="text-muted mb-0">
-                    No jobs available right now.
-                  </p>
+                <div className="card shadow-sm border-0 rounded-4">
+                  <div className="card-body text-center py-5">
+                    <div className="display-4 text-muted mb-3">
+                      <i className="fa fa-folder-open-o"></i>
+                    </div>
+                    <h4 className="fw-bold text-dark">No jobs found</h4>
+                    <p className="text-secondary mb-0">
+                      Check back again later for new opportunities.
+                    </p>
+                  </div>
                 </div>
               </div>
             )}
           </div>
 
-          {/* View All Button */}
-          <div className="category-viewall text-center">
-            <Link to="/latest-jobs" className="btn btn-primary">
+          <div className="text-center mt-5">
+            <Link
+              to="/latest-jobs"
+              className="btn btn-primary rounded-pill px-4 fw-semibold shadow-sm"
+            >
               View All Latest Jobs
             </Link>
           </div>
         </div>
-      </div>
+      </section>
 
-      {/* <section className="section cities-section">
-        <div className="container">
-          <div className="titleTop text-center">
-            <div className="subtitle">Choose Your Location</div>
-            <h3>Jobs by Cities</h3>
-          </div>
-
-          <div className="row g-4 cities-grid">
-            {cities.map((city, index) => (
-              <div className="col-12 col-md-6 col-lg-3" key={index}>
-                <a href="/" className="city-card">
-                  <div className="city-image">
-                    <img
-                      src={`/assets/images/cities/${city.image}`}
-                      alt={city.name}
-                    />
-                  </div>
-                  <div className="city-overlay">
-                    <span>{city.name}</span>
-                    <span className="city-badge">
-                      <i className="fa fa-briefcase" aria-hidden="true"></i>{" "}
-                      {city.jobs}
-                    </span>
-                  </div>
-                </a>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section> */}
-
+      {/* Testimonials Section */}
       <section className="section testimonials-section">
         <div className="container">
           <div className="titleTop text-center">
@@ -1056,11 +463,9 @@ export default function Home() {
           </div>
 
           <div className="testimonials-wrap position-relative">
-            {/* Custom navigation arrows */}
             <div className="testimonials-nav testimonials-prev">
               <i className="fa fa-angle-left" aria-hidden="true"></i>
             </div>
-
             <div className="testimonials-nav testimonials-next">
               <i className="fa fa-angle-right" aria-hidden="true"></i>
             </div>
@@ -1104,11 +509,11 @@ export default function Home() {
         </div>
       </section>
 
+      {/* App Wrapper Section */}
       <div className="appwraper">
         <div className="container">
           <div className="row align-items-center">
             <div className="col-lg-6 col-md-6">
-              {/* app image Start */}
               <div className="appimg">
                 <img
                   src="/assets/images/app-screens.png"
@@ -1116,25 +521,20 @@ export default function Home() {
                 />
               </div>
             </div>
-
             <div className="col-lg-6 col-md-6">
-              {/* app info Start */}
               <div className="titleTop">
                 <div className="subtitle">Step Forword Now</div>
                 <h3>The JobsPortal APP</h3>
               </div>
-
               <div className="subtitle2">
                 A world of oppertunity in your hand
               </div>
-
               <p>
                 Aliquam vestibulum cursus felis. In iaculis iaculis sapien ac
                 condimentum. Vestibulum congue posuere lacus, id tincidunt nisi
                 porta sit amet. Suspendisse et sapien varius, pellentesque dui
                 non, semper orci. Curabitur blandit, diam ut ornare ultricies.
               </p>
-
               <div className="appbtn">
                 <a href="/">
                   <img
@@ -1154,96 +554,116 @@ export default function Home() {
         </div>
       </div>
 
-      {/* <section className="section subscribe-section">
-        <div className="container">
-          <div className="subscribe-wrapper">
-            <div className="subscribe-copy">
-              <span className="subscribe-badge">Stay in the loop</span>
-              <h3>Subscribe To Our Newsletter</h3>
-              <p>
-                Get the latest jobs, hiring trends, and tips delivered directly
-                to your inbox.
-              </p>
+      {/* JOB DETAILS MODAL */}
+      {selectedJob && (
+        <div className="custom-modal-backdrop" onClick={handleCloseModal}>
+          <div
+            className="custom-modal-content"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="custom-modal-header">
+              <div>
+                <h4 className="mb-0 fw-bold">Job Details</h4>
+                <div className="text-muted small mt-1">
+                  Job #{selectedJob.id} | Site #{selectedJob.site_id}
+                </div>
+              </div>
+              <button className="close-btn" onClick={handleCloseModal}>
+                &times;
+              </button>
             </div>
 
-            <form className="subscribe-form" onSubmit={handleSubmit}>
-              <div className="input-group">
-                <span className="input-group-text">
-                  <i className="fa fa-envelope" aria-hidden="true"></i>
-                </span>
-                <input
-                  type="email"
-                  className="form-control"
-                  placeholder="Enter your email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                />
-                <button className="btn btn-primary" type="submit">
-                  Subscribe
-                </button>
+            <div className="custom-modal-body">
+              <div className="detail-group">
+                <h6 className="text-primary fw-bold mb-3">
+                  <i className="fa fa-calendar me-2"></i>Schedule & Timing
+                </h6>
+                <div className="row g-3">
+                  <div className="col-sm-6">
+                    <span className="text-muted d-block small text-uppercase">
+                      Start
+                    </span>
+                    <strong className="text-dark">
+                      {formatDateTime(selectedJob.start)}
+                    </strong>
+                  </div>
+                  <div className="col-sm-6">
+                    <span className="text-muted d-block small text-uppercase">
+                      End
+                    </span>
+                    <strong className="text-dark">
+                      {formatDateTime(selectedJob.end)}
+                    </strong>
+                  </div>
+                </div>
               </div>
 
-              <small className="subscribe-note">
-                We respect your privacy. Unsubscribe anytime.
-              </small>
-            </form>
-          </div>
-        </div>
-      </section> */}
-
-      {/* <section className="section">
-        <div className="container">
-          <div className="titleTop text-center">
-            <div className="subtitle">Our Blog</div>
-            <h3>Latest Blog Posts</h3>
-          </div>
-
-          <div className="blog-grid">
-            {blogPosts.map((post, index) => (
-              <article className="blog-card" key={index}>
-                <div className="blog-card-media">
-                  <img src={`/assets/images/${post.image}`} alt="Blog cover" />
-                  <span className={`blog-card-tag ${post.tagClass}`}>
-                    {post.tag}
-                  </span>
-                </div>
-
-                <div className="blog-card-body">
-                  <div className="blog-card-meta">
-                    <span>{post.date}</span>
-                    <span>•</span>
-                    <span>{post.readTime}</span>
+              <div className="detail-group">
+                <h6 className="text-primary fw-bold mb-3">
+                  <i className="fa fa-clock-o me-2"></i>Hours Breakdown
+                </h6>
+                <div className="row g-3">
+                  <div className="col-4 col-sm-3">
+                    <span className="text-muted d-block small">Total</span>
+                    <strong>{selectedJob.hours || 0}h</strong>
                   </div>
-
-                  <h3>
-                    <a href="/blog-detail">{post.title}</a>
-                  </h3>
-
-                  <p>{post.excerpt}</p>
-
-                  <div className="blog-card-footer">
-                    <div className="author">
-                      <img
-                        src={`/assets/images/${post.authorImage}`}
-                        alt="Author"
-                      />
-                      <div>
-                        <strong>{post.authorName}</strong>
-                        <span>{post.authorRole}</span>
-                      </div>
-                    </div>
-
-                    <a href="/blog-detail" className="text-link">
-                      Read article <i className="fa-solid fa-arrow-right"></i>
-                    </a>
+                  <div className="col-4 col-sm-3">
+                    <span className="text-muted d-block small">Morning</span>
+                    <strong>{selectedJob.morning_hours || 0}h</strong>
+                  </div>
+                  <div className="col-4 col-sm-3">
+                    <span className="text-muted d-block small">Night</span>
+                    <strong>{selectedJob.night_hours || 0}h</strong>
                   </div>
                 </div>
-              </article>
-            ))}
+              </div>
+
+              <div className="detail-group mb-0">
+                <h6 className="text-primary fw-bold mb-3">
+                  <i className="fa fa-info-circle me-2"></i>Job Requirements &
+                  Info
+                </h6>
+                <div className="row g-3">
+                  <div className="col-sm-4">
+                    <span className="text-muted d-block small">Status</span>
+                    <span className="badge bg-secondary text-capitalize">
+                      {selectedJob.job_status || "N/A"}
+                    </span>
+                  </div>
+                  <div className="col-sm-4">
+                    <span className="text-muted d-block small">
+                      Shift Payable
+                    </span>
+                    <span className="text-dark fw-medium text-capitalize">
+                      {selectedJob.shift_payable || "No"}
+                    </span>
+                  </div>
+                  <div className="col-sm-4">
+                    <span className="text-muted d-block small">
+                      ASAP Required
+                    </span>
+                    <span
+                      className={`fw-medium ${selectedJob.asap ? "text-danger" : "text-dark"}`}
+                    >
+                      {selectedJob.asap ? "Yes" : "No"}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="custom-modal-footer">
+              <button
+                type="button"
+                className="btn btn-secondary rounded-pill px-4"
+                onClick={handleCloseModal}
+              >
+                Close
+              </button>
+            </div>
           </div>
         </div>
-      </section> */}
+      )}
 
       <Footer />
     </>

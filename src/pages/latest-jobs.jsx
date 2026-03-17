@@ -4,20 +4,6 @@ import Footer from "../components/footer";
 import Loader from "../components/Loader";
 import useFetch from "../hooks/useFetch";
 
-function formatDate(value) {
-  if (!value) return "-";
-
-  const normalized = String(value).replace(" ", "T");
-  const parsed = new Date(normalized);
-  if (Number.isNaN(parsed.getTime())) return "-";
-
-  return parsed.toLocaleDateString("en-AU", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  });
-}
-
 function formatDateTime(value) {
   if (!value) return "-";
 
@@ -45,18 +31,16 @@ export default function LatestJobs() {
 
   const handleOpenModal = (job) => {
     setSelectedJob(job);
-    // Prevent background scrolling when modal is open
     document.body.style.overflow = "hidden";
   };
 
   const handleCloseModal = () => {
     setSelectedJob(null);
-    // Restore background scrolling
     document.body.style.overflow = "auto";
   };
 
   if (loading) {
-    return <Loader fullpage />;
+    return <Loader fullPage />;
   }
 
   return (

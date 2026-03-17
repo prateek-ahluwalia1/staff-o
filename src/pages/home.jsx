@@ -507,7 +507,7 @@ export default function Home() {
       </section>
 
       {/* Info Data Wrap (Search Job / Post Job boxes) */}
-      <div className="infodatawrap">
+      {/* <div className="infodatawrap">
         <div className="container">
           <div className="row">
             <div className="col-md-6">
@@ -542,7 +542,7 @@ export default function Home() {
             </div>
           </div>
         </div>
-      </div>
+      </div> */}
 
       {/* Top Companies */}
       <section className="section company-section">

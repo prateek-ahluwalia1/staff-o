@@ -98,12 +98,11 @@ const Footer = memo(function Footer() {
               <ul className="footer-contact">
                 <li>
                   <i className="fa fa-map-marker" aria-hidden="true"></i>
-                  651 N Broad St, Suite 201, Middletown, Zip Code 19709, New
-                  Castle, Delaware, USA.
+                  21 Tanglewood Bvd Truganina VIC 3029
                 </li>
                 <li>
                   <i className="fa fa-envelope" aria-hidden="true"></i>
-                  <a href="mailto:info@jobsportal.com">info@jobsportal.com</a>
+                  <a href="mailto:staffoapp@gmail.com">staffoapp@gmail.com</a>
                 </li>
                 <li>
                   <i className="fa fa-phone" aria-hidden="true"></i>
@@ -112,20 +111,29 @@ const Footer = memo(function Footer() {
               </ul>
 
               <div className="footer-social">
-                <a href="/" aria-label="Facebook">
+                <a
+                  href="https://www.facebook.com/profile.php?id=61582204185867"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Facebook"
+                >
                   <i className="fab fa-facebook" aria-hidden="true"></i>
                 </a>
-                <a href="/" aria-label="X">
-                  <i className="fab fa-x-twitter" aria-hidden="true"></i>
-                </a>
-                <a href="/" aria-label="Instagram">
+                <a
+                  href="https://www.instagram.com/staffoapp/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Instagram"
+                >
                   <i className="fab fa-instagram" aria-hidden="true"></i>
                 </a>
-                <a href="/" aria-label="LinkedIn">
+                <a
+                  href="https://www.linkedin.com/company/staff-o/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="LinkedIn"
+                >
                   <i className="fab fa-linkedin" aria-hidden="true"></i>
-                </a>
-                <a href="/" aria-label="YouTube">
-                  <i className="fab fa-youtube" aria-hidden="true"></i>
                 </a>
               </div>
             </div>

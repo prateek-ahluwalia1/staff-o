@@ -11,6 +11,7 @@ use App\Models\DocumentCategory;
 use App\Models\Staff;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Validator;
@@ -833,6 +834,60 @@ class StaffController extends Controller
             return response()->json([
                 'message' => 'Failed to update user',
                 'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function deleteUser($id)
+    {
+        try {
+            $user = User::findOrFail($id);
+
+            DB::beginTransaction();
+
+            if ($user->user_type === 'customer') {
+                if ($user->customer) {
+                    $user->customer->delete();
+                }
+                
+            } elseif ($user->user_type === 'contractor') {
+                if ($user->contractor) {
+                    $user->contractor->delete();
+                }
+                
+                if ($user->documents) {
+                    $user->documents()->delete();
+                }
+                
+            } elseif ($user->user_type === 'staff') {
+                if ($user->staff) {
+                    $user->staff->delete();
+                }
+                
+                if ($user->documents) {
+                    $user->documents()->delete();
+                }
+            }
+
+            $user->tokens()->delete();
+
+            $user->delete();
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true, 
+                'code' => 200, 
+                'message' => 'User deleted successfully'
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            
+            return response()->json([
+                'success' => false, 
+                'code' => 500, 
+                'message' => 'Failed to delete user: ' . $e->getMessage()
             ], 500);
         }
     }

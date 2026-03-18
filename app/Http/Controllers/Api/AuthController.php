@@ -216,6 +216,11 @@ class AuthController extends Controller
 
         $user = User::where('email', $request->email)->first();
 
+        if (! $user->is_active) {
+            return response()->json([
+                'message' => 'User Not Found.'
+            ], 403);
+        }
         if ($user->user_type === 'customer') {
             $user->load(['customer']);
         } elseif ($user->user_type === 'contractor') {

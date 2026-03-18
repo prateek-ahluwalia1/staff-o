@@ -13,6 +13,7 @@ use App\Http\Controllers\Api\JobRosterActiviteController;
 use App\Http\Controllers\Api\JobRosterController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\PayRateController;
+use App\Http\Controllers\Api\ReportController;
 use App\Http\Controllers\Api\StaffController;
 use Illuminate\Support\Facades\Artisan;
 
@@ -86,6 +87,7 @@ Route::middleware('auth:sanctum')->group(function () {
     //customer and contractor update
     Route::any('customers/{id}/update', [StaffController::class, 'customerUpdate'])->name('customer.update');
     Route::any('user-edit/{id}', [StaffController::class, 'editUser'])->name('user.edit');
+    Route::any('user-delete/{id}', [StaffController::class, 'deleteUser'])->name('user.delete');
     Route::any('upload-file', [StaffController::class, 'uploadFile'])->name('upload.file');
 
     Route::any('/confirm_task/{id}', [JobRosterController::class, 'confirm_task']);
@@ -130,8 +132,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('contact-us/test-email', [ContactUsController::class, 'testEmail']);
 
     Route::any('get-roaster-hour-sum', [JobRosterController::class, 'getrosterhoursum'])->name('get.roster.hours.sum');
-    Route::any('getTimesheet', [JobRosterController::class, 'getTimesheet'])->name('getTimesheet');
-    Route::any('get-timesheet-details', [JobRosterController::class, 'getTimeSheetDetails'])->name('get.timesheet.details');
+
+    Route::any('getTimesheet', [ReportController::class, 'getTimesheet'])->name('getTimesheet');
+    Route::any('get-timesheet-details', [ReportController::class, 'getTimeSheetDetails'])->name('get.timesheet.details');
+    Route::any('generateJobTrackerReport', [ReportController::class, 'generateJobTrackerReport']);
+
  
     // Notifications
     Route::prefix('notifications')->group(function () {

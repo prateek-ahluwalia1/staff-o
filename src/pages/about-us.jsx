@@ -1,6 +1,7 @@
 import React from "react";
 import Header from "../components/header";
 import Footer from "../components/footer";
+import teamsimg from "../assets/images/teams.png";
 
 const highlights = [
   {
@@ -59,7 +60,7 @@ export default function AboutUs() {
               </div>
               <div className="col-lg-5">
                 <img
-                  src="/assets/images/about-us-img1.jpg"
+                  src={teamsimg}
                   alt="Team collaboration"
                   className="img-fluid rounded-4"
                 />

@@ -8,6 +8,8 @@ import useFetch from "../hooks/useFetch";
 import Loader from "../components/Loader";
 import "swiper/css";
 import "swiper/css/navigation";
+import heroimg from "../assets/images/hero-image.png";
+import appscreens from "../assets/images/app-screens.png";
 
 function formatDate(value) {
   if (!value) return "-";
@@ -251,16 +253,10 @@ export default function Home() {
             <div className="col-lg-6">
               <div className="hero-visual">
                 <img
-                  src="/assets/images/hero-image.png"
+                  src={heroimg}
                   alt="Find a perfect job"
                   className="img-fluid hero-image"
                 />
-                <div className="hero-floating-card">
-                  <span className="card-label">Find a Perfect Job</span>
-                  <button type="button" className="btn btn-sm btn-primary">
-                    Apply Now
-                  </button>
-                </div>
               </div>
             </div>
           </div>
@@ -506,10 +502,7 @@ export default function Home() {
           <div className="row align-items-center">
             <div className="col-lg-6 col-md-6">
               <div className="appimg">
-                <img
-                  src="/assets/images/app-screens.png"
-                  alt="Staffoo App Screens"
-                />
+                <img src={appscreens} alt="Staffoo App Screens" />
               </div>
             </div>
             <div className="col-lg-6 col-md-6">

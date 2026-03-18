@@ -66,12 +66,12 @@ export default function Home() {
   const [selectedJob, setSelectedJob] = useState(null);
 
   const categories = [
-    { title: "Security License", jobs: "(5) Jobs", icon: "admin.png" },
-    { title: "MISC Time License", jobs: "(3) Jobs", icon: "it.png" },
-    { title: "Working With Children", jobs: "(2) Jobs", icon: "developer.png" },
-    { title: "First Aid", jobs: "(2) Jobs", icon: "data-admin.png" },
-    { title: "CPR", jobs: "(2) Jobs", icon: "electrician.png" },
-    { title: "White Card", jobs: "(2) Jobs", icon: "development-web.png" },
+    { title: "Security License", icon: "admin.png" },
+    { title: "MISC Time License", icon: "it.png" },
+    { title: "Working With Children", icon: "developer.png" },
+    { title: "First Aid", icon: "data-admin.png" },
+    { title: "CPR", icon: "electrician.png" },
+    { title: "White Card", icon: "development-web.png" },
     {
       title: "Traffic Controller",
       jobs: "(2) Jobs",
@@ -83,19 +83,20 @@ export default function Home() {
     {
       icon: "fa-solid fa-user-plus",
       title: "Create An Account",
-      description: "It's very easy to open an account and start your journey.",
+      description:
+        "It’s quick and easy to open an account on Staffoo. Register as a Security Staff, Customer, or Sub-contractor and start your journey immediately",
     },
     {
       icon: "fa-solid fa-file",
       title: "Complete your profile",
       description:
-        "Share all the key details so employers can get to know you.",
+        "Add your key details, qualifications, and documents so employers or staff can see your profile and trust your expertise.",
     },
     {
       icon: "fa-solid fa-paper-plane",
       title: "Apply job or hire",
       description:
-        "Apply to your preferred jobs or hire top talent effortlessly.",
+        "For Staff: Apply to security jobs that match your skills and availability. For Customers: Post jobs and connect with verified security staff. For Sub-contractors: Assign jobs to trusted staff and manage workforce efficiently.",
     },
   ];
 
@@ -107,28 +108,22 @@ export default function Home() {
 
   const testimonials = [
     {
-      text: "JobsPortal helped me land my dream role within weeks. The process was clean, seamless, and the support team was always ready to assist.",
-      name: "Samantha Lee",
-      role: "Product Designer, Bright Labs",
+      text: "Staffoo made hiring security staff effortless. Within hours, we had verified professionals ready for our event. The platform is easy to use, and I can trust the quality of the staff every time.",
+      name: " Michael T. – Melbourne",
+      role: "Customer",
       image: "user1.jpg",
     },
     {
-      text: "As an employer, we found top talent faster than ever before. The platform makes publishing jobs and managing applicants incredibly simple.",
-      name: "Michael Robinson",
-      role: "HR Manager, SphereTech",
+      text: "Posting jobs on Staffoo is straightforward, and the staff profiles are thorough and reliable. We’ve filled multiple positions through the platform without any hassle. Highly recommended!",
+      name: "Emma R. - Sydney",
+      role: "Staff",
       image: "user2.jpg",
     },
     {
-      text: "I appreciate the curated job recommendations and the ability to connect directly with companies that align with my values.",
-      name: "Priya Patel",
-      role: "Software Engineer, Connect People",
+      text: "The Sub-contractor management feature is a lifesaver. Assigning jobs and monitoring progress is so smooth, and I always know our security needs are met by professional staff.",
+      name: "Sarah K. – Brisbane",
+      role: "Sub-contractor",
       image: "user3.jpg",
-    },
-    {
-      text: "We scaled our hiring pipeline dramatically thanks to JobsPortal’s reach and user-friendly tools.",
-      name: "Liam Carter",
-      role: "Founder, Appify Labs",
-      image: "user4.jpg",
     },
   ];
 
@@ -192,16 +187,19 @@ export default function Home() {
         <div className="container">
           <div className="row align-items-center g-4">
             <div className="col-lg-6">
-              <span className="hero-badge">Ready to Find Your Dream Job?</span>
+              <span className="hero-badge">
+                Australia’s Leading Platform for Security Jobs and Staff
+              </span>
               <h1 className="hero-title">
-                Take the next step in your career journey.
+                Connecting Australia’s Security Professionals with Trusted Jobs
               </h1>
               <p className="hero-copy">
-                Explore opportunities that match your skills and passions, and
-                land the job you've always wanted with JobsPortal.
+                Whether you’re looking for work, hiring security staff, or
+                managing assignments, Staffoo makes it simple, fast, and
+                reliable.
               </p>
 
-              <form className="hero-search" action="#." method="get">
+              {/* <form className="hero-search" action="#." method="get">
                 <div className="hero-search-fields">
                   <label className="hero-field">
                     <i className="fa fa-search" aria-hidden="true"></i>
@@ -230,7 +228,7 @@ export default function Home() {
                     <i className="fa fa-search" aria-hidden="true"></i>
                   </button>
                 </div>
-              </form>
+              </form> */}
 
               <div className="hero-actions d-flex flex-wrap align-items-center gap-3">
                 <div className="hero-stat">
@@ -416,13 +414,6 @@ export default function Home() {
                       />
                     </div>
                     <h5 className="mb-2">{cat.title}</h5>
-                    <a href="/" className="category-jobs d-block">
-                      <i
-                        className="fa fa-briefcase me-1"
-                        aria-hidden="true"
-                      ></i>
-                      {cat.jobs}
-                    </a>
                   </div>
                 </SwiperSlide>
               ))}
@@ -517,23 +508,27 @@ export default function Home() {
               <div className="appimg">
                 <img
                   src="/assets/images/app-screens.png"
-                  alt="JobsPortal App Screens"
+                  alt="Staffoo App Screens"
                 />
               </div>
             </div>
             <div className="col-lg-6 col-md-6">
               <div className="titleTop">
                 <div className="subtitle">Step Forword Now</div>
-                <h3>The JobsPortal APP</h3>
+                <h3>STAFFOO APP</h3>
               </div>
               <div className="subtitle2">
-                A world of oppertunity in your hand
+                Connecting Security Staff with Trusted Jobs Across Australia
               </div>
               <p>
-                Aliquam vestibulum cursus felis. In iaculis iaculis sapien ac
-                condimentum. Vestibulum congue posuere lacus, id tincidunt nisi
-                porta sit amet. Suspendisse et sapien varius, pellentesque dui
-                non, semper orci. Curabitur blandit, diam ut ornare ultricies.
+                Staffoo App is Australia’s leading platform for security jobs
+                and staffing. Find verified security jobs, hire qualified
+                security staff, or manage assignments efficiently — all from
+                your mobile device. Designed for security professionals,
+                employers, and subcontractors, Staffoo simplifies recruitment,
+                streamlines workforce management, and connects trusted staff
+                with reliable opportunities across Australia. Download now to
+                secure your next job or hire top security talent effortlessly.
               </p>
               <div className="appbtn">
                 <a href="/">

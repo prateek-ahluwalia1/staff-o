@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\RolesPermissionController;
 use App\Http\Controllers\Api\ChargeRateController;
+use App\Http\Controllers\API\ContactUsController;
 use App\Http\Controllers\Api\JobRosterActiviteController;
 use App\Http\Controllers\Api\JobRosterController;
 use App\Http\Controllers\Api\NotificationController;
@@ -32,6 +33,10 @@ Route::post('/register/staff', [AuthController::class, 'registerStaff']);
 
 Route::post('/login', [AuthController::class, 'login']);
 
+Route::prefix('contact-us')->group(function () {
+    Route::post('/', [ContactUsController::class, 'store']);
+    Route::get('/inquiry-types', [ContactUsController::class, 'getInquiryTypes']);
+});
 
 // Route::prefix('user')->group(function () {
 //     Route::get('/all', [UserController::class, 'index']);
@@ -99,7 +104,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::any('/guard/other/jobs/{type}/{duration}/{id}', [JobRosterController::class, 'getJobs'])->name('guard.job');
     Route::any('/report-incident/{id}', [JobRosterController::class, 'reportIncident']);
     Route::any('/add-foot-patrol-report/{id}', [JobRosterController::class, 'addFootPatrolReport']);
-    Route::any('/get-all-jobs', [JobRosterController::class, 'getAllJobs'])->name('get.all.jobs');
     Route::any('/get-staff/{id}', [JobRosterController::class, 'getStaff'])->name('get.staff');
     Route::any('fetch-customer-sites', [JobRosterController::class, 'fetchCustomerSites'])->name('fetch.customer.sites');
     Route::any('get-contractor-staff/{id}', [JobRosterController::class, 'getContractorStaff'])->name('get.contractor');
@@ -116,6 +120,18 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::any('store-operation-notes', [JobRosterActiviteController::class, 'storeOperationNotes'])->name('store.operation.notes');
     Route::any('get-operation-notes', [JobRosterActiviteController::class, 'getOperationNotes'])->name('get.operation.notes');
     Route::any('get-job-tasks', [JobRosterActiviteController::class, 'getJobTasks'])->name('get.job.tasks');
+
+    //ContactUs
+    Route::get('contact-us/', [ContactUsController::class, 'index']);
+    Route::get('contact-us/stats', [ContactUsController::class, 'getStats']);
+    Route::get('contact-us/{id}', [ContactUsController::class, 'show']);
+    Route::put('contact-us/{id}/status', [ContactUsController::class, 'updateStatus']);
+    Route::delete('contact-us/{id}', [ContactUsController::class, 'destroy']);
+    Route::post('contact-us/test-email', [ContactUsController::class, 'testEmail']);
+
+    Route::any('get-roaster-hour-sum', [JobRosterController::class, 'getrosterhoursum'])->name('get.roster.hours.sum');
+    Route::any('getTimesheet', [JobRosterController::class, 'getTimesheet'])->name('getTimesheet');
+    Route::any('get-timesheet-details', [JobRosterController::class, 'getTimeSheetDetails'])->name('get.timesheet.details');
  
     // Notifications
     Route::prefix('notifications')->group(function () {
@@ -196,3 +212,6 @@ Route::get('/clear-all-cache', function() {
         ], 500);
     }
 });
+    Route::any('/get-all-jobs', [JobRosterController::class, 'getAllJobs'])->name('get.all.jobs');
+
+

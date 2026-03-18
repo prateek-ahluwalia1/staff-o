@@ -50,7 +50,7 @@ class StaffController extends Controller
 
         return min($percentage, 100);
     }
-   
+
     public function createStaff(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -72,7 +72,7 @@ class StaffController extends Controller
 
         if ($validator->fails()) {
             $firstErrorMessage = $validator->errors()->first();
-            
+
             return response()->json([
                 'success' => false,
                 'message' => $firstErrorMessage,
@@ -105,19 +105,18 @@ class StaffController extends Controller
             'gender' => $request->gender,
             'staff_document_type' => $request->staff_document_type
         ]);
-        
+
         $old_data = Staff::where('user_id', $user->id)->first();
 
         $capitalUser = User::where('id', $request->user_id)
             ->where('name', 'Capital Security')
             ->firstOrFail();
-        if($capitalUser->name == "Capital Security")
-        {
+        if ($capitalUser->name == "Capital Security") {
             $check_old_data_exist = Document::where('user_id', $user->id)->where('document_category', '!=', 'other-doc')->first();
-            if((!isset($old_data)) || (isset($old_data->staff_document_type) && !$check_old_data_exist)){
+            if ((!isset($old_data)) || (isset($old_data->staff_document_type) && !$check_old_data_exist)) {
                 $document_categories = DocumentCategory::where('document_category', $request->staff_document_type)->first();
-                if($document_categories){
-                    foreach (json_decode($document_categories->document_type) as $key => $value) {  
+                if ($document_categories) {
+                    foreach (json_decode($document_categories->document_type) as $key => $value) {
                         $guard_documents = new Document();
                         $guard_documents->user_id = $user->id;
                         $guard_documents->document_category = ($document_categories->document_category != '' ? $document_categories->document_category : 'other');
@@ -126,56 +125,55 @@ class StaffController extends Controller
                         $guard_documents->save();
                     }
                 }
-            }else{
-                if($old_data->staff_document_type != $request->staff_document_type){
-                    if($request->has('staff_document_type') && !empty($request->staff_document_type)){
+            } else {
+                if ($old_data->staff_document_type != $request->staff_document_type) {
+                    if ($request->has('staff_document_type') && !empty($request->staff_document_type)) {
                         $document_categories = DocumentCategory::where('document_category', $request->staff_document_type)->first();
-                        
-                        if($document_categories){
+
+                        if ($document_categories) {
                             $old_docs = Document::where('user_id', $user->id)
-                                                    ->where('document_category', '!=', 'other-doc')
-                                                    ->get()
-                                                    ->keyBy('document_type');
-                            
+                                ->where('document_category', '!=', 'other-doc')
+                                ->get()
+                                ->keyBy('document_type');
+
                             $new_doc_types = json_decode($document_categories->document_type, true);
                             $new_document_category = $document_categories->document_category ?: 'other';
-                            
+
                             $old_doc_types = $old_docs->keys()->toArray();
                             $new_doc_keys = array_keys($new_doc_types);
-                            
+
                             $to_delete_types = array_diff($old_doc_types, $new_doc_keys);
-                            
+
                             $to_add_types = array_diff($new_doc_keys, $old_doc_types);
-                            
+
                             $common_types = array_intersect($old_doc_types, $new_doc_keys);
-                            
-                            if(!empty($common_types)) {
+
+                            if (!empty($common_types)) {
                                 $common_doc_ids = [];
-                                foreach($common_types as $doc_type) {
-                                    if($old_docs->has($doc_type)) {
+                                foreach ($common_types as $doc_type) {
+                                    if ($old_docs->has($doc_type)) {
                                         $common_doc_ids[] = $old_docs[$doc_type]->id;
                                     }
                                 }
-                                
+
                                 Document::whereIn('id', $common_doc_ids)
-                                            ->update(['document_category' => $new_document_category]);
-                                
+                                    ->update(['document_category' => $new_document_category]);
                             }
-                            
-                            if(!empty($to_delete_types)) {
+
+                            if (!empty($to_delete_types)) {
                                 $docs_to_delete = $old_docs->whereIn('document_type', $to_delete_types);
-                                
-                                foreach($docs_to_delete as $doc) {
+
+                                foreach ($docs_to_delete as $doc) {
                                     $doc_id = $doc->id;
                                     $doc->delete();
                                 }
                             }
-                            
-                            if(!empty($to_add_types)) {
+
+                            if (!empty($to_add_types)) {
                                 $documents_to_insert = [];
-                                
-                                foreach($to_add_types as $doc_type) {
-                                    if(!Document::where(['user_id' => $user->id, 'document_type' => $doc_type])->exists()) {
+
+                                foreach ($to_add_types as $doc_type) {
+                                    if (!Document::where(['user_id' => $user->id, 'document_type' => $doc_type])->exists()) {
                                         $documents_to_insert[] = [
                                             'user_id' => $user->id,
                                             'document_category' => $new_document_category,
@@ -186,26 +184,25 @@ class StaffController extends Controller
                                         ];
                                     }
                                 }
-                                
-                                if(!empty($documents_to_insert)) {
+
+                                if (!empty($documents_to_insert)) {
                                     Document::insert($documents_to_insert);
-                                    
-                                    foreach($documents_to_insert as $new_doc) {
+
+                                    foreach ($documents_to_insert as $new_doc) {
                                         $saved_doc = Document::where([
                                             'user_id' => $new_doc['user_id'],
                                             'document_type' => $new_doc['document_type']
                                         ])->first();
-                                        
                                     }
                                 }
                             }
-                            
-                            if(!empty($to_delete_types)) {
+
+                            if (!empty($to_delete_types)) {
                                 Document::where('user_id', $user->id)
-                                ->where('document_category', '!=', 'other-doc')
-                                ->whereNull('file')
-                                ->whereIn('document_type', $to_delete_types)
-                                ->delete();
+                                    ->where('document_category', '!=', 'other-doc')
+                                    ->whereNull('file')
+                                    ->whereIn('document_type', $to_delete_types)
+                                    ->delete();
                             }
                         }
                     }
@@ -215,7 +212,7 @@ class StaffController extends Controller
 
         // Send email verification
         // $this->guardEmailVerifay($request->email, $request->header('Business-Id'), $request->password);
-            
+
         return response()->json([
             'message' => "Staff registered successfully. Please verify your email.",
             'code' => 200,
@@ -256,25 +253,25 @@ class StaffController extends Controller
         }
 
         $user = User::findOrFail($userId);
-        
+
         $userData = [];
-        
+
         if ($request->has('name')) {
             $userData['name'] = $request->name;
         }
-        
+
         if ($request->has('email')) {
             $userData['email'] = $request->email;
         }
-        
+
         if ($request->has('phone')) {
             $userData['phone'] = $request->phone;
         }
-        
+
         if ($request->has('password') && !empty($request->password)) {
             $userData['password'] = Hash::make($request->password);
         }
-        
+
         if ($request->has('is_active')) {
             $userData['is_active'] = $request->is_active;
         }
@@ -284,7 +281,7 @@ class StaffController extends Controller
         }
 
         if ($request->has('state')) {
-             $userData['state'] = $request->state;
+            $userData['state'] = $request->state;
         }
 
         if ($request->has('city')) {
@@ -292,12 +289,12 @@ class StaffController extends Controller
         }
 
         if ($request->has('country')) {
-         $userData['country'] = $request->country;
+            $userData['country'] = $request->country;
         }
-        
-        
+
+
         if ($request->has('coordinates')) {
-         $userData['coordinates'] = $request->coordinates;
+            $userData['coordinates'] = $request->coordinates;
         }
 
         if (!empty($userData)) {
@@ -305,20 +302,20 @@ class StaffController extends Controller
         }
 
         $staff = Staff::firstOrNew(['user_id' => $user->id]);
-        
+
         if ($request->hasFile('profile_image')) {
             if ($staff->profile_image) {
                 Storage::disk('public')->delete($staff->profile_image);
             }
-            
+
             $profileImagePath = $request->file('profile_image')->store('staff-profiles', 'public');
             $staff->profile_image = $profileImagePath;
         } elseif ($request->has('profile_image') && !$request->hasFile('profile_image')) {
             $staff->profile_image = $request->profile_image;
         }
 
-        
-        
+
+
         if ($request->has('gender')) {
             $staff->gender = $request->gender;
         }
@@ -330,13 +327,12 @@ class StaffController extends Controller
         $capitalUser = User::where('id', $request->user_id)
             ->where('name', 'Capital Security')
             ->firstOrFail();
-        if($capitalUser->name == "Capital Security")
-        {
+        if ($capitalUser->name == "Capital Security") {
             $check_old_data_exist = Document::where('user_id', $user->id)->where('document_category', '!=', 'other-doc')->first();
-            if((!isset($old_data)) || (isset($old_data->staff_document_type) && !$check_old_data_exist)){
+            if ((!isset($old_data)) || (isset($old_data->staff_document_type) && !$check_old_data_exist)) {
                 $document_categories = DocumentCategory::where('document_category', $request->staff_document_type)->first();
-                if($document_categories){
-                    foreach (json_decode($document_categories->document_type) as $key => $value) {  
+                if ($document_categories) {
+                    foreach (json_decode($document_categories->document_type) as $key => $value) {
                         $guard_documents = new Document();
                         $guard_documents->user_id = $user->id;
                         $guard_documents->document_category = ($document_categories->document_category != '' ? $document_categories->document_category : 'other');
@@ -345,56 +341,55 @@ class StaffController extends Controller
                         $guard_documents->save();
                     }
                 }
-            }else{
-                if($old_data->staff_document_type != $request->staff_document_type){
-                    if($request->has('staff_document_type') && !empty($request->staff_document_type)){
+            } else {
+                if ($old_data->staff_document_type != $request->staff_document_type) {
+                    if ($request->has('staff_document_type') && !empty($request->staff_document_type)) {
                         $document_categories = DocumentCategory::where('document_category', $request->staff_document_type)->first();
-                        
-                        if($document_categories){
+
+                        if ($document_categories) {
                             $old_docs = Document::where('user_id', $user->id)
-                                                    ->where('document_category', '!=', 'other-doc')
-                                                    ->get()
-                                                    ->keyBy('document_type');
-                            
+                                ->where('document_category', '!=', 'other-doc')
+                                ->get()
+                                ->keyBy('document_type');
+
                             $new_doc_types = json_decode($document_categories->document_type, true);
                             $new_document_category = $document_categories->document_category ?: 'other';
-                            
+
                             $old_doc_types = $old_docs->keys()->toArray();
                             $new_doc_keys = array_keys($new_doc_types);
-                            
+
                             $to_delete_types = array_diff($old_doc_types, $new_doc_keys);
-                            
+
                             $to_add_types = array_diff($new_doc_keys, $old_doc_types);
-                            
+
                             $common_types = array_intersect($old_doc_types, $new_doc_keys);
-                            
-                            if(!empty($common_types)) {
+
+                            if (!empty($common_types)) {
                                 $common_doc_ids = [];
-                                foreach($common_types as $doc_type) {
-                                    if($old_docs->has($doc_type)) {
+                                foreach ($common_types as $doc_type) {
+                                    if ($old_docs->has($doc_type)) {
                                         $common_doc_ids[] = $old_docs[$doc_type]->id;
                                     }
                                 }
-                                
+
                                 Document::whereIn('id', $common_doc_ids)
-                                            ->update(['document_category' => $new_document_category]);
-                                
+                                    ->update(['document_category' => $new_document_category]);
                             }
-                            
-                            if(!empty($to_delete_types)) {
+
+                            if (!empty($to_delete_types)) {
                                 $docs_to_delete = $old_docs->whereIn('document_type', $to_delete_types);
-                                
-                                foreach($docs_to_delete as $doc) {
+
+                                foreach ($docs_to_delete as $doc) {
                                     $doc_id = $doc->id;
                                     $doc->delete();
                                 }
                             }
-                            
-                            if(!empty($to_add_types)) {
+
+                            if (!empty($to_add_types)) {
                                 $documents_to_insert = [];
-                                
-                                foreach($to_add_types as $doc_type) {
-                                    if(!Document::where(['user_id' => $user->id, 'document_type' => $doc_type])->exists()) {
+
+                                foreach ($to_add_types as $doc_type) {
+                                    if (!Document::where(['user_id' => $user->id, 'document_type' => $doc_type])->exists()) {
                                         $documents_to_insert[] = [
                                             'user_id' => $user->id,
                                             'document_category' => $new_document_category,
@@ -405,26 +400,25 @@ class StaffController extends Controller
                                         ];
                                     }
                                 }
-                                
-                                if(!empty($documents_to_insert)) {
+
+                                if (!empty($documents_to_insert)) {
                                     Document::insert($documents_to_insert);
-                                    
-                                    foreach($documents_to_insert as $new_doc) {
+
+                                    foreach ($documents_to_insert as $new_doc) {
                                         $saved_doc = Document::where([
                                             'user_id' => $new_doc['user_id'],
                                             'document_type' => $new_doc['document_type']
                                         ])->first();
-                                        
                                     }
                                 }
                             }
-                            
-                            if(!empty($to_delete_types)) {
+
+                            if (!empty($to_delete_types)) {
                                 Document::where('user_id', $user->id)
-                                ->where('document_category', '!=', 'other-doc')
-                                ->whereNull('file')
-                                ->whereIn('document_type', $to_delete_types)
-                                ->delete();
+                                    ->where('document_category', '!=', 'other-doc')
+                                    ->whereNull('file')
+                                    ->whereIn('document_type', $to_delete_types)
+                                    ->delete();
                             }
                         }
                     }
@@ -444,9 +438,9 @@ class StaffController extends Controller
 
     public function getAllGuardDocument(Request $request)
     {
-       $guardDocuments = Document::where('user_id', $request->id)->orderBy('document_name', 'asc')->get();
-       $grd = GetAllGuardDocuments::collection($guardDocuments);
-       return response()->json([ 'success' => true, 'data' => $grd , 'code' => 200 ]);
+        $guardDocuments = Document::where('user_id', $request->id)->orderBy('document_name', 'asc')->get();
+        $grd = GetAllGuardDocuments::collection($guardDocuments);
+        return response()->json(['success' => true, 'data' => $grd, 'code' => 200]);
     }
 
     public function uploadFile(Request $request)
@@ -455,29 +449,29 @@ class StaffController extends Controller
             $request->folder = 'uploads';
         }
         if ($request->has('upload')) {
-            $image = fileUpload($request->upload, '/'.$request->folder.'/');     
-        }else{
-            $image = fileUpload($request->file, '/'.$request->folder.'/');
+            $image = fileUpload($request->upload, '/' . $request->folder . '/');
+        } else {
+            $image = fileUpload($request->file, '/' . $request->folder . '/');
         }
-             if ($image != '') {
-                $url = asset('').$request->folder.'/'. $image;
-                if ($request->folder == '') {
-                $url = asset('uploads').'/'.$image;
-                }
-                return response()->json(array('success' => true, 'path' => $image, 'url' => $url));
-             } else {
-                return response()->json(array('success' => false, 'path' => '', 'url' => ''));
-         }
+        if ($image != '') {
+            $url = asset('') . $request->folder . '/' . $image;
+            if ($request->folder == '') {
+                $url = asset('uploads') . '/' . $image;
+            }
+            return response()->json(array('success' => true, 'path' => $image, 'url' => $url));
+        } else {
+            return response()->json(array('success' => false, 'path' => '', 'url' => ''));
+        }
     }
 
     public function addGuardDocuments(Request $request)
     {
         $staff_details = Staff::where('user_id', $request->id)->first();
-        if($staff_details && $staff_details->staff_document_type){
-            
-            if(Document::where(['user_id'=> $request->id, 'document_type'=> $request->document_type])->first()){
-                if($request->document_type != 'other'){
-                return response()->json(['message' => "This type of document is already exist!", 'success' => false], 404);
+        if ($staff_details && $staff_details->staff_document_type) {
+
+            if (Document::where(['user_id' => $request->id, 'document_type' => $request->document_type])->first()) {
+                if ($request->document_type != 'other') {
+                    return response()->json(['message' => "This type of document is already exist!", 'success' => false], 404);
                 }
             }
             $addDocuments = new Document();
@@ -490,12 +484,12 @@ class StaffController extends Controller
             $addDocuments->document_type = (!empty($request->document_type) && $request->has('document_type') ? $request->document_type : '');
             $addDocuments->document_name = (!empty($request->document_name) && $request->has('document_name') ? returnAction($request->document_name) : '');
 
-            if($request->has('file')){
-                $addDocuments->file = $request->file; 
+            if ($request->has('file')) {
+                $addDocuments->file = $request->file;
             }
             $addDocuments->save();
-            return response()->json(['message' => "Staff Documents Add Successfully!",'code' => 200, 'success' => true]);
-        }else{
+            return response()->json(['message' => "Staff Documents Add Successfully!", 'code' => 200, 'success' => true]);
+        } else {
             return response()->json(['message' => "Staff Residencial status not updated!", 'success' => false], 404);
         }
     }
@@ -507,22 +501,21 @@ class StaffController extends Controller
         $old_data = $updateDocuments;
         $updateDocuments->document_name = $request->document_name;
         $updateDocuments->user_id = $request->user_id;
-        if(!empty($request->document_expiry) && $request->document_expiry == 'current, pending renewal')
-        {
-        $updateDocuments->document_expiry = $request->document_expiry;
-        }else{
-        $updateDocuments->document_expiry = !empty($request->document_expiry) ? dbFormate($request->document_expiry) : '' ;
+        if (!empty($request->document_expiry) && $request->document_expiry == 'current, pending renewal') {
+            $updateDocuments->document_expiry = $request->document_expiry;
+        } else {
+            $updateDocuments->document_expiry = !empty($request->document_expiry) ? dbFormate($request->document_expiry) : '';
         }
         $updateDocuments->document_no = (!empty($request->document_no) && $request->has('document_no') ? $request->document_no : '');
         $updateDocuments->document_type = (!empty($request->document_type) && $request->has('document_type') ? $request->document_type : '');
 
-        if($request->has('file')){
-            $updateDocuments->file = $request->file; 
-            $updateDocuments->file = str_replace(url('')."/"."staff_documents/","",$request->file);
+        if ($request->has('file')) {
+            $updateDocuments->file = $request->file;
+            $updateDocuments->file = str_replace(url('') . "/" . "staff_documents/", "", $request->file);
         }
         $updateDocuments->save();
-        
-        return response()->json(['message' => "Staff Documents Updated Successfully!",'code' => 200, 'success' => true]);
+
+        return response()->json(['message' => "Staff Documents Updated Successfully!", 'code' => 200, 'success' => true]);
     }
 
     public function editUser($id)
@@ -530,7 +523,7 @@ class StaffController extends Controller
         $user = User::findOrFail($id);
 
         if ($user->user_type === 'customer') {
-            $user->load(['customer', 'documents']);
+            $user->load(['customer']);
         } elseif ($user->user_type === 'contractor') {
             $user->load('contractor', 'documents');
         } elseif ($user->user_type === 'staff') {
@@ -543,434 +536,304 @@ class StaffController extends Controller
             $user->is_active = 1;
             $user->save();
         }
-        
+
         $user->profile_completion_percentage = $percentage;
 
         return response()->json(['success' => true, 'code' => 200, 'data' => $user]);
     }
 
-    // public function updateUser(Request $request, $id)
-    // {
-    //     try {
-    //         $user = User::findOrFail($id);
-
-    //         $rules = [
-    //             'name' => 'sometimes|required|string|max:255',
-    //             'email' => 'sometimes|required|email|unique:users,email,' . $user->id,
-    //             'password' => 'nullable|confirmed|min:6',
-    //             'is_active' => 'sometimes|boolean',
-    //             'staff_document_type' => 'nullable|string',
-    //             'address' => 'nullable',
-    //             'city' => 'nullable|string',
-    //             'state' => 'nullable|string',
-    //             'country' => 'nullable|string',
-    //             'coordinates' => 'nullable|string',
-    //         ];
-
-    //         if ($user->user_type === 'customer') {
-    //             $rules = array_merge($rules, [
-    //                 'phone' => 'nullable|string',
-    //                 'company_name' => 'nullable|string',
-    //                 'bank_details' => 'nullable',
-    //                 'email_otp' => 'nullable|string',
-    //                 'phone_otp' => 'nullable|string'
-    //             ]);
-    //         }
-
-    //         if ($user->user_type === 'contractor') {
-    //             $rules = array_merge($rules, [
-    //                 'company_name' => 'sometimes|required|string|max:255',
-    //                 'registration_number' => 'nullable|string|max:255',
-    //                 'phone' => 'nullable|string|max:20',
-    //             ]);
-    //         }
-
-    //         if ($user->user_type === 'staff') {
-    //             $rules = array_merge($rules, [
-    //                 'profile_image' => 'sometimes|nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-    //                 'gender' => 'sometimes|nullable|in:male,female,other',
-    //                 'phone' => 'sometimes|nullable|string',
-    //                 'staff_document_type' => 'sometimes|nullable|string',
-    //             ]);
-    //         }
-
-    //         $data = $request->validate($rules);
-
-    //         /*
-    //         |--------------------------------------------------------------------------
-    //         | CUSTOMER OTP VERIFICATION LOGIC
-    //         |--------------------------------------------------------------------------
-    //         */
-
-    //         if ($user->user_type === 'customer') {
-
-    //             $customer = $user->customer;
-
-    //             $newEmail = $request->email ?? $user->email;
-    //             $newPhone = $request->phone ?? optional($customer)->phone;
-
-    //             $emailChanged = $newEmail != $user->email;
-    //             $phoneChanged = $newPhone != optional($customer)->phone;
-
-    //             if ($emailChanged || $phoneChanged || $customer->verify_profile == 0) {
-
-    //                 // If OTP not provided → send OTP
-    //                 if (!$request->email_otp || !$request->phone_otp) {
-
-    //                     $emailOtp = rand(100000, 999999);
-    //                     $phoneOtp = rand(100000, 999999);
-
-    //                     if ($customer) {
-    //                         $customer->update([
-    //                             'email_otp' => $emailOtp,
-    //                             'phone_otp' => $phoneOtp,
-    //                             'otp_expires_at' => now()->addMinutes(10)
-    //                         ]);
-    //                     }
-
-    //                     // Send Email OTP
-    //                     if ($emailChanged) {
-    //                         \Mail::raw("Your verification OTP is: $emailOtp", function ($message) use ($newEmail) {
-    //                             $message->to($newEmail)
-    //                                 ->subject('Email Verification OTP');
-    //                         });
-    //                     }
-
-    //                     // Send SMS OTP (integrate gateway)
-    //                     if ($phoneChanged) {
-    //                         // SMS::send($newPhone, "Your OTP is: $phoneOtp");
-    //                     }
-
-    //                     return response()->json([
-    //                         'success' => false,
-    //                         'otp_required' => true,
-    //                         'message' => 'OTP sent to email and phone. Please verify to continue.'
-    //                     ]);
-    //                 }
-
-    //                 // Verify OTP
-    //                 if (!$customer || $customer->otp_expires_at < now()) {
-    //                     return response()->json([
-    //                         'message' => 'OTP expired'
-    //                     ], 400);
-    //                 }
-
-    //                 if ($request->email_otp != $customer->email_otp || 
-    //                     $request->phone_otp != $customer->phone_otp) {
-
-    //                     return response()->json([
-    //                         'message' => 'Invalid OTP'
-    //                     ], 400);
-    //                 }
-
-    //                 // OTP verified
-    //                 $customer->update([
-    //                     'email_otp' => null,
-    //                     'phone_otp' => null,
-    //                     'otp_expires_at' => null,
-    //                     'verify_profile' => 1
-    //                 ]);
-    //             }
-    //         }
-
-    //         /*
-    //         |--------------------------------------------------------------------------
-    //         | UPDATE USER DATA
-    //         |--------------------------------------------------------------------------
-    //         */
-
-    //         if (isset($data['password'])) {
-    //             $data['password'] = \Hash::make($data['password']);
-    //         }
-
-    //         $user->update(collect($data)->only([
-    //             'name',
-    //             'email',
-    //             'password',
-    //             'is_active',
-    //             'city',
-    //             'state',
-    //             'country',
-    //             'address',
-    //             'coordinates'
-    //         ])->toArray());
-
-    //         /*
-    //         |--------------------------------------------------------------------------
-    //         | CUSTOMER PROFILE UPDATE
-    //         |--------------------------------------------------------------------------
-    //         */
-
-    //         if ($user->user_type === 'customer') {
-
-    //             $profileData = collect($data)->only([
-    //                 'phone',
-    //                 'company_name',
-    //                 'bank_details',
-    //             ])->toArray();
-
-    //             if ($user->customer) {
-    //                 $user->customer->update($profileData);
-    //             } else {
-    //                 $profileData['user_id'] = $user->id;
-    //                 Customer::create($profileData);
-    //             }
-
-    //             $user->load(['customer']);
-    //         }
-
-    //         /*
-    //         |--------------------------------------------------------------------------
-    //         | CONTRACTOR UPDATE
-    //         |--------------------------------------------------------------------------
-    //         */
-
-    //         if ($user->user_type === 'contractor') {
-
-    //             $profileData = collect($data)->only([
-    //                 'company_name',
-    //                 'registration_number',
-    //                 'phone',
-    //             ])->toArray();
-
-    //             if ($user->contractor) {
-    //                 $user->contractor->update($profileData);
-    //             } else {
-    //                 $profileData['user_id'] = $user->id;
-    //                 Contractor::create($profileData);
-    //             }
-
-    //             $user->load('contractor', 'documents');
-    //         }
-
-    //         /*
-    //         |--------------------------------------------------------------------------
-    //         | STAFF UPDATE (YOUR EXISTING CODE UNCHANGED)
-    //         |--------------------------------------------------------------------------
-    //         */
-
-    //         if ($user->user_type === 'staff') {
-
-    //             $staff = Staff::where('user_id', $user->id)->first();
-
-    //             $staffData = collect($data)->only([
-    //                 'gender',
-    //                 'phone',
-    //                 'staff_document_type'
-    //             ])->toArray();
-
-    //             if ($request->hasFile('profile_image')) {
-    //                 $staffData['profile_image'] = $request->file('profile_image')->store('staff-profiles', 'public');
-    //             }
-
-    //             if ($staff) {
-    //                 $staff->update($staffData);
-    //             } else {
-    //                 $staffData['user_id'] = $user->id;
-    //                 Staff::create($staffData);
-    //             }
-
-    //             $user->load(['staff', 'documents']);
-    //         }
-
-    //         /*
-    //         |--------------------------------------------------------------------------
-    //         | PROFILE COMPLETION
-    //         |--------------------------------------------------------------------------
-    //         */
-
-    //         $percentage = $this->calculateProfileCompletion($user);
-
-    //         if ($percentage === 100 && (int) $user->is_active !== 1) {
-    //             $user->is_active = 1;
-    //             $user->save();
-    //         }
-
-    //         $user->profile_completion_percentage = $percentage;
-
-    //         return response()->json([
-    //             'success' => true,
-    //             'code' => 200,
-    //             'data' => $user
-    //         ]);
-
-    //     } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
-
-    //         return response()->json([
-    //             'message' => 'User not found'
-    //         ], 404);
-
-    //     } catch (\Illuminate\Validation\ValidationException $e) {
-
-    //         return response()->json([
-    //             'message' => 'Validation failed',
-    //             'errors' => $e->errors()
-    //         ], 422);
-
-    //     } catch (\Exception $e) {
-
-    //         return response()->json([
-    //             'message' => 'Failed to update user',
-    //             'error' => $e->getMessage()
-    //         ], 500);
-    //     }
-    // }
-
-public function updateUser(Request $request, $id)
-{
-    try {
-
-        $user = User::findOrFail($id);
-
-        $rules = [
-            'name' => 'sometimes|required|string|max:255',
-            'email' => 'sometimes|required|email|unique:users,email,' . $user->id,
-            'password' => 'nullable|confirmed|min:6',
-        ];
-
-        if ($user->user_type === 'customer') {
-            $rules = array_merge($rules, [
-                'phone' => 'nullable|string',
-                'company_name' => 'nullable|string',
-                'bank_details' => 'nullable',
-                'email_otp' => 'nullable|string',
-                'phone_otp' => 'nullable|string'
-            ]);
-        }
-
-        $data = $request->validate($rules);
-
-        if ($user->user_type === 'customer') {
-
-            $customer = $user->customer;
-
-            $newEmail = $request->email ?? $user->email;
-            // $newPhone = $request->phone ?? optional($customer)->phone;
-
-            $emailChanged = $newEmail != $user->email;
-            $emailOtp = rand(100000, 999999);
-
-            // $phoneChanged = $newPhone != optional($customer)->phone;
-
-            // Generate OTP if needed
-            if ($emailChanged) {
-
-                if (!$request->email_otp) {
-
-                    // $phoneOtp = rand(100000, 999999);
-
-                    $customer->update([
-                        'email_otp' => $emailOtp,
-                        // 'phone_otp' => $phoneOtp,
-                        'otp_expires_at' => now()->addMinutes(5)
-                    ]);
-
-                    if ($emailChanged) {
-                        Mail::raw("Your verification OTP is: $emailOtp", function ($message) use ($newEmail) {
-                            $message->to($newEmail)
-                                    ->subject('Email Verification OTP');
-                        });
-                    }
-
-                    // SEND PHONE OTP via Twilio SMS
-                    // if ($phoneChanged) {
-
-                    //     $sid   = env('TWILIO_SID');
-                    //     $token = env('TWILIO_AUTH_TOKEN');
-                    //     $from  = '+923320327516'; // Twilio phone number
-                    //     $twilio = new Client($sid, $token);
-
-                    //     try {
-                    //         $phoneNumber = $newPhone;
-                    //         if (!str_starts_with($phoneNumber, '+')) {
-                    //             $phoneNumber = '+'.$phoneNumber; // ensure E.164 format
-                    //         }
-
-                    //         $twilio->messages->create(
-                    //             $phoneNumber,
-                    //             [
-                    //                 'from' => $from,
-                    //                 'body' => "Your verification OTP is: $phoneOtp"
-                    //             ]
-                    //         );
-
-                    //     } catch (\Exception $e) {
-                    //         return response()->json([
-                    //             'message' => 'Failed to send OTP',
-                    //             'error' => $e->getMessage()
-                    //         ], 500);
-                    //     }
-                    // }
-
-                    return response()->json([
-                        'success' => false,
-                        'otp_required' => true,
-                        'message' => 'OTP sent to email.'
-                    ]);
-                }
-
-                // VERIFY OTP
-                if (!$customer || $customer->otp_expires_at < now()) {
-                    return response()->json([
-                        'message' => 'OTP expired'
-                    ], 400);
-                }
-
-                if ($request->email_otp != $customer->email_otp) {
-                    return response()->json([
-                        'message' => 'Invalid OTP'
-                    ], 400);
-                }
-
-                // OTP verified
-                $customer->update([
-                    'email_otp' => null,
-                    'phone_otp' => null,
-                    'otp_expires_at' => null,
-                    'verify_profile' => 1,
-                ]);
-
-            }
-        }
-
-        // UPDATE USER
-        if (isset($data['password'])) {
-            $data['password'] = Hash::make($data['password']);
-        }
-
-        $user->update([
-            'name' => $data['name'] ?? $user->name,
-            'email' => $data['email'] ?? $user->email
-        ]);
-
-        // UPDATE CUSTOMER PROFILE
-        if ($user->user_type === 'customer') {
-            $profileData = [
-                'phone' => $request->phone,
-                'company_name' => $request->company_name,
-                'bank_details' => $request->bank_details
+    public function updateUser(Request $request, $id)
+    {
+        try {
+            $user = User::findOrFail($id);
+
+            $rules = [
+                'name' => 'sometimes|required|string|max:255',
+                'email' => 'sometimes|required|email|unique:users,email,' . $user->id,
+                'password' => 'nullable|confirmed|min:6',
+                'is_active' => 'sometimes|boolean',
+                'staff_document_type' => 'nullable|string',
+                'address' => 'nullable',
+                'city' => 'nullable|string',
+                'state' => 'nullable|string',
+                'country' => 'nullable|string',
+                'coordinates' => 'nullable|string',
             ];
 
-            if ($user->customer) {
-                $user->customer->update($profileData);
-            } else {
-                $profileData['user_id'] = $user->id;
-                Customer::create($profileData);
+            if ($user->user_type === 'customer') {
+                $rules = array_merge($rules, [
+                    'phone' => 'nullable|string',
+                    'company_name' => 'nullable|string',
+                    'bank_details' => 'nullable',
+                    'email_otp' => 'nullable|string',
+                ]);
             }
 
-            $user->load('customer');
+            if ($user->user_type === 'contractor') {
+                $rules = array_merge($rules, [
+                    'company_name' => 'sometimes|required|string|max:255',
+                    'registration_number' => 'nullable|string|max:255',
+                    'phone' => 'nullable|string|max:20',
+                ]);
+            }
+
+            if ($user->user_type === 'staff') {
+                $rules = array_merge($rules, [
+                    'profile_image' => 'sometimes|nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+                    'gender' => 'sometimes|nullable|in:male,female,other',
+                    'phone' => 'sometimes|nullable|string',
+                    'staff_document_type' => 'sometimes|nullable|string',
+                ]);
+            }
+
+            $data = $request->validate($rules);
+
+            if (isset($data['password'])) {
+                $data['password'] = Hash::make($data['password']);
+            }
+
+            $user->update(collect($data)->only([
+                'name',
+                'email',
+                'password',
+                'is_active',
+                'city',
+                'state',
+                'country',
+                'address',
+                'coordinates'
+            ])->toArray());
+
+            if ($user->user_type === 'customer') {
+                $profileData = collect($data)->only([
+                    'phone',
+                    'company_name',
+                    'bank_details',
+                ])->toArray();
+
+                if ($user->customer) {
+                    $user->customer->update($profileData);
+                } else {
+                    $profileData['user_id'] = $user->id;
+                    Customer::create($profileData);
+                }
+
+                $user->load(['customer']);
+            }
+
+            if ($user->user_type === 'contractor') {
+                $profileData = collect($data)->only([
+                    'company_name',
+                    'registration_number',
+                    'phone',
+                ])->toArray();
+
+                if ($user->contractor) {
+                    $user->contractor->update($profileData);
+                } else {
+                    $profileData['user_id'] = $user->id;
+                    Contractor::create($profileData);
+                }
+                $user->load('contractor', 'documents');
+            }
+
+            if ($user->user_type === 'staff') {
+                $staff = Staff::where('user_id', $user->id)->first();
+
+                if (!empty($data['staff_document_type'])) {
+                    $check_old_data_exist = Document::where('user_id', $user->id)
+                        ->where('document_category', '!=', 'other-doc')
+                        ->first();
+
+                    if (!$staff || !$check_old_data_exist) {
+                        $document_categories = DocumentCategory::where('document_category', $request->staff_document_type)->first();
+                        if ($document_categories) {
+                            foreach (json_decode($document_categories->document_type) as $key => $value) {
+                                $guard_documents = new Document();
+                                $guard_documents->user_id = $user->id;
+                                $guard_documents->document_category = ($document_categories->document_category != '' ? $document_categories->document_category : 'other');
+                                $guard_documents->document_type = $key;
+                                $guard_documents->document_name = $value;
+                                $guard_documents->save();
+                            }
+                        }
+                    }
+                    // Case 2: Updating existing documents
+                    else if ($staff && $staff->staff_document_type != $request->staff_document_type) {
+                        $document_categories = DocumentCategory::where('document_category', $request->staff_document_type)->first();
+
+                        if ($document_categories) {
+                            $old_docs = Document::where('user_id', $user->id)
+                                ->where('document_category', '!=', 'other-doc')
+                                ->get()
+                                ->keyBy('document_type');
+
+                            $new_doc_types = json_decode($document_categories->document_type, true);
+                            $new_document_category = $document_categories->document_category ?: 'other';
+
+                            $old_doc_types = $old_docs->keys()->toArray();
+                            $new_doc_keys = array_keys($new_doc_types);
+
+                            $to_delete_types = array_diff($old_doc_types, $new_doc_keys);
+                            $to_add_types = array_diff($new_doc_keys, $old_doc_types);
+                            $common_types = array_intersect($old_doc_types, $new_doc_keys);
+
+                            // Update common types
+                            if (!empty($common_types)) {
+                                $common_doc_ids = [];
+                                foreach ($common_types as $doc_type) {
+                                    if ($old_docs->has($doc_type)) {
+                                        $common_doc_ids[] = $old_docs[$doc_type]->id;
+                                    }
+                                }
+
+                                Document::whereIn('id', $common_doc_ids)
+                                    ->update(['document_category' => $new_document_category]);
+                            }
+
+                            // Delete old types that have no files
+                            if (!empty($to_delete_types)) {
+                                Document::where('user_id', $user->id)
+                                    ->where('document_category', '!=', 'other-doc')
+                                    ->whereNull('file')
+                                    ->whereIn('document_type', $to_delete_types)
+                                    ->delete();
+                            }
+
+                            // Add new types
+                            if (!empty($to_add_types)) {
+                                $documents_to_insert = [];
+
+                                foreach ($to_add_types as $doc_type) {
+                                    if (!Document::where(['user_id' => $user->id, 'document_type' => $doc_type])->exists()) {
+                                        $documents_to_insert[] = [
+                                            'user_id' => $user->id,
+                                            'document_category' => $new_document_category,
+                                            'document_type' => $doc_type,
+                                            'document_name' => $new_doc_types[$doc_type],
+                                            'created_at' => now(),
+                                            'updated_at' => now()
+                                        ];
+                                    }
+                                }
+
+                                if (!empty($documents_to_insert)) {
+                                    Document::insert($documents_to_insert);
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Now update the staff record with ALL data including the document type
+                $staffData = collect($data)->only([
+                    'gender',
+                    'phone',
+                    'staff_document_type'  // This will now be saved
+                ])->toArray();
+
+                if ($request->hasFile('profile_image')) {
+                    $staffData['profile_image'] = $request->file('profile_image')->store('staff-profiles', 'public');
+                } elseif (array_key_exists('profile_image', $data)) {
+                    $staffData['profile_image'] = $data['profile_image'];
+                }
+
+                if ($staff) {
+                    $staff->update($staffData);
+                } else {
+                    $staffData['user_id'] = $user->id;
+                    Staff::create($staffData);
+                }
+
+                $user->load(['staff', 'documents']);
+            }
+
+
+            if ($user->user_type === 'customer') {
+
+                $customer = $user->customer;
+
+                $newEmail = $request->email ?? $user->email;
+                // $newPhone = $request->phone ?? optional($customer)->phone;
+
+                $emailChanged = $newEmail != $user->email;
+                // $phoneChanged = $newPhone != optional($customer)->phone;
+
+                if ($emailChanged || $customer->verify_profile == 0) {
+
+                    // If OTP not provided → send OTP
+                    if (!$request->email_otp) {
+
+                        $emailOtp = rand(100000, 999999);
+                        // $phoneOtp = rand(100000, 999999);
+
+                        if ($customer) {
+                            $customer->update([
+                                'email_otp' => $emailOtp,
+                                // 'phone_otp' => $phoneOtp,
+                                'otp_expires_at' => now()->addMinutes(10)
+                            ]);
+                        }
+
+                        // Send Email OTP
+                        if ($emailChanged) {
+                            Mail::raw("Your verification OTP is: $emailOtp", function ($message) use ($newEmail) {
+                                $message->to($newEmail)
+                                    ->subject('Email Verification OTP');
+                            });
+                        }
+
+                        // Send SMS OTP (integrate gateway)
+                        // if ($phoneChanged) {
+                        //     // SMS::send($newPhone, "Your OTP is: $phoneOtp");
+                        // }
+
+                        return response()->json([
+                            'success' => false,
+                            'otp_required' => true,
+                            'message' => 'OTP sent to email. Please verify to continue.'
+                        ]);
+                    }
+
+                    // Verify OTP
+                    if (!$customer || $customer->otp_expires_at < now()) {
+                        return response()->json([
+                            'message' => 'OTP expired'
+                        ], 400);
+                    }
+
+                    if ($request->email_otp != $customer->email_otp) {
+
+                        return response()->json([
+                            'message' => 'Invalid OTP'
+                        ], 400);
+                    }
+
+                    // OTP verified
+                    $customer->update([
+                        'email_otp' => null,
+                        'phone_otp' => null,
+                        'otp_expires_at' => null,
+                        'verify_profile' => 1
+                    ]);
+                }
+            }
+
+            return response()->json(['success' => true, 'code' => 200, 'data' => $user]);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json([
+                'message' => 'User not found'
+            ], 404);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'message' => 'Validation failed',
+                'errors' => $e->errors()
+            ], 422);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Failed to update user',
+                'error' => $e->getMessage()
+            ], 500);
         }
-
-        return response()->json([
-            'success' => true,
-            'data' => $user
-        ]);
-
-    } catch (\Exception $e) {
-        return response()->json([
-            'message' => 'Failed to update user',
-            'error' => $e->getMessage()
-        ], 500);
     }
-}
 }

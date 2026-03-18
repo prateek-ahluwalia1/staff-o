@@ -65,7 +65,7 @@ class JobRosterController extends Controller
         $jobInstructionsValue = is_array($request->document_list) ? json_encode($request->document_list) : $request->document_list;
 
         $createdJobIds = [];
-        
+
         for ($i = 0; $i < $request->numberOfGuards; $i++) {
             $roster = [
                 'site_id'               => $site->id,
@@ -104,7 +104,7 @@ class JobRosterController extends Controller
 
             $jobId = JobRoster::insertGetId($roster);
 
-            if($request->has('tasks') && !empty($request->tasks)){
+            if ($request->has('tasks') && !empty($request->tasks)) {
                 foreach ($request->tasks as $key => $task) {
                     $newTask =  new JobRosterTask();
                     $newTask->job_roster_id = $jobId;
@@ -139,7 +139,7 @@ class JobRosterController extends Controller
     {
         $radiusKm = 500; // 5km radius
         $notifiedUsers = [];
-        
+
         // Get all staff with user_id = 1
         // $staff = User::where('user_id', 1)
         //     ->where('is_active', 1)
@@ -156,15 +156,15 @@ class JobRosterController extends Controller
             ->select('id', 'name', 'coordinates', 'notification_token')
             ->get();
         // }
-        
+
 
         foreach ($staff as $staffMember) {
             // Calculate distance between site and staff
             $distance = $this->calculateDistance($siteCoordinates, $staffMember->coordinates);
-        
+
             // Check if within 5km radius
             if ($distance <= $radiusKm) {
-                
+
                 // Send notification if token exists
                 if ($staffMember->notification_token) {
                     $notificationSent = send_push_notification([
@@ -179,7 +179,7 @@ class JobRosterController extends Controller
                             'roster' => $roster
                         ]
                     ]);
-                    
+
                     if ($notificationSent) {
                         $notifiedUsers[] = [
                             'user_id' => $staffMember->id,
@@ -190,10 +190,10 @@ class JobRosterController extends Controller
                 }
             }
         }
-        
+
         // Update each job roster with notified users
         $this->updateJobRosterWithNotifiedUsers($jobIds, $notifiedUsers, $radiusKm);
-        
+
         return $notifiedUsers;
     }
 
@@ -204,18 +204,18 @@ class JobRosterController extends Controller
     {
         list($lat1, $lng1) = explode(',', $coord1);
         list($lat2, $lng2) = explode(',', $coord2);
-        
+
         $earthRadius = 6371;
-        
+
         $latDelta = deg2rad($lat2 - $lat1);
         $lngDelta = deg2rad($lng2 - $lng1);
-        
-        $a = sin($latDelta/2) * sin($latDelta/2) +
+
+        $a = sin($latDelta / 2) * sin($latDelta / 2) +
             cos(deg2rad($lat1)) * cos(deg2rad($lat2)) *
-            sin($lngDelta/2) * sin($lngDelta/2);
-        
-        $c = 2 * atan2(sqrt($a), sqrt(1-$a));
-        
+            sin($lngDelta / 2) * sin($lngDelta / 2);
+
+        $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
+
         return $earthRadius * $c;
     }
 
@@ -231,14 +231,14 @@ class JobRosterController extends Controller
             'notified_at' => now()->toDateTimeString(),
             'user_details' => $notifiedUsers
         ];
-        
+
         foreach ($jobIds as $jobId) {
             $jobRoster = JobRoster::find($jobId);
-            
+
             if ($jobRoster) {
                 $existingNotified = json_decode($jobRoster->notified_users ?? '[]', true);
                 $existingNotified[] = $notificationData;
-                
+
                 $jobRoster->notified_users = json_encode($existingNotified);
                 $jobRoster->save();
             }
@@ -249,7 +249,7 @@ class JobRosterController extends Controller
     {
         $guards = User::where('user_id', $id)->where('is_active', 1)->select('id', 'name')->where('user_type', 'staff')->get();
 
-        if(!$guards){
+        if (!$guards) {
             return response()->json([
                 'code' => 200,
                 'success' => false,
@@ -265,7 +265,7 @@ class JobRosterController extends Controller
             'guards' => $guards
         ]);
     }
-    
+
     public function holdPayment(Request $request)
     {
         // ─── 1. VALIDATE ─────────────────────────────────────────────────────
@@ -273,7 +273,6 @@ class JobRosterController extends Controller
         $validator = Validator::make($request->all(), [
             'start'             => 'required|date',
             'end'               => 'required|date|after:start',
-            'site_id'           => 'required|integer|exists:sites,id',
             'user_id'           => 'required|integer|exists:users,id',
             'card_holder_name'  => 'required|string',
             'payment_method_id' => 'required|string|starts_with:pm_',
@@ -371,7 +370,7 @@ class JobRosterController extends Controller
             $amountInCents     = (int) round($roster['grand_total'] * 100);
             $serviceFeeInCents = (int) round($roster['service_fee'] * 100);
             $stripeAccountId   = $jobRosterTime->site->stripe_account_id
-                                    ?? config('services.stripe.express_account_id');
+                ?? config('services.stripe.express_account_id');
 
             $paymentIntent = PaymentIntent::create([
                 'amount'                 => $amountInCents,
@@ -440,7 +439,6 @@ class JobRosterController extends Controller
                     ],
                 ],
             ], 200);
-
         } catch (\Stripe\Exception\CardException $e) {
             return response()->json([
                 'success'      => false,
@@ -448,19 +446,16 @@ class JobRosterController extends Controller
                 'code'         => $e->getStripeCode(),
                 'decline_code' => $e->getDeclineCode(),
             ], 402);
-
         } catch (\Stripe\Exception\InvalidRequestException $e) {
             return response()->json([
                 'success' => false,
                 'message' => 'Invalid request: ' . $e->getMessage(),
             ], 400);
-
         } catch (\Stripe\Exception\ApiErrorException $e) {
             return response()->json([
                 'success' => false,
                 'message' => 'Stripe API error: ' . $e->getMessage(),
             ], 500);
-
         } catch (Exception $e) {
             return response()->json([
                 'success' => false,
@@ -481,7 +476,7 @@ class JobRosterController extends Controller
         $diff = $end - $start;
         $hours = round($diff / (60 * 60), 2);
         $hoursCond = round($diff / (60 * 60), 2);
-        
+
         $morning_start = 6;
         $morning_end = 18;
 
@@ -497,7 +492,7 @@ class JobRosterController extends Controller
                 $hours = $diff_new;
             }
         }
-        
+
         $saturday_start = 0;
         $saturday_end = 0;
         $total_saturday_hours = 0;
@@ -523,9 +518,9 @@ class JobRosterController extends Controller
         //     );
         //     $state = $site_state->state != '' ? $states_array[$site_state->state] : 'vic';
         // } else {
-            $state = 'vic';
+        $state = 'vic';
         // }
-        
+
         if ($day_start == 'Saturday' && $day_end == 'Saturday') {
             $total_saturday_hours = $hours;
             $saturday_start = $shift_start;
@@ -1474,7 +1469,7 @@ class JobRosterController extends Controller
             ]
         ]);
     }
-   
+
     public function uploadFile(Request $request)
     {
         $folder = $request->folder ?: 'uploads';
@@ -1514,42 +1509,43 @@ class JobRosterController extends Controller
         $a = null;
         $b = '';
         $roster = DB::table('job_rosters')
-        ->join('sites', 'sites.id', '=', 'job_rosters.site_id')
-        ->where('job_rosters.asap', '=', '1')
-        ->where('job_rosters.id', '=', $request->input('roster_id'))->where(
-        function ($query) use ($a, $b) {
-            return $query->where('job_rosters.assigned_to', '=', $a)
-            ->orWhere('job_rosters.assigned_to', '=', $b);
-        })
-        ->select('job_rosters.*', 'sites.id as jobId', 'sites.address', 'sites.coordinates')
-        ->first();
-        
-        if($roster != null){
+            ->join('sites', 'sites.id', '=', 'job_rosters.site_id')
+            ->where('job_rosters.asap', '=', '1')
+            ->where('job_rosters.id', '=', $request->input('roster_id'))->where(
+                function ($query) use ($a, $b) {
+                    return $query->where('job_rosters.assigned_to', '=', $a)
+                        ->orWhere('job_rosters.assigned_to', '=', $b);
+                }
+            )
+            ->select('job_rosters.*', 'sites.id as jobId', 'sites.address', 'sites.coordinates')
+            ->first();
+
+        if ($roster != null) {
             $flag = 0;
             $is_already_assign = DB::table('job_rosters')
-            ->where('assigned_to', $id)
-            ->whereBetween('start', [$roster->start, $roster->end])
-            ->select('job_rosters.*')->first();
-            if($is_already_assign != null){
-                $flag = 1;
-            }else{
-                $is_already_assign = DB::table('job_rosters')
-                ->where('created_by', $id)
-                ->whereBetween('end', [$roster->start, $roster->end])
+                ->where('assigned_to', $id)
+                ->whereBetween('start', [$roster->start, $roster->end])
                 ->select('job_rosters.*')->first();
-                if($is_already_assign != null){
+            if ($is_already_assign != null) {
+                $flag = 1;
+            } else {
+                $is_already_assign = DB::table('job_rosters')
+                    ->where('created_by', $id)
+                    ->whereBetween('end', [$roster->start, $roster->end])
+                    ->select('job_rosters.*')->first();
+                if ($is_already_assign != null) {
                     $flag = 1;
                 }
             }
-            if($flag == 0){
-                
+            if ($flag == 0) {
+
                 if ($roster->is_document == 1) {
                     $document_types = $roster->document_list;
 
                     $document_category = DocumentCategory::where('document_category', 'job_doc')->first();
 
                     if ($document_category && !empty($document_types)) {
-                       foreach (json_decode($document_category->document_type) as $doc_key => $doc_name) {  
+                        foreach (json_decode($document_category->document_type) as $doc_key => $doc_name) {
                             $document_types_array = json_decode($document_types, true) ?? [];
                             if (in_array($doc_key, $document_types_array)) {
 
@@ -1557,11 +1553,11 @@ class JobRosterController extends Controller
                                     'user_id'       => $id,
                                     'document_type' => $doc_key,
                                 ])->first();
-                                
+
                                 if ($already_exists) {
                                     continue;
                                 }
-                        
+
                                 $guard_document                    = new Document();
                                 $guard_document->user_id           = $id;
                                 $guard_document->document_category = $document_category->document_category;
@@ -1573,47 +1569,45 @@ class JobRosterController extends Controller
                     }
                 }
 
-                
+
                 DB::table('job_rosters')
-                ->where('id', '=', $request->input('roster_id'))
-                ->update(['assigned_to' => $id, 'publish_status' => 1, 'job_status' => 'confirmed']);
+                    ->where('id', '=', $request->input('roster_id'))
+                    ->update(['assigned_to' => $id, 'publish_status' => 1, 'job_status' => 'confirmed']);
                 $guard = DB::table('users')->where('id', $id)->first();
 
                 //push notification
                 $admins = DB::table('users')->where('notification_token', '!=', '')->where('id', '=', $roster->created_by)->select('notification_token')->get();
-                foreach($admins as $a)
-                {
+                foreach ($admins as $a) {
                     $notification_data = [
-                        'message' => $guard->name.' accepted and confirmed the job.',
+                        'message' => $guard->name . ' accepted and confirmed the job.',
                         'title' => 'Job Signin',
                         'notification_token' => $a->notification_token,
                         'page' => 'homepage',
                         'roster_id' =>  $id
-                    ]; 
-                     
-                    send_push_notification($notification_data);
+                    ];
 
+                    send_push_notification($notification_data);
                 }
                 return response()->json([
                     'success' => true,
                     'message' => 'Job accept successfully.',
                 ], 200);
-            }else{
+            } else {
                 return response()->json([
                     'success' => false,
                     'message' => 'These timings are contradicting with other site timings because this guard is already added in another site.'
                 ], 200);
             }
-        }else{
+        } else {
             return response()->json([
-                 'success' => false,
-                 'message' => 'Job already accepted!'
-                ], 200);
-            
+                'success' => false,
+                'message' => 'Job already accepted!'
+            ], 200);
         }
     }
 
-    public function jobSignin(Request $request, $id) {
+    public function jobSignin(Request $request, $id)
+    {
 
         // $this->request = $request;
         // $this->setValidationRules(['time' => 'required', 'selfie' => 'required', 'location' => 'required']);
@@ -1622,7 +1616,7 @@ class JobRosterController extends Controller
         // $this->statusCode = self::STATUS_CODE_200;
         // return $this->sendResponse();
         // }
-        
+
         $job = JobRoster::where('id', $id)->with('site')->first();
         if (!$job || !$job->site) {
             return response()->json([
@@ -1632,58 +1626,58 @@ class JobRosterController extends Controller
             ], 404);
         }
 
-        $roster_data = JobRoster::where('id',$id)->first();
+        $roster_data = JobRoster::where('id', $id)->first();
         $job_start_time = $roster_data->start;
         $job_start_time = strtotime($job_start_time);
-      
+
         if ($request->has('signin_time')) {
-        $current_time = $request->input('signin_time');
-        $current_time = strtotime($current_time);
-        }else{
-        $current_time = time();
+            $current_time = $request->input('signin_time');
+            $current_time = strtotime($current_time);
+        } else {
+            $current_time = time();
         }
-        $diff = round(($job_start_time - $current_time) / 60,2);
+        $diff = round(($job_start_time - $current_time) / 60, 2);
 
-        if($request->input('location') == null || $request->input('location') == ''){
+        if ($request->input('location') == null || $request->input('location') == '') {
 
-        return response()->json([ 'success' => false, 'message' => 'Please send coordinates.' , 'code' => 404 ]);
+            return response()->json(['success' => false, 'message' => 'Please send coordinates.', 'code' => 404]);
         }
 
         $coordinates = explode(',', $request->input('location'));
 
 
-        if($job->site->coordinates == null ||  $job->site->coordinates == ''){
-        return response()->json([ 'success' => false, 'message' => 'Location coordinates not set.' , 'code' => 404 ]);
+        if ($job->site->coordinates == null ||  $job->site->coordinates == '') {
+            return response()->json(['success' => false, 'message' => 'Location coordinates not set.', 'code' => 404]);
         }
 
         $coordinates1 = explode(',', $job->site->coordinates);
 
-        $distance = $this->distance(trim($coordinates[0]), trim($coordinates[1]), trim($coordinates1[0]), trim($coordinates1[1]) );
-        if($job->site->signin_radius > 0){
-        $signin_radius = $job->site->signin_radius/1000;
-        }else{
-        $signin_radius = 0.31;
+        $distance = $this->distance(trim($coordinates[0]), trim($coordinates[1]), trim($coordinates1[0]), trim($coordinates1[1]));
+        if ($job->site->signin_radius > 0) {
+            $signin_radius = $job->site->signin_radius / 1000;
+        } else {
+            $signin_radius = 0.31;
         }
-        if($distance > $signin_radius){
-        return response()->json([ 'success' => false, 'error' => 'You are '.number_format($distance, 2).' km away from your job!', 'message' => 'You are '.number_format($distance, 2).' km away from your job!', 'code' => 404 ]);
+        if ($distance > $signin_radius) {
+            return response()->json(['success' => false, 'error' => 'You are ' . number_format($distance, 2) . ' km away from your job!', 'message' => 'You are ' . number_format($distance, 2) . ' km away from your job!', 'code' => 404]);
         }
         $is_already_signin = JobRosterActivity::where(['job_roster_id' => $id])->first();
         if (!empty($is_already_signin)) {
-          return response()->json([ 'success' => false, 'error' => 'You are already signin in this job!', 'message' => 'You are already signin in this job!', 'code' => 404 ]);
+            return response()->json(['success' => false, 'error' => 'You are already signin in this job!', 'message' => 'You are already signin in this job!', 'code' => 404]);
         }
-        
-        $field = 'selfie'; 
+
+        $field = 'selfie';
         $media = '';
-       
+
         $media = $this->uploader_base64($request->input($field));
-        
+
         $update_status = JobRosterActivity::where('job_roster_id', $id)
             ->where('guard_id', $roster_data->assigned_to)
             ->where('status', 1)
             ->first();
 
         if ($update_status) {
-                JobRosterActivity::where('job_roster_id', $id)
+            JobRosterActivity::where('job_roster_id', $id)
                 ->where('guard_id', $roster_data->assigned_to)
                 ->update(['status' => 0]);
         }
@@ -1707,41 +1701,39 @@ class JobRosterController extends Controller
         $guard = DB::table('users')->where('id', $roster_data->assigned_to)->first();
         $inputTime = DateTime::createFromFormat('d-m-Y H:i', $request->input('time'));
         $inputTimeFormatted = $inputTime->format('Y-m-d H:i');
-        if($inputTimeFormatted <= $roster_data->start){
-        // DB::table('job_rosters')->where(['id' => $id])->update(['in_paysheet' => 1]);
+        if ($inputTimeFormatted <= $roster_data->start) {
+            // DB::table('job_rosters')->where(['id' => $id])->update(['in_paysheet' => 1]);
         }
-        
+
         if ($model) {
 
-        $roster = DB::table('job_rosters')->where('id', $id)->first();
+            $roster = DB::table('job_rosters')->where('id', $id)->first();
 
-        $admins = DB::table('users')->where('notification_token', '!=', '')->where('id', $roster->created_by)->select('notification_token')->get();
-        foreach($admins as $a)
-        {
-        $notification_data = [
-        'message' => $guard->name.' signin in their job.',
-        'title' => 'Job Signin',
-        'notification_token' => $a->notification_token,
-        'page' => 'homepage',
-        'roster_id' =>  $id
-        ]; 
-        send_push_notification($notification_data);
-
-        }
+            $admins = DB::table('users')->where('notification_token', '!=', '')->where('id', $roster->created_by)->select('notification_token')->get();
+            foreach ($admins as $a) {
+                $notification_data = [
+                    'message' => $guard->name . ' signin in their job.',
+                    'title' => 'Job Signin',
+                    'notification_token' => $a->notification_token,
+                    'page' => 'homepage',
+                    'roster_id' =>  $id
+                ];
+                send_push_notification($notification_data);
+            }
             return response()->json([
-            'success' => true,
-            'message' => 'Clocked-in Successfully!'
+                'success' => true,
+                'message' => 'Clocked-in Successfully!'
             ], 200);
         }
-       
-         return response()->json([
-        'success' => true,
-        'message' => 'You are not Check-in your job.'
+
+        return response()->json([
+            'success' => true,
+            'message' => 'You are not Check-in your job.'
         ], 200);
     }
 
     function distance($lat1, $lon1, $lat2, $lon2)
-    {   
+    {
         $lat1 = doubleval($lat1);
         $lon1 = doubleval($lon1);
         $lat2 = doubleval($lat2);
@@ -1756,14 +1748,15 @@ class JobRosterController extends Controller
         return $miles;
     }
 
-    private function uploader_base64($file, $folder = 'uploads') {
-    try {
+    private function uploader_base64($file, $folder = 'uploads')
+    {
+        try {
             // $destinationPath =  rtrim('../../uploads/');
             $public_path =  rtrim(app()->basePath('public/'), '');
-                    $public_path = str_replace('portal/public', '', $public_path);
-                    $public_path = str_replace('apis/public', '', $public_path);
-                    $public_path = str_replace('https://appapi.thescouts.com.au/', 'apis.247staffingsolutions.com.au/public', $public_path);
-                    $destinationPath = $public_path.$folder.'/';
+            $public_path = str_replace('portal/public', '', $public_path);
+            $public_path = str_replace('apis/public', '', $public_path);
+            $public_path = str_replace('https://appapi.thescouts.com.au/', 'apis.247staffingsolutions.com.au/public', $public_path);
+            $destinationPath = $public_path . $folder . '/';
             if (!is_dir($destinationPath)) {
                 @mkdir($destinationPath, 0755, true);
             }
@@ -1772,9 +1765,9 @@ class JobRosterController extends Controller
 
             $fileName = $newName . '.jpg';
 
-            
+
             $file = base64_decode(preg_replace('#^data:image/\w+;base64,#i', '', $file));
-            file_put_contents($destinationPath.$fileName, $file);
+            file_put_contents($destinationPath . $fileName, $file);
 
             return $fileName;
         } catch (\Exception $e) {
@@ -1782,7 +1775,8 @@ class JobRosterController extends Controller
         }
     }
 
-    public function getGuardJobs(Request $request, $type, $duration) {
+    public function getGuardJobs(Request $request, $type, $duration)
+    {
         $week    = ($request->input('week_no') != null) ? $request->input('week_no') : 0;
         $guardId = $request->input('guard_id');
 
@@ -1947,123 +1941,123 @@ class JobRosterController extends Controller
         ], 200);
     }
 
-    public function jobSpecificDetail(Request $request, $id) {
+    public function jobSpecificDetail(Request $request, $id)
+    {
         // $results = $this->jobRosterRepo->jobSpecificDetail(($this->currentUser) ? $this->currentUser->id : [], $id);
         // return new JobRosterCollection(JobRosterResource::collection($results));
     }
 
-public function reportIncident(Request $request, $id) 
-{
-    $media = array();
-    if ($request->input('photo')) {
-        $photo = $request->input('photo');
-        if (is_array($photo) && !empty($photo)) {
-            foreach ($photo as $key => $value) {
-                $newObject = new \stdClass();
-                $newObject->imgPath = $this->uploader_base64($value['imgPath'], 'incident');
-                $newObject->timestamp = $value['timestamp'];
-                $media[] = $newObject;
+    public function reportIncident(Request $request, $id)
+    {
+        $media = array();
+        if ($request->input('photo')) {
+            $photo = $request->input('photo');
+            if (is_array($photo) && !empty($photo)) {
+                foreach ($photo as $key => $value) {
+                    $newObject = new \stdClass();
+                    $newObject->imgPath = $this->uploader_base64($value['imgPath'], 'incident');
+                    $newObject->timestamp = $value['timestamp'];
+                    $media[] = $newObject;
+                }
             }
         }
-    }
-    
-    $signature = '';
-    if ($request->input('signature')) {
-        $signature = $this->uploader_base64($request->input('signature'), 'incident');
-    }
-    
-    // Prepare data with proper JSON encoding for array/object fields
-    $data = array(
-        'job_id' => $id,
-        'guard_id' => $request->input('guard_id'),
-        'roster_id' => $request->input('roster_id'),
-        'incident_date' => $request->input('date'),
-        'incident_time' => $request->input('time'),
-        'site_name' => $request->input('site_name'), 
-        'injury_type' => $request->input('injury_type'), 
-        'injury_detail' => $request->input('incident_detail'),
-        'people_involved' => $this->encodeJsonField($request->input('people_involved')),
-        'vehicle' => $this->encodeJsonField($request->input('vehicle')),
-        'emergency_services' => $this->encodeJsonField($request->input('emergency_services')),
-        'wittness' => $this->encodeJsonField($request->input('wittness')),
-        'photo' => $this->encodeJsonField($media),
-        'signature' => $signature
-    );
-    
-    // Insert the data
-    try {
-        $job_incident_report_id = DB::table('incident_reports')->insertGetId($data);
-        
-        // Rest of your code remains the same
-        $guard = DB::table('users')->where('id', $request->input('guard_id'))->first();
-        $job = DB::table('sites')->where('id', $id)->first();
-        $roster = DB::table('job_rosters')->where('id', $request->input('roster_id'))->first();
-        $main_roster = DB::table('job_new_roster')->where('id', $roster->roster_id)->first();
 
-        DB::table('job_roster_activities')
-            ->where('job_roster_id', $request->input('roster_id'))
-            ->where('guard_id', $request->input('guard_id'))
-            ->update(['job_incident_report_id' => $job_incident_report_id]);
-
-        // Push notification
-        $admins = DB::table('users')
-            ->where('notification_token', '!=', '')
-            ->where('id', $roster->created_by)
-            ->select('notification_token')
-            ->get();
-            
-        foreach($admins as $a) {
-            $notification_data = [
-                'message' => $guard->name.' report new incident.',
-                'title' => 'Incident Report',
-                'notification_token' => $a->notification_token,
-                'page' => 'homepage',
-                'roster_id' =>  $id
-            ]; 
-            send_push_notification($notification_data);
+        $signature = '';
+        if ($request->input('signature')) {
+            $signature = $this->uploader_base64($request->input('signature'), 'incident');
         }
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Incident reported successfully!'
-        ], 200);
-        
-    } catch (\Exception $e) {
-        return response()->json([
-            'success' => false,
-            'message' => 'Error creating incident report',
-            'error' => $e->getMessage(),
-            'data' => $data // For debugging
-        ], 500);
-    }
-}
+        // Prepare data with proper JSON encoding for array/object fields
+        $data = array(
+            'job_id' => $id,
+            'guard_id' => $request->input('guard_id'),
+            'roster_id' => $request->input('roster_id'),
+            'incident_date' => $request->input('date'),
+            'incident_time' => $request->input('time'),
+            'site_name' => $request->input('site_name'),
+            'injury_type' => $request->input('injury_type'),
+            'injury_detail' => $request->input('incident_detail'),
+            'people_involved' => $this->encodeJsonField($request->input('people_involved')),
+            'vehicle' => $this->encodeJsonField($request->input('vehicle')),
+            'emergency_services' => $this->encodeJsonField($request->input('emergency_services')),
+            'wittness' => $this->encodeJsonField($request->input('wittness')),
+            'photo' => $this->encodeJsonField($media),
+            'signature' => $signature
+        );
 
-/**
- * Helper function to properly encode fields that might be arrays/objects
- */
-private function encodeJsonField($field)
-{
-    if (is_null($field)) {
+        // Insert the data
+        try {
+            $job_incident_report_id = DB::table('incident_reports')->insertGetId($data);
+
+            // Rest of your code remains the same
+            $guard = DB::table('users')->where('id', $request->input('guard_id'))->first();
+            $job = DB::table('sites')->where('id', $id)->first();
+            $roster = DB::table('job_rosters')->where('id', $request->input('roster_id'))->first();
+            $main_roster = DB::table('job_new_roster')->where('id', $roster->roster_id)->first();
+
+            DB::table('job_roster_activities')
+                ->where('job_roster_id', $request->input('roster_id'))
+                ->where('guard_id', $request->input('guard_id'))
+                ->update(['job_incident_report_id' => $job_incident_report_id]);
+
+            // Push notification
+            $admins = DB::table('users')
+                ->where('notification_token', '!=', '')
+                ->where('id', $roster->created_by)
+                ->select('notification_token')
+                ->get();
+
+            foreach ($admins as $a) {
+                $notification_data = [
+                    'message' => $guard->name . ' report new incident.',
+                    'title' => 'Incident Report',
+                    'notification_token' => $a->notification_token,
+                    'page' => 'homepage',
+                    'roster_id' =>  $id
+                ];
+                send_push_notification($notification_data);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Incident reported successfully!'
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error creating incident report',
+                'error' => $e->getMessage(),
+                'data' => $data // For debugging
+            ], 500);
+        }
+    }
+
+    /**
+     * Helper function to properly encode fields that might be arrays/objects
+     */
+    private function encodeJsonField($field)
+    {
+        if (is_null($field)) {
+            return json_encode([]);
+        }
+
+        if (is_array($field) || is_object($field)) {
+            return json_encode($field);
+        }
+
+        // If it's already a string, check if it needs cleaning
+        if (is_string($field)) {
+            // Clean up empty array strings
+            $cleaned = str_replace(['[{}]', '{}'], '[]', $field);
+            return $cleaned;
+        }
+
         return json_encode([]);
     }
-    
-    if (is_array($field) || is_object($field)) {
-        return json_encode($field);
-    }
-    
-    // If it's already a string, check if it needs cleaning
-    if (is_string($field)) {
-        // Clean up empty array strings
-        $cleaned = str_replace(['[{}]', '{}'], '[]', $field);
-        return $cleaned;
-    }
-    
-    return json_encode([]);
-}
 
-    public function addFootPatrolReport(Request $request, $id) 
+    public function addFootPatrolReport(Request $request, $id)
     {
-        if(!isset($id) || $id == 0){
+        if (!isset($id) || $id == 0) {
             return response()->json([
                 'success' => false,
                 'message' => 'Site not found'
@@ -2093,7 +2087,7 @@ private function encodeJsonField($field)
             'date' => $request->input('date'),
             'time' => $request->input('time'),
             'patrolling_detail' => $request->input('patrolling_detail'),
-            'site_name' => $request->input('site_name'), 
+            'site_name' => $request->input('site_name'),
             'photo' => json_encode($media),
             'signature' => $signature
         );
@@ -2103,35 +2097,36 @@ private function encodeJsonField($field)
         $job = DB::table('sites')->where('id', $id)->first();
         $roster = DB::table('job_rosters')->where('id', $request->input('roster_id'))->first();
         $main_roster = DB::table('job_new_roster')->where('id', $roster->roster_id)->first();
-        
+
         DB::table('job_roster_activities')->where('job_roster_id', $request->input('roster_id'))->where('guard_id', $request->input('guard_id'))->update(['job_patrol_report_id' => $job_patrol_report_id]);
-        
+
         //push notification
         $admins = DB::table('users')->where('notification_token', '!=', '')->where('id', $roster->created_by)->select('notification_token')->get();
-        foreach($admins as $a)
-        {
+        foreach ($admins as $a) {
             $notification_data = [
-                'message' => $guard->name.' report new foot patrol.',
+                'message' => $guard->name . ' report new foot patrol.',
                 'title' => 'Foot Patrol Report',
                 'notification_token' => $a->notification_token,
                 'page' => 'homepage',
                 'roster_id' =>  $id
-            ]; 
+            ];
             send_push_notification($notification_data);
-        }  
-        
+        }
+
         return response()->json([
-        'success' => true,
-        'message' => 'Foot Patrol reported successfully!'
+            'success' => true,
+            'message' => 'Foot Patrol reported successfully!'
         ], 200);
     }
 
-    public function jobSignout(Request $request, $id) {
-        
-        $field = 'selfie'; $media = '';
-            
+    public function jobSignout(Request $request, $id)
+    {
+
+        $field = 'selfie';
+        $media = '';
+
         $media = $this->uploader_base64($request->input($field));
-        
+
         $signout_location = '';
 
         if ($request->has('location') && $request->location != '') {
@@ -2144,23 +2139,23 @@ private function encodeJsonField($field)
 
         $model = DB::table('job_roster_activities')
             ->updateOrInsert(
-            [
-                'guard_id' => $roster->assigned_to, 
-                'job_roster_id' => $id
-            ],
-            [
-            'signout_time' => $usFormat,
-            'signout_selfie' => $media,
-            'status' => 0,
-            'signout_location' => $signout_location,
-            'signout_notes' => (!empty($request->input('notes')) && $request->input('notes') != null && $request->input('notes') != '') ? $request->input('notes') : '',
-            'updated_at' => now()
-            ]
-        );
+                [
+                    'guard_id' => $roster->assigned_to,
+                    'job_roster_id' => $id
+                ],
+                [
+                    'signout_time' => $usFormat,
+                    'signout_selfie' => $media,
+                    'status' => 0,
+                    'signout_location' => $signout_location,
+                    'signout_notes' => (!empty($request->input('notes')) && $request->input('notes') != null && $request->input('notes') != '') ? $request->input('notes') : '',
+                    'updated_at' => now()
+                ]
+            );
 
         if ($model) {
             DB::table('job_rosters')->where('id', $id)->update(['job_status' => 'completed', 'signin_status' => 0]);
-            $guard = DB::table('users')->where('id',$roster->assigned_to)->first();
+            $guard = DB::table('users')->where('id', $roster->assigned_to)->first();
             $roster = DB::table('job_rosters')->where('id', $id)->first();
             # CALCULATE TIME DIFFERENCE SO THAT UPDATE THE VARIABLE USE IN COMPLETE PATSHEET
             $inputTime = DateTime::createFromFormat('d-m-Y H:i', $request->input('time'));
@@ -2172,38 +2167,39 @@ private function encodeJsonField($field)
             // }
 
             $admins = DB::table('users')->where('notification_token', '!=', '')->where('id', $roster->created_by)->select('notification_token')->get();
-            foreach($admins as $a)
-            {
+            foreach ($admins as $a) {
                 $notification_data = [
-                    'message' => $guard->name.' signout in their job.',
+                    'message' => $guard->name . ' signout in their job.',
                     'title' => 'Job Signout',
                     'notification_token' => $a->notification_token,
                     'page' => 'homepage',
                     'roster_id' =>  $id
-                ]; 
+                ];
                 send_push_notification($notification_data);
             }
-        
+
             return response()->json([
-            'success' => true,
-            'message' => 'Clocked-out Successfully!'
+                'success' => true,
+                'message' => 'Clocked-out Successfully!'
             ], 200);
         }
-            return response()->json([
+        return response()->json([
             'success' => true,
             'message' => 'You are not Check-out your job.'
-            ], 200);
+        ], 200);
     }
-    
-    public function getAllJobs() {
+
+    public function getAllJobs()
+    {
         $startOfWeek = now()->startOfWeek();
         $endOfWeek = now()->endOfWeek();
-        
+
         $jobs = JobRoster::whereNull('assigned_to')
-        ->whereBetween('start', [$startOfWeek, $endOfWeek])
-        ->orderBy('created_at', 'desc')
-        ->get();
-        
+            ->whereBetween('start', [$startOfWeek, $endOfWeek])
+            ->where('job_status', 'pending')
+            ->orderBy('created_at', 'desc')
+            ->get();
+
         return response()->json([
             'success' => true,
             'data' => $jobs,
@@ -2216,7 +2212,8 @@ private function encodeJsonField($field)
         ]);
     }
 
-    public function getStaff($id) {
+    public function getStaff($id)
+    {
 
         $user = User::findOrFail($id);
 
@@ -2224,7 +2221,6 @@ private function encodeJsonField($field)
         } elseif ($user->user_type === 'contractor') {
         } elseif ($user->user_type === 'staff') {
         }
-        
     }
 
     public function fetchCustomerSites(Request $request)
@@ -2266,24 +2262,23 @@ private function encodeJsonField($field)
 
         $sites = Site::whereHas('jobRoster', function ($q) use ($start, $end, $roster_id, $user) {
 
-                $q->whereBetween('start', [$start, $end])
+            $q->whereBetween('start', [$start, $end])
                 ->where('roster_id', $roster_id);
 
-                if ($user->user_type === 'staff') {
-                    $q->where('assigned_to', $user->id);
-                }
+            if ($user->user_type === 'staff') {
+                $q->where('assigned_to', $user->id);
+            }
 
-                if ($user->user_type === 'customer') {
-                    $q->where('created_by', $user->id);
-                }
-
-            })
+            if ($user->user_type === 'customer') {
+                $q->where('created_by', $user->id);
+            }
+        })
             ->with(['jobRoster' => function ($q) use ($start, $end, $roster_id, $user) {
 
                 $q->whereBetween('start', [$start, $end])
-                ->where('roster_id', $roster_id)
-                ->orderBy('start', 'asc')
-                ->with('guards');
+                    ->where('roster_id', $roster_id)
+                    ->orderBy('start', 'asc')
+                    ->with('guards');
 
 
                 if ($user->user_type === 'staff') {
@@ -2293,7 +2288,6 @@ private function encodeJsonField($field)
                 if ($user->user_type === 'customer') {
                     $q->where('created_by', $user->id);
                 }
-
             }])
             // ->when($request->has('state'), function ($query) use ($request) {
             //     $query->where('state', $request->state);
@@ -2368,18 +2362,19 @@ private function encodeJsonField($field)
         ]);
     }
 
-    public function getJobs(Request $request, $type, $duration, $id) {
+    public function getJobs(Request $request, $type, $duration, $id)
+    {
         $week = ($request->input('week_no') != null) ? $request->input('week_no') : 0;
-        
+
         // Define constants if not defined elsewhere
         $DURATION_TODAY = 'today';
         $DURATION_WEEK = 'week';
         $DURATION_MONTH = 'month';
         $DEFULT_PAGES = 15; // or whatever your default pagination is
-        
-            $model = JobRoster::with('guards', 'rosterActivity', 'site')
+
+        $model = JobRoster::with('guards', 'rosterActivity', 'site')
             ->where(['publish_status' => 1, 'assigned_to' => $id])
-            ->where(function($que) use ($type){
+            ->where(function ($que) use ($type) {
                 if ($type == 'incompleted') {
                     $que->orWhere('job_status', 'confirmed');
                     $que->orWhere('job_status', 'pending');
@@ -2387,52 +2382,52 @@ private function encodeJsonField($field)
                     $que->orWhere('job_status', $type);
                 }
             });
-            
+
         switch ($duration) {
             case $DURATION_TODAY:
                 $model->whereDate('start', Carbon::today());
                 break;
-                
+
             case $DURATION_WEEK:
-                if($week == 0){
+                if ($week == 0) {
                     $model->whereBetween('start', [
-                        Carbon::now()->startOfWeek(), 
+                        Carbon::now()->startOfWeek(),
                         Carbon::parse('next monday')->toDateString()
                     ]);
                 } else {
                     $startofweek = Carbon::now()->startOfWeek();
                     $endofweek = Carbon::parse('next monday')->toDateString();
-                    
+
                     if ($week > 0) {
-                        $startofweek = strtotime("+".$week." week", strtotime($startofweek));
+                        $startofweek = strtotime("+" . $week . " week", strtotime($startofweek));
                     } else {
-                        $startofweek = strtotime("-".$week." week", strtotime($startofweek));
+                        $startofweek = strtotime("-" . $week . " week", strtotime($startofweek));
                     }
 
                     if ($week > 0) {
-                        $endofweek = strtotime("+".$week." week", strtotime($endofweek));
+                        $endofweek = strtotime("+" . $week . " week", strtotime($endofweek));
                     } else {
-                        $endofweek = strtotime("-".$week." week", strtotime($endofweek));
+                        $endofweek = strtotime("-" . $week . " week", strtotime($endofweek));
                     }
-                    
+
                     $startofweek = date('Y-m-d H:i', $startofweek);
                     $endofweek = date('Y-m-d H:i', $endofweek);
                     $model->whereBetween('start', [$startofweek, $endofweek]);
                 }
                 break;
-                
+
             case $DURATION_MONTH:
                 $model->whereMonth('start', date('m'));
                 $model->whereYear('start', date('Y'));
                 break;
         }
-        
+
         $results = $model->orderBy('start', 'asc')->paginate($DEFULT_PAGES);
-        
+
         return $results;
     }
 
-    public function start_task(Request $request,$id)
+    public function start_task(Request $request, $id)
     {
         // $this->setValidationRules(['task_id' => 'required', 'roster_id' => 'required', 'start_time' => 'required', 'location' => 'required']);
         // if ($this->isValidRequest()) {
@@ -2457,8 +2452,8 @@ private function encodeJsonField($field)
                 'code' => 200
             ]);
         }
-        $active_task = DB::table('job_roster_tasks')->where('start_time','!=', '')->where('end_time', '=', '')
-        ->where('job_roster_id', '=', $request->input('roster_id'))->first();
+        $active_task = DB::table('job_roster_tasks')->where('start_time', '!=', '')->where('end_time', '=', '')
+            ->where('job_roster_id', '=', $request->input('roster_id'))->first();
         if (!empty($active_task)) {
             return response()->json([
                 'success' => false,
@@ -2467,7 +2462,7 @@ private function encodeJsonField($field)
             ]);
         }
 
-            DB::table('job_roster_tasks')
+        DB::table('job_roster_tasks')
             ->where(['job_roster_id' => $request->input('roster_id'), 'id' => $request->input('task_id')])
             ->update([
                 'start_time' => $request->input('start_time'),
@@ -2477,45 +2472,44 @@ private function encodeJsonField($field)
         $guard = User::where('id', $id)->first();
 
         $notification = array(
-            'guard_id' => $id, 
+            'guard_id' => $id,
             'record_id' => $request->input('roster_id'),
-            'message' => $guard->name.' start its task.',
+            'message' => $guard->name . ' start its task.',
             'type' => 'task',
             'send_time' => time(),
             'title' => 'Task start'
         );
 
         DB::table('roster_complete_activity')->insert([
-        'roster_id' => $request->input('roster_id'),
-        'activity' => $guard->name.' start its task.',
-        'type' => 'start_task',
-        'record_id' => $request->input('task_id'),
-        'activity_time' => time(),
-        'activity_by' => $id
+            'roster_id' => $request->input('roster_id'),
+            'activity' => $guard->name . ' start its task.',
+            'type' => 'start_task',
+            'record_id' => $request->input('task_id'),
+            'activity_time' => time(),
+            'activity_by' => $id
         ]);
 
         $roster = DB::table('job_rosters')->where('id', $request->input('roster_id'))->first();
         $admins = DB::table('users')->where('notification_token', '!=', '')->where('id', $roster->created_by)->select('notification_token')->get();
-        foreach($admins as $a)
-        {
+        foreach ($admins as $a) {
             $notification_data = [
-                'message' => $guard->name.' start its task.',
+                'message' => $guard->name . ' start its task.',
                 'title' => 'start_task',
                 'notification_token' => $a->notification_token,
                 'page' => 'homepage',
                 'roster_id' =>  $id
-            ]; 
+            ];
             send_push_notification($notification_data);
         }
-    
+
         return response()->json([
-                'success' => true,
-                'message' => 'Task start successfully!',
-                'code' => 200
-            ]);
+            'success' => true,
+            'message' => 'Task start successfully!',
+            'code' => 200
+        ]);
     }
 
-    public function end_task(Request $request,$id)
+    public function end_task(Request $request, $id)
     {
 
         $imageArray = $request->input('images');
@@ -2526,20 +2520,20 @@ private function encodeJsonField($field)
         //     $this->statusCode = self::STATUS_CODE_200;
         //     return $this->sendResponse();
         // }
-            // DB::table('job_new_roster')->where('roster_id', )->update(['job_status' => 'completed']);
+        // DB::table('job_new_roster')->where('roster_id', )->update(['job_status' => 'completed']);
         DB::table('job_roster_tasks')
-        ->where(['job_roster_id' => $request->input('roster_id'), 'id' => $request->input('task_id')])
-        ->update(['end_time' => $request->input('end_time'), 'status' => 'completed', 'end_location' => $request->input('location'), 'note' => $request->input('task_message'), 'task_end_imgs' => !empty($imageArray) ? json_encode($imageArray): null ]);
+            ->where(['job_roster_id' => $request->input('roster_id'), 'id' => $request->input('task_id')])
+            ->update(['end_time' => $request->input('end_time'), 'status' => 'completed', 'end_location' => $request->input('location'), 'note' => $request->input('task_message'), 'task_end_imgs' => !empty($imageArray) ? json_encode($imageArray) : null]);
 
         $roster = DB::table('job_rosters')->where('id', $request->roster_id)->first();
         $main_roster = DB::table('job_new_roster')->where('id', $roster->roster_id)->first();
         $guard = DB::table('users')->where('id', $id)->first();
-       
+
         $notification = array(
             'roster' => !empty($main_roster->id) ? $main_roster->id : null,
-            'guard_id' => $id, 
+            'guard_id' => $id,
             'record_id' => $request->input('roster_id'),
-            'message' => $guard->name.' completed its task.',
+            'message' => $guard->name . ' completed its task.',
             'type' => 'end_task',
             'send_time' => time(),
             'title' => 'Task Completion'
@@ -2547,24 +2541,23 @@ private function encodeJsonField($field)
         // DB::table('portal_notifications')->insert($notification);
 
         DB::table('roster_complete_activity')->insert([
-        'roster_id' => $request->input('roster_id'),
-        'activity' => $guard->name.' completed its task.',
-        'type' => 'end_task',
-        'record_id' => $request->input('task_id'),
-        'activity_time' => time(),
-        'activity_by' => $id
+            'roster_id' => $request->input('roster_id'),
+            'activity' => $guard->name . ' completed its task.',
+            'type' => 'end_task',
+            'record_id' => $request->input('task_id'),
+            'activity_time' => time(),
+            'activity_by' => $id
         ]);
 
         $admins = DB::table('users')->where('notification_token', '!=', '')->where('id', $roster->created_by)->select('notification_token')->get();
-        foreach($admins as $a)
-        {
+        foreach ($admins as $a) {
             $notification_data = [
-                'message' => $guard->name.' completed its task.',
+                'message' => $guard->name . ' completed its task.',
                 'title' => 'end_task',
                 'notification_token' => $a->notification_token,
                 'page' => 'homepage',
                 'roster_id' =>  $id
-            ]; 
+            ];
             send_push_notification($notification_data);
         }
 
@@ -2579,8 +2572,8 @@ private function encodeJsonField($field)
     {
         $time = explode(':', $time);
         if (isset($time[1])) {
-            $time[1] = $time[1]/60;
-        }else{
+            $time[1] = $time[1] / 60;
+        } else {
             $time[1] = 0;
         }
         return ($time[0] * 1) + $time[1];
@@ -2602,26 +2595,25 @@ private function encodeJsonField($field)
         $job_signin_details = DB::table('job_roster_activities')->where(['guard_id' => $id, 'job_roster_id' => $request->input('roster_id')])->first();
 
         if ($job_signin_details) {
-            if ($job_signin_details->status == 0) { 
+            if ($job_signin_details->status == 0) {
                 return response()->json([
                     'success' => false,
                     'error' => 'You can\'t take a break!',
                     'code' => 200
-                ]);  
-            }else{
+                ]);
+            } else {
                 $job_start_time = $job_signin_details->signin_time;
                 $job_start_time = explode('GMT', $job_start_time);
                 $job_start_time = strtotime($job_start_time[0]);
                 $current_time = time();
-                $diff = round(($current_time - $job_start_time) / (60 *60),2);
+                $diff = round(($current_time - $job_start_time) / (60 * 60), 2);
             }
-
-        }else{
+        } else {
             return response()->json([
-                    'success' => false,
-                    'error' => 'You must be signin into you job to start break!',
-                    'code' => 200
-                ]); 
+                'success' => false,
+                'error' => 'You must be signin into you job to start break!',
+                'code' => 200
+            ]);
         }
 
         $already_break = DB::table('job_breaks')->where(['guard_id' => $id, 'roster_id' => $request->input('roster_id')])->orderBy('id', 'desc')->first();
@@ -2631,18 +2623,18 @@ private function encodeJsonField($field)
                     'success' => false,
                     'error' => 'You are already on a break!',
                     'code' => 200
-                ]); 
-            }else{
+                ]);
+            } else {
                 $job_start_time = $already_break->end_time;
                 $job_start_time = strtotime($job_start_time);
                 $current_time = time();
-                $diff = round(($job_start_time - $current_time) / (60 *60),2);
+                $diff = round(($job_start_time - $current_time) / (60 * 60), 2);
                 if ($diff < 4) {
-                      return response()->json([
-                            'success' => false,
-                            'error' => 'You can take a break after 4 hours!',
-                            'code' => 200
-                       ]); 
+                    return response()->json([
+                        'success' => false,
+                        'error' => 'You can take a break after 4 hours!',
+                        'code' => 200
+                    ]);
                 }
             }
         }
@@ -2652,40 +2644,40 @@ private function encodeJsonField($field)
             'start_time' => time(),
             'notes' => $request->input('notes'),
             'inform_to' => $request->input('inform'),
-            'job_status' => 1, 
-            'break_start_time' => time());
+            'job_status' => 1,
+            'break_start_time' => time()
+        );
         DB::table('job_breaks')->insert($data);
         DB::table('job_rosters')->where(['id' => $request->input('roster_id'), 'assigned_to' => $id])->update(['break_status' => 1]);
 
-            DB::table('roster_complete_activity')->insert([
-                'roster_id' => $request->input('roster_id'),
-                'activity' => $guard->name.' start break.',
-                'type' => 'start_break',
-                'record_id' => $request->input('roster_id'),
-                'activity_time' => time(),
-                'activity_by' => $id
-                ]);
+        DB::table('roster_complete_activity')->insert([
+            'roster_id' => $request->input('roster_id'),
+            'activity' => $guard->name . ' start break.',
+            'type' => 'start_break',
+            'record_id' => $request->input('roster_id'),
+            'activity_time' => time(),
+            'activity_by' => $id
+        ]);
 
-            //push notification
-            $admins = DB::table('users')->where('notification_token', '!=', '')->select('notification_token')->get();
-            foreach($admins as $a)
-            {
-                $notification_data = [
-                    'message' => $guard->name. 'start break.',
-                    'title' => 'start_break',
-                    'notification_token' => $a->notification_token,
-                    'page' => 'homepage',
-                    'roster_id' =>  $id
-                ]; 
-                send_push_notification($notification_data);
-            }
+        //push notification
+        $admins = DB::table('users')->where('notification_token', '!=', '')->select('notification_token')->get();
+        foreach ($admins as $a) {
+            $notification_data = [
+                'message' => $guard->name . 'start break.',
+                'title' => 'start_break',
+                'notification_token' => $a->notification_token,
+                'page' => 'homepage',
+                'roster_id' =>  $id
+            ];
+            send_push_notification($notification_data);
+        }
         return response()->json([
             'success' => true,
             'message' => 'Break start successfully.',
             'code' => 200
-        ]); 
+        ]);
     }
-public function end_break(Request $request, $id)
+    public function end_break(Request $request, $id)
     {
         // $this->setValidationRules(['roster_id' => 'required']);
         // if ($this->isValidRequest()) {
@@ -2703,71 +2695,343 @@ public function end_break(Request $request, $id)
 
         DB::table('job_rosters')->where(['id' => $request->input('roster_id'), 'assigned_to' => $id])->update(['break_status' => 0]);
 
-            DB::table('roster_complete_activity')->insert([
-                'roster_id' => $request->input('roster_id'),
-                'activity' => $guard->name.' end its break.',
-                'type' => 'end_break',
-                'record_id' => $request->input('roster_id'),
-                'activity_time' => time(),
-                'activity_by' => $id
-                ]);
+        DB::table('roster_complete_activity')->insert([
+            'roster_id' => $request->input('roster_id'),
+            'activity' => $guard->name . ' end its break.',
+            'type' => 'end_break',
+            'record_id' => $request->input('roster_id'),
+            'activity_time' => time(),
+            'activity_by' => $id
+        ]);
 
-            //push notification
-            // $admins = DB::table('users')->where('notification_token', '!=', '')->select('notification_token')->get();
-            // foreach($admins as $a)
-            // {
-            //     $notification_data = [
-            //         'message' => $guard->name.' end its break.',
-            //         'title' => 'end_break',
-            //         'notification_token' => $a->notification_token,
-            //         'page' => 'homepage',
-            //         'roster_id' =>  $id
-            //     ]; 
-            //     send_push_notification($notification_data);
-            // }
+        //push notification
+        // $admins = DB::table('users')->where('notification_token', '!=', '')->select('notification_token')->get();
+        // foreach($admins as $a)
+        // {
+        //     $notification_data = [
+        //         'message' => $guard->name.' end its break.',
+        //         'title' => 'end_break',
+        //         'notification_token' => $a->notification_token,
+        //         'page' => 'homepage',
+        //         'roster_id' =>  $id
+        //     ]; 
+        //     send_push_notification($notification_data);
+        // }
 
-         return response()->json([
+        return response()->json([
             'success' => true,
             'message' => 'Break Completed.',
             'code' => 200
-        ]); 
-
+        ]);
     }
 
     public function updateRosterTime(Request $request)
     {
-    $jobRosterTime = JobRoster::where('id', $request->id)->first();
-    $old_data = $jobRosterTime;
-    $hours = $this->getShiftHours(dbFormateDateTime($request->start), dbFormateDateTime($request->end), $jobRosterTime->site_id, 0);
-    $guardWorkingHours =  calCulateGuardWeekHours(dbFormateDateTime($request->start),dbFormateDateTime($request->end));
-    if($jobRosterTime){
-        $jobRosterTime->start = dbFormateDateTime($request->start);
-        $jobRosterTime->end = dbFormateDateTime($request->end);
-        $jobRosterTime->hours = $guardWorkingHours;
-        $jobRosterTime->morning_hours = (!empty($hours['morning']) ? $hours['morning'] : 0.0);
-        $jobRosterTime->night_hours = (!empty($hours['night']) ? $hours['night'] : 0.0);
-        $jobRosterTime->saturday_morning_hours = (!empty($hours['saturday_morning']) ? $hours['saturday_morning'] : 0.0);
-        $jobRosterTime->saturday_night_hours = (!empty($hours['saturday_night']) ? $hours['saturday_night'] : 0.0);
-        $jobRosterTime->sunday_morning_hours = (!empty($hours['sunday_morning']) ? $hours['sunday_morning'] : 0.0);
-        $jobRosterTime->sunday_night_hours = (!empty($hours['sunday_night']) ? $hours['sunday_night'] : 0.0);
-        $jobRosterTime->ph_morning_hours = (!empty($hours['ph_morning']) ? $hours['ph_morning'] : 0.0);
-        $jobRosterTime->ph_night_hours = (!empty($hours['ph_night']) ? $hours['ph_night'] : 0.0);
-        $jobRosterTime->update();
-        $check = checkGuardShiftTimingUpdate($request->start, $request->end, $jobRosterTime->assigned_to, $jobRosterTime->roster_id);
-        $jobRosterTime->conf_start = (!empty($check['start']) ? dbFormateDateTime($check['start']) : '');
-        $jobRosterTime->conf_end = (!empty($check['end']) ? dbFormateDateTime($check['end']) : '');
-        $jobRosterTime->conflict =  (!empty($check['conf']) ? $check['conf'] : '');
-        $jobRosterTime->update();
-        $updatedjobRosterTime = $jobRosterTime->getChanges();
-        // jobRosterActions($request->admin_id,'update_shift_time',$jobRosterTime->id, 'job_roster',$old_data, $updatedjobRosterTime);
+        $jobRosterTime = JobRoster::where('id', $request->id)->first();
+        $old_data = $jobRosterTime;
+        $hours = $this->getShiftHours(dbFormateDateTime($request->start), dbFormateDateTime($request->end), $jobRosterTime->site_id, 0);
+        $guardWorkingHours =  calCulateGuardWeekHours(dbFormateDateTime($request->start), dbFormateDateTime($request->end));
+        if ($jobRosterTime) {
+            $jobRosterTime->start = dbFormateDateTime($request->start);
+            $jobRosterTime->end = dbFormateDateTime($request->end);
+            $jobRosterTime->hours = $guardWorkingHours;
+            $jobRosterTime->morning_hours = (!empty($hours['morning']) ? $hours['morning'] : 0.0);
+            $jobRosterTime->night_hours = (!empty($hours['night']) ? $hours['night'] : 0.0);
+            $jobRosterTime->saturday_morning_hours = (!empty($hours['saturday_morning']) ? $hours['saturday_morning'] : 0.0);
+            $jobRosterTime->saturday_night_hours = (!empty($hours['saturday_night']) ? $hours['saturday_night'] : 0.0);
+            $jobRosterTime->sunday_morning_hours = (!empty($hours['sunday_morning']) ? $hours['sunday_morning'] : 0.0);
+            $jobRosterTime->sunday_night_hours = (!empty($hours['sunday_night']) ? $hours['sunday_night'] : 0.0);
+            $jobRosterTime->ph_morning_hours = (!empty($hours['ph_morning']) ? $hours['ph_morning'] : 0.0);
+            $jobRosterTime->ph_night_hours = (!empty($hours['ph_night']) ? $hours['ph_night'] : 0.0);
+            $jobRosterTime->update();
+            // $check = checkGuardShiftTimingUpdate($request->start, $request->end, $jobRosterTime->assigned_to, $jobRosterTime->roster_id);
+            $jobRosterTime->conf_start = (!empty($check['start']) ? dbFormateDateTime($check['start']) : '');
+            $jobRosterTime->conf_end = (!empty($check['end']) ? dbFormateDateTime($check['end']) : '');
+            $jobRosterTime->conflict =  (!empty($check['conf']) ? $check['conf'] : '');
+            $jobRosterTime->update();
+            $updatedjobRosterTime = $jobRosterTime->getChanges();
+            // jobRosterActions($request->admin_id,'update_shift_time',$jobRosterTime->id, 'job_roster',$old_data, $updatedjobRosterTime);
 
-        $admin_name = getUserName($request->admin_id);
-        $currnet_time = time();
-        // shiftCompleteActivity($jobRosterTime->id, $admin_name. ' Update Time of this Shift', 'update_shift_time', $jobRosterTime->id, $currnet_time, $request->admin_id);
+            $admin_name = getUserName($request->admin_id);
+            $currnet_time = time();
+            // shiftCompleteActivity($jobRosterTime->id, $admin_name. ' Update Time of this Shift', 'update_shift_time', $jobRosterTime->id, $currnet_time, $request->admin_id);
 
-        return response()->json(['message' => "Shift Time Updated" ,  'code' => 200, 'success' => true]);
-    }else{
-        return response()->json(['message' => "Shift not Found!" ,  'code' => 404, 'success' => false]);
+            return response()->json(['message' => "Shift Time Updated",  'code' => 200, 'success' => true]);
+        } else {
+            return response()->json(['message' => "Shift not Found!",  'code' => 404, 'success' => false]);
+        }
     }
+
+    function getrosterhoursum(Request $request)
+    {
+        if (!empty($request['date'])) {
+            $dateRange  = explode(' - ', $request['date']);
+            $from       = strtotime(str_replace('/', '-', $dateRange[0]));
+            $to         = strtotime(str_replace('/', '-', $dateRange[1])) + 86399;
+        } else {
+            $to   = time();
+            $from = $to - (60 * 60 * 24 * 14);
+        }
+
+        $startDate = date('Y-m-d H:i', $from);
+        $endDate   = date('Y-m-d H:i', $to);
+
+        $query = DB::table('job_rosters AS jr')
+            ->select(
+                'jr.*',
+                'j.id AS site_id',
+                'j.user_id',
+                'j.state',
+                'j.address',
+                'j.site_name',
+                'cust.name AS customer_name',
+                // 'g.phone AS guard_phone',
+                'g.name  AS guard_name',
+                'ja.signin_time',
+                'ja.signout_time',
+                'jr.id         AS id',
+                'jr.assigned_to AS guard_id',
+                'jr.created_by  AS customer_id'
+            )
+            ->join('sites AS j', 'j.id', '=', 'jr.site_id')
+            ->leftJoin('job_roster_activities AS ja', 'ja.job_roster_id', '=', 'jr.id')
+            ->leftJoin('users AS g',    'g.id',    '=', 'jr.assigned_to')
+            ->leftJoin('users AS cust', 'cust.id', '=', 'jr.created_by')
+            ->whereIn('jr.job_status', ['completed', 'pending', 'confirmed'])
+            ->whereBetween('jr.start', [$startDate, $endDate])
+            ->orderBy('g.name', 'ASC')
+            ->orderBy('jr.start');
+
+        if (!empty($request['customer_id'])) {
+            $query->where('j.user_id', $request['customer_id']);
+        }
+
+        $results = $query->get()->toArray();
+        $results = json_decode(json_encode($results), true);
+
+        $chargerate = ChargeRate::where('id', 1)
+            ->where('status', 'active')
+            ->first();
+
+        foreach ($results as $key => $roster) {
+
+            $roster['day_rate']            = 0;
+            $roster['night_rate']          = 0;
+            $roster['public_holiday_rate'] = 0;
+            $roster['saturday_rate']       = 0;
+            $roster['sunday_rate']         = 0;
+            $roster['total_amount']        = 0;
+            $roster['ot']                  = 0;
+
+            if (!empty($chargerate)) {
+
+                $roster['day_rate']            = $chargerate->def_metro_mon_to_fri_day_rate;
+                $roster['night_rate']          = $chargerate->def_metro_mon_to_fri_night_rate;
+                $roster['public_holiday_rate'] = $chargerate->def_metro_pub_holi_day_rate;
+                $roster['saturday_rate']       = $chargerate->def_metro_sat_day_rate;
+                $roster['sunday_rate']         = $chargerate->def_metro_sun_day_rate;
+
+                $roster['total_amount'] =
+                    ($roster['day_rate']            * $roster['morning_hours']) +
+                    ($roster['night_rate']           * $roster['night_hours']) +
+                    ($roster['public_holiday_rate']  * ($roster['ph_morning_hours']       + $roster['ph_night_hours'])) +
+                    ($roster['saturday_rate']        * ($roster['saturday_morning_hours'] + $roster['saturday_night_hours'])) +
+                    ($roster['sunday_rate']          * ($roster['sunday_morning_hours']   + $roster['sunday_night_hours']));
+            }
+
+            $results[$key] = $roster;
+        }
+
+        // ── Normal type: aggregate into hour buckets ─────────────────────────────
+        if ($request->type === 'normal') {
+
+            $total_hours = [
+                0 => ['name' => 'M-F Morning Hours',    'hours' => 0, 'payrate' => 0, 'totalpay' => 0],
+                1 => ['name' => 'M-F Night Hours',       'hours' => 0, 'payrate' => 0, 'totalpay' => 0],
+                2 => ['name' => 'Saturday Hours',        'hours' => 0, 'payrate' => 0, 'totalpay' => 0],
+                3 => ['name' => 'Sunday Hours',          'hours' => 0, 'payrate' => 0, 'totalpay' => 0],
+                4 => ['name' => 'Public Holiday Hours',  'hours' => 0, 'payrate' => 0, 'totalpay' => 0],
+            ];
+
+            foreach ($results as $shift) {
+
+                // Helper closure to reduce repetition
+                $add = function (int $index, float $hours, float $rate) use (&$total_hours, $shift) {
+                    $total_hours[$index]['hours']      += $hours;
+                    $total_hours[$index]['payrate']     = $rate;
+                    $total_hours[$index]['totalpay']    = $total_hours[$index]['hours'] * $rate;
+                    // $total_hours[$index]['site_po_wo']  = $shift['site_po_wo'];
+                    // $total_hours[$index]['po_wo']       = $shift['po_wo'];
+                };
+
+                $add(0, $shift['morning_hours'],                                                $shift['day_rate']);
+                $add(1, $shift['night_hours'],                                                  $shift['night_rate']);
+                $add(2, $shift['saturday_morning_hours'] + $shift['saturday_night_hours'],      $shift['saturday_rate']);
+                $add(3, $shift['sunday_morning_hours']   + $shift['sunday_night_hours'],        $shift['sunday_rate']);
+                $add(4, $shift['ph_morning_hours']       + $shift['ph_night_hours'],            $shift['public_holiday_rate']);
+            }
+
+            // Always return success; let the frontend decide if data is empty
+            return response()->json([
+                'success' => !empty(array_filter($total_hours, fn($b) => $b['hours'] > 0)),
+                'code'    => 200,
+                'data'    => $total_hours,
+            ]);
+        }
+    }
+
+    function getTimesheet(Request $request)
+    {
+        $limit = 10;
+        $offset = 0;
+        if ($request->has('pageIndex') && $request->has('pageSize')) {
+            $offset = $request->pageIndex * $request->pageSize;
+            $limit = $request->pageSize;
+        }
+        
+        // Build base query
+        $baseQuery = JobRoster::query();
+
+        if ($request->has('start') && $request->start != '') {
+            $start = dbFormate($request->start);
+        } else {
+            $start = Carbon::now()->startOfWeek()->toDateString();
+        }
+        if ($request->has('end') && $request->end != '') {
+            $end = dbFormate($request->end);
+        } else {
+            $end = Carbon::now()->endOfWeek()->toDateString();
+        }
+
+        // Apply filters
+        if ($request->has('guard_id') && !empty($request->guard_id)) {
+            $baseQuery->whereIn('job_rosters.assigned_to', $request->guard_id);
+        }
+
+        if ($request->has('customer_ids') && !empty($request->customer_ids)) {
+            $sites_id = Site::whereIn('user_id', $request->customer_ids)->pluck('id')->toArray();
+            $baseQuery->whereIn('job_rosters.site_id', $sites_id);
+        }
+
+        if ($request->has('sites_ids') && !empty($request->sites_ids)) {
+            $baseQuery->whereIn('job_rosters.site_id', $request->sites_ids);
+        }
+
+        // Apply date filters
+        $baseQuery->whereDate('job_rosters.start', '>=', $start)
+            ->whereDate('job_rosters.start', '<=', $end)
+            ->whereNotNull('job_rosters.assigned_to');
+
+        // Get total count
+        $totalQuery = clone $baseQuery;
+        $total = $totalQuery->count('job_rosters.id');
+
+        // Get the timesheet data with proper grouping
+        $timesheet = $baseQuery
+            ->leftJoin('users', 'users.id', '=', 'job_rosters.assigned_to')
+            ->select(
+                'job_rosters.id as shift_id',
+                'job_rosters.start',
+                'job_rosters.end',
+                'users.id as user_id',
+                'users.name',
+                'job_rosters.in_paysheet',
+                'job_rosters.morning_hours',
+                'job_rosters.night_hours',
+                'job_rosters.saturday_morning_hours',
+                'job_rosters.saturday_night_hours',
+                'job_rosters.sunday_morning_hours',
+                'job_rosters.sunday_night_hours',
+                'job_rosters.ph_morning_hours',
+                'job_rosters.ph_night_hours',
+                'job_rosters.hours'
+            )
+            ->orderBy('users.name')
+            ->orderBy('job_rosters.start')
+            ->get();
+
+        // Process the results to group by user
+        $mainArr = [];
+        foreach ($timesheet as $shift) {
+            $userId = $shift['user_id'];
+            
+            // Get shift hours breakdown
+            $job_hours = $this->getShiftHours(
+                date('m/d/Y H:i', strtotime($shift['start'])),
+                date('m/d/Y H:i', strtotime($shift['end']))
+            );
+            
+            if (!isset($mainArr[$userId])) {
+                $mainArr[$userId] = [
+                    'id' => $shift['user_id'],
+                    'name' => $shift['name'],
+                    'hours' => (float)$shift['hours'],
+                    'morning_hours' => (float)$job_hours['morning'],
+                    'night_hours' => (float)$job_hours['night'],
+                    'saturday_morning_hours' => (float)$job_hours['saturday_morning'],
+                    'saturday_night_hours' => (float)$job_hours['saturday_night'],
+                    'sunday_morning_hours' => (float)$job_hours['sunday_morning'],
+                    'sunday_night_hours' => (float)$job_hours['sunday_night'],
+                    'ph_morning_hours' => (float)$job_hours['ph_morning'],
+                    'ph_night_hours' => (float)$job_hours['ph_night'],
+                    'shift_collection' => [$shift['shift_id']],
+                ];
+            } else {
+                // Update the aggregated values
+                $mainArr[$userId]['hours'] += (float)$shift['hours'];
+                $mainArr[$userId]['morning_hours'] += (float)$job_hours['morning'];
+                $mainArr[$userId]['night_hours'] += (float)$job_hours['night'];
+                $mainArr[$userId]['saturday_morning_hours'] += (float)$job_hours['saturday_morning'];
+                $mainArr[$userId]['saturday_night_hours'] += (float)$job_hours['saturday_night'];
+                $mainArr[$userId]['sunday_morning_hours'] += (float)$job_hours['sunday_morning'];
+                $mainArr[$userId]['sunday_night_hours'] += (float)$job_hours['sunday_night'];
+                $mainArr[$userId]['ph_morning_hours'] += (float)$job_hours['ph_morning'];
+                $mainArr[$userId]['ph_night_hours'] += (float)$job_hours['ph_night'];
+                $mainArr[$userId]['shift_collection'][] = $shift['shift_id'];
+            }
+        }
+        
+        $timesheet = array_values($mainArr);
+        
+        // Apply pagination to the processed array
+        $paginatedData = array_slice($timesheet, $offset, $limit);
+        $total = count($timesheet);
+
+        if (count($paginatedData) > 0) {
+            return response()->json([
+                'success' => true,
+                'code' => 200,
+                'length' => $total,
+                'pageIndex' => $request->pageIndex ?? 0,
+                'pageSize' => $limit,
+                'message' => 'Timesheet found.',
+                'data' => $paginatedData
+            ]);
+        } else {
+            return response()->json([
+                'success' => false,
+                'code' => 200,
+                'length' => $total,
+                'pageIndex' => $request->pageIndex ?? 0,
+                'pageSize' => $limit,
+                'message' => 'No timesheet found!',
+                'data' => $paginatedData
+            ]);
+        }
+    }
+
+    public function getTimeSheetDetails(Request $request)
+    {   
+        $rosters = JobRoster::
+       
+        whereIn('id', $request->shift_collection)
+        ->with(['site', 'guards', 'customer', 'rosterActivity'])->get();
+
+      //$data = TimeSheetDetailsResource::collection($rosters);
+      $data = $rosters;
+      if (count($data) > 0) {
+         return response()->json(['success' => true, 'data' => $data]);
+       }
+      return response()->json(['success' => false, 'data' => $data]);
     }
 }

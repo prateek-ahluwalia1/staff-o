@@ -20,6 +20,7 @@ class User extends Authenticatable
             'user_id',
             'city',
             'country',
+            'google_id',
             'state',
             'coordinates',
             'address'

@@ -9,8 +9,10 @@ use App\Models\Contractor;
 use App\Models\DocumentCategory;
 use App\Models\Staff;
 use App\Models\Document;
+use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Http;
 
 class AuthController extends Controller
 {
@@ -49,7 +51,7 @@ class AuthController extends Controller
         ]);
 
         // $document_categories = DocumentCategory::where('document_category', 'customer_document')->first();
-        
+
         // foreach (json_decode($document_categories->document_type) as $key => $value) {  
 
         //     $guard_documents = new Document();
@@ -100,8 +102,8 @@ class AuthController extends Controller
         ]);
 
         $document_categories = DocumentCategory::where('document_category', 'contractor_document')->first();
-        
-        foreach (json_decode($document_categories->document_type) as $key => $value) {  
+
+        foreach (json_decode($document_categories->document_type) as $key => $value) {
 
             $guard_documents = new Document();
             $guard_documents->user_id = $user->id;
@@ -214,7 +216,7 @@ class AuthController extends Controller
 
         $user = User::where('email', $request->email)->first();
 
-         if ($user->user_type === 'customer') {
+        if ($user->user_type === 'customer') {
             $user->load(['customer']);
         } elseif ($user->user_type === 'contractor') {
             $user->load('contractor', 'documents');
@@ -258,13 +260,223 @@ class AuthController extends Controller
     public function storeNotificationToken(Request $request)
     {
         $user = User::where('id', $request->id)->first();
-        if($user){
+        if ($user) {
             $user->notification_token = $request->notification_token;
             $user->update();
             return response()->json(['success' => true, 'msg' => 'notification token create successfully!']);
-        }else{
+        } else {
             return response()->json(['success' => true, 'msg' => 'admin not found!']);
         }
     }
 
+     public function handleGoogleCallback(Request $request)
+    {
+        // ── Step 1: Validate ─────────────────────────────────────────
+        $request->validate([
+            'credential' => 'required|string',
+            'user_type'  => 'required|in:customer,staff,contractor',
+        ]);
+
+        try {
+            // ── Step 2: Verify Google access token (ya29...) ─────────
+            $response = Http::withHeaders([
+                'Authorization' => 'Bearer ' . $request->credential,
+            ])->get('https://www.googleapis.com/oauth2/v3/userinfo');
+
+            if ($response->failed()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid Google token.',
+                ], 401);
+            }
+
+            $google = $response->json();
+            // $google contains: sub, name, email, picture
+
+            // ── Step 3: Check if email already exists ─────────────────
+            $existingUser = User::where('email', $google['email'])->first();
+
+            if ($existingUser) {
+                // ════════════════════════════════════════
+                // LOGIN — email found in DB
+                // ════════════════════════════════════════
+                $existingUser->update([
+                    'google_id' => $google['sub'],
+                    'avatar'    => $google['picture'] ?? $existingUser->avatar,
+                ]);
+
+                $existingUser->tokens()->delete();
+                $token = $existingUser->createToken('api')->plainTextToken;
+
+                return response()->json([
+                    'success' => true,
+                    'is_new'  => false,
+                    'message' => 'Logged in successfully.',
+                    'token'   => $token,
+                    'user'    => $existingUser,
+                ], 200);
+            }
+
+            // ════════════════════════════════════════
+            // REGISTER — email not found, create user
+            // ════════════════════════════════════════
+            $userType = $request->user_type;
+
+            if ($userType === 'customer') {
+                return $this->registerCustomerViaGoogle($google);
+            }
+
+            if ($userType === 'contractor') {
+                return $this->registerContractorViaGoogle($google);
+            }
+
+            if ($userType === 'staff') {
+                return $this->registerStaffViaGoogle($google);
+            }
+
+        } catch (Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Authentication failed. ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    // ────────────────────────────────────────────────────────────────
+    // PRIVATE: Register Customer via Google
+    // Mirrors your registerCustomer() — no password needed
+    // ────────────────────────────────────────────────────────────────
+    private function registerCustomerViaGoogle(array $google)
+    {
+        $user = User::create([
+            'name'      => $google['name'],
+            'email'     => $google['email'],
+            'google_id' => $google['sub'],
+            'avatar'    => $google['picture'] ?? null,
+            'password'  => null,
+            'user_type' => 'customer',
+            'is_active' => 0,
+            'address'   => null,
+            'city'      => null,
+            'state'     => null,
+            'country'   => null,
+            'coordinates' => null,
+        ]);
+
+        Customer::create([
+            'user_id'      => $user->id,
+            'phone'        => null,
+            'company_name' => null,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'is_new'  => true,
+            'message' => 'Customer registered successfully.',
+            'token'   => $user->createToken('api')->plainTextToken,
+            'user'    => $user,
+        ], 201);
+    }
+
+    // ────────────────────────────────────────────────────────────────
+    // PRIVATE: Register Contractor via Google
+    // Mirrors your registerContractor() — creates Document records
+    // ────────────────────────────────────────────────────────────────
+    private function registerContractorViaGoogle(array $google)
+    {
+        $user = User::create([
+            'name'      => $google['name'],
+            'email'     => $google['email'],
+            'google_id' => $google['sub'],
+            'avatar'    => $google['picture'] ?? null,
+            'password'  => null,
+            'user_type' => 'contractor',
+            'is_active' => 0,
+            'address'   => null,
+            'city'      => null,
+            'state'     => null,
+            'country'   => null,
+            'coordinates' => null,
+        ]);
+
+        Contractor::create([
+            'user_id'             => $user->id,
+            'company_name'        => null,
+            'registration_number' => null,
+            'phone'               => null,
+        ]);
+
+        // Create document placeholders — same as your registerContractor()
+        $document_categories = DocumentCategory::where('document_category', 'contractor_document')->first();
+
+        if ($document_categories) {
+            foreach (json_decode($document_categories->document_type) as $key => $value) {
+                $document = new Document();
+                $document->user_id            = $user->id;
+                $document->document_category  = $document_categories->document_category ?: 'other';
+                $document->document_type      = $key;
+                $document->document_name      = $value;
+                $document->save();
+            }
+        }
+
+        return response()->json([
+            'success' => true,
+            'is_new'  => true,
+            'message' => 'Contractor registered successfully.',
+            'token'   => $user->createToken('api')->plainTextToken,
+            'user'    => $user,
+        ], 201);
+    }
+
+    // ────────────────────────────────────────────────────────────────
+    // PRIVATE: Register Staff via Google
+    // Mirrors your registerStaff() — links to Capital Security user
+    // ────────────────────────────────────────────────────────────────
+    private function registerStaffViaGoogle(array $google)
+    {
+        // Same logic as your registerStaff() — link to Capital Security
+        $capitalUser = User::where('user_type', 'customer')
+            ->where('name', 'Capital Security')
+            ->first();
+
+        if (!$capitalUser) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Capital Security account not found.',
+            ], 404);
+        }
+
+        $user = User::create([
+            'name'      => $google['name'],
+            'email'     => $google['email'],
+            'google_id' => $google['sub'],
+            'avatar'    => $google['picture'] ?? null,
+            'password'  => null,
+            'user_type' => 'staff',
+            'user_id'   => $capitalUser->id,
+            'is_active' => 0,
+            'address'   => null,
+            'city'      => null,
+            'state'     => null,
+            'country'   => null,
+            'coordinates' => null,
+        ]);
+
+        $staff = Staff::create([
+            'user_id'       => $user->id,
+            'profile_image' => null,
+            'gender'        => null,
+            'phone'         => null,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'is_new'  => true,
+            'message' => 'Staff registered under Capital Security.',
+            'token'   => $user->createToken('api')->plainTextToken,
+            'user'    => $user,
+            'staff'   => $staff,
+        ], 201);
+    }
 }

@@ -13,6 +13,12 @@ return [
     |
     */
 
+    'admin_addresses' => env('MAIL_ADMIN_ADDRESSES', 'admin@example.com'),
+    
+    'support_email' => env('MAIL_SUPPORT_EMAIL', 'support@example.com'),
+    
+    'support_phone' => env('MAIL_SUPPORT_PHONE', ''),
+    
     'default' => env('MAIL_MAILER', 'smtp'),
 
     /*

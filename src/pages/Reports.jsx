@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { Card } from "../components/Card";
 import reportimg from "../assets/images/reports.png";
+import jobtrackingimg from "../assets/images/jobtracker.png";
 
 const Reports = () => {
   const navigate = useNavigate();
@@ -29,7 +30,9 @@ const Reports = () => {
         </p>
       </div>
 
+      {/* Put both cards inside the SAME row container */}
       <div className="row g-4">
+        {/* Card 1 */}
         <div className="col-12 col-md-6 col-lg-4">
           <Card
             title="Time Sheet"
@@ -38,6 +41,18 @@ const Reports = () => {
             image={reportimg}
             type="timesheet"
             onClick={() => navigate("/timesheet")}
+          />
+        </div>
+
+        {/* Card 2 */}
+        <div className="col-12 col-md-6 col-lg-4">
+          <Card
+            title="Job Tracker"
+            description="Used to display the detailed overview of staff job progress."
+            accent="linear-gradient(135deg,#27ae60,#16a085)"
+            image={jobtrackingimg}
+            type="jobtracker"
+            onClick={() => navigate("/job-tracker")}
           />
         </div>
       </div>

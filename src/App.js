@@ -42,6 +42,7 @@ const PrivacyPolicy = lazy(() => import("./pages/privacy-policy"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const Reports = lazy(() => import("./pages/Reports"));
 const TimeSheet = lazy(() => import("./pages/TimeSheet"));
+const JobTracker = lazy(() => import("./pages/JobTracker"));
 
 function App() {
   useEcho();
@@ -174,6 +175,7 @@ function App() {
               <Route path="/rates/pay" element={<RatesList />} />
               <Route path="/reports" element={<Reports />} />
               <Route path="/timesheet" element={<TimeSheet />} />
+              <Route path="/job-tracker" element={<JobTracker />} />
 
               {/* Financial & Accounting */}
               <Route path="/accounts/invoice" element={<Invoice />} />

@@ -35,7 +35,7 @@ const PayChargerate = () => {
         <div className="col-12 col-md-6 col-lg-4">
           <Card
             title="Charge Rates"
-            description="The amount which is charged from the customer."
+            description="Amount charged from customers."
             accent="linear-gradient(135deg,#27ae60,#16a085)"
             image={chargerateimg}
             type="charge"
@@ -48,7 +48,7 @@ const PayChargerate = () => {
         <div className="col-12 col-md-6 col-lg-4">
           <Card
             title="Pay Rates"
-            description="The amount which is paid to the staff."
+            description="Amount paid to the staff."
             accent="linear-gradient(135deg,#1abc9c,#2ecc71)"
             image={payrateimg}
             type="pay"
@@ -60,7 +60,7 @@ const PayChargerate = () => {
         <div className="col-12 col-md-6 col-lg-4">
           <Card
             title="Invoice"
-            description="It is used to send an invoice to the customer and other users of the system."
+            description="It is used to send an invoice to the users"
             accent="linear-gradient(135deg,#1abc9c,#2ecc71)"
             image={invoiceimg}
             type="invoice"

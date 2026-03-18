@@ -41,13 +41,7 @@ export const Card = ({ title, description, onClick, accent, image, type }) => {
               letterSpacing: 0.5,
             }}
           >
-            {type === "invoice"
-              ? "Invoice"
-              : type === "charge"
-                ? "Charge Rate"
-                : type === "pay"
-                  ? "Pay Rate"
-                  : ""}
+            {title}
           </div>
         )}
 

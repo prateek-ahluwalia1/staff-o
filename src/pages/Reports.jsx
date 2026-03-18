@@ -32,11 +32,11 @@ const Reports = () => {
       <div className="row g-4">
         <div className="col-12 col-md-6 col-lg-4">
           <Card
-            title="Charge Rates"
-            description="The amount which is charged from the customer."
+            title="Time Sheet"
+            description="Used to display the detailed overview of staff work hours."
             accent="linear-gradient(135deg,#27ae60,#16a085)"
             image={reportimg}
-            type="charge"
+            type="timesheet"
             onClick={() => navigate("/reports")}
           />
         </div>

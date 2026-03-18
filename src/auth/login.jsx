@@ -124,9 +124,9 @@ export default function Login() {
       <Header />
       <section className="auth-section">
         <div className="container">
-          <div className="row align-items-center g-5">
+          <div className="row g-5">
             <div className="col-lg-6">
-              <div className="auth-intro">
+              <div className="auth-intro mt-5">
                 <span className="auth-badge">Welcome Back</span>
                 <h1 className="auth-title">
                   Log in to continue your job search
@@ -158,22 +158,6 @@ export default function Login() {
                 <p className="auth-subtitle">
                   Enter your details below or continue with a social account.
                 </p>
-
-                <div className="auth-social">
-                  <button
-                    type="button"
-                    onClick={() => handleGoogleLogin()}
-                    className="auth-social-btn google"
-                    disabled={loading}
-                  >
-                    <i className="fa-brands fa-google"></i>{" "}
-                    {loading ? "Please wait..." : "Login with Google"}
-                  </button>
-                </div>
-
-                <div className="auth-divider">
-                  <span>or</span>
-                </div>
 
                 <form className="auth-form" onSubmit={handleSubmit}>
                   <div className="mb-3">
@@ -230,6 +214,21 @@ export default function Login() {
                     {loading ? "Signing in..." : "Sign In"}
                   </button>
                 </form>
+                <div className="auth-divider">
+                  <span>or</span>
+                </div>
+
+                <div className="auth-social">
+                  <button
+                    type="button"
+                    onClick={() => handleGoogleLogin()}
+                    className="auth-social-btn google"
+                    disabled={loading}
+                  >
+                    <i className="fa-brands fa-google"></i>{" "}
+                    {loading ? "Please wait..." : "Login with Google"}
+                  </button>
+                </div>
 
                 <p className="auth-switch">
                   New to JobsPortal?{" "}

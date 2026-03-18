@@ -13,7 +13,6 @@ export default function Register() {
   const dispatch = useDispatch();
   const { submit, loading } = useSubmit();
 
-  // Track which user type is currently selected for Google Registration
   const [userType, setUserType] = useState("contractor");
 
   const fetchLatestUserProfile = async (token, authUser) => {
@@ -73,7 +72,6 @@ export default function Register() {
     phone: "",
   });
 
-  // Sub Contractor state
   const [subContractorForm, setSubContractorForm] = useState({
     name: "",
     email: "",
@@ -94,7 +92,6 @@ export default function Register() {
       [e.target.name]: e.target.value,
     });
 
-  // Standard Form Submissions
   const handleStaffSubmit = async (e) => {
     e.preventDefault();
     const res = await submit("api/register/staff", staffForm);
@@ -116,7 +113,6 @@ export default function Register() {
     await handleSuccess(res, "Sub Contractor Registration successful!");
   };
 
-  // Helper to handle successful standard registration
   const handleSuccess = async (res, successMessage) => {
     if (res.token) {
       dispatch(setToken({ token: res.token }));
@@ -129,7 +125,6 @@ export default function Register() {
     }
   };
 
-  // Google Registration Handler
   const handleGoogleRegister = useGoogleLogin({
     flow: "implicit",
     onSuccess: async (tokenResponse) => {
@@ -143,7 +138,6 @@ export default function Register() {
           return;
         }
 
-        // Send both the credential AND the selected user_type to the backend
         const res = await submit("api/auth/google/callback", {
           credential: googleToken,
           user_type: userType,
@@ -158,7 +152,6 @@ export default function Register() {
             res.user,
           );
           dispatch(setUser({ userdata: latestProfile }));
-          // Format the userType to have a capital first letter for the toast
           const formattedType =
             userType.charAt(0).toUpperCase() + userType.slice(1);
           toast.success(`${formattedType} Google Registration successful!`);
@@ -182,10 +175,10 @@ export default function Register() {
       <Header />
       <section className="auth-section auth-signup">
         <div className="container">
-          <div className="row align-items-center g-5">
+          <div className="row g-5">
             {/* Left side - Intro text */}
-            <div className="col-lg-6">
-              <div className="auth-intro">
+            <div className="col-lg-6 ">
+              <div className="auth-intro mt-5">
                 <span className="auth-badge">Create Account</span>
                 <h1 className="auth-title">
                   Join thousands of professionals hiring and getting hired
@@ -217,7 +210,8 @@ export default function Register() {
               <div className="auth-card">
                 <h3>Create your free account</h3>
                 <p className="auth-subtitle">
-                  Start as a candidate or an employer. Switch anytime.
+                  Start as a staff, customer or Sub Contractor. Switch anytime.
+                  Default is Sub Contractor.
                 </p>
 
                 {/* Tabs: Staff / Customer / Sub Contractor */}
@@ -262,25 +256,6 @@ export default function Register() {
                   </button>
                 </div>
 
-                {/* Google Registration Button (Dynamic text based on selected tab) */}
-                <div className="auth-social">
-                  <button
-                    type="button"
-                    onClick={() => handleGoogleRegister()}
-                    className="auth-social-btn google"
-                    disabled={loading}
-                  >
-                    <i className="fa-brands fa-google"></i>{" "}
-                    {loading
-                      ? "Please wait..."
-                      : `Sign up as ${userType.charAt(0).toUpperCase() + userType.slice(1)} with Google`}
-                  </button>
-                </div>
-
-                <div className="auth-divider">
-                  <span>or fill details manually</span>
-                </div>
-
                 {/* Tab content */}
                 <div className="tab-content" id="registerTabContent">
                   {/* Staff Form */}
@@ -291,7 +266,7 @@ export default function Register() {
                   >
                     <form className="auth-form" onSubmit={handleStaffSubmit}>
                       <div className="row g-3">
-                        <div className="col-sm-12">
+                        <div className="col-sm-6">
                           <label className="form-label">Name</label>
                           <input
                             type="text"
@@ -301,6 +276,17 @@ export default function Register() {
                             onChange={handleStaffChange}
                             placeholder="John Doe"
                             required
+                          />
+                        </div>
+                        <div className="col-sm-6">
+                          <label className="form-label">Company name</label>
+                          <input
+                            type="text"
+                            className="form-control"
+                            name="company_name"
+                            value={staffForm.company_name}
+                            onChange={handleStaffChange}
+                            placeholder="Acme Studios"
                           />
                         </div>
                         <div className="col-sm-12">
@@ -337,17 +323,6 @@ export default function Register() {
                             onChange={handleStaffChange}
                             placeholder="Confirm password"
                             required
-                          />
-                        </div>
-                        <div className="col-sm-12">
-                          <label className="form-label">Company name</label>
-                          <input
-                            type="text"
-                            className="form-control"
-                            name="company_name"
-                            value={staffForm.company_name}
-                            onChange={handleStaffChange}
-                            placeholder="Acme Studios"
                           />
                         </div>
                         <div className="col-sm-6">
@@ -483,7 +458,7 @@ export default function Register() {
                       onSubmit={handleSubContractorSubmit}
                     >
                       <div className="row g-3">
-                        <div className="col-sm-12">
+                        <div className="col-sm-6">
                           <label className="form-label">Name</label>
                           <input
                             type="text"
@@ -493,6 +468,17 @@ export default function Register() {
                             onChange={handleSubContractorChange}
                             placeholder="Jenkins"
                             required
+                          />
+                        </div>
+                        <div className="col-sm-6">
+                          <label className="form-label">Company Name</label>
+                          <input
+                            type="text"
+                            className="form-control"
+                            name="company_name"
+                            value={subContractorForm.company_name}
+                            onChange={handleSubContractorChange}
+                            placeholder="Acme Studios"
                           />
                         </div>
                         <div className="col-sm-12">
@@ -531,17 +517,6 @@ export default function Register() {
                             required
                           />
                         </div>
-                        <div className="col-sm-12">
-                          <label className="form-label">Company Name</label>
-                          <input
-                            type="text"
-                            className="form-control"
-                            name="company_name"
-                            value={subContractorForm.company_name}
-                            onChange={handleSubContractorChange}
-                            placeholder="Acme Studios"
-                          />
-                        </div>
                         <div className="col-sm-6">
                           <label className="form-label">
                             Registration Number
@@ -578,6 +553,24 @@ export default function Register() {
                       </button>
                     </form>
                   </div>
+                </div>
+
+                <div className="auth-divider">
+                  <span>OR</span>
+                </div>
+
+                <div className="auth-social">
+                  <button
+                    type="button"
+                    onClick={() => handleGoogleRegister()}
+                    className="auth-social-btn google"
+                    disabled={loading}
+                  >
+                    <i className="fa-brands fa-google"></i>{" "}
+                    {loading
+                      ? "Please wait..."
+                      : `Sign up as ${userType.charAt(0).toUpperCase() + userType.slice(1)} with Google`}
+                  </button>
                 </div>
 
                 <p className="auth-switch mt-4">

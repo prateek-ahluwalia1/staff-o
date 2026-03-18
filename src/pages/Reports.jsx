@@ -37,7 +37,7 @@ const Reports = () => {
             accent="linear-gradient(135deg,#27ae60,#16a085)"
             image={reportimg}
             type="timesheet"
-            onClick={() => navigate("/reports")}
+            onClick={() => navigate("/timesheet")}
           />
         </div>
       </div>

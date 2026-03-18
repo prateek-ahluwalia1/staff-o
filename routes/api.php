@@ -133,9 +133,8 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::any('get-roaster-hour-sum', [JobRosterController::class, 'getrosterhoursum'])->name('get.roster.hours.sum');
 
-    Route::any('getTimesheet', [ReportController::class, 'getTimesheet'])->name('getTimesheet');
-    Route::any('get-timesheet-details', [ReportController::class, 'getTimeSheetDetails'])->name('get.timesheet.details');
-    Route::any('generateJobTrackerReport', [ReportController::class, 'generateJobTrackerReport']);
+    Route::any('getTimesheet', [JobRosterController::class, 'getTimesheet'])->name('getTimesheet');
+    Route::any('get-timesheet-details', [JobRosterController::class, 'getTimeSheetDetails'])->name('get.timesheet.details');
 
  
     // Notifications
@@ -220,3 +219,4 @@ Route::get('/clear-all-cache', function() {
     Route::any('/get-all-jobs', [JobRosterController::class, 'getAllJobs'])->name('get.all.jobs');
 
 
+    Route::any('generateJobTrackerReport', [ReportController::class, 'generateJobTrackerReport']);

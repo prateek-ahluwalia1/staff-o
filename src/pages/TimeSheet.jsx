@@ -195,11 +195,15 @@ const normalizeTimesheetRow = (row, index) => {
   };
 };
 
-const normalizeBreakdown = (item, index) => {
+const normalizeBreakdown = (item, index, shiftCollectionIds = []) => {
   const activity = item?.roster_activity || {};
+  const fallbackShiftId = shiftCollectionIds[index];
+  const resolvedRosterId =
+    item?.id ?? activity?.job_roster_id ?? fallbackShiftId ?? item?.roster_id;
 
   return {
-    id: item?.id ?? index + 1,
+    id: resolvedRosterId ?? index + 1,
+    rosterId: resolvedRosterId,
     siteName: item?.site?.site_name || item?.site_name || "-",
     customerName: item?.customer?.name || item?.customer_name || "-",
     guardName: item?.guards?.name || item?.guard_name || "-",
@@ -300,7 +304,7 @@ const selectStyles = {
     minHeight: "38px",
     borderColor: "#ced4da",
     boxShadow: "none",
-    minWidth: "220px",
+    minWidth: "0",
   }),
   valueContainer: (base) => ({
     ...base,
@@ -325,6 +329,9 @@ export default function TimeSheet() {
   const { submit: submitDetails, loading: detailsLoading } = useSubmit({
     isAuth: true,
   });
+  const { submit: submitManualApproval } = useSubmit({
+    isAuth: true,
+  });
   const { data: customersResponse, loading: customersLoading } = useFetch(
     "api/admin/get-customers?limit=1000",
     { isAuth: true },
@@ -345,22 +352,16 @@ export default function TimeSheet() {
   }, [staffResponse]);
 
   const weekRange = useMemo(() => getWeekRange(), []);
-  const [selectedStateValues, setSelectedStateValues] = useState(AU_STATES);
+  const [selectedStateValues] = useState(AU_STATES);
   const [selectedCustomerValues, setSelectedCustomerValues] = useState([]);
-  const [selectedStaffValues, setSelectedStaffValues] = useState([]);
+  const [selectedStaffValues] = useState([]);
   const [startDate, setStartDate] = useState(formatDateInput(weekRange.start));
   const [endDate, setEndDate] = useState(formatDateInput(weekRange.end));
 
   const [timesheetData, setTimesheetData] = useState([]);
   const [selectedRowId, setSelectedRowId] = useState(null);
   const [breakdownData, setBreakdownData] = useState([]);
-  const stateOptions = useMemo(
-    () => [
-      { value: ALL_OPTION_VALUE, label: "Select/Unselect All" },
-      ...AU_STATES.map((state) => ({ value: state, label: state })),
-    ],
-    [],
-  );
+  const [togglingRosterId, setTogglingRosterId] = useState(null);
 
   const customerOptions = useMemo(
     () =>
@@ -371,26 +372,9 @@ export default function TimeSheet() {
     [customersList],
   );
 
-  const staffOptions = useMemo(
-    () =>
-      buildSelectOptions(
-        staffList,
-        (staff) => `${staff.id} - ${staff.name || "Unknown"}`,
-      ),
-    [staffList],
-  );
-
-  const stateAllSelected = useMemo(
-    () => isAllSelected(selectedStateValues, stateOptions),
-    [selectedStateValues, stateOptions],
-  );
   const customerAllSelected = useMemo(
     () => isAllSelected(selectedCustomerValues, customerOptions),
     [selectedCustomerValues, customerOptions],
-  );
-  const staffAllSelected = useMemo(
-    () => isAllSelected(selectedStaffValues, staffOptions),
-    [selectedStaffValues, staffOptions],
   );
 
   const buildPayload = useCallback(() => {
@@ -493,7 +477,9 @@ export default function TimeSheet() {
         return;
       }
 
-      const details = getArrayFromResponse(res).map(normalizeBreakdown);
+      const details = getArrayFromResponse(res).map((item, index) =>
+        normalizeBreakdown(item, index, row.raw?.shift_collection || []),
+      );
       setBreakdownData(details);
     },
     [submitDetails],
@@ -509,6 +495,33 @@ export default function TimeSheet() {
     setSelectedRowId(row.id);
     setBreakdownData([]);
     await fetchBreakdown(row);
+  };
+
+  const handleToggleManualApproval = async (item) => {
+    const rosterId = item?.rosterId;
+
+    if (!rosterId) {
+      toast.error("Roster ID is missing for this shift.");
+      return;
+    }
+
+    setTogglingRosterId(rosterId);
+
+    const res = await submitManualApproval(
+      "api/job-status-manual-approved",
+      { roster_id: rosterId },
+      { method: "POST" },
+    );
+
+    setTogglingRosterId(null);
+
+    if (!res) return;
+
+    setBreakdownData((prev) =>
+      prev.map((row) =>
+        row.rosterId === rosterId ? { ...row, active: !row.active } : row,
+      ),
+    );
   };
 
   const handleExport = () => {
@@ -541,13 +554,18 @@ export default function TimeSheet() {
   return (
     <div
       className="container-fluid p-4"
-      style={{ backgroundColor: "#f8f9fa", minHeight: "100vh" }}
+      style={{
+        backgroundColor: "#f8f9fa",
+        minHeight: "100vh",
+        maxWidth: "900px",
+        overflowX: "auto",
+      }}
     >
       {/* Top Filter Bar */}
-      <div className="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+      <div className="d-flex justify-content-between align-items-start mb-4 flex-wrap gap-3">
         <h3 className="m-0">Time Sheet (Reports)</h3>
-        <div className="d-flex gap-2 flex-wrap">
-          <div style={{ minWidth: "240px" }}>
+        <div className="row g-2 w-100 timesheet-filter-grid">
+          {/* <div className="col-12 col-sm-6 col-lg-4">
             <Select
               isMulti
               options={stateOptions}
@@ -574,8 +592,8 @@ export default function TimeSheet() {
                 AU_STATES.length,
               )}
             />
-          </div>
-          <div style={{ minWidth: "260px" }}>
+          </div> */}
+          <div className="col-12 col-sm-6 col-lg-4">
             <Select
               isMulti
               options={customerOptions}
@@ -607,7 +625,7 @@ export default function TimeSheet() {
               isLoading={customersLoading}
             />
           </div>
-          <div style={{ minWidth: "260px" }}>
+          {/* <div className="col-12 col-sm-6 col-lg-4">
             <Select
               isMulti
               options={staffOptions}
@@ -635,33 +653,41 @@ export default function TimeSheet() {
               )}
               isLoading={staffLoading}
             />
+          </div> */}
+          <div className="col-12 col-sm-6 col-lg-3">
+            <input
+              type="date"
+              className="form-control"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+            />
           </div>
-          <input
-            type="date"
-            className="form-control w-auto"
-            value={startDate}
-            onChange={(e) => setStartDate(e.target.value)}
-          />
-          <input
-            type="date"
-            className="form-control w-auto"
-            value={endDate}
-            onChange={(e) => setEndDate(e.target.value)}
-          />
-          <button
-            className="btn btn-success"
-            onClick={fetchTimesheets}
-            disabled={timesheetLoading}
-          >
-            <i className="fa-solid fa-search me-1"></i> Search
-          </button>
-          <button
-            className="btn btn-success"
-            onClick={handleExport}
-            disabled={timesheetData.length === 0}
-          >
-            <i className="fa-solid fa-download me-1"></i> Export
-          </button>
+          <div className="col-12 col-sm-6 col-lg-3">
+            <input
+              type="date"
+              className="form-control"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+            />
+          </div>
+          <div className="col-12 col-sm-6 col-lg-3 d-grid">
+            <button
+              className="btn btn-success"
+              onClick={fetchTimesheets}
+              disabled={timesheetLoading}
+            >
+              <i className="fa-solid fa-search me-1"></i> Search
+            </button>
+          </div>
+          <div className="col-12 col-sm-6 col-lg-3 d-grid">
+            <button
+              className="btn btn-success"
+              onClick={handleExport}
+              disabled={timesheetData.length === 0}
+            >
+              <i className="fa-solid fa-download me-1"></i> Export
+            </button>
+          </div>
         </div>
       </div>
 
@@ -813,7 +839,15 @@ export default function TimeSheet() {
                                                 type="checkbox"
                                                 role="switch"
                                                 checked={item.active}
-                                                readOnly
+                                                disabled={
+                                                  togglingRosterId ===
+                                                  item.rosterId
+                                                }
+                                                onChange={() =>
+                                                  handleToggleManualApproval(
+                                                    item,
+                                                  )
+                                                }
                                               />
                                             </div>
                                           </td>
@@ -850,6 +884,14 @@ export default function TimeSheet() {
           Loading filters (customers/staff)...
         </div>
       )}
+
+      <style>
+        {`
+          .timesheet-filter-grid .css-b62m3t-container {
+            width: 100%;
+          }
+        `}
+      </style>
     </div>
   );
 }

@@ -239,8 +239,6 @@ export default function EditProfile() {
           payload.append("bank_details", JSON.stringify(formData.bank_details));
         } else if (key === "email") {
           // Email is updated via separate OTP verification flow
-        } else if (key === "phone") {
-          // Phone is updated via separate OTP verification flow
         } else {
           payload.append(key, formData[key]);
         }
@@ -400,8 +398,6 @@ export default function EditProfile() {
         payload.append("bank_details", JSON.stringify(updatedCards));
       } else if (key === "email") {
         // Email is updated via separate OTP verification flow
-      } else if (key === "phone") {
-        // Phone is updated via separate OTP verification flow
       } else {
         payload.append(key, formData[key]);
       }
@@ -439,8 +435,6 @@ export default function EditProfile() {
         payload.append("bank_details", JSON.stringify(updatedCards));
       } else if (key === "email") {
         // Email is updated via separate OTP verification flow
-      } else if (key === "phone") {
-        // Phone is updated via separate OTP verification flow
       } else {
         payload.append(key, formData[key]);
       }
@@ -556,13 +550,15 @@ export default function EditProfile() {
       </div>
 
       <div style={{ display: "flex", gap: 16, marginBottom: 20 }}>
-        <button
-          className={`btn ${activeTab === "personal" ? "btn-primary" : "btn-outline-primary"}`}
-          onClick={() => setActiveTab("personal")}
-        >
-          Personal Information
-        </button>
-        {userType === "customer" ? (
+        {userType !== "admin" && (
+          <button
+            className={`btn ${activeTab === "personal" ? "btn-primary" : "btn-outline-primary"}`}
+            onClick={() => setActiveTab("personal")}
+          >
+            Personal Information
+          </button>
+        )}
+        {userType === "customer" && (
           <button
             className={`btn ${activeTab === "cards" ? "btn-primary" : "btn-outline-primary"}`}
             onClick={() => {
@@ -572,7 +568,8 @@ export default function EditProfile() {
           >
             Payment Details
           </button>
-        ) : (
+        )}
+        {userType !== "customer" && userType !== "admin" && (
           <button
             className={`btn ${activeTab === "documents" ? "btn-primary" : "btn-outline-primary"}`}
             onClick={() => setActiveTab("documents")}
@@ -992,29 +989,31 @@ export default function EditProfile() {
         </div>
       )}
 
-      {activeTab === "documents" && userType !== "customer" && (
-        <DocumentTable
-          documents={profileData?.data?.documents || []}
-          onAddFile={(doc) => {
-            setSelectedDoc(doc);
-            setDocForm((prev) => ({
-              ...prev,
-              file_url: doc.file,
-              document_name: doc.document_name,
-            }));
-            setShowDocModal(true);
-          }}
-          onAddDocument={() => {
-            setSelectedDoc(null);
-            setDocForm((prev) => ({
-              ...prev,
-              file_url: "",
-              document_name: "",
-            }));
-            setShowDocModal(true);
-          }}
-        />
-      )}
+      {activeTab === "documents" &&
+        userType !== "customer" &&
+        userType !== "admin" && (
+          <DocumentTable
+            documents={profileData?.data?.documents || []}
+            onAddFile={(doc) => {
+              setSelectedDoc(doc);
+              setDocForm((prev) => ({
+                ...prev,
+                file_url: doc.file,
+                document_name: doc.document_name,
+              }));
+              setShowDocModal(true);
+            }}
+            onAddDocument={() => {
+              setSelectedDoc(null);
+              setDocForm((prev) => ({
+                ...prev,
+                file_url: "",
+                document_name: "",
+              }));
+              setShowDocModal(true);
+            }}
+          />
+        )}
 
       {/* Email Change Modal */}
       <Modal open={showEmailModal} onClose={handleCloseEmailModal}>

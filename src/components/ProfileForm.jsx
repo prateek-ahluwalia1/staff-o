@@ -73,7 +73,8 @@ export default function ProfileForm({
                 id="phone"
                 value={formData.phone || ""}
                 style={{ background: "#f8f9fa", cursor: "default" }}
-                readOnly={userType !== "customer"}
+                // readOnly={userType !== "customer"}
+                onChange={onChange}
               />
               {/* <button
                 type="button"
@@ -188,11 +189,17 @@ export default function ProfileForm({
             </div>
           )}
         </div>
-        <div className="settings-card-footer">
-          <button type="submit" className="btn btn-primary" disabled={loading}>
-            {loading ? "Saving..." : "Save changes"}
-          </button>
-        </div>
+        {userType !== "admin" && (
+          <div className="settings-card-footer">
+            <button
+              type="submit"
+              className="btn btn-primary"
+              disabled={loading}
+            >
+              {loading ? "Saving..." : "Save changes"}
+            </button>
+          </div>
+        )}
       </div>
     </form>
   );

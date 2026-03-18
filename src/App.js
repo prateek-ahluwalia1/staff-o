@@ -40,6 +40,8 @@ const AboutUs = lazy(() => import("./pages/about-us"));
 const TermsOfUse = lazy(() => import("./pages/terms-of-use"));
 const PrivacyPolicy = lazy(() => import("./pages/privacy-policy"));
 const NotFound = lazy(() => import("./pages/NotFound"));
+const Reports = lazy(() => import("./pages/Reports"));
+//time sheet payload --> {"length":0,"pageIndex":0,"pageSize":20,"previousPageIndex":0,"guard_id":[164,165,166,9,123,124,105,92,214,98,167,126,125,202,84,109,10,56,103,8,210,146,156,133,159,160,161,151,145,196,201,174,54,215,106,91,100,52,157,55,177,175,172,25,115,116,53,137,104,89,205,97,186,82,187,119,86,4,81,83,110,94,143,147,7,24,154,155,217,87,152,117,35,139,107,168,23,144,1,216,36,93,197,88,49,11,189,190,142,85,148,150,138,211,173,22,132,114,102,162,149,204,209,90,76,77,78,79,80,108,99,32,176,188,195,194,101,181,180,182,183,184,96,198,185,213,130,171,199,112,193,200,206,111,169,2,163,118,141,134,208,158],"start":"03-15-2026","end":"03-21-2026","state":["Victoria","New South Wales","Tasmania","Queensland","Western Australia","South Australia","ACT"],"customer_ids":[133,132,131,130,84,106,105,81,120,126,113,63,65,115,121,122,123,124,118,116,137,134,119,114,128,72,6,135,138]}
 
 function App() {
   useEcho();
@@ -170,6 +172,7 @@ function App() {
               <Route path="/pay-charge-rate" element={<PayChargeRate />} />
               <Route path="/rates/charge" element={<RatesList />} />
               <Route path="/rates/pay" element={<RatesList />} />
+              <Route path="/reports" element={<Reports />} />
 
               {/* Financial & Accounting */}
               <Route path="/accounts/invoice" element={<Invoice />} />

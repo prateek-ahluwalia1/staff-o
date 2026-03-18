@@ -83,7 +83,17 @@ const Sidebar = memo(function Sidebar() {
     { to: "/dashboard", icon: "fa-solid fa-gauge", label: "Admin Dashboard" },
     { to: "/roster", icon: "fa-solid fa-users", label: "Roster" },
     { to: "/add-job", icon: "fa-solid fa-briefcase", label: "Post a Job" },
+    {
+      to: "/reports",
+      icon: "fa-solid fa-chart-bar",
+      label: "Reports Management",
+    },
     { to: "/chat", icon: "fa-solid fa-comments", label: "Communications" },
+    {
+      to: "/pay-charge-rate",
+      icon: "fa-solid fa-money-bill-wave",
+      label: "Accounts",
+    },
     {
       to: "/manage-users",
       icon: "fa-solid fa-users-gear",
@@ -93,11 +103,6 @@ const Sidebar = memo(function Sidebar() {
       to: "/my-job-applications",
       icon: "fa-solid fa-list-check",
       label: "All Jobs",
-    },
-    {
-      to: "/pay-charge-rate",
-      icon: "fa-solid fa-money-bill-wave",
-      label: "Accounts",
     },
     {
       to: "/payment-history",

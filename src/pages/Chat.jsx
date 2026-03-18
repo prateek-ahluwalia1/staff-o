@@ -12,7 +12,7 @@ const CATEGORIES = [
   {
     key: "customers",
     label: "Customers",
-    desc: "Manage and respond to customer conversations",
+    desc: "Handle customer conversations",
     icon: "fa-solid fa-user-tie",
   },
   {
@@ -37,7 +37,7 @@ const Chat = () => {
 
       <div className="row g-4">
         {CATEGORIES.map((cat) => (
-          <div key={cat.key} className="col-12 col-sm-6 col-xl-3">
+          <div key={cat.key} className="col-12 col-sm-6 col-xl-4">
             <div className="chat-category-card">
               <div className="chat-category-icon-wrapper">
                 <div className="chat-category-placeholder">
@@ -63,7 +63,7 @@ const Chat = () => {
                   className="chat-category-btn"
                   onClick={() => navigate(`/chat/${cat.key}`)}
                 >
-                  <i className="fa-solid fa-arrow-right me-2"></i>Open Chat
+                  Access Now
                 </button>
               </div>
             </div>

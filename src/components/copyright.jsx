@@ -1,4 +1,5 @@
 import React, { memo } from "react";
+import paymenticons from "../assets/images/payment-icons.png";
 
 const Copyright = memo(function Copyright() {
   return (
@@ -11,7 +12,7 @@ const Copyright = memo(function Copyright() {
           </div>
 
           <div className="footer-payments">
-            <img src="/assets/images/payment-icons.png" alt="Payment methods" />
+            <img src={paymenticons} alt="Payment methods" />
           </div>
         </div>
       </div>

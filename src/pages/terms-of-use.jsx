@@ -4,34 +4,34 @@ import Footer from "../components/footer";
 
 const sections = [
   {
-    title: "1. Acceptance of Terms",
+    title: "Part 2: Terms for Customers",
     content:
-      "By using Staffo, you agree to these terms and any applicable policies. If you do not agree, please discontinue use of the platform.",
+      "2.1 Booking and Payment Holds: Upon job acceptance by a staff member or contractor, a payment hold (pre-authorization) will be placed on the customer's nominated card via Stripe. The hold amount equals the approved quotation or invoice total. Funds are captured upon shift completion or as determined by the cancellation policy.",
   },
   {
-    title: "2. Account Responsibilities",
+    title: "2.2 Cancellation and Refund Policy",
     content:
-      "You are responsible for maintaining account credentials, ensuring profile information is accurate, and promptly reporting unauthorized access.",
+      "Standard cancellation more than 24 hours before shift start is eligible for full release of held funds. Under the 1-hour rule, if a customer cancels within one hour of the scheduled start time, a minimum charge of four hours will be deducted from held funds to compensate assigned personnel.",
   },
   {
-    title: "3. Platform Usage",
+    title: "Part 3: Workforce Compliance (Staff and Contractors)",
     content:
-      "Users must not post misleading jobs, abusive content, unlawful material, or attempt to disrupt service integrity, security, or availability.",
+      "3.1 National Licensing and Credentials: Personnel must hold a current and valid security license for the state or territory where services are performed. Independent contractors must maintain a valid ABN and any required business or master licensing under applicable laws. Users are responsible for keeping licenses and first aid certifications up to date in the Staffoo app.",
   },
   {
-    title: "4. Billing and Subscriptions",
+    title: "3.2 Safety and Reporting",
     content:
-      "Paid plans, if applicable, renew and bill according to selected package terms. Taxes and payment processor conditions may apply.",
+      "Personnel must comply with applicable Work Health and Safety (WHS) laws and log incidents or hazards immediately through the Staffoo app for transparency.",
   },
   {
-    title: "5. Limitation of Liability",
+    title: "Part 4: Code of Conduct",
     content:
-      "Staffo is provided on an as-available basis. We are not liable for indirect damages arising from platform use, to the extent permitted by law.",
+      "Reliability: Arrive at least 10 minutes prior to shift start. Repeat lateness or no-shows may result in removal from the platform. Professionalism: Required attire, including high-visibility clothing where specified, must be worn on duty. GPS Integrity: Location services must remain enabled during shifts; spoofing or blocking GPS may result in immediate assignment termination. Sobriety: Zero tolerance applies to alcohol and illegal substances. Confidentiality: Customer site data, access codes, and sensitive site information must be protected at all times.",
   },
   {
-    title: "6. Contact",
+    title: "Part 5: Contact Information",
     content:
-      "Questions about these terms can be sent through the Contact Us page or by email at info@jobsportal.com.",
+      "For support or administrative inquiries, contact Capital Services Pty Ltd at 21 Tanglewood Bvd, Truganina VIC 3029, Australia. Email: staffoapp@gmail.com. Phone: 0478916034.",
   },
 ];
 
@@ -48,8 +48,8 @@ export default function TermsOfUse() {
           </span>
           <h1>Terms Of Use</h1>
           <p>
-            These terms govern access to and use of the Staffo platform for both
-            employers and candidates.
+            Staffoo Terms of Service and customer obligations, including
+            payment, workforce compliance, and code of conduct requirements.
           </p>
         </div>
       </section>
@@ -57,13 +57,23 @@ export default function TermsOfUse() {
       <section className="content-shell">
         <div className="container">
           <div className="content-card">
+            <article className="mb-4">
+              <h2 className="h5 mb-2">Staffoo: Terms of Service</h2>
+              <p className="mb-1">Effective Date: March 14, 2026</p>
+              <p className="mb-1">Operated by: Capital Services Pty Ltd</p>
+              <p className="mb-1">ABN: 48 613 317 838</p>
+              <p className="mb-0">
+                Registered Office: 21 Tanglewood Bvd, Truganina VIC 3029,
+                Australia
+              </p>
+            </article>
             {sections.map((section) => (
               <article key={section.title} className="mb-4">
                 <h2 className="h5 mb-2">{section.title}</h2>
                 <p className="mb-0">{section.content}</p>
               </article>
             ))}
-            <p className="mb-0 text-muted">Last updated: March 17, 2026.</p>
+            <p className="mb-0 text-muted">Effective Date: March 14, 2026.</p>
           </div>
         </div>
       </section>

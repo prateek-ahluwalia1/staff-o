@@ -4,34 +4,34 @@ import Footer from "../components/footer";
 
 const faqItems = [
   {
-    question: "How do I post a job on Staffo?",
+    question: "How do I get started on Staffoo?",
     answer:
-      "Sign in, open your dashboard, and choose Add Job. Complete the role details, location, schedule, and attachments, then publish.",
+      "Simply create an account, complete your profile with your details and documents, and start applying for jobs, posting jobs, or managing assignments immediately.",
   },
   {
-    question: "Can I manage multiple locations and shifts?",
+    question: "What information does Staffoo collect?",
     answer:
-      "Yes. Staffo supports multi-location teams and shift-based planning through roster and staff management modules.",
+      "We collect personal and business details, security licenses, ABNs, certifications, and other documents needed to verify staff and contractors. For workforce users, GPS tracking is active only while clocked in for a shift to ensure safety and proof-of-attendance.",
   },
   {
-    question: "How quickly does support respond?",
+    question: "How are payments handled?",
     answer:
-      "Most requests are answered within one business day. Urgent account access issues are prioritized.",
+      "All payments are processed securely via Stripe. A payment hold is placed when a job is accepted and funds are captured upon shift completion or per the cancellation policy. Staffoo does not store any credit card or sensitive financial data.",
   },
   {
-    question: "Do candidates pay to apply for jobs?",
+    question: "How do I know the staff is qualified?",
     answer:
-      "Basic job browsing and application features remain accessible. Premium tools are available through optional plans.",
+      "All security personnel are verified for licenses, credentials, and experience. Staffoo ensures that only verified professionals appear on the platform.",
   },
   {
-    question: "Is my data secure on the platform?",
+    question: "Is GPS tracking required?",
     answer:
-      "We apply standard authentication controls, secure transport, and role-based access boundaries to protect account data.",
+      "Yes. For safety, accountability, and proof-of-attendance, workforce users must enable location services while clocked in for a shift. Attempts to disable or spoof GPS tracking may result in removal from the platform.",
   },
   {
-    question: "Can I export invoices and payment history?",
+    question: "What is expected of staff while on duty?",
     answer:
-      "Yes. Billing and invoice data can be reviewed and exported from your payment history and accounts sections.",
+      "Staff must be reliable, arrive on time, wear high-visibility or required attire, remain sober, and protect all customer site information. Compliance with local WHS laws is mandatory.",
   },
 ];
 
@@ -48,8 +48,8 @@ export default function Faqs() {
           </span>
           <h1>Frequently Asked Questions</h1>
           <p>
-            Find quick answers about hiring, account access, billing, and how to
-            get the best results from Staffo.
+            Find quick answers about getting started, compliance, payment
+            handling, verification, and account safety on Staffoo.
           </p>
         </div>
       </section>

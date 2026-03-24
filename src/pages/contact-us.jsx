@@ -111,7 +111,7 @@ export default function ContactUs() {
           <div className="contact-banner-wrapper">
             <span className="contact-badge mb-3">
               <i className="fa fa-envelope-open" aria-hidden="true"></i>
-              Contact Staffo
+              Contact Staffoo
             </span>
             <h1>Let&apos;s Build Your Team Faster</h1>
             <p>
@@ -141,8 +141,8 @@ export default function ContactUs() {
                       <i className="fa fa-map-marker" aria-hidden="true"></i>
                     </span>
                     <div>
-                      <h5>Head Office</h5>
-                      <p>21 Tanglewood Bvd Truganina VIC 3029</p>
+                      <h5>Admin Office</h5>
+                      <p>21 Tanglewood Bvd, Truganina VIC 3029, Australia</p>
                     </div>
                   </li>
                   <li>
@@ -162,7 +162,7 @@ export default function ContactUs() {
                     </span>
                     <div>
                       <h5>Phone</h5>
-                      <a href="tel:+13025550123">+1 (302) 555-0123</a>
+                      <a href="tel:0478916034">0478916034</a>
                     </div>
                   </li>
                   <li>
@@ -171,7 +171,7 @@ export default function ContactUs() {
                     </span>
                     <div>
                       <h5>Business Hours</h5>
-                      <p>Mon - Fri, 9:00 AM - 6:00 PM (EST)</p>
+                      <p>Mon - Fri, 9:00 AM - 6:00 PM (AEST)</p>
                     </div>
                   </li>
                 </ul>
@@ -410,7 +410,7 @@ export default function ContactUs() {
       <section className="contact-map">
         <div className="container">
           <iframe
-            title="Staffo office map"
+            title="Staffoo office map"
             src="https://www.google.com/maps?q=21+Tanglewood+Bvd+Truganina+VIC+3029&output=embed"
             width="100%"
             height="420"

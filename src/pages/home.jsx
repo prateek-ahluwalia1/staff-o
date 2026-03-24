@@ -84,21 +84,93 @@ export default function Home() {
   const steps = [
     {
       icon: "fa-solid fa-user-plus",
-      title: "Create An Account",
+      title: "Step 1 - Create an Account",
       description:
-        "It’s quick and easy to open an account on Staffoo. Register as a Security Staff, Customer, or Sub-contractor and start your journey immediately",
+        "It's quick and easy to open an account on Staffoo. Register as Security Staff, Customer, or Sub-contractor and start your journey immediately.",
     },
     {
       icon: "fa-solid fa-file",
-      title: "Complete your profile",
+      title: "Step 2 - Complete Your Profile",
       description:
         "Add your key details, qualifications, and documents so employers or staff can see your profile and trust your expertise.",
     },
     {
       icon: "fa-solid fa-paper-plane",
-      title: "Apply job or hire",
+      title: "Step 3 - Apply for Jobs or Hire Staff",
       description:
         "For Staff: Apply to security jobs that match your skills and availability. For Customers: Post jobs and connect with verified security staff. For Sub-contractors: Assign jobs to trusted staff and manage workforce efficiently.",
+    },
+  ];
+
+  const slogans = [
+    "Australia's Leading Platform for Security Jobs and Staff",
+    "Connecting Security Staff with Trusted Jobs Across Australia",
+    "Staffoo: Your Hub for Security Jobs and Professional Staff in Australia",
+  ];
+
+  const rolePages = [
+    {
+      icon: "fa-user-shield",
+      label: "For Staff",
+      title: "Find Security Jobs That Match Your Skills",
+      subtitle:
+        "Create your profile, verify your credentials, and apply for security jobs across Australia - all in one place.",
+      points: [
+        "Easy registration and document upload",
+        "Verified jobs and employers",
+        "Real-time job notifications",
+        "Flexible job assignments",
+      ],
+      cta: "Join Staffoo Today",
+      href: "/latest-jobs",
+    },
+    {
+      icon: "fa-building",
+      label: "For Customers",
+      title: "Hire Trusted Security Professionals Quickly",
+      subtitle:
+        "Post jobs, review verified staff profiles, and fill your security needs effortlessly.",
+      points: [
+        "Post jobs in minutes",
+        "Access verified staff profiles",
+        "Streamlined hiring process",
+        "Flexible staffing solutions",
+      ],
+      cta: "Post Your Job Now",
+      href: "/add-job",
+    },
+    {
+      icon: "fa-sitemap",
+      label: "For Sub-contractors",
+      title: "Assign and Manage Jobs Efficiently",
+      subtitle:
+        "Coordinate with staff, track assignments, and ensure your jobs are completed professionally.",
+      points: [
+        "Assign jobs to verified staff",
+        "Monitor job progress",
+        "Manage workforce flexibly",
+        "Maintain quality and compliance",
+      ],
+      cta: "Register as a Sub-contractor",
+      href: "/register",
+    },
+  ];
+
+  const features = [
+    {
+      icon: "fa-check-circle",
+      title: "Verified Staff",
+      copy: "All security personnel are carefully verified for qualifications and experience.",
+    },
+    {
+      icon: "fa-random",
+      title: "Seamless Job Matching",
+      copy: "Quickly connect staff, customers, and sub-contractors through a simple platform.",
+    },
+    {
+      icon: "fa-calendar-check-o",
+      title: "Flexible Assignments",
+      copy: "Manage shifts and jobs efficiently, ensuring the right staff are assigned at the right time.",
     },
   ];
 
@@ -111,20 +183,20 @@ export default function Home() {
   const testimonials = [
     {
       text: "Staffoo made hiring security staff effortless. Within hours, we had verified professionals ready for our event. The platform is easy to use, and I can trust the quality of the staff every time.",
-      name: " Michael T. – Melbourne",
-      role: "Customer",
+      name: "Emma R. - Sydney",
+      role: "Event Manager",
       image: "user1.jpg",
     },
     {
       text: "Posting jobs on Staffoo is straightforward, and the staff profiles are thorough and reliable. We’ve filled multiple positions through the platform without any hassle. Highly recommended!",
-      name: "Emma R. - Sydney",
-      role: "Staff",
+      name: "Michael T. - Melbourne",
+      role: "Business Owner",
       image: "user2.jpg",
     },
     {
       text: "The Sub-contractor management feature is a lifesaver. Assigning jobs and monitoring progress is so smooth, and I always know our security needs are met by professional staff.",
       name: "Sarah K. – Brisbane",
-      role: "Sub-contractor",
+      role: "Venue Supervisor",
       image: "user3.jpg",
     },
   ];
@@ -177,6 +249,122 @@ export default function Home() {
         .close-btn { background: none; border: none; font-size: 1.5rem; color: #6c757d; cursor: pointer; transition: color 0.2s; }
         .close-btn:hover { color: #dc3545; }
         .detail-group { background: #f8f9fa; padding: 1rem; border-radius: 12px; margin-bottom: 1rem; border: 1px solid #eee; }
+
+        /* For Every Role Section */
+        .role-showcase {
+          background: radial-gradient(circle at 10% 20%, #f4f8ff 0%, #eaf3ff 35%, #f8fcff 100%);
+          position: relative;
+          overflow: hidden;
+        }
+        .role-showcase::before,
+        .role-showcase::after {
+          content: "";
+          position: absolute;
+          border-radius: 50%;
+          z-index: 0;
+        }
+        .role-showcase::before {
+          width: 420px;
+          height: 420px;
+          right: -180px;
+          top: -200px;
+          background: rgba(13, 110, 253, 0.08);
+        }
+        .role-showcase::after {
+          width: 280px;
+          height: 280px;
+          left: -140px;
+          bottom: -120px;
+          background: rgba(25, 135, 84, 0.08);
+        }
+        .role-showcase .container {
+          position: relative;
+          z-index: 1;
+        }
+        .role-card {
+          background: #fff;
+          border: 1px solid #e8eef8;
+          border-radius: 18px;
+          box-shadow: 0 10px 30px rgba(31, 56, 88, 0.08);
+          transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+          height: 100%;
+          display: flex;
+          flex-direction: column;
+          padding: 28px;
+        }
+        .role-card:hover {
+          transform: translateY(-8px);
+          box-shadow: 0 18px 34px rgba(31, 56, 88, 0.14);
+          border-color: rgba(13, 110, 253, 0.25);
+        }
+        .role-pill {
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          background: #eef4ff;
+          color: #134db8;
+          border-radius: 999px;
+          font-weight: 700;
+          font-size: 0.78rem;
+          letter-spacing: 0.03em;
+          text-transform: uppercase;
+          padding: 6px 12px;
+          margin-bottom: 14px;
+        }
+        .role-icon {
+          width: 46px;
+          height: 46px;
+          border-radius: 12px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          background: linear-gradient(145deg, #0d6efd, #0b53c1);
+          color: #fff;
+          font-size: 1.15rem;
+          margin-bottom: 14px;
+          box-shadow: 0 10px 20px rgba(13, 110, 253, 0.25);
+        }
+        .role-card h4 {
+          font-size: 1.22rem;
+          line-height: 1.4;
+          margin-bottom: 10px;
+        }
+        .role-card p {
+          color: #5f6b7a;
+          margin-bottom: 16px;
+        }
+        .role-points {
+          list-style: none;
+          margin: 0 0 24px;
+          padding: 0;
+          display: grid;
+          gap: 10px;
+        }
+        .role-points li {
+          display: flex;
+          align-items: flex-start;
+          gap: 10px;
+          color: #243447;
+          line-height: 1.4;
+          font-weight: 500;
+        }
+        .role-points li i {
+          color: #198754;
+          margin-top: 3px;
+          font-size: 0.9rem;
+        }
+        .role-card .btn {
+          align-self: flex-start;
+          font-weight: 600;
+          padding-left: 20px;
+          padding-right: 20px;
+        }
+
+        @media (max-width: 991px) {
+          .role-card {
+            padding: 24px;
+          }
+        }
         
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
@@ -190,13 +378,13 @@ export default function Home() {
           <div className="row align-items-center g-4">
             <div className="col-lg-6">
               <span className="hero-badge">
-                Australia’s Leading Platform for Security Jobs and Staff
+                Australia's Leading Platform for Security Jobs and Staff
               </span>
               <h1 className="hero-title">
-                Connecting Australia’s Security Professionals with Trusted Jobs
+                Connecting Australia's Security Professionals with Trusted Jobs
               </h1>
               <p className="hero-copy">
-                Whether you’re looking for work, hiring security staff, or
+                Whether you're looking for work, hiring security staff, or
                 managing assignments, Staffoo makes it simple, fast, and
                 reliable.
               </p>
@@ -238,15 +426,34 @@ export default function Home() {
                   <span className="stat-label">Active Jobs</span>
                 </div>
                 <div className="hero-links d-flex gap-3">
-                  <a href="/post-job" className="hero-link">
-                    <i className="fa fa-briefcase" aria-hidden="true"></i> Post
-                    Your Job
+                  <a href="/latest-jobs" className="hero-link">
+                    <i className="fa fa-search" aria-hidden="true"></i> Find
+                    Security Jobs
                   </a>
-                  <a href="/candidate-listing" className="hero-link">
-                    <i className="fa fa-user-o" aria-hidden="true"></i> Search
-                    Jobs
+                  <a href="/add-job" className="hero-link">
+                    <i className="fa fa-briefcase" aria-hidden="true"></i> Post
+                    a Job
+                  </a>
+                  <a href="/roster" className="hero-link">
+                    <i className="fa fa-tasks" aria-hidden="true"></i> Manage
+                    Assignments
                   </a>
                 </div>
+              </div>
+
+              <div className="mt-4">
+                {slogans.map((slogan) => (
+                  <div
+                    className="d-flex align-items-start gap-2 mb-2"
+                    key={slogan}
+                  >
+                    <i
+                      className="fa fa-shield text-primary mt-1"
+                      aria-hidden="true"
+                    ></i>
+                    <span>{slogan}</span>
+                  </div>
+                ))}
               </div>
             </div>
 
@@ -421,8 +628,8 @@ export default function Home() {
       <section className="section howit-section">
         <div className="container">
           <div className="titleTop text-center">
-            <div className="subtitle">Simple Steps</div>
-            <h3>How It Works</h3>
+            <div className="subtitle">How It Works - Staffoo</div>
+            <h3>Simple Steps to Get Started</h3>
           </div>
 
           <div className="row g-4 justify-content-center howit-grid">
@@ -434,6 +641,74 @@ export default function Home() {
                   </div>
                   <h4>{step.title}</h4>
                   <p>{step.description}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="section py-5 bg-light">
+        <div className="container">
+          <div className="titleTop text-center mb-5">
+            <div className="subtitle">Features</div>
+            <h3>Why Choose Staffoo?</h3>
+          </div>
+          <div className="row g-4">
+            {features.map((feature) => (
+              <div className="col-md-4" key={feature.title}>
+                <div className="card h-100 border-0 shadow-sm rounded-4 p-4">
+                  <div
+                    className="mb-3 text-primary"
+                    style={{ fontSize: "1.8rem" }}
+                  >
+                    <i className={`fa ${feature.icon}`} aria-hidden="true"></i>
+                  </div>
+                  <h4 className="h5 fw-bold">{feature.title}</h4>
+                  <p className="mb-0 text-secondary">{feature.copy}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="section py-5 role-showcase">
+        <div className="container">
+          <div className="titleTop text-center mb-5">
+            <div className="subtitle">For Every Role</div>
+            <h3>Simple. Transparent. Efficient.</h3>
+          </div>
+          <div className="row g-4">
+            {rolePages.map((role) => (
+              <div className="col-lg-4" key={role.title}>
+                <div className="role-card">
+                  <span className="role-pill">
+                    <i className="fa fa-circle" aria-hidden="true"></i>
+                    {role.label}
+                  </span>
+                  <div className="role-icon" aria-hidden="true">
+                    <i className={`fa ${role.icon}`}></i>
+                  </div>
+                  <h4 className="fw-bold h5">{role.title}</h4>
+                  <p className="text-secondary">{role.subtitle}</p>
+                  <ul className="role-points">
+                    {role.points.map((point) => (
+                      <li key={point}>
+                        <i
+                          className="fa fa-check-circle"
+                          aria-hidden="true"
+                        ></i>
+                        <span>{point}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  <a
+                    href={role.href}
+                    className="btn btn-outline-primary rounded-pill mt-auto"
+                  >
+                    {role.cta}
+                  </a>
                 </div>
               </div>
             ))}

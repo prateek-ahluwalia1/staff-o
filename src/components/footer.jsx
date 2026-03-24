@@ -94,7 +94,7 @@ const Footer = memo(function Footer() {
                 </li>
                 <li>
                   <i className="fa fa-phone" aria-hidden="true"></i>
-                  <a href="tel:+13025550123">+1 (302) 555-0123</a>
+                  <a href="tel:0478916034">0478916034</a>
                 </li>
               </ul>
 

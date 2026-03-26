@@ -84,6 +84,11 @@ const Sidebar = memo(function Sidebar() {
     { to: "/roster", icon: "fa-solid fa-users", label: "Roster" },
     { to: "/add-job", icon: "fa-solid fa-briefcase", label: "Post a Job" },
     {
+      to: "/wfm-tools",
+      icon: "fa-solid fa-toolbox",
+      label: "WFM Tools",
+    },
+    {
       to: "/reports",
       icon: "fa-solid fa-chart-bar",
       label: "Reports Management",

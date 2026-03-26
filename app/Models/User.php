@@ -23,7 +23,10 @@ class User extends Authenticatable
             'google_id',
             'state',
             'coordinates',
-            'address'
+            'address',
+            'agora_uid', 
+            'is_online', 
+            'last_seen'
         ];
     
         protected $hidden = [
@@ -35,6 +38,8 @@ class User extends Authenticatable
      protected $casts = [
         'email_verified_at' => 'datetime',
         'is_active' => 'boolean',
+        'is_online' => 'boolean',
+        'last_seen' => 'datetime',
     ];
 
      public function customer()
@@ -87,5 +92,32 @@ class User extends Authenticatable
     public function children()
     {
         return $this->hasMany(User::class, 'user_id');
+    }
+
+     // Relationships
+    public function initiatedCalls()
+    {
+        return $this->hasMany(Call::class, 'caller_id');
+    }
+
+    public function receivedCalls()
+    {
+        return $this->hasMany(Call::class, 'receiver_id');
+    }
+
+    public function sentMessages()
+    {
+        return $this->hasMany(Message::class, 'sender_id');
+    }
+
+    public function receivedMessages()
+    {
+        return $this->hasMany(Message::class, 'receiver_id');
+    }
+
+    // Accessor for unread messages count
+    public function getUnreadMessagesCountAttribute()
+    {
+        return $this->receivedMessages()->where('is_read', false)->count();
     }
 }

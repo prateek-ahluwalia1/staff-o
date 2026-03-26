@@ -11,6 +11,7 @@ use App\Models\DocumentCategory;
 use App\Models\Staff;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
@@ -890,5 +891,79 @@ class StaffController extends Controller
                 'message' => 'Failed to delete user: ' . $e->getMessage()
             ], 500);
         }
+    }
+
+     public function index(Request $request)
+    {
+        $query = User::where('id', '!=', Auth::id())
+            ->select('id', 'name', 'email', 'phone', 'avatar', 'is_online', 'last_seen');
+
+        if ($request->has('search') && !empty($request->search)) {
+            $search = $request->search;
+            $query->where('name', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%");
+        }
+
+        if ($request->has('status') && $request->status === 'online') {
+            $query->where('is_online', true);
+        }
+
+        $users = $query->orderBy('is_online', 'desc')
+            ->orderBy('name')
+            ->paginate($request->get('per_page', 20));
+
+        return response()->json([
+            'success' => true,
+            'data' => $users->items(),
+            'total' => $users->total(),
+            'current_page' => $users->currentPage(),
+            'last_page' => $users->lastPage()
+        ]);
+    }
+
+     public function getOnlineUsers()
+    {
+        $users = User::where('id', '!=', Auth::id())
+            ->where('is_online', true)
+            ->select('id', 'name', 'email', 'avatar')
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => $users,
+            'count' => $users->count()
+        ]);
+    }
+
+    public function show($id)
+    {
+        $user = User::findOrFail($id);
+        
+        return response()->json([
+            'success' => true,
+            'data' => $user
+        ]);
+    }
+
+    public function updateOnlineStatus(Request $request)
+    {
+        $request->validate([
+            'is_online' => 'required|boolean'
+        ]);
+
+        $user = Auth::user();
+        $user->is_online = $request->is_online;
+        
+        if (!$request->is_online) {
+            $user->last_seen = now();
+        }
+        
+        $user->save();
+
+        return response()->json([
+            'success' => true,
+            'is_online' => $user->is_online,
+            'last_seen' => $user->last_seen
+        ]);
     }
 }

@@ -15,6 +15,10 @@ use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\PayRateController;
 use App\Http\Controllers\Api\ReportController;
 use App\Http\Controllers\Api\StaffController;
+use App\Http\Controllers\Api\CallController;
+use App\Http\Controllers\Api\LeaveManagementController;
+use App\Http\Controllers\Api\MessageController;
+use App\Http\Controllers\Api\RtmController;
 use Illuminate\Support\Facades\Artisan;
 
 /*
@@ -27,6 +31,7 @@ use Illuminate\Support\Facades\Artisan;
 | be assigned to the "api" middleware group. Make something great!
 |
 */
+Route::post('/auth/google/callback', [AuthController::class, 'handleGoogleCallback']);
 
 Route::post('/register/customer', [AuthController::class, 'registerCustomer']);
 Route::post('/register/contractor', [AuthController::class, 'registerContractor']);
@@ -75,6 +80,39 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::any('get-payrate',  [PayRateController::class, 'getPayrate'])->name('get.payrate');
     Route::any('get-all-archive-payrates',  [PayRateController::class, 'getAllArchivePayrate'])->name('get.all.archive_payrates');
     Route::any('payrate/remove',  [PayRateController::class, 'removePayrate'])->name('payrate.remove');
+
+     // Users
+    Route::get('/users', [StaffController::class, 'index']);
+    Route::get('/users/online', [StaffController::class, 'getOnlineUsers']);
+    Route::get('/users/{id}', [StaffController::class, 'show']);
+    Route::post('/users/online-status', [StaffController::class, 'updateOnlineStatus']);
+
+      // Calls
+    Route::prefix('calls')->group(function () {
+        Route::post('/initiate', [CallController::class, 'initiateCall']);
+        Route::post('/accept/{callId}', [CallController::class, 'acceptCall']);
+        Route::post('/reject/{callId}', [CallController::class, 'rejectCall']);
+        Route::post('/end/{callId}', [CallController::class, 'endCall']);
+        Route::get('/history', [CallController::class, 'callHistory']);
+        Route::get('/{callId}', [CallController::class, 'getCallDetails']);
+    });
+    
+    // Messages
+    Route::prefix('messages')->group(function () {
+        Route::post('/send', [MessageController::class, 'sendMessage']);
+        Route::get('/conversations', [MessageController::class, 'getConversations']);
+        Route::get('/conversation/{userId}', [MessageController::class, 'getConversation']);
+        Route::post('/read/{messageId}', [MessageController::class, 'markAsRead']);
+        Route::post('/read-all/{userId}', [MessageController::class, 'markAllAsRead']);
+        Route::delete('/{messageId}', [MessageController::class, 'deleteMessage']);
+    });
+    
+    // RTM
+    Route::prefix('rtm')->group(function () {
+        Route::get('/token', [RtmController::class, 'getToken']);
+        Route::post('/message', [RtmController::class, 'sendMessage']);
+        Route::get('/conversation/{userId}', [RtmController::class, 'getConversation']);
+    });
     
     //create new staff
     Route::any('create-staff',  [StaffController::class, 'createStaff'])->name('create.staff');
@@ -110,7 +148,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::any('fetch-customer-sites', [JobRosterController::class, 'fetchCustomerSites'])->name('fetch.customer.sites');
     Route::any('get-contractor-staff/{id}', [JobRosterController::class, 'getContractorStaff'])->name('get.contractor');
     Route::any('update-roster-time', [JobRosterController::class, 'updateRosterTime'])->name('update.roster.time');
-
+    Route::any('job-status-manual-approved', [JobRosterController::class, 'jobStatusManualApproved'])->name('job.status.manual.approved');
+    Route::any('generateJobTrackerReport', [ReportController::class, 'generateJobTrackerReport']);
 
     // JobRosterActivity
     Route::any('get-jobSignIn-jobSignOut', [JobRosterActiviteController::class, 'JobSignInSignOut'])->name('job.signIn.signout');
@@ -135,6 +174,15 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::any('getTimesheet', [JobRosterController::class, 'getTimesheet'])->name('getTimesheet');
     Route::any('get-timesheet-details', [JobRosterController::class, 'getTimeSheetDetails'])->name('get.timesheet.details');
+
+    //Leave Management
+    Route::any('getLeaveDetails', [LeaveManagementController::class, 'getLeaveDetails'])->name('getLeaveDetails');
+    Route::any('getPendingLeaveRequests', [LeaveManagementController::class, 'getPendingLeaveRequests'])->name('getPendingLeaveRequests');
+    Route::any('addAdminLeaveRequest', [LeaveManagementController::class, 'addAdminLeaveRequest'])->name('addAdminLeaveRequest');
+    Route::any('getLeaveGuards', [LeaveManagementController::class, 'getLeaveGuards'])->name('getLeaveGuards');
+    Route::any('approveLeave', [LeaveManagementController::class, 'approveLeave'])->name('approveLeave');
+    Route::any('guardOnLeave', [LeaveManagementController::class, 'guardOnLeave'])->name('guardOnLeave');
+    Route::get('/get-guard-leaves/{guard_id}', [LeaveManagementController::class, 'getGuardLeave']);
 
  
     // Notifications
@@ -178,45 +226,46 @@ Route::middleware('auth:sanctum')->group(function () {
 
 });
 
-Route::get('/clear-all-cache', function() {
-    try {
-        // Clear application cache
-        Artisan::call('cache:clear');
-        $messages[] = 'Application cache cleared';
-        
-        // Clear route cache
-        Artisan::call('route:clear');
-        $messages[] = 'Route cache cleared';
-        
-        // Clear config cache
-        Artisan::call('config:clear');
-        $messages[] = 'Config cache cleared';
-        
-        // Clear view cache
-        Artisan::call('view:clear');
-        $messages[] = 'View cache cleared';
-        
-        // Clear compiled files
-        Artisan::call('clear-compiled');
-        $messages[] = 'Compiled files cleared';
-        
-        // Optimize (recreate cache)
-        Artisan::call('optimize:clear');
-        $messages[] = 'Optimization cleared';
-        
-        return response()->json([
-            'status' => 'success',
-            'message' => 'All caches cleared successfully',
-            'details' => $messages
-        ]);
-    } catch (\Exception $e) {
-        return response()->json([
-            'status' => 'error',
-            'message' => 'Error clearing cache: ' . $e->getMessage()
-        ], 500);
-    }
-});
+    Route::get('/clear-all-cache', function() {
+        try {
+            // Clear application cache
+            Artisan::call('cache:clear');
+            $messages[] = 'Application cache cleared';
+            
+            // Clear route cache
+            Artisan::call('route:clear');
+            $messages[] = 'Route cache cleared';
+            
+            // Clear config cache
+            Artisan::call('config:clear');
+            $messages[] = 'Config cache cleared';
+            
+            // Clear view cache
+            Artisan::call('view:clear');
+            $messages[] = 'View cache cleared';
+            
+            // Clear compiled files
+            Artisan::call('clear-compiled');
+            $messages[] = 'Compiled files cleared';
+            
+            // Optimize (recreate cache)
+            Artisan::call('optimize:clear');
+            $messages[] = 'Optimization cleared';
+            
+            return response()->json([
+                'status' => 'success',
+                'message' => 'All caches cleared successfully',
+                'details' => $messages
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Error clearing cache: ' . $e->getMessage()
+            ], 500);
+        }
+    });
+    
     Route::any('/get-all-jobs', [JobRosterController::class, 'getAllJobs'])->name('get.all.jobs');
 
 
-    Route::any('generateJobTrackerReport', [ReportController::class, 'generateJobTrackerReport']);
+

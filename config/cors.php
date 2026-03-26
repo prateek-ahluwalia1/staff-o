@@ -1,6 +1,6 @@
 <?php
 return [
-    'paths' => ['api/*', 'sanctum/csrf-cookie', 'login', 'logout'],
+    'paths' => ['*', 'api/*', 'sanctum/csrf-cookie', 'login', 'logout'],
     'allowed_methods' => ['*'],
     'allowed_origins' => [
         'http://localhost:3000',    // React default
@@ -8,7 +8,8 @@ return [
         'http://localhost:8000',    // Laravel (if different port)
         'http://127.0.0.1:3000',
         'http://127.0.0.1:5173',
-        'https://staff-o.vercel.app'
+        'https://staff-o.vercel.app',
+        'https://staffoo.com.au',
         // Add your production domain here
     ],
     'allowed_origins_patterns' => [],

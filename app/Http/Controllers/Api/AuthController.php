@@ -42,6 +42,9 @@ class AuthController extends Controller
             'state' => $data['state'] ?? null,
             'country' => $data['country'] ?? null,
             'coordinates' => $data['coordinates'] ?? null,
+            'agora_uid' => rand(100000, 999999),
+            'is_online' => false,
+            'last_seen' => now()
         ]);
 
         Customer::create([
@@ -92,6 +95,9 @@ class AuthController extends Controller
             'state' => $data['state'] ?? null,
             'country' => $data['country'] ?? null,
             'coordinates' => $data['coordinates'] ?? null,
+            'agora_uid' => rand(100000, 999999),
+            'is_online' => false,
+            'last_seen' => now()
         ]);
 
         Contractor::create([
@@ -119,7 +125,7 @@ class AuthController extends Controller
         ], 201);
     }
 
-    public function logout(Request $request)
+    public function logouttest(Request $request)
     {
         $token = $request->bearerToken();
         if (!$token) {
@@ -183,6 +189,9 @@ class AuthController extends Controller
             'country' => $data['state'] ?? null,
             'coordinates' => $data['coordinates'] ?? null,
             'is_active' => 0,
+            'agora_uid' => rand(100000, 999999),
+            'is_online' => false,
+            'last_seen' => now()
         ]);
 
         $profileImagePath = null;
@@ -240,6 +249,10 @@ class AuthController extends Controller
         //         'message' => 'Your account is inactive'
         //     ], 403);
         // }
+
+        $user->update(['is_online' => true, 'last_seen' => now()]);
+        
+        $user->tokens()->delete();
 
         $token = $user->createToken('api')->plainTextToken;
 
@@ -483,5 +496,14 @@ class AuthController extends Controller
             'user'    => $user,
             'staff'   => $staff,
         ], 201);
+    }
+
+    public function logout(Request $request)
+    {
+        $user = User::where('id', $request->id)->first();
+        $user->update(['is_online' => false, 'last_seen' => now()]);
+        $user->currentAccessToken()->delete();
+
+        return response()->json(['success' => true, 'message' => 'Logged out']);
     }
 }

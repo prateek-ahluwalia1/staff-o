@@ -2888,7 +2888,7 @@ class JobRosterController extends Controller
             $offset = $request->pageIndex * $request->pageSize;
             $limit = $request->pageSize;
         }
-        
+
         // Build base query
         $baseQuery = JobRoster::query();
 
@@ -2954,13 +2954,13 @@ class JobRosterController extends Controller
         $mainArr = [];
         foreach ($timesheet as $shift) {
             $userId = $shift['user_id'];
-            
+
             // Get shift hours breakdown
             $job_hours = $this->getShiftHours(
                 date('m/d/Y H:i', strtotime($shift['start'])),
                 date('m/d/Y H:i', strtotime($shift['end']))
             );
-            
+
             if (!isset($mainArr[$userId])) {
                 $mainArr[$userId] = [
                     'id' => $shift['user_id'],
@@ -2990,9 +2990,9 @@ class JobRosterController extends Controller
                 $mainArr[$userId]['shift_collection'][] = $shift['shift_id'];
             }
         }
-        
+
         $timesheet = array_values($mainArr);
-        
+
         // Apply pagination to the processed array
         $paginatedData = array_slice($timesheet, $offset, $limit);
         $total = count($timesheet);
@@ -3021,17 +3021,34 @@ class JobRosterController extends Controller
     }
 
     public function getTimeSheetDetails(Request $request)
-    {   
-        $rosters = JobRoster::
-       
-        whereIn('id', $request->shift_collection)
-        ->with(['site', 'guards', 'customer', 'rosterActivity'])->get();
+    {
+        $rosters = JobRoster::whereIn('id', $request->shift_collection)
+            ->with(['site', 'guards', 'customer', 'rosterActivity'])->get();
 
-      //$data = TimeSheetDetailsResource::collection($rosters);
-      $data = $rosters;
-      if (count($data) > 0) {
-         return response()->json(['success' => true, 'data' => $data]);
-       }
-      return response()->json(['success' => false, 'data' => $data]);
+        //$data = TimeSheetDetailsResource::collection($rosters);
+        $data = $rosters;
+        if (count($data) > 0) {
+            return response()->json(['success' => true, 'data' => $data]);
+        }
+        return response()->json(['success' => false, 'data' => $data]);
+    }
+
+    public function jobStatusManualApproved(Request $request)
+    {
+        $jobStatusManualApproved = JobRoster::where('id', $request->roster_id)->first();
+        if ($jobStatusManualApproved) {
+            if ($jobStatusManualApproved->in_paysheet == 0) {
+                $jobStatusManualApproved->in_paysheet = 1;
+                $jobStatusManualApproved->update();
+
+                return response()->json(['success' => true, 'msg' => 'Status Updated Successfully!']);
+            } else {
+                $jobStatusManualApproved->in_paysheet = 0;
+                $jobStatusManualApproved->update();
+                return response()->json(['success' => true, 'msg' => 'Status Updated Successfully!']);
+            }
+        } else {
+            return response()->json(['success' => true, 'msg' => 'Status Updated Successfully!']);
+        }
     }
 }

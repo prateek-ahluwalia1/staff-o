@@ -1,6 +1,6 @@
 /* Main Layout Background */
 .leave-management-container {
-    background-color: #eef2f6;
+    background-color: #fff;
     /* Soft gray/blue background matching the image */
     min-height: 100vh;
     font-family: 'Inter', 'Roboto', sans-serif;
@@ -25,7 +25,7 @@
 
 /* Search Box */
 .search-box {
-    background-color: #e2e8f0;
+    background-color: #f1f1f2;
     width: 250px;
 }
 
@@ -35,9 +35,7 @@
 
 /* --- Stat Cards (Pill Design) --- */
 .stat-card {
-    background-color: #e2e8f0;
-    /* Darker gray pill background */
-    border-radius: 20px;
+    background-color: #f1f1f2;
     display: flex;
     overflow: hidden;
     height: 100%;
@@ -55,10 +53,6 @@
     flex-grow: 1;
 }
 
-.stat-icon {
-    font-size: 1.2rem;
-    margin-top: -2px;
-}
 
 /* --- Table Styling --- */
 .table-wrapper {

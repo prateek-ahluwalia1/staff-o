@@ -5,49 +5,34 @@ const LeaveManagement = () => {
   const [showModal, setShowModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
 
-  // Updated stats array matching the new image
   const stats = [
     {
       label: "WH = Worked Hours",
-      sub: "260 Total Hrs",
       color: "#dc3545",
-      icon: "⏱️",
     },
     {
       label: "AAL = Accumulated Annual Leaves",
-      sub: "15 Total Hrs",
       color: "#198754",
-      icon: "🍃",
     },
     {
       label: "ASL = Accumulated Sick Leaves",
-      sub: "10 Total Hrs",
       color: "#dc3545",
-      icon: "💼",
     },
     {
       label: "UAL = Used Annual Leaves",
-      sub: "1.1 Total Hrs",
       color: "#fd7e14",
-      icon: "🍂",
     },
     {
       label: "USL = Used Sick Leaves",
-      sub: "3.3 Total Hrs",
       color: "#0d6efd",
-      icon: "🏥",
     },
     {
       label: "RAL = Remaining Annual Leaves",
-      sub: "10 Total Days",
       color: "#198754",
-      icon: "🌿",
     },
     {
       label: "RSL = Remaining Sick Leaves",
-      sub: "8 Total Days",
       color: "#0d6efd",
-      icon: "🏥",
     },
   ];
 
@@ -183,20 +168,11 @@ const LeaveManagement = () => {
               ></div>
               <div className="stat-content">
                 <div className="d-flex align-items-start gap-2">
-                  <span className="stat-icon">{stat.icon}</span>
-                  <div>
-                    <div
-                      className="fw-bold text-dark"
-                      style={{ fontSize: "0.9rem" }}
-                    >
-                      {stat.label}
-                    </div>
-                    <div
-                      className="text-muted mt-1"
-                      style={{ fontSize: "0.8rem" }}
-                    >
-                      {stat.sub}
-                    </div>
+                  <div
+                    className="fw-bold text-dark"
+                    style={{ fontSize: "0.6rem" }}
+                  >
+                    {stat.label}
                   </div>
                 </div>
               </div>

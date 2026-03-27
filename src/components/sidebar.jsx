@@ -46,6 +46,11 @@ const Sidebar = memo(function Sidebar() {
     { to: "/dashboard", icon: "fa-solid fa-gauge", label: "Dashboard" },
     { to: "/roster", icon: "fa-solid fa-users", label: "Roster" },
     {
+      to: "/wfm-tools",
+      icon: "fa-solid fa-toolbox",
+      label: "WFM Tools",
+    },
+    {
       to: "/manage-staff",
       icon: "fa-solid fa-users-gear",
       label: "Staff Management",
@@ -66,6 +71,11 @@ const Sidebar = memo(function Sidebar() {
   const staffNav = [
     { to: "/dashboard", icon: "fa-solid fa-gauge", label: "Dashboard" },
     { to: "/roster", icon: "fa-solid fa-users", label: "Roster" },
+    {
+      to: "/wfm-tools",
+      icon: "fa-solid fa-toolbox",
+      label: "WFM Tools",
+    },
     {
       to: "/edit-profile",
       icon: "fa-solid fa-user-pen",

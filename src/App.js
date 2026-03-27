@@ -176,7 +176,16 @@ function App() {
               <Route path="/rates/charge" element={<RatesList />} />
               <Route path="/rates/pay" element={<RatesList />} />
               <Route path="/wfm-tools" element={<WFMTools />} />
-              <Route path="/leave" element={<LeaveManagement />} />
+              <Route
+                path="/leave"
+                element={
+                  <ProtectedRoute
+                    allowedRoles={["admin", "staff", "contractor"]}
+                  >
+                    <LeaveManagement />
+                  </ProtectedRoute>
+                }
+              />
               <Route path="/reports" element={<Reports />} />
               <Route path="/timesheet" element={<TimeSheet />} />
               <Route path="/job-tracker" element={<JobTracker />} />

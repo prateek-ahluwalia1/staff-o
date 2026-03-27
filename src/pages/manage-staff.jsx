@@ -15,7 +15,7 @@ const ManageStaff = () => {
     loading,
     error,
     refetch,
-  } = useFetch(`api/admin/get-staff?page=${page}`, { isAuth: true });
+  } = useFetch(`api/get-contractor-staff/${loggedInContractorId}`, { isAuth: true });
 
   const { submit, loading: submitLoading } = useSubmit({ isAuth: true });
 

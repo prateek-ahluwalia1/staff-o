@@ -257,6 +257,7 @@ const LeaveManagement = () => {
   });
 
   const canShowStaffSelector = isContractor || isAdmin;
+  const canManageLeaveActions = isAdmin || isContractor;
 
   return (
     <div className="leave-management-container p-4">
@@ -316,7 +317,9 @@ const LeaveManagement = () => {
               <th>REQUESTED</th>
               <th>NOTES</th>
               <th>STATUS</th>
-              <th className="pe-4 text-center">ACTION</th>
+              {canManageLeaveActions && (
+                <th className="pe-4 text-center">ACTION</th>
+              )}
             </tr>
           </thead>
           <tbody>
@@ -357,40 +360,47 @@ const LeaveManagement = () => {
                       {isPendingLeave(leave) ? "Pending" : "Approved"}
                     </span>
                   </td>
-                  <td className="pe-4 text-center">
-                    <button
-                      className={`leave-action-btn btn btn-sm fw-bold px-3 rounded-pill shadow-sm ${isPendingLeave(leave) ? "btn-success" : "btn-outline-danger"}`}
-                      onClick={() => handleToggleLeave(leave)}
-                      disabled={submitLoading || processingLeaveId === leave.id}
-                      aria-label={
-                        isPendingLeave(leave)
-                          ? "Approve leave"
-                          : "Cancel approval"
-                      }
-                      title={
-                        isPendingLeave(leave)
-                          ? "Approve leave"
-                          : "Cancel approval"
-                      }
-                    >
-                      {processingLeaveId === leave.id ? (
-                        <span
-                          className="spinner-border spinner-border-sm"
-                          role="status"
-                          aria-hidden="true"
-                        />
-                      ) : isPendingLeave(leave) ? (
-                        <i className="fa-solid fa-check" aria-hidden="true" />
-                      ) : (
-                        <i className="fa-solid fa-xmark" aria-hidden="true" />
-                      )}
-                    </button>
-                  </td>
+                  {canManageLeaveActions && (
+                    <td className="pe-4 text-center">
+                      <button
+                        className={`leave-action-btn btn btn-sm fw-bold px-3 rounded-pill shadow-sm ${isPendingLeave(leave) ? "btn-success" : "btn-outline-danger"}`}
+                        onClick={() => handleToggleLeave(leave)}
+                        disabled={
+                          submitLoading || processingLeaveId === leave.id
+                        }
+                        aria-label={
+                          isPendingLeave(leave)
+                            ? "Approve leave"
+                            : "Cancel approval"
+                        }
+                        title={
+                          isPendingLeave(leave)
+                            ? "Approve leave"
+                            : "Cancel approval"
+                        }
+                      >
+                        {processingLeaveId === leave.id ? (
+                          <span
+                            className="spinner-border spinner-border-sm"
+                            role="status"
+                            aria-hidden="true"
+                          />
+                        ) : isPendingLeave(leave) ? (
+                          <i className="fa-solid fa-check" aria-hidden="true" />
+                        ) : (
+                          <i className="fa-solid fa-xmark" aria-hidden="true" />
+                        )}
+                      </button>
+                    </td>
+                  )}
                 </tr>
               ))
             ) : (
               <tr>
-                <td colSpan="10" className="text-center py-5 text-muted">
+                <td
+                  colSpan={canManageLeaveActions ? "10" : "9"}
+                  className="text-center py-5 text-muted"
+                >
                   No {activeLeaveTab} leaves found.
                 </td>
               </tr>
@@ -460,35 +470,37 @@ const LeaveManagement = () => {
                   </div>
                 </div>
 
-                <div className="d-flex justify-content-end mt-3">
-                  <button
-                    className={`leave-action-btn btn btn-sm fw-bold px-3 rounded-pill ${isPendingLeave(leave) ? "btn-success" : "btn-outline-danger"}`}
-                    onClick={() => handleToggleLeave(leave)}
-                    disabled={submitLoading || processingLeaveId === leave.id}
-                    aria-label={
-                      isPendingLeave(leave)
-                        ? "Approve leave"
-                        : "Cancel approval"
-                    }
-                    title={
-                      isPendingLeave(leave)
-                        ? "Approve leave"
-                        : "Cancel approval"
-                    }
-                  >
-                    {processingLeaveId === leave.id ? (
-                      <span
-                        className="spinner-border spinner-border-sm"
-                        role="status"
-                        aria-hidden="true"
-                      />
-                    ) : isPendingLeave(leave) ? (
-                      <i className="fa-solid fa-check" aria-hidden="true" />
-                    ) : (
-                      <i className="fa-solid fa-xmark" aria-hidden="true" />
-                    )}
-                  </button>
-                </div>
+                {canManageLeaveActions && (
+                  <div className="d-flex justify-content-end mt-3">
+                    <button
+                      className={`leave-action-btn btn btn-sm fw-bold px-3 rounded-pill ${isPendingLeave(leave) ? "btn-success" : "btn-outline-danger"}`}
+                      onClick={() => handleToggleLeave(leave)}
+                      disabled={submitLoading || processingLeaveId === leave.id}
+                      aria-label={
+                        isPendingLeave(leave)
+                          ? "Approve leave"
+                          : "Cancel approval"
+                      }
+                      title={
+                        isPendingLeave(leave)
+                          ? "Approve leave"
+                          : "Cancel approval"
+                      }
+                    >
+                      {processingLeaveId === leave.id ? (
+                        <span
+                          className="spinner-border spinner-border-sm"
+                          role="status"
+                          aria-hidden="true"
+                        />
+                      ) : isPendingLeave(leave) ? (
+                        <i className="fa-solid fa-check" aria-hidden="true" />
+                      ) : (
+                        <i className="fa-solid fa-xmark" aria-hidden="true" />
+                      )}
+                    </button>
+                  </div>
+                )}
               </div>
             ))}
           </div>

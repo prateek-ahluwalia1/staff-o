@@ -15,11 +15,14 @@ const ProtectedRoute = ({
   guestOnly = false,
   public: isPublic = false,
   redirectTo,
+  allowedRoles,
 }) => {
   const token = useSelector((state) => state.auth.token);
+  const userdata = useSelector((state) => state.auth.userdata);
   const location = useLocation();
 
   const isAuthenticated = Boolean(token);
+  const userRole = userdata?.data?.user_type || userdata?.user_type;
 
   // Public routes — accessible by anyone, no auth required
   if (isPublic) {
@@ -38,6 +41,16 @@ const ProtectedRoute = ({
     return <Navigate to={destination} state={{ from: location }} replace />;
   }
 
+  // Role-restricted routes — authenticated but not authorized users are redirected away
+  if (
+    Array.isArray(allowedRoles) &&
+    allowedRoles.length > 0 &&
+    !allowedRoles.includes(userRole)
+  ) {
+    const destination = redirectTo || "/dashboard";
+    return <Navigate to={destination} replace />;
+  }
+
   return children ?? <Outlet />;
 };
 
@@ -46,6 +59,7 @@ ProtectedRoute.propTypes = {
   guestOnly: PropTypes.bool,
   public: PropTypes.bool,
   redirectTo: PropTypes.string,
+  allowedRoles: PropTypes.arrayOf(PropTypes.string),
 };
 
 export default ProtectedRoute;

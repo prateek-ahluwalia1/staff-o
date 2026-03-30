@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { addNotification } from "../store/slices/notificationSlice";
+import { receiveNewMessage } from "../store/slices/chatSlice"; // <-- Add this import
 import { getEchoInstance, destroyEchoInstance } from "../echo";
 
 export const useEcho = () => {
@@ -16,18 +17,10 @@ export const useEcho = () => {
     const pusherConn = echo.connector.pusher.connection;
 
     const onConnected = () =>
-      console.log(
-        "%c:white_check_mark: Pusher connected",
-        "color:#22C55E;font-weight:bold",
-      );
-
-    const onFailed = () =>
-      console.error(
-        "[Echo] :x: Connection FAILED — check your Pusher key/cluster",
-      );
-
+      console.log("%c✅ Pusher connected", "color:#22C55E;font-weight:bold");
+    const onFailed = () => console.error("[Echo] ❌ Connection FAILED");
     const onError = (err) =>
-      console.error("[Echo] :x: Connection error:", err?.error?.message ?? err);
+      console.error("[Echo] ❌ Connection error:", err?.error?.message ?? err);
 
     if (pusherConn.state === "connected") {
       onConnected();
@@ -45,8 +38,16 @@ export const useEcho = () => {
     echo
       .private(channelName)
       .listen(eventName, (data) => {
-        console.log(":bell: Notification received:", data);
-        dispatch(addNotification(data));
+        console.log("🔔 Event received:", data);
+
+        // --- NEW LOGIC HERE ---
+        // Check if the payload is a Chat Message
+        if (data.message_id && data.message) {
+          dispatch(receiveNewMessage(data));
+        } else {
+          // Otherwise, it's a regular system notification
+          dispatch(addNotification(data));
+        }
       })
       .error((error) => {
         console.error("[Echo] Channel subscription error:", error);

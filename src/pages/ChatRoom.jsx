@@ -83,10 +83,12 @@ const ChatRoom = () => {
   const scrollRef = useRef();
   const pickerRef = useRef();
 
-  const { data: convData, loading: loadingConv } = useFetch(
-    `chat/conversations?type=${category}`,
-    { isAuth: true },
-  );
+  // 1. Get Conversations API
+  const {
+    data: convData,
+    loading: loadingConv,
+    refetch: refetchConversations,
+  } = useFetch(`api/messages/conversations`, { isAuth: true });
 
   const userEndpoint = USER_ENDPOINTS[category];
   const { data: usersData, loading: loadingUsers } = useFetch(
@@ -97,7 +99,6 @@ const ChatRoom = () => {
   const { submit: sendMessageApi, loading: sending } = useSubmit({
     isAuth: true,
   });
-  const { submit: startConversation } = useSubmit({ isAuth: true });
 
   useEffect(() => {
     dispatch(setActiveCategory(category));
@@ -125,14 +126,21 @@ const ChatRoom = () => {
   }, [showUserPicker]);
 
   const fetchMessages = useCallback(
-    async (convId) => {
+    async (userId) => {
       setLoadingMessages(true);
       try {
-        const res = await fetch(`${apiURL}chat/messages/${convId}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        const data = await res.json();
-        dispatch(setMessages(data?.data || data || []));
+        const res = await fetch(
+          `${apiURL}api/messages/conversation/${userId}`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          },
+        );
+
+        const responseData = await res.json();
+
+        const messageList =
+          responseData?.messages?.data || responseData?.data || [];
+        dispatch(setMessages(messageList));
       } catch (error) {
         console.error("Error fetching messages:", error);
       } finally {
@@ -142,31 +150,89 @@ const ChatRoom = () => {
     [token, dispatch],
   );
 
+  const markMessagesAsRead = async (userId) => {
+    try {
+      await fetch(`${apiURL}api/messages/read-all/${userId}`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+      refetchConversations();
+    } catch (error) {
+      console.error("Error marking messages as read:", error);
+    }
+  };
+
+  // 4. Delete Message API
+  const handleDeleteMessage = async (messageId) => {
+    if (!window.confirm("Are you sure you want to delete this message?"))
+      return;
+    try {
+      await fetch(`${apiURL}api/messages/${messageId}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      // Refresh messages after delete
+      const other = otherUser(activeConversation);
+      if (other?.id) fetchMessages(other.id);
+    } catch (error) {
+      console.error("Error deleting message:", error);
+    }
+  };
+
   const handleSelectConv = (conv) => {
     dispatch(setActiveChat(conv));
-    fetchMessages(conv.id);
+    const other = otherUser(conv);
+    if (other?.id) {
+      fetchMessages(other.id);
+      markMessagesAsRead(other.id); // Mark as read when opened
+    }
   };
 
   const handleStartConversation = async (targetUser) => {
     setShowUserPicker(false);
-    const res = await startConversation("chat/conversations", {
-      user_id: targetUser.id,
-    });
-    if (res) {
-      const conv = res?.data || res;
-      dispatch(prependConversation(conv));
-      dispatch(setActiveChat(conv));
-      fetchMessages(conv.id);
-    }
+
+    const conv = {
+      user: targetUser,
+      last_message: null,
+      unread_count: 0,
+    };
+
+    dispatch(prependConversation(conv));
+    dispatch(setActiveChat(conv));
+    fetchMessages(targetUser.id);
+    markMessagesAsRead(targetUser.id);
   };
 
   const onSend = async (e) => {
     e.preventDefault();
     if (!text.trim() || !activeConversation) return;
-    const payload = { conversation_id: activeConversation.id, message: text };
+
+    const other = otherUser(activeConversation);
+    if (!other?.id) return;
+
+    const payload = {
+      receiver_id: other.id,
+      message: text,
+    };
+
     setText("");
-    await sendMessageApi("chat/send", payload);
-    fetchMessages(activeConversation.id);
+
+    try {
+      const response = await sendMessageApi("api/messages/send", payload);
+
+      if (response && response.success && response.message) {
+        dispatch(setMessages([...messages, response.message]));
+      } else {
+        fetchMessages(other.id);
+      }
+
+      refetchConversations();
+    } catch (error) {
+      console.error("Failed to send message:", error);
+    }
   };
 
   const formatTime = (iso) => {
@@ -207,7 +273,7 @@ const ChatRoom = () => {
   }, []);
 
   const filteredConvs = (conversations || []).filter((conv) => {
-    const name = conv?.user?.name || conv?.other_user?.name || "";
+    const name = conv?.user?.name || "";
     return name.toLowerCase().includes(search.toLowerCase());
   });
 
@@ -223,13 +289,14 @@ const ChatRoom = () => {
     },
   );
 
-  const otherUser = (conv) => conv?.user || conv?.other_user || {};
+  // The API directly provides the 'user' object for the other person
+  const otherUser = (conv) => conv?.user || {};
 
   return (
     <div className="chatroom-page">
       {/* ── LEFT PANEL ── */}
       <div className="chatroom-sidebar">
-        {/* Header row: back + current user avatar + name + plus button */}
+        {/* Header row */}
         <div className="chatroom-sidebar-header">
           <button
             className="btn btn-sm me-1 flex-shrink-0"
@@ -350,10 +417,18 @@ const ChatRoom = () => {
           ) : (
             filteredConvs.map((conv) => {
               const other = otherUser(conv);
-              const isActive = activeConversation?.id === conv.id;
+              // Since the conversation object doesn't have a top-level ID, we match by the user's ID
+              const isActive = activeConversation?.user?.id === other?.id;
+              const hasUnread = conv.unread_count > 0;
+
+              // Extract details from the new last_message object
+              const lastMsgText = conv.last_message?.message || "";
+              const lastMsgTime = conv.last_message?.created_at || null;
+              const isSentByMe = conv.last_message?.is_sent_by_me || false;
+
               return (
                 <div
-                  key={conv.id}
+                  key={other?.id}
                   className={`chatroom-conv-item d-flex align-items-center px-3 py-2 ${isActive ? "chatroom-conv-active" : ""}`}
                   onClick={() => handleSelectConv(conv)}
                 >
@@ -364,21 +439,37 @@ const ChatRoom = () => {
                   />
                   <div className="ms-2 flex-grow-1 overflow-hidden">
                     <div className="d-flex justify-content-between align-items-center">
-                      <span className="small fw-semibold text-truncate">
+                      <span
+                        className={`small text-truncate ${hasUnread ? "fw-bold" : "fw-semibold"}`}
+                      >
                         {other?.name || "Unknown"}
                       </span>
                       <span
                         className="text-muted"
                         style={{ fontSize: "0.68rem", flexShrink: 0 }}
                       >
-                        {formatTime(conv.updated_at)}
+                        {formatTime(lastMsgTime)}
                       </span>
                     </div>
-                    <div
-                      className="text-muted text-truncate"
-                      style={{ fontSize: "0.75rem" }}
-                    >
-                      {conv.last_message || ""}
+                    <div className="d-flex justify-content-between align-items-center mt-1">
+                      <div
+                        className={`text-truncate ${hasUnread ? "text-dark fw-bold" : "text-muted"}`}
+                        style={{ fontSize: "0.75rem" }}
+                      >
+                        {/* Display "You:" if the last message was sent by the current user */}
+                        {isSentByMe && lastMsgText && (
+                          <span className="me-1">You:</span>
+                        )}
+                        {lastMsgText}
+                      </div>
+                      {hasUnread && (
+                        <span
+                          className="badge bg-danger rounded-pill ms-1"
+                          style={{ fontSize: "0.65rem" }}
+                        >
+                          {conv.unread_count}
+                        </span>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -413,21 +504,6 @@ const ChatRoom = () => {
                 >
                   {otherUser(activeConversation)?.name || "Conversation"}
                 </h6>
-                <span
-                  className="d-flex align-items-center gap-1"
-                  style={{ fontSize: "0.74rem", color: "#17d27c" }}
-                >
-                  <span
-                    style={{
-                      width: 7,
-                      height: 7,
-                      borderRadius: "50%",
-                      background: "#17d27c",
-                      display: "inline-block",
-                    }}
-                  ></span>
-                  Online
-                </span>
               </div>
             </div>
 
@@ -485,13 +561,45 @@ const ChatRoom = () => {
                             />
                           )}
                           <div
-                            className={`message-bubble ${isMe ? "message-sent" : "message-received"}`}
+                            className={`message-bubble ${isMe ? "message-sent" : "message-received"} position-relative`}
                           >
+                            {/* Delete Button (Only on your messages) */}
+                            {isMe && (
+                              <button
+                                onClick={() => handleDeleteMessage(m.id)}
+                                className="btn btn-sm btn-link text-white p-0 position-absolute"
+                                style={{
+                                  top: "-10px",
+                                  left: "-20px",
+                                  opacity: 0.6,
+                                }}
+                                title="Delete message"
+                              >
+                                <i
+                                  className="fa-solid fa-trash"
+                                  style={{
+                                    fontSize: "0.75rem",
+                                    color: "#dc3545",
+                                  }}
+                                ></i>
+                              </button>
+                            )}
+
                             {m.message}
                             <div
                               className={`chat-timestamp text-end ${isMe ? "text-white-50" : "text-muted"}`}
                             >
                               {formatTime(m.created_at)}
+                              {/* Read Status Checkmarks (Optional Visual) */}
+                              {isMe && m.is_read && (
+                                <i
+                                  className="fa-solid fa-check-double ms-1"
+                                  style={{
+                                    fontSize: "0.6rem",
+                                    color: "#4dffb5",
+                                  }}
+                                ></i>
+                              )}
                             </div>
                           </div>
                         </div>
@@ -509,13 +617,6 @@ const ChatRoom = () => {
                 onSubmit={onSend}
                 className="d-flex align-items-center gap-2"
               >
-                <button
-                  type="button"
-                  className="chatroom-attach-btn"
-                  title="Attach file"
-                >
-                  <i className="fa-solid fa-paperclip"></i>
-                </button>
                 <input
                   type="text"
                   className="form-control border-0 bg-light rounded-pill"

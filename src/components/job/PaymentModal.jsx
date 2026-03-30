@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { loadStripe } from "@stripe/stripe-js";
 import {
   Elements,
@@ -7,10 +7,6 @@ import {
   useElements,
 } from "@stripe/react-stripe-js";
 import { STRIPE_PUBLISHABLE_KEY } from "../../utils/exports";
-
-const stripePromise = STRIPE_PUBLISHABLE_KEY
-  ? loadStripe(STRIPE_PUBLISHABLE_KEY)
-  : null;
 
 const CARD_ELEMENT_OPTIONS = {
   style: {
@@ -76,6 +72,7 @@ function CardForm({
     e.preventDefault();
     if (processing) return;
 
+    // 🔹 USING SAVED CARD
     if (paymentMode === "saved") {
       if (!selectedSavedCard) return;
 
@@ -96,14 +93,14 @@ function CardForm({
         }
 
         onSuccess(holdResult);
-        return;
       } catch (err) {
-        setCardError(err.message || "Payment failed. Please try again.");
+        setCardError(err.message || "Payment failed.");
         setProcessing(false);
-        return;
       }
+      return;
     }
 
+    // 🔹 USING NEW CARD
     if (!stripe || !elements || !cardComplete || !cardholderValid) return;
 
     setCardError("");
@@ -112,7 +109,7 @@ function CardForm({
     try {
       const cardElement = elements.getElement(CardElement);
       if (!cardElement) {
-        setCardError("Card input is not ready. Please try again.");
+        setCardError("Card input is not ready.");
         setProcessing(false);
         return;
       }
@@ -131,14 +128,9 @@ function CardForm({
         return;
       }
 
-      if (!paymentMethod?.id) {
-        setCardError("Unable to tokenize card. Please try again.");
-        setProcessing(false);
-        return;
-      }
-
+      // 🔥 SEND TO BACKEND
       const holdResult = await onHoldPayment({
-        paymentMethodId: paymentMethod.id,
+        paymentMethodId: paymentMethod.id, // Using the key expected by your handler
         cardHolderName: cardHolderName.trim(),
       });
 
@@ -150,14 +142,13 @@ function CardForm({
 
       onSuccess(holdResult);
     } catch (err) {
-      setCardError(err.message || "Payment failed. Please try again.");
+      setCardError(err.message || "Payment failed.");
       setProcessing(false);
     }
   }
 
   return (
     <form onSubmit={handleSubmit} noValidate>
-      {/* Amount summary */}
       <div
         className="d-flex justify-content-between align-items-center rounded mb-4 p-3"
         style={{ background: "linear-gradient(135deg,#6366f115,#3b82f615)" }}
@@ -183,7 +174,6 @@ function CardForm({
               onClick={() => {
                 setPaymentMode("saved");
                 setCardError("");
-                setProcessing(false);
               }}
               disabled={processing}
             >
@@ -195,7 +185,6 @@ function CardForm({
               onClick={() => {
                 setPaymentMode("new");
                 setCardError("");
-                setProcessing(false);
               }}
               disabled={processing}
             >
@@ -211,10 +200,9 @@ function CardForm({
                   "",
                 );
                 const last4 = rawNumber.slice(-4) || "****";
-                const label = card?.card_holder_name || "Saved card";
                 return (
                   <label
-                    key={`${label}-${index}`}
+                    key={index}
                     className="d-flex align-items-center justify-content-between p-2 border rounded mb-2"
                     style={{
                       cursor: "pointer",
@@ -225,123 +213,59 @@ function CardForm({
                     <span className="d-flex align-items-center gap-2">
                       <input
                         type="radio"
-                        name="saved-card"
                         checked={selectedSavedIndex === index}
                         onChange={() => setSelectedSavedIndex(index)}
                         disabled={processing}
                       />
                       <span>
-                        <span className="fw-semibold">{label}</span>
+                        <span className="fw-semibold">
+                          {card?.card_holder_name || "Saved Card"}
+                        </span>
                         <span className="text-muted ms-2">•••• {last4}</span>
                       </span>
-                    </span>
-                    <span className="text-muted small">
-                      {card?.expiry_month || "--"}/{card?.expiry_year || "--"}
                     </span>
                   </label>
                 );
               })}
-
-              <div className="small text-muted mt-1">
-                Selected card will be sent as a reference to backend for payment
-                hold.
-              </div>
             </div>
           )}
         </div>
       )}
 
-      {/* Card element */}
       {paymentMode === "new" && (
         <>
-          <div className="mb-1">
-            <label
-              className="form-label fw-semibold mb-1"
-              style={{ fontSize: 13 }}
-            >
-              Card Holder Name
-            </label>
+          <div className="mb-2">
             <input
               type="text"
               className="form-control"
               value={cardHolderName}
               onChange={(e) => setCardHolderName(e.target.value)}
-              placeholder="John Smith"
-              autoComplete="cc-name"
+              placeholder="Card Holder Name"
               disabled={processing}
             />
           </div>
-
-          <div className="mb-1 mt-3">
-            <label
-              className="form-label fw-semibold mb-1"
-              style={{ fontSize: 13 }}
-            >
-              Card Details
-            </label>
-            <div
-              className="border rounded px-3"
-              style={{
-                minHeight: 48,
-                display: "flex",
-                alignItems: "center",
-                background: "#fff",
-                borderColor: cardError ? "#e53e3e" : "#dee2e6",
-                opacity: processing ? 0.6 : 1,
-                pointerEvents: processing ? "none" : "auto",
+          <div className="border rounded px-3 py-2 bg-white mb-2">
+            <CardElement
+              options={CARD_ELEMENT_OPTIONS}
+              onChange={(e) => {
+                setCardComplete(e.complete);
+                setCardError(e.error ? e.error.message : "");
               }}
-            >
-              {/* Added div wrapper with width: "100%" to fix flexbox collapse */}
-              <div style={{ width: "100%" }}>
-                <CardElement
-                  key={`card-element-${paymentMode}`}
-                  options={CARD_ELEMENT_OPTIONS}
-                  onChange={(e) => {
-                    setCardComplete(e.complete);
-                    setCardError(e.error ? e.error.message : "");
-                  }}
-                />
-              </div>
-            </div>
+            />
           </div>
         </>
       )}
 
-      {cardError && (
-        <div className="text-danger small mt-1 mb-2">{cardError}</div>
-      )}
+      {cardError && <div className="text-danger small mb-2">{cardError}</div>}
 
-      {/* Trust badge */}
-      <div className="text-muted small mt-2 mb-4" style={{ fontSize: 12 }}>
-        <i className="fa fa-lock me-1" />
-        Your card details are encrypted and processed securely by{" "}
-        <strong>Stripe</strong>. We never store card numbers.
-      </div>
-
-      {/* Actions */}
-      <div className="d-flex gap-2">
+      <div className="d-flex gap-2 mt-4">
         <button
           type="submit"
           className="btn btn-success fw-semibold flex-grow-1"
           disabled={processing || (!canSubmitSaved && !canSubmitNew)}
         >
-          {processing ? (
-            <>
-              <span
-                className="spinner-border spinner-border-sm me-2"
-                role="status"
-                aria-hidden="true"
-              />
-              Processing…
-            </>
-          ) : (
-            <>
-              <i className="fa fa-lock me-2" />
-              Pay {fmt(amountAud)}
-            </>
-          )}
+          {processing ? "Processing..." : `Pay ${fmt(amountAud)}`}
         </button>
-
         <button
           type="button"
           className="btn btn-outline-secondary"
@@ -364,91 +288,26 @@ export default function PaymentModal({
   onSuccess,
   savedCards = [],
 }) {
+  const stripePromise = useMemo(() => {
+    if (!STRIPE_PUBLISHABLE_KEY) return null;
+    return loadStripe(STRIPE_PUBLISHABLE_KEY);
+  }, []);
+
   if (!open) return null;
 
-  if (!STRIPE_PUBLISHABLE_KEY) {
-    return (
-      <div
-        style={{
-          position: "fixed",
-          inset: 0,
-          background: "rgba(0,0,0,0.55)",
-          zIndex: 1050,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          padding: "1rem",
-        }}
-        role="dialog"
-        aria-modal="true"
-        aria-label="Payment configuration missing"
-      >
-        <div
-          className="bg-white rounded-3 shadow-lg p-4"
-          style={{ width: "100%", maxWidth: 460, position: "relative" }}
-        >
-          <h5 className="mb-2 fw-bold">Stripe Not Configured</h5>
-          <p className="text-muted small mb-3">
-            Missing REACT_APP_STRIPE_PUBLISHABLE_KEY. Add it to your environment
-            before accepting card payments.
-          </p>
-          <button
-            type="button"
-            className="btn btn-outline-secondary"
-            onClick={onClose}
-          >
-            Close
-          </button>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div
-      style={{
-        position: "fixed",
-        inset: 0,
-        background: "rgba(0,0,0,0.55)",
-        zIndex: 1050,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: "1rem",
-      }}
-      role="dialog"
-      aria-modal="true"
-      aria-label="Complete payment"
-    >
+    <div style={overlayStyle} role="dialog" aria-modal="true">
       <div
         className="bg-white rounded-3 shadow-lg p-4"
         style={{ width: "100%", maxWidth: 460, position: "relative" }}
       >
-        {/* Header */}
-        <button
-          onClick={onClose}
-          aria-label="Close"
-          style={{
-            position: "absolute",
-            top: 10,
-            right: 14,
-            background: "none",
-            border: "none",
-            fontSize: 22,
-            cursor: "pointer",
-            lineHeight: 1,
-            color: "#6b7280",
-          }}
-        >
+        <button onClick={onClose} style={closeButtonStyle}>
           &times;
         </button>
-
-        <div className="mb-3">
-          <h5 className="mb-1 fw-bold">Complete Payment</h5>
-          <p className="text-muted small mb-0">
-            Payment is required to post this job.
-          </p>
-        </div>
+        <h5 className="fw-bold mb-1">Complete Payment</h5>
+        <p className="text-muted small mb-3">
+          Direct payment to the service provider.
+        </p>
 
         <Elements stripe={stripePromise}>
           <CardForm
@@ -465,3 +324,25 @@ export default function PaymentModal({
     </div>
   );
 }
+
+const overlayStyle = {
+  position: "fixed",
+  inset: 0,
+  background: "rgba(0,0,0,0.55)",
+  zIndex: 1050,
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  padding: "1rem",
+};
+
+const closeButtonStyle = {
+  position: "absolute",
+  top: 10,
+  right: 14,
+  background: "none",
+  border: "none",
+  fontSize: 22,
+  cursor: "pointer",
+  color: "#6b7280",
+};

@@ -1,10 +1,10 @@
 /* Main Layout Background */
 .leave-management-container {
     background-color: #fff;
-    /* Soft gray/blue background matching the image */
     min-height: 100vh;
     font-family: 'Inter', 'Roboto', sans-serif;
     border-radius: 20px;
+    max-width: 1000px;
 }
 
 .leave-header {

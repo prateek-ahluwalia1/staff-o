@@ -101,7 +101,7 @@ export default function AddJob() {
 
   const [attachmentPreviews, setAttachmentPreviews] = useState([]);
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
-  const [pendingDraft, setPendingDraft] = useState(null); // { payload, amountAud }
+  const [pendingDraft, setPendingDraft] = useState(null);
   const [postingJob, setPostingJob] = useState(false);
 
   const dynamicRates = useMemo(() => {
@@ -303,22 +303,33 @@ export default function AddJob() {
       };
     }
 
-    const amountInCents = Math.round(Number(pendingDraft.amountAud) * 100);
+    // Required fields only
+    const start = pendingDraft.payload.startTime;
+    const end = pendingDraft.payload.endTime;
+    let user_id = pendingDraft.payload.user_id;
+    if (typeof user_id !== "number") {
+      user_id = Number(user_id);
+    }
+    const card_holder_name =
+      cardHolderName || savedCard?.card_holder_name || "";
+    let payment_method_id =
+      paymentMethodId || savedCard?.payment_method_id || null;
+    if (
+      typeof payment_method_id === "string" &&
+      !payment_method_id.startsWith("pm_")
+    ) {
+      return {
+        success: false,
+        message: "Invalid payment method ID. Must start with 'pm_'.",
+      };
+    }
 
     const holdBody = {
-      start: pendingDraft.payload.startTime,
-      end: pendingDraft.payload.endTime,
-      site_id: form.site_id || null,
-      user_id: pendingDraft.payload.user_id,
-      card_holder_name: cardHolderName || savedCard?.card_holder_name || "",
-      payment_method_id:
-        paymentMethodId || savedCard?.payment_method_id || null,
-      use_saved_card: Boolean(savedCard),
-      saved_card_index:
-        typeof savedCardIndex === "number" ? savedCardIndex : null,
-      saved_card: savedCard || null,
-      amount: amountInCents,
-      currency: "aud",
+      start,
+      end,
+      user_id,
+      card_holder_name,
+      payment_method_id,
     };
 
     const holdRes = await submitJob("api/payment/hold", holdBody, {
@@ -348,10 +359,6 @@ export default function AddJob() {
     };
   }
 
-  /**
-   * Called by PaymentModal after Stripe confirms the card payment.
-   * Verifies with backend then posts the job.
-   */
   async function handlePaymentSuccess(holdResult) {
     if (!pendingDraft?.payload) {
       toast.error("Missing job draft. Please create the job again.");
@@ -362,10 +369,10 @@ export default function AddJob() {
     setPostingJob(true);
 
     try {
-      const paymentBreakdown =
-        holdResult?.paymentBreakdown || holdResult?.data?.payment_breakdown;
-      const paymentIntentId =
-        paymentBreakdown?.stripe?.payment_intent_id ||
+      // Try to extract payment_intent_id from the new backend response structure
+      let paymentIntentId =
+        holdResult?.data?.payment?.payment_intent_id ||
+        holdResult?.paymentBreakdown?.stripe?.payment_intent_id ||
         holdResult?.data?.payment_intent_id ||
         holdResult?.data?.stripe_payment_intent_id ||
         null;

@@ -2,7 +2,6 @@ export const apiURL = "https://apis.staffoo.com.au/";
 export const STRIPE_PUBLISHABLE_KEY =
   "pk_test_51TBYBwDb535HMVUZHtQiPJGDYYZex0gIGvFWtuKR9FRage5WxqqzkLDvKBUpq4MfPkWhgDDM7z3WZrURpwWFBkbo005rxvV6q9";
 export const REACT_APP_AGORA_APP_ID = "4c98656fc9a34bdb8ad5e34c1b356ef2";
-export const AGORA_APP_CERTIFICATE = "63bec3a697fe43388604a2174a5795bc";
 
 export const TIME_KEYS = [
   "metro_mon_to_fri_day_rate",

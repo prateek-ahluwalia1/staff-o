@@ -1,117 +1,103 @@
-import React, { useState, useEffect, useRef } from "react";
-import AgoraRTC from "agora-rtc-sdk-ng";
+import React, { useEffect, useRef, useState } from "react";
+import { useSelector } from "react-redux";
+import { useAgoraVoice } from "../hooks/useAgoraVoice";
+import { useCallManager } from "../hooks/useCallManager";
 import { REACT_APP_AGORA_APP_ID } from "../utils/exports";
-
-const client = AgoraRTC.createClient({ mode: "rtc", codec: "vp8" });
 
 const WelfareCallCard = ({
   callData = {},
   isIncoming = false,
   onClose = () => {},
 }) => {
-  const [inCall, setInCall] = useState(false);
-  const [isMuted, setIsMuted] = useState(false);
-  const [localAudioTrack, setLocalAudioTrack] = useState(null);
-  const [networkQuality, setNetworkQuality] = useState("Good");
+  const { callStatus, remoteUsers, isMuted, joinCall, leaveCall, toggleMute } =
+    useAgoraVoice();
+  const { acceptIncomingCall } = useCallManager();
+
+  // Get current user id for receiver token fetch
+  const { userdata } = useSelector((state) => state.auth);
+  const currentUserId = userdata?.id ?? userdata?.data?.id;
 
   const joinAttempted = useRef(false);
+  const [isAccepting, setIsAccepting] = useState(false);
 
   const targetName = isIncoming
-    ? callData?.staffName || callData?.callerName
-    : callData?.receiverName;
+    ? callData?.staffName ||
+      callData?.callerName ||
+      callData?.caller?.name ||
+      "Caller"
+    : callData?.receiverName || callData?.receiver?.name || "Receiver";
 
-  const handleJoinCall = async () => {
-    let appId, token, channel, uid;
+  // ── Outgoing caller: join Agora automatically ───────────────
+  // The caller already has their token in callData.agoraConfig
+  const handleOutgoingJoin = async () => {
+    const appId =
+      callData?.agoraConfig?.appId || REACT_APP_AGORA_APP_ID;
+    const channel = callData?.agoraConfig?.channel || callData?.roomName;
+    const token = callData?.agoraConfig?.token;
+    const uid = callData?.agoraConfig?.uid || callData?.uid;
 
-    if (callData?.agoraConfig) {
-      appId = callData.agoraConfig.appId;
-      token = callData.agoraConfig.token;
-      channel = callData.agoraConfig.channel;
-      uid = callData.agoraConfig.uid;
-    } else {
-      appId = REACT_APP_AGORA_APP_ID;
-      token = callData?.token;
-      channel = callData?.roomName;
-      uid = null;
-    }
-
-    if (!appId || !channel) {
-      alert("Missing call configuration. Cannot connect.");
+    if (!appId || !channel || !token) {
+      alert("Missing call configuration. Cannot join.");
       onClose();
       return;
     }
 
     try {
-      await client.join(appId, channel, token, uid);
-      const audioTrack = await AgoraRTC.createMicrophoneAudioTrack();
-      setLocalAudioTrack(audioTrack);
-      await client.publish([audioTrack]);
-      setInCall(true);
+      console.log("[WelfareCallCard] Caller joining Agora:", { channel, uid });
+      await joinCall({ appId, channel, token, uid });
     } catch (error) {
-      console.error("Agora Join Error:", error);
-      alert(
-        `Call failed: ${error?.message || error?.name || "Check microphone permissions."}`,
-      );
+      alert(`Call failed: ${error?.message || error?.name}`);
       onClose();
     }
   };
 
-  const handleLeaveCall = async () => {
-    if (localAudioTrack) {
-      localAudioTrack.stop();
-      localAudioTrack.close();
+  // ── Receiver: fetch their token THEN join Agora ─────────────
+  const handleAccept = async () => {
+    setIsAccepting(true);
+    try {
+      // acceptIncomingCall hits api/agora/token to get the receiver's own token
+      const agoraConfig = await acceptIncomingCall(currentUserId);
+      if (!agoraConfig) {
+        onClose();
+        return;
+      }
+
+      console.log("[WelfareCallCard] Receiver joining Agora:", agoraConfig);
+      await joinCall(agoraConfig);
+    } catch (error) {
+      alert(`Failed to join call: ${error?.message || error?.name}`);
+      onClose();
+    } finally {
+      setIsAccepting(false);
     }
-    await client.leave();
-    setInCall(false);
-    setLocalAudioTrack(null);
-    setIsMuted(false);
+  };
+
+  const handleLeaveCall = async () => {
+    await leaveCall();
     onClose();
   };
 
-  const toggleMic = async () => {
-    if (localAudioTrack) {
-      await localAudioTrack.setMuted(!isMuted);
-      setIsMuted(!isMuted);
-    }
-  };
-
+  // Auto-join for OUTGOING calls only (caller side)
   useEffect(() => {
-    if (!isIncoming && !inCall && !joinAttempted.current) {
+    if (!isIncoming && callStatus === "idle" && !joinAttempted.current) {
       joinAttempted.current = true;
-      handleJoinCall();
+      handleOutgoingJoin();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isIncoming, inCall]);
+  }, [isIncoming, callStatus]);
 
+  // Cleanup if component unmounts mid-call
   useEffect(() => {
-    const handleUserPublished = async (user, mediaType) => {
-      await client.subscribe(user, mediaType);
-      if (mediaType === "audio") {
-        user.audioTrack.play();
-      }
-    };
-
-    const handleNetworkQuality = (stats) => {
-      if (
-        stats.uplinkNetworkQuality >= 4 ||
-        stats.downlinkNetworkQuality >= 4
-      ) {
-        setNetworkQuality("Poor");
-      } else {
-        setNetworkQuality("Good");
-      }
-    };
-
-    client.on("user-published", handleUserPublished);
-    client.on("network-quality", handleNetworkQuality);
-
     return () => {
-      client.off("user-published", handleUserPublished);
-      client.off("network-quality", handleNetworkQuality);
-      if (inCall) handleLeaveCall();
+      if (callStatus === "in-call" || callStatus === "joining") {
+        leaveCall();
+      }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [inCall]);
+  }, [callStatus]);
+
+  const isConnected = callStatus === "in-call";
+  const isJoining = callStatus === "joining" || isAccepting;
 
   return (
     <div
@@ -119,9 +105,10 @@ const WelfareCallCard = ({
       style={{ borderRadius: "20px", width: "350px", overflow: "hidden" }}
     >
       <div className="card-body p-4 text-center">
+        {/* Avatar */}
         <div className="position-relative d-inline-block mb-3">
           <div
-            className="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center"
+            className="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center shadow-sm"
             style={{
               width: "80px",
               height: "80px",
@@ -131,62 +118,85 @@ const WelfareCallCard = ({
           >
             <i className="fa-solid fa-user"></i>
           </div>
+          {/* Pulse ring when ringing */}
+          {!isConnected && (
+            <span
+              style={{
+                position: "absolute",
+                inset: -6,
+                borderRadius: "50%",
+                border: "3px solid #3b82f6",
+                opacity: 0.5,
+                animation: "pulse-ring 1.4s ease-in-out infinite",
+              }}
+            />
+          )}
         </div>
 
-        <h5 className="fw-bold mb-1 text-dark">
-          {targetName || "Unknown User"}
-        </h5>
+        <h5 className="fw-bold mb-1 text-dark">{targetName}</h5>
+
         <p className="text-muted small mb-4">
-          {!inCall
-            ? isIncoming
-              ? "Incoming Call..."
-              : "Dialing..."
-            : "Connected"}
+          {isJoining
+            ? "Connecting to call..."
+            : isConnected
+            ? `Connected • ${remoteUsers.length} other(s) in call`
+            : isIncoming
+            ? "Incoming call..."
+            : "Calling... waiting for answer"}
         </p>
 
-        {!inCall ? (
+        {/* ── Before connected: show Accept / Decline or Cancel ── */}
+        {!isConnected && !isJoining && (
           <div className="d-flex w-100 gap-3 mt-3">
             <button
-              onClick={onClose}
+              onClick={handleLeaveCall}
               className="btn btn-danger flex-grow-1 fw-semibold rounded-pill py-2 shadow-sm"
             >
+              <i className="fa-solid fa-phone-slash me-2"></i>
               {isIncoming ? "Decline" : "Cancel"}
             </button>
             {isIncoming && (
               <button
-                onClick={handleJoinCall}
+                onClick={handleAccept}
                 className="btn btn-success flex-grow-1 fw-semibold rounded-pill py-2 shadow-sm"
               >
-                Accept
+                <i className="fa-solid fa-phone me-2"></i> Accept
               </button>
             )}
           </div>
-        ) : (
-          <div className="d-flex flex-column align-items-center gap-3">
-            <div className="d-flex align-items-center gap-2 mb-2">
-              <span
-                className="badge rounded-pill px-3 py-2 shadow-sm"
-                style={{ backgroundColor: "#22c55e", color: "white" }}
-              >
-                <i className="fa-solid fa-circle-dot me-2"></i> Active
-              </span>
-              {networkQuality === "Poor" && (
-                <span className="badge rounded-pill bg-warning text-dark px-3 py-2">
-                  Weak Connection
-                </span>
-              )}
-            </div>
+        )}
 
+        {/* ── Connecting spinner ── */}
+        {isJoining && (
+          <div className="d-flex justify-content-center mt-3">
+            <div className="spinner-border text-primary" role="status">
+              <span className="visually-hidden">Connecting...</span>
+            </div>
+          </div>
+        )}
+
+        {/* ── In-call controls ── */}
+        {isConnected && (
+          <div className="d-flex flex-column align-items-center gap-3">
+            <span
+              className="badge rounded-pill px-3 py-2 shadow-sm"
+              style={{ backgroundColor: "#22c55e", color: "white" }}
+            >
+              <i className="fa-solid fa-circle-dot me-2"></i> Active
+            </span>
             <div className="d-flex w-100 gap-2 mt-2">
               <button
-                onClick={toggleMic}
-                className={`btn flex-grow-1 fw-semibold rounded-pill py-2 shadow-sm ${isMuted ? "btn-warning text-dark" : "btn-light border"}`}
+                onClick={toggleMute}
+                className={`btn flex-grow-1 fw-semibold rounded-pill py-2 shadow-sm ${
+                  isMuted ? "btn-warning text-dark" : "btn-light border"
+                }`}
               >
                 <i
-                  className={`fa-solid ${isMuted ? "fa-microphone-lines-slash" : "fa-microphone"}`}
+                  className={`fa-solid ${
+                    isMuted ? "fa-microphone-lines-slash" : "fa-microphone"
+                  }`}
                 ></i>
               </button>
-
               <button
                 onClick={handleLeaveCall}
                 className="btn btn-danger flex-grow-1 fw-semibold rounded-pill py-2 shadow-sm"
@@ -197,6 +207,14 @@ const WelfareCallCard = ({
           </div>
         )}
       </div>
+
+      <style>{`
+        @keyframes pulse-ring {
+          0%   { transform: scale(1);   opacity: 0.5; }
+          70%  { transform: scale(1.3); opacity: 0;   }
+          100% { transform: scale(1);   opacity: 0;   }
+        }
+      `}</style>
     </div>
   );
 };

@@ -9,11 +9,9 @@ const CallManagement = () => {
   const [calls, setCalls] = useState([]);
   const [totalPages, setTotalPages] = useState(1);
 
-  // Modal State for New Calls
   const [isNewCallModalOpen, setIsNewCallModalOpen] = useState(false);
   const [selectedUserToCall, setSelectedUserToCall] = useState("");
 
-  // 1. Fetch Call History
   const {
     data: apiResponse,
     loading: callsLoading,
@@ -26,7 +24,6 @@ const CallManagement = () => {
     },
   );
 
-  // 2. Fetch ALL User Types for the "New Call" Dropdown
   const { data: staffRes, loading: staffLoading } = useFetch(
     "api/admin/get-staff?limit=1000",
     { isAuth: true },
@@ -42,9 +39,7 @@ const CallManagement = () => {
 
   const usersLoading = staffLoading || contractorLoading || customerLoading;
 
-  // Combine them all into one flat array and attach a label
   const availableUsers = useMemo(() => {
-    // Extract arrays defensively
     const getList = (res) => {
       if (!res) return [];
       if (Array.isArray(res)) return res;
@@ -66,23 +61,18 @@ const CallManagement = () => {
     return [...staff, ...contractors, ...customers];
   }, [staffRes, contractorRes, customerRes]);
 
-  // 3. Initialize Call Manager Hook
   const { initiateCall, isCalling, isCurrentlyInCall } = useCallManager();
 
-  // 4. Update the Table State (BULLETPROOF PARSING)
   useEffect(() => {
     if (!apiResponse) return;
 
-    // Check all possible locations for the array based on your JSON structure
     let historyArray = [];
     let lastPage = 1;
 
     if (Array.isArray(apiResponse.data)) {
-      // Direct format: { current_page: 1, data: [...] }
       historyArray = apiResponse.data;
       lastPage = apiResponse.last_page || 1;
     } else if (apiResponse.data && Array.isArray(apiResponse.data.data)) {
-      // Nested format: { success: true, data: { current_page: 1, data: [...] } }
       historyArray = apiResponse.data.data;
       lastPage = apiResponse.data.last_page || 1;
     } else if (Array.isArray(apiResponse)) {
@@ -104,7 +94,6 @@ const CallManagement = () => {
     }
   };
 
-  // Triggered when "Start Call" is clicked inside the modal
   const handleStartNewCall = (e) => {
     e.preventDefault();
     if (!selectedUserToCall) return;
@@ -172,7 +161,6 @@ const CallManagement = () => {
 
   return (
     <div className="container mt-4 pb-5">
-      {/* Header Section */}
       <div className="d-flex justify-content-between align-items-end mb-4">
         <div>
           <h2 className="fw-bold text-dark mb-1">Call Management</h2>
@@ -218,7 +206,6 @@ const CallManagement = () => {
         ))}
       </div>
 
-      {/* Error Alert */}
       {callsError && (
         <div className="alert alert-danger rounded-3 shadow-sm border-0 d-flex align-items-center mb-4">
           <i className="fa-solid fa-circle-exclamation me-3"></i>
@@ -228,7 +215,6 @@ const CallManagement = () => {
         </div>
       )}
 
-      {/* Call History Table */}
       <div className="card border-0 shadow-sm rounded-4 overflow-hidden">
         <div className="table-responsive">
           <table

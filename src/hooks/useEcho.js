@@ -9,7 +9,7 @@ export const useEcho = () => {
   const dispatch = useDispatch();
   const { token, userdata } = useSelector((state) => state.auth);
 
-  // Safely extract the current user's ID
+  // Safely extract current user's ID
   const userId = userdata?.id ?? userdata?.data?.id;
 
   useEffect(() => {
@@ -40,44 +40,47 @@ export const useEcho = () => {
     echo
       .private(channelName)
       .listen(eventName, (data) => {
-        console.log("🔔 Event received:", data);
+        console.log("🔔 Echo event received:", data);
 
-        // --- CALL HANDLING LOGIC ---
-        if (data.type === "start_call" && data.roomName) {
-          // Look for IDs either at the root level of the payload or nested inside a 'call' object
-          const eventCallerId =
-            data.caller_id || data.call?.caller_id || data.callerId;
-          const eventReceiverId =
-            data.receiver_id || data.call?.receiver_id || data.receiverId;
+        // ── INCOMING CALL HANDLING ──────────────────────────────────
+        if (data.type === "start_call" && (data.roomName || data.channel_name)) {
+          const callerId =
+            data.caller_id ?? data.call?.caller_id ?? data.callerId;
+          const receiverId =
+            data.receiver_id ?? data.call?.receiver_id ?? data.receiverId;
 
-          // 1. If I am the caller, drop the event immediately. (Prevents dialing yourself)
-          if (eventCallerId && String(eventCallerId) === String(userId)) {
-            console.log(
-              "[Echo] Dropping event: I am the initiator of this call.",
-            );
+          // Drop if I am the one who started this call
+          if (callerId && String(callerId) === String(userId)) {
+            console.log("[Echo] Dropping: I am the caller.");
             return;
           }
 
-          // 2. If it's meant for someone else, drop it. (Double-checking security)
-          if (eventReceiverId && String(eventReceiverId) !== String(userId)) {
-            console.log("[Echo] Dropping event: Not meant for me.");
+          // Drop if this is not meant for me
+          if (receiverId && String(receiverId) !== String(userId)) {
+            console.log("[Echo] Dropping: Not meant for me.");
             return;
           }
 
-          // If we pass the checks above, it's a genuine incoming call meant for us!
+          // Normalise the payload so WelfareCallCard can always find roomName
           dispatch(
             receiveIncomingCall({
-              roomName: data.roomName,
-              staffName: data.staffName || data.callerName || "Incoming Call",
+              roomName: data.roomName || data.channel_name,
+              staffName:
+                data.staffName ||
+                data.callerName ||
+                data.caller?.name ||
+                "Incoming Call",
+              caller_id: callerId,
+              receiver_id: receiverId,
               ...data,
-            }),
+            })
           );
         }
-        // --- CHAT HANDLING LOGIC ---
+        // ── CHAT MESSAGE ───────────────────────────────────────────
         else if (data.message_id && data.message) {
           dispatch(receiveNewMessage(data));
         }
-        // --- GENERAL NOTIFICATIONS ---
+        // ── GENERAL NOTIFICATION ───────────────────────────────────
         else {
           dispatch(addNotification(data));
         }
@@ -95,7 +98,7 @@ export const useEcho = () => {
     };
   }, [token, userId, dispatch]);
 
-  // Clean up Echo instance if user logs out
+  // Destroy Echo when user logs out
   useEffect(() => {
     if (!token) {
       destroyEchoInstance();

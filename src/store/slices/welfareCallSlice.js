@@ -1,9 +1,9 @@
 import { createSlice } from "@reduxjs/toolkit";
 
 const initialState = {
-  incomingCall: null,
-  outgoingCall: null,
-  inCall: false,
+  incomingCall: null, // set by useEcho when a push.notification with type=start_call arrives
+  outgoingCall: null, // set by useCallManager.initiateCall after getting token
+  inCall: false,      // set to true once Agora join succeeds
 };
 
 const welfareCallSlice = createSlice({
@@ -11,11 +11,9 @@ const welfareCallSlice = createSlice({
   initialState,
   reducers: {
     receiveIncomingCall(state, action) {
-      // THE FIX: If we are already making a call, totally ignore the Echo event!
+      // Ignore if we're already in a call or dialling out
       if (state.outgoingCall || state.inCall) {
-        console.warn(
-          "Blocked incoming call echo because we are already dialing.",
-        );
+        console.warn("[welfareCallSlice] Blocked incoming call — already in a session.");
         return;
       }
       state.incomingCall = action.payload;

@@ -2,6 +2,7 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 import { Card } from "../components/Card";
 import leaveimg from "../assets/images/leave.png";
+import callimg from "../assets/images/call.png";
 const WFMTools = () => {
   const navigate = useNavigate();
 
@@ -29,6 +30,16 @@ const WFMTools = () => {
         </div>
 
         {/* Card 2 */}
+        <div className="col-12 col-md-6 col-lg-4">
+          <Card
+            title="Call Management"
+            description="Used to initiate and manage calls with staff members."
+            accent="linear-gradient(135deg,#3498db,#2980b9)"
+            image={callimg}
+            type="call"
+            onClick={() => navigate("/welfare-call")}
+          />
+        </div>
       </div>
     </div>
   );

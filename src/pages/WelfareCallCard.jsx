@@ -1,22 +1,19 @@
 import React, { useState, useEffect } from "react";
 import AgoraRTC from "agora-rtc-sdk-ng";
-// Ensure Bootstrap is imported in your main index.js or App.js
-// import 'bootstrap/dist/css/bootstrap.min.css';
+import { REACT_APP_AGORA_APP_ID } from "../utils/exports";
 
 const client = AgoraRTC.createClient({ mode: "rtc", codec: "vp8" });
 
-const WelfareCallCard = ({ roomName, staffName }) => {
+const WelfareCallCard = ({ roomName, staffName, agoraConfig }) => {
   const [inCall, setInCall] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [localAudioTrack, setLocalAudioTrack] = useState(null);
   const [networkQuality, setNetworkQuality] = useState("Good");
 
-  // Fetch token from Laravel backend
+  // Fetch token from Laravel backend (fallback)
   const fetchToken = async () => {
     try {
-      const response = await fetch(
-        `${process.env.REACT_APP_BACKEND_URL}/api/agora/token?channelName=${roomName}`,
-      );
+      const response = await fetch(`api/agora/token?channelName=${roomName}`);
       const data = await response.json();
       return data.token;
     } catch (error) {
@@ -26,16 +23,26 @@ const WelfareCallCard = ({ roomName, staffName }) => {
   };
 
   const handleJoinCall = async () => {
-    const appId = process.env.REACT_APP_AGORA_APP_ID;
-    const token = await fetchToken();
+    let appId, token, channel, uid;
+    if (agoraConfig) {
+      appId = agoraConfig.appId;
+      token = agoraConfig.token;
+      channel = agoraConfig.channel;
+      uid = agoraConfig.uid;
+    } else {
+      appId = REACT_APP_AGORA_APP_ID;
+      token = await fetchToken();
+      channel = roomName;
+      uid = null;
+    }
 
-    if (!token) {
+    if (!token || !appId || !channel) {
       alert("Could not connect to the server.");
       return;
     }
 
     try {
-      await client.join(appId, roomName, token, null);
+      await client.join(appId, channel, token, uid);
       const audioTrack = await AgoraRTC.createMicrophoneAudioTrack();
       setLocalAudioTrack(audioTrack);
       await client.publish([audioTrack]);

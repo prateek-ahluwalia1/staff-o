@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { addNotification } from "../store/slices/notificationSlice";
-import { receiveNewMessage } from "../store/slices/chatSlice"; // <-- Add this import
+import { receiveNewMessage } from "../store/slices/chatSlice";
 import { getEchoInstance, destroyEchoInstance } from "../echo";
 import { receiveIncomingCall } from "../store/slices/welfareCallSlice";
 
@@ -9,6 +9,7 @@ export const useEcho = () => {
   const dispatch = useDispatch();
   const { token, userdata } = useSelector((state) => state.auth);
 
+  // Safely extract the current user's ID
   const userId = userdata?.id ?? userdata?.data?.id;
 
   useEffect(() => {
@@ -41,18 +42,43 @@ export const useEcho = () => {
       .listen(eventName, (data) => {
         console.log("🔔 Event received:", data);
 
-        // If backend triggers a call event
+        // --- CALL HANDLING LOGIC ---
         if (data.type === "start_call" && data.roomName) {
+          // Look for IDs either at the root level of the payload or nested inside a 'call' object
+          const eventCallerId =
+            data.caller_id || data.call?.caller_id || data.callerId;
+          const eventReceiverId =
+            data.receiver_id || data.call?.receiver_id || data.receiverId;
+
+          // 1. If I am the caller, drop the event immediately. (Prevents dialing yourself)
+          if (eventCallerId && String(eventCallerId) === String(userId)) {
+            console.log(
+              "[Echo] Dropping event: I am the initiator of this call.",
+            );
+            return;
+          }
+
+          // 2. If it's meant for someone else, drop it. (Double-checking security)
+          if (eventReceiverId && String(eventReceiverId) !== String(userId)) {
+            console.log("[Echo] Dropping event: Not meant for me.");
+            return;
+          }
+
+          // If we pass the checks above, it's a genuine incoming call meant for us!
           dispatch(
             receiveIncomingCall({
               roomName: data.roomName,
-              staffName: data.staffName || "Staff Member",
+              staffName: data.staffName || data.callerName || "Incoming Call",
               ...data,
             }),
           );
-        } else if (data.message_id && data.message) {
+        }
+        // --- CHAT HANDLING LOGIC ---
+        else if (data.message_id && data.message) {
           dispatch(receiveNewMessage(data));
-        } else {
+        }
+        // --- GENERAL NOTIFICATIONS ---
+        else {
           dispatch(addNotification(data));
         }
       })
@@ -69,6 +95,7 @@ export const useEcho = () => {
     };
   }, [token, userId, dispatch]);
 
+  // Clean up Echo instance if user logs out
   useEffect(() => {
     if (!token) {
       destroyEchoInstance();

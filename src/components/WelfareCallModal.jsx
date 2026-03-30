@@ -1,15 +1,20 @@
 import React from "react";
 import { useSelector, useDispatch } from "react-redux";
 import WelfareCallCard from "../pages/WelfareCallCard";
-import { clearIncomingCall } from "../store/slices/welfareCallSlice";
+import { clearCallSession } from "../store/slices/welfareCallSlice";
 
 export default function WelfareCallModal() {
   const dispatch = useDispatch();
-  const { incomingCall } = useSelector((state) => state.welfareCall);
+  const { incomingCall, outgoingCall } = useSelector(
+    (state) => state.welfareCall,
+  );
 
-  if (!incomingCall) return null;
+  // If neither exists, don't render anything
+  if (!incomingCall && !outgoingCall) return null;
 
-  // Optionally, you can add a modal overlay here
+  const isIncoming = !!incomingCall;
+  const callData = incomingCall || outgoingCall; // Combines them safely
+
   return (
     <div
       style={{
@@ -18,18 +23,20 @@ export default function WelfareCallModal() {
         left: 0,
         width: "100vw",
         height: "100vh",
-        background: "rgba(0,0,0,0.4)",
+        background: "rgba(0,0,0,0.5)",
+        backdropFilter: "blur(4px)",
         zIndex: 2000,
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
       }}
-      onClick={() => dispatch(clearIncomingCall())}
     >
       <div onClick={(e) => e.stopPropagation()}>
+        {/* MAKE SURE callData IS PASSED HERE */}
         <WelfareCallCard
-          roomName={incomingCall.roomName}
-          staffName={incomingCall.staffName}
+          callData={callData}
+          isIncoming={isIncoming}
+          onClose={() => dispatch(clearCallSession())}
         />
       </div>
     </div>

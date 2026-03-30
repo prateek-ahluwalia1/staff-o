@@ -1,43 +1,43 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import AgoraRTC from "agora-rtc-sdk-ng";
 import { REACT_APP_AGORA_APP_ID } from "../utils/exports";
 
 const client = AgoraRTC.createClient({ mode: "rtc", codec: "vp8" });
 
-const WelfareCallCard = ({ roomName, staffName, agoraConfig }) => {
+const WelfareCallCard = ({
+  callData = {},
+  isIncoming = false,
+  onClose = () => {},
+}) => {
   const [inCall, setInCall] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [localAudioTrack, setLocalAudioTrack] = useState(null);
   const [networkQuality, setNetworkQuality] = useState("Good");
 
-  // Fetch token from Laravel backend (fallback)
-  const fetchToken = async () => {
-    try {
-      const response = await fetch(`api/agora/token?channelName=${roomName}`);
-      const data = await response.json();
-      return data.token;
-    } catch (error) {
-      console.error("Failed to fetch token:", error);
-      return null;
-    }
-  };
+  const joinAttempted = useRef(false);
+
+  const targetName = isIncoming
+    ? callData?.staffName || callData?.callerName
+    : callData?.receiverName;
 
   const handleJoinCall = async () => {
     let appId, token, channel, uid;
-    if (agoraConfig) {
-      appId = agoraConfig.appId;
-      token = agoraConfig.token;
-      channel = agoraConfig.channel;
-      uid = agoraConfig.uid;
+
+    if (callData?.agoraConfig) {
+      appId = callData.agoraConfig.appId;
+      token = callData.agoraConfig.token;
+      channel = callData.agoraConfig.channel;
+      uid = callData.agoraConfig.uid;
     } else {
       appId = REACT_APP_AGORA_APP_ID;
-      token = await fetchToken();
-      channel = roomName;
+      token = callData?.token;
+      channel = callData?.roomName;
       uid = null;
     }
 
-    if (!token || !appId || !channel) {
-      alert("Could not connect to the server.");
+    if (!appId || !channel) {
+      alert("Missing call configuration. Cannot connect.");
+      onClose();
       return;
     }
 
@@ -48,8 +48,11 @@ const WelfareCallCard = ({ roomName, staffName, agoraConfig }) => {
       await client.publish([audioTrack]);
       setInCall(true);
     } catch (error) {
-      console.error("Error joining:", error);
-      alert("Microphone access denied or connection failed.");
+      console.error("Agora Join Error:", error);
+      alert(
+        `Call failed: ${error?.message || error?.name || "Check microphone permissions."}`,
+      );
+      onClose();
     }
   };
 
@@ -62,6 +65,7 @@ const WelfareCallCard = ({ roomName, staffName, agoraConfig }) => {
     setInCall(false);
     setLocalAudioTrack(null);
     setIsMuted(false);
+    onClose();
   };
 
   const toggleMic = async () => {
@@ -70,6 +74,14 @@ const WelfareCallCard = ({ roomName, staffName, agoraConfig }) => {
       setIsMuted(!isMuted);
     }
   };
+
+  useEffect(() => {
+    if (!isIncoming && !inCall && !joinAttempted.current) {
+      joinAttempted.current = true;
+      handleJoinCall();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isIncoming, inCall]);
 
   useEffect(() => {
     const handleUserPublished = async (user, mediaType) => {
@@ -102,38 +114,61 @@ const WelfareCallCard = ({ roomName, staffName, agoraConfig }) => {
   }, [inCall]);
 
   return (
-    // Styled to match the white cards with soft shadows in your dashboard
     <div
-      className="card border-0 shadow-sm"
-      style={{ borderRadius: "16px", maxWidth: "400px" }}
+      className="card border-0 shadow-lg"
+      style={{ borderRadius: "20px", width: "350px", overflow: "hidden" }}
     >
       <div className="card-body p-4 text-center">
-        {/* Header Section */}
-        <h5 className="fw-bold mb-1" style={{ color: "#2C323F" }}>
-          Welfare Call
+        <div className="position-relative d-inline-block mb-3">
+          <div
+            className="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center"
+            style={{
+              width: "80px",
+              height: "80px",
+              fontSize: "2rem",
+              margin: "0 auto",
+            }}
+          >
+            <i className="fa-solid fa-user"></i>
+          </div>
+        </div>
+
+        <h5 className="fw-bold mb-1 text-dark">
+          {targetName || "Unknown User"}
         </h5>
         <p className="text-muted small mb-4">
-          Calling: <strong>{staffName || "Staff Member"}</strong>
+          {!inCall
+            ? isIncoming
+              ? "Incoming Call..."
+              : "Dialing..."
+            : "Connected"}
         </p>
 
         {!inCall ? (
-          // Matches your "Add Leave +" blue pill button style
-          <button
-            onClick={handleJoinCall}
-            className="btn btn-primary w-100 fw-semibold rounded-pill py-2"
-            style={{ backgroundColor: "#3b82f6", border: "none" }}
-          >
-            Start Call
-          </button>
+          <div className="d-flex w-100 gap-3 mt-3">
+            <button
+              onClick={onClose}
+              className="btn btn-danger flex-grow-1 fw-semibold rounded-pill py-2 shadow-sm"
+            >
+              {isIncoming ? "Decline" : "Cancel"}
+            </button>
+            {isIncoming && (
+              <button
+                onClick={handleJoinCall}
+                className="btn btn-success flex-grow-1 fw-semibold rounded-pill py-2 shadow-sm"
+              >
+                Accept
+              </button>
+            )}
+          </div>
         ) : (
           <div className="d-flex flex-column align-items-center gap-3">
-            {/* Status Indicator matching your table's "Active" pill */}
             <div className="d-flex align-items-center gap-2 mb-2">
               <span
-                className="badge rounded-pill px-3 py-2"
+                className="badge rounded-pill px-3 py-2 shadow-sm"
                 style={{ backgroundColor: "#22c55e", color: "white" }}
               >
-                ● Active Call
+                <i className="fa-solid fa-circle-dot me-2"></i> Active
               </span>
               {networkQuality === "Poor" && (
                 <span className="badge rounded-pill bg-warning text-dark px-3 py-2">
@@ -142,20 +177,21 @@ const WelfareCallCard = ({ roomName, staffName, agoraConfig }) => {
               )}
             </div>
 
-            {/* Call Controls */}
-            <div className="d-flex w-100 gap-2">
+            <div className="d-flex w-100 gap-2 mt-2">
               <button
                 onClick={toggleMic}
-                className={`btn flex-grow-1 fw-semibold rounded-pill py-2 ${isMuted ? "btn-warning text-dark" : "btn-light border"}`}
+                className={`btn flex-grow-1 fw-semibold rounded-pill py-2 shadow-sm ${isMuted ? "btn-warning text-dark" : "btn-light border"}`}
               >
-                {isMuted ? "Unmute Mic" : "Mute Mic"}
+                <i
+                  className={`fa-solid ${isMuted ? "fa-microphone-lines-slash" : "fa-microphone"}`}
+                ></i>
               </button>
 
               <button
                 onClick={handleLeaveCall}
-                className="btn btn-danger flex-grow-1 fw-semibold rounded-pill py-2"
+                className="btn btn-danger flex-grow-1 fw-semibold rounded-pill py-2 shadow-sm"
               >
-                End Call
+                <i className="fa-solid fa-phone-slash me-2"></i> End
               </button>
             </div>
           </div>

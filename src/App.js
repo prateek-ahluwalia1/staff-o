@@ -46,7 +46,7 @@ const TimeSheet = lazy(() => import("./pages/TimeSheet"));
 const JobTracker = lazy(() => import("./pages/JobTracker"));
 const WFMTools = lazy(() => import("./pages/wfm-tools"));
 const LeaveManagement = lazy(() => import("./pages/LeaveManagement"));
-const WelfareCallCard = lazy(() => import("./pages/WelfareCallCard"));
+const CallManagement = lazy(() => import("./pages/callManagement"));
 
 function App() {
   useEcho();
@@ -179,7 +179,7 @@ function App() {
               <Route path="/rates/charge" element={<RatesList />} />
               <Route path="/rates/pay" element={<RatesList />} />
               <Route path="/wfm-tools" element={<WFMTools />} />
-              <Route path="/welfare-call" element={<WelfareCallCard />} />
+              <Route path="/welfare-call" element={<CallManagement />} />
               <Route
                 path="/leave"
                 element={

@@ -3,7 +3,7 @@ import authReducer from "./slices/authSlice";
 import notificationReducer from "./slices/notificationSlice";
 import chatReducer from "./slices/chatSlice";
 import socketMiddleware from "./middleware/socketMiddleware";
-
+import welfareCallReducer from "./slices/welfareCallSlice";
 import { persistReducer, persistStore } from "redux-persist";
 import storage from "redux-persist/lib/storage";
 import {
@@ -14,7 +14,6 @@ import {
   PURGE,
   REGISTER,
 } from "redux-persist";
-import welfareCallReducer from "./slices/welfareCallSlice";
 
 const authPersistConfig = { key: "auth", storage };
 const persistedAuthReducer = persistReducer(authPersistConfig, authReducer);

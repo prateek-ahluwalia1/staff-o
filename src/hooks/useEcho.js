@@ -3,6 +3,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { addNotification } from "../store/slices/notificationSlice";
 import { receiveNewMessage } from "../store/slices/chatSlice"; // <-- Add this import
 import { getEchoInstance, destroyEchoInstance } from "../echo";
+import { receiveIncomingCall } from "../store/slices/welfareCallSlice";
 
 export const useEcho = () => {
   const dispatch = useDispatch();
@@ -40,12 +41,18 @@ export const useEcho = () => {
       .listen(eventName, (data) => {
         console.log("🔔 Event received:", data);
 
-        // --- NEW LOGIC HERE ---
-        // Check if the payload is a Chat Message
-        if (data.message_id && data.message) {
+        // If backend triggers a call event
+        if (data.type === "start_call" && data.roomName) {
+          dispatch(
+            receiveIncomingCall({
+              roomName: data.roomName,
+              staffName: data.staffName || "Staff Member",
+              ...data,
+            }),
+          );
+        } else if (data.message_id && data.message) {
           dispatch(receiveNewMessage(data));
         } else {
-          // Otherwise, it's a regular system notification
           dispatch(addNotification(data));
         }
       })

@@ -8,6 +8,7 @@ import {
 import ProtectedRoute from "./components/ProtectedRoute";
 import Loader from "./components/Loader";
 import NotificationToast from "./components/NotificationToast";
+import WelfareCallModal from "./components/WelfareCallModal";
 import { useEcho } from "./hooks/useEcho";
 
 const Login = lazy(() => import("./auth/login"));
@@ -53,6 +54,7 @@ function App() {
     <Router>
       <div className="App">
         <NotificationToast />
+        <WelfareCallModal />
         <Suspense fallback={<Loader fullPage />}>
           <Routes>
             {/* Root redirect - goes to home for public access or login for unauthenticated flow */}

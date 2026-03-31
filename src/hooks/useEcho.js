@@ -42,26 +42,24 @@ export const useEcho = () => {
       .listen(eventName, (data) => {
         console.log("🔔 Echo event received:", data);
 
-        // ── INCOMING CALL HANDLING ──────────────────────────────────
-        if (data.type === "start_call" && (data.roomName || data.channel_name)) {
+        if (
+          data.type === "start_call" &&
+          (data.roomName || data.channel_name)
+        ) {
           const callerId =
             data.caller_id ?? data.call?.caller_id ?? data.callerId;
           const receiverId =
             data.receiver_id ?? data.call?.receiver_id ?? data.receiverId;
 
-          // Drop if I am the one who started this call
           if (callerId && String(callerId) === String(userId)) {
             console.log("[Echo] Dropping: I am the caller.");
             return;
           }
-
-          // Drop if this is not meant for me
           if (receiverId && String(receiverId) !== String(userId)) {
             console.log("[Echo] Dropping: Not meant for me.");
             return;
           }
 
-          // Normalise the payload so WelfareCallCard can always find roomName
           dispatch(
             receiveIncomingCall({
               roomName: data.roomName || data.channel_name,
@@ -73,15 +71,11 @@ export const useEcho = () => {
               caller_id: callerId,
               receiver_id: receiverId,
               ...data,
-            })
+            }),
           );
-        }
-        // ── CHAT MESSAGE ───────────────────────────────────────────
-        else if (data.message_id && data.message) {
+        } else if (data.message_id && data.message) {
           dispatch(receiveNewMessage(data));
-        }
-        // ── GENERAL NOTIFICATION ───────────────────────────────────
-        else {
+        } else {
           dispatch(addNotification(data));
         }
       })
@@ -98,7 +92,6 @@ export const useEcho = () => {
     };
   }, [token, userId, dispatch]);
 
-  // Destroy Echo when user logs out
   useEffect(() => {
     if (!token) {
       destroyEchoInstance();

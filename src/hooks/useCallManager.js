@@ -13,7 +13,7 @@ export const useCallManager = () => {
   const { submit, loading: isCalling } = useSubmit({ isAuth: true });
 
   const { incomingCall, outgoingCall, inCall } = useSelector(
-    (state) => state.welfareCall
+    (state) => state.welfareCall,
   );
   const isCurrentlyInCall = inCall || !!incomingCall || !!outgoingCall;
 
@@ -37,6 +37,17 @@ export const useCallManager = () => {
 
       console.log("[CallManager] Initiating call, payload:", payload);
 
+      // 1. Tell backend to log the call and ring the receiver via Echo
+      const initRes = await submit("api/calls/initiate", payload, {
+        method: "POST",
+      });
+
+      if (!initRes || initRes.error) {
+        toast.error(initRes?.error || "Failed to ring the receiver.");
+        return;
+      }
+
+      // 2. Fetch the Agora token for the caller
       const res = await submit("api/agora/token", payload, { method: "POST" });
 
       if (!res || res.error) {
@@ -44,6 +55,7 @@ export const useCallManager = () => {
         return;
       }
 
+      // 3. Set the active outgoing call in Redux so the UI pops up
       if (res.token && res.channel_name) {
         dispatch(
           setOutgoingCall({
@@ -56,7 +68,7 @@ export const useCallManager = () => {
               token: res.token,
               uid: res.uid,
             },
-          })
+          }),
         );
       } else {
         toast.error("API did not return a valid token.");
@@ -68,8 +80,6 @@ export const useCallManager = () => {
   };
 
   // ── Receiver: accept an incoming call ───────────────────────
-  // When the receiver clicks "Accept", we must fetch THEIR Agora token
-  // using the channel/room name that was broadcast to them via Echo.
   const acceptIncomingCall = async (currentUserId) => {
     if (!incomingCall) {
       toast.error("No incoming call to accept.");
@@ -85,12 +95,15 @@ export const useCallManager = () => {
 
       const uid = currentUserId || Math.floor(Math.random() * 100000);
 
-      console.log("[CallManager] Fetching receiver token for channel:", channelName);
+      console.log(
+        "[CallManager] Fetching receiver token for channel:",
+        channelName,
+      );
 
       const res = await submit(
         "api/agora/token",
         { channel_name: channelName, uid },
-        { method: "POST" }
+        { method: "POST" },
       );
 
       if (!res || res.error || !res.token) {

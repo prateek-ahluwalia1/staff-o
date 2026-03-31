@@ -15,10 +15,22 @@ export function useAgoraVoice() {
 
   useEffect(() => {
     // Remote user starts publishing (joins and unmutes)
+    // Remote user starts publishing (joins and unmutes)
     const handleUserPublished = async (user, mediaType) => {
+      console.log(`[Agora] Remote user ${user.uid} published ${mediaType}`);
+
       await client.subscribe(user, mediaType);
+      console.log(`[Agora] Subscribed to ${user.uid}'s ${mediaType}`);
+
       if (mediaType === "audio") {
-        user.audioTrack?.play();
+        console.log(`[Agora] Attempting to play audio for ${user.uid}...`);
+
+        // Sometimes browsers require a split-second delay before playing
+        setTimeout(() => {
+          user.audioTrack?.play();
+          console.log(`[Agora] Audio play triggered for ${user.uid}`);
+        }, 100);
+
         setRemoteUsers((prev) => {
           const exists = prev.find((u) => u.uid === user.uid);
           return exists ? prev : [...prev, user];

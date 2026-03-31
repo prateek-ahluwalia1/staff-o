@@ -1,10 +1,16 @@
-import React, { lazy, Suspense } from "react";
+import React, { lazy, Suspense, useEffect, useCallback } from "react";
 import {
   BrowserRouter as Router,
   Routes,
   Route,
   Navigate,
+  useNavigate,
 } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
+import { setToken, setUser } from "./store/slices/authSlice";
+import { toast } from "react-toastify";
+import { apiURL } from "./utils/exports";
+
 import ProtectedRoute from "./components/ProtectedRoute";
 import Loader from "./components/Loader";
 import NotificationToast from "./components/NotificationToast";
@@ -48,167 +54,205 @@ const WFMTools = lazy(() => import("./pages/wfm-tools"));
 const LeaveManagement = lazy(() => import("./pages/LeaveManagement"));
 const CallManagement = lazy(() => import("./pages/callManagement"));
 
-function App() {
+function AppContent() {
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const { token, userdata: user } = useSelector((state) => state.auth);
+
   useEcho();
 
+  const handleLogout = useCallback(() => {
+    dispatch(setToken({ token: null }));
+    dispatch(setUser({ userdata: null }));
+    toast.error("Session expired. Please log in again.");
+    navigate("/login", { replace: true });
+  }, [dispatch, navigate]);
+
+  useEffect(() => {
+    const fetchLatestUserProfile = async () => {
+      if (!token) return;
+      const userId = user?.id || user?.data?.id;
+      if (!userId) return;
+
+      try {
+        const profileRes = await fetch(`${apiURL}api/user-edit/${userId}`, {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (profileRes.status === 401) {
+          handleLogout();
+          return;
+        }
+
+        if (profileRes.ok) {
+          const profileJson = await profileRes.json();
+          dispatch(setUser({ userdata: profileJson?.data || profileJson }));
+        }
+      } catch (error) {
+        console.error("Session verification failed", error);
+      }
+    };
+
+    fetchLatestUserProfile();
+  }, [token, dispatch, handleLogout, user?.data?.id, user?.id]);
+
+  return (
+    <>
+      <NotificationToast />
+      <WelfareCallModal />
+      <Suspense fallback={<Loader fullPage />}>
+        <Routes>
+          {/* Root redirect */}
+          <Route path="/" element={<Navigate to="/home" replace />} />
+
+          {/* ===== PUBLIC ROUTES ===== */}
+          <Route
+            path="/home"
+            element={
+              <ProtectedRoute public>
+                <Home />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/latest-jobs"
+            element={
+              <ProtectedRoute public>
+                <LatestJobs />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/public-profile"
+            element={
+              <ProtectedRoute public>
+                <PublicProfilePreview />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/contact-us"
+            element={
+              <ProtectedRoute public>
+                <ContactUs />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/faqs"
+            element={
+              <ProtectedRoute public>
+                <Faqs />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/about-us"
+            element={
+              <ProtectedRoute public>
+                <AboutUs />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/terms-of-use"
+            element={
+              <ProtectedRoute public>
+                <TermsOfUse />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/privacy-policy"
+            element={
+              <ProtectedRoute public>
+                <PrivacyPolicy />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* ===== AUTHENTICATION ROUTES ===== */}
+          <Route
+            path="/login"
+            element={
+              <ProtectedRoute guestOnly>
+                <Login />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/register"
+            element={
+              <ProtectedRoute guestOnly>
+                <Register />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* ===== PROTECTED ROUTES ===== */}
+          <Route
+            element={
+              <ProtectedRoute>
+                <DashboardLayout />
+              </ProtectedRoute>
+            }
+          >
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/edit-profile" element={<EditProfile />} />
+            <Route path="/add-job" element={<AddJob />} />
+            <Route
+              path="/my-job-applications"
+              element={<MyJobApplications />}
+            />
+            <Route path="/my-favourite-jobs" element={<MyFavouriteJobs />} />
+            <Route path="/job-alerts" element={<JobAlerts />} />
+            <Route path="/roster" element={<RosterPage />} />
+            <Route path="/manage-users" element={<ManageUsers />} />
+            <Route path="/manage-staff" element={<ManageStaff />} />
+            <Route path="/my-followings" element={<MyFollowings />} />
+            <Route path="/user-packages" element={<UserPackages />} />
+            <Route path="/payment-history" element={<PaymentHistory />} />
+            <Route path="/pay-charge-rate" element={<PayChargeRate />} />
+            <Route path="/rates/charge" element={<RatesList />} />
+            <Route path="/rates/pay" element={<RatesList />} />
+            <Route path="/wfm-tools" element={<WFMTools />} />
+            <Route path="/welfare-call" element={<CallManagement />} />
+            <Route
+              path="/leave"
+              element={
+                <ProtectedRoute allowedRoles={["admin", "staff", "contractor"]}>
+                  <LeaveManagement />
+                </ProtectedRoute>
+              }
+            />
+            <Route path="/reports" element={<Reports />} />
+            <Route path="/timesheet" element={<TimeSheet />} />
+            <Route path="/job-tracker" element={<JobTracker />} />
+            <Route path="/accounts/invoice" element={<Invoice />} />
+            <Route path="/chat" element={<ChatPage />} />
+            <Route path="/chat/:category" element={<ChatRoom />} />
+            <Route path="/notifications" element={<AllNotifications />} />
+          </Route>
+
+          {/* ===== CATCH-ALL ===== */}
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </Suspense>
+    </>
+  );
+}
+
+export default function App() {
   return (
     <Router>
       <div className="App">
-        <NotificationToast />
-        <WelfareCallModal />
-        <Suspense fallback={<Loader fullPage />}>
-          <Routes>
-            {/* Root redirect - goes to home for public access or login for unauthenticated flow */}
-            <Route path="/" element={<Navigate to="/home" replace />} />
-
-            {/* ===== PUBLIC ROUTES - Accessible without authentication ===== */}
-            <Route
-              path="/home"
-              element={
-                <ProtectedRoute public>
-                  <Home />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/latest-jobs"
-              element={
-                <ProtectedRoute public>
-                  <LatestJobs />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/public-profile"
-              element={
-                <ProtectedRoute public>
-                  <PublicProfilePreview />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/contact-us"
-              element={
-                <ProtectedRoute public>
-                  <ContactUs />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/faqs"
-              element={
-                <ProtectedRoute public>
-                  <Faqs />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/about-us"
-              element={
-                <ProtectedRoute public>
-                  <AboutUs />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/terms-of-use"
-              element={
-                <ProtectedRoute public>
-                  <TermsOfUse />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/privacy-policy"
-              element={
-                <ProtectedRoute public>
-                  <PrivacyPolicy />
-                </ProtectedRoute>
-              }
-            />
-
-            {/* ===== AUTHENTICATION ROUTES - Guest-only (redirects authenticated users) ===== */}
-            <Route
-              path="/login"
-              element={
-                <ProtectedRoute guestOnly>
-                  <Login />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/register"
-              element={
-                <ProtectedRoute guestOnly>
-                  <Register />
-                </ProtectedRoute>
-              }
-            />
-
-            {/* ===== PROTECTED ROUTES - Requires authentication ===== */}
-            <Route
-              element={
-                <ProtectedRoute>
-                  <DashboardLayout />
-                </ProtectedRoute>
-              }
-            >
-              {/* Dashboard & Profile */}
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/edit-profile" element={<EditProfile />} />
-
-              {/* Job Management */}
-              <Route path="/add-job" element={<AddJob />} />
-              <Route
-                path="/my-job-applications"
-                element={<MyJobApplications />}
-              />
-              <Route path="/my-favourite-jobs" element={<MyFavouriteJobs />} />
-              <Route path="/job-alerts" element={<JobAlerts />} />
-
-              {/* User & Staff Management */}
-              <Route path="/roster" element={<RosterPage />} />
-              <Route path="/manage-users" element={<ManageUsers />} />
-              <Route path="/manage-staff" element={<ManageStaff />} />
-              <Route path="/my-followings" element={<MyFollowings />} />
-
-              {/* Packages & Payments */}
-              <Route path="/user-packages" element={<UserPackages />} />
-              <Route path="/payment-history" element={<PaymentHistory />} />
-              <Route path="/pay-charge-rate" element={<PayChargeRate />} />
-              <Route path="/rates/charge" element={<RatesList />} />
-              <Route path="/rates/pay" element={<RatesList />} />
-              <Route path="/wfm-tools" element={<WFMTools />} />
-              <Route path="/welfare-call" element={<CallManagement />} />
-              <Route
-                path="/leave"
-                element={
-                  <ProtectedRoute
-                    allowedRoles={["admin", "staff", "contractor"]}
-                  >
-                    <LeaveManagement />
-                  </ProtectedRoute>
-                }
-              />
-              <Route path="/reports" element={<Reports />} />
-              <Route path="/timesheet" element={<TimeSheet />} />
-              <Route path="/job-tracker" element={<JobTracker />} />
-
-              {/* Financial & Accounting */}
-              <Route path="/accounts/invoice" element={<Invoice />} />
-
-              {/* Communications */}
-              <Route path="/chat" element={<ChatPage />} />
-              <Route path="/chat/:category" element={<ChatRoom />} />
-              <Route path="/notifications" element={<AllNotifications />} />
-            </Route>
-
-            {/* ===== CATCH-ALL - 404 handler ===== */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </Suspense>
+        <AppContent />
       </div>
     </Router>
   );
 }
-export default App;

@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useSelector } from "react-redux";
 import { apiURL } from "../utils/exports";
-import { toast } from "react-toastify";
 
 const useFetch = (endpoint, { isAuth = false, immediate = true } = {}) => {
   const token = useSelector((state) => state.auth.token);
@@ -34,14 +33,14 @@ const useFetch = (endpoint, { isAuth = false, immediate = true } = {}) => {
         const json = await res.json();
 
         if (!res.ok) {
-          toast.error(json.errors || json.message || "Something went wrong");
+          // thtoast.error(json.errors || json.message || "Something went wrong");
           return;
         }
 
         setData(json);
       } catch (err) {
-        const message = err.message || "Network error";
-        toast.error(message);
+        // const message = err.message || "Network error";
+        // toast.error(message);
       } finally {
         setLoading(false);
       }

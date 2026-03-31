@@ -10,6 +10,7 @@ import {
 } from "../store/slices/welfareCallSlice";
 import { toast } from "react-toastify";
 
+// Helper function to play sound
 const playAlertSound = (type) => {
   const audioFile =
     type === "chat" ? "/sounds/chat.mp3" : "/sounds/notification.mp3";
@@ -20,6 +21,7 @@ const playAlertSound = (type) => {
 export const useEcho = () => {
   const dispatch = useDispatch();
   const { token, userdata } = useSelector((state) => state.auth);
+
   const userId = userdata?.id ?? userdata?.data?.id;
 
   // 🔥 Keep track of recently ended calls so we don't ghost ring
@@ -58,6 +60,8 @@ export const useEcho = () => {
 
         // ── 1. DEFENSIVE SHIELD: INTERCEPT HANGUPS FIRST ────────────────
         if (
+          data.type === "rejected" || // 🔥 Matches your exact backend payload!
+          data.type === "ended" ||
           data.type === "end_call" ||
           data.type === "call_ended" ||
           data.type === "call_rejected" ||
@@ -68,7 +72,9 @@ export const useEcho = () => {
           console.log("[Echo] Call ended/rejected. Clearing session.");
 
           // Add this call ID to our graveyard so it can NEVER ring again
-          if (incomingCallId) deadCallsRef.current.add(String(incomingCallId));
+          if (incomingCallId) {
+            deadCallsRef.current.add(String(incomingCallId));
+          }
 
           dispatch(clearCallSession());
           dispatch(setInCall(false));
@@ -137,11 +143,25 @@ export const useEcho = () => {
         console.error("[Echo] Channel subscription error:", error);
       });
 
+    // Also listen to specific endpoints just in case
+    echo
+      .private(`user.${userId}`)
+      .listen(".call.ended", () => {
+        dispatch(clearCallSession());
+        dispatch(setInCall(false));
+      })
+      .listen(".call.rejected", () => {
+        dispatch(clearCallSession());
+        dispatch(setInCall(false));
+      });
+
     return () => {
       pusherConn.unbind("connected", onConnected);
       pusherConn.unbind("failed", onFailed);
       pusherConn.unbind("error", onError);
       echo.private(channelName).stopListening(eventName);
+      echo.private(`user.${userId}`).stopListening(".call.ended");
+      echo.private(`user.${userId}`).stopListening(".call.rejected");
     };
   }, [token, userId, dispatch]);
 

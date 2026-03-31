@@ -1,16 +1,29 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { addNotification } from "../store/slices/notificationSlice";
 import { receiveNewMessage } from "../store/slices/chatSlice";
 import { getEchoInstance, destroyEchoInstance } from "../echo";
-import { receiveIncomingCall } from "../store/slices/welfareCallSlice";
+import {
+  receiveIncomingCall,
+  clearCallSession,
+  setInCall,
+} from "../store/slices/welfareCallSlice";
+import { toast } from "react-toastify";
+
+const playAlertSound = (type) => {
+  const audioFile =
+    type === "chat" ? "/sounds/chat.mp3" : "/sounds/notification.mp3";
+  const audio = new Audio(audioFile);
+  audio.play().catch((err) => console.warn("Audio autoplay blocked:", err));
+};
 
 export const useEcho = () => {
   const dispatch = useDispatch();
   const { token, userdata } = useSelector((state) => state.auth);
-
-  // Safely extract current user's ID
   const userId = userdata?.id ?? userdata?.data?.id;
+
+  // 🔥 Keep track of recently ended calls so we don't ghost ring
+  const deadCallsRef = useRef(new Set());
 
   useEffect(() => {
     if (!token || !userId) return;
@@ -35,30 +48,56 @@ export const useEcho = () => {
     const channelName = `notifications.${userId}`;
     const eventName = ".push.notification";
 
-    console.log(`[Echo] Subscribing to private channel: ${channelName}`);
-
     echo
       .private(channelName)
       .listen(eventName, (data) => {
         console.log("🔔 Echo event received:", data);
 
+        const callStatus = data.call?.status || data.status;
+        const incomingCallId = data.call_id || data.call?.id;
+
+        // ── 1. DEFENSIVE SHIELD: INTERCEPT HANGUPS FIRST ────────────────
+        if (
+          data.type === "end_call" ||
+          data.type === "call_ended" ||
+          data.type === "call_rejected" ||
+          callStatus === "ended" ||
+          callStatus === "rejected" ||
+          callStatus === "missed"
+        ) {
+          console.log("[Echo] Call ended/rejected. Clearing session.");
+
+          // Add this call ID to our graveyard so it can NEVER ring again
+          if (incomingCallId) deadCallsRef.current.add(String(incomingCallId));
+
+          dispatch(clearCallSession());
+          dispatch(setInCall(false));
+          return;
+        }
+
+        // ── 2. INCOMING CALL HANDLING ───────────────────────────────────
         if (
           data.type === "start_call" &&
           (data.roomName || data.channel_name)
         ) {
+          // 🔥 GHOST RING PREVENTION: If this call ID is in our graveyard, IGNORE IT!
+          if (
+            incomingCallId &&
+            deadCallsRef.current.has(String(incomingCallId))
+          ) {
+            console.warn(
+              "[Echo] Blocked ghost ring for a call that already ended.",
+            );
+            return;
+          }
+
           const callerId =
             data.caller_id ?? data.call?.caller_id ?? data.callerId;
           const receiverId =
             data.receiver_id ?? data.call?.receiver_id ?? data.receiverId;
 
-          if (callerId && String(callerId) === String(userId)) {
-            console.log("[Echo] Dropping: I am the caller.");
-            return;
-          }
-          if (receiverId && String(receiverId) !== String(userId)) {
-            console.log("[Echo] Dropping: Not meant for me.");
-            return;
-          }
+          if (callerId && String(callerId) === String(userId)) return;
+          if (receiverId && String(receiverId) !== String(userId)) return;
 
           dispatch(
             receiveIncomingCall({
@@ -70,12 +109,27 @@ export const useEcho = () => {
                 "Incoming Call",
               caller_id: callerId,
               receiver_id: receiverId,
+              call_id: incomingCallId,
               ...data,
             }),
           );
-        } else if (data.message_id && data.message) {
+        }
+
+        // ── 3. CHAT MESSAGE HANDLING ────────────────────────────────────
+        else if (data.message_id && data.message) {
+          playAlertSound("chat");
+          const senderName = data.sender_name || data.user?.name || "Someone";
+          toast.info(`New message from ${senderName}`, { icon: "💬" });
           dispatch(receiveNewMessage(data));
-        } else {
+        }
+
+        // ── 4. GENERAL NOTIFICATION ─────────────────────────────────────
+        else {
+          playAlertSound("notification");
+          toast.success(
+            data.title || data.message || "You have a new notification!",
+            { icon: "🔔" },
+          );
           dispatch(addNotification(data));
         }
       })
@@ -88,13 +142,10 @@ export const useEcho = () => {
       pusherConn.unbind("failed", onFailed);
       pusherConn.unbind("error", onError);
       echo.private(channelName).stopListening(eventName);
-      console.log(`[Echo] Unsubscribed from ${channelName}`);
     };
   }, [token, userId, dispatch]);
 
   useEffect(() => {
-    if (!token) {
-      destroyEchoInstance();
-    }
+    if (!token) destroyEchoInstance();
   }, [token]);
 };

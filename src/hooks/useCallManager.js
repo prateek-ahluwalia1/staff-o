@@ -48,7 +48,7 @@ export const useCallManager = () => {
 
       const actualChannelName = initRes.call.channel_name;
 
-      // 2. 🔥 STRICT TOKEN ENDPOINT: Fetch token for CALLER
+      // 2. Fetch token for CALLER
       const tokenPayload = {
         channel_name: actualChannelName,
         uid: Math.floor(Math.random() * 100000),
@@ -96,21 +96,25 @@ export const useCallManager = () => {
         incomingCall.call_id || incomingCall.callId || incomingCall.id;
 
       // 1. Tell backend we accepted the call
-      const acceptRes = await submit(`api/calls/accept/${activeId}`);
+      const acceptRes = await submit(
+        `api/calls/accept/${activeId}`,
+        { call_id: activeId },
+        { method: "POST" },
+      );
 
       if (!acceptRes || !acceptRes.success) {
         toast.error(acceptRes?.error || "Failed to accept call on backend.");
         return null;
       }
 
-      // We must use the exact channel name provided by the backend to join the caller
+      // Use the exact channel name provided by the backend to join the caller
       const channelName =
         acceptRes?.call?.channel_name ||
         incomingCall.roomName ||
         incomingCall.channel_name;
       const uid = currentUserId || Math.floor(Math.random() * 100000);
 
-      // 2. 🔥 STRICT TOKEN ENDPOINT: Fetch token for RECEIVER
+      // 2. Fetch token for RECEIVER
       const tokenRes = await submit(
         "api/agora/token",
         { channel_name: channelName, uid },
@@ -124,7 +128,7 @@ export const useCallManager = () => {
         return null;
       }
 
-      // 3. Return the config back to WelfareCallCard so Agora can connect
+      // 3. Return the config back to WelfareCallCard
       const agoraConfig = {
         appId: tokenRes.app_id || REACT_APP_AGORA_APP_ID,
         channel: channelName,
@@ -140,8 +144,7 @@ export const useCallManager = () => {
     }
   };
 
-  const endCall = async () => {
-    // Safely grab the ID whether it's incoming or outgoing
+  const endCall = async (isReject = false) => {
     const activeCallId =
       incomingCall?.call_id ||
       incomingCall?.callId ||
@@ -149,23 +152,22 @@ export const useCallManager = () => {
       outgoingCall?.callId ||
       outgoingCall?.id;
 
-    if (activeCallId) {
-      try {
-        console.log(
-          "[CallManager] Telling backend to end call ID:",
-          activeCallId,
-        );
-        await submit(`api/calls/end/${activeCallId}`);
-      } catch (e) {
-        console.error("Failed to notify backend of call end", e);
-      }
-    }
-
-    // Immediately clear local UI state
     dispatch(clearCallSession());
     dispatch(setInCall(false));
-  };
 
+    if (activeCallId) {
+      try {
+        const endpoint = isReject
+          ? `api/calls/reject/${activeCallId}`
+          : `api/calls/end/${activeCallId}`;
+        submit(endpoint).catch((e) =>
+          console.error("Failed to notify backend of call end", e),
+        );
+      } catch (e) {
+        console.error("Error ending call", e);
+      }
+    }
+  };
   return {
     initiateCall,
     acceptIncomingCall,

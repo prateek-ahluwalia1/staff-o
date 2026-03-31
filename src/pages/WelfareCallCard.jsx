@@ -12,7 +12,7 @@ export default function WelfareCallCard({ callData, isIncoming, onClose }) {
   const [isAccepting, setIsAccepting] = useState(false);
   const [hasConnected, setHasConnected] = useState(false);
 
-  // 🔥 1. CALLER AUTO-JOIN
+  // 1. CALLER AUTO-JOIN: Join the room immediately to wait for the receiver
   useEffect(() => {
     if (!isIncoming && callData?.agoraConfig && !inCall) {
       joinCall(callData.agoraConfig).catch((err) => {
@@ -21,38 +21,38 @@ export default function WelfareCallCard({ callData, isIncoming, onClose }) {
     }
   }, [isIncoming, callData, inCall, joinCall]);
 
-  // 🔥 2. BULLETPROOF RINGTONE LOGIC
+  // 2. RINGTONE LOGIC
   const ringtoneRef = useRef(null);
 
   useEffect(() => {
-    // Play only if incoming, not in call, and haven't clicked accept
+    // Play only if it's an incoming call, we aren't connected yet, and haven't clicked accept
     if (isIncoming && !inCall && !isAccepting) {
-      ringtoneRef.current = new Audio("/assets/call.mp3"); // Ensure this matches your public folder path!
+      ringtoneRef.current = new Audio("/assets/call.mp3"); // Verify this path matches your public folder
       ringtoneRef.current.loop = true;
       ringtoneRef.current
         .play()
         .catch((e) => console.warn("Autoplay blocked by browser", e));
     }
 
-    // Cleanup: Stop audio immediately when state changes
+    // Cleanup: Stop audio immediately when component unmounts or state changes
     return () => {
       if (ringtoneRef.current) {
         ringtoneRef.current.pause();
-        ringtoneRef.current.src = ""; // Force clear
+        ringtoneRef.current.src = "";
         ringtoneRef.current = null;
       }
     };
   }, [isIncoming, inCall, isAccepting]);
 
-  // 🔥 3. AUTO-HANGUP WHEN OTHER PERSON LEAVES AGORA
-  // Track when the call officially connects (both users present)
+  // 3. AUTO-HANGUP LOGIC
+  // Track when the call officially connects (both users are in the Agora room)
   useEffect(() => {
     if (inCall && remoteUsers.length > 0) {
       setHasConnected(true);
     }
   }, [inCall, remoteUsers]);
 
-  // If we WERE connected, and now remoteUsers is 0, they hung up! Close our modal.
+  // If we WERE connected, and now remoteUsers drops to 0, they hung up!
   useEffect(() => {
     if (hasConnected && remoteUsers.length === 0) {
       console.log("Remote user left Agora. Ending call automatically.");
@@ -72,8 +72,10 @@ export default function WelfareCallCard({ callData, isIncoming, onClose }) {
   const handleAccept = async () => {
     stopRingtone();
     setIsAccepting(true);
+
     const currentUserId = callData?.receiver_id || callData?.uid;
     const config = await acceptIncomingCall(currentUserId);
+
     if (config) {
       await joinCall(config);
     }
@@ -83,7 +85,11 @@ export default function WelfareCallCard({ callData, isIncoming, onClose }) {
   const handleEndCall = () => {
     stopRingtone();
     leaveCall();
-    endCall();
+
+    // Determine if we are actively rejecting an incoming call or just ending an active one
+    const isReject = isIncoming && !inCall;
+
+    endCall(isReject);
     onClose();
   };
 

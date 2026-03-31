@@ -140,21 +140,22 @@ export const useCallManager = () => {
     }
   };
 
-  // ── Caller/Receiver: End Call ───────────────────────────────
   const endCall = async () => {
+    // Safely grab the ID whether it's incoming or outgoing
     const activeCallId =
       incomingCall?.call_id ||
       incomingCall?.callId ||
       incomingCall?.id ||
-      outgoingCall?.callId;
+      outgoingCall?.callId ||
+      outgoingCall?.id;
 
     if (activeCallId) {
       try {
-        await submit(
-          "api/calls/end",
-          { call_id: activeCallId },
-          { method: "POST" },
+        console.log(
+          "[CallManager] Telling backend to end call ID:",
+          activeCallId,
         );
+        await submit(`api/calls/end/${activeCallId}`);
       } catch (e) {
         console.error("Failed to notify backend of call end", e);
       }

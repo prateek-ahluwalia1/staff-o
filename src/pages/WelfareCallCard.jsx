@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useSelector } from "react-redux";
 import { useAgoraVoice } from "../hooks/useAgoraVoice";
 import { useCallManager } from "../hooks/useCallManager";
@@ -10,8 +10,9 @@ export default function WelfareCallCard({ callData, isIncoming, onClose }) {
   const { acceptIncomingCall, endCall } = useCallManager();
 
   const [isAccepting, setIsAccepting] = useState(false);
+  const [hasConnected, setHasConnected] = useState(false);
 
-  // 🔥 CALLER AUTO-JOIN: If this is an outgoing call, join the room immediately to wait
+  // 🔥 1. CALLER AUTO-JOIN
   useEffect(() => {
     if (!isIncoming && callData?.agoraConfig && !inCall) {
       joinCall(callData.agoraConfig).catch((err) => {
@@ -20,11 +21,58 @@ export default function WelfareCallCard({ callData, isIncoming, onClose }) {
     }
   }, [isIncoming, callData, inCall, joinCall]);
 
-  // Handle Receiver Accepting
+  // 🔥 2. BULLETPROOF RINGTONE LOGIC
+  const ringtoneRef = useRef(null);
+
+  useEffect(() => {
+    // Play only if incoming, not in call, and haven't clicked accept
+    if (isIncoming && !inCall && !isAccepting) {
+      ringtoneRef.current = new Audio("/assets/call.mp3"); // Ensure this matches your public folder path!
+      ringtoneRef.current.loop = true;
+      ringtoneRef.current
+        .play()
+        .catch((e) => console.warn("Autoplay blocked by browser", e));
+    }
+
+    // Cleanup: Stop audio immediately when state changes
+    return () => {
+      if (ringtoneRef.current) {
+        ringtoneRef.current.pause();
+        ringtoneRef.current.src = ""; // Force clear
+        ringtoneRef.current = null;
+      }
+    };
+  }, [isIncoming, inCall, isAccepting]);
+
+  // 🔥 3. AUTO-HANGUP WHEN OTHER PERSON LEAVES AGORA
+  // Track when the call officially connects (both users present)
+  useEffect(() => {
+    if (inCall && remoteUsers.length > 0) {
+      setHasConnected(true);
+    }
+  }, [inCall, remoteUsers]);
+
+  // If we WERE connected, and now remoteUsers is 0, they hung up! Close our modal.
+  useEffect(() => {
+    if (hasConnected && remoteUsers.length === 0) {
+      console.log("Remote user left Agora. Ending call automatically.");
+      handleEndCall();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [remoteUsers, hasConnected]);
+
+  // ── Actions ──────────────────────────────────────────────
+  const stopRingtone = () => {
+    if (ringtoneRef.current) {
+      ringtoneRef.current.pause();
+      ringtoneRef.current = null;
+    }
+  };
+
   const handleAccept = async () => {
+    stopRingtone();
     setIsAccepting(true);
     const currentUserId = callData?.receiver_id || callData?.uid;
-
     const config = await acceptIncomingCall(currentUserId);
     if (config) {
       await joinCall(config);
@@ -32,18 +80,17 @@ export default function WelfareCallCard({ callData, isIncoming, onClose }) {
     setIsAccepting(false);
   };
 
-  // Handle Ending/Declining
   const handleEndCall = () => {
+    stopRingtone();
     leaveCall();
     endCall();
     onClose();
   };
 
   // ──────────────────────────────────────────────────────────
-  // STATE 1: ACTIVE CALL UI (Or Caller waiting in the room)
+  // STATE 1: ACTIVE CALL UI
   // ──────────────────────────────────────────────────────────
   if (inCall) {
-    // If you are the caller and no one else is in the room yet, show "Ringing"
     const isWaiting = !isIncoming && remoteUsers.length === 0;
 
     return (
@@ -77,10 +124,9 @@ export default function WelfareCallCard({ callData, isIncoming, onClose }) {
           >
             <i
               className={`fa-solid ${isMuted ? "fa-microphone-slash" : "fa-microphone"} me-2`}
-            ></i>
+            ></i>{" "}
             {isMuted ? "Unmute" : "Mute"}
           </button>
-
           <button
             className="btn btn-danger rounded-pill px-4"
             onClick={handleEndCall}
@@ -93,7 +139,7 @@ export default function WelfareCallCard({ callData, isIncoming, onClose }) {
   }
 
   // ──────────────────────────────────────────────────────────
-  // STATE 2: OUTGOING CALL UI (Dialing phase before Agora connects)
+  // STATE 2: OUTGOING CALL UI
   // ──────────────────────────────────────────────────────────
   if (!isIncoming) {
     return (
@@ -127,7 +173,7 @@ export default function WelfareCallCard({ callData, isIncoming, onClose }) {
   }
 
   // ──────────────────────────────────────────────────────────
-  // STATE 3: INCOMING CALL UI (Receiver sees this)
+  // STATE 3: INCOMING CALL UI
   // ──────────────────────────────────────────────────────────
   return (
     <div

@@ -16,7 +16,6 @@ const CallManagement = () => {
     data: apiResponse,
     loading: callsLoading,
     error: callsError,
-    refetch: refetchCalls,
   } = useFetch(
     `api/calls/history?page=${page}&status=${activeFilter !== "all" ? activeFilter : ""}`,
     {
@@ -169,12 +168,6 @@ const CallManagement = () => {
           </p>
         </div>
         <div className="d-flex gap-2">
-          <button
-            className="btn btn-light border shadow-sm rounded-3 px-3 py-2 fw-bold"
-            onClick={refetchCalls}
-          >
-            <i className="fa-solid fa-arrows-rotate me-2"></i> Refresh Logs
-          </button>
           <button
             className="btn btn-primary shadow-sm rounded-3 px-4 py-2 fw-bold"
             onClick={() => setIsNewCallModalOpen(true)}

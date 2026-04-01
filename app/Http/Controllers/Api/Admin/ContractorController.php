@@ -124,6 +124,10 @@ class ContractorController extends Controller
             'coordinates' => $data['coordinates'] ?? null,
         ]);
 
+        
+        $user->staffo_id = 'STAFO' . $user->id;
+        $user->save();
+
         // Create contractor record
         $contractor = Contractor::create([
             'user_id' => $user->id,

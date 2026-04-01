@@ -80,6 +80,9 @@ class AdminStaffController extends Controller
             'is_active' => 0,
         ]);
 
+        $user->staffo_id = 'STAFO' . $user->id;
+        $user->save();
+        
         $profileImagePath = null;
         if ($request->hasFile('profile_image')) {
             $profileImagePath = $request->file('profile_image')->store('staff-profiles', 'public');

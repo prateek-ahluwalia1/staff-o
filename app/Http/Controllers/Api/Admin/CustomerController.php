@@ -115,6 +115,9 @@ class CustomerController extends Controller
             'coordinates' => $data['coordinates'] ?? null,
         ]);
 
+        $user->staffo_id = 'STAFO' . $user->id;
+        $user->save();
+
         // Create customer record
         $customer = Customer::create([
             'user_id' => $user->id,

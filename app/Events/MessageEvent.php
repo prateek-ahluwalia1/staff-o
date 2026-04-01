@@ -20,11 +20,19 @@ class MessageEvent implements ShouldBroadcast
         $this->message = $message->load('sender');
     }
 
+    // public function broadcastOn()
+    // {
+    //     return new PrivateChannel('chat.' . $this->message->receiver_id);
+    // }
     public function broadcastOn()
     {
-        return new PrivateChannel('chat.' . $this->message->receiver_id);
+        return new PrivateChannel('notifications.' . $this->message->receiver_id);
     }
 
+ public function broadcastAs(): string
+    {
+        return 'push.notification';
+    }
     public function broadcastWith()
     {
         return [

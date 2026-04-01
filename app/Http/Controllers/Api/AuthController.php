@@ -47,23 +47,15 @@ class AuthController extends Controller
             'last_seen' => now()
         ]);
 
+        
+        $user->staffo_id = 'STAFO' . $user->id;
+        $user->save();
+
         Customer::create([
             'user_id' => $user->id,
             'phone' => $data['phone'] ?? null,
             'company_name' => $data['company_name'] ?? null,
         ]);
-
-        // $document_categories = DocumentCategory::where('document_category', 'customer_document')->first();
-
-        // foreach (json_decode($document_categories->document_type) as $key => $value) {  
-
-        //     $guard_documents = new Document();
-        //     $guard_documents->user_id = $user->id;
-        //     $guard_documents->document_category = ($document_categories->document_category != '' ? $document_categories->document_category : 'other');
-        //     $guard_documents->document_type = $key;
-        //     $guard_documents->document_name = $value;
-        //     $guard_documents->save();
-        // }
 
         return response()->json([
             'token' => $user->createToken('api')->plainTextToken,
@@ -99,6 +91,9 @@ class AuthController extends Controller
             'is_online' => false,
             'last_seen' => now()
         ]);
+
+        $user->staffo_id = 'STAFO' . $user->id;
+        $user->save();
 
         Contractor::create([
             'user_id' => $user->id,
@@ -164,7 +159,7 @@ class AuthController extends Controller
             'email' => 'required|email|unique:users',
             'password' => 'required|confirmed|min:6',
             'address' => 'nullable|string',
-            'profile_image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048', // Optional: if uploading image
+            'profile_image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'gender' => 'nullable|in:male,female,other',
             'city' => 'nullable|string',
             'state' => 'nullable|string',
@@ -193,6 +188,9 @@ class AuthController extends Controller
             'is_online' => false,
             'last_seen' => now()
         ]);
+
+        $user->staffo_id = 'STAFO' . $user->id;
+        $user->save();
 
         $profileImagePath = null;
         if ($request->hasFile('profile_image')) {

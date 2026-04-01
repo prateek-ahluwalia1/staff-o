@@ -37,21 +37,21 @@ class CallController extends Controller
             return response()->json(['error' => 'User is offline'], 400);
         }
 
-        if ($this->agoraService->isUserInCall($caller->id)) {
-            return response()->json(['error' => 'You are already in a call'], 400);
-        }
+        // if ($this->agoraService->isUserInCall($caller->id)) {
+        //     return response()->json(['error' => 'You are already in a call'], 400);
+        // }
 
-        if ($this->agoraService->isUserInCall($receiver->id)) {
-            return response()->json(['error' => 'User is already in a call'], 400);
-        }
+        // if ($this->agoraService->isUserInCall($receiver->id)) {
+        //     return response()->json(['error' => 'User is already in a call'], 400);
+        // }
 
         $call = $this->agoraService->createCall($caller->id, $receiver->id);
         $tokenData = $this->agoraService->generateRtcToken(
             $call->channel_name, 
             $caller->agora_uid ?? $caller->id
         );
-
-        broadcast(new CallEvent($call, 'initiated'));
+        
+        broadcast(new CallEvent($call, 'start_call'));
 
         return response()->json([
             'success' => true,
@@ -78,7 +78,7 @@ class CallController extends Controller
             Auth::user()->agora_uid ?? Auth::id()
         );
 
-        broadcast(new CallEvent($call, 'accepted'));
+        // broadcast(new CallEvent($call, 'accepted'));
 
         return response()->json([
             'success' => true,
@@ -111,7 +111,7 @@ class CallController extends Controller
         }
 
         $call = $this->agoraService->updateCallStatus($callId, 'ended');
-        broadcast(new CallEvent($call, 'ended'));
+        broadcast(new CallEvent($call, 'call_ended'));
 
         return response()->json([
             'success' => true,

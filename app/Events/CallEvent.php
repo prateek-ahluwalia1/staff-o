@@ -22,20 +22,34 @@ class CallEvent implements ShouldBroadcast
         $this->call = $call;
         $this->action = $action;
     }
+ 
+    // public function broadcastOn()
+    // {
+    //     return new PrivateChannel('notifications.' . $this->call->receiver_id);
+    // }
 
     public function broadcastOn()
     {
-        return new PrivateChannel('user.' . $this->call->receiver_id);
+        // Send to both caller and receiver
+        return [
+            new PrivateChannel('notifications.' . $this->call->receiver_id),
+            new PrivateChannel('notifications.' . $this->call->caller_id)
+        ];
+    }
+
+ public function broadcastAs(): string
+    {
+        return 'push.notification';
     }
 
     public function broadcastWith()
     {
         return [
+            'type' => $this->action,
             'call_id' => $this->call->id,
             'caller_id' => $this->call->caller_id,
             'caller_name' => $this->call->caller->name,
             'channel_name' => $this->call->channel_name,
-            'action' => $this->action,
             'status' => $this->call->status,
             'started_at' => $this->call->started_at->toDateTimeString()
         ];

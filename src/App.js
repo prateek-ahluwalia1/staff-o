@@ -57,7 +57,7 @@ const CallManagement = lazy(() => import("./pages/callManagement"));
 function AppContent() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { token, userdata: user } = useSelector((state) => state.auth);
+  const { token, user } = useSelector((state) => state.auth);
 
   useEcho();
 
@@ -91,7 +91,12 @@ function AppContent() {
 
         if (profileRes.ok) {
           const profileJson = await profileRes.json();
-          dispatch(setUser({ userdata: profileJson?.data || profileJson }));
+          dispatch(
+            setUser({
+              userdata:
+                profileJson?.data || profileJson?.data?.user || profileJson,
+            }),
+          );
         }
       } catch (error) {
         console.error("Session verification failed", error);

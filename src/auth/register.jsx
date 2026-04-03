@@ -7,6 +7,7 @@ import { toast } from "react-toastify";
 import { useGoogleLogin } from "@react-oauth/google";
 import Header from "../components/header";
 import { apiURL } from "../utils/exports";
+import { normalizeAuthResponse, extractUserId } from "../utils/authResponseNormalizer";
 
 export default function Register() {
   const navigate = useNavigate();
@@ -60,7 +61,6 @@ export default function Register() {
     password_confirmation: "",
     company_name: "",
     phone: "",
-    city: "",
   });
 
   // Customer state
@@ -69,7 +69,6 @@ export default function Register() {
     email: "",
     password: "",
     password_confirmation: "",
-    city: "",
     phone: "",
   });
 
@@ -80,7 +79,6 @@ export default function Register() {
     password_confirmation: "",
     company_name: "",
     registration_number: "",
-    city: "",
   });
 
   const handleStaffChange = (e) =>
@@ -115,11 +113,18 @@ export default function Register() {
   };
 
   const handleSuccess = async (res, successMessage) => {
-    if (res.token) {
-      dispatch(setToken({ token: res.token }));
+    const normalized = normalizeAuthResponse(res);
+
+    if (!normalized || !normalized.token) {
+      toast.error(res.message || "Registration failed. Please try again.");
+      return;
+    }
+
+    if (normalized.token) {
+      dispatch(setToken({ token: normalized.token }));
       const latestProfile = await fetchLatestUserProfile(
-        res.token,
-        res.data.user,
+        normalized.token,
+        normalized.user,
       );
       dispatch(setUser({ userdata: latestProfile }));
       toast.success(successMessage);
@@ -149,11 +154,13 @@ export default function Register() {
 
         if (!res) return;
 
-        if (res.token) {
-          dispatch(setToken({ token: res.token }));
+        const normalized = normalizeAuthResponse(res);
+
+        if (normalized && normalized.token) {
+          dispatch(setToken({ token: normalized.token }));
           const latestProfile = await fetchLatestUserProfile(
-            res.token,
-            res.data.user || res.user,
+            normalized.token,
+            normalized.user,
           );
           dispatch(setUser({ userdata: latestProfile }));
           const formattedType =
@@ -253,7 +260,7 @@ export default function Register() {
                     data-bs-target="#registerCandidate"
                     type="button"
                     role="tab"
-                    style={{ fontSize: "12px", fontWeight: "500" }}
+                    style={{ fontSize: "12px", fontWeight: "700" }}
                     onClick={() => setUserType("contractor")}
                   >
                     Sub Contractor
@@ -278,7 +285,7 @@ export default function Register() {
                             name="name"
                             value={staffForm.name}
                             onChange={handleStaffChange}
-                            placeholder="John Doe"
+                            placeholder="Name"
                             required
                           />
                         </div>
@@ -290,7 +297,7 @@ export default function Register() {
                             name="company_name"
                             value={staffForm.company_name}
                             onChange={handleStaffChange}
-                            placeholder="Acme Studios"
+                            placeholder="Company Name"
                           />
                         </div>
                         <div className="col-sm-12">
@@ -301,7 +308,7 @@ export default function Register() {
                             name="email"
                             value={staffForm.email}
                             onChange={handleStaffChange}
-                            placeholder="name@email.com"
+                            placeholder="Email address"
                             required
                           />
                         </div>
@@ -337,18 +344,7 @@ export default function Register() {
                             name="phone"
                             value={staffForm.phone}
                             onChange={handleStaffChange}
-                            placeholder="+1 234 567 890"
-                          />
-                        </div>
-                        <div className="col-sm-6">
-                          <label className="form-label">City</label>
-                          <input
-                            type="text"
-                            className="form-control"
-                            name="city"
-                            value={staffForm.city}
-                            onChange={handleStaffChange}
-                            placeholder="New York"
+                            placeholder="Phone Number"
                           />
                         </div>
                       </div>
@@ -378,7 +374,7 @@ export default function Register() {
                             name="name"
                             value={customerForm.name}
                             onChange={handleCustomerChange}
-                            placeholder="John Doe"
+                            placeholder="Name"
                             required
                           />
                         </div>
@@ -390,7 +386,7 @@ export default function Register() {
                             name="email"
                             value={customerForm.email}
                             onChange={handleCustomerChange}
-                            placeholder="name@email.com"
+                            placeholder="Email address"
                             required
                           />
                         </div>
@@ -419,17 +415,6 @@ export default function Register() {
                           />
                         </div>
                         <div className="col-sm-6">
-                          <label className="form-label">City</label>
-                          <input
-                            type="text"
-                            className="form-control"
-                            name="city"
-                            value={customerForm.city}
-                            onChange={handleCustomerChange}
-                            placeholder="New York"
-                          />
-                        </div>
-                        <div className="col-sm-6">
                           <label className="form-label">Phone</label>
                           <input
                             type="tel"
@@ -437,7 +422,7 @@ export default function Register() {
                             name="phone"
                             value={customerForm.phone}
                             onChange={handleCustomerChange}
-                            placeholder="+1 234 567 890"
+                            placeholder="Phone Number"
                           />
                         </div>
                       </div>
@@ -470,7 +455,7 @@ export default function Register() {
                             name="name"
                             value={subContractorForm.name}
                             onChange={handleSubContractorChange}
-                            placeholder="Jenkins"
+                            placeholder="Name"
                             required
                           />
                         </div>
@@ -482,7 +467,7 @@ export default function Register() {
                             name="company_name"
                             value={subContractorForm.company_name}
                             onChange={handleSubContractorChange}
-                            placeholder="Acme Studios"
+                            placeholder="Company Name"
                           />
                         </div>
                         <div className="col-sm-12">
@@ -493,7 +478,7 @@ export default function Register() {
                             name="email"
                             value={subContractorForm.email}
                             onChange={handleSubContractorChange}
-                            placeholder="name@email.com"
+                            placeholder="Email address"
                             required
                           />
                         </div>
@@ -531,18 +516,7 @@ export default function Register() {
                             name="registration_number"
                             value={subContractorForm.registration_number}
                             onChange={handleSubContractorChange}
-                            placeholder="REG-123456"
-                          />
-                        </div>
-                        <div className="col-sm-6">
-                          <label className="form-label">City</label>
-                          <input
-                            type="text"
-                            className="form-control"
-                            name="city"
-                            value={subContractorForm.city}
-                            onChange={handleSubContractorChange}
-                            placeholder="New York"
+                            placeholder="Registration Number"
                           />
                         </div>
                       </div>

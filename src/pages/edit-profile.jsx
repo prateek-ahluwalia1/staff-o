@@ -1245,6 +1245,31 @@ export default function EditProfile() {
             <option value="Casual Contract Form">Casual Contract Form</option>
           </select>
 
+          <div className="mb-3">
+            <label className="form-label fw-semibold">Document Number</label>
+            <input
+              type="text"
+              className="form-control"
+              placeholder="e.g. ABC123456"
+              name="document_no"
+              value={docForm.document_no}
+              onChange={handleDocFormChange}
+              required
+            />
+          </div>
+
+          <div className="mb-3">
+            <label className="form-label fw-semibold">Expiry Date</label>
+            <input
+              type="date"
+              className="form-control"
+              name="document_expiry"
+              value={docForm.document_expiry}
+              onChange={handleDocFormChange}
+              required
+            />
+          </div>
+
           <div
             className="text-center mb-3 position-relative"
             style={{ minHeight: "150px" }}

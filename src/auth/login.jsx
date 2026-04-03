@@ -6,6 +6,7 @@ import useSubmit from "../hooks/useSubmit";
 import { toast } from "react-toastify";
 import { useGoogleLogin } from "@react-oauth/google";
 import Header from "../components/header";
+import { normalizeAuthResponse } from "../utils/authResponseNormalizer";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -27,9 +28,11 @@ export default function Login() {
     const res = await submit("api/login", { email, password });
     if (!res) return;
 
-    if (res.token) {
-      dispatch(setToken({ token: res.token }));
-      dispatch(setUser({ userdata: res.user }));
+    const normalized = normalizeAuthResponse(res);
+
+    if (normalized && normalized.token) {
+      dispatch(setToken({ token: normalized.token }));
+      dispatch(setUser({ userdata: normalized.user }));
 
       toast.success("Login successful!");
       const redirectTo = location.state?.from?.pathname || "/edit-profile";
@@ -57,9 +60,11 @@ export default function Login() {
 
         if (!res) return;
 
-        if (res.token) {
-          dispatch(setToken({ token: res.token }));
-          dispatch(setUser({ userdata: res.user }));
+        const normalized = normalizeAuthResponse(res);
+
+        if (normalized && normalized.token) {
+          dispatch(setToken({ token: normalized.token }));
+          dispatch(setUser({ userdata: normalized.user }));
 
           toast.success("Google Login successful!");
           const redirectTo = location.state?.from?.pathname || "/edit-profile";

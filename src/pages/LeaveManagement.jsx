@@ -259,6 +259,19 @@ const LeaveManagement = () => {
   const canShowStaffSelector = isContractor || isAdmin;
   const canManageLeaveActions = isAdmin || isContractor;
 
+  if (!isAdmin) {
+    return (
+      <div className="container-fluid p-4">
+        <div className="text-center">
+          <h3 className="text-danger fw-bold mb-3">Access Denied</h3>
+          <p className="text-muted">
+            Only administrators can access Leave Management.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="leave-management-container p-4">
       {/* Header */}

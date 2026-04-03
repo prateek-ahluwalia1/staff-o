@@ -557,7 +557,7 @@ h6 {
 }
 
 .main-navbar {
-    padding: 18px 0px;
+    padding: 18px 100px;
     background: #ffffff;
 }
 
@@ -5706,7 +5706,6 @@ blockquote:after {
     list-style: none;
 }
 
-.footerWrap .quicklinks li {}
 
 .footerWrap .quicklinks li a {
     display: block;
@@ -6388,7 +6387,7 @@ Large Mobile Screen
 }
 
 .footer-modern .footer-main {
-    padding: 70px 100px;
+    padding: 100px;
     border-bottom: 1px solid rgba(148, 163, 184, 0.12);
 }
 

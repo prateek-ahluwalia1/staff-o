@@ -31,6 +31,16 @@ export const normalizeAuthResponse = (response) => {
     user = response.data;
   }
 
+  // Ensure user object has both id formats for compatibility
+  if (user && !user.id && user.data?.id) {
+    user.id = user.data.id;
+  }
+
+  // Log inconsistencies for debugging
+  if (user && !user.id && !user.data?.id) {
+    console.warn("User object missing ID in all expected locations:", user);
+  }
+
   return {
     token,
     user,
@@ -39,8 +49,20 @@ export const normalizeAuthResponse = (response) => {
 
 /**
  * Extracts the user ID from various response formats
+ * Handles both flat and nested structures
  */
 export const extractUserId = (userData) => {
   if (!userData) return null;
-  return userData.data?.id || userData.id;
+
+  // Try multiple possible locations
+  return userData.data?.id || userData.id || userData.user?.id;
+};
+
+/**
+ * Safely get user type from various response formats
+ */
+export const getUserType = (userData) => {
+  if (!userData) return null;
+
+  return userData.data?.user_type || userData.user_type;
 };

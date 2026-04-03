@@ -8,10 +8,18 @@ let echoInstance = null;
 const socketMiddleware = (store) => (next) => (action) => {
   const result = next(action);
   const state = store.getState();
-  const { token, user } = state.auth;
+  const { token, userdata } = state.auth;
 
-  // Initialize connection if token exists and no instance is running
-  if (token && user && !echoInstance) {
+  // Extract user ID safely from different data structures
+  const extractUserId = (user) => {
+    if (!user) return null;
+    return user.data?.id || user.id;
+  };
+
+  const userId = extractUserId(userdata);
+
+  // Initialize connection if token and userId exist and no instance is running
+  if (token && userdata && userId && !echoInstance) {
     window.Pusher = Pusher;
 
     echoInstance = new Echo({
@@ -34,21 +42,24 @@ const socketMiddleware = (store) => (next) => (action) => {
           })
             .then((res) => res.json())
             .then((data) => callback(false, data))
-            .catch((err) => callback(true, err));
+            .catch((err) => {
+              console.error("Socket authorization failed:", err);
+              callback(true, err);
+            });
         },
       }),
     });
 
     // Listener 1: Laravel Database Notifications
     echoInstance
-      .private(`App.Models.User.${user.id}`)
+      .private(`App.Models.User.${userId}`)
       .notification((notification) => {
         store.dispatch(addNotification(notification));
       });
 
     // Listener 2: Live Chat Messages (Future-ready)
     echoInstance
-      .private(`User.Chat.${user.id}`)
+      .private(`User.Chat.${userId}`)
       .listen("MessageSent", (data) => {
         store.dispatch(addMessage(data.message));
       });

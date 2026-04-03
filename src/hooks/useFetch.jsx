@@ -33,13 +33,17 @@ const useFetch = (endpoint, { isAuth = false, immediate = true } = {}) => {
         const json = await res.json();
 
         if (!res.ok) {
-          // thtoast.error(json.errors || json.message || "Something went wrong");
+          console.error("Fetch error response:", json);
+          // Uncomment to show error toast to users:
+          // toast.error(json.errors || json.message || "Something went wrong");
           return;
         }
 
         setData(json);
       } catch (err) {
-        // const message = err.message || "Network error";
+        const message = err.message || "Network error";
+        console.error("Fetch request failed:", message);
+        // Uncomment to show error toast to users:
         // toast.error(message);
       } finally {
         setLoading(false);

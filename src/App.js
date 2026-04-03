@@ -58,18 +58,32 @@ const CallManagement = lazy(() => import("./pages/callManagement"));
 function AppContent() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { token, user } = useSelector((state) => state.auth);
+  const { token, userdata } = useSelector((state) => state.auth);
+  const isInitialMount = React.useRef(true);
 
   useEcho();
 
   useEffect(() => {
-    const fetchLatestUserProfile = async () => {
-      if (!token) {
-        dispatch(logOut());
+    // Only verify session on initial mount, not on every token change
+    if (!isInitialMount.current) return;
+    isInitialMount.current = false;
+
+    const verifySession = async () => {
+      if (!token || !userdata) {
+        if (token) {
+          // Token exists but no user data, clear it
+          dispatch(logOut());
+        }
         return;
       }
-      const userId = user?.id || user?.data?.id;
-      if (!userId) return;
+
+      const userId = userdata?.data?.id || userdata?.id;
+      if (!userId) {
+        dispatch(logOut());
+        toast.error("Invalid user session. Please log in again.");
+        navigate("/login", { replace: true });
+        return;
+      }
 
       try {
         const profileRes = await fetch(`${apiURL}api/user-edit/${userId}`, {
@@ -84,29 +98,32 @@ function AppContent() {
         if (profileRes.status === 401) {
           dispatch(logOut());
           toast.error("Session expired. Please log in again.");
-          navigate("/login");
+          navigate("/login", { replace: true });
           return;
         }
 
-        if (profileRes.ok) {
-          const profileJson = await profileRes.json();
-          dispatch(
-            setUser({
-              userdata:
-                profileJson?.data || profileJson?.data?.user || profileJson,
-            }),
-          );
+        if (!profileRes.ok) {
+          throw new Error(`Session verification failed: ${profileRes.status}`);
         }
+
+        const profileJson = await profileRes.json();
+        dispatch(
+          setUser({
+            userdata:
+              profileJson?.data || profileJson?.data?.user || profileJson,
+          }),
+        );
       } catch (error) {
+        console.error("Session verification failed:", error);
         dispatch(logOut());
         toast.error("Session verification failed. Please log in again.");
-        navigate("/login");
-        console.error("Session verification failed", error);
+        navigate("/login", { replace: true });
       }
     };
 
-    fetchLatestUserProfile();
-  }, [token, dispatch, user?.data?.id, user?.id, navigate]);
+    verifySession();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token, userdata, dispatch, navigate]); // useRef guard prevents unnecessary re-runs despite dependencies
 
   return (
     <>

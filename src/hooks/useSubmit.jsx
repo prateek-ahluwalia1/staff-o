@@ -40,15 +40,21 @@ const useSubmit = ({ isAuth = false } = {}) => {
         const json = await res.json();
 
         if (!res.ok) {
-          toast.error(json.errors || json.message || "Something went wrong");
-          return;
+          const errorMsg =
+            json.errors || json.message || "Something went wrong";
+          console.error("Submit API error:", errorMsg);
+          toast.error(errorMsg);
+          throw new Error(errorMsg);
         }
 
         setData(json);
         return json;
       } catch (err) {
         const message = err.message || "Network error";
-        toast.error(message);
+        console.error("Submit request failed:", message);
+        if (!message.includes("Something went wrong")) {
+          toast.error(message);
+        }
         return;
       } finally {
         setLoading(false);

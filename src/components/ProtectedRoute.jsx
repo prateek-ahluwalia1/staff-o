@@ -1,6 +1,7 @@
 import { Navigate, useLocation, Outlet } from "react-router-dom";
 import { useSelector } from "react-redux";
 import PropTypes from "prop-types";
+import { getUserType } from "../utils/authResponseNormalizer";
 
 /**
  * Unified route guard for authenticated, guest-only, and public routes.
@@ -22,7 +23,7 @@ const ProtectedRoute = ({
   const location = useLocation();
 
   const isAuthenticated = Boolean(token);
-  const userRole = userdata?.data?.user_type || userdata?.user_type;
+  const userRole = getUserType(userdata);
 
   // Public routes — accessible by anyone, no auth required
   if (isPublic) {

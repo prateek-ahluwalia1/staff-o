@@ -8,7 +8,7 @@ export default function SettingsHeaderContent({
   gender,
   company_name,
   profileCompletion = 0,
-  isVerified = false,
+  isVerified,
 }) {
   const pct = Math.min(100, Math.max(0, Number(profileCompletion) || 0));
 

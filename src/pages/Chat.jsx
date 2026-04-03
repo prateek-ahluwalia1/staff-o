@@ -1,8 +1,9 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
+import { useSelector } from "react-redux";
 import "../assets/css/chat.css";
 
-const CATEGORIES = [
+const ALL_CATEGORIES = [
   {
     key: "staff",
     label: "Staff",
@@ -25,6 +26,28 @@ const CATEGORIES = [
 
 const Chat = () => {
   const navigate = useNavigate();
+  const { userdata } = useSelector((state) => state.auth);
+  const userType =
+    userdata?.user_type?.toLowerCase() ||
+    userdata?.data?.user_type?.toLowerCase() ||
+    "";
+
+  // Apply Role-Based Access Control (RBAC) to visible categories
+  const allowedCategories = useMemo(() => {
+    switch (userType) {
+      case "admin":
+        return ALL_CATEGORIES; // Admins see all
+      case "contractor":
+        return ALL_CATEGORIES.filter(
+          (c) => c.key === "staff" || c.key === "customers",
+        );
+      case "staff":
+      case "customer":
+        return ALL_CATEGORIES.filter((c) => c.key === "contractors"); // Staff & Customers only talk to Contractors
+      default:
+        return [];
+    }
+  }, [userType]);
 
   return (
     <div className="container py-4">
@@ -36,7 +59,7 @@ const Chat = () => {
       </div>
 
       <div className="row g-4">
-        {CATEGORIES.map((cat) => (
+        {allowedCategories.map((cat) => (
           <div key={cat.key} className="col-12 col-sm-6 col-xl-4">
             <div className="chat-category-card">
               <div className="chat-category-icon-wrapper">
@@ -69,6 +92,11 @@ const Chat = () => {
             </div>
           </div>
         ))}
+        {allowedCategories.length === 0 && (
+          <div className="col-12 text-center text-muted mt-5">
+            You do not have permission to view any chat categories.
+          </div>
+        )}
       </div>
     </div>
   );

@@ -1,4 +1,10 @@
-import React, { useEffect, useState, useRef, useCallback } from "react";
+import React, {
+  useEffect,
+  useState,
+  useRef,
+  useCallback,
+  useMemo,
+} from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { useParams, useNavigate } from "react-router-dom";
 import {
@@ -12,12 +18,6 @@ import useFetch from "../hooks/useFetch";
 import useSubmit from "../hooks/useSubmit";
 import { apiURL } from "../utils/exports";
 import "../assets/css/chat.css";
-
-const USER_ENDPOINTS = {
-  staff: "api/admin/get-staff?limit=500",
-  customers: "api/admin/get-customers?limit=500",
-  contractors: "api/admin/get-contractors?limit=500",
-};
 
 const CATEGORY_LABELS = {
   staff: "Staff",
@@ -74,6 +74,11 @@ const ChatRoom = () => {
   );
 
   const currentUser = userdata?.data || userdata || {};
+  const userType =
+    userdata?.user_type?.toLowerCase() ||
+    userdata?.data?.user_type?.toLowerCase() ||
+    "";
+  const loggedInContractorId = userdata?.id || userdata?.data?.id || null;
 
   const [text, setText] = useState("");
   const [search, setSearch] = useState("");
@@ -90,11 +95,26 @@ const ChatRoom = () => {
     refetch: refetchConversations,
   } = useFetch(`api/messages/conversations`, { isAuth: true });
 
-  const userEndpoint = USER_ENDPOINTS[category];
-  const { data: usersData, loading: loadingUsers } = useFetch(
-    showUserPicker && userEndpoint ? userEndpoint : null,
-    { isAuth: true },
-  );
+  // Dynamically Set Endpoint based on RBAC & Category
+  let userEndpoint = null;
+  if (showUserPicker) {
+    if (category === "staff") {
+      if (userType === "admin") userEndpoint = "api/admin/get-staff?limit=500";
+      else if (userType === "contractor" && loggedInContractorId) {
+        userEndpoint = `api/get-contractor-staff/${loggedInContractorId}`;
+      }
+    } else if (category === "customers") {
+      if (["admin", "contractor"].includes(userType))
+        userEndpoint = "api/admin/get-customers?limit=500";
+    } else if (category === "contractors") {
+      if (["admin", "customer", "staff"].includes(userType))
+        userEndpoint = "api/admin/get-contractors?limit=500";
+    }
+  }
+
+  const { data: usersData, loading: loadingUsers } = useFetch(userEndpoint, {
+    isAuth: true,
+  });
 
   const { submit: sendMessageApi, loading: sending } = useSubmit({
     isAuth: true,
@@ -137,7 +157,6 @@ const ChatRoom = () => {
         );
 
         const responseData = await res.json();
-
         const messageList =
           responseData?.messages?.data || responseData?.data || [];
         dispatch(setMessages(messageList));
@@ -174,7 +193,6 @@ const ChatRoom = () => {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });
-      // Refresh messages after delete
       const other = otherUser(activeConversation);
       if (other?.id) fetchMessages(other.id);
     } catch (error) {
@@ -187,7 +205,7 @@ const ChatRoom = () => {
     const other = otherUser(conv);
     if (other?.id) {
       fetchMessages(other.id);
-      markMessagesAsRead(other.id); // Mark as read when opened
+      markMessagesAsRead(other.id);
     }
   };
 
@@ -277,19 +295,42 @@ const ChatRoom = () => {
     return name.toLowerCase().includes(search.toLowerCase());
   });
 
-  const allUsers = usersData?.data?.data || usersData?.data || usersData || [];
-  const filteredUsers = (Array.isArray(allUsers) ? allUsers : []).filter(
-    (u) => {
-      const name = u?.name || u?.data?.name || "";
-      const email = u?.email || u?.data?.email || "";
-      return (
-        name.toLowerCase().includes(userSearch.toLowerCase()) ||
-        email.toLowerCase().includes(userSearch.toLowerCase())
-      );
-    },
-  );
+  // Parse available users with RBAC logic + array handling
+  const allUsers = useMemo(() => {
+    let res = usersData;
+    if (!res) return [];
 
-  // The API directly provides the 'user' object for the other person
+    let list = [];
+    if (Array.isArray(res)) list = res;
+    else if (Array.isArray(res.guards))
+      list = res.guards; // Handle guards array fix
+    else if (res.data && Array.isArray(res.data.guards)) list = res.data.guards;
+    else if (Array.isArray(res.data)) list = res.data;
+    else if (res.data && Array.isArray(res.data.data)) list = res.data.data;
+
+    // Strict enforce: Staff can ONLY message their assigned Contractor
+    if (category === "contractors" && userType === "staff") {
+      const myContractorId =
+        userdata?.contractor_id || userdata?.data?.contractor_id;
+      if (myContractorId) {
+        return list.filter(
+          (c) => c.id.toString() === myContractorId.toString(),
+        );
+      }
+    }
+
+    return list;
+  }, [usersData, category, userType, userdata]);
+
+  const filteredUsers = allUsers.filter((u) => {
+    const name = u?.name || u?.data?.name || "";
+    const email = u?.email || u?.data?.email || "";
+    return (
+      name.toLowerCase().includes(userSearch.toLowerCase()) ||
+      email.toLowerCase().includes(userSearch.toLowerCase())
+    );
+  });
+
   const otherUser = (conv) => conv?.user || {};
 
   return (
@@ -417,11 +458,8 @@ const ChatRoom = () => {
           ) : (
             filteredConvs.map((conv) => {
               const other = otherUser(conv);
-              // Since the conversation object doesn't have a top-level ID, we match by the user's ID
               const isActive = activeConversation?.user?.id === other?.id;
               const hasUnread = conv.unread_count > 0;
-
-              // Extract details from the new last_message object
               const lastMsgText = conv.last_message?.message || "";
               const lastMsgTime = conv.last_message?.created_at || null;
               const isSentByMe = conv.last_message?.is_sent_by_me || false;
@@ -456,7 +494,6 @@ const ChatRoom = () => {
                         className={`text-truncate ${hasUnread ? "text-dark fw-bold" : "text-muted"}`}
                         style={{ fontSize: "0.75rem" }}
                       >
-                        {/* Display "You:" if the last message was sent by the current user */}
                         {isSentByMe && lastMsgText && (
                           <span className="me-1">You:</span>
                         )}
@@ -563,7 +600,6 @@ const ChatRoom = () => {
                           <div
                             className={`message-bubble ${isMe ? "message-sent" : "message-received"} position-relative`}
                           >
-                            {/* Delete Button (Only on your messages) */}
                             {isMe && (
                               <button
                                 onClick={() => handleDeleteMessage(m.id)}
@@ -590,7 +626,6 @@ const ChatRoom = () => {
                               className={`chat-timestamp text-end ${isMe ? "text-white-50" : "text-muted"}`}
                             >
                               {formatTime(m.created_at)}
-                              {/* Read Status Checkmarks (Optional Visual) */}
                               {isMe && m.is_read && (
                                 <i
                                   className="fa-solid fa-check-double ms-1"

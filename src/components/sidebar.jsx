@@ -2,6 +2,7 @@ import React, { memo, useCallback, useState, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { NavLink, useNavigate } from "react-router-dom";
 import { logOut } from "../store/slices/authSlice";
+import staffologo from "../assets/images/staffo.png";
 
 const Sidebar = memo(function Sidebar() {
   const { userdata } = useSelector((state) => state.auth);
@@ -168,7 +169,7 @@ const Sidebar = memo(function Sidebar() {
 
   return (
     <aside className={`dashboard-sidebar ${isExpanded ? "expanded" : ""}`}>
-      <div className="sidebar-toggle">
+      <div className="sidebar-toggle mb-3">
         <button
           className="toggle-btn"
           onClick={handleToggle}
@@ -179,6 +180,10 @@ const Sidebar = memo(function Sidebar() {
             className={`fa-solid ${isExpanded ? "fa-chevron-left" : "fa-chevron-right"}`}
           ></i>
         </button>
+        {/* Logo */}
+        {isExpanded && (
+          <img src={staffologo} alt="Staffo" style={{ height: "40px" }} />
+        )}
       </div>
 
       <div className="sidebar-header">

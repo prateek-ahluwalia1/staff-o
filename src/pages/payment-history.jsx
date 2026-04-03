@@ -88,12 +88,9 @@ export default function PaymentHistory() {
                       </span>
                     </td>
                     <td>
-                      <a
-                        href="/"
-                        className="btn btn-outline-primary btn-sm rounded-3"
-                      >
+                      <p className="btn btn-outline-primary btn-sm rounded-3">
                         {tx.invoice}
-                      </a>
+                      </p>
                     </td>
                   </tr>
                 ))}

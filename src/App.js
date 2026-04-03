@@ -123,7 +123,7 @@ function AppContent() {
 
     verifySession();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [token, userdata, dispatch, navigate]); // useRef guard prevents unnecessary re-runs despite dependencies
+  }, []); // Only run once on mount. useRef guard ensures single execution.
 
   return (
     <>

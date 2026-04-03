@@ -15,7 +15,9 @@ const ManageStaff = () => {
     loading,
     error,
     refetch,
-  } = useFetch(`api/get-contractor-staff/${loggedInContractorId}`, { isAuth: true });
+  } = useFetch(`api/get-contractor-staff/${loggedInContractorId}`, {
+    isAuth: true,
+  });
 
   const { submit, loading: submitLoading } = useSubmit({ isAuth: true });
 
@@ -26,10 +28,11 @@ const ManageStaff = () => {
   const [editingUser, setEditingUser] = useState(null);
 
   useEffect(() => {
-    if (apiResponse?.success && apiResponse?.data?.data) {
-      setStaff(apiResponse.data.data);
-      setTotalPages(apiResponse.data.last_page || 1);
-      setTotalItems(apiResponse.data.total || 0);
+    if (apiResponse?.success && apiResponse?.guards) {
+      setStaff(apiResponse.guards || []);
+      // Safely handle missing pagination data from the API
+      setTotalPages(apiResponse.data?.last_page || 1);
+      setTotalItems(apiResponse.data?.total || apiResponse.guards.length || 0);
     } else {
       setStaff([]);
       setTotalPages(1);

@@ -2,8 +2,16 @@ import React, { useState, useEffect, useMemo } from "react";
 import useFetch from "../hooks/useFetch";
 import Loader from "../components/Loader";
 import { useCallManager } from "../hooks/useCallManager";
+import { useSelector } from "react-redux";
 
 const CallManagement = () => {
+  const { userdata } = useSelector((state) => state.auth);
+  const loggedInContractorId = userdata?.id || userdata?.data?.id || null;
+  const userType =
+    userdata?.user_type?.toLowerCase() ||
+    userdata?.data?.user_type?.toLowerCase() ||
+    "";
+
   const [activeFilter, setActiveFilter] = useState("all");
   const [page, setPage] = useState(1);
   const [calls, setCalls] = useState([]);
@@ -23,16 +31,33 @@ const CallManagement = () => {
     },
   );
 
-  const { data: staffRes, loading: staffLoading } = useFetch(
-    "api/admin/get-staff?limit=1000",
-    { isAuth: true },
-  );
+  // Dynamically set API endpoints based on User Type to avoid fetching unnecessary data or hitting 404s
+  const staffEndpoint =
+    userType === "admin"
+      ? "api/admin/get-staff?limit=1000" // Admin sees ALL staff
+      : userType === "contractor" && loggedInContractorId
+        ? `api/get-contractor-staff/${loggedInContractorId}` // Contractor sees THEIR staff
+        : null; // Other roles don't need staff lists
+
+  const contractorEndpoint = ["admin", "customer", "staff"].includes(userType)
+    ? "api/admin/get-contractors?limit=1000"
+    : null;
+
+  const customerEndpoint = ["admin", "contractor"].includes(userType)
+    ? "api/admin/get-customers?limit=1000"
+    : null;
+
+  // If your useFetch hook doesn't support skipping when `null` is passed,
+  // you can replace `null` above with an empty string or dummy endpoint.
+  const { data: staffRes, loading: staffLoading } = useFetch(staffEndpoint, {
+    isAuth: true,
+  });
   const { data: contractorRes, loading: contractorLoading } = useFetch(
-    "api/admin/get-contractors?limit=1000",
+    contractorEndpoint,
     { isAuth: true },
   );
   const { data: customerRes, loading: customerLoading } = useFetch(
-    "api/admin/get-customers?limit=1000",
+    customerEndpoint,
     { isAuth: true },
   );
 
@@ -41,9 +66,18 @@ const CallManagement = () => {
   const availableUsers = useMemo(() => {
     const getList = (res) => {
       if (!res) return [];
+
+      // If the response itself is an array
       if (Array.isArray(res)) return res;
+
+      // --- NEW FIX: Check for the 'guards' array from the contractor-staff API ---
+      if (Array.isArray(res.guards)) return res.guards;
+      if (res.data && Array.isArray(res.data.guards)) return res.data.guards;
+
+      // Check standard 'data' arrays
       if (Array.isArray(res.data)) return res.data;
       if (res.data && Array.isArray(res.data.data)) return res.data.data;
+
       return [];
     };
 
@@ -57,8 +91,31 @@ const CallManagement = () => {
       roleLabel: "Customer",
     }));
 
-    return [...staff, ...contractors, ...customers];
-  }, [staffRes, contractorRes, customerRes]);
+    // Apply Role-Based Access Control (RBAC)
+    switch (userType) {
+      case "admin":
+        return [...staff, ...contractors, ...customers];
+
+      case "contractor":
+        return [...staff, ...customers];
+
+      case "staff":
+        const myContractorId =
+          userdata?.contractor_id || userdata?.data?.contractor_id;
+        if (myContractorId) {
+          return contractors.filter(
+            (c) => c.id.toString() === myContractorId.toString(),
+          );
+        }
+        return [...contractors];
+
+      case "customer":
+        return [...contractors];
+
+      default:
+        return [];
+    }
+  }, [staffRes, contractorRes, customerRes, userType, userdata]);
 
   const { initiateCall, isCalling, isCurrentlyInCall } = useCallManager();
 
@@ -359,6 +416,11 @@ const CallManagement = () => {
                     </option>
                   ))}
                 </select>
+                {availableUsers.length === 0 && !usersLoading && (
+                  <div className="text-danger small mt-2">
+                    No users available to call based on your role permissions.
+                  </div>
+                )}
               </div>
 
               <div className="d-flex gap-2 justify-content-end">
@@ -373,7 +435,10 @@ const CallManagement = () => {
                   type="submit"
                   className="btn btn-success rounded-pill px-4 fw-bold shadow-sm"
                   disabled={
-                    !selectedUserToCall || isCalling || isCurrentlyInCall
+                    !selectedUserToCall ||
+                    isCalling ||
+                    isCurrentlyInCall ||
+                    availableUsers.length === 0
                   }
                 >
                   {isCalling ? (

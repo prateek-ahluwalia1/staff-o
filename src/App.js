@@ -1,4 +1,4 @@
-import React, { lazy, Suspense, useEffect, useCallback } from "react";
+import React, { lazy, Suspense, useEffect } from "react";
 import {
   BrowserRouter as Router,
   Routes,
@@ -7,7 +7,7 @@ import {
   useNavigate,
 } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import { setToken, setUser } from "./store/slices/authSlice";
+import { setUser } from "./store/slices/authSlice";
 import { toast } from "react-toastify";
 import { apiURL } from "./utils/exports";
 
@@ -16,6 +16,7 @@ import Loader from "./components/Loader";
 import NotificationToast from "./components/NotificationToast";
 import WelfareCallModal from "./components/WelfareCallModal";
 import { useEcho } from "./hooks/useEcho";
+import { logOut } from "./store/slices/authSlice";
 
 const Login = lazy(() => import("./auth/login"));
 const Register = lazy(() => import("./auth/register"));
@@ -61,16 +62,12 @@ function AppContent() {
 
   useEcho();
 
-  const handleLogout = useCallback(() => {
-    dispatch(setToken({ token: null }));
-    dispatch(setUser({ userdata: null }));
-    toast.error("Session expired. Please log in again.");
-    navigate("/login", { replace: true });
-  }, [dispatch, navigate]);
-
   useEffect(() => {
     const fetchLatestUserProfile = async () => {
-      if (!token) return;
+      if (!token) {
+        dispatch(logOut());
+        return;
+      }
       const userId = user?.id || user?.data?.id;
       if (!userId) return;
 
@@ -85,7 +82,9 @@ function AppContent() {
         });
 
         if (profileRes.status === 401) {
-          handleLogout();
+          dispatch(logOut());
+          toast.error("Session expired. Please log in again.");
+          navigate("/login");
           return;
         }
 
@@ -99,12 +98,15 @@ function AppContent() {
           );
         }
       } catch (error) {
+        dispatch(logOut());
+        toast.error("Session verification failed. Please log in again.");
+        navigate("/login");
         console.error("Session verification failed", error);
       }
     };
 
     fetchLatestUserProfile();
-  }, [token, dispatch, handleLogout, user?.data?.id, user?.id]);
+  }, [token, dispatch, user?.data?.id, user?.id, navigate]);
 
   return (
     <>

@@ -30,7 +30,9 @@ export default function SettingsHeaderContent({
 
   return (
     <div className="settings-header-content" style={{ position: "relative" }}>
-      <span>{userType || "Staff"} Profile</span>
+      <span>
+        {userType?.charAt(0)?.toUpperCase() + userType?.slice(1) || ""} Profile
+      </span>
 
       {/* Name and Verification Badge */}
       <h2 style={{ display: "flex", alignItems: "center", gap: "8px" }}>

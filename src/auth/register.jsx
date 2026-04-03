@@ -62,7 +62,6 @@ export default function Register() {
     email: "",
     password: "",
     password_confirmation: "",
-    company_name: "",
     phone: "",
   });
 
@@ -293,14 +292,14 @@ export default function Register() {
                           />
                         </div>
                         <div className="col-sm-6">
-                          <label className="form-label">Company name</label>
+                          <label className="form-label">Phone</label>
                           <input
-                            type="text"
+                            type="tel"
                             className="form-control"
-                            name="company_name"
-                            value={staffForm.company_name}
+                            name="phone"
+                            value={staffForm.phone}
                             onChange={handleStaffChange}
-                            placeholder="Company Name"
+                            placeholder="Phone Number"
                           />
                         </div>
                         <div className="col-sm-12">
@@ -337,17 +336,6 @@ export default function Register() {
                             onChange={handleStaffChange}
                             placeholder="Confirm password"
                             required
-                          />
-                        </div>
-                        <div className="col-sm-6">
-                          <label className="form-label">Phone</label>
-                          <input
-                            type="tel"
-                            className="form-control"
-                            name="phone"
-                            value={staffForm.phone}
-                            onChange={handleStaffChange}
-                            placeholder="Phone Number"
                           />
                         </div>
                       </div>

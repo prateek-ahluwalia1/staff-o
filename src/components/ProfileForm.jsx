@@ -86,7 +86,7 @@ export default function ProfileForm({
             </div>
           </div>
 
-          {userType !== "contractor" && (
+          {userType !== "contractor" && userType !== "customer" && (
             <>
               <div>
                 <label htmlFor="gender" className="form-label">

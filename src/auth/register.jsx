@@ -7,7 +7,10 @@ import { toast } from "react-toastify";
 import { useGoogleLogin } from "@react-oauth/google";
 import Header from "../components/header";
 import { apiURL } from "../utils/exports";
-import { normalizeAuthResponse, extractUserId } from "../utils/authResponseNormalizer";
+import {
+  normalizeAuthResponse,
+  extractUserId,
+} from "../utils/authResponseNormalizer";
 
 export default function Register() {
   const navigate = useNavigate();
@@ -18,7 +21,7 @@ export default function Register() {
 
   const fetchLatestUserProfile = async (token, authUser) => {
     console.log("Fetching latest profile for user ID:", authUser);
-    const userId = authUser?.data?.id || authUser?.id;
+    const userId = extractUserId(authUser);
 
     if (!userId) {
       return authUser;

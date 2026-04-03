@@ -16,6 +16,7 @@ export default function Register() {
   const [userType, setUserType] = useState("contractor");
 
   const fetchLatestUserProfile = async (token, authUser) => {
+    console.log("Fetching latest profile for user ID:", authUser);
     const userId = authUser?.data?.id || authUser?.id;
 
     if (!userId) {
@@ -116,7 +117,10 @@ export default function Register() {
   const handleSuccess = async (res, successMessage) => {
     if (res.token) {
       dispatch(setToken({ token: res.token }));
-      const latestProfile = await fetchLatestUserProfile(res.token, res.user);
+      const latestProfile = await fetchLatestUserProfile(
+        res.token,
+        res.data.user,
+      );
       dispatch(setUser({ userdata: latestProfile }));
       toast.success(successMessage);
       navigate("/edit-profile");
@@ -149,7 +153,7 @@ export default function Register() {
           dispatch(setToken({ token: res.token }));
           const latestProfile = await fetchLatestUserProfile(
             res.token,
-            res.user,
+            res.data.user || res.user,
           );
           dispatch(setUser({ userdata: latestProfile }));
           const formattedType =

@@ -557,7 +557,7 @@ h6 {
 }
 
 .main-navbar {
-    padding: 18px 70px;
+    padding: 18px 0px;
     background: #ffffff;
 }
 
@@ -722,6 +722,10 @@ h6 {
 }
 
 @media (max-width: 991px) {
+    .main-navbar {
+        padding: 18px 0px;
+        background: #ffffff;
+    }
 
     /* Show mobile menu elements on mobile */
     .mobile-menu-close {
@@ -6384,7 +6388,7 @@ Large Mobile Screen
 }
 
 .footer-modern .footer-main {
-    padding: 70px 0 50px;
+    padding: 70px 100px;
     border-bottom: 1px solid rgba(148, 163, 184, 0.12);
 }
 

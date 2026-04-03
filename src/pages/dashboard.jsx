@@ -72,34 +72,6 @@ export default function Dashboard() {
 
   return (
     <div className="dashboard-main">
-      {/* Stats */}
-      {/* <div className="row g-3 dashboard-stats">
-        <div className="col-6 col-md-3">
-          <div className="stat-card stat-purple">
-            <span>Profile Views</span>
-            <strong>219</strong>
-          </div>
-        </div>
-        <div className="col-6 col-md-3">
-          <div className="stat-card stat-orange">
-            <span>Followings</span>
-            <strong>4</strong>
-          </div>
-        </div>
-        <div className="col-6 col-md-3">
-          <div className="stat-card stat-blue">
-            <span>My CV List</span>
-            <strong>1</strong>
-          </div>
-        </div>
-        <div className="col-6 col-md-3">
-          <div className="stat-card stat-teal">
-            <span>Messages</span>
-            <strong>0</strong>
-          </div>
-        </div>
-      </div> */}
-
       {/* Cover Card / Profile Info */}
       <div className="dashboard-cover-card">
         <div className="dashboard-cover-media">

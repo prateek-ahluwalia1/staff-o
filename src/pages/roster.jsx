@@ -61,6 +61,9 @@ export default function RosterPage() {
   const [selectedUserId, setSelectedUserId] = useState("");
   const [showStats, setShowStats] = useState(false);
 
+  // NEW: State to toggle between 1 and 2 weeks
+  const [weeksToView, setWeeksToView] = useState(1);
+
   const [editForm, setEditForm] = useState({
     startTime: "",
     endTime: "",
@@ -68,22 +71,28 @@ export default function RosterPage() {
 
   const fetchCustomerSites = useCallback(() => {
     if (!userId) return;
+
+    // Dynamically calculate the end date based on selected view
+    const endDayOffset = weeksToView === 1 ? 6 : 13;
+
     const payload = {
       user_id: [userId],
       state: "Victoria",
       start: format(monday, "MM-dd-yyyy"),
-      end: format(addDays(monday, 6), "MM-dd-yyyy"),
+      end: format(addDays(monday, endDayOffset), "MM-dd-yyyy"),
       roster_id: "1",
     };
     submit("api/fetch-customer-sites", payload, { method: "POST" });
-  }, [userId, monday, submit]);
+  }, [userId, monday, weeksToView, submit]);
 
   useEffect(() => {
     fetchCustomerSites();
   }, [fetchCustomerSites]);
 
   const weekDays = useMemo(() => {
-    return Array.from({ length: 7 }, (_, i) => {
+    // Dynamically set array length to 7 or 14
+    const totalDays = weeksToView === 1 ? 7 : 14;
+    return Array.from({ length: totalDays }, (_, i) => {
       const d = addDays(monday, i);
       return {
         label: format(d, "EEE , dd/MM"),
@@ -93,11 +102,12 @@ export default function RosterPage() {
         isToday: isToday(d),
       };
     });
-  }, [monday]);
+  }, [monday, weeksToView]);
 
   const weekTitle = useMemo(() => {
-    return `${format(monday, "MMM d")} - ${format(addDays(monday, 6), "d, yyyy")}`;
-  }, [monday]);
+    const endDayOffset = weeksToView === 1 ? 6 : 13;
+    return `${format(monday, "MMM d")} - ${format(addDays(monday, endDayOffset), "d, yyyy")}`;
+  }, [monday, weeksToView]);
 
   const sites = useMemo(() => {
     if (!submitData?.data) return [];
@@ -133,7 +143,8 @@ export default function RosterPage() {
   }, [submitData]);
 
   const columnTotals = useMemo(() => {
-    const totals = Array(7).fill(0);
+    // Dynamically set totals array length to 7 or 14
+    const totals = Array(weeksToView === 1 ? 7 : 14).fill(0);
     let grandTotal = 0;
 
     sites.forEach((site) => {
@@ -150,12 +161,13 @@ export default function RosterPage() {
     });
 
     return { totals, grandTotal };
-  }, [sites, weekDays]);
+  }, [sites, weekDays, weeksToView]);
 
   const guards = staffData?.guards || [];
 
-  const prevWeek = () => setMonday((prev) => subWeeks(prev, 1));
-  const nextWeek = () => setMonday((prev) => addWeeks(prev, 1));
+  // Paging jumps by 1 week or 2 weeks depending on the view state
+  const prevWeek = () => setMonday((prev) => subWeeks(prev, weeksToView));
+  const nextWeek = () => setMonday((prev) => addWeeks(prev, weeksToView));
   const goToThisWeek = () =>
     setMonday(startOfWeek(new Date(), { weekStartsOn: 1 }));
 
@@ -264,6 +276,34 @@ export default function RosterPage() {
               </button>
             </div>
             <div className="action-buttons">
+              {/* NEW: View Toggle Buttons */}
+              <div style={{ display: "flex", gap: "4px", marginRight: "8px" }}>
+                <button
+                  className="text-btn"
+                  style={{
+                    background: weeksToView === 1 ? "#0d6efd" : "#fff",
+                    color: weeksToView === 1 ? "#fff" : "#4b5563",
+                    borderColor: weeksToView === 1 ? "#0d6efd" : "#d1d5db",
+                  }}
+                  onClick={() => setWeeksToView(1)}
+                  type="button"
+                >
+                  1 Week
+                </button>
+                <button
+                  className="text-btn"
+                  style={{
+                    background: weeksToView === 2 ? "#0d6efd" : "#fff",
+                    color: weeksToView === 2 ? "#fff" : "#4b5563",
+                    borderColor: weeksToView === 2 ? "#0d6efd" : "#d1d5db",
+                  }}
+                  onClick={() => setWeeksToView(2)}
+                  type="button"
+                >
+                  2 Weeks
+                </button>
+              </div>
+
               <button
                 onClick={handleRefresh}
                 className="icon-btn"
@@ -332,9 +372,12 @@ export default function RosterPage() {
                 <br />
                 Shift
               </div>
-            </div>
-            <div className="status-box status-confirmed status-confirmed-full">
-              Confirmed Shift
+              {/* Moved Confirmed inside the row container */}
+              <div className="status-box status-confirmed">
+                Confirmed
+                <br />
+                Shift
+              </div>
             </div>
           </div>
         )}
@@ -365,10 +408,10 @@ export default function RosterPage() {
               {sites.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={8}
+                    colSpan={weekDays.length + 1}
                     style={{ textAlign: "center", padding: "24px" }}
                   >
-                    No sites found for this week.
+                    No sites found for this date range.
                   </td>
                 </tr>
               ) : (
@@ -705,7 +748,7 @@ export default function RosterPage() {
                   padding: "10px 24px",
                   fontSize: "14px",
                   borderRadius: "6px",
-                  background: "#007bff",
+                  background: "#0d6efd",
                   color: "#fff",
                   border: "none",
                   cursor: "pointer",

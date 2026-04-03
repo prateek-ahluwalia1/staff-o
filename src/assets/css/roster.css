@@ -48,9 +48,10 @@
     color: #6b7280;
 }
 
+/* Updated to Bootstrap Primary */
 .tab.active {
-    color: #0f766e;
-    border-bottom: 2px solid #0f766e;
+    color: #0d6efd;
+    border-bottom: 2px solid #0d6efd;
 }
 
 .date-controls {
@@ -77,12 +78,13 @@
     padding: 0 8px;
 }
 
+/* Updated to Bootstrap Primary */
 .today-btn {
     display: flex;
     align-items: center;
     gap: 6px;
-    background: #e6f4f1 !important;
-    color: #0f766e !important;
+    background: #e7f1ff !important;
+    color: #0d6efd !important;
     border-radius: 4px;
     padding: 6px 12px !important;
 }
@@ -119,7 +121,7 @@
 
 .icon-btn:hover,
 .text-btn:hover {
-    background: #f9fafb;
+    background: #f8f9fa;
 }
 
 .text-btn.disabled {
@@ -185,26 +187,30 @@
     background-color: #66ffff;
 }
 
+/* Updated to Bootstrap Danger */
 .status-missed {
-    background-color: #ff6b6b;
+    background-color: #dc3545;
     color: white;
 }
 
+/* Updated to Bootstrap Warning */
 .status-uncoverd {
-    background-color: #ffff00;
+    background-color: #ffc107;
 }
 
 .status-op-notes {
     background-color: #d2b48c;
 }
 
+/* Updated to Bootstrap Indigo/Purple */
 .status-completed {
-    background-color: #7b68ee;
+    background-color: #6f42c1;
     color: white;
 }
 
+/* Updated to Bootstrap Primary */
 .status-confirmed {
-    background-color: #10b981;
+    background-color: #0d6efd;
     color: white;
 }
 
@@ -220,7 +226,6 @@
 .roster-grid {
     width: 100%;
     border-collapse: collapse;
-    /* min-width is only applied on smaller screens via media query */
 }
 
 .roster-grid th,
@@ -276,24 +281,25 @@
     color: #374151;
 }
 
+/* Updated to Bootstrap Primary */
 .loc-name {
-    color: #0d9488;
+    color: #0d6efd;
     font-weight: 600;
     cursor: pointer;
     text-decoration: none;
 }
 
 .loc-name:hover {
-    color: #0f766e;
-    text-decoration: underline;
+    color: #0a58ca;
 }
 
+/* Updated to Bootstrap Primary Info/Light variants */
 .loc-badge {
     position: absolute;
     bottom: 12px;
     right: 12px;
-    background: #d1fae5;
-    color: #065f46;
+    background: #cfe2ff;
+    color: #084298;
     padding: 4px 8px;
     border-radius: 12px;
     font-size: 11px;
@@ -345,12 +351,14 @@
 }
 
 .shift-missed {
-    background-color: #ff6b6b;
+    background-color: #dc3545;
+    /* Bootstrap danger */
     color: white;
 }
 
 .shift-uncovered {
-    background-color: #ffff00;
+    background-color: #ffc107;
+    /* Bootstrap warning */
     color: #111;
 }
 
@@ -360,12 +368,14 @@
 }
 
 .shift-completed {
-    background-color: #7b68ee;
+    background-color: #6f42c1;
+    /* Bootstrap indigo */
     color: white;
 }
 
+/* Updated to Bootstrap Primary */
 .shift-confirmed {
-    background-color: #10b981;
+    background-color: #0d6efd;
     color: white;
 }
 
@@ -409,12 +419,14 @@
 }
 
 .s-tag-activity {
-    background: #1f2937;
+    background: #212529;
+    /* Bootstrap Dark */
     color: white;
 }
 
+/* Updated to Bootstrap Primary */
 .s-tag-detail {
-    background: #0d9488;
+    background: #0d6efd;
     color: white;
 }
 
@@ -428,17 +440,18 @@
     color: white;
 }
 
+/* Updated to Bootstrap Light Theme */
 .roster-footer {
-    background: #eef7f1;
+    background: #f8f9fa;
     font-weight: 600;
     font-size: 13px;
-    color: #111;
+    color: #212529;
 }
 
 .roster-footer td {
     text-align: center;
     padding: 16px 12px;
-    border: 1px solid #dcf0e3;
+    border: 1px solid #dee2e6;
 }
 
 .footer-total-label {
@@ -450,7 +463,6 @@
 
 /* --- Responsive Media Queries --- */
 
-/* Always allow horizontal scroll so shift tags are never hidden */
 .roster-grid {
     min-width: 100%;
     width: 100%;
@@ -501,13 +513,11 @@
 
     .status-box {
         flex: 0 1 calc(33% - 4px);
-        /* 3 items per row on mobile */
     }
 }
 
 @media screen and (max-width: 480px) {
     .status-box {
         flex: 0 1 calc(50% - 4px);
-        /* 2 items per row on very small screens */
     }
 }

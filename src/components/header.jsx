@@ -13,7 +13,6 @@ import useFetch from "../hooks/useFetch";
 import staffologo from "../assets/images/staffo.png";
 
 const Header = memo(function Header() {
-  //info, success, warning, error
   const { token, userdata } = useSelector((state) => state.auth);
   const { items, unreadCount } = useSelector((state) => state.notifications);
   const dispatch = useDispatch();
@@ -156,85 +155,6 @@ const Header = memo(function Header() {
                 </NavLink>
               </li>
 
-              {/* Employer Dropdown */}
-              {/* <li className="nav-item dropdown">
-                <button
-                  className="nav-link dropdown-toggle"
-                  type="button"
-                  data-bs-toggle="dropdown"
-                >
-                  Employer
-                </button>
-                <ul className="dropdown-menu dropdown-menu-lg">
-                  <li>
-                    <NavLink className="dropdown-item" to="/employer-listing">
-                      Employer List
-                    </NavLink>
-                  </li>
-                  <li>
-                    <NavLink className="dropdown-item" to="/employer-grid">
-                      Employer Grid
-                    </NavLink>
-                  </li>
-                  <li>
-                    <NavLink className="dropdown-item" to="/company-detail">
-                      Employer Single
-                    </NavLink>
-                  </li>
-                  <li>
-                    <NavLink className="dropdown-item" to="/company-dashboard">
-                      Employer Dashboard
-                    </NavLink>
-                  </li>
-                  <li>
-                    <NavLink className="dropdown-item" to="/post-job">
-                      Post Job
-                    </NavLink>
-                  </li>
-                </ul>
-              </li> */}
-
-              {/* Candidate Dropdown */}
-              {/* <li className="nav-item dropdown">
-                <button
-                  className="nav-link dropdown-toggle"
-                  type="button"
-                  data-bs-toggle="dropdown"
-                >
-                  Candidate
-                </button>
-                <ul className="dropdown-menu dropdown-menu-lg">
-                  <li>
-                    <NavLink
-                      className="dropdown-item"
-                      to="/candidate-listing-list"
-                    >
-                      Candidate List
-                    </NavLink>
-                  </li>
-                  <li>
-                    <NavLink className="dropdown-item" to="/candidate-listing">
-                      Candidate Grid View
-                    </NavLink>
-                  </li>
-                  <li>
-                    <NavLink className="dropdown-item" to="/candidate-detail">
-                      Candidate Single
-                    </NavLink>
-                  </li>
-                  <li>
-                    <NavLink className="dropdown-item" to="/dashboard">
-                      Candidate Dashboard
-                    </NavLink>
-                  </li>
-                  <li>
-                    <NavLink className="dropdown-item" to="/edit-profile">
-                      Edit Profile
-                    </NavLink>
-                  </li>
-                </ul>
-              </li> */}
-
               {/* Blog Dropdown */}
               {/* <li className="nav-item dropdown">
                 <button
@@ -278,58 +198,6 @@ const Header = memo(function Header() {
                   About Us
                 </NavLink>
               </li>
-
-              {/* Pages Dropdown */}
-              {/* <li className="nav-item dropdown">
-                <button
-                  className="nav-link dropdown-toggle"
-                  type="button"
-                  data-bs-toggle="dropdown"
-                >
-                  Pages
-                </button>
-                <ul className="dropdown-menu dropdown-menu-lg">
-                  <li>
-                    <NavLink className="dropdown-item" to="/about-us">
-                      About Us
-                    </NavLink>
-                  </li>
-                  {!token && (
-                    <>
-                      <li>
-                        <NavLink className="dropdown-item" to="/login">
-                          Login
-                        </NavLink>
-                      </li>
-                      <li>
-                        <NavLink className="dropdown-item" to="/register">
-                          Register
-                        </NavLink>
-                      </li>
-                    </>
-                  )}
-                  <li>
-                    <NavLink className="dropdown-item" to="/packages">
-                      Packages
-                    </NavLink>
-                  </li>
-                  <li>
-                    <NavLink className="dropdown-item" to="/faqs">
-                      FAQs
-                    </NavLink>
-                  </li>
-                  <li>
-                    <NavLink className="dropdown-item" to="/404">
-                      404 Page
-                    </NavLink>
-                  </li>
-                  <li>
-                    <NavLink className="dropdown-item" to="/typography">
-                      Typography
-                    </NavLink>
-                  </li>
-                </ul>
-              </li> */}
             </ul>
 
             <div className="navbar-actions d-flex align-items-center gap-3">

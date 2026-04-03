@@ -197,12 +197,6 @@ const Sidebar = memo(function Sidebar() {
                 <span className="status-slider"></span>
               </label>
             </div>
-            <h2>{userdata?.data?.name || userdata?.name || "Job Seeker"}</h2>
-            <p>
-              {userdata?.data?.email ||
-                userdata?.email ||
-                "jobseeker@jobsportal.com"}
-            </p>
           </>
         )}
       </div>

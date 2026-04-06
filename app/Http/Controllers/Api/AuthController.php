@@ -223,11 +223,12 @@ class AuthController extends Controller
 
         $user = User::where('email', $request->email)->first();
 
-        if (! $user->is_active) {
+        if (! $user) {
             return response()->json([
                 'message' => 'User Not Found.'
-            ], 403);
+            ], 401);
         }
+
         if ($user->user_type === 'customer') {
             $user->load(['customer']);
         } elseif ($user->user_type === 'contractor') {
@@ -496,12 +497,39 @@ class AuthController extends Controller
         ], 201);
     }
 
-    public function logout(Request $request)
+    public function logout($id)
     {
-        $user = User::where('id', $request->id)->first();
-        $user->update(['is_online' => false, 'last_seen' => now()]);
-        $user->currentAccessToken()->delete();
-
-        return response()->json(['success' => true, 'message' => 'Logged out']);
+        try {
+            // Find user by ID from URL parameter
+            $user = User::find($id);
+            
+            if (!$user) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'User not found'
+                ], 404);
+            }
+            
+            // Update user status
+            $user->update([
+                'is_online' => false,
+                'last_seen' => now(),
+                'notification_token' => null
+            ]);
+            
+            // Delete all user tokens
+            $user->tokens()->delete();
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Logged out successfully'
+            ]);
+            
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Logout failed: ' . $e->getMessage()
+            ], 500);
+        }
     }
 }

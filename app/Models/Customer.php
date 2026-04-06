@@ -15,6 +15,7 @@ class Customer extends Model
         'phone_otp',
         'email_otp',
         'verify_profile',
+        'profile_image',
     ];
 
     /* ======================

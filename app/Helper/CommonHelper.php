@@ -107,8 +107,8 @@ function send_push_notification($data){
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, "https://onesignal.com/api/v1/notifications");
         curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: application/json; charset=utf-8',
-                //   'Authorization: Basic '.'NjIxNzJmZDUtMjMzOS00ZmZjLWIwM2EtZWU2MTU5ZWFkNzBh'
-                  'Authorization: Key os_v2_app_pecbywkvazhfnhperjtbt6c6dwimrjippdkehwuk3oyy7arltwiy7xojfegl3vmry5vtgaw74cihsil4r53kj7b7ag7hkpcenksowjy'));
+                //   'Authorization: Basic '.'NjIxNzJmZDUtMjMzOS00ZmZjLWIwM2EtZWU2MTU5ZWFkNzBh'));
+                  'Authorization: key os_v2_app_pecbywkvazhfnhperjtbt6c6dx3nveous3aueefb7wqgiew2tx3nchxvellucvx4ubfzeqqgnn2mr6t4vyqr6hgw7sfzwbn5wp6ys4i'));
                 //   config('custom.server_key')
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
         curl_setopt($ch, CURLOPT_HEADER, FALSE);

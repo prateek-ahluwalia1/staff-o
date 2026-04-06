@@ -63,7 +63,7 @@ class ContractorController extends Controller
         $query->orderBy($sortField, $sortDirection);
 
         // Pagination
-        $contractors = $query->paginate($request->get('per_page', 15));
+        $contractors = $query->orderBy('id', 'desc')->paginate($request->get('per_page', $request->limit));
 
         return response()->json([
             'success' => true,

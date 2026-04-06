@@ -21,7 +21,7 @@ class AdminStaffController extends Controller
     public function index(Request $request)
     {
         $query = User::where('user_type', 'staff')
-            ->with('customer');
+            ->with('staff');
 
         // Search functionality
         if ($request->has('search')) {
@@ -55,11 +55,11 @@ class AdminStaffController extends Controller
         }
 
         // Pagination
-        $customers = $query->paginate($request->get('per_page', 15));
+        $staff = $query->orderBy('id', 'desc')->paginate($request->get('per_page', $request->limit));
 
         return response()->json([
             'success' => true,
-            'data' => $customers,
+            'data' => $staff,
             'message' => 'Staff retrieved successfully'
         ]);
     }
@@ -92,6 +92,7 @@ class AdminStaffController extends Controller
             'user_id' => $user->id,
             'profile_image' => $profileImagePath ?? $request->profile_image,
             'gender' => $request->gender,
+            'phone' => $request->phone,
             'staff_document_type' => $request->staff_document_type
         ]);
         
@@ -99,8 +100,8 @@ class AdminStaffController extends Controller
 
         $capitalUser = User::where('id', $request->user_id)
             ->where('name', 'Capital Security')
-            ->firstOrFail();
-        if($capitalUser->name == "Capital Security")
+            ->first();
+        if($capitalUser && $capitalUser->name == "Capital Security")
         {
             $check_old_data_exist = Document::where('user_id', $user->id)->where('document_category', '!=', 'other-doc')->first();
             if((!isset($old_data)) || (isset($old_data->staff_document_type) && !$check_old_data_exist)){

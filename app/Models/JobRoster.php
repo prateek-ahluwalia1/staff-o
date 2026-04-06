@@ -33,4 +33,14 @@ class JobRoster extends Model
         return $this->hasMany(JobRosterTask::class, 'job_roster_id', 'id');
     }
 
+    public function callScript()
+    {
+        return $this->belongsTo(CallScript::class, 'script_id');
+    }
+
+    public function callLogs()
+    {
+        return $this->hasMany(CallLog::class, 'uuid', 'uuid');
+    }
+
 }

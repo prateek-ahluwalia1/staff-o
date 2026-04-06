@@ -47,8 +47,11 @@ class StaffController extends Controller
         if ($totalDocuments > 0) {
             $documentScore = ($filledDocuments / $totalDocuments) * $documentWeight;
         }
-
+        if($user->user_type == 'staff' || $user->user_type == 'contractor'){
         $percentage = (int) round($baseScore + $documentScore);
+        }else{
+        $percentage = (int) round($baseScore + 50);
+        }
 
         return min($percentage, 100);
     }
@@ -572,6 +575,7 @@ class StaffController extends Controller
                     'company_name' => 'nullable|string',
                     'bank_details' => 'nullable',
                     'email_otp' => 'nullable|string',
+                    'profile_image' => 'sometimes|nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
                 ]);
             }
 
@@ -580,6 +584,7 @@ class StaffController extends Controller
                     'company_name' => 'sometimes|required|string|max:255',
                     'registration_number' => 'nullable|string|max:255',
                     'phone' => 'nullable|string|max:20',
+                    'profile_image' => 'sometimes|nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
                 ]);
             }
 
@@ -617,6 +622,12 @@ class StaffController extends Controller
                     'bank_details',
                 ])->toArray();
 
+                 if ($request->hasFile('profile_image')) {
+                    $profileData['profile_image'] = $request->file('profile_image')->store('staff-profiles', 'public');
+                } elseif (array_key_exists('profile_image', $data)) {
+                    $profileData['profile_image'] = $data['profile_image'];
+                }
+
                 if ($user->customer) {
                     $user->customer->update($profileData);
                 } else {
@@ -633,6 +644,12 @@ class StaffController extends Controller
                     'registration_number',
                     'phone',
                 ])->toArray();
+
+                 if ($request->hasFile('profile_image')) {
+                    $profileData['profile_image'] = $request->file('profile_image')->store('staff-profiles', 'public');
+                } elseif (array_key_exists('profile_image', $data)) {
+                    $profileData['profile_image'] = $data['profile_image'];
+                }
 
                 if ($user->contractor) {
                     $user->contractor->update($profileData);
@@ -787,6 +804,12 @@ class StaffController extends Controller
                                 $message->to($newEmail)
                                     ->subject('Email Verification OTP');
                             });
+
+                            return response()->json([
+                                'success' => false,
+                                'otp_required' => true,
+                                'message' => 'OTP sent to email. Please verify to continue.'
+                            ]);
                         }
 
                         // Send SMS OTP (integrate gateway)
@@ -795,9 +818,9 @@ class StaffController extends Controller
                         // }
 
                         return response()->json([
-                            'success' => false,
-                            'otp_required' => true,
-                            'message' => 'OTP sent to email. Please verify to continue.'
+                            'success' => true,
+                            'otp_required' => false,
+                            'message' => 'User Updated Successfully.'
                         ]);
                     }
 

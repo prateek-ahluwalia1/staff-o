@@ -57,7 +57,7 @@ class CustomerController extends Controller
         }
 
         // Pagination
-        $customers = $query->paginate($request->get('per_page', 15));
+        $customers = $query->orderBy('id', 'desc')->paginate($request->get('per_page', $request->limit));
 
         return response()->json([
             'success' => true,

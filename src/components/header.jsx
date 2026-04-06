@@ -393,24 +393,51 @@ const Header = memo(function Header() {
                   </div>
 
                   {/* Logged-in user dropdown */}
-                  <div className="dropdown user-dropdown">
+                  <div
+                    className="dropdown"
+                    style={{ display: "flex", alignItems: "center" }}
+                  >
                     <button
-                      className="btn btn-secondary dropdown-toggle"
+                      className="btn dropdown-toggle"
                       type="button"
                       data-bs-toggle="dropdown"
                       style={{
-                        width: "40px", // Forces the button to be a tiny square
-                        height: "40px",
-                        padding: "0",
                         display: "flex",
                         alignItems: "center",
-                        justifyContent: "center",
-                        borderRadius: "50%", // Turns the square into a circle
-                        overflow: "hidden", // Hides anything that bleeds outside the circle
+                        gap: "10px",
+                        background: "transparent",
+                        border: "none",
+                        padding: "5px 10px",
+                        boxShadow: "none",
+                        color: "#333", // Forces text to be dark and visible
                       }}
                     >
-                      {renderUserAvatar()}
+                      {/* Avatar Wrapper - Strictly keeps the circle shape */}
+                      <div
+                        style={{
+                          width: "40px",
+                          height: "40px",
+                          borderRadius: "50%",
+                          overflow: "hidden",
+                          flexShrink: 0,
+                        }}
+                      >
+                        {renderUserAvatar()}
+                      </div>
+
+                      {/* Name Wrapper - Forces text to display inline */}
+                      <span
+                        style={{
+                          fontWeight: "600",
+                          fontSize: "15px",
+                          whiteSpace: "nowrap", // Prevents name from wrapping to next line
+                          display: "block",
+                        }}
+                      >
+                        {userdata?.data?.name || userdata?.name || "John Doe"}
+                      </span>
                     </button>
+
                     <ul className="dropdown-menu dropdown-menu-end">
                       <li>
                         <NavLink className="dropdown-item" to="/dashboard">

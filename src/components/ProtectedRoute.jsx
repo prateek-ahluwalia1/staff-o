@@ -23,7 +23,7 @@ const ProtectedRoute = ({
   const location = useLocation();
 
   const isAuthenticated = Boolean(token);
-  const userRole = getUserType(userdata);
+  const userRole = (getUserType(userdata) || "").toLowerCase();
 
   // Public routes — accessible by anyone, no auth required
   if (isPublic) {

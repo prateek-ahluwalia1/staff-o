@@ -461,9 +461,19 @@ const Header = memo(function Header() {
                         <button
                           type="button"
                           className="dropdown-item text-danger"
-                          onClick={() => {
-                            dispatch(logOut());
-                            navigate("/");
+                          onClick={async () => {
+                            try {
+                              await submit(
+                                "api/logout",
+                                {},
+                                { method: "POST" },
+                              );
+                            } catch (error) {
+                              console.error("Logout error:", error);
+                            } finally {
+                              dispatch(logOut());
+                              navigate("/");
+                            }
                           }}
                         >
                           Logout

@@ -224,16 +224,44 @@ function AppContent() {
           <Route path="/my-job-applications" element={<MyJobApplications />} />
           <Route path="/my-favourite-jobs" element={<MyFavouriteJobs />} />
           <Route path="/job-alerts" element={<JobAlerts />} />
-          <Route path="/roster" element={<RosterPage />} />
-          <Route path="/manage-users" element={<ManageUsers />} />
-          <Route path="/manage-staff" element={<ManageStaff />} />
+          <Route
+            path="/roster"
+            element={
+              <ProtectedRoute allowedRoles={["admin", "contractor", "staff"]}>
+                <RosterPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/manage-users"
+            element={
+              <ProtectedRoute allowedRoles={["admin"]}>
+                <ManageUsers />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/manage-staff"
+            element={
+              <ProtectedRoute allowedRoles={["admin", "contractor"]}>
+                <ManageStaff />
+              </ProtectedRoute>
+            }
+          />
           <Route path="/my-followings" element={<MyFollowings />} />
           <Route path="/user-packages" element={<UserPackages />} />
           <Route path="/payment-history" element={<PaymentHistory />} />
           <Route path="/pay-charge-rate" element={<PayChargeRate />} />
           <Route path="/rates/charge" element={<RatesList />} />
           <Route path="/rates/pay" element={<RatesList />} />
-          <Route path="/wfm-tools" element={<WFMTools />} />
+          <Route
+            path="/wfm-tools"
+            element={
+              <ProtectedRoute allowedRoles={["admin", "contractor", "staff"]}>
+                <WFMTools />
+              </ProtectedRoute>
+            }
+          />
           <Route path="/welfare-call" element={<CallManagement />} />
           <Route
             path="/leave"
@@ -243,7 +271,14 @@ function AppContent() {
               </ProtectedRoute>
             }
           />
-          <Route path="/reports" element={<Reports />} />
+          <Route
+            path="/reports"
+            element={
+              <ProtectedRoute allowedRoles={["admin"]}>
+                <Reports />
+              </ProtectedRoute>
+            }
+          />
           <Route path="/timesheet" element={<TimeSheet />} />
           <Route path="/job-tracker" element={<JobTracker />} />
           <Route path="/accounts/invoice" element={<Invoice />} />

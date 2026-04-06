@@ -2,12 +2,14 @@ import React, { memo, useCallback, useState, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { NavLink, useNavigate } from "react-router-dom";
 import { logOut } from "../store/slices/authSlice";
+import useSubmit from "../hooks/useSubmit";
 import staffologo from "../assets/images/staffo.png";
 
 const Sidebar = memo(function Sidebar() {
   const { userdata } = useSelector((state) => state.auth);
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const { submit } = useSubmit({ isAuth: true });
   const userType = userdata?.data?.user_type || userdata?.user_type;
   const [isExpanded, setIsExpanded] = useState(false);
 
@@ -24,12 +26,18 @@ const Sidebar = memo(function Sidebar() {
   }, []);
 
   const handleLogout = useCallback(
-    (e) => {
+    async (e) => {
       e.preventDefault();
-      dispatch(logOut());
-      navigate("/login");
+      try {
+        await submit("api/logout", {}, { method: "POST" });
+      } catch (error) {
+        console.error("Logout error:", error);
+      } finally {
+        dispatch(logOut());
+        navigate("/login");
+      }
     },
-    [dispatch, navigate],
+    [dispatch, navigate, submit],
   );
 
   const handleToggle = useCallback(() => {

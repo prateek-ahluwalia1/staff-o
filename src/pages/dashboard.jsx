@@ -14,7 +14,6 @@ export default function Dashboard() {
     return type?.toLowerCase();
   }, [userdata]);
 
-  // Render appropriate dashboard based on user type
   const renderDashboard = useMemo(() => {
     switch (userType) {
       case "staff":

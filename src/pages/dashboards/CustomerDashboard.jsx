@@ -8,7 +8,13 @@ import dashboardBanner from "../../assets/images/dashboard-banner.jpg";
 
 export default function CustomerDashboard() {
   const { userdata } = useSelector((state) => state.auth);
-
+  const email = userdata?.data?.email || userdata?.email || "No Email";
+  const address = userdata?.data?.address || userdata?.address || "No Location";
+  const phone =
+    userdata?.data?.customer?.phone || userdata?.customer?.phone || "No Phone";
+  const username = userdata?.data?.name || userdata?.name || "No Name";
+  const profileImage = userdata?.data?.profile_image || userdata?.profile_image;
+  // eslint-disable-next-line
   const [dashboardStats, setDashboardStats] = useState({
     activeJobs: 0,
     completedJobs: 0,
@@ -17,7 +23,7 @@ export default function CustomerDashboard() {
     upcomingJobs: 0,
     invoicesPending: 0,
   });
-
+  // eslint-disable-next-line
   const [recentJobs, setRecentJobs] = useState([
     {
       id: 1,
@@ -48,7 +54,6 @@ export default function CustomerDashboard() {
     },
   ]);
 
-  const profileImage = userdata?.data?.profile_image || userdata?.profile_image;
   const imageUrl =
     profileImage && profileImage.startsWith("http")
       ? profileImage
@@ -69,7 +74,7 @@ export default function CustomerDashboard() {
               <img src={imageUrl} alt="Profile" />
             ) : (
               <div className="avatar-placeholder">
-                {(userdata?.data?.company_name || userdata?.company_name || "C")
+                {username
                   .split(" ")
                   .map((n) => n[0])
                   .join("")
@@ -79,24 +84,14 @@ export default function CustomerDashboard() {
             )}
           </div>
           <div>
-            <h3>
-              {userdata?.data?.company_name ||
-                userdata?.company_name ||
-                "Company"}
-            </h3>
-            <p>
-              {userdata?.data?.address ||
-                userdata?.address ||
-                "Company Address"}
-            </p>
+            <h3>{username}</h3>
+            <p>{address}</p>
             <ul>
               <li>
-                <i className="fa-solid fa-phone"></i>{" "}
-                {userdata?.data?.phone || "No Phone"}
+                <i className="fa-solid fa-phone"></i> {phone}
               </li>
               <li>
-                <i className="fa-solid fa-envelope"></i>{" "}
-                {userdata?.data?.email || "No Email"}
+                <i className="fa-solid fa-envelope"></i> {email}
               </li>
             </ul>
           </div>

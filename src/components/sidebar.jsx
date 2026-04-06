@@ -37,7 +37,7 @@ const Sidebar = memo(function Sidebar() {
         console.error("Logout error:", error);
       }
     },
-    [dispatch, navigate, submit],
+    [dispatch, navigate, submit, userId],
   );
 
   const handleToggle = useCallback(() => {

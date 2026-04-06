@@ -12,6 +12,9 @@ import dashboardBanner from "../../assets/images/dashboard-banner.jpg";
 export default function StaffDashboard() {
   const { userdata } = useSelector((state) => state.auth);
   const userId = userdata?.data?.id || userdata?.id;
+  const email = userdata?.data?.email || userdata?.email || "No Email";
+  const address = userdata?.data?.address || userdata?.address || "No Location";
+  const username = userdata?.data?.name || userdata?.name || "No Name";
   const { submit, loading, data: submitData } = useSubmit({ isAuth: true });
   const [dashboardStats, setDashboardStats] = useState({
     totalJobs: 0,
@@ -90,7 +93,7 @@ export default function StaffDashboard() {
               <img src={imageUrl} alt="Profile" />
             ) : (
               <div className="avatar-placeholder">
-                {(userdata?.data?.name || userdata?.name || "U")
+                {username
                   .split(" ")
                   .map((n) => n[0])
                   .join("")
@@ -100,18 +103,11 @@ export default function StaffDashboard() {
             )}
           </div>
           <div>
-            <h3>{userdata?.data?.name || userdata?.name || "Staff Member"}</h3>
-            <p>
-              {userdata?.data?.address || userdata?.address || "No Location"}
-            </p>
+            <h3>{username}</h3>
+            <p>{address}</p>
             <ul>
               <li>
-                <i className="fa-solid fa-phone"></i>{" "}
-                {userdata?.data?.phone || userdata?.phone || "No Phone"}
-              </li>
-              <li>
-                <i className="fa-solid fa-envelope"></i>{" "}
-                {userdata?.data?.email || userdata?.email || "No Email"}
+                <i className="fa-solid fa-envelope"></i> {email}
               </li>
             </ul>
           </div>

@@ -12,6 +12,9 @@ import dashboardBanner from "../../assets/images/dashboard-banner.jpg";
 
 export default function AdminDashboard() {
   const { userdata } = useSelector((state) => state.auth);
+  const email = userdata?.data?.email || userdata?.email || "No Email";
+  const username = userdata?.data?.name || userdata?.name || "No Name";
+  const profileImage = userdata?.data?.profile_image || userdata?.profile_image;
   const { submit, loading, data: submitData } = useSubmit({ isAuth: true });
 
   const [adminStats, setAdminStats] = useState({
@@ -58,7 +61,6 @@ export default function AdminDashboard() {
     setTopContractors(dashData.topContractors || []);
   }, [submitData]);
 
-  const profileImage = userdata?.data?.profile_image || userdata?.profile_image;
   const imageUrl =
     profileImage && profileImage.startsWith("http")
       ? profileImage
@@ -81,7 +83,7 @@ export default function AdminDashboard() {
               <img src={imageUrl} alt="Profile" />
             ) : (
               <div className="avatar-placeholder">
-                {(userdata?.data?.name || userdata?.name || "A")
+                {username
                   .split(" ")
                   .map((n) => n[0])
                   .join("")
@@ -91,15 +93,11 @@ export default function AdminDashboard() {
             )}
           </div>
           <div>
-            <h3>
-              Admin Panel -{" "}
-              {userdata?.data?.name || userdata?.name || "Administrator"}
-            </h3>
+            <h3>Admin Panel - {username}</h3>
             <p>Platform Management & Analytics</p>
             <ul>
               <li>
-                <i className="fa-solid fa-envelope"></i>{" "}
-                {userdata?.data?.email || userdata?.email || "No Email"}
+                <i className="fa-solid fa-envelope"></i> {email}
               </li>
             </ul>
           </div>

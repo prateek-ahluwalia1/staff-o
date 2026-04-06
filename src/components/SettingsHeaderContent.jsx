@@ -27,7 +27,12 @@ export default function SettingsHeaderContent({
     if (pct < 80) return "#f59e0b";
     return "#16a34a";
   };
-
+  const verified = !!(
+    isVerified === true ||
+    isVerified === "true" ||
+    isVerified === 1 ||
+    isVerified === "1"
+  );
   const progressColor = getColor();
 
   return (
@@ -41,7 +46,7 @@ export default function SettingsHeaderContent({
 
         <h2 style={{ display: "flex", alignItems: "center", gap: "8px" }}>
           {name || "Staff Member"}
-          {isVerified && (
+          {verified && (
             <i
               className="fa-solid fa-circle-check text-primary"
               aria-hidden="true"

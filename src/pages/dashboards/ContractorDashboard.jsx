@@ -12,6 +12,17 @@ import dashboardBanner from "../../assets/images/dashboard-banner.jpg";
 export default function ContractorDashboard() {
   const { userdata } = useSelector((state) => state.auth);
   const userId = userdata?.data?.id || userdata?.id;
+  const email = userdata?.data?.email || userdata?.email || "No Email";
+  const phone =
+    userdata?.data?.contractor?.phone ||
+    userdata?.contractor?.phone ||
+    "No Phone";
+  const username = userdata?.data?.name || userdata?.name || "No Name";
+  const profileImage = userdata?.data?.profile_image || userdata?.profile_image;
+  const companyName =
+    userdata?.data?.contractor?.company_name ||
+    userdata?.contractor?.company_name ||
+    "No Company Name";
   const { submit, loading, data: submitData } = useSubmit({ isAuth: true });
 
   const [dashboardStats, setDashboardStats] = useState({
@@ -53,7 +64,6 @@ export default function ContractorDashboard() {
     setLeaveRequests(dashData.leaveRequests || []);
   }, [submitData]);
 
-  const profileImage = userdata?.data?.profile_image || userdata?.profile_image;
   const imageUrl =
     profileImage && profileImage.startsWith("http")
       ? profileImage
@@ -76,7 +86,7 @@ export default function ContractorDashboard() {
               <img src={imageUrl} alt="Profile" />
             ) : (
               <div className="avatar-placeholder">
-                {(userdata?.data?.name || userdata?.name || "U")
+                {username
                   .split(" ")
                   .map((n) => n[0])
                   .join("")
@@ -86,16 +96,14 @@ export default function ContractorDashboard() {
             )}
           </div>
           <div>
-            <h3>{userdata?.data?.name || userdata?.name || "Contractor"}</h3>
-            <p>{userdata?.data?.company_name || "Contractor Agency"}</p>
+            <h3>{username}</h3>
+            <p>{companyName}</p>
             <ul>
               <li>
-                <i className="fa-solid fa-phone"></i>{" "}
-                {userdata?.data?.phone || "No Phone"}
+                <i className="fa-solid fa-phone"></i> {phone}
               </li>
               <li>
-                <i className="fa-solid fa-envelope"></i>{" "}
-                {userdata?.data?.email || "No Email"}
+                <i className="fa-solid fa-envelope"></i> {email}
               </li>
             </ul>
           </div>

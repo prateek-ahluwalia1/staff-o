@@ -1,12 +1,6 @@
-import {
-  PieChart,
-  Pie,
-  Cell,
-  ResponsiveContainer,
-  Tooltip,
-} from "recharts";
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 
-export default function UserBreakdownChart({ data = [] }) {
+function UserBreakdownChart({ data = [] }) {
   const defaultData = [
     { name: "Staff", value: 450 },
     { name: "Contractors", value: 280 },
@@ -32,7 +26,10 @@ export default function UserBreakdownChart({ data = [] }) {
             dataKey="value"
           >
             {(data?.length > 0 ? data : defaultData).map((entry, index) => (
-              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+              <Cell
+                key={`cell-${index}`}
+                fill={COLORS[index % COLORS.length]}
+              />
             ))}
           </Pie>
           <Tooltip />
@@ -41,3 +38,5 @@ export default function UserBreakdownChart({ data = [] }) {
     </div>
   );
 }
+
+export default UserBreakdownChart;

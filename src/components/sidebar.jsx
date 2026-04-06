@@ -11,6 +11,7 @@ const Sidebar = memo(function Sidebar() {
   const navigate = useNavigate();
   const { submit } = useSubmit({ isAuth: true });
   const userType = userdata?.data?.user_type || userdata?.user_type;
+  const userId = userdata?.data?.id || userdata?.id;
   const [isExpanded, setIsExpanded] = useState(false);
 
   // Auto-collapse sidebar on mobile/tablet
@@ -29,12 +30,11 @@ const Sidebar = memo(function Sidebar() {
     async (e) => {
       e.preventDefault();
       try {
-        await submit("api/logout", {}, { method: "POST" });
-      } catch (error) {
-        console.error("Logout error:", error);
-      } finally {
+        await submit(`api/logout/${userId}`, {}, { method: "POST" });
         dispatch(logOut());
         navigate("/login");
+      } catch (error) {
+        console.error("Logout error:", error);
       }
     },
     [dispatch, navigate, submit],

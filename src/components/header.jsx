@@ -19,7 +19,7 @@ const Header = memo(function Header() {
   const { items, unreadCount } = useSelector((state) => state.notifications);
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const userId = userdata?.id ?? userdata?.data?.id;
+  const userId = userdata?.id || userdata?.data?.id;
 
   const notificationsEndpoint = useMemo(
     () => (userId ? `api/notifications/user/${userId}` : null),
@@ -464,15 +464,14 @@ const Header = memo(function Header() {
                           onClick={async () => {
                             try {
                               await submit(
-                                "api/logout",
+                                `api/logout/${userId}`,
                                 {},
                                 { method: "POST" },
                               );
+                              dispatch(logOut());
+                              navigate("/login");
                             } catch (error) {
                               console.error("Logout error:", error);
-                            } finally {
-                              dispatch(logOut());
-                              navigate("/");
                             }
                           }}
                         >

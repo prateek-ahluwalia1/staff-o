@@ -11,8 +11,14 @@ export default function ReviewStep({
   paymentAmount,
 }) {
   const JOB_TYPE_LABELS = {
-    "site-patrol": "Site Patrol Security",
-    event: "Event Security",
+    security_license: "Security License",
+    misc_time_license: "MISC Time License",
+    working_with_children: "Working With Children",
+    first_aid: "First Aid",
+    cpr: "CPR",
+    white_card: "White Card",
+    traffic_controller: "Traffic Controller",
+    others: "Others",
   };
 
   const jobTypeLabel = JOB_TYPE_LABELS[form.jobType] || form.jobType || "-";

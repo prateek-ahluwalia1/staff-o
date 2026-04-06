@@ -1,7 +1,6 @@
-/* Roster.css - High Density Version */
+/* Roster.css */
 .roster-page-wrapper {
-    padding: 10px;
-    /* Reduced from 20px */
+    padding: 20px;
     background-color: white;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     color: #333;
@@ -9,17 +8,16 @@
     max-width: 100%;
 }
 
+
 .roster-main-card {
     background: white;
-    border-radius: 6px;
-    /* Slightly tighter radius */
+    border-radius: 8px;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
 /* --- Toolbar & Controls --- */
 .roster-toolbar {
-    padding: 8px 12px;
-    /* Reduced from 12px 16px */
+    padding: 12px 16px;
     border-bottom: 1px solid #e5e7eb;
 }
 
@@ -28,34 +26,29 @@
     justify-content: space-between;
     align-items: center;
     flex-wrap: wrap;
-    gap: 8px;
-    /* Reduced from 12px */
+    gap: 12px;
 }
 
 .top-left-group {
     display: flex;
     align-items: center;
-    gap: 16px;
-    /* Reduced from 32px */
+    gap: 32px;
     flex-wrap: wrap;
 }
 
 .tabs {
     display: flex;
-    gap: 16px;
-    /* Reduced from 24px */
+    gap: 24px;
     font-weight: 500;
-    font-size: 13px;
-    /* Added explicit smaller font */
 }
 
 .tab {
     cursor: pointer;
-    padding-bottom: 2px;
-    /* Reduced from 4px */
+    padding-bottom: 4px;
     color: #6b7280;
 }
 
+/* Updated to Bootstrap Primary */
 .tab.active {
     color: #0d6efd;
     border-bottom: 2px solid #0d6efd;
@@ -64,49 +57,41 @@
 .date-controls {
     display: flex;
     align-items: center;
-    gap: 4px;
-    /* Reduced from 8px */
+    gap: 8px;
     background: #f3f4f6;
-    padding: 2px;
-    /* Reduced from 4px */
-    border-radius: 4px;
+    padding: 4px;
+    border-radius: 6px;
 }
 
 .date-controls button {
     border: none;
     background: transparent;
     cursor: pointer;
-    padding: 2px 6px;
-    /* Reduced from 4px 8px */
+    padding: 4px 8px;
     font-weight: 500;
     color: #374151;
 }
 
 .date-range-text {
-    font-size: 13px;
-    /* Reduced from 14px */
+    font-size: 14px;
     font-weight: 600;
-    padding: 0 6px;
-    /* Reduced from 8px */
+    padding: 0 8px;
 }
 
+/* Updated to Bootstrap Primary */
 .today-btn {
     display: flex;
     align-items: center;
-    gap: 4px;
-    /* Reduced from 6px */
+    gap: 6px;
     background: #e7f1ff !important;
     color: #0d6efd !important;
     border-radius: 4px;
-    padding: 4px 8px !important;
-    /* Reduced from 6px 12px */
-    font-size: 12px;
+    padding: 6px 12px !important;
 }
 
 .action-buttons {
     display: flex;
-    gap: 4px;
-    /* Reduced from 6px */
+    gap: 6px;
     align-items: center;
     flex-wrap: wrap;
 }
@@ -116,8 +101,7 @@
     border: 1px solid #d1d5db;
     background: white;
     border-radius: 4px;
-    font-size: 12px;
-    /* Reduced from 13px */
+    font-size: 13px;
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -127,14 +111,12 @@
 }
 
 .icon-btn {
-    padding: 4px 6px;
-    /* Reduced from 8px 10px */
+    padding: 8px 10px;
 }
 
 .text-btn {
-    padding: 4px 8px;
-    /* Reduced from 6px 12px */
-    gap: 4px;
+    padding: 6px 12px;
+    gap: 6px;
 }
 
 .icon-btn:hover,
@@ -152,49 +134,39 @@
 .status-legend-bar {
     display: flex;
     flex-direction: column;
-    gap: 2px;
-    /* Reduced from 4px */
-    padding: 6px 10px;
-    /* Reduced from 12px 16px */
+    gap: 4px;
+    padding: 12px 16px;
     background: #fff;
     border-bottom: 1px solid #e5e7eb;
 }
 
 .status-legend-row {
     display: flex;
-    gap: 2px;
-    /* Reduced from 4px */
+    gap: 4px;
     width: 100%;
 }
 
 .status-box {
     flex: 1;
     text-align: center;
-    padding: 4px 2px;
-    /* Reduced from 10px 4px */
-    font-size: 10px;
-    /* Reduced from 11px */
+    padding: 10px 4px;
+    font-size: 11px;
     font-weight: 700;
     color: #111;
     text-transform: uppercase;
     display: flex;
     align-items: center;
     justify-content: center;
-    line-height: 1.1;
-    /* Tighter line height */
+    line-height: 1.2;
 }
 
 .status-confirmed-full {
     width: 100%;
-    padding: 6px 4px;
-    /* Reduced from 14px 4px */
-    font-size: 11px;
-    /* Reduced from 13px */
-    letter-spacing: 0.5px;
-    /* Reduced from 1px */
+    padding: 14px 4px;
+    font-size: 13px;
+    letter-spacing: 1px;
 }
 
-/* Status Colors (Unchanged) */
 .status-pending {
     background-color: #e6ced3;
 }
@@ -215,11 +187,13 @@
     background-color: #66ffff;
 }
 
+/* Updated to Bootstrap Danger */
 .status-missed {
     background-color: #dc3545;
     color: white;
 }
 
+/* Updated to Bootstrap Warning */
 .status-uncoverd {
     background-color: #ffc107;
 }
@@ -228,11 +202,13 @@
     background-color: #d2b48c;
 }
 
+/* Updated to Bootstrap Indigo/Purple */
 .status-completed {
     background-color: #6f42c1;
     color: white;
 }
 
+/* Updated to Bootstrap Primary */
 .status-confirmed {
     background-color: #0d6efd;
     color: white;
@@ -255,8 +231,7 @@
 .roster-grid th,
 .roster-grid td {
     border: 1px solid #e5e7eb;
-    padding: 6px;
-    /* Halved from 12px */
+    padding: 12px;
     vertical-align: top;
 }
 
@@ -264,8 +239,7 @@
     text-align: left;
     background: white;
     font-weight: 600;
-    font-size: 12px;
-    /* Reduced from 14px */
+    font-size: 14px;
     color: #111827;
     white-space: nowrap;
 }
@@ -273,30 +247,25 @@
 .search-cell {
     display: flex;
     align-items: center;
-    gap: 4px;
-    /* Reduced from 8px */
-    min-width: 100px;
-    /* Reduced from 140px */
+    gap: 8px;
+    min-width: 140px;
 }
 
 .search-cell i {
     color: #9ca3af;
-    font-size: 12px;
 }
 
 .search-input {
     width: 100%;
     border: none;
     outline: none;
-    font-size: 12px;
-    /* Reduced from 14px */
+    font-size: 14px;
     color: #6b7280;
 }
 
 .location-td {
     position: relative;
-    min-height: 60px;
-    /* Reduced from 100px */
+    min-height: 100px;
 }
 
 .location-cell-content {
@@ -310,9 +279,9 @@
     justify-content: space-between;
     font-weight: 500;
     color: #374151;
-    font-size: 12px;
 }
 
+/* Updated to Bootstrap Primary */
 .loc-name {
     color: #0d6efd;
     font-weight: 600;
@@ -324,45 +293,38 @@
     color: #0a58ca;
 }
 
+/* Updated to Bootstrap Primary Info/Light variants */
 .loc-badge {
     position: absolute;
-    bottom: 6px;
-    /* Reduced from 12px */
-    right: 6px;
-    /* Reduced from 12px */
+    bottom: 12px;
+    right: 12px;
     background: #cfe2ff;
     color: #084298;
-    padding: 2px 6px;
-    /* Reduced from 4px 8px */
-    border-radius: 10px;
-    font-size: 10px;
-    /* Reduced from 11px */
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 11px;
     font-weight: 600;
     display: flex;
     align-items: center;
-    gap: 2px;
+    gap: 4px;
 }
 
 /* Shift Cells */
 .day-cell {
     width: 11%;
     position: relative;
-    padding-bottom: 20px !important;
-    /* Reduced from 35px */
+    padding-bottom: 35px !important;
 }
 
 .shift-block {
     border: 1px solid rgba(0, 0, 0, 0.15);
-    font-size: 10px;
-    /* Reduced from 11px */
-    margin-bottom: 4px;
-    /* Reduced from 6px */
+    font-size: 11px;
+    margin-bottom: 6px;
     cursor: pointer;
     color: #111;
     overflow: hidden;
 }
 
-/* Shift Colors (Unchanged) */
 .shift-pending {
     background-color: #e6ced3;
     color: #111;
@@ -390,11 +352,13 @@
 
 .shift-missed {
     background-color: #dc3545;
+    /* Bootstrap danger */
     color: white;
 }
 
 .shift-uncovered {
     background-color: #ffc107;
+    /* Bootstrap warning */
     color: #111;
 }
 
@@ -405,33 +369,30 @@
 
 .shift-completed {
     background-color: #6f42c1;
+    /* Bootstrap indigo */
     color: white;
 }
 
+/* Updated to Bootstrap Primary */
 .shift-confirmed {
     background-color: #0d6efd;
     color: white;
 }
 
 .shift-time {
-    font-weight: 900;
-    margin-bottom: 2px;
-    /* Reduced from 5px */
-    padding: 2px 4px 0;
-    /* Reduced from 4px 6px 0 */
+    text-align: center;
+    margin-bottom: 5px;
+    padding: 4px 6px 0;
 }
 
 .shift-name {
     margin-bottom: 0;
-    margin-left: 6px;
-    /* Reduced from 10px */
+    text-align: center;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    font-size: 9px;
-    /* Reduced from 10px */
-    padding: 0 4px 2px;
-    /* Reduced from 0 6px 4px */
+    font-size: 10px;
+    padding: 0 6px 4px;
 }
 
 .shift-tags {
@@ -442,10 +403,8 @@
 
 .s-tag {
     flex: 1;
-    font-size: 8px;
-    /* Reduced from 9px */
-    padding: 2px 1px;
-    /* Reduced from 3px 2px */
+    font-size: 9px;
+    padding: 3px 2px;
     font-weight: 600;
     white-space: nowrap;
     display: flex;
@@ -459,12 +418,13 @@
     border-right: none;
 }
 
-/* Tag Colors (Unchanged) */
 .s-tag-activity {
     background: #212529;
+    /* Bootstrap Dark */
     color: white;
 }
 
+/* Updated to Bootstrap Primary */
 .s-tag-detail {
     background: #0d6efd;
     color: white;
@@ -480,18 +440,17 @@
     color: white;
 }
 
+/* Updated to Bootstrap Light Theme */
 .roster-footer {
     background: #f8f9fa;
     font-weight: 600;
-    font-size: 11px;
-    /* Reduced from 13px */
+    font-size: 13px;
     color: #212529;
 }
 
 .roster-footer td {
     text-align: center;
-    padding: 8px 6px;
-    /* Halved from 16px 12px */
+    padding: 16px 12px;
     border: 1px solid #dee2e6;
 }
 
@@ -499,8 +458,7 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 2px;
-    /* Reduced from 4px */
+    gap: 4px;
 }
 
 /* --- Responsive Media Queries --- */
@@ -511,14 +469,12 @@
 }
 
 .day-cell {
-    min-width: 100px;
-    /* Reduced from 130px */
+    min-width: 130px;
 }
 
 @media screen and (max-width: 1024px) {
     .top-left-group {
-        gap: 12px;
-        /* Tighter gap */
+        gap: 16px;
     }
 
     .roster-grid {
@@ -528,8 +484,7 @@
 
 @media screen and (max-width: 768px) {
     .roster-page-wrapper {
-        padding: 6px;
-        /* Even tighter for mobile */
+        padding: 10px;
     }
 
     .toolbar-row-top,
@@ -544,8 +499,7 @@
 
     .filter-select {
         flex: 1;
-        min-width: 100px;
-        /* Reduced from 120px */
+        min-width: 120px;
     }
 
     .action-buttons {
@@ -558,14 +512,12 @@
     }
 
     .status-box {
-        flex: 0 1 calc(33% - 2px);
-        /* Adjusted for new gap */
+        flex: 0 1 calc(33% - 4px);
     }
 }
 
 @media screen and (max-width: 480px) {
     .status-box {
-        flex: 0 1 calc(50% - 2px);
-        /* Adjusted for new gap */
+        flex: 0 1 calc(50% - 4px);
     }
 }

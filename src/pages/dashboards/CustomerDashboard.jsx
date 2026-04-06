@@ -4,10 +4,10 @@ import StatsCard from "../../components/dashboard/StatsCard";
 import JobTrendChart from "../../components/dashboard/JobTrendChart";
 import { apiURL } from "../../utils/exports";
 import "./DashboardStyles.css";
+import dashboardBanner from "../../assets/images/dashboard-banner.jpg";
 
 export default function CustomerDashboard() {
   const { userdata } = useSelector((state) => state.auth);
-
 
   const [dashboardStats] = useState({
     activeJobs: 8,
@@ -61,7 +61,7 @@ export default function CustomerDashboard() {
       {/* Profile Card */}
       <div className="dashboard-cover-card">
         <div className="dashboard-cover-media">
-          <img src="./assets/images/dashboard-banner.jpeg" alt="Dashboard" />
+          <img src={dashboardBanner} alt="Dashboard" />
         </div>
         <div className="dashboard-cover-profile">
           <div className="cover-avatar">
@@ -80,10 +80,14 @@ export default function CustomerDashboard() {
           </div>
           <div>
             <h3>
-              {userdata?.data?.company_name || userdata?.company_name || "Company"}
+              {userdata?.data?.company_name ||
+                userdata?.company_name ||
+                "Company"}
             </h3>
             <p>
-              {userdata?.data?.address || userdata?.address || "Company Address"}
+              {userdata?.data?.address ||
+                userdata?.address ||
+                "Company Address"}
             </p>
             <ul>
               <li>
@@ -179,7 +183,16 @@ export default function CustomerDashboard() {
                     </span>
                   </td>
                   <td>
-                    <button className="text-primary small" style={{ border: "none", background: "none", cursor: "pointer", textDecoration: "underline", padding: 0 }}>
+                    <button
+                      className="text-primary small"
+                      style={{
+                        border: "none",
+                        background: "none",
+                        cursor: "pointer",
+                        textDecoration: "underline",
+                        padding: 0,
+                      }}
+                    >
                       View
                     </button>
                   </td>

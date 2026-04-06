@@ -7,10 +7,10 @@ import JobTrendChart from "../../components/dashboard/JobTrendChart";
 import Loader from "../../components/Loader";
 import { apiURL } from "../../utils/exports";
 import "./DashboardStyles.css";
+import dashboardBanner from "../../assets/images/dashboard-banner.jpg";
 
 export default function AdminDashboard() {
   const { userdata } = useSelector((state) => state.auth);
-
 
   const [adminStats] = useState({
     totalUsers: 920,
@@ -26,8 +26,20 @@ export default function AdminDashboard() {
   });
 
   const [topContractors] = useState([
-    { id: 1, name: "Premier Security Co", staff: 45, jobs: 120, revenue: "125,000" },
-    { id: 2, name: "Elite Staffing Ltd", staff: 38, jobs: 95, revenue: "108,500" },
+    {
+      id: 1,
+      name: "Premier Security Co",
+      staff: 45,
+      jobs: 120,
+      revenue: "125,000",
+    },
+    {
+      id: 2,
+      name: "Elite Staffing Ltd",
+      staff: 38,
+      jobs: 95,
+      revenue: "108,500",
+    },
     { id: 3, name: "Quick Solutions", staff: 32, jobs: 78, revenue: "89,200" },
     { id: 4, name: "Trusted Services", staff: 28, jobs: 66, revenue: "74,500" },
   ]);
@@ -40,14 +52,12 @@ export default function AdminDashboard() {
         ? `${apiURL}${profileImage}`
         : null;
 
-
-
   return (
     <div className="dashboard-main admin-dashboard">
       {/* Profile Card */}
       <div className="dashboard-cover-card">
         <div className="dashboard-cover-media">
-          <img src="./assets/images/dashboard-banner.jpeg" alt="Dashboard" />
+          <img src={dashboardBanner} alt="Dashboard" />
         </div>
         <div className="dashboard-cover-profile">
           <div className="cover-avatar">
@@ -65,7 +75,10 @@ export default function AdminDashboard() {
             )}
           </div>
           <div>
-            <h3>Admin Panel - {userdata?.data?.name || userdata?.name || "Administrator"}</h3>
+            <h3>
+              Admin Panel -{" "}
+              {userdata?.data?.name || userdata?.name || "Administrator"}
+            </h3>
             <p>Platform Management & Analytics</p>
             <ul>
               <li>
@@ -190,7 +203,16 @@ export default function AdminDashboard() {
                   <td>{contractor.jobs}</td>
                   <td className="fw-500">${contractor.revenue}</td>
                   <td>
-                    <button className="text-primary small" style={{ border: "none", background: "none", cursor: "pointer", textDecoration: "underline", padding: 0 }}>
+                    <button
+                      className="text-primary small"
+                      style={{
+                        border: "none",
+                        background: "none",
+                        cursor: "pointer",
+                        textDecoration: "underline",
+                        padding: 0,
+                      }}
+                    >
                       View Profile
                     </button>
                   </td>
@@ -209,11 +231,15 @@ export default function AdminDashboard() {
         <div className="health-metrics">
           <div className="health-item">
             <span className="health-label">Active Jobs</span>
-            <span className="health-value text-success">{adminStats.activeJobs}</span>
+            <span className="health-value text-success">
+              {adminStats.activeJobs}
+            </span>
           </div>
           <div className="health-item">
             <span className="health-label">Pending Jobs</span>
-            <span className="health-value text-warning">{adminStats.pendingJobs}</span>
+            <span className="health-value text-warning">
+              {adminStats.pendingJobs}
+            </span>
           </div>
           <div className="health-item">
             <span className="health-label">Platform Status</span>

@@ -8,6 +8,7 @@ import useSubmit from "../../hooks/useSubmit";
 import Loader from "../../components/Loader";
 import { apiURL } from "../../utils/exports";
 import "./DashboardStyles.css";
+import dashboardBanner from "../../assets/images/dashboard-banner.jpg";
 
 export default function StaffDashboard() {
   const { userdata } = useSelector((state) => state.auth);
@@ -23,7 +24,7 @@ export default function StaffDashboard() {
   });
 
   const [lastMonday] = useState(() =>
-    startOfWeek(subWeeks(new Date(), 1), { weekStartsOn: 1 })
+    startOfWeek(subWeeks(new Date(), 1), { weekStartsOn: 1 }),
   );
 
   const fetchStaffData = useCallback(() => {
@@ -128,7 +129,7 @@ export default function StaffDashboard() {
       {/* Profile Card */}
       <div className="dashboard-cover-card">
         <div className="dashboard-cover-media">
-          <img src="./assets/images/dashboard-banner.jpeg" alt="Dashboard" />
+          <img src={dashboardBanner} alt="Dashboard" />
         </div>
         <div className="dashboard-cover-profile">
           <div className="cover-avatar">
@@ -147,7 +148,9 @@ export default function StaffDashboard() {
           </div>
           <div>
             <h3>{userdata?.data?.name || userdata?.name || "Staff Member"}</h3>
-            <p>{userdata?.data?.address || userdata?.address || "No Location"}</p>
+            <p>
+              {userdata?.data?.address || userdata?.address || "No Location"}
+            </p>
             <ul>
               <li>
                 <i className="fa-solid fa-phone"></i>{" "}
@@ -230,7 +233,9 @@ export default function StaffDashboard() {
                     <div>
                       <strong>{job.company}</strong>
                       {job.guard && (
-                        <small className="d-block text-muted">{job.guard}</small>
+                        <small className="d-block text-muted">
+                          {job.guard}
+                        </small>
                       )}
                     </div>
                   </div>

@@ -7,6 +7,7 @@ import useSubmit from "../../hooks/useSubmit";
 import Loader from "../../components/Loader";
 import { apiURL } from "../../utils/exports";
 import "./DashboardStyles.css";
+import dashboardBanner from "../../assets/images/dashboard-banner.jpg";
 
 export default function ContractorDashboard() {
   const { userdata } = useSelector((state) => state.auth);
@@ -29,20 +30,24 @@ export default function ContractorDashboard() {
     if (!userId) return;
 
     // Fetch assigned staff
-    submit("api/contractor/assigned-staff", { contractor_id: userId }, { method: "GET" });
+    submit(
+      "api/contractor/assigned-staff",
+      { contractor_id: userId },
+      { method: "GET" },
+    );
 
     // Fetch leave requests
     submit(
       "api/contractor/leave-requests",
       { contractor_id: userId },
-      { method: "GET" }
+      { method: "GET" },
     );
 
     // Fetch active jobs
     submit(
       "api/contractor/active-jobs",
       { contractor_id: userId, status: "active" },
-      { method: "GET" }
+      { method: "GET" },
     );
   }, [userId, submit]);
 
@@ -93,9 +98,27 @@ export default function ContractorDashboard() {
     ]);
 
     setLeaveRequests([
-      { id: 1, staffName: "Jane Doe", startDate: "2026-04-15", endDate: "2026-04-22", status: "Pending" },
-      { id: 2, staffName: "Robert Brown", startDate: "2026-04-20", endDate: "2026-04-25", status: "Approved" },
-      { id: 3, staffName: "Emma Davis", startDate: "2026-04-18", endDate: "2026-04-19", status: "Pending" },
+      {
+        id: 1,
+        staffName: "Jane Doe",
+        startDate: "2026-04-15",
+        endDate: "2026-04-22",
+        status: "Pending",
+      },
+      {
+        id: 2,
+        staffName: "Robert Brown",
+        startDate: "2026-04-20",
+        endDate: "2026-04-25",
+        status: "Approved",
+      },
+      {
+        id: 3,
+        staffName: "Emma Davis",
+        startDate: "2026-04-18",
+        endDate: "2026-04-19",
+        status: "Pending",
+      },
     ]);
   }, []);
 
@@ -114,7 +137,7 @@ export default function ContractorDashboard() {
       {/* Profile Card */}
       <div className="dashboard-cover-card">
         <div className="dashboard-cover-media">
-          <img src="./assets/images/dashboard-banner.jpeg" alt="Dashboard" />
+          <img src={dashboardBanner} alt="Dashboard" />
         </div>
         <div className="dashboard-cover-profile">
           <div className="cover-avatar">
@@ -133,9 +156,7 @@ export default function ContractorDashboard() {
           </div>
           <div>
             <h3>{userdata?.data?.name || userdata?.name || "Contractor"}</h3>
-            <p>
-              {userdata?.data?.company_name || "Contractor Agency"}
-            </p>
+            <p>{userdata?.data?.company_name || "Contractor Agency"}</p>
             <ul>
               <li>
                 <i className="fa-solid fa-phone"></i>{" "}
@@ -223,9 +244,7 @@ export default function ContractorDashboard() {
                   <td>
                     <span
                       className={`badge ${
-                        staff.status === "Active"
-                          ? "bg-success"
-                          : "bg-warning"
+                        staff.status === "Active" ? "bg-success" : "bg-warning"
                       }`}
                     >
                       {staff.status}
@@ -233,7 +252,16 @@ export default function ContractorDashboard() {
                   </td>
                   <td>{staff.activeJobs}</td>
                   <td>
-                    <button className="text-primary small" style={{ border: "none", background: "none", cursor: "pointer", textDecoration: "underline", padding: 0 }}>
+                    <button
+                      className="text-primary small"
+                      style={{
+                        border: "none",
+                        background: "none",
+                        cursor: "pointer",
+                        textDecoration: "underline",
+                        padding: 0,
+                      }}
+                    >
                       View
                     </button>
                   </td>
@@ -262,9 +290,7 @@ export default function ContractorDashboard() {
               <div className="leave-right">
                 <span
                   className={`badge ${
-                    request.status === "Pending"
-                      ? "bg-warning"
-                      : "bg-success"
+                    request.status === "Pending" ? "bg-warning" : "bg-success"
                   }`}
                 >
                   {request.status}

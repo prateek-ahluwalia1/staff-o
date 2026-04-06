@@ -603,7 +603,11 @@ export default function EditProfile() {
     [userId, deleteSubmit, deleteConfirmText, dispatch],
   );
 
-  if (fetchLoading) return <Loader fullPage />;
+  // Only show loader on initial page load when no data exists yet
+  // Once data loads, never show the full-screen loader (let individual operations handle their own feedback)
+  if (fetchLoading && !profileData?.data) {
+    return <Loader />;
+  }
 
   return (
     <div className="dashboard-main">

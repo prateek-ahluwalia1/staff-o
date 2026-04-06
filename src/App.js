@@ -63,14 +63,12 @@ function AppContent() {
   useEcho();
 
   useEffect(() => {
-    // Only verify session on initial mount, not on every token change
     if (!isInitialMount.current) return;
     isInitialMount.current = false;
 
     const verifySession = async () => {
       if (!token || !userdata) {
         if (token) {
-          // Token exists but no user data, clear it
           dispatch(logOut());
         }
         return;
@@ -122,7 +120,7 @@ function AppContent() {
 
     verifySession();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Only run once on mount. useRef guard ensures single execution.
+  }, []);
 
   return (
     <>

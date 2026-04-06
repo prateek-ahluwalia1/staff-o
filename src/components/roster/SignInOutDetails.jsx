@@ -81,7 +81,7 @@ export default function SignInOutDetails({ rosterId, guardId, shift, site }) {
       <div
         style={{ display: "flex", justifyContent: "center", padding: "40px" }}
       >
-        <Loader message="Loading sign in/out details..." />
+        <Loader fullPage />
       </div>
     );
   }

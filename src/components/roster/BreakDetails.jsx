@@ -20,7 +20,7 @@ export default function BreakDetails({ rosterId, guardId }) {
       <div
         style={{ display: "flex", justifyContent: "center", padding: "40px" }}
       >
-        <Loader message="Loading break details..." />
+        <Loader fullPage />
       </div>
     );
   }

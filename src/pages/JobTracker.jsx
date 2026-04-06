@@ -462,7 +462,7 @@ const JobTracker = () => {
               {loading && (
                 <tr>
                   <td colSpan="12" className="text-center py-4">
-                    <Loader />
+                    <Loader fullPage />
                   </td>
                 </tr>
               )}

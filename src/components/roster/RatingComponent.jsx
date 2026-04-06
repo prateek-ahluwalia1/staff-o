@@ -66,7 +66,7 @@ export default function RatingComponent({ rosterId, guardId }) {
       <div
         style={{ display: "flex", justifyContent: "center", padding: "40px" }}
       >
-        <Loader message="Loading rating..." />
+        <Loader fullPage />
       </div>
     );
   }

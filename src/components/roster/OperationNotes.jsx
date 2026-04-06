@@ -50,7 +50,7 @@ export default function OperationNotes({ rosterId, guardId }) {
       <div
         style={{ display: "flex", justifyContent: "center", padding: "40px" }}
       >
-        <Loader message="Loading operation notes..." />
+        <Loader fullPage />
       </div>
     );
   }

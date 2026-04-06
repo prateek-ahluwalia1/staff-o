@@ -176,7 +176,7 @@ export default function FootPatrolReport({ rosterId, guardId, shift, site }) {
       <div
         style={{ display: "flex", justifyContent: "center", padding: "40px" }}
       >
-        <Loader message="Loading foot patrol report..." />
+        <Loader fullPage />
       </div>
     );
   }

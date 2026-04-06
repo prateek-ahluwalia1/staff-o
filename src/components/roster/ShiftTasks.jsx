@@ -34,7 +34,7 @@ export default function ShiftTasks({ rosterId, guardId }) {
       <div
         style={{ display: "flex", justifyContent: "center", padding: "40px" }}
       >
-        <Loader message="Loading shift tasks..." />
+        <Loader fullPage />
       </div>
     );
   }

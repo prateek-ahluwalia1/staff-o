@@ -619,8 +619,10 @@ export default function EditProfile() {
           loading={uploadLoading}
         />
         <SettingsHeaderContent
+          company_name={formData.company_name}
           isVerified={isverified}
           userType={userType}
+          phone={formData.phone}
           name={formData.name}
           email={formData.email}
           city={formData.address}

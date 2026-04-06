@@ -62,29 +62,31 @@ export default function ProfileForm({
               )}
             </div>
           </div>
-          <div>
-            <label htmlFor="phone" className="form-label">
-              Phone <span className="text-danger">*</span>
-            </label>
-            <div className="d-flex gap-2 align-items-center">
-              <input
-                type="tel"
-                className="form-control"
-                id="phone"
-                value={formData.phone || ""}
-                style={{ background: "#f8f9fa", cursor: "default" }}
-                // readOnly={userType !== "customer"}
-                onChange={onChange}
-              />
-              {/* <button
+          {userType !== "contractor" && (
+            <div>
+              <label htmlFor="phone" className="form-label">
+                Phone <span className="text-danger">*</span>
+              </label>
+              <div className="d-flex gap-2 align-items-center">
+                <input
+                  type="tel"
+                  className="form-control"
+                  id="phone"
+                  value={formData.phone || ""}
+                  style={{ background: "#f8f9fa", cursor: "default" }}
+                  // readOnly={userType !== "customer"}
+                  onChange={onChange}
+                />
+                {/* <button
                 type="button"
                 className="btn btn-outline-primary btn-sm text-nowrap"
                 onClick={onChangePhone}
               >
                 Change Phone
               </button> */}
+              </div>
             </div>
-          </div>
+          )}
 
           {userType === "staff" && (
             <>

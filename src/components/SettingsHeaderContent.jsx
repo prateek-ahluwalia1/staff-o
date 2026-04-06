@@ -5,7 +5,6 @@ export default function SettingsHeaderContent({
   name,
   email,
   city,
-  gender,
   company_name,
   profileCompletion = 0,
   isVerified,
@@ -68,10 +67,6 @@ export default function SettingsHeaderContent({
               <span>
                 <i className="fa-solid fa-location-dot" aria-hidden="true"></i>
                 {limitToFirstFourWords(city) || "No location"}
-              </span>
-              <span>
-                <i className="fa-solid fa-user" aria-hidden="true"></i>
-                {gender || "Not specified"}
               </span>
             </>
           ) : (

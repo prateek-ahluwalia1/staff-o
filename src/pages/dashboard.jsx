@@ -38,6 +38,7 @@ const getAvatarColor = (name) => {
 export default function Dashboard() {
   const { userdata } = useSelector((state) => state.auth);
   const userId = userdata?.data?.id || userdata?.id;
+  const userType = userdata?.data?.user_type || userdata?.user_type;
   const { submit, loading, data: submitData } = useSubmit({ isAuth: true });
 
   const getProfileImageUrl = useCallback(() => {
@@ -178,10 +179,12 @@ export default function Dashboard() {
               {userdata?.data?.address || userdata?.address || "No Location"}
             </p>
             <ul>
-              <li>
-                <i className="fa-solid fa-phone"></i>{" "}
-                {userdata?.data?.phone || userdata?.phone || "No Phone"}
-              </li>
+              {userType !== "contractor" && (
+                <li>
+                  <i className="fa-solid fa-phone"></i>{" "}
+                  {userdata?.data?.phone || userdata?.phone || "No Phone"}
+                </li>
+              )}
               <li>
                 <i className="fa-solid fa-envelope"></i>{" "}
                 {userdata?.data?.email || userdata?.email || "No Email"}

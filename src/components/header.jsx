@@ -226,7 +226,7 @@ const Header = memo(function Header() {
             <ul className="navbar-nav mx-auto align-items-lg-center main-menu">
               {/* Home */}
               <li className="nav-item">
-                <NavLink className="nav-link" to="/home">
+                <NavLink className="nav-link" to="/">
                   Home
                 </NavLink>
               </li>

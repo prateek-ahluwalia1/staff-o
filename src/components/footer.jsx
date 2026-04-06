@@ -13,7 +13,7 @@ const Footer = memo(function Footer() {
               <h5 className="footer-title">Quick Links</h5>
               <ul className="footer-links">
                 <li>
-                  <Link to="/home">Home</Link>
+                  <Link to="/">Home</Link>
                 </li>
                 <li>
                   <Link to="/contact-us">Contact Us</Link>

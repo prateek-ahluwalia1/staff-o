@@ -15220,12 +15220,13 @@ Large Mobile Screen
     /* Adds breathing room below the meta info */
 }
 
-/* 2. Desktop view (768px and up): Pops into the original -400px spot */
+
+
 @media (min-width: 1200px) {
     .status-circle-wrapper {
         position: absolute;
         top: -10px;
-        right: -400px;
+        right: -250px;
         margin-top: 0;
         /* Removes the mobile spacing */
     }

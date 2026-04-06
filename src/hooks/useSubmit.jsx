@@ -53,7 +53,7 @@ const useSubmit = ({ isAuth = false } = {}) => {
 
           console.error("Submit API error:", errorMsg);
           toast.error(errorMsg);
-          throw new Error(errorMsg);
+          return;
         }
 
         setData(json);
@@ -61,9 +61,7 @@ const useSubmit = ({ isAuth = false } = {}) => {
       } catch (err) {
         const message = err.message || "Network error";
         console.error("Submit request failed:", message);
-        if (!message.includes("Something went wrong")) {
-          toast.error(message);
-        }
+        toast.error(message);
         return;
       } finally {
         setLoading(false);

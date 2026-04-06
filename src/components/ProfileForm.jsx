@@ -27,7 +27,7 @@ export default function ProfileForm({
         <div className="settings-grid">
           <div>
             <label htmlFor="name" className="form-label">
-              Full Name
+              Full Name <span className="text-danger">*</span>
             </label>
             <input
               type="text"
@@ -40,7 +40,7 @@ export default function ProfileForm({
           </div>
           <div>
             <label htmlFor="email" className="form-label">
-              Email Address
+              Email Address <span className="text-danger">*</span>
             </label>
             <div className="d-flex gap-2 align-items-center">
               <input
@@ -64,7 +64,7 @@ export default function ProfileForm({
           </div>
           <div>
             <label htmlFor="phone" className="form-label">
-              Phone
+              Phone <span className="text-danger">*</span>
             </label>
             <div className="d-flex gap-2 align-items-center">
               <input
@@ -185,7 +185,7 @@ export default function ProfileForm({
             <>
               <div>
                 <label htmlFor="company_name" className="form-label">
-                  Company Name
+                  Company Name <span className="text-danger">*</span>
                 </label>
                 <input
                   type="text"
@@ -216,7 +216,7 @@ export default function ProfileForm({
               It is visible to all user types. */}
           <div>
             <label htmlFor="address" className="form-label">
-              Address
+              Address <span className="text-danger">*</span>
             </label>
             <input
               type="text"

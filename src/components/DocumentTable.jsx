@@ -232,29 +232,31 @@ export default function DocumentTable({ documents, onAddFile, onAddDocument }) {
                       border: "none",
                     }}
                   >
-                    <button
-                      type="button"
-                      title="Update document"
-                      style={{
-                        background: "#f3f4f6",
-                        border: "none",
-                        color: "#007bff",
-                        fontSize: 20,
-                        cursor: "pointer",
-                        borderRadius: 6,
-                        padding: 6,
-                        transition: "background 0.2s",
-                      }}
-                      onClick={() => onAddFile(doc)}
-                      onMouseOver={(e) =>
-                        (e.currentTarget.style.background = "#e0e7ef")
-                      }
-                      onMouseOut={(e) =>
-                        (e.currentTarget.style.background = "#f3f4f6")
-                      }
-                    >
-                      <i className="fa fa-pencil" aria-hidden="true"></i>
-                    </button>
+                    {doc.document_no && doc.document_expiry ? (
+                      <button
+                        type="button"
+                        title="Update document"
+                        style={{
+                          background: "#f3f4f6",
+                          border: "none",
+                          color: "#007bff",
+                          fontSize: 20,
+                          cursor: "pointer",
+                          borderRadius: 6,
+                          padding: 6,
+                          transition: "background 0.2s",
+                        }}
+                        onClick={() => onAddFile(doc)}
+                        onMouseOver={(e) =>
+                          (e.currentTarget.style.background = "#e0e7ef")
+                        }
+                        onMouseOut={(e) =>
+                          (e.currentTarget.style.background = "#f3f4f6")
+                        }
+                      >
+                        <i className="fa fa-pencil" aria-hidden="true"></i>
+                      </button>
+                    ) : null}
                   </td>
                 </tr>
               ))

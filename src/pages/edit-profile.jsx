@@ -9,7 +9,6 @@ import DocumentTable from "../components/DocumentTable";
 import ProfileForm from "../components/ProfileForm";
 import AvatarUpload from "../components/AvatarUpload";
 import SettingsHeaderContent from "../components/SettingsHeaderContent";
-import fallbackImage from "../assets/images/notfound.jpeg";
 import { apiURL } from "../utils/exports";
 import { toast } from "react-toastify";
 
@@ -500,6 +499,13 @@ export default function EditProfile() {
     } else if (type === "file") {
       const file = files[0];
       if (file) {
+        // Show local preview immediately
+        const previewUrl = URL.createObjectURL(file);
+        setDocForm((prev) => ({
+          ...prev,
+          file_url: previewUrl,
+        }));
+
         const fd = new FormData();
         fd.append("file", file);
         fd.append("folder", "staff_documents");
@@ -934,7 +940,7 @@ export default function EditProfile() {
                 <form onSubmit={handleSaveNewCard}>
                   <div className="mb-3">
                     <label className="form-label text-muted small fw-bold">
-                      Name on Card
+                      Name on Card <span className="text-danger">*</span>
                     </label>
                     <input
                       type="text"
@@ -953,7 +959,7 @@ export default function EditProfile() {
 
                   <div className="mb-3">
                     <label className="form-label text-muted small fw-bold">
-                      Card Number
+                      Card Number <span className="text-danger">*</span>
                     </label>
                     <div className="input-group">
                       <input
@@ -983,7 +989,7 @@ export default function EditProfile() {
                   <div className="row mb-4">
                     <div className="col-4">
                       <label className="form-label text-muted small fw-bold">
-                        Exp Month
+                        Exp Month <span className="text-danger">*</span>
                       </label>
                       <input
                         type="text"
@@ -1000,7 +1006,7 @@ export default function EditProfile() {
                     </div>
                     <div className="col-4">
                       <label className="form-label text-muted small fw-bold">
-                        Exp Year
+                        Exp Year <span className="text-danger">*</span>
                       </label>
                       <input
                         type="text"
@@ -1017,7 +1023,7 @@ export default function EditProfile() {
                     </div>
                     <div className="col-4">
                       <label className="form-label text-muted small fw-bold">
-                        CVV
+                        CVV <span className="text-danger">*</span>
                       </label>
                       <input
                         type="password"
@@ -1068,20 +1074,44 @@ export default function EditProfile() {
             documents={profileData?.data?.documents || []}
             onAddFile={(doc) => {
               setSelectedDoc(doc);
-              setDocForm((prev) => ({
-                ...prev,
-                file_url: doc.file,
-                document_name: doc.document_name,
-              }));
+              // If document has no data (empty fields), reset form completely
+              if (!doc.document_no && !doc.document_expiry && !doc.file) {
+                setDocForm({
+                  notes: "",
+                  no: false,
+                  exp: false,
+                  document_no: "",
+                  document_expiry: "",
+                  file: null,
+                  file_path: "",
+                  file_url: "",
+                  document_name: doc.document_name || "",
+                });
+              } else {
+                // If document has data, load it for editing
+                setDocForm((prev) => ({
+                  ...prev,
+                  file_url: doc.file,
+                  document_name: doc.document_name,
+                  document_no: doc.document_no || "",
+                  document_expiry: doc.document_expiry || "",
+                }));
+              }
               setShowDocModal(true);
             }}
             onAddDocument={() => {
               setSelectedDoc(null);
-              setDocForm((prev) => ({
-                ...prev,
+              setDocForm({
+                notes: "",
+                no: false,
+                exp: false,
+                document_no: "",
+                document_expiry: "",
+                file: null,
+                file_path: "",
                 file_url: "",
                 document_name: "",
-              }));
+              });
               setShowDocModal(true);
             }}
           />
@@ -1156,7 +1186,7 @@ export default function EditProfile() {
             <form onSubmit={handleRequestEmailOtp}>
               <div className="mb-3">
                 <label className="form-label fw-semibold">
-                  New Email Address
+                  New Email Address <span className="text-danger">*</span>
                 </label>
                 <input
                   type="email"
@@ -1189,7 +1219,9 @@ export default function EditProfile() {
           ) : (
             <form onSubmit={handleVerifyEmailOtp}>
               <div className="mb-3">
-                <label className="form-label fw-semibold">Enter OTP</label>
+                <label className="form-label fw-semibold">
+                  Enter OTP <span className="text-danger">*</span>
+                </label>
                 <input
                   type="text"
                   className="form-control text-center fw-bold"
@@ -1262,7 +1294,7 @@ export default function EditProfile() {
             <form onSubmit={handleRequestPhoneOtp}>
               <div className="mb-3">
                 <label className="form-label fw-semibold">
-                  New Phone Number
+                  New Phone Number <span className="text-danger">*</span>
                 </label>
                 <input
                   type="tel"
@@ -1295,7 +1327,9 @@ export default function EditProfile() {
           ) : (
             <form onSubmit={handleVerifyPhoneOtp}>
               <div className="mb-3">
-                <label className="form-label fw-semibold">Enter OTP</label>
+                <label className="form-label fw-semibold">
+                  Enter OTP <span className="text-danger">*</span>
+                </label>
                 <input
                   type="text"
                   className="form-control text-center fw-bold"
@@ -1357,7 +1391,9 @@ export default function EditProfile() {
             required={!selectedDoc}
             disabled={!!selectedDoc}
           >
-            <option value="">Select Type</option>
+            <option value="">
+              Select Type <span className="text-danger">*</span>
+            </option>
             <option value="Passport">Passport</option>
             <option value="Visa">Visa</option>
             <option value="Casual Contract Form">Casual Contract Form</option>
@@ -1372,12 +1408,13 @@ export default function EditProfile() {
               name="document_no"
               value={docForm.document_no}
               onChange={handleDocFormChange}
-              required
             />
           </div>
 
           <div className="mb-3">
-            <label className="form-label fw-semibold">Expiry Date</label>
+            <label className="form-label fw-semibold">
+              Expiry Date <span className="text-danger">*</span>
+            </label>
             <input
               type="date"
               className="form-control"
@@ -1388,51 +1425,119 @@ export default function EditProfile() {
             />
           </div>
 
-          <div
-            className="text-center mb-3 position-relative"
-            style={{ minHeight: "150px" }}
-          >
-            <img
-              src={
-                docForm.file_url
-                  ? docForm.file_url.startsWith("http")
-                    ? docForm.file_url
-                    : `${apiURL}staff_documents/${docForm.file_url}`
-                  : fallbackImage
-              }
-              alt="Document Preview"
+          <div className="mb-3">
+            <label className="form-label fw-semibold">
+              Document/Image <span className="text-danger">*</span>
+            </label>
+            <div
+              className="position-relative border rounded p-3 text-center bg-light"
               style={{
-                width: 150,
-                height: 150,
-                objectFit: "cover",
-                borderRadius: "8px",
-                opacity: uploadLoading ? 0.3 : 1,
+                minHeight: "250px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
               }}
+            >
+              {docForm.file_url ? (
+                <>
+                  {docForm.file_url.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
+                    <img
+                      src={
+                        docForm.file_url.startsWith("http")
+                          ? docForm.file_url
+                          : `${apiURL}staff_documents/${docForm.file_url}`
+                      }
+                      alt="Document Preview"
+                      style={{
+                        width: "100%",
+                        height: "100%",
+                        maxHeight: "400px",
+                        objectFit: "contain",
+                        borderRadius: "8px",
+                        opacity: uploadLoading ? 0.3 : 1,
+                      }}
+                    />
+                  ) : (
+                    <div className="text-center">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="64"
+                        height="64"
+                        fill="#6c757d"
+                        className="bi bi-file-earmark mb-3"
+                        viewBox="0 0 16 16"
+                      >
+                        <path d="M14 4.5V14a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-9a2 2 0 0 1 2-2h5.5L14 4.5zm-3 0A1.5 1.5 0 0 0 9.5 3V1H4a1 1 0 0 0-1 1v9a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V4.5h-2z" />
+                      </svg>
+                      <p className="text-muted mb-0">
+                        {docForm.file_url.split("/").pop() || "Document"}
+                      </p>
+                    </div>
+                  )}
+                  {uploadLoading && (
+                    <div className="position-absolute top-50 start-50 translate-middle">
+                      <div
+                        className="spinner-border text-primary"
+                        role="status"
+                      ></div>
+                      <p className="small mt-1">Uploading...</p>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div className="text-center">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="48"
+                    height="48"
+                    fill="#ccc"
+                    className="bi bi-cloud-upload mb-3"
+                    viewBox="0 0 16 16"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M4.406 1.342a.5.5 0 0 1 .98 0l.745 2.985h3.138a.5.5 0 0 1 .369.883l-2.54 1.874 1.009 3.26a.5.5 0 0 1-.759.544L8 8.71l-2.609 1.905a.5.5 0 1 1-.758-.544l1.009-3.26-2.54-1.874a.5.5 0 0 1 .369-.883h3.138l.745-2.985z"
+                    />
+                  </svg>
+                  <p className="text-muted">Click to upload document/image</p>
+                </div>
+              )}
+            </div>
+            <input
+              type="file"
+              className="form-control mt-2"
+              onChange={handleDocFormChange}
+              name="file"
+              accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.gif,.webp"
             />
-            {uploadLoading && (
-              <div className="position-absolute top-50 start-50 translate-middle">
-                <div
-                  className="spinner-border text-primary"
-                  role="status"
-                ></div>
-                <p className="small mt-1">Uploading...</p>
-              </div>
-            )}
           </div>
 
-          <input
-            type="file"
-            className="form-control mb-3"
-            onChange={handleDocFormChange}
-            name="file"
-          />
-          <button
-            type="submit"
-            className="btn btn-success w-100"
-            disabled={uploadLoading || submitLoading}
-          >
-            {submitLoading ? "Saving..." : "Save Document"}
-          </button>
+          <div className="d-flex gap-2">
+            <button
+              type="button"
+              className="btn btn-outline-secondary w-50"
+              onClick={() => setShowDocModal(false)}
+              disabled={uploadLoading || submitLoading}
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="btn btn-success w-50"
+              disabled={
+                uploadLoading ||
+                submitLoading ||
+                !docForm.document_expiry ||
+                !docForm.file_url
+              }
+            >
+              {submitLoading
+                ? "Saving..."
+                : selectedDoc
+                  ? "Update Document"
+                  : "Save Document"}
+            </button>
+          </div>
         </form>
       </Modal>
 

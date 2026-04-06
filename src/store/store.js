@@ -2,7 +2,7 @@ import { configureStore } from "@reduxjs/toolkit";
 import authReducer from "./slices/authSlice";
 import notificationReducer from "./slices/notificationSlice";
 import chatReducer from "./slices/chatSlice";
-import socketMiddleware from "./middleware/socketMiddleware";
+// import socketMiddleware from "./middleware/socketMiddleware";
 import welfareCallReducer from "./slices/welfareCallSlice";
 import { persistReducer, persistStore } from "redux-persist";
 import storage from "redux-persist/lib/storage";
@@ -30,7 +30,8 @@ const store = configureStore({
       serializableCheck: {
         ignoredActions: [FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER],
       },
-    }).concat(socketMiddleware),
+    }),
+  // }).concat(socketMiddleware),
 });
 
 export const persistor = persistStore(store);

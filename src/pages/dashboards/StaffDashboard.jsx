@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useSelector } from "react-redux";
 import { NavLink } from "react-router-dom";
-import { startOfWeek, subWeeks, addDays, format, parse } from "date-fns";
 import StatsCard from "../../components/dashboard/StatsCard";
 import JobTrendChart from "../../components/dashboard/JobTrendChart";
 import useSubmit from "../../hooks/useSubmit";
@@ -23,90 +22,44 @@ export default function StaffDashboard() {
     upcomingShifts: 0,
   });
 
-  const [lastMonday] = useState(() =>
-    startOfWeek(subWeeks(new Date(), 1), { weekStartsOn: 1 }),
-  );
-
   const fetchStaffData = useCallback(() => {
     if (!userId) return;
-    const payload = {
-      user_id: [userId],
-      state: "Victoria",
-      start: format(lastMonday, "MM-dd-yyyy"),
-      end: format(addDays(lastMonday, 6), "MM-dd-yyyy"),
-      roster_id: "1",
-    };
-    submit("api/fetch-customer-sites", payload, { method: "POST" });
-  }, [userId, submit, lastMonday]);
+    submit("api/dashboard", {}, { method: "GET" });
+  }, [userId, submit]);
 
   useEffect(() => {
     fetchStaffData();
   }, [fetchStaffData]);
 
-  // Calculate stats from submitted data
+  // Update stats from API response
   useEffect(() => {
     if (!submitData?.data) return;
 
-    let totalJobs = 0;
-    let completedJobs = 0;
-    let pendingJobs = 0;
-    let upcomingShifts = 0;
-
-    for (const site of submitData.data) {
-      for (const shift of site.job_roster || []) {
-        totalJobs++;
-        const status = shift.job_status?.toLowerCase() || "pending";
-        if (status === "confirmed") completedJobs++;
-        else if (status === "pending") pendingJobs++;
-
-        upcomingShifts++;
-      }
-    }
-
+    const dashData = submitData.data;
     setDashboardStats((prev) => ({
       ...prev,
-      totalJobs,
-      completedJobs,
-      pendingJobs,
-      upcomingShifts: Math.min(upcomingShifts, 5),
-      earnedThisMonth: (completedJobs * 250).toLocaleString(), // Placeholder calculation
+      totalJobs: dashData.totalJobs || 0,
+      completedJobs: dashData.completedJobs || 0,
+      pendingJobs: dashData.pendingJobs || 0,
+      upcomingShifts: dashData.upcomingShifts || 0,
+      earnedThisMonth: dashData.earnedThisMonth || 0,
+      leaveRequestsSent: dashData.leaveRequestsSent || 0,
     }));
   }, [submitData]);
 
   const recentJobs = useMemo(() => {
-    if (!submitData?.data) return [];
-    const shifts = [];
-    for (const site of submitData.data) {
-      for (const shift of site.job_roster || []) {
-        const status = shift.job_status?.toLowerCase() || "pending";
-        let badgeClass = "";
-        if (status === "confirmed") badgeClass = "success";
-        else if (status === "pending") badgeClass = "warning";
-
-        let timeLabel = `${shift.start} – ${shift.end}`;
-        try {
-          const s = parse(shift.start, "yyyy-MM-dd HH:mm", new Date());
-          const e = parse(shift.end, "yyyy-MM-dd HH:mm", new Date());
-          timeLabel = `${format(s, "MMM dd, HH:mm")} – ${format(e, "HH:mm")}`;
-        } catch (_) {}
-
-        shifts.push({
-          id: shift.id,
-          type: status.charAt(0).toUpperCase() + status.slice(1),
-          badgeClass,
-          title: site.site_name || "Unknown Site",
-          location: site.address || "Location TBA",
-          salary: `Hours: ${shift.hours || 0}`,
-          appliedDate: timeLabel,
-          company: site.state || "",
-          guard: shift.guards?.name || null,
-        });
-
-        if (shifts.length === 12) break;
-      }
-      if (shifts.length === 12) break;
-    }
-    return shifts;
+    if (!submitData?.data?.shifts) return [];
+    return submitData.data.shifts.slice(0, 12).map((shift) => ({
+      id: shift.id,
+      type: shift.status,
+      badgeClass: shift.status === "confirmed" ? "success" : "warning",
+      title: shift.site_name || "Unknown Site",
+      location: shift.address || "Location TBA",
+      salary: `Hours: ${shift.hours || 0}`,
+      appliedDate: shift.dateRange || "",
+      company: shift.state || "",
+      guard: shift.guard_name || null,
+    }));
   }, [submitData]);
 
   const profileImage =

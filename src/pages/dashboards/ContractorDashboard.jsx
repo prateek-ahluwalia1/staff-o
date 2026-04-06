@@ -12,7 +12,7 @@ import dashboardBanner from "../../assets/images/dashboard-banner.jpg";
 export default function ContractorDashboard() {
   const { userdata } = useSelector((state) => state.auth);
   const userId = userdata?.data?.id || userdata?.id;
-  const { submit, loading } = useSubmit({ isAuth: true });
+  const { submit, loading, data: submitData } = useSubmit({ isAuth: true });
 
   const [dashboardStats, setDashboardStats] = useState({
     totalStaff: 0,
@@ -28,99 +28,30 @@ export default function ContractorDashboard() {
 
   const fetchContractorData = useCallback(() => {
     if (!userId) return;
-
-    // Fetch assigned staff
-    submit(
-      "api/contractor/assigned-staff",
-      { contractor_id: userId },
-      { method: "GET" },
-    );
-
-    // Fetch leave requests
-    submit(
-      "api/contractor/leave-requests",
-      { contractor_id: userId },
-      { method: "GET" },
-    );
-
-    // Fetch active jobs
-    submit(
-      "api/contractor/active-jobs",
-      { contractor_id: userId, status: "active" },
-      { method: "GET" },
-    );
+    submit("api/dashboard", {}, { method: "GET" });
   }, [userId, submit]);
 
   useEffect(() => {
     fetchContractorData();
   }, [fetchContractorData]);
 
-  // Mock data for stats (replace with real API data)
+  // Update stats and lists from API data
   useEffect(() => {
+    if (!submitData?.data) return;
+
+    const dashData = submitData.data;
     setDashboardStats({
-      totalStaff: 24,
-      activeJobs: 12,
-      completedJobs: 48,
-      pendingLeaveRequests: 3,
-      staffOnLeave: 2,
-      upcomingAssignments: 7,
+      totalStaff: dashData.totalStaff || 0,
+      activeJobs: dashData.activeJobs || 0,
+      completedJobs: dashData.completedJobs || 0,
+      pendingLeaveRequests: dashData.pendingLeaveRequests || 0,
+      staffOnLeave: dashData.staffOnLeave || 0,
+      upcomingAssignments: dashData.upcomingAssignments || 0,
     });
 
-    setStaffList([
-      {
-        id: 1,
-        name: "John Smith",
-        role: "Security Guard",
-        status: "Active",
-        activeJobs: 2,
-      },
-      {
-        id: 2,
-        name: "Jane Doe",
-        role: "Cleaner",
-        status: "On Leave",
-        activeJobs: 0,
-      },
-      {
-        id: 3,
-        name: "Mike Johnson",
-        role: "Support Staff",
-        status: "Active",
-        activeJobs: 1,
-      },
-      {
-        id: 4,
-        name: "Sarah Williams",
-        role: "Security Guard",
-        status: "Active",
-        activeJobs: 3,
-      },
-    ]);
-
-    setLeaveRequests([
-      {
-        id: 1,
-        staffName: "Jane Doe",
-        startDate: "2026-04-15",
-        endDate: "2026-04-22",
-        status: "Pending",
-      },
-      {
-        id: 2,
-        staffName: "Robert Brown",
-        startDate: "2026-04-20",
-        endDate: "2026-04-25",
-        status: "Approved",
-      },
-      {
-        id: 3,
-        staffName: "Emma Davis",
-        startDate: "2026-04-18",
-        endDate: "2026-04-19",
-        status: "Pending",
-      },
-    ]);
-  }, []);
+    setStaffList(dashData.staffList || []);
+    setLeaveRequests(dashData.leaveRequests || []);
+  }, [submitData]);
 
   const profileImage = userdata?.data?.profile_image || userdata?.profile_image;
   const imageUrl =

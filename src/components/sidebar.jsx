@@ -56,11 +56,6 @@ const Sidebar = memo(function Sidebar() {
     { to: "/dashboard", icon: "fa-solid fa-gauge", label: "Dashboard" },
     { to: "/add-job", icon: "fa-solid fa-briefcase", label: "Post a Job" },
     {
-      to: "/edit-profile",
-      icon: "fa-solid fa-user-pen",
-      label: "Edit Profile",
-    },
-    {
       to: "/my-job-applications",
       icon: "fa-solid fa-briefcase",
       label: "My Jobs",
@@ -71,6 +66,11 @@ const Sidebar = memo(function Sidebar() {
       label: "Payment History",
     },
     { to: "/chat", icon: "fa-solid fa-comments", label: "Communications" },
+    {
+      to: "/edit-profile",
+      icon: "fa-solid fa-user-pen",
+      label: "Edit Profile",
+    },
   ];
 
   const contractorNav = [
@@ -87,16 +87,16 @@ const Sidebar = memo(function Sidebar() {
       label: "Staff Management",
     },
     {
-      to: "/edit-profile",
-      icon: "fa-solid fa-user-pen",
-      label: "Edit Profile",
-    },
-    {
       to: "/payment-history",
       icon: "fa-solid fa-credit-card",
       label: "Payment History",
     },
     { to: "/chat", icon: "fa-solid fa-comments", label: "Communications" },
+    {
+      to: "/edit-profile",
+      icon: "fa-solid fa-user-pen",
+      label: "Edit Profile",
+    },
   ];
 
   const staffNav = [
@@ -108,16 +108,16 @@ const Sidebar = memo(function Sidebar() {
       label: "WFM Tools",
     },
     {
-      to: "/edit-profile",
-      icon: "fa-solid fa-user-pen",
-      label: "Edit Profile",
-    },
-    {
       to: "/my-job-applications",
       icon: "fa-solid fa-briefcase",
       label: "My Job Applications",
     },
     { to: "/chat", icon: "fa-solid fa-comments", label: "Communications" },
+    {
+      to: "/edit-profile",
+      icon: "fa-solid fa-user-pen",
+      label: "Edit Profile",
+    },
   ];
 
   const adminNav = [

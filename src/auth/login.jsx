@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useNavigate, useLocation, NavLink } from "react-router-dom";
+import { useNavigate, NavLink } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { setToken, setUser } from "../store/slices/authSlice";
 import useSubmit from "../hooks/useSubmit";
@@ -10,7 +10,6 @@ import { normalizeAuthResponse } from "../utils/authResponseNormalizer";
 
 export default function Login() {
   const navigate = useNavigate();
-  const location = useLocation();
   const dispatch = useDispatch();
   const { submit, loading } = useSubmit();
 
@@ -48,7 +47,9 @@ export default function Login() {
       dispatch(setUser({ userdata: normalized.user }));
 
       toast.success("Login successful!");
-      const redirectTo = location.state?.from?.pathname || "/edit-profile";
+      const redirectTo = normalized.user?.data?.is_active
+        ? "/dashboard"
+        : "/edit-profile";
       navigate(redirectTo, { replace: true });
     } else {
       toast.error(extractErrorMessage(res));
@@ -80,7 +81,9 @@ export default function Login() {
           dispatch(setUser({ userdata: normalized.user }));
 
           toast.success("Google Login successful!");
-          const redirectTo = location.state?.from?.pathname || "/edit-profile";
+          const redirectTo = normalized.user?.data?.is_active
+            ? "/dashboard"
+            : "/edit-profile";
           navigate(redirectTo, { replace: true });
         } else {
           toast.error(extractErrorMessage(res));

@@ -30,12 +30,18 @@ const useSubmit = ({ isAuth = false } = {}) => {
           headers["Authorization"] = `Bearer ${token}`;
         }
 
-        const res = await fetch(`${apiURL}${endpoint}`, {
+        const fetchOptions = {
           method,
           headers,
           credentials: "include",
-          body: isFormData ? body : JSON.stringify(body),
-        });
+        };
+
+        // Only include body for non-GET requests
+        if (method !== "GET" && method !== "HEAD") {
+          fetchOptions.body = isFormData ? body : JSON.stringify(body);
+        }
+
+        const res = await fetch(`${apiURL}${endpoint}`, fetchOptions);
 
         const json = await res.json();
 

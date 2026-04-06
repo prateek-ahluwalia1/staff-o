@@ -9,16 +9,16 @@ import dashboardBanner from "../../assets/images/dashboard-banner.jpg";
 export default function CustomerDashboard() {
   const { userdata } = useSelector((state) => state.auth);
 
-  const [dashboardStats] = useState({
-    activeJobs: 8,
-    completedJobs: 45,
-    staffAssigned: 24,
-    spentThisMonth: "12,500",
-    upcomingJobs: 3,
-    invoicesPending: 2,
+  const [dashboardStats, setDashboardStats] = useState({
+    activeJobs: 0,
+    completedJobs: 0,
+    staffAssigned: 0,
+    spentThisMonth: "0",
+    upcomingJobs: 0,
+    invoicesPending: 0,
   });
 
-  const [recentJobs] = useState([
+  const [recentJobs, setRecentJobs] = useState([
     {
       id: 1,
       role: "Security Guards",

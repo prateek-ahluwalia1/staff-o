@@ -1,48 +1,62 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useSelector } from "react-redux";
 import StatsCard from "../../components/dashboard/StatsCard";
 import UserBreakdownChart from "../../components/dashboard/UserBreakdownChart";
 import RevenueChart from "../../components/dashboard/RevenueChart";
 import JobTrendChart from "../../components/dashboard/JobTrendChart";
-// import Loader from "../../components/Loader";
+import useSubmit from "../../hooks/useSubmit";
+import Loader from "../../components/Loader";
 import { apiURL } from "../../utils/exports";
 import "./DashboardStyles.css";
 import dashboardBanner from "../../assets/images/dashboard-banner.jpg";
 
 export default function AdminDashboard() {
   const { userdata } = useSelector((state) => state.auth);
+  const { submit, loading, data: submitData } = useSubmit({ isAuth: true });
 
-  const [adminStats] = useState({
-    totalUsers: 920,
-    totalStaff: 450,
-    totalContractors: 280,
-    totalCustomers: 150,
-    totalJobs: 1240,
-    completedJobs: 1050,
-    totalRevenue: "485,250",
-    thisMonthRevenue: "42,500",
-    activeJobs: 65,
-    pendingJobs: 15,
+  const [adminStats, setAdminStats] = useState({
+    totalUsers: 0,
+    totalStaff: 0,
+    totalContractors: 0,
+    totalCustomers: 0,
+    totalJobs: 0,
+    completedJobs: 0,
+    totalRevenue: "0",
+    thisMonthRevenue: "0",
+    activeJobs: 0,
+    pendingJobs: 0,
   });
 
-  const [topContractors] = useState([
-    {
-      id: 1,
-      name: "Premier Security Co",
-      staff: 45,
-      jobs: 120,
-      revenue: "125,000",
-    },
-    {
-      id: 2,
-      name: "Elite Staffing Ltd",
-      staff: 38,
-      jobs: 95,
-      revenue: "108,500",
-    },
-    { id: 3, name: "Quick Solutions", staff: 32, jobs: 78, revenue: "89,200" },
-    { id: 4, name: "Trusted Services", staff: 28, jobs: 66, revenue: "74,500" },
-  ]);
+  const [topContractors, setTopContractors] = useState([]);
+
+  const fetchAdminData = useCallback(() => {
+    submit("api/dashboard", {}, { method: "GET" });
+  }, [submit]);
+
+  useEffect(() => {
+    fetchAdminData();
+  }, [fetchAdminData]);
+
+  // Update stats and contractor list from API data
+  useEffect(() => {
+    if (!submitData?.data) return;
+
+    const dashData = submitData.data;
+    setAdminStats({
+      totalUsers: dashData.totalUsers || 0,
+      totalStaff: dashData.totalStaff || 0,
+      totalContractors: dashData.totalContractors || 0,
+      totalCustomers: dashData.totalCustomers || 0,
+      totalJobs: dashData.totalJobs || 0,
+      completedJobs: dashData.completedJobs || 0,
+      totalRevenue: dashData.totalRevenue || "0",
+      thisMonthRevenue: dashData.thisMonthRevenue || "0",
+      activeJobs: dashData.activeJobs || 0,
+      pendingJobs: dashData.pendingJobs || 0,
+    });
+
+    setTopContractors(dashData.topContractors || []);
+  }, [submitData]);
 
   const profileImage = userdata?.data?.profile_image || userdata?.profile_image;
   const imageUrl =
@@ -51,6 +65,8 @@ export default function AdminDashboard() {
       : profileImage
         ? `${apiURL}${profileImage}`
         : null;
+
+  if (loading) return <Loader fullPage />;
 
   return (
     <div className="dashboard-main admin-dashboard">

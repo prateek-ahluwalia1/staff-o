@@ -139,7 +139,10 @@ export default function Register() {
       );
       dispatch(setUser({ userdata: latestProfile }));
       toast.success(successMessage);
-      navigate("/edit-profile");
+      const redirectTo = latestProfile?.data?.is_active
+        ? "/dashboard"
+        : "/edit-profile";
+      navigate(redirectTo);
     } else {
       toast.error(extractErrorMessage(res));
     }
@@ -177,7 +180,10 @@ export default function Register() {
           const formattedType =
             userType.charAt(0).toUpperCase() + userType.slice(1);
           toast.success(`${formattedType} Google Registration successful!`);
-          navigate("/edit-profile");
+          const redirectTo = latestProfile?.data?.is_active
+            ? "/dashboard"
+            : "/edit-profile";
+          navigate(redirectTo);
         } else {
           toast.error(extractErrorMessage(res));
         }

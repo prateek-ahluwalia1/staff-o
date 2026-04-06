@@ -15215,6 +15215,8 @@ Large Mobile Screen
     align-items: center;
     gap: 16px;
     margin-top: 24px;
+    right: 400px;
+    top: 10px;
     /* Adds breathing room below the meta info */
 }
 

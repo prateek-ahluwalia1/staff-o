@@ -12,6 +12,11 @@ export default function SettingsHeaderContent({
 }) {
   const pct = Math.min(100, Math.max(0, Number(profileCompletion) || 0));
 
+  const limitToFirstFourWords = (text) => {
+    if (!text) return "";
+    return text.split(" ").slice(0, 4).join(" ");
+  };
+
   const radius = 38;
   const stroke = 8;
   const normalizedRadius = radius - stroke / 2;
@@ -62,7 +67,7 @@ export default function SettingsHeaderContent({
             <>
               <span>
                 <i className="fa-solid fa-location-dot" aria-hidden="true"></i>
-                {city || "No location"}
+                {limitToFirstFourWords(city) || "No location"}
               </span>
               <span>
                 <i className="fa-solid fa-user" aria-hidden="true"></i>

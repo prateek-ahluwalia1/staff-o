@@ -4,11 +4,101 @@ import { NavLink } from "react-router-dom";
 import { startOfWeek, subWeeks, addDays, format, parse } from "date-fns";
 import useSubmit from "../hooks/useSubmit";
 import Loader from "../components/Loader";
+import { apiURL } from "../utils/exports";
+
+const getInitials = (name) => {
+  if (!name) return "U";
+  return name
+    .split(" ")
+    .map((word) => word[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
+};
+
+const getAvatarColor = (name) => {
+  const colors = [
+    "#FF6B6B",
+    "#4ECDC4",
+    "#45B7D1",
+    "#96CEB4",
+    "#FFEAA7",
+    "#DDA15E",
+    "#BC6C25",
+  ];
+  let hash = 0;
+  if (name) {
+    for (let i = 0; i < name.length; i++) {
+      hash = name.charCodeAt(i) + ((hash << 5) - hash);
+    }
+  }
+  return colors[Math.abs(hash) % colors.length];
+};
 
 export default function Dashboard() {
   const { userdata } = useSelector((state) => state.auth);
   const userId = userdata?.data?.id || userdata?.id;
   const { submit, loading, data: submitData } = useSubmit({ isAuth: true });
+
+  const getProfileImageUrl = useCallback(() => {
+    const profileImage =
+      userdata?.data?.profile_image ||
+      userdata?.profile_image ||
+      userdata?.data?.staff?.profile_image ||
+      userdata?.staff?.profile_image ||
+      userdata?.data?.contractor?.profile_image ||
+      userdata?.contractor?.profile_image;
+
+    if (!profileImage) return null;
+
+    return profileImage.startsWith("http")
+      ? profileImage
+      : `${apiURL}${profileImage}`;
+  }, [userdata]);
+
+  const renderUserAvatar = useCallback(() => {
+    const imageUrl = getProfileImageUrl();
+    const userName = userdata?.data?.name || userdata?.name || "User";
+
+    if (imageUrl) {
+      return (
+        <img
+          src={imageUrl}
+          alt="Profile"
+          style={{
+            width: 120,
+            height: 120,
+            objectFit: "cover",
+            borderRadius: "10%",
+            boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+          }}
+          onError={(e) => {
+            e.target.style.display = "none";
+          }}
+        />
+      );
+    }
+
+    return (
+      <div
+        style={{
+          width: 120,
+          height: 120,
+          borderRadius: "10%",
+          backgroundColor: getAvatarColor(userName),
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          color: "white",
+          fontWeight: "bold",
+          fontSize: "2.5rem",
+          boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+        }}
+      >
+        {getInitials(userName)}
+      </div>
+    );
+  }, [getProfileImageUrl, userdata]);
 
   // Last week: Monday → Sunday
   const [lastMonday] = useState(() =>
@@ -81,9 +171,7 @@ export default function Dashboard() {
           />
         </div>
         <div className="dashboard-cover-profile">
-          <div className="cover-avatar">
-            <img src="/assets/images/candidates/01.jpg" alt="Job Seeker" />
-          </div>
+          <div className="cover-avatar">{renderUserAvatar()}</div>
           <div>
             <h3>{userdata?.data?.name || userdata?.name || "No Name"}</h3>
             <p>

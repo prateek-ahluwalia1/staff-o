@@ -82,7 +82,6 @@ const AllNotifications = () => {
       <div className="d-flex justify-content-between align-items-center mb-3">
         <h4 className="mb-0">All Notifications</h4>
         <div className="d-flex align-items-center gap-2">
-          <span className="badge bg-danger">Unread: {unreadCount}</span>
           <button
             type="button"
             className="btn btn-sm btn-outline-primary"

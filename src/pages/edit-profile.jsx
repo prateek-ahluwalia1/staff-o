@@ -69,7 +69,6 @@ export default function EditProfile() {
   });
 
   const [profilePhoto, setProfilePhoto] = useState(null);
-  const [profilePhotoFile, setProfilePhotoFile] = useState(null);
   const [formData, setFormData] = useState(INITIAL_FORM_STATE);
   const [activeTab, setActiveTab] = useState("personal");
 
@@ -167,12 +166,22 @@ export default function EditProfile() {
         staff.registration_number ||
         "",
       bank_details: existingBankDetails,
+      profile_image:
+        d.profile_image ||
+        staff.profile_image ||
+        contractor.profile_image ||
+        "",
     });
 
-    if (staff.profile_image) setProfilePhoto(staff.profile_image);
-    else if (contractor.profile_image)
-      setProfilePhoto(contractor.profile_image);
-    else if (d.profile_image) setProfilePhoto(d.profile_image);
+    const profileImageUrl =
+      d.profile_image || staff.profile_image || contractor.profile_image;
+    if (profileImageUrl) {
+      setProfilePhoto(
+        profileImageUrl.startsWith("http")
+          ? profileImageUrl
+          : `${apiURL}${profileImageUrl}`,
+      );
+    }
   }, [profileData]);
 
   useEffect(() => {
@@ -223,6 +232,45 @@ export default function EditProfile() {
     };
   }, [activeTab, fetchLoading]);
 
+  // Upload avatar and get URL
+  const handleAvatarUpload = useCallback(
+    async (file) => {
+      try {
+        if (!file) return;
+
+        const fd = new FormData();
+        fd.append("file", file);
+        fd.append("folder", "profile_avatars");
+
+        const res = await uploadFile("api/upload-file", fd, {
+          method: "POST",
+        });
+
+        if (res?.success) {
+          // Use full URL from response (prioritize res.url)
+          const imageUrl =
+            res.url || res.data?.url || res.path || res.data?.path;
+          if (imageUrl) {
+            // Update formData with the profile_image URL
+            setFormData((prev) => ({
+              ...prev,
+              profile_image: imageUrl,
+            }));
+            // Show the uploaded image immediately
+            setProfilePhoto(
+              imageUrl.startsWith("http") ? imageUrl : `${apiURL}${imageUrl}`,
+            );
+            toast.success("Avatar uploaded successfully!");
+          }
+        }
+      } catch (err) {
+        console.warn("Avatar upload failed", err);
+        toast.error("Failed to upload avatar");
+      }
+    },
+    [uploadFile],
+  );
+
   // General profile submit
   const handleSubmit = useCallback(
     async (e) => {
@@ -239,12 +287,16 @@ export default function EditProfile() {
           payload.append("bank_details", JSON.stringify(formData.bank_details));
         } else if (key === "email") {
           // Email is updated via separate OTP verification flow
+        } else if (
+          key === "profile_image" &&
+          typeof formData[key] === "string"
+        ) {
+          // Send profile_image as URL string, not as file
+          payload.append(key, formData[key]);
         } else {
           payload.append(key, formData[key]);
         }
       });
-
-      if (profilePhotoFile) payload.append("profile_image", profilePhotoFile);
 
       const res = await submit(`api/user-update/${userId}`, payload, {
         method: "POST",
@@ -257,7 +309,7 @@ export default function EditProfile() {
         dispatch(setUser({ userdata: refetchRes.data }));
       }
     },
-    [formData, profilePhotoFile, submit, userId, dispatch, refetch],
+    [formData, submit, userId, dispatch, refetch],
   );
 
   const handleCloseEmailModal = () => {
@@ -393,17 +445,7 @@ export default function EditProfile() {
     const updatedCards = [...formData.bank_details, cardForm];
 
     const payload = new FormData();
-    Object.keys(formData).forEach((key) => {
-      if (key === "bank_details") {
-        payload.append("bank_details", JSON.stringify(updatedCards));
-      } else if (key === "email") {
-        // Email is updated via separate OTP verification flow
-      } else {
-        payload.append(key, formData[key]);
-      }
-    });
-
-    if (profilePhotoFile) payload.append("profile_image", profilePhotoFile);
+    payload.append("bank_details", JSON.stringify(updatedCards));
 
     const res = await submit(`api/user-update/${userId}`, payload, {
       method: "POST",
@@ -430,17 +472,7 @@ export default function EditProfile() {
     );
 
     const payload = new FormData();
-    Object.keys(formData).forEach((key) => {
-      if (key === "bank_details") {
-        payload.append("bank_details", JSON.stringify(updatedCards));
-      } else if (key === "email") {
-        // Email is updated via separate OTP verification flow
-      } else {
-        payload.append(key, formData[key]);
-      }
-    });
-
-    if (profilePhotoFile) payload.append("profile_image", profilePhotoFile);
+    payload.append("bank_details", JSON.stringify(updatedCards));
 
     const res = await submit(`api/user-update/${userId}`, payload, {
       method: "POST",
@@ -528,13 +560,8 @@ export default function EditProfile() {
         <AvatarUpload
           profilePhoto={profilePhoto}
           name={formData.name}
-          onPhotoChange={(e) => {
-            const file = e.target.files?.[0];
-            if (file) {
-              setProfilePhotoFile(file);
-              setProfilePhoto(URL.createObjectURL(file));
-            }
-          }}
+          onPhotoChange={handleAvatarUpload}
+          loading={uploadLoading}
         />
         <SettingsHeaderContent
           isVerified={isverified}

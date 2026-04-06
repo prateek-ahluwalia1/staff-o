@@ -11,6 +11,7 @@ import {
 import useSubmit from "../hooks/useSubmit";
 import useFetch from "../hooks/useFetch";
 import staffologo from "../assets/images/staffo.png";
+import { apiURL } from "../utils/exports";
 
 const Header = memo(function Header() {
   const { token, userdata } = useSelector((state) => state.auth);
@@ -65,6 +66,88 @@ const Header = memo(function Header() {
 
   const getNotificationMessage = (notif) =>
     notif?.message || notif?.data?.message || "";
+
+  const getInitials = (name) => {
+    if (!name) return "U";
+    return name
+      .split(" ")
+      .map((word) => word[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2);
+  };
+
+  const getAvatarColor = (name) => {
+    const colors = [
+      "#FF6B6B",
+      "#4ECDC4",
+      "#45B7D1",
+      "#96CEB4",
+      "#FFEAA7",
+      "#DDA15E",
+      "#BC6C25",
+    ];
+    let hash = 0;
+    if (name) {
+      for (let i = 0; i < name.length; i++) {
+        hash = name.charCodeAt(i) + ((hash << 5) - hash);
+      }
+    }
+    return colors[Math.abs(hash) % colors.length];
+  };
+
+  const getProfileImageUrl = () => {
+    const profileImage =
+      userdata?.data?.profile_image ||
+      userdata?.profile_image ||
+      userdata?.data?.staff?.profile_image ||
+      userdata?.staff?.profile_image ||
+      userdata?.data?.contractor?.profile_image ||
+      userdata?.contractor?.profile_image;
+
+    if (!profileImage) return null;
+
+    return profileImage.startsWith("http")
+      ? profileImage
+      : `${apiURL}${profileImage}`;
+  };
+
+  const renderUserAvatar = () => {
+    const imageUrl = getProfileImageUrl();
+    const userName = userdata?.data?.name || userdata?.name || "User";
+
+    if (imageUrl) {
+      return (
+        <img
+          src={imageUrl}
+          alt="Profile"
+          onError={(e) => {
+            e.target.style.display = "none";
+          }}
+        />
+      );
+    }
+
+    // Show initials badge instead of default photo
+    return (
+      <div
+        style={{
+          width: "100%",
+          height: "100%",
+          borderRadius: "50%",
+          backgroundColor: getAvatarColor(userName),
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          color: "white",
+          fontWeight: "bold",
+          fontSize: "0.9rem",
+        }}
+      >
+        {getInitials(userName)}
+      </div>
+    );
+  };
 
   const markSingleNotificationRead = async (notif) => {
     if (!notif?.id || notif.read_at) return;
@@ -302,11 +385,16 @@ const Header = memo(function Header() {
                       className="btn btn-secondary dropdown-toggle"
                       type="button"
                       data-bs-toggle="dropdown"
+                      style={{
+                        width: "40px",
+                        height: "40px",
+                        padding: "2px",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
                     >
-                      <img
-                        src="/assets/images/candidates/01.jpg"
-                        alt="Profile"
-                      />
+                      {renderUserAvatar()}
                     </button>
                     <ul className="dropdown-menu dropdown-menu-end">
                       <li>

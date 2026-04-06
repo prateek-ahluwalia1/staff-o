@@ -86,23 +86,84 @@ export default function ProfileForm({
             </div>
           </div>
 
-          {userType !== "contractor" && userType !== "customer" && (
+          {userType === "staff" && (
             <>
               <div>
-                <label htmlFor="gender" className="form-label">
-                  Gender
-                </label>
-                <select
-                  className="form-control"
-                  id="gender"
-                  value={formData.gender || ""}
-                  onChange={onChange}
-                >
-                  <option value="">Select Gender</option>
-                  <option value="male">Male</option>
-                  <option value="female">Female</option>
-                  <option value="other">Other</option>
-                </select>
+                <label className="form-label mb-3">Gender</label>
+                <div style={{ display: "flex", gap: "20px", flexWrap: "wrap" }}>
+                  {["male", "female", "other"].map((option) => {
+                    const isSelected = formData.gender === option;
+                    return (
+                      <div
+                        key={option}
+                        style={{ display: "flex", alignItems: "center" }}
+                      >
+                        <input
+                          type="radio"
+                          id={`gender_${option}`}
+                          name="gender"
+                          value={option}
+                          checked={isSelected}
+                          onChange={(e) => {
+                            onChange({
+                              target: {
+                                id: "gender",
+                                value: e.target.value,
+                              },
+                            });
+                          }}
+                          style={{ display: "none" }}
+                        />
+                        <label
+                          htmlFor={`gender_${option}`}
+                          className="gender-radio-label"
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "8px",
+                            cursor: "pointer",
+                            padding: "10px 16px",
+                            borderRadius: "8px",
+                            border: isSelected
+                              ? "2px solid #007bff"
+                              : "2px solid #e0e0e0",
+                            backgroundColor: isSelected ? "#007bff" : "#f8f9fa",
+                            color: isSelected ? "white" : "#333",
+                            fontWeight: isSelected ? "600" : "500",
+                            transition: "all 0.3s ease",
+                            userSelect: "none",
+                          }}
+                          onMouseEnter={(e) => {
+                            if (!isSelected) {
+                              e.currentTarget.style.borderColor = "#007bff";
+                              e.currentTarget.style.backgroundColor = "#e7f1ff";
+                            }
+                          }}
+                          onMouseLeave={(e) => {
+                            if (!isSelected) {
+                              e.currentTarget.style.borderColor = "#e0e0e0";
+                              e.currentTarget.style.backgroundColor = "#f8f9fa";
+                            }
+                          }}
+                        >
+                          <i
+                            className={`fa-solid ${
+                              option === "male"
+                                ? "fa-mars"
+                                : option === "female"
+                                  ? "fa-venus"
+                                  : "fa-circle-question"
+                            }`}
+                            style={{ fontSize: "1.1rem" }}
+                          ></i>
+                          <span style={{ textTransform: "capitalize" }}>
+                            {option}
+                          </span>
+                        </label>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
               <div>
                 <label htmlFor="city" className="form-label">

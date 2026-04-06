@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import useSubmit from "../../hooks/useSubmit";
 import Loader from "../Loader";
+import reportExporter from "../../utils/reportExporter";
 
 export default function OperationNotes({ rosterId, guardId }) {
   const [noteText, setNoteText] = useState("");
@@ -73,6 +74,22 @@ export default function OperationNotes({ rosterId, guardId }) {
 
   return (
     <div>
+      {/* Export Button */}
+      {notes.length > 0 && (
+        <div style={{ marginBottom: "16px" }}>
+          <button
+            className="btn btn-success"
+            onClick={() =>
+              reportExporter.exportOperationNotes(notes, "operation-notes")
+            }
+            style={{ display: "flex", alignItems: "center", gap: "8px" }}
+          >
+            <i className="fa fa-download"></i>
+            Export All Operation Notes
+          </button>
+        </div>
+      )}
+
       {/* Notes list */}
       {notes.length === 0 ? (
         <div

@@ -16,13 +16,6 @@ const SIDEBAR_TABS = [
     activeBg: "#00acc1",
     icon: "fa-exchange",
   },
-  // {
-  //   id: "break",
-  //   label: "Break Details",
-  //   bg: "#fff9c4",
-  //   activeBg: "#f9a825",
-  //   icon: "fa-coffee",
-  // },
   {
     id: "incident",
     label: "Incident Report",
@@ -31,18 +24,18 @@ const SIDEBAR_TABS = [
     icon: "fa-exclamation-triangle",
   },
   {
-    id: "shift_tasks",
-    label: "Shift Task",
-    bg: "#e0f7fa",
-    activeBg: "#0097a7",
-    icon: "fa-tasks",
-  },
-  {
     id: "foot_petrol",
     label: "Foot Patrol Report",
     bg: "#ffccbc",
     activeBg: "#bf360c",
     icon: "fa-exclamation-circle",
+  },
+  {
+    id: "shift_tasks",
+    label: "Shift Task",
+    bg: "#e0f7fa",
+    activeBg: "#0097a7",
+    icon: "fa-tasks",
   },
   {
     id: "operation_notes",

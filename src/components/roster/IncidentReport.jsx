@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import useSubmit from "../../hooks/useSubmit";
 import Loader from "../Loader";
+import reportExporter from "../../utils/reportExporter";
 
 function fixUrl(url) {
   if (!url) return "";
@@ -336,6 +337,18 @@ export default function IncidentReport({ rosterId, guardId, shift, site }) {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+      <div style={{ marginBottom: "12px" }}>
+        <button
+          className="btn btn-success"
+          onClick={() =>
+            reportExporter.exportIncidentReports(reports, "incident-reports")
+          }
+          style={{ display: "flex", alignItems: "center", gap: "8px" }}
+        >
+          <i className="fa fa-download"></i>
+          Export All Incident Reports
+        </button>
+      </div>
       {reports.map((report, i) => (
         <div
           key={report.id || i}

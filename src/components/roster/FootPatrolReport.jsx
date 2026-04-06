@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import useSubmit from "../../hooks/useSubmit";
 import Loader from "../Loader";
 import { apiURL } from "../../utils/exports";
+import reportExporter from "../../utils/reportExporter";
 
 const BASE_URL = `${apiURL}footpatrol/`;
 
@@ -218,6 +219,21 @@ export default function FootPatrolReport({ rosterId, guardId, shift, site }) {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+      <div style={{ marginBottom: "12px" }}>
+        <button
+          className="btn btn-success"
+          onClick={() =>
+            reportExporter.exportFootPatrolReports(
+              patrols,
+              "foot-patrol-reports",
+            )
+          }
+          style={{ display: "flex", alignItems: "center", gap: "8px" }}
+        >
+          <i className="fa fa-download"></i>
+          Export All Foot Patrol Reports
+        </button>
+      </div>
       {patrols.map((patrol, i) => (
         <div
           key={patrol.id || i}

@@ -1,6 +1,7 @@
 import React, { useEffect } from "react";
 import useSubmit from "../../hooks/useSubmit";
 import Loader from "../Loader";
+import reportExporter from "../../utils/reportExporter";
 
 function extractTime(val) {
   if (!val) return null;
@@ -103,30 +104,31 @@ export default function ShiftTasks({ rosterId, guardId }) {
       )}
 
       {/* Download PDF button */}
-      {/* <div
-        style={{
-          display: "flex",
-          justifyContent: "flex-end",
-          marginBottom: "20px",
-        }}
-      >
-        <button
-          type="button"
+      {tasks.length > 0 && (
+        <div
           style={{
-            background: "#2bbfa4",
-            color: "#fff",
-            border: "none",
-            borderRadius: "8px",
-            padding: "10px 22px",
-            fontSize: "14px",
-            fontWeight: 600,
-            cursor: "pointer",
-            letterSpacing: "0.3px",
+            display: "flex",
+            justifyContent: "flex-end",
+            marginBottom: "20px",
           }}
         >
-          Download Pdf
-        </button>
-      </div> */}
+          <button
+            type="button"
+            className="btn btn-success"
+            onClick={() =>
+              reportExporter.exportShiftTasks(tasks, "shift-tasks")
+            }
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+            }}
+          >
+            <i className="fa fa-download"></i>
+            Export All Shift Tasks
+          </button>
+        </div>
+      )}
 
       {tasks.length === 0 ? (
         <div

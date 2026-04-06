@@ -124,6 +124,12 @@ const Header = memo(function Header() {
         <img
           src={imageUrl}
           alt="Profile"
+          style={{
+            width: "100%",
+            height: "100%",
+            borderRadius: "50%",
+            objectFit: "cover",
+          }}
           onError={(e) => {
             e.target.style.display = "none";
           }}
@@ -393,12 +399,14 @@ const Header = memo(function Header() {
                       type="button"
                       data-bs-toggle="dropdown"
                       style={{
-                        width: "40px",
+                        width: "40px", // Forces the button to be a tiny square
                         height: "40px",
-                        padding: "2px",
+                        padding: "0",
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
+                        borderRadius: "50%", // Turns the square into a circle
+                        overflow: "hidden", // Hides anything that bleeds outside the circle
                       }}
                     >
                       {renderUserAvatar()}

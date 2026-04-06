@@ -79,7 +79,6 @@ export default function AddJob() {
 
   const [form, setForm] = useState({
     title: "",
-    company: "",
     location: "",
     address: "",
     city: "",

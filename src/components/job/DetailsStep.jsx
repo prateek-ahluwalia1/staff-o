@@ -49,31 +49,21 @@ export default function DetailsStep({
         Job specifics and optional attachments.
       </p>
 
-      <div className="mb-3">
-        <label className="form-label">Job title</label>
-        <input
-          name="title"
-          value={form.title}
-          onChange={(e) => setField("title", e.target.value)}
-          className="form-control form-control-lg"
-          placeholder="e.g. Event Security"
-          required
-        />
-      </div>
-
       <div className="row g-3">
-        <div className="col-md-6">
-          <label className="form-label">Company</label>
+        <div className="col-12">
+          <label className="form-label">Job title</label>
           <input
-            name="company"
-            value={form.company}
-            onChange={(e) => setField("company", e.target.value)}
-            className="form-control"
+            name="title"
+            value={form.title}
+            onChange={(e) => setField("title", e.target.value)}
+            className="form-control form-control-lg"
+            placeholder="e.g. Event Security"
+            required
           />
         </div>
-        <div className="col-md-3">
+        <div className="col-12 col-md-6">
           <label className="form-label"># of Guards</label>
-          <div className="input-group">
+          <div className="input-group input-group-lg">
             <button
               type="button"
               className="btn btn-outline-secondary"
@@ -98,7 +88,7 @@ export default function DetailsStep({
             </button>
           </div>
         </div>
-        <div className="col-md-3">
+        <div className="col-12 col-md-6">
           <label className="form-label">Job Type</label>
           <Select
             options={JOB_TYPE_OPTIONS}
@@ -112,6 +102,12 @@ export default function DetailsStep({
             }}
             isClearable
             classNamePrefix="react-select"
+            styles={{
+              control: (base) => ({
+                ...base,
+                minHeight: "48px",
+              }),
+            }}
           />
           {/* Custom Job Type Input when "Others" is selected */}
           {form.jobType === "others" && (
@@ -142,48 +138,86 @@ export default function DetailsStep({
       </div>
 
       <div className="mb-3">
-        <label className="form-label">Document</label>
-        <div className="mb-2">
-          <button
-            type="button"
-            className={`btn ${
-              form.document ? "btn-primary" : "btn-outline-primary"
-            }`}
-            onClick={() => setField("document", !form.document)}
-            aria-pressed={Boolean(form.document)}
-          >
-            {form.document ? "Document Required" : "Document Required?"}
-          </button>
+        <div
+          className={`card cursor-pointer transition-all ${form.document ? "border-primary bg-light" : "border-secondary"}`}
+          onClick={() => setField("document", !form.document)}
+          style={{ cursor: "pointer" }}
+        >
+          <div className="card-body d-flex align-items-center gap-3 p-3">
+            <div className="form-check form-switch m-0">
+              <input
+                className="form-check-input"
+                type="checkbox"
+                id="documentRequired"
+                checked={Boolean(form.document)}
+                onChange={(e) => {
+                  e.stopPropagation();
+                  setField("document", e.target.checked);
+                }}
+                style={{ cursor: "pointer" }}
+              />
+            </div>
+            <div className="flex-grow-1">
+              <label
+                className="form-label m-0"
+                htmlFor="documentRequired"
+                style={{ cursor: "pointer" }}
+              >
+                <strong>Require Documents from Applicants</strong>
+              </label>
+              <div className="text-muted small">
+                {form.document
+                  ? `${form.document_types?.length || 0} document(s) required`
+                  : "Click to add document requirements"}
+              </div>
+            </div>
+            <i
+              className={`fa-solid fa-chevron-${form.document ? "up" : "down"} text-muted`}
+            ></i>
+          </div>
         </div>
 
         {form.document && (
-          <div className="card p-2">
-            <div className="small text-muted mb-2">
-              Select required documents
+          <div className="card mt-2 border-primary">
+            <div className="card-body">
+              <label className="form-label mb-3">
+                <i className="fa-solid fa-file-check text-primary me-2"></i>
+                <strong>Select Required Documents</strong>
+              </label>
+              <Select
+                isMulti
+                options={DOC_OPTIONS.map((d) => ({
+                  value: d,
+                  label: d
+                    .replace(/_/g, " ")
+                    .replace(/\b\w/g, (l) => l.toUpperCase()),
+                }))}
+                value={
+                  Array.isArray(form.document_types)
+                    ? form.document_types.map((d) => ({
+                        value: d,
+                        label: d
+                          .replace(/_/g, " ")
+                          .replace(/\b\w/g, (l) => l.toUpperCase()),
+                      }))
+                    : []
+                }
+                onChange={(opts) =>
+                  setField(
+                    "document_types",
+                    Array.isArray(opts) ? opts.map((o) => o.value) : [],
+                  )
+                }
+                classNamePrefix="react-select"
+                placeholder="Choose documents to require..."
+              />
+              {form.document_types?.length > 0 && (
+                <div className="mt-3 pt-3 border-top small">
+                  <strong>Selected:</strong> {form.document_types.length}{" "}
+                  document(s)
+                </div>
+              )}
             </div>
-            <Select
-              isMulti
-              options={DOC_OPTIONS.map((d) => ({
-                value: d,
-                label: d.replace(/_/g, " "),
-              }))}
-              value={
-                Array.isArray(form.document_types)
-                  ? form.document_types.map((d) => ({
-                      value: d,
-                      label: d.replace(/_/g, " "),
-                    }))
-                  : []
-              }
-              onChange={(opts) =>
-                setField(
-                  "document_types",
-                  Array.isArray(opts) ? opts.map((o) => o.value) : [],
-                )
-              }
-              classNamePrefix="react-select"
-              placeholder="Select required documents"
-            />
           </div>
         )}
       </div>

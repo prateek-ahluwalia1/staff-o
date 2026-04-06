@@ -623,7 +623,7 @@ export default function EditProfile() {
           userType={userType}
           name={formData.name}
           email={formData.email}
-          city={formData.city}
+          city={formData.address}
           profileCompletion={
             profileData?.data?.profile_completion_percentage || 0
           }

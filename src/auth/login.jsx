@@ -17,6 +17,19 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
+  const extractErrorMessage = (response) => {
+    if (response.message) {
+      return response.message;
+    }
+    if (response.errors && typeof response.errors === "object") {
+      const firstErrorKey = Object.keys(response.errors)[0];
+      if (firstErrorKey && Array.isArray(response.errors[firstErrorKey])) {
+        return response.errors[firstErrorKey][0];
+      }
+    }
+    return "An error occurred. Please try again.";
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -38,7 +51,7 @@ export default function Login() {
       const redirectTo = location.state?.from?.pathname || "/edit-profile";
       navigate(redirectTo, { replace: true });
     } else {
-      toast.error(res.message || "Login failed. Please try again.");
+      toast.error(extractErrorMessage(res));
     }
   };
 
@@ -70,7 +83,7 @@ export default function Login() {
           const redirectTo = location.state?.from?.pathname || "/edit-profile";
           navigate(redirectTo, { replace: true });
         } else {
-          toast.error(res.message || "Google Login failed on the server.");
+          toast.error(extractErrorMessage(res));
         }
       } catch (error) {
         toast.error("An error occurred connecting to the server.");

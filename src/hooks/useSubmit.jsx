@@ -40,8 +40,17 @@ const useSubmit = ({ isAuth = false } = {}) => {
         const json = await res.json();
 
         if (!res.ok) {
-          const errorMsg =
-            json.errors || json.message || "Something went wrong";
+          let errorMsg = "Something went wrong";
+
+          if (json.message) {
+            errorMsg = json.message;
+          } else if (json.errors && typeof json.errors === "object") {
+            const firstErrorKey = Object.keys(json.errors)[0];
+            if (firstErrorKey && Array.isArray(json.errors[firstErrorKey])) {
+              errorMsg = json.errors[firstErrorKey][0];
+            }
+          }
+
           console.error("Submit API error:", errorMsg);
           toast.error(errorMsg);
           throw new Error(errorMsg);

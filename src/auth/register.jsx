@@ -19,6 +19,19 @@ export default function Register() {
 
   const [userType, setUserType] = useState("contractor");
 
+  const extractErrorMessage = (response) => {
+    if (response.message) {
+      return response.message;
+    }
+    if (response.errors && typeof response.errors === "object") {
+      const firstErrorKey = Object.keys(response.errors)[0];
+      if (firstErrorKey && Array.isArray(response.errors[firstErrorKey])) {
+        return response.errors[firstErrorKey][0];
+      }
+    }
+    return "An error occurred. Please try again.";
+  };
+
   const fetchLatestUserProfile = async (token, authUser) => {
     console.log("Fetching latest profile for user ID:", authUser);
     const userId = extractUserId(authUser);
@@ -41,11 +54,7 @@ export default function Register() {
       const profileJson = await profileRes.json();
 
       if (!profileRes.ok) {
-        toast.error(
-          profileJson.errors ||
-            profileJson.message ||
-            "Failed to load latest profile data.",
-        );
+        toast.error(extractErrorMessage(profileJson));
         return authUser;
       }
 
@@ -118,7 +127,7 @@ export default function Register() {
     const normalized = normalizeAuthResponse(res);
 
     if (!normalized || !normalized.token) {
-      toast.error(res.message || "Registration failed. Please try again.");
+      toast.error(extractErrorMessage(res));
       return;
     }
 
@@ -132,7 +141,7 @@ export default function Register() {
       toast.success(successMessage);
       navigate("/edit-profile");
     } else {
-      toast.error(res.message || "Registration failed. Please try again.");
+      toast.error(extractErrorMessage(res));
     }
   };
 
@@ -170,9 +179,7 @@ export default function Register() {
           toast.success(`${formattedType} Google Registration successful!`);
           navigate("/edit-profile");
         } else {
-          toast.error(
-            res.message || "Google Registration failed on the server.",
-          );
+          toast.error(extractErrorMessage(res));
         }
       } catch (error) {
         toast.error("An error occurred connecting to the server.");

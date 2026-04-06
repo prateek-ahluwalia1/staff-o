@@ -4,7 +4,7 @@ import StatsCard from "../../components/dashboard/StatsCard";
 import UserBreakdownChart from "../../components/dashboard/UserBreakdownChart";
 import RevenueChart from "../../components/dashboard/RevenueChart";
 import JobTrendChart from "../../components/dashboard/JobTrendChart";
-import Loader from "../../components/Loader";
+// import Loader from "../../components/Loader";
 import { apiURL } from "../../utils/exports";
 import "./DashboardStyles.css";
 import dashboardBanner from "../../assets/images/dashboard-banner.jpg";

@@ -1,4 +1,4 @@
-import React, { lazy, Suspense, useEffect } from "react";
+import React, { lazy, useEffect } from "react";
 import {
   BrowserRouter as Router,
   Routes,
@@ -11,7 +11,6 @@ import { toast } from "react-toastify";
 import { apiURL } from "./utils/exports";
 
 import ProtectedRoute from "./components/ProtectedRoute";
-import Loader from "./components/Loader";
 import NotificationToast from "./components/NotificationToast";
 import WelfareCallModal from "./components/WelfareCallModal";
 import { useEcho } from "./hooks/useEcho";
@@ -126,141 +125,136 @@ function AppContent() {
     <>
       <NotificationToast />
       <WelfareCallModal />
-      <Suspense fallback={<Loader fullPage />}>
-        <Routes>
-          {/* ===== PUBLIC ROUTES ===== */}
-          <Route
-            path="/"
-            element={
-              <ProtectedRoute public>
-                <Home />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/latest-jobs"
-            element={
-              <ProtectedRoute public>
-                <LatestJobs />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/public-profile"
-            element={
-              <ProtectedRoute public>
-                <PublicProfilePreview />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/contact-us"
-            element={
-              <ProtectedRoute public>
-                <ContactUs />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/faqs"
-            element={
-              <ProtectedRoute public>
-                <Faqs />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/about-us"
-            element={
-              <ProtectedRoute public>
-                <AboutUs />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/terms-of-use"
-            element={
-              <ProtectedRoute public>
-                <TermsOfUse />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/privacy-policy"
-            element={
-              <ProtectedRoute public>
-                <PrivacyPolicy />
-              </ProtectedRoute>
-            }
-          />
+      <Routes>
+        {/* ===== PUBLIC ROUTES ===== */}
+        <Route
+          path="/"
+          element={
+            <ProtectedRoute public>
+              <Home />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/latest-jobs"
+          element={
+            <ProtectedRoute public>
+              <LatestJobs />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/public-profile"
+          element={
+            <ProtectedRoute public>
+              <PublicProfilePreview />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/contact-us"
+          element={
+            <ProtectedRoute public>
+              <ContactUs />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/faqs"
+          element={
+            <ProtectedRoute public>
+              <Faqs />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/about-us"
+          element={
+            <ProtectedRoute public>
+              <AboutUs />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/terms-of-use"
+          element={
+            <ProtectedRoute public>
+              <TermsOfUse />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/privacy-policy"
+          element={
+            <ProtectedRoute public>
+              <PrivacyPolicy />
+            </ProtectedRoute>
+          }
+        />
 
-          {/* ===== AUTHENTICATION ROUTES ===== */}
+        {/* ===== AUTHENTICATION ROUTES ===== */}
+        <Route
+          path="/login"
+          element={
+            <ProtectedRoute guestOnly>
+              <Login />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/register"
+          element={
+            <ProtectedRoute guestOnly>
+              <Register />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* ===== PROTECTED ROUTES ===== */}
+        <Route
+          element={
+            <ProtectedRoute>
+              <DashboardLayout />
+            </ProtectedRoute>
+          }
+        >
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/edit-profile" element={<EditProfile />} />
+          <Route path="/add-job" element={<AddJob />} />
+          <Route path="/my-job-applications" element={<MyJobApplications />} />
+          <Route path="/my-favourite-jobs" element={<MyFavouriteJobs />} />
+          <Route path="/job-alerts" element={<JobAlerts />} />
+          <Route path="/roster" element={<RosterPage />} />
+          <Route path="/manage-users" element={<ManageUsers />} />
+          <Route path="/manage-staff" element={<ManageStaff />} />
+          <Route path="/my-followings" element={<MyFollowings />} />
+          <Route path="/user-packages" element={<UserPackages />} />
+          <Route path="/payment-history" element={<PaymentHistory />} />
+          <Route path="/pay-charge-rate" element={<PayChargeRate />} />
+          <Route path="/rates/charge" element={<RatesList />} />
+          <Route path="/rates/pay" element={<RatesList />} />
+          <Route path="/wfm-tools" element={<WFMTools />} />
+          <Route path="/welfare-call" element={<CallManagement />} />
           <Route
-            path="/login"
+            path="/leave"
             element={
-              <ProtectedRoute guestOnly>
-                <Login />
+              <ProtectedRoute allowedRoles={["admin", "staff", "contractor"]}>
+                <LeaveManagement />
               </ProtectedRoute>
             }
           />
-          <Route
-            path="/register"
-            element={
-              <ProtectedRoute guestOnly>
-                <Register />
-              </ProtectedRoute>
-            }
-          />
+          <Route path="/reports" element={<Reports />} />
+          <Route path="/timesheet" element={<TimeSheet />} />
+          <Route path="/job-tracker" element={<JobTracker />} />
+          <Route path="/accounts/invoice" element={<Invoice />} />
+          <Route path="/chat" element={<ChatPage />} />
+          <Route path="/chat/:category" element={<ChatRoom />} />
+          <Route path="/notifications" element={<AllNotifications />} />
+        </Route>
 
-          {/* ===== PROTECTED ROUTES ===== */}
-          <Route
-            element={
-              <ProtectedRoute>
-                <DashboardLayout />
-              </ProtectedRoute>
-            }
-          >
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/edit-profile" element={<EditProfile />} />
-            <Route path="/add-job" element={<AddJob />} />
-            <Route
-              path="/my-job-applications"
-              element={<MyJobApplications />}
-            />
-            <Route path="/my-favourite-jobs" element={<MyFavouriteJobs />} />
-            <Route path="/job-alerts" element={<JobAlerts />} />
-            <Route path="/roster" element={<RosterPage />} />
-            <Route path="/manage-users" element={<ManageUsers />} />
-            <Route path="/manage-staff" element={<ManageStaff />} />
-            <Route path="/my-followings" element={<MyFollowings />} />
-            <Route path="/user-packages" element={<UserPackages />} />
-            <Route path="/payment-history" element={<PaymentHistory />} />
-            <Route path="/pay-charge-rate" element={<PayChargeRate />} />
-            <Route path="/rates/charge" element={<RatesList />} />
-            <Route path="/rates/pay" element={<RatesList />} />
-            <Route path="/wfm-tools" element={<WFMTools />} />
-            <Route path="/welfare-call" element={<CallManagement />} />
-            <Route
-              path="/leave"
-              element={
-                <ProtectedRoute allowedRoles={["admin", "staff", "contractor"]}>
-                  <LeaveManagement />
-                </ProtectedRoute>
-              }
-            />
-            <Route path="/reports" element={<Reports />} />
-            <Route path="/timesheet" element={<TimeSheet />} />
-            <Route path="/job-tracker" element={<JobTracker />} />
-            <Route path="/accounts/invoice" element={<Invoice />} />
-            <Route path="/chat" element={<ChatPage />} />
-            <Route path="/chat/:category" element={<ChatRoom />} />
-            <Route path="/notifications" element={<AllNotifications />} />
-          </Route>
-
-          {/* ===== CATCH-ALL ===== */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </Suspense>
+        {/* ===== CATCH-ALL ===== */}
+        <Route path="*" element={<NotFound />} />
+      </Routes>
     </>
   );
 }

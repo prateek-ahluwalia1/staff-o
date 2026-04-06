@@ -3,7 +3,6 @@ import {
   BrowserRouter as Router,
   Routes,
   Route,
-  Navigate,
   useNavigate,
 } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
@@ -131,12 +130,9 @@ function AppContent() {
       <WelfareCallModal />
       <Suspense fallback={<Loader fullPage />}>
         <Routes>
-          {/* Root redirect */}
-          <Route path="/" element={<Navigate to="/home" replace />} />
-
           {/* ===== PUBLIC ROUTES ===== */}
           <Route
-            path="/home"
+            path="/"
             element={
               <ProtectedRoute public>
                 <Home />

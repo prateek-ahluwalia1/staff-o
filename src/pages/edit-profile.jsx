@@ -67,8 +67,12 @@ export default function EditProfile() {
   const { submit: phoneSubmit, loading: phoneSubmitLoading } = useSubmit({
     isAuth: true,
   });
+  const { submit: deleteSubmit, loading: deleteLoading } = useSubmit({
+    isAuth: true,
+  });
 
   const [profilePhoto, setProfilePhoto] = useState(null);
+  const [profileImageFile, setProfileImageFile] = useState(null);
   const [formData, setFormData] = useState(INITIAL_FORM_STATE);
   const [activeTab, setActiveTab] = useState("personal");
 
@@ -88,6 +92,9 @@ export default function EditProfile() {
   const [phoneOtp, setPhoneOtp] = useState("");
   const [phoneChangeError, setPhoneChangeError] = useState(null);
   const [phoneChangeSuccess, setPhoneChangeSuccess] = useState(false);
+
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
 
   const [showDocModal, setShowDocModal] = useState(false);
   const [selectedDoc, setSelectedDoc] = useState(null);
@@ -232,43 +239,41 @@ export default function EditProfile() {
     };
   }, [activeTab, fetchLoading]);
 
-  // Upload avatar and get URL
+  // Store avatar file and show preview, then save to backend
   const handleAvatarUpload = useCallback(
     async (file) => {
       try {
-        if (!file) return;
+        if (!file || !userId) return;
 
-        const fd = new FormData();
-        fd.append("file", file);
-        fd.append("folder", "profile_avatars");
+        // Create local preview URL
+        const previewUrl = URL.createObjectURL(file);
+        setProfilePhoto(previewUrl);
 
-        const res = await uploadFile("api/upload-file", fd, {
+        // Prepare payload with only the profile image
+        const payload = new FormData();
+        payload.append("profile_image", file);
+
+        // Save avatar directly to backend
+        const res = await submit(`api/user-update/${userId}`, payload, {
           method: "POST",
         });
 
         if (res?.success) {
-          // Use full URL from response (prioritize res.url)
-          const imageUrl =
-            res.url || res.data?.url || res.path || res.data?.path;
-          if (imageUrl) {
-            // Update formData with the profile_image URL
-            setFormData((prev) => ({
-              ...prev,
-              profile_image: imageUrl,
-            }));
-            // Show the uploaded image immediately
-            setProfilePhoto(
-              imageUrl.startsWith("http") ? imageUrl : `${apiURL}${imageUrl}`,
-            );
-            toast.success("Avatar uploaded successfully!");
-          }
+          toast.success("Avatar updated successfully!");
+          setProfileImageFile(null);
+          // Refetch profile data
+          refetch();
+        } else {
+          toast.error(res?.message || "Failed to save avatar");
+          setProfilePhoto(null);
         }
       } catch (err) {
         console.warn("Avatar upload failed", err);
         toast.error("Failed to upload avatar");
+        setProfilePhoto(null);
       }
     },
-    [uploadFile],
+    [userId, submit, refetch],
   );
 
   // General profile submit
@@ -287,29 +292,32 @@ export default function EditProfile() {
           payload.append("bank_details", JSON.stringify(formData.bank_details));
         } else if (key === "email") {
           // Email is updated via separate OTP verification flow
-        } else if (
-          key === "profile_image" &&
-          typeof formData[key] === "string"
-        ) {
-          // Send profile_image as URL string, not as file
-          payload.append(key, formData[key]);
+        } else if (key === "profile_image") {
+          // Skip - will be handled separately if file exists
         } else {
           payload.append(key, formData[key]);
         }
       });
+
+      // Append profile image file if selected
+      if (profileImageFile) {
+        payload.append("profile_image", profileImageFile);
+      }
 
       const res = await submit(`api/user-update/${userId}`, payload, {
         method: "POST",
       });
       if (res === undefined) return;
       toast.success("Profile updated successfully!");
+      // Reset profile image file after successful upload
+      setProfileImageFile(null);
       if (res.data) dispatch(setUser({ userdata: res.data }));
       const refetchRes = await refetch();
       if (refetchRes?.success && refetchRes?.data) {
         dispatch(setUser({ userdata: refetchRes.data }));
       }
     },
-    [formData, submit, userId, dispatch, refetch],
+    [formData, submit, userId, dispatch, refetch, profileImageFile],
   );
 
   const handleCloseEmailModal = () => {
@@ -551,6 +559,43 @@ export default function EditProfile() {
       toast.error(res.message || "Failed to save document");
     }
   };
+
+  const handleDeleteProfile = useCallback(
+    async (e) => {
+      if (e) e.preventDefault();
+      if (!userId) {
+        toast.error("Unable to delete profile. Missing user id.");
+        return;
+      }
+      if (deleteConfirmText !== "DELETE") {
+        toast.error("Please type DELETE to confirm.");
+        return;
+      }
+
+      const res = await deleteSubmit(
+        `api/user-delete/${userId}`,
+        {},
+        { method: "POST" },
+      );
+      if (res === undefined) return;
+
+      if (res.success) {
+        toast.success("Profile deleted successfully!");
+        // Clear user data and redirect to login
+        dispatch(setUser({ userdata: null }));
+        localStorage.removeItem("auth_token");
+        localStorage.removeItem("user");
+        setTimeout(() => {
+          window.location.href = "/login";
+        }, 1500);
+      } else {
+        toast.error(res.message || "Failed to delete profile");
+        setShowDeleteModal(false);
+        setDeleteConfirmText("");
+      }
+    },
+    [userId, deleteSubmit, deleteConfirmText, dispatch],
+  );
 
   if (fetchLoading) return <Loader fullPage />;
 
@@ -1042,6 +1087,52 @@ export default function EditProfile() {
           />
         )}
 
+      {/* Danger Zone Section */}
+      <div
+        className="mt-5 p-4 bg-light border border-danger rounded"
+        style={{ borderWidth: "2px" }}
+      >
+        <div className="d-flex align-items-center mb-3">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="24"
+            height="24"
+            fill="#dc3545"
+            className="bi bi-exclamation-triangle me-2"
+            viewBox="0 0 16 16"
+          >
+            <path d="M7.938 2.016A.13.13 0 0 1 8.002 2a.13.13 0 0 1 .063.016.146.146 0 0 1 .054.057l6.857 11.667c.036.06.035.124.002.183a.163.163 0 0 1-.054.057.107.107 0 0 1-.066.01H.146a.107.107 0 0 1-.066-.01.163.163 0 0 1-.054-.057.106.106 0 0 1 .002-.183L7.884 2.073a.147.147 0 0 1 .054-.057zm1.044-.45a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566z" />
+            <path d="M7.002 12a1 1 0 1 1 2 0 1 1 0 0 1-2 0zM7.1 5.995a.905.905 0 1 1 1.8 0l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995z" />
+          </svg>
+          <h5 className="mb-0 text-danger fw-bold">Danger Zone</h5>
+        </div>
+        <p className="text-muted mb-3">
+          Deleting your profile is permanent and cannot be undone. All your data
+          will be permanently deleted.
+        </p>
+        <button
+          className="btn btn-danger"
+          onClick={() => {
+            setShowDeleteModal(true);
+            setDeleteConfirmText("");
+          }}
+          disabled={deleteLoading}
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="16"
+            height="16"
+            fill="currentColor"
+            className="bi bi-trash me-2"
+            viewBox="0 0 16 16"
+          >
+            <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0z" />
+            <path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4zM2.5 3h11V2h-11z" />
+          </svg>
+          Delete Profile
+        </button>
+      </div>
+
       {/* Email Change Modal */}
       <Modal open={showEmailModal} onClose={handleCloseEmailModal}>
         <div className="p-3">
@@ -1343,6 +1434,63 @@ export default function EditProfile() {
             {submitLoading ? "Saving..." : "Save Document"}
           </button>
         </form>
+      </Modal>
+
+      {/* Delete Profile Confirmation Modal */}
+      <Modal open={showDeleteModal} onClose={() => setShowDeleteModal(false)}>
+        <div className="p-3">
+          <h5 className="mb-1 text-danger fw-bold">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="20"
+              height="20"
+              fill="currentColor"
+              className="bi bi-exclamation-circle me-2"
+              viewBox="0 0 16 16"
+            >
+              <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z" />
+              <path d="m8.93 6.588-2.29.287-.082.38.45.083c.294.07.352.176.288.469l-.738 3.468c-.194.897.105 1.319.808 1.319.545 0 1.178-.252 1.465-.598l.088-.416c-.2.176-.492.246-.686.246-.275 0-.375-.193-.304-.533L8.93 6.588zM9 4.5a1 1 0 1 1-2 0 1 1 0 0 1 2 0z" />
+            </svg>
+            Permanently Delete Profile?
+          </h5>
+          <div className="alert alert-danger py-2 mt-3">
+            <strong>Warning:</strong> This action is permanent and cannot be
+            undone. All your data will be deleted.
+          </div>
+          <p className="text-muted small mb-4">
+            Please type <strong>DELETE</strong> to confirm you want to
+            permanently delete your profile.
+          </p>
+          <input
+            type="text"
+            className="form-control mb-3 fw-bold text-center"
+            placeholder="Type DELETE to confirm"
+            value={deleteConfirmText}
+            onChange={(e) => setDeleteConfirmText(e.target.value.toUpperCase())}
+            autoFocus
+          />
+          <div className="d-flex gap-2">
+            <button
+              type="button"
+              className="btn btn-outline-secondary w-50"
+              onClick={() => {
+                setShowDeleteModal(false);
+                setDeleteConfirmText("");
+              }}
+              disabled={deleteLoading}
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              className="btn btn-danger w-50"
+              onClick={handleDeleteProfile}
+              disabled={deleteLoading || deleteConfirmText !== "DELETE"}
+            >
+              {deleteLoading ? "Deleting..." : "Delete Profile"}
+            </button>
+          </div>
+        </div>
       </Modal>
     </div>
   );

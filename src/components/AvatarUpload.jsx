@@ -135,7 +135,7 @@ export default function AvatarUpload({
         style={{
           cursor: uploadProgress || loading ? "not-allowed" : "pointer",
           display: "inline-flex",
-          width: "fit-content",
+          width: "80%",
           alignItems: "center",
           gap: 6,
           opacity: uploadProgress || loading ? 0.6 : 1,

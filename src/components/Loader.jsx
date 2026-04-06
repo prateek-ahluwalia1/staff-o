@@ -1,7 +1,7 @@
 import React from "react";
 
 const SIZE = "64px";
-const PRIMARY_COLOR = "#4F46E5"; // An elegant, modern indigo
+const PRIMARY_COLOR = "#4F46E5";
 
 // Refined, smooth spinning SVG
 const SpinnerSVG = ({ color = PRIMARY_COLOR, dimension = SIZE }) => (

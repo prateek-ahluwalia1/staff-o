@@ -110,8 +110,8 @@ export default function SettingsHeaderContent({
           <div
             style={{
               position: "absolute",
-              top: "45%",
-              left: "45%",
+              top: "42%",
+              left: "42%",
               transform: "translate(-50%, -50%)",
               fontWeight: "600",
               fontSize: 16,

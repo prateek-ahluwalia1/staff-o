@@ -1,11 +1,11 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState } from "react";
 import { useSelector } from "react-redux";
 import StatsCard from "../../components/dashboard/StatsCard";
 import UserBreakdownChart from "../../components/dashboard/UserBreakdownChart";
 import RevenueChart from "../../components/dashboard/RevenueChart";
 import JobTrendChart from "../../components/dashboard/JobTrendChart";
-import useSubmit from "../../hooks/useSubmit";
-import Loader from "../../components/Loader";
+// import useSubmit from "../../hooks/useSubmit";
+// import Loader from "../../components/Loader";
 import { apiURL } from "../../utils/exports";
 import "./DashboardStyles.css";
 import dashboardBanner from "../../assets/images/dashboard-banner.jpg";
@@ -15,51 +15,75 @@ export default function AdminDashboard() {
   const email = userdata?.data?.email || userdata?.email || "No Email";
   const username = userdata?.data?.name || userdata?.name || "No Name";
   const profileImage = userdata?.data?.profile_image || userdata?.profile_image;
-  const { submit, loading, data: submitData } = useSubmit({ isAuth: true });
+  // const { submit, loading, data: submitData } = useSubmit({ isAuth: true });
 
-  const [adminStats, setAdminStats] = useState({
-    totalUsers: 0,
-    totalStaff: 0,
-    totalContractors: 0,
-    totalCustomers: 0,
-    totalJobs: 0,
-    completedJobs: 0,
-    totalRevenue: "0",
-    thisMonthRevenue: "0",
-    activeJobs: 0,
-    pendingJobs: 0,
+  const [adminStats] = useState({
+    totalUsers: 248,
+    totalStaff: 156,
+    totalContractors: 42,
+    totalCustomers: 50,
+    totalJobs: 324,
+    completedJobs: 298,
+    totalRevenue: "125,750",
+    thisMonthRevenue: "18,502",
+    activeJobs: 26,
+    pendingJobs: 12,
   });
 
-  const [topContractors, setTopContractors] = useState([]);
+  const [topContractors] = useState([
+    {
+      id: 1,
+      name: "Elite Staffing Solutions",
+      staff: 45,
+      jobs: 156,
+      revenue: 8250,
+    },
+    {
+      id: 2,
+      name: "Premier Contractors Inc",
+      staff: 38,
+      jobs: 142,
+      revenue: 7890,
+    },
+    {
+      id: 3,
+      name: "Professional Services Ltd",
+      staff: 32,
+      jobs: 118,
+      revenue: 6750,
+    },
+    { id: 4, name: "Quality Work Force", staff: 28, jobs: 95, revenue: 5420 },
+    { id: 5, name: "Trusted Talent Group", staff: 25, jobs: 82, revenue: 4680 },
+  ]);
 
-  const fetchAdminData = useCallback(() => {
-    submit("api/dashboard", {}, { method: "GET" });
-  }, [submit]);
+  // const fetchAdminData = useCallback(() => {
+  //   submit("api/dashboard", {}, { method: "GET" });
+  // }, [submit]);
 
-  useEffect(() => {
-    fetchAdminData();
-  }, [fetchAdminData]);
+  // useEffect(() => {
+  //   fetchAdminData();
+  // }, [fetchAdminData]);
 
   // Update stats and contractor list from API data
-  useEffect(() => {
-    if (!submitData?.data) return;
+  // useEffect(() => {
+  //   if (!submitData?.data) return;
 
-    const dashData = submitData.data;
-    setAdminStats({
-      totalUsers: dashData.totalUsers || 0,
-      totalStaff: dashData.totalStaff || 0,
-      totalContractors: dashData.totalContractors || 0,
-      totalCustomers: dashData.totalCustomers || 0,
-      totalJobs: dashData.totalJobs || 0,
-      completedJobs: dashData.completedJobs || 0,
-      totalRevenue: dashData.totalRevenue || "0",
-      thisMonthRevenue: dashData.thisMonthRevenue || "0",
-      activeJobs: dashData.activeJobs || 0,
-      pendingJobs: dashData.pendingJobs || 0,
-    });
+  //   const dashData = submitData.data;
+  //   setAdminStats({
+  //     totalUsers: dashData.totalUsers || 0,
+  //     totalStaff: dashData.totalStaff || 0,
+  //     totalContractors: dashData.totalContractors || 0,
+  //     totalCustomers: dashData.totalCustomers || 0,
+  //     totalJobs: dashData.totalJobs || 0,
+  //     completedJobs: dashData.completedJobs || 0,
+  //     totalRevenue: dashData.totalRevenue || "0",
+  //     thisMonthRevenue: dashData.thisMonthRevenue || "0",
+  //     activeJobs: dashData.activeJobs || 0,
+  //     pendingJobs: dashData.pendingJobs || 0,
+  //   });
 
-    setTopContractors(dashData.topContractors || []);
-  }, [submitData]);
+  //   setTopContractors(dashData.topContractors || []);
+  // }, [submitData]);
 
   const imageUrl =
     profileImage && profileImage.startsWith("http")
@@ -68,7 +92,7 @@ export default function AdminDashboard() {
         ? `${apiURL}${profileImage}`
         : null;
 
-  if (loading) return <Loader fullPage />;
+  // if (loading) return <Loader fullPage />;
 
   return (
     <div className="dashboard-main admin-dashboard">

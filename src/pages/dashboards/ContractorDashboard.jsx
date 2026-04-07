@@ -1,17 +1,16 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState } from "react";
 import { useSelector } from "react-redux";
 import StatsCard from "../../components/dashboard/StatsCard";
 import JobTrendChart from "../../components/dashboard/JobTrendChart";
 import JobCategoryChart from "../../components/dashboard/JobCategoryChart";
-import useSubmit from "../../hooks/useSubmit";
-import Loader from "../../components/Loader";
+// import useSubmit from "../../hooks/useSubmit";
+// import Loader from "../../components/Loader";
 import { apiURL } from "../../utils/exports";
 import "./DashboardStyles.css";
 import dashboardBanner from "../../assets/images/dashboard-banner.jpg";
 
 export default function ContractorDashboard() {
   const { userdata } = useSelector((state) => state.auth);
-  const userId = userdata?.data?.id || userdata?.id;
   const email = userdata?.data?.email || userdata?.email || "No Email";
   const phone =
     userdata?.data?.contractor?.phone ||
@@ -23,46 +22,104 @@ export default function ContractorDashboard() {
     userdata?.data?.contractor?.company_name ||
     userdata?.contractor?.company_name ||
     "No Company Name";
-  const { submit, loading, data: submitData } = useSubmit({ isAuth: true });
 
-  const [dashboardStats, setDashboardStats] = useState({
-    totalStaff: 0,
-    activeJobs: 0,
-    completedJobs: 0,
-    pendingLeaveRequests: 0,
-    staffOnLeave: 0,
-    upcomingAssignments: 0,
+  const [dashboardStats] = useState({
+    totalStaff: 42,
+    activeJobs: 8,
+    completedJobs: 156,
+    pendingLeaveRequests: 3,
+    staffOnLeave: 2,
+    upcomingAssignments: 12,
   });
 
-  const [staffList, setStaffList] = useState([]);
-  const [leaveRequests, setLeaveRequests] = useState([]);
+  const [staffList] = useState([
+    {
+      id: 1,
+      name: "John Smith",
+      role: "Security Guard",
+      status: "Active",
+      activeJobs: 3,
+    },
+    {
+      id: 2,
+      name: "Sarah Johnson",
+      role: "Cleaner",
+      status: "Active",
+      activeJobs: 2,
+    },
+    {
+      id: 3,
+      name: "Michael Brown",
+      role: "Supervisor",
+      status: "Active",
+      activeJobs: 4,
+    },
+    {
+      id: 4,
+      name: "Emma Davis",
+      role: "Support Staff",
+      status: "On Leave",
+      activeJobs: 0,
+    },
+    {
+      id: 5,
+      name: "David Wilson",
+      role: "Manager",
+      status: "Active",
+      activeJobs: 1,
+    },
+  ]);
 
-  const fetchContractorData = useCallback(() => {
-    if (!userId) return;
-    submit("api/dashboard", {}, { method: "GET" });
-  }, [userId, submit]);
+  const [leaveRequests] = useState([
+    {
+      id: 1,
+      staffName: "Emma Davis",
+      startDate: "2026-04-20",
+      endDate: "2026-04-25",
+      status: "Pending",
+    },
+    {
+      id: 2,
+      staffName: "Robert Taylor",
+      startDate: "2026-04-22",
+      endDate: "2026-04-24",
+      status: "Approved",
+    },
+    {
+      id: 3,
+      staffName: "Lisa Anderson",
+      startDate: "2026-04-25",
+      endDate: "2026-04-28",
+      status: "Pending",
+    },
+  ]);
 
-  useEffect(() => {
-    fetchContractorData();
-  }, [fetchContractorData]);
+  // const fetchContractorData = useCallback(() => {
+  //   if (!userId) return;
+  //   submit("api/dashboard", {}, { method: "GET" });
+  // }, [userId, submit]);
+
+  // useEffect(() => {
+  //   fetchContractorData();
+  // }, [fetchContractorData]);
 
   // Update stats and lists from API data
-  useEffect(() => {
-    if (!submitData?.data) return;
+  // useEffect(() => {
+  //   if (!submitData?.data) return;
 
-    const dashData = submitData.data;
-    setDashboardStats({
-      totalStaff: dashData.totalStaff || 0,
-      activeJobs: dashData.activeJobs || 0,
-      completedJobs: dashData.completedJobs || 0,
-      pendingLeaveRequests: dashData.pendingLeaveRequests || 0,
-      staffOnLeave: dashData.staffOnLeave || 0,
-      upcomingAssignments: dashData.upcomingAssignments || 0,
-    });
+  //   const dashData = submitData.data;
+  //   setDashboardStats({
+  //     totalStaff: dashData.totalStaff || 0,
+  //     activeJobs: dashData.activeJobs || 0,
+  //     completedJobs: dashData.completedJobs || 0,
+  //     pendingLeaveRequests: dashData.pendingLeaveRequests || 0,
+  //     staffOnLeave: dashData.staffOnLeave || 0,
+  //     upcomingAssignments: dashData.upcomingAssignments || 0,
+  //   });
 
-    setStaffList(dashData.staffList || []);
-    setLeaveRequests(dashData.leaveRequests || []);
-  }, [submitData]);
+  //   setStaffList(dashData.staffList || []);
+  //   setLeaveRequests(dashData.leaveRequests || []);
+  // }, [submitData]);
 
   const imageUrl =
     profileImage && profileImage.startsWith("http")
@@ -71,7 +128,7 @@ export default function ContractorDashboard() {
         ? `${apiURL}${profileImage}`
         : null;
 
-  if (loading) return <Loader fullPage />;
+  // if (loading) return <Loader fullPage />;
 
   return (
     <div className="dashboard-main contractor-dashboard">

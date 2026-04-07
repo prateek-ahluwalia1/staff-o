@@ -1,69 +1,96 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { useSelector } from "react-redux";
 import { NavLink } from "react-router-dom";
 import StatsCard from "../../components/dashboard/StatsCard";
 import JobTrendChart from "../../components/dashboard/JobTrendChart";
-import useSubmit from "../../hooks/useSubmit";
-import Loader from "../../components/Loader";
 import { apiURL } from "../../utils/exports";
 import "./DashboardStyles.css";
 import dashboardBanner from "../../assets/images/dashboard-banner.jpg";
 
 export default function StaffDashboard() {
   const { userdata } = useSelector((state) => state.auth);
-  const userId = userdata?.data?.id || userdata?.id;
   const email = userdata?.data?.email || userdata?.email || "No Email";
   const address = userdata?.data?.address || userdata?.address || "No Location";
   const username = userdata?.data?.name || userdata?.name || "No Name";
-  const { submit, loading, data: submitData } = useSubmit({ isAuth: true });
-  const [dashboardStats, setDashboardStats] = useState({
-    totalJobs: 0,
-    completedJobs: 0,
-    pendingJobs: 0,
-    earnedThisMonth: 0,
-    leaveRequestsSent: 0,
-    upcomingShifts: 0,
+  const [dashboardStats] = useState({
+    totalJobs: 24,
+    completedJobs: 18,
+    pendingJobs: 4,
+    earnedThisMonth: 3250,
+    leaveRequestsSent: 2,
+    upcomingShifts: 5,
   });
 
-  const fetchStaffData = useCallback(() => {
-    if (!userId) return;
-    submit("api/dashboard", {}, { method: "GET" });
-  }, [userId, submit]);
-
-  useEffect(() => {
-    fetchStaffData();
-  }, [fetchStaffData]);
-
-  // Update stats from API response
-  useEffect(() => {
-    if (!submitData?.data) return;
-
-    const dashData = submitData.data;
-    setDashboardStats((prev) => ({
-      ...prev,
-      totalJobs: dashData.totalJobs || 0,
-      completedJobs: dashData.completedJobs || 0,
-      pendingJobs: dashData.pendingJobs || 0,
-      upcomingShifts: dashData.upcomingShifts || 0,
-      earnedThisMonth: dashData.earnedThisMonth || 0,
-      leaveRequestsSent: dashData.leaveRequestsSent || 0,
-    }));
-  }, [submitData]);
-
   const recentJobs = useMemo(() => {
-    if (!submitData?.data?.shifts) return [];
-    return submitData.data.shifts.slice(0, 12).map((shift) => ({
-      id: shift.id,
-      type: shift.status,
-      badgeClass: shift.status === "confirmed" ? "success" : "warning",
-      title: shift.site_name || "Unknown Site",
-      location: shift.address || "Location TBA",
-      salary: `Hours: ${shift.hours || 0}`,
-      appliedDate: shift.dateRange || "",
-      company: shift.state || "",
-      guard: shift.guard_name || null,
-    }));
-  }, [submitData]);
+    return [
+      {
+        id: 1,
+        type: "confirmed",
+        badgeClass: "success",
+        title: "Downtown Security Post",
+        location: "123 Main St, Dallas, TX 75201",
+        salary: "Hours: 8",
+        appliedDate: "2026-04-18 to 2026-04-18",
+        company: "Texas",
+        guard: "Thomas Brown",
+      },
+      {
+        id: 2,
+        type: "confirmed",
+        badgeClass: "success",
+        title: "Airport Patrol",
+        location: "DFW Airport, TX",
+        salary: "Hours: 10",
+        appliedDate: "2026-04-19 to 2026-04-19",
+        company: "Texas",
+        guard: null,
+      },
+      {
+        id: 3,
+        type: "pending",
+        badgeClass: "warning",
+        title: "Mall Security Coverage",
+        location: "Northpark Mall, Dallas, TX",
+        salary: "Hours: 6",
+        appliedDate: "2026-04-20 to 2026-04-20",
+        company: "Texas",
+        guard: null,
+      },
+      {
+        id: 4,
+        type: "confirmed",
+        badgeClass: "success",
+        title: "Event Security",
+        location: "Convention Center, Dallas, TX",
+        salary: "Hours: 12",
+        appliedDate: "2026-04-21 to 2026-04-21",
+        company: "Texas",
+        guard: "James Miller",
+      },
+      {
+        id: 5,
+        type: "confirmed",
+        badgeClass: "success",
+        title: "Warehouse Watch",
+        location: "Industrial Park, Arlington, TX",
+        salary: "Hours: 8",
+        appliedDate: "2026-04-22 to 2026-04-22",
+        company: "Texas",
+        guard: null,
+      },
+      {
+        id: 6,
+        type: "pending",
+        badgeClass: "warning",
+        title: "Corporate Building Security",
+        location: "Galleria Office Tower, Dallas, TX",
+        salary: "Hours: 8",
+        appliedDate: "2026-04-23 to 2026-04-23",
+        company: "Texas",
+        guard: null,
+      },
+    ];
+  }, []);
 
   const profileImage =
     userdata?.data?.profile_image ||
@@ -77,8 +104,6 @@ export default function StaffDashboard() {
       : profileImage
         ? `${apiURL}${profileImage}`
         : null;
-
-  if (loading) return <Loader fullPage />;
 
   return (
     <div className="dashboard-main staff-dashboard">

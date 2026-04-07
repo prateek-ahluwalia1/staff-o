@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { useSelector } from "react-redux";
 import StatsCard from "../../components/dashboard/StatsCard";
 import JobTrendChart from "../../components/dashboard/JobTrendChart";
@@ -14,17 +13,15 @@ export default function CustomerDashboard() {
     userdata?.data?.customer?.phone || userdata?.customer?.phone || "No Phone";
   const username = userdata?.data?.name || userdata?.name || "No Name";
   const profileImage = userdata?.data?.profile_image || userdata?.profile_image;
-  // eslint-disable-next-line
-  const [dashboardStats, setDashboardStats] = useState({
+  const dashboardStats = {
     activeJobs: 0,
     completedJobs: 0,
     staffAssigned: 0,
     spentThisMonth: "0",
     upcomingJobs: 0,
     invoicesPending: 0,
-  });
-  // eslint-disable-next-line
-  const [recentJobs, setRecentJobs] = useState([
+  };
+  const recentJobs = [
     {
       id: 1,
       role: "Security Guards",
@@ -52,7 +49,7 @@ export default function CustomerDashboard() {
       cost: "$800",
       status: "Pending",
     },
-  ]);
+  ];
 
   const imageUrl =
     profileImage && profileImage.startsWith("http")

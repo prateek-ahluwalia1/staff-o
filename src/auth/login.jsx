@@ -161,9 +161,9 @@ export default function Login() {
                       <label htmlFor="loginPassword" className="form-label">
                         Password
                       </label>
-                      <NavLink to="/forgot-password" className="auth-link">
+                      {/* <NavLink to="/forgot-password" className="auth-link">
                         Forgot password?
-                      </NavLink>
+                      </NavLink> */}
                     </div>
                     <input
                       type="password"

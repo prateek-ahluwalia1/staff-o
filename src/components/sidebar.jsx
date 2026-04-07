@@ -66,7 +66,7 @@ const Sidebar = memo(function Sidebar() {
 
   const customerNav = [
     { to: "/dashboard", icon: "fa-solid fa-gauge", label: "Dashboard" },
-    { to: "/add-job", icon: "fa-solid fa-briefcase", label: "Post a Job" },
+    { to: "/add-job", icon: "fa-solid fa-paper-plane", label: "Post a Job" },
     {
       to: "/my-job-applications",
       icon: "fa-solid fa-briefcase",
@@ -135,7 +135,7 @@ const Sidebar = memo(function Sidebar() {
   const adminNav = [
     { to: "/dashboard", icon: "fa-solid fa-gauge", label: "Admin Dashboard" },
     { to: "/roster", icon: "fa-solid fa-users", label: "Roster" },
-    { to: "/add-job", icon: "fa-solid fa-briefcase", label: "Post a Job" },
+    { to: "/add-job", icon: "fa-solid fa-paper-plane", label: "Post a Job" },
     {
       to: "/wfm-tools",
       icon: "fa-solid fa-toolbox",

@@ -15213,23 +15213,10 @@ Large Mobile Screen
 .status-circle-wrapper {
     display: flex;
     align-items: center;
+    justify-content: center;
     gap: 16px;
     margin-top: 24px;
-    right: 400px;
-    top: 10px;
-    /* Adds breathing room below the meta info */
-}
-
-
-
-@media (min-width: 1200px) {
-    .status-circle-wrapper {
-        position: absolute;
-        top: -10px;
-        right: -250px;
-        margin-top: 0;
-        /* Removes the mobile spacing */
-    }
+    flex-shrink: 0;
 }
 
 /* =========================================
@@ -15248,11 +15235,4 @@ Large Mobile Screen
 .header-text-info {
     flex: 1 1 auto;
     min-width: 280px;
-}
-
-.status-circle-wrapper {
-    flex-shrink: 0;
-    display: flex;
-    justify-content: center;
-    align-items: center;
 }

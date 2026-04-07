@@ -234,12 +234,13 @@ export default function AddJob() {
 
   function buildJobPayload(document_list = []) {
     const coordinates = form.coordinates || "";
+    const normalizedTitle = (form.title || "").trim();
 
     return {
       user_id: isAdmin
         ? selectedContractorId || null
         : userdata?.data?.id || userdata?.id || null,
-      title: form.title,
+      title: normalizedTitle,
       description: form.description,
       address: form.location || form.address,
       coordinates,
@@ -405,6 +406,14 @@ export default function AddJob() {
 
   async function handleConfirm(e) {
     e.preventDefault();
+
+    const normalizedTitle = (form.title || "").trim();
+    if (!normalizedTitle) {
+      toast.error("Job title is required.");
+      if (step !== 2) setStep(2);
+      return;
+    }
+
     if (isAdmin && !selectedContractorId) {
       toast.error("Please select a contractor before posting the job.");
       return;

@@ -67,7 +67,7 @@ const ManageStaff = () => {
         name: user.name || "",
         email: user.email || "",
         password: "",
-        phone: user.phone || "",
+        phone: user.staff?.phone || "",
         address: user.address || "",
         city: user.city || "",
         state: user.state || "",
@@ -246,7 +246,7 @@ const ManageStaff = () => {
                     </td>
                     <td>
                       <div className="text-dark small">
-                        {user.phone || "N/A"}
+                        {user.staff?.phone || "N/A"}
                       </div>
                     </td>
                     <td>

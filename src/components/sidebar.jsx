@@ -1,30 +1,34 @@
-import React, { memo, useCallback, useState, useEffect } from "react";
+import React, { memo, useCallback, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { NavLink, useNavigate } from "react-router-dom";
 import { logOut } from "../store/slices/authSlice";
+import {
+  toggleSidebar,
+  setSidebarExpanded,
+} from "../store/slices/sidebarSlice";
 import useSubmit from "../hooks/useSubmit";
 import staffologo from "../assets/images/staffo.png";
 
 const Sidebar = memo(function Sidebar() {
   const { userdata } = useSelector((state) => state.auth);
+  const { isExpanded } = useSelector((state) => state.sidebar);
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { submit } = useSubmit({ isAuth: true });
   const userType = userdata?.data?.user_type || userdata?.user_type;
   const userId = userdata?.data?.id || userdata?.id;
-  const [isExpanded, setIsExpanded] = useState(false);
 
   // Auto-collapse sidebar on mobile/tablet
   useEffect(() => {
     const handleResize = () => {
       if (window.innerWidth <= 1199) {
-        setIsExpanded(false);
+        dispatch(setSidebarExpanded(false));
       }
     };
 
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
-  }, []);
+  }, [dispatch]);
 
   const handleLogout = useCallback(
     async (e) => {
@@ -41,21 +45,21 @@ const Sidebar = memo(function Sidebar() {
   );
 
   const handleToggle = useCallback(() => {
-    setIsExpanded((prev) => !prev);
-  }, []);
+    dispatch(toggleSidebar());
+  }, [dispatch]);
 
   // Handle keyboard shortcut (Ctrl/Cmd + B)
   useEffect(() => {
     const handleKeyboard = (e) => {
       if ((e.ctrlKey || e.metaKey) && e.key === "b") {
         e.preventDefault();
-        setIsExpanded((prev) => !prev);
+        dispatch(toggleSidebar());
       }
     };
 
     window.addEventListener("keydown", handleKeyboard);
     return () => window.removeEventListener("keydown", handleKeyboard);
-  }, []);
+  }, [dispatch]);
 
   const type = (userType || "").toString().toLowerCase();
   const isProfileActive = !!(userdata?.data?.is_active || userdata?.is_active);

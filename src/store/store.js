@@ -4,6 +4,7 @@ import notificationReducer from "./slices/notificationSlice";
 import chatReducer from "./slices/chatSlice";
 // import socketMiddleware from "./middleware/socketMiddleware";
 import welfareCallReducer from "./slices/welfareCallSlice";
+import sidebarReducer from "./slices/sidebarSlice";
 import { persistReducer, persistStore } from "redux-persist";
 import storage from "redux-persist/lib/storage";
 import {
@@ -24,6 +25,7 @@ const store = configureStore({
     notifications: notificationReducer,
     chat: chatReducer,
     welfareCall: welfareCallReducer,
+    sidebar: sidebarReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

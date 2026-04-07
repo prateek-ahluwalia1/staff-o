@@ -17,6 +17,7 @@ import Loader from "./Loader";
 const Header = memo(function Header() {
   const { token, userdata } = useSelector((state) => state.auth);
   const { items, unreadCount } = useSelector((state) => state.notifications);
+  const { isExpanded: sidebarExpanded } = useSelector((state) => state.sidebar);
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const userId = userdata?.id || userdata?.data?.id;
@@ -33,6 +34,7 @@ const Header = memo(function Header() {
 
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 1200);
 
   const { submit, loading } = useSubmit({ isAuth: true });
   const {
@@ -63,6 +65,16 @@ const Header = memo(function Header() {
       dispatch(setUnreadCount(unreadData));
     }
   }, [dispatch, unreadData]);
+
+  // Track desktop/mobile view
+  useEffect(() => {
+    const handleResize = () => {
+      setIsDesktop(window.innerWidth >= 1200);
+    };
+
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   const getNotificationTitle = (notif) =>
     notif?.title || notif?.data?.title || "Notification";
@@ -205,12 +217,14 @@ const Header = memo(function Header() {
       <nav className="navbar navbar-expand-lg navbar-light main-navbar">
         <div className="container">
           {/* Logo */}
-          <NavLink
-            to="/"
-            className="navbar-brand logo d-flex align-items-center"
-          >
-            <img src={staffologo} alt="Staffo" style={{ height: "50px" }} />
-          </NavLink>
+          {!(isDesktop && sidebarExpanded) && (
+            <NavLink
+              to="/"
+              className="navbar-brand logo d-flex align-items-center"
+            >
+              <img src={staffologo} alt="Staffo" style={{ height: "50px" }} />
+            </NavLink>
+          )}
 
           {/* Mobile toggle */}
           <button

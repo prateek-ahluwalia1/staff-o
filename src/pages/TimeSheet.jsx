@@ -717,7 +717,7 @@ export default function TimeSheet() {
               {timesheetLoading && (
                 <tr>
                   <td colSpan="12" className="text-center py-4">
-                    <Loader fullPage />
+                    <Loader compact />
                   </td>
                 </tr>
               )}

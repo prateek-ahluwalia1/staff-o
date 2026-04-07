@@ -12,7 +12,6 @@ import useSubmit from "../hooks/useSubmit";
 import useFetch from "../hooks/useFetch";
 import staffologo from "../assets/images/staffo.png";
 import { apiURL } from "../utils/exports";
-import Loader from "./Loader";
 
 const Header = memo(function Header() {
   const { token, userdata } = useSelector((state) => state.auth);
@@ -36,23 +35,21 @@ const Header = memo(function Header() {
   const [showNotifications, setShowNotifications] = useState(false);
   const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 1200);
 
-  const { submit, loading } = useSubmit({ isAuth: true });
-  const {
-    data: notificationsData,
-    refetch: refetchNotifications,
-    loading: notificationsLoading,
-  } = useFetch(notificationsEndpoint, {
-    isAuth: true,
-    immediate: Boolean(notificationsEndpoint),
-  });
-  const {
-    data: unreadData,
-    refetch: refetchUnreadCount,
-    loading: unreadLoading,
-  } = useFetch(unreadEndpoint, {
-    isAuth: true,
-    immediate: Boolean(unreadEndpoint),
-  });
+  const { submit } = useSubmit({ isAuth: true });
+  const { data: notificationsData, refetch: refetchNotifications } = useFetch(
+    notificationsEndpoint,
+    {
+      isAuth: true,
+      immediate: Boolean(notificationsEndpoint),
+    },
+  );
+  const { data: unreadData, refetch: refetchUnreadCount } = useFetch(
+    unreadEndpoint,
+    {
+      isAuth: true,
+      immediate: Boolean(unreadEndpoint),
+    },
+  );
 
   useEffect(() => {
     if (notificationsData) {
@@ -202,10 +199,6 @@ const Header = memo(function Header() {
   const closeMobileMenu = useCallback(() => {
     setIsMobileOpen(false);
   }, []);
-
-  if (notificationsLoading || unreadLoading || loading) {
-    return <Loader fullPage />;
-  }
 
   return (
     <div className="header">

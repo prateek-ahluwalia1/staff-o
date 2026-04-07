@@ -128,7 +128,7 @@ export default function MyJobApplications() {
   const closeModal = () => setSelectedApp(null);
 
   if (loading) {
-    return <Loader fullPage />;
+    return <Loader />;
   }
 
   return (

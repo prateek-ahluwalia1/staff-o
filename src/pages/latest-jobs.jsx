@@ -40,7 +40,7 @@ export default function LatestJobs() {
   };
 
   if (loading) {
-    return <Loader fullPage />;
+    return <Loader />;
   }
 
   return (

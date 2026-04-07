@@ -173,7 +173,7 @@ const LeaveManagement = () => {
   };
 
   if (loading && !leavesResponse?.data) {
-    return <Loader fullPage />;
+    return <Loader />;
   }
 
   const allLeavesRaw =

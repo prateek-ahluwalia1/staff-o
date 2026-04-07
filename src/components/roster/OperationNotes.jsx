@@ -51,7 +51,7 @@ export default function OperationNotes({ rosterId, guardId }) {
       <div
         style={{ display: "flex", justifyContent: "center", padding: "40px" }}
       >
-        <Loader fullPage />
+        <Loader compact />
       </div>
     );
   }

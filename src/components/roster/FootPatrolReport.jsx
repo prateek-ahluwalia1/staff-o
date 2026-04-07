@@ -177,7 +177,7 @@ export default function FootPatrolReport({ rosterId, guardId, shift, site }) {
       <div
         style={{ display: "flex", justifyContent: "center", padding: "40px" }}
       >
-        <Loader fullPage />
+        <Loader compact />
       </div>
     );
   }

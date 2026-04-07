@@ -212,7 +212,7 @@ export default function Home() {
   };
 
   if (loading) {
-    return <Loader fullPage />;
+    return <Loader />;
   }
 
   return (

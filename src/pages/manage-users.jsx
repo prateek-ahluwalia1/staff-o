@@ -179,7 +179,7 @@ const ManageUsers = () => {
     }
   };
 
-  if (loading && users.length === 0) return <Loader fullPage />;
+  if (loading && users.length === 0) return <Loader />;
 
   return (
     <div className="container mt-4 pb-5">

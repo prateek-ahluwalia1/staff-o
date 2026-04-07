@@ -45,15 +45,18 @@ const SpinnerSVG = ({ color = PRIMARY_COLOR, dimension = SIZE }) => (
   </svg>
 );
 
-// We destructure className and message, and spread ...props to absorb
-// and ignore any other props (like fullPage) that might be passed in.
-const Loader = ({ className = "", message = "", ...props }) => {
-  return (
-    <div
-      role="status"
-      aria-live="polite"
-      className={className}
-      style={{
+const Loader = ({
+  className = "",
+  message = "",
+  fullPage = false,
+  compact = false,
+  color = PRIMARY_COLOR,
+  size,
+  ...props
+}) => {
+  const dimension = size || (compact ? "40px" : SIZE);
+  const rootStyle = fullPage
+    ? {
         top: 0,
         left: 0,
         right: 0,
@@ -61,12 +64,27 @@ const Loader = ({ className = "", message = "", ...props }) => {
         position: "fixed",
         inset: 0,
         zIndex: 9999,
+        backgroundColor: "white",
+      }
+    : {
+        position: "relative",
+        width: "100%",
+        minHeight: compact ? "72px" : "40vh",
+        backgroundColor: "transparent",
+      };
+
+  return (
+    <div
+      role="status"
+      aria-live="polite"
+      className={className}
+      style={{
         display: "flex",
         justifyContent: "center",
         alignItems: "center",
-        backgroundColor: "white",
         margin: 0,
         padding: 0,
+        ...rootStyle,
       }}
     >
       <div
@@ -76,16 +94,18 @@ const Loader = ({ className = "", message = "", ...props }) => {
           alignItems: "center",
           justifyContent: "center",
           gap: "16px",
-          padding: "32px 48px",
+          padding: compact ? "8px" : "32px 48px",
           borderRadius: "24px",
-          // Frosted glass card effect
-          backgroundColor: "rgba(255, 255, 255, 0.85)",
-          boxShadow:
-            "0 10px 40px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0,0,0,0.05)",
-          border: "1px solid rgba(255, 255, 255, 0.6)",
+          backgroundColor: compact
+            ? "transparent"
+            : "rgba(255, 255, 255, 0.85)",
+          boxShadow: compact
+            ? "none"
+            : "0 10px 40px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0,0,0,0.05)",
+          border: compact ? "none" : "1px solid rgba(255, 255, 255, 0.6)",
         }}
       >
-        <SpinnerSVG />
+        <SpinnerSVG color={color} dimension={dimension} />
         {message && (
           <span
             style={{

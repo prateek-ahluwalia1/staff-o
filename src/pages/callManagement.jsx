@@ -213,7 +213,7 @@ const CallManagement = () => {
     }
   };
 
-  if (callsLoading && calls.length === 0) return <Loader fullPage />;
+  if (callsLoading && calls.length === 0) return <Loader />;
 
   return (
     <div className="container mt-4 pb-5">

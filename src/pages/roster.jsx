@@ -242,7 +242,7 @@ export default function RosterPage() {
     0,
   );
 
-  if (staffLoading || submitLoading) return <Loader fullPage />;
+  if (staffLoading || submitLoading) return <Loader />;
 
   const inputStyle = {
     height: "48px",

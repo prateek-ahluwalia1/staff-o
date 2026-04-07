@@ -166,7 +166,7 @@ const RatesList = ({ forcedType } = {}) => {
     );
   }
 
-  if (loading) return <Loader fullPage />;
+  if (loading) return <Loader />;
 
   if (error) {
     const errMsg =

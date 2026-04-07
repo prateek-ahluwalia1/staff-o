@@ -295,7 +295,7 @@ export default function IncidentReport({ rosterId, guardId, shift, site }) {
       <div
         style={{ display: "flex", justifyContent: "center", padding: "40px" }}
       >
-        <Loader fullPage />
+        <Loader compact />
       </div>
     );
   }

@@ -49,7 +49,6 @@ export default function RosterPage() {
     loading: submitLoading,
     data: submitData,
   } = useSubmit({ isAuth: true });
-
   const { submit: saveUserAssignment, loading: saveLoading } = useSubmit({
     isAuth: true,
   });
@@ -60,21 +59,15 @@ export default function RosterPage() {
   const [modal, setModal] = useState(null);
   const [selectedUserId, setSelectedUserId] = useState("");
   const [showStats, setShowStats] = useState(false);
-
-  // NEW: State to toggle between 1 and 2 weeks
   const [weeksToView, setWeeksToView] = useState(1);
+  const [editForm, setEditForm] = useState({ startTime: "", endTime: "" });
 
-  const [editForm, setEditForm] = useState({
-    startTime: "",
-    endTime: "",
-  });
+  // NEW: State for the search box
+  const [searchQuery, setSearchQuery] = useState("");
 
   const fetchCustomerSites = useCallback(() => {
     if (!userId) return;
-
-    // Dynamically calculate the end date based on selected view
     const endDayOffset = weeksToView === 1 ? 6 : 13;
-
     const payload = {
       user_id: [userId],
       state: "Victoria",
@@ -90,7 +83,6 @@ export default function RosterPage() {
   }, [fetchCustomerSites]);
 
   const weekDays = useMemo(() => {
-    // Dynamically set array length to 7 or 14
     const totalDays = weeksToView === 1 ? 7 : 14;
     return Array.from({ length: totalDays }, (_, i) => {
       const d = addDays(monday, i);
@@ -142,12 +134,21 @@ export default function RosterPage() {
     });
   }, [submitData]);
 
+  // NEW: Filter sites based on the search query
+  const filteredSites = useMemo(() => {
+    if (!searchQuery.trim()) return sites;
+    const lowerQuery = searchQuery.toLowerCase();
+    return sites.filter((site) =>
+      site.displayName.toLowerCase().includes(lowerQuery),
+    );
+  }, [sites, searchQuery]);
+
+  // UPDATED: Calculate totals based ONLY on the filteredSites
   const columnTotals = useMemo(() => {
-    // Dynamically set totals array length to 7 or 14
     const totals = Array(weeksToView === 1 ? 7 : 14).fill(0);
     let grandTotal = 0;
 
-    sites.forEach((site) => {
+    filteredSites.forEach((site) => {
       site.jobRoster.forEach((shift) => {
         const dayIndex = weekDays.findIndex((d) =>
           isSameDay(d.dateObj, shift.startDate),
@@ -161,27 +162,23 @@ export default function RosterPage() {
     });
 
     return { totals, grandTotal };
-  }, [sites, weekDays, weeksToView]);
+  }, [filteredSites, weekDays, weeksToView]);
 
   const guards = staffData?.guards || [];
 
-  // Paging jumps by 1 week or 2 weeks depending on the view state
   const prevWeek = () => setMonday((prev) => subWeeks(prev, weeksToView));
   const nextWeek = () => setMonday((prev) => addWeeks(prev, weeksToView));
   const goToThisWeek = () =>
     setMonday(startOfWeek(new Date(), { weekStartsOn: 1 }));
-
   const handleRefresh = () => fetchCustomerSites();
 
   const openModalAction = (site, shift, dateStr, modalType) => {
     setSelectedUserId(shift.assigned_to || "");
-
     if (modalType === "time") {
       const startT = (shift.start || "").split(" ")[1] || "00:00";
       const endT = (shift.end || "").split(" ")[1] || "00:00";
       setEditForm({ startTime: startT, endTime: endT });
     }
-
     setModal({ type: modalType, site, shift, dateStr });
   };
 
@@ -192,29 +189,31 @@ export default function RosterPage() {
 
   const handleSave = async () => {
     if (!modal) return;
-
     try {
       let res;
       if (modal.type === "time") {
-        const endpoint = `api/update-roster-time`;
         const payload = {
           id: modal.shift.id,
           start: editForm.startTime,
           end: editForm.endTime,
         };
-        res = await saveUserAssignment(endpoint, payload, { method: "POST" });
+        res = await saveUserAssignment(`api/update-roster-time`, payload, {
+          method: "POST",
+        });
       } else if (modal.type === "admin_assign") {
         if (!selectedUserId) {
           toast.error("Please select a user to assign.");
           return;
         }
-        const endpoint = `api/asap-jobs/accept/${selectedUserId}`;
         const payload = { roster_id: modal.shift.id };
-        res = await saveUserAssignment(endpoint, payload, { method: "POST" });
+        res = await saveUserAssignment(
+          `api/asap-jobs/accept/${selectedUserId}`,
+          payload,
+          { method: "POST" },
+        );
       }
 
       if (res === undefined) return;
-
       fetchCustomerSites();
       toast.success("Saved successfully!");
       closeModal();
@@ -276,7 +275,6 @@ export default function RosterPage() {
               </button>
             </div>
             <div className="action-buttons">
-              {/* NEW: View Toggle Buttons */}
               <div style={{ display: "flex", gap: "4px", marginRight: "8px" }}>
                 <button
                   className="text-btn"
@@ -303,7 +301,6 @@ export default function RosterPage() {
                   2 Weeks
                 </button>
               </div>
-
               <button
                 onClick={handleRefresh}
                 className="icon-btn"
@@ -372,7 +369,6 @@ export default function RosterPage() {
                 <br />
                 Shift
               </div>
-              {/* Moved Confirmed inside the row container */}
               <div className="status-box status-confirmed">
                 Confirmed
                 <br />
@@ -382,17 +378,22 @@ export default function RosterPage() {
           </div>
         )}
 
-        <div className="roster-grid-wrapper">
+        <div
+          className={`roster-grid-wrapper ${weeksToView === 2 ? "two-week-view" : ""}`}
+        >
           <table className="roster-grid">
             <thead>
               <tr>
                 <th>
                   <div className="search-cell">
                     <i className="fa fa-search"></i>
+                    {/* UPDATED: Search input now bound to state */}
                     <input
                       type="text"
-                      placeholder="Search..."
+                      placeholder="Search site..."
                       className="search-input"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
                     />
                   </div>
                 </th>
@@ -405,17 +406,24 @@ export default function RosterPage() {
             </thead>
 
             <tbody>
-              {sites.length === 0 ? (
+              {/* UPDATED: Map over filteredSites instead of sites */}
+              {filteredSites.length === 0 ? (
                 <tr>
                   <td
                     colSpan={weekDays.length + 1}
-                    style={{ textAlign: "center", padding: "24px" }}
+                    style={{
+                      textAlign: "center",
+                      padding: "24px",
+                      color: "#6b7280",
+                    }}
                   >
-                    No sites found for this date range.
+                    {searchQuery
+                      ? `No sites found matching "${searchQuery}"`
+                      : "No sites found for this date range."}
                   </td>
                 </tr>
               ) : (
-                sites.map((site) => (
+                filteredSites.map((site) => (
                   <tr key={site.id}>
                     <td className="location-td">
                       <div className="location-cell-content">
@@ -491,7 +499,8 @@ export default function RosterPage() {
                                     );
                                   }}
                                 >
-                                  Activity
+                                  <i className="fa fa-list-alt"></i>{" "}
+                                  <span className="tag-text">Activity</span>
                                 </span>
                                 <span
                                   className="s-tag s-tag-detail"
@@ -505,7 +514,8 @@ export default function RosterPage() {
                                     );
                                   }}
                                 >
-                                  Detail
+                                  <i className="fa fa-info-circle"></i>{" "}
+                                  <span className="tag-text">Detail</span>
                                 </span>
                                 {userRole !== "staff" && (
                                   <span
@@ -520,7 +530,8 @@ export default function RosterPage() {
                                       );
                                     }}
                                   >
-                                    <i className="fa fa-clock-o"></i> Time
+                                    <i className="fa fa-clock-o fas fa-clock"></i>{" "}
+                                    <span className="tag-text">Time</span>
                                   </span>
                                 )}
                                 {userRole === "contractor" &&
@@ -537,7 +548,8 @@ export default function RosterPage() {
                                         );
                                       }}
                                     >
-                                      <i className="fa fa-user-plus"></i> Assign
+                                      <i className="fa fa-user-plus"></i>{" "}
+                                      <span className="tag-text">Assign</span>
                                     </span>
                                   )}
                               </div>
@@ -550,7 +562,6 @@ export default function RosterPage() {
                 ))
               )}
             </tbody>
-
             <tfoot>
               <tr className="roster-footer">
                 <td>
@@ -575,7 +586,6 @@ export default function RosterPage() {
           userRole={userRole}
         />
       )}
-
       {modal?.type === "time" && (
         <TimeEditModal
           modal={modal}
@@ -586,7 +596,6 @@ export default function RosterPage() {
           saveLoading={saveLoading}
         />
       )}
-
       {modal?.type === "details" && (
         <DetailsModal
           modal={modal}
@@ -650,7 +659,6 @@ export default function RosterPage() {
                 &times;
               </button>
             </div>
-
             <div
               className="modal-body"
               style={{ padding: "16px", flex: 1, width: "100%" }}
@@ -672,7 +680,6 @@ export default function RosterPage() {
                   </span>
                 </p>
               </div>
-
               <div className="form-group">
                 <label
                   htmlFor="user-select"
@@ -712,7 +719,6 @@ export default function RosterPage() {
                 )}
               </div>
             </div>
-
             <div
               className="modal-footer"
               style={{

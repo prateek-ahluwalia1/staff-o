@@ -1,4 +1,3 @@
-/* Roster.css */
 .roster-page-wrapper {
     padding: 20px;
     background-color: white;
@@ -7,7 +6,6 @@
     width: 100%;
     max-width: 100%;
 }
-
 
 .roster-main-card {
     background: white;
@@ -27,31 +25,6 @@
     align-items: center;
     flex-wrap: wrap;
     gap: 12px;
-}
-
-.top-left-group {
-    display: flex;
-    align-items: center;
-    gap: 32px;
-    flex-wrap: wrap;
-}
-
-.tabs {
-    display: flex;
-    gap: 24px;
-    font-weight: 500;
-}
-
-.tab {
-    cursor: pointer;
-    padding-bottom: 4px;
-    color: #6b7280;
-}
-
-/* Updated to Bootstrap Primary */
-.tab.active {
-    color: #0d6efd;
-    border-bottom: 2px solid #0d6efd;
 }
 
 .date-controls {
@@ -78,7 +51,6 @@
     padding: 0 8px;
 }
 
-/* Updated to Bootstrap Primary */
 .today-btn {
     display: flex;
     align-items: center;
@@ -124,12 +96,6 @@
     background: #f8f9fa;
 }
 
-.text-btn.disabled {
-    background: #f3f4f6;
-    color: #9ca3af;
-    cursor: not-allowed;
-}
-
 /* --- Status Legend Bar --- */
 .status-legend-bar {
     display: flex;
@@ -160,13 +126,6 @@
     line-height: 1.2;
 }
 
-.status-confirmed-full {
-    width: 100%;
-    padding: 14px 4px;
-    font-size: 13px;
-    letter-spacing: 1px;
-}
-
 .status-pending {
     background-color: #e6ced3;
 }
@@ -187,13 +146,11 @@
     background-color: #66ffff;
 }
 
-/* Updated to Bootstrap Danger */
 .status-missed {
     background-color: #dc3545;
     color: white;
 }
 
-/* Updated to Bootstrap Warning */
 .status-uncoverd {
     background-color: #ffc107;
 }
@@ -202,13 +159,11 @@
     background-color: #d2b48c;
 }
 
-/* Updated to Bootstrap Indigo/Purple */
 .status-completed {
     background-color: #6f42c1;
     color: white;
 }
 
-/* Updated to Bootstrap Primary */
 .status-confirmed {
     background-color: #0d6efd;
     color: white;
@@ -216,39 +171,59 @@
 
 /* --- Table styling --- */
 .roster-grid-wrapper {
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
     width: 100%;
     max-width: 100%;
     border-radius: 8px;
+    overflow-x: auto;
+    /* Enables horizontal scroll */
+    -webkit-overflow-scrolling: touch;
 }
 
 .roster-grid {
     width: 100%;
     border-collapse: collapse;
+    table-layout: fixed;
+    min-width: 950px;
+    /* Prevents columns from crushing */
+}
+
+/* Make the first column sticky */
+.roster-grid th:first-child,
+.roster-grid td:first-child {
+    position: sticky;
+    left: 0;
+    background-color: #fff;
+    z-index: 2;
+    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.05);
+    width: 180px;
+}
+
+.roster-grid th:first-child {
+    z-index: 3;
 }
 
 .roster-grid th,
 .roster-grid td {
     border: 1px solid #e5e7eb;
-    padding: 12px;
+    padding: 8px 4px;
     vertical-align: top;
+    word-wrap: break-word;
+    min-width: 0;
 }
 
 .roster-grid th {
     text-align: left;
     background: white;
     font-weight: 600;
-    font-size: 14px;
+    font-size: 13px;
     color: #111827;
-    white-space: nowrap;
+    white-space: normal;
 }
 
 .search-cell {
     display: flex;
     align-items: center;
     gap: 8px;
-    min-width: 140px;
 }
 
 .search-cell i {
@@ -259,7 +234,7 @@
     width: 100%;
     border: none;
     outline: none;
-    font-size: 14px;
+    font-size: 13px;
     color: #6b7280;
 }
 
@@ -281,28 +256,27 @@
     color: #374151;
 }
 
-/* Updated to Bootstrap Primary */
 .loc-name {
     color: #0d6efd;
     font-weight: 600;
     cursor: pointer;
     text-decoration: none;
+    word-wrap: break-word;
 }
 
 .loc-name:hover {
     color: #0a58ca;
 }
 
-/* Updated to Bootstrap Primary Info/Light variants */
 .loc-badge {
     position: absolute;
     bottom: 12px;
     right: 12px;
     background: #cfe2ff;
     color: #084298;
-    padding: 4px 8px;
+    padding: 4px 6px;
     border-radius: 12px;
-    font-size: 11px;
+    font-size: 10px;
     font-weight: 600;
     display: flex;
     align-items: center;
@@ -311,7 +285,6 @@
 
 /* Shift Cells */
 .day-cell {
-    width: 11%;
     position: relative;
     padding-bottom: 35px !important;
 }
@@ -352,13 +325,11 @@
 
 .shift-missed {
     background-color: #dc3545;
-    /* Bootstrap danger */
     color: white;
 }
 
 .shift-uncovered {
     background-color: #ffc107;
-    /* Bootstrap warning */
     color: #111;
 }
 
@@ -369,11 +340,9 @@
 
 .shift-completed {
     background-color: #6f42c1;
-    /* Bootstrap indigo */
     color: white;
 }
 
-/* Updated to Bootstrap Primary */
 .shift-confirmed {
     background-color: #0d6efd;
     color: white;
@@ -383,6 +352,7 @@
     text-align: center;
     margin-bottom: 5px;
     padding: 4px 6px 0;
+    font-size: 10px;
 }
 
 .shift-name {
@@ -397,6 +367,8 @@
 
 .shift-tags {
     display: flex;
+    flex-wrap: nowrap;
+    /* Forces tags onto one line */
     border-top: 1px solid rgba(0, 0, 0, 0.15);
     width: 100%;
 }
@@ -404,12 +376,13 @@
 .s-tag {
     flex: 1;
     font-size: 9px;
-    padding: 3px 2px;
+    padding: 4px 2px;
     font-weight: 600;
     white-space: nowrap;
     display: flex;
     align-items: center;
     justify-content: center;
+    gap: 3px;
     text-align: center;
     border-right: 1px solid rgba(0, 0, 0, 0.15);
 }
@@ -420,11 +393,9 @@
 
 .s-tag-activity {
     background: #212529;
-    /* Bootstrap Dark */
     color: white;
 }
 
-/* Updated to Bootstrap Primary */
 .s-tag-detail {
     background: #0d6efd;
     color: white;
@@ -440,17 +411,16 @@
     color: white;
 }
 
-/* Updated to Bootstrap Light Theme */
 .roster-footer {
     background: #f8f9fa;
     font-weight: 600;
-    font-size: 13px;
+    font-size: 12px;
     color: #212529;
 }
 
 .roster-footer td {
     text-align: center;
-    padding: 16px 12px;
+    padding: 12px 8px;
     border: 1px solid #dee2e6;
 }
 
@@ -461,63 +431,87 @@
     gap: 4px;
 }
 
-/* --- Responsive Media Queries --- */
+/* --- Responsive & 2-Week Icon Modes --- */
 
-.roster-grid {
-    min-width: 100%;
-    width: 100%;
+/* 2-Week View Icon-Only & Smaller First Column Override */
+.two-week-view .tag-text {
+    display: none;
 }
 
-.day-cell {
-    min-width: 130px;
+.two-week-view .s-tag {
+    padding: 6px 0;
 }
 
-@media screen and (max-width: 1024px) {
-    .top-left-group {
-        gap: 16px;
-    }
-
-    .roster-grid {
-        min-width: 100%;
-    }
+.two-week-view .s-tag i {
+    font-size: 13px;
+    margin: 0;
 }
 
+/* NEW: Shrink the sticky location column ONLY in 2-week mode */
+.two-week-view .roster-grid th:first-child,
+.two-week-view .roster-grid td:first-child {
+    width: 115px;
+    /* Shrunk from 180px to give dates more space */
+}
+
+/* Make text slightly smaller so it still fits nicely in the narrower box */
+.two-week-view .loc-name {
+    font-size: 11px;
+}
+
+.two-week-view .search-input {
+    font-size: 11px;
+}
+
+
+/* Mobile Media Queries */
 @media screen and (max-width: 768px) {
     .roster-page-wrapper {
         padding: 10px;
     }
 
-    .toolbar-row-top,
-    .toolbar-row-bottom {
+    .toolbar-row-top {
         flex-direction: column;
-        align-items: flex-start;
+        align-items: stretch;
     }
 
-    .filters {
+    .date-controls {
+        justify-content: space-between;
         width: 100%;
-    }
-
-    .filter-select {
-        flex: 1;
-        min-width: 120px;
     }
 
     .action-buttons {
         width: 100%;
-        justify-content: flex-start;
+        justify-content: space-between;
+        margin-top: 10px;
     }
 
-    .status-legend-bar {
-        justify-content: center;
+    .status-legend-row {
+        flex-wrap: wrap;
     }
 
     .status-box {
-        flex: 0 1 calc(33% - 4px);
+        flex: 1 1 30%;
+        font-size: 10px;
+        margin-bottom: 4px;
+    }
+
+    .tag-text {
+        display: none;
+    }
+
+    .s-tag {
+        padding: 6px 0;
+    }
+
+    .s-tag i {
+        font-size: 13px;
+        margin: 0;
     }
 }
 
 @media screen and (max-width: 480px) {
     .status-box {
-        flex: 0 1 calc(50% - 4px);
+        flex: 1 1 45%;
     }
 }

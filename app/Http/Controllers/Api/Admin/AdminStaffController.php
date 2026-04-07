@@ -231,10 +231,6 @@ class AdminStaffController extends Controller
             $userData['email'] = $request->email;
         }
         
-        if ($request->has('phone')) {
-            $userData['phone'] = $request->phone;
-        }
-        
         if ($request->has('password') && !empty($request->password)) {
             $userData['password'] = Hash::make($request->password);
         }
@@ -289,6 +285,11 @@ class AdminStaffController extends Controller
 
         if ($request->has('gender')) {
             $staff->staff_document_type = $request->staff_document_type;
+        }
+
+        if ($request->has('phone')) {
+            $staff->phone = $request->phone;
+
         }
 
         $staff->save();

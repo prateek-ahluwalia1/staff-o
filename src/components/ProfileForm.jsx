@@ -92,13 +92,24 @@ export default function ProfileForm({
             <>
               <div>
                 <label className="form-label mb-3">Gender</label>
-                <div style={{ display: "flex", gap: "20px", flexWrap: "wrap" }}>
+                <div
+                  style={{
+                    display: "flex",
+                    gap: "20px",
+                    flexWrap: "wrap",
+                    position: "relative", // Add this
+                    top: "-8px",
+                  }}
+                >
                   {["male", "female", "other"].map((option) => {
                     const isSelected = formData.gender === option;
                     return (
                       <div
                         key={option}
-                        style={{ display: "flex", alignItems: "center" }}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                        }}
                       >
                         <input
                           type="radio"
@@ -124,7 +135,7 @@ export default function ProfileForm({
                             alignItems: "center",
                             gap: "8px",
                             cursor: "pointer",
-                            padding: "10px 16px",
+                            padding: "12px 16px",
                             borderRadius: "8px",
                             border: isSelected
                               ? "2px solid #007bff"

@@ -6,7 +6,10 @@ import RevenueChart from "../../components/dashboard/RevenueChart";
 import JobTrendChart from "../../components/dashboard/JobTrendChart";
 // import useSubmit from "../../hooks/useSubmit";
 // import Loader from "../../components/Loader";
-import { apiURL } from "../../utils/exports";
+import {
+  getProfileImageFromUserdata,
+  resolveProfileImageUrl,
+} from "../../utils/profileImage";
 import "./DashboardStyles.css";
 import dashboardBanner from "../../assets/images/dashboard-banner.jpg";
 
@@ -14,7 +17,7 @@ export default function AdminDashboard() {
   const { userdata } = useSelector((state) => state.auth);
   const email = userdata?.data?.email || userdata?.email || "No Email";
   const username = userdata?.data?.name || userdata?.name || "No Name";
-  const profileImage = userdata?.data?.profile_image || userdata?.profile_image;
+  const profileImage = getProfileImageFromUserdata(userdata);
   // const { submit, loading, data: submitData } = useSubmit({ isAuth: true });
 
   const [adminStats] = useState({
@@ -85,12 +88,7 @@ export default function AdminDashboard() {
   //   setTopContractors(dashData.topContractors || []);
   // }, [submitData]);
 
-  const imageUrl =
-    profileImage && profileImage.startsWith("http")
-      ? profileImage
-      : profileImage
-        ? `${apiURL}${profileImage}`
-        : null;
+  const imageUrl = resolveProfileImageUrl(profileImage);
 
   // if (loading) return <Loader fullPage />;
 

@@ -11,7 +11,7 @@ import {
 import useSubmit from "../hooks/useSubmit";
 import useFetch from "../hooks/useFetch";
 import staffologo from "../assets/images/staffo.png";
-import { apiURL } from "../utils/exports";
+import { getProfileImageUrlFromUserdata } from "../utils/profileImage";
 
 const Header = memo(function Header() {
   const { token, userdata } = useSelector((state) => state.auth);
@@ -109,19 +109,7 @@ const Header = memo(function Header() {
   };
 
   const getProfileImageUrl = () => {
-    const profileImage =
-      userdata?.data?.profile_image ||
-      userdata?.profile_image ||
-      userdata?.data?.staff?.profile_image ||
-      userdata?.staff?.profile_image ||
-      userdata?.data?.contractor?.profile_image ||
-      userdata?.contractor?.profile_image;
-
-    if (!profileImage) return null;
-
-    return profileImage.startsWith("http")
-      ? profileImage
-      : `${apiURL}${profileImage}`;
+    return getProfileImageUrlFromUserdata(userdata);
   };
 
   const renderUserAvatar = () => {

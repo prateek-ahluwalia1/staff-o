@@ -5,7 +5,10 @@ import JobTrendChart from "../../components/dashboard/JobTrendChart";
 import JobCategoryChart from "../../components/dashboard/JobCategoryChart";
 // import useSubmit from "../../hooks/useSubmit";
 // import Loader from "../../components/Loader";
-import { apiURL } from "../../utils/exports";
+import {
+  getProfileImageFromUserdata,
+  resolveProfileImageUrl,
+} from "../../utils/profileImage";
 import "./DashboardStyles.css";
 import dashboardBanner from "../../assets/images/dashboard-banner.jpg";
 
@@ -17,7 +20,7 @@ export default function ContractorDashboard() {
     userdata?.contractor?.phone ||
     "No Phone";
   const username = userdata?.data?.name || userdata?.name || "No Name";
-  const profileImage = userdata?.data?.profile_image || userdata?.profile_image;
+  const profileImage = getProfileImageFromUserdata(userdata);
   const companyName =
     userdata?.data?.contractor?.company_name ||
     userdata?.contractor?.company_name ||
@@ -121,12 +124,7 @@ export default function ContractorDashboard() {
   //   setLeaveRequests(dashData.leaveRequests || []);
   // }, [submitData]);
 
-  const imageUrl =
-    profileImage && profileImage.startsWith("http")
-      ? profileImage
-      : profileImage
-        ? `${apiURL}${profileImage}`
-        : null;
+  const imageUrl = resolveProfileImageUrl(profileImage);
 
   // if (loading) return <Loader fullPage />;
 

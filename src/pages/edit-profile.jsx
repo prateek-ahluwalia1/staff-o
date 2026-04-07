@@ -10,6 +10,7 @@ import ProfileForm from "../components/ProfileForm";
 import AvatarUpload from "../components/AvatarUpload";
 import SettingsHeaderContent from "../components/SettingsHeaderContent";
 import { apiURL } from "../utils/exports";
+import { resolveProfileImageUrl } from "../utils/profileImage";
 import { toast } from "react-toastify";
 
 const INITIAL_CARD_STATE = {
@@ -176,17 +177,17 @@ export default function EditProfile() {
         d.profile_image ||
         staff.profile_image ||
         contractor.profile_image ||
+        customer.profile_image ||
         "",
     });
 
     const profileImageUrl =
-      d.profile_image || staff.profile_image || contractor.profile_image;
+      d.profile_image ||
+      staff.profile_image ||
+      contractor.profile_image ||
+      customer.profile_image;
     if (profileImageUrl) {
-      setProfilePhoto(
-        profileImageUrl.startsWith("http")
-          ? profileImageUrl
-          : `${apiURL}${profileImageUrl}`,
-      );
+      setProfilePhoto(resolveProfileImageUrl(profileImageUrl));
     }
   }, [profileData]);
 

@@ -3,7 +3,10 @@ import { useSelector } from "react-redux";
 import { NavLink } from "react-router-dom";
 import StatsCard from "../../components/dashboard/StatsCard";
 import JobTrendChart from "../../components/dashboard/JobTrendChart";
-import { apiURL } from "../../utils/exports";
+import {
+  getProfileImageFromUserdata,
+  resolveProfileImageUrl,
+} from "../../utils/profileImage";
 import "./DashboardStyles.css";
 import dashboardBanner from "../../assets/images/dashboard-banner.jpg";
 
@@ -92,18 +95,9 @@ export default function StaffDashboard() {
     ];
   }, []);
 
-  const profileImage =
-    userdata?.data?.profile_image ||
-    userdata?.profile_image ||
-    userdata?.data?.staff?.profile_image ||
-    userdata?.staff?.profile_image;
+  const profileImage = getProfileImageFromUserdata(userdata);
 
-  const imageUrl =
-    profileImage && profileImage.startsWith("http")
-      ? profileImage
-      : profileImage
-        ? `${apiURL}${profileImage}`
-        : null;
+  const imageUrl = resolveProfileImageUrl(profileImage);
 
   return (
     <div className="dashboard-main staff-dashboard">

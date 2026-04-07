@@ -1,7 +1,10 @@
 import { useSelector } from "react-redux";
 import StatsCard from "../../components/dashboard/StatsCard";
 import JobTrendChart from "../../components/dashboard/JobTrendChart";
-import { apiURL } from "../../utils/exports";
+import {
+  getProfileImageFromUserdata,
+  resolveProfileImageUrl,
+} from "../../utils/profileImage";
 import "./DashboardStyles.css";
 import dashboardBanner from "../../assets/images/dashboard-banner.jpg";
 
@@ -12,7 +15,7 @@ export default function CustomerDashboard() {
   const phone =
     userdata?.data?.customer?.phone || userdata?.customer?.phone || "No Phone";
   const username = userdata?.data?.name || userdata?.name || "No Name";
-  const profileImage = userdata?.data?.profile_image || userdata?.profile_image;
+  const profileImage = getProfileImageFromUserdata(userdata);
   const dashboardStats = {
     activeJobs: 0,
     completedJobs: 0,
@@ -51,12 +54,7 @@ export default function CustomerDashboard() {
     },
   ];
 
-  const imageUrl =
-    profileImage && profileImage.startsWith("http")
-      ? profileImage
-      : profileImage
-        ? `${apiURL}${profileImage}`
-        : null;
+  const imageUrl = resolveProfileImageUrl(profileImage);
 
   return (
     <div className="dashboard-main customer-dashboard">

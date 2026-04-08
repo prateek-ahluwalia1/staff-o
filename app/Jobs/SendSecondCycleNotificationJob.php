@@ -1,69 +1,31 @@
 <?php
 
-namespace App\Console\Commands;
+namespace App\Jobs;
 
-use App\Jobs\SendSecondCycleNotificationJob;
-use App\Models\User;
-use Illuminate\Console\Command;
+use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Foundation\Bus\Dispatchable;
+use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
-use Illuminate\Support\Facades\Log;
+use App\Models\User;
 
-class SendASAPJobNotifications extends Command
+class SendSecondCycleNotificationJob implements ShouldQueue
 {
-    protected $signature = 'notifications:asap-job';
-    protected $description = 'Send ASAP job notifications to contractors every 15 minutes';
+    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
+
+    public $tries   = 1;
+    public $timeout = 300;
 
     public function handle()
     {
         try {
-            Log::info('=== SendASAPJobNotifications command started ===');
+            Log::info('=== Second Cycle Job Started (via Queue) ===');
 
-            $rosterData = $this->getUnassignedJobsWithRoster();
-
-            if (!$rosterData['has_jobs']) {
-                $this->info('No unassigned jobs found for today. Notifications not sent.');
-                Log::info('No unassigned jobs found. Command terminated.');
-                return;
-            }
-
-            Log::info('Unassigned jobs found', [
-                'job_count'      => $rosterData['jobs']->count(),
-                'roster_details' => $rosterData['roster']
-            ]);
-
-            // ---- FIRST CYCLE runs immediately ----
-            $this->sendFirstCycleNotifications($rosterData['roster']);
-            $this->info('First cycle completed. Second cycle queued for 15 minutes later.');
-            Log::info('First cycle completed. Dispatching second cycle with 15 min delay.');
-
-            // ---- SECOND CYCLE dispatched to queue with 15 min delay ----
-            SendSecondCycleNotificationJob::dispatch()
-                ->delay(now()->addMinutes(15));
-
-            Log::info('Second cycle job dispatched successfully.');
-            Log::info('=== SendASAPJobNotifications command finished ===');
-
-        } catch (\Exception $e) {
-            Log::error('Critical error in handle method', [
-                'error_message' => $e->getMessage(),
-                'error_line'    => $e->getLine(),
-                'error_file'    => $e->getFile()
-            ]);
-            $this->error('An error occurred: ' . $e->getMessage());
-        }
-    }
-
-    private function getUnassignedJobsWithRoster()
-    {
-        try {
             $startOfDay = Carbon::today()->startOfDay();
             $endOfDay   = Carbon::today()->endOfDay();
-
-            $jobs = DB::table('job_rosters')
-                ->whereNull('assigned_to')
-                ->whereBetween('start', [$startOfDay, $endOfDay])
-                ->get();
 
             $roster = DB::table('job_rosters')
                 ->whereNull('assigned_to')
@@ -71,62 +33,18 @@ class SendASAPJobNotifications extends Command
                 ->get()
                 ->toArray();
 
-            return [
-                'has_jobs' => $jobs->count() > 0,
-                'jobs'     => $jobs,
-                'roster'   => $roster
-            ];
+            if (empty($roster)) {
+                Log::info('Second Cycle Job: No unassigned jobs found. Skipped.');
+                return;
+            }
 
-        } catch (\Exception $e) {
-            Log::error('Error in getUnassignedJobsWithRoster', ['error' => $e->getMessage()]);
-            return [
-                'has_jobs' => false,
-                'jobs'     => collect(),
-                'roster'   => []
-            ];
-        }
-    }
-
-    private function sendFirstCycleNotifications($roster)
-    {
-        try {
-            Log::info('=== First Cycle Started ===');
+            Log::info('Second Cycle Job: Unassigned jobs found', [
+                'job_count' => count($roster)
+            ]);
 
             $notifiedUserIds = $this->getAllNotifiedUserIdsFromRoster($roster);
 
-            Log::info('Users already notified in roster', [
-                'user_ids' => $notifiedUserIds,
-                'count'    => count($notifiedUserIds)
-            ]);
-
-            $guards = User::where('user_id', 1)
-                ->where('is_active', 1)
-                ->where('user_type', 'staff')
-                ->whereNotIn('id', $notifiedUserIds)
-                ->select('id', 'name', 'notification_token', 'coordinates')
-                ->get();
-
-            Log::info('First cycle guards fetched', [
-                'total_guards'   => $guards->count(),
-                'user_type'      => 'staff',
-                'excluded_count' => count($notifiedUserIds)
-            ]);
-
-            $this->sendNotificationsForMultipleJobs($guards, 'First Cycle', $roster, 'staff');
-
-        } catch (\Exception $e) {
-            Log::error('Error in sendFirstCycleNotifications', ['error' => $e->getMessage()]);
-        }
-    }
-
-    private function sendSecondCycleNotifications($roster)
-    {
-        try {
-            Log::info('=== Second Cycle Started ===');
-
-            $notifiedUserIds = $this->getAllNotifiedUserIdsFromRoster($roster);
-
-            Log::info('Users already notified in roster', [
+            Log::info('Second Cycle Job: Users already notified', [
                 'user_ids' => $notifiedUserIds,
                 'count'    => count($notifiedUserIds)
             ]);
@@ -138,19 +56,27 @@ class SendASAPJobNotifications extends Command
                 ->select('id', 'name', 'notification_token', 'coordinates')
                 ->get();
 
-            Log::info('Second cycle guards fetched', [
+            Log::info('Second Cycle Job: Guards fetched', [
                 'total_guards'            => $guards->count(),
-                'user_type'               => 'contractor',
                 'excluded_notified_count' => count($notifiedUserIds)
             ]);
 
             $this->sendNotificationsForMultipleJobs($guards, 'Second Cycle', $roster, 'contractor');
 
-        } catch (\Exception $e) {
-            Log::error('Error in sendSecondCycleNotifications', ['error' => $e->getMessage()]);
-        }
-    }
+            Log::info('=== Second Cycle Job Completed ===');
 
+        } catch (\Exception $e) {
+            Log::error('Error in Second Cycle Job', [
+                'error_message' => $e->getMessage(),
+                'error_line'    => $e->getLine(),
+                'error_file'    => $e->getFile()
+            ]);
+        }
+        }
+
+    /**
+     * Get all notified user IDs from roster's notified_users field
+     */
     private function getAllNotifiedUserIdsFromRoster($roster)
     {
         $allNotifiedUserIds = [];
@@ -181,7 +107,10 @@ class SendASAPJobNotifications extends Command
         return $allNotifiedUserIds;
     }
 
-    private function sendNotificationsForMultipleJobs($guards, $cycle, $roster, $userType = 'staff')
+    /**
+     * Send notifications for multiple jobs
+     */
+    private function sendNotificationsForMultipleJobs($guards, $cycle, $roster, $userType = 'contractor')
     {
         $totalSentCount     = 0;
         $totalJobsProcessed = 0;
@@ -226,7 +155,7 @@ class SendASAPJobNotifications extends Command
                 $radiusKm,
                 $jobIndex + 1,
                 $jobCoordinates,
-                $userType        // ← pass user type for notified_users update
+                $userType
             );
 
             $totalSentCount += $jobSentCount;
@@ -245,18 +174,17 @@ class SendASAPJobNotifications extends Command
             'total_guards'             => $guards->count()
         ]);
 
-        $this->info("{$cycle}: Sent {$totalSentCount} notifications across {$totalJobsProcessed} jobs.");
-
         return $totalSentCount;
     }
 
-    private function sendNotificationsForSingleJob($guards, $cycle, $rosterItem, $jobIds, $radiusKm, $jobNumber, $jobCoordinates, $userType = 'staff')
+    /**
+     * Send notifications for a single job
+     */
+    private function sendNotificationsForSingleJob($guards, $cycle, $rosterItem, $jobIds, $radiusKm, $jobNumber, $jobCoordinates, $userType = 'contractor')
     {
-        $sentCount    = 0;
-        $skippedCount = 0;
-        $noTokenCount = 0;
-
-        // Collect successfully notified users for DB update
+        $sentCount          = 0;
+        $skippedCount       = 0;
+        $noTokenCount       = 0;
         $newlyNotifiedUsers = [];
 
         if ($guards->isEmpty()) {
@@ -282,7 +210,9 @@ class SendASAPJobNotifications extends Command
                     ->first();
 
                 if (!$guard) {
-                    Log::warning("{$cycle} - Job #{$jobNumber}: Guard not found or inactive", ['guard_id' => $grd->id]);
+                    Log::warning("{$cycle} - Job #{$jobNumber}: Guard not found or inactive", [
+                        'guard_id' => $grd->id
+                    ]);
                     $skippedCount++;
                     continue;
                 }
@@ -326,7 +256,7 @@ class SendASAPJobNotifications extends Command
                     send_push_notification($notificationData);
                     $sentCount++;
 
-                    // ---- Collect this guard for notified_users update ----
+                    // ---- Collect successfully notified user ----
                     $newlyNotifiedUsers[] = [
                         'user_id'  => $guard->id,
                         'name'     => $guard->name,
@@ -376,7 +306,6 @@ class SendASAPJobNotifications extends Command
     private function updateNotifiedUsers($jobId, $newlyNotifiedUsers, $radiusKm, $userType, $cycle, $jobNumber)
     {
         try {
-            // Fetch current notified_users from DB
             $job = DB::table('job_rosters')->where('id', $jobId)->first();
 
             if (!$job) {
@@ -438,10 +367,10 @@ class SendASAPJobNotifications extends Command
                 ]);
 
             Log::info("{$cycle} - Job #{$jobNumber}: notified_users updated successfully", [
-                'job_id'              => $jobId,
-                'total_notified_now'  => count($existingUserIds),
-                'newly_added'         => count($newlyNotifiedUsers),
-                'updated_structure'   => $updatedNotifiedUsers
+                'job_id'             => $jobId,
+                'total_notified_now' => count($existingUserIds),
+                'newly_added'        => count($newlyNotifiedUsers),
+                'updated_structure'  => $updatedNotifiedUsers
             ]);
 
         } catch (\Exception $e) {
@@ -453,6 +382,9 @@ class SendASAPJobNotifications extends Command
         }
     }
 
+    /**
+     * Extract notified user IDs from a single roster item
+     */
     private function extractNotifiedUserIdsFromRosterItem($rosterItem)
     {
         $alreadyNotifiedUserIds = [];
@@ -485,28 +417,9 @@ class SendASAPJobNotifications extends Command
         return $alreadyNotifiedUserIds;
     }
 
-    private function prepareNotifyUserData($rosterItem)
-    {
-        if (!$rosterItem) return [];
-
-        try {
-            $item = is_object($rosterItem) ? (array) $rosterItem : $rosterItem;
-
-            if (isset($item['notified_users']) && !empty($item['notified_users'])) {
-                $notifyUser = $item['notified_users'];
-                if (is_string($notifyUser)) {
-                    return json_decode($notifyUser, true);
-                }
-                return $notifyUser;
-            }
-
-        } catch (\Exception $e) {
-            Log::error('Error preparing notify user data', ['error' => $e->getMessage()]);
-        }
-
-        return [];
-    }
-
+    /**
+     * Calculate distance from coordinate strings
+     */
     private function calculateDistanceFromCoordinates($guardCoordinates, $jobCoordinates)
     {
         try {
@@ -530,6 +443,9 @@ class SendASAPJobNotifications extends Command
         }
     }
 
+    /**
+     * Haversine formula
+     */
     private function calculateDistance($lat1, $lon1, $lat2, $lon2)
     {
         $theta = $lon1 - $lon2;

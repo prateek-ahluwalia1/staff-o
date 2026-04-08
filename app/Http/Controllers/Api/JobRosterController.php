@@ -281,11 +281,7 @@ class JobRosterController extends Controller
     private function updateJobRosterWithNotifiedUsers($jobIds, $notifiedUsers, $radiusKm)
     {
         $notificationData = [
-            'radius' => $radiusKm,
-            'type' => 'staff',
             'user_ids' => array_column($notifiedUsers, 'user_id'),
-            'notified_at' => now()->toDateTimeString(),
-            'user_details' => $notifiedUsers
         ];
 
         foreach ($jobIds as $jobId) {

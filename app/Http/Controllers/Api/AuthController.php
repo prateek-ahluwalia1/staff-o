@@ -291,7 +291,7 @@ class AuthController extends Controller
         // ── Step 1: Validate ─────────────────────────────────────────
         $request->validate([
             'credential' => 'required|string',
-            'user_type'  => 'required|in:customer,staff,contractor',
+            // 'user_type'  => 'required|in:customer,staff,contractor',
         ]);
 
         try {

@@ -73,6 +73,46 @@ class MessageController extends Controller
         ]);
     }
 
+    // public function getConversations()
+    // {
+    //     $userId = Auth::id();
+        
+    //     $conversations = Message::where('sender_id', $userId)
+    //         ->orWhere('receiver_id', $userId)
+    //         ->with(['sender', 'receiver'])
+    //         ->orderBy('created_at', 'desc')
+    //         ->get()
+    //         ->groupBy(function($message) use ($userId) {
+    //             return $message->sender_id === $userId ? $message->receiver_id : $message->sender_id;
+    //         })
+    //         ->map(function($messages) use ($userId) {
+    //             $latestMessage = $messages->first();
+    //             $otherUser = $latestMessage->sender_id === $userId ? 
+    //                         $latestMessage->receiver : $latestMessage->sender;
+                
+    //             return [
+    //                 'user' => [
+    //                     'id' => $otherUser->id,
+    //                     'name' => $otherUser->name,
+    //                     'email' => $otherUser->email,
+    //                     'is_online' => $otherUser->is_online,
+    //                     'last_seen' => $otherUser->last_seen
+    //                 ],
+    //                 'last_message' => [
+    //                     'message' => $latestMessage->message,
+    //                     'created_at' => $latestMessage->created_at,
+    //                     'is_sent_by_me' => $latestMessage->sender_id === $userId
+    //                 ],
+    //                 'unread_count' => $messages->where('receiver_id', $userId)
+    //                                         ->where('is_read', false)
+    //                                         ->count()
+    //             ];
+    //         })
+    //         ->values();
+
+    //     return response()->json($conversations);
+    // }
+
     public function getConversations()
     {
         $userId = Auth::id();
@@ -85,18 +125,27 @@ class MessageController extends Controller
             ->groupBy(function($message) use ($userId) {
                 return $message->sender_id === $userId ? $message->receiver_id : $message->sender_id;
             })
+            ->filter(function($messages, $otherUserId) {
+                // Filter out conversations where the other user doesn't exist
+                return !is_null($otherUserId);
+            })
             ->map(function($messages) use ($userId) {
                 $latestMessage = $messages->first();
                 $otherUser = $latestMessage->sender_id === $userId ? 
                             $latestMessage->receiver : $latestMessage->sender;
                 
+                // Skip if other user doesn't exist (deleted account)
+                if (!$otherUser) {
+                    return null;
+                }
+                
                 return [
                     'user' => [
                         'id' => $otherUser->id,
-                        'name' => $otherUser->name,
-                        'email' => $otherUser->email,
-                        'is_online' => $otherUser->is_online,
-                        'last_seen' => $otherUser->last_seen
+                        'name' => $otherUser->name ?? 'Deleted User',
+                        'email' => $otherUser->email ?? '',
+                        'is_online' => $otherUser->is_online ?? false,
+                        'last_seen' => $otherUser->last_seen ?? null
                     ],
                     'last_message' => [
                         'message' => $latestMessage->message,
@@ -108,6 +157,7 @@ class MessageController extends Controller
                                             ->count()
                 ];
             })
+            ->filter() // Remove null entries
             ->values();
 
         return response()->json($conversations);

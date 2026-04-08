@@ -42,23 +42,16 @@ class SendSecondCycleNotificationJob implements ShouldQueue
                 'job_count' => count($roster)
             ]);
 
-            $notifiedUserIds = $this->getAllNotifiedUserIdsFromRoster($roster);
-
-            Log::info('Second Cycle Job: Users already notified', [
-                'user_ids' => $notifiedUserIds,
-                'count'    => count($notifiedUserIds)
-            ]);
-
+            // ← Fetch ALL active contractors — no global exclusion
+            // Each job filters its own notified users individually
             $guards = User::whereNotIn('id', [1])
                 ->where('user_type', 'contractor')
                 ->where('is_active', 1)
-                ->whereNotIn('id', $notifiedUserIds)
                 ->select('id', 'name', 'notification_token', 'coordinates')
                 ->get();
 
             Log::info('Second Cycle Job: Guards fetched', [
-                'total_guards'            => $guards->count(),
-                'excluded_notified_count' => count($notifiedUserIds)
+                'total_guards' => $guards->count(),
             ]);
 
             $this->sendNotificationsForMultipleJobs($guards, 'Second Cycle', $roster, 'contractor');
@@ -72,44 +65,8 @@ class SendSecondCycleNotificationJob implements ShouldQueue
                 'error_file'    => $e->getFile()
             ]);
         }
-        }
-
-    /**
-     * Get all notified user IDs from roster's notified_users field
-     */
-    private function getAllNotifiedUserIdsFromRoster($roster)
-    {
-        $allNotifiedUserIds = [];
-
-        if (!empty($roster) && is_array($roster)) {
-            foreach ($roster as $rosterItem) {
-                if (!$rosterItem) continue;
-
-                $item = is_object($rosterItem) ? (array) $rosterItem : $rosterItem;
-
-                if (isset($item['notified_users']) && !empty($item['notified_users'])) {
-                    $notifyUser = $item['notified_users'];
-                    if (is_string($notifyUser)) {
-                        $notifyUser = json_decode($notifyUser, true);
-                    }
-                    if (is_array($notifyUser)) {
-                        foreach ($notifyUser as $notification) {
-                            if (isset($notification['user_ids']) && is_array($notification['user_ids'])) {
-                                $allNotifiedUserIds = array_merge($allNotifiedUserIds, $notification['user_ids']);
-                            }
-                        }
-                    }
-                }
-            }
-            $allNotifiedUserIds = array_unique($allNotifiedUserIds);
-        }
-
-        return $allNotifiedUserIds;
     }
 
-    /**
-     * Send notifications for multiple jobs
-     */
     private function sendNotificationsForMultipleJobs($guards, $cycle, $roster, $userType = 'contractor')
     {
         $totalSentCount     = 0;
@@ -141,11 +98,26 @@ class SendSecondCycleNotificationJob implements ShouldQueue
                 'job_coordinates' => $jobCoordinates
             ]);
 
+            // ← Only exclude users already notified for THIS specific job
             $alreadyNotifiedUserIds = $this->extractNotifiedUserIdsFromRosterItem($rosterItem);
 
+            Log::info("{$cycle} - Job #" . ($jobIndex + 1) . ": Already notified users for this job", [
+                'job_id'               => $jobId,
+                'already_notified_ids' => $alreadyNotifiedUserIds,
+                'count'                => count($alreadyNotifiedUserIds)
+            ]);
+
+            // Filter guards — exclude only THIS job's already notified users
             $filteredGuards = $guards->filter(function ($guard) use ($alreadyNotifiedUserIds) {
                 return !in_array($guard->id, $alreadyNotifiedUserIds);
             });
+
+            Log::info("{$cycle} - Job #" . ($jobIndex + 1) . ": Filtered guards", [
+                'job_id'          => $jobId,
+                'total_guards'    => $guards->count(),
+                'filtered_guards' => $filteredGuards->count(),
+                'excluded_count'  => count($alreadyNotifiedUserIds)
+            ]);
 
             $jobSentCount = $this->sendNotificationsForSingleJob(
                 $filteredGuards,
@@ -177,9 +149,6 @@ class SendSecondCycleNotificationJob implements ShouldQueue
         return $totalSentCount;
     }
 
-    /**
-     * Send notifications for a single job
-     */
     private function sendNotificationsForSingleJob($guards, $cycle, $rosterItem, $jobIds, $radiusKm, $jobNumber, $jobCoordinates, $userType = 'contractor')
     {
         $sentCount          = 0;
@@ -300,9 +269,6 @@ class SendSecondCycleNotificationJob implements ShouldQueue
         return $sentCount;
     }
 
-    /**
-     * Update notified_users JSON field in job_rosters table
-     */
     private function updateNotifiedUsers($jobId, $newlyNotifiedUsers, $radiusKm, $userType, $cycle, $jobNumber)
     {
         try {
@@ -351,11 +317,7 @@ class SendSecondCycleNotificationJob implements ShouldQueue
             // Build updated notified_users structure
             $updatedNotifiedUsers = [
                 [
-                    // 'radius'       => $radiusKm,
-                    // 'type'         => $userType,
-                    'user_ids'     => array_values(array_unique($existingUserIds)),
-                    // 'notified_at'  => Carbon::now()->format('Y-m-d H:i:s'),
-                    // 'user_details' => $existingUserDetails
+                    'user_ids' => array_values(array_unique($existingUserIds)),
                 ]
             ];
 
@@ -382,9 +344,6 @@ class SendSecondCycleNotificationJob implements ShouldQueue
         }
     }
 
-    /**
-     * Extract notified user IDs from a single roster item
-     */
     private function extractNotifiedUserIdsFromRosterItem($rosterItem)
     {
         $alreadyNotifiedUserIds = [];
@@ -417,9 +376,6 @@ class SendSecondCycleNotificationJob implements ShouldQueue
         return $alreadyNotifiedUserIds;
     }
 
-    /**
-     * Calculate distance from coordinate strings
-     */
     private function calculateDistanceFromCoordinates($guardCoordinates, $jobCoordinates)
     {
         try {
@@ -443,9 +399,6 @@ class SendSecondCycleNotificationJob implements ShouldQueue
         }
     }
 
-    /**
-     * Haversine formula
-     */
     private function calculateDistance($lat1, $lon1, $lat2, $lon2)
     {
         $theta = $lon1 - $lon2;

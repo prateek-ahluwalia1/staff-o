@@ -92,24 +92,17 @@ class SendASAPJobNotifications extends Command
         try {
             Log::info('=== First Cycle Started ===');
 
-            $notifiedUserIds = $this->getAllNotifiedUserIdsFromRoster($roster);
-
-            Log::info('Users already notified in roster', [
-                'user_ids' => $notifiedUserIds,
-                'count'    => count($notifiedUserIds)
-            ]);
-
+            // ← Fetch ALL active staff — no global exclusion
+            // Each job filters its own notified users individually
             $guards = User::where('user_id', 1)
                 ->where('is_active', 1)
                 ->where('user_type', 'staff')
-                ->whereNotIn('id', $notifiedUserIds)
                 ->select('id', 'name', 'notification_token', 'coordinates')
                 ->get();
 
             Log::info('First cycle guards fetched', [
-                'total_guards'   => $guards->count(),
-                'user_type'      => 'staff',
-                'excluded_count' => count($notifiedUserIds)
+                'total_guards' => $guards->count(),
+                'user_type'    => 'staff',
             ]);
 
             $this->sendNotificationsForMultipleJobs($guards, 'First Cycle', $roster, 'staff');
@@ -124,24 +117,17 @@ class SendASAPJobNotifications extends Command
         try {
             Log::info('=== Second Cycle Started ===');
 
-            $notifiedUserIds = $this->getAllNotifiedUserIdsFromRoster($roster);
-
-            Log::info('Users already notified in roster', [
-                'user_ids' => $notifiedUserIds,
-                'count'    => count($notifiedUserIds)
-            ]);
-
+            // ← Fetch ALL active contractors — no global exclusion
+            // Each job filters its own notified users individually
             $guards = User::whereNotIn('id', [1])
                 ->where('user_type', 'contractor')
                 ->where('is_active', 1)
-                ->whereNotIn('id', $notifiedUserIds)
                 ->select('id', 'name', 'notification_token', 'coordinates')
                 ->get();
 
             Log::info('Second cycle guards fetched', [
-                'total_guards'            => $guards->count(),
-                'user_type'               => 'contractor',
-                'excluded_notified_count' => count($notifiedUserIds)
+                'total_guards' => $guards->count(),
+                'user_type'    => 'contractor',
             ]);
 
             $this->sendNotificationsForMultipleJobs($guards, 'Second Cycle', $roster, 'contractor');
@@ -149,36 +135,6 @@ class SendASAPJobNotifications extends Command
         } catch (\Exception $e) {
             Log::error('Error in sendSecondCycleNotifications', ['error' => $e->getMessage()]);
         }
-    }
-
-    private function getAllNotifiedUserIdsFromRoster($roster)
-    {
-        $allNotifiedUserIds = [];
-
-        if (!empty($roster) && is_array($roster)) {
-            foreach ($roster as $rosterItem) {
-                if (!$rosterItem) continue;
-
-                $item = is_object($rosterItem) ? (array) $rosterItem : $rosterItem;
-
-                if (isset($item['notified_users']) && !empty($item['notified_users'])) {
-                    $notifyUser = $item['notified_users'];
-                    if (is_string($notifyUser)) {
-                        $notifyUser = json_decode($notifyUser, true);
-                    }
-                    if (is_array($notifyUser)) {
-                        foreach ($notifyUser as $notification) {
-                            if (isset($notification['user_ids']) && is_array($notification['user_ids'])) {
-                                $allNotifiedUserIds = array_merge($allNotifiedUserIds, $notification['user_ids']);
-                            }
-                        }
-                    }
-                }
-            }
-            $allNotifiedUserIds = array_unique($allNotifiedUserIds);
-        }
-
-        return $allNotifiedUserIds;
     }
 
     private function sendNotificationsForMultipleJobs($guards, $cycle, $roster, $userType = 'staff')
@@ -212,11 +168,26 @@ class SendASAPJobNotifications extends Command
                 'job_coordinates' => $jobCoordinates
             ]);
 
+            // ← Only exclude users already notified for THIS specific job
             $alreadyNotifiedUserIds = $this->extractNotifiedUserIdsFromRosterItem($rosterItem);
 
+            Log::info("{$cycle} - Job #" . ($jobIndex + 1) . ": Already notified users for this job", [
+                'job_id'               => $jobId,
+                'already_notified_ids' => $alreadyNotifiedUserIds,
+                'count'                => count($alreadyNotifiedUserIds)
+            ]);
+
+            // Filter guards — exclude only THIS job's already notified users
             $filteredGuards = $guards->filter(function ($guard) use ($alreadyNotifiedUserIds) {
                 return !in_array($guard->id, $alreadyNotifiedUserIds);
             });
+
+            Log::info("{$cycle} - Job #" . ($jobIndex + 1) . ": Filtered guards", [
+                'job_id'          => $jobId,
+                'total_guards'    => $guards->count(),
+                'filtered_guards' => $filteredGuards->count(),
+                'excluded_count'  => count($alreadyNotifiedUserIds)
+            ]);
 
             $jobSentCount = $this->sendNotificationsForSingleJob(
                 $filteredGuards,
@@ -226,7 +197,7 @@ class SendASAPJobNotifications extends Command
                 $radiusKm,
                 $jobIndex + 1,
                 $jobCoordinates,
-                $userType        // ← pass user type for notified_users update
+                $userType
             );
 
             $totalSentCount += $jobSentCount;
@@ -252,11 +223,9 @@ class SendASAPJobNotifications extends Command
 
     private function sendNotificationsForSingleJob($guards, $cycle, $rosterItem, $jobIds, $radiusKm, $jobNumber, $jobCoordinates, $userType = 'staff')
     {
-        $sentCount    = 0;
-        $skippedCount = 0;
-        $noTokenCount = 0;
-
-        // Collect successfully notified users for DB update
+        $sentCount          = 0;
+        $skippedCount       = 0;
+        $noTokenCount       = 0;
         $newlyNotifiedUsers = [];
 
         if ($guards->isEmpty()) {
@@ -370,13 +339,9 @@ class SendASAPJobNotifications extends Command
         return $sentCount;
     }
 
-    /**
-     * Update notified_users JSON field in job_rosters table
-     */
     private function updateNotifiedUsers($jobId, $newlyNotifiedUsers, $radiusKm, $userType, $cycle, $jobNumber)
     {
         try {
-            // Fetch current notified_users from DB
             $job = DB::table('job_rosters')->where('id', $jobId)->first();
 
             if (!$job) {
@@ -422,11 +387,7 @@ class SendASAPJobNotifications extends Command
             // Build updated notified_users structure
             $updatedNotifiedUsers = [
                 [
-                    // 'radius'       => $radiusKm,
-                    // 'type'         => $userType,
-                    'user_ids'     => array_values(array_unique($existingUserIds)),
-                    // 'notified_at'  => Carbon::now()->format('Y-m-d H:i:s'),
-                    // 'user_details' => $existingUserDetails
+                    'user_ids' => array_values(array_unique($existingUserIds)),
                 ]
             ];
 
@@ -438,10 +399,10 @@ class SendASAPJobNotifications extends Command
                 ]);
 
             Log::info("{$cycle} - Job #{$jobNumber}: notified_users updated successfully", [
-                'job_id'              => $jobId,
-                'total_notified_now'  => count($existingUserIds),
-                'newly_added'         => count($newlyNotifiedUsers),
-                'updated_structure'   => $updatedNotifiedUsers
+                'job_id'             => $jobId,
+                'total_notified_now' => count($existingUserIds),
+                'newly_added'        => count($newlyNotifiedUsers),
+                'updated_structure'  => $updatedNotifiedUsers
             ]);
 
         } catch (\Exception $e) {

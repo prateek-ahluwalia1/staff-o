@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { Card } from "../components/Card";
 import leaveimg from "../assets/images/leave.png";
-import callimg from "../assets/images/call.png";
 const WFMTools = () => {
   const navigate = useNavigate();
   const { userdata } = useSelector((state) => state.auth);
@@ -15,13 +14,11 @@ const WFMTools = () => {
       <div style={{ marginBottom: 32 }}>
         <h2 style={{ fontWeight: 700 }}>WFM Tools</h2>
         <p style={{ color: "#6b7280", marginTop: 6 }}>
-          Choose a category to manage your WFM tools.
+          Leave tools are managed here. Calls now start directly from chat.
         </p>
       </div>
 
-      {/* Put both cards inside the SAME row container */}
       <div className="row g-4">
-        {/* Card 1 */}
         {isAdmin && (
           <div className="col-12 col-md-6 col-lg-4">
             <Card
@@ -34,18 +31,6 @@ const WFMTools = () => {
             />
           </div>
         )}
-
-        {/* Card 2 */}
-        <div className="col-12 col-md-6 col-lg-4">
-          <Card
-            title="Call Management"
-            description="Used to initiate and manage calls with staff members."
-            accent="linear-gradient(135deg,#3498db,#2980b9)"
-            image={callimg}
-            type="call"
-            onClick={() => navigate("/welfare-call")}
-          />
-        </div>
       </div>
     </div>
   );

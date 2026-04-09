@@ -6,7 +6,7 @@ import {
   resolveProfileImageUrl,
 } from "../../utils/profileImage";
 import "./DashboardStyles.css";
-import dashboardBanner from "../../assets/images/dashboard-banner.jpg";
+import dashboardBanner from "../../assets/images/dashboard-banner.webp";
 
 export default function CustomerDashboard() {
   const { userdata } = useSelector((state) => state.auth);

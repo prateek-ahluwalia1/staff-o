@@ -327,6 +327,31 @@
     flex-shrink: 0;
 }
 
+.chatroom-call-btn {
+    width: 38px;
+    height: 38px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #d4ddf8 !important;
+    background: linear-gradient(135deg, #2fbf71, #239a5c) !important;
+    color: #fff !important;
+    box-shadow: 0 6px 16px rgba(47, 191, 113, 0.28);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.chatroom-call-btn:hover:not(:disabled) {
+    transform: scale(1.06);
+    box-shadow: 0 9px 18px rgba(47, 191, 113, 0.35);
+}
+
+.chatroom-call-btn:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+    box-shadow: none;
+    transform: none;
+}
+
 /* Messages Area */
 .chatroom-messages {
     flex: 1;

@@ -16,6 +16,7 @@ import {
 } from "../store/slices/chatSlice";
 import useFetch from "../hooks/useFetch";
 import useSubmit from "../hooks/useSubmit";
+import { useCallManager } from "../hooks/useCallManager";
 import { apiURL } from "../utils/exports";
 import "../assets/css/chat.css";
 
@@ -119,6 +120,7 @@ const ChatRoom = () => {
   const { submit: sendMessageApi, loading: sending } = useSubmit({
     isAuth: true,
   });
+  const { initiateCall, isCalling, isCurrentlyInCall } = useCallManager();
 
   useEffect(() => {
     dispatch(setActiveCategory(category));
@@ -222,6 +224,12 @@ const ChatRoom = () => {
     dispatch(setActiveChat(conv));
     fetchMessages(targetUser.id);
     markMessagesAsRead(targetUser.id);
+  };
+
+  const handleStartCall = () => {
+    const target = otherUser(activeConversation);
+    if (!target?.id) return;
+    initiateCall({ id: target.id, name: target.name || "User" });
   };
 
   const onSend = async (e) => {
@@ -541,6 +549,25 @@ const ChatRoom = () => {
                 >
                   {otherUser(activeConversation)?.name || "Conversation"}
                 </h6>
+              </div>
+              <div className="ms-auto d-flex align-items-center">
+                <button
+                  type="button"
+                  className="btn rounded-circle chatroom-call-btn"
+                  onClick={handleStartCall}
+                  disabled={isCalling || isCurrentlyInCall}
+                  title={
+                    isCurrentlyInCall
+                      ? "You are already in an active call"
+                      : "Start call"
+                  }
+                >
+                  <i
+                    className={
+                      isCalling ? "fa fa-spinner fa-spin" : "fa-solid fa-phone"
+                    }
+                  ></i>
+                </button>
               </div>
             </div>
 

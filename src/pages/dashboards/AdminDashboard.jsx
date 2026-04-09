@@ -11,7 +11,7 @@ import {
   resolveProfileImageUrl,
 } from "../../utils/profileImage";
 import "./DashboardStyles.css";
-import dashboardBanner from "../../assets/images/dashboard-banner.jpg";
+import dashboardBanner from "../../assets/images/dashboard-banner.webp";
 
 export default function AdminDashboard() {
   const { userdata } = useSelector((state) => state.auth);

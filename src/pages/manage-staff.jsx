@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import useFetch from "../hooks/useFetch";
 import useSubmit from "../hooks/useSubmit";
 import Loader from "../components/Loader";
@@ -26,6 +26,8 @@ const ManageStaff = () => {
   const [totalItems, setTotalItems] = useState(0);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
+  const staffAutocompleteRef = useRef(null);
+  const staffAutocompleteListenerRef = useRef(null);
 
   useEffect(() => {
     if (apiResponse?.success && apiResponse?.guards) {
@@ -49,6 +51,7 @@ const ManageStaff = () => {
     city: "",
     state: "",
     country: "",
+    coordinates: "",
     is_active: false,
   };
 
@@ -72,6 +75,7 @@ const ManageStaff = () => {
         city: user.city || "",
         state: user.state || "",
         country: user.country || "",
+        coordinates: user.coordinates || user.staff?.coordinates || "",
         is_active: user.is_active || false,
       });
     } else {
@@ -91,11 +95,109 @@ const ManageStaff = () => {
     setFormData((prev) => ({
       ...prev,
       [name]: type === "checkbox" ? checked : value,
+      // If address is manually edited, force selecting from suggestions again.
+      ...(name === "address"
+        ? { coordinates: "", city: "", state: "", country: "" }
+        : {}),
     }));
   };
 
+  useEffect(() => {
+    if (!isModalOpen) return;
+
+    let checkGoogleMaps;
+
+    const initAutocomplete = () => {
+      const addressInput = document.getElementById("staff-address");
+      if (
+        !addressInput ||
+        !window.google ||
+        !window.google.maps ||
+        !window.google.maps.places
+      )
+        return;
+      if (addressInput.getAttribute("data-gmaps-initialized")) return;
+
+      const autocomplete = new window.google.maps.places.Autocomplete(
+        addressInput,
+        {
+          fields: ["address_components", "geometry", "formatted_address"],
+          types: ["address"],
+        },
+      );
+
+      addressInput.setAttribute("data-gmaps-initialized", "true");
+      staffAutocompleteRef.current = autocomplete;
+
+      staffAutocompleteListenerRef.current = autocomplete.addListener(
+        "place_changed",
+        () => {
+          const place = autocomplete.getPlace();
+          if (!place?.geometry) return;
+
+          let newCity = "";
+          let newState = "";
+          let newCountry = "";
+
+          place.address_components?.forEach((component) => {
+            if (component.types.includes("locality"))
+              newCity = component.long_name;
+            if (component.types.includes("administrative_area_level_1"))
+              newState = component.long_name;
+            if (component.types.includes("country"))
+              newCountry = component.long_name;
+          });
+
+          setFormData((prev) => ({
+            ...prev,
+            address: place.formatted_address || prev.address,
+            city: newCity || prev.city,
+            state: newState || prev.state,
+            country: newCountry || prev.country,
+            coordinates: `${place.geometry.location.lat()},${place.geometry.location.lng()}`,
+          }));
+        },
+      );
+    };
+
+    checkGoogleMaps = setInterval(() => {
+      if (window.google && window.google.maps && window.google.maps.places) {
+        clearInterval(checkGoogleMaps);
+        initAutocomplete();
+      }
+    }, 500);
+
+    // Try immediately in case Google is already loaded.
+    initAutocomplete();
+
+    return () => {
+      clearInterval(checkGoogleMaps);
+
+      if (staffAutocompleteListenerRef.current && window.google) {
+        window.google.maps.event.removeListener(
+          staffAutocompleteListenerRef.current,
+        );
+      }
+
+      const addressInput = document.getElementById("staff-address");
+      if (addressInput) {
+        addressInput.removeAttribute("data-gmaps-initialized");
+      }
+
+      staffAutocompleteRef.current = null;
+      staffAutocompleteListenerRef.current = null;
+    };
+  }, [isModalOpen]);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (!editingUser && !formData.coordinates) {
+      toast.error(
+        "Please select an address from Google suggestions to capture coordinates.",
+      );
+      return;
+    }
 
     const method = editingUser ? "PUT" : "POST";
     const url = editingUser
@@ -192,6 +294,10 @@ const ManageStaff = () => {
           margin: 30px 0 15px;
           padding-left: 12px;
           border-left: 4px solid #0d6efd;
+        }
+
+        .pac-container {
+          z-index: 2000 !important;
         }
       `}</style>
 
@@ -385,45 +491,37 @@ const ManageStaff = () => {
                   <div className="col-12">
                     <h6 className="section-divider">Address Information</h6>
                   </div>
-                  <div className="col-md-4">
-                    <label className="form-label">City</label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      name="city"
-                      value={formData.city}
-                      onChange={handleInputChange}
-                    />
-                  </div>
-                  <div className="col-md-4">
-                    <label className="form-label">State</label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      name="state"
-                      value={formData.state}
-                      onChange={handleInputChange}
-                    />
-                  </div>
-                  <div className="col-md-4">
-                    <label className="form-label">Country</label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      name="country"
-                      value={formData.country}
-                      onChange={handleInputChange}
-                    />
-                  </div>
                   <div className="col-12">
                     <label className="form-label">Full Address</label>
-                    <textarea
+                    <input
+                      type="text"
+                      id="staff-address"
                       className="form-control"
-                      rows="2"
                       name="address"
                       value={formData.address}
                       onChange={handleInputChange}
-                    ></textarea>
+                      placeholder="Start typing and choose from Google suggestions"
+                    />
+                    <div className="form-text">
+                      Select from suggestions to auto-fill city, state, country
+                      and coordinates.
+                    </div>
+                  </div>
+
+                  <div className="col-12">
+                    <label className="form-label">
+                      Coordinates {!editingUser && "*"}
+                    </label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      name="coordinates"
+                      value={formData.coordinates}
+                      onChange={handleInputChange}
+                      placeholder="Auto-filled from selected address"
+                      readOnly
+                      required={!editingUser}
+                    />
                   </div>
 
                   <div className="col-12 mt-5">

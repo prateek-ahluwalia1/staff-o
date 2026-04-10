@@ -93,11 +93,6 @@ const Sidebar = memo(function Sidebar() {
     { to: "/dashboard", icon: "fa-solid fa-table-columns", label: "Dashboard" },
     { to: "/roster", icon: "fa-solid fa-calendar-days", label: "Roster" },
     {
-      to: "/wfm-tools",
-      icon: "fa-solid fa-toolbox",
-      label: "WFM Tools",
-    },
-    {
       to: "/manage-staff",
       icon: "fa-solid fa-users-gear",
       label: "Staff Management",

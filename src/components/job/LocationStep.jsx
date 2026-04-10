@@ -109,8 +109,6 @@ export default function LocationStep({
       inputRef.current,
       {
         fields: ["address_components", "geometry", "formatted_address"],
-        types: ["address"],
-        componentRestrictions: { country: "pk" },
       },
     );
 

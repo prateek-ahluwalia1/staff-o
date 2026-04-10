@@ -304,7 +304,7 @@ const PaySlip = () => {
       style={{
         backgroundColor: "#f8f9fa",
         minHeight: "100vh",
-        maxWidth: "960px",
+        maxWidth: "100%",
         overflowX: "auto",
       }}
     >

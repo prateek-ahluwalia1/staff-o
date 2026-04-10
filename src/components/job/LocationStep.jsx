@@ -12,12 +12,13 @@ export default function LocationStep({
   const inputRef = useRef(null);
   const mapRef = useRef(null);
   const markerRef = useRef(null);
+  const selectingPlaceRef = useRef(false);
   const [map, setMap] = useState(null);
   const [googleReady, setGoogleReady] = useState(false);
 
   // 1. Wrap helper functions in useCallback to stabilize their references
   const fillAddress = useCallback(
-    (place) => {
+    (place, options = {}) => {
       let block = "",
         area = "",
         city = "",
@@ -35,9 +36,16 @@ export default function LocationStep({
       const finalAddress = [block, area, city, state, postcode]
         .filter(Boolean)
         .join(", ");
+      const canonicalAddress = finalAddress || place.formatted_address || "";
+      const placeLabel = place.name
+        ? `${place.name}${place.formatted_address ? `, ${place.formatted_address}` : ""}`
+        : canonicalAddress;
 
-      setField("location", finalAddress || place.formatted_address);
-      setField("address", finalAddress || place.formatted_address);
+      setField(
+        "location",
+        options.preferPlaceLabel ? placeLabel : canonicalAddress,
+      );
+      setField("address", canonicalAddress);
       if (city) setField("city", city);
       if (state) setField("state", state);
       if (postcode) setField("postcode", postcode);
@@ -108,7 +116,7 @@ export default function LocationStep({
     const autocomplete = new window.google.maps.places.Autocomplete(
       inputRef.current,
       {
-        fields: ["address_components", "geometry", "formatted_address"],
+        fields: ["name", "address_components", "geometry", "formatted_address"],
       },
     );
 
@@ -116,13 +124,18 @@ export default function LocationStep({
       const place = autocomplete.getPlace();
       if (!place.geometry) return;
 
+      selectingPlaceRef.current = true;
       const lat = place.geometry.location.lat();
       const lng = place.geometry.location.lng();
       setField("coordinates", `${lat},${lng}`);
-      fillAddress(place);
+      fillAddress(place, { preferPlaceLabel: true });
 
       if (markerRef.current) markerRef.current.setPosition({ lat, lng });
       if (map) map.setCenter({ lat, lng });
+
+      setTimeout(() => {
+        selectingPlaceRef.current = false;
+      }, 0);
     });
 
     // Cleanup listener on unmount or dependency change
@@ -180,8 +193,15 @@ export default function LocationStep({
               value={form.location || ""}
               onChange={(e) => {
                 setField("location", e.target.value);
+
+                if (selectingPlaceRef.current) {
+                  if (setLocationError) setLocationError("");
+                  return;
+                }
+
                 // clear coordinates when user manually edits the field
                 setField("coordinates", "");
+                setField("address", "");
                 if (setLocationError) setLocationError("");
               }}
               className={`form-control form-control-lg${

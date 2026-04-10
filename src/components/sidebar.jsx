@@ -65,16 +65,20 @@ const Sidebar = memo(function Sidebar() {
   const isProfileActive = !!(userdata?.data?.is_active || userdata?.is_active);
 
   const customerNav = [
-    { to: "/dashboard", icon: "fa-solid fa-gauge", label: "Dashboard" },
-    { to: "/add-job", icon: "fa-solid fa-paper-plane", label: "Post a Job" },
+    { to: "/dashboard", icon: "fa-solid fa-table-columns", label: "Dashboard" },
+    {
+      to: "/add-job",
+      icon: "fa-solid fa-file-circle-plus",
+      label: "Post a Job",
+    },
     {
       to: "/my-job-applications",
-      icon: "fa-solid fa-briefcase",
+      icon: "fa-solid fa-clipboard-list",
       label: "My Jobs",
     },
     {
       to: "/payment-history",
-      icon: "fa-solid fa-credit-card",
+      icon: "fa-solid fa-file-invoice-dollar",
       label: "Payment History",
     },
     { to: "/chat", icon: "fa-solid fa-comments", label: "Communications" },
@@ -86,8 +90,8 @@ const Sidebar = memo(function Sidebar() {
   ];
 
   const contractorNav = [
-    { to: "/dashboard", icon: "fa-solid fa-gauge", label: "Dashboard" },
-    { to: "/roster", icon: "fa-solid fa-users", label: "Roster" },
+    { to: "/dashboard", icon: "fa-solid fa-table-columns", label: "Dashboard" },
+    { to: "/roster", icon: "fa-solid fa-calendar-days", label: "Roster" },
     {
       to: "/wfm-tools",
       icon: "fa-solid fa-toolbox",
@@ -100,7 +104,7 @@ const Sidebar = memo(function Sidebar() {
     },
     {
       to: "/payment-history",
-      icon: "fa-solid fa-credit-card",
+      icon: "fa-solid fa-file-invoice-dollar",
       label: "Payment History",
     },
     { to: "/chat", icon: "fa-solid fa-comments", label: "Communications" },
@@ -112,8 +116,8 @@ const Sidebar = memo(function Sidebar() {
   ];
 
   const staffNav = [
-    { to: "/dashboard", icon: "fa-solid fa-gauge", label: "Dashboard" },
-    { to: "/roster", icon: "fa-solid fa-users", label: "Roster" },
+    { to: "/dashboard", icon: "fa-solid fa-table-columns", label: "Dashboard" },
+    { to: "/roster", icon: "fa-solid fa-calendar-days", label: "Roster" },
     {
       to: "/wfm-tools",
       icon: "fa-solid fa-toolbox",
@@ -121,7 +125,7 @@ const Sidebar = memo(function Sidebar() {
     },
     {
       to: "/my-job-applications",
-      icon: "fa-solid fa-briefcase",
+      icon: "fa-solid fa-clipboard-user",
       label: "My Job Applications",
     },
     { to: "/chat", icon: "fa-solid fa-comments", label: "Communications" },
@@ -133,9 +137,17 @@ const Sidebar = memo(function Sidebar() {
   ];
 
   const adminNav = [
-    { to: "/dashboard", icon: "fa-solid fa-gauge", label: "Admin Dashboard" },
-    { to: "/roster", icon: "fa-solid fa-users", label: "Roster" },
-    { to: "/add-job", icon: "fa-solid fa-paper-plane", label: "Post a Job" },
+    {
+      to: "/dashboard",
+      icon: "fa-solid fa-table-columns",
+      label: "Admin Dashboard",
+    },
+    { to: "/roster", icon: "fa-solid fa-calendar-days", label: "Roster" },
+    {
+      to: "/add-job",
+      icon: "fa-solid fa-file-circle-plus",
+      label: "Post a Job",
+    },
     {
       to: "/wfm-tools",
       icon: "fa-solid fa-toolbox",
@@ -143,13 +155,13 @@ const Sidebar = memo(function Sidebar() {
     },
     {
       to: "/reports",
-      icon: "fa-solid fa-chart-bar",
+      icon: "fa-solid fa-chart-pie",
       label: "Reports Management",
     },
     { to: "/chat", icon: "fa-solid fa-comments", label: "Communications" },
     {
       to: "/pay-charge-rate",
-      icon: "fa-solid fa-money-bill-wave",
+      icon: "fa-solid fa-building-columns",
       label: "Accounts",
     },
     {
@@ -164,10 +176,10 @@ const Sidebar = memo(function Sidebar() {
     },
     {
       to: "/payment-history",
-      icon: "fa-solid fa-chart-line",
+      icon: "fa-solid fa-vault",
       label: "Financials",
     },
-    { to: "/edit-profile", icon: "fa-solid fa-user-pen", label: "Settings" },
+    { to: "/edit-profile", icon: "fa-solid fa-gear", label: "Settings" },
   ];
 
   const navConfig = {

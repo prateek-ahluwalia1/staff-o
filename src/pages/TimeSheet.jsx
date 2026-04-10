@@ -314,9 +314,9 @@ const selectStyles = {
   option: (base, state) => ({
     ...base,
     backgroundColor: state.isSelected
-      ? "#36b49f"
+      ? "#0d6efd"
       : state.isFocused
-        ? "#eaf7f4"
+        ? "#e7f1ff"
         : "#fff",
     color: state.isSelected ? "#fff" : "#212529",
   }),
@@ -672,7 +672,7 @@ export default function TimeSheet() {
           </div>
           <div className="col-12 col-sm-6 col-lg-3 d-grid">
             <button
-              className="btn btn-success"
+              className="btn btn-primary"
               onClick={fetchTimesheets}
               disabled={timesheetLoading}
             >
@@ -681,7 +681,7 @@ export default function TimeSheet() {
           </div>
           <div className="col-12 col-sm-6 col-lg-3 d-grid">
             <button
-              className="btn btn-success"
+              className="btn btn-primary"
               onClick={handleExport}
               disabled={timesheetData.length === 0}
             >
@@ -696,7 +696,7 @@ export default function TimeSheet() {
           <table className="table table-hover align-middle mb-0">
             <thead
               className="table-primary text-dark"
-              style={{ borderBottom: "2px solid #67c7b8" }}
+              style={{ borderBottom: "2px solid #0d6efd" }}
             >
               <tr>
                 <th>Staff ID</th>

@@ -227,9 +227,9 @@ const selectStyles = {
   option: (base, state) => ({
     ...base,
     backgroundColor: state.isSelected
-      ? "#36b49f"
+      ? "#0d6efd"
       : state.isFocused
-        ? "#eaf7f4"
+        ? "#e7f1ff"
         : "#fff",
     color: state.isSelected ? "#fff" : "#212529",
   }),
@@ -420,14 +420,14 @@ const JobTracker = () => {
             onChange={(e) => setEndDate(e.target.value)}
           />
           <button
-            className="btn btn-success"
+            className="btn btn-primary"
             onClick={fetchReport}
             disabled={loading}
           >
             <i className="fa-solid fa-search me-1"></i> Search
           </button>
           <button
-            className="btn btn-success"
+            className="btn btn-primary"
             onClick={handleExport}
             disabled={rows.length === 0}
           >
@@ -441,7 +441,7 @@ const JobTracker = () => {
           <table className="table table-hover align-middle mb-0">
             <thead
               className="table-primary text-dark"
-              style={{ borderBottom: "2px solid #67c7b8" }}
+              style={{ borderBottom: "2px solid #0d6efd" }}
             >
               <tr>
                 <th>Job ID</th>

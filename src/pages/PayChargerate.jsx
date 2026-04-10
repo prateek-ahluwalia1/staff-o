@@ -5,6 +5,7 @@ import { Card } from "../components/Card";
 import payrateimg from "../assets/images/pay.png";
 import chargerateimg from "../assets/images/charge.png";
 import invoiceimg from "../assets/images/invoice.png";
+import payslipimg from "../assets/images/pay-slip.png";
 
 const PayChargerate = () => {
   const navigate = useNavigate();
@@ -65,6 +66,16 @@ const PayChargerate = () => {
             image={invoiceimg}
             type="invoice"
             onClick={() => navigate("/accounts/invoice")}
+          />
+        </div>
+        <div className="col-12 col-md-6 col-lg-4">
+          <Card
+            title="Pay Slip"
+            description="It is used to generate a pay slip for the staff"
+            accent="linear-gradient(135deg,#1abc9c,#2ecc71)"
+            image={payslipimg}
+            type="pay-slip"
+            onClick={() => navigate("/pay-slip")}
           />
         </div>
       </div>

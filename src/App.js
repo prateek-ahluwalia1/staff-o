@@ -52,6 +52,7 @@ const JobTracker = lazy(() => import("./pages/JobTracker"));
 const WFMTools = lazy(() => import("./pages/wfm-tools"));
 const LeaveManagement = lazy(() => import("./pages/LeaveManagement"));
 const CallManagement = lazy(() => import("./pages/callManagement"));
+const PaySlip = lazy(() => import("./pages/PaySlip"));
 
 function AppContent() {
   const dispatch = useDispatch();
@@ -276,6 +277,14 @@ function AppContent() {
             element={
               <ProtectedRoute allowedRoles={["admin"]}>
                 <Reports />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/pay-slip"
+            element={
+              <ProtectedRoute allowedRoles={["admin"]}>
+                <PaySlip />
               </ProtectedRoute>
             }
           />

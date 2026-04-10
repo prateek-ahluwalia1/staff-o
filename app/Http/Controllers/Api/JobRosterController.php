@@ -201,6 +201,7 @@ class JobRosterController extends Controller
             ->where('is_active', 1)
             ->where('user_type', 'staff')
             ->whereNotNull('coordinates')
+            ->whereNotNull('notification_token')
             ->select('id', 'name', 'coordinates', 'notification_token')
             ->get();
 
@@ -209,6 +210,7 @@ class JobRosterController extends Controller
             // ->whereNotIn('user_id', $userId)
             ->where('user_type', 'contractor')
             ->whereNotNull('coordinates')
+            ->whereNotNull('notification_token')
             ->select('id', 'name', 'coordinates', 'notification_token')
             ->get();
         }

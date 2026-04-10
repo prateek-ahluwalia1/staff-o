@@ -47,6 +47,8 @@ class SendSecondCycleNotificationJob implements ShouldQueue
             $guards = User::whereNotIn('id', [1])
                 ->where('user_type', 'contractor')
                 ->where('is_active', 1)
+                ->whereNotNull('coordinates')
+                ->whereNotNull('notification_token')
                 ->select('id', 'name', 'notification_token', 'coordinates')
                 ->get();
 

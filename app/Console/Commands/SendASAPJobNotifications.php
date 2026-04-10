@@ -97,6 +97,8 @@ class SendASAPJobNotifications extends Command
             $guards = User::where('user_id', 1)
                 ->where('is_active', 1)
                 ->where('user_type', 'staff')
+                ->whereNotNull('coordinates')
+                ->whereNotNull('notification_token')
                 ->select('id', 'name', 'notification_token', 'coordinates')
                 ->get();
 
@@ -122,6 +124,8 @@ class SendASAPJobNotifications extends Command
             $guards = User::whereNotIn('id', [1])
                 ->where('user_type', 'contractor')
                 ->where('is_active', 1)
+                ->whereNotNull('coordinates')
+                ->whereNotNull('notification_token')
                 ->select('id', 'name', 'notification_token', 'coordinates')
                 ->get();
 

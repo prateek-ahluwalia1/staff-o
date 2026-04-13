@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Jobs\SendSecondCycleNotificationJob;
+use App\Models\JobRoster;
 use App\Models\User;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
@@ -60,12 +61,12 @@ class SendASAPJobNotifications extends Command
             $startOfDay = Carbon::today()->startOfDay();
             $endOfDay   = Carbon::today()->endOfDay();
 
-            $jobs = DB::table('job_rosters')
+            $jobs = JobRoster::with('site')
                 ->whereNull('assigned_to')
                 ->whereBetween('start', [$startOfDay, $endOfDay])
                 ->get();
 
-            $roster = DB::table('job_rosters')
+            $roster = JobRoster::with('site')
                 ->whereNull('assigned_to')
                 ->whereBetween('start', [$startOfDay, $endOfDay])
                 ->get()
@@ -162,7 +163,7 @@ class SendASAPJobNotifications extends Command
             $rosterItemArray = is_object($rosterItem) ? (array) $rosterItem : $rosterItem;
             $jobId           = $rosterItemArray['id'] ?? null;
             $jobStartTime    = $rosterItemArray['start'] ?? null;
-            $jobCoordinates  = $rosterItemArray['coordinates'] ?? null;
+            $jobCoordinates  = $rosterItemArray['site']['coordinates'] ?? null;
             $radiusKm        = $rosterItemArray['radius'] ?? 5;
             $jobIds          = [$jobId];
 

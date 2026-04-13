@@ -47,7 +47,9 @@ class StaffController extends Controller
         if ($totalDocuments > 0) {
             $documentScore = ($filledDocuments / $totalDocuments) * $documentWeight;
         }
-        if($user->user_type == 'staff' || $user->user_type == 'contractor'){
+        if($user->user_type == 'contractor'){
+        $percentage = (int) round($baseScore + $documentScore);
+        }elseif($user->user_type == 'staff' && $user->user_id == 1){
         $percentage = (int) round($baseScore + $documentScore);
         }else{
         $percentage = (int) round($baseScore + 50);
@@ -663,7 +665,7 @@ class StaffController extends Controller
             if ($user->user_type === 'staff') {
                 $staff = Staff::where('user_id', $user->id)->first();
 
-                if (!empty($data['staff_document_type'])) {
+                if (!empty($data['staff_document_type']) && $user->user_id = 1) {
                     $check_old_data_exist = Document::where('user_id', $user->id)
                         ->where('document_category', '!=', 'other-doc')
                         ->first();

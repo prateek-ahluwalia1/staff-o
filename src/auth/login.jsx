@@ -15,6 +15,7 @@ export default function Login() {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
 
   const extractErrorMessage = (response) => {
     if (response.message) {
@@ -166,7 +167,7 @@ export default function Login() {
                       </NavLink> */}
                     </div>
                     <input
-                      type="password"
+                      type={showPassword ? "text" : "password"}
                       className="form-control"
                       id="loginPassword"
                       placeholder="********"
@@ -181,9 +182,15 @@ export default function Login() {
                       className="form-check-input"
                       type="checkbox"
                       id="rememberMe"
+                      checked={showPassword}
+                      onChange={() => setShowPassword((prev) => !prev)}
                     />
-                    <label className="form-check-label" htmlFor="rememberMe">
-                      Keep me signed in
+                    <label
+                      style={{ cursor: "pointer" }}
+                      className="form-check-label"
+                      htmlFor="rememberMe"
+                    >
+                      Show Password
                     </label>
                   </div>
 

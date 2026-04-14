@@ -4,6 +4,7 @@ import {
   Routes,
   Route,
   useNavigate,
+  useLocation,
 } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { setUser } from "./store/slices/authSlice";
@@ -57,10 +58,15 @@ const PaySlip = lazy(() => import("./pages/PaySlip"));
 function AppContent() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const location = useLocation();
   const { token, userdata } = useSelector((state) => state.auth);
   const isInitialMount = React.useRef(true);
 
   useEcho();
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+  }, [location.pathname]);
 
   useEffect(() => {
     if (!isInitialMount.current) return;

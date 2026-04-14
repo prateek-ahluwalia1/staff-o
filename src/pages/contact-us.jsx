@@ -186,7 +186,7 @@ export default function ContactUs() {
                     <i className="fab fa-facebook" aria-hidden="true"></i>
                   </a>
                   <a
-                    href="https://www.instagram.com/staffoapp/"
+                    href="https://www.instagram.com/staffoo_/"
                     target="_blank"
                     rel="noopener noreferrer"
                     aria-label="Instagram"

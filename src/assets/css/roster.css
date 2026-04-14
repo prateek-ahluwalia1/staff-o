@@ -298,6 +298,14 @@
     overflow: hidden;
 }
 
+.shift-has-op-note {
+    border-left: 4px solid #198754;
+}
+
+.shift-has-op-note:hover {
+    box-shadow: 0 2px 10px rgba(25, 135, 84, 0.25);
+}
+
 .shift-pending {
     background-color: #e6ced3;
     color: #111;

@@ -30,6 +30,44 @@ function parseApiDate(dateValue) {
   return isValid(fallback) ? fallback : null;
 }
 
+function extractOperationNoteText(shift) {
+  const raw =
+    shift?.operation_notes ||
+    shift?.operation_note ||
+    shift?.op_notes ||
+    shift?.op_note ||
+    "";
+
+  if (typeof raw === "string") return raw.trim();
+
+  if (Array.isArray(raw)) {
+    return raw
+      .map((item) => {
+        if (typeof item === "string") return item.trim();
+        if (item && typeof item === "object") {
+          return String(
+            item.notes ||
+              item.note ||
+              item.content ||
+              item.operation_notes ||
+              "",
+          ).trim();
+        }
+        return "";
+      })
+      .filter(Boolean)
+      .join(" | ");
+  }
+
+  if (raw && typeof raw === "object") {
+    return String(
+      raw.notes || raw.note || raw.content || raw.operation_notes || "",
+    ).trim();
+  }
+
+  return "";
+}
+
 export default function RosterPage() {
   const { userdata } = useSelector((state) => state.auth);
   const userId = userdata?.data?.id || userdata?.id;
@@ -442,119 +480,137 @@ export default function RosterPage() {
                       );
                       return (
                         <td key={day.key} className="day-cell">
-                          {shifts.map((shift) => (
-                            <div
-                              key={shift.id}
-                              className={`shift-block ${
-                                shift.job_status === "confirmed"
-                                  ? "shift-confirmed"
-                                  : shift.job_status === "rejected"
-                                    ? "shift-rejected"
-                                    : shift.job_status === "completed"
-                                      ? "shift-completed"
-                                      : shift.job_status === "missed"
-                                        ? "shift-missed"
-                                        : shift.job_status === "mock"
-                                          ? "shift-mock"
-                                          : shift.job_status === "uncovered"
-                                            ? "shift-uncovered"
-                                            : shift.job_status === "op_notes"
-                                              ? "shift-op-notes"
-                                              : shift.job_status === "published"
-                                                ? "shift-published"
+                          {shifts.map((shift) =>
+                            (() => {
+                              const operationNoteText =
+                                extractOperationNoteText(shift);
+                              const hasOperationNote =
+                                Boolean(operationNoteText);
+
+                              return (
+                                <div
+                                  key={shift.id}
+                                  className={`shift-block ${
+                                    shift.job_status === "confirmed"
+                                      ? "shift-confirmed"
+                                      : shift.job_status === "rejected"
+                                        ? "shift-rejected"
+                                        : shift.job_status === "completed"
+                                          ? "shift-completed"
+                                          : shift.job_status === "missed"
+                                            ? "shift-missed"
+                                            : shift.job_status === "mock"
+                                              ? "shift-mock"
+                                              : shift.job_status === "uncovered"
+                                                ? "shift-uncovered"
                                                 : shift.job_status ===
-                                                    "unpublished"
-                                                  ? "shift-unpublished"
-                                                  : "shift-pending"
-                              }`}
-                              onClick={() =>
-                                openModalAction(
-                                  site,
-                                  shift,
-                                  day.dateLabel,
-                                  userRole === "contractor" &&
-                                    !shift.assigned_to
-                                    ? "admin_assign"
-                                    : "details",
-                                )
-                              }
-                            >
-                              <div className="shift-time">
-                                {format(shift.startDate, "HH:mm")}-
-                                {format(shift.endDate, "HH:mm")}
-                              </div>
-                              <div className="shift-name">
-                                {shift?.guards?.name || "Unassigned"}
-                              </div>
-                              <div className="shift-tags">
-                                <span
-                                  className="s-tag s-tag-activity"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
+                                                    "op_notes"
+                                                  ? "shift-op-notes"
+                                                  : shift.job_status ===
+                                                      "published"
+                                                    ? "shift-published"
+                                                    : shift.job_status ===
+                                                        "unpublished"
+                                                      ? "shift-unpublished"
+                                                      : "shift-pending"
+                                  } ${hasOperationNote ? "shift-has-op-note" : ""}`}
+                                  title={
+                                    hasOperationNote
+                                      ? `Operation Note: ${operationNoteText}`
+                                      : ""
+                                  }
+                                  onClick={() =>
                                     openModalAction(
                                       site,
                                       shift,
                                       day.dateLabel,
-                                      "activity",
-                                    );
-                                  }}
+                                      userRole === "contractor" &&
+                                        !shift.assigned_to
+                                        ? "admin_assign"
+                                        : "details",
+                                    )
+                                  }
                                 >
-                                  <i className="fa fa-list-alt"></i>{" "}
-                                  <span className="tag-text">Activity</span>
-                                </span>
-                                <span
-                                  className="s-tag s-tag-detail"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    openModalAction(
-                                      site,
-                                      shift,
-                                      day.dateLabel,
-                                      "details",
-                                    );
-                                  }}
-                                >
-                                  <i className="fa fa-info-circle"></i>{" "}
-                                  <span className="tag-text">Detail</span>
-                                </span>
-                                {userRole !== "staff" && (
-                                  <span
-                                    className="s-tag s-tag-time"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      openModalAction(
-                                        site,
-                                        shift,
-                                        day.dateLabel,
-                                        "time",
-                                      );
-                                    }}
-                                  >
-                                    <i className="fa fa-clock-o fas fa-clock"></i>{" "}
-                                    <span className="tag-text">Time</span>
-                                  </span>
-                                )}
-                                {userRole === "contractor" &&
-                                  !shift.assigned_to && (
+                                  <div className="shift-time">
+                                    {format(shift.startDate, "HH:mm")}-
+                                    {format(shift.endDate, "HH:mm")}
+                                  </div>
+                                  <div className="shift-name">
+                                    {shift?.guards?.name || "Unassigned"}
+                                  </div>
+                                  <div className="shift-tags">
                                     <span
-                                      className="s-tag s-tag-assign"
+                                      className="s-tag s-tag-activity"
                                       onClick={(e) => {
                                         e.stopPropagation();
                                         openModalAction(
                                           site,
                                           shift,
                                           day.dateLabel,
-                                          "admin_assign",
+                                          "activity",
                                         );
                                       }}
                                     >
-                                      <i className="fa fa-user-plus"></i>{" "}
-                                      <span className="tag-text">Assign</span>
+                                      <i className="fa fa-list-alt"></i>{" "}
+                                      <span className="tag-text">Activity</span>
                                     </span>
-                                  )}
-                              </div>
-                            </div>
-                          ))}
+                                    <span
+                                      className="s-tag s-tag-detail"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        openModalAction(
+                                          site,
+                                          shift,
+                                          day.dateLabel,
+                                          "details",
+                                        );
+                                      }}
+                                    >
+                                      <i className="fa fa-info-circle"></i>{" "}
+                                      <span className="tag-text">Detail</span>
+                                    </span>
+                                    {userRole !== "staff" && (
+                                      <span
+                                        className="s-tag s-tag-time"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          openModalAction(
+                                            site,
+                                            shift,
+                                            day.dateLabel,
+                                            "time",
+                                          );
+                                        }}
+                                      >
+                                        <i className="fa fa-clock-o fas fa-clock"></i>{" "}
+                                        <span className="tag-text">Time</span>
+                                      </span>
+                                    )}
+                                    {userRole === "contractor" &&
+                                      !shift.assigned_to && (
+                                        <span
+                                          className="s-tag s-tag-assign"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            openModalAction(
+                                              site,
+                                              shift,
+                                              day.dateLabel,
+                                              "admin_assign",
+                                            );
+                                          }}
+                                        >
+                                          <i className="fa fa-user-plus"></i>{" "}
+                                          <span className="tag-text">
+                                            Assign
+                                          </span>
+                                        </span>
+                                      )}
+                                  </div>
+                                </div>
+                              );
+                            })(),
+                          )}
                         </td>
                       );
                     })}

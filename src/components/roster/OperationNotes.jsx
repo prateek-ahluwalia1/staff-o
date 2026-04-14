@@ -6,6 +6,30 @@ import reportExporter from "../../utils/reportExporter";
 export default function OperationNotes({ rosterId, guardId }) {
   const [noteText, setNoteText] = useState("");
 
+  const normalizeNoteItem = (note, fallback = {}) => {
+    if (typeof note === "string") {
+      const text = note.trim();
+      if (!text) return null;
+      return {
+        id: fallback.id,
+        notes: text,
+        created_at: fallback.created_at || "",
+      };
+    }
+
+    if (note && typeof note === "object") {
+      const text =
+        note.notes || note.note || note.content || note.operation_notes || "";
+      if (!String(text).trim()) return null;
+      return {
+        ...note,
+        notes: String(text).trim(),
+      };
+    }
+
+    return null;
+  };
+
   const {
     submit: fetchNotes,
     loading: fetchLoading,
@@ -43,8 +67,17 @@ export default function OperationNotes({ rosterId, guardId }) {
     }
   };
 
-  const rawNotes = notesData?.data?.operation_notes;
-  const notes = Array.isArray(rawNotes) ? rawNotes : [];
+  const notes = (() => {
+    const payload = notesData?.data;
+    const rawNotes = payload?.operation_notes;
+
+    if (Array.isArray(rawNotes)) {
+      return rawNotes.map((item) => normalizeNoteItem(item)).filter(Boolean);
+    }
+
+    const single = normalizeNoteItem(rawNotes, payload);
+    return single ? [single] : [];
+  })();
 
   if (fetchLoading) {
     return (
@@ -125,9 +158,7 @@ export default function OperationNotes({ rosterId, guardId }) {
                 color: "#333",
               }}
             >
-              <div style={{ marginBottom: "4px" }}>
-                {note.notes || note.note || note.content || "—"}
-              </div>
+              <div style={{ marginBottom: "4px" }}>{note.notes || "—"}</div>
               {note.created_at && (
                 <div style={{ fontSize: "11px", color: "#888" }}>
                   {note.created_at}

@@ -567,11 +567,11 @@ export default function RosterPage() {
                 <td>
                   <div className="footer-total-label">
                     <span>Total Hours</span>
-                    <span>{columnTotals.grandTotal} Hrs</span>
+                    <span>{columnTotals.grandTotal.toFixed(2)} Hrs</span>
                   </div>
                 </td>
                 {columnTotals.totals.map((total, index) => (
-                  <td key={index}>{total} Hours</td>
+                  <td key={index}>{total.toFixed(2)} Hours</td>
                 ))}
               </tr>
             </tfoot>

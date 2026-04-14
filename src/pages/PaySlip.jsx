@@ -24,6 +24,14 @@ const getUploadedPdfName = (res) => {
   return lastSegment.trim();
 };
 
+const isRequestSuccessful = (res) => {
+  const statusFlag = res?.success ?? res?.status;
+  if (typeof statusFlag === "string") {
+    return statusFlag.toLowerCase() === "true";
+  }
+  return Boolean(statusFlag);
+};
+
 const buildSelectOptions = (items, labelBuilder) =>
   [{ value: ALL_OPTION_VALUE, label: "Select/Unselect All" }, ...items].map(
     (item) => {
@@ -193,7 +201,7 @@ const PaySlip = () => {
     fd.append("folder", "payslip");
 
     const res = await uploadFile("api/upload-file", fd, { method: "POST" });
-    if (!res?.success) return;
+    if (!isRequestSuccessful(res)) return;
 
     const pdfName = getUploadedPdfName(res);
     if (!pdfName) {
@@ -204,6 +212,43 @@ const PaySlip = () => {
     setUploadedPdf(pdfName);
     setLastUploadedFileName(file.name);
     toast.success("Payslip PDF uploaded.");
+  };
+
+  const fetchGuardPayslips = async ({
+    startDate,
+    endDate,
+    guardIds,
+    showSuccessToast = true,
+  }) => {
+    if (!validateDateRange(startDate, endDate)) return null;
+    if (!guardIds.length) {
+      toast.error("Select at least one staff guard.");
+      return null;
+    }
+
+    const payload = {
+      start_date: startDate,
+      end_date: endDate,
+      guard_id: guardIds.map((id) => Number(id)),
+    };
+
+    const res = await submitForm("api/get-guard-payslips", payload, {
+      method: "POST",
+    });
+
+    if (!res) return null;
+
+    setGuardPayslipRows(toArray(res?.data));
+
+    if (isRequestSuccessful(res)) {
+      if (showSuccessToast) {
+        toast.success(res.message || "Guard payslips fetched successfully.");
+      }
+    } else {
+      toast.info(res.message || "No payslip data returned.");
+    }
+
+    return res;
   };
 
   const handleSavePayslip = async () => {
@@ -224,9 +269,21 @@ const PaySlip = () => {
     });
 
     if (!res) return;
-    if (res.success) {
+    if (isRequestSuccessful(res)) {
       toast.success("Payslip record uploaded successfully.");
       setIsUploadModalOpen(false);
+
+      setFilterStartDate(uploadStartDate);
+      setFilterEndDate(uploadEndDate);
+      if (selectedGuardIds.length) {
+        await fetchGuardPayslips({
+          startDate: uploadStartDate,
+          endDate: uploadEndDate,
+          guardIds: selectedGuardIds,
+          showSuccessToast: false,
+        });
+      }
+
       return;
     }
 
@@ -234,31 +291,11 @@ const PaySlip = () => {
   };
 
   const handleGetGuardPayslips = async () => {
-    if (!validateDateRange(filterStartDate, filterEndDate)) return;
-    if (!selectedGuardIds.length) {
-      toast.error("Select at least one staff guard.");
-      return;
-    }
-
-    const payload = {
-      start_date: filterStartDate,
-      end_date: filterEndDate,
-      guard_id: selectedGuardIds.map((id) => Number(id)),
-    };
-
-    const res = await submitForm("api/get-guard-payslips", payload, {
-      method: "POST",
+    await fetchGuardPayslips({
+      startDate: filterStartDate,
+      endDate: filterEndDate,
+      guardIds: selectedGuardIds,
     });
-
-    if (!res) return;
-
-    setGuardPayslipRows(toArray(res?.data));
-
-    if (res.success) {
-      toast.success("Guard payslips fetched successfully.");
-    } else {
-      toast.info(res.message || "No payslip data returned.");
-    }
   };
 
   const handleAutoUpdatePayslips = async () => {
@@ -279,7 +316,7 @@ const PaySlip = () => {
     });
 
     if (!res) return;
-    if (res.success) {
+    if (isRequestSuccessful(res)) {
       toast.success("Payslips auto-updated for selected staff guards.");
       return;
     }
@@ -473,8 +510,20 @@ const PaySlip = () => {
                     </td>
                     <td>{row.start_date || "-"}</td>
                     <td>{row.end_date || "-"}</td>
-                    <td className="text-break">
-                      {row.pdf || row.pdf_name || "-"}
+                    <td>
+                      {row.file_url ? (
+                        <a
+                          href={row.file_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="btn btn-sm btn-outline-primary"
+                        >
+                          <i className="fa-solid fa-up-right-from-square me-1"></i>
+                          Open
+                        </a>
+                      ) : (
+                        "-"
+                      )}
                     </td>
                   </tr>
                 ))}

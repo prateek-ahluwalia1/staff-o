@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { format } from "date-fns";
 import SignInOutDetails from "./SignInOutDetails";
-// import BreakDetails from "./BreakDetails";
 import IncidentReport from "./IncidentReport";
 import ShiftTasks from "./ShiftTasks";
 import FootPatrolReport from "./FootPatrolReport";
@@ -61,6 +60,14 @@ export default function ActivityDashboardModal({ modal, closeModal }) {
   const shift = modal?.shift;
   const site = modal?.site;
 
+  // Filter tabs: hide Operation Notes and Rating if guardId does not exist
+  const visibleTabs = SIDEBAR_TABS.filter((tab) => {
+    if (!guardId && (tab.id === "operation_notes" || tab.id === "rating")) {
+      return false;
+    }
+    return true;
+  });
+
   const renderTabContent = () => {
     switch (activeTab) {
       case "signin":
@@ -72,8 +79,6 @@ export default function ActivityDashboardModal({ modal, closeModal }) {
             site={site}
           />
         );
-      // case "break":
-      //   return <BreakDetails rosterId={rosterId} guardId={guardId} />;
       case "incident":
         return (
           <IncidentReport
@@ -194,7 +199,7 @@ export default function ActivityDashboardModal({ modal, closeModal }) {
           )}
 
           <div style={{ overflowY: "auto", flex: 1, padding: "8px 0" }}>
-            {SIDEBAR_TABS.map((tab) => {
+            {visibleTabs.map((tab) => {
               const isActive = activeTab === tab.id;
               return (
                 <div

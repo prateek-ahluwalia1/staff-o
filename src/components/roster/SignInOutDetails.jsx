@@ -1,9 +1,8 @@
 import React, { useEffect } from "react";
 import useSubmit from "../../hooks/useSubmit";
 import Loader from "../Loader";
-import { apiURL } from "../../utils/exports";
 
-const SELFIE_BASE = `${apiURL}uploads/`;
+const SELFIE_BASE = `https://apis.staffoo.com.au/uploads/`;
 
 const Field = ({ label, value }) => (
   <div style={{ marginBottom: "16px" }}>

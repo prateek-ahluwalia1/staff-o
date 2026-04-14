@@ -13,7 +13,7 @@ import useFetch from "../hooks/useFetch";
 import staffologo from "../assets/images/staffo.png";
 import { getProfileImageUrlFromUserdata } from "../utils/profileImage";
 
-const Header = memo(function Header() {
+const Header = memo(function Header({ withSidebar = false }) {
   const { token, userdata } = useSelector((state) => state.auth);
   const { items, unreadCount } = useSelector((state) => state.notifications);
   const { isExpanded: sidebarExpanded } = useSelector((state) => state.sidebar);
@@ -188,8 +188,15 @@ const Header = memo(function Header() {
     setIsMobileOpen(false);
   }, []);
 
+  const sidebarHeaderClass = useMemo(() => {
+    if (!withSidebar || !isDesktop) return "";
+    return sidebarExpanded
+      ? "header-with-sidebar-expanded"
+      : "header-with-sidebar-collapsed";
+  }, [isDesktop, sidebarExpanded, withSidebar]);
+
   return (
-    <div className="header">
+    <div className={`header ${sidebarHeaderClass}`.trim()}>
       <div
         className={`mobile-menu-overlay ${isMobileOpen ? "show" : ""}`}
         onClick={closeMobileMenu}

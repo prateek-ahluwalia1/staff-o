@@ -7,7 +7,7 @@ import Footer from "./footer";
 const DashboardLayout = memo(function DashboardLayout() {
   return (
     <>
-      <Header />
+      <Header withSidebar />
       <section className="dashboard-section">
         <div className="container">
           <div className="dashboard-layout">

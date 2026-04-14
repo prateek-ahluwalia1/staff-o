@@ -561,6 +561,16 @@ h6 {
     background: #ffffff;
 }
 
+@media (min-width: 1200px) {
+    .header.header-with-sidebar-collapsed .main-navbar {
+        padding-left: 150px;
+    }
+
+    .header.header-with-sidebar-expanded .main-navbar {
+        padding-left: 350px;
+    }
+}
+
 .main-navbar .navbar-brand {
     font-weight: 700;
     color: #0f172a;

@@ -368,16 +368,15 @@
 .shift-tags {
     display: flex;
     flex-wrap: nowrap;
-    /* Forces tags onto one line */
     border-top: 1px solid rgba(0, 0, 0, 0.15);
     width: 100%;
 }
 
 .s-tag {
     flex: 1;
-    font-size: 9px;
+    font-size: 5px;
     padding: 4px 2px;
-    font-weight: 600;
+    font-weight: 900;
     white-space: nowrap;
     display: flex;
     align-items: center;

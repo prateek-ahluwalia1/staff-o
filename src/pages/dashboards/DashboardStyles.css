@@ -1,5 +1,4 @@
 .dashboard-main {
-  background: #f8f9fa;
   min-height: 100vh;
 }
 
@@ -327,7 +326,6 @@
 }
 
 .health-value {
-  font-size: 1.5rem;
   font-weight: bold;
 }
 

@@ -60,7 +60,6 @@ export default function ActivityDashboardModal({ modal, closeModal }) {
   const shift = modal?.shift;
   const site = modal?.site;
 
-  // Filter tabs: hide Operation Notes and Rating if guardId does not exist
   const visibleTabs = SIDEBAR_TABS.filter((tab) => {
     if (!guardId && (tab.id === "operation_notes" || tab.id === "rating")) {
       return false;

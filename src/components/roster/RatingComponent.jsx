@@ -45,7 +45,7 @@ export default function RatingComponent({ rosterId, guardId }) {
       guard_id: guardId,
       roster_id: rosterId,
       rating: selectedRating,
-      description: description.trim(),
+      rating_desc: description.trim(),
     });
     if (res?.success) {
       toast.success("Rating submitted successfully!");

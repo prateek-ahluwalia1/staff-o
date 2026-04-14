@@ -32,7 +32,7 @@ export default function OperationNotes({ rosterId, guardId }) {
     const res = await storeNote("api/store-operation-notes", {
       guard_id: guardId,
       roster_id: rosterId,
-      notes: noteText.trim(),
+      operation_notes: noteText.trim(),
     });
     if (res?.success) {
       setNoteText("");

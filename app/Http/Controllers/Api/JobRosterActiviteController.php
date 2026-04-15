@@ -148,7 +148,7 @@ class JobRosterActiviteController extends Controller
     }
     public function giveRatingJobRoster(Request $request)
     {
-        $storeRating = JobRoster::where('guard_id', $request->guard_id)->where('id', $request->roster_id)->first();
+        $storeRating = JobRoster::where('assigned_to', $request->guard_id)->where('id', $request->roster_id)->first();
         if(!empty($storeRating->rating)){
             return response()->json(['success' => false,'message' => 'Rating Already Store!']);
         }else{

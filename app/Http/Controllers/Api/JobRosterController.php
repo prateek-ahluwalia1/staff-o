@@ -171,6 +171,9 @@ class JobRosterController extends Controller
                 );
             }
 
+            Transaction::where('payment_intent_id', $paymentIntentId)
+            ->update(['job_roster_id' => json_encode($createdJobIds)]);
+            
             return response()->json([
                 'success' => true,
                 'message' => 'Jobs created successfully with payment hold.',
@@ -1663,7 +1666,7 @@ class JobRosterController extends Controller
             $public_path =  rtrim(app()->basePath('public/'), '');
             $public_path = str_replace('portal/public', '', $public_path);
             $public_path = str_replace('apis/public', '', $public_path);
-            $public_path = str_replace('https://appapi.thescouts.com.au/', 'apis.247staffingsolutions.com.au/public', $public_path);
+            $public_path = str_replace('https://apis.staffoo.com.au/', 'apis.247staffingsolutions.com.au/public', $public_path);
             $destinationPath = $public_path . $folder . '/';
             if (!is_dir($destinationPath)) {
                 @mkdir($destinationPath, 0755, true);
@@ -1781,10 +1784,10 @@ class JobRosterController extends Controller
             }
 
             if (!empty($item->rosterActivity) && $item->rosterActivity->signin_selfie != null) {
-                $item->rosterActivity->signin_selfie = 'https://staffo.arrowbyte.com.au/uploads/' . $item->rosterActivity->signin_selfie;
+                $item->rosterActivity->signin_selfie = 'https://apis.staffo.com.au/uploads/' . $item->rosterActivity->signin_selfie;
             }
             if (!empty($item->rosterActivity) && $item->rosterActivity->signout_selfie != null) {
-                $item->rosterActivity->signout_selfie = 'https://staffo.arrowbyte.com.au/uploads/' . $item->rosterActivity->signout_selfie;
+                $item->rosterActivity->signout_selfie = 'https://apis.staffo.com.au/uploads/' . $item->rosterActivity->signout_selfie;
             }
 
             $signin_timez = !empty($item->rosterActivity) ? strtotime($item->rosterActivity->signin_time) : null;
@@ -1815,6 +1818,7 @@ class JobRosterController extends Controller
                 'completed_status'      => $completed_status,
                 'site'                   => $item->site,
                 'guard'                 => $item->guards,
+                'is_document'           => $item->is_document,
                 'job_roster_activities' => $item->rosterActivity,
                 'job_roster_task'       => $item->jobRosterTask,
                 'signin_time'           => $signin_status == 1 ? date("m-d-Y H:i", $signin_timez) : null,
@@ -3281,11 +3285,11 @@ public function getGuardPayslips(Request $request)
         $guardIds = $request->guard_id ?? [];
 
         $query = DB::table('guard_payslips')
-            ->join('guards', 'guard_payslips.guard_id', '=', 'guards.id')
+            ->join('users', 'guard_payslips.guard_id', '=', 'users.id')
             ->where('guard_payslips.status', 1)
             ->select(
                 'guard_payslips.*',
-                DB::raw("CONCAT(guards.first_name, ' ', guards.last_name) as guard_name")
+                'users.name',
             );
 
               $query->where(function ($q) use ($startDate, $endDate) {
@@ -3316,6 +3320,7 @@ public function autoUpdatePayslipStatus()
 {
     $today = \Carbon\Carbon::now()->format('Y-m-d');
     
+    
     $updatedCount = DB::table('guard_payslips')
         ->where('status', 1)
         ->whereNotNull('end_date')
@@ -3329,4 +3334,39 @@ public function autoUpdatePayslipStatus()
         'check_date' => $today
     ]);
 }
+
+
+    public function getSpecificGuardPayslips(Request $request)
+    {
+    try {
+        
+        $guardIds = $request->guard_id ?? [];
+
+        $query = DB::table('guard_payslips')
+            ->join('users', 'guard_payslips.guard_id', '=', 'users.id')
+            ->where('status', 1)
+            ->select(
+                'guard_payslips.*',
+                'users.name',
+            );
+
+        if (!empty($guardIds)) {
+            $query->whereIn('guard_payslips.guard_id', (array) $guardIds);
+        }
+
+        $payslips = $query->get();
+
+        return response()->json([
+            'status'   => true,
+            'message'  => 'Guard payslips retrieved successfully',
+            'data'     => $payslips,
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'status'  => false,
+            'message' => 'Error: ' . $e->getMessage(),
+        ], 500);
+    }
+    }
+
 }

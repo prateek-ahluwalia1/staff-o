@@ -27,7 +27,8 @@ class User extends Authenticatable
             'agora_uid', 
             'is_online', 
             'last_seen',
-            'notification_token'
+            'notification_token',
+            'staffo_id'
         ];
     
         protected $hidden = [

@@ -617,14 +617,19 @@ class StaffController extends Controller
                 'coordinates'
             ])->toArray());
 
-            if ($user->user_type === 'customer') {
-                $profileData = collect($data)->only([
+              if (empty($user->staffo_id) || $user->staffo_id == null ){
+                    $user->staffo_id = 'STAFO' . $user->id;
+                    $user->update();
+                }
+
+                if ($user->user_type === 'customer') {
+                 $profileData = collect($data)->only([
                     'phone',
                     'company_name',
                     'bank_details',
                 ])->toArray();
 
-                 if ($request->hasFile('profile_image')) {
+                if ($request->hasFile('profile_image')) {
                     $profileData['profile_image'] = $request->file('profile_image')->store('staff-profiles', 'public');
                 } elseif (array_key_exists('profile_image', $data)) {
                     $profileData['profile_image'] = $data['profile_image'];

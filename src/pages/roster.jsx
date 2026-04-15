@@ -21,6 +21,7 @@ import DetailsModal from "../components/roster/DetailsModal";
 import "../assets/css/roster.css";
 
 const API_DATE_FORMAT = "yyyy-MM-dd HH:mm";
+const UPDATE_API_DATE_FORMAT = "MM-dd-yyyy HH:mm";
 
 function parseApiDate(dateValue) {
   if (!dateValue) return null;
@@ -68,6 +69,14 @@ function extractOperationNoteText(shift) {
   return "";
 }
 
+function combineDateAndTime(dateObj, timeValue) {
+  if (!dateObj || !timeValue) return null;
+  const [hours, minutes] = String(timeValue).split(":");
+  const merged = new Date(dateObj);
+  merged.setHours(Number(hours || 0), Number(minutes || 0), 0, 0);
+  return isValid(merged) ? merged : null;
+}
+
 export default function RosterPage() {
   const { userdata } = useSelector((state) => state.auth);
   const userId = userdata?.data?.id || userdata?.id;
@@ -99,6 +108,7 @@ export default function RosterPage() {
   const [showStats, setShowStats] = useState(false);
   const [weeksToView, setWeeksToView] = useState(1);
   const [editForm, setEditForm] = useState({ startTime: "", endTime: "" });
+  const [timeEditError, setTimeEditError] = useState("");
 
   // NEW: State for the search box
   const [searchQuery, setSearchQuery] = useState("");
@@ -213,6 +223,7 @@ export default function RosterPage() {
   const openModalAction = (site, shift, dateStr, modalType) => {
     setSelectedUserId(shift.assigned_to || "");
     if (modalType === "time") {
+      setTimeEditError("");
       const startT = (shift.start || "").split(" ")[1] || "00:00";
       const endT = (shift.end || "").split(" ")[1] || "00:00";
       setEditForm({ startTime: startT, endTime: endT });
@@ -223,6 +234,7 @@ export default function RosterPage() {
   const closeModal = () => {
     setModal(null);
     setSelectedUserId("");
+    setTimeEditError("");
   };
 
   const handleSave = async () => {
@@ -230,10 +242,40 @@ export default function RosterPage() {
     try {
       let res;
       if (modal.type === "time") {
+        setTimeEditError("");
+        const startDateTime = combineDateAndTime(
+          modal.shift.startDate,
+          editForm.startTime,
+        );
+        const endDateTime = combineDateAndTime(
+          modal.shift.endDate,
+          editForm.endTime,
+        );
+
+        if (!startDateTime || !endDateTime) {
+          setTimeEditError("Please provide valid start and end times.");
+          return;
+        }
+
+        // If end time is earlier than start time, treat it as an overnight shift.
+        const normalizedEndDateTime =
+          endDateTime <= startDateTime
+            ? addDays(endDateTime, 1)
+            : endDateTime;
+        const durationHours =
+          (normalizedEndDateTime.getTime() - startDateTime.getTime()) /
+          (1000 * 60 * 60);
+
+        if (durationHours < 4 || durationHours > 12) {
+          setTimeEditError("Shift duration must be between 4 and 12 hours.");
+          return;
+        }
+
         const payload = {
           id: modal.shift.id,
-          start: editForm.startTime,
-          end: editForm.endTime,
+          start: format(startDateTime, UPDATE_API_DATE_FORMAT),
+          end: format(normalizedEndDateTime, UPDATE_API_DATE_FORMAT),
+          admin_id: userId,
         };
         res = await saveUserAssignment(`api/update-roster-time`, payload, {
           method: "POST",
@@ -256,7 +298,11 @@ export default function RosterPage() {
       toast.success("Saved successfully!");
       closeModal();
     } catch (error) {
-      toast.error(error.message || "Failed to save. Please try again.");
+      if (modal.type === "time") {
+        setTimeEditError(error.message || "Failed to save. Please try again.");
+      } else {
+        toast.error(error.message || "Failed to save. Please try again.");
+      }
     }
   };
 
@@ -648,6 +694,8 @@ export default function RosterPage() {
           closeModal={closeModal}
           editForm={editForm}
           setEditForm={setEditForm}
+          timeEditError={timeEditError}
+          clearTimeEditError={() => setTimeEditError("")}
           handleSave={handleSave}
           saveLoading={saveLoading}
         />

@@ -30,6 +30,8 @@ export default function TimeEditModal({
   closeModal,
   editForm,
   setEditForm,
+  timeEditError,
+  clearTimeEditError,
   handleSave,
   saveLoading,
 }) {
@@ -40,6 +42,7 @@ export default function TimeEditModal({
     let m = getPart(currentVal, "minute") || "00";
     if (type === "hour") h = newVal;
     if (type === "minute") m = newVal;
+    clearTimeEditError?.();
     setEditForm((prev) => ({ ...prev, [field]: `${h}:${m}` }));
   };
 
@@ -367,10 +370,23 @@ export default function TimeEditModal({
               padding: "16px 24px",
               borderTop: "1px solid #eaeaea",
               display: "flex",
+              alignItems: "center",
               justifyContent: "flex-end",
               gap: "12px",
             }}
           >
+            {timeEditError && (
+              <div
+                style={{
+                  color: "#dc3545",
+                  fontSize: "14px",
+                  fontWeight: 500,
+                  marginRight: "auto",
+                }}
+              >
+                {timeEditError}
+              </div>
+            )}
             <button
               onClick={closeModal}
               type="button"

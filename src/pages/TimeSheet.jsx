@@ -553,12 +553,11 @@ export default function TimeSheet() {
 
   return (
     <div
-      className="container-fluid p-4"
+      className="container-fluid px-0 py-3"
       style={{
-        backgroundColor: "#f8f9fa",
         minHeight: "100vh",
-        maxWidth: "900px",
-        overflowX: "auto",
+        maxWidth: "100%",
+        overflowX: "hidden",
       }}
     >
       {/* Top Filter Bar */}
@@ -692,8 +691,8 @@ export default function TimeSheet() {
       </div>
 
       <div className="card border-0 shadow-sm">
-        <div className="table-responsive">
-          <table className="table table-hover align-middle mb-0">
+        <div className="timesheet-table-shell">
+          <table className="table table-sm table-hover align-middle mb-0 timesheet-main-table">
             <thead
               className="table-primary text-dark"
               style={{ borderBottom: "2px solid #0d6efd" }}
@@ -704,12 +703,12 @@ export default function TimeSheet() {
                 <th>Total Hours</th>
                 <th>Morning Hours</th>
                 <th>Night Hours</th>
-                <th>Saturday Morning</th>
-                <th>Saturday Night</th>
-                <th>Sunday Morning</th>
-                <th>Sunday Night</th>
-                <th>PH Morning</th>
-                <th>PH Night</th>
+                <th title="Saturday Morning Hours">Sat M</th>
+                <th title="Saturday Night Hours">Sat N</th>
+                <th title="Sunday Morning Hours">Sun M</th>
+                <th title="Sunday Night Hours">Sun N</th>
+                <th title="Public Holiday Morning Hours">PH M</th>
+                <th title="Public Holiday Night Hours">PH N</th>
                 <th>Shift Count</th>
               </tr>
             </thead>
@@ -738,7 +737,9 @@ export default function TimeSheet() {
                       <tr
                         onClick={() => handleRowClick(row)}
                         style={{ cursor: "pointer" }}
-                        className={isSelected ? "table-active" : ""}
+                        className={`timesheet-summary-row ${
+                          isSelected ? "table-active" : ""
+                        }`}
                       >
                         <td>
                           {row.raw?.id ??
@@ -760,14 +761,14 @@ export default function TimeSheet() {
                       </tr>
 
                       {isSelected && (
-                        <tr>
+                        <tr className="timesheet-detail-row">
                           <td colSpan="12" className="bg-light">
                             <div className="p-3">
                               <h6 className="fw-bold mb-3">
                                 Detailed Shift Breakdown: {row.staffName}
                               </h6>
                               <div className="table-responsive">
-                                <table className="table table-bordered align-middle mb-0">
+                                <table className="table table-sm table-bordered align-middle mb-0 timesheet-breakdown-table">
                                   <thead className="table-primary text-dark">
                                     <tr>
                                       <th>Shift ID</th>
@@ -889,6 +890,132 @@ export default function TimeSheet() {
         {`
           .timesheet-filter-grid .css-b62m3t-container {
             width: 100%;
+          }
+
+          .timesheet-table-shell {
+            overflow: hidden;
+          }
+
+          .timesheet-main-table {
+            table-layout: fixed;
+            width: 100%;
+          }
+
+          .timesheet-main-table > thead > tr > th,
+          .timesheet-main-table > tbody > tr > td {
+            padding: 0.5rem 0.4rem;
+            font-size: 0.8rem;
+            line-height: 1.2;
+            white-space: normal;
+            word-break: break-word;
+            vertical-align: middle;
+          }
+
+          .timesheet-main-table > thead > tr > th {
+            white-space: normal;
+            word-break: break-word;
+            border-right: 1px solid #d6e4ff;
+            border-bottom: 2px solid #0d6efd !important;
+            font-size: 0.82rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.02em;
+            text-align: center;
+            line-height: 1.2;
+            padding-top: 0.6rem;
+            padding-bottom: 0.6rem;
+          }
+
+          .timesheet-main-table > thead > tr > th:last-child {
+            border-right: 0;
+          }
+
+          .timesheet-main-table > tbody > tr.timesheet-summary-row > td {
+            border-bottom: 1px solid #d5dbe3;
+            border-right: 1px solid #edf0f3;
+            background-color: #fff;
+          }
+
+          .timesheet-main-table > tbody > tr.timesheet-summary-row > td:not(:nth-child(2)) {
+            text-align: center;
+          }
+
+          .timesheet-main-table > tbody > tr.timesheet-summary-row > td:last-child {
+            border-right: 0;
+          }
+
+          .timesheet-main-table > tbody > tr.timesheet-summary-row:nth-of-type(odd) > td {
+            background-color: #fbfdff;
+          }
+
+          .timesheet-main-table > tbody > tr.timesheet-summary-row:hover > td {
+            background-color: #eef5ff;
+          }
+
+          .timesheet-main-table > tbody > tr.timesheet-detail-row > td {
+            border-bottom: 2px solid #c8d2de;
+          }
+
+          .timesheet-main-table .table-bordered > :not(caption) > * > * {
+            border-color: #dce3ea;
+          }
+
+          .timesheet-breakdown-table th,
+          .timesheet-breakdown-table td {
+            font-size: 0.78rem;
+            padding: 0.45rem 0.4rem;
+            white-space: nowrap;
+            word-break: normal;
+            text-transform: none;
+            letter-spacing: normal;
+            text-align: left;
+            line-height: 1.25;
+          }
+
+          .timesheet-breakdown-table thead th {
+            background-color: #dce9fb;
+            border-bottom: 2px solid #0d6efd;
+            font-weight: 700;
+          }
+
+          .timesheet-breakdown-table tbody td {
+            background-color: #fff;
+          }
+
+          .timesheet-breakdown-table tbody tr:nth-child(even) td {
+            background-color: #f8fbff;
+          }
+
+          @media (max-width: 1200px) {
+            .timesheet-main-table th:nth-child(6),
+            .timesheet-main-table th:nth-child(7),
+            .timesheet-main-table th:nth-child(8),
+            .timesheet-main-table th:nth-child(9),
+            .timesheet-main-table th:nth-child(10),
+            .timesheet-main-table th:nth-child(11),
+            .timesheet-main-table td:nth-child(6),
+            .timesheet-main-table td:nth-child(7),
+            .timesheet-main-table td:nth-child(8),
+            .timesheet-main-table td:nth-child(9),
+            .timesheet-main-table td:nth-child(10),
+            .timesheet-main-table td:nth-child(11) {
+              display: none;
+            }
+          }
+
+          @media (max-width: 768px) {
+            .timesheet-main-table th,
+            .timesheet-main-table td {
+              padding: 0.45rem 0.3rem;
+              font-size: 0.75rem;
+            }
+
+            .timesheet-main-table th:nth-child(4),
+            .timesheet-main-table th:nth-child(5),
+            .timesheet-main-table td:nth-child(4),
+            .timesheet-main-table td:nth-child(5) {
+              display: none;
+            }
           }
         `}
       </style>

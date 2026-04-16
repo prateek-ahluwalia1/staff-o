@@ -1,5 +1,58 @@
 import * as XLSX from "xlsx";
 
+const toCell = (value) => {
+  if (value === null || value === undefined) return "";
+  return value;
+};
+
+const parseArrayField = (value) => {
+  if (Array.isArray(value)) return value;
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    if (!trimmed) return [];
+    try {
+      const parsed = JSON.parse(trimmed);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  }
+  return [];
+};
+
+const joinMapped = (items, mapper) => {
+  if (!Array.isArray(items) || items.length === 0) return "";
+  return items
+    .map((item) => mapper(item))
+    .filter((text) => String(text).trim())
+    .join(" | ");
+};
+
+const hasValue = (value) => {
+  if (value === null || value === undefined) return false;
+  if (typeof value === "string") return value.trim().length > 0;
+  return true;
+};
+
+const removeEmptyColumns = (rows) => {
+  if (!Array.isArray(rows) || rows.length === 0) return rows;
+
+  const keys = Object.keys(rows[0]);
+  const keysToKeep = keys.filter((key) =>
+    rows.some((row) => hasValue(row[key])),
+  );
+
+  return rows.map((row) => {
+    const cleaned = {};
+    keysToKeep.forEach((key) => {
+      cleaned[key] = row[key];
+    });
+    return cleaned;
+  });
+};
+
+const toWorksheet = (rows) => XLSX.utils.json_to_sheet(removeEmptyColumns(rows));
+
 const reportExporter = {
   /**
    * Export incident reports to Excel
@@ -13,23 +66,59 @@ const reportExporter = {
     }
 
     // Flatten and format the data for export
-    const exportData = reports.map((report) => ({
-      "Report ID": report.id || "N/A",
-      "Incident Date": report.incident_date || "N/A",
-      "Incident Time": report.incident_time || "N/A",
-      "Injury Type": report.injury_type || "N/A",
-      "Site Name": report.site_name || "N/A",
-      "Injury Detail": report.injury_detail || "N/A",
-      "People Involved Count": report.people_involved?.length || 0,
-      "Vehicles Count": report.vehicle?.length || 0,
-      "Witnesses Count": report.wittness?.length || 0,
-      "Emergency Services": report.emergency_services?.emergency_type || "N/A",
-      "Photos Count": report.photo?.length || 0,
-      "Created At": report.created_at || "N/A",
-    }));
+    const exportData = reports.map((report) => {
+      const peopleInvolved = parseArrayField(report.people_involved);
+      const vehicles = parseArrayField(report.vehicle);
+      const witnesses = parseArrayField(report.wittness);
+      const photos = parseArrayField(report.photo);
+      const emergency = report.emergency_services || {};
+
+      return {
+        "Report ID": toCell(report.id),
+        "Incident Date": toCell(report.incident_date),
+        "Incident Time": toCell(report.incident_time),
+        "Injury Type": toCell(report.injury_type),
+        "Site Name": toCell(report.site_name),
+        "Injury Detail": toCell(report.injury_detail),
+        "People Involved Count": peopleInvolved.length,
+        "People Involved": joinMapped(
+          peopleInvolved,
+          (p) => p?.name || p?.email || p?.phone || "",
+        ),
+        "Vehicles Count": vehicles.length,
+        Vehicles: joinMapped(
+          vehicles,
+          (v) =>
+            [v?.make, v?.model, v?.vehicle_type, v?.vehicle_rander]
+              .filter(Boolean)
+              .join(" "),
+        ),
+        "Witnesses Count": witnesses.length,
+        Witnesses: joinMapped(
+          witnesses,
+          (w) =>
+            w?.witness_name ||
+            w?.wittness_name ||
+            w?.witness_email ||
+            w?.wittness_email ||
+            "",
+        ),
+        "Emergency Type": toCell(emergency.emergency_type),
+        "Emergency Detail": toCell(emergency.emergency_detail),
+        Supervisor: toCell(emergency.supervisor_name),
+        "Emergency Position": toCell(emergency.position),
+        "Emergency Address": toCell(emergency.address),
+        "Emergency Email": toCell(emergency.email),
+        "Emergency Phone": toCell(emergency.phone),
+        "Photos Count": photos.length,
+        Photos: joinMapped(photos, (ph) => ph?.imgPath || ""),
+        Signature: toCell(report.signature),
+        "Created At": toCell(report.created_at),
+      };
+    });
 
     // Create worksheet and workbook
-    const worksheet = XLSX.utils.json_to_sheet(exportData);
+    const worksheet = toWorksheet(exportData);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Incident Reports");
 
@@ -49,22 +138,25 @@ const reportExporter = {
     }
 
     // Flatten and format the data for export
-    const exportData = reports.map((report) => ({
-      "Report ID": report.id || "N/A",
-      "Patrol Date": report.date || "N/A",
-      "Patrol Time": report.time || "N/A",
-      "Site Name": report.site_name || "N/A",
-      "Patrol Detail": report.patrolling_detail || "N/A",
-      "Photos Count": report.photo
-        ? Array.isArray(report.photo)
-          ? report.photo.length
-          : 1
-        : 0,
-      "Created At": report.created_at || "N/A",
-    }));
+    const exportData = reports.map((report) => {
+      const photos = parseArrayField(report.photo);
+
+      return {
+        "Report ID": toCell(report.id),
+        "Patrol Date": toCell(report.date),
+        "Patrol Time": toCell(report.time),
+        "Site Name": toCell(report.site_name),
+        "Patrol Detail": toCell(report.patrolling_detail),
+        "Photos Count": photos.length,
+        Photos: joinMapped(photos, (ph) => ph?.imgPath || ""),
+        "Photo Timestamps": joinMapped(photos, (ph) => ph?.timestamp || ""),
+        Signature: toCell(report.signature),
+        "Created At": toCell(report.created_at),
+      };
+    });
 
     // Create worksheet and workbook
-    const worksheet = XLSX.utils.json_to_sheet(exportData);
+    const worksheet = toWorksheet(exportData);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Foot Patrol Reports");
 
@@ -85,15 +177,15 @@ const reportExporter = {
 
     // Flatten and format the data for export
     const exportData = notes.map((note) => ({
-      "Note ID": note.id || "N/A",
-      "Note Date": note.date || "N/A",
-      "Note Time": note.time || "N/A",
-      Note: note.note || note.notes || "N/A",
-      "Created At": note.created_at || "N/A",
+      "Note ID": toCell(note.id),
+      "Note Date": toCell(note.date),
+      "Note Time": toCell(note.time),
+      Note: toCell(note.note || note.notes || note.operation_notes),
+      "Created At": toCell(note.created_at),
     }));
 
     // Create worksheet and workbook
-    const worksheet = XLSX.utils.json_to_sheet(exportData);
+    const worksheet = toWorksheet(exportData);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Operation Notes");
 
@@ -114,18 +206,18 @@ const reportExporter = {
 
     // Flatten and format the data for export
     const exportData = tasks.map((task) => ({
-      "Task ID": task.id || "N/A",
-      "Task Name": task.task || "N/A",
-      Status: task.status || "N/A",
-      "Schedule Start": task.task_start || "N/A",
-      "Schedule End": task.task_end || "N/A",
-      "Actual Start": task.start_time || "N/A",
-      "Actual End": task.end_time || "N/A",
-      "Created At": task.created_at || "N/A",
+      "Task ID": toCell(task.id),
+      "Task Name": toCell(task.task),
+      Status: toCell(task.status),
+      "Schedule Start": toCell(task.task_start),
+      "Schedule End": toCell(task.task_end),
+      "Actual Start": toCell(task.start_time),
+      "Actual End": toCell(task.end_time),
+      "Created At": toCell(task.created_at),
     }));
 
     // Create worksheet and workbook
-    const worksheet = XLSX.utils.json_to_sheet(exportData);
+    const worksheet = toWorksheet(exportData);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Shift Tasks");
 

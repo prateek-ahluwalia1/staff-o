@@ -287,9 +287,6 @@ export default function AddJob() {
     return document_list;
   }
 
-  /**
-   * Called by PaymentModal after card tokenization to hold payment in backend.
-   */
   async function handleHoldPayment({
     paymentMethodId,
     cardHolderName,
@@ -303,9 +300,9 @@ export default function AddJob() {
       };
     }
 
-    // Required fields only
     const start = pendingDraft.payload.startTime;
     const end = pendingDraft.payload.endTime;
+    const number_of_guards = pendingDraft.payload.numberOfGuards;
     let user_id = pendingDraft.payload.user_id;
     if (typeof user_id !== "number") {
       user_id = Number(user_id);
@@ -322,11 +319,18 @@ export default function AddJob() {
         success: false,
         message: "Invalid payment method ID. Must start with 'pm_'.",
       };
+      if(number_of_guards < 1) {
+        return {
+          success: false,
+          message: "Number of guards must be at least 1.",
+        };
+      }
     }
 
     const holdBody = {
       start,
       end,
+      number_of_guards,
       user_id,
       card_holder_name,
       payment_method_id,

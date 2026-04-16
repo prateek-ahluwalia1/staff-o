@@ -173,7 +173,7 @@ class JobRosterController extends Controller
 
             Transaction::where('payment_intent_id', $paymentIntentId)
             ->update(['job_roster_id' => json_encode($createdJobIds)]);
-            
+
             return response()->json([
                 'success' => true,
                 'message' => 'Jobs created successfully with payment hold.',
@@ -2698,11 +2698,11 @@ class JobRosterController extends Controller
             $jobRosterTime->ph_night_hours = (!empty($hours['ph_night']) ? $hours['ph_night'] : 0.0);
             $jobRosterTime->update();
             // $check = checkGuardShiftTimingUpdate($request->start, $request->end, $jobRosterTime->assigned_to, $jobRosterTime->roster_id);
-            $jobRosterTime->conf_start = (!empty($check['start']) ? dbFormateDateTime($check['start']) : '');
-            $jobRosterTime->conf_end = (!empty($check['end']) ? dbFormateDateTime($check['end']) : '');
-            $jobRosterTime->conflict =  (!empty($check['conf']) ? $check['conf'] : '');
+            // $jobRosterTime->conf_start = (!empty($check['start']) ? dbFormateDateTime($check['start']) : '');
+            // $jobRosterTime->conf_end = (!empty($check['end']) ? dbFormateDateTime($check['end']) : '');
+            // $jobRosterTime->conflict =  (!empty($check['conf']) ? $check['conf'] : '');
             $jobRosterTime->update();
-            $updatedjobRosterTime = $jobRosterTime->getChanges();
+            // $updatedjobRosterTime = $jobRosterTime->getChanges();
             // jobRosterActions($request->admin_id,'update_shift_time',$jobRosterTime->id, 'job_roster',$old_data, $updatedjobRosterTime);
 
             $admin_name = getUserName($request->admin_id);
@@ -3051,6 +3051,7 @@ public function holdPayment(Request $request)
             ($chargeRate->def_metro_sat_day_rate * (($hours['saturday_morning'] ?? 0) + ($hours['saturday_night'] ?? 0))) +
             ($chargeRate->def_metro_sun_day_rate * (($hours['sunday_morning'] ?? 0) + ($hours['sunday_night'] ?? 0)));
 
+        $total = $total * $request->number_of_guards;
         $serviceFee = round($total * 0.10, 2);
         $grandTotal = round($total + $serviceFee, 2);
 

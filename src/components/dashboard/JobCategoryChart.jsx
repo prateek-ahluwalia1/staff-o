@@ -10,33 +10,33 @@ import {
 } from "recharts";
 
 export default function JobCategoryChart({ data = [] }) {
-  const defaultData = [
-    { category: "Security", jobs: 45, completed: 38 },
-    { category: "Cleaning", jobs: 32, completed: 28 },
-    { category: "Support", jobs: 28, completed: 24 },
-    { category: "Admin", jobs: 18, completed: 16 },
-  ];
-
   return (
     <div className="chart-container">
       <h4>Jobs by Category</h4>
-      <ResponsiveContainer width="100%" height={300}>
-        <BarChart data={data?.length > 0 ? data : defaultData}>
-          <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.1)" />
-          <XAxis dataKey="category" />
-          <YAxis />
-          <Tooltip
-            contentStyle={{
-              backgroundColor: "#fff",
-              border: "1px solid #e0e0e0",
-              borderRadius: "8px",
-            }}
-          />
-          <Legend />
-          <Bar dataKey="jobs" fill="#45B7D1" radius={[8, 8, 0, 0]} />
-          <Bar dataKey="completed" fill="#4ECDC4" radius={[8, 8, 0, 0]} />
-        </BarChart>
-      </ResponsiveContainer>
+      {data.length > 0 ? (
+        <ResponsiveContainer width="100%" height={300}>
+          <BarChart data={data}>
+            <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.1)" vertical={false} />
+            <XAxis dataKey="category" tick={{ fill: "#666" }} tickMargin={10} />
+            <YAxis tick={{ fill: "#666" }} tickMargin={10} />
+            <Tooltip
+              contentStyle={{
+                backgroundColor: "#fff",
+                border: "none",
+                borderRadius: "8px",
+                boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
+              }}
+            />
+            <Legend wrapperStyle={{ paddingTop: "20px" }} />
+            <Bar name="Total Jobs" dataKey="jobs" fill="#45B7D1" radius={[4, 4, 0, 0]} />
+            <Bar name="Completed" dataKey="completed" fill="#4ECDC4" radius={[4, 4, 0, 0]} />
+          </BarChart>
+        </ResponsiveContainer>
+      ) : (
+        <div className="text-center text-muted d-flex align-items-center justify-content-center" style={{ height: 300 }}>
+          No category data available.
+        </div>
+      )}
     </div>
   );
 }

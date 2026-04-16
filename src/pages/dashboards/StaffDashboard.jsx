@@ -1,8 +1,9 @@
-import { useState, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { useSelector } from "react-redux";
-import { NavLink } from "react-router-dom";
 import StatsCard from "../../components/dashboard/StatsCard";
 import JobTrendChart from "../../components/dashboard/JobTrendChart";
+import useFetch from "../../hooks/useFetch";
+import Loader from "../../components/Loader";
 import {
   getProfileImageFromUserdata,
   resolveProfileImageUrl,
@@ -15,89 +16,49 @@ export default function StaffDashboard() {
   const email = userdata?.data?.email || userdata?.email || "No Email";
   const address = userdata?.data?.address || userdata?.address || "No Location";
   const username = userdata?.data?.name || userdata?.name || "No Name";
-  const [dashboardStats] = useState({
-    totalJobs: 24,
-    completedJobs: 18,
-    pendingJobs: 4,
-    earnedThisMonth: 3250,
-    leaveRequestsSent: 2,
-    upcomingShifts: 5,
+  const profileImage = getProfileImageFromUserdata(userdata);
+  
+  // Fetch Dashboard Data
+  const { data: fetchResponse, loading } = useFetch("api/dashboard", { isAuth: true });
+
+  const [dashboardStats, setDashboardStats] = useState({
+    totalJobs: 0,
+    completedJobs: 0,
+    pendingJobs: 0,
+    earnedThisMonth: "0.00",
   });
 
-  const recentJobs = useMemo(() => {
-    return [
-      {
-        id: 1,
-        type: "confirmed",
-        badgeClass: "success",
-        title: "Downtown Security Post",
-        location: "123 Main St, Dallas, TX 75201",
-        salary: "Hours: 8",
-        appliedDate: "2026-04-18 to 2026-04-18",
-        company: "Texas",
-        guard: "Thomas Brown",
-      },
-      {
-        id: 2,
-        type: "confirmed",
-        badgeClass: "success",
-        title: "Airport Patrol",
-        location: "DFW Airport, TX",
-        salary: "Hours: 10",
-        appliedDate: "2026-04-19 to 2026-04-19",
-        company: "Texas",
-        guard: null,
-      },
-      {
-        id: 3,
-        type: "pending",
-        badgeClass: "warning",
-        title: "Mall Security Coverage",
-        location: "Northpark Mall, Dallas, TX",
-        salary: "Hours: 6",
-        appliedDate: "2026-04-20 to 2026-04-20",
-        company: "Texas",
-        guard: null,
-      },
-      {
-        id: 4,
-        type: "confirmed",
-        badgeClass: "success",
-        title: "Event Security",
-        location: "Convention Center, Dallas, TX",
-        salary: "Hours: 12",
-        appliedDate: "2026-04-21 to 2026-04-21",
-        company: "Texas",
-        guard: "James Miller",
-      },
-      {
-        id: 5,
-        type: "confirmed",
-        badgeClass: "success",
-        title: "Warehouse Watch",
-        location: "Industrial Park, Arlington, TX",
-        salary: "Hours: 8",
-        appliedDate: "2026-04-22 to 2026-04-22",
-        company: "Texas",
-        guard: null,
-      },
-      {
-        id: 6,
-        type: "pending",
-        badgeClass: "warning",
-        title: "Corporate Building Security",
-        location: "Galleria Office Tower, Dallas, TX",
-        salary: "Hours: 8",
-        appliedDate: "2026-04-23 to 2026-04-23",
-        company: "Texas",
-        guard: null,
-      },
-    ];
-  }, []);
+  const [chartData, setChartData] = useState([]);
 
-  const profileImage = getProfileImageFromUserdata(userdata);
+  // Update stats and lists dynamically from the exact API payload keys
+  useEffect(() => {
+    if (!fetchResponse?.data) return;
+
+    const dashData = fetchResponse.data;
+
+    setDashboardStats({
+      totalJobs: dashData.total_assigned_jobs || 0,
+      completedJobs: dashData.completed_jobs || 0,
+      pendingJobs: dashData.pending_jobs || 0,
+      // Format to 2 decimal places (e.g., 207.9 -> 207.90)
+      earnedThisMonth: Number(dashData.earned_this_month || 0).toLocaleString(undefined, {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      }),
+    });
+
+    const mappedChartData = (dashData.last_6_months_shifts || []).map((month) => ({
+      month: month.month,
+      pending_jobs: month.pending_shifts || 0,
+      completed_jobs: month.completed_shifts || 0,
+    }));
+    setChartData(mappedChartData);
+
+  }, [fetchResponse]);
 
   const imageUrl = resolveProfileImageUrl(profileImage);
+
+  if (loading) return <Loader fullPage />;
 
   return (
     <div className="dashboard-main staff-dashboard">
@@ -169,49 +130,7 @@ export default function StaffDashboard() {
 
       {/* Job Trend Chart */}
       <section className="dashboard-panel">
-        <JobTrendChart />
-      </section>
-
-      {/* Recent Jobs */}
-      <section className="dashboard-panel">
-        <div className="panel-heading">
-          <h3>Recent Shifts</h3>
-          <NavLink to="/my-job-applications">View All</NavLink>
-        </div>
-
-        <div className="row g-3">
-          {recentJobs.length === 0 ? (
-            <div className="col-12 text-center py-4 text-muted">
-              No shifts assigned yet.
-            </div>
-          ) : (
-            recentJobs.map((job, index) => (
-              <div className="col-md-4" key={job.id || index}>
-                <div className="applied-card">
-                  <span className={`badge-status ${job.badgeClass}`}>
-                    {job.type}
-                  </span>
-                  <h4>{job.title}</h4>
-                  <p>{job.location}</p>
-                  <div className="applied-meta">
-                    <span>{job.salary}</span>
-                    <span>{job.appliedDate}</span>
-                  </div>
-                  <div className="applied-footer">
-                    <div>
-                      <strong>{job.company}</strong>
-                      {job.guard && (
-                        <small className="d-block text-muted">
-                          {job.guard}
-                        </small>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))
-          )}
-        </div>
+        <JobTrendChart data={chartData} />
       </section>
     </div>
   );

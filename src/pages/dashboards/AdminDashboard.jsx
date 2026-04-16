@@ -1,11 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useSelector } from "react-redux";
 import StatsCard from "../../components/dashboard/StatsCard";
 import UserBreakdownChart from "../../components/dashboard/UserBreakdownChart";
 import RevenueChart from "../../components/dashboard/RevenueChart";
 import JobTrendChart from "../../components/dashboard/JobTrendChart";
-// import useSubmit from "../../hooks/useSubmit";
-// import Loader from "../../components/Loader";
+import useFetch from "../../hooks/useFetch";
+import Loader from "../../components/Loader";
 import {
   getProfileImageFromUserdata,
   resolveProfileImageUrl,
@@ -18,79 +18,57 @@ export default function AdminDashboard() {
   const email = userdata?.data?.email || userdata?.email || "No Email";
   const username = userdata?.data?.name || userdata?.name || "No Name";
   const profileImage = getProfileImageFromUserdata(userdata);
-  // const { submit, loading, data: submitData } = useSubmit({ isAuth: true });
+  
+  // Fetch Dashboard Data
+  const { data: fetchResponse, loading } = useFetch("api/dashboard", { isAuth: true });
 
-  const [adminStats] = useState({
-    totalUsers: 248,
-    totalStaff: 156,
-    totalContractors: 42,
-    totalCustomers: 50,
-    totalJobs: 324,
-    completedJobs: 298,
-    totalRevenue: "125,750",
-    thisMonthRevenue: "18,502",
-    activeJobs: 26,
-    pendingJobs: 12,
+  const [adminStats, setAdminStats] = useState({
+    totalUsers: 0,
+    totalStaff: 0,
+    totalContractors: 0,
+    totalCustomers: 0,
+    totalJobs: 0,
+    completedJobs: 0,
+    totalRevenue: "0",
+    thisMonthRevenue: "0",
   });
 
-  const [topContractors] = useState([
-    {
-      id: 1,
-      name: "Elite Staffing Solutions",
-      staff: 45,
-      jobs: 156,
-      revenue: 8250,
-    },
-    {
-      id: 2,
-      name: "Premier Contractors Inc",
-      staff: 38,
-      jobs: 142,
-      revenue: 7890,
-    },
-    {
-      id: 3,
-      name: "Professional Services Ltd",
-      staff: 32,
-      jobs: 118,
-      revenue: 6750,
-    },
-    { id: 4, name: "Quality Work Force", staff: 28, jobs: 95, revenue: 5420 },
-    { id: 5, name: "Trusted Talent Group", staff: 25, jobs: 82, revenue: 4680 },
-  ]);
+  const [topContractors, setTopContractors] = useState([]);
 
-  // const fetchAdminData = useCallback(() => {
-  //   submit("api/dashboard", {}, { method: "GET" });
-  // }, [submit]);
+  // Update stats, contractor list dynamically from API data
+  useEffect(() => {
+    if (!fetchResponse?.data) return;
 
-  // useEffect(() => {
-  //   fetchAdminData();
-  // }, [fetchAdminData]);
+    const dashData = fetchResponse.data;
 
-  // Update stats and contractor list from API data
-  // useEffect(() => {
-  //   if (!submitData?.data) return;
+    setAdminStats({
+      totalUsers: dashData.total_users || 0,
+      totalStaff: dashData.staff_count || 0,
+      totalContractors: dashData.contractor_count || 0,
+      totalCustomers: dashData.customer_count || 0,
+      totalJobs: dashData.total_jobs || 0,
+      completedJobs: dashData.completed_jobs_count || 0,
+      totalRevenue: dashData.total_revenue?.toLocaleString() || "0",
+      thisMonthRevenue: dashData.this_month_revenue?.toLocaleString() || "0",
+    });
 
-  //   const dashData = submitData.data;
-  //   setAdminStats({
-  //     totalUsers: dashData.totalUsers || 0,
-  //     totalStaff: dashData.totalStaff || 0,
-  //     totalContractors: dashData.totalContractors || 0,
-  //     totalCustomers: dashData.totalCustomers || 0,
-  //     totalJobs: dashData.totalJobs || 0,
-  //     completedJobs: dashData.completedJobs || 0,
-  //     totalRevenue: dashData.totalRevenue || "0",
-  //     thisMonthRevenue: dashData.thisMonthRevenue || "0",
-  //     activeJobs: dashData.activeJobs || 0,
-  //     pendingJobs: dashData.pendingJobs || 0,
-  //   });
+    // Map contractors and sort by revenue dynamically
+    const mappedContractors = (dashData.contractors || [])
+      .map((c) => ({
+        id: c.id,
+        name: c.name,
+        staff: c.staff_count || 0,
+        jobs: c.total_jobs || 0,
+        revenue: c.revenue || 0,
+      }))
+      .sort((a, b) => b.revenue - a.revenue);
 
-  //   setTopContractors(dashData.topContractors || []);
-  // }, [submitData]);
+    setTopContractors(mappedContractors);
+  }, [fetchResponse]);
 
   const imageUrl = resolveProfileImageUrl(profileImage);
 
-  // if (loading) return <Loader fullPage />;
+  if (loading) return <Loader fullPage />;
 
   return (
     <div className="dashboard-main admin-dashboard">
@@ -198,10 +176,16 @@ export default function AdminDashboard() {
       <section className="dashboard-charts">
         <div className="row g-3">
           <div className="col-lg-6">
-            <UserBreakdownChart />
+            <UserBreakdownChart 
+              data={{
+                staff: adminStats.totalStaff,
+                contractors: adminStats.totalContractors,
+                customers: adminStats.totalCustomers
+              }} 
+            />
           </div>
           <div className="col-lg-6">
-            <RevenueChart />
+            <RevenueChart data={fetchResponse?.data?.last_6_months_revenue || []} />
           </div>
         </div>
       </section>
@@ -209,7 +193,7 @@ export default function AdminDashboard() {
       <section className="dashboard-charts">
         <div className="row g-3">
           <div className="col-lg-12">
-            <JobTrendChart />
+            <JobTrendChart data={fetchResponse?.data?.last_6_months_jobs || []} />
           </div>
         </div>
       </section>
@@ -218,10 +202,10 @@ export default function AdminDashboard() {
       <section className="dashboard-panel">
         <div className="panel-heading">
           <h3>Top Performing Contractors</h3>
-          <a href="/manage-users">View All Contractors</a>
+          <a href="/manage-users" className="view-all-link">View All Contractors</a>
         </div>
         <div className="table-responsive">
-          <table className="table">
+          <table className="table align-middle">
             <thead>
               <tr>
                 <th>Contractor Name</th>
@@ -232,59 +216,52 @@ export default function AdminDashboard() {
               </tr>
             </thead>
             <tbody>
-              {topContractors.map((contractor) => (
-                <tr key={contractor.id}>
-                  <td className="fw-500">{contractor.name}</td>
-                  <td>{contractor.staff}</td>
-                  <td>{contractor.jobs}</td>
-                  <td className="fw-500">${contractor.revenue}</td>
-                  <td>
-                    <button
-                      className="text-primary small"
-                      style={{
-                        border: "none",
-                        background: "none",
-                        cursor: "pointer",
-                        textDecoration: "underline",
-                        padding: 0,
-                      }}
-                    >
-                      View Profile
-                    </button>
+              {topContractors.length > 0 ? (
+                topContractors.map((contractor) => (
+                  <tr key={contractor.id}>
+                    <td className="fw-500">{contractor.name}</td>
+                    <td>{contractor.staff}</td>
+                    <td>{contractor.jobs}</td>
+                    <td className="fw-500 text-success">${contractor.revenue}</td>
+                    <td>
+                      <a 
+                        href={`/contractor-profile/${contractor.id}`}
+                        className="btn btn-sm"
+                        style={{
+                          backgroundColor: "#f0f4ff",
+                          color: "#45B7D1",
+                          border: "1px solid #45B7D1",
+                          borderRadius: "6px",
+                          padding: "6px 16px",
+                          textDecoration: "none",
+                          fontWeight: "500",
+                          fontSize: "0.85rem",
+                          display: "inline-block",
+                          transition: "all 0.2s ease"
+                        }}
+                        onMouseOver={(e) => {
+                          e.target.style.backgroundColor = "#45B7D1";
+                          e.target.style.color = "#ffffff";
+                        }}
+                        onMouseOut={(e) => {
+                          e.target.style.backgroundColor = "#f0f4ff";
+                          e.target.style.color = "#45B7D1";
+                        }}
+                      >
+                        Manage
+                      </a>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="5" className="text-center py-4 text-muted">
+                    No active contractors found.
                   </td>
                 </tr>
-              ))}
+              )}
             </tbody>
           </table>
-        </div>
-      </section>
-
-      {/* System Health */}
-      <section className="dashboard-panel">
-        <div className="panel-heading">
-          <h3>System Health</h3>
-        </div>
-        <div className="health-metrics">
-          <div className="health-item">
-            <span className="health-label">Active Jobs</span>
-            <span className="health-value text-success">
-              {adminStats.activeJobs}
-            </span>
-          </div>
-          <div className="health-item">
-            <span className="health-label">Pending Jobs</span>
-            <span className="health-value text-warning">
-              {adminStats.pendingJobs}
-            </span>
-          </div>
-          <div className="health-item">
-            <span className="health-label">Platform Status</span>
-            <span className="health-value text-success">Operational</span>
-          </div>
-          <div className="health-item">
-            <span className="health-label">Last Updated</span>
-            <span className="health-value">Just now</span>
-          </div>
         </div>
       </section>
     </div>

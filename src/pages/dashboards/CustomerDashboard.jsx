@@ -1,6 +1,9 @@
+import { useState, useEffect } from "react";
 import { useSelector } from "react-redux";
 import StatsCard from "../../components/dashboard/StatsCard";
 import JobTrendChart from "../../components/dashboard/JobTrendChart";
+import useFetch from "../../hooks/useFetch";
+import Loader from "../../components/Loader";
 import {
   getProfileImageFromUserdata,
   resolveProfileImageUrl,
@@ -16,45 +19,60 @@ export default function CustomerDashboard() {
     userdata?.data?.customer?.phone || userdata?.customer?.phone || "No Phone";
   const username = userdata?.data?.name || userdata?.name || "No Name";
   const profileImage = getProfileImageFromUserdata(userdata);
-  const dashboardStats = {
+  
+  // Fetch Dashboard Data
+  const { data: fetchResponse, loading } = useFetch("api/dashboard", { isAuth: true });
+
+  const [dashboardStats, setDashboardStats] = useState({
     activeJobs: 0,
     completedJobs: 0,
     staffAssigned: 0,
-    spentThisMonth: "0",
-    upcomingJobs: 0,
+    spentThisMonth: "0.00",
     invoicesPending: 0,
-  };
-  const recentJobs = [
-    {
-      id: 1,
-      role: "Security Guards",
-      staff: 4,
-      startDate: "2026-04-15",
-      endDate: "2026-04-20",
-      cost: "$2,000",
-      status: "Active",
-    },
-    {
-      id: 2,
-      role: "Cleaners",
-      staff: 6,
-      startDate: "2026-04-10",
-      endDate: "2026-04-14",
-      cost: "$1,500",
-      status: "Completed",
-    },
-    {
-      id: 3,
-      role: "Support Staff",
-      staff: 2,
-      startDate: "2026-04-18",
-      endDate: "2026-04-25",
-      cost: "$800",
-      status: "Pending",
-    },
-  ];
+  });
+
+  const [recentJobs, setRecentJobs] = useState([]);
+
+  // Update stats and lists dynamically from API data
+  useEffect(() => {
+    if (!fetchResponse?.data) return;
+
+    const dashData = fetchResponse.data;
+
+    // Active jobs: Total jobs minus completed jobs
+    const calculatedActiveJobs = Math.max(
+      (dashData.total_jobs || 0) - (dashData.completed_jobs || 0),
+      0
+    );
+
+    setDashboardStats({
+      activeJobs: calculatedActiveJobs,
+      completedJobs: dashData.completed_jobs || 0,
+      staffAssigned: dashData.staff_assigned || 0,
+      spentThisMonth: Number(dashData.total_spend || 0).toLocaleString(undefined, {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      }),
+      invoicesPending: dashData.invoices_pending || 0,
+    });
+
+    // Mapping jobs based strictly on the `this_week_jobs` payload
+    const mappedJobs = (dashData.this_week_jobs || []).map((j) => ({
+      id: j.id,
+      role: "Assigned Role", // Fallback as 'role' isn't in your exact payload
+      staff: j.assigned_staff_name || "Unassigned",
+      startDate: j.start || "N/A",
+      endDate: j.end || "N/A",
+      cost: Number(j.job_amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2 }),
+      status: j.job_status || "Active",
+    }));
+
+    setRecentJobs(mappedJobs);
+  }, [fetchResponse]);
 
   const imageUrl = resolveProfileImageUrl(profileImage);
+
+  if (loading) return <Loader fullPage />;
 
   return (
     <div className="dashboard-main customer-dashboard">
@@ -119,7 +137,7 @@ export default function CustomerDashboard() {
           />
           <StatsCard
             icon="fa-solid fa-dollar-sign"
-            title="Spent This Month"
+            title="Total Spend"
             value={`$${dashboardStats.spentThisMonth}`}
             bgColor="#fce4ec"
             iconColor="#FF6B6B"
@@ -129,7 +147,7 @@ export default function CustomerDashboard() {
 
       {/* Job Trend Chart */}
       <section className="dashboard-panel">
-        <JobTrendChart />
+        <JobTrendChart data={fetchResponse?.data?.last_6_months_jobs || []} />
       </section>
 
       {/* Active Jobs */}
@@ -139,7 +157,7 @@ export default function CustomerDashboard() {
           <a href="/jobs">Post New Job</a>
         </div>
         <div className="table-responsive">
-          <table className="table">
+          <table className="table align-middle">
             <thead>
               <tr>
                 <th>Role Required</th>
@@ -151,59 +169,70 @@ export default function CustomerDashboard() {
               </tr>
             </thead>
             <tbody>
-              {recentJobs.map((job) => (
-                <tr key={job.id}>
-                  <td className="fw-500">{job.role}</td>
-                  <td>{job.staff}</td>
-                  <td>
-                    {job.startDate} to {job.endDate}
-                  </td>
-                  <td className="fw-500">{job.cost}</td>
-                  <td>
-                    <span
-                      className={`badge ${
-                        job.status === "Active"
-                          ? "bg-success"
-                          : job.status === "Completed"
+              {recentJobs.length > 0 ? (
+                recentJobs.map((job) => (
+                  <tr key={job.id}>
+                    <td className="fw-500">{job.role}</td>
+                    <td>{job.staff}</td>
+                    <td className="text-muted small">
+                      {job.startDate} to {job.endDate}
+                    </td>
+                    <td className="fw-500 text-success">
+                      ${job.cost}
+                    </td>
+                    <td>
+                      <span
+                        className={`badge ${
+                          job.status === "confirmed" || job.status === "Active"
+                            ? "bg-success"
+                            : job.status === "completed" || job.status === "Completed"
                             ? "bg-info"
                             : "bg-warning"
-                      }`}
-                    >
-                      {job.status}
-                    </span>
-                  </td>
-                  <td>
-                    <button
-                      className="text-primary small"
-                      style={{
-                        border: "none",
-                        background: "none",
-                        cursor: "pointer",
-                        textDecoration: "underline",
-                        padding: 0,
-                      }}
-                    >
-                      View
-                    </button>
+                        }`}
+                        style={{ padding: "6px 10px", borderRadius: "6px", textTransform: "capitalize" }}
+                      >
+                        {job.status}
+                      </span>
+                    </td>
+                    <td>
+                      <a
+                        href={`/job-details/${job.id}`}
+                        className="btn btn-sm"
+                        style={{
+                          backgroundColor: "#f0f4ff",
+                          color: "#45B7D1",
+                          border: "1px solid #45B7D1",
+                          borderRadius: "6px",
+                          padding: "6px 16px",
+                          textDecoration: "none",
+                          fontWeight: "500",
+                          fontSize: "0.85rem",
+                          display: "inline-block",
+                          transition: "all 0.2s ease"
+                        }}
+                        onMouseOver={(e) => {
+                          e.target.style.backgroundColor = "#45B7D1";
+                          e.target.style.color = "#ffffff";
+                        }}
+                        onMouseOut={(e) => {
+                          e.target.style.backgroundColor = "#f0f4ff";
+                          e.target.style.color = "#45B7D1";
+                        }}
+                      >
+                        Manage
+                      </a>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="6" className="text-center py-4 text-muted">
+                    No recent jobs found.
                   </td>
                 </tr>
-              ))}
+              )}
             </tbody>
           </table>
-        </div>
-      </section>
-
-      {/* Invoices Section */}
-      <section className="dashboard-panel">
-        <div className="panel-heading">
-          <h3>Recent Invoices</h3>
-          <a href="/payment-history">View All Invoices</a>
-        </div>
-        <div className="invoices-summary">
-          <p className="text-muted">
-            You have <strong>{dashboardStats.invoicesPending}</strong> pending
-            invoices
-          </p>
         </div>
       </section>
     </div>

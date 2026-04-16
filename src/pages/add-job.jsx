@@ -317,15 +317,15 @@ export default function AddJob() {
     ) {
       return {
         success: false,
-        message: "Invalid payment method ID. Must start with 'pm_'.",
+        message: "Invalid payment method ID. Please select a valid card or enter new card details.",
       };
-      if(number_of_guards < 1) {
+    }
+          if(number_of_guards < 1) {
         return {
           success: false,
           message: "Number of guards must be at least 1.",
         };
       }
-    }
 
     const holdBody = {
       start,

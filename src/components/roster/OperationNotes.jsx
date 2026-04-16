@@ -5,6 +5,7 @@ import reportExporter from "../../utils/reportExporter";
 
 export default function OperationNotes({ rosterId, guardId }) {
   const [noteText, setNoteText] = useState("");
+  const [message, setMessage] = useState(null); 
 
   const normalizeNoteItem = (note, fallback = {}) => {
     if (typeof note === "string") {
@@ -53,17 +54,40 @@ export default function OperationNotes({ rosterId, guardId }) {
 
   const handleAddNote = async () => {
     if (!noteText.trim() || !rosterId) return;
+    
+    setMessage(null);
+    
     const res = await storeNote("api/store-operation-notes", {
       guard_id: guardId,
       roster_id: rosterId,
       operation_notes: noteText.trim(),
     });
+    
+    // Check if the request failed and use the server's message
+    if (!res.success) {
+      setMessage({ 
+        type: "error", 
+        text: res.message || "Failed to add note. Please try again." 
+      });
+      return;
+    }
+    
+    // Check if the request succeeded and use the server's message
     if (res?.success) {
       setNoteText("");
+      setMessage({ 
+        type: "success", 
+        text: res.message || "Note added successfully!" 
+      });
+      
       fetchNotes("api/get-operation-notes", {
         guard_id: guardId,
         roster_id: rosterId,
       });
+
+      setTimeout(() => {
+        setMessage(null);
+      }, 3000);
     }
   };
 
@@ -107,7 +131,6 @@ export default function OperationNotes({ rosterId, guardId }) {
 
   return (
     <div>
-      {/* Export Button */}
       {notes.length > 0 && (
         <div style={{ marginBottom: "16px" }}>
           <button
@@ -123,7 +146,6 @@ export default function OperationNotes({ rosterId, guardId }) {
         </div>
       )}
 
-      {/* Notes list */}
       {notes.length === 0 ? (
         <div
           style={{
@@ -169,7 +191,6 @@ export default function OperationNotes({ rosterId, guardId }) {
         </div>
       )}
 
-      {/* Add Note */}
       <div
         style={{
           borderTop: notes.length > 0 ? "1px solid #eee" : "none",
@@ -187,6 +208,25 @@ export default function OperationNotes({ rosterId, guardId }) {
         >
           Add Operation Note
         </label>
+
+        {message && (
+          <div
+            style={{
+              padding: "10px 14px",
+              marginBottom: "12px",
+              borderRadius: "6px",
+              fontSize: "13px",
+              backgroundColor: message.type === "error" ? "#fde8e8" : "#e1fdf4",
+              color: message.type === "error" ? "#c81e1e" : "#046c4e",
+              border: `1px solid ${
+                message.type === "error" ? "#f8b4b4" : "#a3e6cd"
+              }`,
+            }}
+          >
+            {message.text}
+          </div>
+        )}
+
         <textarea
           className="form-control"
           rows={3}

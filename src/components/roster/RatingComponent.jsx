@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from "react";
 import useSubmit from "../../hooks/useSubmit";
 import Loader from "../Loader";
-import { toast } from "react-toastify";
 
 export default function RatingComponent({ rosterId, guardId }) {
   const [selectedRating, setSelectedRating] = useState(0);
   const [hoveredRating, setHoveredRating] = useState(0);
   const [description, setDescription] = useState("");
-  const [submitted, setSubmitted] = useState(false);
+  // New unified state for API messages
+  const [message, setMessage] = useState(null); 
 
   const {
     submit: fetchRating,
@@ -17,7 +17,6 @@ export default function RatingComponent({ rosterId, guardId }) {
   const {
     submit: submitRating,
     loading: submitLoading,
-    error: submitError,
   } = useSubmit({ isAuth: true });
 
   useEffect(() => {
@@ -41,21 +40,42 @@ export default function RatingComponent({ rosterId, guardId }) {
 
   const handleSubmit = async () => {
     if (!selectedRating || !rosterId) return;
+    
+    // Clear previous message
+    setMessage(null);
+    
     const res = await submitRating("api/jobroster-give-rating", {
       guard_id: guardId,
       roster_id: rosterId,
       rating: selectedRating,
       rating_desc: description.trim(),
     });
+    
+    if (!res?.success) {
+      // Use API message or fallback error
+      setMessage({ 
+        type: "error", 
+        text: res?.message || "Failed to submit rating. Please try again." 
+      });
+      return;
+    }
+    
     if (res?.success) {
-      toast.success("Rating submitted successfully!");
-      setSubmitted(true);
+      // Use API message or fallback success
+      setMessage({ 
+        type: "success", 
+        text: res.message || "Rating submitted successfully!" 
+      });
+      
       fetchRating("api/get-jobroster-rating", {
         guard_id: guardId,
         roster_id: rosterId,
       });
-    } else {
-      toast.error(res?.message || "Failed to submit rating");
+
+      // Auto-hide the success message
+      setTimeout(() => {
+        setMessage(null);
+      }, 3000);
     }
   };
 
@@ -75,35 +95,24 @@ export default function RatingComponent({ rosterId, guardId }) {
 
   return (
     <div style={{ maxWidth: "480px" }}>
-      {submitted && (
+      
+      {/* Inline Feedback Message */}
+      {message && (
         <div
           style={{
-            background: "#e8f8f0",
-            border: "1px solid #c3e6cb",
-            color: "#155724",
             padding: "10px 16px",
+            marginBottom: "20px",
             borderRadius: "8px",
             fontSize: "14px",
-            marginBottom: "20px",
+            backgroundColor: message.type === "error" ? "#fde8e8" : "#e8f8f0",
+            color: message.type === "error" ? "#c81e1e" : "#155724",
+            border: `1px solid ${
+              message.type === "error" ? "#f8b4b4" : "#c3e6cb"
+            }`,
           }}
         >
-          ✅ Rating submitted successfully!
-        </div>
-      )}
-
-      {submitError && (
-        <div
-          style={{
-            background: "#fff3f3",
-            border: "1px solid #f5c6cb",
-            color: "#721c24",
-            padding: "10px 16px",
-            borderRadius: "8px",
-            fontSize: "14px",
-            marginBottom: "20px",
-          }}
-        >
-          Failed to submit rating. Please try again.
+          {message.type === "success" ? "✅ " : "⚠️ "}
+          {message.text}
         </div>
       )}
 

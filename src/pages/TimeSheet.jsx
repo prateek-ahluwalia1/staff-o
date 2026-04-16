@@ -562,8 +562,13 @@ export default function TimeSheet() {
     >
       {/* Top Filter Bar */}
       <div className="d-flex justify-content-between align-items-start mb-4 flex-wrap gap-3">
-        <h3 className="m-0">Time Sheet (Reports)</h3>
-        <div className="row g-2 w-100 timesheet-filter-grid">
+        <div>
+          <h3 className="m-0">Time Sheet (Reports)</h3>
+          <p className="text-muted mb-0 mt-1">
+            Filter, review, and drill into shift breakdowns.
+          </p>
+        </div>
+        <div className="row g-2 w-100 timesheet-filter-grid align-items-end">
           {/* <div className="col-12 col-sm-6 col-lg-4">
             <Select
               isMulti
@@ -669,18 +674,18 @@ export default function TimeSheet() {
               onChange={(e) => setEndDate(e.target.value)}
             />
           </div>
-          <div className="col-12 col-sm-6 col-lg-3 d-grid">
+          <div className="col-6 col-sm-6 col-lg-2 d-grid">
             <button
-              className="btn btn-primary"
+              className="btn btn-sm btn-primary timesheet-action-btn"
               onClick={fetchTimesheets}
               disabled={timesheetLoading}
             >
               <i className="fa-solid fa-search me-1"></i> Search
             </button>
           </div>
-          <div className="col-12 col-sm-6 col-lg-3 d-grid">
+          <div className="col-6 col-sm-6 col-lg-2 d-grid">
             <button
-              className="btn btn-primary"
+              className="btn btn-sm btn-outline-primary timesheet-action-btn"
               onClick={handleExport}
               disabled={timesheetData.length === 0}
             >
@@ -984,6 +989,10 @@ export default function TimeSheet() {
 
           .timesheet-breakdown-table tbody tr:nth-child(even) td {
             background-color: #f8fbff;
+          }
+
+          .timesheet-action-btn {
+            min-height: 38px;
           }
 
           @media (max-width: 1200px) {

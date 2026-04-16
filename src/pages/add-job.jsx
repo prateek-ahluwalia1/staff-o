@@ -373,7 +373,6 @@ export default function AddJob() {
     setPostingJob(true);
 
     try {
-      // Try to extract payment_intent_id from the new backend response structure
       let paymentIntentId =
         holdResult?.data?.payment?.payment_intent_id ||
         holdResult?.paymentBreakdown?.stripe?.payment_intent_id ||

@@ -217,7 +217,7 @@ const selectStyles = {
     minHeight: "38px",
     borderColor: "#ced4da",
     boxShadow: "none",
-    minWidth: "260px",
+    minWidth: "0",
   }),
   valueContainer: (base) => ({
     ...base,
@@ -352,30 +352,40 @@ const JobTracker = () => {
 
   return (
     <div
-      className="container-fluid p-4"
-      style={{ backgroundColor: "#f8f9fa", minHeight: "100vh" }}
+      className="container-fluid px-0 py-3"
+      style={{ minHeight: "100vh", maxWidth: "100%", overflowX: "hidden" }}
     >
-      <div className="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-3">
-        <h3 className="m-0">Job Tracker (Reports)</h3>
+      <div className="d-flex justify-content-between align-items-start mb-4 flex-wrap gap-3">
+        <div>
+          <h3 className="m-0">Job Tracker (Reports)</h3>
+          <p className="text-muted mb-0 mt-1">
+            Review shifts, filter records, and export a clean tracker summary.
+          </p>
+        </div>
       </div>
 
-      <ul className="nav nav-tabs mb-3">
-        {STATUS_TABS.map((tab) => (
-          <li className="nav-item" key={tab.key}>
-            <button
-              type="button"
-              className={`nav-link ${activeTab.key === tab.key ? "active" : ""}`}
-              onClick={() => handleTabChange(tab)}
-            >
-              {tab.label}
-            </button>
-          </li>
-        ))}
-      </ul>
+      <div className="card border-0 shadow-sm mb-4">
+        <div className="card-body py-3">
+          <ul className="nav nav-pills jobtracker-tabs gap-2 flex-wrap mb-0">
+            {STATUS_TABS.map((tab) => (
+              <li className="nav-item" key={tab.key}>
+                <button
+                  type="button"
+                  className={`nav-link ${activeTab.key === tab.key ? "active" : ""}`}
+                  onClick={() => handleTabChange(tab)}
+                >
+                  {tab.label}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
 
       <div className="card border-0 shadow-sm mb-4">
-        <div className="card-body d-flex flex-wrap gap-2 align-items-center">
-          <div style={{ minWidth: "280px" }}>
+        <div className="card-body">
+          <div className="row g-2 align-items-end jobtracker-filter-row">
+          <div className="col-12 col-lg-4">
             <Select
               isMulti
               options={customerOptions}
@@ -407,38 +417,47 @@ const JobTracker = () => {
               isLoading={customerLoading}
             />
           </div>
-          <input
-            type="date"
-            className="form-control w-auto"
-            value={startDate}
-            onChange={(e) => setStartDate(e.target.value)}
-          />
-          <input
-            type="date"
-            className="form-control w-auto"
-            value={endDate}
-            onChange={(e) => setEndDate(e.target.value)}
-          />
-          <button
-            className="btn btn-primary"
-            onClick={fetchReport}
-            disabled={loading}
-          >
-            <i className="fa-solid fa-search me-1"></i> Search
-          </button>
-          <button
-            className="btn btn-primary"
-            onClick={handleExport}
-            disabled={rows.length === 0}
-          >
-            <i className="fa-solid fa-download me-1"></i> Export
-          </button>
+          <div className="col-6 col-lg-2">
+            <input
+              type="date"
+              className="form-control"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+            />
+          </div>
+          <div className="col-6 col-lg-2">
+            <input
+              type="date"
+              className="form-control"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+            />
+          </div>
+          <div className="col-6 col-lg-2 d-grid">
+            <button
+              className="btn btn-sm btn-primary jobtracker-action-btn"
+              onClick={fetchReport}
+              disabled={loading}
+            >
+              <i className="fa-solid fa-search me-1"></i> Search
+            </button>
+          </div>
+          <div className="col-6 col-lg-2 d-grid">
+            <button
+              className="btn btn-sm btn-outline-primary jobtracker-action-btn"
+              onClick={handleExport}
+              disabled={rows.length === 0}
+            >
+              <i className="fa-solid fa-download me-1"></i> Export
+            </button>
+          </div>
+          </div>
         </div>
       </div>
 
       <div className="card border-0 shadow-sm">
-        <div className="table-responsive">
-          <table className="table table-hover align-middle mb-0">
+        <div className="table-responsive jobtracker-table-shell">
+          <table className="table table-hover align-middle mb-0 jobtracker-main-table">
             <thead
               className="table-primary text-dark"
               style={{ borderBottom: "2px solid #0d6efd" }}
@@ -477,7 +496,7 @@ const JobTracker = () => {
 
               {!loading &&
                 rows.map((row) => (
-                  <tr key={row.id}>
+                  <tr key={row.id} className="jobtracker-data-row">
                     <td>{row.jobId}</td>
                     <td>{row.jobTitle}</td>
                     <td>{row.siteName}</td>
@@ -500,6 +519,103 @@ const JobTracker = () => {
       {customerLoading && (
         <div className="mt-3 text-muted small">Loading customer filters...</div>
       )}
+
+      <style>
+        {`
+          .jobtracker-tabs .nav-link {
+            border-radius: 999px;
+            padding: 0.45rem 0.9rem;
+            font-size: 0.88rem;
+            font-weight: 600;
+            color: #475569;
+            background: #f8fafc;
+            border: 1px solid #dbe3ef;
+          }
+
+          .jobtracker-tabs .nav-link.active {
+            background: linear-gradient(135deg, #0d6efd 0%, #0b5ed7 100%);
+            border-color: #0d6efd;
+            color: #fff;
+            box-shadow: 0 8px 18px rgba(13, 110, 253, 0.18);
+          }
+
+          .jobtracker-action-btn {
+            min-height: 38px;
+          }
+
+          .jobtracker-main-table {
+            table-layout: fixed;
+            width: 100%;
+          }
+
+          .jobtracker-main-table > thead > tr > th,
+          .jobtracker-main-table > tbody > tr > td {
+            padding: 0.65rem 0.55rem;
+            font-size: 0.82rem;
+            line-height: 1.25;
+            white-space: normal;
+            word-break: break-word;
+            vertical-align: middle;
+          }
+
+          .jobtracker-main-table > thead > tr > th {
+            text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 0.02em;
+            font-weight: 700;
+            border-right: 1px solid #d6e4ff;
+            border-bottom: 2px solid #0d6efd !important;
+          }
+
+          .jobtracker-main-table > thead > tr > th:last-child,
+          .jobtracker-main-table > tbody > tr > td:last-child {
+            border-right: 0;
+          }
+
+          .jobtracker-main-table > tbody > tr.jobtracker-data-row > td {
+            background: #fff;
+            border-bottom: 1px solid #d9e1ea;
+            border-right: 1px solid #edf1f6;
+          }
+
+          .jobtracker-main-table > tbody > tr.jobtracker-data-row:nth-of-type(odd) > td {
+            background: #fbfdff;
+          }
+
+          .jobtracker-main-table > tbody > tr.jobtracker-data-row:hover > td {
+            background: #eef5ff;
+          }
+
+          @media (max-width: 992px) {
+            .jobtracker-filter-row > div {
+              flex: 0 0 auto;
+            }
+          }
+
+          @media (max-width: 768px) {
+            .jobtracker-main-table > thead > tr > th,
+            .jobtracker-main-table > tbody > tr > td {
+              padding: 0.5rem 0.4rem;
+              font-size: 0.74rem;
+            }
+
+            .jobtracker-main-table > thead > tr > th:nth-child(6),
+            .jobtracker-main-table > thead > tr > th:nth-child(7),
+            .jobtracker-main-table > thead > tr > th:nth-child(8),
+            .jobtracker-main-table > thead > tr > th:nth-child(9),
+            .jobtracker-main-table > thead > tr > th:nth-child(10),
+            .jobtracker-main-table > thead > tr > th:nth-child(11),
+            .jobtracker-main-table > tbody > tr.jobtracker-data-row > td:nth-child(6),
+            .jobtracker-main-table > tbody > tr.jobtracker-data-row > td:nth-child(7),
+            .jobtracker-main-table > tbody > tr.jobtracker-data-row > td:nth-child(8),
+            .jobtracker-main-table > tbody > tr.jobtracker-data-row > td:nth-child(9),
+            .jobtracker-main-table > tbody > tr.jobtracker-data-row > td:nth-child(10),
+            .jobtracker-main-table > tbody > tr.jobtracker-data-row > td:nth-child(11) {
+              display: none;
+            }
+          }
+        `}
+      </style>
     </div>
   );
 };

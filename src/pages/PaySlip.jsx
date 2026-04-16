@@ -385,8 +385,40 @@ const PaySlip = () => {
             <Loader compact message="Loading staff guards..." />
           ) : (
             <>
-              <div className="row g-2 mb-3">
-                <div className="col-12 col-sm-6 col-lg-3">
+              <div className="row g-2 align-items-end mb-3 payslip-filter-row">
+                <div className="col-12 col-lg-4">
+                  <label className="form-label small fw-semibold text-muted mb-1">
+                    Staff
+                  </label>
+                  <Select
+                    isMulti
+                    options={staffOptions}
+                    components={{ Option: CheckboxOption }}
+                    styles={selectStyles}
+                    closeMenuOnSelect={false}
+                    hideSelectedOptions={false}
+                    controlShouldRenderValue={false}
+                    value={resolveSelectedOptions(staffOptions, selectedGuardIds)}
+                    isAllSelected={staffAllSelected}
+                    onChange={(selected, actionMeta) =>
+                      setSelectedGuardIds(
+                        normalizeMultiSelectValues(
+                          selected,
+                          actionMeta,
+                          selectedGuardIds,
+                          staffOptions,
+                        ),
+                      )
+                    }
+                    placeholder={getSelectPlaceholder(
+                      "Select Staff",
+                      selectedGuardIds.length,
+                      staffList.length,
+                    )}
+                    isLoading={staffLoading}
+                  />
+                </div>
+                <div className="col-6 col-lg-2">
                   <label className="form-label small fw-semibold text-muted mb-1">
                     Start Date
                   </label>
@@ -397,7 +429,7 @@ const PaySlip = () => {
                     onChange={(e) => setFilterStartDate(e.target.value)}
                   />
                 </div>
-                <div className="col-12 col-sm-6 col-lg-3">
+                <div className="col-6 col-lg-2">
                   <label className="form-label small fw-semibold text-muted mb-1">
                     End Date
                   </label>
@@ -408,59 +440,24 @@ const PaySlip = () => {
                     onChange={(e) => setFilterEndDate(e.target.value)}
                   />
                 </div>
-              </div>
-
-              <div className="w-100">
-                <Select
-                  isMulti
-                  options={staffOptions}
-                  components={{ Option: CheckboxOption }}
-                  styles={selectStyles}
-                  closeMenuOnSelect={false}
-                  hideSelectedOptions={false}
-                  controlShouldRenderValue={false}
-                  value={resolveSelectedOptions(staffOptions, selectedGuardIds)}
-                  isAllSelected={staffAllSelected}
-                  onChange={(selected, actionMeta) =>
-                    setSelectedGuardIds(
-                      normalizeMultiSelectValues(
-                        selected,
-                        actionMeta,
-                        selectedGuardIds,
-                        staffOptions,
-                      ),
-                    )
-                  }
-                  placeholder={getSelectPlaceholder(
-                    "Select Staff",
-                    selectedGuardIds.length,
-                    staffList.length,
-                  )}
-                  isLoading={staffLoading}
-                />
-              </div>
-
-              <div className="row g-2 mt-2">
-                <div className="col-12 col-sm-6 col-lg-4 d-grid">
+                <div className="col-6 col-lg-2 d-grid">
                   <button
                     type="button"
-                    className="btn btn-primary"
+                    className="btn btn-sm btn-primary payslip-action-btn"
                     onClick={handleGetGuardPayslips}
                     disabled={actionLoading}
                   >
-                    <i className="fa-solid fa-search me-1"></i> Get Guard
-                    Payslips
+                    <i className="fa-solid fa-search me-1"></i> Fetch
                   </button>
                 </div>
-                <div className="col-12 col-sm-6 col-lg-4 d-grid">
+                <div className="col-6 col-lg-2 d-grid">
                   <button
                     type="button"
-                    className="btn btn-outline-primary"
+                    className="btn btn-sm btn-outline-primary payslip-action-btn"
                     onClick={handleAutoUpdatePayslips}
                     disabled={actionLoading}
                   >
-                    <i className="fa-solid fa-rotate me-1"></i> Auto Update
-                    Payslips
+                    <i className="fa-solid fa-rotate me-1"></i> Auto Sync
                   </button>
                 </div>
               </div>
@@ -531,6 +528,28 @@ const PaySlip = () => {
           </table>
         </div>
       </div>
+
+      <style>
+        {`
+          .payslip-action-btn {
+            min-height: 36px;
+            padding-top: 0.35rem;
+            padding-bottom: 0.35rem;
+            font-size: 0.85rem;
+            line-height: 1.1;
+          }
+
+          .payslip-filter-row .css-b62m3t-container {
+            width: 100%;
+          }
+
+          .payslip-filter-row .form-control,
+          .payslip-filter-row .css-13cymwt-control,
+          .payslip-filter-row .css-t3ipsp-control {
+            min-height: 38px;
+          }
+        `}
+      </style>
 
       {isUploadModalOpen && (
         <div

@@ -10,7 +10,7 @@ const useSubmit = ({ isAuth = false } = {}) => {
 
   const submit = useCallback(
     async (endpoint, body, options = {}) => {
-      const { method = "POST" } = options;
+      const { method = "POST", silentErrorToast = false } = options;
 
       const isFormData = body instanceof FormData;
 
@@ -36,7 +36,6 @@ const useSubmit = ({ isAuth = false } = {}) => {
           credentials: "include",
         };
 
-        // Only include body for non-GET requests
         if (method !== "GET" && method !== "HEAD") {
           fetchOptions.body = isFormData ? body : JSON.stringify(body);
         }
@@ -48,9 +47,11 @@ const useSubmit = ({ isAuth = false } = {}) => {
         if (!res.ok) {
           let errorMsg = "Something went wrong";
 
-          if (json.message) {
+          if (json?.error) {
+            errorMsg = json.error;
+          } else if (json?.message) {
             errorMsg = json.message;
-          } else if (json.errors && typeof json.errors === "object") {
+          } else if (json?.errors && typeof json.errors === "object") {
             const firstErrorKey = Object.keys(json.errors)[0];
             if (firstErrorKey && Array.isArray(json.errors[firstErrorKey])) {
               errorMsg = json.errors[firstErrorKey][0];
@@ -58,17 +59,28 @@ const useSubmit = ({ isAuth = false } = {}) => {
           }
 
           console.error("Submit API error:", errorMsg);
-          toast.error(errorMsg);
-          return;
+          if (!silentErrorToast) {
+            toast.error(errorMsg);
+          }
+          return {
+            success: false,
+            error: errorMsg,
+            status: res.status,
+            data: json,
+          };
         }
 
         setData(json);
         return json;
       } catch (err) {
         const message = err.message || "Network error";
-        console.error("Submit request failed:", message);
-        toast.error(message);
-        return;
+        if (!silentErrorToast) {
+          toast.error(message);
+        }
+        return {
+          success: false,
+          error: message,
+        };
       } finally {
         setLoading(false);
       }

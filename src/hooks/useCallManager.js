@@ -38,11 +38,13 @@ export const useCallManager = () => {
       const initRes = await submit(
         "api/calls/initiate",
         { receiver_id: user.id },
-        { method: "POST" },
+        { method: "POST", silentErrorToast: true },
       );
 
-      if (!initRes || !initRes.success || !initRes.call) {
-        toast.error(initRes?.error || "Failed to initiate call with backend.");
+      if (!initRes?.success || !initRes?.call) {
+        toast.error(
+          initRes?.error || initRes?.message || "Failed to initiate call.",
+        );
         return;
       }
 
@@ -56,9 +58,10 @@ export const useCallManager = () => {
 
       const res = await submit("api/agora/token", tokenPayload, {
         method: "POST",
+        silentErrorToast: true,
       });
 
-      if (!res || res.error || !res.token) {
+      if (!res?.token || res?.error) {
         toast.error(res?.error || "Failed to get token.");
         return;
       }
@@ -99,10 +102,10 @@ export const useCallManager = () => {
       const acceptRes = await submit(
         `api/calls/accept/${activeId}`,
         { call_id: activeId },
-        { method: "POST" },
+        { method: "POST", silentErrorToast: true },
       );
 
-      if (!acceptRes || !acceptRes.success) {
+      if (!acceptRes?.success) {
         toast.error(acceptRes?.error || "Failed to accept call on backend.");
         return null;
       }
@@ -118,10 +121,10 @@ export const useCallManager = () => {
       const tokenRes = await submit(
         "api/agora/token",
         { channel_name: channelName, uid },
-        { method: "POST" },
+        { method: "POST", silentErrorToast: true },
       );
 
-      if (!tokenRes || tokenRes.error || !tokenRes.token) {
+      if (!tokenRes?.token || tokenRes?.error) {
         toast.error(
           tokenRes?.error || "Failed to get token for incoming call.",
         );

@@ -18,6 +18,7 @@ import useFetch from "../hooks/useFetch";
 import useSubmit from "../hooks/useSubmit";
 import { useCallManager } from "../hooks/useCallManager";
 import { apiURL } from "../utils/exports";
+import Modal from "../components/Modal";
 import "../assets/css/chat.css";
 
 const CATEGORY_LABELS = {
@@ -86,6 +87,8 @@ const ChatRoom = () => {
   const [showUserPicker, setShowUserPicker] = useState(false);
   const [userSearch, setUserSearch] = useState("");
   const [loadingMessages, setLoadingMessages] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [messageToDelete, setMessageToDelete] = useState(null);
   const scrollRef = useRef();
   const pickerRef = useRef();
 
@@ -187,9 +190,18 @@ const ChatRoom = () => {
   };
 
   // 4. Delete Message API
-  const handleDeleteMessage = async (messageId) => {
-    if (!window.confirm("Are you sure you want to delete this message?"))
-      return;
+  const askDeleteMessage = (message) => {
+    setMessageToDelete(message);
+    setShowDeleteModal(true);
+  };
+
+  const handleDeleteMessage = async () => {
+    const messageId = messageToDelete?.id;
+    if (!messageId) return;
+
+    setShowDeleteModal(false);
+    setMessageToDelete(null);
+
     try {
       await fetch(`${apiURL}api/messages/${messageId}`, {
         method: "DELETE",
@@ -629,7 +641,7 @@ const ChatRoom = () => {
                           >
                             {isMe && (
                               <button
-                                onClick={() => handleDeleteMessage(m.id)}
+                                onClick={() => askDeleteMessage(m)}
                                 className="btn btn-sm btn-link text-white p-0 position-absolute"
                                 style={{
                                   top: "-10px",
@@ -725,6 +737,64 @@ const ChatRoom = () => {
           </div>
         )}
       </div>
+
+      <Modal
+        open={showDeleteModal}
+        onClose={() => {
+          setShowDeleteModal(false);
+          setMessageToDelete(null);
+        }}
+      >
+        <div className="text-center">
+          <div
+            className="mx-auto mb-3 d-flex align-items-center justify-content-center"
+            style={{
+              width: 56,
+              height: 56,
+              borderRadius: "50%",
+              background: "rgba(220,53,69,0.12)",
+            }}
+          >
+            <i
+              className="fa-solid fa-trash"
+              style={{ color: "#dc3545", fontSize: "1.1rem" }}
+            ></i>
+          </div>
+
+          <h6 className="fw-bold mb-2">Delete this message?</h6>
+          <p className="text-muted small mb-3" style={{ lineHeight: 1.45 }}>
+            This action cannot be undone.
+            {messageToDelete?.message ? (
+              <>
+                <br />
+                <span className="d-inline-block mt-2 px-2 py-1 rounded bg-light text-dark">
+                  "{String(messageToDelete.message).slice(0, 80)}"
+                </span>
+              </>
+            ) : null}
+          </p>
+
+          <div className="d-flex justify-content-center gap-2">
+            <button
+              type="button"
+              className="btn btn-sm btn-outline-secondary px-3"
+              onClick={() => {
+                setShowDeleteModal(false);
+                setMessageToDelete(null);
+              }}
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              className="btn btn-sm btn-danger px-3"
+              onClick={handleDeleteMessage}
+            >
+              Yes, delete
+            </button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 };

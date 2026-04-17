@@ -13,7 +13,7 @@ const DashboardLayout = memo(function DashboardLayout() {
           <div className="dashboard-layout">
             <Sidebar />
 
-            <div className="dashboard-main">
+            <div className="dashboard-main dashboard-content-shell">
               <Outlet />
             </div>
           </div>

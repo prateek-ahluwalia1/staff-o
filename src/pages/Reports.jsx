@@ -12,9 +12,9 @@ const Reports = () => {
 
   if (userType !== "admin") {
     return (
-      <div className="dashboard-main" style={{ padding: 32 }}>
-        <div className="alert alert-danger">
-          <i className="fa fa-lock me-2"></i>
+      <div className="dashboard-main dashboard-tools-page">
+        <div className="dashboard-tools-access-state">
+          <i className="fa fa-lock"></i>
           You do not have permission to access reports management.
         </div>
       </div>
@@ -22,17 +22,15 @@ const Reports = () => {
   }
 
   return (
-    <div className="dashboard-main" style={{ padding: 32 }}>
-      <div style={{ marginBottom: 32 }}>
-        <h2 style={{ fontWeight: 700 }}>Reports Management</h2>
-        <p style={{ color: "#6b7280", marginTop: 6 }}>
+    <div className="dashboard-main dashboard-tools-page">
+      <div className="dashboard-tools-header">
+        <h2 className="dashboard-tools-title">Reports Management</h2>
+        <p className="dashboard-tools-subtitle">
           Choose a category to manage your reports.
         </p>
       </div>
 
-      {/* Put both cards inside the SAME row container */}
-      <div className="row g-4">
-        {/* Card 1 */}
+      <div className="row g-4 dashboard-tools-grid">
         <div className="col-12 col-md-6 col-lg-4">
           <Card
             title="Time Sheet"
@@ -44,7 +42,6 @@ const Reports = () => {
           />
         </div>
 
-        {/* Card 2 */}
         <div className="col-12 col-md-6 col-lg-4">
           <Card
             title="Job Tracker"

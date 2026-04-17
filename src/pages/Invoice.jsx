@@ -330,9 +330,9 @@ const Invoice = () => {
 
   if (!isAdmin) {
     return (
-      <div className="container-fluid py-4">
-        <div className="alert alert-danger">
-          <i className="fa fa-lock me-2"></i>
+      <div className="dashboard-main dashboard-tools-page">
+        <div className="dashboard-tools-access-state">
+          <i className="fa fa-lock"></i>
           You do not have permission to access invoicing.
         </div>
       </div>
@@ -340,7 +340,7 @@ const Invoice = () => {
   }
 
   return (
-    <div className="dashboard-main invoice-page">
+    <div className="dashboard-main dashboard-tools-page invoice-page">
       {/* Header Section */}
       <div className="dashboard-page-header">
         <div>

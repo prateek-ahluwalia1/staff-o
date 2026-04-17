@@ -354,7 +354,25 @@ const ChatRoom = () => {
   const otherUser = (conv) => conv?.user || {};
 
   return (
-    <div className="chatroom-page">
+    <div className="dashboard-tools-page">
+      <div className="dashboard-page-header">
+        <div>
+          <h1>{CATEGORY_LABELS[category] || "Communications"} Chat</h1>
+          <p>Manage conversations, start calls, and keep communication in one place.</p>
+        </div>
+        <div>
+          <button
+            type="button"
+            className="btn btn-outline-primary"
+            onClick={() => navigate("/chat")}
+          >
+            <i className="fa-solid fa-arrow-left me-2"></i>
+            Back to Categories
+          </button>
+        </div>
+      </div>
+
+      <div className="chatroom-page">
       {/* ── LEFT PANEL ── */}
       <div className="chatroom-sidebar">
         {/* Header row */}
@@ -795,6 +813,7 @@ const ChatRoom = () => {
           </div>
         </div>
       </Modal>
+      </div>
     </div>
   );
 };

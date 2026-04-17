@@ -1,26 +1,26 @@
 import React, { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
-import "../assets/css/chat.css";
+import { Card } from "../components/Card";
 
 const ALL_CATEGORIES = [
   {
     key: "staff",
     label: "Staff",
     desc: "Chat with your team members in real-time",
-    icon: "fa-solid fa-users",
+    accent: "linear-gradient(135deg,#2563eb,#1d4ed8)",
   },
   {
     key: "customers",
     label: "Customers",
     desc: "Handle customer conversations",
-    icon: "fa-solid fa-user-tie",
+    accent: "linear-gradient(135deg,#0ea5e9,#0284c7)",
   },
   {
     key: "contractors",
     label: "Contractors",
     desc: "Connect and collaborate with contractors",
-    icon: "fa-solid fa-helmet-safety",
+    accent: "linear-gradient(135deg,#16a34a,#15803d)",
   },
 ];
 
@@ -50,51 +50,34 @@ const Chat = () => {
   }, [userType]);
 
   return (
-    <div className="container py-4">
-      <div className="chat-landing-header mb-4">
-        <h3 className="fw-bold mb-1">Communications</h3>
-        <p className="mb-0">
+    <div className="dashboard-tools-page">
+      <div className="dashboard-page-header">
+        <div>
+          <h1>Communications</h1>
+          <p>
           Select a category to start or continue a conversation
-        </p>
+          </p>
+        </div>
       </div>
 
-      <div className="row g-4">
+      <div className="row g-4 dashboard-tools-grid">
         {allowedCategories.map((cat) => (
           <div key={cat.key} className="col-12 col-sm-6 col-xl-4">
-            <div className="chat-category-card">
-              <div className="chat-category-icon-wrapper">
-                <div className="chat-category-placeholder">
-                  <div className="chat-category-icon-circle">
-                    <i className={`${cat.icon} fa-2x text-white`}></i>
-                  </div>
-                  <span
-                    className="text-white fw-semibold mt-1"
-                    style={{
-                      fontSize: "0.8rem",
-                      opacity: 0.85,
-                      letterSpacing: "0.5px",
-                    }}
-                  >
-                    {cat.label.toUpperCase()}
-                  </span>
-                </div>
-              </div>
-              <div className="chat-category-body">
-                <h5>{cat.label}</h5>
-                <p className="chat-cat-desc">{cat.desc}</p>
-                <button
-                  className="chat-category-btn"
-                  onClick={() => navigate(`/chat/${cat.key}`)}
-                >
-                  Access Now
-                </button>
-              </div>
-            </div>
+            <Card
+              title={cat.label}
+              description={cat.desc}
+              accent={cat.accent}
+              type="chat"
+              onClick={() => navigate(`/chat/${cat.key}`)}
+            />
           </div>
         ))}
         {allowedCategories.length === 0 && (
-          <div className="col-12 text-center text-muted mt-5">
-            You do not have permission to view any chat categories.
+          <div className="col-12">
+            <div className="dashboard-tools-empty-state">
+              <i className="fa fa-info-circle"></i>
+              You do not have permission to view any chat categories.
+            </div>
           </div>
         )}
       </div>

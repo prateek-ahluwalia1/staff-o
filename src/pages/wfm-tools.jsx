@@ -10,15 +10,15 @@ const WFMTools = () => {
   const isAdmin = userType === "admin";
 
   return (
-    <div className="dashboard-main" style={{ padding: 32 }}>
-      <div style={{ marginBottom: 32 }}>
-        <h2 style={{ fontWeight: 700 }}>WFM Tools</h2>
-        <p style={{ color: "#6b7280", marginTop: 6 }}>
+    <div className="dashboard-main dashboard-tools-page">
+      <div className="dashboard-tools-header">
+        <h2 className="dashboard-tools-title">WFM Tools</h2>
+        <p className="dashboard-tools-subtitle">
           Leave tools are managed here. Calls now start directly from chat.
         </p>
       </div>
 
-      <div className="row g-4">
+      <div className="row g-4 dashboard-tools-grid">
         {isAdmin && (
           <div className="col-12 col-md-6 col-lg-4">
             <Card
@@ -29,6 +29,15 @@ const WFMTools = () => {
               type="leave"
               onClick={() => navigate("/leave")}
             />
+          </div>
+        )}
+
+        {!isAdmin && (
+          <div className="col-12">
+            <div className="dashboard-tools-empty-state">
+              <i className="fa fa-info-circle"></i>
+              Leave management is currently available for admin users only.
+            </div>
           </div>
         )}
       </div>

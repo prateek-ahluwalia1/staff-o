@@ -4,28 +4,6 @@
    Fonts   : Montserrat (headings) / Open Sans (body)
    ══════════════════════════════════════════════════ */
 
-/* ── CHAT LANDING PAGE ────────────────────────────── */
-
-.chat-landing-header {
-    padding-bottom: 16px;
-    border-bottom: 3px solid #263bd6;
-    margin-bottom: 8px;
-}
-
-.chat-landing-header h3 {
-    font-family: 'Montserrat', sans-serif;
-    font-size: 26px;
-    font-weight: 700;
-    color: #1a1a2e;
-    letter-spacing: -0.4px;
-}
-
-.chat-landing-header p {
-    color: #6b7280;
-    font-size: 0.92rem;
-    margin-bottom: 0;
-}
-
 /* Category Cards */
 .chat-category-card {
     background: #fff;
@@ -153,7 +131,7 @@
 
 .chatroom-page {
     display: flex;
-    height: calc(100vh - 130px);
+    height: clamp(520px, calc(100vh - 250px), 760px);
     min-height: 520px;
     background: #eef0f9;
     overflow: hidden;

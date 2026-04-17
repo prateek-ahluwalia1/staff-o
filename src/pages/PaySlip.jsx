@@ -326,9 +326,9 @@ const PaySlip = () => {
 
   if (!isAdmin) {
     return (
-      <div className="dashboard-main" style={{ padding: 32 }}>
-        <div className="alert alert-danger">
-          <i className="fa fa-lock me-2"></i>
+      <div className="dashboard-main dashboard-tools-page">
+        <div className="dashboard-tools-access-state">
+          <i className="fa fa-lock"></i>
           You do not have permission to access payslip management.
         </div>
       </div>
@@ -336,19 +336,11 @@ const PaySlip = () => {
   }
 
   return (
-    <div
-      className="container-fluid p-4"
-      style={{
-        backgroundColor: "#f8f9fa",
-        minHeight: "100vh",
-        maxWidth: "100%",
-        overflowX: "auto",
-      }}
-    >
-      <div className="d-flex justify-content-between align-items-start mb-4 flex-wrap gap-3">
+    <div className="dashboard-main dashboard-tools-page">
+      <div className="dashboard-page-header">
         <div>
-          <h3 className="m-0">Pay Slip (Reports)</h3>
-          <p className="text-muted mb-0 mt-1">
+          <h1>Pay Slip</h1>
+          <p>
             Upload and map payslip PDFs to date ranges, then fetch or auto-sync
             staff payslips.
           </p>

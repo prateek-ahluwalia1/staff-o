@@ -9511,7 +9511,7 @@ Large Mobile Screen
 *************************************************/
 .dashboard-section {
     background: linear-gradient(180deg, #f8fafc 0%, #eef4ff 100%);
-    padding: 70px 0;
+    padding: 24px 0;
 }
 
 .dashboard-layout {
@@ -9889,6 +9889,73 @@ Large Mobile Screen
     gap: 28px;
     min-width: 0;
     animation: slideInContent 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.dashboard-content-shell > * {
+    width: 100%;
+}
+
+.dashboard-content-shell>.container,
+.dashboard-content-shell>.container-fluid {
+    max-width: 100%;
+    padding-left: 0;
+    padding-right: 0;
+}
+
+.dashboard-tools-page {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    padding: 16px;
+}
+
+.dashboard-tools-header {
+    background: #ffffff;
+    border: 1px solid rgba(148, 163, 184, 0.22);
+    border-radius: 18px;
+    box-shadow: 0 16px 32px rgba(15, 23, 42, 0.06);
+    padding: 18px 20px;
+}
+
+.dashboard-tools-title {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.dashboard-tools-subtitle {
+    margin: 8px 0 0;
+    color: #64748b;
+    line-height: 1.5;
+}
+
+.dashboard-tools-grid {
+    margin-top: 0;
+}
+
+.dashboard-tools-access-state {
+    background: #ffffff;
+    border: 1px solid rgba(248, 113, 113, 0.3);
+    border-radius: 14px;
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
+    color: #b91c1c;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+    padding: 14px 16px;
+}
+
+.dashboard-tools-empty-state {
+    background: #ffffff;
+    border: 1px solid rgba(148, 163, 184, 0.25);
+    border-radius: 14px;
+    color: #475569;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 14px 16px;
 }
 
 @keyframes slideInContent {
@@ -14091,7 +14158,7 @@ Large Mobile Screen
     }
 
     .dashboard-section {
-        padding: 40px 0;
+        padding: 16px 0;
     }
 
     .projects-grid {
@@ -14133,6 +14200,25 @@ Large Mobile Screen
 
     .dashboard-main {
         width: 100%;
+    }
+
+    .dashboard-tools-page {
+        padding: 12px;
+        gap: 16px;
+    }
+
+    .dashboard-tools-header {
+        border-radius: 14px;
+        padding: 14px 16px;
+    }
+
+    .dashboard-tools-title {
+        font-size: 1.25rem;
+    }
+
+    .dashboard-tools-subtitle {
+        margin-top: 6px;
+        font-size: 0.95rem;
     }
 
     .experience-item:not(:last-child)::after,

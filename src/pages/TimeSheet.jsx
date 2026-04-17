@@ -552,22 +552,18 @@ export default function TimeSheet() {
   };
 
   return (
-    <div
-      className="container-fluid px-0 py-3"
-      style={{
-        minHeight: "100vh",
-        maxWidth: "100%",
-        overflowX: "hidden",
-      }}
-    >
-      {/* Top Filter Bar */}
-      <div className="d-flex justify-content-between align-items-start mb-4 flex-wrap gap-3">
+    <div className="dashboard-main dashboard-tools-page">
+      <div className="dashboard-page-header">
         <div>
-          <h3 className="m-0">Time Sheet (Reports)</h3>
-          <p className="text-muted mb-0 mt-1">
+          <h1>Time Sheet</h1>
+          <p>
             Filter, review, and drill into shift breakdowns.
           </p>
         </div>
+      </div>
+
+      <div className="card border-0 shadow-sm">
+        <div className="card-body py-3">
         <div className="row g-2 w-100 timesheet-filter-grid align-items-end">
           {/* <div className="col-12 col-sm-6 col-lg-4">
             <Select
@@ -692,6 +688,7 @@ export default function TimeSheet() {
               <i className="fa-solid fa-download me-1"></i> Export
             </button>
           </div>
+        </div>
         </div>
       </div>
 

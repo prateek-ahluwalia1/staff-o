@@ -351,14 +351,11 @@ const JobTracker = () => {
   };
 
   return (
-    <div
-      className="container-fluid px-0 py-3"
-      style={{ minHeight: "100vh", maxWidth: "100%", overflowX: "hidden" }}
-    >
-      <div className="d-flex justify-content-between align-items-start mb-4 flex-wrap gap-3">
+    <div className="dashboard-main dashboard-tools-page">
+      <div className="dashboard-page-header">
         <div>
-          <h3 className="m-0">Job Tracker (Reports)</h3>
-          <p className="text-muted mb-0 mt-1">
+          <h1>Job Tracker</h1>
+          <p>
             Review shifts, filter records, and export a clean tracker summary.
           </p>
         </div>

@@ -157,9 +157,9 @@ const RatesList = ({ forcedType } = {}) => {
 
   if (!isAdmin) {
     return (
-      <div className="container-fluid py-4">
-        <div className="alert alert-danger">
-          <i className="fa fa-lock me-2"></i>
+      <div className="dashboard-main dashboard-tools-page">
+        <div className="dashboard-tools-access-state">
+          <i className="fa fa-lock"></i>
           You do not have permission to access rates management.
         </div>
       </div>
@@ -175,8 +175,8 @@ const RatesList = ({ forcedType } = {}) => {
         : error?.message || JSON.stringify(error) || "An error occurred";
 
     return (
-      <div className="container-fluid py-4">
-        <div className="alert alert-danger">
+      <div className="dashboard-main dashboard-tools-page">
+        <div className="dashboard-tools-access-state">
           <div className="fw-bold">Error</div>
           <div className="small text-break">{errMsg}</div>
           <div className="mt-2">
@@ -193,13 +193,11 @@ const RatesList = ({ forcedType } = {}) => {
   }
 
   return (
-    <div className="container-fluid py-4">
-      {/* Header */}
-      <div className="card border-0 shadow-sm mb-4">
-        <div className="card-body d-flex justify-content-between align-items-center">
+    <div className="dashboard-main dashboard-tools-page">
+      <div className="dashboard-page-header">
           <div>
-            <h4 className="fw-bold mb-1">{title}</h4>
-            <p className="text-muted mb-0 small">
+            <h1>{title}</h1>
+            <p>
               Manage {isCharge ? "charges" : "payments"} by job level and state
             </p>
           </div>
@@ -214,7 +212,6 @@ const RatesList = ({ forcedType } = {}) => {
               </button>
             )}
           </div>
-        </div>
       </div>
 
       {/* Table Card */}

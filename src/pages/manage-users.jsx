@@ -182,7 +182,7 @@ const ManageUsers = () => {
   if (loading && users.length === 0) return <Loader />;
 
   return (
-    <div className="container mt-4 pb-5">
+    <div className="dashboard-tools-page">
       <style>{`
         .full-screen-modal {
           position: fixed;
@@ -233,33 +233,72 @@ const ManageUsers = () => {
           padding-left: 12px;
           border-left: 4px solid #0d6efd;
         }
+
+        .user-role-tabs {
+          background: #ffffff;
+          border: 1px solid rgba(148, 163, 184, 0.22);
+          border-radius: 14px;
+          box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
+          display: inline-flex;
+          gap: 8px;
+          padding: 8px;
+        }
+
+        .user-role-tab-btn {
+          border: none;
+          border-radius: 10px;
+          color: #475569;
+          font-size: 0.9rem;
+          font-weight: 700;
+          padding: 10px 16px;
+          text-transform: capitalize;
+          transition: all 0.2s ease;
+        }
+
+        .user-role-tab-btn.active {
+          background: linear-gradient(135deg, #2563eb, #1d4ed8);
+          box-shadow: 0 8px 20px rgba(37, 99, 235, 0.28);
+          color: #ffffff;
+        }
+
+        .user-role-tab-btn:not(.active) {
+          background: #f8fafc;
+        }
+
+        .user-role-tab-btn:not(.active):hover {
+          background: #eef2ff;
+          color: #1d4ed8;
+        }
       `}</style>
 
       {/* Header Section */}
-      <div className="d-flex justify-content-between align-items-end mb-4">
+      <div className="dashboard-page-header">
         <div>
-          <h2 className="fw-bold text-dark mb-1">User Management</h2>
-          <p className="text-muted mb-0">
+          <h1>User Management</h1>
+          <p>
             Manage permissions and details for all account types.
           </p>
         </div>
-        <button
-          className="btn btn-primary rounded-3 px-4 py-2 shadow-sm fw-bold"
-          onClick={() => openModal()}
-        >
-          <i className="fa-solid fa-plus me-2"></i> Add{" "}
-          {activeTab.replace("_", " ")}
-        </button>
+        <div className="d-flex align-items-center gap-2 flex-wrap">
+          <span className="badge text-bg-light border px-3 py-2">
+            Total: {totalItems}
+          </span>
+          <button
+            className="btn btn-primary rounded-3 px-4 py-2 shadow-sm fw-bold"
+            onClick={() => openModal()}
+          >
+            <i className="fa-solid fa-plus me-2"></i> Add {activeTab.replace("_", " ")}
+          </button>
+        </div>
       </div>
 
-      {/* Tabs */}
-      <div className="bg-white p-2 rounded-3 shadow-sm border d-inline-flex mb-4">
+      <div className="user-role-tabs">
         {["customer", "sub_contractor", "staff"].map((role) => (
           <button
             key={role}
-            className={`btn rounded-3 px-4 fw-bold text-capitalize border-0 ${activeTab === role ? "btn-primary shadow" : "btn-light text-muted"}`}
+            type="button"
+            className={`user-role-tab-btn ${activeTab === role ? "active" : ""}`}
             onClick={() => handleTabChange(role)}
-            style={{ marginRight: role !== "staff" ? "8px" : "0" }}
           >
             {role.replace("_", " ")}
           </button>

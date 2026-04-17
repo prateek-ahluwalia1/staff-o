@@ -20,7 +20,7 @@ const Invoice = () => {
   const { userdata } = useSelector((state) => state.auth || {});
   const userType = userdata?.data?.user_type || userdata?.user_type;
   const isAdmin = userType === "admin";
-  const { submit, loading: sending } = useSubmit({ isAuth: true });
+  const { submit } = useSubmit({ isAuth: true });
 
   const { data: customersResponse } = useFetch(
     "api/admin/get-customers?limit=1000",
@@ -147,37 +147,7 @@ const Invoice = () => {
     return null;
   };
 
-  const getPayload = () => ({
-    invoice_no: invoiceNo,
-    invoice_mode: "normal",
-    currency,
-    start_date: startDate,
-    end_date: endDate,
-    due_date: dueDate,
-    customer_id: selectedCustomerId,
-    from,
-    to,
-    payment_methods: paymentMethods,
-    include_late_fees: lateFees,
-    late_fee_amount: lateFeeAmount,
-    include_notes: includeNotes,
-    include_gst: includeGst,
-    gst_percent: Number(gstPercent) || 0,
-    notes,
-    items: lineItems.map((item) => ({
-      description: item.description,
-      qty: item.qty,
-      rate: item.rate,
-    })),
-    totals: {
-      subtotal,
-      gst_amount: gstAmount,
-      late_fee_amount: lateFeeAmount,
-      total: grandTotal,
-    },
-  });
 
-  // ===== API HANDLERS =====
   const handleSearch = async () => {
     if (!selectedCustomerId) {
       toast.error("Please select a customer first.");
@@ -302,32 +272,6 @@ const Invoice = () => {
     }
   };
 
-  // ===== SEND INVOICE =====
-  const handleSendInvoice = async () => {
-    const error = validateInvoice();
-    if (error) {
-      toast.error(error);
-      return;
-    }
-
-    const payload = getPayload();
-    const res = await submit("api/invoice/store", payload, { method: "POST" });
-
-    if (res?.success) {
-      toast.success("Invoice sent successfully.");
-      return;
-    }
-
-    if (res && !res.success) {
-      toast.error(res.message || "Unable to send invoice.");
-      return;
-    }
-
-    toast.info(
-      "Invoice draft prepared. Please verify API endpoint for sending.",
-    );
-  };
-
   if (!isAdmin) {
     return (
       <div className="dashboard-main dashboard-tools-page">
@@ -362,22 +306,6 @@ const Invoice = () => {
             onClick={handleDownload}
           >
             <i className="fa-solid fa-download me-2"></i> Download
-          </button>
-          <button
-            type="button"
-            className="btn btn-primary"
-            onClick={handleSendInvoice}
-            disabled={sending}
-          >
-            {sending ? (
-              <>
-                <i className="fa fa-spinner fa-spin me-2"></i> Sending...
-              </>
-            ) : (
-              <>
-                <i className="fa-solid fa-paper-plane me-2"></i> Send Invoice
-              </>
-            )}
           </button>
         </div>
       </div>

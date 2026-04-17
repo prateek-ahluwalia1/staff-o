@@ -489,7 +489,7 @@ const RatesList = ({ forcedType } = {}) => {
                         onChange={handleFormChange}
                         disabled={isViewing}
                         className="form-control"
-                        placeholder="e.g. Senior Electrician"
+                        placeholder="Enter role title"
                         required
                       />
                     </div>
@@ -506,7 +506,7 @@ const RatesList = ({ forcedType } = {}) => {
                           onChange={handleFormChange}
                           disabled={isViewing}
                           className="form-control"
-                          placeholder="0.00"
+                          placeholder="Enter base rate"
                           required
                         />
                       </div>
@@ -522,7 +522,7 @@ const RatesList = ({ forcedType } = {}) => {
                         onChange={handleFormChange}
                         disabled={isViewing}
                         className="form-control"
-                        placeholder="e.g. Technician"
+                        placeholder="Enter position or category"
                       />
                     </div>
 
@@ -534,7 +534,7 @@ const RatesList = ({ forcedType } = {}) => {
                         onChange={handleFormChange}
                         disabled={isViewing}
                         className="form-control"
-                        placeholder="e.g. Lvl 2"
+                        placeholder="Enter job level"
                       />
                     </div>
 
@@ -546,7 +546,7 @@ const RatesList = ({ forcedType } = {}) => {
                         onChange={handleFormChange}
                         disabled={isViewing}
                         className="form-control"
-                        placeholder="e.g. NSW"
+                        placeholder="Enter state"
                       />
                     </div>
                   </div>
@@ -589,7 +589,7 @@ const RatesList = ({ forcedType } = {}) => {
                                     onChange={handleFormChange}
                                     disabled={isViewing}
                                     className="form-control bg-light-subtle"
-                                    placeholder="0.00"
+                                    placeholder="Enter rate"
                                   />
                                 </div>
                               </div>
@@ -604,7 +604,7 @@ const RatesList = ({ forcedType } = {}) => {
                                     onChange={handleFormChange}
                                     disabled={isViewing}
                                     className="form-control bg-light-subtle"
-                                    placeholder="0.00"
+                                    placeholder="Enter rate"
                                   />
                                 </div>
                               </div>

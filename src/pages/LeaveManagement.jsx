@@ -273,10 +273,12 @@ const LeaveManagement = () => {
   }
 
   return (
-    <div className="leave-management-container p-4">
-      {/* Header */}
-      <div className="leave-header d-flex justify-content-between align-items-center gap-3 mb-4">
-        <h3 className="fw-bold mb-0 text-dark">Leave Management</h3>
+    <div className="dashboard-main dashboard-tools-page leave-management-container">
+      <div className="dashboard-page-header leave-page-header">
+        <div>
+          <h1>Leave Management</h1>
+          <p>Review, approve, and manage staff leave requests.</p>
+        </div>
 
         <div className="leave-header-actions d-flex gap-3 align-items-center">
           <button
@@ -317,109 +319,111 @@ const LeaveManagement = () => {
       </div>
 
       {/* Desktop / Tablet Table */}
-      <div className="table-wrapper d-none d-md-block">
-        <table className="table custom-table align-middle mb-0">
-          <thead className="bg-light">
-            <tr className="text-muted small">
-              <th className="ps-4">STAFF</th>
-              <th>ROLE</th>
-              <th>REASON</th>
-              <th>START</th>
-              <th>END</th>
-              <th>DAYS</th>
-              <th>REQUESTED</th>
-              <th>NOTES</th>
-              <th>STATUS</th>
-              {canManageLeaveActions && (
-                <th className="pe-4 text-center">ACTION</th>
-              )}
-            </tr>
-          </thead>
-          <tbody>
-            {tableData.length > 0 ? (
-              tableData.map((leave) => (
-                <tr key={leave.id}>
-                  <td className="ps-4">
-                    <div className="text-dark fw-bold">
-                      {getLeaveUserName(leave)}
-                    </div>
-                    <div className="text-muted" style={{ fontSize: "0.8em" }}>
-                      {getLeaveEmail(leave)}
-                    </div>
-                  </td>
-                  <td
-                    className="text-muted"
-                    style={{ textTransform: "capitalize" }}
-                  >
-                    {getLeaveRole(leave)}
-                  </td>
-                  <td
-                    className="text-muted"
-                    style={{ textTransform: "capitalize" }}
-                  >
-                    {leave.reason || "N/A"}
-                  </td>
-                  <td className="text-muted">{getLeaveStartDate(leave)}</td>
-                  <td className="text-muted">{getLeaveEndDate(leave)}</td>
-                  <td className="text-muted text-center">
-                    {getLeaveDays(leave)}
-                  </td>
-                  <td className="text-muted">{getRequestedDate(leave)}</td>
-                  <td className="text-muted">{getLeaveNotes(leave)}</td>
-                  <td className="leave-status-cell">
-                    <span
-                      className={`badge leave-status-badge ${isPendingLeave(leave) ? "bg-warning text-dark" : "bg-success text-white"} rounded-pill`}
-                    >
-                      {isPendingLeave(leave) ? "Pending" : "Approved"}
-                    </span>
-                  </td>
-                  {canManageLeaveActions && (
-                    <td className="pe-4 text-center">
-                      <button
-                        className={`leave-action-btn btn btn-sm fw-bold px-3 rounded-pill shadow-sm ${isPendingLeave(leave) ? "btn-success" : "btn-outline-danger"}`}
-                        onClick={() => handleToggleLeave(leave)}
-                        disabled={
-                          submitLoading || processingLeaveId === leave.id
-                        }
-                        aria-label={
-                          isPendingLeave(leave)
-                            ? "Approve leave"
-                            : "Cancel approval"
-                        }
-                        title={
-                          isPendingLeave(leave)
-                            ? "Approve leave"
-                            : "Cancel approval"
-                        }
-                      >
-                        {processingLeaveId === leave.id ? (
-                          <span
-                            className="spinner-border spinner-border-sm"
-                            role="status"
-                            aria-hidden="true"
-                          />
-                        ) : isPendingLeave(leave) ? (
-                          <i className="fa-solid fa-check" aria-hidden="true" />
-                        ) : (
-                          <i className="fa-solid fa-xmark" aria-hidden="true" />
-                        )}
-                      </button>
-                    </td>
-                  )}
-                </tr>
-              ))
-            ) : (
-              <tr>
-                <td
-                  colSpan={canManageLeaveActions ? "10" : "9"}
-                  className="text-center py-5 text-muted"
-                >
-                  No {activeLeaveTab} leaves found.
-                </td>
+      <div className="card border-0 shadow-sm mb-3 d-none d-md-block">
+        <div className="table-wrapper leave-table-shell">
+          <table className="table custom-table align-middle mb-0">
+            <thead>
+              <tr className="text-muted small">
+                <th className="ps-4">STAFF</th>
+                <th>ROLE</th>
+                <th>REASON</th>
+                <th>START</th>
+                <th>END</th>
+                <th>DAYS</th>
+                <th>REQUESTED</th>
+                <th>NOTES</th>
+                <th>STATUS</th>
+                {canManageLeaveActions && (
+                  <th className="pe-4 text-center">ACTION</th>
+                )}
               </tr>
-            )}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {tableData.length > 0 ? (
+                tableData.map((leave) => (
+                  <tr key={leave.id}>
+                    <td className="ps-4">
+                      <div className="text-dark fw-bold">
+                        {getLeaveUserName(leave)}
+                      </div>
+                      <div className="text-muted" style={{ fontSize: "0.8em" }}>
+                        {getLeaveEmail(leave)}
+                      </div>
+                    </td>
+                    <td
+                      className="text-muted"
+                      style={{ textTransform: "capitalize" }}
+                    >
+                      {getLeaveRole(leave)}
+                    </td>
+                    <td
+                      className="text-muted"
+                      style={{ textTransform: "capitalize" }}
+                    >
+                      {leave.reason || "N/A"}
+                    </td>
+                    <td className="text-muted">{getLeaveStartDate(leave)}</td>
+                    <td className="text-muted">{getLeaveEndDate(leave)}</td>
+                    <td className="text-muted text-center">
+                      {getLeaveDays(leave)}
+                    </td>
+                    <td className="text-muted">{getRequestedDate(leave)}</td>
+                    <td className="text-muted">{getLeaveNotes(leave)}</td>
+                    <td className="leave-status-cell">
+                      <span
+                        className={`badge leave-status-badge ${isPendingLeave(leave) ? "bg-warning text-dark" : "bg-success text-white"} rounded-pill`}
+                      >
+                        {isPendingLeave(leave) ? "Pending" : "Approved"}
+                      </span>
+                    </td>
+                    {canManageLeaveActions && (
+                      <td className="pe-4 text-center">
+                        <button
+                          className={`leave-action-btn btn btn-sm fw-bold px-3 rounded-pill shadow-sm ${isPendingLeave(leave) ? "btn-success" : "btn-outline-danger"}`}
+                          onClick={() => handleToggleLeave(leave)}
+                          disabled={
+                            submitLoading || processingLeaveId === leave.id
+                          }
+                          aria-label={
+                            isPendingLeave(leave)
+                              ? "Approve leave"
+                              : "Cancel approval"
+                          }
+                          title={
+                            isPendingLeave(leave)
+                              ? "Approve leave"
+                              : "Cancel approval"
+                          }
+                        >
+                          {processingLeaveId === leave.id ? (
+                            <span
+                              className="spinner-border spinner-border-sm"
+                              role="status"
+                              aria-hidden="true"
+                            />
+                          ) : isPendingLeave(leave) ? (
+                            <i className="fa-solid fa-check" aria-hidden="true" />
+                          ) : (
+                            <i className="fa-solid fa-xmark" aria-hidden="true" />
+                          )}
+                        </button>
+                      </td>
+                    )}
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td
+                    colSpan={canManageLeaveActions ? "10" : "9"}
+                    className="text-center py-5 text-muted"
+                  >
+                    No {activeLeaveTab} leaves found.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {/* Mobile Card View */}

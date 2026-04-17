@@ -1,14 +1,25 @@
 /* Main Layout Background */
 .leave-management-container {
-    background-color: #fff;
     min-height: 100vh;
-    font-family: 'Inter', 'Roboto', sans-serif;
-    border-radius: 20px;
     max-width: 100%;
 }
 
-.leave-header {
+.leave-page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 14px;
     flex-wrap: wrap;
+    margin-bottom: 1rem;
+}
+
+.leave-page-header h1 {
+    margin-bottom: 0.25rem;
+}
+
+.leave-page-header p {
+    margin-bottom: 0;
+    color: #6c757d;
 }
 
 .leave-header-actions {
@@ -17,25 +28,26 @@
 
 /* Custom Primary Button */
 .btn-primary-custom {
-    background-color: #3b82f6;
+    background-color: #0d6efd;
     color: white;
     border: none;
     font-weight: 500;
-    box-shadow: 0 4px 10px rgba(59, 130, 246, 0.3);
+    box-shadow: 0 6px 14px rgba(13, 110, 253, 0.25);
     transition: all 0.2s ease;
 }
 
 .btn-primary-custom:hover {
-    background-color: #2563eb;
+    background-color: #0b5ed7;
     color: white;
     transform: translateY(-1px);
 }
 
 /* Search Box */
 .search-box {
-    background-color: #f1f1f2;
-    width: 250px;
+    background-color: #fff;
+    width: 280px;
     max-width: 100%;
+    border-color: #ced4da !important;
 }
 
 .search-box input::placeholder {
@@ -45,40 +57,55 @@
 
 /* --- Table Styling --- */
 .table-wrapper {
-    background-color: transparent;
+    background-color: #fff;
     overflow-x: auto;
 }
 
+.leave-table-shell {
+    overflow: hidden;
+    border-radius: 0.5rem;
+}
+
 .custom-table {
-    border-collapse: separate;
-    border-spacing: 0 8px;
+    table-layout: fixed;
+    width: 100%;
+    margin-bottom: 0;
+    border-collapse: collapse;
 }
 
 .custom-table thead th {
-    border: none;
-    color: #64748b;
-    font-size: 0.75rem;
+    color: #212529;
+    font-size: 0.78rem;
     text-transform: uppercase;
-    letter-spacing: 1px;
-    font-weight: 600;
-    padding-bottom: 0.5rem;
+    letter-spacing: 0.02em;
+    font-weight: 700;
+    text-align: center;
+    line-height: 1.2;
+    background-color: #dce9fb;
+    border-bottom: 2px solid #0d6efd !important;
+    border-right: 1px solid #d6e4ff;
+    padding: 0.6rem 0.45rem;
+}
+
+.custom-table thead th:last-child {
+    border-right: 0;
 }
 
 .custom-table tbody tr {
-    transition: transform 0.2s ease, box-shadow 0.2s;
+    transition: background-color 0.2s ease;
 }
 
 .custom-table tbody tr:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+    background-color: #eef5ff;
 }
 
 .custom-table tbody td {
-    border: none;
-    padding: 1rem 0.5rem;
-    font-size: 0.95rem;
+    padding: 0.62rem 0.45rem;
+    font-size: 0.82rem;
     vertical-align: middle;
     white-space: nowrap;
+    border-right: 1px solid #edf0f3;
+    border-bottom: 1px solid #d5dbe3;
 }
 
 .custom-table tbody td:nth-child(8) {
@@ -91,22 +118,20 @@
     white-space: nowrap;
 }
 
+.custom-table tbody td:last-child {
+    border-right: 0;
+}
+
+.custom-table tbody tr:nth-child(odd) td {
+    background-color: #fbfdff;
+}
+
 .leave-status-badge {
     padding: 0.28rem 0.62rem;
     font-size: 0.72rem;
     font-weight: 600;
     letter-spacing: 0.2px;
     line-height: 1.1;
-}
-
-.custom-table tbody td:first-child {
-    border-top-left-radius: 12px;
-    border-bottom-left-radius: 12px;
-}
-
-.custom-table tbody td:last-child {
-    border-top-right-radius: 12px;
-    border-bottom-right-radius: 12px;
 }
 
 /* --- Status Badges --- */
@@ -251,11 +276,10 @@
 
 @media (max-width: 767.98px) {
     .leave-management-container {
-        border-radius: 14px;
         padding: 1rem !important;
     }
 
-    .leave-header h3 {
+    .leave-page-header h1 {
         width: 100%;
     }
 
@@ -300,11 +324,11 @@
 
 @media (min-width: 768px) and (max-width: 991.98px) {
     .search-box {
-        width: 220px;
+        width: 240px;
     }
 
     .custom-table tbody td {
-        font-size: 0.9rem;
+        font-size: 0.8rem;
     }
 
     .leave-action-btn {

@@ -8,13 +8,19 @@ const InvoiceLineItems = ({ lineItems }) => {
       </div>
 
       <div className="table-responsive">
-        <table className="table-modern">
+        <table className="table-modern invoice-line-items-table">
+          <colgroup>
+            <col style={{ width: "54%" }} />
+            <col style={{ width: "12%" }} />
+            <col style={{ width: "17%" }} />
+            <col style={{ width: "17%" }} />
+          </colgroup>
           <thead>
             <tr>
               <th>Item</th>
-              <th width="100">Hours</th>
-              <th width="140">Price</th>
-              <th width="160">Total</th>
+              <th className="is-center">Hours</th>
+              <th className="is-right">Price</th>
+              <th className="is-right">Total</th>
             </tr>
           </thead>
           <tbody>
@@ -39,9 +45,9 @@ const InvoiceLineItems = ({ lineItems }) => {
                         readOnly
                       />
                     </td>
-                    <td>
+                    <td className="is-center">
                       <input
-                        className="form-control"
+                        className="form-control text-center"
                         type="number"
                         min="1"
                         value={item.qty}
@@ -49,9 +55,9 @@ const InvoiceLineItems = ({ lineItems }) => {
                         readOnly
                       />
                     </td>
-                    <td>
+                    <td className="is-right">
                       <input
-                        className="form-control"
+                        className="form-control text-end"
                         type="number"
                         step="0.01"
                         min="0"
@@ -60,7 +66,7 @@ const InvoiceLineItems = ({ lineItems }) => {
                         readOnly
                       />
                     </td>
-                    <td className="fw-semibold">${lineTotal.toFixed(2)}</td>
+                    <td className="fw-semibold is-right">${lineTotal.toFixed(2)}</td>
                   </tr>
                 );
               })

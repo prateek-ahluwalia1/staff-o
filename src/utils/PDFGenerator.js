@@ -155,20 +155,29 @@ const PDFGenerator = {
 
     /* ================= SLEEK TABLE ================= */
 
+    const formatMoney = (value) => `${currency} ${Number(value || 0).toFixed(2)}`;
+
     const tableData = items.map((item) => {
       const lineTotal = (Number(item.qty) || 0) * (Number(item.rate) || 0);
       return [
         item.description || "-",
-        Number(item.qty) || 0,
-        `${currency} ${Number(item.rate).toFixed(2)}`,
-        `${currency} ${lineTotal.toFixed(2)}`,
+        (Number(item.qty) || 0).toFixed(2),
+        formatMoney(item.rate),
+        formatMoney(lineTotal),
       ];
     });
+
+    const printableTableWidth = pageWidth - margin * 2;
+    const itemColumnWidth = printableTableWidth * 0.52;
+    const hoursColumnWidth = printableTableWidth * 0.14;
+    const priceColumnWidth = printableTableWidth * 0.17;
+    const totalColumnWidth = printableTableWidth * 0.17;
 
     autoTable(doc, {
       startY: yPosition,
       head: [["Item", "Hours", "Price", "Total"]],
       body: tableData,
+      tableWidth: printableTableWidth,
       theme: "plain", // Removes the heavy grid blocks
       headStyles: {
         fillColor: [248, 250, 252], // Very subtle background just for the header
@@ -176,6 +185,7 @@ const PDFGenerator = {
         fontStyle: "bold",
         fontSize: 9,
         cellPadding: 4,
+        valign: "middle",
       },
       bodyStyles: {
         fontSize: 9,
@@ -183,13 +193,33 @@ const PDFGenerator = {
         cellPadding: { top: 6, bottom: 6, left: 4, right: 4 }, // Gives rows room to breathe
         lineColor: lightBorder,
         lineWidth: { bottom: 0.1 }, // Only a subtle horizontal divider between rows
+        valign: "middle",
       },
       margin: { left: margin, right: margin },
+      styles: {
+        overflow: "linebreak",
+      },
       columnStyles: {
-        0: { cellWidth: "auto" },
-        1: { halign: "center", cellWidth: 20 },
-        2: { halign: "right", cellWidth: 35 },
-        3: { halign: "right", cellWidth: 35 },
+        0: { cellWidth: itemColumnWidth, halign: "left" },
+        1: { cellWidth: hoursColumnWidth, halign: "center" },
+        2: { cellWidth: priceColumnWidth, halign: "right" },
+        3: { cellWidth: totalColumnWidth, halign: "right" },
+      },
+      didParseCell: (hookData) => {
+        const { section, column, cell } = hookData;
+        if (section !== "head") return;
+
+        if (column.index === 1) {
+          cell.styles.halign = "center";
+          return;
+        }
+
+        if (column.index === 2 || column.index === 3) {
+          cell.styles.halign = "right";
+          return;
+        }
+
+        cell.styles.halign = "left";
       },
     });
 
@@ -299,7 +329,7 @@ const PDFGenerator = {
       pageHeight - 15,
       { align: "center" },
     );
-    doc.text("www.staffo.com.au", pageWidth / 2, pageHeight - 10, {
+    doc.text("https://app.staffoo.com.au", pageWidth / 2, pageHeight - 10, {
       align: "center",
     });
 

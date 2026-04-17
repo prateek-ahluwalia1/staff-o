@@ -12786,6 +12786,34 @@ Large Mobile Screen
     border-bottom: none;
 }
 
+.invoice-line-items-table {
+    table-layout: fixed;
+}
+
+.invoice-line-items-table th,
+.invoice-line-items-table td {
+    vertical-align: middle;
+}
+
+.invoice-line-items-table th.is-center,
+.invoice-line-items-table td.is-center {
+    text-align: center;
+}
+
+.invoice-line-items-table th.is-right,
+.invoice-line-items-table td.is-right {
+    text-align: right;
+}
+
+.invoice-line-items-table .form-control {
+    min-height: 40px;
+}
+
+.invoice-line-items-table td.is-right .form-control,
+.invoice-line-items-table td.is-center .form-control {
+    font-variant-numeric: tabular-nums;
+}
+
 .invoice-layout {
     display: grid;
     grid-template-columns: minmax(0, 1fr) 320px;

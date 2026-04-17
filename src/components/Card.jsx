@@ -53,6 +53,7 @@ export const Card = ({ title, description, onClick, accent, image, type }) => {
               width: "100%",
               height: "100%",
               objectFit: "cover",
+              borderBottom: "1px solid rgba(0,0,0,0.05)",
             }}
           />
         )}

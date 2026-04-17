@@ -2,6 +2,9 @@ import React, { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { Card } from "../components/Card";
+import chat1img from "../assets/images/chat1.png";
+import chat2img from "../assets/images/chat2.png";
+import chat3img from "../assets/images/chat3.png";
 
 const ALL_CATEGORIES = [
   {
@@ -9,18 +12,21 @@ const ALL_CATEGORIES = [
     label: "Staff",
     desc: "Chat with your team members in real-time",
     accent: "linear-gradient(135deg,#2563eb,#1d4ed8)",
+    image: chat1img,
   },
   {
     key: "customers",
     label: "Customers",
     desc: "Handle customer conversations",
     accent: "linear-gradient(135deg,#0ea5e9,#0284c7)",
+    image: chat2img,
   },
   {
     key: "contractors",
     label: "Contractors",
     desc: "Connect and collaborate with contractors",
     accent: "linear-gradient(135deg,#16a34a,#15803d)",
+    image: chat3img,
   },
 ];
 
@@ -32,18 +38,17 @@ const Chat = () => {
     userdata?.data?.user_type?.toLowerCase() ||
     "";
 
-  // Apply Role-Based Access Control (RBAC) to visible categories
   const allowedCategories = useMemo(() => {
     switch (userType) {
       case "admin":
-        return ALL_CATEGORIES; // Admins see all
+        return ALL_CATEGORIES;
       case "contractor":
         return ALL_CATEGORIES.filter(
           (c) => c.key === "staff" || c.key === "customers",
         );
       case "staff":
       case "customer":
-        return ALL_CATEGORIES.filter((c) => c.key === "contractors"); // Staff & Customers only talk to Contractors
+        return ALL_CATEGORIES.filter((c) => c.key === "contractors"); 
       default:
         return [];
     }
@@ -67,6 +72,7 @@ const Chat = () => {
               title={cat.label}
               description={cat.desc}
               accent={cat.accent}
+              image={cat.image}
               type="chat"
               onClick={() => navigate(`/chat/${cat.key}`)}
             />

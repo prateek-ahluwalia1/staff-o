@@ -4,7 +4,7 @@ import { useSelector } from "react-redux";
 import { Card } from "../components/Card";
 import reportimg from "../assets/images/reports.png";
 import jobtrackingimg from "../assets/images/jobtracker.png";
-import visaimg from "../assets/images/visa.png";
+import visaimg from "../assets/images/visa-check.png";
 
 const Reports = () => {
   const navigate = useNavigate();

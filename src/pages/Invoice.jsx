@@ -70,6 +70,7 @@ const Invoice = () => {
   const [notes, setNotes] = useState("");
   const [lineItems, setLineItems] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [isSending, setIsSending] = useState(false);
 
   useEffect(() => {
     if (userdata) {
@@ -84,11 +85,9 @@ const Invoice = () => {
     }
   }, [userdata]);
 
-  // ===== HANDLERS FOR FROM/TO =====
   const handleFromChange = (updatedFrom) => setFrom(updatedFrom);
   const handleToChange = (updatedTo) => setTo(updatedTo);
 
-  // ===== HANDLERS FOR TOOLBAR =====
   const handleCustomerChange = (e) => {
     const id = e.target.value;
     setSelectedCustomerId(id);
@@ -107,8 +106,6 @@ const Invoice = () => {
     }
   };
 
-  // ===== HANDLERS FOR LINE ITEMS =====
-  // ===== HANDLERS FOR SETTINGS =====
   const togglePaymentMethod = (key) => {
     setPaymentMethods((prev) => ({ ...prev, [key]: !prev[key] }));
   };
@@ -136,7 +133,6 @@ const Invoice = () => {
 
   const hasValidLineItems = lineItems.some((item) => item.description.trim());
 
-  // ===== VALIDATION & PAYLOAD =====
   const validateInvoice = () => {
     if (!invoiceNo.trim()) return "Invoice number is required";
     if (!selectedCustomerId) return "Please select a customer";
@@ -175,10 +171,10 @@ const Invoice = () => {
 
       const rosterItems = Array.isArray(res?.data)
         ? res.data.map((item) => ({
-            description: item?.name || "",
-            qty: Number(item?.hours) || 0,
-            rate: Number(item?.payrate) || 0,
-          }))
+          description: item?.name || "",
+          qty: Number(item?.hours) || 0,
+          rate: Number(item?.payrate) || 0,
+        }))
         : [];
 
       if (rosterItems.length > 0) {
@@ -199,7 +195,6 @@ const Invoice = () => {
     }
   };
 
-  // ===== PDF HANDLERS =====
   const handlePreview = () => {
     const error = validateInvoice();
     if (error) {
@@ -272,6 +267,62 @@ const Invoice = () => {
     }
   };
 
+  const handleSendInvoice = async () => {
+    const error = validateInvoice();
+    if (error) {
+      toast.error(error);
+      return;
+    }
+
+    setIsSending(true);
+    try {
+      const invoiceData = {
+        invoiceNo,
+        currency,
+        startDate,
+        endDate,
+        dueDate,
+        from,
+        to,
+        items: lineItems,
+        subtotal,
+        gstAmount,
+        lateFeeAmount,
+        grandTotal,
+        includeGst,
+        gstPercent,
+        notes,
+        includeNotes,
+        paymentMethods,
+      };
+
+      // 1. Generate the PDF instance
+      const doc = PDFGenerator.generateInvoicePDF(invoiceData);
+
+      // 2. Convert PDF to Blob/File (assuming PDFGenerator uses jsPDF)
+      const pdfBlob = doc.output("blob");
+      const formData = new FormData();
+
+      // 3. Append necessary data for the API
+      formData.append("invoice_pdf", pdfBlob, `${invoiceNo}.pdf`);
+      formData.append("customer_id", selectedCustomerId);
+      formData.append("email", to.email);
+      formData.append("amount", grandTotal);
+      formData.append("invoice_no", invoiceNo);
+
+      const res = await submit("api/admin/send-invoice", formData);
+
+      if (res?.success || res?.status === 200) {
+        toast.success("Invoice sent successfully to " + to.email);
+      }
+    } catch (err) {
+      toast.error(err.message || "Failed to send invoice.");
+      console.error(err);
+    } finally {
+      setIsSending(false);
+    }
+  };
+
   if (!isAdmin) {
     return (
       <div className="dashboard-main dashboard-tools-page">
@@ -297,6 +348,7 @@ const Invoice = () => {
             type="button"
             className="btn btn-outline-primary"
             onClick={handlePreview}
+            disabled={isSending}
           >
             <i className="fa-solid fa-eye me-2"></i> Preview
           </button>
@@ -304,8 +356,24 @@ const Invoice = () => {
             type="button"
             className="btn btn-outline-primary"
             onClick={handleDownload}
+            disabled={isSending}
           >
             <i className="fa-solid fa-download me-2"></i> Download
+          </button>
+
+          {/* New Send Invoice Button */}
+          <button
+            type="button"
+            className="btn btn-primary"
+            onClick={handleSendInvoice}
+            disabled={isSending}
+          >
+            {isSending ? (
+              <i className="fa-solid fa-spinner fa-spin me-2"></i>
+            ) : (
+              <i className="fa-solid fa-paper-plane me-2"></i>
+            )}
+            {isSending ? "Sending..." : "Send Invoice"}
           </button>
         </div>
       </div>

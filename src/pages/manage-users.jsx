@@ -34,6 +34,9 @@ const ManageUsers = () => {
   const [totalItems, setTotalItems] = useState(0);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   useEffect(() => {
     if (apiResponse?.success && apiResponse?.data?.data) {
@@ -160,29 +163,44 @@ const ManageUsers = () => {
     }
   };
 
-  const handleDelete = async (id) => {
-    if (window.confirm("Are you sure you want to delete this user?")) {
-      let url = "";
-      if (activeTab === "customer") url = `api/admin/customers-delete/${id}`;
-      else if (activeTab === "sub_contractor")
-        url = `api/admin/contractors-delete/${id}`;
-      else url = `api/admin/staff-delete/${id}`;
+  const openDeleteModal = (user) => {
+    setDeleteTarget(user);
+    setIsDeleteModalOpen(true);
+  };
 
-      try {
-        const res = await submit(url, null, { method: "DELETE" });
-        if (res === undefined) return;
-        toast.success("User deleted successfully!");
-        refetch();
-      } catch (err) {
-        toast.error("Delete failed: " + err.message);
-      }
+  const closeDeleteModal = () => {
+    if (deleteLoading) return;
+    setIsDeleteModalOpen(false);
+    setDeleteTarget(null);
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteTarget?.id) return;
+
+    let url = "";
+    if (activeTab === "customer") url = `api/admin/customers-delete/${deleteTarget.id}`;
+    else if (activeTab === "sub_contractor")
+      url = `api/admin/contractors-delete/${deleteTarget.id}`;
+    else url = `api/admin/staff-delete/${deleteTarget.id}`;
+
+    try {
+      setDeleteLoading(true);
+      const res = await submit(url, null, { method: "DELETE" });
+      if (res === undefined) return;
+      toast.success("User deleted successfully!");
+      refetch();
+      closeDeleteModal();
+    } catch (err) {
+      toast.error("Delete failed: " + err.message);
+    } finally {
+      setDeleteLoading(false);
     }
   };
 
   if (loading && users.length === 0) return <Loader />;
 
   return (
-    <div className="dashboard-tools-page">
+    <div className="dashboard-main dashboard-tools-page">
       <style>{`
         .full-screen-modal {
           position: fixed;
@@ -234,44 +252,124 @@ const ManageUsers = () => {
           border-left: 4px solid #0d6efd;
         }
 
-        .user-role-tabs {
-          background: #ffffff;
-          border: 1px solid rgba(148, 163, 184, 0.22);
-          border-radius: 14px;
-          box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
-          display: inline-flex;
-          gap: 8px;
-          padding: 8px;
-        }
-
-        .user-role-tab-btn {
-          border: none;
-          border-radius: 10px;
+        .jobtracker-tabs .nav-link {
+          border-radius: 999px;
+          padding: 0.45rem 0.9rem;
+          font-size: 0.88rem;
+          font-weight: 600;
           color: #475569;
-          font-size: 0.9rem;
-          font-weight: 700;
-          padding: 10px 16px;
-          text-transform: capitalize;
-          transition: all 0.2s ease;
-        }
-
-        .user-role-tab-btn.active {
-          background: linear-gradient(135deg, #2563eb, #1d4ed8);
-          box-shadow: 0 8px 20px rgba(37, 99, 235, 0.28);
-          color: #ffffff;
-        }
-
-        .user-role-tab-btn:not(.active) {
           background: #f8fafc;
+          border: 1px solid #dbe3ef;
         }
 
-        .user-role-tab-btn:not(.active):hover {
-          background: #eef2ff;
-          color: #1d4ed8;
+        .jobtracker-tabs .nav-link.active {
+          background: linear-gradient(135deg, #0d6efd 0%, #0b5ed7 100%);
+          border-color: #0d6efd;
+          color: #fff;
+          box-shadow: 0 8px 18px rgba(13, 110, 253, 0.18);
+        }
+
+        .jobtracker-action-btn {
+          min-height: 38px;
+        }
+
+        .jobtracker-main-table {
+          table-layout: fixed;
+          width: 100%;
+        }
+
+        .jobtracker-main-table > thead > tr > th,
+        .jobtracker-main-table > tbody > tr > td {
+          padding: 0.65rem 0.55rem;
+          font-size: 0.82rem;
+          line-height: 1.25;
+          white-space: normal;
+          word-break: break-word;
+          vertical-align: middle;
+        }
+
+        .jobtracker-main-table > thead > tr > th {
+          text-align: center;
+          text-transform: uppercase;
+          letter-spacing: 0.02em;
+          font-weight: 700;
+          border-right: 1px solid #d6e4ff;
+          border-bottom: 2px solid #0d6efd !important;
+        }
+
+        .jobtracker-main-table > thead > tr > th:last-child,
+        .jobtracker-main-table > tbody > tr > td:last-child {
+          border-right: 0;
+        }
+
+        .jobtracker-main-table > tbody > tr.jobtracker-data-row > td {
+          background: #fff;
+          border-bottom: 1px solid #d9e1ea;
+          border-right: 1px solid #edf1f6;
+        }
+
+        .jobtracker-main-table > tbody > tr.jobtracker-data-row:nth-of-type(odd) > td {
+          background: #fbfdff;
+        }
+
+        .jobtracker-main-table > tbody > tr.jobtracker-data-row:hover > td {
+          background: #eef5ff;
+        }
+
+        .confirm-modal-backdrop {
+          position: fixed;
+          inset: 0;
+          z-index: 1080;
+          background: rgba(15, 23, 42, 0.42);
+          backdrop-filter: blur(4px);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 1rem;
+        }
+
+        .confirm-modal-card {
+          width: 100%;
+          max-width: 480px;
+          border-radius: 20px;
+          border: 1px solid #e2e8f0;
+          background: #ffffff;
+          box-shadow: 0 24px 70px rgba(15, 23, 42, 0.22);
+          overflow: hidden;
+          animation: modalFadeIn 0.2s ease-out;
+        }
+
+        .confirm-modal-header {
+          background: linear-gradient(135deg, #fff1f2 0%, #ffe4e6 100%);
+          border-bottom: 1px solid #fecdd3;
+        }
+
+        .confirm-modal-icon {
+          width: 42px;
+          height: 42px;
+          border-radius: 999px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          background: #fee2e2;
+          color: #dc2626;
+        }
+
+        @media (max-width: 992px) {
+          .jobtracker-filter-row > div {
+            flex: 0 0 auto;
+          }
+        }
+
+        @media (max-width: 768px) {
+          .jobtracker-main-table > thead > tr > th,
+          .jobtracker-main-table > tbody > tr > td {
+            padding: 0.5rem 0.4rem;
+            font-size: 0.74rem;
+          }
         }
       `}</style>
 
-      {/* Header Section */}
       <div className="dashboard-page-header">
         <div>
           <h1>User Management</h1>
@@ -279,30 +377,31 @@ const ManageUsers = () => {
             Manage permissions and details for all account types.
           </p>
         </div>
-        <div className="d-flex align-items-center gap-2 flex-wrap">
-          <span className="badge text-bg-light border px-3 py-2">
-            Total: {totalItems}
-          </span>
-          <button
-            className="btn btn-primary rounded-3 px-4 py-2 shadow-sm fw-bold"
-            onClick={() => openModal()}
-          >
-            <i className="fa-solid fa-plus me-2"></i> Add {activeTab.replace("_", " ")}
-          </button>
-        </div>
       </div>
 
-      <div className="user-role-tabs">
-        {["customer", "sub_contractor", "staff"].map((role) => (
+      <div className="card border-0 shadow-sm mb-4">
+        <div className="card-body py-3 d-flex justify-content-between align-items-center gap-2 flex-wrap">
+          <ul className="nav nav-pills jobtracker-tabs gap-2 flex-wrap mb-0">
+            {["customer", "sub_contractor", "staff"].map((role) => (
+              <li className="nav-item" key={role}>
+                <button
+                  type="button"
+                  className={`nav-link ${activeTab === role ? "active" : ""}`}
+                  onClick={() => handleTabChange(role)}
+                >
+                  {role.replace("_", " ")}
+                </button>
+              </li>
+            ))}
+          </ul>
+
           <button
-            key={role}
-            type="button"
-            className={`user-role-tab-btn ${activeTab === role ? "active" : ""}`}
-            onClick={() => handleTabChange(role)}
+            className="btn btn-sm btn-primary jobtracker-action-btn"
+            onClick={() => openModal()}
           >
-            {role.replace("_", " ")}
+            <i className="fa-solid fa-plus me-1"></i> Add {activeTab.replace("_", " ")}
           </button>
-        ))}
+        </div>
       </div>
 
       {/* Error Alert */}
@@ -316,12 +415,15 @@ const ManageUsers = () => {
       )}
 
       {/* Table Card */}
-      <div className="card border-0 shadow-sm rounded-4 overflow-hidden">
-        <div className="table-responsive">
+      <div className="card border-0 shadow-sm">
+        <div className="table-responsive jobtracker-table-shell">
           <table
-            className={`table table-hover align-middle mb-0 ${loading ? "opacity-50" : ""}`}
+            className={`table table-hover align-middle mb-0 jobtracker-main-table ${loading ? "opacity-50" : ""}`}
           >
-            <thead className="bg-light">
+            <thead
+              className="table-primary text-dark"
+              style={{ borderBottom: "2px solid #0d6efd" }}
+            >
               <tr className="text-muted small">
                 <th className="ps-4 py-3">NAME & EMAIL</th>
                 {activeTab !== "staff" && <th>BUSINESS & PHONE</th>}
@@ -333,7 +435,7 @@ const ManageUsers = () => {
             <tbody>
               {users.length > 0 ? (
                 users.map((user) => (
-                  <tr key={user.id}>
+                  <tr key={user.id} className="jobtracker-data-row">
                     <td className="ps-4">
                       <div className="fw-bold text-dark">{user.name}</div>
                       <div className="text-muted small">{user.email}</div>
@@ -371,7 +473,7 @@ const ManageUsers = () => {
                         </button>
                         <button
                           className="btn btn-outline-danger btn-sm rounded-circle border-0"
-                          onClick={() => handleDelete(user.id)}
+                          onClick={() => openDeleteModal(user)}
                         >
                           <i className="fa-solid fa-trash"></i>
                         </button>
@@ -381,7 +483,7 @@ const ManageUsers = () => {
                 ))
               ) : (
                 <tr>
-                  <td colSpan="5" className="text-center py-5 text-muted">
+                  <td colSpan={activeTab === "staff" ? 4 : 5} className="text-center py-5 text-muted">
                     No records found for this category.
                   </td>
                 </tr>
@@ -641,6 +743,53 @@ const ManageUsers = () => {
                   : editingUser
                     ? "Update Profile"
                     : "Create User"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {isDeleteModalOpen && (
+        <div className="confirm-modal-backdrop" onClick={closeDeleteModal}>
+          <div
+            className="confirm-modal-card"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="confirm-modal-header px-4 py-3 d-flex align-items-center gap-3">
+              <span className="confirm-modal-icon">
+                <i className="fa-solid fa-triangle-exclamation"></i>
+              </span>
+              <div>
+                <h5 className="mb-0 fw-bold text-danger">Confirm Deletion</h5>
+                <div className="small text-muted">
+                  This action cannot be undone.
+                </div>
+              </div>
+            </div>
+
+            <div className="px-4 py-4">
+              <p className="mb-0 text-dark">
+                Delete <strong>{deleteTarget?.name || "this user"}</strong> from{" "}
+                <strong>{activeTab.replace("_", " ")}</strong> records?
+              </p>
+            </div>
+
+            <div className="px-4 py-3 border-top d-flex justify-content-end gap-2 bg-light">
+              <button
+                type="button"
+                className="btn btn-outline-secondary rounded-pill px-4"
+                onClick={closeDeleteModal}
+                disabled={deleteLoading}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="btn btn-danger rounded-pill px-4"
+                onClick={confirmDelete}
+                disabled={deleteLoading}
+              >
+                {deleteLoading ? "Deleting..." : "Yes, Delete"}
               </button>
             </div>
           </div>

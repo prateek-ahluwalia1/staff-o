@@ -26,6 +26,9 @@ const ManageStaff = () => {
   const [totalItems, setTotalItems] = useState(0);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
   const staffAutocompleteRef = useRef(null);
   const staffAutocompleteListenerRef = useRef(null);
 
@@ -226,18 +229,32 @@ const ManageStaff = () => {
     }
   };
 
-  const handleDelete = async (id) => {
-    if (window.confirm("Are you sure you want to delete this staff member?")) {
-      const url = `api/admin/staff-delete/${id}`;
+  const openDeleteModal = (user) => {
+    setDeleteTarget(user);
+    setIsDeleteModalOpen(true);
+  };
 
-      try {
-        const res = await submit(url, null, { method: "DELETE" });
-        if (res === undefined) return;
-        toast.success("Staff member deleted successfully!");
-        refetch();
-      } catch (err) {
-        toast.error("Delete failed: " + err.message);
-      }
+  const closeDeleteModal = () => {
+    if (deleteLoading) return;
+    setIsDeleteModalOpen(false);
+    setDeleteTarget(null);
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteTarget?.id) return;
+    const url = `api/admin/staff-delete/${deleteTarget.id}`;
+
+    try {
+      setDeleteLoading(true);
+      const res = await submit(url, null, { method: "DELETE" });
+      if (res === undefined) return;
+      toast.success("Staff member deleted successfully!");
+      refetch();
+      closeDeleteModal();
+    } catch (err) {
+      toast.error("Delete failed: " + err.message);
+    } finally {
+      setDeleteLoading(false);
     }
   };
 
@@ -299,6 +316,89 @@ const ManageStaff = () => {
         .pac-container {
           z-index: 2000 !important;
         }
+
+        .manage-staff-table {
+          table-layout: fixed;
+          width: 100%;
+        }
+
+        .manage-staff-table > thead > tr > th,
+        .manage-staff-table > tbody > tr > td {
+          padding: 0.72rem 0.58rem;
+          font-size: 0.85rem;
+          line-height: 1.28;
+          white-space: normal;
+          word-break: break-word;
+          vertical-align: middle;
+        }
+
+        .manage-staff-table > thead > tr > th {
+          background: #eaf2ff;
+          text-transform: uppercase;
+          letter-spacing: 0.02em;
+          font-weight: 700;
+          color: #24416e;
+          border-bottom: 2px solid #0d6efd;
+          border-right: 1px solid #d3e3ff;
+        }
+
+        .manage-staff-table > thead > tr > th:last-child,
+        .manage-staff-table > tbody > tr > td:last-child {
+          border-right: 0;
+        }
+
+        .manage-staff-table > tbody > tr > td {
+          background: #ffffff;
+          border-bottom: 1px solid #d9e3ef;
+          border-right: 1px solid #edf2f8;
+        }
+
+        .manage-staff-table > tbody > tr:nth-of-type(odd) > td {
+          background: #fbfdff;
+        }
+
+        .manage-staff-table > tbody > tr:hover > td {
+          background: #eef5ff;
+        }
+
+        .confirm-modal-backdrop {
+          position: fixed;
+          inset: 0;
+          z-index: 1080;
+          background: rgba(15, 23, 42, 0.42);
+          backdrop-filter: blur(4px);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 1rem;
+        }
+
+        .confirm-modal-card {
+          width: 100%;
+          max-width: 480px;
+          border-radius: 20px;
+          border: 1px solid #e2e8f0;
+          background: #ffffff;
+          box-shadow: 0 24px 70px rgba(15, 23, 42, 0.22);
+          overflow: hidden;
+          animation: modalFadeIn 0.2s ease-out;
+        }
+
+        .confirm-modal-header {
+          background: linear-gradient(135deg, #fff1f2 0%, #ffe4e6 100%);
+          border-bottom: 1px solid #fecdd3;
+        }
+
+        .confirm-modal-icon {
+          width: 42px;
+          height: 42px;
+          border-radius: 999px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          background: #fee2e2;
+          color: #dc2626;
+        }
       `}</style>
 
       {/* Header Section */}
@@ -331,9 +431,9 @@ const ManageStaff = () => {
       <div className="card border-0 shadow-sm rounded-4 overflow-hidden">
         <div className="table-responsive">
           <table
-            className={`table table-hover align-middle mb-0 ${loading ? "opacity-50" : ""}`}
+            className={`table table-hover align-middle mb-0 manage-staff-table ${loading ? "opacity-50" : ""}`}
           >
-            <thead className="bg-light">
+            <thead>
               <tr className="text-muted small">
                 <th className="ps-4 py-3">NAME & EMAIL</th>
                 <th>PHONE</th>
@@ -378,7 +478,7 @@ const ManageStaff = () => {
                         </button>
                         <button
                           className="btn btn-outline-danger btn-sm rounded-circle border-0"
-                          onClick={() => handleDelete(user.id)}
+                          onClick={() => openDeleteModal(user)}
                         >
                           <i className="fa-solid fa-trash"></i>
                         </button>
@@ -568,6 +668,52 @@ const ManageStaff = () => {
                   : editingUser
                     ? "Update Profile"
                     : "Add Staff"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {isDeleteModalOpen && (
+        <div className="confirm-modal-backdrop" onClick={closeDeleteModal}>
+          <div
+            className="confirm-modal-card"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="confirm-modal-header px-4 py-3 d-flex align-items-center gap-3">
+              <span className="confirm-modal-icon">
+                <i className="fa-solid fa-triangle-exclamation"></i>
+              </span>
+              <div>
+                <h5 className="mb-0 fw-bold text-danger">Confirm Deletion</h5>
+                <div className="small text-muted">
+                  This action cannot be undone.
+                </div>
+              </div>
+            </div>
+
+            <div className="px-4 py-4">
+              <p className="mb-0 text-dark">
+                Delete <strong>{deleteTarget?.name || "this staff member"}</strong> from your team records?
+              </p>
+            </div>
+
+            <div className="px-4 py-3 border-top d-flex justify-content-end gap-2 bg-light">
+              <button
+                type="button"
+                className="btn btn-outline-secondary rounded-pill px-4"
+                onClick={closeDeleteModal}
+                disabled={deleteLoading}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="btn btn-danger rounded-pill px-4"
+                onClick={confirmDelete}
+                disabled={deleteLoading}
+              >
+                {deleteLoading ? "Deleting..." : "Yes, Delete"}
               </button>
             </div>
           </div>

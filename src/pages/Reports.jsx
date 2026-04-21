@@ -4,6 +4,7 @@ import { useSelector } from "react-redux";
 import { Card } from "../components/Card";
 import reportimg from "../assets/images/reports.png";
 import jobtrackingimg from "../assets/images/jobtracker.png";
+import visaimg from "../assets/images/visa.png";
 
 const Reports = () => {
   const navigate = useNavigate();
@@ -50,6 +51,17 @@ const Reports = () => {
             image={jobtrackingimg}
             type="jobtracker"
             onClick={() => navigate("/job-tracker")}
+          />
+        </div>
+
+        <div className="col-12 col-md-6 col-lg-4">
+          <Card
+            title="Visa Check"
+            description="Run visa verification checks and view visa check results."
+            accent="linear-gradient(135deg,#1d4ed8,#0ea5e9)"
+            image={visaimg}
+            type="visacheck"
+            onClick={() => navigate("/visa-management")}
           />
         </div>
       </div>

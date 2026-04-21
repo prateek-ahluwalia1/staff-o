@@ -50,6 +50,7 @@ const NotFound = lazy(() => import("./pages/NotFound"));
 const Reports = lazy(() => import("./pages/Reports"));
 const TimeSheet = lazy(() => import("./pages/TimeSheet"));
 const JobTracker = lazy(() => import("./pages/JobTracker"));
+const VisaManagement = lazy(() => import("./pages/VisaManagement"));
 const WFMTools = lazy(() => import("./pages/wfm-tools"));
 const LeaveManagement = lazy(() => import("./pages/LeaveManagement"));
 const CallManagement = lazy(() => import("./pages/callManagement"));
@@ -296,6 +297,14 @@ function AppContent() {
           />
           <Route path="/timesheet" element={<TimeSheet />} />
           <Route path="/job-tracker" element={<JobTracker />} />
+          <Route
+            path="/visa-management"
+            element={
+              <ProtectedRoute allowedRoles={["admin"]}>
+                <VisaManagement />
+              </ProtectedRoute>
+            }
+          />
           <Route path="/accounts/invoice" element={<Invoice />} />
           <Route path="/chat" element={<ChatPage />} />
           <Route path="/chat/:category" element={<ChatRoom />} />

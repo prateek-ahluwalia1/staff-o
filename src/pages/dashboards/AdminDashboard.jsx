@@ -12,13 +12,14 @@ import {
 } from "../../utils/profileImage";
 import "./DashboardStyles.css";
 import dashboardBanner from "../../assets/images/dashboard-banner.webp";
+import { NavLink } from "react-router-dom";
 
 export default function AdminDashboard() {
   const { userdata } = useSelector((state) => state.auth);
   const email = userdata?.data?.email || userdata?.email || "No Email";
   const username = userdata?.data?.name || userdata?.name || "No Name";
   const profileImage = getProfileImageFromUserdata(userdata);
-  
+
   // Fetch Dashboard Data
   const { data: fetchResponse, loading } = useFetch("api/dashboard", { isAuth: true });
 
@@ -176,12 +177,12 @@ export default function AdminDashboard() {
       <section className="dashboard-charts">
         <div className="row g-3">
           <div className="col-lg-6">
-            <UserBreakdownChart 
+            <UserBreakdownChart
               data={{
                 staff: adminStats.totalStaff,
                 contractors: adminStats.totalContractors,
                 customers: adminStats.totalCustomers
-              }} 
+              }}
             />
           </div>
           <div className="col-lg-6">
@@ -224,8 +225,8 @@ export default function AdminDashboard() {
                     <td>{contractor.jobs}</td>
                     <td className="fw-500 text-success">${contractor.revenue}</td>
                     <td>
-                      <a 
-                        href={`/contractor-profile/${contractor.id}`}
+                      <NavLink
+                        to='/manage-users'
                         className="btn btn-sm"
                         style={{
                           backgroundColor: "#f0f4ff",
@@ -249,7 +250,7 @@ export default function AdminDashboard() {
                         }}
                       >
                         Manage
-                      </a>
+                      </NavLink>
                     </td>
                   </tr>
                 ))

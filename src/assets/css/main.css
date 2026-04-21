@@ -1,3 +1,32 @@
+/* Prevent avatar jump on dropdown open (mobile) */
+.mobile-top-user-dropdown {
+    position: relative;
+    z-index: 1100;
+}
+
+.mobile-top-user-dropdown .mobile-top-user-btn {
+    position: relative;
+    box-shadow: none !important;
+    outline: none !important;
+    transition: background 0.18s, border 0.18s;
+}
+
+.mobile-top-user-dropdown .dropdown-menu {
+    position: absolute !important;
+    top: 110%;
+    right: 0;
+    left: auto;
+    min-width: 180px;
+    margin-top: 6px;
+    z-index: 1200;
+    box-shadow: 0 8px 32px rgba(15,23,42,0.13);
+    border-radius: 14px;
+    padding: 10px 0;
+}
+
+.mobile-top-user-dropdown .dropdown-menu.show {
+    display: block;
+}
 /*------------------------------------------
 Project Name : Jobs Portal
 Desgined By  : eCreative solutions
@@ -705,6 +734,37 @@ h6 {
     margin-left: 12px;
 }
 
+.mobile-header-actions {
+    display: none;
+}
+
+.mobile-top-user-dropdown {
+    display: none;
+}
+
+.notification-bell-btn {
+    font-size: 20px;
+    color: #64748b;
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.notification-bell-btn:hover {
+    background: #f1f5f9;
+    color: #0f172a;
+}
+
+.notification-dropdown-menu {
+    width: 300px;
+    max-width: calc(100vw - 24px);
+    border-radius: 14px;
+}
+
 .user-dropdown .btn {
     width: 48px;
     height: 48px;
@@ -733,8 +793,89 @@ h6 {
 
 @media (max-width: 991px) {
     .main-navbar {
-        padding: 18px 0px;
+        padding: 12px 0;
         background: #ffffff;
+    }
+
+    .main-navbar .container {
+        padding-left: 14px;
+        padding-right: 14px;
+        gap: 10px;
+    }
+
+    .main-navbar .navbar-brand {
+        margin-right: 0;
+    }
+
+    .main-navbar .navbar-brand img {
+        height: 42px !important;
+    }
+
+    .mobile-menu-toggle {
+        width: 42px;
+        height: 42px;
+        border-radius: 12px;
+        background: #f8fafc;
+        border: 1px solid rgba(148, 163, 184, 0.25);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        margin-left: auto;
+    }
+
+    .mobile-header-actions {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-left: 0;
+    }
+
+    .mobile-top-user-dropdown {
+        display: block;
+    }
+
+    .mobile-top-user-dropdown .mobile-top-user-btn {
+        height: 42px;
+        border-radius: 999px;
+        display: inline-flex;
+        align-items: center;
+        color: #0f172a;
+        box-shadow: none;
+    }
+
+    .mobile-top-user-dropdown .mobile-top-user-btn::after {
+        margin-left: 2px;
+    }
+
+    .mobile-top-user-avatar {
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        overflow: hidden;
+        flex-shrink: 0;
+    }
+
+    .mobile-top-user-name {
+        font-size: 0.82rem;
+        font-weight: 600;
+        color: #1e293b;
+        max-width: 72px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        display: block;
+    }
+
+    .desktop-user-dropdown {
+        display: none !important;
+    }
+
+    .mobile-header-actions .notification-wrapper {
+        display: flex;
+    }
+
+    .mobile-header-actions .notification-dropdown-menu {
+        right: -12px !important;
     }
 
     /* Show mobile menu elements on mobile */
@@ -880,12 +1021,16 @@ h6 {
     }
 
     .mobile-menu .navbar-actions {
-        padding: 20px 24px;
+        padding: 16px 20px 20px;
         margin: 0;
         border-top: 1px solid rgba(148, 163, 184, 0.15);
         flex-direction: column;
         gap: 12px;
         width: 100%;
+    }
+
+    .mobile-menu .navbar-actions .notification-wrapper {
+        display: none;
     }
 
     .mobile-menu .navbar-actions .btn {
@@ -894,8 +1039,7 @@ h6 {
     }
 
     .mobile-menu .user-dropdown {
-        width: 100%;
-        margin-top: 8px;
+        display: none !important;
     }
 
     .mobile-menu .user-dropdown .btn {
@@ -938,6 +1082,12 @@ h6 {
         margin-right: 0 !important;
         order: 2;
         float: none;
+    }
+
+    .notification-dropdown-menu {
+        width: min(340px, calc(100vw - 20px));
+        max-height: calc(100vh - 90px);
+        overflow: hidden;
     }
 }
 

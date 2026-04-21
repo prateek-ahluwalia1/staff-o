@@ -112,6 +112,8 @@ const Header = memo(function Header({ withSidebar = false }) {
     return getProfileImageUrlFromUserdata(userdata);
   };
 
+  const displayName = userdata?.data?.name || userdata?.name || "John Doe";
+
   const renderUserAvatar = () => {
     const imageUrl = getProfileImageUrl();
     const userName = userdata?.data?.name || userdata?.name || "User";
@@ -224,6 +226,138 @@ const Header = memo(function Header({ withSidebar = false }) {
             <span className="navbar-toggler-icon"></span>
           </button>
 
+          {token && (
+            <div className="mobile-header-actions">
+              <div className="notification-wrapper position-relative">
+                <button
+                  className="btn position-relative p-0 border-0 bg-transparent notification-bell-btn"
+                  onClick={toggleNotifications}
+                  aria-label="Toggle notifications"
+                >
+                  <i className="fa fa-bell"></i>
+                  {unreadCount > 0 && (
+                    <span
+                      className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+                      style={{ fontSize: "10px" }}
+                    >
+                      {unreadCount}
+                    </span>
+                  )}
+                </button>
+
+                {showNotifications && (
+                  <div
+                    className="dropdown-menu dropdown-menu-end show shadow notification-dropdown-menu"
+                    style={{
+                      position: "absolute",
+                      right: 0,
+                      top: "42px",
+                      display: "block",
+                      padding: "0",
+                    }}
+                  >
+                    <div className="p-2 border-bottom fw-bold text-center">
+                      Notifications
+                    </div>
+                    <ul
+                      className="list-unstyled mb-0"
+                      style={{ maxHeight: "300px", overflowY: "auto" }}
+                    >
+                      {items.length > 0 ? (
+                        items.map((notif, index) => (
+                          <li
+                            key={notif.id || index}
+                            className="p-3 border-bottom dropdown-item"
+                            style={{ whiteSpace: "normal" }}
+                            role="button"
+                            onClick={() => markSingleNotificationRead(notif)}
+                          >
+                            <div className="small text-dark fw-semibold">
+                              {getNotificationTitle(notif)}
+                            </div>
+                            <div className="small text-muted">
+                              {getNotificationMessage(notif)}
+                            </div>
+                            <div
+                              className="text-muted"
+                              style={{ fontSize: "11px" }}
+                            >
+                              {notif.created_at || "Just now"}
+                            </div>
+                          </li>
+                        ))
+                      ) : (
+                        <li className="p-3 text-center text-muted small">
+                          No new notifications
+                        </li>
+                      )}
+                    </ul>
+                    <div className="p-2 text-center border-top">
+                      <NavLink
+                        to="/notifications"
+                        className="small text-primary text-decoration-none"
+                        onClick={() => setShowNotifications(false)}
+                      >
+                        View All
+                      </NavLink>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="dropdown user-dropdown mobile-top-user-dropdown">
+                <button
+                  className="btn dropdown-toggle mobile-top-user-btn"
+                  type="button"
+                  data-bs-toggle="dropdown"
+                  aria-label="Open account menu"
+                >
+                  <div className="mobile-top-user-avatar">{renderUserAvatar()}</div>
+                  <span className="mobile-top-user-name">{displayName}</span>
+                </button>
+
+                <ul className="dropdown-menu dropdown-menu-end">
+                  <li>
+                    <NavLink className="dropdown-item" to="/dashboard">
+                      Dashboard
+                    </NavLink>
+                  </li>
+                  <li>
+                    <NavLink className="dropdown-item" to="/edit-profile">
+                      Edit Profile
+                    </NavLink>
+                  </li>
+                  <li>
+                    <NavLink className="dropdown-item" to="/payment-history">
+                      Payment History
+                    </NavLink>
+                  </li>
+                  <li>
+                    <button
+                      type="button"
+                      className="dropdown-item text-danger"
+                      onClick={async () => {
+                        try {
+                          await submit(
+                            `api/logout/${userId}`,
+                            {},
+                            { method: "POST" },
+                          );
+                          dispatch(logOut());
+                          navigate("/login");
+                        } catch (error) {
+                          console.error("Logout error:", error);
+                        }
+                      }}
+                    >
+                      Logout
+                    </button>
+                  </li>
+                </ul>
+              </div>
+            </div>
+          )}
+
           {/* Menu + actions */}
           <div
             className={`collapse navbar-collapse mobile-menu ${isMobileOpen ? "show" : ""}`}
@@ -316,9 +450,9 @@ const Header = memo(function Header({ withSidebar = false }) {
                   {/* REAL-TIME NOTIFICATION BELL */}
                   <div className="notification-wrapper position-relative">
                     <button
-                      className="btn position-relative p-0 border-0 bg-transparent"
+                      className="btn position-relative p-0 border-0 bg-transparent notification-bell-btn"
                       onClick={toggleNotifications}
-                      style={{ fontSize: "20px", color: "#666" }}
+                      aria-label="Toggle notifications"
                     >
                       <i className="fa fa-bell"></i>
                       {unreadCount > 0 && (
@@ -333,12 +467,11 @@ const Header = memo(function Header({ withSidebar = false }) {
 
                     {showNotifications && (
                       <div
-                        className="dropdown-menu dropdown-menu-end show shadow"
+                        className="dropdown-menu dropdown-menu-end show shadow notification-dropdown-menu"
                         style={{
                           position: "absolute",
                           right: 0,
                           top: "40px",
-                          width: "280px",
                           display: "block",
                           padding: "0",
                         }}
@@ -396,7 +529,7 @@ const Header = memo(function Header({ withSidebar = false }) {
 
                   {/* Logged-in user dropdown */}
                   <div
-                    className="dropdown"
+                    className="dropdown user-dropdown desktop-user-dropdown"
                     style={{ display: "flex", alignItems: "center" }}
                   >
                     <button
@@ -436,7 +569,7 @@ const Header = memo(function Header({ withSidebar = false }) {
                           display: "block",
                         }}
                       >
-                        {userdata?.data?.name || userdata?.name || "John Doe"}
+                        {displayName}
                       </span>
                     </button>
 

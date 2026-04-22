@@ -20,7 +20,10 @@ const Invoice = () => {
   const { userdata } = useSelector((state) => state.auth || {});
   const userType = userdata?.data?.user_type || userdata?.user_type;
   const isAdmin = userType === "admin";
+
   const { submit } = useSubmit({ isAuth: true });
+  // Added second useSubmit hook specifically for file uploads
+  const { submit: uploadFile } = useSubmit({ isAuth: true });
 
   const { data: customersResponse } = useFetch(
     "api/admin/get-customers?limit=1000",
@@ -85,8 +88,27 @@ const Invoice = () => {
     }
   }, [userdata]);
 
-  const handleFromChange = (updatedFrom) => setFrom(updatedFrom);
-  const handleToChange = (updatedTo) => setTo(updatedTo);
+  const handleFromChange = (updatedFrom) => {
+    // Restrict ABN to numbers only and max 11 digits
+    if (updatedFrom.abn !== undefined) {
+      updatedFrom.abn = updatedFrom.abn.replace(/\D/g, "").slice(0, 11);
+    }
+    setFrom(updatedFrom);
+  };
+
+  const handleToChange = (updatedTo) => {
+    // Restrict ABN to numbers only and max 11 digits
+    if (updatedTo.abn !== undefined) {
+      updatedTo.abn = updatedTo.abn.replace(/\D/g, "").slice(0, 11);
+    }
+
+    setTo((prev) => ({
+      ...updatedTo,
+      // Force Name and Email to remain whatever was set by the customer dropdown
+      name: prev.name,
+      email: prev.email,
+    }));
+  };
 
   const handleCustomerChange = (e) => {
     const id = e.target.value;
@@ -113,7 +135,7 @@ const Invoice = () => {
   const subtotal = useMemo(
     () =>
       lineItems.reduce((sum, item) => {
-        const qty = Number(item.qty) || 0;
+        const qty = Number(item.hours) || 0;
         const rate = Number(item.rate) || 0;
         return sum + qty * rate;
       }, 0),
@@ -142,7 +164,6 @@ const Invoice = () => {
     if (!hasValidLineItems) return "At least one valid line item is required";
     return null;
   };
-
 
   const handleSearch = async () => {
     if (!selectedCustomerId) {
@@ -231,7 +252,7 @@ const Invoice = () => {
     }
   };
 
-  const handleDownload = () => {
+  const handleDownload = (download = true) => {
     const error = validateInvoice();
     if (error) {
       toast.error(error);
@@ -260,7 +281,11 @@ const Invoice = () => {
       };
 
       const doc = PDFGenerator.generateInvoicePDF(invoiceData);
-      PDFGenerator.downloadPDF(doc, `${invoiceNo}.pdf`);
+      if (download) {
+        PDFGenerator.downloadPDF(doc, `${invoiceNo}.pdf`);
+      }
+      return doc;
+
     } catch (err) {
       toast.error("Failed to download PDF.");
       console.error(err);
@@ -296,27 +321,44 @@ const Invoice = () => {
         paymentMethods,
       };
 
-      // 1. Generate the PDF instance
+      // 1. Generate the PDF instance and convert to a File object
       const doc = PDFGenerator.generateInvoicePDF(invoiceData);
-
-      // 2. Convert PDF to Blob/File (assuming PDFGenerator uses jsPDF)
       const pdfBlob = doc.output("blob");
-      const formData = new FormData();
+      const pdfFile = new File([pdfBlob], `${invoiceNo}.pdf`, { type: "application/pdf" });
 
-      // 3. Append necessary data for the API
-      formData.append("invoice_pdf", pdfBlob, `${invoiceNo}.pdf`);
-      formData.append("customer_id", selectedCustomerId);
-      formData.append("email", to.email);
-      formData.append("amount", grandTotal);
-      formData.append("invoice_no", invoiceNo);
+      // 2. Upload the PDF to the backend "uploads" folder
+      const uploadFd = new FormData();
+      uploadFd.append("file", pdfFile);
+      uploadFd.append("folder", "uploads");
 
-      const res = await submit("api/admin/send-invoice", formData);
+      const uploadRes = await uploadFile("api/upload-file", uploadFd, { method: "POST" });
+
+      if (!uploadRes?.success) {
+        throw new Error(uploadRes?.message || "Failed to upload invoice document to server.");
+      }
+
+      // Extract the uploaded URL/Path from the upload API response
+      const pdfUrl = uploadRes.path || uploadRes.data?.path || uploadRes.url || uploadRes.data?.url;
+
+      // Extract just the filename to match the required "invoice" payload format
+      const invoiceFilename = typeof pdfUrl === 'string' ? pdfUrl.split('/').pop() : `${invoiceNo}.pdf`;
+
+      // 3. Send the final Invoice payload with the exact requested structure
+      const payload = {
+        emails: [to.email], // Sending as an array of strings
+        invoice: invoiceFilename, // Sending just the uploaded filename
+      };
+
+      const res = await submit("api/admin/send-invoice", payload, { method: "POST" });
 
       if (res?.success || res?.status === 200) {
-        toast.success("Invoice sent successfully to " + to.email);
+        toast.success(`Invoice sent successfully to ${to.email}`);
+      } else {
+        toast.error(res?.message || "Failed to send invoice email.");
       }
+
     } catch (err) {
-      toast.error(err.message || "Failed to send invoice.");
+      toast.error(err.message || "Failed to process invoice.");
       console.error(err);
     } finally {
       setIsSending(false);
@@ -361,7 +403,6 @@ const Invoice = () => {
             <i className="fa-solid fa-download me-2"></i> Download
           </button>
 
-          {/* New Send Invoice Button */}
           <button
             type="button"
             className="btn btn-primary"

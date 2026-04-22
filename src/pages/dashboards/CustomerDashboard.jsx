@@ -9,7 +9,7 @@ import {
   resolveProfileImageUrl,
 } from "../../utils/profileImage";
 import "./DashboardStyles.css";
-import dashboardBanner from "../../assets/images/dashboard-banner.webp";
+import dashboardBanner from "../../assets/images/dashboard-banner.png";
 
 export default function CustomerDashboard() {
   const { userdata } = useSelector((state) => state.auth);
@@ -19,7 +19,7 @@ export default function CustomerDashboard() {
     userdata?.data?.customer?.phone || userdata?.customer?.phone || "No Phone";
   const username = userdata?.data?.name || userdata?.name || "No Name";
   const profileImage = getProfileImageFromUserdata(userdata);
-  
+
   // Fetch Dashboard Data
   const { data: fetchResponse, loading } = useFetch("api/dashboard", { isAuth: true });
 
@@ -182,13 +182,12 @@ export default function CustomerDashboard() {
                     </td>
                     <td>
                       <span
-                        className={`badge ${
-                          job.status === "confirmed" || job.status === "Active"
+                        className={`badge ${job.status === "confirmed" || job.status === "Active"
                             ? "bg-success"
                             : job.status === "completed" || job.status === "Completed"
-                            ? "bg-info"
-                            : "bg-warning"
-                        }`}
+                              ? "bg-info"
+                              : "bg-warning"
+                          }`}
                         style={{ padding: "6px 10px", borderRadius: "6px", textTransform: "capitalize" }}
                       >
                         {job.status}

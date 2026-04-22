@@ -9,7 +9,7 @@ import {
   resolveProfileImageUrl,
 } from "../../utils/profileImage";
 import "./DashboardStyles.css";
-import dashboardBanner from "../../assets/images/dashboard-banner.webp";
+import dashboardBanner from "../../assets/images/dashboard-banner.png";
 
 export default function ContractorDashboard() {
   const { userdata } = useSelector((state) => state.auth);

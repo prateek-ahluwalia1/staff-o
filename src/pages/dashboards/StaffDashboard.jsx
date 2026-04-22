@@ -9,7 +9,7 @@ import {
   resolveProfileImageUrl,
 } from "../../utils/profileImage";
 import "./DashboardStyles.css";
-import dashboardBanner from "../../assets/images/dashboard-banner.webp";
+import dashboardBanner from "../../assets/images/dashboard-banner.png";
 
 export default function StaffDashboard() {
   const { userdata } = useSelector((state) => state.auth);
@@ -17,7 +17,7 @@ export default function StaffDashboard() {
   const address = userdata?.data?.address || userdata?.address || "No Location";
   const username = userdata?.data?.name || userdata?.name || "No Name";
   const profileImage = getProfileImageFromUserdata(userdata);
-  
+
   // Fetch Dashboard Data
   const { data: fetchResponse, loading } = useFetch("api/dashboard", { isAuth: true });
 

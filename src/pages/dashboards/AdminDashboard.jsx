@@ -11,7 +11,7 @@ import {
   resolveProfileImageUrl,
 } from "../../utils/profileImage";
 import "./DashboardStyles.css";
-import dashboardBanner from "../../assets/images/dashboard-banner.webp";
+import dashboardBanner from "../../assets/images/dashboard-banner.png";
 import { NavLink } from "react-router-dom";
 
 export default function AdminDashboard() {

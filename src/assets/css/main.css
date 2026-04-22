@@ -910,7 +910,7 @@ h6 {
 
     .mobile-menu.show {
         right: 0;
-        padding: 40px 0;
+        padding: 40px 20px;
     }
 
     .mobile-menu-close {
@@ -2750,8 +2750,6 @@ a.wit-btn {
     color: #666;
 }
 
-/*Top Search*/
-.topsearchwrap {}
 
 .topsearchwrap h4 {
     background: #263bd6;
@@ -4518,7 +4516,6 @@ a.wit-btn {
     font-weight: 600;
 }
 
-.whatList li p {}
 
 .textrow {
     padding-top: 100px;
@@ -5363,8 +5360,6 @@ blockquote:after {
     color: #fff;
 }
 
-/*Popular Posts*/
-.papu-post {}
 
 .papu-post .media-left {
     margin-right: 0px;

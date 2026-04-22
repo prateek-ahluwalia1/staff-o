@@ -6,15 +6,6 @@ import useSubmit from "../hooks/useSubmit";
 import useFetch from "../hooks/useFetch";
 import Loader from "../components/Loader";
 
-const AU_STATES = [
-  "Victoria",
-  "New South Wales",
-  "Tasmania",
-  "Queensland",
-  "Western Australia",
-  "South Australia",
-  "ACT",
-];
 
 const ALL_OPTION_VALUE = "ALL";
 
@@ -175,8 +166,8 @@ const normalizeTimesheetRow = (row, index) => {
     authTime: buildTimeRange(authStart, authEnd),
     authorizedTotalHours: safeNumber(
       row?.authorized_total_hours ??
-        row?.authorised_total_hours ??
-        row?.authorized_hours,
+      row?.authorised_total_hours ??
+      row?.authorized_hours,
     ),
     actualFinishTime:
       row?.actual_finish_time ??
@@ -336,25 +327,14 @@ export default function TimeSheet() {
     "api/admin/get-customers?limit=1000",
     { isAuth: true },
   );
-  const { data: staffResponse, loading: staffLoading } = useFetch(
-    "api/admin/get-staff?limit=1000",
-    { isAuth: true },
-  );
 
   const customersList = useMemo(() => {
     const list = customersResponse?.data?.data || customersResponse?.data || [];
     return Array.isArray(list) ? list : [];
   }, [customersResponse]);
 
-  const staffList = useMemo(() => {
-    const list = staffResponse?.data?.data || staffResponse?.data || [];
-    return Array.isArray(list) ? list : [];
-  }, [staffResponse]);
-
   const weekRange = useMemo(() => getWeekRange(), []);
-  const [selectedStateValues] = useState(AU_STATES);
   const [selectedCustomerValues, setSelectedCustomerValues] = useState([]);
-  const [selectedStaffValues] = useState([]);
   const [startDate, setStartDate] = useState(formatDateInput(weekRange.start));
   const [endDate, setEndDate] = useState(formatDateInput(weekRange.end));
 
@@ -378,9 +358,6 @@ export default function TimeSheet() {
   );
 
   const buildPayload = useCallback(() => {
-    const allGuardIds = staffList
-      .map((staff) => Number(staff.id))
-      .filter((id) => Number.isFinite(id));
     const allCustomerIds = customersList
       .map((customer) => Number(customer.id))
       .filter((id) => Number.isFinite(id));
@@ -390,29 +367,19 @@ export default function TimeSheet() {
       pageIndex: 0,
       pageSize: 20,
       previousPageIndex: 0,
-      guard_id:
-        selectedStaffValues.length === 0
-          ? allGuardIds
-          : selectedStaffValues
-              .map((id) => Number(id))
-              .filter((id) => Number.isFinite(id)),
       start: formatDateForPayload(parseInputDate(startDate)),
       end: formatDateForPayload(parseInputDate(endDate)),
-      state: selectedStateValues.length === 0 ? AU_STATES : selectedStateValues,
       customer_ids:
         selectedCustomerValues.length === 0
           ? allCustomerIds
           : selectedCustomerValues
-              .map((id) => Number(id))
-              .filter((id) => Number.isFinite(id)),
+            .map((id) => Number(id))
+            .filter((id) => Number.isFinite(id)),
     };
   }, [
     customersList,
     endDate,
     selectedCustomerValues,
-    selectedStaffValues,
-    selectedStateValues,
-    staffList,
     startDate,
   ]);
 
@@ -452,17 +419,17 @@ export default function TimeSheet() {
     async (row) => {
       const detailsPayload = Array.isArray(row.raw?.shift_collection)
         ? {
-            id: row.id,
-            timesheet_id: row.id,
-            guard_id: row.raw?.id,
-            staff_id: row.raw?.id,
-            shift_collection: row.raw.shift_collection,
-          }
+          id: row.id,
+          timesheet_id: row.id,
+          guard_id: row.raw?.id,
+          staff_id: row.raw?.id,
+          shift_collection: row.raw.shift_collection,
+        }
         : {
-            timesheet_id: row.id,
-            id: row.id,
-            roster_id: row.raw?.roster_id || row.id,
-          };
+          timesheet_id: row.id,
+          id: row.id,
+          roster_id: row.raw?.roster_id || row.id,
+        };
 
       const res = await submitDetails(
         "api/get-timesheet-details",
@@ -564,131 +531,74 @@ export default function TimeSheet() {
 
       <div className="card border-0 shadow-sm">
         <div className="card-body py-3">
-        <div className="row g-2 w-100 timesheet-filter-grid align-items-end">
-          {/* <div className="col-12 col-sm-6 col-lg-4">
-            <Select
-              isMulti
-              options={stateOptions}
-              components={{ Option: CheckboxOption }}
-              styles={selectStyles}
-              closeMenuOnSelect={false}
-              hideSelectedOptions={false}
-              controlShouldRenderValue={false}
-              value={resolveSelectedOptions(stateOptions, selectedStateValues)}
-              isAllSelected={stateAllSelected}
-              onChange={(selected, actionMeta) =>
-                setSelectedStateValues(
-                  normalizeMultiSelectValues(
-                    selected,
-                    actionMeta,
-                    selectedStateValues,
-                    stateOptions,
-                  ),
-                )
-              }
-              placeholder={getSelectPlaceholder(
-                "States",
-                selectedStateValues.length,
-                AU_STATES.length,
-              )}
-            />
-          </div> */}
-          <div className="col-12 col-sm-6 col-lg-4">
-            <Select
-              isMulti
-              options={customerOptions}
-              components={{ Option: CheckboxOption }}
-              styles={selectStyles}
-              closeMenuOnSelect={false}
-              hideSelectedOptions={false}
-              controlShouldRenderValue={false}
-              value={resolveSelectedOptions(
-                customerOptions,
-                selectedCustomerValues,
-              )}
-              isAllSelected={customerAllSelected}
-              onChange={(selected, actionMeta) =>
-                setSelectedCustomerValues(
-                  normalizeMultiSelectValues(
-                    selected,
-                    actionMeta,
-                    selectedCustomerValues,
-                    customerOptions,
-                  ),
-                )
-              }
-              placeholder={getSelectPlaceholder(
-                "Select Customers",
-                selectedCustomerValues.length,
-                customersList.length,
-              )}
-              isLoading={customersLoading}
-            />
+          <div className="row g-2 w-100 timesheet-filter-grid align-items-end">
+            <div className="col-12 col-sm-6 col-lg-4">
+              <Select
+                isMulti
+                options={customerOptions}
+                components={{ Option: CheckboxOption }}
+                styles={selectStyles}
+                closeMenuOnSelect={false}
+                hideSelectedOptions={false}
+                controlShouldRenderValue={false}
+                value={resolveSelectedOptions(
+                  customerOptions,
+                  selectedCustomerValues,
+                )}
+                isAllSelected={customerAllSelected}
+                onChange={(selected, actionMeta) =>
+                  setSelectedCustomerValues(
+                    normalizeMultiSelectValues(
+                      selected,
+                      actionMeta,
+                      selectedCustomerValues,
+                      customerOptions,
+                    ),
+                  )
+                }
+                placeholder={getSelectPlaceholder(
+                  "Select Customers",
+                  selectedCustomerValues.length,
+                  customersList.length,
+                )}
+                isLoading={customersLoading}
+              />
+            </div>
+            <div className="col-12 col-sm-6 col-lg-3">
+              <input
+                type="date"
+                className="form-control"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+              />
+            </div>
+            <div className="col-12 col-sm-6 col-lg-3">
+              <input
+                type="date"
+                className="form-control"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+              />
+            </div>
+
+            {/* Grouped Search and Export Buttons */}
+            <div className="col-12 col-sm-12 col-lg-2 d-flex gap-2">
+              <button
+                className="btn btn-sm btn-primary timesheet-action-btn w-100 px-2"
+                onClick={fetchTimesheets}
+                disabled={timesheetLoading}
+              >
+                <i className="fa-solid fa-search"></i> Search
+              </button>
+              <button
+                className="btn btn-sm btn-outline-primary timesheet-action-btn w-100 px-2"
+                onClick={handleExport}
+                disabled={timesheetData.length === 0}
+              >
+                <i className="fa-solid fa-download"></i> Export
+              </button>
+            </div>
           </div>
-          {/* <div className="col-12 col-sm-6 col-lg-4">
-            <Select
-              isMulti
-              options={staffOptions}
-              components={{ Option: CheckboxOption }}
-              styles={selectStyles}
-              closeMenuOnSelect={false}
-              hideSelectedOptions={false}
-              controlShouldRenderValue={false}
-              value={resolveSelectedOptions(staffOptions, selectedStaffValues)}
-              isAllSelected={staffAllSelected}
-              onChange={(selected, actionMeta) =>
-                setSelectedStaffValues(
-                  normalizeMultiSelectValues(
-                    selected,
-                    actionMeta,
-                    selectedStaffValues,
-                    staffOptions,
-                  ),
-                )
-              }
-              placeholder={getSelectPlaceholder(
-                "Select Staff",
-                selectedStaffValues.length,
-                staffList.length,
-              )}
-              isLoading={staffLoading}
-            />
-          </div> */}
-          <div className="col-12 col-sm-6 col-lg-3">
-            <input
-              type="date"
-              className="form-control"
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-            />
-          </div>
-          <div className="col-12 col-sm-6 col-lg-3">
-            <input
-              type="date"
-              className="form-control"
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-            />
-          </div>
-          <div className="col-6 col-sm-6 col-lg-2 d-grid">
-            <button
-              className="btn btn-sm btn-primary timesheet-action-btn"
-              onClick={fetchTimesheets}
-              disabled={timesheetLoading}
-            >
-              <i className="fa-solid fa-search me-1"></i> Search
-            </button>
-          </div>
-          <div className="col-6 col-sm-6 col-lg-2 d-grid">
-            <button
-              className="btn btn-sm btn-outline-primary timesheet-action-btn"
-              onClick={handleExport}
-              disabled={timesheetData.length === 0}
-            >
-              <i className="fa-solid fa-download me-1"></i> Export
-            </button>
-          </div>
-        </div>
         </div>
       </div>
 
@@ -739,9 +649,8 @@ export default function TimeSheet() {
                       <tr
                         onClick={() => handleRowClick(row)}
                         style={{ cursor: "pointer" }}
-                        className={`timesheet-summary-row ${
-                          isSelected ? "table-active" : ""
-                        }`}
+                        className={`timesheet-summary-row ${isSelected ? "table-active" : ""
+                          }`}
                       >
                         <td>
                           {row.raw?.id ??
@@ -882,9 +791,9 @@ export default function TimeSheet() {
         </div>
       </div>
 
-      {(customersLoading || staffLoading) && (
+      {(customersLoading) && (
         <div className="mt-3 text-muted small">
-          Loading filters (customers/staff)...
+          Loading filters customers...
         </div>
       )}
 

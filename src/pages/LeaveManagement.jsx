@@ -202,13 +202,6 @@ const LeaveManagement = () => {
     leave.name ||
     "N/A";
 
-  const getLeaveEmail = (leave) =>
-    leave.guardss?.email ||
-    leave.guard?.email ||
-    leave.staff?.email ||
-    leave.email ||
-    "N/A";
-
   const getLeaveRole = (leave) =>
     leave.guardss?.user_type ||
     leave.guard?.user_type ||
@@ -249,11 +242,10 @@ const LeaveManagement = () => {
 
   const tableData = filteredLeavesByStatus.filter((leave) => {
     const name = getLeaveUserName(leave).toLowerCase();
-    const email = getLeaveEmail(leave).toLowerCase();
     const reason = String(leave.reason || "").toLowerCase();
     const term = searchTerm.toLowerCase();
 
-    return name.includes(term) || email.includes(term) || reason.includes(term);
+    return name.includes(term) || reason.includes(term);
   });
 
   const canShowStaffSelector = isContractor || isAdmin;
@@ -346,9 +338,6 @@ const LeaveManagement = () => {
                       <div className="text-dark fw-bold">
                         {getLeaveUserName(leave)}
                       </div>
-                      <div className="text-muted" style={{ fontSize: "0.8em" }}>
-                        {getLeaveEmail(leave)}
-                      </div>
                     </td>
                     <td
                       className="text-muted"
@@ -436,9 +425,6 @@ const LeaveManagement = () => {
                   <div>
                     <div className="text-dark fw-bold">
                       {getLeaveUserName(leave)}
-                    </div>
-                    <div className="text-muted leave-mobile-email">
-                      {getLeaveEmail(leave)}
                     </div>
                   </div>
                   <span

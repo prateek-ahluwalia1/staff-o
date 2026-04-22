@@ -1,11 +1,15 @@
 import React, { useState, useEffect } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import useFetch from "../hooks/useFetch";
 import useSubmit from "../hooks/useSubmit";
 import Loader from "../components/Loader";
 import { toast } from "react-toastify";
 
 const ManageUsers = () => {
-  const [activeTab, setActiveTab] = useState("customer");
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  const [activeTab, setActiveTab] = useState(location.state?.targetTab || "customer");
   const [page, setPage] = useState(1);
 
   const endpointMap = {
@@ -13,20 +17,22 @@ const ManageUsers = () => {
     sub_contractor: "api/admin/get-contractors",
     staff: "api/admin/get-staff",
   };
+
   const {
     data: apiResponse,
     loading,
     error,
     refetch,
   } = useFetch(`${endpointMap[activeTab]}?page=${page}`, { isAuth: true });
+
   const { data: contractorsResponse } = useFetch(
     "api/admin/get-contractors?limit=1000",
     {
       isAuth: true,
     },
   );
-  const contractorsList = contractorsResponse?.data?.data || [];
 
+  const contractorsList = contractorsResponse?.data?.data || [];
   const { submit, loading: submitLoading } = useSubmit({ isAuth: true });
 
   const [users, setUsers] = useState([]);
@@ -37,18 +43,6 @@ const ManageUsers = () => {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
-
-  useEffect(() => {
-    if (apiResponse?.success && apiResponse?.data?.data) {
-      setUsers(apiResponse.data.data);
-      setTotalPages(apiResponse.data.last_page || 1);
-      setTotalItems(apiResponse.data.total || 0);
-    } else {
-      setUsers([]);
-      setTotalPages(1);
-      setTotalItems(0);
-    }
-  }, [apiResponse]);
 
   const defaultFormState = {
     name: "",
@@ -114,6 +108,33 @@ const ManageUsers = () => {
     setIsModalOpen(false);
     setEditingUser(null);
   };
+
+  useEffect(() => {
+    if (apiResponse?.success && apiResponse?.data?.data) {
+      const fetchedUsers = apiResponse.data.data;
+      setUsers(fetchedUsers);
+      setTotalPages(apiResponse.data.last_page || 1);
+      setTotalItems(apiResponse.data.total || 0);
+
+      // Check if we arrived from the Dashboard with a specific user to edit
+      if (location.state?.editUserId) {
+        const userToEdit = fetchedUsers.find((u) => u.id === location.state.editUserId);
+
+        if (userToEdit) {
+          openModal(userToEdit);
+        } else {
+          toast.info("User located on a different page. Please use search or pagination.");
+        }
+
+        // Clear the state so the modal doesn't reopen if the user closes it
+        navigate(location.pathname, { replace: true, state: {} });
+      }
+    } else {
+      setUsers([]);
+      setTotalPages(1);
+      setTotalItems(0);
+    }
+  }, [apiResponse, location.state, navigate]);
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;

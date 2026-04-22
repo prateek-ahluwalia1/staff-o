@@ -227,6 +227,7 @@ export default function AdminDashboard() {
                     <td>
                       <NavLink
                         to='/manage-users'
+                        state={{ targetTab: 'sub_contractor', editUserId: contractor.id }}
                         className="btn btn-sm"
                         style={{
                           backgroundColor: "#f0f4ff",

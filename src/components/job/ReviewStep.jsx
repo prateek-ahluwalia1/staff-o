@@ -166,7 +166,7 @@ export default function ReviewStep({
         </button>
 
         <button
-          className="btn btn-success fw-bold px-5 py-2 shadow-sm order-1 order-md-2 d-flex align-items-center justify-content-center gap-2"
+          className="btn btn-primary fw-bold px-5 py-2 shadow-sm order-1 order-md-2 d-flex align-items-center justify-content-center gap-2"
           onClick={handleConfirm}
           disabled={!form.termsAccepted || isSubmitting}
         >

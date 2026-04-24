@@ -11,17 +11,17 @@ export default function ReviewStep({
   paymentAmount,
 }) {
   const JOB_TYPE_LABELS = {
-    security_license: "Security License",
-    misc_time_license: "MISC Time License",
-    working_with_children: "Working With Children",
-    first_aid: "First Aid",
-    cpr: "CPR",
-    white_card: "White Card",
-    traffic_controller: "Traffic Controller",
-    others: "Others",
+    "event-security": "Event Security",
+    "static-security": "Static Security Guard",
+    "corporate-security": "Corporate Security",
+    "site-patrol": "Site Patrol Security",
+    "others": "Others",
   };
 
-  const jobTypeLabel = JOB_TYPE_LABELS[form.jobType] || form.jobType || "-";
+  const jobTypeLabel =
+    form.jobType === "others" && form.customJobType
+      ? form.customJobType
+      : JOB_TYPE_LABELS[form.jobType] || form.jobType || "-";
 
   return (
     <div className="mb-4">
@@ -74,11 +74,16 @@ export default function ReviewStep({
           <div className="border rounded p-3 bg-light">
             <strong>Required Documents</strong>
             <div className="text-muted small">
-              {Array.isArray(form.document_types) &&
-              form.document_types.length > 0
+              {Array.isArray(form.document_types) && form.document_types.length > 0
                 ? form.document_types
-                    .map((d) => d.replace(/_/g, " "))
-                    .join(", ")
+                  .map((d) =>
+                    d === "others" && form.customDocumentType
+                      ? form.customDocumentType
+                      : d
+                        .replace(/_/g, " ")
+                        .replace(/\b\w/g, (l) => l.toUpperCase())
+                  )
+                  .join(", ")
                 : "None selected"}
             </div>
           </div>

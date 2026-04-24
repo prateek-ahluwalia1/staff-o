@@ -10,36 +10,31 @@ export default function DetailsStep({
   removeAttachment,
 }) {
   const DOC_OPTIONS = [
-    "passport",
-    "visa",
-    "vaccination",
-    "security_license",
-    "driver_license_front",
-    "driver_license_back",
-    "application_form",
-    "working_with_children",
-    "first_aid",
-    "cpr",
+    { label: 'Security License', value: 'security_license' },
+    { label: 'MISC Time License', value: 'misc_time_license' },
+    { label: 'Working With Children', value: 'working_with_children' },
+    { label: 'First Aid', value: 'first_aid' },
+    { label: 'CPR', value: 'cpr' },
+    { label: 'White Card', value: 'white_card' },
+    { label: 'Traffic Controller', value: 'traffic_controller' },
+    { label: 'Others', value: 'others' },
   ];
 
   const JOB_TYPE_OPTIONS = [
     { value: "", label: "Select type" },
-    { label: "Security License", value: "security_license" },
-    { label: "MISC Time License", value: "misc_time_license" },
-    { label: "Working With Children", value: "working_with_children" },
-    { label: "First Aid", value: "first_aid" },
-    { label: "CPR", value: "cpr" },
-    { label: "White Card", value: "white_card" },
-    { label: "Traffic Controller", value: "traffic_controller" },
+    { label: 'Event Security', value: 'event-security' },
+    { label: 'Static Security Guard', value: 'static-security' },
+    { label: 'Corporate Security', value: 'corporate-security' },
+    { label: 'Site Patrol Security', value: 'site-patrol' },
     { label: "Others", value: "others" },
   ];
 
   // Helper to find the correct label for the selected job type
   const selectedJobTypeOption = form.jobType
     ? JOB_TYPE_OPTIONS.find((opt) => opt.value === form.jobType) || {
-        value: form.jobType,
-        label: form.jobType,
-      }
+      value: form.jobType,
+      label: form.jobType,
+    }
     : null;
 
   return (
@@ -68,7 +63,7 @@ export default function DetailsStep({
               type="button"
               className="btn btn-outline-secondary"
               onClick={() =>
-                setField("numGuards", Math.max(1, form.numGuards - 1))
+                setField("numGuards", Math.max(1, (Number(form.numGuards) || 1) - 1))
               }
             >
               −
@@ -77,12 +72,12 @@ export default function DetailsStep({
               type="text"
               readOnly
               className="form-control text-center"
-              value={form.numGuards}
+              value={form.numGuards || 1}
             />
             <button
               type="button"
               className="btn btn-outline-secondary"
-              onClick={() => setField("numGuards", form.numGuards + 1)}
+              onClick={() => setField("numGuards", (Number(form.numGuards) || 1) + 1)}
             >
               +
             </button>
@@ -144,16 +139,13 @@ export default function DetailsStep({
           style={{ cursor: "pointer" }}
         >
           <div className="card-body d-flex align-items-center gap-3 p-3">
-            <div className="form-check form-switch m-0">
+            <div className="form-check form-switch m-0" onClick={(e) => e.stopPropagation()}>
               <input
                 className="form-check-input"
                 type="checkbox"
                 id="documentRequired"
                 checked={Boolean(form.document)}
-                onChange={(e) => {
-                  e.stopPropagation();
-                  setField("document", e.target.checked);
-                }}
+                onChange={(e) => setField("document", e.target.checked)}
                 style={{ cursor: "pointer" }}
               />
             </div>
@@ -187,30 +179,42 @@ export default function DetailsStep({
               <Select
                 isMulti
                 options={DOC_OPTIONS.map((d) => ({
-                  value: d,
-                  label: d
-                    .replace(/_/g, " ")
-                    .replace(/\b\w/g, (l) => l.toUpperCase()),
+                  value: d.value,
+                  label: d.label,
                 }))}
                 value={
                   Array.isArray(form.document_types)
-                    ? form.document_types.map((d) => ({
-                        value: d,
-                        label: d
-                          .replace(/_/g, " ")
-                          .replace(/\b\w/g, (l) => l.toUpperCase()),
-                      }))
+                    ? DOC_OPTIONS.filter(opt => form.document_types.includes(opt.value))
                     : []
                 }
-                onChange={(opts) =>
-                  setField(
-                    "document_types",
-                    Array.isArray(opts) ? opts.map((o) => o.value) : [],
-                  )
-                }
+                onChange={(opts) => {
+                  const selectedValues = Array.isArray(opts) ? opts.map((o) => o.value) : [];
+                  setField("document_types", selectedValues);
+
+                  // Clear custom input if they switch away from "others"
+                  if (!selectedValues.includes("others")) {
+                    setField("customDocumentType", "");
+                  }
+                }}
                 classNamePrefix="react-select"
                 placeholder="Choose documents to require..."
               />
+
+              {/* Custom Document Input when "Others" is selected */}
+              {form.document_types?.includes("others") && (
+                <div className="mt-2">
+                  <input
+                    type="text"
+                    name="customDocumentType"
+                    value={form.customDocumentType || ""}
+                    onChange={(e) => setField("customDocumentType", e.target.value)}
+                    className="form-control"
+                    placeholder="Enter custom document requirement"
+                    required
+                  />
+                </div>
+              )}
+
               {form.document_types?.length > 0 && (
                 <div className="mt-3 pt-3 border-top small">
                   <strong>Selected:</strong> {form.document_types.length}{" "}

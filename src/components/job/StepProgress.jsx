@@ -10,11 +10,11 @@ export default function StepProgress({ step, titles }) {
         </small>
         <small className="text-muted">{titles[step]}</small>
       </div>
-      <div className="progress" style={{ height: 8 }}>
+      <div className="progress shadow-sm rounded-pill" style={{ height: 8 }}>
         <div
-          className="progress-bar bg-success"
+          className="progress-bar bg-primary rounded-pill"
           role="progressbar"
-          style={{ width: `${pct}%` }}
+          style={{ width: `${pct}%`, transition: "width 0.4s ease" }}
           aria-valuenow={pct}
           aria-valuemin="0"
           aria-valuemax="100"

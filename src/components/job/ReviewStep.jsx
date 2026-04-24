@@ -1,16 +1,7 @@
 import React from "react";
 import RateBreakdown from "./RateBreakdown";
-import { NavLink } from "react-router-dom";
 
-export default function ReviewStep({
-  form,
-  rate,
-  setField,
-  handleConfirm,
-  setStep,
-  isSubmitting,
-  paymentAmount,
-}) {
+export default function ReviewStep({ form, rate, setField, handleConfirm, setStep, isSubmitting, paymentAmount }) {
   const JOB_TYPE_LABELS = {
     "event-security": "Event Security",
     "static-security": "Static Security Guard",
@@ -19,10 +10,9 @@ export default function ReviewStep({
     "others": "Others",
   };
 
-  const jobTypeLabel =
-    form.jobType === "others" && form.customJobType
-      ? form.customJobType
-      : JOB_TYPE_LABELS[form.jobType] || form.jobType || "-";
+  const jobTypeLabel = form.jobType === "others" && form.customJobType
+    ? form.customJobType
+    : JOB_TYPE_LABELS[form.jobType] || form.jobType || "-";
 
   return (
     <div className="mb-4">
@@ -44,21 +34,24 @@ export default function ReviewStep({
         </div>
       </div>
 
-      <div className="row mt-3">
-        <div className="col-md-6 mb-2">
-          <div className="border rounded p-2 bg-light">
-            <strong>Start</strong>
-            <div className="text-muted small mt-2">
-              {form.startDate} {form.startTime}
-            </div>
-          </div>
-        </div>
-        <div className="col-md-6 mb-2">
-          <div className="border rounded p-2 bg-light">
-            <strong>End</strong>
-            <div className="text-muted small mt-2">
-              {form.endDate} {form.endTime}
-            </div>
+      <div className="mt-3">
+        <div className="border rounded p-3">
+          <strong>Schedule & Shifts</strong>
+          <div className="mt-2">
+            {form.scheduleDays?.length > 0 ? (
+              form.scheduleDays.map((day, idx) => (
+                <div key={idx} className="mb-2 border-bottom pb-2">
+                  <span className="fw-bold small">{day.date}:</span>
+                  {day.shifts.map((shift, sIdx) => (
+                    <div key={sIdx} className="text-muted small ms-2">
+                      • {shift.startTime} to {shift.endTime} ({shift.numGuards} Guard{shift.numGuards > 1 ? 's' : ''})
+                    </div>
+                  ))}
+                </div>
+              ))
+            ) : (
+              <span className="text-muted small">No schedule selected.</span>
+            )}
           </div>
         </div>
       </div>
@@ -70,49 +63,16 @@ export default function ReviewStep({
         </div>
       </div>
 
-      {form.document && (
-        <div className="mt-3">
-          <div className="border rounded p-3 bg-light">
-            <strong>Required Documents</strong>
-            <div className="text-muted small">
-              {Array.isArray(form.document_types) && form.document_types.length > 0
-                ? form.document_types
-                  .map((d) =>
-                    d === "others" && form.customDocumentType
-                      ? form.customDocumentType
-                      : d
-                        .replace(/_/g, " ")
-                        .replace(/\b\w/g, (l) => l.toUpperCase())
-                  )
-                  .join(", ")
-                : "None selected"}
-            </div>
-          </div>
-        </div>
-      )}
+      {rate && <RateBreakdown rate={rate} numGuards={1 /* Optional: You may want to update RateBreakdown to handle variable guards */} />}
 
-      {rate && <RateBreakdown rate={rate} numGuards={form.numGuards} />}
-
-      <div
-        className="list-card mt-3 p-3 bg-white"
-        style={{ background: "#fff" }}
-      >
+      <div className="list-card mt-3 p-3 bg-white" style={{ background: "#fff" }}>
         <div className="alert alert-info py-2 px-3 mb-3" role="alert">
           <strong>Payment required:</strong> A secure card payment of{" "}
           <strong>
-            {new Intl.NumberFormat("en-AU", {
-              style: "currency",
-              currency: "AUD",
-              maximumFractionDigits: 2,
-            }).format(Number(paymentAmount) || 0)}
+            {new Intl.NumberFormat("en-AU", { style: "currency", currency: "AUD", maximumFractionDigits: 2 }).format(Number(paymentAmount) || 0)}
           </strong>{" "}
-          is required to post this job. You will enter card details in a secure
-          Stripe form on this page.
+          is required to post this job.
         </div>
-        <h6>Terms & Conditions</h6>
-        <p className="text-muted small">
-          By paying and posting this job you agree to our <NavLink to="/terms-of-use">Terms & Conditions</NavLink> and <NavLink to="/privacy-policy">Privacy Policy</NavLink>.
-        </p>
         <div className="form-check">
           <input
             id="terms"
@@ -130,30 +90,13 @@ export default function ReviewStep({
 
       <div className="mt-3 d-flex justify-content-end gap-2">
         <button
-          className="btn btn-success btn-lg d-flex align-items-center"
+          className="btn btn-success btn-lg"
           onClick={handleConfirm}
           disabled={!form.termsAccepted || isSubmitting}
-          style={{ opacity: !form.termsAccepted || isSubmitting ? 0.6 : 1 }}
         >
-          {isSubmitting ? (
-            <>
-              <span
-                className="spinner-border spinner-border-sm me-2"
-                role="status"
-                aria-hidden="true"
-              ></span>
-              Processing...
-            </>
-          ) : (
-            "Pay with Stripe & Post Job"
-          )}
+          {isSubmitting ? "Processing..." : "Pay with Stripe & Post Job"}
         </button>
-        <button
-          type="button"
-          className="btn btn-outline-secondary btn-lg"
-          onClick={() => setStep(0)}
-          disabled={isSubmitting}
-        >
+        <button type="button" className="btn btn-outline-secondary btn-lg" onClick={() => setStep(0)} disabled={isSubmitting}>
           Edit Job
         </button>
       </div>

@@ -1,223 +1,306 @@
-import React from "react";
+import React, { useState } from "react";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 
+const formatLocalDate = (date) => {
+  if (!date) return "";
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+};
+
+const parseLocalDate = (dateStr) => {
+  if (!dateStr) return null;
+  const [year, month, day] = dateStr.split("-").map(Number);
+  return new Date(year, month - 1, day);
+};
+
 export default function ScheduleStep({ form, setField, scheduleError = "" }) {
-  const cardStyle = {
-    background: "#ffffff",
-    borderRadius: "16px",
-    padding: "24px",
-    boxShadow: "0 10px 30px rgba(0,0,0,0.05)",
-    border: "1px solid #f1f1f1",
+  const [bulkStart, setBulkStart] = useState("");
+  const [bulkEnd, setBulkEnd] = useState("");
+  const [bulkGuards, setBulkGuards] = useState(1);
+
+  const handleModeChange = (mode) => {
+    if (form.scheduleMode === mode) return;
+    setField("scheduleMode", mode);
+    setField("scheduleDays", []);
+    setField("dateRange", [null, null]);
   };
 
-  const labelStyle = {
-    fontWeight: 600,
-    marginBottom: 6,
-    fontSize: 14,
+  const handleSingleDateSelect = (date) => {
+    if (!date) return;
+    setField("scheduleDays", [
+      {
+        date: formatLocalDate(date),
+        shifts: [{ id: Date.now().toString(), startTime: "", endTime: "", numGuards: 1 }],
+      },
+    ]);
   };
 
-  const inputStyle = {
-    height: "48px",
-    borderRadius: "10px",
-    border: "1px solid #e5e7eb",
-    padding: "0 12px",
-    fontSize: "14px",
-    width: "100%",
+  const handleRangeSelect = (dates) => {
+    const [start, end] = dates;
+    setField("dateRange", dates);
+
+    if (start && end) {
+      const days = [];
+      let current = new Date(start);
+      while (current <= end) {
+        days.push({
+          date: formatLocalDate(current),
+          shifts: [{ id: Math.random().toString(), startTime: "", endTime: "", numGuards: 1 }],
+        });
+        current.setDate(current.getDate() + 1);
+      }
+      setField("scheduleDays", days);
+    }
   };
 
-  // ✅ Convert yyyy-MM-dd string to LOCAL Date object
-  const parseLocalDate = (dateStr) => {
-    if (!dateStr) return null;
-    const [year, month, day] = dateStr.split("-").map(Number);
-    return new Date(year, month - 1, day); // local time
+  const applyBulkSettings = () => {
+    const updatedDays = form.scheduleDays.map((day) => ({
+      ...day,
+      shifts: day.shifts.map((shift, idx) => {
+        if (idx === 0) {
+          return { ...shift, startTime: bulkStart, endTime: bulkEnd, numGuards: bulkGuards };
+        }
+        return shift;
+      }),
+    }));
+    setField("scheduleDays", updatedDays);
   };
 
-  // ✅ Convert Date object to yyyy-MM-dd (LOCAL)
-  const formatLocalDate = (date) => {
-    if (!date) return "";
-    const y = date.getFullYear();
-    const m = String(date.getMonth() + 1).padStart(2, "0");
-    const d = String(date.getDate()).padStart(2, "0");
-    return `${y}-${m}-${d}`;
+  const addShift = (dayIndex) => {
+    const newDays = [...form.scheduleDays];
+    newDays[dayIndex].shifts.push({
+      id: Date.now().toString(),
+      startTime: "",
+      endTime: "",
+      numGuards: 1,
+    });
+    setField("scheduleDays", newDays);
   };
 
-  const hours = Array.from({ length: 24 }, (_, i) =>
-    String(i).padStart(2, "0"),
-  );
-
-  const minutes = Array.from({ length: 12 }, (_, i) =>
-    String(i * 5).padStart(2, "0"),
-  );
-
-  const getPart = (timeStr, part) => {
-    if (!timeStr) return "";
-    const split = timeStr.split(":");
-    return part === "hour" ? split[0] : split[1];
+  const removeShift = (dayIndex, shiftIndex) => {
+    const newDays = [...form.scheduleDays];
+    newDays[dayIndex].shifts.splice(shiftIndex, 1);
+    setField("scheduleDays", newDays);
   };
 
-  const handleTimeChange = (field, currentVal, type, newVal) => {
-    let h = getPart(currentVal, "hour") || "00";
-    let m = getPart(currentVal, "minute") || "00";
+  const updateShift = (dayIndex, shiftIndex, field, value) => {
+    const newDays = [...form.scheduleDays];
+    newDays[dayIndex].shifts[shiftIndex][field] = value;
+    setField("scheduleDays", newDays);
+  };
 
-    if (type === "hour") h = newVal;
-    if (type === "minute") m = newVal;
+  // 🛠️ THE FIX: Smart, typable 24-hour inputs (No AM/PM)
+  const CompactTime = ({ value, onChange }) => {
+    const h = value ? value.split(":")[0] : "";
+    const m = value ? value.split(":")[1] : "";
 
-    setField(field, `${h}:${m}`);
+    const handleHour = (e) => {
+      let val = e.target.value.replace(/\D/g, ""); // Remove non-numbers
+      if (val.length > 2) val = val.slice(-2);
+      if (parseInt(val) > 23) val = "23"; // Cap at 23
+      onChange(`${val}:${m || "00"}`);
+    };
+
+    const handleMin = (e) => {
+      let val = e.target.value.replace(/\D/g, ""); // Remove non-numbers
+      if (val.length > 2) val = val.slice(-2);
+      if (parseInt(val) > 59) val = "59"; // Cap at 59
+      onChange(`${h || "00"}:${val}`);
+    };
+
+    const handleBlur = () => {
+      // Auto-pad single digits with a leading zero when the user clicks away
+      const cleanH = h ? h.padStart(2, "0") : "";
+      const cleanM = m ? m.padStart(2, "0") : "";
+      if (cleanH || cleanM) {
+        onChange(`${cleanH || "00"}:${cleanM || "00"}`);
+      }
+    };
+
+    return (
+      <div className="input-group input-group-sm bg-white rounded flex-nowrap" style={{ width: "110px", boxShadow: "0 1px 3px rgba(0,0,0,0.06)" }}>
+        <input
+          type="text"
+          className="form-control border-secondary-subtle px-1 text-center bg-transparent fw-semibold"
+          placeholder="HH"
+          value={h}
+          onChange={handleHour}
+          onBlur={handleBlur}
+        />
+        <span className="input-group-text bg-transparent border-secondary-subtle border-start-0 border-end-0 px-0 text-muted fw-bold pb-1">:</span>
+        <input
+          type="text"
+          className="form-control border-secondary-subtle px-1 text-center bg-transparent fw-semibold"
+          placeholder="MM"
+          value={m}
+          onChange={handleMin}
+          onBlur={handleBlur}
+        />
+      </div>
+    );
   };
 
   return (
-    <div style={cardStyle}>
-      {scheduleError ? (
-        <div className="alert alert-danger py-2 px-3 mb-3" role="alert">
+    <div className="bg-white rounded-4 p-4 border" style={{ boxShadow: "0 4px 20px rgba(0,0,0,0.03)" }}>
+      {scheduleError && (
+        <div className="alert alert-danger py-2 px-3 mb-4 d-flex align-items-center gap-2" role="alert">
+          <i className="fa-solid fa-circle-exclamation"></i>
           {scheduleError}
         </div>
-      ) : null}
+      )}
 
-      <div className="mb-4">
-        <h6 style={{ fontWeight: 600 }}>Start</h6>
-        <div className="row g-3">
-          <div className="col-md-6">
-            <label style={labelStyle}>Start Date</label>
+      {/* Mode Toggle */}
+      <div className="d-flex p-1 bg-light rounded-pill border mb-4 mx-auto" style={{ maxWidth: "450px" }}>
+        <button
+          type="button"
+          className={`btn btn-sm rounded-pill flex-grow-1 fw-semibold transition-all ${form.scheduleMode === "single" ? "btn-primary shadow-sm" : "btn-light text-muted border-0 bg-transparent"
+            }`}
+          onClick={() => handleModeChange("single")}
+        >
+          Single Day
+        </button>
+        <button
+          type="button"
+          className={`btn btn-sm rounded-pill flex-grow-1 fw-semibold transition-all ${form.scheduleMode === "multiple" ? "btn-primary shadow-sm" : "btn-light text-muted border-0 bg-transparent"
+            }`}
+          onClick={() => handleModeChange("multiple")}
+        >
+          Multiple Days
+        </button>
+      </div>
+
+      {/* Date Picker */}
+      <div className="mb-4 pb-4 border-bottom">
+        <label className="form-label fw-bold mb-2">
+          {form.scheduleMode === "single" ? "Select Job Date" : "Select Date Range"}
+        </label>
+        <div className="position-relative" style={{ maxWidth: "450px" }}>
+          {form.scheduleMode === "single" ? (
             <DatePicker
-              selected={parseLocalDate(form.startDate)}
-              onChange={(date) => setField("startDate", formatLocalDate(date))}
+              selected={form.scheduleDays.length > 0 ? parseLocalDate(form.scheduleDays[0].date) : null}
+              onChange={handleSingleDateSelect}
               dateFormat="yyyy-MM-dd"
-              placeholderText="Select start date"
+              placeholderText="Choose a date..."
               minDate={new Date()}
-              wrapperClassName="w-100"
-              customInput={<input style={inputStyle} />}
+              className="form-control form-control-lg shadow-sm"
             />
-          </div>
-
-          <div className="col-md-6">
-            <label style={labelStyle}>Start Time (24h)</label>
-            <div className="d-flex gap-2">
-              <select
-                className="form-select"
-                style={inputStyle}
-                value={getPart(form.startTime, "hour")}
-                onChange={(e) =>
-                  handleTimeChange(
-                    "startTime",
-                    form.startTime,
-                    "hour",
-                    e.target.value,
-                  )
-                }
-              >
-                <option value="" disabled>
-                  HH
-                </option>
-                {hours.map((h) => (
-                  <option key={h} value={h}>
-                    {h}
-                  </option>
-                ))}
-              </select>
-
-              <span className="d-flex align-items-center fw-bold">:</span>
-
-              <select
-                className="form-select"
-                style={inputStyle}
-                value={getPart(form.startTime, "minute")}
-                onChange={(e) =>
-                  handleTimeChange(
-                    "startTime",
-                    form.startTime,
-                    "minute",
-                    e.target.value,
-                  )
-                }
-              >
-                <option value="" disabled>
-                  MM
-                </option>
-                {minutes.map((m) => (
-                  <option key={m} value={m}>
-                    {m}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
+          ) : (
+            <DatePicker
+              selectsRange={true}
+              startDate={form.dateRange[0]}
+              endDate={form.dateRange[1]}
+              onChange={handleRangeSelect}
+              dateFormat="yyyy-MM-dd"
+              placeholderText="Start Date - End Date"
+              minDate={new Date()}
+              className="form-control form-control-lg shadow-sm w-100"
+              isClearable
+            />
+          )}
         </div>
       </div>
 
-      <div style={{ height: 1, background: "#f1f1f1", margin: "20px 0" }} />
-
-      <div>
-        <h6 style={{ fontWeight: 600 }}>End</h6>
-        <div className="row g-3">
-          <div className="col-md-6">
-            <label style={labelStyle}>End Date</label>
-            <DatePicker
-              selected={parseLocalDate(form.endDate)}
-              onChange={(date) => setField("endDate", formatLocalDate(date))}
-              dateFormat="yyyy-MM-dd"
-              placeholderText="Select end date"
-              minDate={
-                form.startDate ? parseLocalDate(form.startDate) : new Date()
-              }
-              wrapperClassName="w-100"
-              customInput={<input style={inputStyle} />}
-            />
-          </div>
-
-          <div className="col-md-6">
-            <label style={labelStyle}>End Time (24h)</label>
-            <div className="d-flex gap-2">
-              <select
-                className="form-select"
-                style={inputStyle}
-                value={getPart(form.endTime, "hour")}
-                onChange={(e) =>
-                  handleTimeChange(
-                    "endTime",
-                    form.endTime,
-                    "hour",
-                    e.target.value,
-                  )
-                }
-              >
-                <option value="" disabled>
-                  HH
-                </option>
-                {hours.map((h) => (
-                  <option key={h} value={h}>
-                    {h}
-                  </option>
-                ))}
-              </select>
-
-              <span className="d-flex align-items-center fw-bold">:</span>
-
-              <select
-                className="form-select"
-                style={inputStyle}
-                value={getPart(form.endTime, "minute")}
-                onChange={(e) =>
-                  handleTimeChange(
-                    "endTime",
-                    form.endTime,
-                    "minute",
-                    e.target.value,
-                  )
-                }
-              >
-                <option value="" disabled>
-                  MM
-                </option>
-                {minutes.map((m) => (
-                  <option key={m} value={m}>
-                    {m}
-                  </option>
-                ))}
-              </select>
+      {/* BULK APPLY ACTION */}
+      {form.scheduleMode === "multiple" && form.scheduleDays.length > 1 && (
+        <div className="rounded-3 p-3 mb-4" style={{ backgroundColor: "#f0f7ff", border: "1px solid #cce3ff" }}>
+          <label className="fw-bold text-primary mb-3 d-block small text-uppercase tracking-wide">
+            <i className="fa-solid fa-bolt me-2"></i> Fast Fill: Apply standard shift to all days
+          </label>
+          <div className="d-flex flex-wrap align-items-center gap-4">
+            <div className="d-flex align-items-center gap-2">
+              <span className="small text-muted fw-semibold">Start:</span>
+              <CompactTime value={bulkStart} onChange={setBulkStart} />
             </div>
+            <div className="d-flex align-items-center gap-2">
+              <span className="small text-muted fw-semibold">End:</span>
+              <CompactTime value={bulkEnd} onChange={setBulkEnd} />
+            </div>
+            <div className="d-flex align-items-center gap-2">
+              <span className="small text-muted fw-semibold">Guards:</span>
+              <input
+                type="number"
+                className="form-control form-control-sm text-center fw-semibold border-secondary-subtle"
+                style={{ width: "65px", boxShadow: "0 1px 3px rgba(0,0,0,0.06)" }}
+                min="1"
+                value={bulkGuards}
+                onChange={(e) => setBulkGuards(Number(e.target.value))}
+              />
+            </div>
+            <button
+              type="button"
+              className="btn btn-sm btn-primary fw-semibold px-3 ms-auto shadow-sm"
+              onClick={applyBulkSettings}
+              disabled={!bulkStart || !bulkEnd}
+            >
+              Apply to All
+            </button>
           </div>
         </div>
+      )}
+
+      {/* Compact Data Grid */}
+      <div className="d-flex flex-column gap-4 mt-2">
+        {form.scheduleDays.map((day, dayIndex) => (
+          <div key={day.date} className="border-bottom pb-3">
+
+            {/* Day Title Row */}
+            <div className="d-flex justify-content-between align-items-center mb-2">
+              <span className="fw-bold text-dark fs-6">
+                {new Date(day.date).toLocaleDateString("en-AU", { weekday: "short", day: "numeric", month: "short" })}
+              </span>
+              <button
+                type="button"
+                className="btn btn-sm text-primary p-0 border-0 fw-semibold small transition-all"
+                style={{ opacity: 0.8 }}
+                onMouseOver={(e) => e.target.style.opacity = 1}
+                onMouseOut={(e) => e.target.style.opacity = 0.8}
+                onClick={() => addShift(dayIndex)}
+              >
+                + Add shift
+              </button>
+            </div>
+
+            {/* Shift Rows inside the day */}
+            <div className="d-flex flex-column gap-2">
+              {day.shifts.map((shift, shiftIndex) => (
+                <div key={shift.id} className="d-flex flex-wrap align-items-center gap-3 bg-light rounded-2 px-3 py-2 border border-light">
+
+                  <div className="d-flex align-items-center gap-2">
+                    <span className="small text-muted fw-medium" style={{ width: "35px" }}>Start:</span>
+                    <CompactTime value={shift.startTime} onChange={(val) => updateShift(dayIndex, shiftIndex, "startTime", val)} />
+                  </div>
+
+                  <div className="d-flex align-items-center gap-2">
+                    <span className="small text-muted fw-medium" style={{ width: "35px" }}>End:</span>
+                    <CompactTime value={shift.endTime} onChange={(val) => updateShift(dayIndex, shiftIndex, "endTime", val)} />
+                  </div>
+
+                  <div className="d-flex align-items-center gap-2 ms-md-auto">
+                    <span className="small text-muted fw-medium">Guards:</span>
+                    <div className="input-group input-group-sm flex-nowrap shadow-sm" style={{ width: "95px" }}>
+                      <button type="button" className="btn btn-white border-secondary-subtle bg-white px-2 text-muted fw-bold" onClick={() => updateShift(dayIndex, shiftIndex, "numGuards", Math.max(1, shift.numGuards - 1))}>−</button>
+                      <input type="text" readOnly className="form-control border-secondary-subtle text-center px-1 bg-white fw-semibold" value={shift.numGuards} />
+                      <button type="button" className="btn btn-white border-secondary-subtle bg-white px-2 text-muted fw-bold" onClick={() => updateShift(dayIndex, shiftIndex, "numGuards", shift.numGuards + 1)}>+</button>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    className="btn btn-sm text-danger p-1 border-0 ms-2 opacity-75"
+                    onClick={() => removeShift(dayIndex, shiftIndex)}
+                    disabled={day.shifts.length === 1}
+                    title="Remove shift"
+                  >
+                    <i className="fa-solid fa-trash-can"></i>
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );

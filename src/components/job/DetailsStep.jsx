@@ -2,13 +2,7 @@ import React from "react";
 import Select from "react-select";
 import AttachmentGrid from "./AttachmentGrid";
 
-export default function DetailsStep({
-  form,
-  setField,
-  handleFile,
-  attachmentPreviews,
-  removeAttachment,
-}) {
+export default function DetailsStep({ form, setField, handleFile, attachmentPreviews, removeAttachment }) {
   const DOC_OPTIONS = [
     { label: 'Security License', value: 'security_license' },
     { label: 'MISC Time License', value: 'misc_time_license' },
@@ -29,23 +23,17 @@ export default function DetailsStep({
     { label: "Others", value: "others" },
   ];
 
-  // Helper to find the correct label for the selected job type
   const selectedJobTypeOption = form.jobType
-    ? JOB_TYPE_OPTIONS.find((opt) => opt.value === form.jobType) || {
-      value: form.jobType,
-      label: form.jobType,
-    }
+    ? JOB_TYPE_OPTIONS.find((opt) => opt.value === form.jobType) || { value: form.jobType, label: form.jobType }
     : null;
 
   return (
     <div className="mb-4">
       <h5 className="mb-2">Details</h5>
-      <p className="text-muted small">
-        Job specifics and optional attachments.
-      </p>
+      <p className="text-muted small">Job specifics and optional attachments.</p>
 
       <div className="row g-3">
-        <div className="col-12">
+        <div className="col-12 col-md-6">
           <label className="form-label">Job title</label>
           <input
             name="title"
@@ -56,33 +44,7 @@ export default function DetailsStep({
             required
           />
         </div>
-        <div className="col-12 col-md-6">
-          <label className="form-label"># of Guards</label>
-          <div className="input-group input-group-lg">
-            <button
-              type="button"
-              className="btn btn-outline-secondary"
-              onClick={() =>
-                setField("numGuards", Math.max(1, (Number(form.numGuards) || 1) - 1))
-              }
-            >
-              −
-            </button>
-            <input
-              type="text"
-              readOnly
-              className="form-control text-center"
-              value={form.numGuards || 1}
-            />
-            <button
-              type="button"
-              className="btn btn-outline-secondary"
-              onClick={() => setField("numGuards", (Number(form.numGuards) || 1) + 1)}
-            >
-              +
-            </button>
-          </div>
-        </div>
+
         <div className="col-12 col-md-6">
           <label className="form-label">Job Type</label>
           <Select
@@ -90,21 +52,12 @@ export default function DetailsStep({
             value={selectedJobTypeOption}
             onChange={(opt) => {
               setField("jobType", opt && opt.value ? opt.value : "");
-              // Clear custom input if they switch away from "others"
-              if (opt?.value !== "others") {
-                setField("customJobType", "");
-              }
+              if (opt?.value !== "others") setField("customJobType", "");
             }}
             isClearable
             classNamePrefix="react-select"
-            styles={{
-              control: (base) => ({
-                ...base,
-                minHeight: "48px",
-              }),
-            }}
+            styles={{ control: (base) => ({ ...base, minHeight: "48px" }) }}
           />
-          {/* Custom Job Type Input when "Others" is selected */}
           {form.jobType === "others" && (
             <div className="mt-2">
               <input
@@ -150,22 +103,14 @@ export default function DetailsStep({
               />
             </div>
             <div className="flex-grow-1">
-              <label
-                className="form-label m-0"
-                htmlFor="documentRequired"
-                style={{ cursor: "pointer" }}
-              >
+              <label className="form-label m-0" htmlFor="documentRequired" style={{ cursor: "pointer" }}>
                 <strong>Require Documents from Applicants</strong>
               </label>
               <div className="text-muted small">
-                {form.document
-                  ? `${form.document_types?.length || 0} document(s) required`
-                  : "Click to add document requirements"}
+                {form.document ? `${form.document_types?.length || 0} document(s) required` : "Click to add document requirements"}
               </div>
             </div>
-            <i
-              className={`fa-solid fa-chevron-${form.document ? "up" : "down"} text-muted`}
-            ></i>
+            <i className={`fa-solid fa-chevron-${form.document ? "up" : "down"} text-muted`}></i>
           </div>
         </div>
 
@@ -178,29 +123,16 @@ export default function DetailsStep({
               </label>
               <Select
                 isMulti
-                options={DOC_OPTIONS.map((d) => ({
-                  value: d.value,
-                  label: d.label,
-                }))}
-                value={
-                  Array.isArray(form.document_types)
-                    ? DOC_OPTIONS.filter(opt => form.document_types.includes(opt.value))
-                    : []
-                }
+                options={DOC_OPTIONS}
+                value={Array.isArray(form.document_types) ? DOC_OPTIONS.filter(opt => form.document_types.includes(opt.value)) : []}
                 onChange={(opts) => {
                   const selectedValues = Array.isArray(opts) ? opts.map((o) => o.value) : [];
                   setField("document_types", selectedValues);
-
-                  // Clear custom input if they switch away from "others"
-                  if (!selectedValues.includes("others")) {
-                    setField("customDocumentType", "");
-                  }
+                  if (!selectedValues.includes("others")) setField("customDocumentType", "");
                 }}
                 classNamePrefix="react-select"
                 placeholder="Choose documents to require..."
               />
-
-              {/* Custom Document Input when "Others" is selected */}
               {form.document_types?.includes("others") && (
                 <div className="mt-2">
                   <input
@@ -214,13 +146,6 @@ export default function DetailsStep({
                   />
                 </div>
               )}
-
-              {form.document_types?.length > 0 && (
-                <div className="mt-3 pt-3 border-top small">
-                  <strong>Selected:</strong> {form.document_types.length}{" "}
-                  document(s)
-                </div>
-              )}
             </div>
           </div>
         )}
@@ -228,35 +153,15 @@ export default function DetailsStep({
 
       <div className="mb-3">
         <label className="form-label">Attachments (optional)</label>
-
-        <input
-          id="attachments-input"
-          type="file"
-          accept="image/*,.pdf,.doc,.docx"
-          multiple
-          onChange={handleFile}
-          style={{ display: "none" }}
-        />
-
-        <label
-          htmlFor="attachments-input"
-          className="d-flex align-items-center gap-3 p-3 rounded border bg-white"
-          style={{ cursor: "pointer" }}
-        >
-          <i
-            className="fa-solid fa-cloud-arrow-up fa-lg text-secondary"
-            aria-hidden="true"
-          ></i>
+        <input id="attachments-input" type="file" accept="image/*,.pdf,.doc,.docx" multiple onChange={handleFile} style={{ display: "none" }} />
+        <label htmlFor="attachments-input" className="d-flex align-items-center gap-3 p-3 rounded border bg-white" style={{ cursor: "pointer" }}>
+          <i className="fa-solid fa-cloud-arrow-up fa-lg text-secondary" aria-hidden="true"></i>
           <div>
             <strong>Upload files</strong>
             <div className="text-muted small">PNG, JPG, PDF — up to 10MB</div>
           </div>
         </label>
-
-        <AttachmentGrid
-          previews={attachmentPreviews}
-          removeAttachment={removeAttachment}
-        />
+        <AttachmentGrid previews={attachmentPreviews} removeAttachment={removeAttachment} />
       </div>
     </div>
   );

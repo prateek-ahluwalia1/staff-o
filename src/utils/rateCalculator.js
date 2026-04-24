@@ -1,22 +1,6 @@
 /**
  * Shift price-breakdown calculator
- *
- * Day-type rules (based on the calendar date the hour falls on)
- * -------------------------------------------------------------
- * weekday  : Monday – Thursday  (getDay 1-4)
- * fri      : Friday             (getDay 5)
- * sat      : Saturday           (getDay 6)
- * sun      : Sunday             (getDay 0)
- *
- * Each day type has separate rates for day (06:00–18:00) and night (18:00–06:00).
- * The shift is split at midnight, 06:00, and 18:00 so each segment is billed
- * at the correct day-type + slot rate.
- *
- * Rates must always come from the API via mapApiRates().
- * computeShiftBreakdown() returns null when no rates are provided.
  */
-
-// ─── helpers ────────────────────────────────────────────────────────────────
 
 export function getDayType(date) {
   const d = date.getDay(); // 0=Sun 1=Mon … 5=Fri 6=Sat
@@ -51,85 +35,40 @@ function nextBoundary(t) {
   } else if (h < 18) {
     next.setHours(18, 0, 0, 0);
   } else {
-    // 18:00–23:59 → advance to midnight (new calendar day)
     next.setDate(next.getDate() + 1);
     next.setHours(0, 0, 0, 0);
   }
-
   return next;
 }
 
-// ─── API → rates mapper ────────────────────────────────────────────────────
-
 export function mapApiRates(chargeRecord, payRecord = null, prefix = "def_metro") {
   if (!chargeRecord) return null;
-
   const r = (record, key) => (record ? parseFloat(record?.[key]) || 0 : 0);
 
   return {
     pay: {
-      weekday: {
-        day: r(payRecord, `${prefix}_mon_to_fri_day_rate`),
-        night: r(payRecord, `${prefix}_mon_to_fri_night_rate`),
-      },
-      fri: {
-        day: r(payRecord, `${prefix}_mon_to_fri_day_rate`),
-        night: r(payRecord, `${prefix}_mon_to_fri_night_rate`),
-      },
-      sat: {
-        day: r(payRecord, `${prefix}_sat_day_rate`),
-        night: r(payRecord, `${prefix}_sat_night_rate`),
-      },
-      sun: {
-        day: r(payRecord, `${prefix}_sun_day_rate`),
-        night: r(payRecord, `${prefix}_sun_night_rate`),
-      },
+      weekday: { day: r(payRecord, `${prefix}_mon_to_fri_day_rate`), night: r(payRecord, `${prefix}_mon_to_fri_night_rate`) },
+      fri: { day: r(payRecord, `${prefix}_mon_to_fri_day_rate`), night: r(payRecord, `${prefix}_mon_to_fri_night_rate`) },
+      sat: { day: r(payRecord, `${prefix}_sat_day_rate`), night: r(payRecord, `${prefix}_sat_night_rate`) },
+      sun: { day: r(payRecord, `${prefix}_sun_day_rate`), night: r(payRecord, `${prefix}_sun_night_rate`) },
     },
     charge: {
-      weekday: {
-        day: r(chargeRecord, `${prefix}_mon_to_fri_day_rate`),
-        night: r(chargeRecord, `${prefix}_mon_to_fri_night_rate`),
-      },
-      fri: {
-        day: r(chargeRecord, `${prefix}_mon_to_fri_day_rate`),
-        night: r(chargeRecord, `${prefix}_mon_to_fri_night_rate`),
-      },
-      sat: {
-        day: r(chargeRecord, `${prefix}_sat_day_rate`),
-        night: r(chargeRecord, `${prefix}_sat_night_rate`),
-      },
-      sun: {
-        day: r(chargeRecord, `${prefix}_sun_day_rate`),
-        night: r(chargeRecord, `${prefix}_sun_night_rate`),
-      },
+      weekday: { day: r(chargeRecord, `${prefix}_mon_to_fri_day_rate`), night: r(chargeRecord, `${prefix}_mon_to_fri_night_rate`) },
+      fri: { day: r(chargeRecord, `${prefix}_mon_to_fri_day_rate`), night: r(chargeRecord, `${prefix}_mon_to_fri_night_rate`) },
+      sat: { day: r(chargeRecord, `${prefix}_sat_day_rate`), night: r(chargeRecord, `${prefix}_sat_night_rate`) },
+      sun: { day: r(chargeRecord, `${prefix}_sun_day_rate`), night: r(chargeRecord, `${prefix}_sun_night_rate`) },
     },
   };
 }
 
-// ─── main export ────────────────────────────────────────────────────────────
-
-/**
- * Compute the pay & charge cost breakdown for an array of shifts.
- *
- * @param {Array} scheduleDays - Array of days with shifts from the AddJob state
- * @param {object} rates - Rates from mapApiRates(). Returns null when not provided.
- *
- * Return shape:
- * {
- * segments: [{ key, label, hours, payRate, chargeRate, payAmount, chargeAmount }],
- * payTotal, chargeTotal, payGst, chargeGst, payTotalIncGst, chargeTotalIncGst, totalHours
- * }
- */
 export function computeShiftBreakdown(scheduleDays, rates = null) {
   if (!scheduleDays || !Array.isArray(scheduleDays) || scheduleDays.length === 0 || !rates) return null;
 
-  // Track Billable Hours (Duration x Guards) per rate-period
   const hoursMap = new Map();
   const keyOrder = [];
 
   for (const day of scheduleDays) {
     if (!day.date || !day.shifts) continue;
-
     const [sy, sm, sd] = day.date.split("-").map(Number);
 
     for (const shift of day.shifts) {
@@ -141,30 +80,20 @@ export function computeShiftBreakdown(scheduleDays, rates = null) {
       let start = new Date(sy, sm - 1, sd, sh, smin, 0, 0);
       let end = new Date(sy, sm - 1, sd, eh, emin, 0, 0);
 
-      // Handle overnight shifts (if end time is earlier than start time, it rolls to the next day)
-      if (end <= start) {
-        end.setDate(end.getDate() + 1);
-      }
+      if (end <= start) end.setDate(end.getDate() + 1);
 
       const durationMs = end - start;
       if (isNaN(durationMs) || durationMs <= 0) continue;
 
       const guards = Math.max(1, Number(shift.numGuards) || 1);
-
-      // Walk the shift in "rate-zone" segments
       let t = new Date(start);
+
       while (t < end) {
         const boundary = nextBoundary(t);
         const segEnd = boundary < end ? boundary : end;
+        const key = `${getDayType(t)}_${getSlot(t.getHours())}`;
 
-        const dayType = getDayType(t);
-        const slot = getSlot(t.getHours());
-        const key = `${dayType}_${slot}`;
-
-        // Raw hours for this specific chunk
         const segHours = (segEnd - t) / 3_600_000;
-
-        // Billable Hours = Raw Hours * Number of Guards
         const billableHours = segHours * guards;
 
         if (!hoursMap.has(key)) {
@@ -172,7 +101,6 @@ export function computeShiftBreakdown(scheduleDays, rates = null) {
           keyOrder.push(key);
         }
         hoursMap.set(key, hoursMap.get(key) + billableHours);
-
         t = new Date(segEnd);
       }
     }
@@ -180,7 +108,6 @@ export function computeShiftBreakdown(scheduleDays, rates = null) {
 
   if (keyOrder.length === 0) return null;
 
-  // ── build segment rows ─────────────────────────────────────────────────
   let payTotal = 0;
   let chargeTotal = 0;
   let totalBillableHours = 0;
@@ -188,7 +115,6 @@ export function computeShiftBreakdown(scheduleDays, rates = null) {
   const segments = keyOrder.map((key) => {
     const [dayType, slot] = key.split("_");
     const billableHours = Math.round(hoursMap.get(key) * 100) / 100;
-
     const payRate = rates.pay[dayType]?.[slot] ?? 0;
     const chargeRate = rates.charge[dayType]?.[slot] ?? 0;
 
@@ -210,20 +136,15 @@ export function computeShiftBreakdown(scheduleDays, rates = null) {
     };
   });
 
-  // ── totals ──────────────────────────────────────────────────────────────
   const GST_RATE = 0.1;
-  const payGst = payTotal * GST_RATE;
-  const chargeGst = chargeTotal * GST_RATE;
-
   return {
     segments,
-    totalHours: Math.round(totalBillableHours * 100) / 100, // Returning total billable hours
+    totalHours: Math.round(totalBillableHours * 100) / 100,
     payTotal,
     chargeTotal,
-    payGst,
-    chargeGst,
-    payTotalIncGst: payTotal + payGst,
-    chargeTotalIncGst: chargeTotal + chargeGst,
-    isComplexSchedule: true // Flag to help UI
+    payGst: payTotal * GST_RATE,
+    chargeGst: chargeTotal * GST_RATE,
+    payTotalIncGst: payTotal + (payTotal * GST_RATE),
+    chargeTotalIncGst: chargeTotal + (chargeTotal * GST_RATE),
   };
 }

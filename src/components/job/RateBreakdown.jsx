@@ -1,130 +1,60 @@
 import React from "react";
 
 function fmt(v) {
-  try {
-    return new Intl.NumberFormat("en-AU", {
-      style: "currency",
-      currency: "AUD",
-      maximumFractionDigits: 2,
-    }).format(v);
-  } catch (e) {
-    return `$${Number(v).toFixed(2)}`;
-  }
+  try { return new Intl.NumberFormat("en-AU", { style: "currency", currency: "AUD", maximumFractionDigits: 2 }).format(v); }
+  catch { return `$${Number(v).toFixed(2)}`; }
 }
 
-function fmtH(h) {
-  return `${Number(h).toFixed(2)} hr${h !== 1 ? "s" : ""}`;
-}
+export default function RateBreakdown({ rate, jobTypeLabel = "Security Guard", paymentOption = "full" }) {
+  if (!rate || !Array.isArray(rate.segments) || rate.segments.length === 0) return null;
 
-export default function RateBreakdown({ rate }) {
-  if (!rate || !Array.isArray(rate.segments) || rate.segments.length === 0) {
-    return null;
-  }
-
-  const {
-    segments,
-    // payTotal,
-    chargeTotal,
-    // payGst,
-    chargeGst,
-    // payTotalIncGst,
-    chargeTotalIncGst,
-    totalHours,
-  } = rate;
-  const guardLabel = "Variable Guards";
+  const { segments, chargeTotal, chargeGst, chargeTotalIncGst, totalHours } = rate;
+  const discountAmount = paymentOption === "full" ? chargeTotalIncGst * 0.05 : 0;
+  const amountDueToday = paymentOption === "full" ? chargeTotalIncGst - discountAmount : chargeTotalIncGst * 0.50;
+  const balanceDue = paymentOption === "split" ? chargeTotalIncGst * 0.50 : 0;
 
   return (
-    <div
-      className="list-card mt-3 p-3 bg-white rounded shadow-sm"
-      aria-live="polite"
-    >
-      {/* Header */}
-      <div className="d-flex justify-content-between align-items-start mb-3">
-        <div>
-          <h6 className="mb-2">Rate Breakdown</h6>
-          <small className="text-muted">
-            {fmtH(totalHours)} billable &middot; {guardLabel}
-          </small>
-        </div>
-        <span className="badge bg-light text-dark">{guardLabel}</span>
+    <div className="border rounded-4 bg-white overflow-hidden shadow-sm" style={{ borderColor: "#e9ecef" }}>
+      <div className="bg-light border-bottom px-4 py-3 d-flex align-items-center justify-content-between">
+        <h6 className="fw-bold mb-0 text-dark"><i className="fa-solid fa-file-invoice-dollar text-primary me-2"></i> Quotation Breakdown</h6>
+        <span className="badge bg-primary bg-opacity-10 text-primary border border-primary-subtle rounded-pill px-3 py-2 fw-bold shadow-sm">{totalHours.toFixed(2)} Total Billable Hours</span>
       </div>
 
-      {/* Column headers */}
-      <div className="row g-0 border-bottom pb-1 mb-1">
-        <div className="col-6 small fw-semibold text-muted">Period</div>
-        <div className="col-2 small fw-semibold text-muted text-end">Hrs</div>
-        {/* <div className="col-3 small fw-semibold text-muted text-end">
-          Pay/hr → Total
-        </div> */}
-        <div className="col-4 small fw-semibold text-muted text-end">
-          Charge/hr → Total
-        </div>
-      </div>
-
-      {/* Segment rows */}
-      {segments.map((seg) => (
-        <div
-          key={seg.key}
-          className="row g-0 align-items-center border-bottom py-1"
-        >
-          <div className="col-6 small">{seg.label}</div>
-          <div className="col-2 small text-end text-muted">
-            {Number(seg.hours).toFixed(2)}
-          </div>
-          {/* <div className="col-3 small text-end">
-            <span className="text-muted">{fmt(seg.payRate)}</span>
-            <span className="mx-1 text-muted">→</span>
-            <span className="fw-semibold">{fmt(seg.payAmount)}</span>
-          </div> */}
-          <div className="col-4 small text-end">
-            <span className="text-muted">{fmt(seg.chargeRate)}</span>
-            <span className="mx-1 text-muted">→</span>
-            <span className="fw-semibold">{fmt(seg.chargeAmount)}</span>
-          </div>
-        </div>
-      ))}
-
-      {/* Subtotal row */}
-      <div className="row g-0 border-bottom py-2">
-        <div className="col-8 small fw-semibold text-muted">
-          Subtotal (ex. GST)
-        </div>
-        {/* <div className="col-3 small text-end fw-semibold text-success">
-          {fmt(payTotal)}
-        </div> */}
-        <div className="col-4 small text-end fw-semibold text-primary">
-          {fmt(chargeTotal)}
-        </div>
-      </div>
-
-      {/* GST row */}
-      <div className="row g-0 border-bottom py-2">
-        <div className="col-8 small text-muted">GST (10%)</div>
-        {/* <div className="col-3 small text-end text-muted">{fmt(payGst)}</div> */}
-        <div className="col-4 small text-end text-muted">{fmt(chargeGst)}</div>
-      </div>
-
-      {/* Total inc-GST highlight */}
-      <div
-        className="row g-0 mt-2 p-2 rounded"
-        style={{
-          background:
-            "linear-gradient(90deg, rgba(13,110,253,0.07), rgba(25,135,84,0.04))",
-        }}
-      >
-        <div className="col-8 fw-bold">Total (inc. GST)</div>
-        {/* <div className="col-3 text-end">
-          <div className="x-small text-muted" style={{ fontSize: "0.7rem" }}>
-            Pay Rate
-          </div>
-          <div className="fw-bold text-success">{fmt(payTotalIncGst)}</div>
-        </div> */}
-        <div className="col-4 text-end">
-          <div className="x-small text-muted" style={{ fontSize: "0.7rem" }}>
-            Charge Rate
-          </div>
-          <div className="fw-bold text-primary">{fmt(chargeTotalIncGst)}</div>
-        </div>
+      <div className="table-responsive">
+        <table className="table mb-0 table-borderless align-middle">
+          <thead style={{ backgroundColor: "#f8f9fa", fontSize: "12px", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+            <tr className="border-bottom">
+              <th className="text-muted fw-bold py-3 ps-4" style={{ width: "30%" }}>Description</th>
+              <th className="text-muted fw-bold py-3" style={{ width: "25%" }}>Rate Type</th>
+              <th className="text-muted fw-bold py-3 text-center" style={{ width: "15%" }}>Qty (Hrs)</th>
+              <th className="text-muted fw-bold py-3 text-end" style={{ width: "15%" }}>Unit Price</th>
+              <th className="text-muted fw-bold py-3 text-end pe-4" style={{ width: "15%" }}>Subtotal</th>
+            </tr>
+          </thead>
+          <tbody className="border-bottom">
+            {segments.map((seg, idx) => (
+              <tr key={idx} style={{ borderBottom: idx === segments.length - 1 ? "none" : "1px dashed #dee2e6" }}>
+                <td className="ps-4 py-3 fw-semibold text-dark fs-6">{jobTypeLabel}</td>
+                <td className="py-3 text-muted fw-medium small">{seg.label.replace("06:00–18:00", "06:00-18:00").replace("18:00–06:00", "18:00-06:00")}</td>
+                <td className="py-3 text-center fw-bold text-dark">{Number(seg.hours).toFixed(2)}</td>
+                <td className="py-3 text-end text-muted fw-medium">{fmt(seg.chargeRate)}</td>
+                <td className="py-3 text-end pe-4 fw-bold text-dark">{fmt(seg.chargeAmount)}</td>
+              </tr>
+            ))}
+          </tbody>
+          <tfoot style={{ backgroundColor: "#fdfdfe" }}>
+            <tr><td colSpan="3" className="ps-4 py-2 border-0"></td><td className="text-end py-2 text-muted small fw-bold text-uppercase border-0 pt-3">Subtotal (ex GST)</td><td className="text-end pe-4 py-2 fw-bold text-dark border-0 pt-3">{fmt(chargeTotal)}</td></tr>
+            <tr><td colSpan="3" className="ps-4 py-1 border-0"></td><td className="text-end py-1 text-muted small fw-bold text-uppercase border-0">GST (10%)</td><td className="text-end pe-4 py-1 text-muted fw-medium border-0">{fmt(chargeGst)}</td></tr>
+            <tr className="border-bottom"><td colSpan="3" className="ps-4 py-3 border-0"></td><td className="text-end py-3 fw-bold text-dark fs-6 border-0">Total Quotation</td><td className="text-end pe-4 py-3 fw-bold text-dark fs-6 border-0">{fmt(chargeTotalIncGst)}</td></tr>
+            {paymentOption === "full" && (
+              <tr className="bg-success bg-opacity-10"><td colSpan="3" className="ps-4 py-2 border-0"><span className="text-success small fw-bold"><i className="fa-solid fa-tag me-1"></i> 5% Pay-in-Full Discount Applied</span></td><td className="text-end py-2 text-success small fw-bold text-uppercase border-0">Less Discount</td><td className="text-end pe-4 py-2 fw-bold text-success border-0">-{fmt(discountAmount)}</td></tr>
+            )}
+            {paymentOption === "split" && (
+              <tr className="bg-warning bg-opacity-10"><td colSpan="3" className="ps-4 py-2 border-0"><span className="text-warning-emphasis small fw-bold"><i className="fa-solid fa-layer-group me-1"></i> 50% Deferred until Handshake Completion</span></td><td className="text-end py-2 text-warning-emphasis small fw-bold text-uppercase border-0">Balance Remaining</td><td className="text-end pe-4 py-2 fw-bold text-warning-emphasis border-0">{fmt(balanceDue)}</td></tr>
+            )}
+            <tr><td colSpan="3" className="ps-4 py-3 border-top mt-2"></td><td className="text-end py-3 fw-bold text-dark fs-5 border-top mt-2">Payable Now</td><td className="text-end pe-4 py-3 fw-bold text-primary fs-4 border-top mt-2">{fmt(amountDueToday)}</td></tr>
+          </tfoot>
+        </table>
       </div>
     </div>
   );

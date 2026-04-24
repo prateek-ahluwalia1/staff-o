@@ -29,10 +29,9 @@ export default function RateBreakdown({ rate }) {
     chargeGst,
     // payTotalIncGst,
     chargeTotalIncGst,
-    numGuards,
     totalHours,
   } = rate;
-  const guardLabel = `${numGuards} guard${numGuards > 1 ? "s" : ""}`;
+  const guardLabel = "Variable Guards";
 
   return (
     <div
@@ -44,7 +43,7 @@ export default function RateBreakdown({ rate }) {
         <div>
           <h6 className="mb-2">Rate Breakdown</h6>
           <small className="text-muted">
-            {fmtH(totalHours)} total &middot; {guardLabel}
+            {fmtH(totalHours)} billable &middot; {guardLabel}
           </small>
         </div>
         <span className="badge bg-light text-dark">{guardLabel}</span>

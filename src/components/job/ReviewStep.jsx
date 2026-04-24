@@ -1,5 +1,6 @@
 import React from "react";
 import RateBreakdown from "./RateBreakdown";
+import { NavLink } from "react-router-dom";
 
 export default function ReviewStep({
   form,
@@ -110,7 +111,7 @@ export default function ReviewStep({
         </div>
         <h6>Terms & Conditions</h6>
         <p className="text-muted small">
-          By paying and posting this job you agree to our terms.
+          By paying and posting this job you agree to our <NavLink to="/terms-of-use">Terms & Conditions</NavLink> and <NavLink to="/privacy-policy">Privacy Policy</NavLink>.
         </p>
         <div className="form-check">
           <input

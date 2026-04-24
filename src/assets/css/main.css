@@ -5409,7 +5409,6 @@ blockquote:after {
 
 .tags li {
     display: inline-block;
-    float: left;
 }
 
 .tags a {
@@ -7380,6 +7379,7 @@ Large Mobile Screen
            ==Auth Pages==
 *************************************************/
 .auth-section {
+    min-height: calc(100vh - 100px);
     padding: 35px 0;
     background: radial-gradient(circle at top left, rgba(59, 130, 246, 0.12), transparent 55%),
         radial-gradient(circle at bottom right, rgba(16, 185, 129, 0.12), transparent 50%),

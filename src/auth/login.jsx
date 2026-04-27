@@ -18,16 +18,14 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
 
   const extractErrorMessage = (response) => {
-    if (response.message) {
-      return response.message;
-    }
+    if (response.message) return response.message;
     if (response.errors && typeof response.errors === "object") {
-      const firstErrorKey = Object.keys(response.errors)[0];
-      if (firstErrorKey && Array.isArray(response.errors[firstErrorKey])) {
-        return response.errors[firstErrorKey][0];
+      const key = Object.keys(response.errors)[0];
+      if (Array.isArray(response.errors[key])) {
+        return response.errors[key][0];
       }
     }
-    return "An error occurred. Please try again.";
+    return "Something went wrong. Please try again.";
   };
 
   const handleSubmit = async (e) => {
@@ -43,7 +41,7 @@ export default function Login() {
 
     const normalized = normalizeAuthResponse(res);
 
-    if (normalized && normalized.token) {
+    if (normalized?.token) {
       dispatch(setToken({ token: normalized.token }));
       dispatch(setUser({ userdata: normalized.user }));
 
@@ -51,6 +49,7 @@ export default function Login() {
       const redirectTo = normalized.user?.data?.is_active
         ? "/dashboard"
         : "/edit-profile";
+
       navigate(redirectTo, { replace: true });
     } else {
       toast.error(extractErrorMessage(res));
@@ -60,12 +59,12 @@ export default function Login() {
   const handleGoogleLogin = useGoogleLogin({
     flow: "implicit",
     onSuccess: async (tokenResponse) => {
-      console.log("Google login successful, token response:", tokenResponse);
       try {
-        const googleToken = tokenResponse?.access_token || tokenResponse?.code;
+        const googleToken =
+          tokenResponse?.access_token || tokenResponse?.code;
 
         if (!googleToken) {
-          toast.error("Google login response was invalid. Please try again.");
+          toast.error("Invalid Google response.");
           return;
         }
 
@@ -77,155 +76,170 @@ export default function Login() {
 
         const normalized = normalizeAuthResponse(res);
 
-        if (normalized && normalized.token) {
+        if (normalized?.token) {
           dispatch(setToken({ token: normalized.token }));
           dispatch(setUser({ userdata: normalized.user }));
 
           toast.success("Google Login successful!");
+
           const redirectTo = normalized.user?.data?.is_active
             ? "/dashboard"
             : "/edit-profile";
+
           navigate(redirectTo, { replace: true });
         } else {
           toast.error(extractErrorMessage(res));
         }
-      } catch (error) {
-        toast.error("An error occurred connecting to the server.");
+      } catch {
+        toast.error("Server connection error.");
       }
-    },
-    onError: () => {
-      toast.error("Google Login Failed. Please try again.");
-    },
-    onNonOAuthError: () => {
-      toast.error("Google popup was blocked or closed. Please try again.");
     },
   });
 
   return (
     <>
       <Header />
-      <section className="auth-section py-5">
-        <div className="container">
-          <div className="row g-5 align-items-center">
 
-            {/* Left side - Intro text */}
-            <div className="col-lg-6">
-              <div className="auth-intro">
-                <span className="auth-badge mb-3 d-inline-block px-3 py-1 bg-primary bg-opacity-10 text-primary rounded-pill fw-semibold small">
-                  Welcome Back
-                </span>
-                <h1 className="auth-title display-5 fw-bold mb-4">
-                  Log in to continue your job search
+      <section
+        className="d-flex align-items-center py-5"
+        style={{
+          minHeight: "calc(100vh - 80px)",
+          background: "#f8fafc",
+        }}
+      >
+        <div className="container" style={{ maxWidth: "1100px" }}>
+          <div className="row align-items-center g-5">
+
+            {/* LEFT SIDE */}
+            <div className="col-lg-6 d-none d-lg-flex align-items-center">
+              <div>
+                <h1
+                  className="fw-bold mb-3"
+                  style={{ fontSize: "40px", lineHeight: "1.2" }}
+                >
+                  Welcome back
                 </h1>
-                <p className="auth-copy text-muted fs-6 mb-4">
-                  Access personalised recommendations, manage your applications,
-                  and stay ahead with instant updates from top employers.
+
+                <p className="text-muted mb-4">
+                  Log in to manage your profile, track applications, and stay
+                  connected with opportunities.
                 </p>
-                <ul className="auth-benefits list-unstyled d-flex flex-column gap-2 mb-0">
-                  <li className="d-flex align-items-center gap-2 small text-dark">
-                    <i className="fa-solid fa-check-circle text-success"></i>
-                    <span className="fw-medium">Track your applications in real time</span>
-                  </li>
-                  <li className="d-flex align-items-center gap-2 small text-dark">
-                    <i className="fa-solid fa-check-circle text-success"></i>
-                    <span className="fw-medium">Discover openings tailored to your skills</span>
-                  </li>
-                  <li className="d-flex align-items-center gap-2 small text-dark">
-                    <i className="fa-solid fa-check-circle text-success"></i>
-                    <span className="fw-medium">Save jobs and set alerts in one dashboard</span>
-                  </li>
-                </ul>
+
+                <div className="d-flex flex-column gap-2 small">
+                  <div className="d-flex align-items-center gap-2">
+                    <i className="fa-solid fa-check text-primary"></i>
+                    Track applications in real time
+                  </div>
+                  <div className="d-flex align-items-center gap-2">
+                    <i className="fa-solid fa-check text-primary"></i>
+                    Discover tailored opportunities
+                  </div>
+                  <div className="d-flex align-items-center gap-2">
+                    <i className="fa-solid fa-check text-primary"></i>
+                    Save jobs & manage alerts
+                  </div>
+                </div>
               </div>
             </div>
 
-            {/* Right side - Form card */}
-            <div className="col-lg-5 ms-lg-auto">
-              <div className="auth-card bg-white p-4 rounded-4 shadow-sm border" style={{ maxWidth: "480px", margin: "0 auto" }}>
-                <h4 className="fw-bold mb-4">Sign in to your account</h4>
+            {/* FORM */}
+            <div className="col-lg-5 ms-auto">
+              <div
+                className="bg-white p-4 rounded-4"
+                style={{
+                  boxShadow: "0 10px 30px rgba(0,0,0,0.08)",
+                  border: "1px solid #eee",
+                }}
+              >
+                <h4 className="fw-bold mb-1">Sign in</h4>
+                <p className="text-muted small mb-3">
+                  Enter your credentials to continue
+                </p>
 
-                <form className="auth-form" onSubmit={handleSubmit}>
-                  <div className="mb-3">
-                    <label htmlFor="loginEmail" className="form-label fw-semibold small mb-1">
-                      Email address
-                    </label>
+                <form onSubmit={handleSubmit}>
+
+                  <div className="mb-2">
                     <input
                       type="email"
-                      className="form-control py-2 bg-light border-secondary-subtle"
-                      id="loginEmail"
-                      placeholder="name@email.com"
+                      className="form-control form-control-sm"
+                      placeholder="Email address"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
+                      disabled={loading}
                       required
                     />
                   </div>
 
-                  <div className="mb-3">
-                    <div className="d-flex justify-content-between align-items-center mb-1">
-                      <label htmlFor="loginPassword" className="form-label fw-semibold small mb-0">
-                        Password
-                      </label>
-                    </div>
+                  <div className="mb-2">
                     <input
                       type={showPassword ? "text" : "password"}
-                      className="form-control py-2 bg-light border-secondary-subtle"
-                      id="loginPassword"
-                      placeholder="********"
+                      className="form-control form-control-sm"
+                      placeholder="Password"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
+                      disabled={loading}
                       required
                     />
                   </div>
 
-                  {/* Show Password Toggle */}
-                  <div className="form-check d-flex align-items-center gap-2 mb-4">
+                  {/* Show Password */}
+                  <div className="form-check mb-3">
                     <input
-                      className="form-check-input mt-0"
+                      className="form-check-input"
                       type="checkbox"
-                      id="rememberMe"
-                      style={{ width: "1.1rem", height: "1.1rem", cursor: "pointer" }}
                       checked={showPassword}
-                      onChange={() => setShowPassword((prev) => !prev)}
+                      onChange={() => setShowPassword(!showPassword)}
+                      id="showPass"
                     />
-                    <label
-                      style={{ cursor: "pointer", paddingTop: "2px" }}
-                      className="form-check-label small fw-medium text-dark user-select-none"
-                      htmlFor="rememberMe"
-                    >
-                      Show Password
+                    <label className="form-check-label small" htmlFor="showPass">
+                      Show password
                     </label>
                   </div>
 
                   <button
                     type="submit"
-                    className="btn btn-primary py-2 w-100 fw-bold shadow-sm"
+                    className="btn w-100 py-2 small fw-semibold"
+                    style={{
+                      background:
+                        "linear-gradient(135deg, #2563eb, #1d4ed8)",
+                      border: "none",
+                      borderRadius: "8px",
+                      color: "#fff",
+                    }}
                     disabled={loading}
                   >
                     {loading ? "Signing in..." : "Sign In"}
                   </button>
                 </form>
 
-                {/* --- Divider --- */}
-                <div className="d-flex align-items-center my-4">
-                  <hr className="flex-grow-1 text-muted opacity-25" />
-                  <span className="mx-3 text-muted small fw-semibold" style={{ fontSize: "11px" }}>OR</span>
-                  <hr className="flex-grow-1 text-muted opacity-25" />
+                {/* Divider */}
+                <div className="d-flex align-items-center my-3">
+                  <hr className="flex-grow-1" />
+                  <span className="mx-2 small text-muted">OR</span>
+                  <hr className="flex-grow-1" />
                 </div>
 
-                {/* --- Social Login --- */}
+                {/* Google */}
                 <button
-                  type="button"
-                  onClick={() => handleGoogleLogin()}
-                  className="btn btn-outline-dark py-2 w-100 fw-semibold d-flex align-items-center justify-content-center gap-2"
+                  onClick={handleGoogleLogin}
+                  className="btn btn-outline-dark w-100 py-2 small d-flex align-items-center justify-content-center gap-2"
                   disabled={loading}
                 >
-                  <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" style={{ width: "18px" }} />
-                  {loading ? "Please wait..." : "Sign in with Google"}
+                  <img
+                    src="https://www.svgrepo.com/show/475656/google-color.svg"
+                    alt="google"
+                    width={16}
+                  />
+                  Continue with Google
                 </button>
 
-                <p className="text-center mt-4 mb-0 small fw-medium">
-                  New to JobsPortal?{" "}
-                  <NavLink to="/register" className="text-primary text-decoration-none fw-bold">Create an account</NavLink>
+                <p className="text-center small mt-3 mb-0">
+                  Don’t have an account?{" "}
+                  <NavLink to="/register" className="fw-semibold text-primary">
+                    Create one
+                  </NavLink>
                 </p>
+
               </div>
             </div>
 

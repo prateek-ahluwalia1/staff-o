@@ -23,17 +23,18 @@ export default function Register() {
     name: "",
     email: "",
     password: "",
+    phone: "",
   });
 
   const extractErrorMessage = (response) => {
     if (response.message) return response.message;
     if (response.errors && typeof response.errors === "object") {
-      const firstErrorKey = Object.keys(response.errors)[0];
-      if (firstErrorKey && Array.isArray(response.errors[firstErrorKey])) {
-        return response.errors[firstErrorKey][0];
+      const key = Object.keys(response.errors)[0];
+      if (key && Array.isArray(response.errors[key])) {
+        return response.errors[key][0];
       }
     }
-    return "An error occurred. Please try again.";
+    return "Something went wrong. Please try again.";
   };
 
   const fetchLatestUserProfile = async (token, authUser) => {
@@ -41,85 +42,65 @@ export default function Register() {
     if (!userId) return authUser;
 
     try {
-      const profileRes = await fetch(`${apiURL}api/user-edit/${userId}`, {
-        method: "GET",
+      const res = await fetch(`${apiURL}api/user-edit/${userId}`, {
         headers: {
           Accept: "application/json",
-          "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        credentials: "include",
       });
 
-      const profileJson = await profileRes.json();
-      if (!profileRes.ok) {
-        toast.error(extractErrorMessage(profileJson));
+      const json = await res.json();
+      if (!res.ok) {
+        toast.error(extractErrorMessage(json));
         return authUser;
       }
-      return profileJson?.data || authUser;
-    } catch (error) {
-      toast.error("Failed to refresh profile data.");
+
+      return json?.data || authUser;
+    } catch {
+      toast.error("Failed to refresh profile.");
       return authUser;
     }
   };
 
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    setFormData((prev) => ({
+      ...prev,
+      [e.target.name]: e.target.value,
+    }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    let endpoint = "";
-    let successMessage = "";
-
-    if (userType === "contractor") {
-      endpoint = "api/register/contractor";
-      successMessage = "Resource Partner Registration successful!";
-    } else if (userType === "customer") {
-      endpoint = "api/register/customer";
-      successMessage = "Customer Registration successful!";
-    } else if (userType === "staff") {
-      endpoint = "api/register/staff";
-      successMessage = "Staff Registration successful!";
-    }
-    const payloadupdated = {
+    const payload = {
       ...formData,
       password_confirmation: formData.password,
-    }
-    const res = await submit(endpoint, payloadupdated);
-    if (!res) return;
-    await handleSuccess(res, successMessage);
-  };
+      user_type: userType,
+    };
 
-  const handleSuccess = async (res, successMessage) => {
+    const res = await submit("api/register/user", payload);
+    if (!res) return;
+
     const normalized = normalizeAuthResponse(res);
 
-    if (!normalized || !normalized.token) {
+    if (!normalized?.token) {
       toast.error(extractErrorMessage(res));
       return;
     }
 
-    dispatch(setToken({ token: normalized.token }));
-    const latestProfile = await fetchLatestUserProfile(
-      normalized.token,
-      normalized.user
-    );
-    dispatch(setUser({ userdata: latestProfile }));
-    toast.success(successMessage);
-    const redirectTo = latestProfile?.data?.is_active
-      ? "/dashboard"
-      : "/edit-profile";
-    navigate(redirectTo);
+    toast.success("Account created successfully!");
+    navigate("/login");
   };
 
   const handleGoogleRegister = useGoogleLogin({
     flow: "implicit",
     onSuccess: async (tokenResponse) => {
       try {
-        const googleToken = tokenResponse?.access_token || tokenResponse?.code;
+        const googleToken =
+          tokenResponse?.access_token || tokenResponse?.code;
+
         if (!googleToken) {
-          toast.error("Google registration response was invalid.");
+          toast.error("Invalid Google response.");
           return;
         }
 
@@ -129,200 +110,213 @@ export default function Register() {
         });
 
         if (!res) return;
+
         const normalized = normalizeAuthResponse(res);
 
-        if (normalized && normalized.token) {
+        if (normalized?.token) {
           dispatch(setToken({ token: normalized.token }));
+
           const latestProfile = await fetchLatestUserProfile(
             normalized.token,
             normalized.user
           );
+
           dispatch(setUser({ userdata: latestProfile }));
-          toast.success("Google Registration successful!");
-          const redirectTo = latestProfile?.data?.is_active
-            ? "/dashboard"
-            : "/edit-profile";
-          navigate(redirectTo);
+
+          toast.success("Google signup successful!");
         } else {
           toast.error(extractErrorMessage(res));
         }
-      } catch (error) {
-        toast.error("An error occurred connecting to the server.");
+      } catch {
+        toast.error("Server connection error.");
       }
     },
-    onError: () => toast.error("Google Registration Failed. Please try again."),
-    onNonOAuthError: () =>
-      toast.error("Google popup was blocked or closed. Please try again."),
   });
 
   return (
     <>
       <Header />
-      <section className="auth-section auth-signup py-5">
-        <div className="container">
-          <div className="row g-5 align-items-center">
 
-            {/* Left side - Intro text */}
-            <div className="col-lg-6">
-              <div className="auth-intro">
-                <span className="auth-badge mb-3 d-inline-block px-3 py-1 bg-primary bg-opacity-10 text-primary rounded-pill fw-semibold small">
-                  Create Account
-                </span>
-                <h1 className="auth-title display-5 fw-bold mb-4">
-                  Join thousands of professionals hiring and getting hired
+      <section
+        className="d-flex align-items-center py-5"
+        style={{
+          minHeight: "calc(100vh - 80px)",
+          background: "#f8fafc",
+        }}
+      >
+        <div className="container" style={{ maxWidth: "1100px" }}>
+          <div className="row align-items-center g-5">
+
+            {/* LEFT SIDE */}
+            <div className="col-lg-6 d-none d-lg-flex align-items-center">
+              <div>
+                <h1
+                  className="fw-bold mb-3"
+                  style={{ fontSize: "40px", lineHeight: "1.2" }}
+                >
+                  Build your professional identity
                 </h1>
-                <p className="auth-copy text-muted fs-6 mb-4">
-                  Build a profile that stands out, connect with employers, and
-                  unlock tailored recommendations to accelerate your career
-                  journey.
+
+                <p className="text-muted mb-4">
+                  Join a trusted network of professionals and clients. Create
+                  your profile, connect, and grow your opportunities.
                 </p>
-                <ul className="auth-benefits list-unstyled d-flex flex-column gap-2 mb-0">
-                  <li className="d-flex align-items-center gap-2 small text-dark">
-                    <i className="fa-solid fa-check-circle text-success"></i>
-                    <span className="fw-medium">Access curated jobs from verified companies</span>
-                  </li>
-                  <li className="d-flex align-items-center gap-2 small text-dark">
-                    <i className="fa-solid fa-check-circle text-success"></i>
-                    <span className="fw-medium">Showcase your portfolio and skill badges</span>
-                  </li>
-                  <li className="d-flex align-items-center gap-2 small text-dark">
-                    <i className="fa-solid fa-check-circle text-success"></i>
-                    <span className="fw-medium">Collaborate with hiring teams in real time</span>
-                  </li>
-                </ul>
+
+                <div className="d-flex flex-column gap-2 small">
+                  <div className="d-flex align-items-center gap-2">
+                    <i className="fa-solid fa-check text-primary"></i>
+                    Verified jobs & trusted clients
+                  </div>
+                  <div className="d-flex align-items-center gap-2">
+                    <i className="fa-solid fa-check text-primary"></i>
+                    Smart matching system
+                  </div>
+                  <div className="d-flex align-items-center gap-2">
+                    <i className="fa-solid fa-check text-primary"></i>
+                    Real-time collaboration
+                  </div>
+                </div>
               </div>
             </div>
 
-            {/* Right side - Form card */}
-            <div className="col-lg-5 ms-lg-auto">
-              <div className="auth-card bg-white p-4 rounded-4 shadow-sm border" style={{ maxWidth: "480px", margin: "0 auto" }}>
-                <h4 className="fw-bold mb-4">Create your free account</h4>
+            {/* FORM */}
+            <div className="col-lg-5 ms-auto">
+              <div
+                className="bg-white p-4 rounded-4"
+                style={{
+                  boxShadow: "0 10px 30px rgba(0,0,0,0.08)",
+                  border: "1px solid #eee",
+                }}
+              >
+                <h4 className="fw-bold mb-1">Create account</h4>
+                <p className="text-muted small mb-3">
+                  It only takes a few seconds
+                </p>
 
-                <form className="auth-form" onSubmit={handleSubmit}>
-                  <div className="mb-3">
-                    <label className="form-label fw-semibold small mb-1">Full Name</label>
-                    <input
-                      type="text"
-                      className="form-control py-2 bg-light border-secondary-subtle"
-                      name="name"
-                      value={formData.name}
-                      onChange={handleChange}
-                      placeholder="John Doe"
-                      required
-                    />
+                <form onSubmit={handleSubmit}>
+                  <div className="row g-2">
+
+                    <div className="col-md-6">
+                      <input
+                        type="text"
+                        className="form-control form-control-sm"
+                        name="name"
+                        placeholder="Full name"
+                        value={formData.name}
+                        onChange={handleChange}
+                        disabled={loading}
+                        required
+                      />
+                    </div>
+
+                    <div className="col-md-6">
+                      <input
+                        type="tel"
+                        className="form-control form-control-sm"
+                        name="phone"
+                        placeholder="Phone"
+                        value={formData.phone}
+                        onChange={handleChange}
+                        disabled={loading}
+                        required
+                      />
+                    </div>
+
+                    <div className="col-12">
+                      <input
+                        type="email"
+                        className="form-control form-control-sm"
+                        name="email"
+                        placeholder="Email address"
+                        value={formData.email}
+                        onChange={handleChange}
+                        disabled={loading}
+                        required
+                      />
+                    </div>
+
+                    <div className="col-12">
+                      <input
+                        type="password"
+                        className="form-control form-control-sm"
+                        name="password"
+                        placeholder="Password"
+                        value={formData.password}
+                        onChange={handleChange}
+                        disabled={loading}
+                        required
+                      />
+                    </div>
+
                   </div>
 
-                  <div className="mb-3">
-                    <label className="form-label fw-semibold small mb-1">Email Address</label>
-                    <input
-                      type="email"
-                      className="form-control py-2 bg-light border-secondary-subtle"
-                      name="email"
-                      value={formData.email}
-                      onChange={handleChange}
-                      placeholder="name@example.com"
-                      required
-                    />
-                  </div>
-
-                  <div className="mb-4">
-                    <label className="form-label fw-semibold small mb-1">Password</label>
-                    <input
-                      type="password"
-                      className="form-control py-2 bg-light border-secondary-subtle"
-                      name="password"
-                      value={formData.password}
-                      onChange={handleChange}
-                      placeholder="Create a strong password"
-                      required
-                    />
-                  </div>
-
-                  {/* --- Sleek Inline Radio Buttons --- */}
-                  <div className="mb-4">
-                    <label className="form-label fw-semibold small mb-2 d-block">I want to...</label>
-                    <div className="d-flex flex-wrap gap-3">
-                      <div className="form-check mb-0">
-                        <input
-                          className="form-check-input"
-                          type="radio"
-                          name="roleSelection"
-                          id="roleContractor"
-                          value="contractor"
-                          checked={userType === "contractor"}
-                          onChange={() => setUserType("contractor")}
-                          style={{ cursor: "pointer" }}
-                        />
-                        <label className="form-check-label small fw-medium text-dark" htmlFor="roleContractor" style={{ cursor: "pointer", paddingTop: "2px" }}>
-                          Register as Resource Partner
-                        </label>
-                      </div>
-                      <div className="form-check mb-0">
-                        <input
-                          className="form-check-input"
-                          type="radio"
-                          name="roleSelection"
-                          id="roleCustomer"
-                          value="customer"
-                          checked={userType === "customer"}
-                          onChange={() => setUserType("customer")}
-                          style={{ cursor: "pointer" }}
-                        />
-                        <label className="form-check-label small fw-medium text-dark" htmlFor="roleCustomer" style={{ cursor: "pointer", paddingTop: "2px" }}>
-                          Book a Guard
-                        </label>
-                      </div>
-                      <div className="form-check mb-0">
-                        <input
-                          className="form-check-input"
-                          type="radio"
-                          name="roleSelection"
-                          id="roleStaff"
-                          value="staff"
-                          checked={userType === "staff"}
-                          onChange={() => setUserType("staff")}
-                          style={{ cursor: "pointer" }}
-                        />
-                        <label className="form-check-label small fw-medium text-dark" htmlFor="roleStaff" style={{ cursor: "pointer", paddingTop: "2px" }}>
-                          Apply for a Job
-                        </label>
-                      </div>
+                  {/* Role Pills */}
+                  <div className="mt-3 mb-3">
+                    <div className="d-flex gap-1 flex-wrap">
+                      {[
+                        { key: "contractor", label: "Register as Resource Partner" },
+                        { key: "customer", label: "Book a Guard" },
+                        { key: "staff", label: " Apply for a Job" },
+                      ].map((role) => (
+                        <div
+                          key={role.key}
+                          onClick={() => !loading && setUserType(role.key)}
+                          className={`px-2 py-1 rounded-pill small ${userType === role.key
+                            ? "bg-primary text-white"
+                            : "bg-light text-muted border border-muted"
+                            }`}
+                          style={{ cursor: "pointer", fontSize: "12px" }}
+                        >
+                          {role.label}
+                        </div>
+                      ))}
                     </div>
                   </div>
 
                   <button
                     type="submit"
-                    className="btn btn-primary py-2 w-100 fw-bold shadow-sm"
+                    className="btn w-100 py-2 small fw-semibold"
+                    style={{
+                      background:
+                        "linear-gradient(135deg, #2563eb, #1d4ed8)",
+                      border: "none",
+                      borderRadius: "8px",
+                      color: "#fff",
+                    }}
                     disabled={loading}
                   >
-                    {loading ? "Creating account..." : "Create Account"}
+                    {loading ? "Creating..." : "Create Account"}
                   </button>
                 </form>
 
-                {/* --- Divider --- */}
-                <div className="d-flex align-items-center my-4">
-                  <hr className="flex-grow-1 text-muted opacity-25" />
-                  <span className="mx-3 text-muted small fw-semibold" style={{ fontSize: "11px" }}>OR</span>
-                  <hr className="flex-grow-1 text-muted opacity-25" />
+                {/* Divider */}
+                <div className="d-flex align-items-center my-3">
+                  <hr className="flex-grow-1" />
+                  <span className="mx-2 small text-muted">OR</span>
+                  <hr className="flex-grow-1" />
                 </div>
 
-                {/* --- Social Login --- */}
+                {/* Google */}
                 <button
-                  type="button"
-                  onClick={() => handleGoogleRegister()}
-                  className="btn btn-outline-dark py-2 w-100 fw-semibold d-flex align-items-center justify-content-center gap-2"
+                  onClick={handleGoogleRegister}
+                  className="btn btn-outline-dark w-100 py-2 small d-flex align-items-center justify-content-center gap-2"
                   disabled={loading}
                 >
-                  <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" style={{ width: "18px" }} />
-                  {loading
-                    ? "Please wait..."
-                    : `Sign up with Google`}
+                  <img
+                    src="https://www.svgrepo.com/show/475656/google-color.svg"
+                    alt="google"
+                    width={16}
+                  />
+                  Continue with Google
                 </button>
 
-                <p className="text-center mt-4 mb-0 small fw-medium">
+                <p className="text-center small mt-3 mb-0">
                   Already have an account?{" "}
-                  <NavLink to="/login" className="text-primary text-decoration-none fw-bold">Sign in</NavLink>
+                  <NavLink to="/login" className="fw-semibold text-primary">
+                    Sign in
+                  </NavLink>
                 </p>
+
               </div>
             </div>
 

@@ -1,9 +1,8 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useSelector } from "react-redux";
-import { NavLink, useLocation } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import useFetch from "../hooks/useFetch";
 
-// --- Helper Functions ---
 const formatDate = (dateString) => {
   if (!dateString) return "-";
   return new Date(dateString).toLocaleDateString("en-AU", {
@@ -37,14 +36,10 @@ export default function PaymentHistory() {
   const loggedInUserId = userdata?.id || userdata?.data?.id;
   const isAdmin = user_type === "admin";
 
-  // State to hold the currently selected customer from the dropdown
-  // It defaults to the location state if the admin navigated from the ManageUsers page
   const [selectedCustomerId, setSelectedCustomerId] = useState(
     location.state?.targetUserId || ""
   );
 
-  // Fetch the list of customers ONLY if the user is an admin
-  // We use limit=1000 to ensure we get a full list for the dropdown
   const { data: customersResponse } = useFetch(
     isAdmin ? "api/admin/get-customers?limit=1000" : null,
     { isAuth: true }
@@ -52,12 +47,7 @@ export default function PaymentHistory() {
 
   const customersList = customersResponse?.data?.data || [];
 
-  // Determine which ID to send to the API for transactions
-  // If Admin AND they selected a customer, use that customer's ID. Otherwise, use logged in user's ID.
   const fetchId = (isAdmin && selectedCustomerId) ? selectedCustomerId : loggedInUserId;
-
-  // Fetch transaction data based on the resolved fetchId
-  // If admin hasn't selected anyone yet, we might skip fetching or fetch nothing.
   const { data: paymentData, loading, error } = useFetch(
     fetchId ? `api/user-transactions/${fetchId}` : null,
     { isAuth: true }
@@ -65,7 +55,6 @@ export default function PaymentHistory() {
 
   const transactions = paymentData?.data || paymentData || [];
 
-  // Find the selected customer's name for the header display
   const selectedCustomerDetails = customersList.find(c => c.id.toString() === selectedCustomerId.toString());
   const displayTitle = isAdmin && selectedCustomerDetails
     ? `Payment History: ${selectedCustomerDetails.name}`
@@ -80,16 +69,6 @@ export default function PaymentHistory() {
             All shift payments, transactions, and receipts in a single place.
           </p>
         </div>
-
-        {/* Ensure ONLY the actual customer sees the Update Card button */}
-        {!isAdmin && user_type === "customer" && (
-          <div className="d-flex flex-wrap gap-2">
-            <NavLink to="/edit-profile" className="btn btn-primary">
-              <i className="fa-solid fa-credit-card me-2" aria-hidden="true"></i>
-              Update card
-            </NavLink>
-          </div>
-        )}
       </div>
 
       <div className="list-card">

@@ -36,9 +36,10 @@ class JobRosterController extends Controller
         // ─── VALIDATION ─────────────────────────────
         $validator = Validator::make($request->all(), [
             'user_id'            => 'required|exists:users,id',
-            'startTime'          => 'required',
-            'endTime'            => 'required',
-            'numberOfGuards'     => 'required|integer|min:1',
+            'shifts'                     => 'required|array|min:1',
+            'shifts.*.start'             => 'required|date',
+            'shifts.*.end'               => 'required|date|after:shifts.*.start',
+            'shifts.*.numberOfGuards'    => 'required|integer|min:1',
             'payment_intent_id'  => 'required|string',
         ]);
 
@@ -77,7 +78,6 @@ class JobRosterController extends Controller
                     'message' => 'Roster not found.'
                 ], 404);
             }
-
             $paymentIntentId = $request->payment_intent_id;
 
             $radiusValue = is_array($request->radius) ? json_encode($request->radius) : $request->radius;
@@ -85,95 +85,97 @@ class JobRosterController extends Controller
             $jobInstructionsValue = is_array($request->document_list) ? json_encode($request->document_list) : $request->document_list;
 
             $createdJobIds = [];
+            $paymentIntentId = $request->payment_intent_id;
+            $isAdminOverride = $paymentIntentId === 'admin_override_no_payment';
+            $chargeRate = ChargeRate::find(1);
 
-            // ─── LOOP FOR MULTIPLE GUARDS ─────────────
-            for ($i = 0; $i < $request->numberOfGuards; $i++) {
+            foreach ($request->shifts as $shift) {
 
-                $start = dbFormateDateTime($request->startTime);
-                $end   = dbFormateDateTime($request->endTime);
+                $start = dbFormateDateTime($shift['start']);
+                $end   = dbFormateDateTime($shift['end']);
 
-                // ─── CALCULATE HOURS ──────────────────
                 $hours = $this->getShiftHours($start, $end, 1, 0);
-
                 $guardWorkingHours = calCulateGuardWeekHours($start, $end);
 
-                // ─── GET RATES ────────────────────────
-                $chargeRate = ChargeRate::find(1);
-
-                // ─── CALCULATE PER JOB AMOUNT ─────────
+                // ─── BASE AMOUNT PER GUARD ───
                 $jobAmount =
                     ($chargeRate->def_metro_mon_to_fri_day_rate * ($hours['morning'] ?? 0)) +
                     ($chargeRate->def_metro_mon_to_fri_night_rate * ($hours['night'] ?? 0)) +
                     ($chargeRate->def_metro_sat_day_rate * (($hours['saturday_morning'] ?? 0) + ($hours['saturday_night'] ?? 0))) +
                     ($chargeRate->def_metro_sun_day_rate * (($hours['sunday_morning'] ?? 0) + ($hours['sunday_night'] ?? 0)));
 
-                // ─── BUILD ROSTER ─────────────────────
-                $roster = [
-                    'site_id'               => $site->id,
-                    'start'                 => $start,
-                    'end'                   => $end,
-                    'shift_payable'         => 'yes',
-                    'shift_chargeable'      => 'yes',
-                    'job_status'            => 'pending',
-                    'asap'                  => 1,
-                    'radius'                => $radiusValue,
-                    'is_document'           => $request->is_document,
-                    'document_list'         => $documentListValue,
-                    'publish_status'        => 1,
-                    'roster_id'             => $jobNewRoster->id,
-                    'job_instrcutions'      => $jobInstructionsValue,
-                    'created_by'            => $request->user_id,
-                    'assigned_to'           => null,
-                    'notified_users'        => json_encode([]),
+                // ─── GST (KEEP YOUR ORIGINAL LOGIC) ───
+                $serviceFee = round($jobAmount * 0.10, 2);
+                $totalAmount = round($jobAmount + $serviceFee, 2);
 
-                    // 🔥 STRIPE FIELDS
-                    'payment_intent_id'     => $paymentIntentId,
-                    'payment_status'        => 'held',
-                    'job_amount'            => $jobAmount,
-                    'payment_captured'      => 0,
+                for ($i = 0; $i < $shift['numberOfGuards']; $i++) {
 
-                    // HOURS
-                    'morning_hours'         => $hours['morning'] ?? 0,
-                    'night_hours'           => $hours['night'] ?? 0,
-                    'saturday_morning_hours'=> $hours['saturday_morning'] ?? 0,
-                    'saturday_night_hours'  => $hours['saturday_night'] ?? 0,
-                    'sunday_morning_hours'  => $hours['sunday_morning'] ?? 0,
-                    'sunday_night_hours'    => $hours['sunday_night'] ?? 0,
-                    'ph_morning_hours'      => $hours['ph_morning'] ?? 0,
-                    'ph_night_hours'        => $hours['ph_night'] ?? 0,
-                    'hours'                 => $guardWorkingHours,
-                ];
+                    $roster = [
+                        'site_id'          => $site->id,
+                        'start'            => $start,
+                        'end'              => $end,
+                        'shift_payable'    => 'yes',
+                        'shift_chargeable' => 'yes',
+                        'job_status'       => 'pending',
+                        'asap'             => 1,
+                        'radius'           => $radiusValue,
+                        'is_document'      => $request->is_document,
+                        'document_list'    => $documentListValue,
+                        'publish_status'   => 1,
+                        'roster_id'        => $jobNewRoster->id,
+                        'job_instrcutions' => $jobInstructionsValue,
+                        'created_by'       => $request->user_id,
+                        'assigned_to'      => null,
+                        'notified_users'   => json_encode([]),
 
-                // ─── INSERT JOB ───────────────────────
-                $jobId = JobRoster::insertGetId($roster);
+                        'payment_intent_id' => $isAdminOverride ? null : $paymentIntentId,
+                        'payment_status'    => $isAdminOverride ? 'not_required' : 'held',
+                        'payment_captured'  => $isAdminOverride ? 1 : 0,
 
-                // ─── SAVE TASKS ───────────────────────
-                if ($request->has('tasks') && !empty($request->tasks)) {
-                    foreach ($request->tasks as $task) {
-                        JobRosterTask::create([
-                            'job_roster_id' => $jobId,
-                            'task'          => $task['task'],
-                            'task_start'    => dbFormateDateTime($task['task_start']),
-                            'task_end'      => dbFormateDateTime($task['task_end']),
-                        ]);
+                        'job_amount'        => $jobAmount,
+
+                        // HOURS
+                        'morning_hours'         => $hours['morning'] ?? 0,
+                        'night_hours'           => $hours['night'] ?? 0,
+                        'saturday_morning_hours'=> $hours['saturday_morning'] ?? 0,
+                        'saturday_night_hours'  => $hours['saturday_night'] ?? 0,
+                        'sunday_morning_hours'  => $hours['sunday_morning'] ?? 0,
+                        'sunday_night_hours'    => $hours['sunday_night'] ?? 0,
+                        'ph_morning_hours'      => $hours['ph_morning'] ?? 0,
+                        'ph_night_hours'        => $hours['ph_night'] ?? 0,
+                        'hours'                 => $guardWorkingHours,
+                    ];
+
+                    $jobId = JobRoster::insertGetId($roster);
+                    $createdJobIds[] = $jobId;
+
+                    // TASKS
+                    if (!empty($request->tasks)) {
+                        foreach ($request->tasks as $task) {
+                            JobRosterTask::create([
+                                'job_roster_id' => $jobId,
+                                'task'          => $task['task'],
+                                'task_start'    => dbFormateDateTime($task['task_start']),
+                                'task_end'      => dbFormateDateTime($task['task_end']),
+                            ]);
+                        }
                     }
+
+                    $createdJob = JobRoster::with('site')->find($jobId);
+
+                    $this->sendNotificationsWithinRadius(
+                        $site->coordinates,
+                        [$jobId],
+                        $request->user_id,
+                        $createdJob
+                    );
                 }
-
-                // ─── NOTIFY GUARDS ────────────────────
-                $createdJob = JobRoster::with('site')->find($jobId);
-
-                $createdJobIds[] = $jobId;
-
-                $notifiedUsers = $this->sendNotificationsWithinRadius(
-                    $site->coordinates,
-                    $createdJobIds,
-                    $request->user_id,
-                    $createdJob
-                );
             }
 
-            Transaction::where('payment_intent_id', $paymentIntentId)
-            ->update(['job_roster_id' => json_encode($createdJobIds)]);
+            if (!$isAdminOverride) {
+                Transaction::where('payment_intent_id', $paymentIntentId)
+                    ->update(['job_roster_id' => json_encode($createdJobIds)]);
+            }
 
             return response()->json([
                 'success' => true,
@@ -3008,13 +3010,17 @@ class JobRosterController extends Controller
 
 public function holdPayment(Request $request)
 {
-    // ─── VALIDATION ───────────────────────────────
     $validator = Validator::make($request->all(), [
-        'start'             => 'required|date',
-        'end'               => 'required|date|after:start',
+        'shifts'                     => 'required|array|min:1',
+        'shifts.*.start'             => 'required|date',
+        'shifts.*.end'               => 'required|date',
+        'shifts.*.numberOfGuards'    => 'required|integer|min:1',
+
         'user_id'           => 'required|integer|exists:users,id',
         'card_holder_name'  => 'required|string',
         'payment_method_id' => 'required|string|starts_with:pm_',
+
+        'payment_option'    => 'required|in:full,split',
     ]);
 
     if ($validator->fails()) {
@@ -3024,18 +3030,18 @@ public function holdPayment(Request $request)
         ], 422);
     }
 
+    // FIX nested validation
+    $validator->after(function ($validator) use ($request) {
+        foreach ($request->shifts as $i => $shift) {
+            if (strtotime($shift['end']) <= strtotime($shift['start'])) {
+                $validator->errors()->add("shifts.$i.end", "End must be after start");
+            }
+        }
+    });
+
     try {
 
-        // ─── STRIPE INIT (PLATFORM KEY ONLY) ───────
         Stripe::setApiKey(config('services.stripe.secret'));
-
-        // ─── CALCULATE AMOUNT ─────────────────────
-        $hours = $this->getShiftHours(
-            dbFormateDateTime($request->start),
-            dbFormateDateTime($request->end),
-            1,
-            0
-        );
 
         $chargeRate = ChargeRate::find(1);
 
@@ -3046,17 +3052,48 @@ public function holdPayment(Request $request)
             ], 404);
         }
 
-        $total =
-            ($chargeRate->def_metro_mon_to_fri_day_rate * ($hours['morning'] ?? 0)) +
-            ($chargeRate->def_metro_mon_to_fri_night_rate * ($hours['night'] ?? 0)) +
-            ($chargeRate->def_metro_sat_day_rate * (($hours['saturday_morning'] ?? 0) + ($hours['saturday_night'] ?? 0))) +
-            ($chargeRate->def_metro_sun_day_rate * (($hours['sunday_morning'] ?? 0) + ($hours['sunday_night'] ?? 0)));
+        // MULTI SHIFT TOTAL
+        $baseTotal = 0;
 
-        $total = $total * $request->number_of_guards;
-        $serviceFee = round($total * 0.10, 2);
-        $grandTotal = round($total + $serviceFee, 2);
+        foreach ($request->shifts as $shift) {
 
-        $amountInCents = (int) round($grandTotal * 100);
+            $start = dbFormateDateTime($shift['start']);
+            $end   = dbFormateDateTime($shift['end']);
+
+            $hours = $this->getShiftHours($start, $end, 1, 0);
+
+            $shiftAmount =
+                ($chargeRate->def_metro_mon_to_fri_day_rate * ($hours['morning'] ?? 0)) +
+                ($chargeRate->def_metro_mon_to_fri_night_rate * ($hours['night'] ?? 0)) +
+                ($chargeRate->def_metro_sat_day_rate * (($hours['saturday_morning'] ?? 0) + ($hours['saturday_night'] ?? 0))) +
+                ($chargeRate->def_metro_sun_day_rate * (($hours['sunday_morning'] ?? 0) + ($hours['sunday_night'] ?? 0)));
+
+            $baseTotal += ($shiftAmount * $shift['numberOfGuards']);
+        }
+
+        // APPLY DISCOUNT (ONLY FULL)
+        $discount = 0;
+
+        if ($request->payment_option === 'full') {
+            $discount = round($baseTotal * 0.05, 2);
+        }
+
+        $discountedTotal = $baseTotal - $discount;
+
+        // GST / SERVICE FEE (UNCHANGED LOGIC)
+        $serviceFee = round($discountedTotal * 0.10, 2);
+        $grandTotal = round($discountedTotal + $serviceFee, 2);
+
+        // SPLIT LOGIC (AFTER GST)
+        if ($request->payment_option === 'split') {
+            $amountToCharge = round($grandTotal * 0.5, 2);
+            $balance = $grandTotal - $amountToCharge;
+        } else {
+            $amountToCharge = $grandTotal;
+            $balance = 0;
+        }
+
+        $amountInCents = (int) round($amountToCharge * 100);
 
         // ─── USER / CUSTOMER ──────────────────────
         $user = User::findOrFail($request->user_id);
@@ -3079,7 +3116,6 @@ public function holdPayment(Request $request)
         // ─── PAYMENT METHOD SAFE ATTACH ───────────
         $paymentMethod = PaymentMethod::retrieve($request->payment_method_id);
 
-        // Prevent wrong customer attach
         if ($paymentMethod->customer && $paymentMethod->customer !== $customerId) {
             return response()->json([
                 'success' => false,
@@ -3087,51 +3123,58 @@ public function holdPayment(Request $request)
             ], 400);
         }
 
-        // Attach if not attached
         if (!$paymentMethod->customer) {
             $paymentMethod->attach([
                 'customer' => $customerId
             ]);
         }
 
-       $paymentIntent = PaymentIntent::create([
+        // ─── STRIPE INTENT ────────────────────────
+        $paymentIntent = PaymentIntent::create([
             'amount'         => $amountInCents,
             'currency'       => 'aud',
             'customer'       => $customerId,
             'payment_method' => $request->payment_method_id,
-        
             'automatic_payment_methods' => [
                 'enabled' => true,
                 'allow_redirects' => 'never',
             ],
-        
             'confirm'        => true,
             'capture_method' => 'manual',
         ]);
 
-          Transaction::create([
+        // ─── SAVE TRANSACTION (UNCHANGED STRUCTURE + NEW FIELDS) ───
+        Transaction::create([
             'user_id'           => $user->id,
             'job_roster_id'     => $request->job_id ?? null,
             'payment_intent_id' => $paymentIntent->id,
-            'amount'            => $total,
+
+            'amount'            => $baseTotal,
+            'discount'          => $discount,
             'service_fee'       => $serviceFee,
             'total_amount'      => $grandTotal,
+
+            'amount_charged'    => $amountToCharge,
+            'balance'           => $balance,
+
             'currency'          => 'AUD',
             'status'            => 'held',
             'response'          => json_encode($paymentIntent),
         ]);
 
-        // ─── RESPONSE ─────────────────────────────
         return response()->json([
             'success' => true,
             'message' => 'Payment held successfully',
 
             'payment' => [
                 'payment_intent_id' => $paymentIntent->id,
-                'status'            => $paymentIntent->status, // requires_capture
+                'status'            => $paymentIntent->status,
                 'amount_cents'      => $amountInCents,
-                'amount'            => $grandTotal,
+                'amount'            => $amountToCharge,
+                'total_amount'      => $grandTotal,
                 'service_fee'       => $serviceFee,
+                'discount'          => $discount,
+                'balance'           => $balance,
                 'currency'          => 'AUD',
             ]
         ]);

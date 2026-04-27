@@ -21,6 +21,7 @@ use App\Models\User;
 use DateTime;
 use Exception;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
 use Stripe\Customer;
 use Stripe\PaymentIntent;
@@ -1507,7 +1508,7 @@ class JobRosterController extends Controller
                 if ($paymentIntent->status == 'requires_capture') {
                     $capturedIntent = $paymentIntent->capture();
 
-                    $chargeId = $capturedIntent->charges->data[0]->id ?? null;
+                    $chargeId = $capturedIntent->latest_charge ?? null;
 
                     Transaction::where('payment_intent_id', $paymentIntent->id)
                         ->update([
@@ -3368,6 +3369,83 @@ public function autoUpdatePayslipStatus()
             'message' => 'Error: ' . $e->getMessage(),
         ], 500);
     }
+    }
+    
+    function sendInvoice(Request $request)
+    {
+        // Validate input
+        $request->validate([
+            'emails' => 'required|array',
+            'emails.*' => 'email',
+            'invoice' => 'required|string'
+        ]);
+        
+        // Get the filename only (for security)
+        $filename = basename($request->invoice);
+        $pdf_path = public_path('uploads/' . $filename);
+        
+        // Check if file exists
+        if (!file_exists($pdf_path)) {
+            return response()->json([
+                'success' => false, 
+                'message' => 'Invoice file not found.'
+            ], 404);
+        }
+        
+        // Generate download URL (adjust URL structure as needed)
+        $download_url = url('/uploads/' . urlencode($filename));
+        
+        foreach($request->emails as $e){
+            $email = [
+                'subject' => 'Generated Invoice',
+                'message' => 'Here is your invoice report.',
+                'email' => $e,
+                'attachment' => null,
+                'download_url' => $download_url,
+                'filename' => $filename
+            ];
+            $this->systemEmail($email);
+        }
+        
+        return response()->json(['success' => true, 'message' => 'Invoice send successfully.']);
+    }
+
+    function systemEmail($prams)
+    {
+        $data = [
+            'email'   => $prams['email'],
+            'description' => $prams['message'],
+            'subject' => $prams['subject'],
+            'download_url' => $prams['download_url'] ?? null,
+            'filename' => $prams['filename'] ?? 'invoice.pdf'
+        ];
+        
+        Mail::send('emails.systemGeneralEmail', $data, function($message) use ($data){
+            $message->from('no-reply@thescouts.com.au', 'Staffoo');
+            $message->to($data['email'])->subject($data['subject']);
+            // No attachment - just send HTML email with button
+        });
+    }
+
+     public function getUserTransactions($user_id)
+    {
+        // Get all transactions for the user
+        $transactions = Transaction::where('user_id', $user_id)
+            ->orderBy('created_at', 'desc') // or 'transaction_date'
+            ->get();
+
+        // Check if transactions exist
+        if ($transactions->isEmpty()) {
+            return response()->json([
+                'message' => 'No transactions found for this user',
+                'data' => []
+            ], 200);
+        }
+
+        return response()->json([
+            'message' => 'Transactions retrieved successfully',
+            'data' => $transactions
+        ], 200);
     }
 
 }

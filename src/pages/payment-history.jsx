@@ -22,9 +22,13 @@ const formatAmount = (amount) => {
 
 const getStatusBadge = (status) => {
   const s = String(status || "").toLowerCase();
-  if (["paid", "succeeded", "success", "captured"].includes(s)) return "pill bg-success bg-opacity-10 text-success border border-success border-opacity-25";
-  if (["pending", "processing", "held"].includes(s)) return "pill bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25";
-  if (["failed", "cancelled"].includes(s)) return "pill bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25";
+  // Matching your API statuses: 'held' and 'captured'
+  if (["paid", "succeeded", "success", "captured"].includes(s))
+    return "pill bg-success bg-opacity-10 text-success border border-success border-opacity-25";
+  if (["pending", "processing", "held"].includes(s))
+    return "pill bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25";
+  if (["failed", "cancelled"].includes(s))
+    return "pill bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25";
   return "pill bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25";
 };
 
@@ -48,12 +52,14 @@ export default function PaymentHistory() {
   const customersList = customersResponse?.data?.data || [];
 
   const fetchId = (isAdmin && selectedCustomerId) ? selectedCustomerId : loggedInUserId;
+
   const { data: paymentData, loading, error } = useFetch(
     fetchId ? `api/user-transactions/${fetchId}` : null,
     { isAuth: true }
   );
 
-  const transactions = paymentData?.data || paymentData || [];
+  // Adjusted to match your JSON structure: data is nested inside the response object
+  const transactions = paymentData?.data || [];
 
   const selectedCustomerDetails = customersList.find(c => c.id.toString() === selectedCustomerId.toString());
   const displayTitle = isAdmin && selectedCustomerDetails
@@ -65,15 +71,11 @@ export default function PaymentHistory() {
       <div className="dashboard-page-header">
         <div>
           <h1>{displayTitle}</h1>
-          <p>
-            All shift payments, transactions, and receipts in a single place.
-          </p>
+          <p>All shift payments, transactions, and receipts in a single place.</p>
         </div>
       </div>
 
       <div className="list-card">
-
-        {/* NEW: Admin Customer Dropdown Selector */}
         {isAdmin && (
           <div className="row mb-4 bg-light p-3 rounded-3 border">
             <div className="col-md-6 col-lg-4">
@@ -100,10 +102,9 @@ export default function PaymentHistory() {
 
         <div className="table-responsive">
           {isAdmin && !selectedCustomerId ? (
-            // Message to prompt admin to select a customer first
             <div className="text-center py-5 bg-light rounded border border-dashed">
               <i className="fa-solid fa-hand-pointer text-primary fs-1 mb-3 opacity-50"></i>
-              <h6 className="text-muted mb-0">Please select a customer from the dropdown above to view their transactions.</h6>
+              <h6 className="text-muted mb-0">Please select a customer from the dropdown to view transactions.</h6>
             </div>
           ) : loading ? (
             <div className="text-center py-5">
@@ -113,7 +114,7 @@ export default function PaymentHistory() {
           ) : error ? (
             <div className="alert alert-danger py-3">
               <i className="fa-solid fa-circle-exclamation me-2"></i>
-              Unable to load transactions. Please try again later.
+              Unable to load transactions.
             </div>
           ) : transactions.length === 0 ? (
             <div className="text-center py-5 bg-light rounded border border-dashed">
@@ -125,28 +126,33 @@ export default function PaymentHistory() {
               <thead>
                 <tr>
                   <th>Date</th>
-                  <th>Description</th>
+                  <th>Job Roster IDs</th>
                   <th>Amount</th>
                   <th>Status</th>
-                  <th>Invoice</th>
+                  <th>Transaction ID</th>
                 </tr>
               </thead>
               <tbody>
-                {transactions.map((tx, index) => (
-                  <tr key={tx.id || index}>
-                    <td>{formatDate(tx.created_at || tx.date)}</td>
-                    <td>{tx.description || tx.title || "Job Payment"}</td>
+                {transactions.map((tx) => (
+                  <tr key={tx.id}>
+                    <td>{formatDate(tx.created_at)}</td>
+                    <td>
+                      {/* Handling the job_roster_id which looks like "[517,518]" */}
+                      <span className="text-muted small">
+                        {tx.job_roster_id ? tx.job_roster_id.replace(/[[\]"]/g, '') : "N/A"}
+                      </span>
+                    </td>
                     <td className="fw-semibold text-dark">
-                      {formatAmount(tx.amount || tx.total)}
+                      {formatAmount(tx.total_amount)}
                     </td>
                     <td>
                       <span className={getStatusBadge(tx.status)} style={{ padding: "0.25rem 0.75rem", fontSize: "0.85em", fontWeight: 600 }}>
-                        {String(tx.status || "Unknown").charAt(0).toUpperCase() + String(tx.status || "Unknown").slice(1)}
+                        {tx.status.charAt(0).toUpperCase() + tx.status.slice(1)}
                       </span>
                     </td>
                     <td>
-                      <p className="mb-0 text-muted" style={{ fontFamily: "monospace" }}>
-                        {tx.invoice_id || tx.invoice || tx.id || "-"}
+                      <p className="mb-0 text-muted small" style={{ fontFamily: "monospace" }}>
+                        {tx.payment_intent_id}
                       </p>
                     </td>
                   </tr>

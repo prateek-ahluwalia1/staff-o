@@ -45,7 +45,7 @@ const useSubmit = ({ isAuth = false } = {}) => {
         const json = await res.json();
 
         if (!res.ok) {
-          let errorMsg = "Something went wrong";
+          let errorMsg;
 
           if (json?.error) {
             errorMsg = json.error;

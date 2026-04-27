@@ -26,17 +26,6 @@ export default function Register() {
     phone: "",
   });
 
-  const extractErrorMessage = (response) => {
-    if (response.message) return response.message;
-    if (response.errors && typeof response.errors === "object") {
-      const key = Object.keys(response.errors)[0];
-      if (key && Array.isArray(response.errors[key])) {
-        return response.errors[key][0];
-      }
-    }
-    return "Something went wrong. Please try again.";
-  };
-
   const fetchLatestUserProfile = async (token, authUser) => {
     const userId = extractUserId(authUser);
     if (!userId) return authUser;
@@ -51,13 +40,13 @@ export default function Register() {
 
       const json = await res.json();
       if (!res.ok) {
-        toast.error(extractErrorMessage(json));
+        console.error("Profile fetch error:", json);
         return authUser;
       }
 
       return json?.data || authUser;
-    } catch {
-      toast.error("Failed to refresh profile.");
+    } catch (error) {
+      console.error("Profile fetch error:", error);
       return authUser;
     }
   };
@@ -84,7 +73,7 @@ export default function Register() {
     const normalized = normalizeAuthResponse(res);
 
     if (!normalized?.token) {
-      toast.error(extractErrorMessage(res));
+      console.error("Registration error response:", res);
       return;
     }
 
@@ -125,10 +114,10 @@ export default function Register() {
 
           toast.success("Google signup successful!");
         } else {
-          toast.error(extractErrorMessage(res));
+          console.error("Google signup error response:", res);
         }
       } catch {
-        toast.error("Server connection error.");
+        toast.error("Server connection error during Google signup.");
       }
     },
   });

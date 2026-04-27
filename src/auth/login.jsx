@@ -17,17 +17,6 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
-  const extractErrorMessage = (response) => {
-    if (response.message) return response.message;
-    if (response.errors && typeof response.errors === "object") {
-      const key = Object.keys(response.errors)[0];
-      if (Array.isArray(response.errors[key])) {
-        return response.errors[key][0];
-      }
-    }
-    return "Something went wrong. Please try again.";
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -52,7 +41,7 @@ export default function Login() {
 
       navigate(redirectTo, { replace: true });
     } else {
-      toast.error(extractErrorMessage(res));
+      console.log("Login error response:", res);
     }
   };
 
@@ -87,11 +76,10 @@ export default function Login() {
             : "/edit-profile";
 
           navigate(redirectTo, { replace: true });
-        } else {
-          toast.error(extractErrorMessage(res));
         }
-      } catch {
-        toast.error("Server connection error.");
+      } catch (error) {
+        toast.error("Google login failed.");
+        console.error("Google login error:", error);
       }
     },
   });

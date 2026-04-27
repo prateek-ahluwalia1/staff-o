@@ -16,6 +16,58 @@ const parseLocalDate = (dateStr) => {
   return new Date(year, month - 1, day);
 };
 
+// 🛠️ FIX 1: Move CompactTime OUTSIDE the main component. 
+// This prevents React from destroying and recreating the inputs on every keystroke, fixing the focus issue.
+const CompactTime = ({ value, onChange }) => {
+  const h = value ? value.split(":")[0] : "";
+  const m = value ? value.split(":")[1] : "";
+
+  const handleHour = (e) => {
+    let val = e.target.value.replace(/\D/g, ""); // Remove non-numbers
+    if (val.length > 2) val = val.slice(-2);
+    if (parseInt(val) > 23) val = "23"; // Cap at 23
+    onChange(`${val}:${m || "00"}`);
+  };
+
+  const handleMin = (e) => {
+    let val = e.target.value.replace(/\D/g, ""); // Remove non-numbers
+    if (val.length > 2) val = val.slice(-2);
+    if (parseInt(val) > 59) val = "59"; // Cap at 59
+    onChange(`${h || "00"}:${val}`);
+  };
+
+  const handleBlur = () => {
+    // Auto-pad single digits with a leading zero when the user clicks away
+    const cleanH = h ? h.padStart(2, "0") : "";
+    const cleanM = m ? m.padStart(2, "0") : "";
+    if (cleanH || cleanM) {
+      onChange(`${cleanH || "00"}:${cleanM || "00"}`);
+    }
+  };
+
+  return (
+    <div className="input-group input-group-sm bg-white rounded flex-nowrap" style={{ width: "110px", boxShadow: "0 1px 3px rgba(0,0,0,0.06)" }}>
+      <input
+        type="text"
+        className="form-control border-secondary-subtle px-1 text-center bg-transparent fw-semibold"
+        placeholder="HH"
+        value={h}
+        onChange={handleHour}
+        onBlur={handleBlur}
+      />
+      <span className="input-group-text bg-transparent border-secondary-subtle border-start-0 border-end-0 px-0 text-muted fw-bold pb-1">:</span>
+      <input
+        type="text"
+        className="form-control border-secondary-subtle px-1 text-center bg-transparent fw-semibold"
+        placeholder="MM"
+        value={m}
+        onChange={handleMin}
+        onBlur={handleBlur}
+      />
+    </div>
+  );
+};
+
 export default function ScheduleStep({ form, setField, scheduleError = "" }) {
   const [bulkStart, setBulkStart] = useState("");
   const [bulkEnd, setBulkEnd] = useState("");
@@ -56,12 +108,29 @@ export default function ScheduleStep({ form, setField, scheduleError = "" }) {
     }
   };
 
-  const applyBulkSettings = () => {
+  // 🛠️ FIX 2: Automatically apply bulk updates on change without needing a button
+  const handleBulkChange = (type, value) => {
+    let newStart = bulkStart;
+    let newEnd = bulkEnd;
+    let newGuards = bulkGuards;
+
+    if (type === "start") {
+      newStart = value;
+      setBulkStart(value);
+    } else if (type === "end") {
+      newEnd = value;
+      setBulkEnd(value);
+    } else if (type === "guards") {
+      newGuards = value;
+      setBulkGuards(value);
+    }
+
     const updatedDays = form.scheduleDays.map((day) => ({
       ...day,
       shifts: day.shifts.map((shift, idx) => {
+        // Only apply bulk changes to the first shift of each day
         if (idx === 0) {
-          return { ...shift, startTime: bulkStart, endTime: bulkEnd, numGuards: bulkGuards };
+          return { ...shift, startTime: newStart, endTime: newEnd, numGuards: newGuards };
         }
         return shift;
       }),
@@ -90,57 +159,6 @@ export default function ScheduleStep({ form, setField, scheduleError = "" }) {
     const newDays = [...form.scheduleDays];
     newDays[dayIndex].shifts[shiftIndex][field] = value;
     setField("scheduleDays", newDays);
-  };
-
-  // 🛠️ THE FIX: Smart, typable 24-hour inputs (No AM/PM)
-  const CompactTime = ({ value, onChange }) => {
-    const h = value ? value.split(":")[0] : "";
-    const m = value ? value.split(":")[1] : "";
-
-    const handleHour = (e) => {
-      let val = e.target.value.replace(/\D/g, ""); // Remove non-numbers
-      if (val.length > 2) val = val.slice(-2);
-      if (parseInt(val) > 23) val = "23"; // Cap at 23
-      onChange(`${val}:${m || "00"}`);
-    };
-
-    const handleMin = (e) => {
-      let val = e.target.value.replace(/\D/g, ""); // Remove non-numbers
-      if (val.length > 2) val = val.slice(-2);
-      if (parseInt(val) > 59) val = "59"; // Cap at 59
-      onChange(`${h || "00"}:${val}`);
-    };
-
-    const handleBlur = () => {
-      // Auto-pad single digits with a leading zero when the user clicks away
-      const cleanH = h ? h.padStart(2, "0") : "";
-      const cleanM = m ? m.padStart(2, "0") : "";
-      if (cleanH || cleanM) {
-        onChange(`${cleanH || "00"}:${cleanM || "00"}`);
-      }
-    };
-
-    return (
-      <div className="input-group input-group-sm bg-white rounded flex-nowrap" style={{ width: "110px", boxShadow: "0 1px 3px rgba(0,0,0,0.06)" }}>
-        <input
-          type="text"
-          className="form-control border-secondary-subtle px-1 text-center bg-transparent fw-semibold"
-          placeholder="HH"
-          value={h}
-          onChange={handleHour}
-          onBlur={handleBlur}
-        />
-        <span className="input-group-text bg-transparent border-secondary-subtle border-start-0 border-end-0 px-0 text-muted fw-bold pb-1">:</span>
-        <input
-          type="text"
-          className="form-control border-secondary-subtle px-1 text-center bg-transparent fw-semibold"
-          placeholder="MM"
-          value={m}
-          onChange={handleMin}
-          onBlur={handleBlur}
-        />
-      </div>
-    );
   };
 
   return (
@@ -207,16 +225,16 @@ export default function ScheduleStep({ form, setField, scheduleError = "" }) {
       {form.scheduleMode === "multiple" && form.scheduleDays.length > 1 && (
         <div className="rounded-3 p-3 mb-4" style={{ backgroundColor: "#f0f7ff", border: "1px solid #cce3ff" }}>
           <label className="fw-bold text-primary mb-3 d-block small text-uppercase tracking-wide">
-            <i className="fa-solid fa-bolt me-2"></i> Fast Fill: Apply standard shift to all days
+            <i className="fa-solid fa-bolt me-2"></i> Fast Fill: Applies automatically to all days
           </label>
           <div className="d-flex flex-wrap align-items-center gap-4">
             <div className="d-flex align-items-center gap-2">
               <span className="small text-muted fw-semibold">Start:</span>
-              <CompactTime value={bulkStart} onChange={setBulkStart} />
+              <CompactTime value={bulkStart} onChange={(val) => handleBulkChange("start", val)} />
             </div>
             <div className="d-flex align-items-center gap-2">
               <span className="small text-muted fw-semibold">End:</span>
-              <CompactTime value={bulkEnd} onChange={setBulkEnd} />
+              <CompactTime value={bulkEnd} onChange={(val) => handleBulkChange("end", val)} />
             </div>
             <div className="d-flex align-items-center gap-2">
               <span className="small text-muted fw-semibold">Guards:</span>
@@ -226,17 +244,9 @@ export default function ScheduleStep({ form, setField, scheduleError = "" }) {
                 style={{ width: "65px", boxShadow: "0 1px 3px rgba(0,0,0,0.06)" }}
                 min="1"
                 value={bulkGuards}
-                onChange={(e) => setBulkGuards(Number(e.target.value))}
+                onChange={(e) => handleBulkChange("guards", Number(e.target.value))}
               />
             </div>
-            <button
-              type="button"
-              className="btn btn-sm btn-primary fw-semibold px-3 ms-auto shadow-sm"
-              onClick={applyBulkSettings}
-              disabled={!bulkStart || !bulkEnd}
-            >
-              Apply to All
-            </button>
           </div>
         </div>
       )}

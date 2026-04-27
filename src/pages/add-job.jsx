@@ -13,8 +13,6 @@ import TasksStep from "../components/job/TasksStep";
 import ReviewStep from "../components/job/ReviewStep";
 import PaymentModal from "../components/job/PaymentModal";
 
-const STEP_TITLES = ["Location", "Schedule", "Details", "Tasks", "Review & Confirm"];
-
 export default function AddJob() {
   const navigate = useNavigate();
   const { userdata } = useSelector((state) => state.auth);
@@ -35,9 +33,10 @@ export default function AddJob() {
 
   const userType = userdata?.data?.user_type || userdata?.user_type;
   const isAdmin = userType === "admin";
-  const { data: contractorsResponse } = useFetch(isAdmin ? "api/admin/get-active-contractors" : null, { isAuth: true });
-  const contractorsList = contractorsResponse?.data || [];
-  const [selectedContractorId, setSelectedContractorId] = useState("");
+
+  const STEP_TITLES = isAdmin
+    ? ["Location", "Schedule", "Details", "Tasks"]
+    : ["Location", "Schedule", "Details", "Tasks", "Review & Confirm"];
 
   const [step, setStep] = useState(0);
   const [resolvingLocation, setResolvingLocation] = useState(false);
@@ -222,13 +221,10 @@ export default function AddJob() {
     }
 
     return {
-      user_id: isAdmin ? selectedContractorId || null : userdata?.data?.id || userdata?.id || null,
+      user_id: userdata?.data?.id || userdata?.id || null,
       title: (form.title || "").trim(), description: form.description, address: form.location || form.address, coordinates: form.coordinates || "", state: "open",
       shifts: shiftsPayload,
-
-      // 🚀 The Admin's selection (full or split) is now securely passed to the backend
       payment_option: form.paymentOption,
-
       financials: {
         base_total_inc_gst: Number(baseAmount.toFixed(2)),
         discount_applied: Number(discountApplied.toFixed(2)),
@@ -277,11 +273,9 @@ export default function AddJob() {
   }
 
   async function handleConfirm(e) {
-    e.preventDefault();
-    if (!form.title.trim()) { toast.error("Job title required."); setStep(2); return; }
-    if (isAdmin && !selectedContractorId) return toast.error("Select contractor to post this job for.");
+    if (e) e.preventDefault();
 
-    // 🚀 ADMIN BYPASS: Ignore terms and conditions if user is Admin
+    if (!form.title.trim()) { toast.error("Job title required."); setStep(2); return; }
     if (!isAdmin && !form.termsAccepted) return toast.error("Accept Terms & Conditions.");
 
     if (!validateSchedule(true)) { setStep(1); return; }
@@ -294,7 +288,6 @@ export default function AddJob() {
       const document_list = await uploadAllAttachments();
       const payload = buildJobPayload(document_list);
 
-      // If user is Admin, bypass Stripe completely
       if (isAdmin) {
         const postRes = await submitJob("api/job-post", {
           ...payload,
@@ -332,48 +325,36 @@ export default function AddJob() {
           </div>
         </div>
 
-        {/* 🚀 COMBINED ADMIN HEADER ROW */}
-        {isAdmin && (
-          <div className="alert alert-info shadow-sm mb-4 border-0 d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3 rounded-4">
-            <div className="d-flex align-items-center gap-3">
-              <div className="bg-white p-2 rounded shadow-sm text-info d-flex align-items-center justify-content-center">
-                <i className="fa-solid fa-shield-halved fs-4"></i>
-              </div>
-              <div>
-                <strong className="text-dark fs-6 d-block mb-1">Admin Mode Active</strong>
-                <p className="mb-0 small text-muted" style={{ lineHeight: "1.2" }}>Posting on behalf of a client. Payments & Terms bypassed.</p>
-              </div>
-            </div>
-            <div style={{ minWidth: "260px", flexShrink: 0 }}>
-              <select
-                className="form-select shadow-sm fw-semibold"
-                style={{ borderColor: "#b6effb" }}
-                value={selectedContractorId}
-                onChange={(e) => setSelectedContractorId(e.target.value)}
-              >
-                <option value="">-- Select a Client to Bill --</option>
-                {contractorsList.map((c) => (<option key={c.id} value={c.id}>{c.name || c.email}</option>))}
-              </select>
-            </div>
-          </div>
-        )}
-
         <div className="card shadow-sm list-card">
           <div className="card-body">
             {chargeratesLoading ? (<div className="text-center py-5">Loading rates...</div>) : (
               <>
                 <StepProgress step={step} titles={STEP_TITLES} />
-                <form onSubmit={handleConfirm}>
+
+                <form onSubmit={(e) => e.preventDefault()}>
                   {step === 0 && <LocationStep form={form} setField={setField} resolvingLocation={resolvingLocation} setResolvingLocation={setResolvingLocation} locationError={locationError} setLocationError={setLocationError} />}
                   {step === 1 && <ScheduleStep form={form} setField={setField} scheduleError={scheduleError} />}
                   {step === 2 && <DetailsStep form={form} setField={setField} handleFile={handleFile} attachmentPreviews={attachmentPreviews} removeAttachment={removeAttachment} />}
                   {step === 3 && <TasksStep form={form} setField={setField} />}
 
-                  {step === 4 && <ReviewStep form={form} rate={breakdown} setStep={setStep} setField={setField} handleConfirm={handleConfirm} isSubmitting={isSubmitting} baseAmount={breakdown?.chargeTotalIncGst || 0} isAdmin={isAdmin} />}
+                  {step === 4 && !isAdmin && <ReviewStep form={form} rate={breakdown} setStep={setStep} setField={setField} handleConfirm={handleConfirm} isSubmitting={isSubmitting} baseAmount={breakdown?.chargeTotalIncGst || 0} isAdmin={isAdmin} />}
 
                   <div className="d-flex justify-content-between mt-4">
                     <button type="button" className="btn btn-outline-secondary" onClick={back} disabled={isSubmitting}>← Back</button>
-                    {step < STEP_TITLES.length - 1 && <button type="button" className="btn btn-primary btn-lg rounded-pill px-4" onClick={next} disabled={isSubmitting}>Next</button>}
+
+                    {step < STEP_TITLES.length - 1 ? (
+                      <button type="button" className="btn btn-primary btn-lg rounded-pill px-4" onClick={next} disabled={isSubmitting}>Next</button>
+                    ) : (
+                      isAdmin && (
+                        <button type="button" className="btn btn-dark btn-lg rounded-pill px-4" onClick={handleConfirm} disabled={isSubmitting}>
+                          {isSubmitting ? (
+                            <><span className="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>Processing...</>
+                          ) : (
+                            <><i className="fa-solid fa-paper-plane me-2"></i>Post Job</>
+                          )}
+                        </button>
+                      )
+                    )}
                   </div>
                 </form>
               </>

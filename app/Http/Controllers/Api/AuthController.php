@@ -13,206 +13,337 @@ use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Str;
+use Vonage\Client;
+use Vonage\Client\Credentials\Basic;
+use Vonage\SMS\Message\SMS;
 
 class AuthController extends Controller
 {
-    public function registerCustomer(Request $request)
+    public function register(Request $request)
     {
         $data = $request->validate([
             'name' => 'required|string',
             'email' => 'required|email|unique:users',
             'password' => 'required|confirmed|min:6',
             'phone' => 'nullable',
-            'company_name' => 'nullable',
-            'address' => 'nullable',
-            'city' => 'nullable|string',
-            'state' => 'nullable|string',
-            'country' => 'nullable|string',
-            'coordinates' => 'nullable|string',
-        ]);
+            'user_type' => 'required|string',
+        ]); 
+        
+        if($data['user_type'] == 'staff'){
+            $capitalUser = User::where('user_type', 'customer')
+            ->where('name', 'Capital Security')
+            ->firstOrFail();
+        }else{
+            $capitalUser = null;
+        }
+        
+        $otp = rand(100000, 999999);
 
         $user = User::create([
             'name' => $data['name'],
             'email' => $data['email'],
             'password' => Hash::make($data['password']),
-            'user_type' => 'customer',
+            'user_type' => $data['user_type'],
             'is_active' => 0,
-            'address' => $data['address'] ?? null,
-            'city' => $data['city'] ?? null,
-            'state' => $data['state'] ?? null,
-            'country' => $data['country'] ?? null,
-            'coordinates' => $data['coordinates'] ?? null,
+            'user_id' => $capitalUser->id ?? $capitalUser,
+            'phone' => $data['phone'] ?? null,
+            'phone_otp' => $otp,
             'agora_uid' => rand(100000, 999999),
             'is_online' => false,
-            'last_seen' => now()
+            'last_seen' => now(),
+            'phone_verified' => 0,
+            'email_verified' => 0
         ]);
 
         
         $user->staffo_id = 'STAFO' . $user->id;
         $user->save();
 
-        Customer::create([
-            'user_id' => $user->id,
-            'phone' => $data['phone'] ?? null,
-            'company_name' => $data['company_name'] ?? null,
-        ]);
+        // $this->sendOTP($user->phone, $otp);
+        $this->EmailVerify($request->email);
 
-        return response()->json([
-            'token' => $user->createToken('api')->plainTextToken,
-            'user' => $user
-        ], 201);
-    }
-
-    public function registerContractor(Request $request)
-    {
-        $data = $request->validate([
-            'name' => 'required|string',
-            'email' => 'required|email|unique:users',
-            'password' => 'required|confirmed|min:6',
-            'address' => 'nullable',
-            'city' => 'nullable|string',
-            'state' => 'nullable|string',
-            'country' => 'nullable|string',
-            'coordinates' => 'nullable|string',
-        ]);
-
-        $user = User::create([
-            'name' => $data['name'],
-            'email' => $data['email'],
-            'password' => Hash::make($data['password']),
-            'user_type' => 'contractor',
-            'is_active' => 0,
-            'address' => $data['address'] ?? null,
-            'city' => $data['city'] ?? null,
-            'state' => $data['state'] ?? null,
-            'country' => $data['country'] ?? null,
-            'coordinates' => $data['coordinates'] ?? null,
-            'agora_uid' => rand(100000, 999999),
-            'is_online' => false,
-            'last_seen' => now()
-        ]);
-
-        $user->staffo_id = 'STAFO' . $user->id;
-        $user->save();
-
-        Contractor::create([
-            'user_id' => $user->id,
-            'company_name' => $request->company_name,
-            'registration_number' => $request->registration_number ?? null,
-            'phone' => $request->phone ?? null,
-        ]);
-
-        $document_categories = DocumentCategory::where('document_category', 'contractor_document')->first();
-
-        foreach (json_decode($document_categories->document_type) as $key => $value) {
-
-            $guard_documents = new Document();
-            $guard_documents->user_id = $user->id;
-            $guard_documents->document_category = ($document_categories->document_category != '' ? $document_categories->document_category : 'other');
-            $guard_documents->document_type = $key;
-            $guard_documents->document_name = $value;
-            $guard_documents->save();
-        }
-
-        return response()->json([
-            'token' => $user->createToken('api')->plainTextToken,
-            'user' => $user
-        ], 201);
-    }
-
-    public function logouttest(Request $request)
-    {
-        $token = $request->bearerToken();
-        if (!$token) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Access token not provided',
-                'code' => 400
-            ], 400);
-        }
-
-        try {
-            JWTAuth::setToken($token)->invalidate();
-            $customer = Customer::where('auth_token', $token)->first();
-            if ($customer) {
-                $customer->auth_token = null;
-                $customer->save();
-            }
-            return response()->json([
-                'success' => true,
-                'message' => 'Customer logged out successfully',
-                'code' => 200
+        if($data['user_type'] == 'customer'){
+            Customer::create([
+                'user_id' => $user->id,
+                'phone' => $data['phone'] ?? null,
             ]);
-        } catch (\Exception $e) {
+        }elseif($data['user_type'] == 'contractor'){
+            Contractor::create([
+                'user_id' => $user->id,
+                'company_name' => $request->company_name,
+                'registration_number' => $request->registration_number ?? null,
+                'phone' => $request->phone ?? null,
+            ]);
+
+            $document_categories = DocumentCategory::where('document_category', 'contractor_document')->first();
+
+            foreach (json_decode($document_categories->document_type) as $key => $value) {
+
+                $guard_documents = new Document();
+                $guard_documents->user_id = $user->id;
+                $guard_documents->document_category = ($document_categories->document_category != '' ? $document_categories->document_category : 'other');
+                $guard_documents->document_type = $key;
+                $guard_documents->document_name = $value;
+                $guard_documents->save();
+            }
+
             return response()->json([
-                'success' => false,
-                'message' => 'Invalid or expired token',
-                'code' => 401
-            ], 401);
+                'token' => $user->createToken('api')->plainTextToken,
+                'user' => $user
+            ], 201);
+        }else{
+            $staff = Staff::create([
+                'user_id' => $user->id,
+                'profile_image' => $profileImagePath ?? $data['profile_image'] ?? null,
+                'gender' => $data['gender'] ?? null,
+                'phone' => $data['phone'] ?? null,
+            ]);
+
+            return response()->json([
+                'message' => 'Staff registered under Capital Security',
+                'data' => [
+                    'user' => $user,
+                    'staff' => $staff,
+                ],
+                'token' => $user->createToken('api')->plainTextToken,
+            ], 201);
         }
-    }
-
-    public function registerStaff(Request $request)
-    {
-        $data = $request->validate([
-            'name' => 'required|string',
-            'email' => 'required|email|unique:users',
-            'password' => 'required|confirmed|min:6',
-            'address' => 'nullable|string',
-            'profile_image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'gender' => 'nullable|in:male,female,other',
-            'city' => 'nullable|string',
-            'state' => 'nullable|string',
-            'country' => 'nullable|string',
-            'coordinates' => 'nullable|string',
-            'phone' => 'nullable|string',
-        ]);
-
-        $capitalUser = User::where('user_type', 'customer')
-            ->where('name', 'Capital Security')
-            ->firstOrFail();
-
-        $user = User::create([
-            'name' => $data['name'],
-            'email' => $data['email'],
-            'password' => Hash::make($data['password']),
-            'user_type' => 'staff',
-            'user_id' => $capitalUser->id,
-            'address' => $data['address'] ?? null,
-            'city' => $data['city'] ?? null,
-            'state' => $data['state'] ?? null,
-            'country' => $data['state'] ?? null,
-            'coordinates' => $data['coordinates'] ?? null,
-            'is_active' => 0,
-            'agora_uid' => rand(100000, 999999),
-            'is_online' => false,
-            'last_seen' => now()
-        ]);
-
-        $user->staffo_id = 'STAFO' . $user->id;
-        $user->save();
-
-        $profileImagePath = null;
-        if ($request->hasFile('profile_image')) {
-            $profileImagePath = $request->file('profile_image')->store('staff-profiles', 'public');
-        }
-
-        $staff = Staff::create([
-            'user_id' => $user->id,
-            'profile_image' => $profileImagePath ?? $data['profile_image'] ?? null,
-            'gender' => $data['gender'] ?? null,
-            'phone' => $data['phone'] ?? null,
-        ]);
-
+        
         return response()->json([
-            'message' => 'Staff registered under Capital Security',
-            'data' => [
-                'user' => $user,
-                'staff' => $staff,
-            ],
             'token' => $user->createToken('api')->plainTextToken,
+            'user' => $user
         ], 201);
     }
+
+    public function sendOTP($phone, $otp)
+    {
+        try {
+            if (empty($phone)) {
+                \Log::error('OTP Error: Phone is null');
+                return false;
+            }
+
+            $phone = $this->formatPhone($phone);
+
+            $basic  = new Basic(env('VONAGE_KEY'), env('VONAGE_SECRET'));
+            $client = new Client($basic);
+
+            $response = $client->sms()->send(
+                new SMS(
+                    $phone,
+                    env('VONAGE_BRAND'),
+                    "Your verification OTP is: $otp"
+                )
+            );
+
+            $message = $response->current();
+
+            if ($message->getStatus() != 0) {
+                \Log::error('Vonage Error: ' . $message->getErrorText());
+                return false;
+            }
+
+            return true;
+
+        } catch (\Exception $e) {
+            \Log::error('Vonage Exception: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    public function verifyPhone(Request $request)
+    {
+        $request->validate([
+            'phone' => 'required',
+            'otp' => 'required'
+        ]);
+
+        $user = User::where('phone', $request->phone)->first();
+
+        if (!$user) {
+            return response()->json(['message' => 'User not found'], 404);
+        }
+
+        if ($user->phone_otp != $request->otp) {
+            return response()->json(['message' => 'Invalid OTP'], 400);
+        }
+
+        if (now()->gt($user->phone_otp_expires_at)) {
+            return response()->json(['message' => 'OTP expired'], 400);
+        }
+
+        $user->update([
+            'phone_verified' => 1,
+            'phone_otp' => null,
+            'phone_otp_expires_at' => null,
+        ]);
+
+        return response()->json(['message' => 'Phone verified']);
+    }
+    
+    public function EmailVerify($email)
+   {
+        $guard = User::where('email', $email)->first();
+        if($guard){
+            $otp = Str::random(6);
+            $guard->email_otp = $otp;
+            $guard->save();
+            $this->isEmailVarifay($guard->email, $otp);
+        }
+    }
+
+    
+    function isEmailVarifay($email,$token){
+        $data = [
+            'token' => $token,
+            'email' => $email,
+            'title' => "Staff Verify Email",
+        ];
+        
+        Mail::send('emails.isEmailVerify', $data, function($token)use($data){
+            $token->from('no-reply@thescouts.com.au', 'Staffoo')
+            ->to($data['email']);
+            $token->subject("Staff Verify Email");
+        });
+    }
+
+       public function EmailVerification($email,$token)
+    { 
+        $guard = User::where('email', $email)->first();
+
+        if($guard){
+            if($guard->email_otp == $token){
+                $guard->is_email_approved = 1;
+                $guard->email_otp = null;
+                $guard->save();
+                return view('guard-welcome', ['guard' => $guard]);
+            }else{
+                return response()->json(['message' => "Your Otp Expired!" ,  'code' => 404, 'success' => false]);
+            }
+        }else{
+            return response()->json(['message' => "Staff Not Found!" ,  'code' => 404, 'success' => false]);
+        }
+    }
+    // public function registerContractor(Request $request)
+    // {
+    //     $data = $request->validate([
+    //         'name' => 'required|string',
+    //         'email' => 'required|email|unique:users',
+    //         'password' => 'required|confirmed|min:6',
+    //         'address' => 'nullable',
+    //         'city' => 'nullable|string',
+    //         'state' => 'nullable|string',
+    //         'country' => 'nullable|string',
+    //         'coordinates' => 'nullable|string',
+    //     ]);
+
+    //     $user = User::create([
+    //         'name' => $data['name'],
+    //         'email' => $data['email'],
+    //         'password' => Hash::make($data['password']),
+    //         'user_type' => 'contractor',
+    //         'is_active' => 0,
+    //         'address' => $data['address'] ?? null,
+    //         'city' => $data['city'] ?? null,
+    //         'state' => $data['state'] ?? null,
+    //         'country' => $data['country'] ?? null,
+    //         'coordinates' => $data['coordinates'] ?? null,
+    //         'agora_uid' => rand(100000, 999999),
+    //         'is_online' => false,
+    //         'last_seen' => now()
+    //     ]);
+
+    //     $user->staffo_id = 'STAFO' . $user->id;
+    //     $user->save();
+
+    //     Contractor::create([
+    //         'user_id' => $user->id,
+    //         'company_name' => $request->company_name,
+    //         'registration_number' => $request->registration_number ?? null,
+    //         'phone' => $request->phone ?? null,
+    //     ]);
+
+    //     $document_categories = DocumentCategory::where('document_category', 'contractor_document')->first();
+
+    //     foreach (json_decode($document_categories->document_type) as $key => $value) {
+
+    //         $guard_documents = new Document();
+    //         $guard_documents->user_id = $user->id;
+    //         $guard_documents->document_category = ($document_categories->document_category != '' ? $document_categories->document_category : 'other');
+    //         $guard_documents->document_type = $key;
+    //         $guard_documents->document_name = $value;
+    //         $guard_documents->save();
+    //     }
+
+    //     return response()->json([
+    //         'token' => $user->createToken('api')->plainTextToken,
+    //         'user' => $user
+    //     ], 201);
+    // }
+
+    // public function registerStaff(Request $request)
+    // {
+    //     $data = $request->validate([
+    //         'name' => 'required|string',
+    //         'email' => 'required|email|unique:users',
+    //         'password' => 'required|confirmed|min:6',
+    //         'address' => 'nullable|string',
+    //         'profile_image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+    //         'gender' => 'nullable|in:male,female,other',
+    //         'city' => 'nullable|string',
+    //         'state' => 'nullable|string',
+    //         'country' => 'nullable|string',
+    //         'coordinates' => 'nullable|string',
+    //         'phone' => 'nullable|string',
+    //     ]);
+
+    //     $capitalUser = User::where('user_type', 'customer')
+    //         ->where('name', 'Capital Security')
+    //         ->firstOrFail();
+
+    //     $user = User::create([
+    //         'name' => $data['name'],
+    //         'email' => $data['email'],
+    //         'password' => Hash::make($data['password']),
+    //         'user_type' => 'staff',
+    //         'user_id' => $capitalUser->id,
+    //         'address' => $data['address'] ?? null,
+    //         'city' => $data['city'] ?? null,
+    //         'state' => $data['state'] ?? null,
+    //         'country' => $data['state'] ?? null,
+    //         'coordinates' => $data['coordinates'] ?? null,
+    //         'is_active' => 0,
+    //         'agora_uid' => rand(100000, 999999),
+    //         'is_online' => false,
+    //         'last_seen' => now()
+    //     ]);
+
+    //     $user->staffo_id = 'STAFO' . $user->id;
+    //     $user->save();
+
+    //     $profileImagePath = null;
+    //     if ($request->hasFile('profile_image')) {
+    //         $profileImagePath = $request->file('profile_image')->store('staff-profiles', 'public');
+    //     }
+
+    //     $staff = Staff::create([
+    //         'user_id' => $user->id,
+    //         'profile_image' => $profileImagePath ?? $data['profile_image'] ?? null,
+    //         'gender' => $data['gender'] ?? null,
+    //         'phone' => $data['phone'] ?? null,
+    //     ]);
+
+    //     return response()->json([
+    //         'message' => 'Staff registered under Capital Security',
+    //         'data' => [
+    //             'user' => $user,
+    //             'staff' => $staff,
+    //         ],
+    //         'token' => $user->createToken('api')->plainTextToken,
+    //     ], 201);
+    // }
 
     public function login(Request $request)
     {
@@ -359,10 +490,6 @@ class AuthController extends Controller
         }
     }
 
-    // ────────────────────────────────────────────────────────────────
-    // PRIVATE: Register Customer via Google
-    // Mirrors your registerCustomer() — no password needed
-    // ────────────────────────────────────────────────────────────────
     private function registerCustomerViaGoogle(array $google)
     {
         $user = User::create([
@@ -382,7 +509,6 @@ class AuthController extends Controller
 
         Customer::create([
             'user_id'      => $user->id,
-            'phone'        => null,
             'company_name' => null,
         ]);
 
@@ -395,10 +521,6 @@ class AuthController extends Controller
         ], 201);
     }
 
-    // ────────────────────────────────────────────────────────────────
-    // PRIVATE: Register Contractor via Google
-    // Mirrors your registerContractor() — creates Document records
-    // ────────────────────────────────────────────────────────────────
     private function registerContractorViaGoogle(array $google)
     {
         $user = User::create([
@@ -446,10 +568,6 @@ class AuthController extends Controller
         ], 201);
     }
 
-    // ────────────────────────────────────────────────────────────────
-    // PRIVATE: Register Staff via Google
-    // Mirrors your registerStaff() — links to Capital Security user
-    // ────────────────────────────────────────────────────────────────
     private function registerStaffViaGoogle(array $google)
     {
         // Same logic as your registerStaff() — link to Capital Security

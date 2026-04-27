@@ -21,6 +21,11 @@ use App\Http\Controllers\Api\MessageController;
 use App\Http\Controllers\Api\RtmController;
 use Illuminate\Support\Facades\Artisan;
 
+use App\Http\Controllers\AgoraController;
+use App\Http\Controllers\Api\DashboardController;
+use App\Http\Controllers\Api\VisaController;
+use App\Http\Controllers\IvrController2;
+
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -32,10 +37,10 @@ use Illuminate\Support\Facades\Artisan;
 |
 */
 Route::post('/auth/google/callback', [AuthController::class, 'handleGoogleCallback']);
-
-Route::post('/register/customer', [AuthController::class, 'registerCustomer']);
-Route::post('/register/contractor', [AuthController::class, 'registerContractor']);
-Route::post('/register/staff', [AuthController::class, 'registerStaff']);
+Route::get('/email-verification/{email}/{token}', [AuthController::class, 'EmailVerification'])->name('guard.email.verification');
+Route::post('/register/user', [AuthController::class, 'register']);
+// Route::post('/register/contractor', [AuthController::class, 'registerContractor']);
+// Route::post('/register/staff', [AuthController::class, 'registerStaff']);
 
 Route::post('/login', [AuthController::class, 'login']);
 
@@ -55,7 +60,7 @@ Route::prefix('contact-us')->group(function () {
 
 Route::middleware('auth:sanctum')->group(function () {
 
-    Route::post('/logout', [AuthController::class, 'logout']);
+    Route::any('/logout/{id}', [AuthController::class, 'logout']);
     Route::any('store-notification-token', [AuthController::class, 'storeNotificationToken'])->name('store.notification.token');
     
     //roles and permission
@@ -128,13 +133,17 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::any('user-delete/{id}', [StaffController::class, 'deleteUser'])->name('user.delete');
     Route::any('upload-file', [StaffController::class, 'uploadFile'])->name('upload.file');
 
+    Route::any('job-post', [JobRosterController::class, 'jobData'])->name('job.post');
     Route::any('/confirm_task/{id}', [JobRosterController::class, 'confirm_task']);
     Route::any('/start_task/{id}', [JobRosterController::class, 'start_task']);
     Route::any('/end_task/{id}', [JobRosterController::class, 'end_task']);
     Route::any('/break/{id}', [JobRosterController::class, 'start_break']);
     Route::any('/end_break/{id}', [JobRosterController::class, 'end_break']);
+    Route::any('get-guard-payslips', [JobRosterController::class, 'getGuardPayslips']);
+    Route::any('get-specific-guard-payslips', [JobRosterController::class, 'getSpecificGuardPayslips']);
+    Route::any('auto-update-payslips', [JobRosterController::class, 'autoUpdatePayslipStatus']);
+    Route::any('upload-payslips', [JobRosterController::class, 'uploadPayslips']);
 
-    Route::any('job-post', [JobRosterController::class, 'jobData'])->name('job.post');
     Route::any('/asap-jobs/accept/{id}', [JobRosterController::class, 'accept_asap_job'])->name('accept.asap.job');
     Route::any('/signin/{id}', [JobRosterController::class, 'jobSignin'])->name('job.signin');
     Route::any('/signout/{id}', [JobRosterController::class, 'jobSignout'])->name('job.signout');
@@ -170,19 +179,28 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('contact-us/{id}', [ContactUsController::class, 'destroy']);
     Route::post('contact-us/test-email', [ContactUsController::class, 'testEmail']);
 
+    //Vonage Calling
+    Route::get('/webhooks/answer', [IvrController2::class, 'answer'])->name('webhooks.answer');
+    Route::post('/webhooks/dtmf', [IvrController2::class, 'dtmf'])->name('webhooks.dtmf');
+    Route::post('/webhooks/event', [IvrController2::class, 'handleEvent'])->name('handleEvent');
+    Route::get('/call-filter', [IvrController2::class, 'callfilter'])->name('callfilter');
+    Route::get('/call-welfare', [IvrController2::class, 'welfareCallFilter'])->name('welfareCallFilter');
+
     Route::any('get-roaster-hour-sum', [JobRosterController::class, 'getrosterhoursum'])->name('get.roster.hours.sum');
 
     Route::any('getTimesheet', [JobRosterController::class, 'getTimesheet'])->name('getTimesheet');
     Route::any('get-timesheet-details', [JobRosterController::class, 'getTimeSheetDetails'])->name('get.timesheet.details');
 
     //Leave Management
-    Route::any('getLeaveDetails', [LeaveManagementController::class, 'getLeaveDetails'])->name('getLeaveDetails');
+    Route::any('getLeaveDetails/{guard_id}', [LeaveManagementController::class, 'getLeaveDetails'])->name('getLeaveDetails');
     Route::any('getPendingLeaveRequests', [LeaveManagementController::class, 'getPendingLeaveRequests'])->name('getPendingLeaveRequests');
     Route::any('addAdminLeaveRequest', [LeaveManagementController::class, 'addAdminLeaveRequest'])->name('addAdminLeaveRequest');
     Route::any('getLeaveGuards', [LeaveManagementController::class, 'getLeaveGuards'])->name('getLeaveGuards');
     Route::any('approveLeave', [LeaveManagementController::class, 'approveLeave'])->name('approveLeave');
     Route::any('guardOnLeave', [LeaveManagementController::class, 'guardOnLeave'])->name('guardOnLeave');
     Route::get('/get-guard-leaves/{guard_id}', [LeaveManagementController::class, 'getGuardLeave']);
+
+    Route::get('user-transactions/{user}', [JobRosterController::class, 'getUserTransactions']);
 
  
     // Notifications
@@ -214,8 +232,14 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::patch('customers/{id}/toggle-status', [CustomerController::class, 'toggleStatus']);
 
         Route::get('get-staff', [AdminStaffController::class, 'index']);
-        Route::any('create-staff',  [AdminStaffController::class, 'createStaff'])->name('create.staff');
         Route::any('update-staff/{id}',  [AdminStaffController::class, 'updateStaff'])->name('update.staff');
+        Route::any('create-staff',  [AdminStaffController::class, 'createStaff'])->name('create.staff');
+        Route::delete('staff-delete/{id}', [AdminStaffController::class, 'destroy']);
+
+        Route::any('send-invoice',  [JobRosterController::class, 'sendInvoice']);
+
+        Route::post('/visa-check', [VisaController::class, 'create']);
+        Route::get('/visa-result/{id}', [VisaController::class, 'result']);
     });
 
     Route::prefix('payment')->group(function () {
@@ -267,5 +291,7 @@ Route::middleware('auth:sanctum')->group(function () {
     
     Route::any('/get-all-jobs', [JobRosterController::class, 'getAllJobs'])->name('get.all.jobs');
 
+    Route::post('/agora/token', [AgoraController::class, 'generateToken']);
+    Route::post('/agora/channel', [AgoraController::class, 'createChannel']);
 
-
+    Route::get('/dashboard', [DashboardController::class, 'index']);

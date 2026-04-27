@@ -264,16 +264,6 @@ class CustomerController extends Controller
             ], 404);
         }
 
-        // Check if customer has any dependencies before deleting
-        $hasOrders = $user->orders()->exists(); // Assuming orders relationship exists
-        
-        if ($hasOrders) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Cannot delete customer with existing orders. Consider deactivating instead.'
-            ], 409);
-        }
-
         // Soft delete (if using SoftDeletes trait)
         $user->delete();
 

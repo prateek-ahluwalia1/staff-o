@@ -24,11 +24,13 @@ class User extends Authenticatable
             'state',
             'coordinates',
             'address',
+            'phone',
             'agora_uid', 
             'is_online', 
             'last_seen',
             'notification_token',
-            'staffo_id'
+            'staffo_id',
+            'phone_otp'
         ];
     
         protected $hidden = [

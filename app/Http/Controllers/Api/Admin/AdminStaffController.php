@@ -219,7 +219,7 @@ class AdminStaffController extends Controller
 
     public function updateStaff(Request $request, $userId)
     {
-        $user = User::findOrFail($userId);
+        $user = User::find($userId);
         
         $userData = [];
         
@@ -295,11 +295,13 @@ class AdminStaffController extends Controller
         $staff->save();
 
         $old_data = Staff::where('user_id', $user->id)->first();
+        
 
         $capitalUser = User::where('id', $request->user_id)
             ->where('name', 'Capital Security')
-            ->firstOrFail();
-        if($capitalUser->name == "Capital Security")
+            ->first();
+            
+        if ($capitalUser && $capitalUser->name == "Capital Security")
         {
             $check_old_data_exist = Document::where('user_id', $user->id)->where('document_category', '!=', 'other-doc')->first();
             if((!isset($old_data)) || (isset($old_data->staff_document_type) && !$check_old_data_exist)){
@@ -486,5 +488,28 @@ class AdminStaffController extends Controller
         $user->profile_completion_percentage = $percentage;
 
         return response()->json(['success' => true, 'code' => 200, 'data' => $user]);
+    }
+
+     /**
+     * Remove the specified customer
+     */
+    public function destroy($id)
+    {
+        $user = User::where('user_type', 'staff')->find($id);
+
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Staff not found'
+            ], 404);
+        }
+
+        // Soft delete (if using SoftDeletes trait)
+        $user->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Staff deleted successfully'
+        ]);
     }
 }

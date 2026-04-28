@@ -62,7 +62,7 @@ export default function ProfileForm({
               )}
             </div>
           </div>
-          {userType !== "contractor" && (
+          {(userType === "contractor") && (
             <div>
               <label htmlFor="phone" className="form-label">
                 Phone <span className="text-danger">*</span>
@@ -73,21 +73,68 @@ export default function ProfileForm({
                   className="form-control"
                   id="phone"
                   value={formData.phone || ""}
-                  style={{ background: "#f8f9fa", cursor: "default" }}
-                  // readOnly={userType !== "customer"}
                   onChange={onChange}
                 />
-                {/* <button
-                type="button"
-                className="btn btn-outline-primary btn-sm text-nowrap"
-                onClick={onChangePhone}
-              >
-                Change Phone
-              </button> */}
               </div>
             </div>
           )}
 
+          {userType === "contractor" && (
+            <>
+              <div>
+                <label htmlFor="company_name" className="form-label">
+                  Company Name <span className="text-danger">*</span>
+                </label>
+                <input
+                  type="text"
+                  className="form-control"
+                  id="company_name"
+                  placeholder="Company Name"
+                  value={formData.company_name || ""}
+                  onChange={onChange}
+                />
+              </div>
+              <div>
+                <label htmlFor="registration_number" className="form-label">
+                  Registration Number
+                </label>
+                <input
+                  type="text"
+                  className="form-control"
+                  id="registration_number"
+                  placeholder="REG-XXXX"
+                  value={formData.registration_number || ""}
+                  onChange={onChange}
+                />
+              </div>
+              <div>
+                <label htmlFor="abn" className="form-label">
+                  ABN <span className="text-danger">*</span>
+                </label>
+                <input
+                  type="text"
+                  className="form-control"
+                  id="abn"
+                  placeholder="XX XXX XXX XXX"
+                  value={formData.abn || ""}
+                  onChange={onChange}
+                />
+              </div>
+              <div>
+                <label htmlFor="acn" className="form-label">
+                  ACN
+                </label>
+                <input
+                  type="text"
+                  className="form-control"
+                  id="acn"
+                  placeholder="XXX XXX XXX"
+                  value={formData.acn || ""}
+                  onChange={onChange}
+                />
+              </div>
+            </>
+          )}
           {userType === "staff" && (
             <>
               <div>
@@ -160,13 +207,12 @@ export default function ProfileForm({
                           }}
                         >
                           <i
-                            className={`fa-solid ${
-                              option === "male"
-                                ? "fa-mars"
-                                : option === "female"
-                                  ? "fa-venus"
-                                  : "fa-circle-question"
-                            }`}
+                            className={`fa-solid ${option === "male"
+                              ? "fa-mars"
+                              : option === "female"
+                                ? "fa-venus"
+                                : "fa-circle-question"
+                              }`}
                             style={{ fontSize: "1.1rem" }}
                           ></i>
                           <span style={{ textTransform: "capitalize" }}>
@@ -193,40 +239,6 @@ export default function ProfileForm({
               </div>
             </>
           )}
-
-          {userType === "contractor" && (
-            <>
-              <div>
-                <label htmlFor="company_name" className="form-label">
-                  Company Name <span className="text-danger">*</span>
-                </label>
-                <input
-                  type="text"
-                  className="form-control"
-                  id="company_name"
-                  placeholder="Company Name"
-                  value={formData.company_name || ""}
-                  onChange={onChange}
-                />
-              </div>
-              <div>
-                <label htmlFor="registration_number" className="form-label">
-                  Registration Number
-                </label>
-                <input
-                  type="text"
-                  className="form-control"
-                  id="registration_number"
-                  placeholder="REG-XXXX"
-                  value={formData.registration_number || ""}
-                  onChange={onChange}
-                />
-              </div>
-            </>
-          )}
-
-          {/* Address field placed immediately after registration number for contractors.
-              It is visible to all user types. */}
           <div>
             <label htmlFor="address" className="form-label">
               Address <span className="text-danger">*</span>

@@ -26,6 +26,8 @@ const INITIAL_FORM_STATE = {
   email: "",
   phone: "",
   address: "",
+  abn: "",
+  acn: "",
   gender: "",
   city: "",
   state: "",
@@ -152,6 +154,8 @@ export default function EditProfile() {
     setFormData({
       name: d.name || "",
       email: d.email || "",
+      abn: d.abn || contractor.abn || "",
+      acn: d.acn || contractor.acn || "",
       phone: staff.phone || contractor.phone || customer.phone || d.phone || "",
       address: d.address || staff.address || contractor.address || "",
       city: d.city || staff.city || contractor.city || "",

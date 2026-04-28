@@ -243,7 +243,7 @@ export default function Register() {
                   <div className="mt-3 mb-3">
                     <div className="d-flex gap-1 flex-wrap">
                       {[
-                        { key: "contractor", label: "Register as Resource Partner" },
+                        { key: "contractor", label: "Resource Partner" },
                         { key: "customer", label: "Book a Guard" },
                         { key: "staff", label: " Apply for a Job" },
                       ].map((role) => (

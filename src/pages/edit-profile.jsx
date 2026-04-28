@@ -63,9 +63,6 @@ export default function EditProfile() {
   const { submit: uploadFile, loading: uploadLoading } = useSubmit({
     isAuth: true,
   });
-  const { submit: emailSubmit, loading: emailSubmitLoading } = useSubmit({
-    isAuth: true,
-  });
   const { submit: phoneSubmit, loading: phoneSubmitLoading } = useSubmit({
     isAuth: true,
   });
@@ -80,13 +77,6 @@ export default function EditProfile() {
 
   const [isAddingCard, setIsAddingCard] = useState(false);
   const [cardForm, setCardForm] = useState(INITIAL_CARD_STATE);
-
-  const [showEmailModal, setShowEmailModal] = useState(false);
-  const [emailStep, setEmailStep] = useState("input");
-  const [newEmailInput, setNewEmailInput] = useState("");
-  const [emailOtp, setEmailOtp] = useState("");
-  const [emailChangeError, setEmailChangeError] = useState(null);
-  const [emailChangeSuccess, setEmailChangeSuccess] = useState(false);
 
   const [showPhoneModal, setShowPhoneModal] = useState(false);
   const [phoneStep, setPhoneStep] = useState("input");
@@ -111,6 +101,13 @@ export default function EditProfile() {
     file_url: "",
     document_name: "",
   });
+
+  // Determines if the contractor's phone is verified based on backend data
+  const isPhoneVerified = Boolean(
+    userdata?.data?.contractor?.is_phone_verified ??
+    userdata?.contractor?.is_phone_verified ??
+    profileData?.data?.contractor?.is_phone_verified
+  );
 
   const getMissingFields = (d) => {
     if (!d) return [];
@@ -243,21 +240,36 @@ export default function EditProfile() {
     };
   }, [activeTab, fetchLoading]);
 
-  // Store avatar file and show preview, then save to backend
+  // Dynamically filter documents based on the selected state
+  const filteredDocuments = useMemo(() => {
+    const allDocs = profileData?.data?.documents || [];
+    const currentState = formData.state?.toLowerCase() || "";
+
+    // Check if the current state is Victoria or Queensland
+    const isRestrictedState = ["victoria", "vic", "queensland", "qld"].some(
+      (restrictedState) => currentState.includes(restrictedState)
+    );
+
+    return allDocs.filter((doc) => {
+      // If user is in Victoria or Queensland, hide the Labour Hire document
+      if (isRestrictedState && doc.document_type === "labour_hire") {
+        return false;
+      }
+      return true;
+    });
+  }, [profileData?.data?.documents, formData.state]);
+
   const handleAvatarUpload = useCallback(
     async (file) => {
       try {
         if (!file || !userId) return;
 
-        // Create local preview URL
         const previewUrl = URL.createObjectURL(file);
         setProfilePhoto(previewUrl);
 
-        // Prepare payload with only the profile image
         const payload = new FormData();
         payload.append("profile_image", file);
 
-        // Save avatar directly to backend
         const res = await submit(`api/user-update/${userId}`, payload, {
           method: "POST",
         });
@@ -265,7 +277,6 @@ export default function EditProfile() {
         if (res?.success) {
           toast.success("Avatar updated successfully!");
           setProfileImageFile(null);
-          // Refetch profile data
           refetch();
         } else {
           toast.error(res?.message || "Failed to save avatar");
@@ -280,7 +291,6 @@ export default function EditProfile() {
     [userId, submit, refetch],
   );
 
-  // General profile submit
   const handleSubmit = useCallback(
     async (e) => {
       if (e) e.preventDefault();
@@ -292,18 +302,14 @@ export default function EditProfile() {
 
       Object.keys(formData).forEach((key) => {
         if (key === "bank_details") {
-          // Stringify the array of cards
           payload.append("bank_details", JSON.stringify(formData.bank_details));
-        } else if (key === "email") {
-          // Email is updated via separate OTP verification flow
         } else if (key === "profile_image") {
-          // Skip - will be handled separately if file exists
+          // Skip - handled separately
         } else {
           payload.append(key, formData[key]);
         }
       });
 
-      // Append profile image file if selected
       if (profileImageFile) {
         payload.append("profile_image", profileImageFile);
       }
@@ -313,7 +319,6 @@ export default function EditProfile() {
       });
       if (res === undefined) return;
       toast.success("Profile updated successfully!");
-      // Reset profile image file after successful upload
       setProfileImageFile(null);
       if (res.data) dispatch(setUser({ userdata: res.data }));
       const refetchRes = await refetch();
@@ -323,63 +328,6 @@ export default function EditProfile() {
     },
     [formData, submit, userId, dispatch, refetch, profileImageFile],
   );
-
-  const handleCloseEmailModal = () => {
-    setShowEmailModal(false);
-    setEmailStep("input");
-    setNewEmailInput("");
-    setEmailOtp("");
-    setEmailChangeError(null);
-    setEmailChangeSuccess(false);
-  };
-
-  const handleRequestEmailOtp = async (e) => {
-    e.preventDefault();
-    if (!userId) {
-      setEmailChangeError("Unable to send OTP. Missing user id.");
-      return;
-    }
-    setEmailChangeError(null);
-    const res = await emailSubmit(
-      `api/user-update/${userId}`,
-      { email: newEmailInput },
-      { method: "POST" },
-    );
-    if (!res) return;
-    if (res.success) {
-      setEmailStep("otp");
-    } else {
-      setEmailChangeError(res.errors || res.message || "Failed to send OTP");
-    }
-  };
-
-  const handleVerifyEmailOtp = async (e) => {
-    e.preventDefault();
-    if (!userId) {
-      setEmailChangeError("Unable to verify OTP. Missing user id.");
-      return;
-    }
-    setEmailChangeError(null);
-    const res = await emailSubmit(
-      `api/user-update/${userId}`,
-      { email: newEmailInput, email_otp: emailOtp },
-      { method: "POST" },
-    );
-    if (!res) return;
-    if (res.success) {
-      toast.success("Email updated successfully!");
-      setFormData((prev) => ({ ...prev, email: newEmailInput }));
-      if (res.data) dispatch(setUser({ userdata: res.data }));
-      refetch();
-      setTimeout(() => {
-        handleCloseEmailModal();
-      }, 1500);
-    } else {
-      setEmailChangeError(
-        res.errors || res.message || "Invalid OTP. Please try again.",
-      );
-    }
-  };
 
   const handleClosePhoneModal = () => {
     setShowPhoneModal(false);
@@ -504,7 +452,6 @@ export default function EditProfile() {
     } else if (type === "file") {
       const file = files[0];
       if (file) {
-        // Show local preview immediately
         const previewUrl = URL.createObjectURL(file);
         setDocForm((prev) => ({
           ...prev,
@@ -592,7 +539,6 @@ export default function EditProfile() {
 
       if (res.success) {
         toast.success("Profile deleted successfully!");
-        // Clear user data and redirect to login
         dispatch(setUser({ userdata: null }));
         localStorage.removeItem("auth_token");
         localStorage.removeItem("user");
@@ -678,15 +624,9 @@ export default function EditProfile() {
           onSubmit={handleSubmit}
           loading={submitLoading}
           userType={userType}
-          onChangeEmail={() => {
-            setNewEmailInput("");
-            setEmailStep("input");
-            setEmailChangeError(null);
-            setEmailChangeSuccess(false);
-            setShowEmailModal(true);
-          }}
+          isPhoneVerified={isPhoneVerified}
           onChangePhone={() => {
-            setNewPhoneInput("");
+            setNewPhoneInput(formData.phone || ""); // Pre-populate with existing phone
             setPhoneStep("input");
             setPhoneChangeError(null);
             setPhoneChangeSuccess(false);
@@ -849,7 +789,6 @@ export default function EditProfile() {
             </>
           ) : (
             <div className="row align-items-center">
-              {/* Visual Card Preview */}
               <div className="col-md-5 mb-4 mb-md-0 d-flex justify-content-center">
                 <div
                   className="card-preview position-relative text-white p-4 rounded-4 shadow-lg"
@@ -922,7 +861,6 @@ export default function EditProfile() {
                 </div>
               </div>
 
-              {/* Card Input Form */}
               <div className="col-md-7">
                 <div className="d-flex justify-content-between align-items-center mb-3">
                   <div className="d-flex align-items-center">
@@ -1076,14 +1014,14 @@ export default function EditProfile() {
         </div>
       )}
 
+      {/* Document Modal */}
       {activeTab === "documents" &&
         userType !== "customer" &&
         userType !== "admin" && (
           <DocumentTable
-            documents={profileData?.data?.documents || []}
+            documents={filteredDocuments}
             onAddFile={(doc) => {
               setSelectedDoc(doc);
-              // If document has no data (empty fields), reset form completely
               if (!doc.document_no && !doc.document_expiry && !doc.file) {
                 setDocForm({
                   notes: "",
@@ -1097,7 +1035,6 @@ export default function EditProfile() {
                   document_name: doc.document_name || "",
                 });
               } else {
-                // If document has data, load it for editing
                 setDocForm((prev) => ({
                   ...prev,
                   file_url: doc.file,
@@ -1126,7 +1063,6 @@ export default function EditProfile() {
           />
         )}
 
-      {/* Danger Zone Section */}
       <div
         className="mt-5 p-4 bg-light border border-danger rounded"
         style={{ borderWidth: "2px" }}
@@ -1172,121 +1108,15 @@ export default function EditProfile() {
         </button>
       </div>
 
-      {/* Email Change Modal */}
-      <Modal open={showEmailModal} onClose={handleCloseEmailModal}>
-        <div className="p-3">
-          <h5 className="mb-1">Change Email Address</h5>
-          <p className="text-muted small mb-4">
-            {emailStep === "input"
-              ? "Enter your new email address. An OTP will be sent to verify it."
-              : `Enter the OTP sent to ${newEmailInput}`}
-          </p>
-
-          {emailChangeSuccess && (
-            <div className="alert alert-success py-2">
-              Email updated successfully!
-            </div>
-          )}
-          {emailChangeError && (
-            <div className="alert alert-danger py-2">{emailChangeError}</div>
-          )}
-
-          {emailStep === "input" ? (
-            <form onSubmit={handleRequestEmailOtp}>
-              <div className="mb-3">
-                <label className="form-label fw-semibold">
-                  New Email Address <span className="text-danger">*</span>
-                </label>
-                <input
-                  type="email"
-                  className="form-control"
-                  placeholder="newemail@example.com"
-                  value={newEmailInput}
-                  onChange={(e) => setNewEmailInput(e.target.value)}
-                  required
-                  autoFocus
-                />
-              </div>
-              <div className="d-flex gap-2">
-                <button
-                  type="button"
-                  className="btn btn-outline-secondary w-50"
-                  onClick={handleCloseEmailModal}
-                  disabled={emailSubmitLoading}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="btn btn-primary w-50"
-                  disabled={emailSubmitLoading}
-                >
-                  {emailSubmitLoading ? "Sending OTP..." : "Send OTP"}
-                </button>
-              </div>
-            </form>
-          ) : (
-            <form onSubmit={handleVerifyEmailOtp}>
-              <div className="mb-3">
-                <label className="form-label fw-semibold">
-                  Enter OTP <span className="text-danger">*</span>
-                </label>
-                <input
-                  type="text"
-                  className="form-control text-center fw-bold"
-                  placeholder="Enter OTP"
-                  value={emailOtp}
-                  onChange={(e) =>
-                    setEmailOtp(e.target.value.replace(/\D/g, ""))
-                  }
-                  maxLength={8}
-                  required
-                  autoFocus
-                />
-                <div className="mt-2 text-end">
-                  <button
-                    type="button"
-                    className="btn btn-link btn-sm p-0 text-muted"
-                    onClick={() => {
-                      setEmailStep("input");
-                      setEmailOtp("");
-                      setEmailChangeError(null);
-                    }}
-                    disabled={emailSubmitLoading}
-                  >
-                    Change email / Resend OTP
-                  </button>
-                </div>
-              </div>
-              <div className="d-flex gap-2">
-                <button
-                  type="button"
-                  className="btn btn-outline-secondary w-50"
-                  onClick={handleCloseEmailModal}
-                  disabled={emailSubmitLoading}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="btn btn-primary w-50"
-                  disabled={emailSubmitLoading || emailChangeSuccess}
-                >
-                  {emailSubmitLoading ? "Verifying..." : "Verify & Update"}
-                </button>
-              </div>
-            </form>
-          )}
-        </div>
-      </Modal>
-
-      {/* Phone Change Modal */}
+      {/* Phone Change / Verify Modal */}
       <Modal open={showPhoneModal} onClose={handleClosePhoneModal}>
         <div className="p-3">
-          <h5 className="mb-1">Change Phone Number</h5>
+          <h5 className="mb-1">{isPhoneVerified ? "Change Phone Number" : "Verify or Change Phone Number"}</h5>
           <p className="text-muted small mb-4">
             {phoneStep === "input"
-              ? "Enter your new phone number. An OTP will be sent to verify it."
+              ? isPhoneVerified
+                ? "Enter your new phone number to receive an OTP."
+                : "You can modify the number below before sending the verification OTP."
               : `Enter the OTP sent to ${newPhoneInput}`}
           </p>
 
@@ -1303,7 +1133,7 @@ export default function EditProfile() {
             <form onSubmit={handleRequestPhoneOtp}>
               <div className="mb-3">
                 <label className="form-label fw-semibold">
-                  New Phone Number <span className="text-danger">*</span>
+                  Phone Number <span className="text-danger">*</span>
                 </label>
                 <input
                   type="tel"
@@ -1313,6 +1143,8 @@ export default function EditProfile() {
                   onChange={(e) => setNewPhoneInput(e.target.value)}
                   required
                   autoFocus
+                  pattern="^\+?[0-9\s\-]{7,15}$"
+                  title="Please enter a valid phone number"
                 />
               </div>
               <div className="d-flex gap-2">
@@ -1550,7 +1382,6 @@ export default function EditProfile() {
         </form>
       </Modal>
 
-      {/* Delete Profile Confirmation Modal */}
       <Modal open={showDeleteModal} onClose={() => setShowDeleteModal(false)}>
         <div className="p-3">
           <h5 className="mb-1 text-danger fw-bold">

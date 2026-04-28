@@ -13,6 +13,7 @@ export default function LocationStep({
   const mapRef = useRef(null);
   const markerRef = useRef(null);
   const selectingPlaceRef = useRef(false);
+  const autocompleteRef = useRef(null); // Added ref for Autocomplete
   const [map, setMap] = useState(null);
   const [googleReady, setGoogleReady] = useState(false);
 
@@ -79,7 +80,6 @@ export default function LocationStep({
 
   // Initialize Map
   useEffect(() => {
-    // Prevent re-initialization if the map is already created
     if (!googleReady || !mapRef.current || map) return;
 
     const initialLatLng = form.coordinates
@@ -107,21 +107,22 @@ export default function LocationStep({
 
     setMap(gmap);
     markerRef.current = marker;
-  }, [googleReady, map, form.coordinates, setField, reverseGeocode]); // Dependencies added
+  }, [googleReady, map, form.coordinates, setField, reverseGeocode]);
 
-  // Initialize Autocomplete
   useEffect(() => {
     if (!googleReady || !inputRef.current) return;
 
-    const autocomplete = new window.google.maps.places.Autocomplete(
+    if (autocompleteRef.current) return;
+
+    autocompleteRef.current = new window.google.maps.places.Autocomplete(
       inputRef.current,
       {
         fields: ["name", "address_components", "geometry", "formatted_address"],
       },
     );
 
-    const listener = autocomplete.addListener("place_changed", () => {
-      const place = autocomplete.getPlace();
+    const listener = autocompleteRef.current.addListener("place_changed", () => {
+      const place = autocompleteRef.current.getPlace();
       if (!place.geometry) return;
 
       selectingPlaceRef.current = true;
@@ -138,13 +139,13 @@ export default function LocationStep({
       }, 0);
     });
 
-    // Cleanup listener on unmount or dependency change
     return () => {
       if (listener && typeof listener.remove === "function") {
         listener.remove();
       }
+      autocompleteRef.current = null;
     };
-  }, [googleReady, map, setField, fillAddress]); // Dependencies added
+  }, [googleReady, map, setField, fillAddress]);
 
   const handleUseCurrent = () => {
     if (!navigator.geolocation) {
@@ -191,6 +192,7 @@ export default function LocationStep({
             <input
               ref={inputRef}
               value={form.location || ""}
+              autoComplete="off" // Added autoComplete="off"
               onChange={(e) => {
                 setField("location", e.target.value);
 
@@ -199,14 +201,12 @@ export default function LocationStep({
                   return;
                 }
 
-                // clear coordinates when user manually edits the field
                 setField("coordinates", "");
                 setField("address", "");
                 if (setLocationError) setLocationError("");
               }}
-              className={`form-control form-control-lg${
-                locationError ? " is-invalid" : ""
-              }`}
+              className={`form-control form-control-lg${locationError ? " is-invalid" : ""
+                }`}
               placeholder="Search address"
             />
             <button

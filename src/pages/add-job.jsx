@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useCallback } from "react"; // Added useCallback
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { toast } from "react-toastify";
@@ -58,10 +58,16 @@ export default function AddJob() {
   const dynamicRates = useMemo(() => mapApiRates(chargeratesData?.data?.[0]), [chargeratesData]);
   const breakdown = useMemo(() => computeShiftBreakdown(form.scheduleDays, dynamicRates), [form.scheduleDays, dynamicRates]);
 
-  function setField(name, value) {
+  // Wrapped in useCallback to prevent re-rendering LocationStep on every keystroke
+  const setField = useCallback((name, value) => {
     setForm((f) => ({ ...f, [name]: value }));
-    if (scheduleError && ["scheduleDays", "dateRange"].includes(name)) setScheduleError("");
-  }
+    setScheduleError((prev) => {
+      if (prev && ["scheduleDays", "dateRange"].includes(name)) {
+        return "";
+      }
+      return prev;
+    });
+  }, []);
 
   function validateSchedule(showToast = false) {
     if (form.scheduleDays.length === 0) {

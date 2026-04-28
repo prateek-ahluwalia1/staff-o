@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useSelector } from "react-redux";
 
 const getInitials = (name) => {
   if (!name) return "U";
@@ -35,6 +36,8 @@ export default function AvatarUpload({
   onPhotoChange,
   loading = false,
 }) {
+  const { userdata } = useSelector((state) => state.auth);
+  const userRole = userdata?.user_type || userdata?.data?.user_type;
   const [uploadProgress, setUploadProgress] = useState(false);
 
   const handleFileChange = async (e) => {
@@ -128,22 +131,25 @@ export default function AvatarUpload({
         style={{ display: "none" }}
         disabled={uploadProgress || loading}
       />
-
-      <label
-        htmlFor="avatar-file-input"
-        className="upload-label"
-        style={{
-          cursor: uploadProgress || loading ? "not-allowed" : "pointer",
-          display: "inline-flex",
-          width: "80%",
-          alignItems: "center",
-          gap: 6,
-          opacity: uploadProgress || loading ? 0.6 : 1,
-        }}
-      >
-        <i className="fa-solid fa-arrow-up-from-bracket" aria-hidden="true"></i>
-        {uploadProgress || loading ? "Uploading..." : "Update Photo"}
-      </label>
+      {
+        userRole !== "admin" && (
+          <label
+            htmlFor="avatar-file-input"
+            className="upload-label"
+            style={{
+              cursor: uploadProgress || loading ? "not-allowed" : "pointer",
+              display: "inline-flex",
+              width: "80%",
+              alignItems: "center",
+              gap: 6,
+              opacity: uploadProgress || loading ? 0.6 : 1,
+            }}
+          >
+            <i className="fa-solid fa-arrow-up-from-bracket" aria-hidden="true"></i>
+            {uploadProgress || loading ? "Uploading..." : "Update Photo"}
+          </label>
+        )
+      }
     </div>
   );
 }

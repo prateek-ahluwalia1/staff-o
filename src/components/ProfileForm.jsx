@@ -61,88 +61,89 @@ export default function ProfileForm({
               />
             </div>
           </div>
+          {
+            userType !== "admin" && (
+              <div>
+                <div className="d-flex justify-content-between align-items-end mb-2">
+                  <label htmlFor="phone" className="form-label fw-semibold mb-0">
+                    Phone <span className="text-danger">*</span>
+                  </label>
 
-          {/* Phone Field */}
-          <div>
-            <div className="d-flex justify-content-between align-items-end mb-2">
-              <label htmlFor="phone" className="form-label fw-semibold mb-0">
-                Phone <span className="text-danger">*</span>
-              </label>
-
-              {/* Verification Status Badge (Contractors Only) */}
-              {userType === "contractor" && formData.phone && (
-                isPhoneVerified ? (
-                  <span className="badge bg-success bg-opacity-10 text-success border border-success rounded-pill px-2 py-1 shadow-sm" style={{ fontSize: "0.75rem" }}>
-                    Verified
-                  </span>
-                ) : (
-                  <span className="badge bg-danger bg-opacity-10 text-danger border border-danger rounded-pill px-2 py-1 shadow-sm" style={{ fontSize: "0.75rem" }}>
-                    Not Verified
-                  </span>
-                )
-              )}
-            </div>
-
-            {userType === "contractor" ? (
-              <>
-                <div className="input-group shadow-sm rounded">
-                  <span className={`input-group-text bg-white border-end-0 ${isPhoneVerified ? 'text-success border-success' : (!isPhoneVerified && formData.phone ? 'text-danger border-danger' : 'text-muted')}`}>
-                    <i className="fa-solid fa-phone"></i>
-                  </span>
-
-                  <input
-                    type="tel"
-                    className={`form-control border-start-0 ps-0 ${isPhoneVerified ? 'border-success text-success fw-bold' : (!isPhoneVerified && formData.phone ? 'is-invalid border-danger' : '')}`}
-                    id="phone"
-                    placeholder="+92 300 0000000"
-                    value={formData.phone || ""}
-                    readOnly
-                    style={{ background: isPhoneVerified ? "#f2fdf5" : "#f8f9fa", cursor: "default" }}
-                  />
-
-                  {/* Show checkmark icon inside input if verified */}
-                  {isPhoneVerified && (
-                    <span className="input-group-text bg-white border-success border-start-0 text-success px-2">
-                      <i className="fa-solid fa-circle-check"></i>
-                    </span>
+                  {userType === "contractor" && formData.phone && (
+                    isPhoneVerified ? (
+                      <span className="badge bg-success bg-opacity-10 text-success border border-success rounded-pill px-2 py-1 shadow-sm" style={{ fontSize: "0.75rem" }}>
+                        Verified
+                      </span>
+                    ) : (
+                      <span className="badge bg-danger bg-opacity-10 text-danger border border-danger rounded-pill px-2 py-1 shadow-sm" style={{ fontSize: "0.75rem" }}>
+                        Not Verified
+                      </span>
+                    )
                   )}
-
-                  {/* Unified Action Button */}
-                  <button
-                    type="button"
-                    className={`btn fw-medium ${!formData.phone ? "btn-outline-primary" : isPhoneVerified ? "btn-success px-3" : "btn-danger"}`}
-                    onClick={onChangePhone}
-                    style={{ zIndex: 0 }}
-                  >
-                    {!formData.phone ? "Add Phone" : isPhoneVerified ? "Change" : "Verify Now"}
-                  </button>
                 </div>
-                {!isPhoneVerified && formData.phone && (
-                  <div className="form-text text-danger mt-2 small fw-medium">
-                    <i className="fa-solid fa-circle-info me-1"></i>
-                    Verification is required to enable full functionality.
+
+                {userType === "contractor" ? (
+                  <>
+                    <div className="input-group shadow-sm rounded">
+                      <span className={`input-group-text bg-white border-end-0 ${isPhoneVerified ? 'text-success border-success' : (!isPhoneVerified && formData.phone ? 'text-danger border-danger' : 'text-muted')}`}>
+                        <i className="fa-solid fa-phone"></i>
+                      </span>
+
+                      <input
+                        type="tel"
+                        className={`form-control border-start-0 ps-0 ${isPhoneVerified ? 'border-success text-success fw-bold' : (!isPhoneVerified && formData.phone ? 'is-invalid border-danger' : '')}`}
+                        id="phone"
+                        placeholder="+92 300 0000000"
+                        value={formData.phone || ""}
+                        readOnly
+                        style={{ background: isPhoneVerified ? "#f2fdf5" : "#f8f9fa", cursor: "default" }}
+                      />
+
+                      {/* Show checkmark icon inside input if verified */}
+                      {isPhoneVerified && (
+                        <span className="input-group-text bg-white border-success border-start-0 text-success px-2">
+                          <i className="fa-solid fa-circle-check"></i>
+                        </span>
+                      )}
+
+                      {/* Unified Action Button */}
+                      <button
+                        type="button"
+                        className={`btn fw-medium ${!formData.phone ? "btn-outline-primary" : isPhoneVerified ? "btn-success px-3" : "btn-danger"}`}
+                        onClick={onChangePhone}
+                        style={{ zIndex: 0 }}
+                      >
+                        {!formData.phone ? "Add Phone" : isPhoneVerified ? "Change" : "Verify Now"}
+                      </button>
+                    </div>
+                    {!isPhoneVerified && formData.phone && (
+                      <div className="form-text text-danger mt-2 small fw-medium">
+                        <i className="fa-solid fa-circle-info me-1"></i>
+                        Verification is required to enable full functionality.
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div className="input-group shadow-sm rounded">
+                    <span className="input-group-text bg-white text-muted border-end-0">
+                      <i className="fa-solid fa-phone"></i>
+                    </span>
+                    <input
+                      type="tel"
+                      className="form-control border-start-0 ps-0"
+                      id="phone"
+                      placeholder="+92 300 0000000"
+                      value={formData.phone || ""}
+                      onChange={onChange}
+                      required
+                      pattern="^\+?[0-9\s\-]{7,15}$"
+                      title="Please enter a valid phone number"
+                    />
                   </div>
                 )}
-              </>
-            ) : (
-              <div className="input-group shadow-sm rounded">
-                <span className="input-group-text bg-white text-muted border-end-0">
-                  <i className="fa-solid fa-phone"></i>
-                </span>
-                <input
-                  type="tel"
-                  className="form-control border-start-0 ps-0"
-                  id="phone"
-                  placeholder="+92 300 0000000"
-                  value={formData.phone || ""}
-                  onChange={onChange}
-                  required
-                  pattern="^\+?[0-9\s\-]{7,15}$"
-                  title="Please enter a valid phone number"
-                />
               </div>
-            )}
-          </div>
+            )
+          }
 
           {/* Contractor Specific Fields */}
           {userType === "contractor" && (
@@ -268,10 +269,10 @@ export default function ProfileForm({
                       >
                         <i
                           className={`fa-solid ${option === "male"
-                              ? "fa-mars"
-                              : option === "female"
-                                ? "fa-venus"
-                                : "fa-circle-question"
+                            ? "fa-mars"
+                            : option === "female"
+                              ? "fa-venus"
+                              : "fa-circle-question"
                             }`}
                           style={{ fontSize: "1.1rem" }}
                         ></i>
@@ -285,8 +286,6 @@ export default function ProfileForm({
               </div>
             </div>
           )}
-
-          {/* Address Information (Replaced Header text with just the input directly) */}
           <div style={{ gridColumn: "1 / -1", marginTop: "1rem" }}>
             <label htmlFor="address" className="form-label fw-semibold">
               Address <span className="text-danger">*</span>
@@ -311,7 +310,6 @@ export default function ProfileForm({
             </div>
           </div>
 
-          {/* Read-Only City, State, Country Fields */}
           <div>
             <label htmlFor="city" className="form-label fw-semibold">City</label>
             <input

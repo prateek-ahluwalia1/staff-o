@@ -18,12 +18,13 @@ export default function Register() {
   const { submit, loading } = useSubmit();
 
   const [userType, setUserType] = useState("contractor");
+  const [showPassword, setShowPassword] = useState(false);
 
   const [formData, setFormData] = useState({
     name: "",
     email: "",
-    password: "",
     phone: "",
+    password: "",
   });
 
   const fetchLatestUserProfile = async (token, authUser) => {
@@ -63,6 +64,7 @@ export default function Register() {
 
     const payload = {
       ...formData,
+      // Pass the same password to satisfy backend validation without wasting UI space
       password_confirmation: formData.password,
       user_type: userType,
     };
@@ -127,68 +129,61 @@ export default function Register() {
       <Header />
 
       <section
-        className="d-flex align-items-center py-5"
+        className="d-flex align-items-center justify-content-center"
         style={{
-          minHeight: "calc(100vh - 80px)",
+          minHeight: "calc(100vh - 80px)", // Ensures it stays within one viewport
           background: "#f8fafc",
+          padding: "2rem 0",
         }}
       >
-        <div className="container" style={{ maxWidth: "1100px" }}>
-          <div className="row align-items-center g-5">
+        <div className="container" style={{ maxWidth: "1000px" }}>
+          <div className="row align-items-center g-4">
 
             {/* LEFT SIDE */}
-            <div className="col-lg-6 d-none d-lg-flex align-items-center">
-              <div>
-                <h1
-                  className="fw-bold mb-3"
-                  style={{ fontSize: "40px", lineHeight: "1.2" }}
-                >
-                  Build your professional identity
-                </h1>
+            <div className="col-lg-6 d-none d-lg-block">
+              <h1 className="fw-bold mb-2" style={{ fontSize: "36px", lineHeight: "1.2" }}>
+                Build your professional identity
+              </h1>
+              <p className="text-muted mb-4 small">
+                Join a trusted network of professionals and clients. Create
+                your profile, connect, and grow your opportunities.
+              </p>
 
-                <p className="text-muted mb-4">
-                  Join a trusted network of professionals and clients. Create
-                  your profile, connect, and grow your opportunities.
-                </p>
-
-                <div className="d-flex flex-column gap-2 small">
-                  <div className="d-flex align-items-center gap-2">
-                    <i className="fa-solid fa-check text-primary"></i>
-                    Verified jobs & trusted clients
-                  </div>
-                  <div className="d-flex align-items-center gap-2">
-                    <i className="fa-solid fa-check text-primary"></i>
-                    Smart matching system
-                  </div>
-                  <div className="d-flex align-items-center gap-2">
-                    <i className="fa-solid fa-check text-primary"></i>
-                    Real-time collaboration
-                  </div>
+              <div className="d-flex flex-column gap-2 small">
+                <div className="d-flex align-items-center gap-2">
+                  <i className="fa-solid fa-circle-check text-primary fs-6"></i>
+                  <span>Verified jobs & trusted clients</span>
+                </div>
+                <div className="d-flex align-items-center gap-2">
+                  <i className="fa-solid fa-circle-check text-primary fs-6"></i>
+                  <span>Smart matching system</span>
+                </div>
+                <div className="d-flex align-items-center gap-2">
+                  <i className="fa-solid fa-circle-check text-primary fs-6"></i>
+                  <span>Real-time collaboration</span>
                 </div>
               </div>
             </div>
 
             {/* FORM */}
-            <div className="col-lg-5 ms-auto">
+            <div className="col-lg-6">
               <div
                 className="bg-white p-4 rounded-4"
                 style={{
-                  boxShadow: "0 10px 30px rgba(0,0,0,0.08)",
-                  border: "1px solid #eee",
+                  boxShadow: "0 10px 40px rgba(0,0,0,0.06)",
+                  border: "1px solid #f1f5f9",
                 }}
               >
-                <h4 className="fw-bold mb-1">Create account</h4>
-                <p className="text-muted small mb-3">
-                  It only takes a few seconds
-                </p>
+                <h5 className="fw-bold mb-1">Create an account</h5>
+                <p className="text-muted small mb-3">It only takes a few seconds.</p>
 
                 <form onSubmit={handleSubmit}>
-                  <div className="row g-2">
-
+                  {/* 2x2 Grid to save vertical space */}
+                  <div className="row g-2 mb-3">
                     <div className="col-md-6">
                       <input
                         type="text"
-                        className="form-control form-control-sm"
+                        className="form-control"
                         name="name"
                         placeholder="Full name"
                         value={formData.name}
@@ -197,24 +192,22 @@ export default function Register() {
                         required
                       />
                     </div>
-
                     <div className="col-md-6">
                       <input
                         type="tel"
-                        className="form-control form-control-sm"
+                        className="form-control"
                         name="phone"
-                        placeholder="Phone"
+                        placeholder="Phone number"
                         value={formData.phone}
                         onChange={handleChange}
                         disabled={loading}
                         required
                       />
                     </div>
-
-                    <div className="col-12">
+                    <div className="col-md-6">
                       <input
                         type="email"
-                        className="form-control form-control-sm"
+                        className="form-control"
                         name="email"
                         placeholder="Email address"
                         value={formData.email}
@@ -223,92 +216,106 @@ export default function Register() {
                         required
                       />
                     </div>
-
-                    <div className="col-12">
+                    <div className="col-md-6 position-relative">
                       <input
-                        type="password"
-                        className="form-control form-control-sm"
+                        type={showPassword ? "text" : "password"}
+                        className="form-control pe-5"
                         name="password"
                         placeholder="Password"
                         value={formData.password}
                         onChange={handleChange}
                         disabled={loading}
                         required
+                        minLength={8}
                       />
+                      <button
+                        type="button"
+                        className="btn btn-sm border-0 position-absolute end-0 top-50 translate-middle-y text-muted"
+                        onClick={() => setShowPassword(!showPassword)}
+                        tabIndex="-1"
+                      >
+                        <i className={`fa-solid ${showPassword ? 'fa-eye-slash' : 'fa-eye'}`}></i>
+                      </button>
                     </div>
-
                   </div>
 
-                  {/* Role Pills */}
-                  <div className="mt-3 mb-3">
-                    <div className="d-flex gap-1 flex-wrap">
+                  {/* Compact Role Selection */}
+                  <div className="mb-3">
+                    <div className="d-flex gap-2 flex-wrap" role="radiogroup">
                       {[
                         { key: "contractor", label: "Resource Partner" },
                         { key: "customer", label: "Book a Guard" },
-                        { key: "staff", label: " Apply for a Job" },
+                        { key: "staff", label: "Apply for a Job" },
                       ].map((role) => (
-                        <div
+                        <label
                           key={role.key}
-                          onClick={() => !loading && setUserType(role.key)}
-                          className={`px-2 py-1 rounded-pill small ${userType === role.key
-                            ? "bg-primary text-white"
-                            : "bg-light text-muted border border-muted"
+                          className={`btn btn-sm rounded-pill px-3 py-1 ${userType === role.key
+                            ? "btn-primary text-white"
+                            : "btn-light text-muted border"
                             }`}
-                          style={{ cursor: "pointer", fontSize: "12px" }}
+                          style={{ cursor: "pointer", transition: "all 0.2s", fontSize: "13px" }}
                         >
+                          <input
+                            type="radio"
+                            name="userRole"
+                            className="visually-hidden"
+                            value={role.key}
+                            checked={userType === role.key}
+                            onChange={() => !loading && setUserType(role.key)}
+                            disabled={loading}
+                          />
                           {role.label}
-                        </div>
+                        </label>
                       ))}
                     </div>
                   </div>
 
                   <button
                     type="submit"
-                    className="btn w-100 py-2 small fw-semibold"
+                    className="btn w-100 py-2 fw-semibold d-flex justify-content-center align-items-center gap-2"
                     style={{
-                      background:
-                        "linear-gradient(135deg, #2563eb, #1d4ed8)",
+                      background: "linear-gradient(135deg, #2563eb, #1d4ed8)",
                       border: "none",
-                      borderRadius: "8px",
+                      borderRadius: "6px",
                       color: "#fff",
                     }}
                     disabled={loading}
                   >
+                    {loading && <i className="fa-solid fa-spinner fa-spin"></i>}
                     {loading ? "Creating..." : "Create Account"}
                   </button>
                 </form>
 
-                {/* Divider */}
+                {/* Compact Divider */}
                 <div className="d-flex align-items-center my-3">
-                  <hr className="flex-grow-1" />
-                  <span className="mx-2 small text-muted">OR</span>
-                  <hr className="flex-grow-1" />
+                  <hr className="flex-grow-1 text-muted opacity-25 m-0" />
+                  <span className="mx-2" style={{ fontSize: "11px", color: "#9ca3af" }}>OR</span>
+                  <hr className="flex-grow-1 text-muted opacity-25 m-0" />
                 </div>
 
-                {/* Google */}
+                {/* Google Button */}
                 <button
                   onClick={handleGoogleRegister}
-                  className="btn btn-outline-dark w-100 py-2 small d-flex align-items-center justify-content-center gap-2"
+                  className="btn btn-light border w-100 py-2 small d-flex align-items-center justify-content-center gap-2"
                   disabled={loading}
+                  style={{ borderRadius: "6px" }}
                 >
                   <img
                     src="https://www.svgrepo.com/show/475656/google-color.svg"
-                    alt="google"
+                    alt="Google"
                     width={16}
                   />
-                  Continue with Google
+                  <span className="text-dark fw-medium" style={{ fontSize: "14px" }}>Google</span>
                 </button>
 
-                <p className="text-center small mt-3 mb-0">
+                <p className="text-center mt-3 mb-0" style={{ fontSize: "13px" }}>
                   Already have an account?{" "}
-                  <NavLink to="/login" className="fw-semibold text-primary">
+                  <NavLink to="/login" className="fw-bold text-primary text-decoration-none">
                     Sign in
                   </NavLink>
                 </p>
-
               </div>
             </div>
-
           </div>
         </div>
       </section>

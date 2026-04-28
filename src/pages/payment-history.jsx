@@ -44,9 +44,8 @@ export default function PaymentHistory() {
     location.state?.targetUserId || ""
   );
 
-  // --- PAGINATION STATE ---
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10; // Change this to show more/less items per page
+  const itemsPerPage = 10;
 
   const { data: customersResponse } = useFetch(
     isAdmin ? "api/admin/get-customers?limit=1000" : null,
@@ -69,7 +68,6 @@ export default function PaymentHistory() {
     ? `Payment History: ${selectedCustomerDetails.name}`
     : "Payment History";
 
-  // --- PAGINATION LOGIC ---
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentTransactions = transactions.slice(indexOfFirstItem, indexOfLastItem);
@@ -77,7 +75,7 @@ export default function PaymentHistory() {
 
   const handleCustomerChange = (e) => {
     setSelectedCustomerId(e.target.value);
-    setCurrentPage(1); // Reset to first page when changing customers
+    setCurrentPage(1);
   };
 
   const handlePageChange = (pageNumber) => {
@@ -152,7 +150,6 @@ export default function PaymentHistory() {
                   </tr>
                 </thead>
                 <tbody>
-                  {/* Map over currentTransactions instead of transactions */}
                   {currentTransactions.map((tx) => (
                     <tr key={tx.id}>
                       <td>{formatDate(tx.created_at)}</td>
@@ -178,7 +175,6 @@ export default function PaymentHistory() {
                   ))}
                 </tbody>
               </table>
-              {/* --- PAGINATION CONTROLS --- */}
               {totalPages > 1 && (
                 <div className="d-flex flex-column flex-md-row justify-content-between align-items-center mt-4 pt-3 border-top">
                   <span className="text-muted small mb-3 mb-md-0">
@@ -186,7 +182,6 @@ export default function PaymentHistory() {
                   </span>
 
                   <nav aria-label="Transaction history pagination">
-                    {/* Added d-flex, flex-row, and flex-wrap to force horizontal alignment */}
                     <ul className="pagination pagination-sm mb-0 d-flex flex-row flex-wrap justify-content-center">
                       <li className={`page-item ${currentPage === 1 ? "disabled" : ""}`}>
                         <button
@@ -209,7 +204,7 @@ export default function PaymentHistory() {
                         </li>
                       ))}
 
-                      <li className={`page-item ${currentPage === totalPages ? "disabled" : ""}`}>
+                      <li className={`mb-3 page-item ${currentPage === totalPages ? "disabled" : ""}`}>
                         <button
                           className="page-link"
                           onClick={() => handlePageChange(currentPage + 1)}

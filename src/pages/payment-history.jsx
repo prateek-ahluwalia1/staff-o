@@ -44,6 +44,10 @@ export default function PaymentHistory() {
     location.state?.targetUserId || ""
   );
 
+  // --- PAGINATION STATE ---
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10; // Change this to show more/less items per page
+
   const { data: customersResponse } = useFetch(
     isAdmin ? "api/admin/get-customers?limit=1000" : null,
     { isAuth: true }
@@ -58,13 +62,27 @@ export default function PaymentHistory() {
     { isAuth: true }
   );
 
-  // Adjusted to match your JSON structure: data is nested inside the response object
   const transactions = paymentData?.data || [];
 
   const selectedCustomerDetails = customersList.find(c => c.id.toString() === selectedCustomerId.toString());
   const displayTitle = isAdmin && selectedCustomerDetails
     ? `Payment History: ${selectedCustomerDetails.name}`
     : "Payment History";
+
+  // --- PAGINATION LOGIC ---
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentTransactions = transactions.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(transactions.length / itemsPerPage);
+
+  const handleCustomerChange = (e) => {
+    setSelectedCustomerId(e.target.value);
+    setCurrentPage(1); // Reset to first page when changing customers
+  };
+
+  const handlePageChange = (pageNumber) => {
+    setCurrentPage(pageNumber);
+  };
 
   return (
     <div className="dashboard-main">
@@ -85,7 +103,7 @@ export default function PaymentHistory() {
               <select
                 className="form-select shadow-sm border-primary-subtle"
                 value={selectedCustomerId}
-                onChange={(e) => setSelectedCustomerId(e.target.value)}
+                onChange={handleCustomerChange}
               >
                 <option value="">-- Choose a Customer --</option>
                 {customersList.map((customer) => (
@@ -122,43 +140,89 @@ export default function PaymentHistory() {
               <h6 className="text-muted mb-0">No transactions found</h6>
             </div>
           ) : (
-            <table className="table-modern">
-              <thead>
-                <tr>
-                  <th>Date</th>
-                  <th>Job Roster IDs</th>
-                  <th>Amount</th>
-                  <th>Status</th>
-                  <th>Transaction ID</th>
-                </tr>
-              </thead>
-              <tbody>
-                {transactions.map((tx) => (
-                  <tr key={tx.id}>
-                    <td>{formatDate(tx.created_at)}</td>
-                    <td>
-                      {/* Handling the job_roster_id which looks like "[517,518]" */}
-                      <span className="text-muted small">
-                        {tx.job_roster_id ? tx.job_roster_id.replace(/[[\]"]/g, '') : "N/A"}
-                      </span>
-                    </td>
-                    <td className="fw-semibold text-dark">
-                      {formatAmount(tx.total_amount)}
-                    </td>
-                    <td>
-                      <span className={getStatusBadge(tx.status)} style={{ padding: "0.25rem 0.75rem", fontSize: "0.85em", fontWeight: 600 }}>
-                        {tx.status.charAt(0).toUpperCase() + tx.status.slice(1)}
-                      </span>
-                    </td>
-                    <td>
-                      <p className="mb-0 text-muted small" style={{ fontFamily: "monospace" }}>
-                        {tx.payment_intent_id}
-                      </p>
-                    </td>
+            <>
+              <table className="table-modern">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Job Roster IDs</th>
+                    <th>Amount</th>
+                    <th>Status</th>
+                    <th>Transaction ID</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {/* Map over currentTransactions instead of transactions */}
+                  {currentTransactions.map((tx) => (
+                    <tr key={tx.id}>
+                      <td>{formatDate(tx.created_at)}</td>
+                      <td>
+                        <span className="text-muted small">
+                          {tx.job_roster_id ? tx.job_roster_id.replace(/[[\]"]/g, '') : "N/A"}
+                        </span>
+                      </td>
+                      <td className="fw-semibold text-dark">
+                        {formatAmount(tx.total_amount)}
+                      </td>
+                      <td>
+                        <span className={getStatusBadge(tx.status)} style={{ padding: "0.25rem 0.75rem", fontSize: "0.85em", fontWeight: 600 }}>
+                          {tx.status.charAt(0).toUpperCase() + tx.status.slice(1)}
+                        </span>
+                      </td>
+                      <td>
+                        <p className="mb-0 text-muted small" style={{ fontFamily: "monospace" }}>
+                          {tx.payment_intent_id}
+                        </p>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {/* --- PAGINATION CONTROLS --- */}
+              {totalPages > 1 && (
+                <div className="d-flex flex-column flex-md-row justify-content-between align-items-center mt-4 pt-3 border-top">
+                  <span className="text-muted small mb-3 mb-md-0">
+                    Showing <strong>{indexOfFirstItem + 1}</strong> to <strong>{Math.min(indexOfLastItem, transactions.length)}</strong> of <strong>{transactions.length}</strong> transactions
+                  </span>
+
+                  <nav aria-label="Transaction history pagination">
+                    {/* Added d-flex, flex-row, and flex-wrap to force horizontal alignment */}
+                    <ul className="pagination pagination-sm mb-0 d-flex flex-row flex-wrap justify-content-center">
+                      <li className={`page-item ${currentPage === 1 ? "disabled" : ""}`}>
+                        <button
+                          className="page-link"
+                          onClick={() => handlePageChange(currentPage - 1)}
+                          disabled={currentPage === 1}
+                        >
+                          Previous
+                        </button>
+                      </li>
+
+                      {[...Array(totalPages)].map((_, i) => (
+                        <li key={i} className={`page-item ${currentPage === i + 1 ? "active" : ""}`}>
+                          <button
+                            className="page-link"
+                            onClick={() => handlePageChange(i + 1)}
+                          >
+                            {i + 1}
+                          </button>
+                        </li>
+                      ))}
+
+                      <li className={`page-item ${currentPage === totalPages ? "disabled" : ""}`}>
+                        <button
+                          className="page-link"
+                          onClick={() => handlePageChange(currentPage + 1)}
+                          disabled={currentPage === totalPages}
+                        >
+                          Next
+                        </button>
+                      </li>
+                    </ul>
+                  </nav>
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>

@@ -240,19 +240,16 @@ export default function EditProfile() {
     };
   }, [activeTab, fetchLoading]);
 
-  // Dynamically filter documents based on the selected state
   const filteredDocuments = useMemo(() => {
     const allDocs = profileData?.data?.documents || [];
     const currentState = formData.state?.toLowerCase() || "";
 
-    // Check if the current state is Victoria or Queensland
-    const isRestrictedState = ["victoria", "vic", "queensland", "qld"].some(
-      (restrictedState) => currentState.includes(restrictedState)
+    const isTargetState = ["victoria", "vic", "queensland", "qld"].some(
+      (targetState) => currentState.includes(targetState)
     );
 
     return allDocs.filter((doc) => {
-      // If user is in Victoria or Queensland, hide the Labour Hire document
-      if (isRestrictedState && doc.document_type === "labour_hire") {
+      if (!isTargetState && doc.document_type === "labour_hire") {
         return false;
       }
       return true;

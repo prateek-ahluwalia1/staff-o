@@ -57,8 +57,6 @@ export default function Login() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    // Adjust this endpoint string to match your backend's login route
     const res = await submit("api/login", formData);
     if (!res) return;
 
@@ -79,7 +77,7 @@ export default function Login() {
     dispatch(setUser({ userdata: latestProfile }));
 
     toast.success("Logged in successfully!");
-    navigate("/"); // Redirect to dashboard or home
+    navigate("/dashboard");
   };
 
   const handleGoogleLogin = useGoogleLogin({
@@ -114,7 +112,7 @@ export default function Login() {
           dispatch(setUser({ userdata: latestProfile }));
 
           toast.success("Google login successful!");
-          navigate("/");
+          navigate("/dashboard");
         } else {
           console.error("Google login error response:", res);
         }

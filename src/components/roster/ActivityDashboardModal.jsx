@@ -6,6 +6,7 @@ import ShiftTasks from "./ShiftTasks";
 import FootPatrolReport from "./FootPatrolReport";
 import RatingComponent from "./RatingComponent";
 import OperationNotes from "./OperationNotes";
+import BreakDetails from "./BreakDetails";
 
 const SIDEBAR_TABS = [
   {
@@ -14,6 +15,13 @@ const SIDEBAR_TABS = [
     bg: "#b2ebf2",
     activeBg: "#00acc1",
     icon: "fa-exchange",
+  },
+  {
+    id: "break",
+    label: "Break Details",
+    bg: "#fff9c4",
+    activeBg: "#f9a825",
+    icon: "fa-coffee",
   },
   {
     id: "incident",
@@ -78,6 +86,8 @@ export default function ActivityDashboardModal({ modal, closeModal }) {
             site={site}
           />
         );
+      case "break":
+        return <BreakDetails rosterId={rosterId} guardId={guardId} />;
       case "incident":
         return (
           <IncidentReport

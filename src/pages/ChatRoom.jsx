@@ -99,17 +99,14 @@ const ChatRoom = () => {
     refetch: refetchConversations,
   } = useFetch(`api/messages/conversations`, { isAuth: true });
 
-  // 2. Dynamically Set Endpoint for New Chats based on RBAC
   let userEndpoint = null;
   if (showUserPicker) {
     if (userType === "admin") {
-      // Admins fetch users based on the selected category
       if (category === "staff") userEndpoint = "api/admin/get-staff?limit=500";
       else if (category === "customers") userEndpoint = "api/admin/get-customers?limit=500";
       else if (category === "contractors") userEndpoint = "api/admin/get-contractors?limit=500";
     } else {
-      // Non-admins fetch admins to start a chat with (Ensure this endpoint exists on your backend)
-      userEndpoint = "api/get-admins?limit=500";
+      userEndpoint = "api/admin";
     }
   }
 

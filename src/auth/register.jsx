@@ -64,7 +64,6 @@ export default function Register() {
 
     const payload = {
       ...formData,
-      // Pass the same password to satisfy backend validation without wasting UI space
       password_confirmation: formData.password,
       user_type: userType,
     };
@@ -131,7 +130,7 @@ export default function Register() {
       <section
         className="d-flex align-items-center justify-content-center"
         style={{
-          minHeight: "calc(100vh - 80px)", // Ensures it stays within one viewport
+          minHeight: "calc(100vh - 80px)",
           background: "#f8fafc",
           padding: "2rem 0",
         }}
@@ -243,9 +242,9 @@ export default function Register() {
                   <div className="mb-3">
                     <div className="d-flex gap-2 flex-wrap" role="radiogroup">
                       {[
-                        { key: "contractor", label: "Resource Partner" },
                         { key: "customer", label: "Book a Guard" },
                         { key: "staff", label: "Apply for a Job" },
+                        { key: "contractor", label: "Resource Partner" },
                       ].map((role) => (
                         <label
                           key={role.key}

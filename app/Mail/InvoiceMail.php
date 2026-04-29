@@ -23,7 +23,7 @@ class InvoiceMail extends Mailable
     {
         $subject = $this->isAdmin
             ? "New Job Invoice {$this->invoiceNumber} – Admin Copy"
-            : "Your Invoice {$this->invoiceNumber} – GuardForce";
+            : "Your Invoice {$this->invoiceNumber} – Staff Copy";
 
         return new Envelope(subject: $subject);
     }

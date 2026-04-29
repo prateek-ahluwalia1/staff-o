@@ -6,7 +6,7 @@ const sections = [
   {
     title: "Part 2: Terms for Customers",
     content:
-      "2.1 Booking and Payment Holds: Upon job acceptance by a staff member or contractor, a payment hold (pre-authorization) will be placed on the customer's nominated card via Stripe. The hold amount equals the approved quotation or invoice total. Funds are captured upon shift completion or as determined by the cancellation policy.",
+      "2.1 Booking and Payment Holds: Upon job acceptance by a staff member or Resource Partner, a payment hold (pre-authorization) will be placed on the customer's nominated card via Stripe. The hold amount equals the approved quotation or invoice total. Funds are captured upon shift completion or as determined by the cancellation policy.",
   },
   {
     title: "2.2 Cancellation and Refund Policy",
@@ -14,9 +14,9 @@ const sections = [
       "Standard cancellation more than 24 hours before shift start is eligible for full release of held funds. Under the 1-hour rule, if a customer cancels within one hour of the scheduled start time, a minimum charge of four hours will be deducted from held funds to compensate assigned personnel.",
   },
   {
-    title: "Part 3: Workforce Compliance (Staff and Contractors)",
+    title: "Part 3: Workforce Compliance (Staff and Resource Partners)",
     content:
-      "3.1 National Licensing and Credentials: Personnel must hold a current and valid security license for the state or territory where services are performed. Independent contractors must maintain a valid ABN and any required business or master licensing under applicable laws. Users are responsible for keeping licenses and first aid certifications up to date in the Staffoo app.",
+      "3.1 National Licensing and Credentials: Personnel must hold a current and valid security license for the state or territory where services are performed. Independent Resource Partners must maintain a valid ABN and any required business or master licensing under applicable laws. Users are responsible for keeping licenses and first aid certifications up to date in the Staffoo app.",
   },
   {
     title: "3.2 Safety and Reporting",

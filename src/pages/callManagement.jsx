@@ -78,7 +78,7 @@ const CallManagement = () => {
     const staff = getList(staffRes).map((u) => ({ ...u, roleLabel: "Staff" }));
     const contractors = getList(contractorRes).map((u) => ({
       ...u,
-      roleLabel: "Contractor",
+      roleLabel: "Resource Partner",
     }));
     const customers = getList(customerRes).map((u) => ({
       ...u,

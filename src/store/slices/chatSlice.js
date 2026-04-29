@@ -3,12 +3,12 @@ import { createSlice } from "@reduxjs/toolkit";
 const chatSlice = createSlice({
   name: "chat",
   initialState: {
-    conversations: [], // List of people you've messaged
-    activeConversation: null, // The person you are currently talking to
-    messages: [], // The messages in the current open chat
+    conversations: [],
+    activeConversation: null,
+    messages: [],
     unreadTotal: 0,
     loading: false,
-    activeCategory: null, // 'admins' | 'staff' | 'customers' | 'contractors'
+    activeCategory: null,
   },
   reducers: {
     setConversations: (state, action) => {

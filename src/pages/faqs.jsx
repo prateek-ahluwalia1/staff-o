@@ -11,7 +11,7 @@ const faqItems = [
   {
     question: "What information does Staffoo collect?",
     answer:
-      "We collect personal and business details, security licenses, ABNs, certifications, and other documents needed to verify staff and contractors. For workforce users, GPS tracking is active only while clocked in for a shift to ensure safety and proof-of-attendance.",
+      "We collect personal and business details, security licenses, ABNs, certifications, and other documents needed to verify staff and Resource Partners. For workforce users, GPS tracking is active only while clocked in for a shift to ensure safety and proof-of-attendance.",
   },
   {
     question: "How are payments handled?",

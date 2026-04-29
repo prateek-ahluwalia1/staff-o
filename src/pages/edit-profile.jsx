@@ -102,7 +102,6 @@ export default function EditProfile() {
     document_name: "",
   });
 
-  // Determines if the contractor's phone is verified based on backend data
   const isPhoneVerified = Boolean(
     userdata?.data?.contractor?.is_phone_verified ??
     userdata?.contractor?.is_phone_verified ??

@@ -108,14 +108,13 @@ export const calculatePercentageChange = (current, previous) => {
 // User type display names
 export const USER_TYPE_LABELS = {
   staff: "Staff Member",
-  contractor: "Contractor",
+  contractor: "Resource Partner",
   customer: "Customer/Employer",
   employer: "Employer",
   admin: "Administrator",
   administrator: "Administrator",
 };
 
-// User type icons
 export const USER_TYPE_ICONS = {
   staff: "fa-user-tie",
   contractor: "fa-handshake",

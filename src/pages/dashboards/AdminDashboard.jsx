@@ -36,7 +36,6 @@ export default function AdminDashboard() {
 
   const [topContractors, setTopContractors] = useState([]);
 
-  // Update stats, contractor list dynamically from API data
   useEffect(() => {
     if (!fetchResponse?.data) return;
 
@@ -53,7 +52,6 @@ export default function AdminDashboard() {
       thisMonthRevenue: dashData.this_month_revenue?.toLocaleString() || "0",
     });
 
-    // Map contractors and sort by revenue dynamically
     const mappedContractors = (dashData.contractors || [])
       .map((c) => ({
         id: c.id,
@@ -151,7 +149,7 @@ export default function AdminDashboard() {
           />
           <StatsCard
             icon="fa-solid fa-handshake"
-            title="Contractors"
+            title="Resource Partners"
             value={adminStats.totalContractors}
             bgColor="#fce7f3"
             iconColor="#ec4899"
@@ -199,17 +197,16 @@ export default function AdminDashboard() {
         </div>
       </section>
 
-      {/* Top Contractors */}
       <section className="dashboard-panel">
         <div className="panel-heading">
-          <h3>Top Performing Contractors</h3>
-          <a href="/manage-users" className="view-all-link">View All Contractors</a>
+          <h3>Top Performing Resource Partners</h3>
+          <a href="/manage-users" className="view-all-link">View All Resource Partners</a>
         </div>
         <div className="table-responsive">
           <table className="table align-middle">
             <thead>
               <tr>
-                <th>Contractor Name</th>
+                <th>Resource Partner Name</th>
                 <th>Assigned Staff</th>
                 <th>Jobs Completed</th>
                 <th>Total Revenue</th>
@@ -258,7 +255,7 @@ export default function AdminDashboard() {
               ) : (
                 <tr>
                   <td colSpan="5" className="text-center py-4 text-muted">
-                    No active contractors found.
+                    No active Resource Partner found.
                   </td>
                 </tr>
               )}

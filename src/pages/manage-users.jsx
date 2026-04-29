@@ -408,7 +408,7 @@ const ManageUsers = () => {
                   className={`nav-link ${activeTab === role ? "active" : ""}`}
                   onClick={() => handleTabChange(role)}
                 >
-                  {role.replace("_", " ")}
+                  {role === "sub_contractor" ? "Resource Partner" : role.replace("_", " ")}
                 </button>
               </li>
             ))}
@@ -418,7 +418,7 @@ const ManageUsers = () => {
             className="btn btn-sm btn-primary jobtracker-action-btn"
             onClick={() => openModal()}
           >
-            <i className="fa-solid fa-plus me-1"></i> Add {activeTab.replace("_", " ")}
+            <i className="fa-solid fa-plus me-1"></i> Add {activeTab === "sub_contractor" ? "Resource Partner" : activeTab.replace("_", " ")}
           </button>
         </div>
       </div>
@@ -564,12 +564,11 @@ const ManageUsers = () => {
                     <h6 className="section-divider mt-0">Personal Details</h6>
                   </div>
 
-                  {/* Contractor Selection Dropdown - Only for Staff */}
                   {activeTab === "staff" && (
                     <div className="col-12 mb-2">
                       <div className="p-3 bg-primary-subtle rounded-3 border border-primary-subtle">
                         <label className="form-label text-primary">
-                          Assign to Contractor *
+                          Assign to Resource Partner *
                         </label>
                         <select
                           className="form-select shadow-sm"
@@ -579,7 +578,7 @@ const ManageUsers = () => {
                           required
                         >
                           <option value="" disabled>
-                            Select a Contractor
+                            Select a Resource Partner
                           </option>
                           {contractorsList.map((contractor) => (
                             <option key={contractor.id} value={contractor.id}>

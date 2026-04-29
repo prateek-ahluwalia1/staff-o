@@ -86,7 +86,7 @@ export default function Home() {
       icon: "fa-solid fa-user-plus",
       title: "Step 1 - Create an Account",
       description:
-        "It's quick and easy to open an account on Staffoo. Register as Security Staff, Customer, or Sub-contractor and start your journey immediately.",
+        "It's quick and easy to open an account on Staffoo. Register as Security Staff, Customer, or Resource Partner and start your journey immediately.",
     },
     {
       icon: "fa-solid fa-file",
@@ -98,7 +98,7 @@ export default function Home() {
       icon: "fa-solid fa-paper-plane",
       title: "Step 3 - Apply for Jobs or Hire Staff",
       description:
-        "For Staff: Apply to security jobs that match your skills and availability. For Customers: Post jobs and connect with verified security staff. For Sub-contractors: Assign jobs to trusted staff and manage workforce efficiently.",
+        "For Staff: Apply to security jobs that match your skills and availability. For Customers: Post jobs and connect with verified security staff. For Resource Partners: Assign jobs to trusted staff and manage workforce efficiently.",
     },
   ];
 
@@ -141,7 +141,7 @@ export default function Home() {
     },
     {
       icon: "fa-sitemap",
-      label: "For Sub-contractors",
+      label: "For Resource Partners",
       title: "Assign and Manage Jobs Efficiently",
       subtitle:
         "Coordinate with staff, track assignments, and ensure your jobs are completed professionally.",
@@ -151,7 +151,7 @@ export default function Home() {
         "Manage workforce flexibly",
         "Maintain quality and compliance",
       ],
-      cta: "Register as a Sub-contractor",
+      cta: "Register as a Resource Partner",
       href: "/register",
     },
   ];
@@ -165,7 +165,7 @@ export default function Home() {
     {
       icon: "fa-random",
       title: "Seamless Job Matching",
-      copy: "Quickly connect staff, customers, and sub-contractors through a simple platform.",
+      copy: "Quickly connect staff, customers, and Resource Partners through a simple platform.",
     },
     {
       icon: "fa-calendar-check-o",
@@ -194,7 +194,7 @@ export default function Home() {
       image: "user2.jpg",
     },
     {
-      text: "The Sub-contractor management feature is a lifesaver. Assigning jobs and monitoring progress is so smooth, and I always know our security needs are met by professional staff.",
+      text: "The Resource Partner management feature is a lifesaver. Assigning jobs and monitoring progress is so smooth, and I always know our security needs are met by professional staff.",
       name: "Sarah K. – Brisbane",
       role: "Venue Supervisor",
       image: "user3.jpg",
@@ -793,7 +793,7 @@ export default function Home() {
                 and staffing. Find verified security jobs, hire qualified
                 security staff, or manage assignments efficiently — all from
                 your mobile device. Designed for security professionals,
-                employers, and subcontractors, Staffoo simplifies recruitment,
+                employers, and Resource Partners, Staffoo simplifies recruitment,
                 streamlines workforce management, and connects trusted staff
                 with reliable opportunities across Australia. Download now to
                 secure your next job or hire top security talent effortlessly.

@@ -541,7 +541,7 @@ const LeaveManagement = () => {
               {isAdmin && (
                 <div className="mb-3">
                   <label className="form-label text-muted small fw-bold">
-                    Select Contractor *
+                    Select Resource Partner *
                   </label>
                   <select
                     className="form-select custom-input"
@@ -551,7 +551,7 @@ const LeaveManagement = () => {
                     required
                   >
                     <option value="" disabled>
-                      Choose a contractor
+                      Choose a Resource Partner
                     </option>
                     {contractorsList.map((contractor) => (
                       <option key={contractor.id} value={contractor.id}>
@@ -580,7 +580,7 @@ const LeaveManagement = () => {
                   >
                     <option value="" disabled>
                       {isAdmin && !selectedContractorId
-                        ? "Select contractor first"
+                        ? "Select Resource Partner first"
                         : "Choose a staff member"}
                     </option>
                     {staffList.map((staff) => (

@@ -211,7 +211,6 @@ const ManageStaff = () => {
     if (editingUser && !payload.password) delete payload.password;
     payload.is_active = payload.is_active ? 1 : 0;
 
-    // Attach the contractor's ID here
     payload.user_id = loggedInContractorId;
 
     try {

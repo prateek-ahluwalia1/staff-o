@@ -6,12 +6,12 @@ const sections = [
   {
     title: "Part 1: Privacy Policy - 1.1 Overview",
     content:
-      "Staffoo (operated by Capital Services Pty Ltd) is committed to protecting the privacy of our customers, contractors, and staff in accordance with the Privacy Act 1988 (Cth) and the Australian Privacy Principles (APPs).",
+      "Staffoo (operated by Capital Services Pty Ltd) is committed to protecting the privacy of our customers, Resource Partners, and staff in accordance with the Privacy Act 1988 (Cth) and the Australian Privacy Principles (APPs).",
   },
   {
     title: "1.2 Information Collection & GPS Tracking",
     content:
-      "Customer Data: We collect business details, site addresses, contact information, and service requirements. Workforce Data: We collect identity documents, ABNs, State-specific Security Licenses, and certifications. GPS Movement Tracking: To ensure site security, lone-worker safety, and proof-of-attendance, Staffoo tracks the GPS location of all staff and contractors. This tracking is active only while a user is 'Clocked In' for a shift. By using the app, workforce users consent to real-time location monitoring for the duration of their work assignment.",
+      "Customer Data: We collect business details, site addresses, contact information, and service requirements. Workforce Data: We collect identity documents, ABNs, State-specific Security Licenses, and certifications. GPS Movement Tracking: To ensure site security, lone-worker safety, and proof-of-attendance, Staffoo tracks the GPS location of all staff and Resource Partners. This tracking is active only while a user is 'Clocked In' for a shift. By using the app, workforce users consent to real-time location monitoring for the duration of their work assignment.",
   },
   {
     title: "1.3 Payment Security (Stripe)",
@@ -21,7 +21,7 @@ const sections = [
   {
     title: "Part 2: Terms for Customers - 2.1 Booking and Payment Holds",
     content:
-      "Authorization: Upon job acceptance by a staff member or contractor, a payment hold (pre-authorization) will be placed on the customer’s nominated card via Stripe. Amount: The hold will be equal to the total value specified in the approved quotation or invoice. Final Charge: Funds are captured upon shift completion or as determined by the cancellation policy.",
+      "Authorization: Upon job acceptance by a staff member or Resource Partner, a payment hold (pre-authorization) will be placed on the customer’s nominated card via Stripe. Amount: The hold will be equal to the total value specified in the approved quotation or invoice. Final Charge: Funds are captured upon shift completion or as determined by the cancellation policy.",
   },
   {
     title: "2.2 Cancellation & Refund Policy",
@@ -31,7 +31,7 @@ const sections = [
   {
     title: "Part 3: Workforce Compliance - 3.1 National Licensing & Credentials",
     content:
-      "Valid Credentials: All personnel must hold a current and valid Security License for the specific State or Territory in which they are performing services. ABN Requirements: Independent contractors must maintain a valid ABN and hold any required Business or Master Licensing relevant to their jurisdiction (e.g., Security Industry Act 1997 in NSW or Private Security Act 2004 in VIC). Updates: It is the individual’s responsibility to ensure licenses and First Aid certifications are kept up to date within the Staffoo app.",
+      "Valid Credentials: All personnel must hold a current and valid Security License for the specific State or Territory in which they are performing services. ABN Requirements: Independent Resource Partners must maintain a valid ABN and hold any required Business or Master Licensing relevant to their jurisdiction (e.g., Security Industry Act 1997 in NSW or Private Security Act 2004 in VIC). Updates: It is the individual’s responsibility to ensure licenses and First Aid certifications are kept up to date within the Staffoo app.",
   },
   {
     title: "3.2 Safety and Reporting",

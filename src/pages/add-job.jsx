@@ -342,8 +342,7 @@ export default function AddJob() {
                 <StepProgress step={step} titles={STEP_TITLES} />
 
                 <form onSubmit={(e) => e.preventDefault()}>
-                  {step === 0 && <LocationStep form={form} setField={setField} resolvingLocation={resolvingLocation} setResolvingLocation={setResolvingLocation} locationError={locationError} setLocationError={setLocationError} />}
-                  {step === 1 && <ScheduleStep form={form} setField={setField} scheduleError={scheduleError} />}
+                  {step === 0 && <LocationStep form={form} setField={setField} resolvingLocation={resolvingLocation} setResolvingLocation={setResolvingLocation} locationError={locationError} setLocationError={setLocationError} isAdmin={isAdmin} />}       {step === 1 && <ScheduleStep form={form} setField={setField} scheduleError={scheduleError} />}
                   {step === 2 && <DetailsStep form={form} setField={setField} handleFile={handleFile} attachmentPreviews={attachmentPreviews} removeAttachment={removeAttachment} />}
                   {step === 3 && <TasksStep form={form} setField={setField} />}
 

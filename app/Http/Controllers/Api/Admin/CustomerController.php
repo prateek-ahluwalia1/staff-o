@@ -399,4 +399,42 @@ class CustomerController extends Controller
             );
         }
     }
+
+    public function customerDetail($id)
+    {
+        $customer = \App\Models\User::with([
+            'sites.jobRoster', 'customer'
+        ])->where('id', $id)
+        ->where('user_type', 'customer')
+        ->first();
+
+        if (!$customer) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Customer not found'
+            ], 404);
+        }
+
+        //Add total hours per site
+        $sites = $customer->sites->map(function ($site) {
+
+            $totalHours = $site->jobRoster->sum('hours');
+
+            return [
+                'id' => $site->id,
+                'site_name' => $site->site_name ?? null,
+                'address' => $site->address ?? null,
+                'total_hours' => $totalHours,
+                'job_rosters' => $site->jobRosters
+            ];
+        });
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'customer' => $customer,
+                'sites' => $sites
+            ]
+        ]);
+    }
 }

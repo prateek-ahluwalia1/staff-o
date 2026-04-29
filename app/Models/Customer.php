@@ -31,4 +31,9 @@ class Customer extends Model
     {
         return $this->hasMany(Staff::class);
     }
+
+    public function sites()
+    {
+        return $this->hasMany(Site::class, 'user_id');
+    }
 }

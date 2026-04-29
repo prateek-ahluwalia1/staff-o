@@ -124,4 +124,9 @@ class User extends Authenticatable
     {
         return $this->receivedMessages()->where('is_read', false)->count();
     }
+
+    public function sites()
+    {
+        return $this->hasMany(Site::class, 'user_id'); // or customer_id (adjust if needed)
+    }
 }

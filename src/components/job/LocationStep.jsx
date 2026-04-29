@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import { toast } from "react-toastify";
 import useFetch from "../../hooks/useFetch";
+import useSubmit from "../../hooks/useSubmit";
 
 export default function LocationStep({
   form,
@@ -20,19 +21,22 @@ export default function LocationStep({
   const [googleReady, setGoogleReady] = useState(false);
 
   const [selectedCustomerId, setSelectedCustomerId] = useState("");
-  const [selectedShiftId, setSelectedShiftId] = useState("");
+  const [inputMode, setInputMode] = useState("autocomplete");
+  const [newCustomer, setNewCustomer] = useState({ name: "", email: "", phone: "", company_name: "" });
 
-  const { data: customersRes, loading: loadingCustomers } = useFetch(
+  const { data: customersRes, loading: loadingCustomers, refetch: refetchCustomers } = useFetch(
     isAdmin ? "api/admin/get-customers?limit=1000" : null,
     { isAuth: true }
   );
   const activeCustomers = customersRes?.data?.data?.filter((c) => c.is_active) || [];
 
   const { data: shiftsRes, loading: loadingShifts } = useFetch(
-    selectedCustomerId ? `api/admin/get-customer-jobs/${selectedCustomerId}` : null,
+    selectedCustomerId && selectedCustomerId !== "new" ? `api/admin/get-customer-jobs/${selectedCustomerId}` : null,
     { isAuth: true }
   );
   const customerShifts = shiftsRes?.data?.data || shiftsRes?.data || [];
+
+  const { submit: submitCustomer, loading: submittingCustomer } = useSubmit({ isAuth: true });
 
   const fillAddress = useCallback(
     (place, options = {}) => {
@@ -103,7 +107,7 @@ export default function LocationStep({
       const lng = pos.lng();
       setField("coordinates", `${lat},${lng}`);
       reverseGeocode(lat, lng);
-      setSelectedShiftId("manual_entry");
+      setInputMode("autocomplete");
     });
 
     setMap(gmap);
@@ -164,7 +168,12 @@ export default function LocationStep({
   const handleCustomerChange = (e) => {
     const custId = e.target.value;
     setSelectedCustomerId(custId);
-    setSelectedShiftId("");
+
+    if (custId && custId !== "new") {
+      setInputMode("dropdown");
+    } else {
+      setInputMode("autocomplete");
+    }
 
     setField("location", "");
     setField("address", "");
@@ -173,9 +182,9 @@ export default function LocationStep({
 
   const handleSiteSelect = (e) => {
     const shiftId = e.target.value;
-    setSelectedShiftId(shiftId);
 
     if (shiftId === "manual_entry") {
+      setInputMode("autocomplete");
       setField("location", "");
       setField("address", "");
       setField("coordinates", "");
@@ -201,7 +210,34 @@ export default function LocationStep({
     }
   };
 
-  const showManualSearch = !isAdmin || !selectedCustomerId || selectedShiftId === "manual_entry";
+  const handleCreateCustomer = async () => {
+    if (!newCustomer.name || !newCustomer.email) {
+      toast.error("Name and Email are required");
+      return;
+    }
+    try {
+      const res = await submitCustomer("api/admin/customers-store", {
+        ...newCustomer,
+        is_active: 1
+      }, { method: "POST" });
+
+      if (res && res.success !== false) {
+        toast.success("Client created successfully!");
+        if (refetchCustomers) await refetchCustomers();
+
+        const createdId = res.data?.id || res.id;
+        if (createdId) {
+          setSelectedCustomerId(createdId.toString());
+          setInputMode("dropdown");
+        } else {
+          setSelectedCustomerId("");
+        }
+        setNewCustomer({ name: "", email: "", phone: "", company_name: "" });
+      }
+    } catch (err) {
+      toast.error(err.message || "Failed to create client");
+    }
+  };
 
   return (
     <div className="mb-4">
@@ -217,7 +253,8 @@ export default function LocationStep({
               onChange={handleCustomerChange}
               disabled={loadingCustomers}
             >
-              <option value="">Select a Client...</option>
+              <option value="">None (Standard Flow)</option>
+              <option value="new" className="text-primary fw-bold">+ Add New Client</option>
               {activeCustomers.map((cust) => (
                 <option key={cust.id} value={cust.id}>
                   {cust.name} ({cust.email})
@@ -228,7 +265,61 @@ export default function LocationStep({
         </div>
       )}
 
-      {isAdmin && selectedCustomerId && (
+      {isAdmin && selectedCustomerId === "new" && (
+        <div className="p-3 bg-white border border-primary-subtle rounded-3 mb-4 shadow-sm">
+          <h6 className="fw-bold text-primary mb-3">Create New Client</h6>
+          <div className="row g-2">
+            <div className="col-md-6">
+              <input
+                type="text"
+                className="form-control form-control-sm"
+                placeholder="Full Name *"
+                value={newCustomer.name}
+                onChange={(e) => setNewCustomer({ ...newCustomer, name: e.target.value })}
+              />
+            </div>
+            <div className="col-md-6">
+              <input
+                type="email"
+                className="form-control form-control-sm"
+                placeholder="Email Address *"
+                value={newCustomer.email}
+                onChange={(e) => setNewCustomer({ ...newCustomer, email: e.target.value })}
+              />
+            </div>
+            <div className="col-md-6">
+              <input
+                type="text"
+                className="form-control form-control-sm"
+                placeholder="Phone Number"
+                value={newCustomer.phone}
+                onChange={(e) => setNewCustomer({ ...newCustomer, phone: e.target.value })}
+              />
+            </div>
+            <div className="col-md-6">
+              <input
+                type="text"
+                className="form-control form-control-sm"
+                placeholder="Company Name"
+                value={newCustomer.company_name}
+                onChange={(e) => setNewCustomer({ ...newCustomer, company_name: e.target.value })}
+              />
+            </div>
+          </div>
+          <div className="d-flex justify-content-end mt-3">
+            <button
+              type="button"
+              className="btn btn-sm btn-primary px-4"
+              onClick={handleCreateCustomer}
+              disabled={submittingCustomer}
+            >
+              {submittingCustomer ? "Saving..." : "Save Client"}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {isAdmin && selectedCustomerId && selectedCustomerId !== "new" && (
         <div className="p-3 bg-primary bg-opacity-10 border border-primary-subtle rounded-3 mb-4 shadow-sm">
           <label className="form-label fw-bold text-primary small mb-2 d-flex align-items-center gap-2">
             <i className="fa-solid fa-map-location-dot"></i> Select Response Site
@@ -236,7 +327,7 @@ export default function LocationStep({
           <select
             className="form-select border-primary-subtle shadow-sm bg-white"
             onChange={handleSiteSelect}
-            value={selectedShiftId}
+            defaultValue=""
           >
             <option value="" disabled>
               {loadingShifts ? "Loading response sites..." : "Select a response site..."}
@@ -260,14 +351,14 @@ export default function LocationStep({
         <div>
           <h5 className="mb-1">Job Location</h5>
           <p className="text-muted small mb-0">
-            {!showManualSearch ? "Location is linked to the selected response site." : "Search for an address or use your GPS."}
+            {inputMode === "dropdown" ? "Location is linked to the selected response site." : "Search for an address or use your GPS."}
           </p>
         </div>
       </div>
 
       <div ref={mapRef} className="rounded mb-3 border shadow-sm" style={{ height: 300, backgroundColor: "#f8f9fa" }} />
 
-      <div className={`row g-2 ${showManualSearch ? "" : "d-none"}`}>
+      <div className={`row g-2 ${inputMode === "dropdown" ? "d-none" : ""}`}>
         <div className="col-md-9">
           <div className="input-group">
             <input

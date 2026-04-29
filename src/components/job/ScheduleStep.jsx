@@ -16,28 +16,25 @@ const parseLocalDate = (dateStr) => {
   return new Date(year, month - 1, day);
 };
 
-// 🛠️ FIX 1: Move CompactTime OUTSIDE the main component. 
-// This prevents React from destroying and recreating the inputs on every keystroke, fixing the focus issue.
 const CompactTime = ({ value, onChange }) => {
   const h = value ? value.split(":")[0] : "";
   const m = value ? value.split(":")[1] : "";
 
   const handleHour = (e) => {
-    let val = e.target.value.replace(/\D/g, ""); // Remove non-numbers
+    let val = e.target.value.replace(/\D/g, "");
     if (val.length > 2) val = val.slice(-2);
-    if (parseInt(val) > 23) val = "23"; // Cap at 23
+    if (parseInt(val) > 23) val = "23";
     onChange(`${val}:${m || "00"}`);
   };
 
   const handleMin = (e) => {
-    let val = e.target.value.replace(/\D/g, ""); // Remove non-numbers
+    let val = e.target.value.replace(/\D/g, "");
     if (val.length > 2) val = val.slice(-2);
-    if (parseInt(val) > 59) val = "59"; // Cap at 59
+    if (parseInt(val) > 59) val = "59";
     onChange(`${h || "00"}:${val}`);
   };
 
   const handleBlur = () => {
-    // Auto-pad single digits with a leading zero when the user clicks away
     const cleanH = h ? h.padStart(2, "0") : "";
     const cleanM = m ? m.padStart(2, "0") : "";
     if (cleanH || cleanM) {
@@ -47,23 +44,9 @@ const CompactTime = ({ value, onChange }) => {
 
   return (
     <div className="input-group input-group-sm bg-white rounded flex-nowrap" style={{ width: "110px", boxShadow: "0 1px 3px rgba(0,0,0,0.06)" }}>
-      <input
-        type="text"
-        className="form-control border-secondary-subtle px-1 text-center bg-transparent fw-semibold"
-        placeholder="HH"
-        value={h}
-        onChange={handleHour}
-        onBlur={handleBlur}
-      />
+      <input type="text" className="form-control border-secondary-subtle px-1 text-center bg-transparent fw-semibold" placeholder="HH" value={h} onChange={handleHour} onBlur={handleBlur} />
       <span className="input-group-text bg-transparent border-secondary-subtle border-start-0 border-end-0 px-0 text-muted fw-bold pb-1">:</span>
-      <input
-        type="text"
-        className="form-control border-secondary-subtle px-1 text-center bg-transparent fw-semibold"
-        placeholder="MM"
-        value={m}
-        onChange={handleMin}
-        onBlur={handleBlur}
-      />
+      <input type="text" className="form-control border-secondary-subtle px-1 text-center bg-transparent fw-semibold" placeholder="MM" value={m} onChange={handleMin} onBlur={handleBlur} />
     </div>
   );
 };
@@ -108,27 +91,40 @@ export default function ScheduleStep({ form, setField, scheduleError = "" }) {
     }
   };
 
-  // 🛠️ FIX 2: Automatically apply bulk updates on change without needing a button
+  const handleCustomDateSelect = (date) => {
+    if (!date) return;
+    const dateStr = formatLocalDate(date);
+    const existingIndex = form.scheduleDays.findIndex((d) => d.date === dateStr);
+
+    if (existingIndex >= 0) {
+      const newDays = [...form.scheduleDays];
+      newDays.splice(existingIndex, 1);
+      setField("scheduleDays", newDays);
+    } else {
+      const newDays = [
+        ...form.scheduleDays,
+        {
+          date: dateStr,
+          shifts: [{ id: Date.now().toString(), startTime: "", endTime: "", numGuards: 1 }],
+        },
+      ];
+      newDays.sort((a, b) => new Date(a.date) - new Date(b.date));
+      setField("scheduleDays", newDays);
+    }
+  };
+
   const handleBulkChange = (type, value) => {
     let newStart = bulkStart;
     let newEnd = bulkEnd;
     let newGuards = bulkGuards;
 
-    if (type === "start") {
-      newStart = value;
-      setBulkStart(value);
-    } else if (type === "end") {
-      newEnd = value;
-      setBulkEnd(value);
-    } else if (type === "guards") {
-      newGuards = value;
-      setBulkGuards(value);
-    }
+    if (type === "start") { newStart = value; setBulkStart(value); }
+    else if (type === "end") { newEnd = value; setBulkEnd(value); }
+    else if (type === "guards") { newGuards = value; setBulkGuards(value); }
 
     const updatedDays = form.scheduleDays.map((day) => ({
       ...day,
       shifts: day.shifts.map((shift, idx) => {
-        // Only apply bulk changes to the first shift of each day
         if (idx === 0) {
           return { ...shift, startTime: newStart, endTime: newEnd, numGuards: newGuards };
         }
@@ -140,18 +136,18 @@ export default function ScheduleStep({ form, setField, scheduleError = "" }) {
 
   const addShift = (dayIndex) => {
     const newDays = [...form.scheduleDays];
-    newDays[dayIndex].shifts.push({
-      id: Date.now().toString(),
-      startTime: "",
-      endTime: "",
-      numGuards: 1,
-    });
+    newDays[dayIndex].shifts.push({ id: Date.now().toString(), startTime: "", endTime: "", numGuards: 1 });
     setField("scheduleDays", newDays);
   };
 
   const removeShift = (dayIndex, shiftIndex) => {
     const newDays = [...form.scheduleDays];
     newDays[dayIndex].shifts.splice(shiftIndex, 1);
+
+    if (newDays[dayIndex].shifts.length === 0) {
+      newDays.splice(dayIndex, 1);
+    }
+
     setField("scheduleDays", newDays);
   };
 
@@ -160,6 +156,8 @@ export default function ScheduleStep({ form, setField, scheduleError = "" }) {
     newDays[dayIndex].shifts[shiftIndex][field] = value;
     setField("scheduleDays", newDays);
   };
+
+  const selectedDateObjects = form.scheduleDays.map(d => parseLocalDate(d.date)).filter(Boolean);
 
   return (
     <div className="bg-white rounded-4 p-4 border" style={{ boxShadow: "0 4px 20px rgba(0,0,0,0.03)" }}>
@@ -170,42 +168,69 @@ export default function ScheduleStep({ form, setField, scheduleError = "" }) {
         </div>
       )}
 
-      {/* Mode Toggle */}
-      <div className="d-flex p-1 bg-light rounded-pill border mb-4 mx-auto" style={{ maxWidth: "450px" }}>
+      {/* Primary Mode Toggle */}
+      <div className="d-flex p-1 bg-light rounded-pill border mb-4 mx-auto" style={{ maxWidth: "400px" }}>
         <button
           type="button"
-          className={`btn btn-sm rounded-pill flex-grow-1 fw-semibold transition-all ${form.scheduleMode === "single" ? "btn-primary shadow-sm" : "btn-light text-muted border-0 bg-transparent"
-            }`}
+          className={`btn btn-sm rounded-pill flex-grow-1 fw-semibold transition-all ${form.scheduleMode === "single" ? "btn-primary shadow-sm" : "btn-light text-muted border-0 bg-transparent"}`}
           onClick={() => handleModeChange("single")}
         >
           Single Day
         </button>
         <button
           type="button"
-          className={`btn btn-sm rounded-pill flex-grow-1 fw-semibold transition-all ${form.scheduleMode === "multiple" ? "btn-primary shadow-sm" : "btn-light text-muted border-0 bg-transparent"
-            }`}
-          onClick={() => handleModeChange("multiple")}
+          className={`btn btn-sm rounded-pill flex-grow-1 fw-semibold transition-all ${form.scheduleMode !== "single" ? "btn-primary shadow-sm" : "btn-light text-muted border-0 bg-transparent"}`}
+          onClick={() => {
+            if (form.scheduleMode === "single") handleModeChange("custom"); // Default to custom when switching to Multi
+          }}
         >
           Multiple Days
         </button>
       </div>
 
-      {/* Date Picker */}
+      {/* Date Picker Area */}
       <div className="mb-4 pb-4 border-bottom">
-        <label className="form-label fw-bold mb-2">
-          {form.scheduleMode === "single" ? "Select Job Date" : "Select Date Range"}
-        </label>
+        <div className="d-flex flex-column flex-md-row justify-content-between align-items-md-end mb-3 gap-3">
+          <label className="form-label fw-bold mb-0">
+            {form.scheduleMode === "single" && "Select Job Date"}
+            {form.scheduleMode === "multiple" && "Select Date Range"}
+            {form.scheduleMode === "custom" && "Click Dates to Select/Deselect"}
+          </label>
+
+          {/* Secondary Multi-Select Toggle (Only shows if Multiple Days is active) */}
+          {form.scheduleMode !== "single" && (
+            <div className="bg-light p-1 rounded-pill border d-inline-flex shadow-sm">
+              <button
+                type="button"
+                className={`btn btn-sm rounded-pill px-3 transition-all ${form.scheduleMode === "custom" ? "btn-white bg-white text-dark shadow-sm fw-semibold" : "btn-light text-muted border-0 bg-transparent"}`}
+                onClick={() => handleModeChange("custom")}
+              >
+                Individual Dates
+              </button>
+              <button
+                type="button"
+                className={`btn btn-sm rounded-pill px-3 transition-all ${form.scheduleMode === "multiple" ? "btn-white bg-white text-dark shadow-sm fw-semibold" : "btn-light text-muted border-0 bg-transparent"}`}
+                onClick={() => handleModeChange("multiple")}
+              >
+                Date Range
+              </button>
+            </div>
+          )}
+        </div>
+
         <div className="position-relative" style={{ maxWidth: "450px" }}>
-          {form.scheduleMode === "single" ? (
+          {form.scheduleMode === "single" && (
             <DatePicker
-              selected={form.scheduleDays.length > 0 ? parseLocalDate(form.scheduleDays[0].date) : null}
+              selected={selectedDateObjects[0] || null}
               onChange={handleSingleDateSelect}
               dateFormat="yyyy-MM-dd"
               placeholderText="Choose a date..."
               minDate={new Date()}
               className="form-control form-control-lg shadow-sm"
             />
-          ) : (
+          )}
+
+          {form.scheduleMode === "multiple" && (
             <DatePicker
               selectsRange={true}
               startDate={form.dateRange[0]}
@@ -218,14 +243,27 @@ export default function ScheduleStep({ form, setField, scheduleError = "" }) {
               isClearable
             />
           )}
+
+          {form.scheduleMode === "custom" && (
+            <DatePicker
+              selected={null}
+              onChange={handleCustomDateSelect}
+              highlightDates={selectedDateObjects}
+              shouldCloseOnSelect={false}
+              dateFormat="yyyy-MM-dd"
+              placeholderText="Select Multiple dates"
+              minDate={new Date()}
+              className="form-control form-control-lg shadow-sm w-100"
+            />
+          )}
         </div>
       </div>
 
       {/* BULK APPLY ACTION */}
-      {form.scheduleMode === "multiple" && form.scheduleDays.length > 1 && (
+      {(form.scheduleMode === "multiple" || form.scheduleMode === "custom") && form.scheduleDays.length > 1 && (
         <div className="rounded-3 p-3 mb-4" style={{ backgroundColor: "#f0f7ff", border: "1px solid #cce3ff" }}>
           <label className="fw-bold text-primary mb-3 d-block small text-uppercase tracking-wide">
-            <i className="fa-solid fa-bolt me-2"></i> Fast Fill: Applies automatically to all days
+            <i className="fa-solid fa-bolt me-2"></i> Fast Fill: Applies automatically to all dates
           </label>
           <div className="d-flex flex-wrap align-items-center gap-4">
             <div className="d-flex align-items-center gap-2">
@@ -238,14 +276,7 @@ export default function ScheduleStep({ form, setField, scheduleError = "" }) {
             </div>
             <div className="d-flex align-items-center gap-2">
               <span className="small text-muted fw-semibold">Guards:</span>
-              <input
-                type="number"
-                className="form-control form-control-sm text-center fw-semibold border-secondary-subtle"
-                style={{ width: "65px", boxShadow: "0 1px 3px rgba(0,0,0,0.06)" }}
-                min="1"
-                value={bulkGuards}
-                onChange={(e) => handleBulkChange("guards", Number(e.target.value))}
-              />
+              <input type="number" className="form-control form-control-sm text-center fw-semibold border-secondary-subtle" style={{ width: "65px", boxShadow: "0 1px 3px rgba(0,0,0,0.06)" }} min="1" value={bulkGuards} onChange={(e) => handleBulkChange("guards", Number(e.target.value))} />
             </div>
           </div>
         </div>
@@ -255,20 +286,12 @@ export default function ScheduleStep({ form, setField, scheduleError = "" }) {
       <div className="d-flex flex-column gap-4 mt-2">
         {form.scheduleDays.map((day, dayIndex) => (
           <div key={day.date} className="border-bottom pb-3">
-
             {/* Day Title Row */}
             <div className="d-flex justify-content-between align-items-center mb-2">
               <span className="fw-bold text-dark fs-6">
                 {new Date(day.date).toLocaleDateString("en-AU", { weekday: "short", day: "numeric", month: "short" })}
               </span>
-              <button
-                type="button"
-                className="btn btn-sm text-primary p-0 border-0 fw-semibold small transition-all"
-                style={{ opacity: 0.8 }}
-                onMouseOver={(e) => e.target.style.opacity = 1}
-                onMouseOut={(e) => e.target.style.opacity = 0.8}
-                onClick={() => addShift(dayIndex)}
-              >
+              <button type="button" className="btn btn-sm text-primary p-0 border-0 fw-semibold small transition-all" style={{ opacity: 0.8 }} onMouseOver={(e) => e.target.style.opacity = 1} onMouseOut={(e) => e.target.style.opacity = 0.8} onClick={() => addShift(dayIndex)}>
                 + Add shift
               </button>
             </div>
@@ -277,7 +300,6 @@ export default function ScheduleStep({ form, setField, scheduleError = "" }) {
             <div className="d-flex flex-column gap-2">
               {day.shifts.map((shift, shiftIndex) => (
                 <div key={shift.id} className="d-flex flex-wrap align-items-center gap-3 bg-light rounded-2 px-3 py-2 border border-light">
-
                   <div className="d-flex align-items-center gap-2">
                     <span className="small text-muted fw-medium" style={{ width: "35px" }}>Start:</span>
                     <CompactTime value={shift.startTime} onChange={(val) => updateShift(dayIndex, shiftIndex, "startTime", val)} />
@@ -297,11 +319,11 @@ export default function ScheduleStep({ form, setField, scheduleError = "" }) {
                     </div>
                   </div>
 
+                  {/* DELETABLE SINGLE SHIFTS */}
                   <button
                     type="button"
                     className="btn btn-sm text-danger p-1 border-0 ms-2 opacity-75"
                     onClick={() => removeShift(dayIndex, shiftIndex)}
-                    disabled={day.shifts.length === 1}
                     title="Remove shift"
                   >
                     <i className="fa-solid fa-trash-can"></i>

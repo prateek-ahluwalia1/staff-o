@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useCallback } from "react"; // Added useCallback
+import React, { useMemo, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { toast } from "react-toastify";
@@ -97,7 +97,6 @@ export default function AddJob() {
 
     let wasSplit = false;
     let wasPadded = false;
-    const MAX_HOURS = 8;
     const MIN_HOURS = 4;
 
     const formatTime = (dec) => {
@@ -105,6 +104,23 @@ export default function AddJob() {
       const h = Math.floor(normalized).toString().padStart(2, "0");
       const m = Math.round((normalized % 1) * 60).toString().padStart(2, "0");
       return `${h}:${m}`;
+    };
+
+    const calculateChunks = (totalDuration) => {
+      if (totalDuration < MIN_HOURS) {
+        return [MIN_HOURS];
+      }
+
+      if (totalDuration <= 13) {
+        return [totalDuration];
+      }
+
+      if (totalDuration < 22) {
+        const half = totalDuration / 2;
+        return [half, half];
+      }
+
+      return [8, 8, totalDuration - 16];
     };
 
     const newDays = form.scheduleDays.map(day => {
@@ -121,43 +137,31 @@ export default function AddJob() {
 
         if (duration < MIN_HOURS) {
           wasPadded = true;
-          duration = MIN_HOURS;
-          endDec = startDec + MIN_HOURS;
         }
 
-        if (duration > MAX_HOURS) {
+        if (duration > 13) {
           wasSplit = true;
-          const numChunks = Math.ceil(duration / MAX_HOURS);
-          const chunkDuration = duration / numChunks;
+        }
 
-          let currentStart = startDec;
-          for (let i = 0; i < numChunks; i++) {
-            let currentEnd = currentStart + chunkDuration;
-            newShifts.push({
-              ...shift,
-              id: Math.random().toString(),
-              startTime: formatTime(currentStart),
-              endTime: formatTime(currentEnd)
-            });
-            currentStart = currentEnd;
-          }
-        } else {
+        const chunks = calculateChunks(duration);
+
+        let currentStart = startDec;
+        chunks.forEach(chunkDuration => {
+          let currentEnd = currentStart + chunkDuration;
           newShifts.push({
             ...shift,
-            endTime: formatTime(endDec)
+            id: Math.random().toString(),
+            startTime: formatTime(currentStart),
+            endTime: formatTime(currentEnd)
           });
-        }
+          currentStart = currentEnd;
+        });
       });
       return { ...day, shifts: newShifts };
     });
 
     if (wasSplit || wasPadded) {
       setForm(f => ({ ...f, scheduleDays: newDays }));
-      if (showToast) {
-        if (wasPadded && wasSplit) toast.info("Short shifts were padded to 4 hours, and long shifts were split for compliance.");
-        else if (wasPadded) toast.info("Shifts shorter than 4 hours were automatically extended to meet minimum engagement laws.");
-        else if (wasSplit) toast.info("Long shifts were automatically split into compliant segments.");
-      }
     }
 
     setScheduleError("");

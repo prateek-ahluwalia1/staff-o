@@ -28,35 +28,38 @@ use Stripe\PaymentIntent;
 use Stripe\PaymentMethod;
 use Stripe\Stripe;
 use Stripe\Transfer;
+use SimpleSoftwareIO\QrCode\Facades\QrCode;
+use App\Mail\InvoiceMail;
+use App\Services\InvoiceService;
 
 class JobRosterController extends Controller
 {
     public function jobData(Request $request)
     {
-        // ─── VALIDATION ─────────────────────────────
+        // ─── VALIDATION ──────────────────────────────────────────────────────
         $validator = Validator::make($request->all(), [
-            'user_id'            => 'required|exists:users,id',
+            'user_id'                    => 'required|exists:users,id',
             'shifts'                     => 'required|array|min:1',
             'shifts.*.start'             => 'required|date',
             'shifts.*.end'               => 'required|date|after:shifts.*.start',
             'shifts.*.numberOfGuards'    => 'required|integer|min:1',
-            'payment_intent_id'  => 'required|string',
+            'payment_intent_id'          => 'required|string',
         ]);
-
+    
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
                 'errors'  => $validator->errors(),
             ], 422);
         }
-
+    
         try {
-
+    
             $user = User::findOrFail($request->user_id);
-
-            // ─── CREATE / FIND SITE ──────────────────
+    
+            // ─── CREATE / FIND SITE ──────────────────────────────────────────
             $site = Site::where('coordinates', $request->coordinates)->first();
-
+    
             if (!$site) {
                 $site = Site::create([
                     'user_id'          => $user->id,
@@ -68,48 +71,77 @@ class JobRosterController extends Controller
                     'state'            => $request->state,
                 ]);
             }
-
-            // ─── GET DEFAULT ROSTER ──────────────────
+    
+            // ─── GET DEFAULT ROSTER ──────────────────────────────────────────
             $jobNewRoster = JobNewRoster::find(1);
-
+    
             if (!$jobNewRoster) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Roster not found.'
+                    'message' => 'Roster not found.',
                 ], 404);
             }
-            $paymentIntentId = $request->payment_intent_id;
-
-            $radiusValue = is_array($request->radius) ? json_encode($request->radius) : $request->radius;
-            $documentListValue = is_array($request->document_types) ? json_encode($request->document_types) : $request->document_types;
-            $jobInstructionsValue = is_array($request->document_list) ? json_encode($request->document_list) : $request->document_list;
-
-            $createdJobIds = [];
-            $paymentIntentId = $request->payment_intent_id;
-            $isAdminOverride = $paymentIntentId === 'admin_override_no_payment';
-            $chargeRate = ChargeRate::find(1);
-
+    
+            $paymentIntentId      = $request->payment_intent_id;
+            $isAdminOverride      = $paymentIntentId === 'admin_override_no_payment';
+            $chargeRate           = ChargeRate::find(1);
+    
+            $radiusValue          = is_array($request->radius)        ? json_encode($request->radius)        : $request->radius;
+            $documentListValue    = is_array($request->document_types) ? json_encode($request->document_types) : $request->document_types;
+            $jobInstructionsValue = is_array($request->document_list)  ? json_encode($request->document_list)  : $request->document_list;
+    
+            $createdJobIds    = [];
+            $invoiceShifts    = [];   // ← collected for the invoice PDF
+            $invoiceBaseTotal = 0;    // ← running total for invoice
+    
+            // ─── FETCH TRANSACTION TO GET PAYMENT OPTION & AMOUNTS ───────────
+            // (only when this is a real Stripe hold, not an admin override)
+            $transaction = null;
+            if (!$isAdminOverride) {
+                $transaction = \App\Models\Transaction::where('payment_intent_id', $paymentIntentId)->first();
+            }
+    
             foreach ($request->shifts as $shift) {
-
+    
                 $start = dbFormateDateTime($shift['start']);
                 $end   = dbFormateDateTime($shift['end']);
-
-                $hours = $this->getShiftHours($start, $end, 1, 0);
+    
+                $hours            = $this->getShiftHours($start, $end, 1, 0);
                 $guardWorkingHours = calCulateGuardWeekHours($start, $end);
-
-                // ─── BASE AMOUNT PER GUARD ───
+    
+                // ─── BASE AMOUNT PER GUARD ────────────────────────────────
                 $jobAmount =
-                    ($chargeRate->def_metro_mon_to_fri_day_rate * ($hours['morning'] ?? 0)) +
-                    ($chargeRate->def_metro_mon_to_fri_night_rate * ($hours['night'] ?? 0)) +
-                    ($chargeRate->def_metro_sat_day_rate * (($hours['saturday_morning'] ?? 0) + ($hours['saturday_night'] ?? 0))) +
-                    ($chargeRate->def_metro_sun_day_rate * (($hours['sunday_morning'] ?? 0) + ($hours['sunday_night'] ?? 0)));
-
-                // ─── GST (KEEP YOUR ORIGINAL LOGIC) ───
-                $serviceFee = round($jobAmount * 0.10, 2);
+                    ($chargeRate->def_metro_mon_to_fri_day_rate   * ($hours['morning']          ?? 0)) +
+                    ($chargeRate->def_metro_mon_to_fri_night_rate * ($hours['night']             ?? 0)) +
+                    ($chargeRate->def_metro_sat_day_rate          * (($hours['saturday_morning'] ?? 0) + ($hours['saturday_night'] ?? 0))) +
+                    ($chargeRate->def_metro_sun_day_rate          * (($hours['sunday_morning']   ?? 0) + ($hours['sunday_night']   ?? 0)));
+    
+                $serviceFee  = round($jobAmount * 0.10, 2);
                 $totalAmount = round($jobAmount + $serviceFee, 2);
-
+    
+                // ─── COLLECT FOR INVOICE ──────────────────────────────────
+                $totalShiftHours = array_sum([
+                    $hours['morning']          ?? 0,
+                    $hours['night']            ?? 0,
+                    $hours['saturday_morning'] ?? 0,
+                    $hours['saturday_night']   ?? 0,
+                    $hours['sunday_morning']   ?? 0,
+                    $hours['sunday_night']     ?? 0,
+                    $hours['ph_morning']       ?? 0,
+                    $hours['ph_night']         ?? 0,
+                ]);
+    
+                $invoiceShifts[] = [
+                    'start'          => $start,
+                    'end'            => $end,
+                    'numberOfGuards' => (int) $shift['numberOfGuards'],
+                    'hours'          => round($totalShiftHours, 2),
+                    'amount'         => round($jobAmount * $shift['numberOfGuards'], 2),
+                ];
+                $invoiceBaseTotal += round($jobAmount * $shift['numberOfGuards'], 2);
+    
                 for ($i = 0; $i < $shift['numberOfGuards']; $i++) {
-
+    
                     $roster = [
                         'site_id'          => $site->id,
                         'start'            => $start,
@@ -127,28 +159,26 @@ class JobRosterController extends Controller
                         'created_by'       => $request->user_id,
                         'assigned_to'      => null,
                         'notified_users'   => json_encode([]),
-
+    
                         'payment_intent_id' => $isAdminOverride ? null : $paymentIntentId,
                         'payment_status'    => $isAdminOverride ? 'not_required' : 'held',
                         'payment_captured'  => $isAdminOverride ? 1 : 0,
-
-                        'job_amount'        => $jobAmount,
-
-                        // HOURS
-                        'morning_hours'         => $hours['morning'] ?? 0,
-                        'night_hours'           => $hours['night'] ?? 0,
-                        'saturday_morning_hours'=> $hours['saturday_morning'] ?? 0,
-                        'saturday_night_hours'  => $hours['saturday_night'] ?? 0,
-                        'sunday_morning_hours'  => $hours['sunday_morning'] ?? 0,
-                        'sunday_night_hours'    => $hours['sunday_night'] ?? 0,
-                        'ph_morning_hours'      => $hours['ph_morning'] ?? 0,
-                        'ph_night_hours'        => $hours['ph_night'] ?? 0,
-                        'hours'                 => $guardWorkingHours,
+    
+                        'job_amount'             => $jobAmount,
+                        'morning_hours'          => $hours['morning']          ?? 0,
+                        'night_hours'            => $hours['night']             ?? 0,
+                        'saturday_morning_hours' => $hours['saturday_morning']  ?? 0,
+                        'saturday_night_hours'   => $hours['saturday_night']    ?? 0,
+                        'sunday_morning_hours'   => $hours['sunday_morning']    ?? 0,
+                        'sunday_night_hours'     => $hours['sunday_night']      ?? 0,
+                        'ph_morning_hours'       => $hours['ph_morning']        ?? 0,
+                        'ph_night_hours'         => $hours['ph_night']          ?? 0,
+                        'hours'                  => $guardWorkingHours,
                     ];
-
+    
                     $jobId = JobRoster::insertGetId($roster);
                     $createdJobIds[] = $jobId;
-
+    
                     // TASKS
                     if (!empty($request->tasks)) {
                         foreach ($request->tasks as $task) {
@@ -160,9 +190,9 @@ class JobRosterController extends Controller
                             ]);
                         }
                     }
-
+    
                     $createdJob = JobRoster::with('site')->find($jobId);
-
+    
                     $this->sendNotificationsWithinRadius(
                         $site->coordinates,
                         [$jobId],
@@ -171,26 +201,99 @@ class JobRosterController extends Controller
                     );
                 }
             }
-
+    
             if (!$isAdminOverride) {
                 Transaction::where('payment_intent_id', $paymentIntentId)
                     ->update(['job_roster_id' => json_encode($createdJobIds)]);
             }
-
+    
+            // ════════════════════════════════════════════════════════════════
+            //  INVOICE  →  GENERATE PDF + SEND EMAIL
+            // ════════════════════════════════════════════════════════════════
+            if (!$isAdminOverride) {
+                $this->sendJobInvoice(
+                    user:             $user,
+                    shifts:           $invoiceShifts,
+                    baseTotal:        $invoiceBaseTotal,
+                    transaction:      $transaction,
+                    invoiceNumber:    'INV-' . strtoupper(substr($paymentIntentId, -8)),
+                    paymentIntentId:  $paymentIntentId,
+                );
+            }
+            // ════════════════════════════════════════════════════════════════
+    
             return response()->json([
-                'success' => true,
-                'message' => 'Jobs created successfully with payment hold.',
+                'success'            => true,
+                'message'            => 'Jobs created successfully with payment hold.',
                 'total_jobs_created' => count($createdJobIds),
-                'job_ids' => $createdJobIds,
-                'payment_intent_id' => $paymentIntentId
+                'job_ids'            => $createdJobIds,
+                'payment_intent_id'  => $paymentIntentId,
             ]);
-
+    
         } catch (\Exception $e) {
-
             return response()->json([
                 'success' => false,
-                'message' => $e->getMessage()
+                'message' => $e->getMessage(),
             ], 500);
+        }
+    }
+    
+    private function sendJobInvoice(
+        $user,
+        array $shifts,
+        float $baseTotal,
+        $transaction,
+        string $invoiceNumber,
+        string $paymentIntentId,
+    ): void {
+        // Pull real numbers from the transaction row (already calculated in holdPayment)
+        $discount      = $transaction ? (float) $transaction->discount      : 0;
+        $serviceFee    = $transaction ? (float) $transaction->service_fee   : round($baseTotal * 0.10, 2);
+        $grandTotal    = $transaction ? (float) $transaction->total_amount  : round(($baseTotal - $discount) + $serviceFee, 2);
+        $amountCharged = $transaction ? (float) $transaction->amount_charged: $grandTotal;
+        $balance       = $transaction ? (float) $transaction->balance       : 0;
+        $paymentOption = $transaction ? ($transaction->balance > 0 ? 'split' : 'full') : 'full';
+    
+        $invoiceData = [
+            'invoice_number'   => $invoiceNumber,
+            'date'             => now()->format('d M Y'),
+            'client_name'      => $user->name,
+            'client_email'     => $user->email,
+            'payment_intent_id'=> $paymentIntentId,
+            'payment_option'   => $paymentOption,
+            'shifts'           => $shifts,
+            'base_total'       => $baseTotal,
+            'discount'         => $discount,
+            'service_fee'      => $serviceFee,
+            'grand_total'      => $grandTotal,
+            'amount_charged'   => $amountCharged,
+            'balance'          => $balance,
+        ];
+    
+       // Generate PDF once
+        $pdfBytes = app(InvoiceService::class)->generatePdf($invoiceData);
+        $pdfBase64 = base64_encode($pdfBytes);   // ← encode here
+
+        // Send to client
+        Mail::to($user->email)
+            ->queue(new InvoiceMail(
+                pdfBase64:     $pdfBase64,        // ← pass base64
+                invoiceNumber: $invoiceNumber,
+                clientName:    $user->name,
+                isAdmin:       false,
+            ));
+    
+        // ── 2. Send to all admins ────────────────────────────────────────────
+       $admin = \App\Models\User::where('user_type', 'admin')->first(); 
+
+        if ($admin && $admin->email) {
+            Mail::to($admin->email)
+                ->queue(new InvoiceMail(
+                    pdfBase64:     $pdfBase64,
+                    invoiceNumber: $invoiceNumber,
+                    clientName:    $user->name,
+                    isAdmin:       true,
+                ));
         }
     }
 
@@ -231,26 +334,26 @@ class JobRosterController extends Controller
 
                 // Send notification if token exists
                 if ($staffMember->notification_token) {
-                    $notificationSent = send_push_notification([
-                        'notification_token' => $staffMember->notification_token,
-                        'message'            => "New ASAP job available within 5km of your location. Please check your app.",
-                        'title'              => 'ASAP Job Nearby',
-                        'page'               => 'asap-job-list',
-                        'data'               => [
-                            'distance' => round($distance, 2),
-                            'radius' => $radiusKm,
-                            'job_ids' => $jobIds,
-                            'roster' => $roster
-                        ]
-                    ]);
+                    // $notificationSent = send_push_notification([
+                    //     'notification_token' => $staffMember->notification_token,
+                    //     'message'            => "New ASAP job available within 5km of your location. Please check your app.",
+                    //     'title'              => 'ASAP Job Nearby',
+                    //     'page'               => 'asap-job-list',
+                    //     'data'               => [
+                    //         'distance' => round($distance, 2),
+                    //         'radius' => $radiusKm,
+                    //         'job_ids' => $jobIds,
+                    //         'roster' => $roster
+                    //     ]
+                    // ]);
 
-                    if ($notificationSent) {
+                    // if ($notificationSent) {
                         $notifiedUsers[] = [
                             'user_id' => $staffMember->id,
                             'name' => $staffMember->name,
                             'distance' => round($distance, 2) . ' km'
                         ];
-                    }
+                    // }
                 }
             }
         }
@@ -1383,7 +1486,50 @@ class JobRosterController extends Controller
             ->select('job_rosters.*', 'sites.id as jobId', 'sites.address', 'sites.coordinates')
             ->first();
 
-        if ($roster != null) {
+            if ($roster != null) {
+
+            $rosterStart = Carbon::parse($roster->start);
+
+            $weekStart = $rosterStart->copy()->startOfWeek();
+            $weekEnd   = $rosterStart->copy()->endOfWeek();
+
+            $currentWeekHours = DB::table('job_rosters')
+                ->where('assigned_to', $id)
+                ->whereBetween('start', [$weekStart, $weekEnd])
+                ->sum('hours');
+
+            $currentWeekHours = $currentWeekHours ?? 0;
+
+            $currentJobHours = $roster->hours ?? 0;
+
+            $totalHours = $currentWeekHours + $currentJobHours;
+
+            $user = \App\Models\User::with('staff')->find($id);
+
+            if (!$user || !$user->staff) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Staff data not found.'
+                ], 200);
+            }
+
+            $visaType = $user->staff->staff_document_type;
+
+            if ($visaType === 'student_visa') {
+                if ($totalHours > 24) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Weekly limit exceeded (24 hours for student visa).'
+                    ], 200);
+                }
+            } else {
+                if ($totalHours > 38) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Weekly limit exceeded (38 hours allowed).'
+                    ], 200);
+                }
+            }
             $flag = 0;
             $is_already_assign = DB::table('job_rosters')
                 ->where('assigned_to', $id)
@@ -3490,5 +3636,288 @@ public function autoUpdatePayslipStatus()
             'data' => $transactions
         ], 200);
     }
+
+    /**
+     * STEP 2 — Guard 1 generates QR code
+     * GET /api/roster/qr-code/{roster_id}
+     */
+    public function generateQR(Request $request, $roster_id)
+    {
+        $now = Carbon::now();
+
+        $roster = JobRoster::find($roster_id);
+
+        if (!$roster) {
+            return response()->json(['message' => 'Roster not found.'], 404);
+        }
+
+        if ($roster->assigned_to !== $request->user()->id) {
+            return response()->json(['message' => 'Unauthorized.'], 403);
+        }
+
+        if ($roster->job_status !== 'ongoing') {
+            return response()->json(['message' => 'You must be checked in to generate a handover QR.'], 400);
+        }
+
+        if (!$roster->handover_token) {
+            $roster->handover_token = (string) Str::uuid();
+            $roster->save();
+        }
+
+        $payload = json_encode([
+            'roster_id' => $roster->id,
+            'token'     => $roster->handover_token,
+        ]);
+
+        // SVG format — no Imagick or GD required
+        $qrImage = QrCode::format('svg')->size(300)->generate($payload);
+
+        return response()->json([
+            'roster_id'      => $roster->id,
+            'handover_token' => $roster->handover_token,
+            'qr_base64'      => 'data:image/png;base64,' . $qrImage,
+        ]);
+    }
+
+    /**
+     * STEP 3 — Guard 2 scans QR
+     * POST /api/roster/handover/scan
+     * Body: { "roster_id": 1, "token": "uuid-here" }
+     */
+    public function scanHandover(Request $request)
+    {
+        $request->validate([
+            'roster_id' => 'required|integer|exists:job_roster,id',
+            'token'     => 'required|string',
+        ]);
+
+        $now = Carbon::now();
+
+        DB::beginTransaction();
+        try {
+            $guard1Roster = JobRoster::lockForUpdate()->findOrFail($request->roster_id);
+
+            if ($guard1Roster->handover_token !== $request->token) {
+                return response()->json(['message' => 'Invalid or expired QR code.'], 400);
+            }
+
+            if ($guard1Roster->job_status !== 'ongoing') {
+                return response()->json(['message' => 'Guard 1 shift is no longer active.'], 400);
+            }
+
+            if ($guard1Roster->assigned_to === $request->user()->id) {
+                return response()->json(['message' => 'You cannot scan your own handover QR.'], 403);
+            }
+
+            $guard2Roster = JobRoster::where('assigned_to', $request->user()->id)
+                ->whereIn('job_status', ['pending', 'confirmed'])
+                ->where('start', '>=', $guard1Roster->start)
+                ->orderBy('start', 'asc')
+                ->lockForUpdate()
+                ->first();
+
+            if (!$guard2Roster) {
+                return response()->json(['message' => 'No upcoming shift found for you.'], 400);
+            }
+
+            // Update Guard 1
+            $guard1Roster->actual_end_time = $now;
+            // $guard1Roster->job_status      = 'completed';
+            $guard1Roster->handover_token  = null;
+            $guard1Roster->save();
+
+            // Update Guard 2
+            $guard2Roster->actual_start_time = $now;
+            // $guard2Roster->job_status        = 'ongoing';
+            $guard2Roster->save();
+
+            DB::commit();
+
+            return response()->json([
+                'message'       => 'Handover completed successfully.',
+                'handover_time' => $now->toDateTimeString(),
+                'guard1' => [
+                    'roster_id'       => $guard1Roster->id,
+                    'actual_end_time' => $guard1Roster->end->toDateTimeString(),
+                    'job_status'      => $guard1Roster->job_status,
+                ],
+                'guard2' => [
+                    'roster_id'         => $guard2Roster->id,
+                    'actual_start_time' => $guard2Roster->start->toDateTimeString(),
+                    'job_status'        => $guard2Roster->job_status,
+                ],
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'message' => 'Handover failed.',
+                'error'   => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    // public function jobData(Request $request)
+    // {
+    //     // ─── VALIDATION ─────────────────────────────
+    //     $validator = Validator::make($request->all(), [
+    //         'user_id'            => 'required|exists:users,id',
+    //         'shifts'                     => 'required|array|min:1',
+    //         'shifts.*.start'             => 'required|date',
+    //         'shifts.*.end'               => 'required|date|after:shifts.*.start',
+    //         'shifts.*.numberOfGuards'    => 'required|integer|min:1',
+    //         'payment_intent_id'  => 'required|string',
+    //     ]);
+
+    //     if ($validator->fails()) {
+    //         return response()->json([
+    //             'success' => false,
+    //             'errors'  => $validator->errors(),
+    //         ], 422);
+    //     }
+
+    //     try {
+
+    //         $user = User::findOrFail($request->user_id);
+
+    //         // ─── CREATE / FIND SITE ──────────────────
+    //         $site = Site::where('coordinates', $request->coordinates)->first();
+
+    //         if (!$site) {
+    //             $site = Site::create([
+    //                 'user_id'          => $user->id,
+    //                 'site_name'        => $request->title,
+    //                 'site_description' => $request->description,
+    //                 'address'          => $request->address,
+    //                 'signin_radius'    => 300,
+    //                 'coordinates'      => $request->coordinates,
+    //                 'state'            => $request->state,
+    //             ]);
+    //         }
+
+    //         // ─── GET DEFAULT ROSTER ──────────────────
+    //         $jobNewRoster = JobNewRoster::find(1);
+
+    //         if (!$jobNewRoster) {
+    //             return response()->json([
+    //                 'success' => false,
+    //                 'message' => 'Roster not found.'
+    //             ], 404);
+    //         }
+    //         $paymentIntentId = $request->payment_intent_id;
+
+    //         $radiusValue = is_array($request->radius) ? json_encode($request->radius) : $request->radius;
+    //         $documentListValue = is_array($request->document_types) ? json_encode($request->document_types) : $request->document_types;
+    //         $jobInstructionsValue = is_array($request->document_list) ? json_encode($request->document_list) : $request->document_list;
+
+    //         $createdJobIds = [];
+    //         $paymentIntentId = $request->payment_intent_id;
+    //         $isAdminOverride = $paymentIntentId === 'admin_override_no_payment';
+    //         $chargeRate = ChargeRate::find(1);
+
+    //         foreach ($request->shifts as $shift) {
+
+    //             $start = dbFormateDateTime($shift['start']);
+    //             $end   = dbFormateDateTime($shift['end']);
+
+    //             $hours = $this->getShiftHours($start, $end, 1, 0);
+    //             $guardWorkingHours = calCulateGuardWeekHours($start, $end);
+
+    //             // ─── BASE AMOUNT PER GUARD ───
+    //             $jobAmount =
+    //                 ($chargeRate->def_metro_mon_to_fri_day_rate * ($hours['morning'] ?? 0)) +
+    //                 ($chargeRate->def_metro_mon_to_fri_night_rate * ($hours['night'] ?? 0)) +
+    //                 ($chargeRate->def_metro_sat_day_rate * (($hours['saturday_morning'] ?? 0) + ($hours['saturday_night'] ?? 0))) +
+    //                 ($chargeRate->def_metro_sun_day_rate * (($hours['sunday_morning'] ?? 0) + ($hours['sunday_night'] ?? 0)));
+
+    //             // ─── GST (KEEP YOUR ORIGINAL LOGIC) ───
+    //             $serviceFee = round($jobAmount * 0.10, 2);
+    //             $totalAmount = round($jobAmount + $serviceFee, 2);
+
+    //             for ($i = 0; $i < $shift['numberOfGuards']; $i++) {
+
+    //                 $roster = [
+    //                     'site_id'          => $site->id,
+    //                     'start'            => $start,
+    //                     'end'              => $end,
+    //                     'shift_payable'    => 'yes',
+    //                     'shift_chargeable' => 'yes',
+    //                     'job_status'       => 'pending',
+    //                     'asap'             => 1,
+    //                     'radius'           => $radiusValue,
+    //                     'is_document'      => $request->is_document,
+    //                     'document_list'    => $documentListValue,
+    //                     'publish_status'   => 1,
+    //                     'roster_id'        => $jobNewRoster->id,
+    //                     'job_instrcutions' => $jobInstructionsValue,
+    //                     'created_by'       => $request->user_id,
+    //                     'assigned_to'      => null,
+    //                     'notified_users'   => json_encode([]),
+
+    //                     'payment_intent_id' => $isAdminOverride ? null : $paymentIntentId,
+    //                     'payment_status'    => $isAdminOverride ? 'not_required' : 'held',
+    //                     'payment_captured'  => $isAdminOverride ? 1 : 0,
+
+    //                     'job_amount'        => $jobAmount,
+
+    //                     // HOURS
+    //                     'morning_hours'         => $hours['morning'] ?? 0,
+    //                     'night_hours'           => $hours['night'] ?? 0,
+    //                     'saturday_morning_hours'=> $hours['saturday_morning'] ?? 0,
+    //                     'saturday_night_hours'  => $hours['saturday_night'] ?? 0,
+    //                     'sunday_morning_hours'  => $hours['sunday_morning'] ?? 0,
+    //                     'sunday_night_hours'    => $hours['sunday_night'] ?? 0,
+    //                     'ph_morning_hours'      => $hours['ph_morning'] ?? 0,
+    //                     'ph_night_hours'        => $hours['ph_night'] ?? 0,
+    //                     'hours'                 => $guardWorkingHours,
+    //                 ];
+
+    //                 $jobId = JobRoster::insertGetId($roster);
+    //                 $createdJobIds[] = $jobId;
+
+    //                 // TASKS
+    //                 if (!empty($request->tasks)) {
+    //                     foreach ($request->tasks as $task) {
+    //                         JobRosterTask::create([
+    //                             'job_roster_id' => $jobId,
+    //                             'task'          => $task['task'],
+    //                             'task_start'    => dbFormateDateTime($task['task_start']),
+    //                             'task_end'      => dbFormateDateTime($task['task_end']),
+    //                         ]);
+    //                     }
+    //                 }
+
+    //                 $createdJob = JobRoster::with('site')->find($jobId);
+
+    //                 $this->sendNotificationsWithinRadius(
+    //                     $site->coordinates,
+    //                     [$jobId],
+    //                     $request->user_id,
+    //                     $createdJob
+    //                 );
+    //             }
+    //         }
+
+    //         if (!$isAdminOverride) {
+    //             Transaction::where('payment_intent_id', $paymentIntentId)
+    //                 ->update(['job_roster_id' => json_encode($createdJobIds)]);
+    //         }
+
+    //         return response()->json([
+    //             'success' => true,
+    //             'message' => 'Jobs created successfully with payment hold.',
+    //             'total_jobs_created' => count($createdJobIds),
+    //             'job_ids' => $createdJobIds,
+    //             'payment_intent_id' => $paymentIntentId
+    //         ]);
+
+    //     } catch (\Exception $e) {
+
+    //         return response()->json([
+    //             'success' => false,
+    //             'message' => $e->getMessage()
+    //         ], 500);
+    //     }
+    // }
 
 }

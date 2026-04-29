@@ -56,7 +56,7 @@
                                 <td style="text-align:center;">
                                     <p style="font-size:14px; color:#455056bd; line-height:18px; margin:0 0 0;">
                                         We're delighted to welcome you to a new era of staff management innovation with
-                                        <strong><a href="https://app.thescouts.com.au/" style="color:#3075BA; text-decoration:none;"> AMG </a></strong>.
+                                        <strong><a href="https://app.thescouts.com.au/" style="color:#3075BA; text-decoration:none;"> STAFFOO </a></strong>.
                                     </p>
                                 </td>
                             </tr>

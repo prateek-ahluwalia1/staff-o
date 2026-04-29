@@ -360,6 +360,12 @@ class AuthController extends Controller
             ], 401);
         }
 
+        if ($user->is_email_approved == 1) {
+            return response()->json([
+                'message' => 'Please verify your email first'
+            ], 403);
+        }
+
         if ($user->user_type === 'customer') {
             $user->load(['customer']);
         } elseif ($user->user_type === 'contractor') {

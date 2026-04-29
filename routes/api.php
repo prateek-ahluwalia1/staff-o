@@ -22,6 +22,7 @@ use App\Http\Controllers\Api\RtmController;
 use Illuminate\Support\Facades\Artisan;
 
 use App\Http\Controllers\AgoraController;
+use App\Http\Controllers\Api\Admin\GeneralController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\VisaController;
 use App\Http\Controllers\IvrController2;
@@ -143,6 +144,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::any('get-specific-guard-payslips', [JobRosterController::class, 'getSpecificGuardPayslips']);
     Route::any('auto-update-payslips', [JobRosterController::class, 'autoUpdatePayslipStatus']);
     Route::any('upload-payslips', [JobRosterController::class, 'uploadPayslips']);
+    Route::get('/roster/qr-code/{roster_id}', [JobRosterController::class, 'generateQR']);
+    Route::post('/roster/handover/scan', [JobRosterController::class, 'scanHandover']);
 
     Route::any('/asap-jobs/accept/{id}', [JobRosterController::class, 'accept_asap_job'])->name('accept.asap.job');
     Route::any('/signin/{id}', [JobRosterController::class, 'jobSignin'])->name('job.signin');
@@ -237,6 +240,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('staff-delete/{id}', [AdminStaffController::class, 'destroy']);
 
         Route::any('send-invoice',  [JobRosterController::class, 'sendInvoice']);
+        Route::get('/', [GeneralController::class, 'getAdmins']);
 
         Route::post('/visa-check', [VisaController::class, 'create']);
         Route::get('/visa-result/{id}', [VisaController::class, 'result']);

@@ -12,6 +12,8 @@ class Contractor extends Model
         'registration_number',
         'phone',
         'profile_image',
+        'acn',
+        'abn',
     ];
 
     /* ======================

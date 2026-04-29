@@ -35,6 +35,7 @@ class StaffController extends Controller
         }
         $baseScore = ($filledBase / count($baseFields)) * $baseWeight;
 
+        $documents = $user->documents ?? collect();
         $totalDocuments = $user->documents ? $user->documents->count() : 0;
         $filledDocuments = 0;
         if ($totalDocuments > 0) {
@@ -47,6 +48,18 @@ class StaffController extends Controller
         if ($totalDocuments > 0) {
             $documentScore = ($filledDocuments / $totalDocuments) * $documentWeight;
         }
+
+          //NEW CONDITION: Labour Hire Required
+       if ( $user->user_type === 'contractor' && in_array(strtolower($user->state), ['victoria', 'queensland']) ) {
+            $labourHireDoc = $documents->firstWhere('document_type', 'labour_hire');
+
+            //If not exists OR document_no empty → apply penalty
+            if (!$labourHireDoc || empty($labourHireDoc->document_no)) {
+
+                $documentScore = $documentScore * 0.5;
+            }
+        }
+
         if($user->user_type == 'contractor'){
         $percentage = (int) round($baseScore + $documentScore);
         }elseif($user->user_type == 'staff' && $user->user_id == 1){
@@ -574,7 +587,6 @@ class StaffController extends Controller
             if ($user->user_type === 'customer') {
                 $rules = array_merge($rules, [
                     'phone' => 'nullable|string',
-                    'company_name' => 'nullable|string',
                     'bank_details' => 'nullable',
                     'email_otp' => 'nullable|string',
                     'profile_image' => 'sometimes|nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
@@ -586,6 +598,8 @@ class StaffController extends Controller
                     'company_name' => 'sometimes|required|string|max:255',
                     'registration_number' => 'nullable|string|max:255',
                     'phone' => 'nullable|string|max:20',
+                    'acn' => 'nullable|string',
+                    'abn' => 'nullable|string',
                     'profile_image' => 'sometimes|nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
                 ]);
             }
@@ -614,6 +628,7 @@ class StaffController extends Controller
                 'state',
                 'country',
                 'address',
+                'phone',
                 'coordinates'
             ])->toArray());
 
@@ -650,6 +665,8 @@ class StaffController extends Controller
                     'company_name',
                     'registration_number',
                     'phone',
+                    'abn',
+                    'acn',
                 ])->toArray();
 
                  if ($request->hasFile('profile_image')) {
@@ -779,81 +796,81 @@ class StaffController extends Controller
             }
 
 
-            if ($user->user_type === 'customer') {
+            // if ($user->user_type === 'customer') {
 
-                $customer = $user->customer;
+            //     $customer = $user->customer;
 
-                $newEmail = $request->email ?? $user->email;
-                // $newPhone = $request->phone ?? optional($customer)->phone;
+            //     $newEmail = $request->email ?? $user->email;
+            //     // $newPhone = $request->phone ?? optional($customer)->phone;
 
-                $emailChanged = $newEmail != $user->email;
-                // $phoneChanged = $newPhone != optional($customer)->phone;
+            //     $emailChanged = $newEmail != $user->email;
+            //     // $phoneChanged = $newPhone != optional($customer)->phone;
 
-                if ($emailChanged || $customer->verify_profile == 0) {
+            //     if ($emailChanged || $customer->verify_profile == 0) {
 
-                    // If OTP not provided → send OTP
-                    if (!$request->email_otp) {
+            //         // If OTP not provided → send OTP
+            //         if (!$request->email_otp) {
 
-                        $emailOtp = rand(100000, 999999);
-                        // $phoneOtp = rand(100000, 999999);
+            //             $emailOtp = rand(100000, 999999);
+            //             // $phoneOtp = rand(100000, 999999);
 
-                        if ($customer) {
-                            $customer->update([
-                                'email_otp' => $emailOtp,
-                                // 'phone_otp' => $phoneOtp,
-                                'otp_expires_at' => now()->addMinutes(10)
-                            ]);
-                        }
+            //             if ($customer) {
+            //                 $customer->update([
+            //                     'email_otp' => $emailOtp,
+            //                     // 'phone_otp' => $phoneOtp,
+            //                     'otp_expires_at' => now()->addMinutes(10)
+            //                 ]);
+            //             }
 
-                        // Send Email OTP
-                        if ($emailChanged) {
-                            Mail::raw("Your verification OTP is: $emailOtp", function ($message) use ($newEmail) {
-                                $message->to($newEmail)
-                                    ->subject('Email Verification OTP');
-                            });
+            //             // Send Email OTP
+            //             if ($emailChanged) {
+            //                 Mail::raw("Your verification OTP is: $emailOtp", function ($message) use ($newEmail) {
+            //                     $message->to($newEmail)
+            //                         ->subject('Email Verification OTP');
+            //                 });
 
-                            return response()->json([
-                                'success' => false,
-                                'otp_required' => true,
-                                'message' => 'OTP sent to email. Please verify to continue.'
-                            ]);
-                        }
+            //                 return response()->json([
+            //                     'success' => false,
+            //                     'otp_required' => true,
+            //                     'message' => 'OTP sent to email. Please verify to continue.'
+            //                 ]);
+            //             }
 
-                        // Send SMS OTP (integrate gateway)
-                        // if ($phoneChanged) {
-                        //     // SMS::send($newPhone, "Your OTP is: $phoneOtp");
-                        // }
+            //             // Send SMS OTP (integrate gateway)
+            //             // if ($phoneChanged) {
+            //             //     // SMS::send($newPhone, "Your OTP is: $phoneOtp");
+            //             // }
 
-                        return response()->json([
-                            'success' => true,
-                            'otp_required' => false,
-                            'message' => 'User Updated Successfully.'
-                        ]);
-                    }
+            //             return response()->json([
+            //                 'success' => true,
+            //                 'otp_required' => false,
+            //                 'message' => 'User Updated Successfully.'
+            //             ]);
+            //         }
 
-                    // Verify OTP
-                    if (!$customer || $customer->otp_expires_at < now()) {
-                        return response()->json([
-                            'message' => 'OTP expired'
-                        ], 400);
-                    }
+            //         // Verify OTP
+            //         if (!$customer || $customer->otp_expires_at < now()) {
+            //             return response()->json([
+            //                 'message' => 'OTP expired'
+            //             ], 400);
+            //         }
 
-                    if ($request->email_otp != $customer->email_otp) {
+            //         if ($request->email_otp != $customer->email_otp) {
 
-                        return response()->json([
-                            'message' => 'Invalid OTP'
-                        ], 400);
-                    }
+            //             return response()->json([
+            //                 'message' => 'Invalid OTP'
+            //             ], 400);
+            //         }
 
-                    // OTP verified
-                    $customer->update([
-                        'email_otp' => null,
-                        'phone_otp' => null,
-                        'otp_expires_at' => null,
-                        'verify_profile' => 1
-                    ]);
-                }
-            }
+            //         // OTP verified
+            //         $customer->update([
+            //             'email_otp' => null,
+            //             'phone_otp' => null,
+            //             'otp_expires_at' => null,
+            //             'verify_profile' => 1
+            //         ]);
+            //     }
+            // }
 
             return response()->json(['success' => true, 'code' => 200, 'data' => $user]);
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {

@@ -31,13 +31,12 @@ const CallManagement = () => {
     },
   );
 
-  // Dynamically set API endpoints based on User Type to avoid fetching unnecessary data or hitting 404s
   const staffEndpoint =
     userType === "admin"
-      ? "api/admin/get-staff?limit=1000" // Admin sees ALL staff
+      ? "api/admin/get-staff?limit=1000"
       : userType === "contractor" && loggedInContractorId
-        ? `api/get-contractor-staff/${loggedInContractorId}` // Contractor sees THEIR staff
-        : null; // Other roles don't need staff lists
+        ? `api/get-contractor-staff/${loggedInContractorId}`
+        : null;
 
   const contractorEndpoint = ["admin", "customer", "staff"].includes(userType)
     ? "api/admin/get-contractors?limit=1000"
@@ -47,8 +46,6 @@ const CallManagement = () => {
     ? "api/admin/get-customers?limit=1000"
     : null;
 
-  // If your useFetch hook doesn't support skipping when `null` is passed,
-  // you can replace `null` above with an empty string or dummy endpoint.
   const { data: staffRes, loading: staffLoading } = useFetch(staffEndpoint, {
     isAuth: true,
   });
@@ -67,14 +64,11 @@ const CallManagement = () => {
     const getList = (res) => {
       if (!res) return [];
 
-      // If the response itself is an array
       if (Array.isArray(res)) return res;
 
-      // --- NEW FIX: Check for the 'guards' array from the contractor-staff API ---
       if (Array.isArray(res.guards)) return res.guards;
       if (res.data && Array.isArray(res.data.guards)) return res.data.guards;
 
-      // Check standard 'data' arrays
       if (Array.isArray(res.data)) return res.data;
       if (res.data && Array.isArray(res.data.data)) return res.data.data;
 
@@ -91,7 +85,6 @@ const CallManagement = () => {
       roleLabel: "Customer",
     }));
 
-    // Apply Role-Based Access Control (RBAC)
     switch (userType) {
       case "admin":
         return [...staff, ...contractors, ...customers];
@@ -243,11 +236,10 @@ const CallManagement = () => {
         {["all", "completed", "missed", "initiated"].map((filter) => (
           <button
             key={filter}
-            className={`btn rounded-3 px-4 fw-bold text-capitalize border-0 ${
-              activeFilter === filter
-                ? "btn-primary shadow"
-                : "btn-light text-muted"
-            }`}
+            className={`btn rounded-3 px-4 fw-bold text-capitalize border-0 ${activeFilter === filter
+              ? "btn-primary shadow"
+              : "btn-light text-muted"
+              }`}
             onClick={() => handleFilterChange(filter)}
             style={{ marginRight: filter !== "initiated" ? "8px" : "0" }}
           >

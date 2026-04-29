@@ -12,7 +12,7 @@ const highlights = [
   {
     icon: "fa-random",
     title: "Seamless Job Matching",
-    copy: "Quickly connect staff, customers, and subcontractors through one platform.",
+    copy: "Quickly connect staff, customers, and Resource Partners through one platform.",
   },
   {
     icon: "fa-calendar-check-o",
@@ -28,11 +28,11 @@ const missionItems = [
   },
   {
     icon: "fa-link",
-    text: "To ensure verified staff and contractors are connected with customers who need reliable security services.",
+    text: "To ensure verified staff and Resource Partners are connected with customers who need reliable security services.",
   },
   {
     icon: "fa-tasks",
-    text: "To provide tools that allow subcontractors to manage assignments and workforce efficiently.",
+    text: "To provide tools that allow Resource Partners to manage assignments and workforce efficiently.",
   },
 ];
 
@@ -63,7 +63,7 @@ export default function AboutUs() {
                 <h2 className="mb-3">Our Story</h2>
                 <p className="mb-3">
                   At Staffoo, we believe in connecting qualified security staff
-                  with trusted customers while supporting subcontractors in
+                  with trusted customers while supporting Resource Partners in
                   managing assignments. Our platform simplifies security
                   staffing, saving time, ensuring reliability, and empowering
                   professionals across Australia.
@@ -73,7 +73,7 @@ export default function AboutUs() {
                   staffing. Find verified security jobs, hire qualified security
                   staff, or manage assignments efficiently from desktop or
                   mobile. Designed for security professionals, employers, and
-                  subcontractors, Staffoo connects trusted staff with reliable
+                  Resource Partners, Staffoo connects trusted staff with reliable
                   opportunities nationwide.
                 </p>
               </div>

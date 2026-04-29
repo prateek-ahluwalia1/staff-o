@@ -24,8 +24,8 @@ import "../assets/css/chat.css";
 const CATEGORY_LABELS = {
   staff: "Staff",
   customers: "Customers",
-  contractors: "Contractors",
-  admin: "Admin Support", // Added for non-admins
+  contractors: "Resource Partners",
+  admin: "Admin Support",
 };
 
 const Avatar = ({ src, name, size = 40 }) => {

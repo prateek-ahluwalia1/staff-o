@@ -116,7 +116,6 @@ const ManageUsers = () => {
       setTotalPages(apiResponse.data.last_page || 1);
       setTotalItems(apiResponse.data.total || 0);
 
-      // Check if we arrived from the Dashboard with a specific user to edit
       if (location.state?.editUserId) {
         const userToEdit = fetchedUsers.find((u) => u.id === location.state.editUserId);
 
@@ -126,7 +125,6 @@ const ManageUsers = () => {
           toast.info("User located on a different page. Please use search or pagination.");
         }
 
-        // Clear the state so the modal doesn't reopen if the user closes it
         navigate(location.pathname, { replace: true, state: {} });
       }
     } else {

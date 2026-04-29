@@ -7,6 +7,7 @@ import FootPatrolReport from "./FootPatrolReport";
 import RatingComponent from "./RatingComponent";
 import OperationNotes from "./OperationNotes";
 import BreakDetails from "./BreakDetails";
+import DownloadShiftReport from "./DownloadShiftReport";
 
 const SIDEBAR_TABS = [
   {
@@ -58,6 +59,13 @@ const SIDEBAR_TABS = [
     activeBg: "#7b1fa2",
     icon: "fa-star",
   },
+  {
+    id: "download_report",
+    label: "Download Report",
+    bg: "#e8f5e9",
+    activeBg: "#2e7d32",
+    icon: "fa-download",
+  },
 ];
 
 export default function ActivityDashboardModal({ modal, closeModal }) {
@@ -72,6 +80,10 @@ export default function ActivityDashboardModal({ modal, closeModal }) {
     if (!guardId && (tab.id === "operation_notes" || tab.id === "rating")) {
       return false;
     }
+    if (tab.id === "download_report" && shift?.job_status !== "completed") {
+      return false;
+    }
+
     return true;
   });
 
@@ -119,6 +131,15 @@ export default function ActivityDashboardModal({ modal, closeModal }) {
         return <OperationNotes rosterId={rosterId} guardId={guardId} />;
       case "rating":
         return <RatingComponent rosterId={rosterId} guardId={guardId} />;
+      case "download_report":
+        return (
+          <DownloadShiftReport
+            rosterId={rosterId}
+            guardId={guardId}
+            shift={shift}
+            site={site}
+          />
+        );
       default:
         return <div>Select an option</div>;
     }

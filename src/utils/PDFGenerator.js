@@ -336,6 +336,207 @@ const PDFGenerator = {
     return doc;
   },
 
+  generateShiftReportPDF: (reportData) => {
+    const {
+      siteName,
+      siteAddress,
+      guardName,
+      shiftStart,
+      shiftEnd,
+      totalHours,
+      signinDetails,
+      jobStatus
+    } = reportData;
+
+    const doc = new jsPDF({
+      orientation: "portrait",
+      unit: "mm",
+      format: "a4",
+    });
+
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const margin = 20;
+
+    const brandBlue = [13, 110, 253];
+    const brandDark = [30, 41, 59];
+    const textGray = [100, 116, 139];
+    const lightBorder = [226, 232, 240];
+
+    try {
+      if (logo) {
+        doc.addImage(logo, "PNG", margin, 18, 40, 14);
+      }
+    } catch (error) {
+      console.error("Error loading logo:", error);
+    }
+
+    doc.setFontSize(8.5);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(...textGray);
+    doc.text("Professional Facility & Workforce Services", margin, 38);
+
+    doc.setFontSize(26);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(...brandDark);
+    doc.text("SHIFT REPORT", pageWidth - margin, 26, { align: "right" });
+
+    let metaY = 34;
+    const metaLabelX = pageWidth - margin - 30;
+    const metaValueX = pageWidth - margin;
+
+    const addMetaRow = (label, value) => {
+      doc.setFontSize(9);
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(...textGray);
+      doc.text(label, metaLabelX, metaY, { align: "right" });
+
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(...brandDark);
+      doc.text(String(value), metaValueX, metaY, { align: "right" });
+      metaY += 6;
+    };
+
+    addMetaRow("Status", jobStatus ? jobStatus.toUpperCase() : "PENDING");
+    addMetaRow("Total Hours", `${totalHours || 0} Hrs`);
+    addMetaRow("Date", new Date().toLocaleDateString());
+
+    let yPosition = 50;
+    doc.setDrawColor(...lightBorder);
+    doc.setLineWidth(0.5);
+    doc.line(margin, yPosition, pageWidth - margin, yPosition);
+
+    yPosition += 8;
+
+    const columnWidth = (pageWidth - margin * 2) / 2;
+
+    let leftY = yPosition;
+    doc.setFontSize(8.5);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(...textGray);
+    doc.text("SITE DETAILS", margin, leftY);
+
+    leftY += 6;
+    doc.setFontSize(10);
+    doc.setTextColor(...brandDark);
+    doc.text(siteName || "N/A", margin, leftY);
+
+    leftY += 5;
+    doc.setFontSize(9);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(...textGray);
+    if (siteAddress) {
+      const splitAddress = doc.splitTextToSize(siteAddress, columnWidth - 10);
+      doc.text(splitAddress, margin, leftY);
+      leftY += (splitAddress.length * 5);
+    }
+
+    // ASSIGNMENT DETAILS Section
+    let rightY = yPosition;
+    const rightColX = margin + columnWidth;
+
+    doc.setFontSize(8.5);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(...textGray);
+    doc.text("ASSIGNMENT DETAILS", rightColX, rightY);
+
+    rightY += 6;
+    doc.setFontSize(10);
+    doc.setTextColor(...brandDark);
+    doc.text(`Guard: ${guardName || "Unassigned"}`, rightColX, rightY);
+
+    rightY += 5;
+    doc.setFontSize(9);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(...textGray);
+
+    if (shiftStart) {
+      doc.text(`Start: ${shiftStart}`, rightColX, rightY);
+      rightY += 5;
+    }
+    if (shiftEnd) {
+      doc.text(`End: ${shiftEnd}`, rightColX, rightY);
+    }
+
+    yPosition = Math.max(leftY, rightY) + 15;
+
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(...brandDark);
+    doc.text("Sign In / Out Logs", margin, yPosition);
+    yPosition += 6;
+
+    const tableData = [];
+    if (signinDetails) {
+      tableData.push([
+        "Sign In",
+        signinDetails.signin_time || "-",
+        signinDetails.location || "-",
+        signinDetails.signin_notes || "No notes"
+      ]);
+      tableData.push([
+        "Sign Out",
+        signinDetails.signout_time || "-",
+        signinDetails.signout_location || "-",
+        signinDetails.signout_notes || "No notes"
+      ]);
+    } else {
+      tableData.push(["-", "No sign in data available", "-", "-"]);
+    }
+
+    const printableTableWidth = pageWidth - margin * 2;
+
+    autoTable(doc, {
+      startY: yPosition,
+      head: [["Activity", "Time", "Coordinates / Location", "Notes"]],
+      body: tableData,
+      tableWidth: printableTableWidth,
+      theme: "plain", // Removes heavy borders
+      headStyles: {
+        fillColor: [248, 250, 252],
+        textColor: brandDark,
+        fontStyle: "bold",
+        fontSize: 9,
+        cellPadding: 4,
+        valign: "middle",
+      },
+      bodyStyles: {
+        fontSize: 9,
+        textColor: brandDark,
+        cellPadding: { top: 6, bottom: 6, left: 4, right: 4 },
+        lineColor: lightBorder,
+        lineWidth: { bottom: 0.1 },
+        valign: "middle",
+      },
+      margin: { left: margin, right: margin },
+      styles: {
+        overflow: "linebreak",
+      },
+      columnStyles: {
+        0: { fontStyle: "bold", textColor: brandBlue, cellWidth: printableTableWidth * 0.15 },
+        1: { cellWidth: printableTableWidth * 0.25 },
+        2: { cellWidth: printableTableWidth * 0.35 },
+        3: { cellWidth: printableTableWidth * 0.25 },
+      }
+    });
+
+    doc.setFontSize(8);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(...textGray);
+
+    doc.text(
+      "Thank you for choosing Staffo Facility Services.",
+      pageWidth / 2,
+      pageHeight - 15,
+      { align: "center" }
+    );
+    doc.text("https://app.staffoo.com.au", pageWidth / 2, pageHeight - 10, {
+      align: "center",
+    });
+
+    return doc;
+  },
+
   openPDFInNewTab: (doc) => {
     const blob = doc.output("blob");
     const url = URL.createObjectURL(blob);

@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { Card } from "../components/Card";
@@ -38,30 +38,29 @@ const Chat = () => {
     userdata?.data?.user_type?.toLowerCase() ||
     "";
 
-  const allowedCategories = useMemo(() => {
-    switch (userType) {
-      case "admin":
-        return ALL_CATEGORIES;
-      case "contractor":
-        return ALL_CATEGORIES.filter(
-          (c) => c.key === "staff" || c.key === "customers",
-        );
-      case "staff":
-      case "customer":
-        return ALL_CATEGORIES.filter((c) => c.key === "contractors"); 
-      default:
-        return [];
+  useEffect(() => {
+    if (userType && userType !== "admin") {
+      navigate("/chat/admin", { replace: true });
     }
+  }, [userType, navigate]);
+
+  const allowedCategories = useMemo(() => {
+    if (userType === "admin") {
+      return ALL_CATEGORIES;
+    }
+    return [];
   }, [userType]);
+
+  if (userType && userType !== "admin") {
+    return null;
+  }
 
   return (
     <div className="dashboard-tools-page">
       <div className="dashboard-page-header">
         <div>
           <h1>Communications</h1>
-          <p>
-          Select a category to start or continue a conversation
-          </p>
+          <p>Select a category to start or continue a conversation</p>
         </div>
       </div>
 
@@ -78,14 +77,6 @@ const Chat = () => {
             />
           </div>
         ))}
-        {allowedCategories.length === 0 && (
-          <div className="col-12">
-            <div className="dashboard-tools-empty-state">
-              <i className="fa fa-info-circle"></i>
-              You do not have permission to view any chat categories.
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );

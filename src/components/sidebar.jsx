@@ -18,7 +18,6 @@ const Sidebar = memo(function Sidebar() {
   const userType = userdata?.data?.user_type || userdata?.user_type;
   const userId = userdata?.data?.id || userdata?.id;
 
-  // Auto-collapse sidebar on mobile/tablet
   useEffect(() => {
     const handleResize = () => {
       if (window.innerWidth <= 1199) {
@@ -48,7 +47,6 @@ const Sidebar = memo(function Sidebar() {
     dispatch(toggleSidebar());
   }, [dispatch]);
 
-  // Handle keyboard shortcut (Ctrl/Cmd + B)
   useEffect(() => {
     const handleKeyboard = (e) => {
       if ((e.ctrlKey || e.metaKey) && e.key === "b") {
@@ -201,7 +199,7 @@ const Sidebar = memo(function Sidebar() {
       </div>
 
       <div className="sidebar-header">
-        {isExpanded && (
+        {isExpanded && userType !== "admin" && (
           <>
             <div
               className={`status-toggle ${isProfileActive ? "status-toggle-active" : "status-toggle-inactive"}`}
@@ -218,6 +216,7 @@ const Sidebar = memo(function Sidebar() {
             </div>
           </>
         )}
+        <hr />
       </div>
 
       <ul className="dashboard-nav">

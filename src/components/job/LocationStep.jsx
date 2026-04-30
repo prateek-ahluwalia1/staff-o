@@ -88,12 +88,13 @@ export default function LocationStep({
   useEffect(() => {
     if (!googleReady || !mapRef.current || map) return;
 
-    const initialLatLng = form.coordinates ? form.coordinates.split(",").map(Number) : [31.526042, 74.271675];
+    const initialLatLng = form.coordinates ? form.coordinates.split(",").map(Number) : [51.4924955, -0.1486599];
 
     const gmap = new window.google.maps.Map(mapRef.current, {
       center: { lat: initialLatLng[0], lng: initialLatLng[1] },
       zoom: 15,
     });
+
 
     const marker = new window.google.maps.Marker({
       position: { lat: initialLatLng[0], lng: initialLatLng[1] },
@@ -112,6 +113,7 @@ export default function LocationStep({
 
     setMap(gmap);
     markerRef.current = marker;
+    console.log(form.coordinates)
   }, [googleReady, map, form.coordinates, setField, reverseGeocode]);
 
   useEffect(() => {

@@ -9,7 +9,7 @@ import {
   resolveProfileImageUrl,
 } from "../../utils/profileImage";
 import "./DashboardStyles.css";
-import dashboardBanner from "../../assets/images/dashboard-banner.png";
+import dashboardBanner from "../../assets/images/dashboard-banner.jpeg";
 
 export default function CustomerDashboard() {
   const { userdata } = useSelector((state) => state.auth);
@@ -183,10 +183,10 @@ export default function CustomerDashboard() {
                     <td>
                       <span
                         className={`badge ${job.status === "confirmed" || job.status === "Active"
-                            ? "bg-success"
-                            : job.status === "completed" || job.status === "Completed"
-                              ? "bg-info"
-                              : "bg-warning"
+                          ? "bg-success"
+                          : job.status === "completed" || job.status === "Completed"
+                            ? "bg-info"
+                            : "bg-warning"
                           }`}
                         style={{ padding: "6px 10px", borderRadius: "6px", textTransform: "capitalize" }}
                       >

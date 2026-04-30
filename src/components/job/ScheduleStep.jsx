@@ -224,7 +224,7 @@ export default function ScheduleStep({ form, setField, scheduleError = "" }) {
               selected={selectedDateObjects[0] || null}
               onChange={handleSingleDateSelect}
               dateFormat="dd/MM/yyyy"
-              placeholderText="Choose a date..."
+              placeholderText="Choose a date"
               minDate={new Date()}
               className="form-control form-control-lg shadow-sm"
             />

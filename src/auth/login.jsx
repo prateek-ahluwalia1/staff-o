@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { NavLink, useNavigate } from "react-router-dom";
+import { NavLink } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { setToken, setUser } from "../store/slices/authSlice";
 import useSubmit from "../hooks/useSubmit";
@@ -13,7 +13,6 @@ import {
 } from "../utils/authResponseNormalizer";
 
 export default function Login() {
-  const navigate = useNavigate();
   const dispatch = useDispatch();
   const { submit, loading } = useSubmit();
 
@@ -77,7 +76,6 @@ export default function Login() {
     dispatch(setUser({ userdata: latestProfile }));
 
     toast.success("Logged in successfully!");
-    navigate("/dashboard");
   };
 
   const handleGoogleLogin = useGoogleLogin({
@@ -112,7 +110,6 @@ export default function Login() {
           dispatch(setUser({ userdata: latestProfile }));
 
           toast.success("Google login successful!");
-          navigate("/dashboard");
         } else {
           console.error("Google login error response:", res);
         }

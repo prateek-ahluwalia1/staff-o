@@ -13,7 +13,7 @@ function formatDateTime(value) {
 
   return parsed.toLocaleString("en-AU", {
     day: "2-digit",
-    month: "short",
+    month: "2-digit", // Changed to 2-digit for strictly dd/MM/yyyy
     year: "numeric",
     hour: "2-digit",
     minute: "2-digit",

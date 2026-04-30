@@ -7,7 +7,7 @@ const formatLocalDate = (date) => {
   const y = date.getFullYear();
   const m = String(date.getMonth() + 1).padStart(2, "0");
   const d = String(date.getDate()).padStart(2, "0");
-  return `${y}-${m}-${d}`;
+  return `${y}-${m}-${d}`; // Keep internal state ISO for reliable sorting/parsing
 };
 
 const parseLocalDate = (dateStr) => {
@@ -223,7 +223,7 @@ export default function ScheduleStep({ form, setField, scheduleError = "" }) {
             <DatePicker
               selected={selectedDateObjects[0] || null}
               onChange={handleSingleDateSelect}
-              dateFormat="yyyy-MM-dd"
+              dateFormat="dd/MM/yyyy"
               placeholderText="Choose a date..."
               minDate={new Date()}
               className="form-control form-control-lg shadow-sm"
@@ -236,7 +236,7 @@ export default function ScheduleStep({ form, setField, scheduleError = "" }) {
               startDate={form.dateRange[0]}
               endDate={form.dateRange[1]}
               onChange={handleRangeSelect}
-              dateFormat="yyyy-MM-dd"
+              dateFormat="dd/MM/yyyy"
               placeholderText="Start Date - End Date"
               minDate={new Date()}
               className="form-control form-control-lg shadow-sm w-100"
@@ -250,7 +250,7 @@ export default function ScheduleStep({ form, setField, scheduleError = "" }) {
               onChange={handleCustomDateSelect}
               highlightDates={selectedDateObjects}
               shouldCloseOnSelect={false}
-              dateFormat="yyyy-MM-dd"
+              dateFormat="dd/MM/yyyy"
               placeholderText="Select Multiple dates"
               minDate={new Date()}
               className="form-control form-control-lg shadow-sm w-100"

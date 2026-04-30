@@ -40,7 +40,7 @@ export default function SettingsHeaderContent({
       {/* LEFT SIDE: Text block */}
       <div className="header-text-info">
         <span>
-          {userType?.charAt(0)?.toUpperCase() + userType?.slice(1) || ""}{" "}
+          {userType === "contractor" ? "Resource Partner" : userType?.charAt(0)?.toUpperCase() + userType?.slice(1) || ""}{" "}
           Profile
         </span>
 

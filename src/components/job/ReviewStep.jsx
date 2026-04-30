@@ -4,9 +4,20 @@ import { NavLink } from "react-router-dom";
 
 const formatDisplayDate = (dateStr) => {
   if (!dateStr) return "";
-  const d = new Date(dateStr);
-  if (isNaN(d)) return dateStr;
-  return d.toLocaleDateString("en-AU", { weekday: "short", day: "numeric", month: "long", year: "numeric" });
+
+  // Safely parse YYYY-MM-DD to avoid timezone off-by-one-day bugs
+  const parts = dateStr.split("-");
+  if (parts.length === 3) {
+    const d = new Date(parts[0], parts[1] - 1, parts[2]);
+    // Returns strictly standard AU format: dd/MM/yyyy
+    return d.toLocaleDateString("en-AU", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric"
+    });
+  }
+
+  return dateStr;
 };
 
 function fmt(v) {

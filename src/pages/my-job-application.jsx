@@ -84,12 +84,12 @@ export default function MyJobApplications() {
           pillIcon = "fa-envelope-open-text";
         }
 
-        // Format dates nicely if available, otherwise use raw string
+        // Changed to strictly dd/MM/yyyy HH:mm format
         let formattedTime = `${shift.start} - ${shift.end}`;
         try {
           const startDate = parse(shift.start, "yyyy-MM-dd HH:mm", new Date());
           const endDate = parse(shift.end, "yyyy-MM-dd HH:mm", new Date());
-          formattedTime = `${format(startDate, "MMM dd, HH:mm")} to ${format(endDate, "HH:mm")}`;
+          formattedTime = `${format(startDate, "dd/MM/yyyy HH:mm")} to ${format(endDate, "HH:mm")}`;
         } catch (e) {
           // Ignore format errors and fallback to string
         }
@@ -391,11 +391,29 @@ export default function MyJobApplications() {
                       </span>
                     }
                   />
+                  {/* Applied simple formatting trick inside modal too */}
                   <InfoRow
                     label="Start Time"
-                    value={selectedApp.rawShift.start}
+                    value={
+                      selectedApp.rawShift.start
+                        ? selectedApp.rawShift.start.replace(
+                          /^(\d{4})-(\d{2})-(\d{2})/,
+                          "$3/$2/$1"
+                        )
+                        : ""
+                    }
                   />
-                  <InfoRow label="End Time" value={selectedApp.rawShift.end} />
+                  <InfoRow
+                    label="End Time"
+                    value={
+                      selectedApp.rawShift.end
+                        ? selectedApp.rawShift.end.replace(
+                          /^(\d{4})-(\d{2})-(\d{2})/,
+                          "$3/$2/$1"
+                        )
+                        : ""
+                    }
+                  />
                   <InfoRow
                     label="Total Hours"
                     value={selectedApp.rawShift.hours}

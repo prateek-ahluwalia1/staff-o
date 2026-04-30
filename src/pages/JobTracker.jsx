@@ -29,7 +29,7 @@ const formatDateInput = (date) => {
   const y = date.getFullYear();
   const m = String(date.getMonth() + 1).padStart(2, "0");
   const d = String(date.getDate()).padStart(2, "0");
-  return `${y}-${m}-${d}`;
+  return `${y}-${m}-${d}`; // HTML <input type="date"> requires YYYY-MM-DD
 };
 
 const parseInputDate = (val) => {
@@ -43,7 +43,7 @@ const formatDateForPayload = (date) => {
   const mm = String(date.getMonth() + 1).padStart(2, "0");
   const dd = String(date.getDate()).padStart(2, "0");
   const yyyy = date.getFullYear();
-  return `${mm}/${dd}/${yyyy}`;
+  return `${mm}/${dd}/${yyyy}`; // Left untouched for your backend API
 };
 
 const formatDateTime = (value) => {
@@ -56,7 +56,9 @@ const formatDateTime = (value) => {
   const yyyy = parsed.getFullYear();
   const hh = String(parsed.getHours()).padStart(2, "0");
   const min = String(parsed.getMinutes()).padStart(2, "0");
-  return `${dd}-${mm}-${yyyy} ${hh}:${min}`;
+
+  // Changed to standard AU format dd/MM/yyyy HH:mm
+  return `${dd}/${mm}/${yyyy} ${hh}:${min}`;
 };
 
 const safeNumber = (value) => {
@@ -294,8 +296,8 @@ const JobTracker = () => {
         selectedCustomerValues.length === 0
           ? allUserIds
           : selectedCustomerValues
-              .map((id) => Number(id))
-              .filter((id) => Number.isFinite(id)),
+            .map((id) => Number(id))
+            .filter((id) => Number.isFinite(id)),
     };
 
     const res = await submit("api/generateJobTrackerReport", payload, {
@@ -382,72 +384,72 @@ const JobTracker = () => {
       <div className="card border-0 shadow-sm mb-4">
         <div className="card-body">
           <div className="row g-2 align-items-end jobtracker-filter-row">
-          <div className="col-12 col-lg-4">
-            <Select
-              isMulti
-              options={customerOptions}
-              components={{ Option: CheckboxOption }}
-              styles={selectStyles}
-              closeMenuOnSelect={false}
-              hideSelectedOptions={false}
-              controlShouldRenderValue={false}
-              value={resolveSelectedOptions(
-                customerOptions,
-                selectedCustomerValues,
-              )}
-              isAllSelected={customerAllSelected}
-              onChange={(selected, actionMeta) =>
-                setSelectedCustomerValues(
-                  normalizeMultiSelectValues(
-                    selected,
-                    actionMeta,
-                    selectedCustomerValues,
-                    customerOptions,
-                  ),
-                )
-              }
-              placeholder={getSelectPlaceholder(
-                "Select Customers",
-                selectedCustomerValues.length,
-                customerList.length,
-              )}
-              isLoading={customerLoading}
-            />
-          </div>
-          <div className="col-6 col-lg-2">
-            <input
-              type="date"
-              className="form-control"
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-            />
-          </div>
-          <div className="col-6 col-lg-2">
-            <input
-              type="date"
-              className="form-control"
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-            />
-          </div>
-          <div className="col-6 col-lg-2 d-grid">
-            <button
-              className="btn btn-sm btn-primary jobtracker-action-btn"
-              onClick={fetchReport}
-              disabled={loading}
-            >
-              <i className="fa-solid fa-search me-1"></i> Search
-            </button>
-          </div>
-          <div className="col-6 col-lg-2 d-grid">
-            <button
-              className="btn btn-sm btn-outline-primary jobtracker-action-btn"
-              onClick={handleExport}
-              disabled={rows.length === 0}
-            >
-              <i className="fa-solid fa-download me-1"></i> Export
-            </button>
-          </div>
+            <div className="col-12 col-lg-4">
+              <Select
+                isMulti
+                options={customerOptions}
+                components={{ Option: CheckboxOption }}
+                styles={selectStyles}
+                closeMenuOnSelect={false}
+                hideSelectedOptions={false}
+                controlShouldRenderValue={false}
+                value={resolveSelectedOptions(
+                  customerOptions,
+                  selectedCustomerValues,
+                )}
+                isAllSelected={customerAllSelected}
+                onChange={(selected, actionMeta) =>
+                  setSelectedCustomerValues(
+                    normalizeMultiSelectValues(
+                      selected,
+                      actionMeta,
+                      selectedCustomerValues,
+                      customerOptions,
+                    ),
+                  )
+                }
+                placeholder={getSelectPlaceholder(
+                  "Select Customers",
+                  selectedCustomerValues.length,
+                  customerList.length,
+                )}
+                isLoading={customerLoading}
+              />
+            </div>
+            <div className="col-6 col-lg-2">
+              <input
+                type="date"
+                className="form-control"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+              />
+            </div>
+            <div className="col-6 col-lg-2">
+              <input
+                type="date"
+                className="form-control"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+              />
+            </div>
+            <div className="col-6 col-lg-2 d-grid">
+              <button
+                className="btn btn-sm btn-primary jobtracker-action-btn"
+                onClick={fetchReport}
+                disabled={loading}
+              >
+                <i className="fa-solid fa-search me-1"></i> Search
+              </button>
+            </div>
+            <div className="col-6 col-lg-2 d-grid">
+              <button
+                className="btn btn-sm btn-outline-primary jobtracker-action-btn"
+                onClick={handleExport}
+                disabled={rows.length === 0}
+              >
+                <i className="fa-solid fa-download me-1"></i> Export
+              </button>
+            </div>
           </div>
         </div>
       </div>

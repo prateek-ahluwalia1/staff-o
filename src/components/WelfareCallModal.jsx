@@ -13,7 +13,8 @@ export default function WelfareCallModal() {
   if (!incomingCall && !outgoingCall) return null;
 
   const isIncoming = !!incomingCall;
-  const callData = incomingCall || outgoingCall; // Combines them safely
+  const callData = incomingCall || outgoingCall;
+
 
   return (
     <div

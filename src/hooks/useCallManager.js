@@ -12,12 +12,16 @@ export const useCallManager = () => {
   const dispatch = useDispatch();
   const { submit, loading: isCalling } = useSubmit({ isAuth: true });
 
+  // 1. Grab the current user's DB info from Redux
+  const { userdata } = useSelector((state) => state.auth);
+  // Ensure we get the correct ID whether it's wrapped in a data object or not
+  const myUserId = userdata?.id || userdata?.data?.id;
+
   const { incomingCall, outgoingCall, inCall } = useSelector(
     (state) => state.welfareCall,
   );
   const isCurrentlyInCall = inCall || !!incomingCall || !!outgoingCall;
 
-  // ── Caller: initiate a call ──────────────────────────────────
   const initiateCall = async (user) => {
     if (!user || !user.id) {
       toast.error("Invalid user selected.");
@@ -34,7 +38,6 @@ export const useCallManager = () => {
         user.id,
       );
 
-      // 1. Tell backend to create the call and broadcast to receiver
       const initRes = await submit(
         "api/calls/initiate",
         { receiver_id: user.id },
@@ -50,10 +53,10 @@ export const useCallManager = () => {
 
       const actualChannelName = initRes.call.channel_name;
 
-      // 2. Fetch token for CALLER
+      // 2. FIXED: Use actual database ID instead of Math.random()
       const tokenPayload = {
         channel_name: actualChannelName,
-        uid: Math.floor(Math.random() * 100000),
+        uid: myUserId,
       };
 
       const res = await submit("api/agora/token", tokenPayload, {
@@ -66,13 +69,12 @@ export const useCallManager = () => {
         return;
       }
 
-      // 3. Set the active outgoing call in Redux
       dispatch(
         setOutgoingCall({
           callId: initRes.call.id,
           receiverName: user.name,
           roomName: actualChannelName,
-          uid: tokenPayload.uid,
+          uid: tokenPayload.uid, // This is now your actual DB ID
           agoraConfig: {
             appId: res.app_id || REACT_APP_AGORA_APP_ID,
             channel: actualChannelName,
@@ -87,8 +89,7 @@ export const useCallManager = () => {
     }
   };
 
-  // ── Receiver: accept an incoming call ───────────────────────
-  const acceptIncomingCall = async (currentUserId) => {
+  const acceptIncomingCall = async () => {
     if (!incomingCall) {
       toast.error("No incoming call to accept.");
       return null;
@@ -98,7 +99,6 @@ export const useCallManager = () => {
       const activeId =
         incomingCall.call_id || incomingCall.callId || incomingCall.id;
 
-      // 1. Tell backend we accepted the call
       const acceptRes = await submit(
         `api/calls/accept/${activeId}`,
         { call_id: activeId },
@@ -110,14 +110,14 @@ export const useCallManager = () => {
         return null;
       }
 
-      // Use the exact channel name provided by the backend to join the caller
       const channelName =
         acceptRes?.call?.channel_name ||
         incomingCall.roomName ||
         incomingCall.channel_name;
-      const uid = currentUserId || Math.floor(Math.random() * 100000);
 
-      // 2. Fetch token for RECEIVER
+      // 3. FIXED: Use actual database ID instead of random generated number
+      const uid = myUserId;
+
       const tokenRes = await submit(
         "api/agora/token",
         { channel_name: channelName, uid },
@@ -131,12 +131,11 @@ export const useCallManager = () => {
         return null;
       }
 
-      // 3. Return the config back to WelfareCallCard
       const agoraConfig = {
         appId: tokenRes.app_id || REACT_APP_AGORA_APP_ID,
         channel: channelName,
         token: tokenRes.token,
-        uid: tokenRes.uid || uid,
+        uid: tokenRes.uid || uid, // This is now your actual DB ID
       };
 
       return agoraConfig;
@@ -171,10 +170,47 @@ export const useCallManager = () => {
       }
     }
   };
+
+  const addParticipant = async (callId, targetUserId) => {
+    try {
+      const res = await submit(
+        `api/calls/add-participant/${callId}`,
+        { user_id: targetUserId },
+        { method: "POST" }
+      );
+      if (!res?.success) {
+        toast.error(res?.error || "Failed to add participant");
+      } else {
+        toast.success("Participant invited!");
+      }
+    } catch (err) {
+      toast.error("Error adding participant");
+    }
+  };
+
+  const removeParticipant = async (callId, targetUserId) => {
+    try {
+      const res = await submit(
+        `api/calls/remove-participant/${callId}`,
+        { user_id: targetUserId },
+        { method: "POST" }
+      );
+      if (!res?.success) {
+        toast.error(res?.error || "Failed to remove participant");
+      } else {
+        toast.success("Participant removed");
+      }
+    } catch (err) {
+      toast.error("Error removing participant");
+    }
+  };
+
   return {
     initiateCall,
     acceptIncomingCall,
     endCall,
+    addParticipant,
+    removeParticipant,
     isCalling,
     isCurrentlyInCall,
   };

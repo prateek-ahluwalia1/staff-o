@@ -20,6 +20,7 @@ import { useCallManager } from "../hooks/useCallManager";
 import { apiURL } from "../utils/exports";
 import Modal from "../components/Modal";
 import "../assets/css/chat.css";
+import { getProfileImageUrlFromUserdata } from "../utils/profileImage";
 
 const CATEGORY_LABELS = {
   staff: "Staff",
@@ -388,7 +389,7 @@ const ChatRoom = () => {
               </button>
             )}
             <Avatar
-              src={currentUser?.avatar || currentUser?.profile_image}
+              src={getProfileImageUrlFromUserdata(currentUser)}
               name={currentUser?.name || "Me"}
               size={40}
             />
@@ -438,7 +439,7 @@ const ChatRoom = () => {
                             onClick={() => handleStartConversation(uData)}
                           >
                             <Avatar
-                              src={uData?.avatar || uData?.profile_image}
+                              src={getProfileImageUrlFromUserdata(uData)}
                               name={uData?.name}
                               size={34}
                             />
@@ -497,7 +498,7 @@ const ChatRoom = () => {
                     onClick={() => handleSelectConv(conv)}
                   >
                     <Avatar
-                      src={other?.avatar || other?.profile_image}
+                      src={getProfileImageUrlFromUserdata(other)}
                       name={other?.name}
                       size={40}
                     />
@@ -549,10 +550,7 @@ const ChatRoom = () => {
               {/* Header */}
               <div className="chatroom-main-header">
                 <Avatar
-                  src={
-                    otherUser(activeConversation)?.avatar ||
-                    otherUser(activeConversation)?.profile_image
-                  }
+                  src={getProfileImageUrlFromUserdata(otherUser(activeConversation))}
                   name={otherUser(activeConversation)?.name}
                   size={40}
                 />
@@ -635,8 +633,7 @@ const ChatRoom = () => {
                             {!isMe && (
                               <Avatar
                                 src={
-                                  otherUser(activeConversation)?.avatar ||
-                                  otherUser(activeConversation)?.profile_image
+                                  getProfileImageUrlFromUserdata(otherUser(activeConversation))
                                 }
                                 name={otherUser(activeConversation)?.name}
                                 size={28}

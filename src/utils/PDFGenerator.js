@@ -53,7 +53,6 @@ const PDFGenerator = {
     doc.setFontSize(8.5);
     doc.setFont("helvetica", "bold");
     doc.setTextColor(...textGray);
-    doc.text("Professional Facility & Workforce Services", margin, 38);
 
     // Right: Large INVOICE text (No heavy blue box)
     doc.setFontSize(28);
@@ -365,28 +364,25 @@ const PDFGenerator = {
 
     try {
       if (logo) {
-        doc.addImage(logo, "PNG", margin, 18, 40, 14);
+        doc.addImage(logo, "PNG", margin, 18, 36, 12); // slightly smaller logo
       }
     } catch (error) {
       console.error("Error loading logo:", error);
     }
 
-    doc.setFontSize(8.5);
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(...textGray);
-    doc.text("Professional Facility & Workforce Services", margin, 38);
-
-    doc.setFontSize(26);
+    // TITLE (Reduced)
+    doc.setFontSize(20);
     doc.setFont("helvetica", "bold");
     doc.setTextColor(...brandDark);
-    doc.text("SHIFT REPORT", pageWidth - margin, 26, { align: "right" });
+    doc.text("SHIFT REPORT", pageWidth - margin, 24, { align: "right" });
 
-    let metaY = 34;
-    const metaLabelX = pageWidth - margin - 30;
+    // META
+    let metaY = 30;
+    const metaLabelX = pageWidth - margin - 28;
     const metaValueX = pageWidth - margin;
 
     const addMetaRow = (label, value) => {
-      doc.setFontSize(9);
+      doc.setFontSize(8);
       doc.setFont("helvetica", "normal");
       doc.setTextColor(...textGray);
       doc.text(label, metaLabelX, metaY, { align: "right" });
@@ -394,77 +390,82 @@ const PDFGenerator = {
       doc.setFont("helvetica", "bold");
       doc.setTextColor(...brandDark);
       doc.text(String(value), metaValueX, metaY, { align: "right" });
-      metaY += 6;
+      metaY += 5;
     };
 
     addMetaRow("Status", jobStatus ? jobStatus.toUpperCase() : "PENDING");
     addMetaRow("Total Hours", `${totalHours || 0} Hrs`);
     addMetaRow("Date", new Date().toLocaleDateString());
 
-    let yPosition = 50;
+    let yPosition = 42;
+
     doc.setDrawColor(...lightBorder);
-    doc.setLineWidth(0.5);
+    doc.setLineWidth(0.4);
     doc.line(margin, yPosition, pageWidth - margin, yPosition);
 
-    yPosition += 8;
+    yPosition += 6;
 
     const columnWidth = (pageWidth - margin * 2) / 2;
 
+    // LEFT: SITE DETAILS
     let leftY = yPosition;
-    doc.setFontSize(8.5);
+    doc.setFontSize(8);
     doc.setFont("helvetica", "bold");
     doc.setTextColor(...textGray);
     doc.text("SITE DETAILS", margin, leftY);
 
-    leftY += 6;
-    doc.setFontSize(10);
+    leftY += 5;
+    doc.setFontSize(9);
     doc.setTextColor(...brandDark);
     doc.text(siteName || "N/A", margin, leftY);
 
-    leftY += 5;
-    doc.setFontSize(9);
+    leftY += 4;
+    doc.setFontSize(8);
     doc.setFont("helvetica", "normal");
     doc.setTextColor(...textGray);
+
     if (siteAddress) {
       const splitAddress = doc.splitTextToSize(siteAddress, columnWidth - 10);
       doc.text(splitAddress, margin, leftY);
-      leftY += (splitAddress.length * 5);
+      leftY += (splitAddress.length * 4);
     }
 
-    // ASSIGNMENT DETAILS Section
+    // RIGHT: ASSIGNMENT DETAILS
     let rightY = yPosition;
     const rightColX = margin + columnWidth;
 
-    doc.setFontSize(8.5);
+    doc.setFontSize(8);
     doc.setFont("helvetica", "bold");
     doc.setTextColor(...textGray);
     doc.text("ASSIGNMENT DETAILS", rightColX, rightY);
 
-    rightY += 6;
-    doc.setFontSize(10);
+    rightY += 5;
+    doc.setFontSize(9);
     doc.setTextColor(...brandDark);
     doc.text(`Guard: ${guardName || "Unassigned"}`, rightColX, rightY);
 
-    rightY += 5;
-    doc.setFontSize(9);
+    rightY += 4;
+    doc.setFontSize(8);
     doc.setFont("helvetica", "normal");
     doc.setTextColor(...textGray);
 
     if (shiftStart) {
       doc.text(`Start: ${shiftStart}`, rightColX, rightY);
-      rightY += 5;
+      rightY += 4;
     }
     if (shiftEnd) {
       doc.text(`End: ${shiftEnd}`, rightColX, rightY);
     }
 
-    yPosition = Math.max(leftY, rightY) + 15;
+    yPosition = Math.max(leftY, rightY) + 10;
 
-    doc.setFontSize(10);
+    // TABLE TITLE
+    doc.setFontSize(9);
     doc.setFont("helvetica", "bold");
     doc.setTextColor(...brandDark);
     doc.text("Sign In / Out Logs", margin, yPosition);
-    yPosition += 6;
+
+    yPosition += 5;
 
     const tableData = [];
     if (signinDetails) {
@@ -488,25 +489,23 @@ const PDFGenerator = {
 
     autoTable(doc, {
       startY: yPosition,
-      head: [["Activity", "Time", "Coordinates / Location", "Notes"]],
+      head: [["Activity", "Time", "Location", "Notes"]],
       body: tableData,
       tableWidth: printableTableWidth,
-      theme: "plain", // Removes heavy borders
+      theme: "plain",
       headStyles: {
         fillColor: [248, 250, 252],
         textColor: brandDark,
         fontStyle: "bold",
-        fontSize: 9,
-        cellPadding: 4,
-        valign: "middle",
+        fontSize: 8,
+        cellPadding: 3,
       },
       bodyStyles: {
-        fontSize: 9,
+        fontSize: 8,
         textColor: brandDark,
-        cellPadding: { top: 6, bottom: 6, left: 4, right: 4 },
+        cellPadding: { top: 4, bottom: 4, left: 3, right: 3 },
         lineColor: lightBorder,
         lineWidth: { bottom: 0.1 },
-        valign: "middle",
       },
       margin: { left: margin, right: margin },
       styles: {
@@ -514,13 +513,14 @@ const PDFGenerator = {
       },
       columnStyles: {
         0: { fontStyle: "bold", textColor: brandBlue, cellWidth: printableTableWidth * 0.15 },
-        1: { cellWidth: printableTableWidth * 0.25 },
-        2: { cellWidth: printableTableWidth * 0.35 },
-        3: { cellWidth: printableTableWidth * 0.25 },
+        1: { cellWidth: printableTableWidth * 0.22 },
+        2: { cellWidth: printableTableWidth * 0.33 },
+        3: { cellWidth: printableTableWidth * 0.30 },
       }
     });
 
-    doc.setFontSize(8);
+    // FOOTER (Smaller)
+    doc.setFontSize(7);
     doc.setFont("helvetica", "normal");
     doc.setTextColor(...textGray);
 

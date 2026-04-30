@@ -30,11 +30,11 @@ export default function LocationStep({
   );
   const activeCustomers = customersRes?.data?.data?.filter((c) => c.is_active) || [];
 
-  const { data: shiftsRes, loading: loadingShifts } = useFetch(
-    selectedCustomerId && selectedCustomerId !== "new" ? `api/admin/get-customer-jobs/${selectedCustomerId}` : null,
+  const { data: detailRes, loading: loadingSites } = useFetch(
+    selectedCustomerId && selectedCustomerId !== "new" ? `api/admin/customers-detail/${selectedCustomerId}` : null,
     { isAuth: true }
   );
-  const customerShifts = shiftsRes?.data?.data || shiftsRes?.data || [];
+  const customerSites = detailRes?.data?.customer?.sites || [];
 
   const { submit: submitCustomer, loading: submittingCustomer } = useSubmit({ isAuth: true });
 
@@ -181,9 +181,9 @@ export default function LocationStep({
   };
 
   const handleSiteSelect = (e) => {
-    const shiftId = e.target.value;
+    const siteId = e.target.value;
 
-    if (shiftId === "manual_entry") {
+    if (siteId === "manual_entry") {
       setInputMode("autocomplete");
       setField("location", "");
       setField("address", "");
@@ -191,19 +191,16 @@ export default function LocationStep({
       return;
     }
 
-    const shift = customerShifts.find((s) => s.id.toString() === shiftId);
-    if (shift) {
-      setField("location", shift.address || shift.location || "");
-      setField("address", shift.address || "");
-      setField("city", shift.city || "");
-      setField("state", shift.state || "");
-      setField("postcode", shift.postcode || "");
-      setField("coordinates", shift.coordinates || "");
+    const site = customerSites.find((s) => s.id.toString() === siteId);
+    if (site) {
+      setField("location", site.address || "");
+      setField("address", site.address || "");
+      setField("coordinates", site.coordinates || "");
 
       if (setLocationError) setLocationError("");
 
-      if (shift.coordinates && map && markerRef.current) {
-        const [lat, lng] = shift.coordinates.split(",").map(Number);
+      if (site.coordinates && map && markerRef.current) {
+        const [lat, lng] = site.coordinates.split(",").map(Number);
         markerRef.current.setPosition({ lat, lng });
         map.setCenter({ lat, lng });
       }
@@ -319,78 +316,85 @@ export default function LocationStep({
         </div>
       )}
 
-      {isAdmin && selectedCustomerId && selectedCustomerId !== "new" && (
-        <div className="p-3 bg-primary bg-opacity-10 border border-primary-subtle rounded-3 mb-4 shadow-sm">
-          <label className="form-label fw-bold text-primary small mb-2 d-flex align-items-center gap-2">
-            <i className="fa-solid fa-map-location-dot"></i> Select Response Site
-          </label>
-          <select
-            className="form-select border-primary-subtle shadow-sm bg-white"
-            onChange={handleSiteSelect}
-            defaultValue=""
-          >
-            <option value="" disabled>
-              {loadingShifts ? "Loading response sites..." : "Select a response site..."}
-            </option>
-            {!loadingShifts && customerShifts.length === 0 && (
-              <option disabled>No previous sites found</option>
-            )}
-            {customerShifts.map((shift) => (
-              <option key={shift.id} value={shift.id}>
-                {shift.address || shift.location || "No Address Provided"}
-              </option>
-            ))}
-            <option value="manual_entry" className="fw-bold text-primary">
-              + Enter new location manually
-            </option>
-          </select>
-        </div>
-      )}
-
       <div className="d-flex justify-content-between align-items-center mb-2">
         <div>
           <h5 className="mb-1">Job Location</h5>
           <p className="text-muted small mb-0">
-            {inputMode === "dropdown" ? "Location is linked to the selected response site." : "Search for an address or use your GPS."}
+            {inputMode === "dropdown" ? "Location is linked to the selected site." : "Search for an address or use your GPS."}
           </p>
         </div>
       </div>
 
       <div ref={mapRef} className="rounded mb-3 border shadow-sm" style={{ height: 300, backgroundColor: "#f8f9fa" }} />
 
-      <div className={`row g-2 ${inputMode === "dropdown" ? "d-none" : ""}`}>
+      <div className="row g-2">
         <div className="col-md-9">
-          <div className="input-group">
-            <input
-              ref={inputRef}
-              value={form.location || ""}
-              autoComplete="off"
-              onChange={(e) => {
-                setField("location", e.target.value);
-                if (selectingPlaceRef.current) {
+          {isAdmin && selectedCustomerId && selectedCustomerId !== "new" && inputMode === "dropdown" ? (
+            <div className="d-flex gap-2">
+              <select
+                className="form-select form-select-lg border-primary shadow-sm"
+                onChange={handleSiteSelect}
+                defaultValue=""
+              >
+                <option value="" disabled>
+                  {loadingSites ? "Loading sites..." : "Select a response site..."}
+                </option>
+                {!loadingSites && customerSites.length === 0 && (
+                  <option disabled>No previous sites found</option>
+                )}
+                {customerSites.map((site) => (
+                  <option key={site.id} value={site.id}>
+                    {site.site_name ? `${site.site_name} - ` : ""}{site.address}
+                  </option>
+                ))}
+                <option value="manual_entry" className="fw-bold text-primary">
+                  + Enter new location manually
+                </option>
+              </select>
+            </div>
+          ) : (
+            <div className="input-group">
+              <input
+                ref={inputRef}
+                value={form.location || ""}
+                autoComplete="off"
+                onChange={(e) => {
+                  setField("location", e.target.value);
+                  if (selectingPlaceRef.current) {
+                    if (setLocationError) setLocationError("");
+                    return;
+                  }
+                  setField("coordinates", "");
+                  setField("address", "");
                   if (setLocationError) setLocationError("");
-                  return;
-                }
-                setField("coordinates", "");
-                setField("address", "");
-                if (setLocationError) setLocationError("");
-              }}
-              className={`form-control form-control-lg${locationError ? " is-invalid" : ""}`}
-              placeholder="Search address"
-            />
-            <button
-              type="button"
-              className="btn btn-outline-secondary"
-              onClick={() => {
-                setField("location", "");
-                setField("address", "");
-                setField("coordinates", "");
-                if (setLocationError) setLocationError("");
-              }}
-            >
-              Clear
-            </button>
-          </div>
+                }}
+                className={`form-control form-control-lg${locationError ? " is-invalid" : ""}`}
+                placeholder="Search address"
+              />
+              <button
+                type="button"
+                className="btn btn-outline-secondary"
+                onClick={() => {
+                  setField("location", "");
+                  setField("address", "");
+                  setField("coordinates", "");
+                  if (setLocationError) setLocationError("");
+                }}
+              >
+                Clear
+              </button>
+              {isAdmin && selectedCustomerId && selectedCustomerId !== "new" && (
+                <button
+                  type="button"
+                  className="btn btn-primary px-3"
+                  onClick={() => setInputMode("dropdown")}
+                  title="Back to response sites"
+                >
+                  <i className="fa-solid fa-list-ul"></i>
+                </button>
+              )}
+            </div>
+          )}
         </div>
 
         <div className="col-md-3 d-grid">
@@ -398,7 +402,7 @@ export default function LocationStep({
             type="button"
             className="btn btn-outline-primary btn-lg"
             onClick={handleUseCurrent}
-            disabled={resolvingLocation}
+            disabled={resolvingLocation || inputMode === "dropdown"}
           >
             {resolvingLocation ? "Resolving..." : "Use Current"}
           </button>

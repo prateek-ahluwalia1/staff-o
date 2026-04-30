@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState, useCallback } from "react";
 import { toast } from "react-toastify";
 
 export default function LocationStep({
-  form,
+  form = {},
   setField,
   resolvingLocation,
   setResolvingLocation,
@@ -17,7 +17,6 @@ export default function LocationStep({
   const [map, setMap] = useState(null);
   const [googleReady, setGoogleReady] = useState(false);
 
-  // --- Map & Autocomplete Initialization ---
   const fillAddress = useCallback(
     (place, options = {}) => {
       let block = "", area = "", city = "", state = "", postcode = "";
@@ -55,7 +54,6 @@ export default function LocationStep({
     [fillAddress]
   );
 
-  // Load Google API
   useEffect(() => {
     const interval = setInterval(() => {
       if (window.google?.maps) {
@@ -70,7 +68,7 @@ export default function LocationStep({
   useEffect(() => {
     if (!googleReady || !mapRef.current || map) return;
 
-    const initialLatLng = form.coordinates ? form.coordinates.split(",").map(Number) : [31.526042, 74.271675];
+    const initialLatLng = form?.coordinates ? form.coordinates.split(",").map(Number) : [51.4924955, -0.1486599];
 
     const gmap = new window.google.maps.Map(mapRef.current, {
       center: { lat: initialLatLng[0], lng: initialLatLng[1] },
@@ -93,28 +91,29 @@ export default function LocationStep({
 
     setMap(gmap);
     markerRef.current = marker;
-  }, [googleReady, map, form.coordinates, setField, reverseGeocode]);
+  }, [googleReady, map, form?.coordinates, setField, reverseGeocode]);
 
-  // Sync Map Whenever Coordinates Change Externally (e.g. clicking a Site)
+  // 🔥 FIX: Map Sync when Coordinates Change from React Select
   useEffect(() => {
-    if (!map || !markerRef.current || !form.coordinates) return;
+    if (!map || !markerRef.current || !form?.coordinates) return;
     try {
-      const [latStr, lngStr] = form.coordinates.split(",");
-      const lat = Number(latStr.trim());
-      const lng = Number(lngStr.trim());
+      const parts = form.coordinates.split(",");
+      if (parts.length === 2) {
+        const lat = Number(parts[0].trim());
+        const lng = Number(parts[1].trim());
 
-      if (!isNaN(lat) && !isNaN(lng)) {
-        const newPos = { lat, lng };
-        markerRef.current.setPosition(newPos);
-        map.panTo(newPos);
-        map.setZoom(15);
+        if (!isNaN(lat) && !isNaN(lng)) {
+          const newPos = { lat, lng };
+          markerRef.current.setPosition(newPos);
+          map.setCenter(newPos); // setCenter forces a clean jump over panTo
+          map.setZoom(15);
+        }
       }
     } catch (err) {
       console.warn("Could not sync map to coordinates:", err);
     }
-  }, [form.coordinates, map]);
+  }, [form?.coordinates, map]);
 
-  // Initialize Autocomplete
   useEffect(() => {
     if (!googleReady || !inputRef.current || autocompleteRef.current) return;
 
@@ -129,9 +128,11 @@ export default function LocationStep({
       selectingPlaceRef.current = true;
       const lat = place.geometry.location.lat();
       const lng = place.geometry.location.lng();
-
       setField("coordinates", `${lat},${lng}`);
       fillAddress(place, { preferPlaceLabel: true });
+
+      if (markerRef.current) markerRef.current.setPosition({ lat, lng });
+      if (map) map.setCenter({ lat, lng });
 
       setTimeout(() => { selectingPlaceRef.current = false; }, 0);
     });
@@ -151,6 +152,9 @@ export default function LocationStep({
         const lng = pos.coords.longitude;
         setField("coordinates", `${lat},${lng}`);
         reverseGeocode(lat, lng);
+
+        if (markerRef.current) markerRef.current.setPosition({ lat, lng });
+        if (map) map.setCenter({ lat, lng });
         setResolvingLocation(false);
       },
       (err) => {
@@ -178,7 +182,7 @@ export default function LocationStep({
             </span>
             <input
               ref={inputRef}
-              value={form.location || ""}
+              value={form?.location || ""}
               autoComplete="off"
               onChange={(e) => {
                 setField("location", e.target.value);
@@ -194,7 +198,7 @@ export default function LocationStep({
               placeholder="Search address or enter manually"
               style={{ boxShadow: "none", fontSize: "1rem" }}
             />
-            {form.location && (
+            {form?.location && (
               <button
                 type="button"
                 className="btn btn-white border border-start-0 text-muted hover-bg-light pe-4"

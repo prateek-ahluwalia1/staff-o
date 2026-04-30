@@ -2,6 +2,7 @@ import React, { useMemo, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { toast } from "react-toastify";
+import Select from "react-select";
 import useSubmit from "../hooks/useSubmit";
 import useFetch from "../hooks/useFetch";
 import { computeShiftBreakdown, mapApiRates } from "../utils/rateCalculator";
@@ -59,7 +60,10 @@ export default function AddJob() {
     isAdmin ? "api/admin/get-customers?limit=1000" : null,
     { isAuth: true }
   );
-  const activeCustomers = customersRes?.data?.data?.filter((c) => c.is_active) || [];
+
+  const activeCustomers = useMemo(() => {
+    return customersRes?.data?.data?.filter((c) => c.is_active) || [];
+  }, [customersRes]);
 
   const { data: detailRes, loading: loadingSites } = useFetch(
     form.user_id && form.user_id !== "new" ? `api/admin/customers-detail/${form.user_id}` : null,
@@ -67,7 +71,17 @@ export default function AddJob() {
   );
 
   const customerDetails = detailRes?.data?.customer || {};
-  const customerSites = detailRes?.data?.customer?.sites || [];
+
+  // 🔥 FIX: Pulling from customer.sites so we get the coordinates!
+  const customerSites = useMemo(() => {
+    return detailRes?.data?.customer?.sites || [];
+  }, [detailRes]);
+
+  // 🔥 FIX: Pulling from the summary sites array just for the total hours math
+  const customerTotalHours = useMemo(() => {
+    const summaries = detailRes?.data?.sites || [];
+    return summaries.reduce((total, site) => total + (Number(site.total_hours) || 0), 0);
+  }, [detailRes]);
 
   const [selectedSiteId, setSelectedSiteId] = useState("");
   const [newCustomer, setNewCustomer] = useState({ name: "", email: "", phone: "", company_name: "" });
@@ -85,6 +99,31 @@ export default function AddJob() {
       return prev;
     });
   }, []);
+
+  const clientOptions = useMemo(() => {
+    const opts = activeCustomers.map((cust) => ({
+      value: cust.id.toString(),
+      label: `${cust.name} (${cust.email})`,
+      customer: cust
+    }));
+    return [
+      { value: "", label: "No Client (Standard Flow)" },
+      { value: "new", label: "+ Add New Client", isNew: true },
+      ...opts
+    ];
+  }, [activeCustomers]);
+
+  const siteOptions = useMemo(() => {
+    const opts = customerSites.map((site) => ({
+      value: site.id.toString(),
+      label: site.site_name ? `${site.site_name} - ${site.address}` : site.address,
+      siteData: site
+    }));
+    return [
+      { value: "manual", label: "+ Enter New Location Manually (Use Map)", isManual: true },
+      ...opts
+    ];
+  }, [customerSites]);
 
   const handleSiteSelect = (site) => {
     setSelectedSiteId(site.id);
@@ -160,19 +199,12 @@ export default function AddJob() {
     };
 
     const calculateChunks = (totalDuration) => {
-      if (totalDuration < MIN_HOURS) {
-        return [MIN_HOURS];
-      }
-
-      if (totalDuration <= 13) {
-        return [totalDuration];
-      }
-
+      if (totalDuration < MIN_HOURS) return [MIN_HOURS];
+      if (totalDuration <= 13) return [totalDuration];
       if (totalDuration < 22) {
         const half = totalDuration / 2;
         return [half, half];
       }
-
       return [8, 8, totalDuration - 16];
     };
 
@@ -188,13 +220,8 @@ export default function AddJob() {
 
         let duration = endDec - startDec;
 
-        if (duration < MIN_HOURS) {
-          wasPadded = true;
-        }
-
-        if (duration > 13) {
-          wasSplit = true;
-        }
+        if (duration < MIN_HOURS) wasPadded = true;
+        if (duration > 13) wasSplit = true;
 
         const chunks = calculateChunks(duration);
 
@@ -388,6 +415,7 @@ export default function AddJob() {
           </div>
         </div>
 
+        {/* --- ADMIN CLIENT SELECTION --- */}
         {isAdmin && step === 0 && (
           <div className="mb-4">
             <div className="card shadow-sm border-0 rounded-4 mb-3">
@@ -396,32 +424,35 @@ export default function AddJob() {
                   <span className="badge bg-primary text-white rounded-pill px-3 py-2 shadow-sm"><i className="fa-solid fa-shield-halved me-1"></i> Admin Mode</span>
                   <h6 className="mb-0 fw-bold text-dark">Client Assignment</h6>
                 </div>
-                <div className="d-flex align-items-center gap-2 flex-grow-1 justify-content-md-end">
-                  <select
-                    className="form-select border-secondary-subtle rounded-pill shadow-sm bg-light"
-                    style={{ maxWidth: "350px", cursor: "pointer", fontWeight: "500" }}
-                    value={form.user_id || ""}
-                    onChange={(e) => {
-                      setField("user_id", e.target.value);
+                <div className="flex-grow-1" style={{ maxWidth: "400px" }}>
+                  <Select
+                    options={clientOptions}
+                    value={clientOptions.find(opt => opt.value === form.user_id) || clientOptions[0]}
+                    onChange={(selected) => {
+                      const val = selected ? selected.value : "";
+                      setField("user_id", val);
                       setSelectedSiteId("");
                       setField("location", "");
                       setField("address", "");
                       setField("coordinates", "");
                     }}
-                    disabled={loadingCustomers}
-                  >
-                    <option value="">No Client (Standard Flow)</option>
-                    <option value="new" className="text-primary fw-bold">+ Add New Client</option>
-                    {activeCustomers.map((cust) => (
-                      <option key={cust.id} value={cust.id}>
-                        {cust.name}
-                      </option>
-                    ))}
-                  </select>
+                    placeholder={loadingCustomers ? "Loading..." : "Search clients..."}
+                    isDisabled={loadingCustomers}
+                    isSearchable={true}
+                    classNamePrefix="react-select"
+                    styles={{
+                      option: (base, state) => ({
+                        ...base,
+                        fontWeight: state.data.isNew ? 'bold' : 'normal',
+                        color: state.data.isNew ? '#0d6efd' : base.color
+                      })
+                    }}
+                  />
                 </div>
               </div>
             </div>
 
+            {/* CREATE NEW CLIENT FORM */}
             {form.user_id === "new" && (
               <div className="card shadow-sm border border-primary-subtle rounded-4 mb-3">
                 <div className="card-body p-4">
@@ -453,6 +484,7 @@ export default function AddJob() {
               </div>
             )}
 
+            {/* CLIENT DETAILS & SEARCHABLE SITE DROPDOWN */}
             {form.user_id && form.user_id !== "new" && (
               <div className="card shadow-sm border border-primary-subtle rounded-4 mb-3">
                 <div className="card-body p-4">
@@ -466,51 +498,42 @@ export default function AddJob() {
                         <span className="bg-light px-2 py-1 rounded border"><i className="fa-solid fa-envelope me-1 text-primary"></i> {customerDetails?.email || "N/A"}</span>
                         {customerDetails?.phone && <span className="bg-light px-2 py-1 rounded border"><i className="fa-solid fa-phone me-1 text-primary"></i> {customerDetails?.phone}</span>}
                         {customerDetails?.city && <span className="bg-light px-2 py-1 rounded border"><i className="fa-solid fa-location-dot me-1 text-primary"></i> {customerDetails?.city}, {customerDetails?.state}</span>}
+                        <span className="bg-light px-2 py-1 rounded border"><i className="fa-solid fa-clock me-1 text-primary"></i> {customerTotalHours.toFixed(1)} Total Hours</span>
                       </div>
                     </div>
                   </div>
 
                   <h6 className="fw-bold mb-3 d-flex align-items-center gap-2 text-dark">
-                    <i className="fa-solid fa-building-user text-primary"></i> Response Sites
+                    <i className="fa-solid fa-map-location-dot text-primary"></i> Response Sites
                   </h6>
-                  {loadingSites ? (
-                    <div className="text-center py-4 text-muted small"><span className="spinner-border spinner-border-sm me-2"></span>Loading sites...</div>
-                  ) : (
-                    <div className="row g-3">
-                      {customerSites.map((site) => (
-                        <div className="col-md-6 col-lg-4" key={site.id}>
-                          <div
-                            className={`p-3 rounded-4 border transition-all h-100 ${selectedSiteId === site.id ? "border-primary bg-primary bg-opacity-10 shadow-sm" : "bg-white border-secondary-subtle hover-bg-light"}`}
-                            style={{ cursor: "pointer" }}
-                            onClick={() => handleSiteSelect(site)}
-                          >
-                            <div className="d-flex align-items-start justify-content-between mb-2">
-                              <strong className={`mb-0 ${selectedSiteId === site.id ? "text-primary" : "text-dark"}`}>{site.site_name || "Response Site"}</strong>
-                              {selectedSiteId === site.id && <i className="fa-solid fa-circle-check text-primary"></i>}
-                            </div>
-                            <div className="small text-muted" style={{ lineHeight: 1.5 }}>
-                              {site.address || "No address details"}
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                      <div className="col-md-6 col-lg-4">
-                        <div
-                          className={`p-3 rounded-4 border transition-all h-100 d-flex flex-column justify-content-center align-items-center text-center ${selectedSiteId === "manual" ? "border-primary bg-primary bg-opacity-10 shadow-sm" : "bg-white"}`}
-                          style={{ cursor: "pointer", minHeight: "100px", borderStyle: selectedSiteId === "manual" ? "solid" : "dashed" }}
-                          onClick={() => {
-                            setSelectedSiteId("manual");
-                            setField("location", "");
-                            setField("address", "");
-                            setField("coordinates", "");
-                          }}
-                        >
-                          <i className={`fa-solid fa-plus mb-2 fs-4 ${selectedSiteId === "manual" ? "text-primary" : "text-secondary"}`}></i>
-                          <strong className={selectedSiteId === "manual" ? "text-primary" : "text-secondary"}>Enter New Location Manually</strong>
-                        </div>
-                      </div>
-                    </div>
-                  )}
+
+                  <Select
+                    options={siteOptions}
+                    value={siteOptions.find(opt => opt.value === selectedSiteId) || null}
+                    onChange={(selected) => {
+                      if (!selected) return;
+                      if (selected.value === "manual") {
+                        setSelectedSiteId("manual");
+                        setField("location", "");
+                        setField("address", "");
+                        setField("coordinates", "");
+                      } else {
+                        handleSiteSelect(selected.siteData);
+                      }
+                    }}
+                    placeholder={loadingSites ? "Loading response sites..." : "Search and select a response site..."}
+                    isDisabled={loadingSites}
+                    isSearchable={true}
+                    classNamePrefix="react-select"
+                    styles={{
+                      control: (base) => ({ ...base, minHeight: '48px', borderRadius: '0.5rem', borderColor: '#9ec5fe' }),
+                      option: (base, state) => ({
+                        ...base,
+                        fontWeight: state.data.isManual ? 'bold' : 'normal',
+                        color: state.data.isManual ? '#0d6efd' : base.color
+                      })
+                    }}
+                  />
                 </div>
               </div>
             )}

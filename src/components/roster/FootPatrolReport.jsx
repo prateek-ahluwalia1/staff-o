@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import useSubmit from "../../hooks/useSubmit";
 import Loader from "../Loader";
 import { apiURL } from "../../utils/exports";
-import reportExporter from "../../utils/reportExporter";
+import PDFGenerator from "../../utils/PDFGenerator";
 
 const BASE_URL = `${apiURL}footpatrol/`;
 
@@ -142,6 +142,7 @@ function PatrolDetail({ patrol, onBack, meta }) {
 
 export default function FootPatrolReport({ rosterId, guardId, shift, site }) {
   const [selectedPatrol, setSelectedPatrol] = useState(null);
+  const [pdfError, setPdfError] = useState(null);
   const { submit, loading, data, error } = useSubmit({ isAuth: true });
 
   useEffect(() => {
@@ -222,18 +223,43 @@ export default function FootPatrolReport({ rosterId, guardId, shift, site }) {
       <div style={{ marginBottom: "12px" }}>
         <button
           className="btn btn-success"
-          onClick={() =>
-            reportExporter.exportFootPatrolReports(
-              patrols,
-              "foot-patrol-reports",
-            )
-          }
+          onClick={async () => {
+            try {
+              setPdfError(null);
+              const reportData = {
+                patrols: patrols,
+                siteName: site?.displayName || site?.site_name,
+                guardName: data?.staff || "Unassigned",
+                shiftStart: data?.shift_start,
+                shiftEnd: data?.shift_end,
+              };
+              const doc = await PDFGenerator.generateFootPatrolReportPDF(reportData);
+              PDFGenerator.downloadPDF(doc, `Foot_Patrol_Reports_${new Date().toISOString().split('T')[0]}.pdf`);
+            } catch (error) {
+              setPdfError("Failed to generate PDF report");
+              console.error(error);
+            }
+          }}
           style={{ display: "flex", alignItems: "center", gap: "8px" }}
         >
           <i className="fa fa-download"></i>
-          Export All Foot Patrol Reports
+          Download Foot Patrol Report PDF
         </button>
       </div>
+      {pdfError && (
+        <div
+          style={{
+            padding: "10px 12px",
+            background: "#ffe6e6",
+            border: "1px solid #ff6b6b",
+            borderRadius: "6px",
+            color: "#c92a2a",
+            fontSize: "13px",
+          }}
+        >
+          {pdfError}
+        </div>
+      )}
       {patrols.map((patrol, i) => (
         <div
           key={patrol.id || i}

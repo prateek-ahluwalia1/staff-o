@@ -27,6 +27,7 @@ const PDFGenerator = {
       orientation: "portrait",
       unit: "mm",
       format: "a4",
+      compress: true,
     });
 
     const pageWidth = doc.internal.pageSize.getWidth();
@@ -44,7 +45,7 @@ const PDFGenerator = {
     // Left: Logo & Tagline
     try {
       if (logo) {
-        doc.addImage(logo, "PNG", margin, 18, 40, 14); // Slightly smaller, elegant sizing
+        doc.addImage(logo, "PNG", margin, 18, 30, 10); // Optimized logo size
       }
     } catch (error) {
       console.error("Error loading logo:", error);
@@ -351,6 +352,7 @@ const PDFGenerator = {
       orientation: "portrait",
       unit: "mm",
       format: "a4",
+      compress: true,
     });
 
     const pageWidth = doc.internal.pageSize.getWidth();
@@ -364,7 +366,7 @@ const PDFGenerator = {
 
     try {
       if (logo) {
-        doc.addImage(logo, "PNG", margin, 18, 36, 12); // slightly smaller logo
+        doc.addImage(logo, "PNG", margin, 18, 20, 8); // Ultra-compact logo size
       }
     } catch (error) {
       console.error("Error loading logo:", error);
@@ -533,6 +535,457 @@ const PDFGenerator = {
     doc.text("https://app.staffoo.com.au", pageWidth / 2, pageHeight - 10, {
       align: "center",
     });
+
+    return doc;
+  },
+
+  generateFootPatrolReportPDF: async (reportData) => {
+    const { patrols, siteName, guardName, shiftStart, shiftEnd } = reportData;
+
+    const doc = new jsPDF({
+      orientation: "portrait",
+      unit: "mm",
+      format: "a4",
+      compress: true,
+    });
+
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const margin = 15;
+
+    const brandDark = [30, 41, 59];
+    const textGray = [100, 116, 139];
+    const lightBorder = [226, 232, 240];
+    const brandWarning = [255, 193, 7];
+
+    let pageNum = 1;
+    const addPageNumber = () => {
+      doc.setFontSize(7);
+      doc.setTextColor(...textGray);
+      doc.text(`Page ${pageNum}`, pageWidth - margin - 10, pageHeight - 8);
+    };
+
+    const addHeader = () => {
+      try {
+        if (logo) {
+          doc.addImage(logo, "PNG", margin, 10, 18, 6);
+        }
+      } catch (error) {
+        console.error("Error loading logo:", error);
+      }
+
+      doc.setFontSize(18);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(...brandDark);
+      doc.text("FOOT PATROL REPORT", pageWidth - margin, 14, { align: "right" });
+
+      doc.setFontSize(7);
+      doc.setTextColor(...textGray);
+      doc.text(new Date().toLocaleDateString(), pageWidth - margin, 19, { align: "right" });
+
+      let y = 28;
+      doc.setLineWidth(0.5);
+      doc.setDrawColor(...lightBorder);
+      doc.line(margin, y, pageWidth - margin, y);
+
+      return y + 6;
+    };
+
+    let yPos = addHeader();
+
+    // Summary Section
+    doc.setFontSize(9);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(...brandDark);
+    doc.text("SHIFT SUMMARY", margin, yPos);
+    yPos += 5;
+
+    doc.setFontSize(8);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(...textGray);
+    doc.text(`Guard: ${guardName || "N/A"}`, margin, yPos);
+    doc.text(`Site: ${siteName || "N/A"}`, pageWidth / 2, yPos);
+    yPos += 4;
+    doc.text(`Shift: ${shiftStart || "N/A"} - ${shiftEnd || "N/A"}`, margin, yPos);
+    doc.text(`Total Patrols: ${patrols.length}`, pageWidth / 2, yPos);
+    yPos += 8;
+
+    // Process each patrol
+    patrols.forEach((patrol, idx) => {
+      // Check if need new page
+      if (yPos > pageHeight - 70) {
+        addPageNumber();
+        pageNum++;
+        doc.addPage();
+        yPos = addHeader();
+      }
+
+      // Patrol header
+      doc.setFontSize(9);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(...brandWarning);
+      doc.text(`PATROL #${idx + 1}`, margin, yPos);
+      yPos += 5;
+
+      // Patrol details box
+      doc.setDrawColor(...lightBorder);
+      doc.setFillColor(255, 252, 240);
+      doc.rect(margin, yPos - 3, pageWidth - margin * 2, 12, "F");
+      doc.setLineWidth(0.3);
+      doc.rect(margin, yPos - 3, pageWidth - margin * 2, 12);
+
+      doc.setFontSize(8);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(...brandDark);
+
+      let detailY = yPos;
+      doc.text(`Date: ${patrol.date || "N/A"}`, margin + 2, detailY);
+      doc.text(`Time: ${patrol.time || "N/A"}`, pageWidth / 2, detailY);
+
+      detailY += 4;
+      doc.setFont("helvetica", "normal");
+      doc.text(`Detail: ${patrol.patrolling_detail || "N/A"}`, margin + 2, detailY);
+
+      yPos += 14;
+
+      yPos += 6;
+
+      // Add separator between patrols
+      if (idx < patrols.length - 1) {
+        if (yPos > pageHeight - 20) {
+          addPageNumber();
+          pageNum++;
+          doc.addPage();
+          yPos = addHeader();
+        }
+        doc.setDrawColor(...lightBorder);
+        doc.setLineWidth(0.5);
+        doc.line(margin, yPos, pageWidth - margin, yPos);
+        yPos += 6;
+      }
+    });
+
+    // Final page number
+    addPageNumber();
+
+    return doc;
+  },
+
+  generateIncidentReportPDF: async (reportData) => {
+    const { incidents, siteName, guardName, shiftStart, shiftEnd } = reportData;
+
+    const doc = new jsPDF({
+      orientation: "portrait",
+      unit: "mm",
+      format: "a4",
+      compress: true,
+    });
+
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const margin = 15;
+
+    const brandDark = [30, 41, 59];
+    const textGray = [100, 116, 139];
+    const lightBorder = [226, 232, 240];
+    const brandDanger = [220, 38, 38];
+
+    let pageNum = 1;
+    const addPageNumber = () => {
+      doc.setFontSize(7);
+      doc.setTextColor(...textGray);
+      doc.text(`Page ${pageNum}`, pageWidth - margin - 10, pageHeight - 8);
+    };
+
+    const addHeader = () => {
+      try {
+        if (logo) {
+          doc.addImage(logo, "PNG", margin, 10, 18, 6);
+        }
+      } catch (error) {
+        console.error("Error loading logo:", error);
+      }
+
+      doc.setFontSize(18);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(...brandDark);
+      doc.text("INCIDENT REPORT", pageWidth - margin, 14, { align: "right" });
+
+      doc.setFontSize(7);
+      doc.setTextColor(...textGray);
+      doc.text(new Date().toLocaleDateString(), pageWidth - margin, 19, { align: "right" });
+
+      let y = 28;
+      doc.setLineWidth(0.5);
+      doc.setDrawColor(...lightBorder);
+      doc.line(margin, y, pageWidth - margin, y);
+
+      return y + 6;
+    };
+
+    let yPos = addHeader();
+
+
+    doc.setFontSize(9);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(...brandDark);
+    doc.text("SHIFT SUMMARY", margin, yPos);
+    yPos += 5;
+
+    doc.setFontSize(8);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(...textGray);
+    doc.text(`Guard: ${guardName || "N/A"}`, margin, yPos);
+    doc.text(`Site: ${siteName || "N/A"}`, pageWidth / 2, yPos);
+    yPos += 4;
+    doc.text(`Shift: ${shiftStart || "N/A"} - ${shiftEnd || "N/A"}`, margin, yPos);
+    doc.text(`Total Incidents: ${incidents.length}`, pageWidth / 2, yPos);
+    yPos += 8;
+
+    // Process each incident
+    for (let idx = 0; idx < incidents.length; idx++) {
+      const incident = incidents[idx];
+
+      // Check if need new page
+      if (yPos > pageHeight - 80) {
+        addPageNumber();
+        pageNum++;
+        doc.addPage();
+        yPos = addHeader();
+      }
+
+      // Incident header
+      doc.setFontSize(9);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(...brandDanger);
+      doc.text(`INCIDENT #${idx + 1}`, margin, yPos);
+      yPos += 5;
+
+      // Incident details box
+      doc.setDrawColor(...lightBorder);
+      doc.setFillColor(255, 248, 248);
+      doc.rect(margin, yPos - 3, pageWidth - margin * 2, 16, "F");
+      doc.setLineWidth(0.3);
+      doc.rect(margin, yPos - 3, pageWidth - margin * 2, 16);
+
+      doc.setFontSize(8);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(...brandDark);
+
+      let detailY = yPos;
+      doc.text(`Date: ${incident.incident_date || "N/A"}`, margin + 2, detailY);
+      doc.text(`Time: ${incident.incident_time || "N/A"}`, pageWidth / 2, detailY);
+
+      detailY += 4;
+      doc.text(`Injury Type: ${incident.injury_type || "N/A"}`, margin + 2, detailY);
+      doc.text(`Site: ${incident.site_name || "N/A"}`, pageWidth / 2, detailY);
+
+      detailY += 4;
+      doc.setFont("helvetica", "normal");
+      doc.text(`Detail: ${incident.injury_detail || "N/A"}`, margin + 2, detailY);
+
+      yPos += 18;
+
+      // People Involved
+      if (incident.people_involved && incident.people_involved.length > 0) {
+        if (yPos > pageHeight - 60) {
+          addPageNumber();
+          pageNum++;
+          doc.addPage();
+          yPos = addHeader();
+        }
+
+        doc.setFontSize(8);
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(...brandDark);
+        doc.text("PEOPLE INVOLVED", margin, yPos);
+        yPos += 4;
+
+        const peopleData = incident.people_involved.map((p) => [
+          p.name || "—",
+          p.gender || "—",
+          p.phone || "—",
+          p.email || "—",
+        ]);
+
+        autoTable(doc, {
+          startY: yPos,
+          head: [["Name", "Gender", "Phone", "Email"]],
+          body: peopleData,
+          theme: "plain",
+          headStyles: {
+            fillColor: [248, 250, 252],
+            textColor: brandDark,
+            fontStyle: "bold",
+            fontSize: 7,
+            cellPadding: 2,
+          },
+          bodyStyles: {
+            fontSize: 7,
+            textColor: brandDark,
+            cellPadding: { top: 2, bottom: 2, left: 2, right: 2 },
+            lineColor: lightBorder,
+            lineWidth: { bottom: 0.1 },
+          },
+          margin: { left: margin, right: margin },
+          columnStyles: {
+            0: { cellWidth: 30 },
+            1: { cellWidth: 20 },
+            2: { cellWidth: 35 },
+            3: { cellWidth: 50 },
+          },
+        });
+
+        yPos = doc.lastAutoTable.finalY + 4;
+      }
+
+      // Vehicles
+      if (incident.vehicle && incident.vehicle.length > 0) {
+        if (yPos > pageHeight - 60) {
+          addPageNumber();
+          pageNum++;
+          doc.addPage();
+          yPos = addHeader();
+        }
+
+        doc.setFontSize(8);
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(...brandDark);
+        doc.text("VEHICLES", margin, yPos);
+        yPos += 4;
+
+        const vehicleData = incident.vehicle.map((v) => [
+          v.make || "—",
+          v.model || "—",
+          v.vehicle_type || "—",
+          v.vehicle_rander || "—",
+        ]);
+
+        autoTable(doc, {
+          startY: yPos,
+          head: [["Make", "Model", "Type", "Registration"]],
+          body: vehicleData,
+          theme: "plain",
+          headStyles: {
+            fillColor: [248, 250, 252],
+            textColor: brandDark,
+            fontStyle: "bold",
+            fontSize: 7,
+            cellPadding: 2,
+          },
+          bodyStyles: {
+            fontSize: 7,
+            textColor: brandDark,
+            cellPadding: { top: 2, bottom: 2, left: 2, right: 2 },
+            lineColor: lightBorder,
+            lineWidth: { bottom: 0.1 },
+          },
+          margin: { left: margin, right: margin },
+        });
+
+        yPos = doc.lastAutoTable.finalY + 4;
+      }
+
+      // Witnesses
+      if (incident.wittness && incident.wittness.length > 0) {
+        if (yPos > pageHeight - 60) {
+          addPageNumber();
+          pageNum++;
+          doc.addPage();
+          yPos = addHeader();
+        }
+
+        doc.setFontSize(8);
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(...brandDark);
+        doc.text("WITNESSES", margin, yPos);
+        yPos += 4;
+
+        const witnessData = incident.wittness.map((w) => [
+          w.witness_name || w.wittness_name || "—",
+          w.witness_phone || w.wittness_phone || "—",
+          w.witness_email || w.wittness_email || "—",
+        ]);
+
+        autoTable(doc, {
+          startY: yPos,
+          head: [["Name", "Phone", "Email"]],
+          body: witnessData,
+          theme: "plain",
+          headStyles: {
+            fillColor: [248, 250, 252],
+            textColor: brandDark,
+            fontStyle: "bold",
+            fontSize: 7,
+            cellPadding: 2,
+          },
+          bodyStyles: {
+            fontSize: 7,
+            textColor: brandDark,
+            cellPadding: { top: 2, bottom: 2, left: 2, right: 2 },
+            lineColor: lightBorder,
+            lineWidth: { bottom: 0.1 },
+          },
+          margin: { left: margin, right: margin },
+        });
+
+        yPos = doc.lastAutoTable.finalY + 4;
+      }
+
+      // Emergency Services
+      if (incident.emergency_services && Object.values(incident.emergency_services).some((v) => v)) {
+        if (yPos > pageHeight - 50) {
+          addPageNumber();
+          pageNum++;
+          doc.addPage();
+          yPos = addHeader();
+        }
+
+        doc.setFontSize(8);
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(...brandDark);
+        doc.text("EMERGENCY SERVICES", margin, yPos);
+        yPos += 4;
+
+        doc.setFontSize(7);
+        doc.setFont("helvetica", "normal");
+        if (incident.emergency_services.emergency_type) {
+          doc.text(`Type: ${incident.emergency_services.emergency_type}`, margin, yPos);
+          yPos += 3;
+        }
+        if (incident.emergency_services.emergency_detail) {
+          doc.text(`Detail: ${incident.emergency_services.emergency_detail}`, margin, yPos);
+          yPos += 3;
+        }
+        if (incident.emergency_services.supervisor_name) {
+          doc.text(`Supervisor: ${incident.emergency_services.supervisor_name}`, margin, yPos);
+          yPos += 3;
+        }
+        if (incident.emergency_services.phone) {
+          doc.text(`Phone: ${incident.emergency_services.phone}`, margin, yPos);
+          yPos += 3;
+        }
+      }
+
+      yPos += 6;
+
+      // Add separator between incidents
+      if (idx < incidents.length - 1) {
+        if (yPos > pageHeight - 20) {
+          addPageNumber();
+          pageNum++;
+          doc.addPage();
+          yPos = addHeader();
+        }
+        doc.setDrawColor(...lightBorder);
+        doc.setLineWidth(0.5);
+        doc.line(margin, yPos, pageWidth - margin, yPos);
+        yPos += 6;
+      }
+    }
+
+    // Final page number
+    addPageNumber();
 
     return doc;
   },

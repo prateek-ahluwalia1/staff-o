@@ -48,10 +48,10 @@ function extractOperationNoteText(shift) {
         if (item && typeof item === "object") {
           return String(
             item.notes ||
-              item.note ||
-              item.content ||
-              item.operation_notes ||
-              "",
+            item.note ||
+            item.content ||
+            item.operation_notes ||
+            "",
           ).trim();
         }
         return "";
@@ -507,37 +507,55 @@ export default function RosterPage() {
                   </td>
                 </tr>
               ) : (
-                filteredSites.map((site) => (
-                  <tr key={site.id}>
-                    <td className="location-td">
-                      <div className="location-cell-content">
-                        <div className="loc-header">
-                          <span className="loc-name">{site.displayName}</span>
-                        </div>
-                        <div className="loc-badge">
-                          <i className="fa fa-clock-o"></i> {site.hoursDisplay}
-                        </div>
-                      </div>
-                    </td>
+                filteredSites.map((site) => {
+                  // For each day, get the shifts for that site
+                  const dayShifts = weekDays.map((day) =>
+                    site.jobRoster.filter((shift) => isSameDay(shift.startDate, day.dateObj))
+                  );
+                  // Find the max number of shifts in any day for this site
+                  const maxShifts = Math.max(...dayShifts.map((shifts) => shifts.length), 1);
 
-                    {weekDays.map((day) => {
-                      const shifts = site.jobRoster.filter((shift) =>
-                        isSameDay(shift.startDate, day.dateObj),
-                      );
-                      return (
-                        <td key={day.key} className="day-cell">
-                          {shifts.map((shift) =>
-                            (() => {
-                              const operationNoteText =
-                                extractOperationNoteText(shift);
-                              const hasOperationNote =
-                                Boolean(operationNoteText);
-
-                              return (
-                                <div
-                                  key={shift.id}
-                                  className={`shift-block ${
-                                    shift.job_status === "confirmed"
+                  // For each row (shift index), render a table row
+                  return Array.from({ length: maxShifts }).map((_, rowIdx) => {
+                    // Find the first shift in this row to get its hours
+                    let firstShiftInRow = null;
+                    for (let d = 0; d < dayShifts.length; d++) {
+                      if (dayShifts[d][rowIdx]) {
+                        firstShiftInRow = dayShifts[d][rowIdx];
+                        break;
+                      }
+                    }
+                    return (
+                      <tr key={site.id + "-row-" + rowIdx}>
+                        <td className="location-td">
+                          <div className="location-cell-content">
+                            <div className="loc-header">
+                              <span className="loc-name">{site.displayName}</span>
+                            </div>
+                            {/* Show shift hours for this row, or site total for first row if no shifts */}
+                            {firstShiftInRow ? (
+                              <div className="loc-badge">
+                                <i className="fa fa-clock-o"></i> {Number(firstShiftInRow.hours).toFixed(2)} Hrs
+                              </div>
+                            ) : rowIdx === 0 ? (
+                              <div className="loc-badge">
+                                <i className="fa fa-clock-o"></i> {site.hoursDisplay}
+                              </div>
+                            ) : null}
+                          </div>
+                        </td>
+                        {weekDays.map((day, dayIdx) => {
+                          const shifts = dayShifts[dayIdx];
+                          const shift = shifts[rowIdx];
+                          return (
+                            <td key={day.key} className="day-cell">
+                              {shift ? (() => {
+                                const operationNoteText = extractOperationNoteText(shift);
+                                const hasOperationNote = Boolean(operationNoteText);
+                                return (
+                                  <div
+                                    key={shift.id}
+                                    className={`shift-block ${shift.job_status === "confirmed"
                                       ? "shift-confirmed"
                                       : shift.job_status === "rejected"
                                         ? "shift-rejected"
@@ -549,119 +567,87 @@ export default function RosterPage() {
                                               ? "shift-mock"
                                               : shift.job_status === "uncovered"
                                                 ? "shift-uncovered"
-                                                : shift.job_status ===
-                                                    "op_notes"
+                                                : shift.job_status === "op_notes"
                                                   ? "shift-op-notes"
-                                                  : shift.job_status ===
-                                                      "published"
+                                                  : shift.job_status === "published"
                                                     ? "shift-published"
-                                                    : shift.job_status ===
-                                                        "unpublished"
+                                                    : shift.job_status === "unpublished"
                                                       ? "shift-unpublished"
                                                       : "shift-pending"
-                                  } ${hasOperationNote ? "shift-has-op-note" : ""}`}
-                                  title={
-                                    hasOperationNote
-                                      ? `Operation Note: ${operationNoteText}`
-                                      : ""
-                                  }
-                                  onClick={() =>
-                                    openModalAction(
-                                      site,
-                                      shift,
-                                      day.dateLabel,
-                                      userRole === "contractor" &&
-                                        !shift.assigned_to
-                                        ? "admin_assign"
-                                        : "details",
-                                    )
-                                  }
-                                >
-                                  <div className="shift-time">
-                                    {format(shift.startDate, "HH:mm")}-
-                                    {format(shift.endDate, "HH:mm")}
-                                  </div>
-                                  <div className="shift-name">
-                                    {shift?.guards?.name || "Unassigned"}
-                                  </div>
-                                  <div className="shift-tags">
-                                    <span
-                                      className="s-tag s-tag-activity"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        openModalAction(
-                                          site,
-                                          shift,
-                                          day.dateLabel,
-                                          "activity",
-                                        );
-                                      }}
-                                    >
-                                      <i className="fa fa-list-alt"></i>{" "}
-                                      <span className="tag-text">Activity</span>
-                                    </span>
-                                    <span
-                                      className="s-tag s-tag-detail"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        openModalAction(
-                                          site,
-                                          shift,
-                                          day.dateLabel,
-                                          "details",
-                                        );
-                                      }}
-                                    >
-                                      <i className="fa fa-info-circle"></i>{" "}
-                                      <span className="tag-text">Detail</span>
-                                    </span>
-                                    {userRole !== "staff" && (
+                                      } ${hasOperationNote ? "shift-has-op-note" : ""}`}
+                                    title={hasOperationNote ? `Operation Note: ${operationNoteText}` : ""}
+                                    onClick={() =>
+                                      openModalAction(
+                                        site,
+                                        shift,
+                                        day.dateLabel,
+                                        userRole === "contractor" && !shift.assigned_to ? "admin_assign" : "details",
+                                      )
+                                    }
+                                  >
+                                    <div className="shift-time">
+                                      {format(shift.startDate, "HH:mm")}-
+                                      {format(shift.endDate, "HH:mm")}
+                                    </div>
+                                    <div className="shift-name">
+                                      {shift?.guards?.name || "Unassigned"}
+                                    </div>
+                                    <div className="shift-tags">
                                       <span
-                                        className="s-tag s-tag-time"
+                                        className="s-tag s-tag-activity"
                                         onClick={(e) => {
                                           e.stopPropagation();
-                                          openModalAction(
-                                            site,
-                                            shift,
-                                            day.dateLabel,
-                                            "time",
-                                          );
+                                          openModalAction(site, shift, day.dateLabel, "activity");
                                         }}
                                       >
-                                        <i className="fa fa-clock-o fas fa-clock"></i>{" "}
-                                        <span className="tag-text">Time</span>
+                                        <i className="fa fa-list-alt"></i>{" "}
+                                        <span className="tag-text">Activity</span>
                                       </span>
-                                    )}
-                                    {userRole === "contractor" &&
-                                      !shift.assigned_to && (
+                                      <span
+                                        className="s-tag s-tag-detail"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          openModalAction(site, shift, day.dateLabel, "details");
+                                        }}
+                                      >
+                                        <i className="fa fa-info-circle"></i>{" "}
+                                        <span className="tag-text">Detail</span>
+                                      </span>
+                                      {userRole !== "staff" && (
+                                        <span
+                                          className="s-tag s-tag-time"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            openModalAction(site, shift, day.dateLabel, "time");
+                                          }}
+                                        >
+                                          <i className="fa fa-clock-o fas fa-clock"></i>{" "}
+                                          <span className="tag-text">Time</span>
+                                        </span>
+                                      )}
+                                      {userRole === "contractor" && !shift.assigned_to && (
                                         <span
                                           className="s-tag s-tag-assign"
                                           onClick={(e) => {
                                             e.stopPropagation();
-                                            openModalAction(
-                                              site,
-                                              shift,
-                                              day.dateLabel,
-                                              "admin_assign",
-                                            );
+                                            openModalAction(site, shift, day.dateLabel, "admin_assign");
                                           }}
                                         >
                                           <i className="fa fa-user-plus"></i>{" "}
-                                          <span className="tag-text">
-                                            Assign
-                                          </span>
+                                          <span className="tag-text">Assign</span>
                                         </span>
                                       )}
+                                    </div>
                                   </div>
-                                </div>
-                              );
-                            })(),
-                          )}
-                        </td>
-                      );
-                    })}
-                  </tr>
-                ))
+                                );
+                              })() : null}
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    );
+                  });
+                })
               )}
             </tbody>
             <tfoot>

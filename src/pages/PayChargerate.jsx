@@ -33,7 +33,7 @@ const PayChargerate = () => {
       </div>
 
       <div className="row g-4 dashboard-tools-grid">
-        <div className="col-12 col-md-6 col-lg-4">
+        <div className="col-12 col-md-6 col-lg-3">
           <Card
             title="Charge Rates"
             description="Amount charged from customers."
@@ -46,7 +46,7 @@ const PayChargerate = () => {
           />
         </div>
 
-        <div className="col-12 col-md-6 col-lg-4">
+        <div className="col-12 col-md-6 col-lg-3">
           <Card
             title="Pay Rates"
             description="Amount paid to the staff."
@@ -58,7 +58,7 @@ const PayChargerate = () => {
             }
           />
         </div>
-        <div className="col-12 col-md-6 col-lg-4">
+        <div className="col-12 col-md-6 col-lg-3">
           <Card
             title="Invoice"
             description="It is used to send an invoice to the users"
@@ -68,7 +68,7 @@ const PayChargerate = () => {
             onClick={() => navigate("/accounts/invoice")}
           />
         </div>
-        <div className="col-12 col-md-6 col-lg-4">
+        <div className="col-12 col-md-6 col-lg-3">
           <Card
             title="Pay Slip"
             description="It is used to generate a pay slip for the staff"

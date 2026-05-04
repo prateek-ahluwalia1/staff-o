@@ -1,8 +1,8 @@
 import React, { useMemo, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
-import { toast } from "react-toastify";
 import Select from "react-select";
+import { toast } from "react-toastify";
 import useSubmit from "../hooks/useSubmit";
 import useFetch from "../hooks/useFetch";
 import { computeShiftBreakdown, mapApiRates } from "../utils/rateCalculator";
@@ -13,6 +13,7 @@ import DetailsStep from "../components/job/DetailsStep";
 import TasksStep from "../components/job/TasksStep";
 import ReviewStep from "../components/job/ReviewStep";
 import PaymentModal from "../components/job/PaymentModal";
+import AdminClientProfile from "../components/job/AdminClientProfile";
 
 export default function AddJob() {
   const navigate = useNavigate();
@@ -72,12 +73,10 @@ export default function AddJob() {
 
   const customerDetails = detailRes?.data?.customer || {};
 
-  // 🔥 FIX: Pulling from customer.sites so we get the coordinates!
   const customerSites = useMemo(() => {
     return detailRes?.data?.customer?.sites || [];
   }, [detailRes]);
 
-  // 🔥 FIX: Pulling from the summary sites array just for the total hours math
   const customerTotalHours = useMemo(() => {
     const summaries = detailRes?.data?.sites || [];
     return summaries.reduce((total, site) => total + (Number(site.total_hours) || 0), 0);
@@ -91,13 +90,45 @@ export default function AddJob() {
   const breakdown = useMemo(() => computeShiftBreakdown(form.scheduleDays, dynamicRates), [form.scheduleDays, dynamicRates]);
 
   const setField = useCallback((name, value) => {
-    setForm((f) => ({ ...f, [name]: value }));
+    setForm((f) => {
+      let updatedForm = { ...f, [name]: value };
+
+      if (name === "dateRange" && Array.isArray(value) && value[0] && value[1]) {
+        const days = [];
+        let currentDate = new Date(value[0]);
+        const endDate = new Date(value[1]);
+
+        while (currentDate <= endDate) {
+          days.push(currentDate.toISOString().split('T')[0]);
+          currentDate.setDate(currentDate.getDate() + 1);
+        }
+
+        updatedForm.scheduleDays = days.map(date => ({
+          date,
+          shifts: [{ id: Math.random().toString(), startTime: "09:00", endTime: "17:00", numGuards: 1 }]
+        }));
+      }
+
+      return updatedForm;
+    });
+
     setScheduleError((prev) => {
       if (prev && ["scheduleDays", "dateRange"].includes(name)) {
         return "";
       }
       return prev;
     });
+  }, []);
+
+  const applyShiftToAllDays = useCallback((templateShift) => {
+    setForm((prevForm) => {
+      const updatedDays = prevForm.scheduleDays.map(day => ({
+        ...day,
+        shifts: [{ ...templateShift, id: Math.random().toString() }]
+      }));
+      return { ...prevForm, scheduleDays: updatedDays };
+    });
+    toast.success("Shift successfully applied to all selected days!");
   }, []);
 
   const clientOptions = useMemo(() => {
@@ -124,14 +155,6 @@ export default function AddJob() {
       ...opts
     ];
   }, [customerSites]);
-
-  const handleSiteSelect = (site) => {
-    setSelectedSiteId(site.id);
-    setField("location", site.address || "");
-    setField("address", site.address || "");
-    setField("coordinates", site.coordinates || "");
-    setLocationError("");
-  };
 
   const handleCreateCustomer = async () => {
     if (!newCustomer.name || !newCustomer.email) {
@@ -241,6 +264,7 @@ export default function AddJob() {
     });
 
     if (wasSplit || wasPadded) {
+      toast.info("Notice: Some shifts were automatically split or padded to comply with minimum/maximum hour regulations.", { autoClose: 6000 });
       setForm(f => ({ ...f, scheduleDays: newDays }));
     }
 
@@ -415,127 +439,150 @@ export default function AddJob() {
           </div>
         </div>
 
-        {/* --- ADMIN CLIENT SELECTION --- */}
         {isAdmin && step === 0 && (
-          <div className="mb-4">
-            <div className="card shadow-sm border-0 rounded-4 mb-3">
-              <div className="card-body p-3 px-4 d-flex flex-wrap justify-content-between align-items-center gap-3">
-                <div className="d-flex align-items-center gap-3">
-                  <span className="badge bg-primary text-white rounded-pill px-3 py-2 shadow-sm"><i className="fa-solid fa-shield-halved me-1"></i> Admin Mode</span>
-                  <h6 className="mb-0 fw-bold text-dark">Client Assignment</h6>
-                </div>
-                <div className="flex-grow-1" style={{ maxWidth: "400px" }}>
-                  <Select
-                    options={clientOptions}
-                    value={clientOptions.find(opt => opt.value === form.user_id) || clientOptions[0]}
-                    onChange={(selected) => {
-                      const val = selected ? selected.value : "";
-                      setField("user_id", val);
-                      setSelectedSiteId("");
-                      setField("location", "");
-                      setField("address", "");
-                      setField("coordinates", "");
-                    }}
-                    placeholder={loadingCustomers ? "Loading..." : "Search clients..."}
-                    isDisabled={loadingCustomers}
-                    isSearchable={true}
-                    classNamePrefix="react-select"
-                    styles={{
-                      option: (base, state) => ({
-                        ...base,
-                        fontWeight: state.data.isNew ? 'bold' : 'normal',
-                        color: state.data.isNew ? '#0d6efd' : base.color
-                      })
-                    }}
-                  />
-                </div>
+          <div className="mb-5">
+            <div className="card shadow-sm border-0 rounded-3 mb-4">
+              <div className="card-body p-4">
+                <h6 className="fw-bold text-dark mb-3">
+                  <i className="fa-solid fa-user-check text-primary me-2"></i>
+                  Select Client
+                </h6>
+                <Select
+                  options={clientOptions}
+                  value={clientOptions.find(opt => opt.value === form.user_id) || clientOptions[0]}
+                  onChange={(selected) => {
+                    const val = selected ? selected.value : "";
+                    setField("user_id", val);
+                    setSelectedSiteId("");
+                    setField("location", "");
+                    setField("address", "");
+                    setField("coordinates", "");
+                  }}
+                  placeholder={loadingCustomers ? "Loading clients..." : "Search clients..."}
+                  isDisabled={loadingCustomers}
+                  isSearchable={true}
+                  classNamePrefix="react-select"
+                  styles={{
+                    control: (base) => ({ ...base, minHeight: '44px', borderRadius: '0.5rem' }),
+                    option: (base, state) => ({
+                      ...base,
+                      fontWeight: state.data.isNew ? 'bold' : 'normal',
+                      color: state.data.isNew ? '#0d6efd' : base.color,
+                      background: state.isSelected ? '#0d6efd' : state.isFocused ? '#e9ecef' : 'white'
+                    })
+                  }}
+                />
               </div>
             </div>
 
-            {/* CREATE NEW CLIENT FORM */}
             {form.user_id === "new" && (
-              <div className="card shadow-sm border border-primary-subtle rounded-4 mb-3">
+              <div className="card shadow-sm border-0 rounded-3 mb-4">
                 <div className="card-body p-4">
-                  <h6 className="fw-bold text-primary mb-3"><i className="fa-solid fa-user-plus me-2"></i>Create New Client Account</h6>
+                  <h6 className="fw-bold text-dark mb-3">
+                    <i className="fa-solid fa-user-plus text-primary me-2"></i>
+                    Create New Client
+                  </h6>
                   <div className="row g-3">
                     <div className="col-md-6">
-                      <label className="form-label small text-muted fw-bold">Full Name *</label>
-                      <input type="text" className="form-control bg-light" value={newCustomer.name} onChange={(e) => setNewCustomer({ ...newCustomer, name: e.target.value })} />
+                      <label className="form-label small text-muted fw-bold mb-2">Full Name *</label>
+                      <input
+                        type="text"
+                        className="form-control"
+                        placeholder="Client name"
+                        value={newCustomer.name}
+                        onChange={(e) => setNewCustomer({ ...newCustomer, name: e.target.value })}
+                      />
                     </div>
                     <div className="col-md-6">
-                      <label className="form-label small text-muted fw-bold">Email Address *</label>
-                      <input type="email" className="form-control bg-light" value={newCustomer.email} onChange={(e) => setNewCustomer({ ...newCustomer, email: e.target.value })} />
+                      <label className="form-label small text-muted fw-bold mb-2">Email *</label>
+                      <input
+                        type="email"
+                        className="form-control"
+                        placeholder="email@example.com"
+                        value={newCustomer.email}
+                        onChange={(e) => setNewCustomer({ ...newCustomer, email: e.target.value })}
+                      />
                     </div>
                     <div className="col-md-6">
-                      <label className="form-label small text-muted fw-bold">Phone Number</label>
-                      <input type="text" className="form-control bg-light" value={newCustomer.phone} onChange={(e) => setNewCustomer({ ...newCustomer, phone: e.target.value })} />
+                      <label className="form-label small text-muted fw-bold mb-2">Phone</label>
+                      <input
+                        type="text"
+                        className="form-control"
+                        placeholder="Phone number"
+                        value={newCustomer.phone}
+                        onChange={(e) => setNewCustomer({ ...newCustomer, phone: e.target.value })}
+                      />
                     </div>
                     <div className="col-md-6">
-                      <label className="form-label small text-muted fw-bold">Company Name</label>
-                      <input type="text" className="form-control bg-light" value={newCustomer.company_name} onChange={(e) => setNewCustomer({ ...newCustomer, company_name: e.target.value })} />
+                      <label className="form-label small text-muted fw-bold mb-2">Company</label>
+                      <input
+                        type="text"
+                        className="form-control"
+                        placeholder="Company name"
+                        value={newCustomer.company_name}
+                        onChange={(e) => setNewCustomer({ ...newCustomer, company_name: e.target.value })}
+                      />
                     </div>
                   </div>
-                  <div className="d-flex justify-content-end mt-4">
-                    <button type="button" className="btn btn-primary px-4 fw-bold shadow-sm rounded-pill" onClick={handleCreateCustomer} disabled={submittingCustomer}>
-                      {submittingCustomer ? "Saving..." : "Save Client & Continue"}
+                  <div className="d-flex justify-content-end gap-2 mt-4">
+                    <button
+                      type="button"
+                      className="btn btn-sm btn-outline-secondary rounded-2 px-4"
+                      onClick={() => setField("user_id", "")}
+                      disabled={submittingCustomer}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-sm btn-primary rounded-2 px-5"
+                      onClick={handleCreateCustomer}
+                      disabled={submittingCustomer}
+                    >
+                      {submittingCustomer ? <>Saving...</> : <>Create & Continue</>}
                     </button>
                   </div>
                 </div>
               </div>
             )}
 
-            {/* CLIENT DETAILS & SEARCHABLE SITE DROPDOWN */}
             {form.user_id && form.user_id !== "new" && (
-              <div className="card shadow-sm border border-primary-subtle rounded-4 mb-3">
-                <div className="card-body p-4">
-                  <div className="d-flex align-items-center gap-3 mb-4 pb-4 border-bottom border-light">
-                    <div className="bg-primary bg-opacity-10 text-primary fw-bold rounded-circle d-flex align-items-center justify-content-center shadow-sm" style={{ width: 60, height: 60, fontSize: 22 }}>
-                      {customerDetails?.name ? customerDetails.name.split(" ").map(n => n[0]).join("").substring(0, 2).toUpperCase() : "C"}
-                    </div>
-                    <div>
-                      <h5 className="mb-1 fw-bold text-dark">{customerDetails?.name || "Client Name"}</h5>
-                      <div className="d-flex flex-wrap gap-3 small text-muted fw-medium mt-2">
-                        <span className="bg-light px-2 py-1 rounded border"><i className="fa-solid fa-envelope me-1 text-primary"></i> {customerDetails?.email || "N/A"}</span>
-                        {customerDetails?.phone && <span className="bg-light px-2 py-1 rounded border"><i className="fa-solid fa-phone me-1 text-primary"></i> {customerDetails?.phone}</span>}
-                        {customerDetails?.city && <span className="bg-light px-2 py-1 rounded border"><i className="fa-solid fa-location-dot me-1 text-primary"></i> {customerDetails?.city}, {customerDetails?.state}</span>}
-                        <span className="bg-light px-2 py-1 rounded border"><i className="fa-solid fa-clock me-1 text-primary"></i> {customerTotalHours.toFixed(1)} Total Hours</span>
-                      </div>
-                    </div>
-                  </div>
+              <AdminClientProfile
+                customerDetails={customerDetails}
+                customerTotalHours={customerTotalHours}
+                siteOptions={siteOptions}
+                selectedSiteId={selectedSiteId}
+                onSiteSelect={(selected) => {
+                  if (!selected) return;
 
-                  <h6 className="fw-bold mb-3 d-flex align-items-center gap-2 text-dark">
-                    <i className="fa-solid fa-map-location-dot text-primary"></i> Response Sites
-                  </h6>
+                  // NEW: Interaction for handling Manual Map entry
+                  if (selected.value === "manual" || selected.isManual) {
+                    setSelectedSiteId("manual");
+                    setField("location", "");
+                    setField("address", "");
+                    setField("coordinates", "");
+                    setLocationError("");
 
-                  <Select
-                    options={siteOptions}
-                    value={siteOptions.find(opt => opt.value === selectedSiteId) || null}
-                    onChange={(selected) => {
-                      if (!selected) return;
-                      if (selected.value === "manual") {
-                        setSelectedSiteId("manual");
-                        setField("location", "");
-                        setField("address", "");
-                        setField("coordinates", "");
+                    // Smooth auto-scroll down to the Map step
+                    setTimeout(() => {
+                      const mapSection = document.getElementById("location-step-wrapper");
+                      if (mapSection) {
+                        mapSection.scrollIntoView({ behavior: "smooth", block: "start" });
+                        toast.info("Please set the location on the map below.");
                       } else {
-                        handleSiteSelect(selected.siteData);
+                        window.scrollBy({ top: 500, behavior: "smooth" });
                       }
-                    }}
-                    placeholder={loadingSites ? "Loading response sites..." : "Search and select a response site..."}
-                    isDisabled={loadingSites}
-                    isSearchable={true}
-                    classNamePrefix="react-select"
-                    styles={{
-                      control: (base) => ({ ...base, minHeight: '48px', borderRadius: '0.5rem', borderColor: '#9ec5fe' }),
-                      option: (base, state) => ({
-                        ...base,
-                        fontWeight: state.data.isManual ? 'bold' : 'normal',
-                        color: state.data.isManual ? '#0d6efd' : base.color
-                      })
-                    }}
-                  />
-                </div>
-              </div>
+                    }, 150);
+                  } else {
+                    setSelectedSiteId(selected.siteData.id);
+                    setField("location", selected.siteData.address || "");
+                    setField("address", selected.siteData.address || "");
+                    setField("coordinates", selected.siteData.coordinates || "");
+                    setLocationError("");
+                  }
+                }}
+                loadingSites={loadingSites}
+              />
             )}
           </div>
         )}
@@ -547,8 +594,14 @@ export default function AddJob() {
                 <StepProgress step={step} titles={STEP_TITLES} />
 
                 <form onSubmit={(e) => e.preventDefault()}>
-                  {step === 0 && <LocationStep form={form} setField={setField} resolvingLocation={resolvingLocation} setResolvingLocation={setResolvingLocation} locationError={locationError} setLocationError={setLocationError} />}
-                  {step === 1 && <ScheduleStep form={form} setField={setField} scheduleError={scheduleError} />}
+                  {/* WRAPPED LOCATION STEP for Auto-Scroll Interaction */}
+                  {step === 0 && (
+                    <div id="location-step-wrapper" className="pt-2">
+                      <LocationStep form={form} setField={setField} resolvingLocation={resolvingLocation} setResolvingLocation={setResolvingLocation} locationError={locationError} setLocationError={setLocationError} />
+                    </div>
+                  )}
+
+                  {step === 1 && <ScheduleStep form={form} setField={setField} scheduleError={scheduleError} applyShiftToAllDays={applyShiftToAllDays} />}
                   {step === 2 && <DetailsStep form={form} setField={setField} handleFile={handleFile} attachmentPreviews={attachmentPreviews} removeAttachment={removeAttachment} />}
                   {step === 3 && <TasksStep form={form} setField={setField} />}
 

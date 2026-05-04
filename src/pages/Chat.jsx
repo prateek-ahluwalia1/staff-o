@@ -5,6 +5,7 @@ import { Card } from "../components/Card";
 import chat1img from "../assets/images/chat1.png";
 import chat2img from "../assets/images/chat2.png";
 import chat3img from "../assets/images/chat3.png";
+import inductionimg from "../assets/images/induction.png";
 
 const ALL_CATEGORIES = [
   {
@@ -32,7 +33,9 @@ const ALL_CATEGORIES = [
 
 const Chat = () => {
   const navigate = useNavigate();
-  const { userdata } = useSelector((state) => state.auth);
+
+  const userdata = useSelector((state) => state.auth?.userdata);
+
   const userType =
     userdata?.user_type?.toLowerCase() ||
     userdata?.data?.user_type?.toLowerCase() ||
@@ -66,7 +69,7 @@ const Chat = () => {
 
       <div className="row g-4 dashboard-tools-grid">
         {allowedCategories.map((cat) => (
-          <div key={cat.key} className="col-12 col-sm-6 col-xl-4">
+          <div key={cat.key} className="col-12 col-sm-6 col-lg-3 col-xl-3">
             <Card
               title={cat.label}
               description={cat.desc}
@@ -77,6 +80,16 @@ const Chat = () => {
             />
           </div>
         ))}
+        <div className="col-12 col-sm-6 col-lg-3 col-xl-3">
+          <Card
+            title="Induction"
+            description="Access induction materials and resources"
+            accent="linear-gradient(135deg,#8b5cf6,#7c3aed)"
+            image={inductionimg}
+            type="chat"
+            onClick={() => navigate(`/induction`)}
+          />
+        </div>
       </div>
     </div>
   );

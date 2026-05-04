@@ -20,7 +20,7 @@ const WFMTools = () => {
 
       <div className="row g-4 dashboard-tools-grid">
         {isAdmin && (
-          <div className="col-12 col-md-6 col-lg-4">
+          <div className="col-12 col-md-6 col-lg-3">
             <Card
               title="Leave Management"
               description="Used to display the detailed overview of staff leave requests."

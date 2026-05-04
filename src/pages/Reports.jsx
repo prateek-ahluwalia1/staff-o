@@ -32,7 +32,7 @@ const Reports = () => {
       </div>
 
       <div className="row g-4 dashboard-tools-grid">
-        <div className="col-12 col-md-6 col-lg-4">
+        <div className="col-12 col-md-6 col-lg-3">
           <Card
             title="Time Sheet"
             description="Used to display the detailed overview of staff work hours."
@@ -43,7 +43,7 @@ const Reports = () => {
           />
         </div>
 
-        <div className="col-12 col-md-6 col-lg-4">
+        <div className="col-12 col-md-6 col-lg-3">
           <Card
             title="Job Tracker"
             description="Used to display the detailed overview of staff job progress."
@@ -54,7 +54,7 @@ const Reports = () => {
           />
         </div>
 
-        <div className="col-12 col-md-6 col-lg-4">
+        <div className="col-12 col-md-6 col-lg-3">
           <Card
             title="Visa Check"
             description="Run visa verification checks and view visa check results."

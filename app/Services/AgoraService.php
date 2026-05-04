@@ -62,17 +62,36 @@ class AgoraService
         return base64_encode($this->appId . '|rtm|' . $uid . '|' . time());
     }
 
-    public function createCall($callerId, $receiverId, $channelName = null)
-    {
-        $channel = $channelName ?? 'call_' . uniqid() . '_' . time();
+    // public function createCall($callerId, $receiverId, $channelName = null)
+    // {
+    //     $channel = $channelName ?? 'call_' . uniqid() . '_' . time();
         
-        return Call::create([
-            'caller_id' => $callerId,
-            'receiver_id' => $receiverId,
-            'channel_name' => $channel,
-            'status' => 'initiated',
-            'started_at' => now()
+    //     return Call::create([
+    //         'caller_id' => $callerId,
+    //         'receiver_id' => $receiverId,
+    //         'channel_name' => $channel,
+    //         'status' => 'initiated',
+    //         'started_at' => now()
+    //     ]);
+    // }
+    public function createCall(int $callerId, array $participantIds, bool $isConference, string $callType = 'audio'): Call
+    {
+        $call = Call::create([
+            'caller_id'    => $callerId,
+            'channel_name' => 'call_' . uniqid(),
+            'status'       => 'initiated',
+            'is_conference'=> $isConference,
+            'call_type'    => $callType,
         ]);
+
+        foreach ($participantIds as $userId) {
+            $call->participants()->create([
+                'user_id' => $userId,
+                'status'  => 'invited',
+            ]);
+        }
+
+        return $call;
     }
 
     public function updateCallStatus($callId, $status)

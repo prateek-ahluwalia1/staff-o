@@ -101,6 +101,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/end/{callId}', [CallController::class, 'endCall']);
         Route::get('/history', [CallController::class, 'callHistory']);
         Route::get('/{callId}', [CallController::class, 'getCallDetails']);
+        Route::post('/add-participant/{callId}',    [CallController::class, 'addParticipant']);
+        Route::post('/remove-participant/{callId}', [CallController::class, 'removeParticipant']);
     });
     
     // Messages

@@ -33,4 +33,9 @@ class Call extends Model
     {
         return $query->where('status', 'ongoing');
     }
+
+    public function participants()
+    {
+        return $this->hasMany(CallParticipant::class);
+    }
 }

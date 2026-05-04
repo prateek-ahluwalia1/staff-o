@@ -80,16 +80,20 @@ const Chat = () => {
             />
           </div>
         ))}
-        <div className="col-12 col-sm-6 col-lg-3 col-xl-3">
-          <Card
-            title="Induction"
-            description="Access induction materials and resources"
-            accent="linear-gradient(135deg,#8b5cf6,#7c3aed)"
-            image={inductionimg}
-            type="chat"
-            onClick={() => navigate(`/induction`)}
-          />
-        </div>
+        {
+          userType === "admin" && (
+            <div className="col-12 col-sm-6 col-lg-3 col-xl-3">
+              <Card
+                title="Induction"
+                description="Access induction materials and resources"
+                accent="linear-gradient(135deg,#8b5cf6,#7c3aed)"
+                image={inductionimg}
+                type="chat"
+                onClick={() => navigate(`/induction`)}
+              />
+            </div>
+          )
+        }
       </div>
     </div>
   );

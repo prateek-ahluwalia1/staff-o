@@ -11,6 +11,10 @@ class Questionnaire extends Model
 
     protected $table = 'questionnaires';
 
+    public function Admin(){
+        return $this->belongsTo(User::class, 'admin_id')->select('id', 'name');
+    }
+    
     protected $casts = [
         'questionnaire' => 'array',
         'sub_heading' => 'array',

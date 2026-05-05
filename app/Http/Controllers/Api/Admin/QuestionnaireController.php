@@ -1,12 +1,13 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Api\Admin;
 
 use App\Models\Guard;
 use App\Models\Questionnaire;
 use App\Models\InductionHistory;
 use App\Models\User;
 use Illuminate\Http\Request;
+use App\Http\Controllers\Controller;
 use DB;
 
 class QuestionnaireController extends Controller
@@ -22,7 +23,7 @@ class QuestionnaireController extends Controller
         $questionnaire->title = $request->title;
         $questionnaire->admin_id = $request->admin_id;
         $questionnaire->questionnaire = $request->questionnaire;
-        $questionnaire->sub_heading = $request->subheading;
+        $questionnaire->sub_heading = $request->sub_heading;
 
         $questionnaire->save();
 

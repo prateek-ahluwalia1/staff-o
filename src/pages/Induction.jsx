@@ -28,7 +28,7 @@ export default function Induction() {
     const [formQuestions, setFormQuestions] = useState([
         {
             id: Date.now(), type: "MCQs", question: "",
-            optiona: "", optionb: "", optionc: "", optiond: "", answer: "1"
+            optiona: "", optionb: "", optionc: "", optiond: "", answer: "1", attachment: null
         }
     ]);
 
@@ -39,7 +39,7 @@ export default function Induction() {
             setFormTitle("");
             setFormSubtitles([""]);
             setFormAttachment(null);
-            setFormQuestions([{ id: Date.now(), type: "MCQs", question: "", optiona: "", optionb: "", optionc: "", optiond: "", answer: "1" }]);
+            setFormQuestions([{ id: Date.now(), type: "MCQs", question: "", optiona: "", optionb: "", optionc: "", optiond: "", answer: "1", attachment: null }]);
         }
     };
 
@@ -65,7 +65,7 @@ export default function Induction() {
     const addQuestion = () => {
         setFormQuestions([
             ...formQuestions,
-            { id: Date.now(), type: "MCQs", question: "", optiona: "", optionb: "", optionc: "", optiond: "", answer: "1" }
+            { id: Date.now(), type: "MCQs", question: "", optiona: "", optionb: "", optionc: "", optiond: "", answer: "1", attachment: null }
         ]);
     };
     const removeQuestion = (index) => {
@@ -91,7 +91,7 @@ export default function Induction() {
             attachment: formAttachment,
             questions: formQuestions
         };
-        console.log("Saving Payload:", JSON.stringify(payload, null, 2));
+        console.log("Saving Payload:", payload);
         closeModal();
         alert("Induction saved! Check console for payload.");
     };
@@ -194,6 +194,7 @@ export default function Induction() {
                                 <div className="col-md-5">
                                     <label className="form-label fw-bold small text-muted text-uppercase">Global Attachment (Optional)</label>
                                     <input type="file" className="form-control clean-input"
+                                        accept=".pdf, application/pdf"
                                         onChange={(e) => setFormAttachment(e.target.files[0])} />
                                 </div>
                             </div>
@@ -231,7 +232,19 @@ export default function Induction() {
                                             <option value="Short Question">Short Question</option>
                                         </select>
                                     </div>
+
+                                    {/* NEW: Document attachment specific to this question */}
+                                    <div className="col-md-12 mt-3">
+                                        <label className="form-label small text-muted fw-bold">Question Document (PDF Only)</label>
+                                        <input
+                                            type="file"
+                                            className="form-control clean-input"
+                                            accept=".pdf, application/pdf"
+                                            onChange={(e) => handleQuestionChange(qIndex, "attachment", e.target.files[0])}
+                                        />
+                                    </div>
                                 </div>
+
                                 {q.type === "MCQs" && (
                                     <div className="row g-3 mb-4">
                                         {['a', 'b', 'c', 'd'].map(opt => (

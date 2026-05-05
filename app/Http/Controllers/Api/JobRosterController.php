@@ -100,7 +100,7 @@ class JobRosterController extends Controller
             if (!$isAdminOverride) {
                 $transaction = \App\Models\Transaction::where('payment_intent_id', $paymentIntentId)->first();
             }
-    
+
             foreach ($request->shifts as $shift) {
     
                 $start = dbFormateDateTime($shift['start']);
@@ -210,16 +210,16 @@ class JobRosterController extends Controller
             // ════════════════════════════════════════════════════════════════
             //  INVOICE  →  GENERATE PDF + SEND EMAIL
             // ════════════════════════════════════════════════════════════════
-            if (!$isAdminOverride) {
-                $this->sendJobInvoice(
-                    user:             $user,
-                    shifts:           $invoiceShifts,
-                    baseTotal:        $invoiceBaseTotal,
-                    transaction:      $transaction,
-                    invoiceNumber:    'INV-' . strtoupper(substr($paymentIntentId, -8)),
-                    paymentIntentId:  $paymentIntentId,
-                );
-            }
+            // if (!$isAdminOverride) {
+            //     $this->sendJobInvoice(
+            //         user:             $user,
+            //         shifts:           $invoiceShifts,
+            //         baseTotal:        $invoiceBaseTotal,
+            //         transaction:      $transaction,
+            //         invoiceNumber:    'INV-' . strtoupper(substr($paymentIntentId, -8)),
+            //         paymentIntentId:  $paymentIntentId,
+            //     );
+            // }
             // ════════════════════════════════════════════════════════════════
     
             return response()->json([
@@ -238,55 +238,62 @@ class JobRosterController extends Controller
         }
     }
     
-    private function sendJobInvoice(
-        $user,
-        array $shifts,
-        float $baseTotal,
-        $transaction,
-        string $invoiceNumber,
-        string $paymentIntentId,
-    ): void {
-        // Pull real numbers from the transaction row (already calculated in holdPayment)
-        $discount      = $transaction ? (float) $transaction->discount      : 0;
-        $serviceFee    = $transaction ? (float) $transaction->service_fee   : round($baseTotal * 0.10, 2);
-        $grandTotal    = $transaction ? (float) $transaction->total_amount  : round(($baseTotal - $discount) + $serviceFee, 2);
-        $amountCharged = $transaction ? (float) $transaction->amount_charged: $grandTotal;
-        $balance       = $transaction ? (float) $transaction->balance       : 0;
-        $paymentOption = $transaction ? ($transaction->balance > 0 ? 'split' : 'full') : 'full';
-    
-        $invoiceData = [
-            'invoice_number'   => $invoiceNumber,
-            'date'             => now()->format('d M Y'),
-            'client_name'      => $user->name,
-            'client_email'     => $user->email,
-            'payment_intent_id'=> $paymentIntentId,
-            'payment_option'   => $paymentOption,
-            'shifts'           => $shifts,
-            'base_total'       => $baseTotal,
-            'discount'         => $discount,
-            'service_fee'      => $serviceFee,
-            'grand_total'      => $grandTotal,
-            'amount_charged'   => $amountCharged,
-            'balance'          => $balance,
-        ];
-    
-       // Generate PDF once
-        $pdfBytes = app(InvoiceService::class)->generatePdf($invoiceData);
-        $pdfBase64 = base64_encode($pdfBytes);   // ← encode here
+   private function sendJobInvoice(
+    $user,
+    array $shifts,
+    float $baseTotal,
+    $transaction,
+    string $invoiceNumber,
+    string $paymentIntentId,
+): void {
 
-        // Send to client
-        Mail::to($user->email)
-            ->queue(new InvoiceMail(
-                pdfBase64:     $pdfBase64,        // ← pass base64
+    try {
+ 
+        // ── STEP 1: resolve payment figures ──────────────────────────
+        $discount      = $transaction ? (float) $transaction->discount       : 0;
+        $serviceFee    = $transaction ? (float) $transaction->service_fee    : round($baseTotal * 0.10, 2);
+        $grandTotal    = $transaction ? (float) $transaction->total_amount   : round(($baseTotal - $discount) + $serviceFee, 2);
+        $amountCharged = $transaction ? (float) $transaction->amount_charged : $grandTotal;
+        $balance       = $transaction ? (float) $transaction->balance        : 0;
+        $paymentOption = ($transaction && $transaction->balance > 0) ? 'split' : 'full';
+ 
+ 
+        // ── STEP 2: build invoice data array ─────────────────────────
+        $invoiceData = [
+            'invoice_number'    => $invoiceNumber,
+            'date'              => now()->format('d M Y'),
+            'client_name'       => $user->name,
+            'client_email'      => $user->email,
+            'payment_intent_id' => $paymentIntentId,
+            'payment_option'    => $paymentOption,
+            'shifts'            => $shifts,
+            'base_total'        => $baseTotal,
+            'discount'          => $discount,
+            'service_fee'       => $serviceFee,
+            'grand_total'       => $grandTotal,
+            'amount_charged'    => $amountCharged,
+            'balance'           => $balance,
+        ];
+ 
+        $pdfBytes  = app(\App\Services\InvoiceService::class)->generatePdf($invoiceData);
+        $pdfBase64 = base64_encode($pdfBytes);
+ 
+        \Illuminate\Support\Facades\Mail::to($user->email)
+            ->queue(new \App\Mail\InvoiceMail(
+                pdfBase64:     $pdfBase64,
                 invoiceNumber: $invoiceNumber,
                 clientName:    $user->name,
                 isAdmin:       false,
             ));
-    
-        // ── 2. Send to all admins ────────────────────────────────────────────
-       $admin = \App\Models\User::where('user_type', 'admin')->first(); 
-
-        if ($admin && $admin->email) {
+ 
+        // ── STEP 5: send to all admins ────────────────────────────────
+        $adminEmails = \App\Models\User::where('user_type', 'admin')->first();
+        
+        if ($adminEmails && $adminEmails->email) {
+             Log::channel('daily')->info('[Invoice] Step 5 – Queueing admin email', [
+                'admin_email' => $adminEmail,
+            ]);
+            
             Mail::to($admin->email)
                 ->queue(new InvoiceMail(
                     pdfBase64:     $pdfBase64,
@@ -295,7 +302,20 @@ class JobRosterController extends Controller
                     isAdmin:       true,
                 ));
         }
+ 
+ 
+    } catch (\Exception $e) {
+        Log::channel('daily')->error('[Invoice] ── FAILED ──', [
+            'invoice_number' => $invoiceNumber,
+            'error'          => $e->getMessage(),
+            'file'           => $e->getFile(),
+            'line'           => $e->getLine(),
+            'trace'          => $e->getTraceAsString(),
+        ]);
+ 
+        // Do NOT rethrow — invoice failure should not break job creation response
     }
+}
 
     /**
      * Send notifications to staff (user_id=1) within 5km radius
@@ -334,26 +354,26 @@ class JobRosterController extends Controller
 
                 // Send notification if token exists
                 if ($staffMember->notification_token) {
-                    // $notificationSent = send_push_notification([
-                    //     'notification_token' => $staffMember->notification_token,
-                    //     'message'            => "New ASAP job available within 5km of your location. Please check your app.",
-                    //     'title'              => 'ASAP Job Nearby',
-                    //     'page'               => 'asap-job-list',
-                    //     'data'               => [
-                    //         'distance' => round($distance, 2),
-                    //         'radius' => $radiusKm,
-                    //         'job_ids' => $jobIds,
-                    //         'roster' => $roster
-                    //     ]
-                    // ]);
+                    $notificationSent = send_push_notification([
+                        'notification_token' => $staffMember->notification_token,
+                        'message'            => "New ASAP job available within 5km of your location. Please check your app.",
+                        'title'              => 'ASAP Job Nearby',
+                        'page'               => 'asap-job-list',
+                        'data'               => [
+                            'distance' => round($distance, 2),
+                            'radius' => $radiusKm,
+                            'job_ids' => $jobIds,
+                            'roster' => $roster
+                        ]
+                    ]);
 
-                    // if ($notificationSent) {
+                    if ($notificationSent) {
                         $notifiedUsers[] = [
                             'user_id' => $staffMember->id,
                             'name' => $staffMember->name,
                             'distance' => round($distance, 2) . ' km'
                         ];
-                    // }
+                    }
                 }
             }
         }
@@ -3651,11 +3671,11 @@ public function autoUpdatePayslipStatus()
             return response()->json(['message' => 'Roster not found.'], 404);
         }
 
-        if ($roster->assigned_to !== $request->user()->id) {
-            return response()->json(['message' => 'Unauthorized.'], 403);
-        }
+        // if ($roster->assigned_to !== $request->user()->id) {
+        //     return response()->json(['message' => 'Unauthorized.'], 403);
+        // }
 
-        if ($roster->job_status !== 'ongoing') {
+        if ($roster->signin_status != 1) {
             return response()->json(['message' => 'You must be checked in to generate a handover QR.'], 400);
         }
 
@@ -3684,10 +3704,10 @@ public function autoUpdatePayslipStatus()
      * POST /api/roster/handover/scan
      * Body: { "roster_id": 1, "token": "uuid-here" }
      */
-    public function scanHandover(Request $request)
+      public function scanHandover(Request $request)
     {
         $request->validate([
-            'roster_id' => 'required|integer|exists:job_roster,id',
+            'roster_id' => 'required|integer|exists:job_rosters,id',
             'token'     => 'required|string',
         ]);
 
@@ -3701,7 +3721,7 @@ public function autoUpdatePayslipStatus()
                 return response()->json(['message' => 'Invalid or expired QR code.'], 400);
             }
 
-            if ($guard1Roster->job_status !== 'ongoing') {
+            if ($guard1Roster->signin_status != 1) {
                 return response()->json(['message' => 'Guard 1 shift is no longer active.'], 400);
             }
 
@@ -3709,26 +3729,19 @@ public function autoUpdatePayslipStatus()
                 return response()->json(['message' => 'You cannot scan your own handover QR.'], 403);
             }
 
-            $guard2Roster = JobRoster::where('assigned_to', $request->user()->id)
-                ->whereIn('job_status', ['pending', 'confirmed'])
-                ->where('start', '>=', $guard1Roster->start)
-                ->orderBy('start', 'asc')
-                ->lockForUpdate()
-                ->first();
+            $guard2Roster = JobRoster::lockForUpdate()->findOrFail($request->scanner_shift_id);
 
             if (!$guard2Roster) {
                 return response()->json(['message' => 'No upcoming shift found for you.'], 400);
             }
 
             // Update Guard 1
-            $guard1Roster->actual_end_time = $now;
-            // $guard1Roster->job_status      = 'completed';
+            $guard1Roster->end = $now;
             $guard1Roster->handover_token  = null;
             $guard1Roster->save();
 
             // Update Guard 2
-            $guard2Roster->actual_start_time = $now;
-            // $guard2Roster->job_status        = 'ongoing';
+            $guard2Roster->start = $now;
             $guard2Roster->save();
 
             DB::commit();

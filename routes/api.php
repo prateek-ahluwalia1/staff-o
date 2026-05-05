@@ -3,6 +3,8 @@
 use App\Http\Controllers\Api\Admin\ContractorController;
 use App\Http\Controllers\Api\Admin\CustomerController;
 use App\Http\Controllers\Api\Admin\AdminStaffController;
+use App\Http\Controllers\Api\Admin\GeneralController;
+use App\Http\Controllers\Api\Admin\QuestionnaireController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
@@ -22,7 +24,6 @@ use App\Http\Controllers\Api\RtmController;
 use Illuminate\Support\Facades\Artisan;
 
 use App\Http\Controllers\AgoraController;
-use App\Http\Controllers\Api\Admin\GeneralController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\VisaController;
 use App\Http\Controllers\IvrController2;
@@ -217,6 +218,12 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/send',      [NotificationController::class, 'send']);
         Route::post('/send-self', [NotificationController::class, 'sendSelf']);
     });
+    
+     //QUESTIONNAIRE
+    Route::post('questionnaire-save', [QuestionnaireController::class, 'save']);
+    Route::post('assign-questionnaire', [QuestionnaireController::class, 'assignQuestionnair']);
+    Route::get('questionnaire-delete/{id}', [QuestionnaireController::class, 'delete']);
+    Route::get('questionnaire-list', [QuestionnaireController::class, 'list']);
 
     Route::prefix('admin')->group(function () {
 
@@ -235,14 +242,16 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('customers-update/{id}', [CustomerController::class, 'update']);
         Route::delete('customers-delete/{id}', [CustomerController::class, 'destroy']);
         Route::patch('customers/{id}/toggle-status', [CustomerController::class, 'toggleStatus']);
-        Route::any('customers-detail/{id}', [CustomerController::class, 'customerDetail']);
 
         Route::get('get-staff', [AdminStaffController::class, 'index']);
+        Route::get('get-staffoo-staff', [AdminStaffController::class, 'staffooStaff']);
         Route::any('update-staff/{id}',  [AdminStaffController::class, 'updateStaff'])->name('update.staff');
         Route::any('create-staff',  [AdminStaffController::class, 'createStaff'])->name('create.staff');
         Route::delete('staff-delete/{id}', [AdminStaffController::class, 'destroy']);
+        Route::any('customers-detail/{id}', [CustomerController::class, 'customerDetail']);
 
         Route::any('send-invoice',  [JobRosterController::class, 'sendInvoice']);
+        
         Route::get('/', [GeneralController::class, 'getAdmins']);
 
         Route::post('/visa-check', [VisaController::class, 'create']);

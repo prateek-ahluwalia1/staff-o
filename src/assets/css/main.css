@@ -1,7 +1,6 @@
 /* Prevent avatar jump on dropdown open (mobile) */
 .mobile-top-user-dropdown {
     position: relative;
-    z-index: 1100;
 }
 
 .mobile-top-user-dropdown .mobile-top-user-btn {
@@ -18,7 +17,6 @@
     left: auto;
     min-width: 180px;
     margin-top: 6px;
-    z-index: 1200;
     box-shadow: 0 8px 32px rgba(15,23,42,0.13);
     border-radius: 14px;
     padding: 10px 0;
@@ -26,6 +24,7 @@
 
 .mobile-top-user-dropdown .dropdown-menu.show {
     display: block;
+    z-index: 1200;
 }
 /*------------------------------------------
 Project Name : Jobs Portal
@@ -9721,9 +9720,6 @@ Large Mobile Screen
     pointer-events: none;
 }
 
-.dashboard-sidebar:hover::before {
-    left: 100%;
-}
 
 .dashboard-sidebar.expanded {
     width: 280px;

@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import useFetch from "../hooks/useFetch";
 import useSubmit from "../hooks/useSubmit";
 import "../assets/css/induction.css";
+import { useSelector } from "react-redux";
 
 const mockHistoryData = [
     { id: 1, name: "Amelia Charlotte", date: "24-01-2024 20:44", status: "Uncompleted" },
@@ -10,6 +11,8 @@ const mockHistoryData = [
 ];
 
 export default function Induction() {
+    const { userdata } = useSelector((state) => state.auth);
+    const userId = userdata?.id || userdata?.data?.id;
     const { data: listResponse, loading: listLoading, refetch: refetchList } = useFetch("api/questionnaire-list", { isAuth: true });
     const { submit: submitSave, loading: isSaving } = useSubmit({ isAuth: true });
     const { submit: submitDelete } = useSubmit({ isAuth: true });
@@ -24,7 +27,7 @@ export default function Induction() {
     const [formSubtitles, setFormSubtitles] = useState([""]);
     const [formAttachment, setFormAttachment] = useState(null);
     const [formQuestions, setFormQuestions] = useState([
-        { id: Date.now(), type: "MCQs", question: "", optiona: "", optionb: "", optionc: "", optiond: "", answer: "1", attachment: null }
+        { id: Date.now(), type: "MCQs", question: "", optiona: "", optionb: "", optionc: "", optiond: "", answer: "1", file: null }
     ]);
 
     const [shareState, setShareState] = useState("");
@@ -36,16 +39,32 @@ export default function Induction() {
 
         if (type === 'create') {
             if (induction) {
-
+                // Populate fields based on your API response structure
                 setFormTitle(induction.title || "");
-                setFormSubtitles(induction.subtitles?.length ? induction.subtitles : [""]);
-                setFormQuestions(induction.questions?.length ? induction.questions : [{ id: Date.now(), type: "MCQs", question: "", optiona: "", optionb: "", optionc: "", optiond: "", answer: "1", attachment: null }]);
+                setFormSubtitles(induction.sub_heading?.length ? induction.sub_heading : [""]);
+
+                // Map the questionnaire array to our form state
+                const mappedQuestions = induction.questionnaire?.length
+                    ? induction.questionnaire.map((q, index) => ({
+                        id: Date.now() + index,
+                        type: q.type || "MCQs",
+                        question: q.question || "",
+                        optiona: q.optiona || "",
+                        optionb: q.optionb || "",
+                        optionc: q.optionc || "",
+                        optiond: q.optiond || "",
+                        answer: q.answer || "1",
+                        file: null // Browsers don't allow setting files from URLs due to security, so this resets to null
+                    }))
+                    : [{ id: Date.now(), type: "MCQs", question: "", optiona: "", optionb: "", optionc: "", optiond: "", answer: "1", file: null }];
+
+                setFormQuestions(mappedQuestions);
                 setFormAttachment(null);
             } else {
                 setFormTitle("");
                 setFormSubtitles([""]);
                 setFormAttachment(null);
-                setFormQuestions([{ id: Date.now(), type: "MCQs", question: "", optiona: "", optionb: "", optionc: "", optiond: "", answer: "1", attachment: null }]);
+                setFormQuestions([{ id: Date.now(), type: "MCQs", question: "", optiona: "", optionb: "", optionc: "", optiond: "", answer: "1", file: null }]);
             }
         }
     };
@@ -70,7 +89,7 @@ export default function Induction() {
     const addQuestion = () => {
         setFormQuestions([
             ...formQuestions,
-            { id: Date.now(), type: "MCQs", question: "", optiona: "", optionb: "", optionc: "", optiond: "", answer: "1", attachment: null }
+            { id: Date.now(), type: "MCQs", question: "", optiona: "", optionb: "", optionc: "", optiond: "", answer: "1", file: null }
         ]);
     };
     const removeQuestion = (index) => {
@@ -95,18 +114,25 @@ export default function Induction() {
         if (selectedInduction?.id) formData.append("id", selectedInduction.id);
         formData.append("title", formTitle);
 
-        formSubtitles.forEach((sub, i) => formData.append(`subtitles[${i}]`, sub));
+        // Added admin_id to the payload as requested
+        if (userId) formData.append("admin_id", userId);
+
+        // Map subtitles to "sub_heading" array for the API
+        formSubtitles.forEach((sub, i) => formData.append(`sub_heading[${i}]`, sub));
+
         if (formAttachment) formData.append("attachment", formAttachment);
 
+        // Map formQuestions to "questionnaire" array for the API
         formQuestions.forEach((q, i) => {
-            formData.append(`questions[${i}][question]`, q.question);
-            formData.append(`questions[${i}][type]`, q.type);
-            formData.append(`questions[${i}][answer]`, q.answer);
-            formData.append(`questions[${i}][optiona]`, q.optiona || "");
-            formData.append(`questions[${i}][optionb]`, q.optionb || "");
-            formData.append(`questions[${i}][optionc]`, q.optionc || "");
-            formData.append(`questions[${i}][optiond]`, q.optiond || "");
-            if (q.attachment) formData.append(`questions[${i}][attachment]`, q.attachment);
+            formData.append(`questionnaire[${i}][question]`, q.question);
+            formData.append(`questionnaire[${i}][type]`, q.type);
+            formData.append(`questionnaire[${i}][answer]`, q.answer);
+            formData.append(`questionnaire[${i}][optiona]`, q.optiona || "");
+            formData.append(`questionnaire[${i}][optionb]`, q.optionb || "");
+            formData.append(`questionnaire[${i}][optionc]`, q.optionc || "");
+            formData.append(`questionnaire[${i}][optiond]`, q.optiond || "");
+            // Use "file" key instead of "attachment" for individual questions
+            if (q.file) formData.append(`questionnaire[${i}][file]`, q.file);
         });
 
         const res = await submitSave("api/questionnaire-save", formData, { method: "POST" });
@@ -283,7 +309,7 @@ export default function Induction() {
                                     <div className="col-md-12 mt-3">
                                         <label className="form-label small text-muted fw-bold">Question Document (PDF Only)</label>
                                         <input type="file" className="form-control clean-input" accept=".pdf, application/pdf"
-                                            onChange={(e) => handleQuestionChange(qIndex, "attachment", e.target.files[0])}
+                                            onChange={(e) => handleQuestionChange(qIndex, "file", e.target.files[0])}
                                         />
                                     </div>
                                 </div>
@@ -372,7 +398,7 @@ export default function Induction() {
                                     <h5 className="card-title text-dark fw-bold mb-4 lh-base">{induction.title || "Untitled Questionnaire"}</h5>
                                     <div className="mt-auto pt-3 border-top d-flex justify-content-between align-items-center">
                                         <div className="d-flex align-items-center gap-2 text-muted small fw-medium">
-                                            <i className="fa fa-user-circle fs-5"></i> {induction.author || "Admin"}
+                                            <i className="fa fa-user-circle fs-5"></i> {induction.admin_id || "Admin"}
                                         </div>
                                         <div className="d-flex gap-2 action-icons">
                                             <button onClick={() => openModal("history", induction)}><i className="fa fa-eye"></i></button>

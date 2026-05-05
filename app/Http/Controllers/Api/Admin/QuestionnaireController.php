@@ -43,13 +43,13 @@ class QuestionnaireController extends Controller
     }
 
     public function assignQuestionnair(Request $request){
-        foreach ($request->guards as $key => $guard) {
-            if(DB::table('guard_questionnaire_details')->where(['guard_id' => $guard,'questionnaire_id' => $request->questionnair_id,])->first()){
+        foreach ($request->staff_ids as $key => $guard) {
+            if(DB::table('guard_questionnaire_details')->where(['guard_id' => $guard,'questionnaire_id' => $request->questionnaire_id,])->first()){
                 # ALREADY ASSIGNED
             }else{
                 DB::table('guard_questionnaire_details')->insert([
                     'guard_id' => $guard,
-                    'questionnaire_id' => $request->questionnair_id,
+                    'questionnaire_id' => $request->questionnaire_id,
                     'marks' => 0,
                     'expiry_date' => null
                 ]);
@@ -64,14 +64,14 @@ class QuestionnaireController extends Controller
             }
         }
 
-        $Inguards = User::whereIn('id', $request->guards)->get();
+        $Inguards = User::whereIn('id', $request->staff_ids)->get();
 
         foreach ($Inguards as $guard) {
 
             $ann = new  InductionHistory();
             $ann->guard_id = $guard['id'];
             $ann->state = $request->state;
-            $ann->induction_id = $request->questionnair_id;
+            $ann->induction_id = $request->questionnaire_id;
             $ann->save();
 
         }

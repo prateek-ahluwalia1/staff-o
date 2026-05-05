@@ -9,6 +9,7 @@
   transition: transform 0.2s ease, box-shadow 0.2s ease;
   border: 1px solid rgba(0,0,0,0.05) !important;
 }
+
 .staffoo-card:hover {
   transform: translateY(-3px);
   box-shadow: 0 12px 24px rgba(0,0,0,0.06) !important;
@@ -24,6 +25,7 @@
   transition: color 0.2s, background 0.2s;
   border-radius: 6px;
 }
+
 .action-icons button:hover {
   color: #0d6efd;
   background-color: #f1f5f9;
@@ -34,7 +36,8 @@
   top: 0;
   left: 0;
   width: 100vw;
-  height: 100vh;
+  /* Using dvh ensures it doesn't get cut off by mobile browser address bars */
+  height: 100dvh;
   background-color: rgba(15, 23, 42, 0.6);
   display: flex;
   justify-content: center;
@@ -56,7 +59,7 @@
 
 .fullscreen-modal {
   width: 100vw !important;
-  height: 100vh !important;
+  height: 100dvh !important; /* Switch to dynamic viewport height for mobile browsers */
   max-width: none !important;
   max-height: none !important;
 }
@@ -67,6 +70,7 @@
   box-shadow: none !important;
   transition: border-color 0.2s, background-color 0.2s;
 }
+
 .clean-input:focus {
   border-color: #94a3b8;
   background-color: #ffffff;
@@ -78,13 +82,56 @@
 .custom-modal-content::-webkit-scrollbar {
   width: 8px;
 }
+
 .custom-modal-content::-webkit-scrollbar-track {
   background: #f8fafc;
 }
+
 .custom-modal-content::-webkit-scrollbar-thumb {
   background: #cbd5e1;
   border-radius: 4px;
 }
+
 .custom-modal-content::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
+}
+
+/* --------------------------------------
+   Responsive Adjustments 
+--------------------------------------- */
+
+@media (max-width: 768px) {
+  .staffoo-page {
+    padding: 16px; /* Less padding on small screens */
+  }
+
+  .custom-modal-overlay {
+    padding: 12px; /* Prevent modal from hugging screen edges too tightly */
+  }
+
+  /* Full width utilities for small screens */
+  .w-sm-100 {
+    width: 100% !important;
+  }
+  
+  .w-md-auto {
+    width: auto !important;
+  }
+
+  /* Reduce spacing on mobile action buttons */
+  .action-icons button {
+    padding: 4px;
+    font-size: 15px;
+  }
+}
+
+/* Helper to prevent text overflowing bounds on mobile */
+.text-break {
+  word-break: break-word;
+}
+.line-clamp-1 {
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;  
+  overflow: hidden;
 }

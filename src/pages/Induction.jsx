@@ -1,16 +1,7 @@
 import React, { useState } from "react";
+import useFetch from "../hooks/useFetch";
+import useSubmit from "../hooks/useSubmit";
 import "../assets/css/induction.css";
-
-const inductionTitles = [
-    "STAFFOO Code of Conduct", "Use of Force", "PPE Use in the Workplace",
-    "Covid Safe Practices", "Work Health & Safety Practices", "Site Induction Procedures"
-];
-
-const mockInductions = inductionTitles.map((title, index) => ({
-    id: index + 1,
-    title: title,
-    author: ["STARC", "SMB", "USMAN", "SHAHBAZ"][index % 4],
-}));
 
 const mockHistoryData = [
     { id: 1, name: "Amelia Charlotte", date: "24-01-2024 20:44", status: "Uncompleted" },
@@ -19,6 +10,13 @@ const mockHistoryData = [
 ];
 
 export default function Induction() {
+    const { data: listResponse, loading: listLoading, refetch: refetchList } = useFetch("api/questionnaire-list", { isAuth: true });
+    const { submit: submitSave, loading: isSaving } = useSubmit({ isAuth: true });
+    const { submit: submitDelete } = useSubmit({ isAuth: true });
+    const { submit: submitAssign, loading: isAssigning } = useSubmit({ isAuth: true });
+
+    const inductions = listResponse?.data || listResponse || [];
+
     const [activeModal, setActiveModal] = useState(null);
     const [selectedInduction, setSelectedInduction] = useState(null);
 
@@ -26,20 +24,29 @@ export default function Induction() {
     const [formSubtitles, setFormSubtitles] = useState([""]);
     const [formAttachment, setFormAttachment] = useState(null);
     const [formQuestions, setFormQuestions] = useState([
-        {
-            id: Date.now(), type: "MCQs", question: "",
-            optiona: "", optionb: "", optionc: "", optiond: "", answer: "1", attachment: null
-        }
+        { id: Date.now(), type: "MCQs", question: "", optiona: "", optionb: "", optionc: "", optiond: "", answer: "1", attachment: null }
     ]);
+
+    const [shareState, setShareState] = useState("");
+    const [shareCustomer, setShareCustomer] = useState("");
 
     const openModal = (type, induction = null) => {
         setSelectedInduction(induction);
         setActiveModal(type);
+
         if (type === 'create') {
-            setFormTitle("");
-            setFormSubtitles([""]);
-            setFormAttachment(null);
-            setFormQuestions([{ id: Date.now(), type: "MCQs", question: "", optiona: "", optionb: "", optionc: "", optiond: "", answer: "1", attachment: null }]);
+            if (induction) {
+
+                setFormTitle(induction.title || "");
+                setFormSubtitles(induction.subtitles?.length ? induction.subtitles : [""]);
+                setFormQuestions(induction.questions?.length ? induction.questions : [{ id: Date.now(), type: "MCQs", question: "", optiona: "", optionb: "", optionc: "", optiond: "", answer: "1", attachment: null }]);
+                setFormAttachment(null);
+            } else {
+                setFormTitle("");
+                setFormSubtitles([""]);
+                setFormAttachment(null);
+                setFormQuestions([{ id: Date.now(), type: "MCQs", question: "", optiona: "", optionb: "", optionc: "", optiond: "", answer: "1", attachment: null }]);
+            }
         }
     };
 
@@ -48,9 +55,7 @@ export default function Induction() {
         setSelectedInduction(null);
     };
 
-    const addSubtitle = () => {
-        setFormSubtitles([...formSubtitles, ""]);
-    };
+    const addSubtitle = () => setFormSubtitles([...formSubtitles, ""]);
     const removeSubtitle = (index) => {
         const updated = [...formSubtitles];
         updated.splice(index, 1);
@@ -84,16 +89,55 @@ export default function Induction() {
         setFormQuestions(updated);
     };
 
-    const handleSaveInduction = () => {
+    const handleSaveInduction = async () => {
+        const formData = new FormData();
+
+        if (selectedInduction?.id) formData.append("id", selectedInduction.id);
+        formData.append("title", formTitle);
+
+        formSubtitles.forEach((sub, i) => formData.append(`subtitles[${i}]`, sub));
+        if (formAttachment) formData.append("attachment", formAttachment);
+
+        formQuestions.forEach((q, i) => {
+            formData.append(`questions[${i}][question]`, q.question);
+            formData.append(`questions[${i}][type]`, q.type);
+            formData.append(`questions[${i}][answer]`, q.answer);
+            formData.append(`questions[${i}][optiona]`, q.optiona || "");
+            formData.append(`questions[${i}][optionb]`, q.optionb || "");
+            formData.append(`questions[${i}][optionc]`, q.optionc || "");
+            formData.append(`questions[${i}][optiond]`, q.optiond || "");
+            if (q.attachment) formData.append(`questions[${i}][attachment]`, q.attachment);
+        });
+
+        const res = await submitSave("api/questionnaire-save", formData, { method: "POST" });
+        if (res && res.success !== false) {
+            closeModal();
+            refetchList();
+        }
+    };
+
+    const handleDelete = async (id) => {
+        if (window.confirm("Are you sure you want to delete this induction?")) {
+            const res = await submitDelete(`api/questionnaire-delete/${id}`, {}, { method: "DELETE" });
+            if (res && res.success !== false) {
+                refetchList();
+            }
+        }
+    };
+
+    const handleAssign = async () => {
         const payload = {
-            title: formTitle,
-            subtitles: formSubtitles,
-            attachment: formAttachment,
-            questions: formQuestions
+            questionnaire_id: selectedInduction.id,
+            state: shareState,
+            customer: shareCustomer
         };
-        console.log("Saving Payload:", payload);
-        closeModal();
-        alert("Induction saved! Check console for payload.");
+
+        const res = await submitAssign("api/assign-questionnaire", payload, { method: "POST" });
+        if (res && res.success !== false) {
+            closeModal();
+            setShareState("");
+            setShareCustomer("");
+        }
     };
 
     const renderHistoryModal = () => (
@@ -142,14 +186,24 @@ export default function Induction() {
                 <div className="p-4">
                     <div className="mb-3">
                         <label className="form-label text-muted small fw-bold">Select State</label>
-                        <select className="form-select clean-input"><option>Tasmania</option><option>Victoria</option></select>
+                        <select className="form-select clean-input" value={shareState} onChange={e => setShareState(e.target.value)}>
+                            <option value="">Select...</option>
+                            <option value="Tasmania">Tasmania</option>
+                            <option value="Victoria">Victoria</option>
+                        </select>
                     </div>
                     <div className="mb-4">
                         <label className="form-label text-muted small fw-bold">Select Customers *</label>
-                        <select className="form-select clean-input"><option>Select...</option><option>Customer A</option></select>
+                        <select className="form-select clean-input" value={shareCustomer} onChange={e => setShareCustomer(e.target.value)}>
+                            <option value="">Select...</option>
+                            <option value="Customer A">Customer A</option>
+                            <option value="Customer B">Customer B</option>
+                        </select>
                     </div>
                     <div className="text-end">
-                        <button className="btn btn-primary px-4 rounded-pill" onClick={closeModal}>Send</button>
+                        <button className="btn btn-primary px-4 rounded-pill" onClick={handleAssign} disabled={isAssigning}>
+                            {isAssigning ? "Sending..." : "Send"}
+                        </button>
                     </div>
                 </div>
             </div>
@@ -191,12 +245,6 @@ export default function Induction() {
                                     </button>
                                 </div>
 
-                                <div className="col-md-5">
-                                    <label className="form-label fw-bold small text-muted text-uppercase">Global Attachment (Optional)</label>
-                                    <input type="file" className="form-control clean-input"
-                                        accept=".pdf, application/pdf"
-                                        onChange={(e) => setFormAttachment(e.target.files[0])} />
-                                </div>
                             </div>
                         </div>
 
@@ -206,7 +254,6 @@ export default function Induction() {
 
                         {formQuestions.map((q, qIndex) => (
                             <div key={q.id} className="border border-light rounded p-4 mb-4 bg-white shadow-sm position-relative">
-
                                 <div className="d-flex justify-content-between align-items-center mb-4">
                                     <span className="badge bg-primary bg-opacity-10 text-primary rounded-pill px-3 py-2 fw-bold">
                                         Question {qIndex + 1}
@@ -233,13 +280,9 @@ export default function Induction() {
                                         </select>
                                     </div>
 
-                                    {/* NEW: Document attachment specific to this question */}
                                     <div className="col-md-12 mt-3">
                                         <label className="form-label small text-muted fw-bold">Question Document (PDF Only)</label>
-                                        <input
-                                            type="file"
-                                            className="form-control clean-input"
-                                            accept=".pdf, application/pdf"
+                                        <input type="file" className="form-control clean-input" accept=".pdf, application/pdf"
                                             onChange={(e) => handleQuestionChange(qIndex, "attachment", e.target.files[0])}
                                         />
                                     </div>
@@ -292,13 +335,14 @@ export default function Induction() {
                                 <i className="fa fa-plus me-2"></i> Add Question
                             </button>
                         </div>
-
                     </div>
                 </div>
 
                 <div className="px-4 py-3 bg-white border-top text-end mb-0 shadow-sm" style={{ flexShrink: 0, zIndex: 10 }}>
-                    <button className="btn btn-light me-3 px-4 rounded-pill fw-medium" onClick={closeModal}>Cancel</button>
-                    <button className="btn btn-primary px-5 rounded-pill fw-medium shadow-sm" onClick={handleSaveInduction}>Save Induction</button>
+                    <button className="btn btn-light me-3 px-4 rounded-pill fw-medium" onClick={closeModal} disabled={isSaving}>Cancel</button>
+                    <button className="btn btn-primary px-5 rounded-pill fw-medium shadow-sm" onClick={handleSaveInduction} disabled={isSaving}>
+                        {isSaving ? "Saving..." : "Save Induction"}
+                    </button>
                 </div>
             </div>
         </div>
@@ -313,28 +357,40 @@ export default function Induction() {
                 </button>
             </div>
 
-            <div className="row g-4">
-                {mockInductions.map((induction) => (
-                    <div className="col-12 col-md-6 col-lg-4" key={induction.id}>
-                        <div className="card h-100 border-0 shadow-sm staffoo-card">
-                            <div className="card-body d-flex flex-column p-4">
-                                <h5 className="card-title text-dark fw-bold mb-4 lh-base">{induction.title}</h5>
-                                <div className="mt-auto pt-3 border-top d-flex justify-content-between align-items-center">
-                                    <div className="d-flex align-items-center gap-2 text-muted small fw-medium">
-                                        <i className="fa fa-user-circle fs-5"></i> {induction.author}
-                                    </div>
-                                    <div className="d-flex gap-2 action-icons">
-                                        <button onClick={() => openModal("history", induction)}><i className="fa fa-eye"></i></button>
-                                        <button onClick={() => openModal("create", induction)}><i className="fa fa-edit"></i></button>
-                                        <button onClick={() => console.log("Delete")}><i className="fa fa-trash"></i></button>
-                                        <button onClick={() => openModal("share", induction)}><i className="fa fa-share-alt"></i></button>
+            {listLoading ? (
+                <div className="text-center py-5">
+                    <div className="spinner-border text-primary" role="status">
+                        <span className="visually-hidden">Loading...</span>
+                    </div>
+                </div>
+            ) : (
+                <div className="row g-4">
+                    {inductions.length > 0 ? inductions.map((induction) => (
+                        <div className="col-12 col-md-6 col-lg-4" key={induction.id}>
+                            <div className="card h-100 border-0 shadow-sm staffoo-card">
+                                <div className="card-body d-flex flex-column p-4">
+                                    <h5 className="card-title text-dark fw-bold mb-4 lh-base">{induction.title || "Untitled Questionnaire"}</h5>
+                                    <div className="mt-auto pt-3 border-top d-flex justify-content-between align-items-center">
+                                        <div className="d-flex align-items-center gap-2 text-muted small fw-medium">
+                                            <i className="fa fa-user-circle fs-5"></i> {induction.author || "Admin"}
+                                        </div>
+                                        <div className="d-flex gap-2 action-icons">
+                                            <button onClick={() => openModal("history", induction)}><i className="fa fa-eye"></i></button>
+                                            <button onClick={() => openModal("create", induction)}><i className="fa fa-edit"></i></button>
+                                            <button onClick={() => handleDelete(induction.id)}><i className="fa fa-trash"></i></button>
+                                            <button onClick={() => openModal("share", induction)}><i className="fa fa-share-alt"></i></button>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
-                ))}
-            </div>
+                    )) : (
+                        <div className="col-12 text-center text-muted py-5">
+                            <p>No inductions found. Create one to get started.</p>
+                        </div>
+                    )}
+                </div>
+            )}
 
             {activeModal === "history" && renderHistoryModal()}
             {activeModal === "share" && renderShareModal()}

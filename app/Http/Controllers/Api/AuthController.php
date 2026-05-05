@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
+use StaffOnboardingMail;
 use Vonage\Client;
 use Vonage\Client\Credentials\Basic;
 use Vonage\SMS\Message\SMS;
@@ -209,21 +210,55 @@ class AuthController extends Controller
         });
     }
 
-       public function EmailVerification($email,$token)
-    { 
-        $guard = User::where('email', $email)->first();
+    //    public function EmailVerification($email,$token)
+    // { 
+    //     $guard = User::where('email', $email)->first();
 
-        if($guard){
-            if($guard->email_otp == $token){
-                $guard->is_email_approved = 1;
-                $guard->email_otp = null;
-                $guard->save();
-                return view('guard-welcome', ['guard' => $guard]);
-            }else{
-                return response()->json(['message' => "Your Otp Expired!" ,  'code' => 404, 'success' => false]);
+    //     if($guard){
+    //         if($guard->email_otp == $token){
+    //             $guard->is_email_approved = 1;
+    //             $guard->email_otp = null;
+    //             $guard->save();
+    //             return view('guard-welcome', ['guard' => $guard]);
+    //         }else{
+    //             return response()->json(['message' => "Your Otp Expired!" ,  'code' => 404, 'success' => false]);
+    //         }
+    //     }else{
+    //         return response()->json(['message' => "Staff Not Found!" ,  'code' => 404, 'success' => false]);
+    //     }
+    // }
+    public function EmailVerification($email, $token)
+    { 
+        $user = User::where('email', $email)->first();
+
+        if ($user) {
+            if ($user->email_otp == $token) {
+
+                // prevent duplicate send
+                $alreadyVerified = $user->is_email_approved;
+
+                $user->is_email_approved = 1;
+                $user->email_otp = null;
+                $user->save();
+
+                // ✅ SEND EMAIL ONLY ON FIRST VERIFY + STAFF
+                if (!$alreadyVerified && $user->user_type === 'staff') {
+                    Mail::to($user->email)->send(new StaffOnboardingMail());
+                }
+
+                return view('guard-welcome', ['guard' => $user]);
+
+            } else {
+                return response()->json([
+                    'message' => "Your OTP Expired!",
+                    'success' => false
+                ], 404);
             }
-        }else{
-            return response()->json(['message' => "Staff Not Found!" ,  'code' => 404, 'success' => false]);
+        } else {
+            return response()->json([
+                'message' => "User Not Found!",
+                'success' => false
+            ], 404);
         }
     }
     // public function registerContractor(Request $request)

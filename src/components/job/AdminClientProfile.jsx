@@ -24,7 +24,6 @@ export default function AdminClientProfile({
     const isVerified = customerDetails?.customer?.verify_profile;
     const isOnline = customerDetails?.is_online;
 
-    // Find the currently selected site object for react-select
     const currentSelectedOption = siteOptions.find((s) => s.value === selectedSiteId) || null;
 
     return (
@@ -172,7 +171,7 @@ export default function AdminClientProfile({
                                 styles={{
                                     control: (base) => ({
                                         ...base,
-                                        minHeight: '40px', // Reduced height for better fit
+                                        minHeight: '40px',
                                         borderRadius: '0.375rem',
                                         borderColor: '#dee2e6',
                                         boxShadow: 'none',

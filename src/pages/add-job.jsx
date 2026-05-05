@@ -264,7 +264,6 @@ export default function AddJob() {
     });
 
     if (wasSplit || wasPadded) {
-      toast.info("Notice: Some shifts were automatically split or padded to comply with minimum/maximum hour regulations.", { autoClose: 6000 });
       setForm(f => ({ ...f, scheduleDays: newDays }));
     }
 

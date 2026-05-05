@@ -64,6 +64,53 @@ class AdminStaffController extends Controller
         ]);
     }
 
+     public function staffooStaff(Request $request)
+    {
+        $query = User::where('user_type', 'staff')->where('user_id', 1)
+            ->with('staff');
+
+        // Search functionality
+        if ($request->has('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%");
+            });
+        }
+
+        // Filter by status
+        if ($request->has('status')) {
+            if ($request->status === 'active') {
+                $query->where('is_active', 1);
+            } elseif ($request->status === 'inactive') {
+                $query->where('is_active', 0);
+            }
+        }
+
+        // Filter by city/state/country
+        if ($request->has('city')) {
+            $query->where('city', $request->city);
+        }
+        
+        if ($request->has('state')) {
+            $query->where('state', $request->state);
+        }
+        
+        if ($request->has('country')) {
+            $query->where('country', $request->country);
+        }
+
+        // Pagination
+        $staff = $query->orderBy('id', 'desc')->paginate($request->get('per_page', $request->limit));
+
+        return response()->json([
+            'success' => true,
+            'data' => $staff,
+            'message' => 'Staffoo Staff retrieved successfully'
+        ]);
+    }
+
+
     public function createStaff(Request $request)
     {
         $user = User::create([

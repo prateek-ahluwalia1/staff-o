@@ -21,8 +21,11 @@ export default function Login() {
     email: "",
     password: "",
   });
-
   const [errors, setErrors] = useState({});
+
+  const [showRoleModal, setShowRoleModal] = useState(false);
+  const [pendingGoogleToken, setPendingGoogleToken] = useState(null);
+  const [selectedRole, setSelectedRole] = useState("contractor");
 
   const fetchLatestUserProfile = async (token, authUser) => {
     const userId = extractUserId(authUser);
@@ -105,12 +108,12 @@ export default function Login() {
     toast.success("Logged in successfully!");
   };
 
+  // --- UPDATED GOOGLE LOGIN HANDLER ---
   const handleGoogleLogin = useGoogleLogin({
     flow: "implicit",
     onSuccess: async (tokenResponse) => {
       try {
-        const googleToken =
-          tokenResponse?.access_token || tokenResponse?.code;
+        const googleToken = tokenResponse?.access_token || tokenResponse?.code;
 
         if (!googleToken) {
           toast.error("Invalid Google response.");
@@ -119,9 +122,15 @@ export default function Login() {
 
         const res = await submit("api/auth/google/callback", {
           credential: googleToken,
-        });
+        }, { silentErrorToast: true });
 
         if (!res) return;
+
+        if (res?.data?.success === false && res?.data?.message === "User not found.") {
+          setPendingGoogleToken(googleToken);
+          setShowRoleModal(true);
+          return;
+        }
 
         const normalized = normalizeAuthResponse(res);
 
@@ -145,6 +154,38 @@ export default function Login() {
     },
   });
 
+  const handleRoleSelectionSubmit = async () => {
+    try {
+      const res = await submit("api/auth/google/callback", {
+        credential: pendingGoogleToken,
+        user_type: selectedRole,
+      }, { silentErrorToast: true });
+
+      if (!res) return;
+
+      const normalized = normalizeAuthResponse(res);
+
+      if (normalized?.token) {
+        dispatch(setToken({ token: normalized.token }));
+
+        const latestProfile = await fetchLatestUserProfile(
+          normalized.token,
+          normalized.user
+        );
+
+        dispatch(setUser({ userdata: latestProfile }));
+
+        toast.success("Account created and logged in successfully!");
+        setShowRoleModal(false);
+        setPendingGoogleToken(null);
+      } else {
+        toast.error(res.message || "Could not complete account creation.");
+      }
+    } catch {
+      toast.error("Server connection error during account creation.");
+    }
+  };
+
   return (
     <>
       <Header />
@@ -159,10 +200,12 @@ export default function Login() {
       >
         <div className="container" style={{ maxWidth: "1000px" }}>
           <div className="row align-items-center g-4">
-
             {/* LEFT SIDE */}
             <div className="col-lg-6 d-none d-lg-block">
-              <h1 className="fw-bold mb-2" style={{ fontSize: "36px", lineHeight: "1.2" }}>
+              <h1
+                className="fw-bold mb-2"
+                style={{ fontSize: "36px", lineHeight: "1.2" }}
+              >
                 Welcome back to your network
               </h1>
               <p className="text-muted mb-4 small">
@@ -196,7 +239,9 @@ export default function Login() {
                 }}
               >
                 <h5 className="fw-bold mb-1">Log in to your account</h5>
-                <p className="text-muted small mb-4">Enter your credentials to continue.</p>
+                <p className="text-muted small mb-4">
+                  Enter your credentials to continue.
+                </p>
 
                 <form onSubmit={handleSubmit} noValidate>
                   <div className="row g-3 mb-4">
@@ -206,7 +251,8 @@ export default function Login() {
                       </label>
                       <input
                         type="email"
-                        className={`form-control py-2 ${errors.email ? 'is-invalid' : ''}`}
+                        className={`form-control py-2 ${errors.email ? "is-invalid" : ""
+                          }`}
                         name="email"
                         placeholder="name@example.com"
                         value={formData.email}
@@ -215,7 +261,10 @@ export default function Login() {
                         disabled={loading}
                       />
                       {errors.email && (
-                        <div className="invalid-feedback" style={{ fontSize: '12px' }}>
+                        <div
+                          className="invalid-feedback"
+                          style={{ fontSize: "12px" }}
+                        >
                           {errors.email}
                         </div>
                       )}
@@ -228,7 +277,8 @@ export default function Login() {
                       <div className="position-relative">
                         <input
                           type={showPassword ? "text" : "password"}
-                          className={`form-control py-2 pe-5 ${errors.password ? 'is-invalid' : ''}`}
+                          className={`form-control py-2 pe-5 ${errors.password ? "is-invalid" : ""
+                            }`}
                           name="password"
                           placeholder="Password"
                           value={formData.password}
@@ -242,10 +292,16 @@ export default function Login() {
                           onClick={() => setShowPassword(!showPassword)}
                           tabIndex="-1"
                         >
-                          <i className={`fa-solid ${showPassword ? 'fa-eye-slash' : 'fa-eye'}`}></i>
+                          <i
+                            className={`fa-solid ${showPassword ? "fa-eye-slash" : "fa-eye"
+                              }`}
+                          ></i>
                         </button>
                         {errors.password && (
-                          <div className="invalid-feedback" style={{ fontSize: '12px' }}>
+                          <div
+                            className="invalid-feedback"
+                            style={{ fontSize: "12px" }}
+                          >
                             {errors.password}
                           </div>
                         )}
@@ -261,21 +317,34 @@ export default function Login() {
                       border: "none",
                       borderRadius: "6px",
                       color: "#fff",
-                      transition: "transform 0.1s"
+                      transition: "transform 0.1s",
                     }}
                     disabled={loading}
-                    onMouseDown={(e) => e.currentTarget.style.transform = "scale(0.98)"}
-                    onMouseUp={(e) => e.currentTarget.style.transform = "scale(1)"}
-                    onMouseLeave={(e) => e.currentTarget.style.transform = "scale(1)"}
+                    onMouseDown={(e) =>
+                      (e.currentTarget.style.transform = "scale(0.98)")
+                    }
+                    onMouseUp={(e) =>
+                      (e.currentTarget.style.transform = "scale(1)")
+                    }
+                    onMouseLeave={(e) =>
+                      (e.currentTarget.style.transform = "scale(1)")
+                    }
                   >
-                    {loading && <i className="fa-solid fa-spinner fa-spin"></i>}
+                    {loading && (
+                      <i className="fa-solid fa-spinner fa-spin"></i>
+                    )}
                     {loading ? "Logging in..." : "Log In"}
                   </button>
                 </form>
 
                 <div className="d-flex align-items-center my-3">
                   <hr className="flex-grow-1 text-muted opacity-25 m-0" />
-                  <span className="mx-2" style={{ fontSize: "11px", color: "#9ca3af" }}>OR</span>
+                  <span
+                    className="mx-2"
+                    style={{ fontSize: "11px", color: "#9ca3af" }}
+                  >
+                    OR
+                  </span>
                   <hr className="flex-grow-1 text-muted opacity-25 m-0" />
                 </div>
 
@@ -290,12 +359,23 @@ export default function Login() {
                     alt="Google"
                     width={16}
                   />
-                  <span className="text-dark fw-medium" style={{ fontSize: "14px" }}>Continue with Google</span>
+                  <span
+                    className="text-dark fw-medium"
+                    style={{ fontSize: "14px" }}
+                  >
+                    Continue with Google
+                  </span>
                 </button>
 
-                <p className="text-center mt-4 mb-0" style={{ fontSize: "13px" }}>
+                <p
+                  className="text-center mt-4 mb-0"
+                  style={{ fontSize: "13px" }}
+                >
                   Don't have an account?{" "}
-                  <NavLink to="/register" className="fw-bold text-primary text-decoration-none">
+                  <NavLink
+                    to="/register"
+                    className="fw-bold text-primary text-decoration-none"
+                  >
                     Sign up
                   </NavLink>
                 </p>
@@ -304,6 +384,95 @@ export default function Login() {
           </div>
         </div>
       </section>
+
+      {/* --- ROLE SELECTION MODAL --- */}
+      {showRoleModal && (
+        <>
+          <div
+            className="modal-backdrop fade show"
+            style={{ zIndex: 1040, backgroundColor: "rgba(0,0,0,0.5)" }}
+          ></div>
+          <div
+            className="modal fade show d-block"
+            tabIndex="-1"
+            style={{ zIndex: 1050 }}
+          >
+            <div className="modal-dialog modal-dialog-centered">
+              <div className="modal-content rounded-4 border-0 shadow-lg">
+                <div className="modal-header border-0 pb-0">
+                  <h5 className="modal-title fw-bold">Complete your setup</h5>
+                  <button
+                    type="button"
+                    className="btn-close"
+                    onClick={() => {
+                      setShowRoleModal(false);
+                      setPendingGoogleToken(null);
+                    }}
+                    disabled={loading}
+                  ></button>
+                </div>
+                <div className="modal-body pt-3 pb-4 px-4">
+                  <p className="text-muted small mb-4">
+                    It looks like you don't have an account yet. Please select
+                    your account type to securely create your profile and
+                    continue.
+                  </p>
+
+                  <label className="form-label small fw-medium mb-2">
+                    Account Type <span className="text-danger">*</span>
+                  </label>
+                  <div className="d-flex gap-2 flex-wrap mb-4" role="radiogroup">
+                    {[
+                      { key: "customer", label: "Book a Guard" },
+                      { key: "staff", label: "Apply for a Job" },
+                      { key: "contractor", label: "Resource Partner" },
+                    ].map((role) => (
+                      <label
+                        key={role.key}
+                        className={`btn btn-sm rounded-pill px-3 py-2 ${selectedRole === role.key
+                          ? "btn-primary text-white"
+                          : "btn-light text-muted border"
+                          }`}
+                        style={{
+                          cursor: "pointer",
+                          transition: "all 0.2s",
+                          fontSize: "13px",
+                        }}
+                      >
+                        <input
+                          type="radio"
+                          name="modalUserRole"
+                          className="visually-hidden"
+                          value={role.key}
+                          checked={selectedRole === role.key}
+                          onChange={() => !loading && setSelectedRole(role.key)}
+                          disabled={loading}
+                        />
+                        {role.label}
+                      </label>
+                    ))}
+                  </div>
+
+                  <button
+                    onClick={handleRoleSelectionSubmit}
+                    className="btn w-100 py-2 fw-semibold d-flex justify-content-center align-items-center gap-2"
+                    style={{
+                      background: "linear-gradient(135deg, #2563eb, #1d4ed8)",
+                      border: "none",
+                      borderRadius: "6px",
+                      color: "#fff",
+                    }}
+                    disabled={loading}
+                  >
+                    {loading && <i className="fa-solid fa-spinner fa-spin"></i>}
+                    {loading ? "Creating..." : "Create Account & Login"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
     </>
   );
 }

@@ -27,7 +27,6 @@ export default function Register() {
     password: "",
   });
 
-  // State to hold validation errors
   const [errors, setErrors] = useState({});
 
   const fetchLatestUserProfile = async (token, authUser) => {
@@ -56,34 +55,64 @@ export default function Register() {
   };
 
   const handleChange = (e) => {
+    const { name, value } = e.target;
+    let newValue = value;
+
+    // Input constraints: Prevent typing invalid characters
+    if (name === "name") {
+      // Allow only letters and spaces
+      newValue = value.replace(/[^a-zA-Z\s]/g, "");
+    } else if (name === "phone") {
+      // Allow only numbers, plus sign, spaces, and dashes
+      newValue = value.replace(/[^\d+\s-]/g, "");
+    }
+
     setFormData((prev) => ({
       ...prev,
-      [e.target.name]: e.target.value,
+      [name]: newValue,
     }));
 
     // Clear error for a specific field when the user starts typing
-    if (errors[e.target.name]) {
-      setErrors((prev) => ({ ...prev, [e.target.name]: null }));
+    if (errors[name]) {
+      setErrors((prev) => ({ ...prev, [name]: null }));
     }
   };
 
-  // Validation function
+  // Comprehensive Validation function
   const validateForm = () => {
     const newErrors = {};
-    if (!formData.name.trim()) newErrors.name = "Full name is required.";
 
-    // Phone validation removed to make it optional
+    // Name Validation
+    if (!formData.name.trim()) {
+      newErrors.name = "Full name is required.";
+    } else if (formData.name.trim().length < 2) {
+      newErrors.name = "Full name must be at least 2 characters.";
+    }
 
+    // Phone Validation (Optional, but validated if provided)
+    if (formData.phone.trim()) {
+      // Strips spaces/dashes to check pure digit length
+      const pureDigits = formData.phone.replace(/[\s-]/g, '');
+      if (!/^\+?\d{10,15}$/.test(pureDigits)) {
+        newErrors.phone = "Please enter a valid phone number (10-15 digits).";
+      }
+    }
+
+    // Email Validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!formData.email.trim()) {
       newErrors.email = "Email address is required.";
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+    } else if (!emailRegex.test(formData.email)) {
       newErrors.email = "Please enter a valid email address.";
     }
 
+    // Password Validation
     if (!formData.password) {
       newErrors.password = "Password is required.";
     } else if (formData.password.length < 8) {
       newErrors.password = "Password must be at least 8 characters.";
+    } else if (!/(?=.*[A-Za-z])(?=.*\d)/.test(formData.password)) {
+      newErrors.password = "Password must contain at least one letter and one number.";
     }
 
     setErrors(newErrors);
@@ -93,7 +122,6 @@ export default function Register() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Run validation before submitting
     if (!validateForm()) return;
 
     const payload = {
@@ -211,7 +239,6 @@ export default function Register() {
                 <p className="text-muted small mb-3">It only takes a few seconds.</p>
 
                 <form onSubmit={handleSubmit} noValidate>
-                  {/* 2x2 Grid to save vertical space */}
                   <div className="row g-2 mb-3">
                     <div className="col-md-6">
                       <label className="form-label small fw-medium mb-1">
@@ -224,6 +251,7 @@ export default function Register() {
                         placeholder="e.g. John Doe"
                         value={formData.name}
                         onChange={handleChange}
+                        maxLength={50}
                         disabled={loading}
                       />
                       {errors.name && <div className="invalid-feedback" style={{ fontSize: '12px' }}>{errors.name}</div>}
@@ -235,14 +263,15 @@ export default function Register() {
                       </label>
                       <input
                         type="tel"
-                        className="form-control"
+                        className={`form-control ${errors.phone ? 'is-invalid' : ''}`}
                         name="phone"
                         placeholder="e.g. +1234567890"
                         value={formData.phone}
                         onChange={handleChange}
+                        maxLength={20}
                         disabled={loading}
                       />
-                      {/* Removed error feedback for phone since it's optional */}
+                      {errors.phone && <div className="invalid-feedback" style={{ fontSize: '12px' }}>{errors.phone}</div>}
                     </div>
 
                     <div className="col-md-6">
@@ -256,6 +285,7 @@ export default function Register() {
                         placeholder="name@example.com"
                         value={formData.email}
                         onChange={handleChange}
+                        maxLength={100}
                         disabled={loading}
                       />
                       {errors.email && <div className="invalid-feedback" style={{ fontSize: '12px' }}>{errors.email}</div>}
@@ -270,9 +300,10 @@ export default function Register() {
                           type={showPassword ? "text" : "password"}
                           className={`form-control pe-5 ${errors.password ? 'is-invalid' : ''}`}
                           name="password"
-                          placeholder="Min. 8 characters"
+                          placeholder="Min. 8 chars (letters & numbers)"
                           value={formData.password}
                           onChange={handleChange}
+                          maxLength={50}
                           disabled={loading}
                         />
                         <button
@@ -288,7 +319,6 @@ export default function Register() {
                     </div>
                   </div>
 
-                  {/* Compact Role Selection */}
                   <div className="mb-3 mt-1">
                     <label className="form-label small fw-medium mb-2">
                       Account Type <span className="text-danger">*</span>
@@ -338,14 +368,12 @@ export default function Register() {
                   </button>
                 </form>
 
-                {/* Compact Divider */}
                 <div className="d-flex align-items-center my-3">
                   <hr className="flex-grow-1 text-muted opacity-25 m-0" />
                   <span className="mx-2" style={{ fontSize: "11px", color: "#9ca3af" }}>OR</span>
                   <hr className="flex-grow-1 text-muted opacity-25 m-0" />
                 </div>
 
-                {/* Google Button */}
                 <button
                   onClick={handleGoogleRegister}
                   className="btn btn-light border w-100 py-2 small d-flex align-items-center justify-content-center gap-2"

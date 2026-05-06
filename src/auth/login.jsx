@@ -22,7 +22,6 @@ export default function Login() {
     password: "",
   });
 
-  // State to hold validation errors
   const [errors, setErrors] = useState({});
 
   const fetchLatestUserProfile = async (token, authUser) => {
@@ -56,19 +55,18 @@ export default function Login() {
       [e.target.name]: e.target.value,
     }));
 
-    // Clear error for a specific field when the user starts typing
     if (errors[e.target.name]) {
       setErrors((prev) => ({ ...prev, [e.target.name]: null }));
     }
   };
 
-  // Validation function
   const validateForm = () => {
     const newErrors = {};
 
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!formData.email.trim()) {
       newErrors.email = "Email address is required.";
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+    } else if (!emailRegex.test(formData.email)) {
       newErrors.email = "Please enter a valid email address.";
     }
 
@@ -83,7 +81,6 @@ export default function Login() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Run validation before submitting
     if (!validateForm()) return;
 
     const res = await submit("api/login", formData);
@@ -120,7 +117,6 @@ export default function Login() {
           return;
         }
 
-        // Adjust to your backend Google auth callback if needed
         const res = await submit("api/auth/google/callback", {
           credential: googleToken,
         });
@@ -215,6 +211,7 @@ export default function Login() {
                         placeholder="name@example.com"
                         value={formData.email}
                         onChange={handleChange}
+                        maxLength={100}
                         disabled={loading}
                       />
                       {errors.email && (
@@ -236,6 +233,7 @@ export default function Login() {
                           placeholder="Password"
                           value={formData.password}
                           onChange={handleChange}
+                          maxLength={50}
                           disabled={loading}
                         />
                         <button
@@ -252,15 +250,6 @@ export default function Login() {
                           </div>
                         )}
                       </div>
-                      {/* <div className="text-end mt-1">
-                        <NavLink
-                          to="/forgot-password"
-                          className="text-decoration-none text-primary"
-                          style={{ fontSize: "12px", fontWeight: "500" }}
-                        >
-                          Forgot password?
-                        </NavLink>
-                      </div> */}
                     </div>
                   </div>
 
@@ -284,14 +273,12 @@ export default function Login() {
                   </button>
                 </form>
 
-                {/* Compact Divider */}
                 <div className="d-flex align-items-center my-3">
                   <hr className="flex-grow-1 text-muted opacity-25 m-0" />
                   <span className="mx-2" style={{ fontSize: "11px", color: "#9ca3af" }}>OR</span>
                   <hr className="flex-grow-1 text-muted opacity-25 m-0" />
                 </div>
 
-                {/* Google Button */}
                 <button
                   onClick={handleGoogleLogin}
                   className="btn btn-light border w-100 py-2 small d-flex align-items-center justify-content-center gap-2"

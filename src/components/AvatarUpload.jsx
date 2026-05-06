@@ -1,5 +1,9 @@
 import React, { useState } from "react";
 import { useSelector } from "react-redux";
+import { toast } from "react-toastify";
+
+const MAX_FILE_SIZE_MB = 5;
+const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
 
 const getInitials = (name) => {
   if (!name) return "U";
@@ -42,10 +46,25 @@ export default function AvatarUpload({
 
   const handleFileChange = async (e) => {
     const file = e.target.files?.[0];
-    if (file && onPhotoChange) {
+
+    if (!file) return;
+
+    // Validate file size before proceeding
+    if (file.size > MAX_FILE_SIZE_BYTES) {
+      toast.error(`File is too large. Maximum allowed size is ${MAX_FILE_SIZE_MB}MB.`);
+      e.target.value = ""; // Reset the file input so the user can try again
+      return;
+    }
+
+    if (onPhotoChange) {
       setUploadProgress(true);
-      await onPhotoChange(file);
-      setUploadProgress(false);
+      try {
+        await onPhotoChange(file);
+      } catch (error) {
+        console.error("Error uploading photo:", error);
+      } finally {
+        setUploadProgress(false);
+      }
     }
   };
 
@@ -133,21 +152,27 @@ export default function AvatarUpload({
       />
       {
         userRole !== "admin" && (
-          <label
-            htmlFor="avatar-file-input"
-            className="upload-label"
-            style={{
-              cursor: uploadProgress || loading ? "not-allowed" : "pointer",
-              display: "inline-flex",
-              width: "80%",
-              alignItems: "center",
-              gap: 6,
-              opacity: uploadProgress || loading ? 0.6 : 1,
-            }}
-          >
-            <i className="fa-solid fa-arrow-up-from-bracket" aria-hidden="true"></i>
-            {uploadProgress || loading ? "Uploading..." : "Update Photo"}
-          </label>
+          <div className="d-flex flex-column align-items-center">
+            <label
+              htmlFor="avatar-file-input"
+              className="upload-label mb-1"
+              style={{
+                cursor: uploadProgress || loading ? "not-allowed" : "pointer",
+                display: "inline-flex",
+                width: "100%",
+                justifyContent: "center",
+                alignItems: "center",
+                gap: 6,
+                opacity: uploadProgress || loading ? 0.6 : 1,
+              }}
+            >
+              <i className="fa-solid fa-arrow-up-from-bracket" aria-hidden="true"></i>
+              {uploadProgress || loading ? "Uploading..." : "Update Photo"}
+            </label>
+            <span style={{ fontSize: "11px", color: "#6c757d" }}>
+              Max file size: {MAX_FILE_SIZE_MB}MB
+            </span>
+          </div>
         )
       }
     </div>

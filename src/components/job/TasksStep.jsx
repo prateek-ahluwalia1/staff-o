@@ -102,7 +102,7 @@ export default function TasksStep({ form, setField }) {
 
   return (
     <div className="mb-4">
-      <h5 className="mb-1">Tasks</h5>
+      <h5 className="mb-1">Tasks <span className="text-muted small">(Optional)</span></h5>
       <p className="text-muted small mb-4">
         Add one or more tasks for this job. Each task has a start time, end
         time, and description.

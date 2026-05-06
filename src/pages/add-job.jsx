@@ -48,8 +48,8 @@ export default function AddJob() {
   const [form, setForm] = useState({
     user_id: "", title: "", location: "", address: "", city: "", state: "", postcode: "", coordinates: "",
     scheduleMode: "single", dateRange: [null, null], scheduleDays: [],
-    jobType: "", attachments: [], document: false, document_types: [], tasks: [],
-    termsAccepted: false, paymentOption: "full",
+    jobType: "", customJobType: "", attachments: [], document: false, document_types: [], customDocumentTypes: [], tasks: [],
+    termsAccepted: false, paymentOption: "full", description: "",
   });
 
   const [attachmentPreviews, setAttachmentPreviews] = useState([]);
@@ -293,10 +293,26 @@ export default function AddJob() {
   }
 
   function next() {
-    if (step === 0 && !form.coordinates) return setLocationError("Please select a valid location before continuing.");
+    if (step === 0 && !form.coordinates) {
+      setLocationError("Please select a valid location before continuing.");
+      return;
+    }
     if (step === 1) {
       if (!validateSchedule(true)) return;
       setTimeout(() => setStep(step + 1), 50);
+      return;
+    }
+    if (step === 2) {
+      // Validate Details step
+      if (!form.title.trim()) {
+        toast.error("Job title is required");
+        return;
+      }
+      if (!form.jobType) {
+        toast.error("Please select a job type");
+        return;
+      }
+      setStep(step + 1);
       return;
     }
     if (step < STEP_TITLES.length - 1) setStep(step + 1);
@@ -344,7 +360,7 @@ export default function AddJob() {
         amount_to_charge_today: Number(finalAmountDueToday.toFixed(2)),
         balance_deferred: Number(balanceRemaining.toFixed(2))
       },
-      is_document: Boolean(form.document) || document_list.length > 0, document_list, document_types: form.document_types || [], job_instruction: form.description || "",
+      is_document: Boolean(form.document) || document_list.length > 0, document_list, document_types: [...(form.document_types || []), ...(Array.isArray(form.customDocumentTypes) ? form.customDocumentTypes : [])], job_instruction: form.description || "",
       tasks: (form.tasks || []).map((t) => ({ task: t.task, task_start: t.task_start, task_end: t.task_end })),
     };
   }
@@ -388,13 +404,47 @@ export default function AddJob() {
   async function handleConfirm(e) {
     if (e) e.preventDefault();
 
-    if (!form.title.trim()) { toast.error("Job title required."); setStep(2); return; }
-    if (!isAdmin && !form.termsAccepted) return toast.error("Accept Terms & Conditions.");
+    // Validate all required fields before submission
+    if (!form.coordinates) {
+      toast.error("Location is required. Please select a location.");
+      setStep(0);
+      return;
+    }
 
-    if (!validateSchedule(true)) { setStep(1); return; }
+    if (form.scheduleDays.length === 0) {
+      toast.error("Schedule is required. Please select at least one date.");
+      setStep(1);
+      return;
+    }
+
+    if (!form.title.trim()) {
+      toast.error("Job title is required.");
+      setStep(2);
+      return;
+    }
+
+    if (!form.jobType) {
+      toast.error("Job type is required.");
+      setStep(2);
+      return;
+    }
+
+    if (!isAdmin && !form.termsAccepted) {
+      toast.error("Accept Terms & Conditions to proceed.");
+      setStep(4);
+      return;
+    }
+
+    if (!validateSchedule(true)) {
+      setStep(1);
+      return;
+    }
 
     const baseAmount = breakdown?.chargeTotalIncGst || 0;
-    if (baseAmount <= 0) return toast.error("Unable to calculate payment amount. Check the schedule.");
+    if (baseAmount <= 0) {
+      toast.error("Unable to calculate payment amount. Please check your schedule and try again.");
+      return;
+    }
 
     setPostingJob(true);
     try {

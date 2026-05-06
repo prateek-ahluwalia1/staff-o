@@ -192,9 +192,9 @@ export default function ScheduleStep({ form, setField, scheduleError = "" }) {
       <div className="mb-4 pb-4 border-bottom">
         <div className="d-flex flex-column flex-md-row justify-content-between align-items-md-end mb-3 gap-3">
           <label className="form-label fw-bold mb-0">
-            {form.scheduleMode === "single" && "Select Job Date"}
-            {form.scheduleMode === "multiple" && "Select Date Range"}
-            {form.scheduleMode === "custom" && "Click Dates to Select/Deselect"}
+            {form.scheduleMode === "single" && "Select Job Date *"}
+            {form.scheduleMode === "multiple" && "Select Date Range *"}
+            {form.scheduleMode === "custom" && "Click Dates to Select/Deselect *"}
           </label>
 
           {/* Secondary Multi-Select Toggle (Only shows if Multiple Days is active) */}

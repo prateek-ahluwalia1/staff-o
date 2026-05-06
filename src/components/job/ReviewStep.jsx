@@ -33,7 +33,7 @@ export default function ReviewStep({ form, rate, setField, handleConfirm, setSte
   return (
     <div className="bg-white rounded-4 p-4 border" style={{ boxShadow: "0 4px 20px rgba(0,0,0,0.03)" }}>
       <div className="mb-4 pb-3 border-bottom">
-        <h4 className="fw-bold mb-1 text-dark">Review & Confirm</h4>
+        <h4 className="fw-bold mb-1 text-dark">Review & Confirm <span className="text-danger">*</span></h4>
         <p className="text-muted small mb-0">Please review your job details before submitting.</p>
       </div>
 

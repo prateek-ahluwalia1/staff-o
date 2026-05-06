@@ -169,7 +169,7 @@ export default function LocationStep({
     <div className="mb-2">
       <div className="d-flex justify-content-between align-items-center mb-3">
         <div>
-          <h5 className="mb-1 fw-bold text-dark">Interactive Map</h5>
+          <h5 className="mb-1 fw-bold text-dark">Interactive Map <span className="text-danger fw-bold">*</span></h5>
           <p className="text-muted small mb-0">Search below, move the pin, or use current location.</p>
         </div>
       </div>
@@ -194,9 +194,13 @@ export default function LocationStep({
                 setField("address", "");
                 if (setLocationError) setLocationError("");
               }}
-              className={`form-control form-control-lg border-start-0 ps-2 ${locationError ? " is-invalid" : ""}`}
+              className={`form-control form-control-lg border-start-0 ps-2 ${locationError ? "is-invalid" : ""}`}
               placeholder="Search address or enter manually"
               style={{ boxShadow: "none", fontSize: "1rem" }}
+              onFocus={() => {
+                // Clear error on focus to allow user to correct
+                if (setLocationError) setLocationError("");
+              }}
             />
             {form?.location && (
               <button

@@ -27,6 +27,9 @@ export default function Register() {
     password: "",
   });
 
+  // State to hold validation errors
+  const [errors, setErrors] = useState({});
+
   const fetchLatestUserProfile = async (token, authUser) => {
     const userId = extractUserId(authUser);
     if (!userId) return authUser;
@@ -57,10 +60,41 @@ export default function Register() {
       ...prev,
       [e.target.name]: e.target.value,
     }));
+
+    // Clear error for a specific field when the user starts typing
+    if (errors[e.target.name]) {
+      setErrors((prev) => ({ ...prev, [e.target.name]: null }));
+    }
+  };
+
+  // Validation function
+  const validateForm = () => {
+    const newErrors = {};
+    if (!formData.name.trim()) newErrors.name = "Full name is required.";
+
+    // Phone validation removed to make it optional
+
+    if (!formData.email.trim()) {
+      newErrors.email = "Email address is required.";
+    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+      newErrors.email = "Please enter a valid email address.";
+    }
+
+    if (!formData.password) {
+      newErrors.password = "Password is required.";
+    } else if (formData.password.length < 8) {
+      newErrors.password = "Password must be at least 8 characters.";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // Run validation before submitting
+    if (!validateForm()) return;
 
     const payload = {
       ...formData,
@@ -176,70 +210,89 @@ export default function Register() {
                 <h5 className="fw-bold mb-1">Create an account</h5>
                 <p className="text-muted small mb-3">It only takes a few seconds.</p>
 
-                <form onSubmit={handleSubmit}>
+                <form onSubmit={handleSubmit} noValidate>
                   {/* 2x2 Grid to save vertical space */}
                   <div className="row g-2 mb-3">
                     <div className="col-md-6">
+                      <label className="form-label small fw-medium mb-1">
+                        Full Name <span className="text-danger">*</span>
+                      </label>
                       <input
                         type="text"
-                        className="form-control"
+                        className={`form-control ${errors.name ? 'is-invalid' : ''}`}
                         name="name"
-                        placeholder="Full name"
+                        placeholder="e.g. John Doe"
                         value={formData.name}
                         onChange={handleChange}
                         disabled={loading}
-                        required
                       />
+                      {errors.name && <div className="invalid-feedback" style={{ fontSize: '12px' }}>{errors.name}</div>}
                     </div>
+
                     <div className="col-md-6">
+                      <label className="form-label small fw-medium mb-1">
+                        Phone Number <span className="text-muted fw-normal ms-1" style={{ fontSize: '0.85em' }}>(Optional)</span>
+                      </label>
                       <input
                         type="tel"
                         className="form-control"
                         name="phone"
-                        placeholder="Phone number"
+                        placeholder="e.g. +1234567890"
                         value={formData.phone}
                         onChange={handleChange}
                         disabled={loading}
-                        required
                       />
+                      {/* Removed error feedback for phone since it's optional */}
                     </div>
+
                     <div className="col-md-6">
+                      <label className="form-label small fw-medium mb-1">
+                        Email Address <span className="text-danger">*</span>
+                      </label>
                       <input
                         type="email"
-                        className="form-control"
+                        className={`form-control ${errors.email ? 'is-invalid' : ''}`}
                         name="email"
-                        placeholder="Email address"
+                        placeholder="name@example.com"
                         value={formData.email}
                         onChange={handleChange}
                         disabled={loading}
-                        required
                       />
+                      {errors.email && <div className="invalid-feedback" style={{ fontSize: '12px' }}>{errors.email}</div>}
                     </div>
-                    <div className="col-md-6 position-relative">
-                      <input
-                        type={showPassword ? "text" : "password"}
-                        className="form-control pe-5"
-                        name="password"
-                        placeholder="Password"
-                        value={formData.password}
-                        onChange={handleChange}
-                        disabled={loading}
-                        required
-                        minLength={8}
-                      />
-                      <button
-                        type="button"
-                        className="btn btn-sm border-0 position-absolute end-0 top-50 translate-middle-y text-muted"
-                        onClick={() => setShowPassword(!showPassword)}
-                        tabIndex="-1"
-                      >
-                        <i className={`fa-solid ${showPassword ? 'fa-eye-slash' : 'fa-eye'}`}></i>
-                      </button>
+
+                    <div className="col-md-6">
+                      <label className="form-label small fw-medium mb-1">
+                        Password <span className="text-danger">*</span>
+                      </label>
+                      <div className="position-relative">
+                        <input
+                          type={showPassword ? "text" : "password"}
+                          className={`form-control pe-5 ${errors.password ? 'is-invalid' : ''}`}
+                          name="password"
+                          placeholder="Min. 8 characters"
+                          value={formData.password}
+                          onChange={handleChange}
+                          disabled={loading}
+                        />
+                        <button
+                          type="button"
+                          className="btn btn-sm border-0 position-absolute end-0 top-50 translate-middle-y text-muted"
+                          onClick={() => setShowPassword(!showPassword)}
+                          tabIndex="-1"
+                        >
+                          <i className={`fa-solid ${showPassword ? 'fa-eye-slash' : 'fa-eye'}`}></i>
+                        </button>
+                        {errors.password && <div className="invalid-feedback" style={{ fontSize: '12px' }}>{errors.password}</div>}
+                      </div>
                     </div>
                   </div>
 
                   {/* Compact Role Selection */}
-                  <div className="mb-3">
+                  <div className="mb-3 mt-1">
+                    <label className="form-label small fw-medium mb-2">
+                      Account Type <span className="text-danger">*</span>
+                    </label>
                     <div className="d-flex gap-2 flex-wrap" role="radiogroup">
                       {[
                         { key: "customer", label: "Book a Guard" },
@@ -271,7 +324,7 @@ export default function Register() {
 
                   <button
                     type="submit"
-                    className="btn w-100 py-2 fw-semibold d-flex justify-content-center align-items-center gap-2"
+                    className="btn w-100 py-2 fw-semibold d-flex justify-content-center align-items-center gap-2 mt-2"
                     style={{
                       background: "linear-gradient(135deg, #2563eb, #1d4ed8)",
                       border: "none",

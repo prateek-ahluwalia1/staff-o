@@ -22,6 +22,9 @@ export default function Login() {
     password: "",
   });
 
+  // State to hold validation errors
+  const [errors, setErrors] = useState({});
+
   const fetchLatestUserProfile = async (token, authUser) => {
     const userId = extractUserId(authUser);
     if (!userId) return authUser;
@@ -52,10 +55,37 @@ export default function Login() {
       ...prev,
       [e.target.name]: e.target.value,
     }));
+
+    // Clear error for a specific field when the user starts typing
+    if (errors[e.target.name]) {
+      setErrors((prev) => ({ ...prev, [e.target.name]: null }));
+    }
+  };
+
+  // Validation function
+  const validateForm = () => {
+    const newErrors = {};
+
+    if (!formData.email.trim()) {
+      newErrors.email = "Email address is required.";
+    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+      newErrors.email = "Please enter a valid email address.";
+    }
+
+    if (!formData.password) {
+      newErrors.password = "Password is required.";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // Run validation before submitting
+    if (!validateForm()) return;
+
     const res = await submit("api/login", formData);
     if (!res) return;
 
@@ -172,32 +202,41 @@ export default function Login() {
                 <h5 className="fw-bold mb-1">Log in to your account</h5>
                 <p className="text-muted small mb-4">Enter your credentials to continue.</p>
 
-                <form onSubmit={handleSubmit}>
+                <form onSubmit={handleSubmit} noValidate>
                   <div className="row g-3 mb-4">
                     <div className="col-12">
+                      <label className="form-label small fw-medium mb-1">
+                        Email Address <span className="text-danger">*</span>
+                      </label>
                       <input
                         type="email"
-                        className="form-control py-2"
+                        className={`form-control py-2 ${errors.email ? 'is-invalid' : ''}`}
                         name="email"
-                        placeholder="Email address"
+                        placeholder="name@example.com"
                         value={formData.email}
                         onChange={handleChange}
                         disabled={loading}
-                        required
                       />
+                      {errors.email && (
+                        <div className="invalid-feedback" style={{ fontSize: '12px' }}>
+                          {errors.email}
+                        </div>
+                      )}
                     </div>
 
                     <div className="col-12">
+                      <label className="form-label small fw-medium mb-1">
+                        Password <span className="text-danger">*</span>
+                      </label>
                       <div className="position-relative">
                         <input
                           type={showPassword ? "text" : "password"}
-                          className="form-control py-2 pe-5"
+                          className={`form-control py-2 pe-5 ${errors.password ? 'is-invalid' : ''}`}
                           name="password"
                           placeholder="Password"
                           value={formData.password}
                           onChange={handleChange}
                           disabled={loading}
-                          required
                         />
                         <button
                           type="button"
@@ -207,8 +246,13 @@ export default function Login() {
                         >
                           <i className={`fa-solid ${showPassword ? 'fa-eye-slash' : 'fa-eye'}`}></i>
                         </button>
+                        {errors.password && (
+                          <div className="invalid-feedback" style={{ fontSize: '12px' }}>
+                            {errors.password}
+                          </div>
+                        )}
                       </div>
-                      <div className="text-end mt-1">
+                      {/* <div className="text-end mt-1">
                         <NavLink
                           to="/forgot-password"
                           className="text-decoration-none text-primary"
@@ -216,7 +260,7 @@ export default function Login() {
                         >
                           Forgot password?
                         </NavLink>
-                      </div>
+                      </div> */}
                     </div>
                   </div>
 

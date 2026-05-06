@@ -95,11 +95,6 @@ const Sidebar = memo(function Sidebar() {
       icon: "fa-solid fa-users-gear",
       label: "Staff Management",
     },
-    {
-      to: "/payment-history",
-      icon: "fa-solid fa-file-invoice-dollar",
-      label: "Payment History",
-    },
     { to: "/chat", icon: "fa-solid fa-comments", label: "Communications" },
     {
       to: "/edit-profile",

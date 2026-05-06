@@ -308,6 +308,13 @@ export default function ScheduleStep({ form, setField, scheduleError = "" }) {
                   <div className="d-flex align-items-center gap-2">
                     <span className="small text-muted fw-medium" style={{ width: "35px" }}>End:</span>
                     <CompactTime value={shift.endTime} onChange={(val) => updateShift(dayIndex, shiftIndex, "endTime", val)} />
+
+                    {/* Next Day Visual Indicator */}
+                    {(shift.startTime && shift.endTime && shift.endTime <= shift.startTime) && (
+                      <span className="badge bg-danger-subtle text-danger border border-danger-subtle ms-1 px-1" style={{ fontSize: "0.65rem" }} title="Ends on the following day">
+                        +1d
+                      </span>
+                    )}
                   </div>
 
                   <div className="d-flex align-items-center gap-2 ms-md-auto">

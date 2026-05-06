@@ -210,8 +210,7 @@ export default function AddJob() {
       return false;
     }
 
-    let wasSplit = false;
-    let wasPadded = false;
+    let wasModified = false;
     const MIN_HOURS = 4;
 
     const formatTime = (dec) => {
@@ -231,39 +230,64 @@ export default function AddJob() {
       return [8, 8, totalDuration - 16];
     };
 
-    const newDays = form.scheduleDays.map(day => {
-      const newShifts = [];
+    // Use a Map to correctly bucket shifts into their absolute calendar dates
+    const newScheduleDaysMap = new Map();
+
+    form.scheduleDays.forEach(day => {
+      const baseDate = new Date(day.date);
+
       day.shifts.forEach(shift => {
         const [sh, sm] = shift.startTime.split(":").map(Number);
         const [eh, em] = shift.endTime.split(":").map(Number);
 
         let startDec = sh + sm / 60;
         let endDec = eh + em / 60;
+
+        // If it crosses midnight natively (e.g. 08:00 to 08:00 or 18:00 to 06:00), add 24 to end
         if (endDec <= startDec) endDec += 24;
 
         let duration = endDec - startDec;
 
-        if (duration < MIN_HOURS) wasPadded = true;
-        if (duration > 13) wasSplit = true;
+        if (duration < MIN_HOURS || duration > 13) wasModified = true;
 
         const chunks = calculateChunks(duration);
 
         let currentStart = startDec;
         chunks.forEach(chunkDuration => {
           let currentEnd = currentStart + chunkDuration;
-          newShifts.push({
+
+          // Calculate how many days we've crossed relative to the original base date
+          // If a chunk starts at or after 24:00, it automatically belongs to the next day.
+          let daysOffset = Math.floor(currentStart / 24);
+          let actualDate = new Date(baseDate);
+          actualDate.setDate(actualDate.getDate() + daysOffset);
+          let dateStr = actualDate.toISOString().split('T')[0];
+
+          let chunkShift = {
             ...shift,
             id: Math.random().toString(),
             startTime: formatTime(currentStart),
             endTime: formatTime(currentEnd)
-          });
+          };
+
+          // Group the shift under its exact calendar date
+          if (!newScheduleDaysMap.has(dateStr)) {
+            newScheduleDaysMap.set(dateStr, { date: dateStr, shifts: [] });
+          }
+          newScheduleDaysMap.get(dateStr).shifts.push(chunkShift);
+
+          // If the chunk falls on a different day than the original container, flag a UI update
+          if (dateStr !== day.date) wasModified = true;
+
           currentStart = currentEnd;
         });
       });
-      return { ...day, shifts: newShifts };
     });
 
-    if (wasSplit || wasPadded) {
+    // Convert Map back to an array, sorted chronologically
+    const newDays = Array.from(newScheduleDaysMap.values()).sort((a, b) => new Date(a.date) - new Date(b.date));
+
+    if (wasModified) {
       setForm(f => ({ ...f, scheduleDays: newDays }));
     }
 

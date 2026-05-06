@@ -68,12 +68,28 @@ export default function ReviewStep({ form, rate, setField, handleConfirm, setSte
                 <div key={idx} className="d-flex flex-column flex-md-row justify-content-between align-items-md-center p-3 mb-2 bg-white rounded border shadow-sm gap-2">
                   <span className="fw-bold text-dark" style={{ minWidth: "160px" }}>{formatDisplayDate(day.date)}</span>
                   <div className="d-flex flex-wrap gap-2 justify-content-md-end">
-                    {day.shifts.map((shift, sIdx) => (
-                      <span key={sIdx} className="badge bg-light text-dark border border-secondary-subtle px-3 py-2 fw-medium rounded-pill shadow-sm">
-                        <i className="fa-regular fa-clock me-1 text-muted"></i>{shift.startTime} <i className="fa-solid fa-arrow-right mx-1 text-muted" style={{ fontSize: "0.7em" }}></i> {shift.endTime}
-                        <span className="ms-2 ps-2 border-start border-secondary-subtle text-primary"><i className="fa-solid fa-user-shield me-1"></i> {shift.numGuards}</span>
-                      </span>
-                    ))}
+                    {day.shifts.map((shift, sIdx) => {
+                      // Logic to detect if the shift crosses midnight
+                      const crossesMidnight = shift.startTime && shift.endTime && shift.endTime <= shift.startTime;
+
+                      return (
+                        <span key={sIdx} className="badge bg-light text-dark border border-secondary-subtle px-3 py-2 fw-medium rounded-pill shadow-sm">
+                          <i className="fa-regular fa-clock me-1 text-muted"></i>
+                          {shift.startTime}
+                          <i className="fa-solid fa-arrow-right mx-1 text-muted" style={{ fontSize: "0.7em" }}></i>
+                          {shift.endTime}
+
+                          {/* Next Day Visual Indicator */}
+                          {crossesMidnight && (
+                            <sup className="text-danger ms-1 fw-bold" title="Ends on the following day">(+1d)</sup>
+                          )}
+
+                          <span className="ms-2 ps-2 border-start border-secondary-subtle text-primary">
+                            <i className="fa-solid fa-user-shield me-1"></i> {shift.numGuards}
+                          </span>
+                        </span>
+                      );
+                    })}
                   </div>
                 </div>
               ))}

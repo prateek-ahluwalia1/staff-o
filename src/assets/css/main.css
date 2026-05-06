@@ -9654,7 +9654,7 @@ Large Mobile Screen
            ==Dashboard==
 *************************************************/
 .dashboard-section {
-    background: linear-gradient(180deg, #f8fafc 0%, #eef4ff 100%);
+    background-image: url("../images/background.jpeg");
     padding: 24px 0;
 }
 
@@ -10047,7 +10047,6 @@ Large Mobile Screen
     display: flex;
     flex-direction: column;
     gap: 20px;
-    padding: 16px;
 }
 
 .dashboard-tools-header {

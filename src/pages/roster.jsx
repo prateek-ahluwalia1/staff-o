@@ -517,33 +517,21 @@ export default function RosterPage() {
 
                   // For each row (shift index), render a table row
                   return Array.from({ length: maxShifts }).map((_, rowIdx) => {
-                    // Find the first shift in this row to get its hours
-                    let firstShiftInRow = null;
-                    for (let d = 0; d < dayShifts.length; d++) {
-                      if (dayShifts[d][rowIdx]) {
-                        firstShiftInRow = dayShifts[d][rowIdx];
-                        break;
-                      }
-                    }
                     return (
                       <tr key={site.id + "-row-" + rowIdx}>
-                        <td className="location-td">
-                          <div className="location-cell-content">
-                            <div className="loc-header">
-                              <span className="loc-name">{site.displayName}</span>
-                            </div>
-                            {/* Show shift hours for this row, or site total for first row if no shifts */}
-                            {firstShiftInRow ? (
-                              <div className="loc-badge">
-                                <i className="fa fa-clock-o"></i> {Number(firstShiftInRow.hours).toFixed(2)} Hrs
+                        {/* Only render location-td on the first row with rowspan */}
+                        {rowIdx === 0 && (
+                          <td className="location-td" rowSpan={maxShifts}>
+                            <div className="location-cell-content">
+                              <div className="loc-header">
+                                <span className="loc-name">{site.displayName}</span>
                               </div>
-                            ) : rowIdx === 0 ? (
                               <div className="loc-badge">
                                 <i className="fa fa-clock-o"></i> {site.hoursDisplay}
                               </div>
-                            ) : null}
-                          </div>
-                        </td>
+                            </div>
+                          </td>
+                        )}
                         {weekDays.map((day, dayIdx) => {
                           const shifts = dayShifts[dayIdx];
                           const shift = shifts[rowIdx];

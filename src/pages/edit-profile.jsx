@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import useFetch from "../hooks/useFetch";
 import useSubmit from "../hooks/useSubmit";
 import { useSelector, useDispatch } from "react-redux";
@@ -48,9 +48,12 @@ export default function EditProfile() {
     userdata?.data?.customer?.verify_profile ||
     userdata?.customer?.verify_profile;
 
+  // Add a ref to handle the Google Maps vs React onChange race condition
+  const isSelectingAddress = useRef(false);
+
   const endpoint = useMemo(
     () => (userId ? `api/user-edit/${userId}` : null),
-    [userId],
+    [userId]
   );
 
   const {
@@ -77,6 +80,10 @@ export default function EditProfile() {
 
   const [isAddingCard, setIsAddingCard] = useState(false);
   const [cardForm, setCardForm] = useState(INITIAL_CARD_STATE);
+
+  // Card Delete Modal States
+  const [showCardDeleteModal, setShowCardDeleteModal] = useState(false);
+  const [cardToDeleteIndex, setCardToDeleteIndex] = useState(null);
 
   const [showPhoneModal, setShowPhoneModal] = useState(false);
   const [phoneStep, setPhoneStep] = useState("input");
@@ -195,27 +202,49 @@ export default function EditProfile() {
     if (activeTab !== "personal" || fetchLoading) return;
     let autocomplete;
     let listener;
+
     const initMap = () => {
       const addressInput = document.getElementById("address");
       if (!addressInput || !window.google || !window.google.maps) return;
       if (addressInput.getAttribute("data-gmaps-initialized")) return;
+
       autocomplete = new window.google.maps.places.Autocomplete(addressInput, {
         fields: ["address_components", "geometry", "formatted_address"],
         types: ["address"],
       });
+
       addressInput.setAttribute("data-gmaps-initialized", "true");
+
       listener = autocomplete.addListener("place_changed", () => {
         const place = autocomplete.getPlace();
-        if (!place.geometry) return;
+
+        if (!place.geometry) {
+          toast.error("Please select a valid address from the dropdown suggestions.");
+          return;
+        }
+
         let newCity = "",
           newState = "",
           newCountry = "";
+
         place.address_components?.forEach((c) => {
-          if (c.types.includes("locality")) newCity = c.long_name;
+          // Check for wider varieties of city classification
+          if (
+            c.types.includes("locality") ||
+            c.types.includes("postal_town") ||
+            c.types.includes("sublocality") ||
+            c.types.includes("administrative_area_level_2")
+          ) {
+            if (!newCity) newCity = c.long_name;
+          }
           if (c.types.includes("administrative_area_level_1"))
             newState = c.long_name;
           if (c.types.includes("country")) newCountry = c.long_name;
         });
+
+        // Set the block flag so onChange doesn't immediately wipe these
+        isSelectingAddress.current = true;
+
         setFormData((prev) => ({
           ...prev,
           address: place.formatted_address,
@@ -224,14 +253,22 @@ export default function EditProfile() {
           country: newCountry,
           coordinates: `${place.geometry.location.lat()},${place.geometry.location.lng()}`,
         }));
+
+        // Release the block flag after 500ms
+        setTimeout(() => {
+          isSelectingAddress.current = false;
+        }, 500);
+
       });
     };
+
     const checkGoogleMaps = setInterval(() => {
       if (window.google && window.google.maps) {
         clearInterval(checkGoogleMaps);
         initMap();
       }
     }, 500);
+
     return () => {
       clearInterval(checkGoogleMaps);
       if (listener && window.google)
@@ -284,7 +321,7 @@ export default function EditProfile() {
         setProfilePhoto(null);
       }
     },
-    [userId, submit, refetch],
+    [userId, submit, refetch]
   );
 
   const handleSubmit = useCallback(
@@ -294,6 +331,21 @@ export default function EditProfile() {
         toast.error("Unable to update profile. Missing user id.");
         return;
       }
+
+      // --- STRICT ADDRESS VALIDATION ---
+      if (
+        !formData.address ||
+        !formData.city ||
+        !formData.state ||
+        !formData.country
+      ) {
+        toast.error(
+          "Please select a valid complete address from the Google Maps suggestions dropdown."
+        );
+        return;
+      }
+      // ---------------------------------
+
       const payload = new FormData();
 
       Object.keys(formData).forEach((key) => {
@@ -322,7 +374,7 @@ export default function EditProfile() {
         dispatch(setUser({ userdata: refetchRes.data }));
       }
     },
-    [formData, submit, userId, dispatch, refetch, profileImageFile],
+    [formData, submit, userId, dispatch, refetch, profileImageFile]
   );
 
   const handleClosePhoneModal = () => {
@@ -344,7 +396,7 @@ export default function EditProfile() {
     const res = await phoneSubmit(
       `api/user-update/${userId}`,
       { phone: newPhoneInput },
-      { method: "POST" },
+      { method: "POST" }
     );
     if (!res) return;
     if (res.success) {
@@ -364,7 +416,7 @@ export default function EditProfile() {
     const res = await phoneSubmit(
       `api/user-update/${userId}`,
       { phone: newPhoneInput, phone_otp: phoneOtp },
-      { method: "POST" },
+      { method: "POST" }
     );
     if (!res) return;
     if (res.success) {
@@ -377,7 +429,7 @@ export default function EditProfile() {
       }, 1500);
     } else {
       setPhoneChangeError(
-        res.errors || res.message || "Invalid OTP. Please try again.",
+        res.errors || res.message || "Invalid OTP. Please try again."
       );
     }
   };
@@ -398,6 +450,21 @@ export default function EditProfile() {
       return;
     }
 
+    // ========== EXPIRY DATE VALIDATION ==========
+    const currentDate = new Date();
+    const currentYear = currentDate.getFullYear() % 100; // Get last two digits, e.g., 2026 -> 26
+    const currentMonth = currentDate.getMonth() + 1; // Get current month 1-12
+
+    const expMonth = parseInt(cardForm.expiry_month, 10);
+    const expYear = parseInt(cardForm.expiry_year, 10);
+
+    // Prevent saving if the year is in the past, or if the year is current but the month is in the past
+    if (expYear < currentYear || (expYear === currentYear && expMonth < currentMonth)) {
+      toast.error("This card has expired. Please enter a valid future expiry date.");
+      return;
+    }
+    // ============================================
+
     const updatedCards = [...formData.bank_details, cardForm];
 
     const payload = new FormData();
@@ -416,15 +483,20 @@ export default function EditProfile() {
     toast.success("Card added successfully!");
   };
 
-  const handleRemoveCard = async (indexToRemove) => {
-    if (!window.confirm("Are you sure you want to remove this card?")) return;
+  const handleRemoveCardClick = (index) => {
+    setCardToDeleteIndex(index);
+    setShowCardDeleteModal(true);
+  };
+
+  const confirmRemoveCard = async () => {
+    if (cardToDeleteIndex === null) return;
     if (!userId) {
       toast.error("Unable to remove card. Missing user id.");
       return;
     }
 
     const updatedCards = formData.bank_details.filter(
-      (_, i) => i !== indexToRemove,
+      (_, i) => i !== cardToDeleteIndex
     );
 
     const payload = new FormData();
@@ -439,6 +511,8 @@ export default function EditProfile() {
     if (res.data) dispatch(setUser({ userdata: res.data }));
     refetch();
     toast.success("Card removed successfully!");
+    setShowCardDeleteModal(false);
+    setCardToDeleteIndex(null);
   };
 
   const handleDocFormChange = async (e) => {
@@ -502,7 +576,7 @@ export default function EditProfile() {
     const res = await submit(
       selectedDoc ? "api/guard-update-documents" : "api/guard-add-documents",
       payload,
-      { method: "POST" },
+      { method: "POST" }
     );
     if (!res) return;
     if (res.success) {
@@ -529,7 +603,7 @@ export default function EditProfile() {
       const res = await deleteSubmit(
         `api/user-delete/${userId}`,
         {},
-        { method: "POST" },
+        { method: "POST" }
       );
       if (res === undefined) return;
 
@@ -547,7 +621,7 @@ export default function EditProfile() {
         setDeleteConfirmText("");
       }
     },
-    [userId, deleteSubmit, deleteConfirmText, dispatch],
+    [userId, deleteSubmit, deleteConfirmText, dispatch]
   );
 
   if (fetchLoading && !profileData?.data) {
@@ -581,7 +655,8 @@ export default function EditProfile() {
       <div style={{ display: "flex", gap: 16, marginBottom: 20 }}>
         {userType !== "admin" && (
           <button
-            className={`btn ${activeTab === "personal" ? "btn-primary" : "btn-outline-primary"}`}
+            className={`btn ${activeTab === "personal" ? "btn-primary" : "btn-outline-primary"
+              }`}
             onClick={() => setActiveTab("personal")}
           >
             Personal Information
@@ -589,7 +664,8 @@ export default function EditProfile() {
         )}
         {userType === "customer" && (
           <button
-            className={`btn ${activeTab === "cards" ? "btn-primary" : "btn-outline-primary"}`}
+            className={`btn ${activeTab === "cards" ? "btn-primary" : "btn-outline-primary"
+              }`}
             onClick={() => {
               setActiveTab("cards");
               setIsAddingCard(false);
@@ -600,7 +676,8 @@ export default function EditProfile() {
         )}
         {userType !== "customer" && userType !== "admin" && (
           <button
-            className={`btn ${activeTab === "documents" ? "btn-primary" : "btn-outline-primary"}`}
+            className={`btn ${activeTab === "documents" ? "btn-primary" : "btn-outline-primary"
+              }`}
             onClick={() => setActiveTab("documents")}
           >
             Documents
@@ -611,12 +688,33 @@ export default function EditProfile() {
       {activeTab === "personal" && (
         <ProfileForm
           formData={formData}
-          onChange={(e) =>
-            setFormData((prev) => ({
-              ...prev,
-              [e.target.id]: e.target.value,
-            }))
-          }
+          onChange={(e) => {
+            const { id, name, value } = e.target;
+            const fieldId = id || name;
+
+            if (fieldId === "address") {
+              // Block manual text input wipe if Google Maps is actively selecting a place
+              if (isSelectingAddress.current) {
+                return;
+              }
+
+              // Reset detailed location data when the user manually types into the input.
+              // This strictly enforces selecting from the dropdown.
+              setFormData((prev) => ({
+                ...prev,
+                address: value,
+                city: "",
+                state: "",
+                country: "",
+                coordinates: "",
+              }));
+            } else {
+              setFormData((prev) => ({
+                ...prev,
+                [fieldId]: value,
+              }));
+            }
+          }}
           onSubmit={handleSubmit}
           loading={submitLoading}
           userType={userType}
@@ -683,7 +781,7 @@ export default function EditProfile() {
                             opacity: 0.9,
                             padding: "4px 8px",
                           }}
-                          onClick={() => handleRemoveCard(index)}
+                          onClick={() => handleRemoveCardClick(index)}
                           disabled={submitLoading}
                           title="Remove Card"
                         >
@@ -765,7 +863,16 @@ export default function EditProfile() {
                             <div style={{ fontSize: "0.6rem", opacity: 0.7 }}>
                               Card Holder
                             </div>
-                            <div>{card.card_holder_name || "YOUR NAME"}</div>
+                            <div
+                              style={{
+                                whiteSpace: "nowrap",
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                                maxWidth: "150px",
+                              }}
+                            >
+                              {card.card_holder_name || "YOUR NAME"}
+                            </div>
                           </div>
                           <div className="text-end">
                             <div style={{ fontSize: "0.6rem", opacity: 0.7 }}>
@@ -842,7 +949,16 @@ export default function EditProfile() {
                       <div style={{ fontSize: "0.6rem", opacity: 0.7 }}>
                         Card Holder
                       </div>
-                      <div>{cardForm.card_holder_name || "YOUR NAME"}</div>
+                      <div
+                        style={{
+                          whiteSpace: "nowrap",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          maxWidth: "180px",
+                        }}
+                      >
+                        {cardForm.card_holder_name || "YOUR NAME"}
+                      </div>
                     </div>
                     <div className="text-end">
                       <div style={{ fontSize: "0.6rem", opacity: 0.7 }}>
@@ -890,12 +1006,15 @@ export default function EditProfile() {
                       className="form-control"
                       placeholder="e.g. John Doe"
                       value={cardForm.card_holder_name}
-                      onChange={(e) =>
+                      maxLength="30"
+                      onChange={(e) => {
+                        // Limit to letters/spaces and strictly slice to 30 characters
+                        const val = e.target.value.replace(/[^a-zA-Z\s]/g, "").slice(0, 30);
                         setCardForm((p) => ({
                           ...p,
-                          card_holder_name: e.target.value.toUpperCase(),
-                        }))
-                      }
+                          card_holder_name: val.toUpperCase(),
+                        }));
+                      }}
                       required
                     />
                   </div>
@@ -941,7 +1060,12 @@ export default function EditProfile() {
                         maxLength="2"
                         value={cardForm.expiry_month}
                         onChange={(e) => {
-                          const val = e.target.value.replace(/\D/g, "");
+                          let val = e.target.value.replace(/\D/g, "").slice(0, 2);
+                          if (val.length === 2 && parseInt(val, 10) > 12) {
+                            val = "12";
+                          } else if (val.length === 2 && parseInt(val, 10) === 0) {
+                            val = "01";
+                          }
                           setCardForm((p) => ({ ...p, expiry_month: val }));
                         }}
                         required
@@ -958,7 +1082,7 @@ export default function EditProfile() {
                         maxLength="2"
                         value={cardForm.expiry_year}
                         onChange={(e) => {
-                          const val = e.target.value.replace(/\D/g, "");
+                          const val = e.target.value.replace(/\D/g, "").slice(0, 2);
                           setCardForm((p) => ({ ...p, expiry_year: val }));
                         }}
                         required
@@ -972,7 +1096,7 @@ export default function EditProfile() {
                         type="password"
                         className="form-control text-center"
                         placeholder="***"
-                        maxLength="4"
+                        maxLength="3"
                         value={cardForm.cvv}
                         onChange={(e) => {
                           const val = e.target.value.replace(/\D/g, "");
@@ -1104,10 +1228,70 @@ export default function EditProfile() {
         </button>
       </div>
 
+      {/* Card Delete Confirm Modal */}
+      <Modal
+        open={showCardDeleteModal}
+        onClose={() => {
+          setShowCardDeleteModal(false);
+          setCardToDeleteIndex(null);
+        }}
+      >
+        <div className="p-4 text-center">
+          <div className="mb-3 text-danger">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="48"
+              height="48"
+              fill="currentColor"
+              className="bi bi-x-circle"
+              viewBox="0 0 16 16"
+            >
+              <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z" />
+              <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z" />
+            </svg>
+          </div>
+          <h4 className="mb-3 fw-bold">Remove Card?</h4>
+          <p className="text-muted mb-4">
+            Are you sure you want to remove this card ending in{" "}
+            <strong>
+              {cardToDeleteIndex !== null && formData.bank_details[cardToDeleteIndex]
+                ? formData.bank_details[cardToDeleteIndex].card_number.slice(-4)
+                : ""}
+            </strong>
+            ? This action cannot be undone.
+          </p>
+          <div className="d-flex gap-3 justify-content-center">
+            <button
+              type="button"
+              className="btn btn-outline-secondary px-4 py-2 fw-bold"
+              onClick={() => {
+                setShowCardDeleteModal(false);
+                setCardToDeleteIndex(null);
+              }}
+              disabled={submitLoading}
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              className="btn btn-danger px-4 py-2 fw-bold shadow-sm"
+              onClick={confirmRemoveCard}
+              disabled={submitLoading}
+            >
+              {submitLoading ? "Removing..." : "Yes, Remove It"}
+            </button>
+          </div>
+        </div>
+      </Modal>
+
       {/* Phone Change / Verify Modal */}
       <Modal open={showPhoneModal} onClose={handleClosePhoneModal}>
         <div className="p-3">
-          <h5 className="mb-1">{isPhoneVerified ? "Change Phone Number" : "Verify or Change Phone Number"}</h5>
+          <h5 className="mb-1">
+            {isPhoneVerified
+              ? "Change Phone Number"
+              : "Verify or Change Phone Number"}
+          </h5>
           <p className="text-muted small mb-4">
             {phoneStep === "input"
               ? isPhoneVerified

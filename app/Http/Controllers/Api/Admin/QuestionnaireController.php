@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\Admin;
 
 use App\Models\Guard;
+use App\Models\GuardQuestionnaireDetails;
 use App\Models\Questionnaire;
 use App\Models\InductionHistory;
 use App\Models\User;
@@ -117,4 +118,26 @@ class QuestionnaireController extends Controller
             'data' => $questionnaires
         ]);
     }
+    public function getQNA($guard_id)
+    {
+        $questions = Questionnaire::get();
+        foreach ($questions as $key => $question) {
+            $previousData = GuardQuestionnaireDetails::where(['guard_id'=> $guard_id, 'questionnaire_id'=>$question->id])->first();
+            if($previousData){
+                if($previousData->marks >= 80){
+                    $question['status'] = 'passed';
+                }else{
+                    $question['status'] = 'failed';
+                }
+            }else{
+                $question['status'] = 'pending';
+            }
+
+        }
+        return response()->json([
+            'success' => true,
+            'data' => $questions
+        ]);
+    }
+
 }

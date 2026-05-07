@@ -224,6 +224,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('assign-questionnaire', [QuestionnaireController::class, 'assignQuestionnair']);
     Route::get('questionnaire-delete/{id}', [QuestionnaireController::class, 'delete']);
     Route::get('questionnaire-list', [QuestionnaireController::class, 'list']);
+    # MOBILE APIS
+    Route::get('get-questionnaire/{guard_id}', [QuestionnaireController::class, 'getQNA']);
+
 
     Route::prefix('admin')->group(function () {
 

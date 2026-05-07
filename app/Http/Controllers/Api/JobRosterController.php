@@ -3220,20 +3220,24 @@ public function holdPayment(Request $request)
 
         // MULTI SHIFT TOTAL
         $baseTotal = 0;
-
+        $hours_array = [];
+        $baseTotal_arr = [];
         foreach ($request->shifts as $shift) {
 
             $start = dbFormateDateTime($shift['start']);
             $end   = dbFormateDateTime($shift['end']);
 
             $hours = $this->getShiftHours($start, $end, 1, 0);
-
             $shiftAmount =
                 ($chargeRate->def_metro_mon_to_fri_day_rate * ($hours['morning'] ?? 0)) +
                 ($chargeRate->def_metro_mon_to_fri_night_rate * ($hours['night'] ?? 0)) +
-                ($chargeRate->def_metro_sat_day_rate * (($hours['saturday_morning'] ?? 0) + ($hours['saturday_night'] ?? 0))) +
-                ($chargeRate->def_metro_sun_day_rate * (($hours['sunday_morning'] ?? 0) + ($hours['sunday_night'] ?? 0)));
+                ($chargeRate->def_metro_sat_day_rate * ($hours['saturday_morning'] ?? 0)) +
+                ($chargeRate->def_metro_sat_night_rate * ($hours['saturday_night'] ?? 0)) +
+                ($chargeRate->def_metro_sun_day_rate * ($hours['sunday_morning'] ?? 0)) +
+                ($chargeRate->def_metro_sun_night_rate * ($hours['sunday_night'] ?? 0));
 
+            $hours_array[] = $hours;
+            $baseTotal_arr[] = $shiftAmount; 
             $baseTotal += ($shiftAmount * $shift['numberOfGuards']);
         }
 
@@ -3258,6 +3262,7 @@ public function holdPayment(Request $request)
             $amountToCharge = $grandTotal;
             $balance = 0;
         }
+        // return [$baseTotal, $discount. $discountedTotal, $serviceFee, $grandTotal, $amountToCharge, $hours_array,$baseTotal_arr];
 
         $amountInCents = (int) round($amountToCharge * 100);
 

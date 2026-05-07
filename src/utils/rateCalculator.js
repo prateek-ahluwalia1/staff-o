@@ -1,12 +1,7 @@
-/**
- * Shift price-breakdown calculator
- */
-
 export function getDayType(date) {
-  const d = date.getDay(); // 0=Sun 1=Mon … 5=Fri 6=Sat
+  const d = date.getDay();
   if (d === 0) return "sun";
   if (d === 6) return "sat";
-  // Everything else (1, 2, 3, 4, 5) is Mon-Fri
   return "weekday";
 }
 
@@ -76,7 +71,6 @@ export function computeShiftBreakdown(scheduleDays, rates = null) {
       let start = new Date(sy, sm - 1, sd, sh, smin, 0, 0);
       let end = new Date(sy, sm - 1, sd, eh, emin, 0, 0);
 
-      // If shift crosses midnight
       if (end <= start) end.setDate(end.getDate() + 1);
 
       const durationMs = end - start;

@@ -28,18 +28,31 @@ export default function MyJobApplications() {
   const fetchCustomerSites = useCallback(() => {
     if (!userId) return;
 
-    // API expects MM-dd-yyyy
-    const formattedStart = format(parse(startDate, "yyyy-MM-dd", new Date()), "MM-dd-yyyy");
-    const formattedEnd = format(parse(endDate, "yyyy-MM-dd", new Date()), "MM-dd-yyyy");
+    try {
+      // API expects MM-dd-yyyy
+      const parsedStart = parse(startDate, "yyyy-MM-dd", new Date());
+      const parsedEnd = parse(endDate, "yyyy-MM-dd", new Date());
 
-    const payload = {
-      user_id: [userId],
-      start: formattedStart,
-      end: formattedEnd,
-      roster_id: "1",
-    };
+      // Validate that parsed dates are valid
+      if (isNaN(parsedStart.getTime()) || isNaN(parsedEnd.getTime())) {
+        console.error("Invalid date format");
+        return;
+      }
 
-    submit("api/fetch-customer-sites", payload, { method: "POST" });
+      const formattedStart = format(parsedStart, "MM-dd-yyyy");
+      const formattedEnd = format(parsedEnd, "MM-dd-yyyy");
+
+      const payload = {
+        user_id: [userId],
+        start: formattedStart,
+        end: formattedEnd,
+        roster_id: "1",
+      };
+
+      submit("api/fetch-customer-sites", payload, { method: "POST" });
+    } catch (error) {
+      console.error("Date parsing error:", error);
+    }
   }, [userId, startDate, endDate, submit]);
 
   useEffect(() => {

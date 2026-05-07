@@ -48,7 +48,6 @@ export default function EditProfile() {
     userdata?.data?.customer?.verify_profile ||
     userdata?.customer?.verify_profile;
 
-  // Add a ref to handle the Google Maps vs React onChange race condition
   const isSelectingAddress = useRef(false);
 
   const endpoint = useMemo(
@@ -624,7 +623,7 @@ export default function EditProfile() {
     [userId, deleteSubmit, deleteConfirmText, dispatch]
   );
 
-  if (fetchLoading && !profileData?.data) {
+  if (fetchLoading || !userdata || !profileData?.data) {
     return <Loader />;
   }
 

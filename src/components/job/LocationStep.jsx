@@ -93,7 +93,6 @@ export default function LocationStep({
     markerRef.current = marker;
   }, [googleReady, map, form?.coordinates, setField, reverseGeocode]);
 
-  // 🔥 FIX: Map Sync when Coordinates Change from React Select
   useEffect(() => {
     if (!map || !markerRef.current || !form?.coordinates) return;
     try {
@@ -105,7 +104,7 @@ export default function LocationStep({
         if (!isNaN(lat) && !isNaN(lng)) {
           const newPos = { lat, lng };
           markerRef.current.setPosition(newPos);
-          map.setCenter(newPos); // setCenter forces a clean jump over panTo
+          map.setCenter(newPos);
           map.setZoom(15);
         }
       }
@@ -176,8 +175,9 @@ export default function LocationStep({
 
       <div className="row g-2 mb-3">
         <div className="col-md-9">
-          <div className="input-group shadow-sm rounded-pill overflow-hidden">
-            <span className="input-group-text bg-white border-end-0 text-muted ps-4">
+          {/* UPDATED: Prominent error border on the search wrapper */}
+          <div className={`input-group shadow-sm rounded-pill overflow-hidden border ${locationError ? "border-danger border-2" : "border-1"}`}>
+            <span className="input-group-text bg-white border-0 text-muted ps-4">
               <i className="fa-solid fa-magnifying-glass"></i>
             </span>
             <input
@@ -194,18 +194,17 @@ export default function LocationStep({
                 setField("address", "");
                 if (setLocationError) setLocationError("");
               }}
-              className={`form-control form-control-lg border-start-0 ps-2 ${locationError ? "is-invalid" : ""}`}
+              className="form-control form-control-lg border-0 ps-2"
               placeholder="Search address or enter manually"
               style={{ boxShadow: "none", fontSize: "1rem" }}
               onFocus={() => {
-                // Clear error on focus to allow user to correct
                 if (setLocationError) setLocationError("");
               }}
             />
             {form?.location && (
               <button
                 type="button"
-                className="btn btn-white border border-start-0 text-muted hover-bg-light pe-4"
+                className="btn btn-white border-0 text-muted hover-bg-light pe-4"
                 onClick={() => {
                   setField("location", "");
                   setField("address", "");
@@ -242,7 +241,12 @@ export default function LocationStep({
         </div>
       )}
 
-      <div ref={mapRef} className="rounded-4 border border-secondary-subtle shadow-sm overflow-hidden" style={{ height: 350, backgroundColor: "#e9ecef" }} />
+      {/* UPDATED: Prominent base border and highly visible error border */}
+      <div
+        ref={mapRef}
+        className={`rounded-4 border-2 shadow-sm overflow-hidden ${locationError ? "border-danger border-opacity-75" : "border-secondary border-opacity-50"}`}
+        style={{ height: 350, backgroundColor: "#e9ecef" }}
+      />
     </div>
   );
 }

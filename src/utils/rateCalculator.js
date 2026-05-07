@@ -5,8 +5,8 @@
 export function getDayType(date) {
   const d = date.getDay(); // 0=Sun 1=Mon … 5=Fri 6=Sat
   if (d === 0) return "sun";
-  if (d === 5) return "fri";
   if (d === 6) return "sat";
+  // Everything else (1, 2, 3, 4, 5) is Mon-Fri
   return "weekday";
 }
 
@@ -15,10 +15,8 @@ export function getSlot(hour) {
 }
 
 const SEGMENT_LABELS = {
-  weekday_day: "Mon–Thu (Day 06:00–18:00)",
-  weekday_night: "Mon–Thu (Night 18:00–06:00)",
-  fri_day: "Friday (Day 06:00–18:00)",
-  fri_night: "Friday (Night 18:00–06:00)",
+  weekday_day: "Mon–Fri (Day 06:00–18:00)",
+  weekday_night: "Mon–Fri (Night 18:00–06:00)",
   sat_day: "Saturday (Day 06:00–18:00)",
   sat_night: "Saturday (Night 18:00–06:00)",
   sun_day: "Sunday (Day 06:00–18:00)",
@@ -48,13 +46,11 @@ export function mapApiRates(chargeRecord, payRecord = null, prefix = "def_metro"
   return {
     pay: {
       weekday: { day: r(payRecord, `${prefix}_mon_to_fri_day_rate`), night: r(payRecord, `${prefix}_mon_to_fri_night_rate`) },
-      fri: { day: r(payRecord, `${prefix}_mon_to_fri_day_rate`), night: r(payRecord, `${prefix}_mon_to_fri_night_rate`) },
       sat: { day: r(payRecord, `${prefix}_sat_day_rate`), night: r(payRecord, `${prefix}_sat_night_rate`) },
       sun: { day: r(payRecord, `${prefix}_sun_day_rate`), night: r(payRecord, `${prefix}_sun_night_rate`) },
     },
     charge: {
       weekday: { day: r(chargeRecord, `${prefix}_mon_to_fri_day_rate`), night: r(chargeRecord, `${prefix}_mon_to_fri_night_rate`) },
-      fri: { day: r(chargeRecord, `${prefix}_mon_to_fri_day_rate`), night: r(chargeRecord, `${prefix}_mon_to_fri_night_rate`) },
       sat: { day: r(chargeRecord, `${prefix}_sat_day_rate`), night: r(chargeRecord, `${prefix}_sat_night_rate`) },
       sun: { day: r(chargeRecord, `${prefix}_sun_day_rate`), night: r(chargeRecord, `${prefix}_sun_night_rate`) },
     },
@@ -80,6 +76,7 @@ export function computeShiftBreakdown(scheduleDays, rates = null) {
       let start = new Date(sy, sm - 1, sd, sh, smin, 0, 0);
       let end = new Date(sy, sm - 1, sd, eh, emin, 0, 0);
 
+      // If shift crosses midnight
       if (end <= start) end.setDate(end.getDate() + 1);
 
       const durationMs = end - start;

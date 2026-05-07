@@ -13,6 +13,8 @@ import {
   setMessages,
   setActiveCategory,
   prependConversation,
+  clearConversationUnread,
+  removeMessage,
 } from "../store/slices/chatSlice";
 import useFetch from "../hooks/useFetch";
 import useSubmit from "../hooks/useSubmit";
@@ -178,6 +180,7 @@ const ChatRoom = () => {
           "Content-Type": "application/json",
         },
       });
+      dispatch(clearConversationUnread(userId));
       refetchConversations();
     } catch (error) {
       console.error("Error marking messages as read:", error);
@@ -202,8 +205,8 @@ const ChatRoom = () => {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });
-      const other = otherUser(activeConversation);
-      if (other?.id) fetchMessages(other.id);
+      dispatch(removeMessage(messageId));
+      refetchConversations();
     } catch (error) {
       console.error("Error deleting message:", error);
     }

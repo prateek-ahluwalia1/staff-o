@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { addNotification } from "../store/slices/notificationSlice";
-import { receiveNewMessage } from "../store/slices/chatSlice";
+import { receiveNewMessage, handleMessageDeleted } from "../store/slices/chatSlice";
 import { getEchoInstance, destroyEchoInstance } from "../echo";
 import {
   receiveIncomingCall,
@@ -127,6 +127,11 @@ export const useEcho = () => {
           const senderName = data.sender_name || data.user?.name || "Someone";
           toast.info(`New message from ${senderName}`, { icon: "💬" });
           dispatch(receiveNewMessage(data));
+        }
+
+        // ── 3.5. MESSAGE DELETION HANDLING ──────────────────────────────
+        else if (data.type === "message_deleted" && data.message_id) {
+          dispatch(handleMessageDeleted(data.message_id));
         }
 
         // ── 4. GENERAL NOTIFICATION ─────────────────────────────────────

@@ -110,6 +110,21 @@ const chatSlice = createSlice({
         state.conversations.unshift(action.payload);
       }
     },
+    clearConversationUnread: (state, action) => {
+      const userId = action.payload;
+      const conv = state.conversations.find((c) => c.user?.id === userId);
+      if (conv) {
+        conv.unread_count = 0;
+      }
+    },
+    removeMessage: (state, action) => {
+      const messageId = action.payload;
+      state.messages = state.messages.filter((m) => m.id !== messageId);
+    },
+    handleMessageDeleted: (state, action) => {
+      const messageId = action.payload;
+      state.messages = state.messages.filter((m) => m.id !== messageId);
+    },
   },
 });
 
@@ -121,6 +136,9 @@ export const {
   receiveNewMessage,
   setActiveCategory,
   prependConversation,
+  clearConversationUnread,
+  removeMessage,
+  handleMessageDeleted,
 } = chatSlice.actions;
 
 export default chatSlice.reducer;

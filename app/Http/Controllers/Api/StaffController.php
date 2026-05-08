@@ -8,7 +8,10 @@ use App\Http\Controllers\Controller;
 use App\Models\Contractor;
 use App\Models\Document;
 use App\Models\DocumentCategory;
+use App\Models\Onboarding;
 use App\Models\Staff;
+use App\Models\Superannuation;
+use App\Models\TfnDeclaration;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -1016,5 +1019,234 @@ class StaffController extends Controller
             'is_online' => $user->is_online,
             'last_seen' => $user->last_seen
         ]);
+    }
+    
+    public function tfnDeclarationStore(Request $request)
+    {
+        $validated = $request->validate([
+            'tfn'                => 'nullable|string|max:11',
+            'title'              => 'nullable|string|max:10',
+            'first_name'         => 'required|string|max:100',
+            'surname'            => 'required|string|max:100',
+            'previous_name'      => 'nullable|string|max:100',
+            'dob'                => 'nullable|date',
+            'address'            => 'nullable|string|max:255',
+            'basis_of_payment'   => 'nullable|in:full-time,part-time,casual',
+            'australian_resident'=> 'nullable|in:yes,no',
+            'claim_threshold'    => 'nullable|in:yes,no',
+            'help_debt'          => 'nullable|in:yes,no',
+            'signature'          => 'nullable|string|max:150',
+            'date'               => 'nullable|date',
+        ]);
+
+        $record = TfnDeclaration::updateOrCreate(
+            ['user_id' => $request->user_id],   // match condition
+            [
+                ...$validated,
+                'user_id'             => $request->user_id,
+                'australian_resident' => $request->australian_resident === 'yes',
+                'claim_threshold'     => $request->claim_threshold === 'yes',
+                'help_debt'           => $request->help_debt === 'yes',
+                'signed_date'         => $request->date,
+            ]
+        );
+
+        $status = $record->wasRecentlyCreated ? 201 : 200;
+        $message = $record->wasRecentlyCreated ? 'TFN declaration saved.' : 'TFN declaration updated.';
+
+        return response()->json(['message' => $message, 'data' => $record], $status);
+    }
+
+    public function superannuationStore(Request $request)
+    {
+        $validated = $request->validate([
+            'full_name'       => 'required|string|max:200',
+            'employee_number' => 'nullable|string|max:50',
+            'fund_choice'     => 'nullable|in:own,employer',
+            'fund_name'       => 'nullable|string|max:200',
+            'fund_abn'        => 'nullable|string|max:20',
+            'fund_usi'        => 'nullable|string|max:50',
+            'member_account'  => 'nullable|string|max:50',
+            'signature'       => 'nullable|string|max:150',
+            'date'            => 'nullable|date',
+        ]);
+
+        $record = Superannuation::updateOrCreate(
+            ['user_id' => $request->user_id],   // match condition
+            [
+                ...$validated,
+                'user_id'     => $request->user_id,
+                'signed_date' => $request->date,
+            ]
+        );
+
+        $status = $record->wasRecentlyCreated ? 201 : 200;
+        $message = $record->wasRecentlyCreated ? 'Superannuation saved.' : 'Superannuation updated.';
+
+        return response()->json(['message' => $message, 'data' => $record], $status);
+    }
+
+    public function onboardingStore(Request $request)
+    {
+        $validated = $request->validate([
+            'full_name'               => 'required|string|max:200',
+            'dob'                     => 'nullable|date',
+            'address'                 => 'nullable|string|max:255',
+            'mobile'                  => 'nullable|string|max:20',
+            'email'                   => 'nullable|email|max:150',
+            'passport_number'         => 'nullable|string|max:20',
+            'passport_country'        => 'nullable|string|max:100',
+            'passport_expiry'         => 'nullable|date',
+            'work_rights'             => 'nullable|in:citizen,student,other',
+            'id_checks'               => 'nullable|array',
+            'bank_name'               => 'nullable|string|max:100',
+            'bsb'                     => 'nullable|string|max:10',
+            'account_number'          => 'nullable|string|max:20',
+            'tfn'                     => 'nullable|string|max:11',
+            'super_fund'              => 'nullable|string|max:200',
+            'super_usi'               => 'nullable|string|max:50',
+            'super_member'            => 'nullable|string|max:50',
+            'security_license'        => 'nullable|string|max:50',
+            'security_license_expiry' => 'nullable|date',
+            'first_aid_cert'          => 'nullable|string|max:50',
+            'first_aid_expiry'        => 'nullable|date',
+            'signature'               => 'nullable|string|max:150',
+            'date'                    => 'nullable|date',
+        ]);
+
+        $record = Onboarding::updateOrCreate(
+            ['user_id' => $request->user_id],   // match condition
+            [
+                ...$validated,
+                'user_id'     => $request->user_id,
+                'signed_date' => $request->date,
+            ]
+        );
+
+        $status = $record->wasRecentlyCreated ? 201 : 200;
+        $message = $record->wasRecentlyCreated ? 'Onboarding saved.' : 'Onboarding updated.';
+
+        return response()->json(['message' => $message, 'data' => $record], $status);
+    }
+    public function uploadStaffFile(Request $request)
+    {
+        try {
+            // Validate request
+            $request->validate([
+                'user_id' => 'required|exists:staff,id',
+                'type' => 'required|in:tfn,super_form,onboarding',
+                'folder' => 'nullable|string'
+            ]);
+
+            if (empty($request->folder)) {
+                switch ($request->type) {
+                    case 'tfn':
+                        $request->folder = 'TFN';
+                        break;
+                    case 'super_form':
+                        $request->folder = 'Superannuation';
+                        break;
+                    case 'onboarding':
+                        $request->folder = 'Onboarding';
+                        break;
+                    default:
+                        $request->folder = 'uploads';
+                }
+            }
+
+            // Upload file
+            if ($request->has('upload')) {
+                $fileName = fileUpload($request->upload, '/' . $request->folder . '/');
+            } elseif ($request->has('file')) {
+                $fileName = fileUpload($request->file, '/' . $request->folder . '/');
+            } else {
+                return response()->json([
+                    'success' => false, 
+                    'message' => 'No file provided'
+                ]);
+            }
+
+            if ($fileName) {
+                // Update staff table based on type
+                $staff = Staff::find($request->user_id);
+                
+                if (!$staff) {
+                    return response()->json([
+                        'success' => false, 
+                        'message' => 'Staff not found'
+                    ]);
+                }
+
+                // Update the appropriate column
+                switch ($request->type) {
+                    case 'tfn':
+                        $staff->tfn_form = $fileName;
+                        break;
+                    case 'super_form':
+                        $staff->super_form = $fileName;
+                        break;
+                    case 'onboarding':
+                        $staff->onboarding_form = $fileName;
+                        break;
+                }
+                
+                $staff->save();
+
+                // Generate URL
+                $url = asset($request->folder . '/' . $fileName);
+                if ($request->folder == 'uploads') {
+                    $url = asset('uploads/' . $fileName);
+                }
+
+                return response()->json([
+                    'success' => true, 
+                    'path' => $fileName, 
+                    'url' => $url,
+                    'message' => ucfirst($request->type) . ' form uploaded successfully'
+                ]);
+            } else {
+                return response()->json([
+                    'success' => false, 
+                    'path' => '', 
+                    'url' => '',
+                    'message' => 'File upload failed'
+                ]);
+            }
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false, 
+                'message' => 'Error: ' . $e->getMessage()
+            ]);
+        }
+    }
+
+    public function getFormData(Request $request)
+    {
+        $request->validate([
+            'user_id' => 'required|integer',
+            'type'    => 'required|in:tfn,superannuation,onboarding',
+        ]);
+
+        $userId = $request->user_id;
+        $type   = $request->type;
+
+        $record = match($type) {
+            'tfn'           => TfnDeclaration::where('user_id', $userId)->first(),
+            'superannuation'=> Superannuation::where('user_id', $userId)->first(),
+            'onboarding'    => Onboarding::where('user_id', $userId)->first(),
+        };
+
+        if (!$record) {
+            return response()->json([
+                'message' => 'No record found for this user and type.',
+                'data'    => null
+            ], 404);
+        }
+
+        return response()->json([
+            'message' => 'Success.',
+            'type'    => $type,
+            'data'    => $record
+        ], 200);
     }
 }

@@ -13,7 +13,10 @@ class Staff extends Model
         'profile_image',
         'gender',
         'phone',
-        'staff_document_type'
+        'staff_document_type',
+        'tfn_form',
+        'super_form',
+        'onboarding_form'
     ];
 
     /* ======================

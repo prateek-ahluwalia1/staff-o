@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
-use StaffOnboardingMail;
+use App\Mail\StaffOnboardingMail;
 use Vonage\Client;
 use Vonage\Client\Credentials\Basic;
 use Vonage\SMS\Message\SMS;
@@ -234,15 +234,11 @@ class AuthController extends Controller
         if ($user) {
             if ($user->email_otp == $token) {
 
-                // prevent duplicate send
-                $alreadyVerified = $user->is_email_approved;
-
                 $user->is_email_approved = 1;
                 $user->email_otp = null;
                 $user->save();
 
-                // ✅ SEND EMAIL ONLY ON FIRST VERIFY + STAFF
-                if (!$alreadyVerified && $user->user_type === 'staff') {
+                if ($user->user_type === 'staff') {
                     Mail::to($user->email)->send(new StaffOnboardingMail());
                 }
 
@@ -395,7 +391,7 @@ class AuthController extends Controller
             ], 401);
         }
 
-        if ($user->is_email_approved == 1) {
+        if ($user->is_email_approved == 0) {
             return response()->json([
                 'message' => 'Please verify your email first'
             ], 403);
@@ -484,6 +480,7 @@ class AuthController extends Controller
 
             // ── Step 3: Check if email already exists ─────────────────
             $existingUser = User::where('email', $google['email'])->first();
+            $userType = $request->user_type;
 
             if ($existingUser) {
                 // ════════════════════════════════════════
@@ -504,12 +501,28 @@ class AuthController extends Controller
                     'token'   => $token,
                     'user'    => $existingUser,
                 ], 200);
+            }else{
+                if (isset($userType) && $userType === 'customer') {
+                    return $this->registerCustomerViaGoogle($google);
+                }
+
+                if (isset($userType) && $userType === 'contractor') {
+                    return $this->registerContractorViaGoogle($google);
+                }
+
+                if (isset($userType) && $userType === 'staff') {
+                    return $this->registerStaffViaGoogle($google);
+                }
+
+                 return response()->json([
+                    'success' => false,
+                    'message' => 'User not found.',
+                 ], 401);
             }
 
             // ════════════════════════════════════════
             // REGISTER — email not found, create user
             // ════════════════════════════════════════
-            $userType = $request->user_type;
 
             if ($userType === 'customer') {
                 return $this->registerCustomerViaGoogle($google);

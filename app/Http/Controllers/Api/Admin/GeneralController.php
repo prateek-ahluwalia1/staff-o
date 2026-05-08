@@ -18,4 +18,14 @@ class GeneralController extends Controller
             'data' => $admins
         ], 200);
     }
+
+     function getPH(Request $request)
+    {
+        $getPublicHolidays = DB::table('public_holidays')->where('state', $request->state)->get();
+        if ($getPublicHolidays) {
+            return response()->json(['success' => true, 'data' => $getPublicHolidays]);
+        }else{
+            return response()->json(['success' => false, 'message' => 'Fail to Get Public Holiday!']);
+        }
+    }
 }

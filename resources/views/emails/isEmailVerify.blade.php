@@ -27,7 +27,7 @@
                                             <tr>
                                                 <td style="padding:0 15px;">
                                                     <h1 style="color:rgb(0, 163, 126); font-weight:400; margin:0;font-size:32px;">STAFFOO</h1>
-                                                    <h4>Staff Verify Email</h4>
+                                                    <h4>User Verify Email</h4>
                                                     <p><b>Email: {{$email}}</b></p>
 
                                                     <!-- Clickable Button -->
@@ -56,7 +56,7 @@
                                 <td style="text-align:center;">
                                     <p style="font-size:14px; color:#455056bd; line-height:18px; margin:0 0 0;">
                                         We're delighted to welcome you to a new era of staff management innovation with
-                                        <strong><a href="https://app.thescouts.com.au/" style="color:#3075BA; text-decoration:none;"> STAFFOO </a></strong>.
+                                        <strong><a href="https://app.staffoo.com.au/" style="color:#3075BA; text-decoration:none;"> STAFFOO </a></strong>.
                                     </p>
                                 </td>
                             </tr>

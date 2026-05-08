@@ -56,6 +56,7 @@ const LeaveManagement = lazy(() => import("./pages/LeaveManagement"));
 const CallManagement = lazy(() => import("./pages/callManagement"));
 const PaySlip = lazy(() => import("./pages/PaySlip"));
 const Induction = lazy(() => import("./pages/Induction"));
+const PublicHolidays = lazy(() => import("./pages/PublicHolidays"));
 
 function AppContent() {
   const dispatch = useDispatch();
@@ -266,7 +267,7 @@ function AppContent() {
           <Route
             path="/wfm-tools"
             element={
-              <ProtectedRoute allowedRoles={["admin", "contractor", "staff"]}>
+              <ProtectedRoute allowedRoles={["admin", "contractor"]}>
                 <WFMTools />
               </ProtectedRoute>
             }
@@ -275,8 +276,16 @@ function AppContent() {
           <Route
             path="/leave"
             element={
-              <ProtectedRoute allowedRoles={["admin", "staff", "contractor"]}>
+              <ProtectedRoute allowedRoles={["admin", "contractor"]}>
                 <LeaveManagement />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/holidays"
+            element={
+              <ProtectedRoute allowedRoles={["admin"]}>
+                <PublicHolidays />
               </ProtectedRoute>
             }
           />

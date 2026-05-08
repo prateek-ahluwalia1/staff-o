@@ -8,7 +8,7 @@ const StaffOnboardingForms = ({ submit, userId }) => {
     // 1. TFN Form State
     const [tfnForm, setTfnForm] = useState({
         tfn: "", title: "", first_name: "", surname: "", prev_name: "", dob: "",
-        address: "", basis: "casual", aus_res: "yes", threshold: "yes", help: "yes",
+        address: "", basis: "casual", aus_res: "yes", threshold: "yes", help: "no",
         sig1: "", date1: new Date().toISOString().split('T')[0]
     });
 
@@ -81,8 +81,6 @@ const StaffOnboardingForms = ({ submit, userId }) => {
 
         if (res?.success) {
             toast.success("Form saved successfully!");
-        } else {
-            toast.error(res?.message || "Failed to save form");
         }
     };
 
@@ -116,26 +114,26 @@ const StaffOnboardingForms = ({ submit, userId }) => {
                     <h6 className="border-bottom pb-2 mb-3 text-uppercase text-muted fw-bold small">Tax File Number</h6>
                     <div className="mb-3">
                         <label className="form-label small fw-bold text-muted">TFN <span className="text-danger">*</span></label>
-                        <input type="text" className="form-control" name="tfn" placeholder="000 000 000" maxLength="11" value={tfnForm.tfn} onChange={handleTfnChange} required />
+                        <input type="text" className="form-control" name="tfn" placeholder="000 000 000" minLength="8" maxLength="11" value={tfnForm.tfn} onChange={handleTfnChange} required />
                     </div>
 
                     <h6 className="border-bottom pb-2 mb-3 text-uppercase text-muted fw-bold small mt-4">Personal Details</h6>
                     <div className="row g-3 mb-3">
                         <div className="col-md-2">
                             <label className="form-label small fw-bold text-muted">Title <span className="text-danger">*</span></label>
-                            <input type="text" className="form-control" name="title" placeholder="Mr/Ms" value={tfnForm.title} onChange={handleTfnChange} required />
+                            <input type="text" className="form-control" name="title" placeholder="Mr/Ms" maxLength="10" value={tfnForm.title} onChange={handleTfnChange} required />
                         </div>
                         <div className="col-md-5">
                             <label className="form-label small fw-bold text-muted">First Name <span className="text-danger">*</span></label>
-                            <input type="text" className="form-control" name="first_name" placeholder="Jane" value={tfnForm.first_name} onChange={handleTfnChange} required />
+                            <input type="text" className="form-control" name="first_name" placeholder="Jane" maxLength="50" value={tfnForm.first_name} onChange={handleTfnChange} required />
                         </div>
                         <div className="col-md-5">
                             <label className="form-label small fw-bold text-muted">Surname <span className="text-danger">*</span></label>
-                            <input type="text" className="form-control" name="surname" placeholder="Smith" value={tfnForm.surname} onChange={handleTfnChange} required />
+                            <input type="text" className="form-control" name="surname" placeholder="Smith" maxLength="50" value={tfnForm.surname} onChange={handleTfnChange} required />
                         </div>
                         <div className="col-md-6">
                             <label className="form-label small fw-bold text-muted">Previous Name (if any)</label>
-                            <input type="text" className="form-control" name="prev_name" placeholder="—" value={tfnForm.prev_name} onChange={handleTfnChange} />
+                            <input type="text" className="form-control" name="prev_name" placeholder="—" maxLength="50" value={tfnForm.prev_name} onChange={handleTfnChange} />
                         </div>
                         <div className="col-md-6">
                             <label className="form-label small fw-bold text-muted">Date of Birth <span className="text-danger">*</span></label>
@@ -146,7 +144,7 @@ const StaffOnboardingForms = ({ submit, userId }) => {
                     <h6 className="border-bottom pb-2 mb-3 text-uppercase text-muted fw-bold small mt-4">Residential Address</h6>
                     <div className="mb-3">
                         <label className="form-label small fw-bold text-muted">Full Address <span className="text-danger">*</span></label>
-                        <input type="text" className="form-control" name="address" placeholder="Street address, suburb, state, postcode" value={tfnForm.address} onChange={handleTfnChange} required />
+                        <input type="text" className="form-control" name="address" placeholder="Street address, suburb, state, postcode" maxLength="200" value={tfnForm.address} onChange={handleTfnChange} required />
                     </div>
 
                     <h6 className="border-bottom pb-2 mb-3 text-uppercase text-muted fw-bold small mt-4">Employment</h6>
@@ -207,7 +205,7 @@ const StaffOnboardingForms = ({ submit, userId }) => {
                     <div className="row g-3 mb-4">
                         <div className="col-md-6">
                             <label className="form-label small fw-bold text-muted">Employee Signature <span className="text-danger">*</span></label>
-                            <input type="text" className="form-control" name="sig1" placeholder="Type full name as signature" value={tfnForm.sig1} onChange={handleTfnChange} required />
+                            <input type="text" className="form-control" name="sig1" placeholder="Type full name as signature" maxLength="50" value={tfnForm.sig1} onChange={handleTfnChange} required />
                         </div>
                         <div className="col-md-6">
                             <label className="form-label small fw-bold text-muted">Date <span className="text-danger">*</span></label>
@@ -232,11 +230,11 @@ const StaffOnboardingForms = ({ submit, userId }) => {
                     <div className="row g-3 mb-4">
                         <div className="col-md-6">
                             <label className="form-label small fw-bold text-muted">Full Name <span className="text-danger">*</span></label>
-                            <input type="text" className="form-control" name="s_name" placeholder="John Doe" value={superForm.s_name} onChange={handleSuperChange} required />
+                            <input type="text" className="form-control" name="s_name" placeholder="John Doe" maxLength="100" value={superForm.s_name} onChange={handleSuperChange} required />
                         </div>
                         <div className="col-md-6">
                             <label className="form-label small fw-bold text-muted">Employee Number</label>
-                            <input type="text" className="form-control" name="s_empno" placeholder="Optional" value={superForm.s_empno} onChange={handleSuperChange} />
+                            <input type="text" className="form-control" name="s_empno" placeholder="Optional" maxLength="20" value={superForm.s_empno} onChange={handleSuperChange} />
                         </div>
                     </div>
 
@@ -256,19 +254,19 @@ const StaffOnboardingForms = ({ submit, userId }) => {
                         <div className="row g-3 mb-4 p-3 bg-light rounded border">
                             <div className="col-md-6">
                                 <label className="form-label small fw-bold text-muted">Fund Name <span className="text-danger">*</span></label>
-                                <input type="text" className="form-control" name="s_fundname" placeholder="e.g. AustralianSuper" value={superForm.s_fundname} onChange={handleSuperChange} required={superForm.fund_choice === "own"} />
+                                <input type="text" className="form-control" name="s_fundname" placeholder="e.g. AustralianSuper" maxLength="100" value={superForm.s_fundname} onChange={handleSuperChange} required={superForm.fund_choice === "own"} />
                             </div>
                             <div className="col-md-6">
                                 <label className="form-label small fw-bold text-muted">Fund ABN <span className="text-danger">*</span></label>
-                                <input type="text" className="form-control" name="s_fundabn" placeholder="12 345 678 901" value={superForm.s_fundabn} onChange={handleSuperChange} required={superForm.fund_choice === "own"} />
+                                <input type="text" className="form-control" name="s_fundabn" placeholder="12 345 678 901" maxLength="15" value={superForm.s_fundabn} onChange={handleSuperChange} required={superForm.fund_choice === "own"} />
                             </div>
                             <div className="col-md-6">
                                 <label className="form-label small fw-bold text-muted">Fund USI <span className="text-danger">*</span></label>
-                                <input type="text" className="form-control" name="s_usi" placeholder="USI code" value={superForm.s_usi} onChange={handleSuperChange} required={superForm.fund_choice === "own"} />
+                                <input type="text" className="form-control" name="s_usi" placeholder="USI code" maxLength="20" value={superForm.s_usi} onChange={handleSuperChange} required={superForm.fund_choice === "own"} />
                             </div>
                             <div className="col-md-6">
                                 <label className="form-label small fw-bold text-muted">Member Account No. <span className="text-danger">*</span></label>
-                                <input type="text" className="form-control" name="s_member" placeholder="Member no." value={superForm.s_member} onChange={handleSuperChange} required={superForm.fund_choice === "own"} />
+                                <input type="text" className="form-control" name="s_member" placeholder="Member no." maxLength="50" value={superForm.s_member} onChange={handleSuperChange} required={superForm.fund_choice === "own"} />
                             </div>
                         </div>
                     ) : (
@@ -282,7 +280,7 @@ const StaffOnboardingForms = ({ submit, userId }) => {
                     <div className="row g-3 mb-4">
                         <div className="col-md-6">
                             <label className="form-label small fw-bold text-muted">Employee Signature <span className="text-danger">*</span></label>
-                            <input type="text" className="form-control" name="sig2" placeholder="Type full name as signature" value={superForm.sig2} onChange={handleSuperChange} required />
+                            <input type="text" className="form-control" name="sig2" placeholder="Type full name as signature" maxLength="50" value={superForm.sig2} onChange={handleSuperChange} required />
                         </div>
                         <div className="col-md-6">
                             <label className="form-label small fw-bold text-muted">Date <span className="text-danger">*</span></label>
@@ -307,7 +305,7 @@ const StaffOnboardingForms = ({ submit, userId }) => {
                     <div className="row g-3 mb-4">
                         <div className="col-md-12">
                             <label className="form-label small fw-bold text-muted">Full Name (as per ID) <span className="text-danger">*</span></label>
-                            <input type="text" className="form-control" name="o_name" value={onboardForm.o_name} onChange={handleOnboardChange} required />
+                            <input type="text" className="form-control" name="o_name" maxLength="100" value={onboardForm.o_name} onChange={handleOnboardChange} required />
                         </div>
                         <div className="col-md-6">
                             <label className="form-label small fw-bold text-muted">Date of birth <span className="text-danger">*</span></label>
@@ -315,15 +313,15 @@ const StaffOnboardingForms = ({ submit, userId }) => {
                         </div>
                         <div className="col-md-6">
                             <label className="form-label small fw-bold text-muted">Residential Address <span className="text-danger">*</span></label>
-                            <input type="text" className="form-control" name="o_addr" value={onboardForm.o_addr} onChange={handleOnboardChange} required />
+                            <input type="text" className="form-control" name="o_addr" maxLength="200" value={onboardForm.o_addr} onChange={handleOnboardChange} required />
                         </div>
                         <div className="col-md-6">
                             <label className="form-label small fw-bold text-muted">Mobile Phone <span className="text-danger">*</span></label>
-                            <input type="text" className="form-control" name="o_phone" placeholder="04xx xxx xxx" value={onboardForm.o_phone} onChange={handleOnboardChange} required />
+                            <input type="text" className="form-control" name="o_phone" placeholder="04xx xxx xxx" maxLength="15" value={onboardForm.o_phone} onChange={handleOnboardChange} required />
                         </div>
                         <div className="col-md-6">
                             <label className="form-label small fw-bold text-muted">Personal Email <span className="text-danger">*</span></label>
-                            <input type="email" className="form-control" name="o_email" placeholder="jane@email.com" value={onboardForm.o_email} onChange={handleOnboardChange} required />
+                            <input type="email" className="form-control" name="o_email" placeholder="jane@email.com" maxLength="100" value={onboardForm.o_email} onChange={handleOnboardChange} required />
                         </div>
                     </div>
 
@@ -331,11 +329,11 @@ const StaffOnboardingForms = ({ submit, userId }) => {
                     <div className="row g-3 mb-4">
                         <div className="col-md-4">
                             <label className="form-label small fw-bold text-muted">Passport No. <span className="text-danger">*</span></label>
-                            <input type="text" className="form-control" name="o_passport" placeholder="PA1234567" value={onboardForm.o_passport} onChange={handleOnboardChange} required />
+                            <input type="text" className="form-control" name="o_passport" placeholder="PA1234567" maxLength="20" value={onboardForm.o_passport} onChange={handleOnboardChange} required />
                         </div>
                         <div className="col-md-4">
                             <label className="form-label small fw-bold text-muted">Country of Issue <span className="text-danger">*</span></label>
-                            <input type="text" className="form-control" name="o_pcountry" placeholder="Australia" value={onboardForm.o_pcountry} onChange={handleOnboardChange} required />
+                            <input type="text" className="form-control" name="o_pcountry" placeholder="Australia" maxLength="50" value={onboardForm.o_pcountry} onChange={handleOnboardChange} required />
                         </div>
                         <div className="col-md-4">
                             <label className="form-label small fw-bold text-muted">Passport Expiry <span className="text-danger">*</span></label>
@@ -398,7 +396,7 @@ const StaffOnboardingForms = ({ submit, userId }) => {
                     <div className="row g-3 mb-4">
                         <div className="col-md-4">
                             <label className="form-label small fw-bold text-muted">Bank Name <span className="text-danger">*</span></label>
-                            <input type="text" className="form-control" name="o_bank" placeholder="Commonwealth Bank" value={onboardForm.o_bank} onChange={handleOnboardChange} required />
+                            <input type="text" className="form-control" name="o_bank" placeholder="Commonwealth Bank" maxLength="100" value={onboardForm.o_bank} onChange={handleOnboardChange} required />
                         </div>
                         <div className="col-md-4">
                             <label className="form-label small fw-bold text-muted">BSB Number <span className="text-danger">*</span></label>
@@ -406,23 +404,23 @@ const StaffOnboardingForms = ({ submit, userId }) => {
                         </div>
                         <div className="col-md-4">
                             <label className="form-label small fw-bold text-muted">Account Number <span className="text-danger">*</span></label>
-                            <input type="text" className="form-control" name="o_acct" placeholder="12345678" value={onboardForm.o_acct} onChange={handleOnboardChange} required />
+                            <input type="text" className="form-control" name="o_acct" placeholder="12345678" maxLength="20" value={onboardForm.o_acct} onChange={handleOnboardChange} required />
                         </div>
                         <div className="col-md-6">
                             <label className="form-label small fw-bold text-muted">TFN <span className="text-danger">*</span></label>
-                            <input type="text" className="form-control" name="o_tfn" value={onboardForm.o_tfn} onChange={handleOnboardChange} required />
+                            <input type="text" className="form-control" name="o_tfn" minLength="8" maxLength="11" value={onboardForm.o_tfn} onChange={handleOnboardChange} required />
                         </div>
                         <div className="col-md-6">
                             <label className="form-label small fw-bold text-muted">Super Fund Name <span className="text-danger">*</span></label>
-                            <input type="text" className="form-control" name="o_superfund" value={onboardForm.o_superfund} onChange={handleOnboardChange} required />
+                            <input type="text" className="form-control" name="o_superfund" maxLength="100" value={onboardForm.o_superfund} onChange={handleOnboardChange} required />
                         </div>
                         <div className="col-md-6">
                             <label className="form-label small fw-bold text-muted">Super USI <span className="text-danger">*</span></label>
-                            <input type="text" className="form-control" name="o_superusi" value={onboardForm.o_superusi} onChange={handleOnboardChange} required />
+                            <input type="text" className="form-control" name="o_superusi" maxLength="20" value={onboardForm.o_superusi} onChange={handleOnboardChange} required />
                         </div>
                         <div className="col-md-6">
                             <label className="form-label small fw-bold text-muted">Member Number <span className="text-danger">*</span></label>
-                            <input type="text" className="form-control" name="o_member" value={onboardForm.o_member} onChange={handleOnboardChange} required />
+                            <input type="text" className="form-control" name="o_member" maxLength="50" value={onboardForm.o_member} onChange={handleOnboardChange} required />
                         </div>
                     </div>
 
@@ -430,7 +428,7 @@ const StaffOnboardingForms = ({ submit, userId }) => {
                     <div className="row g-3 mb-4">
                         <div className="col-md-6">
                             <label className="form-label small fw-bold text-muted">Security Licence No. <span className="text-danger">*</span></label>
-                            <input type="text" className="form-control" name="o_seclic" placeholder="VIC 123456" value={onboardForm.o_seclic} onChange={handleOnboardChange} required />
+                            <input type="text" className="form-control" name="o_seclic" placeholder="VIC 123456" maxLength="50" value={onboardForm.o_seclic} onChange={handleOnboardChange} required />
                         </div>
                         <div className="col-md-6">
                             <label className="form-label small fw-bold text-muted">Security Licence Expiry <span className="text-danger">*</span></label>
@@ -438,7 +436,7 @@ const StaffOnboardingForms = ({ submit, userId }) => {
                         </div>
                         <div className="col-md-6">
                             <label className="form-label small fw-bold text-muted">First Aid Certificate No. <span className="text-danger">*</span></label>
-                            <input type="text" className="form-control" name="o_fa" placeholder="FA-001234" value={onboardForm.o_fa} onChange={handleOnboardChange} required />
+                            <input type="text" className="form-control" name="o_fa" placeholder="FA-001234" maxLength="50" value={onboardForm.o_fa} onChange={handleOnboardChange} required />
                         </div>
                         <div className="col-md-6">
                             <label className="form-label small fw-bold text-muted">First Aid Expiry <span className="text-danger">*</span></label>
@@ -450,7 +448,7 @@ const StaffOnboardingForms = ({ submit, userId }) => {
                     <div className="row g-3 mb-4">
                         <div className="col-md-6">
                             <label className="form-label small fw-bold text-muted">Signature <span className="text-danger">*</span></label>
-                            <input type="text" className="form-control" name="sig3" placeholder="Type full name as signature" value={onboardForm.sig3} onChange={handleOnboardChange} required />
+                            <input type="text" className="form-control" name="sig3" placeholder="Type full name as signature" maxLength="50" value={onboardForm.sig3} onChange={handleOnboardChange} required />
                         </div>
                         <div className="col-md-6">
                             <label className="form-label small fw-bold text-muted">Date <span className="text-danger">*</span></label>

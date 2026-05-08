@@ -6,6 +6,7 @@ import '../assets/css/PublicHolidays.css';
 const PUBLIC_HOLIDAY_ENDPOINTS = {
     list: 'api/admin/get-public-holiday',
     save: 'api/admin/add-public-holiday',
+    update: 'api/admin/update-public-holiday',
     delete: 'api/admin/delete-public-holiday',
 };
 
@@ -162,7 +163,9 @@ const PublicHolidays = () => {
             payload.id = editingId;
         }
 
-        const response = await submitHolidayMutation(PUBLIC_HOLIDAY_ENDPOINTS.save, payload, {
+        const endpoint = isEditMode ? PUBLIC_HOLIDAY_ENDPOINTS.update : PUBLIC_HOLIDAY_ENDPOINTS.save;
+
+        const response = await submitHolidayMutation(endpoint, payload, {
             method: 'POST',
         });
 

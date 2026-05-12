@@ -1,5 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { toast } from "react-toastify";
+import PDFGenerator from "../utils/PDFGenerator";
 
 const TAB_LABELS = ["TFN Declaration", "Superannuation", "Employee Onboarding"];
 
@@ -9,15 +10,15 @@ const SectionTitle = ({ children, className = "" }) => (
     </h6>
 );
 
-const ActionBar = ({ loading, saveLabel }) => (
+const ActionBar = ({ loading, saveLabel, disabled }) => (
     <div className="d-flex justify-content-end pt-3 border-top mt-4">
-        <button type="submit" className="btn btn-primary fw-bold px-4" disabled={loading}>
+        <button type="submit" className="btn btn-primary fw-bold px-4" disabled={loading || disabled}>
             {loading ? "Saving..." : saveLabel}
         </button>
     </div>
 );
 
-const TfnDeclarationForm = ({ values, loading, onChange, onSubmit }) => (
+const TfnDeclarationForm = ({ values, loading, onChange, onSubmit, dataModified }) => (
     <form onSubmit={onSubmit} className="animate__animated animate__fadeIn">
         <SectionTitle>Tax File Number</SectionTitle>
         <div className="mb-3">
@@ -121,11 +122,11 @@ const TfnDeclarationForm = ({ values, loading, onChange, onSubmit }) => (
             </div>
         </div>
 
-        <ActionBar loading={loading} saveLabel="Save TFN Declaration" />
+        <ActionBar loading={loading} saveLabel="Save TFN Declaration" disabled={!dataModified} />
     </form>
 );
 
-const SuperannuationForm = ({ values, loading, onChange, onSubmit }) => (
+const SuperannuationForm = ({ values, loading, onChange, onSubmit, dataModified }) => (
     <form onSubmit={onSubmit} className="animate__animated animate__fadeIn">
         <SectionTitle>Employee Details</SectionTitle>
         <div className="row g-3 mb-4">
@@ -189,11 +190,11 @@ const SuperannuationForm = ({ values, loading, onChange, onSubmit }) => (
             </div>
         </div>
 
-        <ActionBar loading={loading} saveLabel="Save Superannuation" />
+        <ActionBar loading={loading} saveLabel="Save Superannuation" disabled={!dataModified} />
     </form>
 );
 
-const EmployeeOnboardingForm = ({ values, loading, onChange, onSubmit }) => (
+const EmployeeOnboardingForm = ({ values, loading, onChange, onSubmit, dataModified }) => (
     <form onSubmit={onSubmit} className="animate__animated animate__fadeIn">
         <SectionTitle>Personal Contact Details</SectionTitle>
         <div className="row g-3 mb-4">
@@ -350,13 +351,20 @@ const EmployeeOnboardingForm = ({ values, loading, onChange, onSubmit }) => (
             </div>
         </div>
 
-        <ActionBar loading={loading} saveLabel="Save Onboarding Form" />
+        <ActionBar loading={loading} saveLabel="Save Onboarding Form" disabled={!dataModified} />
     </form>
 );
 
 const StaffOnboardingForms = ({ submit, userId }) => {
     const [subTab, setSubTab] = useState(0);
     const [loading, setLoading] = useState(false);
+    const [dataModified, setDataModified] = useState(false);
+    const [formDataLoading, setFormDataLoading] = useState(true);
+
+    // Store original data for change detection
+    const [originalTfnForm, setOriginalTfnForm] = useState(null);
+    const [originalSuperForm, setOriginalSuperForm] = useState(null);
+    const [originalOnboardForm, setOriginalOnboardForm] = useState(null);
 
     // 1. TFN Form State
     const [tfnForm, setTfnForm] = useState({
@@ -381,12 +389,125 @@ const StaffOnboardingForms = ({ submit, userId }) => {
         sig3: "", date3: new Date().toISOString().split('T')[0]
     });
 
+    // Fetch existing form data on mount
+    useEffect(() => {
+        const toDateValue = (value) => {
+            if (!value) return "";
+            return String(value).split("T")[0];
+        };
+
+        const normalizeTfnData = (data) => ({
+            tfn: data?.tfn ?? "",
+            title: data?.title ?? "",
+            first_name: data?.first_name ?? "",
+            surname: data?.surname ?? "",
+            prev_name: data?.previous_name ?? data?.prev_name ?? "",
+            dob: toDateValue(data?.dob),
+            address: data?.address ?? "",
+            basis: data?.basis_of_payment ?? data?.basis ?? "casual",
+            aus_res: String(data?.australian_resident ?? data?.aus_res ?? "").toLowerCase() === "1" ? "yes" : String(data?.australian_resident ?? data?.aus_res ?? "").toLowerCase() === "yes" ? "yes" : "no",
+            threshold: String(data?.claim_threshold ?? data?.threshold ?? "").toLowerCase() === "1" ? "yes" : String(data?.claim_threshold ?? data?.threshold ?? "").toLowerCase() === "yes" ? "yes" : "no",
+            help: String(data?.help_debt ?? data?.help ?? "").toLowerCase() === "1" ? "yes" : String(data?.help_debt ?? data?.help ?? "").toLowerCase() === "yes" ? "yes" : "no",
+            sig1: data?.signature ?? data?.sig1 ?? "",
+            date1: toDateValue(data?.signed_date ?? data?.date1),
+        });
+
+        const normalizeSuperData = (data) => ({
+            s_name: data?.full_name ?? data?.s_name ?? "",
+            s_empno: data?.employee_number ?? data?.s_empno ?? "",
+            fund_choice: data?.fund_choice ?? "employer",
+            s_fundname: data?.fund_name ?? data?.s_fundname ?? "",
+            s_fundabn: data?.fund_abn ?? data?.s_fundabn ?? "",
+            s_usi: data?.fund_usi ?? data?.s_usi ?? "",
+            s_member: data?.member_account ?? data?.s_member ?? "",
+            sig2: data?.signature ?? data?.sig2 ?? "",
+            date2: toDateValue(data?.signed_date ?? data?.date2),
+        });
+
+        const normalizeOnboardData = (data) => ({
+            o_name: data?.full_name ?? data?.o_name ?? "",
+            o_dob: toDateValue(data?.dob ?? data?.o_dob),
+            o_addr: data?.address ?? data?.o_addr ?? "",
+            o_phone: data?.mobile ?? data?.o_phone ?? "",
+            o_email: data?.email ?? data?.o_email ?? "",
+            o_passport: data?.passport_number ?? data?.o_passport ?? "",
+            o_pcountry: data?.passport_country ?? data?.o_pcountry ?? "",
+            o_pexpiry: toDateValue(data?.passport_expiry ?? data?.o_pexpiry),
+            work: data?.work_rights ?? data?.work ?? "citizen",
+            chk_primary: Boolean(data?.id_checks?.primary_id ?? data?.chk_primary ?? false),
+            chk_driver: Boolean(data?.id_checks?.drivers_license ?? data?.chk_driver ?? false),
+            chk_security: Boolean(data?.id_checks?.security_license ?? data?.chk_security ?? false),
+            chk_medicare: Boolean(data?.id_checks?.medicare_or_utility ?? data?.chk_medicare ?? false),
+            o_bank: data?.bank_name ?? data?.o_bank ?? "",
+            o_bsb: data?.bsb ?? data?.o_bsb ?? "",
+            o_acct: data?.account_number ?? data?.o_acct ?? "",
+            o_tfn: data?.tfn ?? data?.o_tfn ?? "",
+            o_superfund: data?.super_fund ?? data?.o_superfund ?? "",
+            o_superusi: data?.super_usi ?? data?.o_superusi ?? "",
+            o_member: data?.super_member ?? data?.o_member ?? "",
+            o_seclic: data?.security_license ?? data?.o_seclic ?? "",
+            o_seclicexp: toDateValue(data?.security_license_expiry ?? data?.o_seclicexp),
+            o_fa: data?.first_aid_cert ?? data?.o_fa ?? "",
+            o_faexp: toDateValue(data?.first_aid_expiry ?? data?.o_faexp),
+            sig3: data?.signature ?? data?.sig3 ?? "",
+            date3: toDateValue(data?.signed_date ?? data?.date3),
+        });
+
+        const fetchFormData = async (formType) => {
+            try {
+                const endpoint = `api/form-data?user_id=${encodeURIComponent(userId)}&type=${encodeURIComponent(formType)}`;
+                const res = await submit(endpoint, undefined, { method: "GET", silentErrorToast: true });
+                const fetchedData = res?.data ?? res;
+
+                if (fetchedData) {
+                    if (formType === "tfn") {
+                        const normalized = normalizeTfnData(fetchedData);
+                        setTfnForm(normalized);
+                        setOriginalTfnForm(normalized);
+                    } else if (formType === "superannuation") {
+                        const normalized = normalizeSuperData(fetchedData);
+                        setSuperForm(normalized);
+                        setOriginalSuperForm(normalized);
+                    } else if (formType === "onboarding") {
+                        const normalized = normalizeOnboardData(fetchedData);
+                        setOnboardForm(normalized);
+                        setOriginalOnboardForm(normalized);
+                    }
+                }
+            } catch (error) {
+                console.error(`Error fetching ${formType} form data:`, error);
+            }
+        };
+
+        if (userId) {
+            Promise.all([
+                fetchFormData("tfn"),
+                fetchFormData("superannuation"),
+                fetchFormData("onboarding")
+            ]).finally(() => setFormDataLoading(false));
+        } else {
+            setFormDataLoading(false);
+        }
+    }, [userId, submit]);
+
     // Change Handlers
-    const handleTfnChange = (e) => setTfnForm((p) => ({ ...p, [e.target.name]: e.target.value }));
-    const handleSuperChange = (e) => setSuperForm((p) => ({ ...p, [e.target.name]: e.target.value }));
+    const handleTfnChange = (e) => {
+        const updatedForm = { ...tfnForm, [e.target.name]: e.target.value };
+        setTfnForm(updatedForm);
+        setDataModified(JSON.stringify(updatedForm) !== JSON.stringify(originalTfnForm));
+    };
+
+    const handleSuperChange = (e) => {
+        const updatedForm = { ...superForm, [e.target.name]: e.target.value };
+        setSuperForm(updatedForm);
+        setDataModified(JSON.stringify(updatedForm) !== JSON.stringify(originalSuperForm));
+    };
+
     const handleOnboardChange = (e) => {
         const { name, value, type, checked } = e.target;
-        setOnboardForm((p) => ({ ...p, [name]: type === "checkbox" ? checked : value }));
+        const updatedForm = { ...onboardForm, [name]: type === "checkbox" ? checked : value };
+        setOnboardForm(updatedForm);
+        setDataModified(JSON.stringify(updatedForm) !== JSON.stringify(originalOnboardForm));
     };
 
     const handleFormSubmit = async (e, tabIndex) => {
@@ -395,24 +516,35 @@ const StaffOnboardingForms = ({ submit, userId }) => {
 
         let payload = {};
         let endpoint = "";
+        let pdfFormData = {};
+        let pdfType = "";
+        let fileName = "";
 
         if (tabIndex === 0) {
             endpoint = "api/tfn-declaration";
+            pdfType = "tfn";
+            fileName = `TFN_Declaration_${userId}_${new Date().getTime()}.pdf`;
             payload = {
                 user_id: userId, tfn: tfnForm.tfn, title: tfnForm.title, first_name: tfnForm.first_name,
                 surname: tfnForm.surname, previous_name: tfnForm.prev_name, dob: tfnForm.dob,
                 address: tfnForm.address, basis_of_payment: tfnForm.basis, australian_resident: tfnForm.aus_res,
                 claim_threshold: tfnForm.threshold, help_debt: tfnForm.help, signature: tfnForm.sig1, date: tfnForm.date1
             };
+            pdfFormData = { ...payload };
         } else if (tabIndex === 1) {
             endpoint = "api/superannuation";
+            pdfType = "super_form";
+            fileName = `Superannuation_${userId}_${new Date().getTime()}.pdf`;
             payload = {
                 user_id: userId, full_name: superForm.s_name, employee_number: superForm.s_empno, fund_choice: superForm.fund_choice,
                 fund_name: superForm.s_fundname, fund_abn: superForm.s_fundabn, fund_usi: superForm.s_usi,
                 member_account: superForm.s_member, signature: superForm.sig2, date: superForm.date2
             };
+            pdfFormData = { ...payload };
         } else if (tabIndex === 2) {
             endpoint = "api/onboarding";
+            pdfType = "onboarding";
+            fileName = `Employee_Onboarding_${userId}_${new Date().getTime()}.pdf`;
             payload = {
                 user_id: userId, full_name: onboardForm.o_name, dob: onboardForm.o_dob, address: onboardForm.o_addr,
                 mobile: onboardForm.o_phone, email: onboardForm.o_email, passport_number: onboardForm.o_passport,
@@ -426,14 +558,52 @@ const StaffOnboardingForms = ({ submit, userId }) => {
                 security_license: onboardForm.o_seclic, security_license_expiry: onboardForm.o_seclicexp,
                 first_aid_cert: onboardForm.o_fa, first_aid_expiry: onboardForm.o_faexp, signature: onboardForm.sig3, date: onboardForm.date3
             };
+            pdfFormData = { ...payload };
         }
 
         setLoading(true);
         const res = await submit(endpoint, payload, { method: "POST" });
         setLoading(false);
 
-        if (res?.success) {
+        const saveSucceeded = res && res.success !== false && !res.error;
+
+        if (saveSucceeded) {
             toast.success("Form saved successfully!");
+
+            // Update original data to track future changes
+            if (tabIndex === 0) setOriginalTfnForm({ ...tfnForm });
+            else if (tabIndex === 1) setOriginalSuperForm({ ...superForm });
+            else if (tabIndex === 2) setOriginalOnboardForm({ ...onboardForm });
+
+            setDataModified(false);
+
+            // Generate and handle PDF download/upload
+            try {
+                let doc;
+                if (tabIndex === 0) {
+                    doc = PDFGenerator.generateTFNDeclarationPDF(pdfFormData);
+                } else if (tabIndex === 1) {
+                    doc = PDFGenerator.generateSuperannuationPDF(pdfFormData);
+                } else if (tabIndex === 2) {
+                    doc = PDFGenerator.generateEmployeeOnboardingPDF(pdfFormData);
+                }
+
+                const uploadPayload = {
+                    user_id: userId,
+                    type: pdfType,
+                    folder: "onboarding_forms",
+                };
+
+                await PDFGenerator.downloadAndUploadPDF(
+                    doc,
+                    fileName,
+                    "api/upload-staff-file",
+                    uploadPayload,
+                    submit
+                );
+            } catch (pdfError) {
+                console.error("PDF generation/upload error:", pdfError);
+            }
         }
     };
 
@@ -446,6 +616,15 @@ const StaffOnboardingForms = ({ submit, userId }) => {
                 </div>
             </div>
 
+            {formDataLoading && (
+                <div className="alert alert-info mb-4">
+                    <div className="spinner-border spinner-border-sm me-2" role="status">
+                        <span className="visually-hidden">Loading...</span>
+                    </div>
+                    Loading form data...
+                </div>
+            )}
+
             <div className="d-flex gap-2 mb-4 bg-light p-1 rounded-pill border">
                 {TAB_LABELS.map((tab, idx) => (
                     <button
@@ -453,6 +632,7 @@ const StaffOnboardingForms = ({ submit, userId }) => {
                         type="button"
                         className={`btn btn-sm rounded-pill flex-grow-1 fw-bold ${subTab === idx ? "btn-primary shadow-sm" : "btn-light text-muted border-0 bg-transparent"}`}
                         onClick={() => setSubTab(idx)}
+                        disabled={formDataLoading}
                     >
                         {tab}
                     </button>
@@ -468,6 +648,7 @@ const StaffOnboardingForms = ({ submit, userId }) => {
                     loading={loading}
                     onChange={handleTfnChange}
                     onSubmit={(e) => handleFormSubmit(e, 0)}
+                    dataModified={dataModified}
                 />
             )}
 
@@ -480,6 +661,7 @@ const StaffOnboardingForms = ({ submit, userId }) => {
                     loading={loading}
                     onChange={handleSuperChange}
                     onSubmit={(e) => handleFormSubmit(e, 1)}
+                    dataModified={dataModified}
                 />
             )}
 
@@ -492,6 +674,7 @@ const StaffOnboardingForms = ({ submit, userId }) => {
                     loading={loading}
                     onChange={handleOnboardChange}
                     onSubmit={(e) => handleFormSubmit(e, 2)}
+                    dataModified={dataModified}
                 />
             )}
         </div>

@@ -101,21 +101,21 @@ export default function LatestJobs() {
               <div className="btn-group" role="group" aria-label="View mode">
                 <button
                   type="button"
-                  className={`btn view-toggle-btn border-0 ${viewMode === "grid" ? "btn-primary text-white" : "text-secondary"}`}
+                  className={`btn view-toggle-btn border-0 ${viewMode === "grid" ? "btn-primary-custom text-white" : "text-secondary"}`}
                   onClick={() => setViewMode("grid")}
                 >
                   <i className="fa fa-th-large me-2"></i> Grid
                 </button>
                 <button
                   type="button"
-                  className={`btn view-toggle-btn border-0 ${viewMode === "list" ? "btn-primary text-white" : "text-secondary"}`}
+                  className={`btn view-toggle-btn border-0 ${viewMode === "list" ? "btn-primary-custom text-white" : "text-secondary"}`}
                   onClick={() => setViewMode("list")}
                 >
                   <i className="fa fa-list me-2"></i> List
                 </button>
                 <button
                   type="button"
-                  className={`btn view-toggle-btn border-0 ${viewMode === "compact" ? "btn-primary text-white" : "text-secondary"}`}
+                  className={`btn view-toggle-btn border-0 ${viewMode === "compact" ? "btn-primary-custom text-white" : "text-secondary"}`}
                   onClick={() => setViewMode("compact")}
                 >
                   <i className="fa fa-table me-2"></i> Compact

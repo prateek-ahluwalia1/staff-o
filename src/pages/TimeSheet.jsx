@@ -584,14 +584,14 @@ export default function TimeSheet() {
             {/* Grouped Search and Export Buttons */}
             <div className="col-12 col-sm-12 col-lg-2 d-flex gap-2">
               <button
-                className="btn btn-sm btn-primary timesheet-action-btn w-100 px-2"
+                className="btn btn-sm btn-primary-custom timesheet-action-btn w-100 px-2"
                 onClick={fetchTimesheets}
                 disabled={timesheetLoading}
               >
                 <i className="fa-solid fa-search"></i> Search
               </button>
               <button
-                className="btn btn-sm btn-outline-primary timesheet-action-btn w-100 px-2"
+                className="btn btn-sm btn-outline-primary-custom timesheet-action-btn w-100 px-2"
                 onClick={handleExport}
                 disabled={timesheetData.length === 0}
               >

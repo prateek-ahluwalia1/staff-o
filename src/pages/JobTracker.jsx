@@ -434,7 +434,7 @@ const JobTracker = () => {
             </div>
             <div className="col-6 col-lg-2 d-grid">
               <button
-                className="btn btn-sm btn-primary jobtracker-action-btn"
+                className="btn btn-sm btn-primary-custom jobtracker-action-btn"
                 onClick={fetchReport}
                 disabled={loading}
               >

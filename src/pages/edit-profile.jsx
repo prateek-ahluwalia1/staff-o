@@ -655,7 +655,7 @@ export default function EditProfile() {
       <div style={{ display: "flex", gap: 16, marginBottom: 20 }}>
         {userType !== "admin" && (
           <button
-            className={`btn ${activeTab === "personal" ? "btn-primary" : "btn-outline-primary"
+            className={`btn ${activeTab === "personal" ? "" : "btn-outline-primary"
               }`}
             onClick={() => setActiveTab("personal")}
           >
@@ -665,7 +665,7 @@ export default function EditProfile() {
 
         {userType === "customer" && (
           <button
-            className={`btn ${activeTab === "cards" ? "btn-primary" : "btn-outline-primary"
+            className={`btn ${activeTab === "cards" ? "btn-primary-custom" : "btn-outline-primary"
               }`}
             onClick={() => {
               setActiveTab("cards");
@@ -677,7 +677,7 @@ export default function EditProfile() {
         )}
         {userType !== "customer" && userType !== "admin" && (
           <button
-            className={`btn ${activeTab === "documents" ? "btn-primary" : "btn-outline-primary"
+            className={`btn ${activeTab === "documents" ? "btn-primary-custom" : "btn-outline-primary"
               }`}
             onClick={() => setActiveTab("documents")}
           >
@@ -686,7 +686,7 @@ export default function EditProfile() {
         )}
         {userType === "staff" && (
           <button
-            className={`btn ${activeTab === "onboarding" ? "btn-primary" : "btn-outline-primary"}`}
+            className={`btn ${activeTab === "onboarding" ? "btn-primary-custom" : "btn-outline-primary"}`}
             onClick={() => setActiveTab("onboarding")}
           >
             Verification Forms
@@ -749,7 +749,7 @@ export default function EditProfile() {
               <div className="d-flex justify-content-between align-items-center mb-4">
                 <h4 className="mb-0">Your Saved Cards</h4>
                 <button
-                  className="btn btn-primary shadow-sm"
+                  className="btn btn-primary-custom shadow-sm"
                   onClick={() => setIsAddingCard(true)}
                 >
                   + Add New Card
@@ -1134,7 +1134,7 @@ export default function EditProfile() {
                     </button>
                     <button
                       type="submit"
-                      className="btn btn-primary w-50 py-2 fw-bold shadow-sm"
+                      className="btn btn-primary-custom w-50 py-2 fw-bold shadow-sm"
                       disabled={submitLoading}
                     >
                       {submitLoading ? "Saving..." : "Save Card"}
@@ -1354,7 +1354,7 @@ export default function EditProfile() {
                 </button>
                 <button
                   type="submit"
-                  className="btn btn-primary w-50"
+                  className="btn btn-primary-custom w-50"
                   disabled={phoneSubmitLoading}
                 >
                   {phoneSubmitLoading ? "Sending OTP..." : "Send OTP"}
@@ -1405,7 +1405,7 @@ export default function EditProfile() {
                 </button>
                 <button
                   type="submit"
-                  className="btn btn-primary w-50"
+                  className="btn btn-primary-custom w-50"
                   disabled={phoneSubmitLoading || phoneChangeSuccess}
                 >
                   {phoneSubmitLoading ? "Verifying..." : "Verify & Update"}

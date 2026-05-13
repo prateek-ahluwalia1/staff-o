@@ -349,7 +349,7 @@ const PaySlip = () => {
         <div className="d-flex flex-wrap gap-2 align-items-center">
           <button
             type="button"
-            className="btn btn-primary"
+            className="btn btn-primary-custom"
             onClick={() => setIsUploadModalOpen(true)}
           >
             <i className="fa-solid fa-file-arrow-up me-2"></i>
@@ -435,7 +435,7 @@ const PaySlip = () => {
                 <div className="col-6 col-lg-2 d-grid">
                   <button
                     type="button"
-                    className="btn btn-sm btn-primary payslip-action-btn"
+                    className="btn btn-sm btn-primary-custom payslip-action-btn"
                     onClick={handleGetGuardPayslips}
                     disabled={actionLoading}
                   >
@@ -625,7 +625,7 @@ const PaySlip = () => {
               </button>
               <button
                 type="button"
-                className="btn btn-primary"
+                className="btn btn-primary-custom"
                 onClick={handleSavePayslip}
                 disabled={isBusy}
               >

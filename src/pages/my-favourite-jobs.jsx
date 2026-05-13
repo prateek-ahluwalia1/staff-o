@@ -106,7 +106,7 @@ export default function MyFavouriteJobs() {
               <i className="fa-solid fa-bell" aria-hidden="true"></i> Manage
               alerts
             </a>
-            <a href="/job-listing" className="btn btn-primary">
+            <a href="/job-listing" className="btn btn-primary-custom">
               <i
                 className="fa-solid fa-magnifying-glass"
                 aria-hidden="true"

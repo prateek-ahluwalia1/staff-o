@@ -405,7 +405,7 @@ const Invoice = () => {
 
           <button
             type="button"
-            className="btn btn-primary"
+            className="btn btn-primary-custom"
             onClick={handleSendInvoice}
             disabled={isSending}
           >

@@ -17,7 +17,7 @@ export default function UserPackages() {
             <a href="/payment-history" className="btn btn-outline-primary">
               <i className="fa-solid fa-receipt" aria-hidden="true"></i> Billing
             </a>
-            <a href="#upgrade" className="btn btn-primary">
+            <a href="#upgrade" className="btn btn-primary-custom">
               <i
                 className="fa-solid fa-arrow-up-right-dots"
                 aria-hidden="true"

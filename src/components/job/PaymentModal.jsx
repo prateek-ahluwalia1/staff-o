@@ -170,7 +170,7 @@ function CardForm({
           <div className="d-flex gap-2 mb-2">
             <button
               type="button"
-              className={`btn btn-sm ${paymentMode === "saved" ? "btn-primary" : "btn-outline-primary"}`}
+              className={`btn btn-sm ${paymentMode === "saved" ? "btn-primary-custom" : "btn-outline-primary"}`}
               onClick={() => {
                 setPaymentMode("saved");
                 setCardError("");
@@ -181,7 +181,7 @@ function CardForm({
             </button>
             <button
               type="button"
-              className={`btn btn-sm ${paymentMode === "new" ? "btn-primary" : "btn-outline-primary"}`}
+              className={`btn btn-sm ${paymentMode === "new" ? "btn-primary-custom" : "btn-outline-primary"}`}
               onClick={() => {
                 setPaymentMode("new");
                 setCardError("");

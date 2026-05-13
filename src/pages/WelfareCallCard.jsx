@@ -208,7 +208,7 @@ export default function WelfareCallCard({ callData, isIncoming, onClose }) {
                       {uData.name}
                     </div>
                     <button
-                      className="btn btn-sm btn-primary py-0 px-2"
+                      className="btn btn-sm btn-primary-custom py-0 px-2"
                       style={{ fontSize: "0.75rem" }}
                       onClick={() => handleInviteUser(uData.id)}
                     >

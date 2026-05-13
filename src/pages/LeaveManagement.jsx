@@ -297,13 +297,13 @@ const LeaveManagement = () => {
 
       <div className="leave-tabs d-flex gap-2 mb-3">
         <button
-          className={`btn rounded-pill px-4 ${activeLeaveTab === "pending" ? "btn-primary" : "btn-light border"}`}
+          className={`btn rounded-pill px-4 ${activeLeaveTab === "pending" ? "btn-primary-custom" : "btn-light border"}`}
           onClick={() => setActiveLeaveTab("pending")}
         >
           Pending Leaves
         </button>
         <button
-          className={`btn rounded-pill px-4 ${activeLeaveTab === "approved" ? "btn-primary" : "btn-light border"}`}
+          className={`btn rounded-pill px-4 ${activeLeaveTab === "approved" ? "btn-primary-custom" : "btn-light border"}`}
           onClick={() => setActiveLeaveTab("approved")}
         >
           Approved Leaves
@@ -658,7 +658,7 @@ const LeaveManagement = () => {
                 </button>
                 <button
                   type="submit"
-                  className="btn btn-primary px-4 py-2 rounded-pill fw-bold"
+                  className="btn btn-primary-custom px-4 py-2 rounded-pill fw-bold"
                   disabled={submitLoading}
                 >
                   {submitLoading ? "Submitting..." : "Submit Request"}

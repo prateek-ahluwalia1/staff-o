@@ -293,7 +293,7 @@ export default function DetailsStep({ form, setField, handleFile, attachmentPrev
                     />
                     <button
                       type="button"
-                      className="btn btn-primary"
+                      className="btn btn-primary-custom"
                       onClick={handleAddCustomDoc}
                     >
                       <i className="fa-solid fa-plus me-2"></i> Add

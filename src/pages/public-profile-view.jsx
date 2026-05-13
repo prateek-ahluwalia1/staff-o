@@ -21,7 +21,7 @@ export default function PublicProfilePreview() {
             <a href="/" className="btn btn-outline-primary">
               <i className="fa-solid fa-link" aria-hidden="true"></i> Copy link
             </a>
-            <a href="/" className="btn btn-primary">
+            <a href="/" className="btn btn-primary-custom">
               <i className="fa-solid fa-eye" aria-hidden="true"></i> View live
               profile
             </a>

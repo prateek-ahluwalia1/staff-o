@@ -375,7 +375,7 @@ export default function ProfileForm({
           <div className="settings-card-footer mt-4 pt-4 border-top d-flex justify-content-end">
             <button
               type="submit"
-              className="btn btn-primary px-5 py-2 fw-bold shadow-sm"
+              className="btn btn-primary-custom px-5 py-2 fw-bold shadow-sm"
               disabled={loading}
             >
               {loading ? (

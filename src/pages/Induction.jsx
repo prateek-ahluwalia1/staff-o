@@ -326,7 +326,7 @@ export default function Induction() {
                             Cancel
                         </button>
                         <button
-                            className="btn btn-primary px-4 rounded-pill w-sm-100"
+                            className="btn btn-primary-custom px-4 rounded-pill w-sm-100"
                             onClick={handleAssign}
                             disabled={isAssigning || !shareState || selectedStaff.length === 0}
                         >
@@ -537,7 +537,7 @@ export default function Induction() {
 
                 <div className="px-3 px-md-4 py-3 bg-white border-top text-end mb-0 shadow-sm d-flex flex-wrap justify-content-end gap-2" style={{ flexShrink: 0, zIndex: 10 }}>
                     <button className="btn btn-light px-4 rounded-pill fw-medium flex-grow-1 flex-sm-grow-0" onClick={closeModal} disabled={isSaving}>Cancel</button>
-                    <button className="btn btn-primary px-4 px-md-5 rounded-pill fw-medium shadow-sm flex-grow-1 flex-sm-grow-0" onClick={handleSaveInduction} disabled={isSaving}>
+                    <button className="btn btn-primary-custom px-4 px-md-5 rounded-pill fw-medium shadow-sm flex-grow-1 flex-sm-grow-0" onClick={handleSaveInduction} disabled={isSaving}>
                         {isSaving ? "Saving..." : "Save Induction"}
                     </button>
                 </div>
@@ -550,7 +550,7 @@ export default function Induction() {
             <div className="d-flex justify-content-between align-items-center mb-4 bg-white p-3 rounded shadow-sm border border-light">
                 <h2 className="h4 m-0 text-dark fw-bold">Induction</h2>
                 <button
-                    className="btn btn-primary btn-sm d-flex align-items-center gap-2 rounded-pill px-3 py-1 shadow-sm"
+                    className="btn btn-primary-custom btn-sm d-flex align-items-center gap-2 rounded-pill px-3 py-1 shadow-sm"
                     onClick={() => openModal("create")}
                 >
                     <i className="fa fa-plus"></i> Create Induction

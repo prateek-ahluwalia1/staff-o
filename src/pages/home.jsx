@@ -566,7 +566,7 @@ export default function Home() {
           <div className="text-center mt-5">
             <Link
               to="/latest-jobs"
-              className="btn btn-primary rounded-pill px-4 fw-semibold shadow-sm"
+              className="btn btn-primary-custom rounded-pill px-4 fw-semibold shadow-sm"
             >
               View All Latest Jobs
             </Link>

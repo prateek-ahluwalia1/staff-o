@@ -221,7 +221,7 @@ export default function LocationStep({
         <div className="col-md-3 d-grid">
           <button
             type="button"
-            className="btn btn-primary btn-lg shadow-sm fw-medium d-flex align-items-center justify-content-center gap-2 rounded-pill"
+            className="btn btn-primary-custom btn-lg shadow-sm fw-medium d-flex align-items-center justify-content-center gap-2 rounded-pill"
             onClick={handleUseCurrent}
             disabled={resolvingLocation}
           >

@@ -415,7 +415,7 @@ const ManageUsers = () => {
           </ul>
 
           <button
-            className="btn btn-sm btn-primary jobtracker-action-btn"
+            className="btn btn-sm btn-primary-custom jobtracker-action-btn"
             onClick={() => openModal()}
           >
             <i className="fa-solid fa-plus me-1"></i> Add {activeTab === "sub_contractor" ? "Resource Partner" : activeTab.replace("_", " ")}
@@ -753,7 +753,7 @@ const ManageUsers = () => {
               <button
                 type="submit"
                 form="userForm"
-                className="btn btn-primary rounded-pill px-5 fw-bold shadow"
+                className="btn btn-primary-custom rounded-pill px-5 fw-bold shadow"
                 disabled={submitLoading}
               >
                 {submitLoading

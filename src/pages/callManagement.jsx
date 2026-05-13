@@ -219,7 +219,7 @@ const CallManagement = () => {
         </div>
         <div className="d-flex gap-2">
           <button
-            className="btn btn-primary shadow-sm rounded-3 px-4 py-2 fw-bold"
+            className="btn btn-primary-custom shadow-sm rounded-3 px-4 py-2 fw-bold"
             onClick={() => setIsNewCallModalOpen(true)}
             disabled={isCurrentlyInCall}
             title={
@@ -237,7 +237,7 @@ const CallManagement = () => {
           <button
             key={filter}
             className={`btn rounded-3 px-4 fw-bold text-capitalize border-0 ${activeFilter === filter
-              ? "btn-primary shadow"
+              ? "btn-primary-custom shadow"
               : "btn-light text-muted"
               }`}
             onClick={() => handleFilterChange(filter)}

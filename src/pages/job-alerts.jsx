@@ -78,7 +78,7 @@ export default function JobAlerts() {
             <a href="/" className="btn btn-outline-primary">
               <i className="fa-solid fa-bell" aria-hidden="true"></i> Pause all
             </a>
-            <a href="#newAlert" className="btn btn-primary">
+            <a href="#newAlert" className="btn btn-primary-custom">
               <i className="fa-solid fa-plus" aria-hidden="true"></i> New alert
             </a>
           </div>
@@ -234,7 +234,7 @@ export default function JobAlerts() {
               <button type="button" className="btn btn-outline-secondary">
                 Reset
               </button>
-              <button type="submit" className="btn btn-primary">
+              <button type="submit" className="btn btn-primary-custom">
                 Save alert
               </button>
             </div>

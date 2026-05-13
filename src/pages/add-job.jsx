@@ -608,7 +608,7 @@ export default function AddJob() {
                     </button>
                     <button
                       type="button"
-                      className="btn btn-sm btn-primary rounded-2 px-5"
+                      className="btn btn-sm btn-primary-custom rounded-2 px-5"
                       onClick={handleCreateCustomer}
                       disabled={submittingCustomer}
                     >
@@ -684,7 +684,7 @@ export default function AddJob() {
                     <button type="button" className="btn btn-outline-secondary rounded-pill px-4 fw-bold" onClick={back} disabled={isSubmitting}>← Back</button>
 
                     {step < STEP_TITLES.length - 1 ? (
-                      <button type="button" className="btn btn-primary btn-lg rounded-pill px-5 fw-bold shadow-sm" onClick={next} disabled={isSubmitting}>Next Step</button>
+                      <button type="button" className="btn btn-primary-custom btn-lg rounded-pill px-5 fw-bold shadow-sm" onClick={next} disabled={isSubmitting}>Next Step</button>
                     ) : (
                       isAdmin && (
                         <button type="button" className="btn btn-dark btn-lg rounded-pill px-5 fw-bold shadow-sm" onClick={handleConfirm} disabled={isSubmitting}>

@@ -705,7 +705,7 @@ const ChatRoom = () => {
                     onChange={(e) => setText(e.target.value)}
                   />
                   <button
-                    className="btn btn-primary btn-sm rounded-circle chatroom-send-btn"
+                    className="btn btn-primary-custom btn-sm rounded-circle chatroom-send-btn"
                     type="submit"
                     disabled={sending || !text.trim()}
                     title="Send"

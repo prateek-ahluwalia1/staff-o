@@ -172,14 +172,14 @@ export default function ScheduleStep({ form, setField, scheduleError = "" }) {
       <div className="d-flex p-1 bg-light rounded-pill border mb-4 mx-auto" style={{ maxWidth: "400px" }}>
         <button
           type="button"
-          className={`btn btn-sm rounded-pill flex-grow-1 fw-semibold transition-all ${form.scheduleMode === "single" ? "btn-primary shadow-sm" : "btn-light text-muted border-0 bg-transparent"}`}
+          className={`btn btn-sm rounded-pill flex-grow-1 fw-semibold transition-all ${form.scheduleMode === "single" ? "btn-primary-custom shadow-sm" : "btn-light text-muted border-0 bg-transparent"}`}
           onClick={() => handleModeChange("single")}
         >
           Single Day
         </button>
         <button
           type="button"
-          className={`btn btn-sm rounded-pill flex-grow-1 fw-semibold transition-all ${form.scheduleMode !== "single" ? "btn-primary shadow-sm" : "btn-light text-muted border-0 bg-transparent"}`}
+          className={`btn btn-sm rounded-pill flex-grow-1 fw-semibold transition-all ${form.scheduleMode !== "single" ? "btn-primary-custom shadow-sm" : "btn-light text-muted border-0 bg-transparent"}`}
           onClick={() => {
             if (form.scheduleMode === "single") handleModeChange("custom"); // Default to custom when switching to Multi
           }}

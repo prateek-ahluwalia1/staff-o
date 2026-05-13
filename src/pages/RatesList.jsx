@@ -181,7 +181,7 @@ const RatesList = ({ forcedType } = {}) => {
           <div className="small text-break">{errMsg}</div>
           <div className="mt-2">
             <button
-              className="btn btn-sm btn-primary"
+              className="btn btn-sm btn-primary-custom"
               onClick={() => refetch(listEndpoint)}
             >
               Retry
@@ -195,23 +195,23 @@ const RatesList = ({ forcedType } = {}) => {
   return (
     <div className="dashboard-main dashboard-tools-page">
       <div className="dashboard-page-header">
-          <div>
-            <h1>{title}</h1>
-            <p>
-              Manage {isCharge ? "charges" : "payments"} by job level and state
-            </p>
-          </div>
+        <div>
+          <h1>{title}</h1>
+          <p>
+            Manage {isCharge ? "charges" : "payments"} by job level and state
+          </p>
+        </div>
 
-          <div className="d-flex align-items-center gap-2">
-            {rows.length === 0 && (
-              <button
-                className="btn btn-success btn-sm px-3 shadow-sm"
-                onClick={openAddModal}
-              >
-                <i className="fa fa-plus me-1"></i> {addButton}
-              </button>
-            )}
-          </div>
+        <div className="d-flex align-items-center gap-2">
+          {rows.length === 0 && (
+            <button
+              className="btn btn-success btn-sm px-3 shadow-sm"
+              onClick={openAddModal}
+            >
+              <i className="fa fa-plus me-1"></i> {addButton}
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Table Card */}
@@ -467,9 +467,9 @@ const RatesList = ({ forcedType } = {}) => {
                 onSubmit={
                   isViewing
                     ? (e) => {
-                        e.preventDefault();
-                        closeAddModal();
-                      }
+                      e.preventDefault();
+                      closeAddModal();
+                    }
                     : handleAddSubmit
                 }
               >
@@ -640,7 +640,7 @@ const RatesList = ({ forcedType } = {}) => {
                   <button
                     type="submit"
                     form="rateForm"
-                    className="btn btn-primary px-5 py-2 rounded-pill fw-bold shadow"
+                    className="btn btn-primary-custom px-5 py-2 rounded-pill fw-bold shadow"
                     disabled={submitting}
                   >
                     {submitting ? (

@@ -409,7 +409,7 @@ const ManageStaff = () => {
           </p>
         </div>
         <button
-          className="btn btn-primary rounded-pill px-4 py-2 shadow-sm fw-bold"
+          className="btn btn-primary-custom rounded-pill px-4 py-2 shadow-sm fw-bold"
           onClick={() => openModal()}
         >
           <i className="fa-solid fa-plus me-2"></i> Add Staff
@@ -659,7 +659,7 @@ const ManageStaff = () => {
               <button
                 type="submit"
                 form="staffForm"
-                className="btn btn-primary rounded-pill px-5 fw-bold shadow"
+                className="btn btn-primary-custom rounded-pill px-5 fw-bold shadow"
                 disabled={submitLoading}
               >
                 {submitLoading

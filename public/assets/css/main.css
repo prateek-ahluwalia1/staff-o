@@ -9163,6 +9163,21 @@ Large Mobile Screen
     font-weight: 600;
     font-size: 1rem;
 }
+
+.btn-primary-custom {
+    background-color: #170C79 !important;
+    color: white;
+    border: none;
+    font-weight: 500;
+    box-shadow: 0 6px 14px rgba(13, 110, 253, 0.25);
+    transition: all 0.2s ease;
+}
+
+.btn-primary-custom:hover {
+    background-color: #2315a3 !important;
+    color: white;
+    transform: translateY(-1px);
+}
 .blog-detail-sidebar .blog-widget {
     margin-bottom: 18px;
 }

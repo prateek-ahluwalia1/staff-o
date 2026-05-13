@@ -180,7 +180,7 @@ export default function VisaManagement() {
                                 <input type="text" className="form-control text-uppercase" name="country" value={formData.country} onChange={handleInputChange} placeholder="e.g. AUS" maxLength={3} required />
                             </div>
                             <div className="col-12 col-xl-2 d-grid mt-4 mt-xl-0">
-                                <button type="submit" className="btn btn-primary fw-bold py-2 shadow-sm position-relative" disabled={checkingVisa}>
+                                <button type="submit" className="btn btn-primary-custom fw-bold py-2 shadow-sm position-relative" disabled={checkingVisa}>
                                     <span style={{ opacity: checkingVisa ? 0 : 1 }}>
                                         Submit Request
                                     </span>
@@ -244,7 +244,7 @@ export default function VisaManagement() {
                                             <td>{formatShortDate(item.requested_at)}</td>
                                             <td className="text-end pe-4">
                                                 <button
-                                                    className={`btn btn-sm rounded-pill px-3 fw-semibold position-relative ${itemIsCompleted ? 'btn-outline-primary' : 'btn-primary'}`}
+                                                    className={`btn btn-sm rounded-pill px-3 fw-semibold position-relative ${itemIsCompleted ? 'btn-outline-primary-custom' : 'btn-primary-custom'}`}
                                                     onClick={() => handleFetchResult(item.id)}
                                                     disabled={isLoadingThisRow}
                                                 >

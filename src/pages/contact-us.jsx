@@ -393,7 +393,7 @@ export default function ContactUs() {
                     <div className="col-12">
                       <button
                         type="submit"
-                        className="btn btn-primary w-100"
+                        className="btn btn-primary-custom w-100"
                         disabled={loading}
                       >
                         {loading ? "Sending message..." : "Submit Message"}

@@ -491,7 +491,7 @@ const PublicHolidays = () => {
                                 )}
                                 <button
                                     type="submit"
-                                    className="btn btn-primary px-4 rounded-pill fw-medium"
+                                    className="btn btn-primary-custom px-4 rounded-pill fw-medium"
                                     disabled={mutationLoading}
                                 >
                                     {mutationLoading ? 'Saving...' : `${isEditMode ? 'Update' : 'Add'} Holiday`}

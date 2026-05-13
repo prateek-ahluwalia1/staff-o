@@ -174,7 +174,7 @@ export default function MyJobApplications() {
                       <span style={{ fontSize: "12px" }} className="text-muted">{app.applied}</span>
                       <span style={{ fontSize: "13px" }} className="fw-medium text-dark">{app.appliedVia}</span>
                     </div>
-                    <button type="button" className="btn btn-primary btn-sm rounded-pill px-4 shadow-sm" onClick={() => openModal(app)}>
+                    <button type="button" className="btn btn-primary-custom btn-sm rounded-pill px-4 shadow-sm" onClick={() => openModal(app)}>
                       View details
                     </button>
                   </div>

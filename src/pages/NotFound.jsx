@@ -39,7 +39,7 @@ const NotFound = () => {
         <div className="error-actions d-flex flex-wrap gap-2 justify-content-center">
           <NavLink
             to="/"
-            className="btn btn-primary btn-lg"
+            className="btn btn-primary-custom btn-lg"
             style={{ width: "240px" }}
           >
             <svg

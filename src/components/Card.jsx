@@ -65,7 +65,7 @@ export const Card = ({ title, description, onClick, accent, image, type }) => {
 
         <div className="mt-auto">
           <button
-            className="btn btn-primary w-100"
+            className="btn btn-primary-custom w-100"
             onClick={(e) => {
               e.stopPropagation();
               onClick();

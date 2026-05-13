@@ -71,7 +71,7 @@ export default function MyFollowings() {
             <a href="/" className="btn btn-outline-primary">
               <i className="fa-solid fa-bell" aria-hidden="true"></i> Notify me
             </a>
-            <a href="/job-listing" className="btn btn-primary">
+            <a href="/job-listing" className="btn btn-primary-custom">
               <i
                 className="fa-solid fa-magnifying-glass"
                 aria-hidden="true"

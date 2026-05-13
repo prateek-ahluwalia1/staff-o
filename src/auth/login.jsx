@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom"; // Added useNavigate
 import { useDispatch } from "react-redux";
 import { setToken, setUser } from "../store/slices/authSlice";
 import useSubmit from "../hooks/useSubmit";
@@ -14,6 +14,7 @@ import {
 
 export default function Login() {
   const dispatch = useDispatch();
+  const navigate = useNavigate(); // Initialize navigate
   const { submit, loading } = useSubmit();
 
   const [showPassword, setShowPassword] = useState(false);
@@ -106,6 +107,11 @@ export default function Login() {
     dispatch(setUser({ userdata: latestProfile }));
 
     toast.success("Logged in successfully!");
+
+    // --- NEW: Redirect Customer ---
+    if (latestProfile?.user_type === "customer") {
+      navigate("/add-job");
+    }
   };
 
   // --- UPDATED GOOGLE LOGIN HANDLER ---
@@ -145,6 +151,11 @@ export default function Login() {
           dispatch(setUser({ userdata: latestProfile }));
 
           toast.success("Google login successful!");
+
+          // --- NEW: Redirect Customer ---
+          if (latestProfile?.user_type === "customer") {
+            navigate("/add-job");
+          }
         } else {
           console.error("Google login error response:", res);
         }
@@ -178,6 +189,11 @@ export default function Login() {
         toast.success("Account created and logged in successfully!");
         setShowRoleModal(false);
         setPendingGoogleToken(null);
+
+        // --- NEW: Redirect Customer ---
+        if (latestProfile?.user_type === "customer") {
+          navigate("/add-job");
+        }
       } else {
         toast.error(res.message || "Could not complete account creation.");
       }

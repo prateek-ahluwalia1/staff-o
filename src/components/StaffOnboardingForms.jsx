@@ -12,7 +12,11 @@ const SectionTitle = ({ children, className = "" }) => (
 
 const ActionBar = ({ loading, saveLabel, disabled }) => (
     <div className="d-flex justify-content-end pt-3 border-top mt-4">
-        <button type="submit" className="btn btn-primary-custom fw-bold px-4" disabled={loading || disabled}>
+        <button type="submit" className="btn btn-primary-custom fw-bold px-4"
+            style={{
+                color: disabled ? "#ccc" : "#fff"
+            }}
+            disabled={loading || disabled}>
             {loading ? "Saving..." : saveLabel}
         </button>
     </div>
@@ -611,7 +615,7 @@ const StaffOnboardingForms = ({ submit, userId }) => {
         <div className="bg-white rounded p-4 border shadow-sm mt-3">
             <div className="d-flex justify-content-between align-items-center mb-4">
                 <div>
-                    <h4 className="fw-bold mb-1">Staffoo Onboarding Forms</h4>
+                    <h4 className="fw-bold mb-1">Staffoo Verification Forms</h4>
                     <span className="text-muted small">Capital Services Pty Ltd &nbsp;·&nbsp; ABN: 48 613 317 838</span>
                 </div>
             </div>
@@ -630,7 +634,7 @@ const StaffOnboardingForms = ({ submit, userId }) => {
                     <button
                         key={idx}
                         type="button"
-                        className={`btn btn-sm rounded-pill flex-grow-1 fw-bold ${subTab === idx ? "btn-primary-custom shadow-sm" : "btn-light text-muted border-0 bg-transparent"}`}
+                        className={`btn btn-sm rounded-pill flex-grow-1 fw-bold ${subTab === idx ? "btn-primary-custom shadow-sm" : "btn-light border-0 bg-transparent"}`}
                         onClick={() => setSubTab(idx)}
                         disabled={formDataLoading}
                     >

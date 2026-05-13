@@ -6531,8 +6531,8 @@ Large Mobile Screen
            ==Footer Modern==
 *************************************************/
 .footer-modern {
-    background: #1e2530;
-    color: rgba(255, 255, 255, 0.5);
+    background: #170C79;
+    color: #ccc;
     font-size: 0.95rem;
 }
 
@@ -6558,7 +6558,7 @@ Large Mobile Screen
 }
 
 .footer-modern .footer-links a {
-    color: rgba(255, 255, 255, 0.5);
+    color: #ccc;
     text-decoration: none;
     transition: color 0.2s ease;
 }
@@ -6574,7 +6574,7 @@ Large Mobile Screen
 }
 
 .footer-modern .footer-contact i {
-    color: #60a5fa;
+    color: #ccc;
     margin-top: 4px;
 }
 
@@ -6588,6 +6588,7 @@ Large Mobile Screen
 }
 
 .footer-modern .footer-social {
+    color: #ccc;
     margin-top: 18px;
     display: flex;
     gap: 10px;
@@ -6601,7 +6602,7 @@ Large Mobile Screen
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    color: #60a5fa;
+    color: #ccc;
     transition: background 0.2s ease, color 0.2s ease;
 }
 

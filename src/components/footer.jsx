@@ -57,25 +57,25 @@ const Footer = memo(function Footer() {
               <h5 className="footer-title">Job Types</h5>
               <ul className="footer-links">
                 <li>
-                  <p style={{ color: "#999" }}>Security License</p>
+                  <p style={{ color: "#ccc" }}>Security License</p>
                 </li>
                 <li>
-                  <p style={{ color: "#999" }}>MISC Time License</p>
+                  <p style={{ color: "#ccc" }}>MISC Time License</p>
                 </li>
                 <li>
-                  <p style={{ color: "#999" }}>Working With Children</p>
+                  <p style={{ color: "#ccc" }}>Working With Children</p>
                 </li>
                 <li>
-                  <p style={{ color: "#999" }}>First Aid</p>
+                  <p style={{ color: "#ccc" }}>First Aid</p>
                 </li>
                 <li>
-                  <p style={{ color: "#999" }}>CPR</p>
+                  <p style={{ color: "#ccc" }}>CPR</p>
                 </li>
                 <li>
-                  <p style={{ color: "#999" }}>White Card</p>
+                  <p style={{ color: "#ccc" }}>White Card</p>
                 </li>
                 <li>
-                  <p style={{ color: "#999" }}>Traffic Controller</p>
+                  <p style={{ color: "#ccc" }}>Traffic Controller</p>
                 </li>
               </ul>
             </div>

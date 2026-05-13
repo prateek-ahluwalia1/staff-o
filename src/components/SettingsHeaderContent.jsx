@@ -82,51 +82,53 @@ export default function SettingsHeaderContent({
           )}
         </div>
       </div>
-
-      {/* RIGHT SIDE STATUS (Controlled by CSS now) */}
-      <div className="status-circle-wrapper">
-        <div style={{ width: 90, height: 90, position: "relative" }}>
-          <svg height={radius * 2} width={radius * 2}>
-            <circle
-              stroke="#e5e7eb"
-              fill="transparent"
-              strokeWidth={stroke}
-              r={normalizedRadius}
-              cx={radius}
-              cy={radius}
-            />
-            <circle
-              stroke={progressColor}
-              fill="transparent"
-              strokeWidth={stroke}
-              strokeLinecap="round"
-              strokeDasharray={circumference + " " + circumference}
-              style={{
-                strokeDashoffset,
-                transition: "stroke-dashoffset 0.6s ease",
-                transform: "rotate(-90deg)",
-                transformOrigin: "50% 50%",
-              }}
-              r={normalizedRadius}
-              cx={radius}
-              cy={radius}
-            />
-          </svg>
-          <div
-            style={{
-              position: "absolute",
-              top: "42%",
-              left: "42%",
-              transform: "translate(-50%, -50%)",
-              fontWeight: "600",
-              fontSize: 16,
-              color: progressColor,
-            }}
-          >
-            {pct}%
+      {
+        (userType !== "admin" && userType !== "customer") && (
+          <div className="status-circle-wrapper">
+            <div style={{ width: 90, height: 90, position: "relative" }}>
+              <svg height={radius * 2} width={radius * 2}>
+                <circle
+                  stroke="#e5e7eb"
+                  fill="transparent"
+                  strokeWidth={stroke}
+                  r={normalizedRadius}
+                  cx={radius}
+                  cy={radius}
+                />
+                <circle
+                  stroke={progressColor}
+                  fill="transparent"
+                  strokeWidth={stroke}
+                  strokeLinecap="round"
+                  strokeDasharray={circumference + " " + circumference}
+                  style={{
+                    strokeDashoffset,
+                    transition: "stroke-dashoffset 0.6s ease",
+                    transform: "rotate(-90deg)",
+                    transformOrigin: "50% 50%",
+                  }}
+                  r={normalizedRadius}
+                  cx={radius}
+                  cy={radius}
+                />
+              </svg>
+              <div
+                style={{
+                  position: "absolute",
+                  top: "42%",
+                  left: "42%",
+                  transform: "translate(-50%, -50%)",
+                  fontWeight: "600",
+                  fontSize: 16,
+                  color: progressColor,
+                }}
+              >
+                {pct}%
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
+        )
+      }
     </div>
   );
 }

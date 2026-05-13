@@ -18,12 +18,12 @@ const getInitials = (name) => {
 const getAvatarColor = (name) => {
   const colors = [
     "#FF6B6B",
-    "#4ECDC4",
-    "#45B7D1",
     "#96CEB4",
     "#FFEAA7",
     "#DDA15E",
     "#BC6C25",
+    "#4ECDC4",
+    "#45B7D1",
   ];
   let hash = 0;
   if (name) {

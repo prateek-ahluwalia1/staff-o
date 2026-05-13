@@ -542,7 +542,6 @@ const Header = memo(function Header({ withSidebar = false }) {
                         gap: "10px",
                         background: "transparent",
                         border: "none",
-                        padding: "5px 10px",
                         boxShadow: "none",
                         color: "#333", // Forces text to be dark and visible
                       }}

@@ -984,8 +984,6 @@ h6 {
     }
 
     .main-navbar .main-menu .nav-link.dropdown-toggle::after {
-        margin-left: 12px !important;
-        margin-right: 0 !important;
         order: 2;
         position: static !important;
         transform: none !important;
@@ -1074,8 +1072,6 @@ h6 {
     }
 
     .mobile-menu .dropdown-toggle::after {
-        margin-left: auto !important;
-        margin-right: 0 !important;
         order: 2;
         float: none;
     }

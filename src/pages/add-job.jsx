@@ -134,7 +134,7 @@ export default function AddJob() {
   const clientOptions = useMemo(() => {
     const opts = activeCustomers.map((cust) => ({
       value: cust.id.toString(),
-      label: `${cust.name} (${cust.email})`,
+      label: `${cust.name} (${cust.id})`,
       customer: cust
     }));
     return [
@@ -540,8 +540,8 @@ export default function AddJob() {
                     option: (base, state) => ({
                       ...base,
                       fontWeight: state.data.isNew ? 'bold' : 'normal',
-                      color: state.data.isNew ? '#0d6efd' : base.color,
-                      background: state.isSelected ? '#0d6efd' : state.isFocused ? '#e9ecef' : 'white'
+                      color: state.data.isNew ? '#170C79' : base.color,
+                      background: state.isSelected ? '#170C79' : state.isFocused ? '#e9ecef' : 'white'
                     })
                   }}
                 />

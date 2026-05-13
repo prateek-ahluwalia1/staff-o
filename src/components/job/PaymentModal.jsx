@@ -130,7 +130,7 @@ function CardForm({
 
       // 🔥 SEND TO BACKEND
       const holdResult = await onHoldPayment({
-        paymentMethodId: paymentMethod.id, // Using the key expected by your handler
+        paymentMethodId: paymentMethod.id,
         cardHolderName: cardHolderName.trim(),
       });
 
@@ -170,7 +170,10 @@ function CardForm({
           <div className="d-flex gap-2 mb-2">
             <button
               type="button"
-              className={`btn btn-sm ${paymentMode === "saved" ? "btn-primary-custom" : "btn-outline-primary"}`}
+              className={`btn btn-sm ${paymentMode === "saved"
+                  ? "btn-primary-custom"
+                  : "btn-outline-primary"
+                }`}
               onClick={() => {
                 setPaymentMode("saved");
                 setCardError("");
@@ -181,7 +184,10 @@ function CardForm({
             </button>
             <button
               type="button"
-              className={`btn btn-sm ${paymentMode === "new" ? "btn-primary-custom" : "btn-outline-primary"}`}
+              className={`btn btn-sm ${paymentMode === "new"
+                  ? "btn-primary-custom"
+                  : "btn-outline-primary"
+                }`}
               onClick={() => {
                 setPaymentMode("new");
                 setCardError("");
@@ -197,7 +203,7 @@ function CardForm({
               {savedCards.map((card, index) => {
                 const rawNumber = String(card?.card_number || "").replace(
                   /\s+/g,
-                  "",
+                  ""
                 );
                 const last4 = rawNumber.slice(-4) || "****";
                 return (
@@ -258,7 +264,28 @@ function CardForm({
 
       {cardError && <div className="text-danger small mb-2">{cardError}</div>}
 
-      <div className="d-flex gap-2 mt-4">
+      {/* --- FOOLPROOF BOTTOM STRIPE BRANDING --- */}
+      <div className="d-flex justify-content-center align-items-center mt-4 mb-2 gap-1 opacity-75">
+        <span className="text-muted fw-medium" style={{ fontSize: "12px" }}>
+          Powered by
+        </span>
+        <span
+          style={{
+            color: "#635BFF",
+            fontWeight: 800,
+            fontSize: "15px",
+            letterSpacing: "-0.5px",
+            fontFamily: "Arial, Helvetica, sans-serif",
+            display: "inline-block",
+            transform: "translateY(1px)" // aligns text nicely
+          }}
+        >
+          stripe
+        </span>
+      </div>
+      {/* -------------------------------------- */}
+
+      <div className="d-flex gap-2 mt-2">
         <button
           type="submit"
           className="btn btn-success fw-semibold flex-grow-1"
@@ -304,10 +331,44 @@ export default function PaymentModal({
         <button onClick={onClose} style={closeButtonStyle}>
           &times;
         </button>
-        <h5 className="fw-bold mb-1">Complete Payment</h5>
-        <p className="text-muted small mb-3">
-          Direct payment to the service provider.
-        </p>
+
+        {/* --- HEADER WITH STRIPE SECURITY INDICATOR --- */}
+        <div className="d-flex justify-content-between align-items-start mb-4 pe-4">
+          <div>
+            <h5 className="fw-bold mb-1">Complete Payment</h5>
+            <p className="text-muted small mb-0">
+              Direct payment to the service provider.
+            </p>
+          </div>
+
+          <div
+            className="d-flex align-items-center gap-1 px-2 py-1 rounded"
+            style={{ backgroundColor: "#f8f9fa", border: "1px solid #e9ecef" }}
+          >
+            {/* Simple SVG Lock Icon */}
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="10"
+              height="10"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="#6c757d"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+            </svg>
+            <span style={{ fontSize: "10px", color: "#6c757d", fontWeight: 500 }}>
+              Secured by{" "}
+              <span style={{ color: "#635BFF", fontWeight: 800, letterSpacing: "-0.2px", fontFamily: "Arial, Helvetica, sans-serif" }}>
+                stripe
+              </span>
+            </span>
+          </div>
+        </div>
+        {/* --------------------------------------------- */}
 
         <Elements stripe={stripePromise}>
           <CardForm

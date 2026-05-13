@@ -440,7 +440,7 @@ const Header = memo(function Header({ withSidebar = false }) {
                   </NavLink>
                   <NavLink
                     to="/register"
-                    className="btn btn-primary register-btn"
+                    className="btn register-btn"
                   >
                     Register
                   </NavLink>

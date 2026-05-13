@@ -689,7 +689,7 @@ export default function EditProfile() {
             className={`btn ${activeTab === "onboarding" ? "btn-primary" : "btn-outline-primary"}`}
             onClick={() => setActiveTab("onboarding")}
           >
-            Onboarding Forms
+            Verification Forms
           </button>
         )}
       </div>

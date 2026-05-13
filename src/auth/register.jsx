@@ -212,15 +212,15 @@ export default function Register() {
 
               <div className="d-flex flex-column gap-2 small">
                 <div className="d-flex align-items-center gap-2">
-                  <i className="fa-solid fa-circle-check text-primary fs-6"></i>
+                  <i className="fa-solid fa-circle-check fs-6" style={{ color: "#170C79" }}></i>
                   <span>Verified jobs & trusted clients</span>
                 </div>
                 <div className="d-flex align-items-center gap-2">
-                  <i className="fa-solid fa-circle-check text-primary fs-6"></i>
+                  <i className="fa-solid fa-circle-check fs-6" style={{ color: "#170C79" }}></i>
                   <span>Smart matching system</span>
                 </div>
                 <div className="d-flex align-items-center gap-2">
-                  <i className="fa-solid fa-circle-check text-primary fs-6"></i>
+                  <i className="fa-solid fa-circle-check fs-6" style={{ color: "#170C79" }}></i>
                   <span>Real-time collaboration</span>
                 </div>
               </div>
@@ -232,7 +232,7 @@ export default function Register() {
                 className="bg-white p-4 rounded-4"
                 style={{
                   boxShadow: "0 10px 40px rgba(0,0,0,0.06)",
-                  border: "1px solid #f1f5f9",
+                  border: "1px solid #170C79",
                 }}
               >
                 <h5 className="fw-bold mb-1">Create an account</h5>
@@ -253,6 +253,7 @@ export default function Register() {
                         onChange={handleChange}
                         maxLength={50}
                         disabled={loading}
+                        style={{ border: "1px solid #170C79" }}
                       />
                       {errors.name && <div className="invalid-feedback" style={{ fontSize: '12px' }}>{errors.name}</div>}
                     </div>
@@ -270,6 +271,7 @@ export default function Register() {
                         onChange={handleChange}
                         maxLength={20}
                         disabled={loading}
+                        style={{ border: "1px solid #170C79" }}
                       />
                       {errors.phone && <div className="invalid-feedback" style={{ fontSize: '12px' }}>{errors.phone}</div>}
                     </div>
@@ -287,6 +289,7 @@ export default function Register() {
                         onChange={handleChange}
                         maxLength={100}
                         disabled={loading}
+                        style={{ border: "1px solid #170C79" }}
                       />
                       {errors.email && <div className="invalid-feedback" style={{ fontSize: '12px' }}>{errors.email}</div>}
                     </div>
@@ -300,11 +303,12 @@ export default function Register() {
                           type={showPassword ? "text" : "password"}
                           className={`form-control pe-5 ${errors.password ? 'is-invalid' : ''}`}
                           name="password"
-                          placeholder="Min. 8 chars (letters & numbers)"
+                          placeholder="Min. 8 chars"
                           value={formData.password}
                           onChange={handleChange}
                           maxLength={50}
                           disabled={loading}
+                          style={{ border: "1px solid #170C79" }}
                         />
                         <button
                           type="button"
@@ -332,10 +336,16 @@ export default function Register() {
                         <label
                           key={role.key}
                           className={`btn btn-sm rounded-pill px-3 py-1 ${userType === role.key
-                            ? "btn-primary text-white"
+                            ? "text-white"
                             : "btn-light text-muted border"
                             }`}
-                          style={{ cursor: "pointer", transition: "all 0.2s", fontSize: "13px" }}
+                          style={{
+                            cursor: "pointer",
+                            transition: "all 0.2s",
+                            fontSize: "13px",
+                            backgroundColor: userType === role.key ? "#170C79" : undefined,
+                            borderColor: userType === role.key ? "#170C79" : undefined,
+                          }}
                         >
                           <input
                             type="radio"
@@ -356,12 +366,16 @@ export default function Register() {
                     type="submit"
                     className="btn w-100 py-2 fw-semibold d-flex justify-content-center align-items-center gap-2 mt-2"
                     style={{
-                      background: "linear-gradient(135deg, #2563eb, #1d4ed8)",
+                      background: "#170C79",
                       border: "none",
                       borderRadius: "6px",
                       color: "#fff",
+                      transition: "transform 0.1s",
                     }}
                     disabled={loading}
+                    onMouseDown={(e) => (e.currentTarget.style.transform = "scale(0.98)")}
+                    onMouseUp={(e) => (e.currentTarget.style.transform = "scale(1)")}
+                    onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
                   >
                     {loading && <i className="fa-solid fa-spinner fa-spin"></i>}
                     {loading ? "Creating..." : "Create Account"}
@@ -370,7 +384,7 @@ export default function Register() {
 
                 <div className="d-flex align-items-center my-3">
                   <hr className="flex-grow-1 text-muted opacity-25 m-0" />
-                  <span className="mx-2" style={{ fontSize: "11px", color: "#9ca3af" }}>OR</span>
+                  <span className="mx-2" style={{ fontSize: "11px", color: "#170C79" }}>OR</span>
                   <hr className="flex-grow-1 text-muted opacity-25 m-0" />
                 </div>
 
@@ -390,7 +404,7 @@ export default function Register() {
 
                 <p className="text-center mt-3 mb-0" style={{ fontSize: "13px" }}>
                   Already have an account?{" "}
-                  <NavLink to="/login" className="fw-bold text-primary text-decoration-none">
+                  <NavLink to="/login" className="fw-bold text-decoration-none" style={{ color: "#170C79" }}>
                     Sign in
                   </NavLink>
                 </p>

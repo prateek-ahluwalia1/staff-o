@@ -222,7 +222,7 @@
 
 /* Highlight color for "Today" */
 .vr-matrix-header .is-today .day-name, 
-.vr-matrix-header .is-today .day-number { color: #2563eb; } 
+.vr-matrix-header .is-today .day-number { color: #0A7C6E; } 
 
 /* --- 4. THE SCROLLABLE BODY --- */
 .vr-matrix-body {
@@ -257,11 +257,11 @@
     align-items: center;
     font-size: 12px; 
     font-weight: 700; 
-    color: #0284c7; 
-    background: #e0f2fe; 
+    color: #0A7C6E; 
+    background: rgb(225, 254, 224); 
     padding: 4px 10px; 
     border-radius: 20px;
-    border: 1px solid #bae6fd;
+    border: 1px solid #0A7C6E;
 }
 
 /* --- THE CONSTANTLY VISIBLE ADD BUTTONS --- */

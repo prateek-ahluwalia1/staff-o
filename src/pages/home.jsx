@@ -218,6 +218,14 @@ export default function Home() {
   return (
     <>
       <style>{`
+        /* --- Color Overrides for Teal Theme (#0A7C6E) --- */
+        .text-primary { color: #0A7C6E !important; }
+        .bg-primary { background-color: #0A7C6E !important; }
+        .btn-outline-primary { color: #0A7C6E; border-color: #0A7C6E; }
+        .btn-outline-primary:hover { background-color: #0A7C6E; color: white; }
+        .btn-primary-custom { background-color: #0A7C6E; color: white; border: none; }
+        .btn-primary-custom:hover { background-color: #086358; color: white; }
+
         /* Existing Carousel & Testimonial Styles */
         .category-carousel-wrap { position: relative; padding: 0 40px; }
         .category-nav { position: absolute; top: 50%; transform: translateY(-50%); width: 45px; height: 45px; background: white; border-radius: 50%; box-shadow: 0 4px 12px rgba(0,0,0,0.1); display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 10; transition: all 0.3s; }
@@ -228,17 +236,17 @@ export default function Home() {
         .category-card:hover { transform: translateY(-6px); box-shadow: 0 15px 30px rgba(0,0,0,0.1); }
         .category-icon img { max-width: 65px; height: auto; margin-bottom: 15px; }
         .category-jobs { color: #6c757d; font-size: 0.95rem; }
-        .category-jobs:hover { color: #0d6efd; text-decoration: none; }
+        .category-jobs:hover { color: #0A7C6E; text-decoration: none; }
         .testimonial-card { background: white; border-radius: 16px; padding: 40px 30px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); transition: all 0.4s ease; border: 1px solid #eef0f4; }
         .testimonial-quote { color: #e9ecef; opacity: 0.6; line-height: 1; margin-bottom: 15px; }
         .testimonial-card p { font-size: 1.1rem; line-height: 1.7; color: #495057; margin-bottom: 30px; }
 
-        /* Modern Job Card Styles (Imported from LatestJobs component) */
+        /* Modern Job Card Styles */
         .bg-light-grey { background-color: #f8f9fa; }
         .job-card { transition: all 0.3s ease; border: 1px solid rgba(0,0,0,0.05); }
-        .job-card:hover { transform: translateY(-4px); box-shadow: 0 12px 24px rgba(0,0,0,0.08) !important; border-color: rgba(13, 110, 253, 0.2); }
-        .icon-box { width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; background: #e9ecef; border-radius: 8px; color: #0d6efd; }
-        .badge-soft-primary { background-color: rgba(13, 110, 253, 0.1); color: #0d6efd; border-radius: 6px; padding: 6px 10px; font-weight: 600; font-size: 0.8rem; }
+        .job-card:hover { transform: translateY(-4px); box-shadow: 0 12px 24px rgba(0,0,0,0.08) !important; border-color: rgba(10, 124, 110, 0.2); }
+        .icon-box { width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; background: #e9ecef; border-radius: 8px; color: #0A7C6E; }
+        .badge-soft-primary { background-color: rgba(10, 124, 110, 0.1); color: #0A7C6E; border-radius: 6px; padding: 6px 10px; font-weight: 600; font-size: 0.8rem; }
         
         /* Modal Styles */
         .custom-modal-backdrop { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(0,0,0,0.5); z-index: 1050; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(4px); animation: fadeIn 0.2s ease-in-out; padding: 1rem; }
@@ -252,7 +260,7 @@ export default function Home() {
 
         /* For Every Role Section */
         .role-showcase {
-          background: radial-gradient(circle at 10% 20%, #f4f8ff 0%, #eaf3ff 35%, #f8fcff 100%);
+          background: radial-gradient(circle at 10% 20%, #f4fbf9 0%, #e6f5f3 35%, #f7fdfc 100%);
           position: relative;
           overflow: hidden;
         }
@@ -268,7 +276,7 @@ export default function Home() {
           height: 420px;
           right: -180px;
           top: -200px;
-          background: rgba(13, 110, 253, 0.08);
+          background: rgba(10, 124, 110, 0.08);
         }
         .role-showcase::after {
           width: 280px;
@@ -283,9 +291,9 @@ export default function Home() {
         }
         .role-card {
           background: #fff;
-          border: 1px solid #e8eef8;
+          border: 1px solid #e6f0ef;
           border-radius: 18px;
-          box-shadow: 0 10px 30px rgba(31, 56, 88, 0.08);
+          box-shadow: 0 10px 30px rgba(10, 124, 110, 0.05);
           transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
           height: 100%;
           display: flex;
@@ -294,15 +302,15 @@ export default function Home() {
         }
         .role-card:hover {
           transform: translateY(-8px);
-          box-shadow: 0 18px 34px rgba(31, 56, 88, 0.14);
-          border-color: rgba(13, 110, 253, 0.25);
+          box-shadow: 0 18px 34px rgba(10, 124, 110, 0.12);
+          border-color: rgba(10, 124, 110, 0.25);
         }
         .role-pill {
           display: inline-flex;
           align-items: center;
           gap: 8px;
-          background: #eef4ff;
-          color: #134db8;
+          background: #eaf4f2;
+          color: #0A7C6E;
           border-radius: 999px;
           font-weight: 700;
           font-size: 0.78rem;
@@ -318,11 +326,11 @@ export default function Home() {
           display: inline-flex;
           align-items: center;
           justify-content: center;
-          background: linear-gradient(145deg, #0d6efd, #0b53c1);
+          background: linear-gradient(145deg, #0A7C6E, #075c51);
           color: #fff;
           font-size: 1.15rem;
           margin-bottom: 14px;
-          box-shadow: 0 10px 20px rgba(13, 110, 253, 0.25);
+          box-shadow: 0 10px 20px rgba(10, 124, 110, 0.25);
         }
         .role-card h4 {
           font-size: 1.22rem;
@@ -388,37 +396,6 @@ export default function Home() {
                 managing assignments, Staffoo makes it simple, fast, and
                 reliable.
               </p>
-
-              {/* <form className="hero-search" action="#." method="get">
-                <div className="hero-search-fields">
-                  <label className="hero-field">
-                    <i className="fa fa-search" aria-hidden="true"></i>
-                    <input
-                      type="text"
-                      className="form-control"
-                      name="keyword"
-                      placeholder="Enter skills or job title"
-                    />
-                  </label>
-                  <label className="hero-field select-field">
-                    <i className="fa fa-map-marker" aria-hidden="true"></i>
-                    <select className="form-select" name="category">
-                      <option defaultValue>Select Category</option>
-                      <option>Marketing</option>
-                      <option>Teaching & Education</option>
-                      <option>Design</option>
-                      <option>Development</option>
-                    </select>
-                  </label>
-                  <button
-                    type="submit"
-                    className="btn hero-submit"
-                    aria-label="Search jobs"
-                  >
-                    <i className="fa fa-search" aria-hidden="true"></i>
-                  </button>
-                </div>
-              </form> */}
 
               <div className="hero-actions d-flex flex-wrap align-items-center gap-3">
                 <div className="hero-stat">

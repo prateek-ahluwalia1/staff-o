@@ -17,7 +17,9 @@ const Copyright = memo(function Copyright() {
         <div className="footer-bottom-content">
           <div className="footer-copy" style={{ marginLeft: "2rem" }}>
             Copyright &copy; {new Date().getFullYear()} Staffoo. All rights
-            reserved. Design by: <a href="/">STAFFOO</a>
+            reserved. Design by: <a href="/" style={{
+              color: "#0A7C6E"
+            }}>STAFFOO</a>
           </div>
 
           <div className="footer-payments">

@@ -10,7 +10,6 @@ import StepProgress from "../components/job/StepProgress";
 import LocationStep from "../components/job/LocationStep";
 import ScheduleStep from "../components/job/ScheduleStep";
 import DetailsStep from "../components/job/DetailsStep";
-import TasksStep from "../components/job/TasksStep";
 import ReviewStep from "../components/job/ReviewStep";
 import PaymentModal from "../components/job/PaymentModal";
 import AdminClientProfile from "../components/job/AdminClientProfile";
@@ -37,8 +36,8 @@ export default function AddJob() {
   const { submit: uploadFile, loading: uploadLoading } = useSubmit({ isAuth: true });
 
   const STEP_TITLES = isAdmin
-    ? ["Location", "Schedule", "Details", "Tasks"]
-    : ["Location", "Schedule", "Details", "Tasks", "Review & Confirm"];
+    ? ["Location", "Schedule", "Details"]
+    : ["Location", "Schedule", "Details", "Review & Confirm"];
 
   const [step, setStep] = useState(0);
   const [resolvingLocation, setResolvingLocation] = useState(false);
@@ -48,7 +47,7 @@ export default function AddJob() {
   const [form, setForm] = useState({
     user_id: "", title: "", location: "", address: "", city: "", state: "", postcode: "", coordinates: "",
     scheduleMode: "single", dateRange: [null, null], scheduleDays: [],
-    jobType: "", customJobType: "", attachments: [], document: false, document_types: [], customDocumentTypes: [], tasks: [],
+    jobType: "", customJobType: "", attachments: [], document_types: [], tasks: [],
     termsAccepted: false, paymentOption: "full", description: "",
   });
 
@@ -384,7 +383,10 @@ export default function AddJob() {
         amount_to_charge_today: Number(finalAmountDueToday.toFixed(2)),
         balance_deferred: Number(balanceRemaining.toFixed(2))
       },
-      is_document: Boolean(form.document) || document_list.length > 0, document_list, document_types: [...(form.document_types || []), ...(Array.isArray(form.customDocumentTypes) ? form.customDocumentTypes : [])], job_instruction: form.description || "",
+      is_document: (form.document_types && form.document_types.length > 0) || document_list.length > 0,
+      document_list,
+      document_types: form.document_types || [],
+      job_instruction: form.description || "",
       tasks: (form.tasks || []).map((t) => ({ task: t.task, task_start: t.task_start, task_end: t.task_end })),
     };
   }
@@ -676,9 +678,8 @@ export default function AddJob() {
 
                   {step === 1 && <ScheduleStep form={form} setField={setField} scheduleError={scheduleError} applyShiftToAllDays={applyShiftToAllDays} />}
                   {step === 2 && <DetailsStep form={form} setField={setField} handleFile={handleFile} attachmentPreviews={attachmentPreviews} removeAttachment={removeAttachment} />}
-                  {step === 3 && <TasksStep form={form} setField={setField} />}
 
-                  {step === 4 && !isAdmin && <ReviewStep form={form} rate={breakdown} setStep={setStep} setField={setField} handleConfirm={handleConfirm} isSubmitting={isSubmitting} baseAmount={breakdown?.chargeTotalIncGst || 0} isAdmin={isAdmin} />}
+                  {step === 3 && !isAdmin && <ReviewStep form={form} rate={breakdown} setStep={setStep} setField={setField} handleConfirm={handleConfirm} isSubmitting={isSubmitting} baseAmount={breakdown?.chargeTotalIncGst || 0} isAdmin={isAdmin} />}
 
                   <div className="d-flex justify-content-between mt-5 pt-4 border-top">
                     <button type="button" className="btn btn-outline-secondary rounded-pill px-4 fw-bold" onClick={back} disabled={isSubmitting}>← Back</button>

@@ -55,7 +55,6 @@ const ManageStaff = () => {
     state: "",
     country: "",
     coordinates: "",
-    is_active: false,
   };
 
   const [formData, setFormData] = useState(defaultFormState);
@@ -79,7 +78,6 @@ const ManageStaff = () => {
         state: user.state || "",
         country: user.country || "",
         coordinates: user.coordinates || user.staff?.coordinates || "",
-        is_active: user.is_active || false,
       });
     } else {
       setEditingUser(null);
@@ -94,10 +92,10 @@ const ManageStaff = () => {
   };
 
   const handleInputChange = (e) => {
-    const { name, value, type, checked } = e.target;
+    const { name, value, type } = e.target;
     setFormData((prev) => ({
       ...prev,
-      [name]: type === "checkbox" ? checked : value,
+      [name]: value,
       // If address is manually edited, force selecting from suggestions again.
       ...(name === "address"
         ? { coordinates: "", city: "", state: "", country: "" }
@@ -209,7 +207,6 @@ const ManageStaff = () => {
 
     const payload = { ...formData };
     if (editingUser && !payload.password) delete payload.password;
-    payload.is_active = payload.is_active ? 1 : 0;
 
     payload.user_id = loggedInContractorId;
 
@@ -437,7 +434,6 @@ const ManageStaff = () => {
                 <th className="ps-4 py-3">NAME & EMAIL</th>
                 <th>PHONE</th>
                 <th>LOCATION</th>
-                <th>STATUS</th>
                 <th className="text-center pe-4">ACTIONS</th>
               </tr>
             </thead>
@@ -460,13 +456,7 @@ const ManageStaff = () => {
                         ({user.country || "N/A"})
                       </span>
                     </td>
-                    <td>
-                      <span
-                        className={`badge rounded-pill px-3 ${user.is_active ? "bg-success-subtle text-success" : "bg-danger-subtle text-danger"}`}
-                      >
-                        {user.is_active ? "Active" : "Inactive"}
-                      </span>
-                    </td>
+
                     <td className="text-center pe-4">
                       <div className="btn-group">
                         <button
@@ -623,27 +613,7 @@ const ManageStaff = () => {
                     />
                   </div>
 
-                  <div className="col-12 mt-5">
-                    <div className="bg-light p-4 rounded-4 border d-flex justify-content-between align-items-center">
-                      <div>
-                        <div className="fw-bold">Active Status</div>
-                        <div className="text-muted small">
-                          Toggle to enable or disable system access.
-                        </div>
-                      </div>
-                      <div className="form-check form-switch">
-                        <input
-                          className="form-check-input"
-                          type="checkbox"
-                          role="switch"
-                          name="is_active"
-                          checked={formData.is_active}
-                          onChange={handleInputChange}
-                          style={{ width: "2.5em", height: "1.25em" }}
-                        />
-                      </div>
-                    </div>
-                  </div>
+
                 </div>
               </form>
             </div>

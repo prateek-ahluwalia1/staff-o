@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import useFetch from "../hooks/useFetch";
 import useSubmit from "../hooks/useSubmit";
@@ -43,6 +43,8 @@ const ManageUsers = () => {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const userAutocompleteRef = useRef(null);
+  const userAutocompleteListenerRef = useRef(null);
 
   const defaultFormState = {
     name: "",
@@ -54,8 +56,8 @@ const ManageUsers = () => {
     city: "",
     state: "",
     country: "",
+    coordinates: "",
     registration_number: "",
-    is_active: false,
     user_id: "",
   };
 
@@ -93,8 +95,8 @@ const ManageUsers = () => {
         city: user.city || "",
         state: user.state || "",
         country: user.country || "",
+        coordinates: user.coordinates || "",
         registration_number: extraInfo.registration_number || "",
-        is_active: user.is_active || false,
         user_id: user.user_id || "",
       });
     } else {
@@ -134,11 +136,85 @@ const ManageUsers = () => {
     }
   }, [apiResponse, location.state, navigate]);
 
+  useEffect(() => {
+    if (!isModalOpen) return;
+
+    let checkGoogleMaps;
+
+    const initAutocomplete = () => {
+      const addressInput = document.getElementById("user-address");
+      if (!addressInput || !window.google || !window.google.maps) return;
+      if (addressInput.getAttribute("data-gmaps-initialized")) return;
+
+      const autocomplete = new window.google.maps.places.Autocomplete(addressInput, {
+        fields: ["address_components", "geometry", "formatted_address"],
+        types: ["address"],
+      });
+
+      addressInput.setAttribute("data-gmaps-initialized", "true");
+      userAutocompleteRef.current = autocomplete;
+
+      userAutocompleteListenerRef.current = autocomplete.addListener("place_changed", () => {
+        const place = autocomplete.getPlace();
+
+        if (!place.geometry) {
+          toast.error("Please select a valid address from the dropdown suggestions.");
+          return;
+        }
+
+        let newCity = "", newState = "", newCountry = "";
+
+        place.address_components?.forEach((c) => {
+          if (
+            c.types.includes("locality") ||
+            c.types.includes("postal_town") ||
+            c.types.includes("sublocality") ||
+            c.types.includes("administrative_area_level_2")
+          ) {
+            if (!newCity) newCity = c.long_name;
+          }
+          if (c.types.includes("administrative_area_level_1"))
+            newState = c.long_name;
+          if (c.types.includes("country")) newCountry = c.long_name;
+        });
+
+        setFormData((prev) => ({
+          ...prev,
+          address: place.formatted_address,
+          city: newCity || prev.city,
+          state: newState,
+          country: newCountry,
+          coordinates: `${place.geometry.location.lat()},${place.geometry.location.lng()}`,
+        }));
+      });
+    };
+
+    checkGoogleMaps = setInterval(() => {
+      if (window.google && window.google.maps) {
+        clearInterval(checkGoogleMaps);
+        initAutocomplete();
+      }
+    }, 500);
+
+    // Try immediately in case Google is already loaded.
+    initAutocomplete();
+
+    return () => {
+      clearInterval(checkGoogleMaps);
+      if (userAutocompleteListenerRef.current && window.google)
+        window.google.maps.event.removeListener(userAutocompleteListenerRef.current);
+    };
+  }, [isModalOpen]);
+
   const handleInputChange = (e) => {
-    const { name, value, type, checked } = e.target;
+    const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
-      [name]: type === "checkbox" ? checked : value,
+      [name]: value,
+      // If address is manually edited, force selecting from suggestions again.
+      ...(name === "address"
+        ? { coordinates: "", city: "", state: "", country: "" }
+        : {}),
     }));
   };
 
@@ -165,7 +241,6 @@ const ManageUsers = () => {
     if (editingUser && !payload.password) delete payload.password;
 
     if (activeTab !== "staff") delete payload.user_id;
-    payload.is_active = payload.is_active ? 1 : 0;
 
     try {
       const res = await submit(url, payload, { method });
@@ -269,6 +344,10 @@ const ManageUsers = () => {
           margin: 30px 0 15px;
           padding-left: 12px;
           border-left: 4px solid #0d6efd;
+        }
+
+        .pac-container {
+          z-index: 2000 !important;
         }
 
         .jobtracker-tabs .nav-link {
@@ -456,7 +535,6 @@ const ManageUsers = () => {
                 <th className="ps-4 py-3">NAME & EMAIL</th>
                 {activeTab !== "staff" && <th>BUSINESS & PHONE</th>}
                 <th>LOCATION</th>
-                <th>STATUS</th>
                 <th className="text-center pe-4">ACTIONS</th>
               </tr>
             </thead>
@@ -484,13 +562,6 @@ const ManageUsers = () => {
                         ({user.country || "N/A"})
                       </span>
                     </td>
-                    <td>
-                      <span
-                        className={`badge rounded-pill px-3 ${user.is_active ? "bg-success-subtle text-success" : "bg-danger-subtle text-danger"}`}
-                      >
-                        {user.is_active ? "Active" : "Inactive"}
-                      </span>
-                    </td>
                     <td className="text-center pe-4">
                       <div className="btn-group">
                         <button
@@ -511,7 +582,7 @@ const ManageUsers = () => {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={activeTab === "staff" ? 4 : 5} className="text-center py-5 text-muted">
+                  <td colSpan={activeTab === "staff" ? 3 : 4} className="text-center py-5 text-muted">
                     No records found for this category.
                   </td>
                 </tr>
@@ -685,67 +756,37 @@ const ManageUsers = () => {
                   <div className="col-12">
                     <h6 className="section-divider">Address Information</h6>
                   </div>
-                  <div className="col-md-4">
-                    <label className="form-label">City</label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      name="city"
-                      value={formData.city}
-                      onChange={handleInputChange}
-                    />
-                  </div>
-                  <div className="col-md-4">
-                    <label className="form-label">State</label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      name="state"
-                      value={formData.state}
-                      onChange={handleInputChange}
-                    />
-                  </div>
-                  <div className="col-md-4">
-                    <label className="form-label">Country</label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      name="country"
-                      value={formData.country}
-                      onChange={handleInputChange}
-                    />
-                  </div>
                   <div className="col-12">
                     <label className="form-label">Full Address</label>
-                    <textarea
+                    <input
+                      type="text"
+                      id="user-address"
                       className="form-control"
-                      rows="2"
                       name="address"
                       value={formData.address}
                       onChange={handleInputChange}
-                    ></textarea>
+                      placeholder="Start typing and choose from Google suggestions"
+                    />
+                    <div className="form-text">
+                      Select from suggestions to auto-fill city, state, country
+                      and coordinates.
+                    </div>
                   </div>
 
-                  <div className="col-12 mt-5">
-                    <div className="bg-light p-4 rounded-4 border d-flex justify-content-between align-items-center">
-                      <div>
-                        <div className="fw-bold">Active Status</div>
-                        <div className="text-muted small">
-                          Toggle to enable or disable system access.
-                        </div>
-                      </div>
-                      <div className="form-check form-switch">
-                        <input
-                          className="form-check-input"
-                          type="checkbox"
-                          role="switch"
-                          name="is_active"
-                          checked={formData.is_active}
-                          onChange={handleInputChange}
-                          style={{ width: "2.5em", height: "1.25em" }}
-                        />
-                      </div>
-                    </div>
+                  <div className="col-12">
+                    <label className="form-label">
+                      Coordinates {!editingUser && "*"}
+                    </label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      name="coordinates"
+                      value={formData.coordinates}
+                      onChange={handleInputChange}
+                      placeholder="Auto-filled from selected address"
+                      readOnly
+                      required={!editingUser}
+                    />
                   </div>
                 </div>
               </form>

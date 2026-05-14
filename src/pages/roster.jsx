@@ -38,34 +38,19 @@ function extractOperationNoteText(shift) {
     shift?.op_notes ||
     shift?.op_note ||
     "";
-
   if (typeof raw === "string") return raw.trim();
-
   if (Array.isArray(raw)) {
-    return raw
-      .map((item) => {
-        if (typeof item === "string") return item.trim();
-        if (item && typeof item === "object") {
-          return String(
-            item.notes ||
-            item.note ||
-            item.content ||
-            item.operation_notes ||
-            "",
-          ).trim();
-        }
-        return "";
-      })
-      .filter(Boolean)
-      .join(" | ");
+    return raw.map((item) => {
+      if (typeof item === "string") return item.trim();
+      if (item && typeof item === "object") {
+        return String(item.notes || item.note || item.content || item.operation_notes || "").trim();
+      }
+      return "";
+    }).filter(Boolean).join(" | ");
   }
-
   if (raw && typeof raw === "object") {
-    return String(
-      raw.notes || raw.note || raw.content || raw.operation_notes || "",
-    ).trim();
+    return String(raw.notes || raw.note || raw.content || raw.operation_notes || "").trim();
   }
-
   return "";
 }
 
@@ -82,36 +67,18 @@ export default function RosterPage() {
   const userId = userdata?.data?.id || userdata?.id;
   const userRole = userdata?.data?.user_type || userdata?.user_type;
 
-  const {
-    data: staffData,
-    loading: staffLoading,
-    error: staffError,
-  } = useFetch(`api/get-contractor-staff/${userId}`, {
-    method: "POST",
-    isAuth: true,
-  });
+  const { data: staffData, loading: staffLoading } = useFetch(`api/get-contractor-staff/${userId}`, { method: "POST", isAuth: true });
+  const { submit, loading: submitLoading, data: submitData } = useSubmit({ isAuth: true });
+  const { submit: saveUserAssignment, loading: saveLoading } = useSubmit({ isAuth: true });
 
-  const {
-    submit,
-    loading: submitLoading,
-    data: submitData,
-  } = useSubmit({ isAuth: true });
-  const { submit: saveUserAssignment, loading: saveLoading } = useSubmit({
-    isAuth: true,
-  });
-
-  const [monday, setMonday] = useState(() =>
-    startOfWeek(new Date(), { weekStartsOn: 1 }),
-  );
+  const [monday, setMonday] = useState(() => startOfWeek(new Date(), { weekStartsOn: 1 }));
   const [modal, setModal] = useState(null);
   const [selectedUserId, setSelectedUserId] = useState("");
-  const [showStats, setShowStats] = useState(false);
   const [weeksToView, setWeeksToView] = useState(1);
   const [editForm, setEditForm] = useState({ startTime: "", endTime: "" });
   const [timeEditError, setTimeEditError] = useState("");
-
-  // NEW: State for the search box
   const [searchQuery, setSearchQuery] = useState("");
+  const [showLegend, setShowLegend] = useState(false);
 
   const fetchCustomerSites = useCallback(() => {
     if (!userId) return;
@@ -135,72 +102,54 @@ export default function RosterPage() {
     return Array.from({ length: totalDays }, (_, i) => {
       const d = addDays(monday, i);
       return {
-        label: format(d, "EEE , dd/MM"),
+        label: format(d, "EEE dd/MM"),
         dateObj: d,
         dateLabel: format(d, "EEE, dd MMM"),
         key: format(d, "yyyy-MM-dd"),
         isToday: isToday(d),
+        short: format(d, "EEE"),
+        num: format(d, "dd")
       };
     });
   }, [monday, weeksToView]);
 
   const weekTitle = useMemo(() => {
     const endDayOffset = weeksToView === 1 ? 6 : 13;
-    return `${format(monday, "MMM d")} - ${format(addDays(monday, endDayOffset), "d, yyyy")}`;
+    return `${format(monday, "MMM d")} - ${format(addDays(monday, endDayOffset), "yyyy")}`;
   }, [monday, weeksToView]);
 
   const sites = useMemo(() => {
     if (!submitData?.data) return [];
     return submitData.data.map((site) => {
-      const roster = (site.job_roster || [])
-        .map((shift) => {
-          const startDate = parseApiDate(shift.start);
-          const endDate = parseApiDate(shift.end);
-          if (!startDate || !endDate) return null;
-          return { ...shift, startDate, endDate };
-        })
-        .filter(Boolean);
+      const roster = (site.job_roster || []).map((shift) => {
+        const startDate = parseApiDate(shift.start);
+        const endDate = parseApiDate(shift.end);
+        if (!startDate || !endDate) return null;
+        return { ...shift, startDate, endDate };
+      }).filter(Boolean);
 
-      const totalHours = roster.reduce(
-        (sum, shift) => sum + Number(shift.hours || 0),
-        0,
-      );
-
+      const totalHours = roster.reduce((sum, shift) => sum + Number(shift.hours || 0), 0);
       return {
         id: site.id,
         displayName: site.site_name || "Unknown Site",
-        siteDescription: site.site_description,
-        address: site.address,
-        state: site.state,
-        coordinates: site.coordinates,
-        signinRadius: site.signin_radius,
-        type: "Static Guard",
-        hoursNum: totalHours,
-        hoursDisplay: `${totalHours.toFixed(2)} Hrs`,
+        hoursDisplay: `${totalHours.toFixed(1)}h`,
         jobRoster: roster,
       };
     });
   }, [submitData]);
 
-  // NEW: Filter sites based on the search query
   const filteredSites = useMemo(() => {
     if (!searchQuery.trim()) return sites;
     const lowerQuery = searchQuery.toLowerCase();
-    return sites.filter((site) =>
-      site.displayName.toLowerCase().includes(lowerQuery),
-    );
+    return sites.filter((site) => site.displayName.toLowerCase().includes(lowerQuery));
   }, [sites, searchQuery]);
 
-  // UPDATED: Calculate totals based ONLY on the filteredSites
   const columnTotals = useMemo(() => {
     const totals = Array(weeksToView === 1 ? 7 : 14).fill(0);
     let grandTotal = 0;
-
     filteredSites.forEach((site) => {
       site.jobRoster.forEach((shift) => {
-        const dayIndex = weekDays.findIndex((d) =>
-          isSameDay(d.dateObj, shift.startDate),
-        );
+        const dayIndex = weekDays.findIndex((d) => isSameDay(d.dateObj, shift.startDate));
         if (dayIndex !== -1) {
           const shiftHrs = Number(shift.hours || 0);
           totals[dayIndex] += shiftHrs;
@@ -208,7 +157,6 @@ export default function RosterPage() {
         }
       });
     });
-
     return { totals, grandTotal };
   }, [filteredSites, weekDays, weeksToView]);
 
@@ -216,13 +164,12 @@ export default function RosterPage() {
 
   const prevWeek = () => setMonday((prev) => subWeeks(prev, weeksToView));
   const nextWeek = () => setMonday((prev) => addWeeks(prev, weeksToView));
-  const goToThisWeek = () =>
-    setMonday(startOfWeek(new Date(), { weekStartsOn: 1 }));
+  const goToThisWeek = () => setMonday(startOfWeek(new Date(), { weekStartsOn: 1 }));
   const handleRefresh = () => fetchCustomerSites();
 
   const openModalAction = (site, shift, dateStr, modalType) => {
-    setSelectedUserId(shift.assigned_to || "");
-    if (modalType === "time") {
+    setSelectedUserId(shift?.assigned_to || "");
+    if (modalType === "time" && shift) {
       setTimeEditError("");
       const startT = (shift.start || "").split(" ")[1] || "00:00";
       const endT = (shift.end || "").split(" ")[1] || "00:00";
@@ -241,35 +188,15 @@ export default function RosterPage() {
     if (!modal) return;
     try {
       let res;
-      if (modal.type === "time") {
+      if (modal.type === "time" && modal.shift) {
         setTimeEditError("");
-        const startDateTime = combineDateAndTime(
-          modal.shift.startDate,
-          editForm.startTime,
-        );
-        const endDateTime = combineDateAndTime(
-          modal.shift.endDate,
-          editForm.endTime,
-        );
+        const startDateTime = combineDateAndTime(modal.shift.startDate, editForm.startTime);
+        const endDateTime = combineDateAndTime(modal.shift.endDate, editForm.endTime);
+        if (!startDateTime || !endDateTime) { setTimeEditError("Invalid times."); return; }
 
-        if (!startDateTime || !endDateTime) {
-          setTimeEditError("Please provide valid start and end times.");
-          return;
-        }
-
-        // If end time is earlier than start time, treat it as an overnight shift.
-        const normalizedEndDateTime =
-          endDateTime <= startDateTime
-            ? addDays(endDateTime, 1)
-            : endDateTime;
-        const durationHours =
-          (normalizedEndDateTime.getTime() - startDateTime.getTime()) /
-          (1000 * 60 * 60);
-
-        if (durationHours < 4 || durationHours > 12) {
-          setTimeEditError("Shift duration must be between 4 and 12 hours.");
-          return;
-        }
+        const normalizedEndDateTime = endDateTime <= startDateTime ? addDays(endDateTime, 1) : endDateTime;
+        const durationHours = (normalizedEndDateTime.getTime() - startDateTime.getTime()) / (1000 * 60 * 60);
+        if (durationHours < 4 || durationHours > 12) { setTimeEditError("Duration must be 4-12 hrs."); return; }
 
         const payload = {
           id: modal.shift.id,
@@ -277,32 +204,19 @@ export default function RosterPage() {
           end: format(normalizedEndDateTime, UPDATE_API_DATE_FORMAT),
           admin_id: userId,
         };
-        res = await saveUserAssignment(`api/update-roster-time`, payload, {
-          method: "POST",
-        });
-      } else if (modal.type === "admin_assign") {
-        if (!selectedUserId) {
-          toast.error("Please select a user to assign.");
-          return;
-        }
+        res = await saveUserAssignment(`api/update-roster-time`, payload, { method: "POST" });
+      } else if (modal.type === "admin_assign" && modal.shift) {
+        if (!selectedUserId) { toast.error("Select a user."); return; }
         const payload = { roster_id: modal.shift.id };
-        res = await saveUserAssignment(
-          `api/asap-jobs/accept/${selectedUserId}`,
-          payload,
-          { method: "POST" },
-        );
+        res = await saveUserAssignment(`api/asap-jobs/accept/${selectedUserId}`, payload, { method: "POST" });
       }
-
       if (res === undefined) return;
       fetchCustomerSites();
       toast.success("Saved successfully!");
       closeModal();
     } catch (error) {
-      if (modal.type === "time") {
-        setTimeEditError(error.message || "Failed to save. Please try again.");
-      } else {
-        toast.error(error.message || "Failed to save. Please try again.");
-      }
+      if (modal.type === "time") setTimeEditError(error.message || "Failed to save.");
+      else toast.error(error.message || "Failed to save.");
     }
   };
 
@@ -312,538 +226,225 @@ export default function RosterPage() {
     let allShifts = [];
     sites.forEach((site) => {
       site.jobRoster.forEach((shift) => {
-        if (String(shift.assigned_to) === String(guardId)) {
-          allShifts.push({ ...shift, siteName: site.displayName });
-        }
+        if (String(shift.assigned_to) === String(guardId)) allShifts.push({ ...shift, siteName: site.displayName });
       });
     });
     return allShifts;
   };
 
   const guardShiftsList = getGuardShifts();
-  const totalGuardHours = guardShiftsList.reduce(
-    (sum, s) => sum + Number(s.hours || 0),
-    0,
-  );
+  const totalGuardHours = guardShiftsList.reduce((sum, s) => sum + Number(s.hours || 0), 0);
 
   if (staffLoading || submitLoading) return <Loader />;
 
-  const inputStyle = {
-    height: "48px",
-    borderRadius: "10px",
-    border: "1px solid #e5e7eb",
-    padding: "0 12px",
-    fontSize: "14px",
-    width: "100%",
-  };
-
   return (
-    <div className="roster-page-wrapper">
-      <div className="roster-main-card">
-        <div className="roster-toolbar">
-          <div className="toolbar-row-top">
-            <div className="date-controls">
-              <button onClick={prevWeek} type="button">
-                <i className="fa fa-chevron-left"></i>
-              </button>
-              <span className="date-range-text">{weekTitle}</span>
-              <button onClick={nextWeek} type="button">
-                <i className="fa fa-chevron-right"></i>
-              </button>
-              <button
-                onClick={goToThisWeek}
-                className="today-btn"
-                type="button"
-              >
-                Today
-              </button>
-            </div>
-            <div className="action-buttons">
-              <div style={{ display: "flex", gap: "4px", marginRight: "8px" }}>
-                <button
-                  className="text-btn"
-                  style={{
-                    background: weeksToView === 1 ? "#0d6efd" : "#fff",
-                    color: weeksToView === 1 ? "#fff" : "#4b5563",
-                    borderColor: weeksToView === 1 ? "#0d6efd" : "#d1d5db",
-                  }}
-                  onClick={() => setWeeksToView(1)}
-                  type="button"
-                >
-                  1 Week
-                </button>
-                <button
-                  className="text-btn"
-                  style={{
-                    background: weeksToView === 2 ? "#0d6efd" : "#fff",
-                    color: weeksToView === 2 ? "#fff" : "#4b5563",
-                    borderColor: weeksToView === 2 ? "#0d6efd" : "#d1d5db",
-                  }}
-                  onClick={() => setWeeksToView(2)}
-                  type="button"
-                >
-                  2 Weeks
-                </button>
-              </div>
-              <button
-                onClick={handleRefresh}
-                className="icon-btn"
-                type="button"
-                title="Refresh"
-              >
-                <i className="fa fa-refresh"></i>
-              </button>
-              <button
-                className="text-btn"
-                type="button"
-                onClick={() => setShowStats(!showStats)}
-              >
-                <i className="fa fa-bar-chart"></i> Stats{" "}
-                <i className={`fa fa-angle-${showStats ? "up" : "down"}`}></i>
-              </button>
-            </div>
-          </div>
+    <div className="vibrant-roster-app">
+
+      {/* --- HEADER --- */}
+      <header className="vr-header">
+        <div className="vr-nav">
+          <button onClick={prevWeek} className="vr-icon-btn"><i className="fa fa-chevron-left"></i></button>
+          <div className="vr-date-display">{weekTitle}</div>
+          <button onClick={nextWeek} className="vr-icon-btn"><i className="fa fa-chevron-right"></i></button>
+          <button onClick={goToThisWeek} className="vr-btn-today">Today</button>
         </div>
 
-        {showStats && (
-          <div className="status-legend-bar">
-            <div className="status-legend-row">
-              <div className="status-box status-pending">
-                Pending
-                <br />
-                Shifts
-              </div>
-              <div className="status-box status-rejected">
-                Rejected
-                <br />
-                Shifts
-              </div>
-              <div className="status-box status-publish">
-                Publish
-                <br />
-                Shifts
-              </div>
-              <div className="status-box status-unpublish">
-                Unpublish
-                <br />
-                Shifts
-              </div>
-              <div className="status-box status-mock">
-                Mock
-                <br />
-                Shifts
-              </div>
-              <div className="status-box status-missed">
-                Missed
-                <br />
-                Shifts
-              </div>
-              <div className="status-box status-uncoverd">
-                Uncoverd
-                <br />
-                Shifts
-              </div>
-              <div className="status-box status-op-notes">
-                Operational
-                <br />
-                Notes_Shifts
-              </div>
-              <div className="status-box status-completed">
-                Completed
-                <br />
-                Shift
-              </div>
-              <div className="status-box status-confirmed">
-                Confirmed
-                <br />
-                Shift
-              </div>
-            </div>
+        <div className="vr-actions">
+          <div className="vr-search">
+            <i className="fa fa-search"></i>
+            <input type="text" placeholder="Search Sites..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
           </div>
-        )}
-
-        <div
-          className={`roster-grid-wrapper ${weeksToView === 2 ? "two-week-view" : ""}`}
-        >
-          <table className="roster-grid">
-            <thead>
-              <tr>
-                <th>
-                  <div className="search-cell">
-                    <i className="fa fa-search"></i>
-                    {/* UPDATED: Search input now bound to state */}
-                    <input
-                      type="text"
-                      placeholder="Search site..."
-                      className="search-input"
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                    />
-                  </div>
-                </th>
-                {weekDays.map((day) => (
-                  <th key={day.key} className={day.isToday ? "today-head" : ""}>
-                    {day.label}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-
-            <tbody>
-              {/* UPDATED: Map over filteredSites instead of sites */}
-              {filteredSites.length === 0 ? (
-                <tr>
-                  <td
-                    colSpan={weekDays.length + 1}
-                    style={{
-                      textAlign: "center",
-                      padding: "24px",
-                      color: "#6b7280",
-                    }}
-                  >
-                    {searchQuery
-                      ? `No sites found matching "${searchQuery}"`
-                      : "No sites found for this date range."}
-                  </td>
-                </tr>
-              ) : (
-                filteredSites.map((site) => {
-                  // For each day, get the shifts for that site
-                  const dayShifts = weekDays.map((day) =>
-                    site.jobRoster.filter((shift) => isSameDay(shift.startDate, day.dateObj))
-                  );
-                  // Find the max number of shifts in any day for this site
-                  const maxShifts = Math.max(...dayShifts.map((shifts) => shifts.length), 1);
-
-                  // For each row (shift index), render a table row
-                  return Array.from({ length: maxShifts }).map((_, rowIdx) => {
-                    return (
-                      <tr key={site.id + "-row-" + rowIdx}>
-                        {/* Only render location-td on the first row with rowspan */}
-                        {rowIdx === 0 && (
-                          <td className="location-td" rowSpan={maxShifts}>
-                            <div className="location-cell-content">
-                              <div className="loc-header">
-                                <span className="loc-name">{site.displayName}</span>
-                              </div>
-                              <div className="loc-badge">
-                                <i className="fa fa-clock-o"></i> {site.hoursDisplay}
-                              </div>
-                            </div>
-                          </td>
-                        )}
-                        {weekDays.map((day, dayIdx) => {
-                          const shifts = dayShifts[dayIdx];
-                          const shift = shifts[rowIdx];
-                          return (
-                            <td key={day.key} className="day-cell">
-                              {shift ? (() => {
-                                const operationNoteText = extractOperationNoteText(shift);
-                                const hasOperationNote = Boolean(operationNoteText);
-                                return (
-                                  <div
-                                    key={shift.id}
-                                    className={`shift-block ${shift.job_status === "confirmed"
-                                      ? "shift-confirmed"
-                                      : shift.job_status === "rejected"
-                                        ? "shift-rejected"
-                                        : shift.job_status === "completed"
-                                          ? "shift-completed"
-                                          : shift.job_status === "missed"
-                                            ? "shift-missed"
-                                            : shift.job_status === "mock"
-                                              ? "shift-mock"
-                                              : shift.job_status === "uncovered"
-                                                ? "shift-uncovered"
-                                                : shift.job_status === "op_notes"
-                                                  ? "shift-op-notes"
-                                                  : shift.job_status === "published"
-                                                    ? "shift-published"
-                                                    : shift.job_status === "unpublished"
-                                                      ? "shift-unpublished"
-                                                      : "shift-pending"
-                                      } ${hasOperationNote ? "shift-has-op-note" : ""}`}
-                                    title={hasOperationNote ? `Operation Note: ${operationNoteText}` : ""}
-                                    onClick={() =>
-                                      openModalAction(
-                                        site,
-                                        shift,
-                                        day.dateLabel,
-                                        userRole === "contractor" && !shift.assigned_to ? "admin_assign" : "details",
-                                      )
-                                    }
-                                  >
-                                    <div className="shift-time">
-                                      {format(shift.startDate, "HH:mm")}-
-                                      {format(shift.endDate, "HH:mm")}
-                                    </div>
-                                    <div className="shift-name">
-                                      {shift?.guards?.name || "Unassigned"}
-                                    </div>
-                                    <div className="shift-tags">
-                                      <span
-                                        className="s-tag s-tag-activity"
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          openModalAction(site, shift, day.dateLabel, "activity");
-                                        }}
-                                      >
-                                        <i className="fa fa-list-alt"></i>{" "}
-                                        <span className="tag-text">Activity</span>
-                                      </span>
-                                      <span
-                                        className="s-tag s-tag-detail"
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          openModalAction(site, shift, day.dateLabel, "details");
-                                        }}
-                                      >
-                                        <i className="fa fa-info-circle"></i>{" "}
-                                        <span className="tag-text">Detail</span>
-                                      </span>
-                                      {userRole !== "staff" && (
-                                        <span
-                                          className="s-tag s-tag-time"
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            openModalAction(site, shift, day.dateLabel, "time");
-                                          }}
-                                        >
-                                          <i className="fa fa-clock-o fas fa-clock"></i>{" "}
-                                          <span className="tag-text">Time</span>
-                                        </span>
-                                      )}
-                                      {userRole === "contractor" && !shift.assigned_to && (
-                                        <span
-                                          className="s-tag s-tag-assign"
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            openModalAction(site, shift, day.dateLabel, "admin_assign");
-                                          }}
-                                        >
-                                          <i className="fa fa-user-plus"></i>{" "}
-                                          <span className="tag-text">Assign</span>
-                                        </span>
-                                      )}
-                                    </div>
-                                  </div>
-                                );
-                              })() : null}
-                            </td>
-                          );
-                        })}
-                      </tr>
-                    );
-                  });
-                })
-              )}
-            </tbody>
-            <tfoot>
-              <tr className="roster-footer">
-                <td>
-                  <div className="footer-total-label">
-                    <span>Total Hours</span>
-                    <span>{columnTotals.grandTotal.toFixed(2)} Hrs</span>
-                  </div>
-                </td>
-                {columnTotals.totals.map((total, index) => (
-                  <td key={index}>{total.toFixed(2)} Hours</td>
-                ))}
-              </tr>
-            </tfoot>
-          </table>
+          <div className="vr-toggles">
+            <button className={weeksToView === 1 ? 'active' : ''} onClick={() => setWeeksToView(1)}>1W</button>
+            <button className={weeksToView === 2 ? 'active' : ''} onClick={() => setWeeksToView(2)}>2W</button>
+          </div>
+          <button onClick={handleRefresh} className="vr-icon-btn"><i className="fa fa-refresh"></i></button>
+          <button onClick={() => setShowLegend(!showLegend)} className={`vr-btn-legend ${showLegend ? 'active' : ''}`}>
+            <i className="fa fa-paint-brush"></i> Legend
+          </button>
         </div>
+      </header>
+
+      {/* --- COLOR LEGEND --- */}
+      {showLegend && (
+        <div className="vr-legend-panel">
+          <span className="vr-badge bg-pending">Pending</span>
+          <span className="vr-badge bg-confirmed">Confirmed</span>
+          <span className="vr-badge bg-completed">Completed</span>
+          <span className="vr-badge bg-published">Publish</span>
+          <span className="vr-badge bg-unpublished">Unpublish</span>
+          <span className="vr-badge bg-rejected">Rejected</span>
+          <span className="vr-badge bg-missed">Missed</span>
+          <span className="vr-badge bg-mock">Mock</span>
+          <span className="vr-badge bg-op-notes">Op Notes</span>
+          <span className="vr-badge bg-uncoverd">Uncovered</span>
+        </div>
+      )}
+
+      {/* --- MATRIX HEADER (Days) --- */}
+      <div className="vr-matrix-header">
+        <div className="vr-col-site">SITES & SUMMARY</div>
+        {weekDays.map((day) => (
+          <div key={day.key} className={`vr-col-day ${day.isToday ? 'is-today' : ''}`}>
+            <div className="day-name">{day.short}</div>
+            <div className="day-number">{day.num}</div>
+          </div>
+        ))}
       </div>
 
-      {modal?.type === "activity" && (
-        <ActivityDashboardModal
-          modal={modal}
-          closeModal={closeModal}
-          userRole={userRole}
-        />
-      )}
-      {modal?.type === "time" && (
-        <TimeEditModal
-          modal={modal}
-          closeModal={closeModal}
-          editForm={editForm}
-          setEditForm={setEditForm}
-          timeEditError={timeEditError}
-          clearTimeEditError={() => setTimeEditError("")}
-          handleSave={handleSave}
-          saveLoading={saveLoading}
-        />
-      )}
-      {modal?.type === "details" && (
-        <DetailsModal
-          modal={modal}
-          closeModal={closeModal}
-          guardShiftsList={guardShiftsList}
-          totalGuardHours={totalGuardHours}
-        />
-      )}
+      {/* --- MATRIX BODY (Scrollable Zone) --- */}
+      <div className="vr-matrix-body">
+        {filteredSites.length === 0 ? (
+          <div className="vr-no-data">No schedules match your search.</div>
+        ) : (
+          filteredSites.map((site) => (
+            <div key={site.id} className="vr-matrix-row">
 
-      {/* ADMIN ASSIGN MODAL */}
-      {modal?.type === "admin_assign" && (
-        <div
-          className="modal-overlay"
-          onClick={closeModal}
-          style={{
-            zIndex: 9999,
-            backgroundColor: "rgba(0,0,0,0.6)",
-            position: "fixed",
-            inset: 0,
-            display: "flex",
-            padding: "16px",
-          }}
-        >
-          <div
-            className="modal-content"
-            onClick={(e) => e.stopPropagation()}
-            style={{
-              margin: "auto",
-              background: "#fff",
-              padding: "20px",
-              borderRadius: "8px",
-              width: "100%",
-              maxWidth: "400px",
-            }}
-          >
-            <div
-              className="modal-header"
-              style={{
-                background: "#fff",
-                color: "#333",
-                padding: "16px 24px",
-                borderBottom: "none",
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-              }}
-            >
-              <h3 style={{ margin: 0, fontSize: "20px", fontWeight: "600" }}>
-                Assign Shift
-              </h3>
-              <button
-                onClick={closeModal}
-                style={{
-                  background: "transparent",
-                  border: "none",
-                  fontSize: "28px",
-                  cursor: "pointer",
-                  color: "#666",
-                }}
-              >
-                &times;
-              </button>
-            </div>
-            <div
-              className="modal-body"
-              style={{ padding: "16px", flex: 1, width: "100%" }}
-            >
-              <div style={{ marginBottom: "20px" }}>
-                <p>
-                  <strong>Site:</strong> {modal.site.displayName}
-                </p>
-                <p>
-                  <strong>Date:</strong> {modal.dateStr}
-                </p>
-                <p>
-                  <strong>Time:</strong>{" "}
-                  {format(modal.shift.startDate, "HH:mm")} -{" "}
-                  {format(modal.shift.endDate, "HH:mm")}
-                  <span className="modal-hours">
-                    {" "}
-                    ({modal.shift.hours} hrs)
+              <div className="vr-col-site vr-site-info">
+                <div className="vr-site-name">{site.displayName}</div>
+                <div>
+                  <span className="vr-site-hours">
+                    <i className="fa fa-clock-o fas fa-clock" style={{ marginRight: '4px' }}></i>
+                    {site.hoursDisplay} Total
                   </span>
-                </p>
+                </div>
               </div>
-              <div className="form-group">
-                <label
-                  htmlFor="user-select"
-                  style={{
-                    fontWeight: "bold",
-                    marginBottom: "8px",
-                    display: "block",
-                  }}
-                >
-                  Assign User
-                </label>
-                {staffLoading ? (
-                  <p style={{ fontSize: "14px", color: "#666" }}>
-                    Loading staff list...
-                  </p>
-                ) : staffError ? (
-                  <p style={{ fontSize: "14px", color: "red" }}>
-                    Failed to load staff list.
-                  </p>
-                ) : (
-                  <select
-                    id="user-select"
-                    className="form-select"
-                    style={inputStyle}
-                    value={selectedUserId}
-                    onChange={(e) => setSelectedUserId(e.target.value)}
-                  >
-                    <option value="" disabled>
-                      Select a user...
-                    </option>
-                    {guards.map((guard) => (
-                      <option key={guard.id} value={guard.id}>
-                        {guard.name} (ID: {guard.id})
-                      </option>
-                    ))}
-                  </select>
-                )}
+
+              {/* Day Cells */}
+              {weekDays.map((day) => {
+                const dayShifts = site.jobRoster.filter((s) => isSameDay(s.startDate, day.dateObj));
+                return (
+                  <div key={day.key} className={`vr-col-day vr-day-cell ${day.isToday ? 'is-today' : ''}`}>
+
+                    {dayShifts.length === 0 ? (
+                      /* Big faint + for entirely empty cells */
+                      <div className="vr-empty-add-btn" onClick={() => openModalAction(site, null, day.dateLabel, "add_shift")}>
+                        <i className="fa fa-plus"></i>
+                      </div>
+                    ) : (
+                      <>
+                        {/* Render existing shifts */}
+                        {dayShifts.map((shift) => {
+                          const status = shift.job_status ? shift.job_status.replace('_', '-') : 'pending';
+                          const hasNote = Boolean(extractOperationNoteText(shift));
+
+                          return (
+                            <div key={shift.id} className={`vr-shift-card bg-${status}`}>
+                              {hasNote && <div className="vr-note-dot"></div>}
+                              <div className="vr-shift-time">
+                                {format(shift.startDate, "HH:mm")} - {format(shift.endDate, "HH:mm")}
+                              </div>
+                              <div className="vr-shift-guard">
+                                {shift?.guards?.name || "Unassigned"}
+                              </div>
+
+                              <div className="vr-shift-actions">
+                                <button title="Activity" onClick={() => openModalAction(site, shift, day.dateLabel, "activity")}>
+                                  <i className="fa fa-list"></i>
+                                </button>
+                                <button title="Details" onClick={() => openModalAction(site, shift, day.dateLabel, "details")}>
+                                  <i className="fa fa-info"></i>
+                                </button>
+                                {userRole !== "staff" && (
+                                  <button title="Time Edit" onClick={() => openModalAction(site, shift, day.dateLabel, "time")}>
+                                    <i className="fa fa-edit fas fa-edit"></i>
+                                  </button>
+                                )}
+                                {userRole === "contractor" && !shift.assigned_to && (
+                                  <button title="Assign" onClick={() => openModalAction(site, shift, day.dateLabel, "admin_assign")}>
+                                    <i className="fa fa-user-plus"></i>
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+
+                        {/* Small subtle + for cells that already have shifts */}
+                        <div className="vr-small-add-btn" onClick={() => openModalAction(site, null, day.dateLabel, "add_shift")}>
+                          <i className="fa fa-plus"></i> Add
+                        </div>
+                      </>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* --- MATRIX FOOTER (Totals) --- */}
+      <div className="vr-matrix-footer">
+        <div className="vr-col-site vr-total-label">
+          GRAND TOTAL <span>{columnTotals.grandTotal.toFixed(1)}h</span>
+        </div>
+        {columnTotals.totals.map((total, i) => (
+          <div key={i} className="vr-col-day vr-total-val">
+            {total.toFixed(1)}h
+          </div>
+        ))}
+      </div>
+
+      {/* EXISTING MODALS */}
+      {modal?.type === "activity" && <ActivityDashboardModal modal={modal} closeModal={closeModal} userRole={userRole} />}
+      {modal?.type === "time" && <TimeEditModal modal={modal} closeModal={closeModal} editForm={editForm} setEditForm={setEditForm} timeEditError={timeEditError} clearTimeEditError={() => setTimeEditError("")} handleSave={handleSave} saveLoading={saveLoading} />}
+      {modal?.type === "details" && <DetailsModal modal={modal} closeModal={closeModal} guardShiftsList={guardShiftsList} totalGuardHours={totalGuardHours} />}
+
+      {modal?.type === "admin_assign" && (
+        <div className="vr-modal-backdrop" onClick={closeModal}>
+          <div className="vr-modal-container" onClick={(e) => e.stopPropagation()}>
+            <div className="vr-modal-header">
+              <h3>Assign Guard</h3>
+              <button onClick={closeModal}><i className="fa fa-times"></i></button>
+            </div>
+            <div className="vr-modal-content">
+              <div className="vr-modal-summary">
+                <div><strong>Site:</strong> {modal.site.displayName}</div>
+                <div><strong>Date:</strong> {modal.dateStr}</div>
+                <div><strong>Shift:</strong> {format(modal.shift.startDate, "HH:mm")} - {format(modal.shift.endDate, "HH:mm")}</div>
+              </div>
+              <div className="vr-input-group">
+                <label>Select Staff Member</label>
+                <select value={selectedUserId} onChange={(e) => setSelectedUserId(e.target.value)}>
+                  <option value="" disabled>Choose...</option>
+                  {guards.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}
+                </select>
               </div>
             </div>
-            <div
-              className="modal-footer"
-              style={{
-                background: "#f8f9fa",
-                padding: "16px 24px",
-                borderTop: "1px solid #eaeaea",
-                justifyContent: "flex-end",
-                borderBottomLeftRadius: "8px",
-                borderBottomRightRadius: "8px",
-                display: "flex",
-              }}
-            >
-              <button
-                onClick={closeModal}
-                type="button"
-                style={{
-                  padding: "10px 22px",
-                  fontSize: "14px",
-                  marginRight: "12px",
-                  border: "1px solid #ddd",
-                  background: "#fff",
-                  borderRadius: "6px",
-                  cursor: "pointer",
-                }}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleSave}
-                type="button"
-                disabled={saveLoading}
-                style={{
-                  padding: "10px 24px",
-                  fontSize: "14px",
-                  borderRadius: "6px",
-                  background: "#0d6efd",
-                  color: "#fff",
-                  border: "none",
-                  cursor: "pointer",
-                }}
-              >
-                {saveLoading ? "Saving..." : "Save Assignment"}
-              </button>
+            <div className="vr-modal-footer">
+              <button className="vr-btn-cancel" onClick={closeModal}>Cancel</button>
+              <button className="vr-btn-confirm" onClick={handleSave} disabled={saveLoading}>{saveLoading ? "Saving..." : "Confirm"}</button>
             </div>
           </div>
         </div>
       )}
+
+      {/* NEW: ADD SHIFT/SITE MODAL */}
+      {modal?.type === "add_shift" && (
+        <div className="vr-modal-backdrop" onClick={closeModal}>
+          <div className="vr-modal-container" onClick={(e) => e.stopPropagation()}>
+            <div className="vr-modal-header">
+              <h3>Add New Shift</h3>
+              <button onClick={closeModal}><i className="fa fa-times"></i></button>
+            </div>
+            <div className="vr-modal-content">
+              <div className="vr-modal-summary">
+                <div><strong>Target Site:</strong> {modal.site.displayName}</div>
+                <div><strong>Target Date:</strong> {modal.dateStr}</div>
+              </div>
+              <p style={{ textAlign: "center", color: "#64748b", margin: "20px 0" }}>
+                <em>(Your add shift form fields go here)</em>
+              </p>
+            </div>
+            <div className="vr-modal-footer">
+              <button className="vr-btn-cancel" onClick={closeModal}>Cancel</button>
+              <button className="vr-btn-confirm" onClick={closeModal}>Add Shift</button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }

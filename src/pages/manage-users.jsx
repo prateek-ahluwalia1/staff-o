@@ -272,7 +272,7 @@ const ManageUsers = () => {
         }
 
         .jobtracker-tabs .nav-link {
-          border-radius: 999px;
+          border-radius: 5px;
           padding: 0.45rem 0.9rem;
           font-size: 0.88rem;
           font-weight: 600;
@@ -282,8 +282,8 @@ const ManageUsers = () => {
         }
 
         .jobtracker-tabs .nav-link.active {
-          background: linear-gradient(135deg, #0d6efd 0%, #0b5ed7 100%);
-          border-color: #0d6efd;
+          background: #0A7C6E;
+          border-color: #0A7C6E;
           color: #fff;
           box-shadow: 0 8px 18px rgba(13, 110, 253, 0.18);
         }
@@ -313,7 +313,6 @@ const ManageUsers = () => {
           letter-spacing: 0.02em;
           font-weight: 700;
           border-right: 1px solid #d6e4ff;
-          border-bottom: 2px solid #0d6efd !important;
         }
 
         .jobtracker-main-table > thead > tr > th:last-child,
@@ -408,7 +407,12 @@ const ManageUsers = () => {
                   className={`nav-link ${activeTab === role ? "active" : ""}`}
                   onClick={() => handleTabChange(role)}
                 >
-                  {role === "sub_contractor" ? "Resource Partner" : role.replace("_", " ")}
+                  {/* Using chained ternaries */}
+                  {role === "sub_contractor"
+                    ? "Resource Partner"
+                    : role === "customer"
+                      ? "Client"
+                      : "Staff"}
                 </button>
               </li>
             ))}
@@ -418,7 +422,12 @@ const ManageUsers = () => {
             className="btn btn-sm btn-primary-custom jobtracker-action-btn"
             onClick={() => openModal()}
           >
-            <i className="fa-solid fa-plus me-1"></i> Add {activeTab === "sub_contractor" ? "Resource Partner" : activeTab.replace("_", " ")}
+            <i className="fa-solid fa-plus me-1"></i> Add{" "}
+            {activeTab === "sub_contractor"
+              ? "Resource Partner"
+              : activeTab === "customer"
+                ? "Client"
+                : "Staff"}
           </button>
         </div>
       </div>

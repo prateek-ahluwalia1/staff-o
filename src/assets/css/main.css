@@ -11798,6 +11798,17 @@ Large Mobile Screen
 .form-field textarea {
     resize: vertical;
 }
+.jobtracker-main-table > thead > tr > th {
+          background-color: #0A7C6E !important; /* New background color */
+          color: #ffffff !important; /* White text for contrast */
+          text-align: center;
+          text-transform: uppercase;
+          letter-spacing: 0.02em;
+          font-weight: 700;
+          border-right: 1px solid #0A7C6E !important; /* Updated border */
+          border-bottom: 2px solid #0A7C6E !important; /* Updated border */
+        }
+        
 
 .form-field input:focus,
 .form-field select:focus,

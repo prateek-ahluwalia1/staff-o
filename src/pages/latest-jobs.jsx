@@ -49,12 +49,19 @@ export default function LatestJobs() {
       <style>{`
         .bg-light-grey { background-color: #f8f9fa; }
         .job-card { transition: all 0.3s ease; border: 1px solid rgba(0,0,0,0.05); }
-        .job-card:hover { transform: translateY(-4px); box-shadow: 0 12px 24px rgba(0,0,0,0.08) !important; border-color: rgba(13, 110, 253, 0.2); }
+        .job-card:hover { transform: translateY(-4px); box-shadow: 0 12px 24px rgba(0,0,0,0.08) !important; border-color: rgba(10, 124, 110, 0.2); }
         .view-toggle-btn { border-radius: 30px; padding: 0.4rem 1.2rem; font-weight: 500; transition: all 0.2s ease; }
-        .icon-box { width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; background: #e9ecef; border-radius: 8px; color: #0d6efd; }
-        .badge-soft-primary { background-color: rgba(13, 110, 253, 0.1); color: #0d6efd; border-radius: 6px; padding: 6px 10px; font-weight: 600; font-size: 0.8rem; }
+        .icon-box { width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; background: #e9ecef; border-radius: 8px; color: #0A7C6E; }
+        .badge-soft-primary { background-color: rgba(10, 124, 110, 0.1); color: #0A7C6E; border-radius: 6px; padding: 6px 10px; font-weight: 600; font-size: 0.8rem; }
         .table-custom-header th { background-color: #f1f3f5; color: #495057; font-weight: 600; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.5px; padding: 1rem; }
         .table td { padding: 1rem; vertical-align: middle; }
+        
+        /* Custom Color Overrides (#0A7C6E) */
+        .text-primary { color: #0A7C6E !important; }
+        .btn-primary-custom { background-color: #0A7C6E !important; color: white !important; border-color: #0A7C6E !important; }
+        .btn-primary-custom:hover { background-color: #08665a !important; border-color: #08665a !important; }
+        .btn-outline-primary { color: #0A7C6E !important; border-color: #0A7C6E !important; }
+        .btn-outline-primary:hover { background-color: #0A7C6E !important; color: white !important; }
         
         /* Modal Styles */
         .custom-modal-backdrop { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(0,0,0,0.5); z-index: 1050; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(4px); animation: fadeIn 0.2s ease-in-out; padding: 1rem; }

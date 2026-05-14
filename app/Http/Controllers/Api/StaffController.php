@@ -65,8 +65,6 @@ class StaffController extends Controller
 
         if($user->user_type == 'contractor'){
         $percentage = (int) round($baseScore + $documentScore);
-        }elseif($user->user_type == 'staff' && $user->user_id == 1){
-        $percentage = (int) round($baseScore + $documentScore);
         }else{
         $percentage = (int) round($baseScore + 50);
         }
@@ -1090,13 +1088,13 @@ class StaffController extends Controller
     {
         $validated = $request->validate([
             'full_name'               => 'required|string|max:200',
-            'dob'                     => 'nullable|date',
+            'dob'                     => 'nullable|string',
             'address'                 => 'nullable|string|max:255',
             'mobile'                  => 'nullable|string|max:20',
             'email'                   => 'nullable|email|max:150',
             'passport_number'         => 'nullable|string|max:20',
             'passport_country'        => 'nullable|string|max:100',
-            'passport_expiry'         => 'nullable|date',
+            'passport_expiry'         => 'nullable|string',
             'work_rights'             => 'nullable|in:citizen,student,other',
             'id_checks'               => 'nullable|array',
             'bank_name'               => 'nullable|string|max:100',
@@ -1107,11 +1105,11 @@ class StaffController extends Controller
             'super_usi'               => 'nullable|string|max:50',
             'super_member'            => 'nullable|string|max:50',
             'security_license'        => 'nullable|string|max:50',
-            'security_license_expiry' => 'nullable|date',
+            'security_license_expiry' => 'nullable|string',
             'first_aid_cert'          => 'nullable|string|max:50',
-            'first_aid_expiry'        => 'nullable|date',
+            'first_aid_expiry'        => 'nullable|string',
             'signature'               => 'nullable|string|max:150',
-            'date'                    => 'nullable|date',
+            'date'                    => 'nullable|string',
         ]);
 
         $record = Onboarding::updateOrCreate(

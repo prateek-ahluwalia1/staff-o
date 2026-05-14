@@ -9,6 +9,7 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
+use App\Models\JobRoster;
 use Carbon\Carbon;
 use App\Models\User;
 
@@ -27,7 +28,7 @@ class SendSecondCycleNotificationJob implements ShouldQueue
             $startOfDay = Carbon::today()->startOfDay();
             $endOfDay   = Carbon::today()->endOfDay();
 
-            $roster = DB::table('job_rosters')
+            $roster = JobRoster::with('site')
                 ->whereNull('assigned_to')
                 ->whereBetween('start', [$startOfDay, $endOfDay])
                 ->get()
@@ -44,7 +45,7 @@ class SendSecondCycleNotificationJob implements ShouldQueue
 
             // ← Fetch ALL active contractors — no global exclusion
             // Each job filters its own notified users individually
-            $guards = User::whereNotIn('id', [1])
+             $guards = User::whereNotIn('id', [1])
                 ->where('user_type', 'contractor')
                 ->where('is_active', 1)
                 ->whereNotNull('coordinates')
@@ -90,7 +91,7 @@ class SendSecondCycleNotificationJob implements ShouldQueue
             $rosterItemArray = is_object($rosterItem) ? (array) $rosterItem : $rosterItem;
             $jobId           = $rosterItemArray['id'] ?? null;
             $jobStartTime    = $rosterItemArray['start'] ?? null;
-            $jobCoordinates  = $rosterItemArray['coordinates'] ?? null;
+            $jobCoordinates  = $rosterItemArray['site']['coordinates'] ?? null;
             $radiusKm        = $rosterItemArray['radius'] ?? 5;
             $jobIds          = [$jobId];
 

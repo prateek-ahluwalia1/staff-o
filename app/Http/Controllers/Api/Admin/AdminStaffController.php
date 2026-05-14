@@ -124,6 +124,7 @@ class AdminStaffController extends Controller
             'state' => $request->state ?? null,
             'country' => $request->state ?? null,
             'coordinates' => $request->coordinates ?? null,
+            'is_email_approved' => 1,
             'is_active' => 0,
         ]);
 
@@ -246,6 +247,19 @@ class AdminStaffController extends Controller
                             }
                         }
                     }
+                }
+            }
+        }else{
+            $document_categories = DocumentCategory::where('document_category', '==', 'contractor_staff')->first();
+
+            if($document_categories){
+                foreach (json_decode($document_categories->document_type) as $key => $value) {  
+                    $guard_documents = new Document();
+                    $guard_documents->user_id = $user->id;
+                    $guard_documents->document_category = ($document_categories->document_category != '' ? $document_categories->document_category : 'other');
+                    $guard_documents->document_type = $key;
+                    $guard_documents->document_name = $value;
+                    $guard_documents->save();
                 }
             }
         }

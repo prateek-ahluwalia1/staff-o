@@ -122,6 +122,7 @@ class ContractorController extends Controller
             'state' => $data['state'] ?? null,
             'country' => $data['country'] ?? null,
             'coordinates' => $data['coordinates'] ?? null,
+            'is_email_approved' => 1,
         ]);
 
         

@@ -113,6 +113,7 @@ class CustomerController extends Controller
             'state' => $data['state'] ?? null,
             'country' => $data['country'] ?? null,
             'coordinates' => $data['coordinates'] ?? null,
+            'is_email_approved' => 1,
         ]);
 
         $user->staffo_id = 'STAFO' . $user->id;

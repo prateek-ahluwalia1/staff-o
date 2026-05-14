@@ -189,7 +189,7 @@ export default function MyJobApplications() {
       {selectedApp && (
         <div className="modal-overlay" onClick={closeModal} style={{ zIndex: 9999, backgroundColor: "rgba(0,0,0,0.6)", position: "fixed", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", padding: "20px" }}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ width: "100%", maxWidth: "800px", maxHeight: "90vh", background: "#fff", borderRadius: "12px", display: "flex", flexDirection: "column", overflow: "hidden" }}>
-            <div className="modal-header d-flex justify-content-between align-items-center" style={{ background: "#007bff", color: "#fff", padding: "16px 24px" }}>
+            <div className="modal-header d-flex justify-content-between align-items-center" style={{ background: "#0A7C6E", color: "#fff", padding: "16px 24px" }}>
               <h3 style={{ margin: 0, fontSize: "18px", fontWeight: "600" }}>Shift & Site Details</h3>
               <button onClick={closeModal} style={{ background: "transparent", border: "none", fontSize: "24px", color: "#fff", lineHeight: 1 }}>&times;</button>
             </div>

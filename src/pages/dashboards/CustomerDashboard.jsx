@@ -9,7 +9,7 @@ import {
   resolveProfileImageUrl,
 } from "../../utils/profileImage";
 import "./DashboardStyles.css";
-import dashboardBanner from "../../assets/images/dashboard-banner.jpeg";
+import dashboardBanner from "../../assets/images/dashboard-banner.png";
 
 export default function CustomerDashboard() {
   const { userdata } = useSelector((state) => state.auth);
@@ -76,7 +76,7 @@ export default function CustomerDashboard() {
 
   return (
     <div className="dashboard-main customer-dashboard">
-      {/* Profile Card */}
+      {/* V3 Premium Profile Card */}
       <div className="dashboard-cover-card">
         <div className="dashboard-cover-media">
           <img src={dashboardBanner} alt="Dashboard" />
@@ -96,17 +96,22 @@ export default function CustomerDashboard() {
               </div>
             )}
           </div>
-          <div>
-            <h3>{username}</h3>
-            <p>{address}</p>
-            <ul>
-              <li>
-                <i className="fa-solid fa-phone"></i> {phone}
-              </li>
-              <li>
-                <i className="fa-solid fa-envelope"></i> {email}
-              </li>
-            </ul>
+
+          <div className="profile-info">
+            <div className="profile-text">
+              <h3>{username}</h3>
+              <p className="profile-role">{address}</p>
+
+              {/* Flex container to hold multiple contact pills nicely */}
+              <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+                <div className="profile-contact">
+                  <i className="fa-solid fa-phone"></i> {phone}
+                </div>
+                <div className="profile-contact">
+                  <i className="fa-solid fa-envelope"></i> {email}
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -199,8 +204,8 @@ export default function CustomerDashboard() {
                         className="btn btn-sm"
                         style={{
                           backgroundColor: "#f0f4ff",
-                          color: "#45B7D1",
-                          border: "1px solid #45B7D1",
+                          color: "#0f766e",
+                          border: "1px solid #0f766e",
                           borderRadius: "6px",
                           padding: "6px 16px",
                           textDecoration: "none",
@@ -210,12 +215,12 @@ export default function CustomerDashboard() {
                           transition: "all 0.2s ease"
                         }}
                         onMouseOver={(e) => {
-                          e.target.style.backgroundColor = "#45B7D1";
+                          e.target.style.backgroundColor = "#0f766e";
                           e.target.style.color = "#ffffff";
                         }}
                         onMouseOut={(e) => {
                           e.target.style.backgroundColor = "#f0f4ff";
-                          e.target.style.color = "#45B7D1";
+                          e.target.style.color = "#0f766e";
                         }}
                       >
                         Manage

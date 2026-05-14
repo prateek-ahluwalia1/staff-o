@@ -9,7 +9,7 @@ import {
   resolveProfileImageUrl,
 } from "../../utils/profileImage";
 import "./DashboardStyles.css";
-import dashboardBanner from "../../assets/images/dashboard-banner.jpeg";
+import dashboardBanner from "../../assets/images/dashboard-banner.png";
 
 export default function ContractorDashboard() {
   const { userdata } = useSelector((state) => state.auth);
@@ -54,7 +54,7 @@ export default function ContractorDashboard() {
 
   return (
     <div className="dashboard-main contractor-dashboard">
-      {/* Profile Card */}
+      {/* V3 Premium Profile Card */}
       <div className="dashboard-cover-card">
         <div className="dashboard-cover-media">
           <img src={dashboardBanner} alt="Dashboard" />
@@ -74,17 +74,22 @@ export default function ContractorDashboard() {
               </div>
             )}
           </div>
-          <div>
-            <h3>{username}</h3>
-            <p>{companyName}</p>
-            <ul>
-              <li>
-                <i className="fa-solid fa-phone"></i> {phone}
-              </li>
-              <li>
-                <i className="fa-solid fa-envelope"></i> {email}
-              </li>
-            </ul>
+
+          <div className="profile-info">
+            <div className="profile-text">
+              <h3>{username}</h3>
+              <p className="profile-role">{companyName}</p>
+
+              {/* Flex container to hold multiple contact pills nicely */}
+              <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+                <div className="profile-contact">
+                  <i className="fa-solid fa-phone"></i> {phone}
+                </div>
+                <div className="profile-contact">
+                  <i className="fa-solid fa-envelope"></i> {email}
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>

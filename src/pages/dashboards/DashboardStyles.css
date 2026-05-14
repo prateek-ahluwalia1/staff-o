@@ -2,88 +2,112 @@
   min-height: 100vh;
 }
 
+/* Enhanced Dashboard Cover - V3 */
 .dashboard-cover-card {
-  border: 1px solid #e0e0e0;
-  background: white;
-  border-radius: 12px;
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  background: #ffffff;
+  border-radius: 20px;
   overflow: hidden;
-  margin-bottom: 2rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  margin-bottom: 2.5rem;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01);
 }
 
 .dashboard-cover-media {
   position: relative;
   width: 100%;
-  height: 300px;
-  overflow: hidden;
+  height: 260px; /* Slightly reduced height for better proportions */
+  background-color: #f1f5f9;
 }
 
 .dashboard-cover-media img {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  object-position: center 30%;
 }
 
 .dashboard-cover-profile {
-  padding: 2rem;
+  padding: 0 2.5rem 2rem 2.5rem;
   display: flex;
-  gap: 2rem;
   align-items: flex-start;
+  position: relative;
 }
 
 .cover-avatar {
-  flex-shrink: 0;
+  margin-top: -65px; /* Pulls the avatar exactly halfway over the line */
+  margin-right: 2rem;
+  position: relative;
+  z-index: 2;
 }
 
-.cover-avatar img {
-  width: 120px;
-  height: 120px;
-  border-radius: 10%;
+.cover-avatar img,
+.avatar-placeholder {
+  width: 130px;
+  height: 130px;
+  border-radius: 50%; /* Perfect circle */
+  border: 5px solid #ffffff;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
   object-fit: cover;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  background: #0A7C6E; /* Matches Staffoo branding */
 }
 
 .avatar-placeholder {
-  width: 120px;
-  height: 120px;
-  border-radius: 10%;
-  background: linear-gradient(135deg, #4ECDC4, #45B7D1);
   color: white;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 2.5rem;
-  font-weight: bold;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  font-size: 3rem;
+  font-weight: 700;
+  letter-spacing: 1px;
 }
 
-.dashboard-cover-profile h3 {
-  margin: 0;
-  font-size: 1.5rem;
-  color: #333;
+.profile-info {
+  padding-top: 1rem; /* Aligns text nicely below the banner line */
+  flex-grow: 1;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
-.dashboard-cover-profile p {
-  margin: 0.5rem 0 1rem;
-  color: #666;
+.profile-text {
+  display: flex;
+  flex-direction: column;
 }
 
-.dashboard-cover-profile ul {
-  list-style: none;
-  padding: 0;
-  margin: 0;
+.profile-text h3 {
+  margin: 0 0 0.25rem 0;
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: #1e293b;
+  letter-spacing: -0.5px;
 }
 
-.dashboard-cover-profile li {
-  margin: 0.5rem 0;
-  color: #666;
+.profile-role {
+  color: #64748b;
+  font-size: 1.05rem;
+  font-weight: 500;
+  margin: 0 0 1rem 0;
 }
 
-.dashboard-cover-profile i {
+.profile-contact {
+  display: inline-flex;
+  align-items: center;
+  background: #f8fafc;
+  padding: 0.5rem 1rem;
+  border-radius: 30px; /* Pill shape */
+  color: #475569;
+  font-size: 0.9rem;
+  font-weight: 500;
+  border: 1px solid #e2e8f0;
+  width: fit-content;
+}
+
+.profile-contact i {
+  color: #0f766e; /* Staffoo teal accent */
   margin-right: 0.5rem;
-  color: #4ECDC4;
-  width: 20px;
+  font-size: 1.1rem;
 }
+
 
 /* Stats Grid */
 .dashboard-stats {
@@ -128,7 +152,7 @@
 
 .panel-heading a,
 .panel-heading button {
-  color: #4ECDC4;
+  color: #0f766e; /* Updated to match branding */
   text-decoration: none;
   font-weight: 500;
   transition: color 0.3s ease;
@@ -136,7 +160,7 @@
 
 .panel-heading a:hover,
 .panel-heading button:hover {
-  color: #45B7D1;
+  color: #14b8a6;
 }
 
 /* Charts Section */
@@ -176,176 +200,28 @@
   font-weight: 500;
 }
 
-.badge {
-  padding: 0.4rem 0.8rem;
-  border-radius: 20px;
-  font-size: 0.75rem;
-  font-weight: 500;
-}
-
-.badge-status {
-  display: inline-block;
-  padding: 0.4rem 0.8rem;
-  border-radius: 20px;
-  font-size: 0.75rem;
-  font-weight: 500;
-  margin-bottom: 0.5rem;
-}
-
-.badge-status.success {
-  background: #c8e6c9;
-  color: #1b5e20;
-}
-
-.badge-status.warning {
-  background: #ffe0b2;
-  color: #e65100;
-}
-
-.badge-status.danger {
-  background: #ffcdd2;
-  color: #b71c1c;
-}
-
-/* Applied Card */
-.applied-card {
-  padding: 1.5rem;
-  background: white;
-  border-radius: 8px;
-  border: 1px solid #e0e0e0;
-  transition: all 0.3s ease;
-}
-
-.applied-card:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  transform: translateY(-2px);
-}
-
-.applied-card h4 {
-  margin: 1rem 0 0.5rem;
-  font-size: 1rem;
-  color: #333;
-}
-
-.applied-card p {
-  margin: 0 0 1rem;
-  color: #666;
-  font-size: 0.9rem;
-}
-
-.applied-meta {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 1rem;
-  padding-bottom: 1rem;
-  border-bottom: 1px solid #e0e0e0;
-  font-size: 0.85rem;
-  color: #666;
-}
-
-.applied-footer {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.applied-footer strong {
-  color: #333;
-  font-size: 0.9rem;
-}
-
-.applied-footer small {
-  font-size: 0.8rem;
-}
-
-/* Leave Request Card */
-.leave-requests-list {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.leave-request-card {
-  padding: 1rem;
-  background: #f8f9fa;
-  border-left: 4px solid #4ECDC4;
-  border-radius: 4px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.leave-left h5 {
-  margin: 0;
-  color: #333;
-}
-
-.leave-left p {
-  margin: 0.25rem 0 0;
-  color: #666;
-  font-size: 0.9rem;
-}
-
-.leave-right {
-  display: flex;
-  gap: 0.5rem;
-  align-items: center;
-}
-
-.leave-actions {
-  display: flex;
-  gap: 0.5rem;
-}
-
-.leave-actions .btn {
-  font-size: 0.75rem;
-  padding: 0.25rem 0.5rem;
-}
-
-/* Health Metrics */
-.health-metrics {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1.5rem;
-  padding: 1rem 0;
-}
-
-.health-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 1rem;
-  background: #f8f9fa;
-  border-radius: 8px;
-}
-
-.health-label {
-  color: #666;
-  font-size: 0.9rem;
-  margin-bottom: 0.5rem;
-}
-
-.health-value {
-  font-weight: bold;
-}
-
-.invoices-summary {
-  padding: 1rem;
-  background: #f8f9fa;
-  border-radius: 8px;
-  text-align: center;
-}
-
 /* Responsive */
 @media (max-width: 768px) {
+  .dashboard-cover-media {
+    height: 180px; 
+  }
+
   .dashboard-cover-profile {
     flex-direction: column;
     align-items: center;
     text-align: center;
+    padding: 0 1.5rem 2rem 1.5rem;
   }
 
-  .dashboard-cover-profile h3 {
-    font-size: 1.2rem;
+  .cover-avatar {
+    margin-top: -50px;
+    margin-right: 0;
+  }
+
+  .profile-info {
+    flex-direction: column;
+    padding-top: 1rem;
+    align-items: center;
   }
 
   .stats-grid {
@@ -364,17 +240,6 @@
 
   .dashboard-main {
     padding: 1rem;
-  }
-
-  .leave-request-card {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .leave-right {
-    width: 100%;
-    margin-top: 1rem;
-    justify-content: space-between;
   }
 }
 

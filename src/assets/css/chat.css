@@ -22,7 +22,7 @@
 }
 
 .chat-category-icon-wrapper {
-    background: linear-gradient(140deg, #263bd6 0%, #1a2db5 55%, #17d27c 130%);
+    background: linear-gradient(135deg, #0A7C6E, #046459);
     height: 190px;
     display: flex;
     align-items: center;
@@ -106,7 +106,7 @@
 }
 
 .chat-category-btn {
-    background: linear-gradient(135deg, #263bd6, #1a2db5);
+    background: linear-gradient(135deg, #0A7C6E, #046459);
     border: none;
     color: #fff;
     border-radius: 10px;

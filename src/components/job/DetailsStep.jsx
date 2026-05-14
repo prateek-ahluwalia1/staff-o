@@ -210,9 +210,9 @@ export default function DetailsStep({ form, setField, handleFile, attachmentPrev
             style={{
               padding: "0.7rem 1rem",
               fontSize: "0.8rem",
-              backgroundColor: Array.isArray(form.document_types) && form.document_types.includes('security_license') ? "#170C79" : "#ffffff",
+              backgroundColor: Array.isArray(form.document_types) && form.document_types.includes('security_license') ? "#0A7C6E" : "#ffffff",
               color: Array.isArray(form.document_types) && form.document_types.includes('security_license') ? "white" : "#1f2937",
-              border: "2px solid " + (Array.isArray(form.document_types) && form.document_types.includes('security_license') ? "#170C79" : "#d1d5db"),
+              border: "2px solid " + (Array.isArray(form.document_types) && form.document_types.includes('security_license') ? "#0A7C6E" : "#d1d5db"),
               transition: "all 0.2s",
               fontWeight: Array.isArray(form.document_types) && form.document_types.includes('security_license') ? "600" : "500",
               cursor: "pointer"
@@ -249,9 +249,9 @@ export default function DetailsStep({ form, setField, handleFile, attachmentPrev
             style={{
               padding: "0.7rem 1rem",
               fontSize: "0.8rem",
-              backgroundColor: Array.isArray(form.document_types) && form.document_types.includes('working_with_children') ? "#170C79" : "#ffffff",
+              backgroundColor: Array.isArray(form.document_types) && form.document_types.includes('working_with_children') ? "#0A7C6E" : "#ffffff",
               color: Array.isArray(form.document_types) && form.document_types.includes('working_with_children') ? "white" : "#1f2937",
-              border: "2px solid " + (Array.isArray(form.document_types) && form.document_types.includes('working_with_children') ? "#170C79" : "#d1d5db"),
+              border: "2px solid " + (Array.isArray(form.document_types) && form.document_types.includes('working_with_children') ? "#0A7C6E" : "#d1d5db"),
               transition: "all 0.2s",
               fontWeight: Array.isArray(form.document_types) && form.document_types.includes('working_with_children') ? "600" : "500",
               cursor: "pointer"
@@ -288,9 +288,9 @@ export default function DetailsStep({ form, setField, handleFile, attachmentPrev
             style={{
               padding: "0.7rem 1rem",
               fontSize: "0.8rem",
-              backgroundColor: Array.isArray(form.document_types) && form.document_types.includes('white_card') ? "#170C79" : "#ffffff",
+              backgroundColor: Array.isArray(form.document_types) && form.document_types.includes('white_card') ? "#0A7C6E" : "#ffffff",
               color: Array.isArray(form.document_types) && form.document_types.includes('white_card') ? "white" : "#1f2937",
-              border: "2px solid " + (Array.isArray(form.document_types) && form.document_types.includes('white_card') ? "#170C79" : "#d1d5db"),
+              border: "2px solid " + (Array.isArray(form.document_types) && form.document_types.includes('white_card') ? "#0A7C6E" : "#d1d5db"),
               transition: "all 0.2s",
               fontWeight: Array.isArray(form.document_types) && form.document_types.includes('white_card') ? "600" : "500",
               cursor: "pointer"

@@ -18,6 +18,7 @@ import useFetch from "../hooks/useFetch";
 import ActivityDashboardModal from "../components/roster/ActivityDashboardModal";
 import TimeEditModal from "../components/roster/TimeEditModal";
 import DetailsModal from "../components/roster/DetailsModal";
+import AddJob from "./add-job";
 import "../assets/css/roster.css";
 
 const API_DATE_FORMAT = "yyyy-MM-dd HH:mm";
@@ -132,6 +133,7 @@ export default function RosterPage() {
       return {
         id: site.id,
         displayName: site.site_name || "Unknown Site",
+        siteData: site,
         hoursDisplay: `${totalHours.toFixed(1)}h`,
         jobRoster: roster,
       };
@@ -167,7 +169,7 @@ export default function RosterPage() {
   const goToThisWeek = () => setMonday(startOfWeek(new Date(), { weekStartsOn: 1 }));
   const handleRefresh = () => fetchCustomerSites();
 
-  const openModalAction = (site, shift, dateStr, modalType) => {
+  const openModalAction = (site, shift, dateStr, modalType, dateKey = null) => {
     setSelectedUserId(shift?.assigned_to || "");
     if (modalType === "time" && shift) {
       setTimeEditError("");
@@ -175,7 +177,7 @@ export default function RosterPage() {
       const endT = (shift.end || "").split(" ")[1] || "00:00";
       setEditForm({ startTime: startT, endTime: endT });
     }
-    setModal({ type: modalType, site, shift, dateStr });
+    setModal({ type: modalType, site, shift, dateStr, dateKey });
   };
 
   const closeModal = () => {
@@ -318,7 +320,7 @@ export default function RosterPage() {
 
                     {dayShifts.length === 0 ? (
                       /* Big faint + for entirely empty cells */
-                      <div className="vr-empty-add-btn" onClick={() => openModalAction(site, null, day.dateLabel, "add_shift")}>
+                      <div className="vr-empty-add-btn" onClick={() => openModalAction(site, null, day.dateLabel, "add_shift", day.key)}>
                         <i className="fa fa-plus"></i>
                       </div>
                     ) : (
@@ -361,7 +363,7 @@ export default function RosterPage() {
                         })}
 
                         {/* Small subtle + for cells that already have shifts */}
-                        <div className="vr-small-add-btn" onClick={() => openModalAction(site, null, day.dateLabel, "add_shift")}>
+                        <div className="vr-small-add-btn" onClick={() => openModalAction(site, null, day.dateLabel, "add_shift", day.key)}>
                           <i className="fa fa-plus"></i> Add
                         </div>
                       </>
@@ -423,23 +425,17 @@ export default function RosterPage() {
       {/* NEW: ADD SHIFT/SITE MODAL */}
       {modal?.type === "add_shift" && (
         <div className="vr-modal-backdrop" onClick={closeModal}>
-          <div className="vr-modal-container" onClick={(e) => e.stopPropagation()}>
+          <div
+            className="vr-modal-container"
+            onClick={(e) => e.stopPropagation()}
+            style={{ width: '100vw', maxWidth: '100vw', height: '100vh', margin: 0, borderRadius: 0, overflow: 'auto' }}
+          >
             <div className="vr-modal-header">
-              <h3>Add New Shift</h3>
+              <h3>Add Shift / Job</h3>
               <button onClick={closeModal}><i className="fa fa-times"></i></button>
             </div>
-            <div className="vr-modal-content">
-              <div className="vr-modal-summary">
-                <div><strong>Target Site:</strong> {modal.site.displayName}</div>
-                <div><strong>Target Date:</strong> {modal.dateStr}</div>
-              </div>
-              <p style={{ textAlign: "center", color: "#64748b", margin: "20px 0" }}>
-                <em>(Your add shift form fields go here)</em>
-              </p>
-            </div>
-            <div className="vr-modal-footer">
-              <button className="vr-btn-cancel" onClick={closeModal}>Cancel</button>
-              <button className="vr-btn-confirm" onClick={closeModal}>Add Shift</button>
+            <div className="vr-modal-content" style={{ padding: 0, height: '100%' }}>
+              <AddJob modalMode="embedded" onClose={closeModal} initialSite={modal.site?.siteData || modal.site} initialDate={modal.dateKey || modal.dateStr} />
             </div>
           </div>
         </div>

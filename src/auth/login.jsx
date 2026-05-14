@@ -233,7 +233,7 @@ export default function Login() {
                 <div className="d-flex align-items-center gap-2">
                   <i className="fa-solid fa-circle-check fs-6"
                     style={{
-                      color: "#170C79"
+                      color: "#0A7C6E"
                     }}
                   ></i>
                   <span>Access your personalized dashboard</span>
@@ -241,7 +241,7 @@ export default function Login() {
                 <div className="d-flex align-items-center gap-2">
                   <i className="fa-solid fa-circle-check fs-6"
                     style={{
-                      color: "#170C79"
+                      color: "#0A7C6E"
                     }}
                   ></i>
                   <span>Review new opportunities & messages</span>
@@ -249,7 +249,7 @@ export default function Login() {
                 <div className="d-flex align-items-center gap-2">
                   <i className="fa-solid fa-circle-check fs-6"
                     style={{
-                      color: "#170C79"
+                      color: "#0A7C6E"
                     }}
                   ></i>
                   <span>Manage your active connections</span>
@@ -263,7 +263,7 @@ export default function Login() {
                 className="bg-white p-4 rounded-4"
                 style={{
                   boxShadow: "0 10px 40px rgba(0,0,0,0.06)",
-                  border: "1px solid #170C79",
+                  border: "1px solid #0A7C6E",
                 }}
               >
                 <h5 className="fw-bold mb-1">Log in to your account</h5>
@@ -288,7 +288,7 @@ export default function Login() {
                         maxLength={100}
                         disabled={loading}
                         style={{
-                          border: "1px solid #170C79"
+                          border: "1px solid #0A7C6E"
                         }}
                       />
                       {errors.email && (
@@ -317,7 +317,7 @@ export default function Login() {
                           maxLength={50}
                           disabled={loading}
                           style={{
-                            border: "1px solid #170C79"
+                            border: "1px solid #0A7C6E"
                           }}
                         />
                         <button
@@ -347,7 +347,7 @@ export default function Login() {
                     type="submit"
                     className="btn w-100 py-2 fw-semibold d-flex justify-content-center align-items-center gap-2"
                     style={{
-                      background: "#170C79",
+                      background: "#0A7C6E",
                       border: "none",
                       borderRadius: "6px",
                       color: "#fff",
@@ -375,7 +375,7 @@ export default function Login() {
                   <hr className="flex-grow-1 text-muted opacity-25 m-0" />
                   <span
                     className="mx-2"
-                    style={{ fontSize: "11px", color: "#170C79" }}
+                    style={{ fontSize: "11px", color: "#0A7C6E" }}
                   >
                     OR
                   </span>
@@ -410,7 +410,7 @@ export default function Login() {
                     to="/register"
                     className="fw-bold text-decoration-none"
                     style={{
-                      color: "#170C79"
+                      color: "#0A7C6E"
                     }}
                   >
                     Sign up
@@ -474,8 +474,8 @@ export default function Login() {
                           cursor: "pointer",
                           transition: "all 0.2s",
                           fontSize: "13px",
-                          backgroundColor: selectedRole === role.key ? "#170C79" : undefined,
-                          borderColor: selectedRole === role.key ? "#170C79" : undefined,
+                          backgroundColor: selectedRole === role.key ? "#0A7C6E" : undefined,
+                          borderColor: selectedRole === role.key ? "#0A7C6E" : undefined,
                         }}
                       >
                         <input
@@ -496,7 +496,7 @@ export default function Login() {
                     onClick={handleRoleSelectionSubmit}
                     className="btn w-100 py-2 fw-semibold d-flex justify-content-center align-items-center gap-2"
                     style={{
-                      background: "#170C79",
+                      background: "#0A7C6E",
                       border: "none",
                       borderRadius: "6px",
                       color: "#fff",

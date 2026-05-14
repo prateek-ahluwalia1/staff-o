@@ -212,15 +212,15 @@ export default function Register() {
 
               <div className="d-flex flex-column gap-2 small">
                 <div className="d-flex align-items-center gap-2">
-                  <i className="fa-solid fa-circle-check fs-6" style={{ color: "#170C79" }}></i>
+                  <i className="fa-solid fa-circle-check fs-6" style={{ color: "#0A7C6E" }}></i>
                   <span>Verified jobs & trusted clients</span>
                 </div>
                 <div className="d-flex align-items-center gap-2">
-                  <i className="fa-solid fa-circle-check fs-6" style={{ color: "#170C79" }}></i>
+                  <i className="fa-solid fa-circle-check fs-6" style={{ color: "#0A7C6E" }}></i>
                   <span>Smart matching system</span>
                 </div>
                 <div className="d-flex align-items-center gap-2">
-                  <i className="fa-solid fa-circle-check fs-6" style={{ color: "#170C79" }}></i>
+                  <i className="fa-solid fa-circle-check fs-6" style={{ color: "#0A7C6E" }}></i>
                   <span>Real-time collaboration</span>
                 </div>
               </div>
@@ -232,7 +232,7 @@ export default function Register() {
                 className="bg-white p-4 rounded-4"
                 style={{
                   boxShadow: "0 10px 40px rgba(0,0,0,0.06)",
-                  border: "1px solid #170C79",
+                  border: "1px solid #0A7C6E",
                 }}
               >
                 <h5 className="fw-bold mb-1">Create an account</h5>
@@ -253,7 +253,7 @@ export default function Register() {
                         onChange={handleChange}
                         maxLength={50}
                         disabled={loading}
-                        style={{ border: "1px solid #170C79" }}
+                        style={{ border: "1px solid #0A7C6E" }}
                       />
                       {errors.name && <div className="invalid-feedback" style={{ fontSize: '12px' }}>{errors.name}</div>}
                     </div>
@@ -271,7 +271,7 @@ export default function Register() {
                         onChange={handleChange}
                         maxLength={20}
                         disabled={loading}
-                        style={{ border: "1px solid #170C79" }}
+                        style={{ border: "1px solid #0A7C6E" }}
                       />
                       {errors.phone && <div className="invalid-feedback" style={{ fontSize: '12px' }}>{errors.phone}</div>}
                     </div>
@@ -289,7 +289,7 @@ export default function Register() {
                         onChange={handleChange}
                         maxLength={100}
                         disabled={loading}
-                        style={{ border: "1px solid #170C79" }}
+                        style={{ border: "1px solid #0A7C6E" }}
                       />
                       {errors.email && <div className="invalid-feedback" style={{ fontSize: '12px' }}>{errors.email}</div>}
                     </div>
@@ -308,7 +308,7 @@ export default function Register() {
                           onChange={handleChange}
                           maxLength={50}
                           disabled={loading}
-                          style={{ border: "1px solid #170C79" }}
+                          style={{ border: "1px solid #0A7C6E" }}
                         />
                         <button
                           type="button"
@@ -343,8 +343,8 @@ export default function Register() {
                             cursor: "pointer",
                             transition: "all 0.2s",
                             fontSize: "13px",
-                            backgroundColor: userType === role.key ? "#170C79" : undefined,
-                            borderColor: userType === role.key ? "#170C79" : undefined,
+                            backgroundColor: userType === role.key ? "#0A7C6E" : undefined,
+                            borderColor: userType === role.key ? "#0A7C6E" : undefined,
                           }}
                         >
                           <input
@@ -366,7 +366,7 @@ export default function Register() {
                     type="submit"
                     className="btn w-100 py-2 fw-semibold d-flex justify-content-center align-items-center gap-2 mt-2"
                     style={{
-                      background: "#170C79",
+                      background: "#0A7C6E",
                       border: "none",
                       borderRadius: "6px",
                       color: "#fff",
@@ -384,7 +384,7 @@ export default function Register() {
 
                 <div className="d-flex align-items-center my-3">
                   <hr className="flex-grow-1 text-muted opacity-25 m-0" />
-                  <span className="mx-2" style={{ fontSize: "11px", color: "#170C79" }}>OR</span>
+                  <span className="mx-2" style={{ fontSize: "11px", color: "#0A7C6E" }}>OR</span>
                   <hr className="flex-grow-1 text-muted opacity-25 m-0" />
                 </div>
 
@@ -404,7 +404,7 @@ export default function Register() {
 
                 <p className="text-center mt-3 mb-0" style={{ fontSize: "13px" }}>
                   Already have an account?{" "}
-                  <NavLink to="/login" className="fw-bold text-decoration-none" style={{ color: "#170C79" }}>
+                  <NavLink to="/login" className="fw-bold text-decoration-none" style={{ color: "#0A7C6E" }}>
                     Sign in
                   </NavLink>
                 </p>

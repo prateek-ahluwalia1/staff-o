@@ -288,7 +288,7 @@ select {
 }
 
 .titleTop h3 span {
-    color: #170C79;
+    color: #0A7C6E;
     font-weight: 200;
 }
 
@@ -463,7 +463,7 @@ h6 {
 }
 
 .mt-list-style-blue {
-    color: #170C79;
+    color: #0A7C6E;
 }
 
 /*Buttons*/
@@ -478,7 +478,7 @@ h6 {
 }
 
 .mt-style-button1 .mt-style-button {
-    background: #170C79;
+    background: #0A7C6E;
     color: #fff;
     border-radius: 3px;
 }
@@ -539,17 +539,17 @@ h6 {
 }
 
 .mt-style-button2 .mt-style-button:hover {
-    background: #170C79;
+    background: #0A7C6E;
     color: #fff;
     border-radius: 3px;
     text-decoration: none;
 }
 
 .mt-style-button3 .mt-style-button:hover {
-    background: #170C79;
+    background: #0A7C6E;
     color: #fff;
     border-radius: 3px;
-    border: 2px solid #170C79;
+    border: 2px solid #0A7C6E;
     text-decoration: none;
 }
 
@@ -639,7 +639,7 @@ h6 {
 .main-navbar .main-menu .nav-link.active,
 .main-navbar .main-menu .nav-link:focus,
 .main-navbar .main-menu .nav-link:hover {
-    color: #170C79;
+    color: #0A7C6E;
 }
 
 .main-navbar .main-menu .nav-link::before {
@@ -649,7 +649,7 @@ h6 {
     right: 0;
     bottom: -6px;
     height: 3px;
-    background: #170C79;
+    background: #0A7C6E;
     border-radius: 999px;
     transform: scaleX(0);
     transform-origin: center;
@@ -676,7 +676,7 @@ h6 {
 
 .main-navbar .dropdown-menu .dropdown-item:hover {
     background: rgba(37, 99, 235, 0.1);
-    color: #170C79;
+    color: #0A7C6E;
 }
 
 .navbar-actions .btn {
@@ -687,24 +687,24 @@ h6 {
 }
 
 .navbar-actions .signin-btn {
-    border-color: #170C79;
-    background-color: #170C79;
+    border-color: #0A7C6E;
+    background-color: #0A7C6E;
     color: #ffffff;
 }
 
 .navbar-actions .signin-btn:hover {
     background: #fff;
-    color: #170C79;
+    color: #0A7C6E;
 }
 
 .navbar-actions .register-btn {
 	background: #fff;
-	border-color: #170C79;
-	color: #170C79;
+	border-color: #0A7C6E;
+	color: #0A7C6E;
 }
 .navbar-actions .register-btn:hover {
 	color: #fff;
-	background: #170C79;
+	background: #0A7C6E;
 }
 
 .navbar-toggler {
@@ -1261,7 +1261,7 @@ h6 {
 
 .hero-link {
     font-weight: 600;
-    color: #170C79;
+    color: #0A7C6E;
     display: inline-flex;
     align-items: center;
     gap: 8px;
@@ -1274,7 +1274,7 @@ h6 {
 }
 
 .hero-link:hover {
-    color: #170C79;
+    color: #0A7C6E;
 }
 
 .hero-visual {
@@ -1323,13 +1323,13 @@ h6 {
     border-radius: 999px;
     padding: 8px 18px;
     font-weight: 600;
-    background: #170C79;
-    border-color: #170C79;
+    background: #0A7C6E;
+    border-color: #0A7C6E;
 }
 
 .hero-floating-card .btn:hover {
-    background: #170C79;
-    border-color: #170C79;
+    background: #0A7C6E;
+    border-color: #0A7C6E;
 }
 
 .herobgimage {
@@ -1622,7 +1622,7 @@ h6 {
 }
 
 .company-location-v2 i {
-    color: #170C79;
+    color: #0A7C6E;
     margin-right: 4px;
 }
 
@@ -1654,7 +1654,7 @@ h6 {
 }
 
 .company-nav-v2:hover {
-    background: #170C79;
+    background: #0A7C6E;
     color: #ffffff;
     box-shadow: 0 16px 35px rgba(37, 99, 235, 0.45);
 }
@@ -1705,7 +1705,7 @@ h6 {
 }
 
 .company-openings i {
-    color: #170C79;
+    color: #0A7C6E;
 }
 
 .company-viewall {
@@ -1777,7 +1777,7 @@ h6 {
 
 .howit-icon i {
     font-size: 40px;
-    color: #170C79;
+    color: #0A7C6E;
 }
 
 .howit-card h4 {
@@ -1880,14 +1880,14 @@ h6 {
 }
 
 .job-card-title a:hover {
-    color: #170C79;
+    color: #0A7C6E;
 }
 
 .job-card-location {
     display: flex;
     align-items: center;
     gap: 8px;
-    color: #170C79;
+    color: #0A7C6E;
     font-weight: 600;
     margin-bottom: 4px;
 }
@@ -1988,7 +1988,7 @@ h6 {
     align-items: center;
     gap: 6px;
     background: rgba(37, 99, 235, 0.12);
-    color: #170C79;
+    color: #0A7C6E;
     font-weight: 600;
     border-radius: 999px;
     padding: 8px 16px;
@@ -2011,7 +2011,7 @@ h6 {
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #170C79;
+    color: #0A7C6E;
     cursor: pointer;
     z-index: 2;
 }
@@ -2080,7 +2080,7 @@ h6 {
     align-items: center;
     gap: 6px;
     background: rgba(37, 99, 235, 0.12);
-    color: #170C79;
+    color: #0A7C6E;
     font-weight: 600;
     border-radius: 999px;
     padding: 6px 14px;
@@ -2166,7 +2166,7 @@ h6 {
     padding: 10px 18px;
     border-radius: 999px;
     background: rgba(37, 99, 235, 0.08);
-    color: #170C79;
+    color: #0A7C6E;
     font-weight: 600;
     text-decoration: none;
     border: 1px solid transparent;
@@ -2186,13 +2186,13 @@ h6 {
 }
 
 .industry-chip:hover {
-    background: #170C79;
+    background: #0A7C6E;
     color: #ffffff;
-    border-color: #170C79;
+    border-color: #0A7C6E;
 }
 
 .industry-chip:hover .chip-icon {
-    color: #170C79;
+    color: #0A7C6E;
     background: #f8fafc;
 }
 
@@ -2261,7 +2261,7 @@ h6 {
 }
 
 #map-section .btn {
-    background: #170C79;
+    background: #0A7C6E;
     border-radius: 0;
     color: #fff;
     border: none;
@@ -2576,7 +2576,7 @@ a.wit-btn {
     padding: 15px 50px;
     text-transform: capitalize !important;
     text-align: left;
-    background: #170C79;
+    background: #0A7C6E;
     font-family: 'Montserrat', sans-serif;
 }
 
@@ -2602,7 +2602,7 @@ a.wit-btn {
     line-height: 115px;
     margin-bottom: 15px;
     display: inline-block;
-    background: #170C79;
+    background: #0A7C6E;
 }
 
 .howlist li:nth-child(2) .iconcircle {
@@ -2674,7 +2674,7 @@ a.wit-btn {
 }
 
 .employerList li:hover img {
-    border-color: #170C79;
+    border-color: #0A7C6E;
 }
 
 .employerList .owl-stage-outer {
@@ -2719,12 +2719,12 @@ a.wit-btn {
 
 .compnaieslist li:hover .compint {
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-    border: 1px solid #170C79;
+    border: 1px solid #0A7C6E;
 }
 
 .compnaieslist li h3 a {
     font-size: 18px;
-    color: #170C79;
+    color: #0A7C6E;
 }
 
 .compnaieslist li .loctext {
@@ -2732,7 +2732,7 @@ a.wit-btn {
 }
 
 .compnaieslist li i {
-    color: #170C79;
+    color: #0A7C6E;
     width: 18px;
     text-align: left;
 }
@@ -2744,7 +2744,7 @@ a.wit-btn {
 
 
 .topsearchwrap h4 {
-    background: #170C79;
+    background: #0A7C6E;
     margin-bottom: 15px;
     color: #fff;
     font-size: 30px;
@@ -2773,7 +2773,7 @@ a.wit-btn {
 }
 
 .catelist li a:hover {
-    color: #170C79;
+    color: #0A7C6E;
 }
 
 .catelist li a:before {
@@ -2814,7 +2814,7 @@ a.wit-btn {
 
 .jobslist li .jobint:hover {
     box-shadow: 0 5px 30px rgb(0 0 0 / 10%);
-    border-color: #170C79;
+    border-color: #0A7C6E;
 }
 
 .jobslist li .col-md-7,
@@ -2833,7 +2833,7 @@ a.wit-btn {
 }
 
 .jobslist li h4 a:hover {
-    color: #170C79;
+    color: #0A7C6E;
 }
 
 .jobslist li .company {
@@ -2842,7 +2842,7 @@ a.wit-btn {
 }
 
 .jobslist li .company a {
-    color: #170C79;
+    color: #0A7C6E;
 }
 
 .jobslist li .jobloc {
@@ -2856,15 +2856,15 @@ a.wit-btn {
 .jobslist li .applybtn {
     background: #fff;
     display: inline-block;
-    color: #170C79;
+    color: #0A7C6E;
     font-weight: 600;
     padding: 9px 15px;
     margin-top: 20px;
-    border: 1px solid #170C79;
+    border: 1px solid #0A7C6E;
 }
 
 .jobslist li .applybtn:hover {
-    background: #170C79;
+    background: #0A7C6E;
     color: #fff;
     text-decoration: none;
 }
@@ -2876,7 +2876,7 @@ a.wit-btn {
 
 .viewallbtn a {
     display: inline-block;
-    background: #170C79;
+    background: #0A7C6E;
     color: #fff;
     font-size: 18px;
     font-weight: 600;
@@ -3064,7 +3064,7 @@ a.wit-btn {
 }
 
 .breadCrumb span {
-    color: #170C79;
+    color: #0A7C6E;
     display: inline-block;
     padding-left: 5px;
 }
@@ -3082,7 +3082,7 @@ a.wit-btn {
 }
 
 .pageSearch a.btn {
-    background: #170C79;
+    background: #0A7C6E;
     color: #fff;
     padding: 13px 15px;
     font-size: 16px;
@@ -3128,7 +3128,7 @@ a.wit-btn {
 
 .searchform .btn {
     border-radius: 0;
-    background: #170C79;
+    background: #0A7C6E;
     font-size: 24px;
     color: #fff;
     padding: 7px 18px;
@@ -3203,13 +3203,13 @@ a.wit-btn {
 }
 
 .sidebar a {
-    color: #170C79;
+    color: #0A7C6E;
     display: inline-block;
     margin-top: 10px;
 }
 
 .searchnt .btn {
-    background: #170C79;
+    background: #0A7C6E;
     display: block;
     border-radius: 0;
     width: 100%;
@@ -3250,7 +3250,7 @@ a.wit-btn {
 
 .searchList li:hover {
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-    border: 1px solid #170C79;
+    border: 1px solid #0A7C6E;
 }
 
 .searchList li .jobimg {
@@ -3295,16 +3295,16 @@ a.wit-btn {
     display: block;
     border-radius: 0;
     width: 100%;
-    color: #170C79;
+    color: #0A7C6E;
     text-transform: uppercase;
     font-weight: 700;
     padding: 10px 15px;
     text-align: center;
-    border: 1px solid #170C79;
+    border: 1px solid #0A7C6E;
 }
 
 .searchList li .listbtn a:hover {
-    background: #170C79;
+    background: #0A7C6E;
     color: #fff;
     text-decoration: none;
 }
@@ -3316,7 +3316,7 @@ a.wit-btn {
 }
 
 .searchList li .cateinfo {
-    color: #170C79;
+    color: #0A7C6E;
     margin: 10px 0;
 }
 
@@ -3404,7 +3404,7 @@ a.wit-btn {
 .job-header .jobinfo .companyinfo .title a {
     font-size: 18px;
     font-weight: 600;
-    color: #170C79;
+    color: #0A7C6E;
 }
 
 .job-header .jobinfo .companyinfo .opening a {
@@ -3416,7 +3416,7 @@ a.wit-btn {
 		Searh Tabs
 ***************************/
 .tabswrap {
-    border-bottom: 3px solid #170C79;
+    border-bottom: 3px solid #0A7C6E;
 }
 
 .tabswrap .nav-tabs {
@@ -3440,9 +3440,9 @@ a.wit-btn {
 
 .tabswrap .nav-tabs>li>button.active,
 .tabswrap .nav-tabs>li>button.active:focus {
-    background: #170C79;
+    background: #0A7C6E;
     color: #fff;
-    border-color: #170C79;
+    border-color: #0A7C6E;
     border-radius: 5px 5px 0 0;
     font-weight: 700;
 }
@@ -3462,7 +3462,7 @@ a.wit-btn {
 
 .tabswrap .nav-tabs>li.last button:hover {
     border: none;
-    color: #170C79;
+    color: #0A7C6E;
 }
 
 .srchbx {
@@ -3487,7 +3487,7 @@ a.wit-btn {
 }
 
 .catelist li a:hover {
-    color: #170C79;
+    color: #0A7C6E;
 }
 
 .catelist li a:before {
@@ -3509,7 +3509,7 @@ a.wit-btn {
     height: 100px;
     background: #cbcbcb;
     margin-right: 20px;
-    border: 5px solid #170C79;
+    border: 5px solid #0A7C6E;
 }
 
 .job-header .jobinfo .candidateinfo .title {
@@ -3532,7 +3532,7 @@ a.wit-btn {
 
 .job-header .jobinfo .candidateinfo .loctext i {
     width: 20px;
-    color: #170C79;
+    color: #0A7C6E;
 }
 
 .cadsocial {
@@ -3547,7 +3547,7 @@ a.wit-btn {
 }
 
 .cadsocial a:hover {
-    color: #170C79;
+    color: #0A7C6E;
 }
 
 .relatedJobs {
@@ -3596,7 +3596,7 @@ a.wit-btn {
 .job-header .contentbox h3 {
     font-size: 24px;
     font-weight: 700;
-    color: #170C79;
+    color: #0A7C6E;
     margin-bottom: 10px;
 }
 
@@ -3637,7 +3637,7 @@ a.wit-btn {
 
 .jobdetail h3 {
     font-size: 18px;
-    color: #170C79;
+    color: #0A7C6E;
     font-weight: 700;
 }
 
@@ -3653,7 +3653,7 @@ a.wit-btn {
 .jbdetail li a {
     display: block;
     text-align: right;
-    color: #170C79;
+    color: #0A7C6E;
     font-weight: 600;
 }
 
@@ -3669,7 +3669,7 @@ a.wit-btn {
 }
 
 .jbdetail li span.contract {
-    color: #170C79;
+    color: #0A7C6E;
 }
 
 .jbdetail li span.freelance {
@@ -3703,7 +3703,7 @@ a.wit-btn {
 }
 
 .educationList li:hover {
-    border-bottom-color: #170C79;
+    border-bottom-color: #0A7C6E;
 }
 
 .educationList li:before {
@@ -3753,7 +3753,7 @@ a.wit-btn {
 }
 
 .experienceList li:hover {
-    border-bottom-color: #170C79;
+    border-bottom-color: #0A7C6E;
 }
 
 .experienceList li:before {
@@ -3911,7 +3911,7 @@ a.wit-btn {
 }
 
 .contact>span {
-    color: #170C79;
+    color: #0A7C6E;
     float: left;
     font-size: 50px;
     line-height: 30px;
@@ -3961,7 +3961,7 @@ a.wit-btn {
 }
 
 .contact-form button {
-    background-color: #170C79;
+    background-color: #0A7C6E;
     border: 0 none;
     color: #fff;
     display: inline-block;
@@ -3988,7 +3988,7 @@ a.wit-btn {
 .faqs h4 a {
     padding: 15px 55px 15px 15px;
     display: block;
-    background: #170C79;
+    background: #0A7C6E;
     color: #fff;
     font-size: 16px;
     position: relative;
@@ -4008,7 +4008,7 @@ a.wit-btn {
 .faqs h4 a:hover,
 .faqs h4 a:active {
     text-decoration: none;
-    background: #170C79;
+    background: #0A7C6E;
     color: #fff;
 }
 
@@ -4018,7 +4018,7 @@ a.wit-btn {
     font-family: 'FontAwesome';
     width: 30px;
     padding: 6px 0;
-    color: #170C79;
+    color: #0A7C6E;
     position: absolute;
     right: 15px;
     top: 8px;
@@ -4085,7 +4085,7 @@ a.wit-btn {
 
 .formpanel .btn {
     width: 100%;
-    background: #170C79;
+    background: #0A7C6E;
     color: #fff;
     border-radius: 0;
     padding: 10px;
@@ -4203,7 +4203,7 @@ a.wit-btn {
 
 .userbtns .nav-tabs>li a:hover,
 .userbtns .nav-tabs>li.active a {
-    background: #170C79;
+    background: #0A7C6E;
     border: none;
     color: #fff;
 }
@@ -4213,7 +4213,7 @@ a.wit-btn {
     height: 0;
     border-left: 10px solid transparent;
     border-right: 10px solid transparent;
-    border-top: 10px solid #170C79;
+    border-top: 10px solid #0A7C6E;
     content: '';
     position: absolute;
     bottom: -10px;
@@ -4258,7 +4258,7 @@ a.wit-btn {
 }
 
 .error-msg .btn {
-    background: #170C79;
+    background: #0A7C6E;
     color: #fff;
     margin-top: 30px;
     border-radius: 10px;
@@ -4318,7 +4318,7 @@ a.wit-btn {
 
 .badge-status.remote {
     background: rgba(37, 99, 235, 0.15);
-    color: #170C79;
+    color: #0A7C6E;
 }
 
 .badge-status.hybrid {
@@ -4337,7 +4337,7 @@ a.wit-btn {
 }
 
 .bookmark:hover {
-    color: #170C79;
+    color: #0A7C6E;
 }
 
 .latest-jobs h4 {
@@ -4353,7 +4353,7 @@ a.wit-btn {
 }
 
 .latest-jobs h4 a:hover {
-    color: #170C79;
+    color: #0A7C6E;
 }
 
 .latest-job-meta {
@@ -4365,7 +4365,7 @@ a.wit-btn {
 }
 
 .latest-job-meta span i {
-    color: #170C79;
+    color: #0A7C6E;
     margin-right: 6px;
 }
 
@@ -4442,7 +4442,7 @@ a.wit-btn {
 
 .about-wraper h2 {
     font-size: 36px;
-    color: #170C79;
+    color: #0A7C6E;
     font-weight: 700;
     margin-bottom: 15px;
 }
@@ -4459,7 +4459,7 @@ a.wit-btn {
 }
 
 .what_we_do .main-heading {
-    color: #170C79;
+    color: #0A7C6E;
     text-align: center;
     line-height: 48px;
     font-size: 36px;
@@ -4492,7 +4492,7 @@ a.wit-btn {
 .whatList li .icon {
     font-size: 103px;
     color: #fff;
-    background: #170C79;
+    background: #0A7C6E;
     width: 180px;
     height: 180px;
     text-align: center;
@@ -4625,7 +4625,7 @@ ul.orderlist li:before {
 }
 
 .order a:hover {
-    background: #170C79;
+    background: #0A7C6E;
 }
 
 .main-plan {
@@ -4969,7 +4969,7 @@ ul.orderlist li:before {
 
 .blogList li:hover {
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-    border-color: #170C79;
+    border-color: #0A7C6E;
 }
 
 .postimg {
@@ -5005,9 +5005,9 @@ ul.orderlist li:before {
     padding: 7px 10px 0 10px;
     text-align: center;
     line-height: 20px;
-    background: #170C79;
+    background: #0A7C6E;
     letter-spacing: 0.4px;
-    outline: 3px solid #170C79;
+    outline: 3px solid #0A7C6E;
     border: 1px solid #fff;
     position: absolute;
     left: 14px;
@@ -5021,7 +5021,7 @@ ul.orderlist li:before {
 
 .post-header h4 a {
     font-size: 24px;
-    color: #170C79;
+    color: #0A7C6E;
     font-weight: 600;
 }
 
@@ -5036,7 +5036,7 @@ ul.orderlist li:before {
 
 .postmeta span,
 .postmeta a {
-    color: #170C79;
+    color: #0A7C6E;
 }
 
 .blogList p,
@@ -5080,7 +5080,7 @@ ul.orderlist li:before {
 
 .blogGrid li .int:hover {
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-    border-color: #170C79;
+    border-color: #0A7C6E;
 }
 
 .blogGrid li .post-header {
@@ -5348,7 +5348,7 @@ blockquote:after {
 }
 
 .archive li a:hover span {
-    background: #170C79;
+    background: #0A7C6E;
     color: #fff;
 }
 
@@ -5414,8 +5414,8 @@ blockquote:after {
 }
 
 .tags a:hover {
-    border: 1px solid #170C79;
-    background: #170C79;
+    border: 1px solid #0A7C6E;
+    background: #0A7C6E;
     color: #fff;
     text-decoration: none;
 }
@@ -5460,7 +5460,7 @@ blockquote:after {
 }
 
 .usernavdash li a:hover {
-    background: #170C79;
+    background: #0A7C6E;
     color: #fff;
     text-decoration: none;
 }
@@ -5473,7 +5473,7 @@ blockquote:after {
 }
 
 .usernavdash li.active a {
-    background: #170C79;
+    background: #0A7C6E;
     color: #fff;
 }
 
@@ -5500,7 +5500,7 @@ blockquote:after {
 .profilestat li h6 {
     font-size: 30px;
     font-weight: 600;
-    color: #170C79;
+    color: #0A7C6E;
     margin-bottom: 10px;
 }
 
@@ -5536,19 +5536,19 @@ blockquote:after {
 }
 
 .instoretxt .currency strong {
-    color: #170C79;
+    color: #0A7C6E;
 }
 
 .instoretxt strong {
     font-weight: 700;
-    color: #170C79;
+    color: #0A7C6E;
 }
 
 .instoretxt a {
     font-size: 18px;
     display: inline-block;
     padding: 9px 20px;
-    background: #170C79;
+    background: #0A7C6E;
     color: #fff;
     margin: 0 5px;
 }
@@ -5867,7 +5867,7 @@ blockquote:after {
 }
 
 .footerWrap .quicklinks li a:hover {
-    color: #170C79;
+    color: #0A7C6E;
     text-decoration: none;
 }
 
@@ -6451,7 +6451,7 @@ Large Mobile Screen
 
 .testimonial-quote i {
     font-size: 28px;
-    color: #170C79;
+    color: #0A7C6E;
 }
 
 .testimonials-carousel p {
@@ -6497,7 +6497,7 @@ Large Mobile Screen
     border-radius: 50%;
     background: #ffffff;
     box-shadow: 0 18px 45px rgba(15, 23, 42, 0.15);
-    color: #170C79;
+    color: #0A7C6E;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -6527,7 +6527,7 @@ Large Mobile Screen
            ==Footer Modern==
 *************************************************/
 .footer-modern {
-    background: #170C79;
+    background: #0A7C6E;
     color: #ccc;
     font-size: 0.95rem;
 }
@@ -6674,7 +6674,7 @@ Large Mobile Screen
     padding: 6px 16px;
     border-radius: 999px;
     background: rgba(37, 99, 235, 0.12);
-    color: #170C79;
+    color: #0A7C6E;
     font-weight: 600;
     letter-spacing: 0.04em;
     text-transform: uppercase;
@@ -6697,7 +6697,7 @@ Large Mobile Screen
 .subscribe-form .input-group-text {
     border: none;
     background: transparent;
-    color: #170C79;
+    color: #0A7C6E;
     font-size: 1.1rem;
     padding: 0 16px;
     display: flex;
@@ -6775,7 +6775,7 @@ Large Mobile Screen
     padding: 6px 18px;
     border-radius: 999px;
     background: rgba(37, 99, 235, 0.14);
-    color: #170C79;
+    color: #0A7C6E;
     font-weight: 600;
     letter-spacing: 0.05em;
     text-transform: uppercase;
@@ -6797,7 +6797,7 @@ Large Mobile Screen
 }
 
 .jobs-hero-field i {
-    color: #170C79;
+    color: #0A7C6E;
 }
 
 .jobs-hero-field .form-control,
@@ -6882,7 +6882,7 @@ Large Mobile Screen
 }
 
 .filter-field i {
-    color: #170C79;
+    color: #0A7C6E;
 }
 
 .filter-field .form-control {
@@ -6931,7 +6931,7 @@ Large Mobile Screen
 
 .filter-list span {
     background: rgba(37, 99, 235, 0.12);
-    color: #170C79;
+    color: #0A7C6E;
     border-radius: 999px;
     padding: 2px 10px;
     font-size: 0.8rem;
@@ -7022,7 +7022,7 @@ Large Mobile Screen
 }
 
 .job-location {
-    color: #170C79;
+    color: #0A7C6E;
     font-weight: 600;
 }
 
@@ -7109,7 +7109,7 @@ Large Mobile Screen
 }
 
 .candidate-save:hover {
-    background: #170C79;
+    background: #0A7C6E;
     color: #fff;
 }
 
@@ -7136,7 +7136,7 @@ Large Mobile Screen
     padding: 6px 12px;
     border-radius: 999px;
     background: rgba(37, 99, 235, 0.12);
-    color: #170C79;
+    color: #0A7C6E;
     font-size: 0.82rem;
     font-weight: 500;
 }
@@ -7310,7 +7310,7 @@ Large Mobile Screen
 
 .jobs-pagination .page-item.active .page-link,
 .jobs-pagination .page-link:hover {
-    background: #170C79;
+    background: #0A7C6E;
     color: #ffffff;
 }
 
@@ -7340,9 +7340,9 @@ Large Mobile Screen
 }
 
 .jobs-pagination ul li.active a {
-    background: #170C79;
+    background: #0A7C6E;
     color: #fff;
-    border-color: #170C79;
+    border-color: #0A7C6E;
 }
 
 @media (max-width: 991px) {
@@ -7393,7 +7393,7 @@ Large Mobile Screen
     padding: 8px 18px;
     border-radius: 999px;
     background: rgba(37, 99, 235, 0.12);
-    color: #170C79;
+    color: #0A7C6E;
     font-weight: 600;
     letter-spacing: 0.08em;
     text-transform: uppercase;
@@ -7525,12 +7525,12 @@ Large Mobile Screen
 
 .auth-link {
     font-size: 0.85rem;
-    color: #170C79;
+    color: #0A7C6E;
     text-decoration: none;
 }
 
 .auth-link:hover {
-    color: #170C79;
+    color: #0A7C6E;
 }
 
 .auth-card .btn {
@@ -7547,7 +7547,7 @@ Large Mobile Screen
 }
 
 .auth-switch a {
-    color: #170C79;
+    color: #0A7C6E;
     font-weight: 600;
     text-decoration: none;
 }
@@ -7616,7 +7616,7 @@ Large Mobile Screen
 
 .auth-toggle-btn.active,
 .auth-toggle-btn:hover {
-    background: #170C79;
+    background: #0A7C6E;
     color: #ffffff;
     box-shadow: 0 18px 32px rgba(37, 99, 235, 0.28);
 }
@@ -7703,7 +7703,7 @@ Large Mobile Screen
 }
 
 .job-grid .job-location {
-    color: #170C79;
+    color: #0A7C6E;
     font-weight: 600;
 }
 
@@ -7781,7 +7781,7 @@ Large Mobile Screen
 
 .plan-icon.primary {
     background: rgba(59, 130, 246, 0.15);
-    color: #170C79;
+    color: #0A7C6E;
 }
 
 .plan-icon.highlight {
@@ -7794,7 +7794,7 @@ Large Mobile Screen
     padding: 4px 12px;
     border-radius: 999px;
     background: rgba(37, 99, 235, 0.1);
-    color: #170C79;
+    color: #0A7C6E;
     font-weight: 600;
     font-size: 0.8rem;
     text-transform: uppercase;
@@ -7871,7 +7871,7 @@ Large Mobile Screen
 
 .metric-icon.primary {
     background: rgba(59, 130, 246, 0.18);
-    color: #170C79;
+    color: #0A7C6E;
 }
 
 .metric-icon.highlight {
@@ -7922,7 +7922,7 @@ Large Mobile Screen
 
 .plan-price span {
     font-size: 1rem;
-    color: #170C79;
+    color: #0A7C6E;
 }
 
 .plan-price strong {
@@ -7989,11 +7989,11 @@ Large Mobile Screen
 }
 
 .jobs-view-toggle .view-btn:hover {
-    color: #170C79;
+    color: #0A7C6E;
 }
 
 .jobs-view-toggle .view-btn.active {
-    background: #170C79;
+    background: #0A7C6E;
     color: #ffffff;
     box-shadow: 0 18px 32px rgba(37, 99, 235, 0.28);
 }
@@ -8083,7 +8083,7 @@ Large Mobile Screen
 }
 
 .job-list-meta i {
-    color: #170C79;
+    color: #0A7C6E;
     margin-right: 6px;
 }
 
@@ -8119,7 +8119,7 @@ Large Mobile Screen
 }
 
 .job-list-actions .bookmark:hover {
-    color: #170C79;
+    color: #0A7C6E;
     background: rgba(37, 99, 235, 0.18);
 }
 
@@ -8219,7 +8219,7 @@ Large Mobile Screen
     align-items: center;
     gap: 8px;
     background: rgba(59, 130, 246, 0.16);
-    color: #170C79;
+    color: #0A7C6E;
     padding: 6px 16px;
     border-radius: 12px;
     font-weight: 600;
@@ -8244,7 +8244,7 @@ Large Mobile Screen
 }
 
 .job-detail-tags i {
-    color: #170C79;
+    color: #0A7C6E;
     margin-right: 6px;
 }
 
@@ -8269,13 +8269,13 @@ Large Mobile Screen
 }
 
 .job-detail-actions .job-share {
-    color: #170C79;
+    color: #0A7C6E;
     font-weight: 600;
     padding: 0;
 }
 
 .job-detail-actions .job-share:hover {
-    color: #170C79;
+    color: #0A7C6E;
     text-decoration: none;
 }
 
@@ -8300,7 +8300,7 @@ Large Mobile Screen
     height: 44px;
     border-radius: 14px;
     background: #ffffff;
-    color: #170C79;
+    color: #0A7C6E;
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -8363,7 +8363,7 @@ Large Mobile Screen
 
 .job-tag-cloud span {
     background: rgba(59, 130, 246, 0.12);
-    color: #170C79;
+    color: #0A7C6E;
     padding: 8px 16px;
     border-radius: 999px;
     font-weight: 600;
@@ -8409,7 +8409,7 @@ Large Mobile Screen
 }
 
 .job-snapshot li i {
-    color: #170C79;
+    color: #0A7C6E;
 }
 
 .job-snapshot li span {
@@ -8456,7 +8456,7 @@ Large Mobile Screen
 
 .job-related .subtitle {
     font-weight: 600;
-    color: #170C79;
+    color: #0A7C6E;
     text-transform: uppercase;
     letter-spacing: 0.1em;
 }
@@ -8581,7 +8581,7 @@ Large Mobile Screen
 }
 
 .candidate-save-btn:hover {
-    background: #170C79;
+    background: #0A7C6E;
     color: #fff;
 }
 
@@ -8611,7 +8611,7 @@ Large Mobile Screen
     padding: 6px 14px;
     border-radius: 14px;
     background: rgba(37, 99, 235, 0.12);
-    color: #170C79;
+    color: #0A7C6E;
     font-weight: 500;
     font-size: 0.85rem;
 }
@@ -8660,7 +8660,7 @@ Large Mobile Screen
 
 .section-head a {
     font-weight: 600;
-    color: #170C79;
+    color: #0A7C6E;
     text-decoration: none;
 }
 
@@ -8699,7 +8699,7 @@ Large Mobile Screen
     width: 14px;
     height: 14px;
     border-radius: 50%;
-    border: 3px solid #170C79;
+    border: 3px solid #0A7C6E;
     background: #fff;
     position: relative;
     top: 0;
@@ -8881,7 +8881,7 @@ Large Mobile Screen
     height: 44px;
     border-radius: 14px;
     background: rgba(37, 99, 235, 0.12);
-    color: #170C79;
+    color: #0A7C6E;
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -8925,7 +8925,7 @@ Large Mobile Screen
     height: 36px;
     border-radius: 12px;
     background: rgba(37, 99, 235, 0.15);
-    color: #170C79;
+    color: #0A7C6E;
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -9081,11 +9081,11 @@ Large Mobile Screen
 .company-hero-actions .btn-outline-primary {
     background: rgba(37, 99, 235, 0.1);
     border-color: transparent;
-    color: #170C79;
+    color: #0A7C6E;
 }
 
 .company-hero-actions .btn-outline-primary:hover {
-    background: #170C79;
+    background: #0A7C6E;
     color: #ffffff;
 }
 
@@ -9220,7 +9220,7 @@ Large Mobile Screen
 
 .company-detail-values .value-chip {
     background: rgba(37, 99, 235, 0.14);
-    color: #170C79;
+    color: #0A7C6E;
     padding: 10px 18px;
     border-radius: 999px;
     font-weight: 600;
@@ -9245,7 +9245,7 @@ Large Mobile Screen
 
 .company-perks .perk-card i {
     font-size: 1.4rem;
-    color: #170C79;
+    color: #0A7C6E;
 }
 
 .company-perks .perk-card h4 {
@@ -9325,7 +9325,7 @@ Large Mobile Screen
 }
 
 .company-facts a {
-    color: #170C79;
+    color: #0A7C6E;
     text-decoration: none;
 }
 
@@ -9398,7 +9398,7 @@ Large Mobile Screen
     background: rgba(37, 99, 235, 0.16);
     border-radius: 999px;
     padding: 8px 18px;
-    color: #170C79;
+    color: #0A7C6E;
     font-weight: 700;
     letter-spacing: 0.1em;
     text-transform: uppercase;
@@ -9466,7 +9466,7 @@ Large Mobile Screen
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    color: #170C79;
+    color: #0A7C6E;
     font-size: 1.1rem;
 }
 
@@ -9484,7 +9484,7 @@ Large Mobile Screen
 }
 
 .contact-details a {
-    color: #170C79;
+    color: #0A7C6E;
     text-decoration: none;
     font-weight: 600;
 }
@@ -9512,7 +9512,7 @@ Large Mobile Screen
 }
 
 .contact-social a:hover {
-    background: #170C79;
+    background: #0A7C6E;
     color: #ffffff;
 }
 
@@ -9575,7 +9575,7 @@ Large Mobile Screen
 
 .office-card a {
     margin-top: auto;
-    color: #170C79;
+    color: #0A7C6E;
     text-decoration: none;
     font-weight: 600;
     display: inline-flex;
@@ -9754,7 +9754,7 @@ Large Mobile Screen
 
 .toggle-btn:hover {
     background: rgba(37, 99, 235, 0.15);
-    color: #170C79;
+    color: #0A7C6E;
     border-color: rgba(37, 99, 235, 0.2);
     transform: scale(1.05);
 }
@@ -10009,12 +10009,12 @@ Large Mobile Screen
 
 .dashboard-nav li a.active {
     background: linear-gradient(135deg, rgba(37, 99, 235, 0.12), rgba(37, 99, 235, 0.08));
-    color: #170C79;
+    color: #0A7C6E;
     box-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.15);
 }
 
 .dashboard-nav li a:hover:not(.disabled-nav) {
-    color: #170C79;
+    color: #0A7C6E;
 }
 
 .dashboard-main {
@@ -10154,7 +10154,7 @@ Large Mobile Screen
 }
 
 .stat-blue {
-    background: linear-gradient(135deg, #170C79, #60a5fa);
+    background: linear-gradient(135deg, #0A7C6E, #60a5fa);
 }
 
 .stat-teal {
@@ -10196,7 +10196,7 @@ Large Mobile Screen
     padding: 6px 14px;
     border-radius: 999px;
     background: rgba(37, 99, 235, 0.12);
-    color: #170C79;
+    color: #0A7C6E;
     font-weight: 600;
     font-size: 0.8rem;
     margin-top: 12px;
@@ -10272,7 +10272,7 @@ Large Mobile Screen
 
 .panel-heading a {
     font-weight: 600;
-    color: #170C79;
+    color: #0A7C6E;
     text-decoration: none;
 }
 
@@ -10383,7 +10383,7 @@ Large Mobile Screen
     width: 46px;
     height: 46px;
     border-radius: 14px;
-    background: linear-gradient(135deg, #170C79, #60a5fa);
+    background: linear-gradient(135deg, #0A7C6E, #60a5fa);
     color: #fff;
     display: inline-flex;
     align-items: center;
@@ -10457,7 +10457,7 @@ Large Mobile Screen
 }
 
 .detail-icon.blue {
-    background: linear-gradient(135deg, #170C79, #60a5fa);
+    background: linear-gradient(135deg, #0A7C6E, #60a5fa);
 }
 
 .detail-icon.danger {
@@ -10551,7 +10551,7 @@ Large Mobile Screen
 }
 
 .faq-accordion details[open] {
-    border-color: #170C79;
+    border-color: #0A7C6E;
     box-shadow: 0 25px 55px rgba(37, 99, 235, 0.12);
 }
 
@@ -10596,7 +10596,7 @@ Large Mobile Screen
 
 .blog-card-body a {
     font-weight: 600;
-    color: #170C79;
+    color: #0A7C6E;
     text-decoration: none;
 }
 
@@ -10638,7 +10638,7 @@ Large Mobile Screen
 .notfound-section h1 {
     font-size: 7rem;
     margin: 0;
-    color: #170C79;
+    color: #0A7C6E;
 }
 
 .notfound-section p {
@@ -10676,7 +10676,7 @@ Large Mobile Screen
     padding: 8px 18px;
     border-radius: 999px;
     background: rgba(37, 99, 235, 0.15);
-    color: #170C79;
+    color: #0A7C6E;
     font-weight: 600;
     font-size: 0.85rem;
     text-transform: uppercase;
@@ -10930,7 +10930,7 @@ Large Mobile Screen
 }
 
 .text-link {
-    color: #170C79;
+    color: #0A7C6E;
     font-weight: 600;
     text-decoration: none;
 }
@@ -11025,7 +11025,7 @@ Large Mobile Screen
 }
 
 .blog-meta a {
-    color: #170C79;
+    color: #0A7C6E;
     text-decoration: none;
     font-weight: 500;
 }
@@ -11045,7 +11045,7 @@ Large Mobile Screen
 }
 
 .blog-title a:hover {
-    color: #170C79;
+    color: #0A7C6E;
 }
 
 .blog-excerpt {
@@ -11059,7 +11059,7 @@ Large Mobile Screen
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    color: #170C79;
+    color: #0A7C6E;
     font-weight: 600;
     text-decoration: none;
     font-size: 0.95rem;
@@ -11090,15 +11090,15 @@ Large Mobile Screen
 }
 
 .blog-pagination .page-item.active .page-link {
-    background: #170C79;
-    border-color: #170C79;
+    background: #0A7C6E;
+    border-color: #0A7C6E;
     color: #fff;
 }
 
 .blog-pagination .page-link:hover {
     background: #eef2ff;
-    border-color: #170C79;
-    color: #170C79;
+    border-color: #0A7C6E;
+    color: #0A7C6E;
 }
 
 .blog-sidebar {
@@ -11164,7 +11164,7 @@ Large Mobile Screen
 }
 
 .sidebar-categories li a:hover {
-    color: #170C79;
+    color: #0A7C6E;
 }
 
 .sidebar-categories li a span {
@@ -11220,7 +11220,7 @@ Large Mobile Screen
 }
 
 .recent-content h6 a:hover {
-    color: #170C79;
+    color: #0A7C6E;
 }
 
 .recent-date {
@@ -11254,7 +11254,7 @@ Large Mobile Screen
 }
 
 .sidebar-archives li a:hover {
-    color: #170C79;
+    color: #0A7C6E;
 }
 
 .sidebar-archives li a span {
@@ -11272,7 +11272,7 @@ Large Mobile Screen
     padding: 8px 16px;
     border-radius: 999px;
     background: #eef2ff;
-    color: #170C79;
+    color: #0A7C6E;
     font-size: 0.85rem;
     text-decoration: none;
     font-weight: 500;
@@ -11280,7 +11280,7 @@ Large Mobile Screen
 }
 
 .sidebar-tags a:hover {
-    background: #170C79;
+    background: #0A7C6E;
     color: #fff;
 }
 
@@ -11307,7 +11307,7 @@ Large Mobile Screen
     padding: 6px 14px;
     border-radius: 999px;
     background: #eef2ff;
-    color: #170C79;
+    color: #0A7C6E;
     font-size: 0.85rem;
     text-decoration: none;
     font-weight: 600;
@@ -11373,7 +11373,7 @@ Large Mobile Screen
 }
 
 .page-dots span.active {
-    background: #170C79;
+    background: #0A7C6E;
     width: 16px;
     border-radius: 999px;
 }
@@ -11484,7 +11484,7 @@ Large Mobile Screen
     padding: 50px 25px 25px;
     border-radius: 20px;
     background: #f8fafc;
-    border-left: 4px solid #170C79;
+    border-left: 4px solid #0A7C6E;
     color: #0f172a;
     font-size: 1.05rem;
 }
@@ -11493,7 +11493,7 @@ Large Mobile Screen
     display: block;
     margin-top: 12px;
     font-weight: 600;
-    color: #170C79;
+    color: #0A7C6E;
 }
 
 .blog-tag-cloud {
@@ -11507,7 +11507,7 @@ Large Mobile Screen
     padding: 6px 16px;
     border-radius: 999px;
     background: rgba(37, 99, 235, 0.1);
-    color: #170C79;
+    color: #0A7C6E;
     text-decoration: none;
     font-size: 0.85rem;
 }
@@ -11591,7 +11591,7 @@ Large Mobile Screen
     padding: 2px 8px;
     border-radius: 4px;
     background: rgba(37, 99, 235, 0.1);
-    color: #170C79;
+    color: #0A7C6E;
     font-size: 0.75rem;
     font-weight: 600;
     text-transform: uppercase;
@@ -11617,7 +11617,7 @@ Large Mobile Screen
     padding: 6px 12px;
     background: transparent;
     border: none;
-    color: #170C79;
+    color: #0A7C6E;
     font-size: 0.9rem;
     font-weight: 600;
     cursor: pointer;
@@ -11663,7 +11663,7 @@ Large Mobile Screen
 }
 
 .comment-form .form-control:focus {
-    border-color: #170C79;
+    border-color: #0A7C6E;
     box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
 }
 
@@ -11680,7 +11680,7 @@ Large Mobile Screen
 }
 
 .btn-primary-custom {
-    background-color: #170C79 !important;
+    background-color: #0A7C6E !important;
     color: white;
     border: none;
     font-weight: 500;
@@ -11689,7 +11689,7 @@ Large Mobile Screen
 }
 
 .btn-primary-custom:hover {
-    background-color: #2315a3 !important;
+    background-color: #046459 !important;
     color: white;
     transform: translateY(-1px);
 }
@@ -11803,7 +11803,7 @@ Large Mobile Screen
 .form-field select:focus,
 .form-field textarea:focus {
     outline: none;
-    border-color: #170C79;
+    border-color: #0A7C6E;
     box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
     background: #fff;
 }
@@ -11878,7 +11878,7 @@ Large Mobile Screen
 }
 
 .detail-icon.blue {
-    background: linear-gradient(135deg, #170C79, #60a5fa);
+    background: linear-gradient(135deg, #0A7C6E, #60a5fa);
 }
 
 .detail-icon.danger {
@@ -11925,7 +11925,7 @@ Large Mobile Screen
 
 .following-card span {
     font-weight: 600;
-    color: #170C79;
+    color: #0A7C6E;
 }
 
 @media (max-width: 1199px) {
@@ -12056,7 +12056,7 @@ Large Mobile Screen
     padding: 6px 14px;
     border-radius: 999px;
     background: rgba(37, 99, 235, 0.12);
-    color: #170C79;
+    color: #0A7C6E;
     font-weight: 600;
     font-size: 0.8rem;
     margin-top: 12px;
@@ -12105,7 +12105,7 @@ Large Mobile Screen
     padding: 4px 12px;
     border-radius: 999px;
     background: rgba(37, 99, 235, 0.12);
-    color: #170C79;
+    color: #0A7C6E;
     font-weight: 600;
     font-size: 0.8rem;
 }
@@ -12172,7 +12172,7 @@ Large Mobile Screen
     align-items: center;
     gap: 8px;
     font-weight: 600;
-    color: #170C79;
+    color: #0A7C6E;
     cursor: pointer;
     font-size: 0.88rem;
     padding: 8px 16px;
@@ -12196,7 +12196,7 @@ Large Mobile Screen
 .settings-header-content span {
     display: inline-flex;
     background: rgba(37, 99, 235, 0.1);
-    color: #170C79;
+    color: #0A7C6E;
     font-weight: 600;
     padding: 4px 12px;
     border-radius: 999px;
@@ -12278,12 +12278,12 @@ Large Mobile Screen
 .settings-card-header .btn-outline-primary {
     background: rgba(37, 99, 235, 0.06);
     border: 1.5px solid rgba(37, 99, 235, 0.3);
-    color: #170C79;
+    color: #0A7C6E;
 }
 
 .settings-card-header .btn-outline-primary:hover {
     background: rgba(37, 99, 235, 0.12);
-    border-color: #170C79;
+    border-color: #0A7C6E;
     box-shadow: 0 4px 14px rgba(37, 99, 235, 0.18);
     transform: translateY(-1px);
 }
@@ -12363,7 +12363,7 @@ Large Mobile Screen
     padding: 6px 12px;
     border-radius: 999px;
     background: rgba(59, 130, 246, 0.14);
-    color: #170C79;
+    color: #0A7C6E;
     font-weight: 600;
 }
 
@@ -12397,14 +12397,14 @@ Large Mobile Screen
 }
 
 .form-actions .btn-primary {
-    background: linear-gradient(135deg, #170C79 0%, #170C79 100%);
+    background: linear-gradient(135deg, #0A7C6E 0%, #0A7C6E 100%);
     border: none;
     color: #fff;
     box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);
 }
 
 .form-actions .btn-primary:hover {
-    background: linear-gradient(135deg, #170C79 0%, #1e40af 100%);
+    background: linear-gradient(135deg, #0A7C6E 0%, #1e40af 100%);
     box-shadow: 0 6px 20px rgba(37, 99, 235, 0.45);
     transform: translateY(-1px);
 }
@@ -12490,7 +12490,7 @@ Large Mobile Screen
     height: 46px;
     border-radius: 14px;
     background: rgba(37, 99, 235, 0.12);
-    color: #170C79;
+    color: #0A7C6E;
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -12560,7 +12560,7 @@ Large Mobile Screen
     padding: 6px 12px;
     border-radius: 999px;
     background: rgba(37, 99, 235, 0.1);
-    color: #170C79;
+    color: #0A7C6E;
     font-weight: 600;
 }
 
@@ -12588,7 +12588,7 @@ Large Mobile Screen
 }
 
 .timeline-card li i {
-    color: #170C79;
+    color: #0A7C6E;
     margin-top: 4px;
 }
 
@@ -12728,7 +12728,7 @@ Large Mobile Screen
 
 .chat-bubble.me {
     margin-left: auto;
-    background: #170C79;
+    background: #0A7C6E;
     color: #ffffff;
 }
 
@@ -12751,7 +12751,7 @@ Large Mobile Screen
 
 .chat-send-btn {
     border: none;
-    background: linear-gradient(135deg, #170C79, #3b82f6);
+    background: linear-gradient(135deg, #0A7C6E, #3b82f6);
     color: #ffffff;
     border-radius: 14px;
     width: 48px;
@@ -12849,7 +12849,7 @@ Large Mobile Screen
 }
 
 .application-location {
-    color: #170C79;
+    color: #0A7C6E;
     font-weight: 600;
     margin-bottom: 10px;
 }
@@ -12863,7 +12863,7 @@ Large Mobile Screen
     align-items: center;
     gap: 8px;
     background: rgba(59, 130, 246, 0.1);
-    color: #170C79;
+    color: #0A7C6E;
     padding: 8px 14px;
     border-radius: 999px;
     font-weight: 600;
@@ -13076,7 +13076,7 @@ Large Mobile Screen
 }
 
 .toggle-switch input:checked+.toggle-slider {
-    background: linear-gradient(135deg, #170C79, #7c3aed);
+    background: linear-gradient(135deg, #0A7C6E, #7c3aed);
 }
 
 .toggle-switch input:checked+.toggle-slider::before {
@@ -13258,7 +13258,7 @@ Large Mobile Screen
 }
 
 .employer-card h4 a:hover {
-    color: #170C79;
+    color: #0A7C6E;
 }
 
 .employer-info p {
@@ -13286,7 +13286,7 @@ Large Mobile Screen
 }
 
 .employer-follow:hover {
-    background: #170C79;
+    background: #0A7C6E;
     color: #fff;
 }
 
@@ -13322,7 +13322,7 @@ Large Mobile Screen
     padding: 5px 11px;
     border-radius: 8px;
     background: rgba(37, 99, 235, 0.1);
-    color: #170C79;
+    color: #0A7C6E;
     font-size: 0.8rem;
     font-weight: 600;
 }
@@ -13433,7 +13433,7 @@ Large Mobile Screen
 }
 
 .employer-list-top h4 a:hover {
-    color: #170C79;
+    color: #0A7C6E;
 }
 
 .employer-list-top p {
@@ -13534,7 +13534,7 @@ Large Mobile Screen
     padding: 8px 20px;
     border-radius: 999px;
     background: rgba(37, 99, 235, 0.15);
-    color: #170C79;
+    color: #0A7C6E;
     font-size: 0.85rem;
     font-weight: 700;
     text-transform: uppercase;
@@ -13634,7 +13634,7 @@ Large Mobile Screen
 }
 
 .toggle-switch input:checked+.toggle-slider {
-    background-color: #170C79;
+    background-color: #0A7C6E;
 }
 
 .toggle-switch input:checked+.toggle-slider:before {
@@ -13665,7 +13665,7 @@ Large Mobile Screen
 }
 
 .pricing-card.featured {
-    border-color: #170C79;
+    border-color: #0A7C6E;
     box-shadow: 0 24px 50px rgba(37, 99, 235, 0.15);
     transform: scale(1.05);
 }
@@ -13681,7 +13681,7 @@ Large Mobile Screen
     transform: translateX(-50%);
     padding: 6px 20px;
     border-radius: 20px;
-    background: #170C79;
+    background: #0A7C6E;
     color: #ffffff;
     font-size: 0.75rem;
     font-weight: 700;
@@ -13828,7 +13828,7 @@ Large Mobile Screen
 
 .feature-icon i {
     font-size: 1.8rem;
-    color: #170C79;
+    color: #0A7C6E;
 }
 
 .feature-card h4 {
@@ -13955,7 +13955,7 @@ Large Mobile Screen
 }
 
 .resume-table a.text-primary {
-    color: #170C79 !important;
+    color: #0A7C6E !important;
     text-decoration: none;
     font-weight: 500;
 }
@@ -13988,7 +13988,7 @@ Large Mobile Screen
 }
 
 .action-icons a.text-primary {
-    color: #170C79 !important;
+    color: #0A7C6E !important;
 }
 
 .action-icons a.text-dark {
@@ -14489,7 +14489,7 @@ Large Mobile Screen
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    background: #170C79;
+    background: #0A7C6E;
     color: #ffffff;
     padding: 6px 12px;
     border-radius: 20px;
@@ -14540,7 +14540,7 @@ Large Mobile Screen
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    color: #170C79;
+    color: #0A7C6E;
     font-size: 0.95rem;
     font-weight: 600;
     transition: all 0.2s ease;
@@ -14548,7 +14548,7 @@ Large Mobile Screen
 
 .company-card-alt:hover .company-link-alt {
     gap: 12px;
-    color: #170C79;
+    color: #0A7C6E;
 }
 
 .company-link-alt i {
@@ -14719,7 +14719,7 @@ Large Mobile Screen
     left: 0;
     right: 0;
     height: 4px;
-    background: linear-gradient(90deg, #170C79 0%, #8b5cf6 100%);
+    background: linear-gradient(90deg, #0A7C6E 0%, #8b5cf6 100%);
     transform: scaleX(0);
     transition: transform 0.4s ease;
 }
@@ -14750,7 +14750,7 @@ Large Mobile Screen
     width: 100px;
     height: 100px;
     margin: 0 auto 24px;
-    background: linear-gradient(135deg, #170C79 0%, #8b5cf6 100%);
+    background: linear-gradient(135deg, #0A7C6E 0%, #8b5cf6 100%);
     border-radius: 24px;
     display: flex;
     align-items: center;
@@ -14912,7 +14912,7 @@ Large Mobile Screen
 .video-badge-new {
     display: inline-block;
     background: rgba(37, 99, 235, 0.1);
-    color: #170C79;
+    color: #0A7C6E;
     padding: 8px 20px;
     border-radius: 30px;
     font-size: 0.85rem;
@@ -14931,7 +14931,7 @@ Large Mobile Screen
 }
 
 .video-title-accent {
-    color: #170C79;
+    color: #0A7C6E;
     position: relative;
 }
 
@@ -15019,7 +15019,7 @@ Large Mobile Screen
     display: flex;
     align-items: center;
     justify-content: center;
-    background: linear-gradient(135deg, #170C79 0%, #170C79 100%);
+    background: linear-gradient(135deg, #0A7C6E 0%, #0A7C6E 100%);
     border-radius: 50%;
     position: relative;
     z-index: 1;
@@ -15027,7 +15027,7 @@ Large Mobile Screen
 }
 
 .video-play-button-new:hover .play-button-inner {
-    background: linear-gradient(135deg, #170C79 0%, #1e40af 100%);
+    background: linear-gradient(135deg, #0A7C6E 0%, #1e40af 100%);
 }
 
 .play-button-inner i {
@@ -15216,7 +15216,7 @@ Large Mobile Screen
 .video-badge-v2 {
     display: inline-block;
     background: linear-gradient(135deg, rgba(37, 99, 235, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%);
-    color: #170C79;
+    color: #0A7C6E;
     padding: 10px 24px;
     border-radius: 30px;
     font-size: 0.9rem;
@@ -15236,7 +15236,7 @@ Large Mobile Screen
 }
 
 .video-highlight-v2 {
-    color: #170C79;
+    color: #0A7C6E;
     position: relative;
 }
 
@@ -15350,13 +15350,13 @@ Large Mobile Screen
 }
 
 .video-play-btn-v2:hover .play-btn-circle-v2 {
-    background: #170C79;
+    background: #0A7C6E;
     box-shadow: 0 12px 40px rgba(37, 99, 235, 0.5);
     transform: rotate(360deg);
 }
 
 .play-btn-circle-v2 i {
-    color: #170C79;
+    color: #0A7C6E;
     font-size: 1.8rem;
     margin-left: 4px;
     transition: all 0.3s ease;

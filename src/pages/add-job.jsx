@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useCallback } from "react";
+import React, { useMemo, useState, useCallback, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import Select from "react-select";
@@ -14,7 +14,7 @@ import ReviewStep from "../components/job/ReviewStep";
 import PaymentModal from "../components/job/PaymentModal";
 import AdminClientProfile from "../components/job/AdminClientProfile";
 
-export default function AddJob() {
+export default function AddJob({ modalMode, onClose, initialSite, initialDate }) {
   const navigate = useNavigate();
   const { userdata } = useSelector((state) => state.auth);
 
@@ -66,7 +66,7 @@ export default function AddJob() {
   }, [customersRes]);
 
   const { data: detailRes, loading: loadingSites } = useFetch(
-    form.user_id && form.user_id !== "new" ? `api/admin/customers-detail/${form.user_id}` : null,
+    isAdmin && form.user_id && form.user_id !== "new" ? `api/admin/customers-detail/${form.user_id}` : null,
     { isAuth: true }
   );
 
@@ -118,6 +118,45 @@ export default function AddJob() {
       return prev;
     });
   }, []);
+
+  useEffect(() => {
+    if (!initialSite) return;
+    try {
+      const siteId = initialSite.id ? String(initialSite.id) : initialSite.site_id ? String(initialSite.site_id) : "";
+      const normalizedInitialDate = initialDate ? new Date(initialDate) : null;
+      const dateString = normalizedInitialDate && !Number.isNaN(normalizedInitialDate.getTime())
+        ? normalizedInitialDate.toISOString().split("T")[0]
+        : "";
+      const siteTitle = initialSite.site_name || initialSite.displayName || initialSite.title || "Roster Shift";
+      const siteJobType = initialSite.jobType || initialSite.job_type || "static-security";
+      setSelectedSiteId(siteId);
+      setForm((f) => ({
+        ...f,
+        title: siteTitle,
+        jobType: siteJobType,
+        location: initialSite.site_name || initialSite.displayName || f.location,
+        address: initialSite.address || initialSite.site_address || f.address,
+        coordinates: initialSite.coordinates || initialSite.latlng || f.coordinates,
+        user_id: (initialSite.user_id && String(initialSite.user_id)) || (initialSite.customer_id && String(initialSite.customer_id)) || f.user_id,
+      }));
+
+      if (dateString) {
+        setForm((f) => ({
+          ...f,
+          scheduleMode: "single",
+          dateRange: [normalizedInitialDate, normalizedInitialDate],
+          scheduleDays: [
+            {
+              date: dateString,
+              shifts: [{ id: Math.random().toString(), startTime: "", endTime: "", numGuards: 1 }],
+            },
+          ],
+        }));
+      }
+    } catch (err) {
+      // silent
+    }
+  }, [initialSite, initialDate]);
 
   const applyShiftToAllDays = useCallback((templateShift) => {
     setForm((prevForm) => {
@@ -507,49 +546,93 @@ export default function AddJob() {
   return (
     <>
       <div className="dashboard-main">
-        <div className="dashboard-page-header mb-4 bg-white p-4 rounded-4 shadow-sm border border-light">
+        <div className="dashboard-page-header mb-4 bg-white p-4 rounded-4 shadow-sm border border-light d-flex flex-wrap justify-content-between align-items-center gap-3">
           <div>
-            <h1 className="h4 fw-bold text-dark">Create Job</h1>
+            <h1 className="h4 fw-bold text-dark mb-1">Create Job</h1>
             <p className="text-muted mb-0">Follow the steps to add a new job</p>
           </div>
+
+          {isAdmin && (
+            <div className="bg-light border rounded-3 p-3" style={{ minWidth: "320px", maxWidth: "420px", width: "100%" }}>
+              <h6 className="fw-bold text-dark mb-2 d-flex align-items-center gap-2">
+                <i className="fa-solid fa-user-check text-primary"></i>
+                Select Client
+              </h6>
+              <Select
+                options={clientOptions}
+                value={clientOptions.find((opt) => opt.value === form.user_id) || clientOptions[0]}
+                onChange={(selected) => {
+                  const val = selected ? selected.value : "";
+                  setField("user_id", val);
+                  setSelectedSiteId("");
+                  setField("location", "");
+                  setField("address", "");
+                  setField("coordinates", "");
+                }}
+                placeholder={loadingCustomers ? "Loading clients..." : "Search clients..."}
+                isDisabled={loadingCustomers}
+                isSearchable={true}
+                classNamePrefix="react-select"
+                styles={{
+                  control: (base) => ({ ...base, minHeight: "40px", borderRadius: "0.5rem", boxShadow: "none" }),
+                  valueContainer: (base) => ({ ...base, paddingTop: 2, paddingBottom: 2 }),
+                  input: (base) => ({ ...base, margin: 0, padding: 0 }),
+                  indicatorsContainer: (base) => ({ ...base, height: "40px" }),
+                  option: (base, state) => ({
+                    ...base,
+                    fontWeight: state.data.isNew ? "bold" : "normal",
+                    color: state.data.isNew ? "#0A7C6E" : base.color,
+                    background: state.isSelected ? "#0A7C6E" : state.isFocused ? "#e9ecef" : "white"
+                  })
+                }}
+              />
+            </div>
+          )}
         </div>
 
-        {isAdmin && step === 0 && (
-          <div className="mb-5">
-            <div className="card shadow-sm border-0 rounded-3 mb-4">
-              <div className="card-body p-4">
-                <h6 className="fw-bold text-dark mb-3">
-                  <i className="fa-solid fa-user-check text-primary me-2"></i>
-                  Select Client
-                </h6>
-                <Select
-                  options={clientOptions}
-                  value={clientOptions.find(opt => opt.value === form.user_id) || clientOptions[0]}
-                  onChange={(selected) => {
-                    const val = selected ? selected.value : "";
-                    setField("user_id", val);
-                    setSelectedSiteId("");
-                    setField("location", "");
-                    setField("address", "");
-                    setField("coordinates", "");
-                  }}
-                  placeholder={loadingCustomers ? "Loading clients..." : "Search clients..."}
-                  isDisabled={loadingCustomers}
-                  isSearchable={true}
-                  classNamePrefix="react-select"
-                  styles={{
-                    control: (base) => ({ ...base, minHeight: '44px', borderRadius: '0.5rem' }),
-                    option: (base, state) => ({
-                      ...base,
-                      fontWeight: state.data.isNew ? 'bold' : 'normal',
-                      color: state.data.isNew ? '#170C79' : base.color,
-                      background: state.isSelected ? '#170C79' : state.isFocused ? '#e9ecef' : 'white'
-                    })
-                  }}
-                />
-              </div>
-            </div>
+        {isAdmin && step === 0 && form.user_id && form.user_id !== "new" && (
+          <div className="mb-3">
+            <AdminClientProfile
+              customerDetails={customerDetails}
+              customerTotalHours={customerTotalHours}
+              siteOptions={siteOptions}
+              selectedSiteId={selectedSiteId}
+              onSiteSelect={(selected) => {
+                if (!selected) return;
 
+                // NEW: Interaction for handling Manual Map entry
+                if (selected.value === "manual" || selected.isManual) {
+                  setSelectedSiteId("manual");
+                  setField("location", "");
+                  setField("address", "");
+                  setField("coordinates", "");
+                  setLocationError("");
+
+                  // Smooth auto-scroll down to the Map step
+                  setTimeout(() => {
+                    const mapSection = document.getElementById("location-step-wrapper");
+                    if (mapSection) {
+                      mapSection.scrollIntoView({ behavior: "smooth", block: "start" });
+                      toast.info("Please set the location on the map below.");
+                    } else {
+                      window.scrollBy({ top: 500, behavior: "smooth" });
+                    }
+                  }, 150);
+                } else {
+                  setSelectedSiteId(selected.siteData.id);
+                  setField("location", selected.siteData.address || "");
+                  setField("address", selected.siteData.address || "");
+                  setField("coordinates", selected.siteData.coordinates || "");
+                  setLocationError("");
+                }
+              }}
+              loadingSites={loadingSites}
+            />
+          </div>
+        )}
+
+        {isAdmin && step === 0 && form.user_id === "new" && (
+          <div className="mb-3">
             {form.user_id === "new" && (
               <div className="card shadow-sm border-0 rounded-3 mb-4">
                 <div className="card-body p-4">
@@ -619,45 +702,6 @@ export default function AddJob() {
                   </div>
                 </div>
               </div>
-            )}
-
-            {form.user_id && form.user_id !== "new" && (
-              <AdminClientProfile
-                customerDetails={customerDetails}
-                customerTotalHours={customerTotalHours}
-                siteOptions={siteOptions}
-                selectedSiteId={selectedSiteId}
-                onSiteSelect={(selected) => {
-                  if (!selected) return;
-
-                  // NEW: Interaction for handling Manual Map entry
-                  if (selected.value === "manual" || selected.isManual) {
-                    setSelectedSiteId("manual");
-                    setField("location", "");
-                    setField("address", "");
-                    setField("coordinates", "");
-                    setLocationError("");
-
-                    // Smooth auto-scroll down to the Map step
-                    setTimeout(() => {
-                      const mapSection = document.getElementById("location-step-wrapper");
-                      if (mapSection) {
-                        mapSection.scrollIntoView({ behavior: "smooth", block: "start" });
-                        toast.info("Please set the location on the map below.");
-                      } else {
-                        window.scrollBy({ top: 500, behavior: "smooth" });
-                      }
-                    }, 150);
-                  } else {
-                    setSelectedSiteId(selected.siteData.id);
-                    setField("location", selected.siteData.address || "");
-                    setField("address", selected.siteData.address || "");
-                    setField("coordinates", selected.siteData.coordinates || "");
-                    setLocationError("");
-                  }
-                }}
-                loadingSites={loadingSites}
-              />
             )}
           </div>
         )}

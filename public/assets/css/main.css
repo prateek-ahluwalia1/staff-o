@@ -430,7 +430,7 @@ h6 {
 .main-navbar .main-menu .nav-link.active,
 .main-navbar .main-menu .nav-link:focus,
 .main-navbar .main-menu .nav-link:hover {
-	color: #2563eb;
+	color: #0A7C6E;
 }
 .main-navbar .main-menu .nav-link::before {
 	content: "";
@@ -439,7 +439,7 @@ h6 {
 	right: 0;
 	bottom: -6px;
 	height: 3px;
-	background: #2563eb;
+	background: #0A7C6E;
 	border-radius: 999px;
 	transform: scaleX(0);
 	transform-origin: center;
@@ -471,20 +471,20 @@ h6 {
 	font-size: 0.95rem;
 }
 .navbar-actions .signin-btn {
-	border-color: #170C79;
-	color: #170C79;
+	border-color: #0A7C6E;
+	color: #0A7C6E;
 }
 .navbar-actions .signin-btn:hover {
 	background: rgba(37, 99, 235, 0.08);
-	color: #170C79;
+	color: #0A7C6E;
 }
 .navbar-actions .register-btn {
-	background: #170C79;
-	border-color: #170C79;
+	background: #0A7C6E;
+	border-color: #0A7C6E;
 	color: #ffffff;
 }
 .navbar-actions .register-btn:hover {
-	color: #170C79;
+	color: #0A7C6E;
 	background: #ffffff;
 }
 .navbar-toggler {
@@ -844,7 +844,7 @@ h6 {
 }
 .hero-link {
 	font-weight: 600;
-	color: #2563eb;
+	color: #0A7C6E;
 	display: inline-flex;
 	align-items: center;
 	gap: 8px;
@@ -896,8 +896,8 @@ h6 {
 	border-radius: 999px;
 	padding: 8px 18px;
 	font-weight: 600;
-	background: #2563eb;
-	border-color: #2563eb;
+	background: #0A7C6E;
+	border-color: #0A7C6E;
 }
 .hero-floating-card .btn:hover {
 	background: #1d4ed8;
@@ -1085,7 +1085,7 @@ h6 {
 	color: #6b7280;
 }
 .company-location-v2 i {
-	color: #2563eb;
+	color: #0A7C6E;
 	margin-right: 4px;
 }
 .company-openings-v2 {
@@ -1113,7 +1113,7 @@ h6 {
 	transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
 }
 .company-nav-v2:hover {
-	background: #2563eb;
+	background: #0A7C6E;
 	color: #ffffff;
 	box-shadow: 0 16px 35px rgba(37, 99, 235, 0.45);
 }
@@ -1156,7 +1156,7 @@ h6 {
 	gap: 8px;
 }
 .company-openings i {
-	color: #2563eb;
+	color: #0A7C6E;
 }
 .company-viewall {
 	margin-top: 40px;
@@ -1220,7 +1220,7 @@ h6 {
 }
 .howit-icon i {
 	font-size: 40px;
-	color: #2563eb;
+	color: #0A7C6E;
 }
 .howit-card h4 {
 	font-size: 1.3rem;
@@ -1310,13 +1310,13 @@ h6 {
 	text-decoration: none;
 }
 .job-card-title a:hover {
-	color: #2563eb;
+	color: #0A7C6E;
 }
 .job-card-location {
 	display: flex;
 	align-items: center;
 	gap: 8px;
-	color: #2563eb;
+	color: #0A7C6E;
 	font-weight: 600;
 	margin-bottom: 4px;
 }
@@ -1426,7 +1426,7 @@ h6 {
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	color: #2563eb;
+	color: #0A7C6E;
 	cursor: pointer;
 	z-index: 2;
 }
@@ -1578,12 +1578,12 @@ h6 {
 	box-shadow: 0 5px 12px rgba(37, 99, 235, 0.15);
 }
 .industry-chip:hover {
-	background: #2563eb;
+	background: #0A7C6E;
 	color: #ffffff;
 	border-color: #1d4ed8;
 }
 .industry-chip:hover .chip-icon {
-	color: #2563eb;
+	color: #0A7C6E;
 	background: #f8fafc;
 }
 
@@ -3291,7 +3291,7 @@ a.wit-btn {
 	font-size: 18px;
 }
 .bookmark:hover {
-	color: #2563eb;
+	color: #0A7C6E;
 }
 .latest-jobs h4 {
 	margin: 0;
@@ -3304,7 +3304,7 @@ a.wit-btn {
 	text-decoration: none;
 }
 .latest-jobs h4 a:hover {
-	color: #2563eb;
+	color: #0A7C6E;
 }
 .latest-job-meta {
 	display: flex;
@@ -3314,7 +3314,7 @@ a.wit-btn {
 	font-size: 0.95rem;
 }
 .latest-job-meta span i {
-	color: #2563eb;
+	color: #0A7C6E;
 	margin-right: 6px;
 }
 .latest-job-footer {
@@ -4993,7 +4993,7 @@ Large Mobile Screen
 }
 .testimonial-quote i {
 	font-size: 28px;
-	color: #2563eb;
+	color: #0A7C6E;
 }
 .testimonials-carousel p {
 	font-size: 0.98rem;
@@ -5033,7 +5033,7 @@ Large Mobile Screen
 	border-radius: 50%;
 	background: #ffffff;
 	box-shadow: 0 18px 45px rgba(15, 23, 42, 0.15);
-	color: #2563eb;
+	color: #0A7C6E;
 	display: flex;
 	align-items: center;
 	justify-content: center;
@@ -5186,7 +5186,7 @@ Large Mobile Screen
     padding: 6px 16px;
     border-radius: 999px;
     background: rgba(37, 99, 235, 0.12);
-    color: #2563eb;
+    color: #0A7C6E;
     font-weight: 600;
     letter-spacing: 0.04em;
     text-transform: uppercase;
@@ -5206,7 +5206,7 @@ Large Mobile Screen
 .subscribe-form .input-group-text {
     border: none;
     background: transparent;
-    color: #2563eb;
+    color: #0A7C6E;
     font-size: 1.1rem;
     padding: 0 16px;
     display: flex;
@@ -5275,7 +5275,7 @@ Large Mobile Screen
     padding: 6px 18px;
     border-radius: 999px;
     background: rgba(37, 99, 235, 0.14);
-    color: #2563eb;
+    color: #0A7C6E;
     font-weight: 600;
     letter-spacing: 0.05em;
     text-transform: uppercase;
@@ -5294,7 +5294,7 @@ Large Mobile Screen
     transition: border-color 0.2s ease, background 0.2s ease;
 }
 .jobs-hero-field i {
-    color: #2563eb;
+    color: #0A7C6E;
 }
 .jobs-hero-field .form-control,
 .jobs-hero-field .form-select {
@@ -5369,7 +5369,7 @@ Large Mobile Screen
     margin-bottom: 12px;
 }
 .filter-field i {
-    color: #2563eb;
+    color: #0A7C6E;
 }
 .filter-field .form-control {
     border: none;
@@ -5410,7 +5410,7 @@ Large Mobile Screen
 }
 .filter-list span {
     background: rgba(37, 99, 235, 0.12);
-    color: #2563eb;
+    color: #0A7C6E;
     border-radius: 999px;
     padding: 2px 10px;
     font-size: 0.8rem;
@@ -5484,7 +5484,7 @@ Large Mobile Screen
     font-weight: 600;
 }
 .job-location {
-    color: #2563eb;
+    color: #0A7C6E;
     font-weight: 600;
 }
 .job-location i {
@@ -5559,7 +5559,7 @@ Large Mobile Screen
     color: #475569;
 }
 .candidate-save:hover {
-    background: #2563eb;
+    background: #0A7C6E;
     color: #fff;
 }
 .candidate-meta {
@@ -5727,7 +5727,7 @@ Large Mobile Screen
 }
 .jobs-pagination .page-item.active .page-link,
 .jobs-pagination .page-link:hover {
-    background: #2563eb;
+    background: #0A7C6E;
     color: #ffffff;
 }
 .jobs-pagination .page-item.disabled .page-link {
@@ -5753,9 +5753,9 @@ Large Mobile Screen
     font-weight: 600;
 }
 .jobs-pagination ul li.active a {
-    background: #2563eb;
+    background: #0A7C6E;
     color: #fff;
-    border-color: #2563eb;
+    border-color: #0A7C6E;
 }
 
 @media (max-width: 991px) {
@@ -5914,7 +5914,7 @@ Large Mobile Screen
 }
 .auth-link {
     font-size: 0.85rem;
-    color: #2563eb;
+    color: #0A7C6E;
     text-decoration: none;
 }
 .auth-link:hover {
@@ -5992,7 +5992,7 @@ Large Mobile Screen
 }
 .auth-toggle-btn.active,
 .auth-toggle-btn:hover {
-    background: #2563eb;
+    background: #0A7C6E;
     color: #ffffff;
     box-shadow: 0 18px 32px rgba(37, 99, 235, 0.28);
 }
@@ -6066,7 +6066,7 @@ Large Mobile Screen
     font-weight: 600;
 }
 .job-grid .job-location {
-    color: #2563eb;
+    color: #0A7C6E;
     font-weight: 600;
 }
 .job-grid .job-location i {
@@ -6134,7 +6134,7 @@ Large Mobile Screen
 }
 .plan-icon.primary {
     background: rgba(59, 130, 246, 0.15);
-    color: #2563eb;
+    color: #0A7C6E;
 }
 .plan-icon.highlight {
     background: rgba(249, 115, 22, 0.18);
@@ -6212,7 +6212,7 @@ Large Mobile Screen
 }
 .metric-icon.primary {
     background: rgba(59, 130, 246, 0.18);
-    color: #2563eb;
+    color: #0A7C6E;
 }
 .metric-icon.highlight {
     background: rgba(249, 115, 22, 0.18);
@@ -6255,7 +6255,7 @@ Large Mobile Screen
 }
 .plan-price span {
     font-size: 1rem;
-    color: #2563eb;
+    color: #0A7C6E;
 }
 .plan-price strong {
     font-size: 2.3rem;
@@ -6316,7 +6316,7 @@ Large Mobile Screen
     color: #1d4ed8;
 }
 .jobs-view-toggle .view-btn.active {
-    background: #2563eb;
+    background: #0A7C6E;
     color: #ffffff;
     box-shadow: 0 18px 32px rgba(37, 99, 235, 0.28);
 }
@@ -6396,7 +6396,7 @@ Large Mobile Screen
     margin-bottom: 12px;
 }
 .job-list-meta i {
-    color: #2563eb;
+    color: #0A7C6E;
     margin-right: 6px;
 }
 .job-list-summary {
@@ -6537,7 +6537,7 @@ Large Mobile Screen
     font-weight: 500;
 }
 .job-detail-tags i {
-    color: #2563eb;
+    color: #0A7C6E;
     margin-right: 6px;
 }
 .job-detail-actions {
@@ -6558,7 +6558,7 @@ Large Mobile Screen
     box-shadow: 0 18px 40px rgba(37, 99, 235, 0.18);
 }
 .job-detail-actions .job-share {
-    color: #2563eb;
+    color: #0A7C6E;
     font-weight: 600;
     padding: 0;
 }
@@ -6585,7 +6585,7 @@ Large Mobile Screen
     height: 44px;
     border-radius: 14px;
     background: #ffffff;
-    color: #2563eb;
+    color: #0A7C6E;
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -6681,7 +6681,7 @@ Large Mobile Screen
     font-weight: 500;
 }
 .job-snapshot li i {
-    color: #2563eb;
+    color: #0A7C6E;
 }
 .job-snapshot li span {
     color: #94a3b8;
@@ -6829,7 +6829,7 @@ Large Mobile Screen
     color: #0f172a;
 }
 .candidate-save-btn:hover {
-    background: #2563eb;
+    background: #0A7C6E;
     color: #fff;
 }
 .candidate-hero-meta {
@@ -6896,7 +6896,7 @@ Large Mobile Screen
 }
 .section-head a {
     font-weight: 600;
-    color: #2563eb;
+    color: #0A7C6E;
     text-decoration: none;
 }
 .candidate-highlights {
@@ -6930,7 +6930,7 @@ Large Mobile Screen
     width: 14px;
     height: 14px;
     border-radius: 50%;
-    border: 3px solid #2563eb;
+    border: 3px solid #0A7C6E;
     background: #fff;
     position: relative;
     top: 0;
@@ -7254,7 +7254,7 @@ Large Mobile Screen
     color: #1d4ed8;
 }
 .company-hero-actions .btn-outline-primary:hover {
-    background: #2563eb;
+    background: #0A7C6E;
     color: #ffffff;
 }
 
@@ -7391,7 +7391,7 @@ Large Mobile Screen
 }
 .company-perks .perk-card i {
     font-size: 1.4rem;
-    color: #2563eb;
+    color: #0A7C6E;
 }
 .company-perks .perk-card h4 {
     margin: 0;
@@ -7458,7 +7458,7 @@ Large Mobile Screen
     font-size: 0.95rem;
 }
 .company-facts a {
-    color: #2563eb;
+    color: #0A7C6E;
     text-decoration: none;
 }
 .company-facts a:hover {
@@ -7580,7 +7580,7 @@ Large Mobile Screen
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    color: #2563eb;
+    color: #0A7C6E;
     font-size: 1.1rem;
 }
 .contact-details h5 {
@@ -7595,7 +7595,7 @@ Large Mobile Screen
     line-height: 1.6;
 }
 .contact-details a {
-    color: #2563eb;
+    color: #0A7C6E;
     text-decoration: none;
     font-weight: 600;
 }
@@ -7619,7 +7619,7 @@ Large Mobile Screen
     transition: background 0.2s ease, color 0.2s ease;
 }
 .contact-social a:hover {
-    background: #2563eb;
+    background: #0A7C6E;
     color: #ffffff;
 }
 
@@ -7675,7 +7675,7 @@ Large Mobile Screen
 }
 .office-card a {
     margin-top: auto;
-    color: #2563eb;
+    color: #0A7C6E;
     text-decoration: none;
     font-weight: 600;
     display: inline-flex;
@@ -7893,7 +7893,7 @@ Large Mobile Screen
 }
 .stat-purple { background: linear-gradient(135deg, #7c3aed, #a855f7); }
 .stat-orange { background: linear-gradient(135deg, #f97316, #fb923c); }
-.stat-blue { background: linear-gradient(135deg, #2563eb, #60a5fa); }
+.stat-blue { background: linear-gradient(135deg, #0A7C6E, #60a5fa); }
 .stat-teal { background: linear-gradient(135deg, #0ea5e9, #14b8a6); }
 .employer-hero {
     width: 100%;
@@ -7990,7 +7990,7 @@ Large Mobile Screen
 }
 .panel-heading a {
     font-weight: 600;
-    color: #2563eb;
+    color: #0A7C6E;
     text-decoration: none;
 }
 .badge-status {
@@ -8084,7 +8084,7 @@ Large Mobile Screen
     width: 46px;
     height: 46px;
     border-radius: 14px;
-    background: linear-gradient(135deg, #2563eb, #60a5fa);
+    background: linear-gradient(135deg, #0A7C6E, #60a5fa);
     color: #fff;
     display: inline-flex;
     align-items: center;
@@ -8140,7 +8140,7 @@ Large Mobile Screen
 .detail-icon.orange { background: linear-gradient(135deg, #f97316, #fb923c); }
 .detail-icon.teal { background: linear-gradient(135deg, #0ea5e9, #14b8a6); }
 .detail-icon.green { background: linear-gradient(135deg, #10b981, #22d3ee); }
-.detail-icon.blue { background: linear-gradient(135deg, #2563eb, #60a5fa); }
+.detail-icon.blue { background: linear-gradient(135deg, #0A7C6E, #60a5fa); }
 .detail-icon.danger { background: linear-gradient(135deg, #f43f5e, #fb7185); }
 
 .content-hero {
@@ -8214,7 +8214,7 @@ Large Mobile Screen
 }
 .faq-accordion p{margin-top: 15px;}
 .faq-accordion details[open] {
-    border-color: #2563eb;
+    border-color: #0A7C6E;
     box-shadow: 0 25px 55px rgba(37, 99, 235, 0.12);
 }
 .blog-grid-modern {
@@ -8252,7 +8252,7 @@ Large Mobile Screen
 }
 .blog-card-body a {
     font-weight: 600;
-    color: #2563eb;
+    color: #0A7C6E;
     text-decoration: none;
 }
 .blog-detail-hero {
@@ -8285,7 +8285,7 @@ Large Mobile Screen
 .notfound-section h1 {
     font-size: 7rem;
     margin: 0;
-    color: #2563eb;
+    color: #0A7C6E;
 }
 .notfound-section p {
     color: #475569;
@@ -8525,7 +8525,7 @@ Large Mobile Screen
 }
 .blog-card-footer .author div strong{font-weight: 700; display: block; margin-bottom: 5px;}
 .text-link {
-    color: #2563eb;
+    color: #0A7C6E;
     font-weight: 600;
     text-decoration: none;
 }
@@ -8607,7 +8607,7 @@ Large Mobile Screen
     color: #94a3b8;
 }
 .blog-meta a {
-    color: #2563eb;
+    color: #0A7C6E;
     text-decoration: none;
     font-weight: 500;
 }
@@ -8624,7 +8624,7 @@ Large Mobile Screen
     transition: color 0.2s ease;
 }
 .blog-title a:hover {
-    color: #2563eb;
+    color: #0A7C6E;
 }
 .blog-excerpt {
     margin: 0;
@@ -8636,7 +8636,7 @@ Large Mobile Screen
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    color: #2563eb;
+    color: #0A7C6E;
     font-weight: 600;
     text-decoration: none;
     font-size: 0.95rem;
@@ -8662,14 +8662,14 @@ Large Mobile Screen
     transition: all 0.2s ease;
 }
 .blog-pagination .page-item.active .page-link {
-    background: #2563eb;
-    border-color: #2563eb;
+    background: #0A7C6E;
+    border-color: #0A7C6E;
     color: #fff;
 }
 .blog-pagination .page-link:hover {
     background: #eef2ff;
-    border-color: #2563eb;
-    color: #2563eb;
+    border-color: #0A7C6E;
+    color: #0A7C6E;
 }
 .blog-sidebar {
     display: flex;
@@ -8725,7 +8725,7 @@ Large Mobile Screen
     border-bottom: none;
 }
 .sidebar-categories li a:hover {
-    color: #2563eb;
+    color: #0A7C6E;
 }
 .sidebar-categories li a span {
     color: #94a3b8;
@@ -8772,7 +8772,7 @@ Large Mobile Screen
     transition: color 0.2s ease;
 }
 .recent-content h6 a:hover {
-    color: #2563eb;
+    color: #0A7C6E;
 }
 .recent-date {
     display: block;
@@ -8801,7 +8801,7 @@ Large Mobile Screen
     border-bottom: none;
 }
 .sidebar-archives li a:hover {
-    color: #2563eb;
+    color: #0A7C6E;
 }
 .sidebar-archives li a span {
     color: #94a3b8;
@@ -8823,7 +8823,7 @@ Large Mobile Screen
     transition: all 0.2s ease;
 }
 .sidebar-tags a:hover {
-    background: #2563eb;
+    background: #0A7C6E;
     color: #fff;
 }
 .blog-widget {
@@ -8903,7 +8903,7 @@ Large Mobile Screen
     display: inline-block;
 }
 .page-dots span.active {
-    background: #2563eb;
+    background: #0A7C6E;
     width: 16px;
     border-radius: 999px;
 }
@@ -8995,7 +8995,7 @@ Large Mobile Screen
     padding: 50px 25px 25px;
     border-radius: 20px;
     background: #f8fafc;
-    border-left: 4px solid #2563eb;
+    border-left: 4px solid #0A7C6E;
     color: #0f172a;
     font-size: 1.05rem;
 }
@@ -9003,7 +9003,7 @@ Large Mobile Screen
     display: block;
     margin-top: 12px;
     font-weight: 600;
-    color: #2563eb;
+    color: #0A7C6E;
 }
 .blog-tag-cloud {
     display: flex;
@@ -9088,7 +9088,7 @@ Large Mobile Screen
     padding: 2px 8px;
     border-radius: 4px;
     background: rgba(37, 99, 235, 0.1);
-    color: #2563eb;
+    color: #0A7C6E;
     font-size: 0.75rem;
     font-weight: 600;
     text-transform: uppercase;
@@ -9111,7 +9111,7 @@ Large Mobile Screen
     padding: 6px 12px;
     background: transparent;
     border: none;
-    color: #2563eb;
+    color: #0A7C6E;
     font-size: 0.9rem;
     font-weight: 600;
     cursor: pointer;
@@ -9150,7 +9150,7 @@ Large Mobile Screen
     transition: all 0.2s ease;
 }
 .comment-form .form-control:focus {
-    border-color: #2563eb;
+    border-color: #0A7C6E;
     box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
 }
 .comment-form textarea.form-control {
@@ -9165,7 +9165,7 @@ Large Mobile Screen
 }
 
 .btn-primary-custom {
-    background-color: #170C79 !important;
+    background-color: #0A7C6E !important;
     color: white;
     border: none;
     font-weight: 500;
@@ -9174,7 +9174,7 @@ Large Mobile Screen
 }
 
 .btn-primary-custom:hover {
-    background-color: #2315a3 !important;
+    background-color: #046459 !important;
     color: white;
     transform: translateY(-1px);
 }
@@ -9270,7 +9270,7 @@ Large Mobile Screen
 .form-field select:focus,
 .form-field textarea:focus {
     outline: none;
-    border-color: #2563eb;
+    border-color: #0A7C6E;
     box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
     background: #fff;
 }
@@ -9327,7 +9327,7 @@ Large Mobile Screen
 .detail-icon.orange { background: linear-gradient(135deg, #f97316, #fb923c); }
 .detail-icon.teal { background: linear-gradient(135deg, #0ea5e9, #14b8a6); }
 .detail-icon.green { background: linear-gradient(135deg, #10b981, #22d3ee); }
-.detail-icon.blue { background: linear-gradient(135deg, #2563eb, #60a5fa); }
+.detail-icon.blue { background: linear-gradient(135deg, #0A7C6E, #60a5fa); }
 .detail-icon.danger { background: linear-gradient(135deg, #f43f5e, #fb7185); }
 .recommended-card,
 .following-card {
@@ -9363,7 +9363,7 @@ Large Mobile Screen
 }
 .following-card span {
     font-weight: 600;
-    color: #2563eb;
+    color: #0A7C6E;
 }
 
 @media (max-width: 1199px) {
@@ -9509,7 +9509,7 @@ Large Mobile Screen
     align-items: center;
     gap: 8px;
     font-weight: 600;
-    color: #2563eb;
+    color: #0A7C6E;
     cursor: pointer;
 }
 .settings-header .upload-label input {
@@ -9518,7 +9518,7 @@ Large Mobile Screen
 .settings-header-content span {
     display: inline-flex;
     background: rgba(37, 99, 235, 0.1);
-    color: #2563eb;
+    color: #0A7C6E;
     font-weight: 600;
     padding: 4px 12px;
     border-radius: 999px;
@@ -9686,7 +9686,7 @@ Large Mobile Screen
     height: 46px;
     border-radius: 14px;
     background: rgba(37, 99, 235, 0.12);
-    color: #2563eb;
+    color: #0A7C6E;
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -9768,7 +9768,7 @@ Large Mobile Screen
     align-items: flex-start;
 }
 .timeline-card li i {
-    color: #2563eb;
+    color: #0A7C6E;
     margin-top: 4px;
 }
 .version-card {
@@ -9889,7 +9889,7 @@ Large Mobile Screen
 }
 .chat-bubble.me {
     margin-left: auto;
-    background: #2563eb;
+    background: #0A7C6E;
     color: #ffffff;
 }
 .chat-composer {
@@ -9909,7 +9909,7 @@ Large Mobile Screen
 }
 .chat-send-btn {
     border: none;
-    background: linear-gradient(135deg, #2563eb, #3b82f6);
+    background: linear-gradient(135deg, #0A7C6E, #3b82f6);
     color: #ffffff;
     border-radius: 14px;
     width: 48px;
@@ -9970,7 +9970,7 @@ Large Mobile Screen
     color: #475569;
 }
 .application-location {
-    color: #2563eb;
+    color: #0A7C6E;
     font-weight: 600;
     margin-bottom: 10px;
 }
@@ -10074,7 +10074,7 @@ Large Mobile Screen
     transition: transform 0.2s ease;
 }
 .toggle-switch input:checked + .toggle-slider {
-    background: linear-gradient(135deg, #2563eb, #7c3aed);
+    background: linear-gradient(135deg, #0A7C6E, #7c3aed);
 }
 .toggle-switch input:checked + .toggle-slider::before {
     transform: translateX(22px);
@@ -10217,7 +10217,7 @@ Large Mobile Screen
     transition: color 0.2s ease;
 }
 .employer-card h4 a:hover {
-    color: #2563eb;
+    color: #0A7C6E;
 }
 .employer-info p {
     margin: 0;
@@ -10242,7 +10242,7 @@ Large Mobile Screen
     cursor: pointer;
 }
 .employer-follow:hover {
-    background: #2563eb;
+    background: #0A7C6E;
     color: #fff;
 }
 .employer-meta {
@@ -10370,7 +10370,7 @@ Large Mobile Screen
     transition: color 0.2s ease;
 }
 .employer-list-top h4 a:hover {
-    color: #2563eb;
+    color: #0A7C6E;
 }
 .employer-list-top p {
     margin: 6px 0 0;
@@ -10458,7 +10458,7 @@ Large Mobile Screen
     padding: 8px 20px;
     border-radius: 999px;
     background: rgba(37, 99, 235, 0.15);
-    color: #2563eb;
+    color: #0A7C6E;
     font-size: 0.85rem;
     font-weight: 700;
     text-transform: uppercase;
@@ -10546,7 +10546,7 @@ Large Mobile Screen
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 .toggle-switch input:checked + .toggle-slider {
-    background-color: #2563eb;
+    background-color: #0A7C6E;
 }
 .toggle-switch input:checked + .toggle-slider:before {
     transform: translateX(26px);
@@ -10572,7 +10572,7 @@ Large Mobile Screen
     border-color: rgba(37, 99, 235, 0.3);
 }
 .pricing-card.featured {
-    border-color: #2563eb;
+    border-color: #0A7C6E;
     box-shadow: 0 24px 50px rgba(37, 99, 235, 0.15);
     transform: scale(1.05);
 }
@@ -10586,7 +10586,7 @@ Large Mobile Screen
     transform: translateX(-50%);
     padding: 6px 20px;
     border-radius: 20px;
-    background: #2563eb;
+    background: #0A7C6E;
     color: #ffffff;
     font-size: 0.75rem;
     font-weight: 700;
@@ -10712,7 +10712,7 @@ Large Mobile Screen
 }
 .feature-icon i {
     font-size: 1.8rem;
-    color: #2563eb;
+    color: #0A7C6E;
 }
 .feature-card h4 {
     font-size: 1.2rem;
@@ -10822,7 +10822,7 @@ Large Mobile Screen
     background: #f8fafc;
 }
 .resume-table a.text-primary {
-    color: #170C79 !important;
+    color: #0A7C6E !important;
     text-decoration: none;
     font-weight: 500;
 }
@@ -10851,7 +10851,7 @@ Large Mobile Screen
     transform: translateY(-2px);
 }
 .action-icons a.text-primary {
-    color: #2563eb !important;
+    color: #0A7C6E !important;
 }
 .action-icons a.text-dark {
     color: #334155 !important;
@@ -11250,7 +11250,7 @@ Large Mobile Screen
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    background: #2563eb;
+    background: #0A7C6E;
     color: #ffffff;
     padding: 6px 12px;
     border-radius: 20px;
@@ -11301,7 +11301,7 @@ Large Mobile Screen
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    color: #2563eb;
+    color: #0A7C6E;
     font-size: 0.95rem;
     font-weight: 600;
     transition: all 0.2s ease;
@@ -11468,7 +11468,7 @@ Large Mobile Screen
     left: 0;
     right: 0;
     height: 4px;
-    background: linear-gradient(90deg, #2563eb 0%, #8b5cf6 100%);
+    background: linear-gradient(90deg, #0A7C6E 0%, #8b5cf6 100%);
     transform: scaleX(0);
     transition: transform 0.4s ease;
 }
@@ -11499,7 +11499,7 @@ Large Mobile Screen
     width: 100px;
     height: 100px;
     margin: 0 auto 24px;
-    background: linear-gradient(135deg, #2563eb 0%, #8b5cf6 100%);
+    background: linear-gradient(135deg, #0A7C6E 0%, #8b5cf6 100%);
     border-radius: 24px;
     display: flex;
     align-items: center;
@@ -11646,7 +11646,7 @@ Large Mobile Screen
 .video-badge-new {
     display: inline-block;
     background: rgba(37, 99, 235, 0.1);
-    color: #2563eb;
+    color: #0A7C6E;
     padding: 8px 20px;
     border-radius: 30px;
     font-size: 0.85rem;
@@ -11665,7 +11665,7 @@ Large Mobile Screen
 }
 
 .video-title-accent {
-    color: #2563eb;
+    color: #0A7C6E;
     position: relative;
 }
 
@@ -11753,7 +11753,7 @@ Large Mobile Screen
     display: flex;
     align-items: center;
     justify-content: center;
-    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+    background: linear-gradient(135deg, #0A7C6E 0%, #1d4ed8 100%);
     border-radius: 50%;
     position: relative;
     z-index: 1;
@@ -11933,7 +11933,7 @@ Large Mobile Screen
 .video-badge-v2 {
     display: inline-block;
     background: linear-gradient(135deg, rgba(37, 99, 235, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%);
-    color: #2563eb;
+    color: #0A7C6E;
     padding: 10px 24px;
     border-radius: 30px;
     font-size: 0.9rem;
@@ -11953,7 +11953,7 @@ Large Mobile Screen
 }
 
 .video-highlight-v2 {
-    color: #2563eb;
+    color: #0A7C6E;
     position: relative;
 }
 
@@ -12067,13 +12067,13 @@ Large Mobile Screen
 }
 
 .video-play-btn-v2:hover .play-btn-circle-v2 {
-    background: #2563eb;
+    background: #0A7C6E;
     box-shadow: 0 12px 40px rgba(37, 99, 235, 0.5);
     transform: rotate(360deg);
 }
 
 .play-btn-circle-v2 i {
-    color: #2563eb;
+    color: #0A7C6E;
     font-size: 1.8rem;
     margin-left: 4px;
     transition: all 0.3s ease;

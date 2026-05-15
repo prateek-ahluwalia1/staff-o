@@ -8,13 +8,6 @@ import Loader from "../components/Loader";
 
 const ALL_OPTION_VALUE = "ALL";
 
-const STATUS_TABS = [
-  { key: "past", label: "Past", status: "completed" },
-  { key: "ongoing", label: "Ongoing", status: "inprogress" },
-  { key: "upcoming", label: "Upcoming", status: "pending" },
-  { key: "missed", label: "Missed", status: "missed" },
-];
-
 const getWeekRange = () => {
   const now = new Date();
   const start = new Date(now);
@@ -29,7 +22,7 @@ const formatDateInput = (date) => {
   const y = date.getFullYear();
   const m = String(date.getMonth() + 1).padStart(2, "0");
   const d = String(date.getDate()).padStart(2, "0");
-  return `${y}-${m}-${d}`; // HTML <input type="date"> requires YYYY-MM-DD
+  return `${y}-${m}-${d}`;
 };
 
 const parseInputDate = (val) => {
@@ -43,7 +36,7 @@ const formatDateForPayload = (date) => {
   const mm = String(date.getMonth() + 1).padStart(2, "0");
   const dd = String(date.getDate()).padStart(2, "0");
   const yyyy = date.getFullYear();
-  return `${mm}/${dd}/${yyyy}`; // Left untouched for your backend API
+  return `${mm}/${dd}/${yyyy}`;
 };
 
 const formatDateTime = (value) => {
@@ -57,7 +50,6 @@ const formatDateTime = (value) => {
   const hh = String(parsed.getHours()).padStart(2, "0");
   const min = String(parsed.getMinutes()).padStart(2, "0");
 
-  // Changed to standard AU format dd/MM/yyyy HH:mm
   return `${dd}/${mm}/${yyyy} ${hh}:${min}`;
 };
 
@@ -229,7 +221,7 @@ const selectStyles = {
   option: (base, state) => ({
     ...base,
     backgroundColor: state.isSelected
-      ? "#0d6efd"
+      ? "#0A7C6E"
       : state.isFocused
         ? "#e7f1ff"
         : "#fff",
@@ -250,7 +242,6 @@ const JobTracker = () => {
   }, [customerResponse]);
 
   const weekRange = useMemo(() => getWeekRange(), []);
-  const [activeTab, setActiveTab] = useState(STATUS_TABS[0]);
   const [selectedCustomerValues, setSelectedCustomerValues] = useState([]);
   const [startDate, setStartDate] = useState(formatDateInput(weekRange.start));
   const [endDate, setEndDate] = useState(formatDateInput(weekRange.end));
@@ -288,10 +279,11 @@ const JobTracker = () => {
       .map((customer) => Number(customer.id))
       .filter((id) => Number.isFinite(id));
 
+    // Removed the dynamic status, defaults to empty string to fetch all records
     const payload = {
       from_to: `${formatDateForPayload(parsedStartDate)} - ${formatDateForPayload(parsedEndDate)}`,
       type: "preview",
-      job_status: activeTab.status,
+      job_status: "",
       user_id:
         selectedCustomerValues.length === 0
           ? allUserIds
@@ -312,18 +304,12 @@ const JobTracker = () => {
     const reportRows = getArrayFromResponse(res).map(normalizeRow);
     setRows(reportRows);
   }, [
-    activeTab.status,
     customerList,
     endDate,
     selectedCustomerValues,
     startDate,
     submit,
   ]);
-
-  const handleTabChange = async (tab) => {
-    setActiveTab(tab);
-    setRows([]);
-  };
 
   const handleExport = () => {
     if (rows.length === 0) {
@@ -360,24 +346,6 @@ const JobTracker = () => {
           <p>
             Review shifts, filter records, and export a clean tracker summary.
           </p>
-        </div>
-      </div>
-
-      <div className="card border-0 shadow-sm mb-4">
-        <div className="card-body py-3">
-          <ul className="nav nav-pills jobtracker-tabs gap-2 flex-wrap mb-0">
-            {STATUS_TABS.map((tab) => (
-              <li className="nav-item" key={tab.key}>
-                <button
-                  type="button"
-                  className={`nav-link ${activeTab.key === tab.key ? "active" : ""}`}
-                  onClick={() => handleTabChange(tab)}
-                >
-                  {tab.label}
-                </button>
-              </li>
-            ))}
-          </ul>
         </div>
       </div>
 
@@ -521,23 +489,6 @@ const JobTracker = () => {
 
       <style>
         {`
-          .jobtracker-tabs .nav-link {
-            border-radius: 999px;
-            padding: 0.45rem 0.9rem;
-            font-size: 0.88rem;
-            font-weight: 600;
-            color: #475569;
-            background: #f8fafc;
-            border: 1px solid #dbe3ef;
-          }
-
-          .jobtracker-tabs .nav-link.active {
-            background: linear-gradient(135deg, #0d6efd 0%, #0b5ed7 100%);
-            border-color: #0d6efd;
-            color: #fff;
-            box-shadow: 0 8px 18px rgba(13, 110, 253, 0.18);
-          }
-
           .jobtracker-action-btn {
             min-height: 38px;
           }
@@ -563,7 +514,7 @@ const JobTracker = () => {
             letter-spacing: 0.02em;
             font-weight: 700;
             border-right: 1px solid #d6e4ff;
-            border-bottom: 2px solid #0d6efd !important;
+            border-bottom: 2px solid #0A7C6E !important;
           }
 
           .jobtracker-main-table > thead > tr > th:last-child,

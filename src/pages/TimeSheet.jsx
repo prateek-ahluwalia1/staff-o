@@ -6,7 +6,6 @@ import useSubmit from "../hooks/useSubmit";
 import useFetch from "../hooks/useFetch";
 import Loader from "../components/Loader";
 
-
 const ALL_OPTION_VALUE = "ALL";
 
 const getWeekRange = () => {
@@ -70,9 +69,10 @@ const getArrayFromResponse = (res) => {
   return [];
 };
 
-const safeNumber = (value) => {
+// Formats numbers to explicitly show 2 decimal places
+const formatHours = (value) => {
   const n = Number(value);
-  return Number.isFinite(n) ? n : 0;
+  return Number.isFinite(n) ? n.toFixed(2) : "0.00";
 };
 
 const buildTimeRange = (start, end) => {
@@ -105,25 +105,25 @@ const normalizeTimesheetRow = (row, index) => {
       location: row?.location_name ?? `Staff: ${row?.name || "-"}`,
       customer: row?.customer_name ?? "-",
       staffName: row?.name || row?.staff_name || row?.guard_name || "-",
-      morningHours: safeNumber(row?.morning_hours),
-      nightHours: safeNumber(row?.night_hours),
-      saturdayMorningHours: safeNumber(row?.saturday_morning_hours),
-      saturdayNightHours: safeNumber(row?.saturday_night_hours),
-      sundayMorningHours: safeNumber(row?.sunday_morning_hours),
-      sundayNightHours: safeNumber(row?.sunday_night_hours),
-      phMorningHours: safeNumber(row?.ph_morning_hours),
-      phNightHours: safeNumber(row?.ph_night_hours),
+      morningHours: formatHours(row?.morning_hours),
+      nightHours: formatHours(row?.night_hours),
+      saturdayMorningHours: formatHours(row?.saturday_morning_hours),
+      saturdayNightHours: formatHours(row?.saturday_night_hours),
+      sundayMorningHours: formatHours(row?.sunday_morning_hours),
+      sundayNightHours: formatHours(row?.sunday_night_hours),
+      phMorningHours: formatHours(row?.ph_morning_hours),
+      phNightHours: formatHours(row?.ph_night_hours),
       shiftCount: Array.isArray(row?.shift_collection)
         ? row.shift_collection.length
         : 0,
       startDate: "-",
       scheduleTime: "-",
       authTime: "-",
-      authorizedTotalHours: safeNumber(row?.hours),
+      authorizedTotalHours: formatHours(row?.hours),
       actualFinishTime: "-",
       status: false,
       statusBy: "N/A",
-      totalHours: safeNumber(row?.hours),
+      totalHours: formatHours(row?.hours),
       raw: row,
     };
   }
@@ -144,27 +144,27 @@ const normalizeTimesheetRow = (row, index) => {
     customer: row?.customer_name ?? row?.customer?.name ?? row?.customer ?? "-",
     staffName:
       row?.staff_name ?? row?.guard_name ?? row?.user?.name ?? row?.name ?? "-",
-    morningHours: safeNumber(row?.morning_hours ?? row?.day_hours),
-    nightHours: safeNumber(row?.night_hours),
-    saturdayMorningHours: safeNumber(
+    morningHours: formatHours(row?.morning_hours ?? row?.day_hours),
+    nightHours: formatHours(row?.night_hours),
+    saturdayMorningHours: formatHours(
       row?.saturday_morning_hours ?? row?.saturday_hours,
     ),
-    saturdayNightHours: safeNumber(row?.saturday_night_hours),
-    sundayMorningHours: safeNumber(
+    saturdayNightHours: formatHours(row?.saturday_night_hours),
+    sundayMorningHours: formatHours(
       row?.sunday_morning_hours ?? row?.sunday_hours,
     ),
-    sundayNightHours: safeNumber(row?.sunday_night_hours),
-    phMorningHours: safeNumber(
+    sundayNightHours: formatHours(row?.sunday_night_hours),
+    phMorningHours: formatHours(
       row?.ph_morning_hours ?? row?.public_holiday_hours,
     ),
-    phNightHours: safeNumber(row?.ph_night_hours),
+    phNightHours: formatHours(row?.ph_night_hours),
     shiftCount: Array.isArray(row?.shift_collection)
       ? row.shift_collection.length
       : 0,
     startDate: formatApiDate(row?.start_date ?? row?.date ?? row?.shift_date),
     scheduleTime: buildTimeRange(scheduleStart, scheduleEnd),
     authTime: buildTimeRange(authStart, authEnd),
-    authorizedTotalHours: safeNumber(
+    authorizedTotalHours: formatHours(
       row?.authorized_total_hours ??
       row?.authorised_total_hours ??
       row?.authorized_hours,
@@ -181,7 +181,7 @@ const normalizeTimesheetRow = (row, index) => {
       row?.updated_by?.name ??
       row?.approved_by?.name ??
       "N/A",
-    totalHours: safeNumber(row?.total_hours ?? row?.hours ?? row?.total_time),
+    totalHours: formatHours(row?.total_hours ?? row?.hours ?? row?.total_time),
     raw: row,
   };
 };
@@ -200,15 +200,15 @@ const normalizeBreakdown = (item, index, shiftCollectionIds = []) => {
     guardName: item?.guards?.name || item?.guard_name || "-",
     start: formatShiftDateTime(item?.start ?? item?.start_time),
     end: formatShiftDateTime(item?.end ?? item?.end_time),
-    totalHours: safeNumber(item?.hours),
-    morningHours: safeNumber(item?.morning_hours),
-    nightHours: safeNumber(item?.night_hours),
-    saturdayMorningHours: safeNumber(item?.saturday_morning_hours),
-    saturdayNightHours: safeNumber(item?.saturday_night_hours),
-    sundayMorningHours: safeNumber(item?.sunday_morning_hours),
-    sundayNightHours: safeNumber(item?.sunday_night_hours),
-    phMorningHours: safeNumber(item?.ph_morning_hours),
-    phNightHours: safeNumber(item?.ph_night_hours),
+    totalHours: formatHours(item?.hours),
+    morningHours: formatHours(item?.morning_hours),
+    nightHours: formatHours(item?.night_hours),
+    saturdayMorningHours: formatHours(item?.saturday_morning_hours),
+    saturdayNightHours: formatHours(item?.saturday_night_hours),
+    sundayMorningHours: formatHours(item?.sunday_morning_hours),
+    sundayNightHours: formatHours(item?.sunday_night_hours),
+    phMorningHours: formatHours(item?.ph_morning_hours),
+    phNightHours: formatHours(item?.ph_night_hours),
     shiftPayable: item?.shift_payable || "-",
     shiftChargeable: item?.shift_chargeable || "-",
     jobStatus: item?.job_status || "-",
@@ -305,9 +305,9 @@ const selectStyles = {
   option: (base, state) => ({
     ...base,
     backgroundColor: state.isSelected
-      ? "#0d6efd"
+      ? "#0A7C6E" // Updated to Green
       : state.isFocused
-        ? "#e7f1ff"
+        ? "#e6f2f0" // Light Green
         : "#fff",
     color: state.isSelected ? "#fff" : "#212529",
   }),
@@ -606,8 +606,7 @@ export default function TimeSheet() {
         <div className="timesheet-table-shell">
           <table className="table table-sm table-hover align-middle mb-0 timesheet-main-table">
             <thead
-              className="table-primary text-dark"
-              style={{ borderBottom: "2px solid #0d6efd" }}
+              className="text-dark"
             >
               <tr>
                 <th>Staff ID</th>
@@ -675,12 +674,12 @@ export default function TimeSheet() {
                         <tr className="timesheet-detail-row">
                           <td colSpan="12" className="bg-light">
                             <div className="p-3">
-                              <h6 className="fw-bold mb-3">
+                              <h6 className="fw-bold mb-3" style={{ color: "#0A7C6E" }}>
                                 Detailed Shift Breakdown: {row.staffName}
                               </h6>
                               <div className="table-responsive">
                                 <table className="table table-sm table-bordered align-middle mb-0 timesheet-breakdown-table">
-                                  <thead className="table-primary text-dark">
+                                  <thead className="text-dark">
                                     <tr>
                                       <th>Shift ID</th>
                                       <th>Site</th>
@@ -823,10 +822,11 @@ export default function TimeSheet() {
           }
 
           .timesheet-main-table > thead > tr > th {
+            background-color: #e6f2f0;
             white-space: normal;
             word-break: break-word;
-            border-right: 1px solid #d6e4ff;
-            border-bottom: 2px solid #0d6efd !important;
+            border-right: 1px solid #dce8e6;
+            border-bottom: 2px solid #0A7C6E !important;
             font-size: 0.82rem;
             font-weight: 700;
             text-transform: uppercase;
@@ -842,8 +842,8 @@ export default function TimeSheet() {
           }
 
           .timesheet-main-table > tbody > tr.timesheet-summary-row > td {
-            border-bottom: 1px solid #d5dbe3;
-            border-right: 1px solid #edf0f3;
+            border-bottom: 1px solid #e2e8e6;
+            border-right: 1px solid #edf2f0;
             background-color: #fff;
           }
 
@@ -856,19 +856,19 @@ export default function TimeSheet() {
           }
 
           .timesheet-main-table > tbody > tr.timesheet-summary-row:nth-of-type(odd) > td {
-            background-color: #fbfdff;
+            background-color: #f8fcfb;
           }
 
           .timesheet-main-table > tbody > tr.timesheet-summary-row:hover > td {
-            background-color: #eef5ff;
+            background-color: #e6f2f0;
           }
 
           .timesheet-main-table > tbody > tr.timesheet-detail-row > td {
-            border-bottom: 2px solid #c8d2de;
+            border-bottom: 2px solid #b8d0cc;
           }
 
           .timesheet-main-table .table-bordered > :not(caption) > * > * {
-            border-color: #dce3ea;
+            border-color: #dce8e6;
           }
 
           .timesheet-breakdown-table th,
@@ -884,8 +884,8 @@ export default function TimeSheet() {
           }
 
           .timesheet-breakdown-table thead th {
-            background-color: #dce9fb;
-            border-bottom: 2px solid #0d6efd;
+            background-color: #e6f2f0;
+            border-bottom: 2px solid #0A7C6E;
             font-weight: 700;
           }
 
@@ -894,7 +894,7 @@ export default function TimeSheet() {
           }
 
           .timesheet-breakdown-table tbody tr:nth-child(even) td {
-            background-color: #f8fbff;
+            background-color: #f8fcfb;
           }
 
           .timesheet-action-btn {

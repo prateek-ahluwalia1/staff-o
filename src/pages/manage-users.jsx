@@ -364,7 +364,6 @@ const ManageUsers = () => {
           background: #0A7C6E;
           border-color: #0A7C6E;
           color: #fff;
-          box-shadow: 0 8px 18px rgba(13, 110, 253, 0.18);
         }
 
         .jobtracker-action-btn {

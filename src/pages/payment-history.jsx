@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useSelector } from "react-redux";
 import { useLocation } from "react-router-dom";
 import useFetch from "../hooks/useFetch";
+import Loader from "../components/Loader";
 
 const formatDate = (dateString) => {
   if (!dateString) return "-";
@@ -123,10 +124,7 @@ export default function PaymentHistory() {
               <h6 className="text-muted mb-0">Please select a customer from the dropdown to view transactions.</h6>
             </div>
           ) : loading ? (
-            <div className="text-center py-5">
-              <div className="spinner-border text-primary mb-2" role="status"></div>
-              <p className="text-muted small">Loading transactions...</p>
-            </div>
+            <Loader />
           ) : error ? (
             <div className="alert alert-danger py-3">
               <i className="fa-solid fa-circle-exclamation me-2"></i>

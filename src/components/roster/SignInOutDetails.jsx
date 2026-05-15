@@ -43,13 +43,14 @@ const ImageBox = ({ src, label }) => (
         alignItems: "center",
         justifyContent: "center",
         position: "relative",
+        borderRadius: "12px",
       }}
     >
       {src ? (
         <img
           src={src}
           alt={label}
-          style={{ width: "100%", height: "100%", objectFit: "cover" }}
+          style={{ width: "100%", height: "100%", objectFit: "cover", }}
           onError={(e) => {
             e.target.style.display = "none";
           }}
@@ -138,12 +139,13 @@ export default function SignInOutDetails({ rosterId, guardId, shift, site }) {
           alignItems: "center",
           gap: "6px",
           padding: "7px 16px",
-          background: "#1976d2",
+          background: "#0A7C6E",
           color: "#fff",
           fontSize: "13px",
           fontWeight: 600,
           textDecoration: "none",
           border: "none",
+          borderRadius: "6px",
         }}
       >
         <i className="fa fa-map-marker" style={{ fontSize: "14px" }} />
@@ -163,6 +165,7 @@ export default function SignInOutDetails({ rosterId, guardId, shift, site }) {
           fontWeight: 600,
           border: "none",
           cursor: "not-allowed",
+          borderRadius: "6px",
         }}
       >
         <i className="fa fa-map-marker" style={{ fontSize: "14px" }} />

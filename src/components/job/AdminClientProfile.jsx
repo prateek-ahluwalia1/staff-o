@@ -21,7 +21,7 @@ export default function AdminClientProfile({
     }, [customerDetails]);
 
     const profileImage = customerDetails?.customer?.profile_image;
-    const isVerified = customerDetails?.customer?.verify_profile;
+    const isVerified = customerDetails?.is_email_approved;
     const isOnline = customerDetails?.is_online;
 
     const currentSelectedOption = siteOptions.find((s) => s.value === selectedSiteId) || null;

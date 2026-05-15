@@ -288,11 +288,11 @@ export default function ActivityDashboardModal({ modal, closeModal }) {
             <h3 className="m-0 fw-bold">{getActiveTabLabel()}</h3>
             <button
               onClick={closeModal}
-              className="btn btn-danger text-white rounded-circle d-flex align-items-center justify-content-center p-0"
+              className="btn btn-success text-white rounded-circle d-flex align-items-center justify-content-center p-0"
               style={{
                 width: "32px",
                 height: "32px",
-                fontSize: "18px",
+                fontSize: "25px",
                 border: "none",
               }}
             >

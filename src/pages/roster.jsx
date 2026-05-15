@@ -15,6 +15,7 @@ import {
 import useSubmit from "../hooks/useSubmit";
 import Loader from "../components/Loader";
 import useFetch from "../hooks/useFetch";
+import { Card } from "../components/Card";
 import ActivityDashboardModal from "../components/roster/ActivityDashboardModal";
 import TimeEditModal from "../components/roster/TimeEditModal";
 import DetailsModal from "../components/roster/DetailsModal";
@@ -23,6 +24,61 @@ import "../assets/css/roster.css";
 
 const API_DATE_FORMAT = "yyyy-MM-dd HH:mm";
 const UPDATE_API_DATE_FORMAT = "MM-dd-yyyy HH:mm";
+
+const states_array = [
+  { label: 'Victoria', value: 'vic' },
+  { label: 'New South Wales', value: 'nsw' },
+  { label: 'Queensland', value: 'qld' },
+  { label: 'Tasmania', value: 'tas' },
+  { label: 'Western Australia', value: 'wa' },
+  { label: 'South Australia', value: 'sa' },
+  { label: 'ACT', value: 'act' }
+];
+
+const rosterStateCards = [
+  {
+    label: "Victoria",
+    value: "vic",
+    artworkNote: "Fast access to Victorian coverage and shift planning.",
+    accent: "linear-gradient(135deg,#16a34a,#0f766e)",
+  },
+  {
+    label: "New South Wales",
+    value: "nsw",
+    artworkNote: "View NSW schedules with a clean weekly snapshot.",
+    accent: "linear-gradient(135deg,#0f766e,#0284c7)",
+  },
+  {
+    label: "Queensland",
+    value: "qld",
+    artworkNote: "Track Queensland assignments and coverage quickly.",
+    accent: "linear-gradient(135deg,#f59e0b,#14b8a6)",
+  },
+  {
+    label: "Tasmania",
+    value: "tas",
+    artworkNote: "A compact overview for Tasmania rosters.",
+    accent: "linear-gradient(135deg,#7c3aed,#0f766e)",
+  },
+  {
+    label: "Western Australia",
+    value: "wa",
+    artworkNote: "See Western Australia schedules at a glance.",
+    accent: "linear-gradient(135deg,#2563eb,#06b6d4)",
+  },
+  {
+    label: "South Australia",
+    value: "sa",
+    artworkNote: "Keep South Australia shifts organised by day.",
+    accent: "linear-gradient(135deg,#be185d,#f97316)",
+  },
+  {
+    label: "ACT",
+    value: "act",
+    artworkNote: "A simple weekly view for ACT planning.",
+    accent: "linear-gradient(135deg,#334155,#0f766e)",
+  },
+];
 
 function parseApiDate(dateValue) {
   if (!dateValue) return null;
@@ -68,6 +124,10 @@ export default function RosterPage() {
   const userId = userdata?.data?.id || userdata?.id;
   const userRole = userdata?.data?.user_type || userdata?.user_type;
 
+  // URL State Parameter Extraction
+  const queryParams = new URLSearchParams(window.location.search);
+  const selectedState = queryParams.get("state");
+
   const { data: staffData, loading: staffLoading } = useFetch(`api/get-contractor-staff/${userId}`, { method: "POST", isAuth: true });
   const { submit, loading: submitLoading, data: submitData } = useSubmit({ isAuth: true });
   const { submit: saveUserAssignment, loading: saveLoading } = useSubmit({ isAuth: true });
@@ -82,21 +142,23 @@ export default function RosterPage() {
   const [showLegend, setShowLegend] = useState(false);
 
   const fetchCustomerSites = useCallback(() => {
-    if (!userId) return;
+    if (!userId || !selectedState) return;
     const endDayOffset = weeksToView === 1 ? 6 : 13;
     const payload = {
       user_id: [userId],
-      state: "Victoria",
+      state: selectedState, // Using dynamic state
       start: format(monday, "MM-dd-yyyy"),
       end: format(addDays(monday, endDayOffset), "MM-dd-yyyy"),
       roster_id: "1",
     };
     submit("api/fetch-customer-sites", payload, { method: "POST" });
-  }, [userId, monday, weeksToView, submit]);
+  }, [userId, monday, weeksToView, submit, selectedState]);
 
   useEffect(() => {
-    fetchCustomerSites();
-  }, [fetchCustomerSites]);
+    if (selectedState) {
+      fetchCustomerSites();
+    }
+  }, [fetchCustomerSites, selectedState]);
 
   const weekDays = useMemo(() => {
     const totalDays = weeksToView === 1 ? 7 : 14;
@@ -237,16 +299,57 @@ export default function RosterPage() {
   const guardShiftsList = getGuardShifts();
   const totalGuardHours = guardShiftsList.reduce((sum, s) => sum + Number(s.hours || 0), 0);
 
+  const openStateRosterInNewTab = (stateValue) => {
+    // Keeps current URL path but appends/updates the state parameter
+    const url = new URL(window.location.href);
+    url.searchParams.set("state", stateValue);
+    window.open(url.toString(), "_blank");
+  };
+
+  // =====================================================================
+  // VIEW 1: STATES DASHBOARD (If no state is selected in the URL)
+  // =====================================================================
+  if (!selectedState) {
+    return (
+      <div className="dashboard-main dashboard-tools-page">
+        <div className="dashboard-tools-header">
+          <h2 className="dashboard-tools-title">State Rosters</h2>
+          <p className="dashboard-tools-subtitle">Choose a state to open its roster in a new tab.</p>
+        </div>
+
+        <div className="row g-4 dashboard-tools-grid">
+          {rosterStateCards.map((stateInfo) => (
+            <div className="col-12 col-md-6 col-lg-4 col-xl-3" key={stateInfo.value}>
+              <Card
+                title={stateInfo.label}
+                description={`Used to display the detailed overview of ${stateInfo.label} rosters.`}
+                accent={stateInfo.accent}
+                type={stateInfo.value}
+                artworkNote={stateInfo.artworkNote}
+                artworkAlign="center"
+                showTopBadge={false}
+                onClick={() => openStateRosterInNewTab(stateInfo.value)}
+              />
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // =====================================================================
+  // VIEW 2: ROSTER MATRIX (If state is selected in the URL)
+  // =====================================================================
+
   if (staffLoading || submitLoading) return <Loader />;
 
   return (
     <div className="vibrant-roster-app">
-
       {/* --- HEADER --- */}
       <header className="vr-header">
         <div className="vr-nav">
           <button onClick={prevWeek} className="vr-icon-btn"><i className="fa fa-chevron-left"></i></button>
-          <div className="vr-date-display">{weekTitle}</div>
+          <div className="vr-date-display">{weekTitle} <span style={{ fontSize: '12px', color: '#64748b' }}>({states_array.find(s => s.value === selectedState)?.label})</span></div>
           <button onClick={nextWeek} className="vr-icon-btn"><i className="fa fa-chevron-right"></i></button>
           <button onClick={goToThisWeek} className="vr-btn-today">Today</button>
         </div>
@@ -440,7 +543,6 @@ export default function RosterPage() {
           </div>
         </div>
       )}
-
     </div>
   );
 }

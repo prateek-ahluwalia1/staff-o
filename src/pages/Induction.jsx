@@ -3,6 +3,7 @@ import useFetch from "../hooks/useFetch";
 import useSubmit from "../hooks/useSubmit";
 import "../assets/css/induction.css";
 import { useSelector } from "react-redux";
+import Loader from "../components/Loader";
 
 const mockHistoryData = [
     { id: 1, name: "Amelia Charlotte", date: "24-01-2024 20:44", status: "Uncompleted" },
@@ -558,11 +559,7 @@ export default function Induction() {
             </div>
 
             {listLoading ? (
-                <div className="text-center py-5">
-                    <div className="spinner-border text-primary" role="status">
-                        <span className="visually-hidden">Loading...</span>
-                    </div>
-                </div>
+                <Loader />
             ) : (
                 <div className="row g-4">
                     {inductions.length > 0 ? inductions.map((induction) => (

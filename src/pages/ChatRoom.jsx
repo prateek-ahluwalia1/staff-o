@@ -596,7 +596,7 @@ const ChatRoom = () => {
                   <div className="text-center text-muted py-5">
                     <i
                       className="fa fa-spinner fa-spin fa-2x mb-3"
-                      style={{ color: "#263bd6" }}
+                      style={{ color: "#0A7C6E" }}
                     ></i>
                     <p className="small mb-0">Loading messages…</p>
                   </div>
@@ -613,7 +613,7 @@ const ChatRoom = () => {
                     >
                       <i
                         className="fa-regular fa-comment-dots fa-2x"
-                        style={{ color: "#263bd6" }}
+                        style={{ color: "#0A7C6E" }}
                       ></i>
                     </div>
                     <p className="text-muted small mb-0">
@@ -724,7 +724,7 @@ const ChatRoom = () => {
               <div className="chatroom-empty-icon">
                 <i
                   className="fa-regular fa-comments"
-                  style={{ fontSize: 38, color: "#263bd6" }}
+                  style={{ fontSize: 38, color: "#0A7C6E" }}
                 ></i>
               </div>
               <h6

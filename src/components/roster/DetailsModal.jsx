@@ -71,7 +71,7 @@ export default function DetailsModal({
                   width: "72px",
                   height: "72px",
                   borderRadius: "50%",
-                  background: "#007bff",
+                  background: "#0A7C6E",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -224,7 +224,7 @@ export default function DetailsModal({
                 style={{
                   fontSize: "14px",
                   fontWeight: "600",
-                  color: "#007bff",
+                  color: "#0A7C6E",
                 }}
               >
                 Total: {totalGuardHours.toFixed(2)} hrs
@@ -376,7 +376,7 @@ export default function DetailsModal({
                 width: "56px",
                 height: "56px",
                 borderRadius: "50%",
-                background: "#007bff",
+                background: "#0A7C6E",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",

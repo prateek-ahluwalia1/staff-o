@@ -121,7 +121,7 @@ export default function TimeEditModal({
                 <div
                   style={{
                     fontSize: "13px",
-                    color: "#007bff",
+                    color: "#0A7C6E",
                     fontWeight: 600,
                   }}
                 >
@@ -409,7 +409,7 @@ export default function TimeEditModal({
                 padding: "10px 28px",
                 fontSize: "14px",
                 borderRadius: "8px",
-                background: "#007bff",
+                background: "#0A7C6E",
                 color: "#fff",
                 border: "none",
                 cursor: "pointer",

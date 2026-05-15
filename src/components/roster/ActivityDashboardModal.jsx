@@ -176,6 +176,7 @@ export default function ActivityDashboardModal({ modal, closeModal }) {
           display: "flex",
           overflow: "hidden",
           boxShadow: "0 4px 20px rgba(0,0,0,0.15)",
+          borderRadius: "12px",
         }}
       >
         {/* Left Sidebar */}
@@ -216,7 +217,7 @@ export default function ActivityDashboardModal({ modal, closeModal }) {
                 </div>
                 <div style={{ marginBottom: 2 }}>{modal?.dateStr}</div>
                 {shift?.startDate && shift?.endDate && (
-                  <div style={{ color: "#007bff", fontWeight: 600 }}>
+                  <div style={{ color: "#0A7C6E", fontWeight: 600 }}>
                     {format(shift.startDate, "HH:mm")} –{" "}
                     {format(shift.endDate, "HH:mm")}
                   </div>

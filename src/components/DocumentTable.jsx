@@ -181,7 +181,7 @@ export default function DocumentTable({ documents, onAddFile, onAddDocument }) {
                         rel="noopener noreferrer"
                         title="View file"
                         style={{
-                          color: "#007bff",
+                          color: "#0A7C6E",
                           fontSize: 20,
                           background: "#eaf1fb",
                           borderRadius: 6,
@@ -238,7 +238,7 @@ export default function DocumentTable({ documents, onAddFile, onAddDocument }) {
                       style={{
                         background: "#f3f4f6",
                         border: "none",
-                        color: "#007bff",
+                        color: "#0A7C6E",
                         fontSize: 20,
                         cursor: "pointer",
                         borderRadius: 6,

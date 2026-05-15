@@ -266,28 +266,28 @@ const EmployeeOnboardingForm = ({ values, loading, onChange, onSubmit, dataModif
                     <input className="form-check-input" type="checkbox" id="chk1" name="chk_primary" checked={values.chk_primary} onChange={onChange} />
                     <label className="form-check-label small" htmlFor="chk1">Birth cert, passport, or citizenship</label>
                 </div>
-                <span className="badge bg-primary-subtle text-primary">70</span>
+                <span className="badge bg-primary-subtle text-white">70</span>
             </div>
             <div className="d-flex justify-content-between align-items-center mb-2">
                 <div className="form-check mb-0">
                     <input className="form-check-input" type="checkbox" id="chk2" name="chk_driver" checked={values.chk_driver} onChange={onChange} />
                     <label className="form-check-label small" htmlFor="chk2">Driver's licence or government photo ID</label>
                 </div>
-                <span className="badge bg-primary-subtle text-primary">40</span>
+                <span className="badge bg-primary-subtle text-white">40</span>
             </div>
             <div className="d-flex justify-content-between align-items-center mb-2">
                 <div className="form-check mb-0">
                     <input className="form-check-input" type="checkbox" id="chk3" name="chk_security" checked={values.chk_security} onChange={onChange} />
                     <label className="form-check-label small" htmlFor="chk3">Security licence (mandatory)</label>
                 </div>
-                <span className="badge bg-primary-subtle text-primary">40</span>
+                <span className="badge bg-primary-subtle text-white">40</span>
             </div>
             <div className="d-flex justify-content-between align-items-center">
                 <div className="form-check mb-0">
                     <input className="form-check-input" type="checkbox" id="chk4" name="chk_medicare" checked={values.chk_medicare} onChange={onChange} />
                     <label className="form-check-label small" htmlFor="chk4">Medicare card / utility bill / bank statement</label>
                 </div>
-                <span className="badge bg-primary-subtle text-primary">25</span>
+                <span className="badge bg-primary-subtle text-white">25</span>
             </div>
         </div>
 

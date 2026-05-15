@@ -36,7 +36,6 @@ const INITIAL_FORM_STATE = {
   coordinates: "",
   staff_document_type: "",
   company_name: "",
-  registration_number: "",
   bank_details: [],
 };
 
@@ -280,7 +279,7 @@ export default function EditProfile() {
     const allDocs = profileData?.data?.documents || [];
     const currentState = formData.state?.toLowerCase() || "";
 
-    const isTargetState = ["victoria", "vic", "queensland", "qld"].some(
+    const isTargetState = ["victoria", "vic", "queensland", "qld", "south australia", "sa"].some(
       (targetState) => currentState.includes(targetState)
     );
 

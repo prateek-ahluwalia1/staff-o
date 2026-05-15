@@ -162,19 +162,7 @@ export default function ProfileForm({
                   required
                 />
               </div>
-              <div>
-                <label htmlFor="registration_number" className="form-label fw-semibold">
-                  Registration Number
-                </label>
-                <input
-                  type="text"
-                  className="form-control"
-                  id="registration_number"
-                  placeholder="e.g. REG-XXXX"
-                  value={formData.registration_number || ""}
-                  onChange={onChange}
-                />
-              </div>
+
               <div>
                 <label htmlFor="abn" className="form-label fw-semibold">
                   ABN <span className="text-danger">*</span>

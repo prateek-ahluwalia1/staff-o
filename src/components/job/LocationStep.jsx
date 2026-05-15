@@ -1,6 +1,19 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import { toast } from "react-toastify";
 
+// 1. Define the mapping dictionary outside the component to prevent recreation on renders
+const STATE_MAP = {
+  'Victoria': 'vic',
+  'New South Wales': 'nsw',
+  'Queensland': 'qld',
+  'Tasmania': 'tas',
+  'Western Australia': 'wa',
+  'South Australia': 'sa',
+  'Australian Capital Territory': 'act',
+  'ACT': 'act',
+  'Northern Territory': 'nt' // Added NT just in case!
+};
+
 export default function LocationStep({
   form = {},
   setField,
@@ -20,14 +33,22 @@ export default function LocationStep({
   const fillAddress = useCallback(
     (place, options = {}) => {
       let block = "", area = "", city = "", state = "", postcode = "";
+
       place.address_components?.forEach((component) => {
         const types = component.types;
         if (types.includes("sublocality_level_1")) block = component.long_name;
         if (types.includes("sublocality")) area = component.long_name;
         if (types.includes("locality")) city = component.long_name;
-        if (types.includes("administrative_area_level_1")) state = component.long_name;
+
+        // 2. Intercept the state and map it to the short form
+        if (types.includes("administrative_area_level_1")) {
+          // If the long name is in our map, use it. Otherwise, fallback to Google's short_name (lowercased)
+          state = STATE_MAP[component.long_name] || component.short_name.toLowerCase();
+        }
+
         if (types.includes("postal_code")) postcode = component.long_name;
       });
+
       const finalAddress = [block, area, city, state, postcode].filter(Boolean).join(", ");
       const canonicalAddress = finalAddress || place.formatted_address || "";
       const placeLabel = place.name ? `${place.name}${place.formatted_address ? `, ${place.formatted_address}` : ""}` : canonicalAddress;
@@ -35,7 +56,7 @@ export default function LocationStep({
       setField("location", options.preferPlaceLabel ? placeLabel : canonicalAddress);
       setField("address", canonicalAddress);
       if (city) setField("city", city);
-      if (state) setField("state", state);
+      if (state) setField("state", state); // This will now save 'vic', 'nsw', etc.
       if (postcode) setField("postcode", postcode);
       if (setLocationError) setLocationError("");
     },
@@ -151,7 +172,6 @@ export default function LocationStep({
         const lng = pos.coords.longitude;
         setField("coordinates", `${lat},${lng}`);
         reverseGeocode(lat, lng);
-
         if (markerRef.current) markerRef.current.setPosition({ lat, lng });
         if (map) map.setCenter({ lat, lng });
         setResolvingLocation(false);
@@ -175,7 +195,6 @@ export default function LocationStep({
 
       <div className="row g-2 mb-3">
         <div className="col-md-9">
-          {/* UPDATED: Prominent error border on the search wrapper */}
           <div className={`input-group shadow-sm rounded-pill overflow-hidden border ${locationError ? "border-danger border-2" : "border-1"}`}>
             <span className="input-group-text bg-white border-0 text-muted ps-4">
               <i className="fa-solid fa-magnifying-glass"></i>
@@ -241,7 +260,6 @@ export default function LocationStep({
         </div>
       )}
 
-      {/* UPDATED: Prominent base border and highly visible error border */}
       <div
         ref={mapRef}
         className={`rounded-4 border-2 shadow-sm overflow-hidden ${locationError ? "border-danger border-opacity-75" : "border-secondary border-opacity-50"}`}

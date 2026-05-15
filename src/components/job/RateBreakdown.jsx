@@ -17,7 +17,7 @@ export default function RateBreakdown({ rate, jobTypeLabel = "Security Guard", p
     <div className="border rounded-4 bg-white overflow-hidden shadow-sm" style={{ borderColor: "#e9ecef" }}>
       <div className="bg-light border-bottom px-4 py-3 d-flex align-items-center justify-content-between">
         <h6 className="fw-bold mb-0 text-dark"><i className="fa-solid fa-file-invoice-dollar text-primary me-2"></i> Quotation Breakdown</h6>
-        <span className="badge bg-primary bg-opacity-10 text-primary border border-primary-subtle rounded-pill px-3 py-2 fw-bold shadow-sm">{totalHours.toFixed(2)} Total Billable Hours</span>
+        <span className="badge bg-primary bg-opacity-10 text-white border border-primary-subtle rounded-pill px-3 py-2 fw-bold shadow-sm">{totalHours.toFixed(2)} Total Billable Hours</span>
       </div>
 
       <div className="table-responsive">

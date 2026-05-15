@@ -416,6 +416,7 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
       title: (form.title || "").trim(), description: form.description, address: form.location || form.address, coordinates: form.coordinates || "", state: "open",
       shifts: shiftsPayload,
       payment_option: form.paymentOption,
+      job_location_state: form.state,
       financials: {
         base_total_inc_gst: Number(baseAmount.toFixed(2)),
         discount_applied: Number(discountApplied.toFixed(2)),

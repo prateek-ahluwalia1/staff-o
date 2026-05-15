@@ -558,7 +558,7 @@ const PDFGenerator = {
 
     const ptw = pw - mg * 2;
     autoTable(doc, {
-      startY: y, head: [["#", "Details", "", "Guards", "Hrs / Guard", `Amount (${currency})`]], body: td, tableWidth: ptw, theme: "plain",
+      startY: y, head: [["#", "Details", "", "Guard", "Hrs / Guard", `Amount (${currency})`]], body: td, tableWidth: ptw, theme: "plain",
       headStyles: { fillColor: T.navy, textColor: T.white, fontStyle: "bold", fontSize: 9, cellPadding: 4, valign: "middle" },
       bodyStyles: { fontSize: 9, textColor: T.text, cellPadding: { top: 4, bottom: 4, left: 4, right: 4 }, lineColor: T.lineGray, lineWidth: { bottom: 0.1 }, valign: "middle" },
       margin: { left: mg, right: mg },

@@ -65,7 +65,7 @@ const InvoiceSettings = ({
       <div className="mb-3">
         <label className="form-label d-block">Payment Methods</label>
         <div className="d-flex flex-column gap-2">
-          <label className="invoice-radio">
+          <label className="invoice-radio d-flex align-items-center">
             <input
               type="checkbox"
               checked={paymentMethods.bankTransfer}
@@ -73,7 +73,7 @@ const InvoiceSettings = ({
             />
             <span>Bank Transfer</span>
           </label>
-          <label className="invoice-radio">
+          <label className="invoice-radio d-flex align-items-center">
             <input
               type="checkbox"
               checked={paymentMethods.bpay}

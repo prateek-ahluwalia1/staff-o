@@ -113,7 +113,9 @@ const Invoice = () => {
   const handleCustomerChange = (e) => {
     const id = e.target.value;
     setSelectedCustomerId(id);
-    const customer = customersList.find((c) => c.id.toString() === id);
+
+    // Convert both IDs to strings for a safe strict comparison
+    const customer = customersList.find((c) => String(c.id) === String(id));
 
     if (customer) {
       setTo({

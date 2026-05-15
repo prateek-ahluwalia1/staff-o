@@ -347,7 +347,7 @@ export default function IncidentReport({ rosterId, guardId, shift, site }) {
               const reportData = {
                 incidents: reports,
                 siteName: site?.displayName || site?.site_name,
-                guardName: data?.staff || "Unassigned",
+                guardName: shift?.guards?.name || data?.staff || "Unassigned",
                 shiftStart: data?.shift_start,
                 shiftEnd: data?.shift_end,
               };

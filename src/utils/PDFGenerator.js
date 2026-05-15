@@ -2,7 +2,7 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
 const T = {
-  navy: [9, 37, 68],
+  navy: [28, 43, 73],
   blue: [37, 99, 235],
   border: [203, 213, 225],
   text: [30, 41, 59],
@@ -11,9 +11,65 @@ const T = {
   white: [255, 255, 255],
   danger: [220, 38, 38],
   lineGray: [226, 232, 240],
+  gold: [234, 152, 28],
+  greenBorder: [110, 231, 183],
+  greenFill: [236, 253, 245],
+  greenText: [4, 120, 87],
 };
 
-// ─── SHARED HEADER (used by TFN, Superannuation, Onboarding) ─────────────────
+// ─── UPGRADED IMAGE FETCHING HELPER ──────────────────────────────────────────
+const fetchImageBase64 = async (url) => {
+  if (!url) return null;
+  try {
+    // Attempt 1: Native Fetch (Bypasses many canvas taint issues)
+    const response = await fetch(url);
+    const blob = await response.blob();
+    return await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result);
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+  } catch (err) {
+    // Attempt 2: Canvas Fallback
+    console.warn("Fetch failed, falling back to Canvas for image:", url);
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.crossOrigin = "Anonymous";
+      img.onload = () => {
+        try {
+          const canvas = document.createElement("canvas");
+          canvas.width = img.width;
+          canvas.height = img.height;
+          const ctx = canvas.getContext("2d");
+          ctx.drawImage(img, 0, 0);
+          resolve(canvas.toDataURL("image/jpeg", 0.8));
+        } catch (e) {
+          console.error("Canvas taint blocked image:", url);
+          resolve(null);
+        }
+      };
+      img.onerror = () => resolve(null);
+      img.src = url;
+    });
+  }
+};
+
+const resolveIncidentUrl = (url) => {
+  if (!url) return "";
+  let cleanUrl = url.replace(/\\\//g, "/"); // Clean escaped slashes
+  return cleanUrl.replace("/uploads/", "/incident/");
+};
+
+const resolvePatrolUrl = (path) => {
+  if (!path) return "";
+  let cleanPath = path.replace(/\\\//g, "/"); // Clean escaped slashes
+  if (cleanPath.startsWith("http")) return cleanPath;
+  if (cleanPath.startsWith("/")) cleanPath = cleanPath.substring(1);
+  return "https://apis.staffoo.com.au/footpatrol/" + cleanPath;
+};
+
+// ─── SHARED HEADER ───────────────────────────────────────────────────────────
 const renderFormHeader = (doc, pageWidth, title, margin = 20) => {
   const barH = 22, barTop = 0;
   doc.setFillColor(...T.navy);
@@ -61,7 +117,6 @@ const isCheckedValue = (value) => {
 const checkbox = (doc, x, y, size = 3.5, ticked = false) => {
   doc.setDrawColor(...T.text); doc.setLineWidth(0.45); doc.rect(x, y, size, size);
   if (!ticked) return;
-  // Draw vector strokes for a dependable checkmark across all PDF viewers/fonts.
   doc.setDrawColor(...T.text);
   doc.setLineWidth(0.6);
   doc.line(x + size * 0.20, y + size * 0.55, x + size * 0.43, y + size * 0.78);
@@ -73,10 +128,8 @@ const checkbox = (doc, x, y, size = 3.5, ticked = false) => {
 // ─────────────────────────────────────────────────────────────────────────────
 const generateTFNDeclarationPDF = (formData) => {
   const {
-    tfn, title, first_name, surname, previous_name,
-    dob, address, basis_of_payment,
-    australian_resident, claim_threshold, help_debt,
-    signature, signed_date,
+    tfn, title, first_name, surname, previous_name, dob, address, basis_of_payment,
+    australian_resident, claim_threshold, help_debt, signature, signed_date,
   } = formData;
 
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4", compress: true });
@@ -94,16 +147,13 @@ const generateTFNDeclarationPDF = (formData) => {
     y += rowH;
   };
 
-  // Row 1: TFN
   row("1. Tax file number (TFN)", tfn);
 
-  // Row 2: Name
   const nameRowH = 22;
   drawBox(doc, mg, y, bw, nameRowH);
   doc.setFont("helvetica", "bold"); doc.setFontSize(8.5); doc.setTextColor(...T.text);
   doc.text("2. Name", mg + pad, y + 5.5);
   hLine(doc, mg, y + 8, bw);
-
   const col1w = bw * 0.30, col2w = bw * 0.38;
   vLine(doc, mg + col1w, y + 8, y + nameRowH);
   vLine(doc, mg + col1w + col2w, y + 8, y + nameRowH);
@@ -119,12 +169,10 @@ const generateTFNDeclarationPDF = (formData) => {
   doc.text(String(surname || ""), mg + col1w + col2w + pad, subValY);
   y += nameRowH;
 
-  // Rows 3-5
   row("3. Previous name (if applicable)", previous_name || "");
   row("4. Date of birth", dob);
   row("5. Residential address", address);
 
-  // Row 6: Basis of payment
   const bopRowH = 18;
   drawBox(doc, mg, y, bw, bopRowH);
   doc.setFont("helvetica", "bold"); doc.setFontSize(8.5); doc.setTextColor(...T.text);
@@ -142,7 +190,6 @@ const generateTFNDeclarationPDF = (formData) => {
   });
   y += bopRowH;
 
-  // Rows 7-9: Yes/No
   [
     { num: 7, q: "Are you an Australian resident for tax purposes?", val: australian_resident },
     { num: 8, q: "Do you want to claim the tax-free threshold?", val: claim_threshold },
@@ -162,7 +209,6 @@ const generateTFNDeclarationPDF = (formData) => {
     y += qH;
   });
 
-  // Signature
   y += 10;
   doc.setDrawColor(...T.text); doc.setLineWidth(0.5); doc.line(mg, y, mg + 75, y);
   if (signature) {
@@ -189,9 +235,7 @@ const generateTFNDeclarationPDF = (formData) => {
 // ─────────────────────────────────────────────────────────────────────────────
 const generateSuperannuationPDF = (formData) => {
   const {
-    full_name, employee_number,
-    fund_choice, fund_name, fund_abn, fund_usi, member_account,
-    signature, signed_date,
+    full_name, employee_number, fund_choice, fund_name, fund_abn, fund_usi, member_account, signature, signed_date,
   } = formData;
 
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4", compress: true });
@@ -200,7 +244,6 @@ const generateSuperannuationPDF = (formData) => {
 
   let y = renderFormHeader(doc, pw, "Superannuation Standard Choice Form", mg);
 
-  // Field helper: bold label + muted value + underline
   const field = (label, value, fx, fy, fw) => {
     doc.setFont("helvetica", "bold"); doc.setFontSize(8.5); doc.setTextColor(...T.text);
     doc.text(label, fx, fy);
@@ -209,7 +252,6 @@ const generateSuperannuationPDF = (formData) => {
     doc.setDrawColor(...T.lineGray); doc.setLineWidth(0.3); doc.line(fx, fy + 8, fx + fw, fy + 8);
   };
 
-  // ── BOX 1: Employee Details ───────────────────────────────────────────────
   drawBox(doc, mg, y, bw, 42);
   doc.setFont("helvetica", "bold"); doc.setFontSize(9.5); doc.setTextColor(...T.text);
   doc.text("Employee Details", mg + pad, y + 6.5);
@@ -218,7 +260,6 @@ const generateSuperannuationPDF = (formData) => {
   field("Employee Number (if known):", employee_number, mg + pad, y + 28, bw - pad * 2);
   y += 48;
 
-  // ── BOX 2: Choice of Fund ─────────────────────────────────────────────────
   const isOwn = fund_choice === "own";
   const b2H = isOwn ? 92 : 36;
   drawBox(doc, mg, y, bw, b2H);
@@ -227,7 +268,6 @@ const generateSuperannuationPDF = (formData) => {
   hLine(doc, mg, y + 9, bw);
 
   let fy = y + 16;
-  // Checkbox 1 – own fund
   checkbox(doc, mg + pad, fy - 3, 3.5, isOwn);
   doc.setFont("helvetica", "normal"); doc.setFontSize(8.5); doc.setTextColor(...T.text);
   doc.text("1. I nominate my own individual fund:", mg + pad + 6, fy);
@@ -247,13 +287,11 @@ const generateSuperannuationPDF = (formData) => {
     fy += 7;
   }
 
-  // Checkbox 2 – employer fund
   checkbox(doc, mg + pad, fy - 3, 3.5, !isOwn);
   doc.setFont("helvetica", "normal"); doc.setFontSize(8.5); doc.setTextColor(...T.text);
   doc.text("2. Employer-nominated fund (default)", mg + pad + 6, fy);
   y += b2H + 6;
 
-  // ── BOX 3: Employer Details ───────────────────────────────────────────────
   drawBox(doc, mg, y, bw, 46);
   doc.setFont("helvetica", "bold"); doc.setFontSize(9.5); doc.setTextColor(...T.text);
   doc.text("Employer Details (Pre-filled)", mg + pad, y + 6.5);
@@ -270,7 +308,6 @@ const generateSuperannuationPDF = (formData) => {
   eRow("Address:", "21 Tanglewood Blvd, Truganina VIC 3029", y + 35);
   y += 60;
 
-  // Signature
   doc.setDrawColor(...T.text); doc.setLineWidth(0.5); doc.line(mg, y, mg + 75, y);
   if (signature) {
     doc.setFont("helvetica", "normal"); doc.setFontSize(8.5); doc.setTextColor(...T.text);
@@ -285,7 +322,6 @@ const generateSuperannuationPDF = (formData) => {
   doc.setTextColor(...T.text);
   if (signed_date) doc.text(String(signed_date), mg + 12, y);
 
-  // Navy footer bar
   doc.setFillColor(...T.navy); doc.rect(0, ph - 14, pw, 14, "F");
   doc.setFont("helvetica", "normal"); doc.setFontSize(7); doc.setTextColor(...T.white);
   doc.text("Staffoo is a brand of Capital Services Pty Ltd.", pw / 2, ph - 5, { align: "center" });
@@ -298,14 +334,9 @@ const generateSuperannuationPDF = (formData) => {
 // ─────────────────────────────────────────────────────────────────────────────
 const generateEmployeeOnboardingPDF = (formData) => {
   const {
-    full_name, dob, address, mobile, email,
-    passport_number, passport_country, passport_expiry, work_rights,
-    id_checks,
-    bank_name, bsb, account_number, tfn,
-    super_fund, super_usi, super_member,
-    security_license, security_license_expiry,
-    first_aid_cert, first_aid_expiry,
-    signature, signed_date,
+    full_name, dob, address, mobile, email, passport_number, passport_country, passport_expiry, work_rights,
+    id_checks, bank_name, bsb, account_number, tfn, super_fund, super_usi, super_member,
+    security_license, security_license_expiry, first_aid_cert, first_aid_expiry, signature, signed_date,
   } = formData;
 
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4", compress: true });
@@ -314,7 +345,6 @@ const generateEmployeeOnboardingPDF = (formData) => {
 
   let y = renderFormHeader(doc, pw, "EMPLOYEE ONBOARDING & ID VERIFICATION FORM", mg);
 
-  // Mandatory notice
   const noticeH = 7;
   doc.setFillColor(...T.white); doc.rect(mg, y, bw, noticeH, "F");
   doc.setDrawColor(...T.blue); doc.setLineWidth(0.4);
@@ -329,14 +359,11 @@ const generateEmployeeOnboardingPDF = (formData) => {
 
   const section = (title) => {
     checkPage(12);
-    // Draw a light-gray header bar and a small navy strip at the left
-    const hdrH = 9;
-    const stripW = 6;
+    const hdrH = 9, stripW = 6;
     doc.setFillColor(241, 245, 249); doc.rect(mg, y, bw, hdrH, "F");
     doc.setFillColor(...T.navy); doc.rect(mg, y, stripW, hdrH, "F");
     doc.setFont("helvetica", "bold"); doc.setFontSize(8); doc.setTextColor(...T.navy);
     doc.text(title, mg + pad + stripW, y + 5);
-    // Leave a bit more vertical space after headings so following content doesn't overlap
     y += hdrH + 3;
   };
 
@@ -360,13 +387,11 @@ const generateEmployeeOnboardingPDF = (formData) => {
     checkPage(rowH); fld(lbl, val, mg, y, bw); y += rowH;
   };
 
-  // Section 1
   section("1. PERSONAL CONTACT DETAILS");
   twoFld("Full Name (as per ID):", full_name, "Date of Birth:", dob);
   oneFld("Residential Address:", address);
   twoFld("Mobile Phone Number:", mobile, "Personal Email Address:", email);
 
-  // Section 2
   section("2. PASSPORT & WORK RIGHTS");
   checkPage(14);
   const pw3 = (bw - 8) / 3;
@@ -390,12 +415,10 @@ const generateEmployeeOnboardingPDF = (formData) => {
   });
   y += 10;
 
-  // Section 3: ID Check table
   section("3. 100-POINT IDENTIFICATION CHECK");
   checkPage(48);
   const idDocW = bw * 0.63, idPtsW = bw * 0.17;
 
-  // Header
   doc.setFillColor(...T.soft); doc.rect(mg, y, bw, 7, "F");
   doc.setDrawColor(...T.border); doc.setLineWidth(0.3); doc.rect(mg, y, bw, 7);
   doc.setFont("helvetica", "bold"); doc.setFontSize(7.5); doc.setTextColor(...T.text);
@@ -418,7 +441,6 @@ const generateEmployeeOnboardingPDF = (formData) => {
     hLine(doc, mg, y + rH, bw);
     vLine(doc, mg + idDocW, y, y + rH);
     vLine(doc, mg + idDocW + idPtsW, y, y + rH);
-    // left/right borders
     doc.setDrawColor(...T.border); doc.setLineWidth(0.3);
     doc.line(mg, y, mg, y + rH);
     doc.line(mg + bw, y, mg + bw, y + rH);
@@ -426,19 +448,16 @@ const generateEmployeeOnboardingPDF = (formData) => {
   });
   y += 4;
 
-  // Section 4
   section("4. BANKING, TAX & SUPERANNUATION");
   twoFld("Bank Name:", bank_name, "BSB Number:", bsb);
   twoFld("Account Number:", account_number, "Tax File Number (TFN):", tfn);
   oneFld("Superannuation Fund Name:", super_fund);
   oneFld("Super Fund USI / Member Number:", `${super_usi || ""}   /   ${super_member || ""}`);
 
-  // Section 5
   section("5. PROFESSIONAL LICENSING");
   twoFld("Security License No:", security_license, "Security License Expiry:", security_license_expiry);
   twoFld("First Aid Certificate No:", first_aid_cert, "First Aid Expiry:", first_aid_expiry);
 
-  // Declaration
   checkPage(20);
   y += 2;
   doc.setFillColor(255, 251, 235); doc.rect(mg, y, bw, 14, "F");
@@ -459,27 +478,40 @@ const generateEmployeeOnboardingPDF = (formData) => {
   return doc;
 };
 
+
 // ─────────────────────────────────────────────────────────────────────────────
-//  INVOICE, SHIFT REPORT, FOOT PATROL, INCIDENT
+//  MODERN BEAUTIFUL REPORTS (Invoice, Shift, Foot Patrol, Incident)
 // ─────────────────────────────────────────────────────────────────────────────
 
-const renderLegacyHeader = (doc, pageWidth, title, margin = 20) => {
-  const barTop = 12, barH = 18;
-  doc.setFillColor(...T.navy); doc.rect(margin, barTop, pageWidth - margin * 2, barH, "F");
-  doc.setFont("helvetica", "bold"); doc.setTextColor(...T.white); doc.setFontSize(15);
-  doc.text("STAFFOO", pageWidth / 2, barTop + 6, { align: "center" });
-  doc.setFontSize(6.5); doc.setFont("helvetica", "normal");
-  doc.text("Capital Services Pty Ltd | ABN: 48 613 317 838", pageWidth / 2, barTop + 11, { align: "center" });
-  doc.setFontSize(5.8);
-  doc.text("Capital Services Pty Ltd", pageWidth - margin - 2, barTop + 4, { align: "right" });
-  doc.text("ABN: 48 613 317 838", pageWidth - margin - 2, barTop + 7, { align: "right" });
-  doc.text("21 Tanglewood Blvd, Truganina VIC 3029", pageWidth - margin - 2, barTop + 10, { align: "right" });
-  doc.text("Melbourne, Victoria", pageWidth - margin - 2, barTop + 13, { align: "right" });
-  doc.setFontSize(14); doc.setTextColor(...T.blue);
-  doc.text(title, margin + 4, barTop + barH + 8);
-  doc.setDrawColor(...T.blue); doc.setLineWidth(0.6);
-  doc.line(margin + 4, barTop + barH + 10, pageWidth - margin - 4, barTop + barH + 10);
-  return barTop + barH + 16;
+const renderModernHeader = (doc, pageWidth, rightTitle) => {
+  doc.setFillColor(...T.navy);
+  doc.rect(0, 0, pageWidth, 26, "F");
+  doc.setFont("helvetica", "bold"); doc.setTextColor(...T.white);
+  doc.setFontSize(20); doc.text("STAFFOO", 16, 17);
+  doc.setFontSize(18); doc.text(rightTitle.toUpperCase(), pageWidth - 16, 17, { align: "right" });
+  return 40;
+};
+
+const drawGoldLine = (doc, y, pw, mg = 15) => {
+  doc.setDrawColor(...T.gold);
+  doc.setLineWidth(1.2);
+  doc.line(mg, y, pw - mg, y);
+  return y + 8;
+};
+
+const renderModernFooter = (doc, pw, ph, showStripeBadge = false) => {
+  let fy = ph - 22;
+  if (showStripeBadge) {
+    doc.setDrawColor(...T.greenBorder);
+    doc.setFillColor(...T.greenFill);
+    doc.rect(pw / 2 - 28, fy, 56, 6, "FD");
+    doc.setFontSize(7); doc.setFont("helvetica", "bold"); doc.setTextColor(...T.greenText);
+    doc.text("✓ Payment Held via Stripe", pw / 2, fy + 4, { align: "center" });
+    fy += 10;
+  }
+  doc.setFontSize(7); doc.setFont("helvetica", "normal"); doc.setTextColor(...T.muted);
+  doc.text("Thank you for choosing Staffoo Facility Services.", pw / 2, fy, { align: "center" });
+  doc.text("For billing enquiries contact admin@staffoo.com.au | ABN: 48 613 317 838", pw / 2, fy + 4, { align: "center" });
 };
 
 const PDFGenerator = {
@@ -488,73 +520,132 @@ const PDFGenerator = {
   generateEmployeeOnboardingPDF,
 
   generateInvoicePDF: (invoiceData) => {
-    const { invoiceNo, currency = "AUD", startDate, dueDate, from, to, items, subtotal, gstAmount, lateFeeAmount, grandTotal, includeGst, gstPercent, notes, includeNotes, paymentMethods } = invoiceData;
+    const { invoiceNo, currency = "AUD", startDate, dueDate, to, items, subtotal, gstAmount, lateFeeAmount, grandTotal, includeGst, gstPercent } = invoiceData;
     const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4", compress: true });
-    const pw = doc.internal.pageSize.getWidth(), ph = doc.internal.pageSize.getHeight(), mg = 20;
-    const bBlue = [13, 110, 253], bDark = [30, 41, 59], tGray = [100, 116, 139], lBorder = [226, 232, 240];
-    let my = renderLegacyHeader(doc, pw, "INVOICE", mg) + 2;
-    const mlx = pw - mg - 26, mvx = pw - mg;
-    const addM = (l, v) => { doc.setFontSize(9); doc.setFont("helvetica", "normal"); doc.setTextColor(...tGray); doc.text(l, mlx, my, { align: "right" }); doc.setFont("helvetica", "bold"); doc.setTextColor(...bDark); doc.text(v, mvx, my, { align: "right" }); my += 6; };
-    addM("Invoice No.", `#${invoiceNo}`); addM("Issue Date", startDate); if (dueDate) addM("Due Date", dueDate);
-    let yp = 50; doc.setDrawColor(...lBorder); doc.setLineWidth(0.5); doc.line(mg, yp, pw - mg, yp); yp += 8;
-    const cw = (pw - mg * 2) / 2; let ly = yp;
-    doc.setFontSize(8.5); doc.setFont("helvetica", "bold"); doc.setTextColor(...tGray); doc.text("FROM", mg, ly); ly += 6;
-    doc.setFontSize(10); doc.setTextColor(...bDark); doc.text(from.name || "Staffoo Facility Services", mg, ly); ly += 5;
-    doc.setFontSize(9); doc.setFont("helvetica", "normal"); doc.setTextColor(...tGray);
-    if (from.email) { doc.text(from.email, mg, ly); ly += 5; } if (from.phone) { doc.text(from.phone, mg, ly); ly += 5; } if (from.abn) { doc.text(`ABN: ${from.abn}`, mg, ly); }
-    let ry = yp; const rx = mg + cw;
-    doc.setFontSize(8.5); doc.setFont("helvetica", "bold"); doc.setTextColor(...tGray); doc.text("BILLED TO", rx, ry); ry += 6;
-    doc.setFontSize(10); doc.setTextColor(...bDark); doc.text(to.name || "-", rx, ry); ry += 5;
-    doc.setFontSize(9); doc.setFont("helvetica", "normal"); doc.setTextColor(...tGray);
-    if (to.email) { doc.text(to.email, rx, ry); ry += 5; } if (to.phone) { doc.text(to.phone, rx, ry); ry += 5; } if (to.abn) { doc.text(`ABN: ${to.abn}`, rx, ry); }
-    yp = Math.max(ly, ry) + 15;
-    const fmt = (v) => `${currency} ${Number(v || 0).toFixed(2)}`;
-    const td = items.map((i) => { const lt = (Number(i.qty) || 0) * (Number(i.rate) || 0); return [i.description || "-", (Number(i.qty) || 0).toFixed(2), fmt(i.rate), fmt(lt)]; });
+    const pw = doc.internal.pageSize.getWidth(), ph = doc.internal.pageSize.getHeight(), mg = 15;
+
+    let y = renderModernHeader(doc, pw, "INVOICE");
+
+    doc.setFont("helvetica", "bold"); doc.setFontSize(10); doc.setTextColor(...T.text);
+    doc.text("Bill To:", mg, y);
+    doc.setFont("helvetica", "normal"); doc.setFontSize(9);
+    doc.text(to.name || "-", mg, y + 6);
+    if (to.email) doc.text(to.email, mg, y + 12);
+    if (to.phone) doc.text(to.phone, mg, y + 18);
+
+    const rightAlignParams = { align: "right" };
+    const rLabelX = pw - mg - 35, rValX = pw - mg;
+    const addRMeta = (lbl, val, yOff) => {
+      doc.setFont("helvetica", "bold"); doc.text(lbl, rLabelX, y + yOff, rightAlignParams);
+      doc.setFont("helvetica", "normal"); doc.text(String(val), rValX, y + yOff, rightAlignParams);
+    };
+
+    addRMeta("Invoice #:", `INV-${invoiceNo}`, 0);
+    addRMeta("Date:", startDate, 6);
+    if (dueDate) addRMeta("Due Date:", dueDate, 12);
+    addRMeta("Payment Option:", "Full Payment", 18);
+
+    y = drawGoldLine(doc, y + 26, pw, mg);
+
+    doc.setFontSize(11); doc.setFont("helvetica", "bold"); doc.setTextColor(...T.navy);
+    doc.text("Shift Details", mg, y + 2); y += 6;
+
+    const fmt = (v) => `$${Number(v || 0).toFixed(2)}`;
+    const td = items.map((i, idx) => {
+      const lt = (Number(i.qty) || 0) * (Number(i.rate) || 0);
+      return [idx + 1, i.description || "-", "", "1", `${(Number(i.qty) || 0).toFixed(1)}h`, fmt(lt)];
+    });
+
     const ptw = pw - mg * 2;
-    autoTable(doc, { startY: yp, head: [["Item", "Hours", "Price", "Total"]], body: td, tableWidth: ptw, theme: "plain", headStyles: { fillColor: [248, 250, 252], textColor: bDark, fontStyle: "bold", fontSize: 9, cellPadding: 4, valign: "middle" }, bodyStyles: { fontSize: 9, textColor: bDark, cellPadding: { top: 6, bottom: 6, left: 4, right: 4 }, lineColor: lBorder, lineWidth: { bottom: 0.1 }, valign: "middle" }, margin: { left: mg, right: mg }, styles: { overflow: "linebreak" }, columnStyles: { 0: { cellWidth: ptw * 0.52, halign: "left" }, 1: { cellWidth: ptw * 0.14, halign: "center" }, 2: { cellWidth: ptw * 0.17, halign: "right" }, 3: { cellWidth: ptw * 0.17, halign: "right" } } });
-    yp = doc.lastAutoTable.finalY + 15;
-    let fly = yp;
-    if (includeNotes && notes) { doc.setFont("helvetica", "bold"); doc.setFontSize(9); doc.setTextColor(...bDark); doc.text("Notes", mg, fly); doc.setFont("helvetica", "normal"); doc.setTextColor(...tGray); const sp = doc.splitTextToSize(notes, 90); doc.text(sp, mg, fly + 5); fly += sp.length * 5 + 8; }
-    if (paymentMethods) { doc.setFont("helvetica", "bold"); doc.setFontSize(9); doc.setTextColor(...bDark); doc.text("Payment Methods", mg, fly); doc.setFont("helvetica", "normal"); doc.setTextColor(...tGray); let py = fly + 5; if (paymentMethods.bankTransfer) { doc.text("• Bank Transfer", mg, py); py += 5; } if (paymentMethods.bpay) { doc.text("• BPAY", mg, py); py += 5; } if (paymentMethods.card) { doc.text("• Credit / Debit Card", mg, py); } }
-    let ty = yp; const tlx = pw - mg - 35, tvx = pw - mg;
-    const addS = (l, v, red = false) => { doc.setFontSize(9); doc.setFont("helvetica", "normal"); doc.setTextColor(...(red ? [220, 38, 38] : tGray)); doc.text(l, tlx, ty, { align: "right" }); doc.setTextColor(...(red ? [220, 38, 38] : bDark)); doc.text(v, tvx, ty, { align: "right" }); ty += 8; };
-    addS("Subtotal", `${currency} ${subtotal.toFixed(2)}`); if (includeGst) addS(`GST (${gstPercent}%)`, `${currency} ${gstAmount.toFixed(2)}`); if (lateFeeAmount > 0) addS("Late Fee", `${currency} ${lateFeeAmount.toFixed(2)}`, true);
-    ty += 2; doc.setDrawColor(...bBlue); doc.setLineWidth(0.6); doc.line(pw - mg - 75, ty - 5, pw - mg, ty - 5);
-    doc.setFontSize(11); doc.setFont("helvetica", "bold"); doc.setTextColor(...bBlue);
-    doc.text("TOTAL AMOUNT", tlx, ty + 1, { align: "right" }); doc.text(`${currency} ${grandTotal.toFixed(2)}`, tvx, ty + 1, { align: "right" });
-    doc.setFontSize(8); doc.setFont("helvetica", "normal"); doc.setTextColor(...tGray);
-    doc.text("Thank you for choosing Staffoo Facility Services.", pw / 2, ph - 15, { align: "center" });
-    doc.text("https://app.staffoo.com.au", pw / 2, ph - 10, { align: "center" });
+    autoTable(doc, {
+      startY: y, head: [["#", "Details", "", "Guards", "Hrs / Guard", `Amount (${currency})`]], body: td, tableWidth: ptw, theme: "plain",
+      headStyles: { fillColor: T.navy, textColor: T.white, fontStyle: "bold", fontSize: 9, cellPadding: 4, valign: "middle" },
+      bodyStyles: { fontSize: 9, textColor: T.text, cellPadding: { top: 4, bottom: 4, left: 4, right: 4 }, lineColor: T.lineGray, lineWidth: { bottom: 0.1 }, valign: "middle" },
+      margin: { left: mg, right: mg },
+      columnStyles: { 0: { cellWidth: ptw * 0.05, halign: "center" }, 1: { cellWidth: ptw * 0.40, halign: "left" }, 2: { cellWidth: ptw * 0.15, halign: "left" }, 3: { cellWidth: ptw * 0.10, halign: "center" }, 4: { cellWidth: ptw * 0.15, halign: "center" }, 5: { cellWidth: ptw * 0.15, halign: "right" } }
+    });
+
+    y = doc.lastAutoTable.finalY + 15;
+    y = drawGoldLine(doc, y, pw, mg);
+
+    doc.setFontSize(11); doc.setFont("helvetica", "bold"); doc.setTextColor(...T.navy);
+    doc.text("Payment Breakdown", mg, y + 6);
+
+    let ty = y + 6;
+    const tlx = pw - mg - 30, tvx = pw - mg;
+    const addSum = (lbl, val, bold = false) => {
+      doc.setFontSize(9); doc.setFont("helvetica", bold ? "bold" : "normal"); doc.setTextColor(...T.muted);
+      doc.text(lbl, tlx, ty, rightAlignParams); doc.setTextColor(...T.text); doc.text(val, tvx, ty, rightAlignParams); ty += 6;
+    };
+
+    addSum("Subtotal", fmt(subtotal));
+    if (includeGst) addSum(`GST / Service Fee (${gstPercent}%)`, fmt(gstAmount));
+    if (lateFeeAmount > 0) addSum("Late Fee", fmt(lateFeeAmount));
+
+    ty += 2; drawGoldLine(doc, ty, pw, mg); ty += 8;
+
+    doc.setFontSize(11); doc.setFont("helvetica", "bold"); doc.setTextColor(...T.text);
+    doc.text("Total Amount", tlx, ty, rightAlignParams); doc.text(fmt(grandTotal), tvx, ty, rightAlignParams); ty += 6;
+
+    doc.setFontSize(10); doc.setTextColor(...T.muted);
+    doc.text("Amount Charged Now", tlx, ty, rightAlignParams); doc.setTextColor(...T.text); doc.text(fmt(grandTotal), tvx, ty, rightAlignParams); ty += 6;
+
+    doc.text("Balance Remaining", tlx, ty, rightAlignParams); doc.setTextColor(...T.gold); doc.text("$0.00", tvx, ty, rightAlignParams);
+
+    renderModernFooter(doc, pw, ph, true);
     return doc;
   },
 
   generateShiftReportPDF: (reportData) => {
     const { siteName, siteAddress, guardName, shiftStart, shiftEnd, totalHours, signinDetails, jobStatus } = reportData;
     const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4", compress: true });
-    const pw = doc.internal.pageSize.getWidth(), ph = doc.internal.pageSize.getHeight(), mg = 20;
-    const bBlue = [13, 110, 253], bDark = [30, 41, 59], tGray = [100, 116, 139], lBorder = [226, 232, 240];
-    let my = renderLegacyHeader(doc, pw, "SHIFT REPORT", mg) - 6; const mlx = pw - mg - 28, mvx = pw - mg;
-    const addM = (l, v) => { doc.setFontSize(8); doc.setFont("helvetica", "normal"); doc.setTextColor(...tGray); doc.text(l, mlx, my, { align: "right" }); doc.setFont("helvetica", "bold"); doc.setTextColor(...bDark); doc.text(String(v), mvx, my, { align: "right" }); my += 5; };
-    addM("Status", jobStatus ? jobStatus.toUpperCase() : "PENDING"); addM("Total Hours", `${totalHours || 0} Hrs`); addM("Date", new Date().toLocaleDateString());
-    let yp = 42; doc.setDrawColor(...lBorder); doc.setLineWidth(0.4); doc.line(mg, yp, pw - mg, yp); yp += 6;
+    const pw = doc.internal.pageSize.getWidth(), ph = doc.internal.pageSize.getHeight(), mg = 15;
+
+    let y = renderModernHeader(doc, pw, "SHIFT REPORT");
+
+    const rightAlignParams = { align: "right" };
+    doc.setFontSize(9); doc.setFont("helvetica", "bold"); doc.setTextColor(...T.muted); doc.text("Status", pw - mg - 25, y, rightAlignParams);
+    doc.setTextColor(...T.text); doc.text(jobStatus ? jobStatus.toUpperCase() : "PENDING", pw - mg, y, rightAlignParams); y += 6;
+    doc.setTextColor(...T.muted); doc.text("Total Hours", pw - mg - 25, y, rightAlignParams);
+    doc.setTextColor(...T.text); doc.text(`${totalHours || 0} Hrs`, pw - mg, y, rightAlignParams); y += 6;
+    doc.setTextColor(...T.muted); doc.text("Date", pw - mg - 25, y, rightAlignParams);
+    doc.setTextColor(...T.text); doc.text(new Date().toLocaleDateString(), pw - mg, y, rightAlignParams);
+
+    let yp = 48; yp = drawGoldLine(doc, yp, pw, mg) + 2;
+
     const cw = (pw - mg * 2) / 2; let ly = yp;
-    doc.setFontSize(8); doc.setFont("helvetica", "bold"); doc.setTextColor(...tGray); doc.text("SITE DETAILS", mg, ly); ly += 5;
-    doc.setFontSize(9); doc.setTextColor(...bDark); doc.text(siteName || "N/A", mg, ly); ly += 4;
-    doc.setFontSize(8); doc.setFont("helvetica", "normal"); doc.setTextColor(...tGray);
+    doc.setFontSize(9); doc.setFont("helvetica", "bold"); doc.setTextColor(...T.navy); doc.text("SITE DETAILS", mg, ly); ly += 6;
+    doc.setFontSize(9); doc.setTextColor(...T.text); doc.text(siteName || "N/A", mg, ly); ly += 5;
+    doc.setFontSize(8); doc.setFont("helvetica", "normal"); doc.setTextColor(...T.muted);
     if (siteAddress) { const sa = doc.splitTextToSize(siteAddress, cw - 10); doc.text(sa, mg, ly); ly += sa.length * 4; }
+
     let ry = yp; const rx = mg + cw;
-    doc.setFontSize(8); doc.setFont("helvetica", "bold"); doc.setTextColor(...tGray); doc.text("ASSIGNMENT DETAILS", rx, ry); ry += 5;
-    doc.setFontSize(9); doc.setTextColor(...bDark); doc.text(`Guard: ${guardName || "Unassigned"}`, rx, ry); ry += 4;
-    doc.setFontSize(8); doc.setFont("helvetica", "normal"); doc.setTextColor(...tGray);
+    doc.setFontSize(9); doc.setFont("helvetica", "bold"); doc.setTextColor(...T.navy); doc.text("ASSIGNMENT DETAILS", rx, ry); ry += 6;
+    doc.setFontSize(9); doc.setTextColor(...T.text); doc.text(`Guard: ${guardName || "Unassigned"}`, rx, ry); ry += 5;
+    doc.setFontSize(8); doc.setFont("helvetica", "normal"); doc.setTextColor(...T.muted);
     if (shiftStart) { doc.text(`Start: ${shiftStart}`, rx, ry); ry += 4; } if (shiftEnd) { doc.text(`End: ${shiftEnd}`, rx, ry); }
-    yp = Math.max(ly, ry) + 10; doc.setFontSize(9); doc.setFont("helvetica", "bold"); doc.setTextColor(...bDark); doc.text("Sign In / Out Logs", mg, yp); yp += 5;
+
+    yp = Math.max(ly, ry) + 10;
+    doc.setFontSize(11); doc.setFont("helvetica", "bold"); doc.setTextColor(...T.navy); doc.text("Sign In / Out Logs", mg, yp); yp += 6;
+
     const td = [];
-    if (signinDetails) { td.push(["Sign In", signinDetails.signin_time || "-", signinDetails.location || "-", signinDetails.signin_notes || "No notes"]); td.push(["Sign Out", signinDetails.signout_time || "-", signinDetails.signout_location || "-", signinDetails.signout_notes || "No notes"]); }
-    else { td.push(["-", "No sign in data available", "-", "-"]); }
+    if (signinDetails) {
+      td.push(["Sign In", signinDetails.signin_time || "-", signinDetails.location || "-", signinDetails.signin_notes || "No notes"]);
+      td.push(["Sign Out", signinDetails.signout_time || "-", signinDetails.signout_location || "-", signinDetails.signout_notes || "No notes"]);
+    } else {
+      td.push(["-", "No sign in data available", "-", "-"]);
+    }
+
     const ptw = pw - mg * 2;
-    autoTable(doc, { startY: yp, head: [["Activity", "Time", "Location", "Notes"]], body: td, tableWidth: ptw, theme: "plain", headStyles: { fillColor: [248, 250, 252], textColor: bDark, fontStyle: "bold", fontSize: 8, cellPadding: 3 }, bodyStyles: { fontSize: 8, textColor: bDark, cellPadding: { top: 4, bottom: 4, left: 3, right: 3 }, lineColor: lBorder, lineWidth: { bottom: 0.1 } }, margin: { left: mg, right: mg }, styles: { overflow: "linebreak" }, columnStyles: { 0: { fontStyle: "bold", textColor: bBlue, cellWidth: ptw * 0.15 }, 1: { cellWidth: ptw * 0.22 }, 2: { cellWidth: ptw * 0.33 }, 3: { cellWidth: ptw * 0.30 } } });
-    doc.setFontSize(7); doc.setFont("helvetica", "normal"); doc.setTextColor(...tGray);
-    doc.text("Thank you for choosing Staffoo Facility Services.", pw / 2, ph - 15, { align: "center" }); doc.text("https://app.staffoo.com.au", pw / 2, ph - 10, { align: "center" });
+    autoTable(doc, {
+      startY: yp, head: [["Activity", "Time", "Location", "Notes"]], body: td, tableWidth: ptw, theme: "plain",
+      headStyles: { fillColor: T.navy, textColor: T.white, fontStyle: "bold", fontSize: 9, cellPadding: 4 },
+      bodyStyles: { fontSize: 9, textColor: T.text, cellPadding: { top: 5, bottom: 5, left: 4, right: 4 }, lineColor: T.lineGray, lineWidth: { bottom: 0.1 } },
+      margin: { left: mg, right: mg },
+      columnStyles: { 0: { fontStyle: "bold", cellWidth: ptw * 0.15 }, 1: { cellWidth: ptw * 0.22 }, 2: { cellWidth: ptw * 0.33 }, 3: { cellWidth: ptw * 0.30 } }
+    });
+
+    renderModernFooter(doc, pw, ph);
     return doc;
   },
 
@@ -562,22 +653,76 @@ const PDFGenerator = {
     const { patrols, siteName, guardName, shiftStart, shiftEnd } = reportData;
     const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4", compress: true });
     const pw = doc.internal.pageSize.getWidth(), ph = doc.internal.pageSize.getHeight(), mg = 15;
-    const bDark = [30, 41, 59], tGray = [100, 116, 139], lBorder = [226, 232, 240], bWarn = [255, 193, 7];
-    let pn = 1; const addPN = () => { doc.setFontSize(7); doc.setTextColor(...tGray); doc.text(`Page ${pn}`, pw - mg - 10, ph - 8); };
-    const addH = () => renderLegacyHeader(doc, pw, "FOOT PATROL REPORT", mg); let y = addH();
-    doc.setFontSize(9); doc.setFont("helvetica", "bold"); doc.setTextColor(...bDark); doc.text("SHIFT SUMMARY", mg, y); y += 5;
-    doc.setFontSize(8); doc.setFont("helvetica", "normal"); doc.setTextColor(...tGray);
-    doc.text(`Guard: ${guardName || "N/A"}`, mg, y); doc.text(`Site: ${siteName || "N/A"}`, pw / 2, y); y += 4;
-    doc.text(`Shift: ${shiftStart || "N/A"} - ${shiftEnd || "N/A"}`, mg, y); doc.text(`Total Patrols: ${patrols.length}`, pw / 2, y); y += 8;
-    patrols.forEach((p, i) => {
-      if (y > ph - 70) { addPN(); pn++; doc.addPage(); y = addH(); }
-      doc.setFontSize(9); doc.setFont("helvetica", "bold"); doc.setTextColor(...bWarn); doc.text(`PATROL #${i + 1}`, mg, y); y += 5;
-      doc.setDrawColor(...lBorder); doc.setFillColor(255, 252, 240); doc.rect(mg, y - 3, pw - mg * 2, 12, "F"); doc.setLineWidth(0.3); doc.rect(mg, y - 3, pw - mg * 2, 12);
-      doc.setFontSize(8); doc.setFont("helvetica", "bold"); doc.setTextColor(...bDark);
-      doc.text(`Date: ${p.date || "N/A"}`, mg + 2, y); doc.text(`Time: ${p.time || "N/A"}`, pw / 2, y);
-      doc.setFont("helvetica", "normal"); doc.text(`Detail: ${p.patrolling_detail || "N/A"}`, mg + 2, y + 4); y += 20;
-      if (i < patrols.length - 1) { if (y > ph - 20) { addPN(); pn++; doc.addPage(); y = addH(); } doc.setDrawColor(...lBorder); doc.setLineWidth(0.5); doc.line(mg, y, pw - mg, y); y += 6; }
-    });
+
+    let pn = 1; const addPN = () => { doc.setFontSize(8); doc.setTextColor(...T.muted); doc.text(`Page ${pn}`, pw - mg - 10, ph - 8); };
+    let y = renderModernHeader(doc, pw, "FOOT PATROL REPORT");
+
+    doc.setFontSize(11); doc.setFont("helvetica", "bold"); doc.setTextColor(...T.navy); doc.text("SHIFT SUMMARY", mg, y); y += 6;
+    doc.setFontSize(9); doc.setFont("helvetica", "normal"); doc.setTextColor(...T.muted);
+    doc.text(`Guard: ${guardName || "N/A"}`, mg, y); doc.text(`Site: ${siteName || "N/A"}`, pw / 2, y); y += 5;
+    doc.text(`Shift: ${shiftStart || "N/A"} - ${shiftEnd || "N/A"}`, mg, y); doc.text(`Total Patrols: ${patrols.length}`, pw / 2, y);
+    y += 6;
+
+    y = drawGoldLine(doc, y, pw, mg) + 4;
+
+    for (let i = 0; i < patrols.length; i++) {
+      const p = patrols[i];
+      if (y > ph - 70) { addPN(); pn++; doc.addPage(); y = renderModernHeader(doc, pw, "FOOT PATROL REPORT"); }
+
+      doc.setFontSize(10); doc.setFont("helvetica", "bold"); doc.setTextColor(...T.gold); doc.text(`PATROL #${i + 1}`, mg, y); y += 6;
+      doc.setDrawColor(...T.border); doc.setFillColor(...T.soft); doc.rect(mg, y - 3, pw - mg * 2, 14, "FD");
+      doc.setFontSize(9); doc.setFont("helvetica", "bold"); doc.setTextColor(...T.text);
+      doc.text(`Date: ${p.date || "N/A"}`, mg + 3, y + 2); doc.text(`Time: ${p.time || "N/A"}`, pw / 2, y + 2);
+      doc.setFont("helvetica", "normal"); doc.text(`Detail: ${p.patrolling_detail || "N/A"}`, mg + 3, y + 7); y += 18;
+
+      let photos = [];
+      if (p.photo) {
+        try { photos = typeof p.photo === "string" ? JSON.parse(p.photo) : p.photo; } catch (e) { }
+      }
+
+      if (photos.length > 0) {
+        if (y > ph - 45) { addPN(); pn++; doc.addPage(); y = renderModernHeader(doc, pw, "FOOT PATROL REPORT"); }
+        doc.setFontSize(9); doc.setFont("helvetica", "bold"); doc.setTextColor(...T.navy); doc.text("PHOTOS", mg, y); y += 6;
+        let imgX = mg;
+        for (let imgObj of photos) {
+          if (imgX + 45 > pw - mg) {
+            imgX = mg; y += 35;
+            if (y > ph - 40) { addPN(); pn++; doc.addPage(); y = renderModernHeader(doc, pw, "FOOT PATROL REPORT"); }
+          }
+          const url = resolvePatrolUrl(imgObj.imgPath);
+          const b64 = await fetchImageBase64(url);
+          if (b64) {
+            doc.addImage(b64, "JPEG", imgX, y, 40, 30);
+          } else {
+            doc.setDrawColor(...T.border); doc.rect(imgX, y, 40, 30);
+            doc.setFontSize(7); doc.setTextColor(...T.muted); doc.text("Image N/A", imgX + 20, y + 15, { align: "center" });
+          }
+          imgX += 45;
+        }
+        y += 35;
+      }
+
+      if (p.signature) {
+        if (y > ph - 35) { addPN(); pn++; doc.addPage(); y = renderModernHeader(doc, pw, "FOOT PATROL REPORT"); }
+        doc.setFontSize(9); doc.setFont("helvetica", "bold"); doc.setTextColor(...T.navy); doc.text("SIGNATURE", mg, y); y += 6;
+        const url = resolvePatrolUrl(p.signature);
+        const sigB64 = await fetchImageBase64(url);
+        if (sigB64) {
+          doc.addImage(sigB64, "JPEG", mg, y, 50, 25);
+        } else {
+          doc.setDrawColor(...T.border); doc.rect(mg, y, 50, 25);
+          doc.setFontSize(7); doc.setTextColor(...T.muted); doc.text("Signature N/A", mg + 25, y + 12.5, { align: "center" });
+        }
+        y += 30;
+      }
+
+      if (i < patrols.length - 1) {
+        if (y > ph - 20) { addPN(); pn++; doc.addPage(); y = renderModernHeader(doc, pw, "FOOT PATROL REPORT"); }
+        doc.setDrawColor(...T.lineGray); doc.setLineWidth(0.5); doc.line(mg, y, pw - mg, y); y += 8;
+      }
+    }
+
+    renderModernFooter(doc, pw, ph);
     addPN(); return doc;
   },
 
@@ -585,27 +730,119 @@ const PDFGenerator = {
     const { incidents, siteName, guardName, shiftStart, shiftEnd } = reportData;
     const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4", compress: true });
     const pw = doc.internal.pageSize.getWidth(), ph = doc.internal.pageSize.getHeight(), mg = 15;
-    const bDark = [30, 41, 59], tGray = [100, 116, 139], lBorder = [226, 232, 240], bDanger = [220, 38, 38];
-    let pn = 1; const addPN = () => { doc.setFontSize(7); doc.setTextColor(...tGray); doc.text(`Page ${pn}`, pw - mg - 10, ph - 8); };
-    const addH = () => renderLegacyHeader(doc, pw, "INCIDENT REPORT", mg); let y = addH();
-    doc.setFontSize(9); doc.setFont("helvetica", "bold"); doc.setTextColor(...bDark); doc.text("SHIFT SUMMARY", mg, y); y += 5;
-    doc.setFontSize(8); doc.setFont("helvetica", "normal"); doc.setTextColor(...tGray);
-    doc.text(`Guard: ${guardName || "N/A"}`, mg, y); doc.text(`Site: ${siteName || "N/A"}`, pw / 2, y); y += 4;
-    doc.text(`Shift: ${shiftStart || "N/A"} - ${shiftEnd || "N/A"}`, mg, y); doc.text(`Total Incidents: ${incidents.length}`, pw / 2, y); y += 8;
+
+    let pn = 1; const addPN = () => { doc.setFontSize(8); doc.setTextColor(...T.muted); doc.text(`Page ${pn}`, pw - mg - 10, ph - 8); };
+    let y = renderModernHeader(doc, pw, "INCIDENT REPORT");
+
+    doc.setFontSize(11); doc.setFont("helvetica", "bold"); doc.setTextColor(...T.navy); doc.text("SHIFT SUMMARY", mg, y); y += 6;
+    doc.setFontSize(9); doc.setFont("helvetica", "normal"); doc.setTextColor(...T.muted);
+    doc.text(`Guard: ${guardName || "N/A"}`, mg, y); doc.text(`Site: ${siteName || "N/A"}`, pw / 2, y); y += 5;
+    doc.text(`Shift: ${shiftStart || "N/A"} - ${shiftEnd || "N/A"}`, mg, y); doc.text(`Total Incidents: ${incidents.length}`, pw / 2, y);
+    y += 6;
+
+    y = drawGoldLine(doc, y, pw, mg) + 4;
+
     for (let i = 0; i < incidents.length; i++) {
-      const inc = incidents[i]; if (y > ph - 80) { addPN(); pn++; doc.addPage(); y = addH(); }
-      doc.setFontSize(9); doc.setFont("helvetica", "bold"); doc.setTextColor(...bDanger); doc.text(`INCIDENT #${i + 1}`, mg, y); y += 5;
-      doc.setDrawColor(...lBorder); doc.setFillColor(255, 248, 248); doc.rect(mg, y - 3, pw - mg * 2, 16, "F"); doc.setLineWidth(0.3); doc.rect(mg, y - 3, pw - mg * 2, 16);
-      doc.setFontSize(8); doc.setFont("helvetica", "bold"); doc.setTextColor(...bDark); let dy = y;
-      doc.text(`Date: ${inc.incident_date || "N/A"}`, mg + 2, dy); doc.text(`Time: ${inc.incident_time || "N/A"}`, pw / 2, dy); dy += 4;
-      doc.text(`Injury Type: ${inc.injury_type || "N/A"}`, mg + 2, dy); doc.text(`Site: ${inc.site_name || "N/A"}`, pw / 2, dy); dy += 4;
-      doc.setFont("helvetica", "normal"); doc.text(`Detail: ${inc.injury_detail || "N/A"}`, mg + 2, dy); y += 18;
-      if (inc.people_involved?.length > 0) { if (y > ph - 60) { addPN(); pn++; doc.addPage(); y = addH(); } doc.setFontSize(8); doc.setFont("helvetica", "bold"); doc.setTextColor(...bDark); doc.text("PEOPLE INVOLVED", mg, y); y += 4; autoTable(doc, { startY: y, head: [["Name", "Gender", "Phone", "Email"]], body: inc.people_involved.map(p => [p.name || "—", p.gender || "—", p.phone || "—", p.email || "—"]), theme: "plain", headStyles: { fillColor: [248, 250, 252], textColor: bDark, fontStyle: "bold", fontSize: 7, cellPadding: 2 }, bodyStyles: { fontSize: 7, textColor: bDark, cellPadding: { top: 2, bottom: 2, left: 2, right: 2 }, lineColor: lBorder, lineWidth: { bottom: 0.1 } }, margin: { left: mg, right: mg }, columnStyles: { 0: { cellWidth: 30 }, 1: { cellWidth: 20 }, 2: { cellWidth: 35 }, 3: { cellWidth: 50 } } }); y = doc.lastAutoTable.finalY + 4; }
-      if (inc.vehicle?.length > 0) { if (y > ph - 60) { addPN(); pn++; doc.addPage(); y = addH(); } doc.setFontSize(8); doc.setFont("helvetica", "bold"); doc.setTextColor(...bDark); doc.text("VEHICLES", mg, y); y += 4; autoTable(doc, { startY: y, head: [["Make", "Model", "Type", "Registration"]], body: inc.vehicle.map(v => [v.make || "—", v.model || "—", v.vehicle_type || "—", v.vehicle_rander || "—"]), theme: "plain", headStyles: { fillColor: [248, 250, 252], textColor: bDark, fontStyle: "bold", fontSize: 7, cellPadding: 2 }, bodyStyles: { fontSize: 7, textColor: bDark, cellPadding: { top: 2, bottom: 2, left: 2, right: 2 }, lineColor: lBorder, lineWidth: { bottom: 0.1 } }, margin: { left: mg, right: mg } }); y = doc.lastAutoTable.finalY + 4; }
-      if (inc.wittness?.length > 0) { if (y > ph - 60) { addPN(); pn++; doc.addPage(); y = addH(); } doc.setFontSize(8); doc.setFont("helvetica", "bold"); doc.setTextColor(...bDark); doc.text("WITNESSES", mg, y); y += 4; autoTable(doc, { startY: y, head: [["Name", "Phone", "Email"]], body: inc.wittness.map(w => [w.witness_name || w.wittness_name || "—", w.witness_phone || w.wittness_phone || "—", w.witness_email || w.wittness_email || "—"]), theme: "plain", headStyles: { fillColor: [248, 250, 252], textColor: bDark, fontStyle: "bold", fontSize: 7, cellPadding: 2 }, bodyStyles: { fontSize: 7, textColor: bDark, cellPadding: { top: 2, bottom: 2, left: 2, right: 2 }, lineColor: lBorder, lineWidth: { bottom: 0.1 } }, margin: { left: mg, right: mg } }); y = doc.lastAutoTable.finalY + 4; }
-      if (inc.emergency_services && Object.values(inc.emergency_services).some(Boolean)) { if (y > ph - 50) { addPN(); pn++; doc.addPage(); y = addH(); } doc.setFontSize(8); doc.setFont("helvetica", "bold"); doc.setTextColor(...bDark); doc.text("EMERGENCY SERVICES", mg, y); y += 4; doc.setFontSize(7); doc.setFont("helvetica", "normal"); const es = inc.emergency_services; if (es.emergency_type) { doc.text(`Type: ${es.emergency_type}`, mg, y); y += 3; } if (es.emergency_detail) { doc.text(`Detail: ${es.emergency_detail}`, mg, y); y += 3; } if (es.supervisor_name) { doc.text(`Supervisor: ${es.supervisor_name}`, mg, y); y += 3; } if (es.phone) { doc.text(`Phone: ${es.phone}`, mg, y); y += 3; } }
-      y += 6; if (i < incidents.length - 1) { if (y > ph - 20) { addPN(); pn++; doc.addPage(); y = addH(); } doc.setDrawColor(...lBorder); doc.setLineWidth(0.5); doc.line(mg, y, pw - mg, y); y += 6; }
+      const inc = incidents[i];
+      if (y > ph - 80) { addPN(); pn++; doc.addPage(); y = renderModernHeader(doc, pw, "INCIDENT REPORT"); }
+
+      doc.setFontSize(10); doc.setFont("helvetica", "bold"); doc.setTextColor(...T.danger); doc.text(`INCIDENT #${i + 1}`, mg, y); y += 6;
+      doc.setDrawColor(...T.border); doc.setFillColor(254, 242, 242); doc.rect(mg, y - 3, pw - mg * 2, 18, "FD");
+
+      doc.setFontSize(9); doc.setFont("helvetica", "bold"); doc.setTextColor(...T.text); let dy = y + 2;
+      doc.text(`Date: ${inc.incident_date || "N/A"}`, mg + 3, dy); doc.text(`Time: ${inc.incident_time || "N/A"}`, pw / 2, dy); dy += 5;
+      doc.text(`Injury Type: ${inc.injury_type || "N/A"}`, mg + 3, dy); doc.text(`Site: ${inc.site_name || "N/A"}`, pw / 2, dy); dy += 5;
+      doc.setFont("helvetica", "normal"); doc.text(`Detail: ${inc.injury_detail || "N/A"}`, mg + 3, dy); y += 20;
+
+      const tbStyles = {
+        theme: "plain", headStyles: { fillColor: T.navy, textColor: T.white, fontStyle: "bold", fontSize: 8, cellPadding: 3 },
+        bodyStyles: { fontSize: 8, textColor: T.text, cellPadding: 3, lineColor: T.lineGray, lineWidth: { bottom: 0.1 } },
+        margin: { left: mg, right: mg }
+      };
+
+      if (inc.people_involved?.length > 0) {
+        if (y > ph - 60) { addPN(); pn++; doc.addPage(); y = renderModernHeader(doc, pw, "INCIDENT REPORT"); }
+        doc.setFontSize(9); doc.setFont("helvetica", "bold"); doc.setTextColor(...T.navy); doc.text("PEOPLE INVOLVED", mg, y); y += 4;
+        autoTable(doc, { startY: y, head: [["Name", "Gender", "Phone", "Email"]], body: inc.people_involved.map(p => [p.name || "—", p.gender || "—", p.phone || "—", p.email || "—"]), ...tbStyles });
+        y = doc.lastAutoTable.finalY + 6;
+      }
+
+      if (inc.vehicle?.length > 0) {
+        if (y > ph - 60) { addPN(); pn++; doc.addPage(); y = renderModernHeader(doc, pw, "INCIDENT REPORT"); }
+        doc.setFontSize(9); doc.setFont("helvetica", "bold"); doc.setTextColor(...T.navy); doc.text("VEHICLES", mg, y); y += 4;
+        autoTable(doc, { startY: y, head: [["Make", "Model", "Type", "Registration"]], body: inc.vehicle.map(v => [v.make || "—", v.model || "—", v.vehicle_type || "—", v.vehicle_rander || "—"]), ...tbStyles });
+        y = doc.lastAutoTable.finalY + 6;
+      }
+
+      if (inc.wittness?.length > 0) {
+        if (y > ph - 60) { addPN(); pn++; doc.addPage(); y = renderModernHeader(doc, pw, "INCIDENT REPORT"); }
+        doc.setFontSize(9); doc.setFont("helvetica", "bold"); doc.setTextColor(...T.navy); doc.text("WITNESSES", mg, y); y += 4;
+        autoTable(doc, { startY: y, head: [["Name", "Phone", "Email"]], body: inc.wittness.map(w => [w.witness_name || w.wittness_name || "—", w.witness_phone || w.wittness_phone || "—", w.witness_email || w.wittness_email || "—"]), ...tbStyles });
+        y = doc.lastAutoTable.finalY + 6;
+      }
+
+      if (inc.emergency_services && Object.values(inc.emergency_services).some(Boolean)) {
+        if (y > ph - 50) { addPN(); pn++; doc.addPage(); y = renderModernHeader(doc, pw, "INCIDENT REPORT"); }
+        doc.setFontSize(9); doc.setFont("helvetica", "bold"); doc.setTextColor(...T.navy); doc.text("EMERGENCY SERVICES", mg, y); y += 6;
+        doc.setFontSize(8); doc.setFont("helvetica", "normal"); doc.setTextColor(...T.text);
+        const es = inc.emergency_services;
+        if (es.emergency_type) { doc.text(`Type: ${es.emergency_type}`, mg, y); y += 4; }
+        if (es.emergency_detail) { doc.text(`Detail: ${es.emergency_detail}`, mg, y); y += 4; }
+        if (es.supervisor_name) { doc.text(`Supervisor: ${es.supervisor_name}`, mg, y); y += 4; }
+        if (es.phone) { doc.text(`Phone: ${es.phone}`, mg, y); y += 4; }
+        y += 4;
+      }
+
+      // Photos
+      let photos = [];
+      if (inc.photo) {
+        try { photos = typeof inc.photo === "string" ? JSON.parse(inc.photo) : inc.photo; } catch (e) { }
+      }
+
+      if (photos.length > 0) {
+        if (y > ph - 45) { addPN(); pn++; doc.addPage(); y = renderModernHeader(doc, pw, "INCIDENT REPORT"); }
+        doc.setFontSize(9); doc.setFont("helvetica", "bold"); doc.setTextColor(...T.navy); doc.text("PHOTOS", mg, y); y += 6;
+        let imgX = mg;
+        for (let imgObj of photos) {
+          if (imgX + 45 > pw - mg) {
+            imgX = mg; y += 35;
+            if (y > ph - 40) { addPN(); pn++; doc.addPage(); y = renderModernHeader(doc, pw, "INCIDENT REPORT"); }
+          }
+          const url = resolveIncidentUrl(imgObj.imgPath);
+          const b64 = await fetchImageBase64(url);
+          if (b64) {
+            doc.addImage(b64, "JPEG", imgX, y, 40, 30);
+          } else {
+            doc.setDrawColor(...T.border); doc.rect(imgX, y, 40, 30);
+            doc.setFontSize(7); doc.setTextColor(...T.muted); doc.text("Image N/A", imgX + 20, y + 15, { align: "center" });
+          }
+          imgX += 45;
+        }
+        y += 35;
+      }
+
+      // Signature
+      if (inc.signature) {
+        if (y > ph - 35) { addPN(); pn++; doc.addPage(); y = renderModernHeader(doc, pw, "INCIDENT REPORT"); }
+        doc.setFontSize(9); doc.setFont("helvetica", "bold"); doc.setTextColor(...T.navy); doc.text("SIGNATURE", mg, y); y += 6;
+        const url = resolveIncidentUrl(inc.signature);
+        const sigB64 = await fetchImageBase64(url);
+        if (sigB64) {
+          doc.addImage(sigB64, "JPEG", mg, y, 50, 25);
+        } else {
+          doc.setDrawColor(...T.border); doc.rect(mg, y, 50, 25);
+          doc.setFontSize(7); doc.setTextColor(...T.muted); doc.text("Signature N/A", mg + 25, y + 12.5, { align: "center" });
+        }
+        y += 30;
+      }
+
+      if (i < incidents.length - 1) {
+        if (y > ph - 20) { addPN(); pn++; doc.addPage(); y = renderModernHeader(doc, pw, "INCIDENT REPORT"); }
+        doc.setDrawColor(...T.lineGray); doc.setLineWidth(0.5); doc.line(mg, y, pw - mg, y); y += 8;
+      }
     }
+
+    renderModernFooter(doc, pw, ph);
     addPN(); return doc;
   },
 

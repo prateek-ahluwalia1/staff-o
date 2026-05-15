@@ -418,7 +418,7 @@ export default function Induction() {
                         {formQuestions.map((q, qIndex) => (
                             <div key={q.id} className="border border-light rounded p-3 p-md-4 mb-4 bg-white shadow-sm position-relative">
                                 <div className="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
-                                    <span className="badge bg-primary bg-opacity-10 text-primary rounded-pill px-3 py-2 fw-bold">
+                                    <span className="badge bg-primary bg-opacity-10 text-white rounded-pill px-3 py-2 fw-bold">
                                         Question {qIndex + 1}
                                     </span>
                                     {formQuestions.length > 1 && (

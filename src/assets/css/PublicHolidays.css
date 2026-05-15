@@ -45,7 +45,7 @@
 }
 
 .holiday-month-pill strong {
-    color: #0d6efd;
+    color: #0A7C6E;
     font-size: 0.98rem;
 }
 
@@ -71,7 +71,7 @@
 }
 
 .calendar-meta-chip strong {
-    color: #0d6efd;
+    color: #0A7C6E;
     font-size: 0.98rem;
 }
 
@@ -113,7 +113,7 @@
 }
 
 .clean-input:focus {
-    border-color: #0d6efd;
+    border-color: #0A7C6E;
     box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.12);
 }
 
@@ -128,7 +128,7 @@
 }
 
 .calendar-nav-btn {
-    background: linear-gradient(135deg, #0d6efd, #0b5ed7);
+    background: #0A7C6E;
     color: white;
     border: none;
     width: 45px;
@@ -167,7 +167,7 @@
 .weekday {
     text-align: center;
     font-weight: 700;
-    color: #0d6efd;
+    color: #0A7C6E;
     font-size: 0.92rem;
     padding: 8px 0;
     text-transform: uppercase;
@@ -194,7 +194,7 @@
 }
 
 .calendar-day:hover:not(.other-month) {
-    border-color: #0d6efd;
+    border-color: #0A7C6E;
     background: linear-gradient(135deg, #f8fbff 0%, #eef5ff 100%);
     box-shadow: 0 5px 15px rgba(13, 110, 253, 0.16);
     transform: translateY(-2px);
@@ -208,12 +208,12 @@
 }
 
 .calendar-day.today {
-    border: 2px solid #0d6efd;
+    border: 2px solid #0A7C6E;
     background: linear-gradient(135deg, #eef5ff 0%, #f8fbff 100%);
 }
 
 .calendar-day.today .day-number {
-    background: linear-gradient(135deg, #0d6efd, #0b5ed7);
+    background: #0A7C6E;
     color: white;
     border-radius: 50%;
     width: 30px;
@@ -275,7 +275,7 @@
 
 .holiday-item {
     background: linear-gradient(135deg, #fbfdff 0%, #eef5ff 100%);
-    border-left: 4px solid #0d6efd;
+    border-left: 4px solid #0A7C6E;
     border-radius: 12px;
     padding: 18px;
     transition: all 0.25s ease;
@@ -303,7 +303,7 @@
 }
 
 .holiday-item-date {
-    background: linear-gradient(135deg, #0d6efd, #0b5ed7);
+    background: #0A7C6E;
     color: white;
     padding: 4px 12px;
     border-radius: 999px;
@@ -320,7 +320,7 @@
 }
 
 .holiday-item-edit-btn {
-    background: linear-gradient(135deg, #0d6efd, #0b5ed7);
+    background: #0A7C6E;
     color: white;
     border: none;
     padding: 8px 15px;
@@ -410,11 +410,11 @@
 
 .form-group .form-control:hover,
 .clean-input:hover {
-    border-color: #0d6efd;
+    border-color: #0A7C6E;
 }
 
 .form-group .form-control:focus {
-    border-color: #0d6efd;
+    border-color: #0A7C6E;
     box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.12);
     outline: none;
 }
@@ -456,7 +456,7 @@
 }
 
 .btn-save {
-    background: linear-gradient(135deg, #0d6efd, #0b5ed7);
+    background: #0A7C6E;
     color: white;
 }
 

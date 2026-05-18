@@ -50,6 +50,7 @@ const ManageStaff = () => {
     email: "",
     password: "",
     phone: "",
+    security_license_no: "",
     address: "",
     city: "",
     state: "",
@@ -73,6 +74,7 @@ const ManageStaff = () => {
         email: user.email || "",
         password: "",
         phone: user.staff?.phone || "",
+        security_license_no: user.staff?.security_license_no || "",
         address: user.address || "",
         city: user.city || "",
         state: user.state || "",
@@ -574,6 +576,20 @@ const ManageStaff = () => {
                       name="phone"
                       value={formData.phone}
                       onChange={handleInputChange}
+                    />
+                  </div>
+
+                  <div className="col-md-6">
+                    <label className="form-label">
+                      Security License No <span className="text-danger">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      name="security_license_no"
+                      value={formData.security_license_no}
+                      onChange={handleInputChange}
+                      required
                     />
                   </div>
 

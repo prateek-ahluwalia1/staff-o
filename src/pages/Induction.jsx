@@ -5,17 +5,21 @@ import "../assets/css/induction.css";
 import { useSelector } from "react-redux";
 import Loader from "../components/Loader";
 
-const mockHistoryData = [
-    { id: 1, name: "Amelia Charlotte", date: "24-01-2024 20:44", status: "Uncompleted" },
-    { id: 2, name: "Micheal Scott", date: "23-01-2024 16:59", status: "Completed" },
-    { id: 3, name: "Nitin Prashar", date: "22-01-2024 22:40", status: "Uncompleted" },
-];
+const getHistoryRows = (response) => {
+    if (Array.isArray(response?.data?.data)) return response.data.data;
+    if (Array.isArray(response?.data?.history)) return response.data.history;
+    if (Array.isArray(response?.data)) return response.data;
+    if (Array.isArray(response?.history)) return response.history;
+    if (Array.isArray(response)) return response;
+    return [];
+};
 
 export default function Induction() {
     const { userdata } = useSelector((state) => state.auth);
     const userId = userdata?.id || userdata?.data?.id;
     const { data: listResponse, loading: listLoading, refetch: refetchList } = useFetch("api/questionnaire-list", { isAuth: true });
     const { data: staffResponse } = useFetch("api/admin/get-staffoo-staff?limit=1000", { isAuth: true });
+    const { data: historyResponse, loading: historyLoading, refetch: refetchHistory } = useFetch("", { isAuth: true, immediate: false });
     const { submit: submitSave, loading: isSaving } = useSubmit({ isAuth: true });
     const { submit: submitDelete, loading: isDeleting } = useSubmit({ isAuth: true });
     const { submit: submitAssign, loading: isAssigning } = useSubmit({ isAuth: true });
@@ -34,6 +38,7 @@ export default function Induction() {
 
     const staffList = staffResponse?.data?.data || [];
     const inductions = listResponse?.data || listResponse || [];
+    const historyRows = getHistoryRows(historyResponse);
 
     const [activeModal, setActiveModal] = useState(null);
     const [selectedInduction, setSelectedInduction] = useState(null);
@@ -53,6 +58,10 @@ export default function Induction() {
     const openModal = (type, induction = null) => {
         setSelectedInduction(induction);
         setActiveModal(type);
+
+        if (type === "history" && induction?.id) {
+            refetchHistory(`api/induction-history/${induction.id}`);
+        }
 
         if (type === 'create') {
             if (induction) {
@@ -235,31 +244,73 @@ export default function Induction() {
                     <button onClick={closeModal} className="btn-close"></button>
                 </div>
                 <div className="p-3 p-md-4">
-                    <div className="table-responsive">
-                        <table className="table align-middle">
-                            <thead className="table-light text-secondary small">
-                                <tr><th>GUARD NAME</th><th>DATE</th><th>STATUS</th><th>ACTION</th></tr>
-                            </thead>
-                            <tbody>
-                                {mockHistoryData.map((record) => (
-                                    <tr key={record.id}>
-                                        <td className="fw-medium text-nowrap">{record.name}</td>
-                                        <td className="text-muted text-nowrap">{record.date}</td>
-                                        <td>
-                                            <span className={`badge rounded-pill fw-normal ${record.status === 'Completed' ? 'bg-success bg-opacity-10 text-success' : 'bg-secondary bg-opacity-10 text-secondary'}`}>
-                                                {record.status}
-                                            </span>
-                                        </td>
-                                        <td>
-                                            {record.status === "Completed" && (
-                                                <button className="btn btn-sm text-primary" title="Download"><i className="fa fa-download"></i></button>
-                                            )}
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
+                    {historyLoading ? (
+                        <div className="py-5 text-center">
+                            <Loader />
+                        </div>
+                    ) : historyRows.length > 0 ? (
+                        <div className="table-responsive">
+                            <table className="table align-middle">
+                                <thead className="table-light text-secondary small">
+                                    <tr><th>GUARD NAME</th><th>DATE</th><th>STATUS</th><th>ACTION</th></tr>
+                                </thead>
+                                <tbody>
+                                    {historyRows.map((record, index) => {
+                                        const name = record?.name || record?.staff_name || record?.user_name || record?.guard_name || "Unknown";
+                                        const date = record?.date || record?.created_at || record?.updated_at || record?.completed_at || "-";
+                                        const isRead = Number(record?.read_status) === 1;
+                                        const hasCertificate = Boolean(record?.certificate_path);
+                                        const isCompleted = isRead && hasCertificate;
+                                        const isOpen = isRead && !hasCertificate;
+                                        const status = isCompleted ? "Completed" : isOpen ? "Open" : "Incomplete";
+                                        const statusClass = isCompleted
+                                            ? "bg-success bg-opacity-10 text-success"
+                                            : isOpen
+                                                ? "bg-warning bg-opacity-10 text-warning"
+                                                : "bg-secondary bg-opacity-10 text-secondary";
+
+                                        return (
+                                            <tr key={record?.id || `${name}-${date}-${index}`}>
+                                                <td className="fw-medium text-nowrap">{name}</td>
+                                                <td className="text-muted text-nowrap">{date}</td>
+                                                <td>
+                                                    <span className={`badge rounded-pill fw-normal ${statusClass}`}>
+                                                        {status}
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    {isCompleted && (
+                                                        <a
+                                                            className="btn btn-sm bg-success bg-opacity-10 text-success border border-success"
+                                                            href={record?.certificate_path}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            title="Download certificate"
+                                                        >
+                                                            <i className="fa fa-download"></i>
+                                                        </a>
+                                                    )}
+                                                    {isOpen && (
+                                                        <button
+                                                            className="btn btn-sm bg-warning bg-opacity-10 text-warning border border-warning"
+                                                            title="Certificate not available yet"
+                                                            disabled
+                                                        >
+                                                            <i className="fa fa-download"></i>
+                                                        </button>
+                                                    )}
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
+                                </tbody>
+                            </table>
+                        </div>
+                    ) : (
+                        <div className="py-5 text-center text-muted">
+                            No induction history found for this record.
+                        </div>
+                    )}
                 </div>
             </div>
         </div>

@@ -35,6 +35,7 @@ const INITIAL_FORM_STATE = {
   country: "",
   coordinates: "",
   staff_document_type: "",
+  security_license_no: "",
   company_name: "",
   bank_details: [],
 };
@@ -124,6 +125,8 @@ export default function EditProfile() {
     if (!(staff.phone || contractor.phone || d.phone)) missing.push("Phone");
     if (!(d.address || staff.address || contractor.address))
       missing.push("Address");
+    if (userType === "staff" && !staff.security_license_no)
+      missing.push("Security License No");
     if (userType === "contractor" && !contractor.company_name)
       missing.push("Company Name");
     return missing;
@@ -167,6 +170,7 @@ export default function EditProfile() {
         d.coordinates || staff.coordinates || contractor.coordinates || "",
       gender: staff.gender || contractor.gender || d.gender || "",
       staff_document_type: staff.staff_document_type || "",
+      security_license_no: staff.security_license_no || "",
       company_name:
         d.company_name ||
         contractor.company_name ||

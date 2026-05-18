@@ -197,82 +197,99 @@ export default function ProfileForm({
 
           {/* Staff Specific Fields */}
           {userType === "staff" && (
-            <div>
-              <label className="form-label fw-semibold mb-3">Gender</label>
-              <div
-                style={{
-                  display: "flex",
-                  gap: "15px",
-                  flexWrap: "wrap",
-                  position: "relative",
-                  top: "-8px",
-                }}
-              >
-                {["male", "female", "other"].map((option) => {
-                  const isSelected = formData.gender === option;
-                  return (
-                    <div key={option} style={{ display: "flex", alignItems: "center" }}>
-                      <input
-                        type="radio"
-                        id={`gender_${option}`}
-                        name="gender"
-                        value={option}
-                        checked={isSelected}
-                        onChange={(e) => {
-                          onChange({
-                            target: { id: "gender", value: e.target.value },
-                          });
-                        }}
-                        style={{ display: "none" }}
-                      />
-                      <label
-                        htmlFor={`gender_${option}`}
-                        className="gender-radio-label shadow-sm"
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "8px",
-                          cursor: "pointer",
-                          padding: "10px 20px",
-                          borderRadius: "8px",
-                          border: isSelected ? "2px solid #0d6efd" : "2px solid #dee2e6",
-                          backgroundColor: isSelected ? "#0d6efd" : "#fff",
-                          color: isSelected ? "white" : "#495057",
-                          fontWeight: isSelected ? "600" : "500",
-                          transition: "all 0.2s ease-in-out",
-                          userSelect: "none",
-                        }}
-                        onMouseEnter={(e) => {
-                          if (!isSelected) {
-                            e.currentTarget.style.borderColor = "#0d6efd";
-                            e.currentTarget.style.backgroundColor = "#f8f9fa";
-                          }
-                        }}
-                        onMouseLeave={(e) => {
-                          if (!isSelected) {
-                            e.currentTarget.style.borderColor = "#dee2e6";
-                            e.currentTarget.style.backgroundColor = "#fff";
-                          }
-                        }}
-                      >
-                        <i
-                          className={`fa-solid ${option === "male"
-                            ? "fa-mars"
-                            : option === "female"
-                              ? "fa-venus"
-                              : "fa-circle-question"
-                            }`}
-                          style={{ fontSize: "1.1rem" }}
-                        ></i>
-                        <span style={{ textTransform: "capitalize" }}>
-                          {option}
-                        </span>
-                      </label>
-                    </div>
-                  );
-                })}
+            <>
+              <div>
+                <label className="form-label fw-semibold mb-3">Gender</label>
+                <div
+                  style={{
+                    display: "flex",
+                    gap: "15px",
+                    flexWrap: "wrap",
+                    position: "relative",
+                    top: "-8px",
+                  }}
+                >
+                  {["male", "female", "other"].map((option) => {
+                    const isSelected = formData.gender === option;
+                    return (
+                      <div key={option} style={{ display: "flex", alignItems: "center" }}>
+                        <input
+                          type="radio"
+                          id={`gender_${option}`}
+                          name="gender"
+                          value={option}
+                          checked={isSelected}
+                          onChange={(e) => {
+                            onChange({
+                              target: { id: "gender", value: e.target.value },
+                            });
+                          }}
+                          style={{ display: "none" }}
+                        />
+                        <label
+                          htmlFor={`gender_${option}`}
+                          className="gender-radio-label shadow-sm"
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "8px",
+                            cursor: "pointer",
+                            padding: "10px 20px",
+                            borderRadius: "8px",
+                            border: isSelected ? "2px solid #0d6efd" : "2px solid #dee2e6",
+                            backgroundColor: isSelected ? "#0d6efd" : "#fff",
+                            color: isSelected ? "white" : "#495057",
+                            fontWeight: isSelected ? "600" : "500",
+                            transition: "all 0.2s ease-in-out",
+                            userSelect: "none",
+                          }}
+                          onMouseEnter={(e) => {
+                            if (!isSelected) {
+                              e.currentTarget.style.borderColor = "#0d6efd";
+                              e.currentTarget.style.backgroundColor = "#f8f9fa";
+                            }
+                          }}
+                          onMouseLeave={(e) => {
+                            if (!isSelected) {
+                              e.currentTarget.style.borderColor = "#dee2e6";
+                              e.currentTarget.style.backgroundColor = "#fff";
+                            }
+                          }}
+                        >
+                          <i
+                            className={`fa-solid ${option === "male"
+                              ? "fa-mars"
+                              : option === "female"
+                                ? "fa-venus"
+                                : "fa-circle-question"
+                              }`}
+                            style={{ fontSize: "1.1rem" }}
+                          ></i>
+                          <span style={{ textTransform: "capitalize" }}>
+                            {option}
+                          </span>
+                        </label>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
-            </div>
+
+              <div>
+                <label htmlFor="security_license_no" className="form-label fw-semibold">
+                  Security License No <span className="text-danger">*</span>
+                </label>
+                <input
+                  type="text"
+                  className="form-control"
+                  id="security_license_no"
+                  placeholder="Enter security license number"
+                  value={formData.security_license_no || ""}
+                  onChange={onChange}
+                  required
+                />
+              </div>
+            </>
           )}
           <div style={{ gridColumn: "1 / -1", marginTop: "1rem" }}>
             <label htmlFor="address" className="form-label fw-semibold">

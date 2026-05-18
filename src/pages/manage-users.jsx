@@ -64,6 +64,7 @@ const ManageUsers = () => {
     email: "",
     password: "",
     phone: "",
+    security_license_no: "",
     company_name: "",
     address: "",
     city: "",
@@ -102,6 +103,7 @@ const ManageUsers = () => {
         email: user.email || "",
         password: "",
         phone: user.phone || extraInfo.phone || "",
+        security_license_no: extraInfo.security_license_no || "",
         company_name: extraInfo.company_name || "",
         address: user.address || "",
         city: user.city || "",
@@ -732,6 +734,22 @@ const ManageUsers = () => {
                       onChange={handleInputChange}
                     />
                   </div>
+
+                  {activeTab === "staff" && (
+                    <div className="col-md-6">
+                      <label className="form-label">
+                        Security License No <span className="text-danger">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        className="form-control"
+                        name="security_license_no"
+                        value={formData.security_license_no}
+                        onChange={handleInputChange}
+                        required
+                      />
+                    </div>
+                  )}
 
                   {activeTab !== "staff" && (
                     <>

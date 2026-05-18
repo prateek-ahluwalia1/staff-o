@@ -6560,7 +6560,7 @@ Large Mobile Screen
 }
 
 .footer-modern .footer-links a:hover {
-    color: #60a5fa;
+    color: #fff;
 }
 
 .footer-modern .footer-contact li {
@@ -6580,7 +6580,7 @@ Large Mobile Screen
 }
 
 .footer-modern .footer-contact a:hover {
-    color: #60a5fa;
+    color: #fff;
 }
 
 .footer-modern .footer-social {
@@ -6603,8 +6603,8 @@ Large Mobile Screen
 }
 
 .footer-modern .footer-social a:hover {
-    background: #60a5fa;
-    color: #0f172a;
+    background: #fff;
+    color: #0A7C6E;
 }
 
 .footer-modern .footer-bottom {

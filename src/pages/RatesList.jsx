@@ -254,7 +254,7 @@ const RatesList = ({ forcedType } = {}) => {
                     </td>
                     <td>{r.level}</td>
                     <td>
-                      <span className="badge bg-primary-subtle text-primary px-3 py-2 rounded-pill">
+                      <span className="badge bg-primary-subtle text-white px-3 py-2 rounded-pill">
                         {r.state}
                       </span>
                     </td>

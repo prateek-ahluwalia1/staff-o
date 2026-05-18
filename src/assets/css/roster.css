@@ -518,6 +518,129 @@
     font-family: 'Inter', sans-serif;
 }
 
+.roster-tab-selector {
+    min-height: auto;
+    padding: 18px;
+    gap: 16px;
+}
+
+.roster-tab-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 0;
+}
+
+.roster-tab-header h2 {
+    margin: 0 0 6px 0;
+    color: #0f172a;
+    font-size: 22px;
+    font-weight: 800;
+}
+
+.roster-tab-header p {
+    margin: 0;
+    color: #64748b;
+    font-size: 14px;
+}
+
+.roster-open-selected-btn {
+    border: none;
+    border-radius: 999px;
+    padding: 12px 18px;
+    font-size: 14px;
+    font-weight: 700;
+    color: #ffffff;
+    background: linear-gradient(135deg, #0f766e, #0a7c6e);
+    box-shadow: 0 10px 22px rgba(10, 124, 110, 0.18);
+    cursor: pointer;
+    transition: transform 0.2s ease, opacity 0.2s ease, box-shadow 0.2s ease;
+}
+
+.roster-open-selected-btn:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 14px 24px rgba(10, 124, 110, 0.22);
+}
+
+.roster-open-selected-btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    box-shadow: none;
+}
+
+.roster-state-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.roster-state-tab {
+    flex: 1 1 220px;
+    min-width: 200px;
+    border: 1px solid #dbe4ee;
+    border-radius: 16px;
+    background: #ffffff;
+    padding: 16px 18px;
+    text-align: left;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+    box-shadow: 0 8px 20px rgba(15, 23, 42, 0.04);
+}
+
+.roster-state-tab:hover {
+    transform: translateY(-2px);
+    border-color: #9ccbc3;
+    box-shadow: 0 14px 24px rgba(15, 23, 42, 0.08);
+}
+
+.roster-state-tab.is-selected {
+    background: linear-gradient(135deg, rgba(10, 124, 110, 0.12), rgba(14, 165, 233, 0.08));
+    border-color: #0a7c6e;
+    box-shadow: 0 14px 26px rgba(10, 124, 110, 0.12);
+}
+
+.roster-state-tab span {
+    display: block;
+    font-size: 16px;
+    font-weight: 800;
+    color: #0f172a;
+    margin-bottom: 4px;
+}
+
+.roster-state-tab small {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    color: #0a7c6e;
+    background: rgba(10, 124, 110, 0.1);
+}
+
+@media screen and (max-width: 768px) {
+    .roster-tab-selector {
+        padding: 14px;
+    }
+
+    .roster-tab-header {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .roster-open-selected-btn {
+        width: 100%;
+    }
+
+    .roster-state-tab {
+        min-width: 0;
+        flex-basis: 100%;
+    }
+}
+
 .wfm-dashboard-header {
     background: #ffffff;
     padding: 24px;

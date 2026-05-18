@@ -1,9 +1,22 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import useFetch from "../hooks/useFetch";
 import useSubmit from "../hooks/useSubmit";
 import Loader from "../components/Loader";
 import { toast } from "react-toastify";
+
+// State mapping dictionary for converting full state names to abbreviations
+const STATE_MAP = {
+  'Victoria': 'vic',
+  'New South Wales': 'nsw',
+  'Queensland': 'qld',
+  'Tasmania': 'tas',
+  'Western Australia': 'wa',
+  'South Australia': 'sa',
+  'Australian Capital Territory': 'act',
+  'ACT': 'act',
+  'Northern Territory': 'nt'
+};
 
 const ManageUsers = () => {
   const location = useLocation();
@@ -46,7 +59,7 @@ const ManageUsers = () => {
   const userAutocompleteRef = useRef(null);
   const userAutocompleteListenerRef = useRef(null);
 
-  const defaultFormState = {
+  const defaultFormState = useMemo(() => ({
     name: "",
     email: "",
     password: "",
@@ -57,9 +70,8 @@ const ManageUsers = () => {
     state: "",
     country: "",
     coordinates: "",
-    registration_number: "",
     user_id: "",
-  };
+  }), []);
 
   const [formData, setFormData] = useState(defaultFormState);
 
@@ -75,13 +87,13 @@ const ManageUsers = () => {
     }
   };
 
-  const getNestedData = (user) => {
+  const getNestedData = useCallback((user) => {
     if (activeTab === "customer") return user.customer || {};
     if (activeTab === "sub_contractor") return user.contractor || {};
     return {};
-  };
+  }, [activeTab]);
 
-  const openModal = (user = null) => {
+  const openModal = useCallback((user = null) => {
     if (user) {
       const extraInfo = getNestedData(user);
       setEditingUser(user);
@@ -96,7 +108,6 @@ const ManageUsers = () => {
         state: user.state || "",
         country: user.country || "",
         coordinates: user.coordinates || "",
-        registration_number: extraInfo.registration_number || "",
         user_id: user.user_id || "",
       });
     } else {
@@ -104,7 +115,8 @@ const ManageUsers = () => {
       setFormData(defaultFormState);
     }
     setIsModalOpen(true);
-  };
+  }, [defaultFormState, getNestedData]);
+
 
   const closeModal = () => {
     setIsModalOpen(false);
@@ -134,7 +146,10 @@ const ManageUsers = () => {
       setTotalPages(1);
       setTotalItems(0);
     }
-  }, [apiResponse, location.state, navigate]);
+  }, [apiResponse, location.state, location.pathname, navigate, openModal]);
+
+  // State mapping dictionary for converting full state names to abbreviations
+  // (Moved outside component to avoid recreation on each render)
 
   useEffect(() => {
     if (!isModalOpen) return;
@@ -148,7 +163,6 @@ const ManageUsers = () => {
 
       const autocomplete = new window.google.maps.places.Autocomplete(addressInput, {
         fields: ["address_components", "geometry", "formatted_address"],
-        types: ["address"],
       });
 
       addressInput.setAttribute("data-gmaps-initialized", "true");
@@ -173,8 +187,10 @@ const ManageUsers = () => {
           ) {
             if (!newCity) newCity = c.long_name;
           }
-          if (c.types.includes("administrative_area_level_1"))
-            newState = c.long_name;
+          if (c.types.includes("administrative_area_level_1")) {
+            // Map full state name to abbreviation
+            newState = STATE_MAP[c.long_name] || c.short_name.toLowerCase();
+          }
           if (c.types.includes("country")) newCountry = c.long_name;
         });
 
@@ -737,18 +753,7 @@ const ManageUsers = () => {
                           required={activeTab === "sub_contractor"}
                         />
                       </div>
-                      {activeTab === "sub_contractor" && (
-                        <div className="col-md-6">
-                          <label className="form-label">Registration No.</label>
-                          <input
-                            type="text"
-                            className="form-control"
-                            name="registration_number"
-                            value={formData.registration_number}
-                            onChange={handleInputChange}
-                          />
-                        </div>
-                      )}
+
                     </>
                   )}
 

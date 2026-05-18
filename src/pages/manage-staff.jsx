@@ -331,12 +331,12 @@ const ManageStaff = () => {
         }
 
         .manage-staff-table > thead > tr > th {
-          background: #eaf2ff;
+          background: #0A7C6E;
           text-transform: uppercase;
           letter-spacing: 0.02em;
           font-weight: 700;
-          color: #24416e;
-          border-bottom: 2px solid #0d6efd;
+          color: #fff;
+          border-bottom: 2px solid #0A7C6E;
           border-right: 1px solid #d3e3ff;
         }
 

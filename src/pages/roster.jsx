@@ -87,7 +87,7 @@ export default function RosterPage() {
       .filter(Boolean);
   }, [search]);
 
-  const { data: staffData, loading: staffLoading } = useFetch(`api/get-contractor-staff/${userId}`, { method: "POST", isAuth: true });
+  const { data: staffData, loading: staffLoading } = useFetch(`api/get-contractor-active-staff/${userId}`, { method: "POST", isAuth: true });
   const { submit, loading: submitLoading, data: submitData } = useSubmit({ isAuth: true });
   const { submit: saveUserAssignment, loading: saveLoading } = useSubmit({ isAuth: true });
 
@@ -229,7 +229,8 @@ export default function RosterPage() {
         res = await saveUserAssignment(`api/update-roster-time`, payload, { method: "POST" });
       } else if (modal.type === "admin_assign" && modal.shift) {
         if (!selectedUserId) { toast.error("Select a user."); return; }
-        const payload = { roster_id: modal.shift.id };
+        // Ensure the assigning user (contractor) is recorded as the actor
+        const payload = { roster_id: modal.shift.id, admin_id: userId };
         res = await saveUserAssignment(`api/asap-jobs/accept/${selectedUserId}`, payload, { method: "POST" });
       }
       if (res === undefined) return;

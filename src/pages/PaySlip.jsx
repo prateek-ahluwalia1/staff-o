@@ -462,14 +462,37 @@ const PaySlip = () => {
         <div className="table-responsive">
           <table className="table table-hover align-middle mb-0">
             <thead
-              className="table-primary text-dark"
-              style={{ borderBottom: "2px solid #0d6efd" }}
+              style={{ borderBottom: "2px solid #0A7C6E", background: "#0A7C6E" }}
             >
               <tr>
-                <th>Guard</th>
-                <th>Start Date</th>
-                <th>End Date</th>
-                <th>PDF</th>
+                <th
+                  className="text-white"
+                  style={{
+                    background: "#0A7C6E",
+                    borderRight: "1px solid #fff",
+                  }}
+                >Guard</th>
+                <th
+                  className="text-white"
+                  style={{
+                    background: "#0A7C6E",
+                    borderRight: "1px solid #fff",
+                  }}
+                >Start Date</th>
+                <th
+                  className="text-white"
+                  style={{
+                    background: "#0A7C6E",
+                    borderRight: "1px solid #fff",
+                  }}
+                >End Date</th>
+                <th
+                  className="text-white"
+                  style={{
+                    background: "#0A7C6E",
+                    borderRight: "1px solid #fff",
+                  }}
+                >PDF</th>
               </tr>
             </thead>
             <tbody>

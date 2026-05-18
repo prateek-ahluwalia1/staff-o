@@ -327,12 +327,18 @@ class JobRosterController extends Controller
 
         // Get all staff with user_id = 1
         $staff = User::where('user_id', 1)
-            ->where('is_active', 1)
-            ->where('user_type', 'staff')
-            ->whereNotNull('coordinates')
-            ->whereNotNull('notification_token')
-            ->select('id', 'name', 'coordinates', 'notification_token')
-            ->get();
+        ->where('is_active', 1)
+        ->where('user_type', 'staff')
+        ->whereNotNull('coordinates')
+        ->whereNotNull('notification_token')
+        ->whereHas('guardQuestionnaireDetails', function ($query) {
+            $query->whereNotNull('certificate_path');
+        })
+        ->whereDoesntHave('guardQuestionnaireDetails', function ($query) {
+            $query->whereNull('certificate_path');
+        })
+        ->select('id', 'name', 'coordinates', 'notification_token')
+        ->get();
 
         if(!$staff){
         $staff = User::where('is_active', 1)
@@ -431,6 +437,40 @@ class JobRosterController extends Controller
     public function getContractorStaff($id)
     {
         $guards = User::where('user_id', $id)->with('staff')->where('is_active', 1)->where('user_type', 'staff')->get();
+
+        if (!$guards) {
+            return response()->json([
+                'code' => 200,
+                'success' => false,
+                'message' => 'Staff Not Found.',
+                'guards' => null
+            ]);
+        }
+
+        return response()->json([
+            'code' => 200,
+            'success' => true,
+            'message' => 'Staff Found.',
+            'guards' => $guards
+        ]);
+    }
+
+    public function getContractorActiveStaff($id)
+    {
+        // $guards = User::where('user_id', $id)->with('staff')->where('is_active', 1)->where('user_type', 'staff')->get();
+         $guards = User::where('user_id', $id)
+        ->where('is_active', 1)
+        ->where('user_type', 'staff')
+        ->whereNotNull('coordinates')
+        ->whereNotNull('notification_token')
+        ->whereHas('guardQuestionnaireDetails', function ($query) {
+            $query->whereNotNull('certificate_path');
+        })
+        ->whereDoesntHave('guardQuestionnaireDetails', function ($query) {
+            $query->whereNull('certificate_path');
+        })
+        ->select('id', 'name', 'coordinates', 'notification_token')
+        ->get();
 
         if (!$guards) {
             return response()->json([

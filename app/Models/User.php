@@ -129,4 +129,9 @@ class User extends Authenticatable
     {
         return $this->hasMany(Site::class, 'user_id'); // or customer_id (adjust if needed)
     }
+
+    public function guardQuestionnaireDetails()
+    {
+        return $this->hasMany(GuardQuestionnaireDetails::class, 'guard_id');
+    }
 }

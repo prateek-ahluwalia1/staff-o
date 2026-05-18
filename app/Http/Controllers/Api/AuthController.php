@@ -16,6 +16,8 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 use App\Mail\StaffOnboardingMail;
+use App\Models\Questionnaire;
+use Carbon\Carbon;
 use Vonage\Client;
 use Vonage\Client\Credentials\Basic;
 use Vonage\SMS\Message\SMS;
@@ -101,6 +103,36 @@ class AuthController extends Controller
                 'gender' => $data['gender'] ?? null,
                 'phone' => $data['phone'] ?? null,
             ]);
+
+            $inductions = Questionnaire::all();
+
+            $now = Carbon::now();
+            $inductionHistoryData = [];
+            $guardQuestionnaireDetailsData = [];
+
+            foreach ($inductions as $induction) {
+                $inductionHistoryData[] = [
+                    'guard_id' => $user->id,
+                    'induction_id' => $induction->id,
+                    'state' => "Victoria",
+                    'read_status' => 0,
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ];
+
+                $guardQuestionnaireDetailsData[] = [
+                    'guard_id' => $user->id,
+                    'questionnaire_id' => $induction->id,
+                    'marks' => 0,
+                    'certificate_path' => null,
+                    'expiry_date' => null,
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ];
+            }
+            
+            DB::table('induction_history')->insert($inductionHistoryData);
+            DB::table('guard_questionnaire_details')->insert($guardQuestionnaireDetailsData);
 
             return response()->json([
                 'message' => 'Staff registered under Capital Security',

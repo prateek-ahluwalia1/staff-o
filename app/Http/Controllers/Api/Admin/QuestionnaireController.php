@@ -147,6 +147,8 @@ class QuestionnaireController extends Controller
     
      $guardQNADetails = GuardQuestionnaireDetails::find($request->questionnaire_id);
      $guardQNADetails->marks = $request->marks;
+     $guardQNADetails->update();
+     $guardQNADetails->refresh();
      $guard = User::find($request->guard_id);
      $testDetails = Questionnaire::find($guardQNADetails->questionnaire_id);
      if($request->marks >= 80){
@@ -274,116 +276,38 @@ class QuestionnaireController extends Controller
                 </p>
                 <div class="footer">
                     <p>Authorised for Service by <br> Staffoo Compliance Team</p>
-                    <p class="induction-date"><b>Induction Date</b> <br> '.$guardQNADetails->created_at->format('l, F j, Y').'</p>
+                    <p class="induction-date"><b>Induction Date</b> <br> '.$guardQNADetails->updated_at->format('l, F j, Y').'</p>
                 </div>
              </div>
            </div>
            </div>
          </body>
          </html>';
-      $dompdf = new Dompdf();
-$options = new Options();
-$options->set('isRemoteEnabled', true);
-$dompdf->setOptions($options);
-$dompdf->loadHtml($pdf_message);
-$dompdf->render();
-$pdfContent = $dompdf->output();
+        $dompdf = new Dompdf();
+        $options = new Options();
+        $options->set('isRemoteEnabled', true);
+        $dompdf->setOptions($options);
+        $dompdf->loadHtml($pdf_message);
+        $dompdf->render();
+        $pdfContent = $dompdf->output();
 
-// Fix: Use Laravel's base_path or public_path
-$destinationPath = public_path('uploads/'); // Creates path: /var/www/html/apis.staffoo.com.au/public/uploads/
+        // Fix: Use Laravel's base_path or public_path
+        $destinationPath = public_path('uploads/');
 
-// Create directory if it doesn't exist
-if (!file_exists($destinationPath)) {
-    mkdir($destinationPath, 0755, true);
-}
+        // Create directory if it doesn't exist
+        if (!file_exists($destinationPath)) {
+            mkdir($destinationPath, 0755, true);
+        }
 
-$cleanedName = str_replace(' ', '_', $guard->name);
-$fileName = $cleanedName . time() . '.pdf';
-$pdfPath = $destinationPath . $fileName;
+        $cleanedName = str_replace(' ', '_', $guard->name);
+        $fileName = $cleanedName . time() . '.pdf';
+        $pdfPath = $destinationPath . $fileName;
 
-// Save the file
-file_put_contents($pdfPath, $pdfContent);
+        // Save the file
+        file_put_contents($pdfPath, $pdfContent);
 
-// URL to access the file
-$finalPdfPath = url('uploads/' . $fileName);
-        //   $mail_message = '<html>
-        //   <head>
-        //   <style>
-        //       .container {
-        //       align-items: center;
-        //       padding: 20px;
-        //       }
-        //       .text-content {
-        //       text-align: center;
-        //       }
-        //       .certificate {
-        //       color: #4C5163;
-        //       font-size: 29px;
-        //       font-family: Trebuchet MS;
-        //       font-weight: bold;
-        //       }
-        //       .recipient {
-        //       color: #4C5163;
-        //       font-size: 14.2px;
-        //       }
-        //       .officer-info {
-        //       font-size: 22px;
-        //       font-family: Montserrat;
-        //       font-weight: bold;
-        //       }
-        //       .compliance-list {
-        //       font-size: 14.2px;
-        //       color: #4C5163;
-        //       }
-        //       .footer {
-        //       display: flex;
-        //       justify-content: space-between;
-        //       margin-top: 15%;
-        //       margin-left: -65%;
-        //       margin-right: -65%;
-        //       }
-        //       .footer p {
-        //       font-size: 13px;
-        //       color: #4C5163;
-        //       }
-        //       .induction-date {
-        //       font-size: 14px;
-        //       text-align: right;
-        //       }
-        //       /* Media Query for Mobile Devices */
-        //       @media screen and (max-width: 768px) {
-        //       .container {
-        //           padding: 10px;
-        //       }
-        //       .certificate {
-        //           font-size: 20px;      }
-        //       .officer-info {
-        //           font-size: 16px;
-        //       }
-        //       .compliance-list {
-        //           font-size: 12px;      }
-        //       .footer {
-        //           flex-direction: column;
-        //           text-align: center;
-        //           margin-top: 10px;
-        //       }
-        //       .footer p {
-        //           font-size: 11px;
-        //       }
-        //       .induction-date {
-        //       }
-        //       }
-        //   </style>
-        //   </head>
-        //   <body style="margin: 0;display: flex;justify-content: center;align-items: center;background-position: center center;">
-        //   <div style="align-items: center;position: absolute; bottom: 45%;left:25%;padding: 20px;">
-        //       <div style="text-align:center">
-        //       <p style="color: #4C5163;font-size: 29px;font-family: Trebuchet MS;font-weight: bold;">Congratulations! You have passed the test successfully.</p>
-        //       <p class="recipient">Now you can download the certificate from this link: <a href="'.$finalPdfPath.'">Certificate</a></p>
-        //       </div>
-        //   </div>
-        //   </body>
-        //   </html>';
+        // URL to access the file
+        $finalPdfPath = url('uploads/' . $fileName);
 
             $guardQNADetails->certificate_path = $finalPdfPath;
             $guardQNADetails->expiry_date = Carbon::now()->addMonth(6)->format('Y-m-d');
@@ -416,5 +340,44 @@ $finalPdfPath = url('uploads/' . $fileName);
         } else {
             return response()->json(['code' => 404, 'success' => false]);
         }
+    }
+
+    public function getInductionhistory($id)
+    {
+            $InductionHistory = InductionHistory::select(
+                'induction_history.guard_id',
+                'users.name',
+                'induction_history.state',
+                \DB::raw('DATE_FORMAT(guard_questionnaire_details.updated_at, "%Y-%m-%d %H:%i") as date'),
+                'induction_history.read_status',
+                'guard_questionnaire_details.certificate_path'
+            )
+            ->join('users', 'induction_history.guard_id', '=', 'users.id')
+            ->leftJoin('guard_questionnaire_details', function($join) use ($id) {
+                $join->on('guard_questionnaire_details.guard_id', '=', 'induction_history.guard_id')
+                    ->where('guard_questionnaire_details.questionnaire_id', '=', $id);
+            })
+            ->where('induction_id', $id)
+            ->groupBy('induction_history.guard_id')
+            ->where('users.is_active', 1)
+            // ->where('guard_questionnaire_details.guard_id', 370)
+            // ->orderByRaw("CONCAT(guards.first_name, ' ', guards.last_name) ASC")
+            ->get();
+
+            if ($InductionHistory->isNotEmpty()) {
+
+                return response()->json([
+                    'data' => $InductionHistory,
+                    'code' => 200,
+                    'success' => true
+                ]);
+            } else {
+                return response()->json([
+                    'msg' => 'Record Not Found!',
+                    'code' => 404,
+                    'success' => false
+                ]);
+            }
+    
     }
 }

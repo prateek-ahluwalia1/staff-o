@@ -210,16 +210,16 @@ class JobRosterController extends Controller
             // ════════════════════════════════════════════════════════════════
             //  INVOICE  →  GENERATE PDF + SEND EMAIL
             // ════════════════════════════════════════════════════════════════
-            // if (!$isAdminOverride) {
-            //     $this->sendJobInvoice(
-            //         user:             $user,
-            //         shifts:           $invoiceShifts,
-            //         baseTotal:        $invoiceBaseTotal,
-            //         transaction:      $transaction,
-            //         invoiceNumber:    'INV-' . strtoupper(substr($paymentIntentId, -8)),
-            //         paymentIntentId:  $paymentIntentId,
-            //     );
-            // }
+            if (!$isAdminOverride) {
+                $this->sendJobInvoice(
+                    user:             $user,
+                    shifts:           $invoiceShifts,
+                    baseTotal:        $invoiceBaseTotal,
+                    transaction:      $transaction,
+                    invoiceNumber:    'INV-' . strtoupper(substr($paymentIntentId, -8)),
+                    paymentIntentId:  $paymentIntentId,
+                );
+            }
             // ════════════════════════════════════════════════════════════════
     
             return response()->json([
@@ -291,10 +291,10 @@ class JobRosterController extends Controller
         
         if ($adminEmails && $adminEmails->email) {
              Log::channel('daily')->info('[Invoice] Step 5 – Queueing admin email', [
-                'admin_email' => $adminEmail,
+                'admin_email' => $adminEmails->email,
             ]);
             
-            Mail::to($admin->email)
+            Mail::to($adminEmails->email)
                 ->queue(new InvoiceMail(
                     pdfBase64:     $pdfBase64,
                     invoiceNumber: $invoiceNumber,
@@ -1738,9 +1738,9 @@ class JobRosterController extends Controller
         } else {
             $signin_radius = 0.31;
         }
-        if ($distance > $signin_radius) {
-            return response()->json(['success' => false, 'error' => 'You are ' . number_format($distance, 2) . ' km away from your job!', 'message' => 'You are ' . number_format($distance, 2) . ' km away from your job!', 'code' => 404]);
-        }
+        // if ($distance > $signin_radius) {
+        //     return response()->json(['success' => false, 'error' => 'You are ' . number_format($distance, 2) . ' km away from your job!', 'message' => 'You are ' . number_format($distance, 2) . ' km away from your job!', 'code' => 404]);
+        // }
         $is_already_signin = JobRosterActivity::where(['job_roster_id' => $id])->first();
         if (!empty($is_already_signin)) {
             return response()->json(['success' => false, 'error' => 'You are already signin in this job!', 'message' => 'You are already signin in this job!', 'code' => 404]);
@@ -2330,6 +2330,18 @@ class JobRosterController extends Controller
 
         $roster_id = $request->roster_id;
 
+        $states = [];
+        if ($request->has('states') && !empty($request->states)) {
+            // If states is a string (comma-separated), convert to array
+            if (is_string($request->states)) {
+                $states = array_map('trim', explode(',', $request->states));
+            } 
+            // If states is already an array
+            else if (is_array($request->states)) {
+                $states = $request->states;
+            }
+        }
+
         /*
         |--------------------------------------------------------------------------
         | Extract notify_user IDs (only for contractor)
@@ -2364,15 +2376,26 @@ class JobRosterController extends Controller
                     'code' => 404
                 ]);
             }
+
         }
 
+        $contractorUserIds = [];
+        $contractorUserIds = User::whereIn('id', $notifyUserIds)
+        ->where('user_id', $user->id)
+        ->pluck('id')
+        ->toArray();
+
+        $siteIds = [];
+        if (!empty($states)) {
+            $siteIds = Site::whereIn('state', $states)->pluck('id')->toArray();
+        }
         /*
         |--------------------------------------------------------------------------
         | Main Query
         |--------------------------------------------------------------------------
         */
-
-        $sites = Site::whereHas('jobRoster', function ($q) use ($start, $end, $roster_id, $user, $notifyUserIds) {
+        
+        $sites = Site::whereHas('jobRoster', function ($q) use ($start, $end, $roster_id, $user, $contractorUserIds) {
 
             $q->whereBetween('start', [$start, $end])
                 ->where('roster_id', $roster_id);
@@ -2386,11 +2409,14 @@ class JobRosterController extends Controller
             }
 
             if ($user->user_type === 'contractor') {
-                $q->whereIn('assigned_to', $notifyUserIds);
+                $q->whereIn('assigned_to', $contractorUserIds);
             }
-        })
-            ->with(['jobRoster' => function ($q) use ($start, $end, $roster_id, $user, $notifyUserIds) {
+        });
 
+        if (!empty($states)) {
+        $sites->whereIn('state', $states);
+        }
+        $sites = $sites->with(['jobRoster' => function ($q) use ($start, $end, $roster_id, $user, $contractorUserIds) {
                 $q->whereBetween('start', [$start, $end])
                     ->where('roster_id', $roster_id)
                     ->orderBy('start', 'asc')
@@ -2405,7 +2431,7 @@ class JobRosterController extends Controller
                 }
 
                 if ($user->user_type === 'contractor') {
-                    $q->whereIn('assigned_to', $notifyUserIds);
+                    $q->whereIn('assigned_to', $contractorUserIds);
                 }
             }])
             ->get();
@@ -2424,7 +2450,7 @@ class JobRosterController extends Controller
         |--------------------------------------------------------------------------
         */
 
-        $unpublishCount = JobRoster::whereBetween('start', [$start, $end])
+        $unpublishCountQuery = JobRoster::whereBetween('start', [$start, $end])
             ->where('roster_id', $roster_id)
             ->whereNotNull('assigned_to')
             ->where('publish_status', 0)
@@ -2434,10 +2460,17 @@ class JobRosterController extends Controller
             ->when($user->user_type === 'customer', function ($q) use ($user) {
                 $q->where('created_by', $user->id);
             })
-            ->when($user->user_type === 'contractor', function ($q) use ($notifyUserIds) {
-                $q->whereIn('assigned_to', $notifyUserIds);
-            })
-            ->count();
+            ->when($user->user_type === 'contractor', function ($q) use ($contractorUserIds) {
+                $q->whereIn('assigned_to', $contractorUserIds);
+            });
+
+            if (!empty($states)) {
+                $unpublishCountQuery->whereHas('site', function ($q) use ($states) {
+                    $q->whereIn('state', $states);
+                });
+            }
+
+            $unpublishCount = $unpublishCountQuery->count();
 
         /*
         |--------------------------------------------------------------------------
@@ -2453,24 +2486,40 @@ class JobRosterController extends Controller
             dbFormate($request->end)
         );
 
-        if ($dateRange) {
+      if ($dateRange) {
+            // Base query for hours
+            $hoursBaseQuery = JobRoster::where('roster_id', $roster_id)
+                ->when($user->user_type === 'staff', function ($q) use ($user) {
+                    $q->where('assigned_to', $user->id);
+                })
+                ->when($user->user_type === 'customer', function ($q) use ($user) {
+                    $q->where('created_by', $user->id);
+                })
+                ->when($user->user_type === 'contractor', function ($q) use ($contractorUserIds) {
+                    $q->whereIn('assigned_to', $contractorUserIds);
+                });
+            
+            // Apply state filter to hours base query
+            if (!empty($states)) {
+                $hoursBaseQuery->whereHas('site', function ($q) use ($states) {
+                    $q->whereIn('state', $states);
+                });
+            }
+            
+            // Get hours grouped by date
+            $hoursByDate = (clone $hoursBaseQuery)
+                ->whereBetween('start', [$start, $end])
+                ->selectRaw('DATE(start) as date, SUM(hours) as total_hours')
+                ->groupBy('date')
+                ->get()
+                ->keyBy('date');
+            
             foreach ($dateRange as $date) {
-
-                $hours = JobRoster::whereDate('start', $date)
-                    ->where('roster_id', $roster_id)
-                    ->when($user->user_type === 'staff', function ($q) use ($user) {
-                        $q->where('assigned_to', $user->id);
-                    })
-                    ->when($user->user_type === 'customer', function ($q) use ($user) {
-                        $q->where('created_by', $user->id);
-                    })
-                    ->when($user->user_type === 'contractor', function ($q) use ($notifyUserIds) {
-                        $q->whereIn('assigned_to', $notifyUserIds);
-                    })
-                    ->sum('hours');
-
-                $data_arry[dateFormat($date)] = round($hours, 2);
-                $total_hours += $hours;
+                $formattedDate = dateFormat($date);
+                $dailyHours = isset($hoursByDate[$date]) ? $hoursByDate[$date]->total_hours : 0;
+                
+                $data_arry[$formattedDate] = round($dailyHours, 2);
+                $total_hours += $dailyHours;
             }
         }
 
@@ -3220,8 +3269,8 @@ public function holdPayment(Request $request)
 
         // MULTI SHIFT TOTAL
         $baseTotal = 0;
-        $hours_array = [];
-        $baseTotal_arr = [];
+$hours_array = [];
+$baseTotal_arr = [];
         foreach ($request->shifts as $shift) {
 
             $start = dbFormateDateTime($shift['start']);
@@ -3774,168 +3823,5 @@ public function autoUpdatePayslipStatus()
             ], 500);
         }
     }
-
-    // public function jobData(Request $request)
-    // {
-    //     // ─── VALIDATION ─────────────────────────────
-    //     $validator = Validator::make($request->all(), [
-    //         'user_id'            => 'required|exists:users,id',
-    //         'shifts'                     => 'required|array|min:1',
-    //         'shifts.*.start'             => 'required|date',
-    //         'shifts.*.end'               => 'required|date|after:shifts.*.start',
-    //         'shifts.*.numberOfGuards'    => 'required|integer|min:1',
-    //         'payment_intent_id'  => 'required|string',
-    //     ]);
-
-    //     if ($validator->fails()) {
-    //         return response()->json([
-    //             'success' => false,
-    //             'errors'  => $validator->errors(),
-    //         ], 422);
-    //     }
-
-    //     try {
-
-    //         $user = User::findOrFail($request->user_id);
-
-    //         // ─── CREATE / FIND SITE ──────────────────
-    //         $site = Site::where('coordinates', $request->coordinates)->first();
-
-    //         if (!$site) {
-    //             $site = Site::create([
-    //                 'user_id'          => $user->id,
-    //                 'site_name'        => $request->title,
-    //                 'site_description' => $request->description,
-    //                 'address'          => $request->address,
-    //                 'signin_radius'    => 300,
-    //                 'coordinates'      => $request->coordinates,
-    //                 'state'            => $request->state,
-    //             ]);
-    //         }
-
-    //         // ─── GET DEFAULT ROSTER ──────────────────
-    //         $jobNewRoster = JobNewRoster::find(1);
-
-    //         if (!$jobNewRoster) {
-    //             return response()->json([
-    //                 'success' => false,
-    //                 'message' => 'Roster not found.'
-    //             ], 404);
-    //         }
-    //         $paymentIntentId = $request->payment_intent_id;
-
-    //         $radiusValue = is_array($request->radius) ? json_encode($request->radius) : $request->radius;
-    //         $documentListValue = is_array($request->document_types) ? json_encode($request->document_types) : $request->document_types;
-    //         $jobInstructionsValue = is_array($request->document_list) ? json_encode($request->document_list) : $request->document_list;
-
-    //         $createdJobIds = [];
-    //         $paymentIntentId = $request->payment_intent_id;
-    //         $isAdminOverride = $paymentIntentId === 'admin_override_no_payment';
-    //         $chargeRate = ChargeRate::find(1);
-
-    //         foreach ($request->shifts as $shift) {
-
-    //             $start = dbFormateDateTime($shift['start']);
-    //             $end   = dbFormateDateTime($shift['end']);
-
-    //             $hours = $this->getShiftHours($start, $end, 1, 0);
-    //             $guardWorkingHours = calCulateGuardWeekHours($start, $end);
-
-    //             // ─── BASE AMOUNT PER GUARD ───
-    //             $jobAmount =
-    //                 ($chargeRate->def_metro_mon_to_fri_day_rate * ($hours['morning'] ?? 0)) +
-    //                 ($chargeRate->def_metro_mon_to_fri_night_rate * ($hours['night'] ?? 0)) +
-    //                 ($chargeRate->def_metro_sat_day_rate * (($hours['saturday_morning'] ?? 0) + ($hours['saturday_night'] ?? 0))) +
-    //                 ($chargeRate->def_metro_sun_day_rate * (($hours['sunday_morning'] ?? 0) + ($hours['sunday_night'] ?? 0)));
-
-    //             // ─── GST (KEEP YOUR ORIGINAL LOGIC) ───
-    //             $serviceFee = round($jobAmount * 0.10, 2);
-    //             $totalAmount = round($jobAmount + $serviceFee, 2);
-
-    //             for ($i = 0; $i < $shift['numberOfGuards']; $i++) {
-
-    //                 $roster = [
-    //                     'site_id'          => $site->id,
-    //                     'start'            => $start,
-    //                     'end'              => $end,
-    //                     'shift_payable'    => 'yes',
-    //                     'shift_chargeable' => 'yes',
-    //                     'job_status'       => 'pending',
-    //                     'asap'             => 1,
-    //                     'radius'           => $radiusValue,
-    //                     'is_document'      => $request->is_document,
-    //                     'document_list'    => $documentListValue,
-    //                     'publish_status'   => 1,
-    //                     'roster_id'        => $jobNewRoster->id,
-    //                     'job_instrcutions' => $jobInstructionsValue,
-    //                     'created_by'       => $request->user_id,
-    //                     'assigned_to'      => null,
-    //                     'notified_users'   => json_encode([]),
-
-    //                     'payment_intent_id' => $isAdminOverride ? null : $paymentIntentId,
-    //                     'payment_status'    => $isAdminOverride ? 'not_required' : 'held',
-    //                     'payment_captured'  => $isAdminOverride ? 1 : 0,
-
-    //                     'job_amount'        => $jobAmount,
-
-    //                     // HOURS
-    //                     'morning_hours'         => $hours['morning'] ?? 0,
-    //                     'night_hours'           => $hours['night'] ?? 0,
-    //                     'saturday_morning_hours'=> $hours['saturday_morning'] ?? 0,
-    //                     'saturday_night_hours'  => $hours['saturday_night'] ?? 0,
-    //                     'sunday_morning_hours'  => $hours['sunday_morning'] ?? 0,
-    //                     'sunday_night_hours'    => $hours['sunday_night'] ?? 0,
-    //                     'ph_morning_hours'      => $hours['ph_morning'] ?? 0,
-    //                     'ph_night_hours'        => $hours['ph_night'] ?? 0,
-    //                     'hours'                 => $guardWorkingHours,
-    //                 ];
-
-    //                 $jobId = JobRoster::insertGetId($roster);
-    //                 $createdJobIds[] = $jobId;
-
-    //                 // TASKS
-    //                 if (!empty($request->tasks)) {
-    //                     foreach ($request->tasks as $task) {
-    //                         JobRosterTask::create([
-    //                             'job_roster_id' => $jobId,
-    //                             'task'          => $task['task'],
-    //                             'task_start'    => dbFormateDateTime($task['task_start']),
-    //                             'task_end'      => dbFormateDateTime($task['task_end']),
-    //                         ]);
-    //                     }
-    //                 }
-
-    //                 $createdJob = JobRoster::with('site')->find($jobId);
-
-    //                 $this->sendNotificationsWithinRadius(
-    //                     $site->coordinates,
-    //                     [$jobId],
-    //                     $request->user_id,
-    //                     $createdJob
-    //                 );
-    //             }
-    //         }
-
-    //         if (!$isAdminOverride) {
-    //             Transaction::where('payment_intent_id', $paymentIntentId)
-    //                 ->update(['job_roster_id' => json_encode($createdJobIds)]);
-    //         }
-
-    //         return response()->json([
-    //             'success' => true,
-    //             'message' => 'Jobs created successfully with payment hold.',
-    //             'total_jobs_created' => count($createdJobIds),
-    //             'job_ids' => $createdJobIds,
-    //             'payment_intent_id' => $paymentIntentId
-    //         ]);
-
-    //     } catch (\Exception $e) {
-
-    //         return response()->json([
-    //             'success' => false,
-    //             'message' => $e->getMessage()
-    //         ], 500);
-    //     }
-    // }
 
 }

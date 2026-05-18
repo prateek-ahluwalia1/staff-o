@@ -26,21 +26,44 @@ class StaffController extends Controller
 {
     private function calculateProfileCompletion(User $user): int
     {
-        $baseFields = ['name', 'email', 'user_type'];
         $baseWeight = 50;
         $documentWeight = 50;
 
+        // Base fields for all users
+        $baseFields = ['name', 'email', 'user_type'];
+        
+        // Additional fields for staff users
+        $staffFields = ['tfn_form', 'super_form', 'onboarding_form'];
+        
+        // Merge fields based on user type
+        $allBaseFields = $baseFields;
+        if ($user->user_type === 'staff') {
+            $allBaseFields = array_merge($baseFields, $staffFields);
+        }
+        
         $filledBase = 0;
-        foreach ($baseFields as $field) {
-            if (!empty($user->{$field})) {
-                $filledBase++;
+        foreach ($allBaseFields as $field) {
+            if ($field === 'tfn_form' || $field === 'super_form' || $field === 'onboarding_form') {
+                // Check staff relationship fields
+                if ($user->staff && !empty($user->staff->{$field})) {
+                    $filledBase++;
+                }
+            } else {
+                // Check regular user fields
+                if (!empty($user->{$field})) {
+                    $filledBase++;
+                }
             }
         }
-        $baseScore = ($filledBase / count($baseFields)) * $baseWeight;
+        
+        // Calculate base score with proper weighting
+        $baseScore = ($filledBase / count($allBaseFields)) * $baseWeight;
 
+        // Document scoring
         $documents = $user->documents ?? collect();
         $totalDocuments = $user->documents ? $user->documents->count() : 0;
         $filledDocuments = 0;
+        
         if ($totalDocuments > 0) {
             $filledDocuments = $user->documents->filter(function ($doc) {
                 return !empty($doc->document_no);
@@ -52,21 +75,25 @@ class StaffController extends Controller
             $documentScore = ($filledDocuments / $totalDocuments) * $documentWeight;
         }
 
-          //NEW CONDITION: Labour Hire Required
-       if ( $user->user_type === 'contractor' && in_array(strtolower($user->state), ['victoria', 'queensland']) ) {
+        // NEW CONDITION: Labour Hire Required (only for contractors in Victoria or Queensland)
+        if ($user->user_type === 'contractor' && in_array(strtolower($user->state), ['victoria', 'queensland'])) {
             $labourHireDoc = $documents->firstWhere('document_type', 'labour_hire');
 
-            //If not exists OR document_no empty → apply penalty
+            // If not exists OR document_no empty → apply penalty
             if (!$labourHireDoc || empty($labourHireDoc->document_no)) {
-
                 $documentScore = $documentScore * 0.5;
             }
         }
 
-        if($user->user_type == 'contractor'){
-        $percentage = (int) round($baseScore + $documentScore);
-        }else{
-        $percentage = (int) round($baseScore + 50);
+        // Calculate final percentage
+        if ($user->user_type == 'contractor') {
+            $percentage = (int) round($baseScore + $documentScore);
+        } elseif ($user->user_type == 'staff') {
+            // Staff have no document score, base score is out of 100
+            $percentage = (int) round($baseScore + $documentScore);
+        } else {
+            // Other user types (customer, etc.)
+            $percentage = (int) round($baseScore + 50);
         }
 
         return min($percentage, 100);
@@ -128,7 +155,8 @@ class StaffController extends Controller
             'user_id' => $user->id,
             'profile_image' => $profileImagePath ?? $request->profile_image,
             'gender' => $request->gender,
-            'staff_document_type' => $request->staff_document_type
+            'staff_document_type' => $request->staff_document_type,
+            'security_license_no' => $request->security_license_no
         ]);
 
         $old_data = Staff::where('user_id', $user->id)->first();
@@ -777,7 +805,8 @@ class StaffController extends Controller
                 $staffData = collect($data)->only([
                     'gender',
                     'phone',
-                    'staff_document_type'  // This will now be saved
+                    'staff_document_type',
+                    'security_license_no'
                 ])->toArray();
 
                 if ($request->hasFile('profile_image')) {

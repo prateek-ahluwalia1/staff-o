@@ -141,7 +141,8 @@ class AdminStaffController extends Controller
             'profile_image' => $profileImagePath ?? $request->profile_image,
             'gender' => $request->gender,
             'phone' => $request->phone,
-            'staff_document_type' => $request->staff_document_type
+            'staff_document_type' => $request->staff_document_type,
+            'security_license_no' => $request->security_license_no
         ]);
         
         $old_data = Staff::where('user_id', $user->id)->first();
@@ -352,6 +353,12 @@ class AdminStaffController extends Controller
             $staff->phone = $request->phone;
 
         }
+
+        if ($request->has('security_license_no')) {
+            $staff->security_license_no = $request->security_license_no;
+
+        }
+        
 
         $staff->save();
 

@@ -61,9 +61,12 @@ class JobRosterController extends Controller
             $site = Site::where('coordinates', $request->coordinates)->first();
     
             if (!$site) {
+                $addressParts = explode(',', $request->address);
+                $firstPart = trim($addressParts[0]);
+
                 $site = Site::create([
                     'user_id'          => $user->id,
-                    'site_name'        => $request->title,
+                    'site_name'        => $firstPart,
                     'site_description' => $request->description,
                     'address'          => $request->address,
                     'signin_radius'    => 300,
@@ -146,6 +149,7 @@ class JobRosterController extends Controller
                         'site_id'          => $site->id,
                         'start'            => $start,
                         'end'              => $end,
+                        'job_type'         => $request->job_type,
                         'shift_payable'    => 'yes',
                         'shift_chargeable' => 'yes',
                         'job_status'       => 'pending',
@@ -436,7 +440,7 @@ class JobRosterController extends Controller
 
     public function getContractorStaff($id)
     {
-        $guards = User::where('user_id', $id)->with('staff')->where('is_active', 1)->where('user_type', 'staff')->get();
+        $guards = User::where('user_id', $id)->with('staff')->where('user_type', 'staff')->get();
 
         if (!$guards) {
             return response()->json([
@@ -3724,7 +3728,7 @@ public function autoUpdatePayslipStatus()
         ];
         
         Mail::send('emails.systemGeneralEmail', $data, function($message) use ($data){
-            $message->from('no-reply@thescouts.com.au', 'Staffoo');
+            $message->from('no-reply@staffoo.com.au', 'Staffoo');
             $message->to($data['email'])->subject($data['subject']);
             // No attachment - just send HTML email with button
         });

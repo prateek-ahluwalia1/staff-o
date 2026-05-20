@@ -153,7 +153,7 @@ class QuestionnaireController extends Controller
      $testDetails = Questionnaire::find($guardQNADetails->questionnaire_id);
      if($request->marks >= 80){
          $config_title = 'STAFFOO';
-         $from = 'no-reply@thescouts.com.au';
+         $from = 'no-reply@staffoo.com.au';
          $headers  = 'MIME-Version: 1.0' . "\r\n";
          $subject = 'Congratulations! You have passed the test successfully.';
          $headers .= 'Content-type: text/html; charset=iso-8859-1' . "\r\n";

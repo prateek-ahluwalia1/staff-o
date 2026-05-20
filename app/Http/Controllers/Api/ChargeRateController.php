@@ -107,7 +107,7 @@ class ChargeRateController extends Controller
     public function update(Request $request)
     {
         $is_check =0;
-        $charge_rate = ChargeRate::where('id', 1)->first();
+        $charge_rate = ChargeRate::where('id', $request->id)->first();
         // if(!empty($charge_rate)){
         // $charge_rate = ChargeRate::where('user_id', 14)->where('level', $request->level)->update(['status' => 'archive']);
         // }

@@ -11,6 +11,7 @@ use App\Models\Staff;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 
@@ -124,13 +125,13 @@ class AdminStaffController extends Controller
             'address' => $request->address ?? null,
             'city' => $request->city ?? null,
             'state' => $request->state ?? null,
-            'country' => $request->state ?? null,
+            'country' => $request->country ?? null,
             'coordinates' => $request->coordinates ?? null,
-            'is_email_approved' => 1,
             'is_active' => 0,
         ]);
 
         $user->staffo_id = 'STAFO' . $user->id;
+        $user->is_email_approved = 1;
         $user->save();
         
         $profileImagePath = null;
@@ -149,11 +150,12 @@ class AdminStaffController extends Controller
         
         $old_data = Staff::where('user_id', $user->id)->first();
 
-        $capitalUser = User::where('id', $request->user_id)
+            $capitalUser = User::where('id', $request->user_id)
             ->where('name', 'Capital Security')
             ->first();
-        if($capitalUser && $capitalUser->name == "Capital Security")
-        {
+            
+        if(isset($capitalUser) && $capitalUser->name == "Capital Security")
+        {   
             $check_old_data_exist = Document::where('user_id', $user->id)->where('document_category', '!=', 'other-doc')->first();
             if((!isset($old_data)) || (isset($old_data->staff_document_type) && !$check_old_data_exist)){
                 $document_categories = DocumentCategory::where('document_category', $request->staff_document_type)->first();
@@ -253,7 +255,7 @@ class AdminStaffController extends Controller
                 }
             }
         }else{
-            $document_categories = DocumentCategory::where('document_category', '==', 'contractor_staff')->first();
+           $document_categories = DocumentCategory::where('document_category', 'contractor_staff')->first();
 
             if($document_categories){
                 foreach (json_decode($document_categories->document_type) as $key => $value) {  
@@ -302,7 +304,7 @@ class AdminStaffController extends Controller
         // $this->guardEmailVerifay($request->email, $request->header('Business-Id'), $request->password);
             
         return response()->json([
-            'message' => "Staff registered successfully. Please verify your email.",
+            'message' => "Staff registered successfully.",
             'code' => 200,
             'success' => true,
             'data' => [
@@ -402,7 +404,7 @@ class AdminStaffController extends Controller
             ->where('name', 'Capital Security')
             ->first();
             
-        if ($capitalUser && $capitalUser->name == "Capital Security")
+        if (isset($capitalUser) && $capitalUser->name == "Capital Security")
         {
             $check_old_data_exist = Document::where('user_id', $user->id)->where('document_category', '!=', 'other-doc')->first();
             if((!isset($old_data)) || (isset($old_data->staff_document_type) && !$check_old_data_exist)){

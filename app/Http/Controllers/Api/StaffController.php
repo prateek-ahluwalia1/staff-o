@@ -716,7 +716,7 @@ class StaffController extends Controller
             if ($user->user_type === 'staff') {
                 $staff = Staff::where('user_id', $user->id)->first();
 
-                if (!empty($data['staff_document_type']) && $user->user_id = 1) {
+                if (!empty($data['staff_document_type']) && $user->user_id == 1) {
                     $check_old_data_exist = Document::where('user_id', $user->id)
                         ->where('document_category', '!=', 'other-doc')
                         ->first();
@@ -1158,12 +1158,13 @@ class StaffController extends Controller
     public function uploadStaffFile(Request $request)
     {
         try {
+
             // Validate request
-            $request->validate([
-                'user_id' => 'required|exists:staff,id',
-                'type' => 'required|in:tfn,super_form,onboarding',
-                'folder' => 'nullable|string'
-            ]);
+            // $request->validate([
+            //     'user_id' => 'required|exists:staff,id',
+            //     'type' => 'required|in:tfn,super_form,onboarding',
+            //     'folder' => 'nullable|string'
+            // ]);
 
             if (empty($request->folder)) {
                 switch ($request->type) {
@@ -1195,7 +1196,7 @@ class StaffController extends Controller
 
             if ($fileName) {
                 // Update staff table based on type
-                $staff = Staff::find($request->user_id);
+         $staff = Staff::where('user_id', $request->user_id)->first();
                 
                 if (!$staff) {
                     return response()->json([

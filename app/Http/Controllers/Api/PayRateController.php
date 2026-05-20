@@ -104,7 +104,7 @@ class PayRateController extends Controller
     public function update(Request $request)
     {
         $is_check =0;
-        $payrates = Payrate::where('id', 1)->first();
+        $payrates = Payrate::where('id', $request->id)->first();
         $old_data = $payrates;
         // if(!empty($payrate)) {
         //     Payrate::where('id', $request->id)->update(['status' => 'archive']);

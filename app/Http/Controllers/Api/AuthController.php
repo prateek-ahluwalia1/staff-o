@@ -236,7 +236,7 @@ class AuthController extends Controller
         ];
         
         Mail::send('emails.isEmailVerify', $data, function($token)use($data){
-            $token->from('no-reply@thescouts.com.au', 'Staffoo')
+            $token->from('no-reply@staffoo.com.au', 'Staffoo')
             ->to($data['email']);
             $token->subject("Staff Verify Email");
         });
@@ -735,5 +735,70 @@ class AuthController extends Controller
                 'message' => 'Logout failed: ' . $e->getMessage()
             ], 500);
         }
+    }
+
+     // Reset Email send
+    public function reset_pass_mail(Request $request)
+    {
+        try {
+            $request->validate([
+                'email' => 'required|email|exists:users,email',
+            ]);
+            $passwordReset = DB::table('password_reset_tokens')->where('email', $request->email)->first();
+
+            if($passwordReset){
+
+                DB::table('password_reset_tokens')->where('email', $passwordReset->email)->delete();
+            }
+            $token = Str::random(60);
+            DB::table('password_reset_tokens')->insert([
+                'email' => $request->email,
+                'token' => $token,
+                'created_at' => Carbon::now(),
+            ]);
+
+            Mail::send('reset', ['token' => $token], function ($message) use ($request) {
+                $message->from('no-reply@staffoo.com.au', 'Staffoo');
+                $message->to($request->email);
+                $message->subject('Reset Your Password');
+            });
+
+            return response()->json(['message' => 'Password reset email sent. Check your inbox.'], 200);
+
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    // Reset Password
+    public function reset(Request $request)
+    {
+        try {
+            $request->validate([
+                'password' => 'required|min:8|confirmed',
+            ]);
+
+            $passwordReset = DB::table('password_reset_tokens')->where('token', $request->token)->first();
+
+            if (!$passwordReset) {
+                return response()->json(['message' => 'This password reset token is invalid.<br>Verify with the latest link.'], 404);
+            }
+
+            $user = User::where('email', $passwordReset->email)->first();
+            $user->password =Hash::make($request->password);
+            $user->save();
+
+            DB::table('password_reset_tokens')->where('email', $passwordReset->email)->delete();
+
+            return response()->json(['message' => 'Password has been successfully reset.'], 200);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    public function showPasswordResetForm(Request $request)
+    {
+        $token = $request->query('token');
+        return view('passwordsave', compact('token'));
     }
 }

@@ -13,9 +13,8 @@ class Kernel extends ConsoleKernel
     protected function schedule(Schedule $schedule): void
     {
         // $schedule->command('notifications:asap-job')->everyThirtyMinutes()->withoutOverlapping();
-         $schedule->command('notifications:asap-job')
-             ->cron('0,30 * * * *')
-             ->withoutOverlapping();
+        $schedule->command('notifications:asap-job')->cron('0,30 * * * *')->withoutOverlapping();
+        $schedule->command('app:sync-public-holidays')->twiceYearly(1, 1);
     }
 
     /**

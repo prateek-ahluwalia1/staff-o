@@ -466,7 +466,6 @@ class JobRosterController extends Controller
         ->where('is_active', 1)
         ->where('user_type', 'staff')
         ->whereNotNull('coordinates')
-        ->whereNotNull('notification_token')
         ->whereHas('guardQuestionnaireDetails', function ($query) {
             $query->whereNotNull('certificate_path');
         })

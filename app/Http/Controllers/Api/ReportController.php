@@ -326,7 +326,7 @@ class ReportController extends Controller
             $userId = $shift->user_id;
  
             // Recalculate hour breakdowns fresh (same helper used in timesheet)
-            $jobHours = $this->getShiftHours(
+            $jobHours = getShiftHours(
                 date('m/d/Y H:i', strtotime($shift->start)),
                 date('m/d/Y H:i', strtotime($shift->end))
             );
@@ -461,17 +461,5 @@ class ReportController extends Controller
              + ($hours['sunday_night']     * $sunNight)
              + ($hours['ph_morning']       * $phMorn)
              + ($hours['ph_night']         * $phNight);
-    }
- 
-    // -------------------------------------------------------------------------
-    // Reuse from TimesheetController (or extract to a trait/service)
-    // -------------------------------------------------------------------------
-    private function getShiftHours(string $start, string $end): array
-    {
-        // Your existing implementation — copy it here or extract to a shared service.
-        // Expected return keys:
-        //   morning, night, saturday_morning, saturday_night,
-        //   sunday_morning, sunday_night, ph_morning, ph_night
-        return app(JobRosterController::class)->getShiftHours($start, $end);
     }
 }

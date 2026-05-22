@@ -371,8 +371,6 @@ const Header = memo(function Header({ withSidebar = false }) {
                   Home
                 </NavLink>
               </li>
-
-
               <li className="nav-item">
                 <NavLink className="nav-link" to="/contact-us">
                   Contact Us

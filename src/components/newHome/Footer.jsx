@@ -1,6 +1,7 @@
 import React from 'react'
 import "../../styles/staffoo.css"
 import { Link } from 'react-router-dom'
+import staffologo from "../../assets/images/staffo.png"
 
 function Footer() {
   return (
@@ -8,14 +9,13 @@ function Footer() {
       <footer>
         <div className="footer-top">
           <div className="footer-brand">
+            {/* Updated Logo Layout containing your image asset */}
             <div className="footer-brand-logo">
-              <div className="fl-shield">
-                <svg viewBox="0 0 32 32" fill="none">
-                  <path d="M16 3L28 8v12C28 26 16 30 16 30S4 26 4 20V8Z" fill="#f0a500" opacity="0.15" stroke="#f0a500" strokeWidth="1.5" />
-                  <text x="16" y="22" textAnchor="middle" fontFamily="'Bebas Neue'" fontSize="12" fill="#f0a500">S</text>
-                </svg>
-              </div>
-              <span className="fl-text">Staff<span>oo</span></span>
+              <img
+                src={staffologo}
+                alt="Staffoo"
+                style={{ height: "45px", width: "auto", display: "block" }}
+              />
             </div>
             <p>Australia's leading platform for security jobs and staffing. Connecting verified security professionals across every state and territory with trusted employers.</p>
             <div className="pay-row">

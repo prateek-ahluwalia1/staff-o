@@ -10,6 +10,7 @@ import {
 } from '../../store/slices/notificationSlice'
 import useSubmit from '../../hooks/useSubmit'
 import useFetch from '../../hooks/useFetch'
+import staffologo from "../../assets/images/staffo.png" // Imported image asset
 import { getProfileImageUrlFromUserdata } from '../../utils/profileImage'
 import "../../styles/staffoo.css"
 
@@ -176,15 +177,13 @@ function Header() {
   return (
     <header className="staffoo-header" style={{ backgroundColor: '#1a1a1a', padding: '12px 20px' }}>
       <div className="nav-left">
-        <NavLink className="logo" to="/">
-          <div className="logo-shield">
-            <svg viewBox="0 0 36 36" fill="none">
-              <path d="M18 3 L33 9 L33 21 C33 28 18 34 18 34 C18 34 3 28 3 21 L3 9 Z" fill="#0A7C6E" opacity="0.15" stroke="#0A7C6E" strokeWidth="1.5" />
-              <path d="M18 8 L28 12 L28 21 C28 26 18 30 18 30 C18 30 8 26 8 21 L8 12 Z" fill="#0A7C6E" opacity="0.1" stroke="#0A7C6E" strokeWidth="1" />
-              <text x="18" y="23" textAnchor="middle" fontFamily="'Bebas Neue'" fontSize="12" fill="#0A7C6E" letterSpacing="0">S</text>
-            </svg>
-          </div>
-          <span className="logo-text" style={{ color: '#fff' }}>Staff<span>oo</span></span>
+        {/* Updated Logo Layout containing your image asset */}
+        <NavLink className="logo d-flex align-items-center" to="/" style={{ textDecoration: 'none' }}>
+          <img
+            src={staffologo}
+            alt="Staffoo"
+            style={{ height: "45px", width: "auto", display: "block" }}
+          />
         </NavLink>
         <nav>
           <NavLink to="/" style={{ color: '#ccc' }}>Home</NavLink>

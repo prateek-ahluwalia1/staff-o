@@ -90,9 +90,7 @@ const Header = memo(function Header({ withSidebar = false }) {
   };
 
   const getAvatarColor = (name) => {
-    const colors = [
-      "#0A7C6E"
-    ];
+    const colors = ["#0A7C6E"];
     let hash = 0;
     if (name) {
       for (let i = 0; i < name.length; i++) {
@@ -106,7 +104,7 @@ const Header = memo(function Header({ withSidebar = false }) {
     return getProfileImageUrlFromUserdata(userdata);
   };
 
-  const displayName = userdata?.data?.name || userdata?.name || "John Doe";
+  const displayName = userdata?.data?.name || userdata?.name || "User";
 
   const renderUserAvatar = () => {
     const imageUrl = getProfileImageUrl();
@@ -374,45 +372,6 @@ const Header = memo(function Header({ withSidebar = false }) {
                 </NavLink>
               </li>
 
-              {/* Jobs Dropdown */}
-              <li className="nav-item dropdown">
-                <NavLink className="nav-link" to="/latest-jobs">
-                  Jobs
-                </NavLink>
-              </li>
-
-              {/* Blog Dropdown */}
-              {/* <li className="nav-item dropdown">
-                <button
-                  className="nav-link dropdown-toggle"
-                  type="button"
-                  data-bs-toggle="dropdown"
-                >
-                  Blog
-                </button>
-                <ul className="dropdown-menu dropdown-menu-lg">
-                  <li>
-                    <NavLink className="dropdown-item" to="/blog-grid">
-                      Blog Grid
-                    </NavLink>
-                  </li>
-                  <li>
-                    <NavLink className="dropdown-item" to="/blog">
-                      Blog List
-                    </NavLink>
-                  </li>
-                  <li>
-                    <NavLink className="dropdown-item" to="/blog-full-width">
-                      Blog Full Width
-                    </NavLink>
-                  </li>
-                  <li>
-                    <NavLink className="dropdown-item" to="/blog-detail">
-                      Blog Detail
-                    </NavLink>
-                  </li>
-                </ul>
-              </li> */}
 
               <li className="nav-item">
                 <NavLink className="nav-link" to="/contact-us">

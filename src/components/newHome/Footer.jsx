@@ -4,90 +4,119 @@ import { Link } from 'react-router-dom'
 
 function Footer() {
   return (
-    <div><footer>
-  <div className="footer-top">
-    <div className="footer-brand">
-      <div className="footer-brand-logo">
-        <div className="fl-shield">
-          <svg viewBox="0 0 32 32" fill="none">
-            <path d="M16 3L28 8v12C28 26 16 30 16 30S4 26 4 20V8Z" fill="#f0a500" opacity="0.15" stroke="#f0a500" stroke-width="1.5"/>
-            <text x="16" y="22" text-anchor="middle" font-family="'Bebas Neue'" font-size="12" fill="#f0a500">S</text>
-          </svg>
+    <div>
+      <footer>
+        <div className="footer-top">
+          <div className="footer-brand">
+            <div className="footer-brand-logo">
+              <div className="fl-shield">
+                <svg viewBox="0 0 32 32" fill="none">
+                  <path d="M16 3L28 8v12C28 26 16 30 16 30S4 26 4 20V8Z" fill="#f0a500" opacity="0.15" stroke="#f0a500" strokeWidth="1.5" />
+                  <text x="16" y="22" textAnchor="middle" fontFamily="'Bebas Neue'" fontSize="12" fill="#f0a500">S</text>
+                </svg>
+              </div>
+              <span className="fl-text">Staff<span>oo</span></span>
+            </div>
+            <p>Australia's leading platform for security jobs and staffing. Connecting verified security professionals across every state and territory with trusted employers.</p>
+            <div className="pay-row">
+              <span className="pay-chip">Stripe</span>
+              <span className="pay-chip">VISA</span>
+              <span className="pay-chip">Mastercard</span>
+            </div>
+          </div>
+
+          {/* Quick Links */}
+          <div className="footer-col">
+            <div className="footer-col-title">Quick Links</div>
+            <ul>
+              <li><Link to="/">Home</Link></li>
+              <li><Link to="/contact-us">Contact Us</Link></li>
+              <li><Link to="/faqs">FAQs</Link></li>
+              <li><Link to="/about-us">About Us</Link></li>
+            </ul>
+          </div>
+
+          {/* Resources */}
+          <div className="footer-col">
+            <div className="footer-col-title">Resources</div>
+            <ul>
+              <li><Link to="/privacy-policy">Privacy Policy</Link></li>
+              <li><Link to="/terms-of-use">Terms Of Use</Link></li>
+            </ul>
+          </div>
+
+          {/* Job Types */}
+          <div className="footer-col">
+            <div className="footer-col-title">Job Types</div>
+            <ul>
+              <li><p>Security License</p></li>
+              <li><p>MISC Time License</p></li>
+              <li><p>Working With Children</p></li>
+              <li><p>First Aid</p></li>
+              <li><p>CPR</p></li>
+              <li><p>White Card</p></li>
+              <li><p>Traffic Controller</p></li>
+            </ul>
+          </div>
+
+          {/* Contact Us + Social */}
+          <div className="footer-col">
+            <div className="footer-col-title">Contact Us</div>
+            <div className="footer-contact-item">
+              <span className="fci-icon"><i className="fa fa-map-marker" aria-hidden="true"></i></span>
+              <span>21 Tanglewood Bvd Truganina VIC 3029</span>
+            </div>
+            <div className="footer-contact-item">
+              <span className="fci-icon"><i className="fa fa-envelope" aria-hidden="true"></i></span>
+              <a href="mailto:staffoapp@gmail.com" style={{ color: 'inherit', textDecoration: 'none' }}>staffoapp@gmail.com</a>
+            </div>
+            <div className="footer-contact-item">
+              <span className="fci-icon"><i className="fa fa-phone" aria-hidden="true"></i></span>
+              <a href="tel:0478916034" style={{ color: 'inherit', textDecoration: 'none' }}>0478916034</a>
+            </div>
+
+            {/* Shared the social icon structure using standard anchor tags for external link handling */}
+            <div className="footer-social" style={{ display: 'flex', gap: '15px', marginTop: '15px' }}>
+              <a
+                href="https://www.facebook.com/profile.php?id=61582204185867"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Facebook"
+                style={{ color: '#aaa', fontSize: '18px' }}
+              >
+                <i className="fab fa-facebook" aria-hidden="true"></i>
+              </a>
+              <a
+                href="https://www.instagram.com/staffoo_/"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Instagram"
+                style={{ color: '#aaa', fontSize: '18px' }}
+              >
+                <i className="fab fa-instagram" aria-hidden="true"></i>
+              </a>
+              <a
+                href="https://www.linkedin.com/company/staff-o/"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="LinkedIn"
+                style={{ color: '#aaa', fontSize: '18px' }}
+              >
+                <i className="fab fa-linkedin" aria-hidden="true"></i>
+              </a>
+            </div>
+          </div>
         </div>
-        <span className="fl-text">Staff<span>oo</span></span>
-      </div>
-      <p>Australia's leading platform for security jobs and staffing. Connecting verified security professionals across every state and territory with trusted employers.</p>
-      <div className="pay-row">
-        <span className="pay-chip">Stripe</span>
-        <span className="pay-chip">VISA</span>
-        <span className="pay-chip">Mastercard</span>
-        <span className="pay-chip">EFTPOS</span>
-      </div>
-    </div>
 
-    <div className="footer-col">
-      <div className="footer-col-title">Quick Links</div>
-      <ul>
-        <li><Link to="/">Home</Link></li>
-        <li><Link to="/">Jobs Board</Link></li>
-        <li><Link to="/">About Staffoo</Link></li>
-        <li><Link to="/">Contact Us</Link></li>
-        <li><Link to="/">Blog</Link></li>
-        <li><Link to="/">FAQ</Link></li>
-      </ul>
+        <div className="footer-bottom">
+          <span>© 2026 STAFFOO PTY LTD · ABN 00 000 000 000 · ALL RIGHTS RESERVED</span>
+          <div className="footer-bottom-links">
+            <Link to="/privacy-policy">Privacy</Link>
+            <Link to="/terms-of-use">Terms</Link>
+          </div>
+        </div>
+      </footer>
     </div>
-
-    <div className="footer-col">
-      <div className="footer-col-title">Resources</div>
-      <ul>
-        <li><Link to="/">Privacy Policy</Link></li>
-        <li><Link to="/">Terms of Service</Link></li>
-        <li><Link to="/">Safety Standards</Link></li>
-        <li><Link to="/">Compliance Docs</Link></li>
-      </ul>
-    </div>
-
-    <div className="footer-col">
-      <div className="footer-col-title">Job Types</div>
-      <ul>
-        <li><Link to="/">Security Licence</Link></li>
-        <li><Link to="/">HISC Licence</Link></li>
-        <li><Link to="/">Working With Children</Link></li>
-        <li><Link to="/">First Aid</Link></li>
-        <li><Link to="/">CPR</Link></li>
-        <li><Link to="/">Crowd Control</Link></li>
-        <li><Link to="/">Traffic Controller</Link></li>
-      </ul>
-    </div>
-
-    <div className="footer-col">
-      <div className="footer-col-title">Contact Us</div>
-      <div className="footer-contact-item">
-        <span className="fci-icon">◈</span>
-        <span>Victoria, Australia</span>
-      </div>
-      <div className="footer-contact-item">
-        <span className="fci-icon">✉</span>
-        <span>contact@company.com</span>
-      </div>
-      <div className="footer-contact-item">
-        <span className="fci-icon">◷</span>
-        <span>Support hours: Mon–Fri 8am–6pm AEST</span>
-      </div>
-    </div>
-  </div>
-
-  <div className="footer-bottom">
-    <span>© 2026 STAFFOO PTY LTD · ABN 00 000 000 000 · ALL RIGHTS RESERVED</span>
-    <div className="footer-bottom-links">
-      <Link to="/">Privacy</Link>
-      <Link to="/">Terms</Link>
-      <Link to="/">Cookies</Link>
-      <Link to="/">Sitemap</Link>
-    </div>
-  </div>
-</footer>
-</div>
   )
 }
 

@@ -1,6 +1,6 @@
 import React from "react";
-import Header from "../components/header";
-import Footer from "../components/footer";
+import Header from "../components/newHome/Header";
+import Footer from "../components/newHome/Footer";
 import teamsimg from "../assets/images/teams.png";
 
 const highlights = [

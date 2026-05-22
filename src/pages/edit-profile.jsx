@@ -1441,14 +1441,30 @@ export default function EditProfile() {
 
           <div className="mb-3">
             <label className="form-label fw-semibold">Document Number</label>
-            <input
-              type="text"
-              className="form-control"
-              placeholder="e.g. ABC123456"
-              name="document_no"
-              value={docForm.document_no}
-              onChange={handleDocFormChange}
-            />
+          <input
+  type="text"
+  className="form-control"
+  placeholder="e.g. ABC123456"
+  name="document_no"
+  value={docForm.document_no}
+  onChange={(e) => {
+    // Allow only letters + numbers
+    let value = e.target.value.replace(/[^a-zA-Z0-9]/g, "");
+
+    // Limit to 20 chars
+    value = value.slice(0, 20);
+
+    setDocForm((prev) => ({
+      ...prev,
+      document_no: value,
+    }));
+  }}
+  minLength={3}
+  maxLength={20}
+  pattern="^[A-Za-z0-9]{3,20}$"
+  title="Document number must be 3–20 characters (letters and numbers only)"
+  required
+/>
           </div>
 
           <div className="mb-3">

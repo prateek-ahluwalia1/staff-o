@@ -164,7 +164,7 @@ const SuperannuationForm = ({ values, loading, onChange, onSubmit, dataModified 
                 </div>
                 <div className="col-md-6">
                     <label className="form-label small fw-bold text-muted">Fund ABN <span className="text-danger">*</span></label>
-                    <input type="text" className="form-control" name="s_fundabn" placeholder="12 345 678 901" maxLength="15" value={values.s_fundabn} onChange={onChange} required={values.fund_choice === "own"} />
+                    <input type="text" className="form-control" name="s_fundabn" placeholder="12 345 678 901" maxLength="11" value={values.s_fundabn} onChange={onChange} required={values.fund_choice === "own"} />
                 </div>
                 <div className="col-md-6">
                     <label className="form-label small fw-bold text-muted">Fund USI <span className="text-danger">*</span></label>

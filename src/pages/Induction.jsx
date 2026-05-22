@@ -4,6 +4,7 @@ import useSubmit from "../hooks/useSubmit";
 import "../assets/css/induction.css";
 import { useSelector } from "react-redux";
 import Loader from "../components/Loader";
+import { Link } from 'react-router-dom'
 
 const getHistoryRows = (response) => {
     if (Array.isArray(response?.data?.data)) return response.data.data;
@@ -280,15 +281,14 @@ export default function Induction() {
                                                 </td>
                                                 <td>
                                                     {isCompleted && (
-                                                        <a
-                                                            className="btn btn-sm bg-success bg-opacity-10 text-success border border-success"
+                                                        <Link                                                            className="btn btn-sm bg-success bg-opacity-10 text-success border border-success"
                                                             href={record?.certificate_path}
                                                             target="_blank"
                                                             rel="noopener noreferrer"
                                                             title="Download certificate"
                                                         >
                                                             <i className="fa fa-download"></i>
-                                                        </a>
+                                                        </Link>
                                                     )}
                                                     {isOpen && (
                                                         <button
@@ -509,15 +509,14 @@ export default function Induction() {
                                                     <i className="fa fa-file-pdf-o text-danger" style={{ fontSize: '18px' }}></i>
                                                     <div>
                                                         <p className="mb-0 text-muted fw-medium line-clamp-1">File uploaded</p>
-                                                        <a
-                                                            href={`https://apis.staffoo.com.au/induction_documents/${q.file_url}`}
+                                                        <Link                                                            href={`https://apis.staffoo.com.au/induction_documents/${q.file_url}`}
                                                             target="_blank"
                                                             rel="noopener noreferrer"
                                                             className="text-primary small text-decoration-none text-break"
                                                             style={{ fontSize: '12px' }}
                                                         >
                                                             View PDF
-                                                        </a>
+                                                        </Link>
                                                     </div>
                                                 </div>
                                                 <button

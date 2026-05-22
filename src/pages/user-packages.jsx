@@ -1,4 +1,6 @@
 import React from "react";
+import { Link } from 'react-router-dom'
+
 
 export default function UserPackages() {
   return (
@@ -14,16 +16,16 @@ export default function UserPackages() {
           </div>
 
           <div className="d-flex flex-wrap gap-2">
-            <a href="/payment-history" className="btn btn-outline-primary">
+            <Link to="/payment-history" className="btn btn-outline-primary">
               <i className="fa-solid fa-receipt" aria-hidden="true"></i> Billing
-            </a>
-            <a href="#upgrade" className="btn btn-primary-custom">
+            </Link>
+            <Link to="#upgrade" className="btn btn-primary-custom">
               <i
                 className="fa-solid fa-arrow-up-right-dots"
                 aria-hidden="true"
               ></i>{" "}
               Upgrade
-            </a>
+            </Link>
           </div>
         </div>
 
@@ -201,12 +203,11 @@ export default function UserPackages() {
                   Auto-renew processed on Mar 31 · Invoice #INV-2048.
                 </p>
               </div>
-              <a
-                href="/payment-history"
+              <Link                href="/payment-history"
                 className="btn btn-outline-primary btn-sm rounded-3"
               >
                 View receipt
-              </a>
+              </Link>
             </li>
           </ul>
         </div>

@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from "react";
-import Header from "../components/header";
-import Footer from "../components/footer";
+
+import Header from "../components/newHome/Header";
+import Footer from "../components/newHome/Footer";
 import Loader from "../components/Loader";
 import useFetch from "../hooks/useFetch";
 

@@ -2,6 +2,7 @@ import React, { useState, useCallback } from "react";
 import { toast } from "react-toastify";
 import useSubmit from "../hooks/useSubmit";
 import Loader from "../components/Loader";
+import { Link } from 'react-router-dom'
 
 const initialForm = {
     passport: "",
@@ -324,9 +325,9 @@ export default function VisaManagement() {
                                             <label className="form-label text-muted fw-semibold mb-1 small">Official Document</label>
                                             <div className="min-h-form-field d-flex align-items-center">
                                                 {attachment?.download_url ? (
-                                                    <a href={attachment.download_url} target="_blank" rel="noreferrer" className="btn btn-outline-primary btn-sm rounded-pill px-3">
+                                                    <Link to={attachment.download_url} target="_blank" rel="noreferrer" className="btn btn-outline-primary btn-sm rounded-pill px-3">
                                                         <i className="fa-solid fa-file-pdf me-1"></i> Download PDF
-                                                    </a>
+                                                    </Link>
                                                 ) : (
                                                     <span className="text-muted fst-italic">Not provided</span>
                                                 )}

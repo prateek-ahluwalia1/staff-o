@@ -5,6 +5,7 @@ import { toast } from "react-toastify";
 import Loader from "../components/Loader";
 import useFetch from "../hooks/useFetch";
 import useSubmit from "../hooks/useSubmit";
+import { Link } from 'react-router-dom'
 
 const todayISO = new Date().toISOString().split("T")[0];
 const ALL_OPTION_VALUE = "ALL";
@@ -524,15 +525,14 @@ const PaySlip = () => {
                     <td>{row.end_date || "-"}</td>
                     <td>
                       {row.file_url ? (
-                        <a
-                          href={row.file_url}
+                        <Link                          href={row.file_url}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="btn btn-sm btn-outline-primary"
                         >
                           <i className="fa-solid fa-up-right-from-square me-1"></i>
                           Open
-                        </a>
+                        </Link>
                       ) : (
                         "-"
                       )}

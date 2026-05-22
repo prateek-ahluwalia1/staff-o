@@ -1,8 +1,9 @@
 import React, { memo } from "react";
 import { Outlet } from "react-router-dom";
-import Header from "../components/header";
+
+import Header from "../components/newHome/Header";
 import Sidebar from "../components/sidebar";
-import Footer from "./footer";
+import Footer from "../components/newHome/Footer";
 
 const DashboardLayout = memo(function DashboardLayout() {
   return (

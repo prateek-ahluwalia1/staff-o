@@ -1,5 +1,6 @@
 import React from "react";
 import { apiURL } from "../utils/exports";
+import { Link } from 'react-router-dom'
 
 export default function DocumentTable({ documents, onAddFile, onAddDocument }) {
   return (
@@ -175,8 +176,7 @@ export default function DocumentTable({ documents, onAddFile, onAddDocument }) {
                     }}
                   >
                     {doc.file ? (
-                      <a
-                        href={`${apiURL}staff_documents/${doc.file}`}
+                      <Link                        href={`${apiURL}staff_documents/${doc.file}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         title="View file"
@@ -197,7 +197,7 @@ export default function DocumentTable({ documents, onAddFile, onAddDocument }) {
                         }
                       >
                         <i className="fa fa-eye" aria-hidden="true"></i>
-                      </a>
+                      </Link>
                     ) : (
                       <button
                         type="button"

@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { Link } from 'react-router-dom'
 
 export default function PublicProfilePreview() {
   const [recruiterSearch, setRecruiterSearch] = useState(true);
@@ -18,13 +19,13 @@ export default function PublicProfilePreview() {
           </div>
 
           <div className="d-flex flex-wrap gap-2">
-            <a href="/" className="btn btn-outline-primary">
+            <Link to="/" className="btn btn-outline-primary">
               <i className="fa-solid fa-link" aria-hidden="true"></i> Copy link
-            </a>
-            <a href="/" className="btn btn-primary-custom">
+            </Link>
+            <Link to="/" className="btn btn-primary-custom">
               <i className="fa-solid fa-eye" aria-hidden="true"></i> View live
               profile
-            </a>
+            </Link>
           </div>
         </div>
 
@@ -134,12 +135,11 @@ export default function PublicProfilePreview() {
                   Visible · Last edited yesterday
                 </p>
               </div>
-              <a
-                href="/edit-profile"
+              <Link                href="/edit-profile"
                 className="btn btn-outline-primary btn-sm rounded-3"
               >
                 Edit
-              </a>
+              </Link>
             </li>
 
             <li>
@@ -149,12 +149,11 @@ export default function PublicProfilePreview() {
                   3 roles published · case studies attached
                 </p>
               </div>
-              <a
-                href="/edit-profile"
+              <Link                href="/edit-profile"
                 className="btn btn-outline-primary btn-sm rounded-3"
               >
                 Edit
-              </a>
+              </Link>
             </li>
 
             <li>
@@ -164,9 +163,9 @@ export default function PublicProfilePreview() {
                   4 links · hero thumbnails enabled
                 </p>
               </div>
-              <a href="/" className="btn btn-outline-primary btn-sm rounded-3">
+              <Link to="/" className="btn btn-outline-primary btn-sm rounded-3">
                 Manage
-              </a>
+              </Link>
             </li>
 
             <li>
@@ -176,12 +175,11 @@ export default function PublicProfilePreview() {
                   Add quotes from managers and peers.
                 </p>
               </div>
-              <a
-                href="/"
+              <Link                href="/"
                 className="btn btn-outline-secondary btn-sm rounded-3"
               >
                 Add
-              </a>
+              </Link>
             </li>
           </ul>
         </div>

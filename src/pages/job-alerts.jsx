@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { toast } from "react-toastify";
+import { Link } from 'react-router-dom'
 
 export default function JobAlerts() {
   const [alerts, setAlerts] = useState([
@@ -75,12 +76,12 @@ export default function JobAlerts() {
           </div>
 
           <div className="d-flex flex-wrap gap-2">
-            <a href="/" className="btn btn-outline-primary">
+            <Link to="/" className="btn btn-outline-primary">
               <i className="fa-solid fa-bell" aria-hidden="true"></i> Pause all
-            </a>
-            <a href="#newAlert" className="btn btn-primary-custom">
+            </Link>
+            <Link to="#newAlert" className="btn btn-primary-custom">
               <i className="fa-solid fa-plus" aria-hidden="true"></i> New alert
-            </a>
+            </Link>
           </div>
         </div>
 

@@ -2,6 +2,7 @@ import React, { memo } from "react";
 import stripeLogo from "../assets/images/stripe.png";
 import masterLogo from "../assets/images/master.png";
 import visaLogo from "../assets/images/visa.png";
+import { Link } from 'react-router-dom';
 
 const Copyright = memo(function Copyright() {
   const paymentLogoStyle = {
@@ -17,9 +18,9 @@ const Copyright = memo(function Copyright() {
         <div className="footer-bottom-content">
           <div className="footer-copy" style={{ marginLeft: "2rem" }}>
             Copyright &copy; {new Date().getFullYear()} Staffoo. All rights
-            reserved. Design by: <a href="/" style={{
+            reserved. Design by: <Link to="/" style={{
               color: "#0A7C6E"
-            }}>STAFFOO</a>
+            }}>STAFFOO</Link>
           </div>
 
           <div className="footer-payments">

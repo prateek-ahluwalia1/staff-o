@@ -1,8 +1,9 @@
 import React, { useState } from "react";
 import { toast } from "react-toastify";
-import Header from "../components/header";
-import Footer from "../components/footer";
+import Header from "../components/newHome/Header";
+import Footer from "../components/newHome/Footer";
 import useSubmit from "../hooks/useSubmit";
+import { Link } from 'react-router-dom'
 
 const initialForm = {
   fullName: "",
@@ -151,9 +152,9 @@ export default function ContactUs() {
                     </span>
                     <div>
                       <h5>Email</h5>
-                      <a href="mailto:staffoapp@gmail.com">
+                      <Link to="mailto:staffoapp@gmail.com">
                         staffoapp@gmail.com
-                      </a>
+                      </Link>
                     </div>
                   </li>
                   <li>
@@ -162,7 +163,7 @@ export default function ContactUs() {
                     </span>
                     <div>
                       <h5>Phone</h5>
-                      <a href="tel:0478916034">0478916034</a>
+                      <Link to="tel:0478916034">0478916034</Link>
                     </div>
                   </li>
                   <li>
@@ -177,30 +178,27 @@ export default function ContactUs() {
                 </ul>
 
                 <div className="contact-social" aria-label="Social links">
-                  <a
-                    href="https://www.facebook.com/profile.php?id=61582204185867"
+                  <Link                    href="https://www.facebook.com/profile.php?id=61582204185867"
                     target="_blank"
                     rel="noopener noreferrer"
                     aria-label="Facebook"
                   >
                     <i className="fab fa-facebook" aria-hidden="true"></i>
-                  </a>
-                  <a
-                    href="https://www.instagram.com/staffoo_/"
+                  </Link>
+                  <Link                    href="https://www.instagram.com/staffoo_/"
                     target="_blank"
                     rel="noopener noreferrer"
                     aria-label="Instagram"
                   >
                     <i className="fab fa-instagram" aria-hidden="true"></i>
-                  </a>
-                  <a
-                    href="https://www.linkedin.com/company/staff-o/"
+                  </Link>
+                  <Link                    href="https://www.linkedin.com/company/staff-o/"
                     target="_blank"
                     rel="noopener noreferrer"
                     aria-label="LinkedIn"
                   >
                     <i className="fab fa-linkedin" aria-hidden="true"></i>
-                  </a>
+                  </Link>
                 </div>
               </div>
             </div>

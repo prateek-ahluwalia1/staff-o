@@ -30,16 +30,30 @@ export default function ProfileForm({
             <label htmlFor="name" className="form-label fw-semibold">
               Full Name <span className="text-danger">*</span>
             </label>
-            <input
-              type="text"
-              className="form-control"
-              id="name"
-              placeholder="e.g. Muhammad Nauman"
-              value={formData.name || ""}
-              onChange={onChange}
-              required
-              minLength={2}
-            />
+           <input
+  type="text"
+  className="form-control"
+  id="name"
+  placeholder="e.g. Muhammad Nauman"
+  value={formData.name || ""}
+  onChange={(e) => {
+    let value = e.target.value
+      .replace(/[^a-zA-Z\s]/g, "") // only letters/spaces
+      .replace(/\s+/g, " "); // avoid multiple spaces
+
+    onChange({
+      target: {
+        id: "name",
+        value,
+      },
+    });
+  }}
+  required
+  minLength={3}
+  maxLength={20}
+  pattern="^[A-Za-z\s]{3,20}$"
+  title="Full Name must contain only letters and be 3-20 characters"
+/>
           </div>
 
           {/* Email (Read-Only) */}
@@ -152,45 +166,112 @@ export default function ProfileForm({
                 <label htmlFor="company_name" className="form-label fw-semibold">
                   Company Name <span className="text-danger">*</span>
                 </label>
-                <input
-                  type="text"
-                  className="form-control"
-                  id="company_name"
-                  placeholder="e.g. Tech Solutions Inc."
-                  value={formData.company_name || ""}
-                  onChange={onChange}
-                  required
-                />
+               <input
+  type="text"
+  className="form-control"
+  id="company_name"
+  placeholder="e.g. Tech Solutions"
+  value={formData.company_name || ""}
+  onChange={(e) => {
+    let value = e.target.value
+      .replace(/[^a-zA-Z0-9\s]/g, "") // remove special chars
+      .replace(/\s+/g, " ");
+
+    onChange({
+      target: {
+        id: "company_name",
+        value,
+      },
+    });
+  }}
+  required
+  minLength={3}
+  maxLength={20}
+  pattern="^[A-Za-z0-9\s]{3,20}$"
+  title="Company Name must be 3-20 characters"
+/>
               </div>
 
               <div>
                 <label htmlFor="abn" className="form-label fw-semibold">
                   ABN <span className="text-danger">*</span>
                 </label>
-                <input
-                  type="text"
-                  className="form-control"
-                  id="abn"
-                  placeholder="XX XXX XXX XXX"
-                  value={formData.abn || ""}
-                  onChange={onChange}
-                  required
-                  pattern="^[\d\s]{11,14}$"
-                  title="Please enter a valid ABN"
-                />
+             <input
+  type="text"
+  className="form-control"
+  id="abn"
+  placeholder="XX-XXX-XXX-XXX"
+  value={formData.abn || ""}
+  onChange={(e) => {
+    // Remove everything except digits
+    let value = e.target.value.replace(/\D/g, "");
+
+    // Limit to 11 digits
+    value = value.substring(0, 11);
+
+    // Auto add dashes
+    if (value.length > 2 && value.length <= 5) {
+      value = value.replace(/^(\d{2})(\d+)/, "$1-$2");
+    } else if (value.length > 5 && value.length <= 8) {
+      value = value.replace(/^(\d{2})(\d{3})(\d+)/, "$1-$2-$3");
+    } else if (value.length > 8) {
+      value = value.replace(
+        /^(\d{2})(\d{3})(\d{3})(\d+)/,
+        "$1-$2-$3-$4"
+      );
+    }
+
+    onChange({
+      target: {
+        id: "abn",
+        value,
+      },
+    });
+  }}
+  required
+  maxLength={15}
+  pattern="^\d{2}-\d{3}-\d{3}-\d{3}$"
+  title="ABN must be in format 12-345-678-901"
+/>
               </div>
               <div>
                 <label htmlFor="acn" className="form-label fw-semibold">
                   ACN
                 </label>
-                <input
-                  type="text"
-                  className="form-control"
-                  id="acn"
-                  placeholder="XXX XXX XXX"
-                  value={formData.acn || ""}
-                  onChange={onChange}
-                />
+             <input
+  type="text"
+  className="form-control"
+  id="acn"
+  placeholder="XXX-XXX-XXX"
+  value={formData.acn || ""}
+  onChange={(e) => {
+    // Keep only digits
+    let value = e.target.value.replace(/\D/g, "");
+
+    // Limit to 9 digits
+    value = value.substring(0, 9);
+
+    // Auto add dashes
+    if (value.length > 3 && value.length <= 6) {
+      value = value.replace(/^(\d{3})(\d+)/, "$1-$2");
+    } else if (value.length > 6) {
+      value = value.replace(
+        /^(\d{3})(\d{3})(\d+)/,
+        "$1-$2-$3"
+      );
+    }
+
+    onChange({
+      target: {
+        id: "acn",
+        value,
+      },
+    });
+  }}
+  maxLength={11}
+  pattern="^\d{3}-\d{3}-\d{3}$"
+  title="ACN must be in format 123-456-789"
+/>
               </div>
             </>
           )}

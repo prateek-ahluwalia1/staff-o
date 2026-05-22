@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import useSubmit from "../../hooks/useSubmit";
 import Loader from "../Loader";
 import PDFGenerator from "../../utils/PDFGenerator";
+import { Link } from 'react-router-dom'
 
 function fixUrl(url) {
   if (!url) return "";
@@ -204,8 +205,7 @@ function IncidentDetail({ report, onBack, meta }) {
           <div className="d-flex flex-wrap gap-2 mb-3">
             {report.photo.map((ph, i) => (
               <div key={i} style={{ position: "relative" }}>
-                <a
-                  href={fixUrl(ph.imgPath)}
+                <Link                  href={fixUrl(ph.imgPath)}
                   target="_blank"
                   rel="noopener noreferrer"
                 >
@@ -220,7 +220,7 @@ function IncidentDetail({ report, onBack, meta }) {
                       border: "1px solid #ddd",
                     }}
                   />
-                </a>
+                </Link>
                 {ph.timestamp && (
                   <div
                     style={{

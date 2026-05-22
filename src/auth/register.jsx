@@ -5,7 +5,7 @@ import { setToken, setUser } from "../store/slices/authSlice";
 import useSubmit from "../hooks/useSubmit";
 import { toast } from "react-toastify";
 import { useGoogleLogin } from "@react-oauth/google";
-import Header from "../components/header";
+import Header from "../components/newHome/Header";
 import { apiURL } from "../utils/exports";
 import {
   normalizeAuthResponse,
@@ -306,7 +306,7 @@ export default function Register() {
                           placeholder="Min. 8 chars"
                           value={formData.password}
                           onChange={handleChange}
-                          maxLength={50}
+                          maxLength={8}
                           disabled={loading}
                           style={{ border: "1px solid #0A7C6E" }}
                         />

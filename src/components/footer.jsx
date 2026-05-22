@@ -90,39 +90,36 @@ const Footer = memo(function Footer() {
                 </li>
                 <li>
                   <i className="fa fa-envelope" aria-hidden="true"></i>
-                  <a href="mailto:staffoapp@gmail.com">staffoapp@gmail.com</a>
+                  <Link to="mailto:staffoapp@gmail.com">staffoapp@gmail.com</Link>
                 </li>
                 <li>
                   <i className="fa fa-phone" aria-hidden="true"></i>
-                  <a href="tel:0478916034">0478916034</a>
+                  <Link to="tel:0478916034">0478916034</Link>
                 </li>
               </ul>
 
               <div className="footer-social">
-                <a
-                  href="https://www.facebook.com/profile.php?id=61582204185867"
+                <Link                  href="https://www.facebook.com/profile.php?id=61582204185867"
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label="Facebook"
                 >
                   <i className="fab fa-facebook" aria-hidden="true"></i>
-                </a>
-                <a
-                  href="https://www.instagram.com/staffoo_/"
+                </Link>
+                <Link                  href="https://www.instagram.com/staffoo_/"
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label="Instagram"
                 >
                   <i className="fab fa-instagram" aria-hidden="true"></i>
-                </a>
-                <a
-                  href="https://www.linkedin.com/company/staff-o/"
+                </Link>
+                <Link                  href="https://www.linkedin.com/company/staff-o/"
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label="LinkedIn"
                 >
                   <i className="fab fa-linkedin" aria-hidden="true"></i>
-                </a>
+                </Link>
               </div>
             </div>
           </div>

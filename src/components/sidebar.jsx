@@ -2,6 +2,7 @@ import React, { memo, useCallback, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { NavLink, useNavigate } from "react-router-dom";
 import { logOut } from "../store/slices/authSlice";
+import { Link } from 'react-router-dom'
 import {
   toggleSidebar,
   setSidebarExpanded,
@@ -220,8 +221,7 @@ const Sidebar = memo(function Sidebar() {
           return (
             <li key={item.label} title={!isExpanded ? item.label : ""}>
               {disabled ? (
-                <a
-                  href="/"
+                <Link                  href="/"
                   onClick={(e) => e.preventDefault()}
                   className="disabled-nav"
                   aria-disabled="true"
@@ -248,7 +248,7 @@ const Sidebar = memo(function Sidebar() {
                       <i className="fa-solid fa-lock"></i>
                     </span>
                   )}
-                </a>
+                </Link>
               ) : (
                 <NavLink
                   to={item.to}
@@ -265,10 +265,10 @@ const Sidebar = memo(function Sidebar() {
         })}
 
         <li title={!isExpanded ? "Logout" : ""}>
-          <a href="/" onClick={handleLogout}>
+          <Link to="/" onClick={handleLogout}>
             <i className="fa-solid fa-right-from-bracket"></i>
             {isExpanded && <span className="nav-label">Logout</span>}
-          </a>
+          </Link>
         </li>
       </ul>
     </aside>

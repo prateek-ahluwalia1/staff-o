@@ -1,0 +1,54 @@
+import React from 'react'
+import "../../styles/staffoo.css"
+// import {mb1} from "./public/assets/images/img.jpg"
+
+function Demographics() {
+  return (
+    <div><section className="demo-sec">
+  <div className="demo-head reveal">
+    <div>
+      <div className="label">Brand Reach & Demographics</div>
+      <h2>App Experience<br/>By User Type</h2>
+    </div>
+    <p className="demo-sub">This section now uses real product screenshots so visitors can instantly see how Staffoo works for staff, clients, and partners across your platform.</p>
+  </div>
+
+  <div className="demo-grid">
+    <div className="demo-showcase reveal">
+      <div className="demo-showcase-head">
+        <span className="tag">Live Product Preview</span>
+        <span className="demo-live"><span className="demo-dot"></span> Live Data Model</span>
+      </div>
+      <div className="demo-shot-main">
+        <img src="/assets/images/img.jpg" alt="Staffoo mobile app screens" />
+      </div>
+      <div className="demo-shot-strip">
+        <img src="/assets/images/dashboard.webp" alt="Staffoo dashboard experience" />
+        <img src="/assets/images/colab.jpg" alt="Staffoo platform collaboration view" />
+      </div>
+    </div>
+
+    <div className="demo-cards">
+      <div className="demo-card reveal reveal-d1">
+        <h3>For Security Staff</h3>
+        <p>Mobile-first views help staff discover nearby jobs, manage profile compliance, and track daily assignments from one clear interface.</p>
+        <div className="demo-meta"><strong>Use Case</strong><span>find and accept shifts</span></div>
+      </div>
+      <div className="demo-card reveal reveal-d2">
+        <h3>For Clients</h3>
+        <p>Dashboard-style panels simplify job posting, candidate visibility, and coverage planning so clients can fill positions quickly.</p>
+        <div className="demo-meta"><strong>Use Case</strong><span>post and manage vacancies</span></div>
+      </div>
+      <div className="demo-card reveal reveal-d3">
+        <h3>For Resource Partners</h3>
+        <p>Operational views support team assignment and oversight, giving partners better control across roster and workforce workflows.</p>
+        <div className="demo-meta"><strong>Use Case</strong><span>assign teams and monitor jobs</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+</div>
+  )
+}
+
+export default Demographics

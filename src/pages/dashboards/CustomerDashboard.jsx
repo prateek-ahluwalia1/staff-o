@@ -4,6 +4,7 @@ import StatsCard from "../../components/dashboard/StatsCard";
 import JobTrendChart from "../../components/dashboard/JobTrendChart";
 import useFetch from "../../hooks/useFetch";
 import Loader from "../../components/Loader";
+import { Link } from 'react-router-dom'
 import {
   getProfileImageFromUserdata,
   resolveProfileImageUrl,
@@ -159,7 +160,7 @@ export default function CustomerDashboard() {
       <section className="dashboard-panel">
         <div className="panel-heading">
           <h3>Your Jobs</h3>
-          <a href="/jobs">Post New Job</a>
+          <Link to="/jobs">Post New Job</Link>
         </div>
         <div className="table-responsive">
           <table className="table align-middle">
@@ -199,8 +200,7 @@ export default function CustomerDashboard() {
                       </span>
                     </td>
                     <td>
-                      <a
-                        href={`/job-details/${job.id}`}
+                      <Link                        href={`/job-details/${job.id}`}
                         className="btn btn-sm"
                         style={{
                           backgroundColor: "#f0f4ff",
@@ -224,7 +224,7 @@ export default function CustomerDashboard() {
                         }}
                       >
                         Manage
-                      </a>
+                      </Link>
                     </td>
                   </tr>
                 ))

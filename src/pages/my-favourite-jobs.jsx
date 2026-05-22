@@ -1,4 +1,5 @@
 import React from "react";
+import { Link } from 'react-router-dom'
 
 const savedRoles = [
   {
@@ -102,17 +103,17 @@ export default function MyFavouriteJobs() {
           </div>
 
           <div className="d-flex flex-wrap gap-2">
-            <a href="/job-alerts" className="btn btn-outline-primary">
+            <Link to="/job-alerts" className="btn btn-outline-primary">
               <i className="fa-solid fa-bell" aria-hidden="true"></i> Manage
               alerts
-            </a>
-            <a href="/job-listing" className="btn btn-primary-custom">
+            </Link>
+            <Link to="/job-listing" className="btn btn-primary-custom">
               <i
                 className="fa-solid fa-magnifying-glass"
                 aria-hidden="true"
               ></i>{" "}
               Find new jobs
-            </a>
+            </Link>
           </div>
         </div>
 
@@ -128,7 +129,7 @@ export default function MyFavouriteJobs() {
 
                 <div className="application-title">
                   <h4>
-                    <a href="/">{role.title}</a>
+                    <Link to="/">{role.title}</Link>
                   </h4>
                   <div className="application-location">
                     <i
@@ -192,12 +193,11 @@ export default function MyFavouriteJobs() {
                   <strong>{collection.title}</strong>
                   <p className="mb-0 text-muted">{collection.description}</p>
                 </div>
-                <a
-                  href="/"
+                <Link                  href="/"
                   className={`btn ${collection.actionClass} btn-sm rounded-3`}
                 >
                   {collection.actionText}
-                </a>
+                </Link>
               </li>
             ))}
           </ul>

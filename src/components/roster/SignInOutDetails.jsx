@@ -1,6 +1,7 @@
 import React, { useEffect } from "react";
 import useSubmit from "../../hooks/useSubmit";
 import Loader from "../Loader";
+import { Link } from 'react-router-dom'
 
 const SELFIE_BASE = `https://apis.staffoo.com.au/uploads/`;
 
@@ -130,8 +131,7 @@ export default function SignInOutDetails({ rosterId, guardId, shift, site }) {
 
   const MapButton = ({ loc }) =>
     loc ? (
-      <a
-        href={`https://maps.google.com/?q=${loc.lat},${loc.lng}`}
+      <Link        href={`https://maps.google.com/?q=${loc.lat},${loc.lng}`}
         target="_blank"
         rel="noopener noreferrer"
         style={{
@@ -150,7 +150,7 @@ export default function SignInOutDetails({ rosterId, guardId, shift, site }) {
       >
         <i className="fa fa-map-marker" style={{ fontSize: "14px" }} />
         Show Map
-      </a>
+      </Link>
     ) : (
       <button
         disabled

@@ -5,7 +5,7 @@ import { setToken, setUser } from "../store/slices/authSlice";
 import useSubmit from "../hooks/useSubmit";
 import { toast } from "react-toastify";
 import { useGoogleLogin } from "@react-oauth/google";
-import Header from "../components/header";
+import Header from "../components/newHome/Header";
 import { apiURL } from "../utils/exports";
 import {
   normalizeAuthResponse,

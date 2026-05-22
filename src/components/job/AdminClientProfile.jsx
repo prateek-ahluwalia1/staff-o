@@ -1,6 +1,7 @@
 import React, { useMemo } from "react";
 import Select from "react-select";
 import { apiURL } from "../../utils/exports";
+import { Link } from 'react-router-dom';
 
 export default function AdminClientProfile({
     customerDetails,
@@ -112,16 +113,16 @@ export default function AdminClientProfile({
 
                         <div className="mb-3 pb-3 border-bottom">
                             <small className="text-muted fw-bold d-block mb-1">Email</small>
-                            <a href={`mailto:${customerDetails?.email}`} className="text-primary text-decoration-none small fw-medium">
+                            <Link to={`mailto:${customerDetails?.email}`} className="text-primary text-decoration-none small fw-medium">
                                 {customerDetails?.email}
-                            </a>
+                            </Link>
                         </div>
 
                         <div className="mb-3 pb-3 border-bottom">
                             <small className="text-muted fw-bold d-block mb-1">Phone</small>
-                            <a href={`tel:${customerDetails?.phone}`} className="text-primary text-decoration-none small fw-medium">
+                            <Link to={`tel:${customerDetails?.phone}`} className="text-primary text-decoration-none small fw-medium">
                                 {customerDetails?.phone || "N/A"}
-                            </a>
+                            </Link>
                         </div>
 
                         <div className="mb-3 pb-3 border-bottom">

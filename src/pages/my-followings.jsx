@@ -1,4 +1,5 @@
 import React from "react";
+import { Link } from 'react-router-dom'
 
 const followedCompanies = [
   {
@@ -68,16 +69,16 @@ export default function MyFollowings() {
           </div>
 
           <div className="d-flex flex-wrap gap-2">
-            <a href="/" className="btn btn-outline-primary">
+            <Link to="/" className="btn btn-outline-primary">
               <i className="fa-solid fa-bell" aria-hidden="true"></i> Notify me
-            </a>
-            <a href="/job-listing" className="btn btn-primary-custom">
+            </Link>
+            <Link to="/job-listing" className="btn btn-primary-custom">
               <i
                 className="fa-solid fa-magnifying-glass"
                 aria-hidden="true"
               ></i>
               Discover companies
-            </a>
+            </Link>
           </div>
         </div>
 
@@ -107,12 +108,11 @@ export default function MyFollowings() {
                   <strong>{suggestion.title}</strong>
                   <p className="mb-0 text-muted">{suggestion.description}</p>
                 </div>
-                <a
-                  href="/"
+                <Link                  href="/"
                   className={`btn ${suggestion.actionClass} btn-sm rounded-3`}
                 >
                   {suggestion.actionText}
-                </a>
+                </Link>
               </li>
             ))}
           </ul>

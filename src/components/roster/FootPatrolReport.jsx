@@ -3,6 +3,7 @@ import useSubmit from "../../hooks/useSubmit";
 import Loader from "../Loader";
 import { apiURL } from "../../utils/exports";
 import PDFGenerator from "../../utils/PDFGenerator";
+import { Link } from 'react-router-dom'
 
 const BASE_URL = `${apiURL}footpatrol/`;
 
@@ -86,8 +87,7 @@ function PatrolDetail({ patrol, onBack, meta }) {
           <div className="d-flex flex-wrap gap-2 mb-3">
             {photos.map((ph, i) => (
               <div key={i}>
-                <a
-                  href={resolveUrl(ph.imgPath)}
+                <Link                  href={resolveUrl(ph.imgPath)}
                   target="_blank"
                   rel="noopener noreferrer"
                 >
@@ -102,7 +102,7 @@ function PatrolDetail({ patrol, onBack, meta }) {
                       border: "1px solid #ddd",
                     }}
                   />
-                </a>
+                </Link>
                 {ph.timestamp && (
                   <div
                     style={{

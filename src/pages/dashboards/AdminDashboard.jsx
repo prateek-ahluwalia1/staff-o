@@ -6,6 +6,7 @@ import RevenueChart from "../../components/dashboard/RevenueChart";
 import JobTrendChart from "../../components/dashboard/JobTrendChart";
 import useFetch from "../../hooks/useFetch";
 import Loader from "../../components/Loader";
+import { Link } from "react-router-dom";
 import {
   getProfileImageFromUserdata,
   resolveProfileImageUrl,
@@ -202,7 +203,7 @@ export default function AdminDashboard() {
       <section className="dashboard-panel">
         <div className="panel-heading">
           <h3>Top Performing Resource Partners</h3>
-          <a href="/manage-users" className="view-all-link">View All Resource Partners</a>
+          <Link to="/manage-users" className="view-all-link">View All Resource Partners</Link>
         </div>
         <div className="table-responsive">
           <table className="table align-middle">

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { NavLink, useNavigate } from "react-router-dom"; // Added useNavigate
+import { NavLink, useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { setToken, setUser } from "../store/slices/authSlice";
 import useSubmit from "../hooks/useSubmit";
@@ -203,7 +203,6 @@ export default function Login() {
   return (
     <>
       <Header />
-
       <section className="auth-page">
         <div className="container" style={{ maxWidth: "1000px" }}>
           <div className="row align-items-center g-4">

@@ -413,7 +413,10 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
 
     return {
       user_id: form.user_id || userdata?.data?.id || userdata?.id || null,
-      title: (form.title || "").trim(), description: form.description, address: form.location || form.address, coordinates: form.coordinates || "", state: "open",
+      title: (form.title || "").trim(),
+      job_type: form.jobType === "others" ? form.customJobType : form.jobType,
+      description: form.description, address: form.location || form.address, coordinates: form.coordinates || "",
+      state: form.state,
       shifts: shiftsPayload,
       payment_option: form.paymentOption,
       job_location_state: form.state,

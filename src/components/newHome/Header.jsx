@@ -179,9 +179,9 @@ function Header() {
         <NavLink className="logo" to="/">
           <div className="logo-shield">
             <svg viewBox="0 0 36 36" fill="none">
-              <path d="M18 3 L33 9 L33 21 C33 28 18 34 18 34 C18 34 3 28 3 21 L3 9 Z" fill="#f0a500" opacity="0.15" stroke="#f0a500" strokeWidth="1.5" />
-              <path d="M18 8 L28 12 L28 21 C28 26 18 30 18 30 C18 30 8 26 8 21 L8 12 Z" fill="#f0a500" opacity="0.1" stroke="#f0a500" strokeWidth="1" />
-              <text x="18" y="23" textAnchor="middle" fontFamily="'Bebas Neue'" fontSize="12" fill="#f0a500" letterSpacing="0">S</text>
+              <path d="M18 3 L33 9 L33 21 C33 28 18 34 18 34 C18 34 3 28 3 21 L3 9 Z" fill="#0A7C6E" opacity="0.15" stroke="#0A7C6E" strokeWidth="1.5" />
+              <path d="M18 8 L28 12 L28 21 C28 26 18 30 18 30 C18 30 8 26 8 21 L8 12 Z" fill="#0A7C6E" opacity="0.1" stroke="#0A7C6E" strokeWidth="1" />
+              <text x="18" y="23" textAnchor="middle" fontFamily="'Bebas Neue'" fontSize="12" fill="#0A7C6E" letterSpacing="0">S</text>
             </svg>
           </div>
           <span className="logo-text" style={{ color: '#fff' }}>Staff<span>oo</span></span>
@@ -222,7 +222,7 @@ function Header() {
                   cursor: 'pointer',
                   transition: 'color 0.2s',
                 }}
-                onMouseEnter={(e) => (e.target.style.color = '#f0a500')}
+                onMouseEnter={(e) => (e.target.style.color = '#0A7C6E')}
                 onMouseLeave={(e) => (e.target.style.color = '#fff')}
               >
                 <i className="fa fa-bell"></i>
@@ -311,7 +311,7 @@ function Header() {
                     <NavLink
                       to="/notifications"
                       onClick={() => setShowNotifications(false)}
-                      style={{ fontSize: '13px', color: '#f0a500', textDecoration: 'none', fontWeight: '500' }}
+                      style={{ fontSize: '13px', color: '#0A7C6E', textDecoration: 'none', fontWeight: '500' }}
                     >
                       View All
                     </NavLink>
@@ -344,7 +344,7 @@ function Header() {
                     borderRadius: '50%',
                     overflow: 'hidden',
                     flexShrink: 0,
-                    border: '2px solid #f0a500',
+                    border: '2px solid #0A7C6E',
                   }}
                 >
                   {renderUserAvatar()}
@@ -352,7 +352,7 @@ function Header() {
                 <span style={{ fontWeight: '600', fontSize: '14px', color: '#fff' }}>
                   {displayName}
                 </span>
-                <i className="fa fa-chevron-down" style={{ fontSize: '12px', color: '#f0a500' }}></i>
+                <i className="fa fa-chevron-down" style={{ fontSize: '12px', color: '#0A7C6E' }}></i>
               </div>
 
               {showUserMenu && (
@@ -384,7 +384,7 @@ function Header() {
                     }}
                     onMouseEnter={(e) => {
                       e.target.style.backgroundColor = '#333'
-                      e.target.style.color = '#f0a500'
+                      e.target.style.color = '#0A7C6E'
                     }}
                     onMouseLeave={(e) => {
                       e.target.style.backgroundColor = 'transparent'
@@ -407,7 +407,7 @@ function Header() {
                     }}
                     onMouseEnter={(e) => {
                       e.target.style.backgroundColor = '#333'
-                      e.target.style.color = '#f0a500'
+                      e.target.style.color = '#0A7C6E'
                     }}
                     onMouseLeave={(e) => {
                       e.target.style.backgroundColor = 'transparent'
@@ -430,7 +430,7 @@ function Header() {
                     }}
                     onMouseEnter={(e) => {
                       e.target.style.backgroundColor = '#333'
-                      e.target.style.color = '#f0a500'
+                      e.target.style.color = '#0A7C6E'
                     }}
                     onMouseLeave={(e) => {
                       e.target.style.backgroundColor = 'transparent'

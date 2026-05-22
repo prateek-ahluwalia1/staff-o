@@ -1,6 +1,5 @@
 import React, { memo } from "react";
 import { Link } from "react-router-dom";
-import Copyright from "../components/copyright";
 
 const Footer = memo(function Footer() {
   return (
@@ -99,21 +98,21 @@ const Footer = memo(function Footer() {
               </ul>
 
               <div className="footer-social">
-                <Link                  href="https://www.facebook.com/profile.php?id=61582204185867"
+                <Link href="https://www.facebook.com/profile.php?id=61582204185867"
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label="Facebook"
                 >
                   <i className="fab fa-facebook" aria-hidden="true"></i>
                 </Link>
-                <Link                  href="https://www.instagram.com/staffoo_/"
+                <Link href="https://www.instagram.com/staffoo_/"
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label="Instagram"
                 >
                   <i className="fab fa-instagram" aria-hidden="true"></i>
                 </Link>
-                <Link                  href="https://www.linkedin.com/company/staff-o/"
+                <Link href="https://www.linkedin.com/company/staff-o/"
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label="LinkedIn"
@@ -125,7 +124,6 @@ const Footer = memo(function Footer() {
           </div>
         </div>
       </div>
-      <Copyright />
     </footer>
   );
 });

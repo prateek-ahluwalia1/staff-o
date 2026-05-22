@@ -17,7 +17,7 @@
     left: auto;
     min-width: 180px;
     margin-top: 6px;
-    box-shadow: 0 8px 32px rgba(15,23,42,0.13);
+    box-shadow: 0 8px 32px rgba(15, 23, 42, 0.13);
     border-radius: 14px;
     padding: 10px 0;
 }
@@ -26,6 +26,7 @@
     display: block;
     z-index: 1200;
 }
+
 /*------------------------------------------
 Project Name : Jobs Portal
 Desgined By  : eCreative solutions
@@ -698,13 +699,14 @@ h6 {
 }
 
 .navbar-actions .register-btn {
-	background: #fff;
-	border-color: #0A7C6E;
-	color: #0A7C6E;
+    background: #fff;
+    border-color: #0A7C6E;
+    color: #0A7C6E;
 }
+
 .navbar-actions .register-btn:hover {
-	color: #fff;
-	background: #0A7C6E;
+    color: #fff;
+    background: #0A7C6E;
 }
 
 .navbar-toggler {
@@ -7368,298 +7370,6 @@ Large Mobile Screen
     }
 }
 
-/************************************************
-           ==Auth Pages==
-*************************************************/
-.auth-section {
-    min-height: calc(100vh - 100px);
-    padding: 35px 0;
-    background: radial-gradient(circle at top left, rgba(59, 130, 246, 0.12), transparent 55%),
-        radial-gradient(circle at bottom right, rgba(16, 185, 129, 0.12), transparent 50%),
-        #f8fafc;
-}
-
-.auth-intro {
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-    max-width: 520px;
-}
-
-.auth-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 8px 18px;
-    border-radius: 999px;
-    background: rgba(37, 99, 235, 0.12);
-    color: #0A7C6E;
-    font-weight: 600;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    font-size: 0.75rem;
-}
-
-.auth-title {
-    font-size: 2.8rem;
-    font-weight: 700;
-    color: #0f172a;
-    margin: 0;
-}
-
-.auth-copy {
-    color: #475569;
-    margin: 0;
-    font-size: 1.05rem;
-}
-
-.auth-benefits {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    display: grid;
-    gap: 12px;
-}
-
-.auth-benefits li {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    color: #1e293b;
-    font-weight: 500;
-}
-
-.auth-benefits i {
-    color: #22c55e;
-    font-size: 1.1rem;
-}
-
-.auth-card {
-    background: #ffffff;
-    border-radius: 28px;
-    padding: 40px 44px;
-    box-shadow: 0 30px 65px rgba(15, 23, 42, 0.15);
-    border: 1px solid rgba(148, 163, 184, 0.18);
-}
-
-.auth-card h3 {
-    font-size: 1.6rem;
-    font-weight: 700;
-    color: #0f172a;
-    margin-bottom: 8px;
-}
-
-.auth-subtitle {
-    color: #64748b;
-    margin-bottom: 24px;
-}
-
-.auth-social {
-    display: flex;
-    gap: 12px;
-}
-
-.auth-social-btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    padding: 12px 18px;
-    border-radius: 14px;
-    border: 1px solid rgba(148, 163, 184, 0.25);
-    background: #f8fafc;
-    color: #0f172a;
-    font-weight: 600;
-    text-decoration: none;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-    width: 100%;
-}
-
-.auth-social-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 16px 30px rgba(15, 23, 42, 0.12);
-    text-decoration: none;
-}
-
-.auth-social-btn.google {
-    border-color: rgba(37, 99, 235, 0.25);
-}
-
-
-.auth-divider {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    margin: 28px 0;
-    color: #94a3b8;
-    font-weight: 600;
-    text-transform: uppercase;
-    font-size: 0.75rem;
-    letter-spacing: 0.18em;
-}
-
-.auth-divider::before,
-.auth-divider::after {
-    content: "";
-    flex: 1;
-    height: 1px;
-    background: rgba(148, 163, 184, 0.3);
-}
-
-.auth-form .form-label {
-    font-weight: 600;
-    color: #1e293b;
-}
-
-.auth-form .form-control {
-    border-radius: 14px;
-    padding: 12px 16px;
-    border: 1px solid rgba(148, 163, 184, 0.35);
-    background: #f8fafc;
-}
-
-.auth-form .form-control:focus {
-    border-color: rgba(37, 99, 235, 0.7);
-    box-shadow: 0 0 0 0.15rem rgba(37, 99, 235, 0.15);
-}
-
-.auth-link {
-    font-size: 0.85rem;
-    color: #0A7C6E;
-    text-decoration: none;
-}
-
-.auth-link:hover {
-    color: #0A7C6E;
-}
-
-.auth-card .btn {
-    border-radius: 14px;
-    padding: 14px 18px;
-    font-weight: 600;
-    box-shadow: 0 20px 35px rgba(37, 99, 235, 0.25);
-}
-
-.auth-switch {
-    margin-top: 24px;
-    color: #475569;
-    text-align: center;
-}
-
-.auth-switch a {
-    color: #0A7C6E;
-    font-weight: 600;
-    text-decoration: none;
-}
-
-.auth-switch a:hover {
-    text-decoration: underline;
-}
-
-@media (max-width: 991px) {
-    .auth-section {
-        padding: 90px 0;
-    }
-
-    .auth-title {
-        font-size: 2.4rem;
-    }
-
-    .auth-card {
-        padding: 36px;
-    }
-}
-
-@media (max-width: 767px) {
-    .auth-section {
-        padding: 70px 0;
-    }
-
-    .auth-card {
-        padding: 32px 24px;
-    }
-
-    .auth-title {
-        font-size: 2.1rem;
-    }
-
-    .auth-social {
-        grid-template-columns: 1fr;
-    }
-}
-
-.auth-section.auth-signup {
-    background: radial-gradient(circle at top right, rgba(59, 130, 246, 0.18), transparent 55%),
-        radial-gradient(circle at bottom left, rgba(16, 185, 129, 0.18), transparent 55%),
-        #f8fafc;
-}
-
-.auth-toggle {
-    display: flex;
-    gap: 10px;
-    background: rgba(148, 163, 184, 0.14);
-    border-radius: 14px;
-    padding: 6px;
-    margin-bottom: 24px;
-}
-
-.auth-toggle-btn {
-    flex: 1;
-    border: none;
-    background: transparent;
-    border-radius: 10px;
-    padding: 10px 16px;
-    font-weight: 600;
-    color: #475569;
-    transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
-}
-
-.auth-toggle-btn.active,
-.auth-toggle-btn:hover {
-    background: #0A7C6E;
-    color: #ffffff;
-    box-shadow: 0 18px 32px rgba(37, 99, 235, 0.28);
-}
-
-.auth-toggle-btn:focus {
-    outline: none;
-}
-
-.auth-form .form-select {
-    border-radius: 14px;
-    padding: 12px 16px;
-    border: 1px solid rgba(148, 163, 184, 0.35);
-    background-color: #f8fafc;
-}
-
-.auth-form .form-select:focus {
-    border-color: rgba(37, 99, 235, 0.7);
-    box-shadow: 0 0 0 0.15rem rgba(37, 99, 235, 0.12);
-}
-
-.auth-policy {
-    color: #475569;
-    font-size: 0.9rem;
-}
-
-.auth-policy .form-check-label {
-    display: inline-flex;
-    align-items: flex-start;
-    gap: 10px;
-}
-
-.auth-policy .form-check-input {
-    margin-top: 0.3rem;
-}
-
-.auth-policy a {
-    font-weight: 600;
-}
-
-.auth-card .tab-content {
-    margin-top: 16px;
-}
-
 .featured-jobs .job-card-company {
     font-weight: 600;
     color: #0f172a;
@@ -10026,7 +9736,7 @@ Large Mobile Screen
     animation: slideInContent 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.dashboard-content-shell > * {
+.dashboard-content-shell>* {
     width: 100%;
 }
 
@@ -11797,17 +11507,22 @@ Large Mobile Screen
 .form-field textarea {
     resize: vertical;
 }
-.jobtracker-main-table > thead > tr > th {
-          background-color: #0A7C6E !important; /* New background color */
-          color: #ffffff !important; /* White text for contrast */
-          text-align: center;
-          text-transform: uppercase;
-          letter-spacing: 0.02em;
-          font-weight: 700;
-          border-right: 1px solid #0A7C6E !important; /* Updated border */
-          border-bottom: 2px solid #0A7C6E !important; /* Updated border */
-        }
-        
+
+.jobtracker-main-table>thead>tr>th {
+    background-color: #0A7C6E !important;
+    /* New background color */
+    color: #ffffff !important;
+    /* White text for contrast */
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    font-weight: 700;
+    border-right: 1px solid #0A7C6E !important;
+    /* Updated border */
+    border-bottom: 2px solid #0A7C6E !important;
+    /* Updated border */
+}
+
 
 .form-field input:focus,
 .form-field select:focus,
@@ -15521,157 +15236,167 @@ Large Mobile Screen
 
 /* Custom Toggle Switch Styling */
 .toggle-switch {
-  position: relative;
-  display: inline-block;
-  width: 44px;
-  height: 24px;
+    position: relative;
+    display: inline-block;
+    width: 44px;
+    height: 24px;
 }
 
 .toggle-switch input {
-  opacity: 0;
-  width: 0;
-  height: 0;
+    opacity: 0;
+    width: 0;
+    height: 0;
 }
 
 .toggle-slider {
-  position: absolute;
-  cursor: pointer;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: #d1d5db; /* Grey when toggled off */
-  transition: 0.4s;
-  border-radius: 34px;
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #d1d5db;
+    /* Grey when toggled off */
+    transition: 0.4s;
+    border-radius: 34px;
 }
 
 .toggle-slider:before {
-  position: absolute;
-  content: "";
-  height: 18px;
-  width: 18px;
-  left: 3px;
-  bottom: 3px;
-  background-color: white;
-  transition: 0.4s;
-  border-radius: 50%;
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    transition: 0.4s;
+    border-radius: 50%;
 }
 
 /* This is where the magic happens for those specific toggles */
-.toggle-switch input:checked + .toggle-slider {
-  background-color: #0A7C6E; /* Replaces the blue/purple with your green */
+.toggle-switch input:checked+.toggle-slider {
+    background-color: #0A7C6E;
+    /* Replaces the blue/purple with your green */
 }
 
-.toggle-switch input:checked + .toggle-slider:before {
-  transform: translateX(20px);
+.toggle-switch input:checked+.toggle-slider:before {
+    transform: translateX(20px);
 }
+
 /* Focus state for inputs like the Late Fee amount and Notes textarea */
 .invoice-side-panel .form-control:focus {
-  border-color: #0A7C6E;
-  box-shadow: 0 0 0 0.25rem rgba(10, 124, 110, 0.25);
-  outline: none;
+    border-color: #0A7C6E;
+    box-shadow: 0 0 0 0.25rem rgba(10, 124, 110, 0.25);
+    outline: none;
 }
+
 /* InvoiceSettings.css */
 
 /* Main Panel Styling */
 .invoice-side-panel {
-  border-top: 4px solid #0A7C6E; /* Green accent border */
-  background-color: #f9fdfc;     /* Very faint green background */
-  padding: 20px;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(10, 124, 110, 0.1);
+    border-top: 4px solid #0A7C6E;
+    /* Green accent border */
+    background-color: #f9fdfc;
+    /* Very faint green background */
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(10, 124, 110, 0.1);
 }
 
 .invoice-side-panel h3 {
-  color: #0A7C6E; /* Green header */
-  margin-bottom: 20px;
-  font-weight: 600;
+    color: #0A7C6E;
+    /* Green header */
+    margin-bottom: 20px;
+    font-weight: 600;
 }
 
 /* 1. Force the checkboxes (Bank Transfer / BPAY) to be green */
 .invoice-radio input[type="checkbox"] {
-  accent-color: #0A7C6E !important; 
-  margin-right: 8px;
-  cursor: pointer;
+    accent-color: #0A7C6E !important;
+    margin-right: 8px;
+    cursor: pointer;
 }
 
 
 /* Flex rows for toggles */
 .invoice-toggle-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 12px;
-  font-weight: 500;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    font-weight: 500;
 }
 
 /* Custom Toggle Switch Styling */
 .toggle-switch {
-  position: relative;
-  display: inline-block;
-  width: 44px;
-  height: 24px;
+    position: relative;
+    display: inline-block;
+    width: 44px;
+    height: 24px;
 }
 
 .toggle-switch input {
-  opacity: 0;
-  width: 0;
-  height: 0;
+    opacity: 0;
+    width: 0;
+    height: 0;
 }
 
 .toggle-slider {
-  position: absolute;
-  cursor: pointer;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: #d1d5db;
-  transition: 0.4s;
-  border-radius: 34px;
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #d1d5db;
+    transition: 0.4s;
+    border-radius: 34px;
 }
 
 .toggle-slider:before {
-  position: absolute;
-  content: "";
-  height: 18px;
-  width: 18px;
-  left: 3px;
-  bottom: 3px;
-  background-color: white;
-  transition: 0.4s;
-  border-radius: 50%;
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    transition: 0.4s;
+    border-radius: 50%;
 }
 
 /* Toggled State */
-.toggle-switch input:checked + .toggle-slider {
-  background-color: #0A7C6E; /* Green toggle background */
+.toggle-switch input:checked+.toggle-slider {
+    background-color: #0A7C6E;
+    /* Green toggle background */
 }
 
-.toggle-switch input:checked + .toggle-slider:before {
-  transform: translateX(20px);
+.toggle-switch input:checked+.toggle-slider:before {
+    transform: translateX(20px);
 }
 
 /* Total Box Styling */
 .invoice-total-box {
-  margin-top: 24px;
-  padding: 16px;
-  background-color: #eef7f6; /* Light green tint */
-  border: 1px solid #cce5e2;
-  border-radius: 8px;
+    margin-top: 24px;
+    padding: 16px;
+    background-color: #eef7f6;
+    /* Light green tint */
+    border: 1px solid #cce5e2;
+    border-radius: 8px;
 }
 
 .invoice-total-box div {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 8px;
-  color: #333;
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+    color: #333;
 }
 
 .invoice-grand-total {
-  font-size: 1.15rem;
-  color: #0A7C6E !important; /* Green total text */
-  border-top: 2px solid #0A7C6E;
-  padding-top: 12px;
-  margin-top: 12px;
+    font-size: 1.15rem;
+    color: #0A7C6E !important;
+    /* Green total text */
+    border-top: 2px solid #0A7C6E;
+    padding-top: 12px;
+    margin-top: 12px;
 }

@@ -108,13 +108,11 @@ export default function Login() {
 
     toast.success("Logged in successfully!");
 
-    // --- NEW: Redirect Customer ---
     if (latestProfile?.user_type === "customer") {
       navigate("/add-job");
     }
   };
 
-  // --- UPDATED GOOGLE LOGIN HANDLER ---
   const handleGoogleLogin = useGoogleLogin({
     flow: "implicit",
     onSuccess: async (tokenResponse) => {
@@ -206,66 +204,40 @@ export default function Login() {
     <>
       <Header />
 
-      <section
-        className="d-flex align-items-center justify-content-center"
-        style={{
-          minHeight: "calc(100vh - 80px)",
-          background: "#f8fafc",
-          padding: "2rem 0",
-        }}
-      >
+      <section className="auth-page">
         <div className="container" style={{ maxWidth: "1000px" }}>
           <div className="row align-items-center g-4">
-            {/* LEFT SIDE */}
-            <div className="col-lg-6 d-none d-lg-block">
-              <h1
-                className="fw-bold mb-2"
-                style={{ fontSize: "36px", lineHeight: "1.2" }}
-              >
-                Welcome back to your network
+            <div className="col-lg-6 d-none d-lg-block auth-hero-copy">
+              <div className="auth-eyebrow">
+                <span className="label">Australia's #1 Security Platform</span>
+              </div>
+              <h1 className="auth-title">
+                Secure your work.<br />
+                <span className="auth-line">Access trusted shifts.</span>
               </h1>
-              <p className="text-muted mb-4 small">
-                Log in to access your dashboard, manage your opportunities, and
-                stay connected with your professional network.
+              <p className="auth-description">
+                Log in to manage your profile, assignments, and verified opportunities from one secure platform.
               </p>
 
-              <div className="d-flex flex-column gap-2 small">
-                <div className="d-flex align-items-center gap-2">
-                  <i className="fa-solid fa-circle-check fs-6"
-                    style={{
-                      color: "#0A7C6E"
-                    }}
-                  ></i>
-                  <span>Access your personalized dashboard</span>
+              <div className="auth-checks">
+                <div className="auth-check">
+                  <i className="fa-solid fa-circle-check"></i>
+                  <span>Verified shifts and trusted clients</span>
                 </div>
-                <div className="d-flex align-items-center gap-2">
-                  <i className="fa-solid fa-circle-check fs-6"
-                    style={{
-                      color: "#0A7C6E"
-                    }}
-                  ></i>
-                  <span>Review new opportunities & messages</span>
+                <div className="auth-check">
+                  <i className="fa-solid fa-circle-check"></i>
+                  <span>Instant access to live job updates</span>
                 </div>
-                <div className="d-flex align-items-center gap-2">
-                  <i className="fa-solid fa-circle-check fs-6"
-                    style={{
-                      color: "#0A7C6E"
-                    }}
-                  ></i>
-                  <span>Manage your active connections</span>
+                <div className="auth-check">
+                  <i className="fa-solid fa-circle-check"></i>
+                  <span>Smart tools for your daily workflow</span>
                 </div>
               </div>
             </div>
 
             {/* FORM */}
             <div className="col-lg-6">
-              <div
-                className="bg-white p-4 rounded-4"
-                style={{
-                  boxShadow: "0 10px 40px rgba(0,0,0,0.06)",
-                  border: "1px solid #0A7C6E",
-                }}
-              >
+              <div className="auth-card">
                 <h5 className="fw-bold mb-1">Log in to your account</h5>
                 <p className="text-muted small mb-4">
                   Enter your credentials to continue.
@@ -371,20 +343,15 @@ export default function Login() {
                   </button>
                 </form>
 
-                <div className="d-flex align-items-center my-3">
-                  <hr className="flex-grow-1 text-muted opacity-25 m-0" />
-                  <span
-                    className="mx-2"
-                    style={{ fontSize: "11px", color: "#0A7C6E" }}
-                  >
-                    OR
-                  </span>
-                  <hr className="flex-grow-1 text-muted opacity-25 m-0" />
+                <div className="auth-divider">
+                  <hr />
+                  <span>or</span>
+                  <hr />
                 </div>
 
                 <button
                   onClick={handleGoogleLogin}
-                  className="btn btn-light border w-100 py-2 small d-flex align-items-center justify-content-center gap-2"
+                  className="btn border auth-google-btn w-100 py-2 small d-flex align-items-center justify-content-center gap-2"
                   disabled={loading}
                   style={{ borderRadius: "6px" }}
                 >
@@ -394,7 +361,7 @@ export default function Login() {
                     width={16}
                   />
                   <span
-                    className="text-dark fw-medium"
+                    className="text-white fw-medium"
                     style={{ fontSize: "14px" }}
                   >
                     Continue with Google

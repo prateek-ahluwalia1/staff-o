@@ -189,52 +189,41 @@ export default function Register() {
     <>
       <Header />
 
-      <section
-        className="d-flex align-items-center justify-content-center"
-        style={{
-          minHeight: "calc(100vh - 80px)",
-          background: "#f8fafc",
-          padding: "2rem 0",
-        }}
-      >
+      <section className="auth-page">
         <div className="container" style={{ maxWidth: "1000px" }}>
           <div className="row align-items-center g-4">
 
-            {/* LEFT SIDE */}
-            <div className="col-lg-6 d-none d-lg-block">
-              <h1 className="fw-bold mb-2" style={{ fontSize: "36px", lineHeight: "1.2" }}>
-                Build your professional identity
+            <div className="col-lg-6 d-none d-lg-block auth-hero-copy">
+              <div className="auth-eyebrow">
+                <span className="label">Australia's #1 Security Platform</span>
+              </div>
+              <h1 className="auth-title">
+                Build your identity.<br />
+                <span className="auth-line">Join trusted teams.</span>
               </h1>
-              <p className="text-muted mb-4 small">
-                Join a trusted network of professionals and clients. Create
-                your profile, connect, and grow your opportunities.
+              <p className="auth-description">
+                Create your profile, connect with verified clients, and grow your opportunities with one secure platform.
               </p>
 
-              <div className="d-flex flex-column gap-2 small">
-                <div className="d-flex align-items-center gap-2">
-                  <i className="fa-solid fa-circle-check fs-6" style={{ color: "#0A7C6E" }}></i>
-                  <span>Verified jobs & trusted clients</span>
+              <div className="auth-checks">
+                <div className="auth-check">
+                  <i className="fa-solid fa-circle-check"></i>
+                  <span>Verified jobs and trusted clients</span>
                 </div>
-                <div className="d-flex align-items-center gap-2">
-                  <i className="fa-solid fa-circle-check fs-6" style={{ color: "#0A7C6E" }}></i>
-                  <span>Smart matching system</span>
+                <div className="auth-check">
+                  <i className="fa-solid fa-circle-check"></i>
+                  <span>Smart matching for every shift</span>
                 </div>
-                <div className="d-flex align-items-center gap-2">
-                  <i className="fa-solid fa-circle-check fs-6" style={{ color: "#0A7C6E" }}></i>
-                  <span>Real-time collaboration</span>
+                <div className="auth-check">
+                  <i className="fa-solid fa-circle-check"></i>
+                  <span>Fast onboarding and secure access</span>
                 </div>
               </div>
             </div>
 
             {/* FORM */}
             <div className="col-lg-6">
-              <div
-                className="bg-white p-4 rounded-4"
-                style={{
-                  boxShadow: "0 10px 40px rgba(0,0,0,0.06)",
-                  border: "1px solid #0A7C6E",
-                }}
-              >
+              <div className="auth-card">
                 <h5 className="fw-bold mb-1">Create an account</h5>
                 <p className="text-muted small mb-3">It only takes a few seconds.</p>
 
@@ -248,7 +237,7 @@ export default function Register() {
                         type="text"
                         className={`form-control ${errors.name ? 'is-invalid' : ''}`}
                         name="name"
-                        placeholder="e.g. John Doe"
+                        placeholder="Your Name"
                         value={formData.name}
                         onChange={handleChange}
                         maxLength={50}
@@ -266,7 +255,7 @@ export default function Register() {
                         type="tel"
                         className={`form-control ${errors.phone ? 'is-invalid' : ''}`}
                         name="phone"
-                        placeholder="e.g. +1234567890"
+                        placeholder="+1234567890"
                         value={formData.phone}
                         onChange={handleChange}
                         maxLength={20}
@@ -327,7 +316,7 @@ export default function Register() {
                     <label className="form-label small fw-medium mb-2">
                       Account Type <span className="text-danger">*</span>
                     </label>
-                    <div className="d-flex gap-2 flex-wrap" role="radiogroup">
+                    <div className="d-flex gap-2 auth-account-types" role="radiogroup">
                       {[
                         { key: "customer", label: "Book a Guard" },
                         { key: "staff", label: "Apply for a Job" },
@@ -335,16 +324,11 @@ export default function Register() {
                       ].map((role) => (
                         <label
                           key={role.key}
-                          className={`btn btn-sm rounded-pill px-3 py-1 ${userType === role.key
-                            ? "text-white"
-                            : "btn-light text-muted border"
-                            }`}
+                          className={`btn btn-sm rounded-pill px-3 py-1 auth-role-button ${userType === role.key ? "active" : ""}`}
                           style={{
                             cursor: "pointer",
                             transition: "all 0.2s",
                             fontSize: "13px",
-                            backgroundColor: userType === role.key ? "#0A7C6E" : undefined,
-                            borderColor: userType === role.key ? "#0A7C6E" : undefined,
                           }}
                         >
                           <input
@@ -382,15 +366,15 @@ export default function Register() {
                   </button>
                 </form>
 
-                <div className="d-flex align-items-center my-3">
-                  <hr className="flex-grow-1 text-muted opacity-25 m-0" />
-                  <span className="mx-2" style={{ fontSize: "11px", color: "#0A7C6E" }}>OR</span>
-                  <hr className="flex-grow-1 text-muted opacity-25 m-0" />
+                <div className="auth-divider">
+                  <hr />
+                  <span>or</span>
+                  <hr />
                 </div>
 
                 <button
                   onClick={handleGoogleRegister}
-                  className="btn btn-light border w-100 py-2 small d-flex align-items-center justify-content-center gap-2"
+                  className="btn border auth-google-btn w-100 py-2 small d-flex align-items-center justify-content-center gap-2"
                   disabled={loading}
                   style={{ borderRadius: "6px" }}
                 >
@@ -399,7 +383,7 @@ export default function Register() {
                     alt="Google"
                     width={16}
                   />
-                  <span className="text-dark fw-medium" style={{ fontSize: "14px" }}>Google</span>
+                  <span className="text-white fw-medium" style={{ fontSize: "14px" }}>Google</span>
                 </button>
 
                 <p className="text-center mt-3 mb-0" style={{ fontSize: "13px" }}>

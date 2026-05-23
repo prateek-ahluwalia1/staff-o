@@ -98,8 +98,9 @@ export default function RosterPage() {
   const [editForm, setEditForm] = useState({ startTime: "", endTime: "" });
   const [timeEditError, setTimeEditError] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
-  const [showLegend, setShowLegend] = useState(false);
-  const [selectedRosterStates, setSelectedRosterStates] = useState([]);
+
+  // Legend opened by default
+  const [showLegend, setShowLegend] = useState(true);
 
   const fetchCustomerSites = useCallback(() => {
     if (!userId || selectedStates.length === 0) return;
@@ -229,7 +230,6 @@ export default function RosterPage() {
         res = await saveUserAssignment(`api/update-roster-time`, payload, { method: "POST" });
       } else if (modal.type === "admin_assign" && modal.shift) {
         if (!selectedUserId) { toast.error("Select a user."); return; }
-        // Ensure the assigning user (contractor) is recorded as the actor
         const payload = { roster_id: modal.shift.id, admin_id: userId };
         res = await saveUserAssignment(`api/asap-jobs/accept/${selectedUserId}`, payload, { method: "POST" });
       }
@@ -258,67 +258,44 @@ export default function RosterPage() {
   const guardShiftsList = getGuardShifts();
   const totalGuardHours = guardShiftsList.reduce((sum, s) => sum + Number(s.hours || 0), 0);
 
-  const openStateRosterInNewTab = (stateValues) => {
-    // Keeps current URL path but appends/updates the state parameter
+  // Directly opens the clicked state in a new tab
+  const openStateRosterInNewTab = (stateValue) => {
     const url = new URL(window.location.href);
-    const stateParam = Array.isArray(stateValues) ? stateValues.join(",") : stateValues;
-    url.searchParams.set("state", stateParam);
+    url.searchParams.set("state", stateValue);
     window.open(url.toString(), "_blank");
   };
 
-  const toggleRosterState = (stateValue) => {
-    setSelectedRosterStates((current) => {
-      if (current.includes(stateValue)) {
-        return current.filter((value) => value !== stateValue);
-      }
-
-      return [...current, stateValue];
-    });
-  };
-
-  const openSelectedRosterStates = () => {
-    if (selectedRosterStates.length === 0) return;
-    openStateRosterInNewTab(selectedRosterStates);
-  };
-
   // =====================================================================
-  // VIEW 1: STATES DASHBOARD (If no state is selected in the URL)
+  // VIEW 1: OPERATIONS DASHBOARD (No state selected)
   // =====================================================================
   if (selectedStates.length === 0) {
     return (
-      <div className="wfm-dashboard-container roster-tab-selector">
-        <div className="wfm-dashboard-header roster-tab-header">
-          <div>
-            <h2>State Rosters</h2>
-            <p>Select one or more states, then open them in new tabs.</p>
-          </div>
+      <div className="wfm-dashboard-container d-flex flex-column align-items-center justify-content-center">
 
-          <button
-            className="roster-open-selected-btn"
-            onClick={openSelectedRosterStates}
-            disabled={selectedRosterStates.length === 0}
-          >
-            Open selected ({selectedRosterStates.length})
-          </button>
+        <div className="text-center mb-5">
+          <h2 className="fw-bold text-dark mb-2">Regional Roster Operations</h2>
+          <p className="text-muted" style={{ maxWidth: "500px", margin: "0 auto" }}>
+            Select a region below to manage sites, rosters, and shift assignments.
+          </p>
         </div>
 
-        <div className="roster-state-tabs" role="group" aria-label="State roster tabs">
-          {states_array.map((stateInfo) => {
-            const isSelected = selectedRosterStates.includes(stateInfo.value);
-
-            return (
-              <button
-                key={stateInfo.value}
-                type="button"
-                aria-pressed={isSelected}
-                className={`roster-state-tab ${isSelected ? "is-selected" : ""}`}
-                onClick={() => toggleRosterState(stateInfo.value)}
-              >
-                <span>{stateInfo.label}</span>
-                <small>{stateInfo.value.toUpperCase()}</small>
-              </button>
-            );
-          })}
+        <div className="d-flex flex-wrap justify-content-center gap-3 px-3" style={{ maxWidth: "900px" }}>
+          {states_array.map((stateInfo) => (
+            <button
+              key={stateInfo.value}
+              type="button"
+              className="region-card"
+              onClick={() => openStateRosterInNewTab(stateInfo.value)}
+            >
+              <div className="region-info">
+                <span className="region-name">{stateInfo.label}</span>
+                <span className="region-code">{stateInfo.value.toUpperCase()}</span>
+              </div>
+              <div className="region-action">
+                <i className="fa-solid fa-chevron-right"></i>
+              </div>
+            </button>
+          ))}
         </div>
       </div>
     );
@@ -387,7 +364,9 @@ export default function RosterPage() {
       {/* --- MATRIX BODY (Scrollable Zone) --- */}
       <div className="vr-matrix-body">
         {filteredSites.length === 0 ? (
-          <div className="vr-no-data">No schedules match your search.</div>
+          <div className="vr-no-data" style={{ padding: "40px", textAlign: "center", color: "#64748b" }}>
+            No schedules match your search.
+          </div>
         ) : (
           filteredSites.map((site) => (
             <div key={site.id} className="vr-matrix-row">

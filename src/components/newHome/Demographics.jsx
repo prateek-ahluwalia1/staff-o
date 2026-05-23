@@ -1,6 +1,8 @@
 import React from 'react'
 import "../../styles/staffoo.css"
-// import {mb1} from "./public/assets/images/img.jpg"
+import demographicBanner1 from "../../assets/images/demographic-banner.png"
+import demographicBanner2 from "../../assets/images/demographic1.png"
+import demographicBanner3 from "../../assets/images/demographic2.png"
 
 function Demographics() {
   return (
@@ -20,11 +22,11 @@ function Demographics() {
             <span className="demo-live"><span className="demo-dot"></span> Live Data Model</span>
           </div>
           <div className="demo-shot-main">
-            <img src="/assets/images/img.jpg" alt="Staffoo mobile app screens" />
+            <img src={demographicBanner1} alt="Staffoo mobile app screens" />
           </div>
           <div className="demo-shot-strip">
-            <img src="/assets/images/dashboard.webp" alt="Staffoo dashboard experience" />
-            <img src="/assets/images/colab.jpg" alt="Staffoo platform collaboration view" />
+            <img src={demographicBanner2} alt="Staffoo dashboard experience" />
+            <img src={demographicBanner3} alt="Staffoo platform collaboration view" />
           </div>
         </div>
 

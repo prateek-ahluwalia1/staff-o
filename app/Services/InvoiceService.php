@@ -161,9 +161,9 @@ class InvoiceService
         // Footer
         $html .= "<div class='footer'>";
         $html .= "<span class='badge'>&#10003; Payment Held via Stripe</span><br><br>";
-        $html .= "Thank you for choosing GuardForce Security Services.<br>";
-        $html .= "For billing enquiries contact <strong>billing@guardforce.com.au</strong>";
-        $html .= " &nbsp;|&nbsp; ABN: XX XXX XXX XXX";
+        $html .= "Thank you for choosing Staffoo Facility Services.<br>";
+        $html .= "For billing enquiries contact <strong>admin@staffoo.com.au</strong>";
+        $html .= " &nbsp;|&nbsp; ABN: 48 613 317 838";
         $html .= "</div></body></html>";
 
         return $html;

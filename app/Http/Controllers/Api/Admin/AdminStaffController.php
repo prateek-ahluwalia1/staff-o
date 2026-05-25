@@ -69,8 +69,9 @@ class AdminStaffController extends Controller
 
      public function staffooStaff(Request $request)
     {
-        $query = User::where('user_type', 'staff')->where('user_id', 1)
-            ->with('staff');
+        $query = User::where('user_type', 'staff')->where('is_active', 1)
+        // ->where('user_id', 1)
+        ->with('staff');
 
         // Search functionality
         if ($request->has('search')) {
@@ -79,15 +80,6 @@ class AdminStaffController extends Controller
                 $q->where('name', 'like', "%{$search}%")
                   ->orWhere('email', 'like', "%{$search}%");
             });
-        }
-
-        // Filter by status
-        if ($request->has('status')) {
-            if ($request->status === 'active') {
-                $query->where('is_active', 1);
-            } elseif ($request->status === 'inactive') {
-                $query->where('is_active', 0);
-            }
         }
 
         // Filter by city/state/country

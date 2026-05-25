@@ -121,26 +121,46 @@ class QuestionnaireController extends Controller
             'data' => $questionnaires
         ]);
     }
+   
     public function getQNA($guard_id)
     {
-        $questions = Questionnaire::get();
-        foreach ($questions as $key => $question) {
-            $previousData = GuardQuestionnaireDetails::where(['guard_id'=> $guard_id, 'questionnaire_id'=>$question->id])->first();
-            if($previousData){
-                if($previousData->marks >= 80){
-                    $question['status'] = 'passed';
+        $assignedQuestionnaire = GuardQuestionnaireDetails::where(['guard_id'=> $guard_id])->orderBy('created_at', 'DESC')->get();
+        if(count($assignedQuestionnaire) <= 0){
+            return response()->json([
+            'success' => true,
+            'data' => 'Induction Not Found',
+            ]);
+        }   
+                
+        foreach ($assignedQuestionnaire as $key => $question) {
+            $questionnaire = Questionnaire::find($question['questionnaire_id']);
+            $question->title = $questionnaire->title; 
+            $question->questionnaire = $questionnaire['questionnaire'];
+            
+            if($question){
+                if($question->marks >= 80){
+                    $assignedQuestionnaire[$key]->status = 'passed';
                 }else{
-                    $question['status'] = 'failed';
+                    $assignedQuestionnaire[$key]->status = 'failed';
                 }
             }else{
-                $question['status'] = 'pending';
+                $assignedQuestionnaire[$key]->status = 'pending';
             }
 
         }
-        return response()->json([
+        if(!empty($assignedQuestionnaire)){
+            return response()->json([
+                'success' => true,
+                'data' => $assignedQuestionnaire
+            ]);
+        }else{
+            return response()->json([
             'success' => true,
-            'data' => $questions
-        ]);
+            'data' => 'Induction Not Found',
+            ]);
+
+        }
+        
     }
 
     public function submitQNA(Request $request){

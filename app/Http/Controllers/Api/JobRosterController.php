@@ -345,8 +345,8 @@ class JobRosterController extends Controller
         ->select('id', 'name', 'coordinates', 'notification_token')
         ->get();
 
-        if(!$staff){
-        $staff = User::where('is_active', 1)
+        if($staff->isEmpty()){
+            $staff = User::where('is_active', 1)
             // ->whereNotIn('user_id', $userId)
             ->where('user_type', 'contractor')
             ->whereNotNull('coordinates')

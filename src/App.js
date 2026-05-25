@@ -132,6 +132,7 @@ function AppContent() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+
   return (
     <>
       <NotificationToast />

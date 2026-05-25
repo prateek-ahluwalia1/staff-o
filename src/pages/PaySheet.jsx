@@ -4,88 +4,18 @@ import { toast } from "react-toastify";
 import useSubmit from "../hooks/useSubmit";
 import Loader from "../components/Loader";
 
-// ── Date helpers ────────────────────────────────────────────────────────────
-const getWeekRange = () => {
-    const now = new Date();
-    const start = new Date(now);
-    start.setDate(now.getDate() - now.getDay());
-    const end = new Date(start);
-    end.setDate(start.getDate() + 6);
-    return { start, end };
-};
-const formatDateInput = (date) => {
-    if (!(date instanceof Date) || Number.isNaN(date.getTime())) return "";
-    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
-};
-const parseInputDate = (val) => {
-    if (!val) return null;
-    const d = new Date(val);
-    return Number.isNaN(d.getTime()) ? null : d;
-};
-const formatDateForPayload = (date) => {
-    if (!(date instanceof Date) || Number.isNaN(date.getTime())) return "";
-    return `${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}-${date.getFullYear()}`;
-};
-const getArrayFromResponse = (res) => {
-    if (Array.isArray(res?.data)) return res.data;
-    if (Array.isArray(res?.data?.data)) return res.data.data;
-    if (Array.isArray(res?.rows)) return res.rows;
-    return [];
-};
-
-// ── Value helpers ────────────────────────────────────────────────────────────
-// Returns a finite number or 0
+// ── Helpers ──────────────────────────────────────────────────────────────────
 const fv = (v) => { const n = Number(v); return Number.isFinite(n) ? n : 0; };
-// Returns formatted string "1.23" — only used for display/export
 const fmt = (v) => fv(v).toFixed(2);
-// Returns the raw API string value, or "" if null/undefined/empty
 const apiStr = (v) => (v !== null && v !== undefined && String(v).trim() !== "" ? String(v).trim() : "");
-// Currency display: shows "$X.XX" if value is meaningful, else ""
-const fmtCurrency = (v) => {
-    const n = fv(v);
-    return n !== 0 ? `$${n.toFixed(2)}` : "";
-};
-// Numeric display: shows "X.XX" if > 0, else ""
-const fmtNum = (v) => {
-    const n = fv(v);
-    return n !== 0 ? n.toFixed(2) : "";
-};
-
-// ── Normalize top-level API row ──────────────────────────────────────────────
-const normalizeRow = (row, index) => ({
-    id: row?.user_id ?? `staff-${index}`,
-    staffName: apiStr(row?.staff_name) || "Unknown Staff",
-    staffPhone: apiStr(row?.staff_phone),
-    staffType: apiStr(row?.staff_type),
-    customerName: apiStr(row?.customer_name),
-    // Staff-level financial fields (may or may not be in API — use raw)
-    accountHolder: apiStr(row?.account_holder_name),
-    bankName: apiStr(row?.bank_name),
-    bsb: apiStr(row?.bsb),
-    bankAccountNum: apiStr(row?.bank_account_number),
-    payroll: apiStr(row?.payroll),
-    // Totals
-    totalHours: fv(row?.total_hours),
-    totalMorning: fv(row?.total_morning_hours),
-    totalNight: fv(row?.total_night_hours),
-    totalSatMorning: fv(row?.total_saturday_morning),
-    totalSatNight: fv(row?.total_saturday_night),
-    totalSunMorning: fv(row?.total_sunday_morning),
-    totalSunNight: fv(row?.total_sunday_night),
-    totalPhMorning: fv(row?.total_ph_morning),
-    totalPhNight: fv(row?.total_ph_night),
-    totalGross: fv(row?.total_gross),
-    shifts: Array.isArray(row?.shift_collection) ? row.shift_collection : [],
-    raw: row,
-});
+const fmtCurrency = (v) => { const n = fv(v); return n !== 0 ? `$${n.toFixed(2)}` : ""; };
+const fmtNum = (v) => { const n = fv(v); return n !== 0 ? n.toFixed(2) : ""; };
 
 // ── Column definitions ───────────────────────────────────────────────────────
 const COLUMNS = [
     { key: "state", label: "State", width: 85 },
     { key: "site_name", label: "Site Name", width: 220 },
-    { key: "site_level", label: "Site Level", width: 75 },
     { key: "staff", label: "Staff", width: 145 },
-    { key: "account_holder", label: "Account Holder Name", width: 150 },
     { key: "staff_phone", label: "Staff Phone", width: 115 },
     { key: "staff_type", label: "Staff Type", width: 95 },
     { key: "customer", label: "Customer", width: 160 },
@@ -105,155 +35,113 @@ const COLUMNS = [
     { key: "sunday_rates", label: "Sunday Rates", width: 98 },
     { key: "ph_hours", label: "Public Holiday Hours", width: 138 },
     { key: "ph_rates", label: "Public Holiday Rates", width: 138 },
-    { key: "travel_time", label: "Travel Time", width: 92 },
-    { key: "travel_time_total", label: "Total Travel Time", width: 118 },
-    { key: "reimbursement_text", label: "Reimbursement Text", width: 138 },
-    { key: "reimbursement", label: "Reimbursement", width: 112 },
     { key: "gross_amount", label: "Gross Amount", width: 112 },
-    { key: "tax", label: "Tax", width: 68 },
-    { key: "super_col", label: "Super", width: 68 },
     { key: "net_payable", label: "Net Payable", width: 95 },
     { key: "payroll", label: "Payroll", width: 80 },
-    { key: "bank_name", label: "Bank Name", width: 158 },
-    { key: "bsb", label: "BSB", width: 68 },
-    { key: "bank_account_number", label: "Bank Account Number", width: 145 },
-    { key: "site_po_wo", label: "Site P.O/W.O", width: 98 },
-    { key: "training", label: "Training", width: 80 },
-    { key: "operation_notes", label: "Operation Notes", width: 120 },
 ];
 
-// ── Build a flat shift display/export row — 100% dynamic from API ────────────
+// ── Row Builders ─────────────────────────────────────────────────────────────
 const buildShiftRow = (shift, staff) => ({
-    // Identity
     state: apiStr(shift.state),
     site_name: apiStr(shift.site_name),
-    site_level: apiStr(shift.site_level),
-    staff: staff.staffName,
-    account_holder: staff.accountHolder,
-    staff_phone: staff.staffPhone,
-    staff_type: staff.staffType,
-    customer: staff.customerName,
-    // Shift timing
-    date: apiStr(shift.date),
-    shift_start: apiStr(shift.shift_start),
-    shift_end: apiStr(shift.shift_end),
-    sign_in: apiStr(shift.sign_in),
-    sign_out: apiStr(shift.sign_out),
-    // Hours — show "" when 0
+    staff: staff.staff_name,
+    staff_phone: staff.staff_phone,
+    staff_type: staff.staff_type,
+    customer: staff.customer_name,
+    date: apiStr(shift.start?.split(' ')[0]),
+    shift_start: apiStr(shift.start?.split(' ')[1]),
+    shift_end: apiStr(shift.end?.split(' ')[1]),
+    sign_in: apiStr(shift.signin_time),
+    sign_out: apiStr(shift.signout_time),
     hours: fmtNum(shift.hours),
     mf_weekday: fmtNum(shift.morning_hours),
-    mf_day_rates: fmtCurrency(shift.mf_day_rate),
+    mf_day_rates: fmtCurrency(shift.day_rate),
     mf_weeknight: fmtNum(shift.night_hours),
-    mf_night_rates: fmtCurrency(shift.mf_night_rate),
+    mf_night_rates: fmtCurrency(shift.night_rate),
     saturday: fmtNum(fv(shift.saturday_morning_hours) + fv(shift.saturday_night_hours)),
-    saturday_rates: fmtCurrency(fv(shift.saturday_morning_rate) + fv(shift.saturday_night_rate)),
+    saturday_rates: fmtCurrency(shift.saturday_rate),
     sunday: fmtNum(fv(shift.sunday_morning_hours) + fv(shift.sunday_night_hours)),
-    sunday_rates: fmtCurrency(fv(shift.sunday_morning_rate) + fv(shift.sunday_night_rate)),
+    sunday_rates: fmtCurrency(shift.sunday_rate),
     ph_hours: fmtNum(fv(shift.ph_morning_hours) + fv(shift.ph_night_hours)),
-    ph_rates: fmtCurrency(fv(shift.ph_morning_rate) + fv(shift.ph_night_rate)),
-    // Extras — from API if present, else blank (not hardcoded)
-    travel_time: fmtNum(shift.travel_time),
-    travel_time_total: fmtCurrency(shift.travel_time_total),
-    reimbursement_text: apiStr(shift.reimbursement_text),
-    reimbursement: fmtCurrency(shift.reimbursement),
-    gross_amount: fmtCurrency(shift.gross_amount),
-    tax: fmtCurrency(shift.tax),
-    super_col: fmtCurrency(shift.super),
-    net_payable: fmtCurrency(shift.net_payable),
-    payroll: apiStr(shift.payroll) || staff.payroll,
-    // Staff bank/payment info — from top-level staff object
-    bank_name: staff.bankName,
-    bsb: staff.bsb,
-    bank_account_number: staff.bankAccountNum,
-    site_po_wo: apiStr(shift.site_po_wo),
-    training: apiStr(shift.training),
-    operation_notes: apiStr(shift.operation_notes),
+    ph_rates: fmtCurrency(shift.public_holiday_rate),
+    gross_amount: fmtCurrency(shift.total_amount),
+    net_payable: fmtCurrency(shift.total_amount),
+    payroll: apiStr(staff.payroll),
 });
 
-// ── Subtotal row (grey separator between staff groups) ───────────────────────
-const buildSubtotalRow = (staff) => {
-    const sat = fv(staff.totalSatMorning) + fv(staff.totalSatNight);
-    const sun = fv(staff.totalSunMorning) + fv(staff.totalSunNight);
-    const ph = fv(staff.totalPhMorning) + fv(staff.totalPhNight);
-    const empty = (k) => ({ [k]: "" });
-    return {
-        ...Object.fromEntries(COLUMNS.map((c) => [c.key, ""])),
-        hours: fmt(staff.totalHours),
-        mf_weekday: fmt(staff.totalMorning),
-        mf_weeknight: fmt(staff.totalNight),
-        saturday: fmt(sat),
-        sunday: fmt(sun),
-        ph_hours: fmt(ph),
-        gross_amount: fv(staff.totalGross) ? `$${fmt(staff.totalGross)}` : "",
-        ...empty("state"), // keep first cell empty so it doesn't look like a data row
-    };
-};
+const buildSubtotalRow = (staff) => ({
+    ...Object.fromEntries(COLUMNS.map((c) => [c.key, ""])),
+    state: "Subtotal",
+    hours: fmt(staff.total_hours),
+    gross_amount: fmtCurrency(staff.total_gross),
+});
 
-// ── Grand total row ───────────────────────────────────────────────────────────
 const buildGrandTotalRow = (totals) => ({
     ...Object.fromEntries(COLUMNS.map((c) => [c.key, ""])),
     state: "Grand Total",
     hours: fmt(totals.hours),
-    mf_weekday: fmt(totals.mfDay),
-    mf_weeknight: fmt(totals.mfNight),
-    saturday: fmt(totals.sat),
-    sunday: fmt(totals.sun),
-    ph_hours: fmt(totals.ph),
-    gross_amount: fv(totals.gross) ? `$${fmt(totals.gross)}` : "",
+    gross_amount: fmtCurrency(totals.gross),
 });
 
-// ── Main component ───────────────────────────────────────────────────────────
 export default function PaySheet() {
     const { submit: submitPaySheet, loading: paySheetLoading } = useSubmit({ isAuth: true });
-
-    const weekRange = useMemo(() => getWeekRange(), []);
-    const [startDate, setStartDate] = useState(formatDateInput(weekRange.start));
-    const [endDate, setEndDate] = useState(formatDateInput(weekRange.end));
+    const [startDate, setStartDate] = useState("");
+    const [endDate, setEndDate] = useState("");
     const [paySheetData, setPaySheetData] = useState([]);
 
     const buildPayload = useCallback(() => ({
-        length: 0, pageIndex: 0, pageSize: 100,
-        start: formatDateForPayload(parseInputDate(startDate)),
-        end: formatDateForPayload(parseInputDate(endDate)),
+        date: `${startDate} - ${endDate}`,
     }), [startDate, endDate]);
 
     const fetchPaySheet = useCallback(async () => {
-        const ps = parseInputDate(startDate);
-        const pe = parseInputDate(endDate);
-        if (!ps || !pe) { toast.error("Please select a valid date range."); return; }
-        if (pe < ps) { toast.error("End date cannot be earlier than start date."); return; }
+        if (!startDate || !endDate) { toast.error("Please select a date range."); return; }
         const res = await submitPaySheet("api/paysheet", buildPayload(), { method: "POST" });
-        if (!res || res.success === false || !res.data || res.data.length === 0) {
-            toast.info(res?.message || "No paysheet records found.");
+        const rawShifts = Array.isArray(res) ? res : (res?.data || []);
+
+        if (rawShifts.length === 0) {
+            toast.info("No records found.");
             setPaySheetData([]);
             return;
         }
-        setPaySheetData(getArrayFromResponse(res).map(normalizeRow));
-    }, [buildPayload, startDate, endDate, submitPaySheet]);
 
-    // ── Grand totals memo ─────────────────────────────────────────────────────
+        const grouped = rawShifts.reduce((acc, shift) => {
+            const uid = shift.user_id || "unknown";
+            if (!acc[uid]) {
+                acc[uid] = {
+                    user_id: uid,
+                    staff_name: shift.name,
+                    staff_phone: shift.phone,
+                    staff_type: shift.user_type,
+                    customer_name: shift.customer_name,
+                    payroll: "Award",
+                    total_hours: 0,
+                    total_gross: 0,
+                    shifts: []
+                };
+            }
+            acc[uid].total_hours += fv(shift.hours);
+            acc[uid].total_gross += fv(shift.total_amount);
+            acc[uid].shifts.push(shift);
+            return acc;
+        }, {});
+
+        setPaySheetData(Object.values(grouped));
+    }, [buildPayload, submitPaySheet, startDate, endDate]);
+
     const grandTotals = useMemo(() => ({
-        hours: paySheetData.reduce((s, r) => s + r.totalHours, 0),
-        mfDay: paySheetData.reduce((s, r) => s + r.totalMorning, 0),
-        mfNight: paySheetData.reduce((s, r) => s + r.totalNight, 0),
-        sat: paySheetData.reduce((s, r) => s + r.totalSatMorning + r.totalSatNight, 0),
-        sun: paySheetData.reduce((s, r) => s + r.totalSunMorning + r.totalSunNight, 0),
-        ph: paySheetData.reduce((s, r) => s + r.totalPhMorning + r.totalPhNight, 0),
-        gross: paySheetData.reduce((s, r) => s + r.totalGross, 0),
+        hours: paySheetData.reduce((s, r) => s + r.total_hours, 0),
+        gross: paySheetData.reduce((s, r) => s + r.total_gross, 0),
         staff: paySheetData.length,
         shifts: paySheetData.reduce((s, r) => s + r.shifts.length, 0),
     }), [paySheetData]);
 
-    // ── Flat table rows: shifts → subtotal → … → grand total ─────────────────
     const tableRows = useMemo(() => {
         const rows = [];
         paySheetData.forEach((staff) => {
             staff.shifts.forEach((shift) => rows.push({ type: "shift", data: buildShiftRow(shift, staff) }));
             rows.push({ type: "subtotal", data: buildSubtotalRow(staff) });
         });
-        if (paySheetData.length > 0) {
-            rows.push({ type: "grandtotal", data: buildGrandTotalRow(grandTotals) });
-        }
+        if (paySheetData.length > 0) rows.push({ type: "grandtotal", data: buildGrandTotalRow(grandTotals) });
         return rows;
     }, [paySheetData, grandTotals]);
 

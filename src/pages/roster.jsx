@@ -20,6 +20,7 @@ import TimeEditModal from "../components/roster/TimeEditModal";
 import DetailsModal from "../components/roster/DetailsModal";
 import AddJob from "./add-job";
 import "../assets/css/roster.css";
+import { useLocation } from "react-router-dom";
 
 const API_DATE_FORMAT = "yyyy-MM-dd HH:mm";
 const UPDATE_API_DATE_FORMAT = "MM-dd-yyyy HH:mm";
@@ -74,18 +75,17 @@ function combineDateAndTime(dateObj, timeValue) {
 }
 
 export default function RosterPage() {
+  const location = useLocation();
   const { userdata } = useSelector((state) => state.auth);
   const userId = userdata?.data?.id || userdata?.id;
   const userRole = userdata?.data?.user_type || userdata?.user_type;
 
-  // URL State Parameter Extraction
-  const search = window.location.search;
   const selectedStates = useMemo(() => {
-    return (new URLSearchParams(search).get("state") || "")
+    return (new URLSearchParams(location.search).get("state") || "")
       .split(",")
       .map((state) => state.trim())
       .filter(Boolean);
-  }, [search]);
+  }, [location.search]);
 
   const { data: staffData, loading: staffLoading } = useFetch(`api/get-contractor-active-staff/${userId}`, { method: "POST", isAuth: true });
   const { submit, loading: submitLoading, data: submitData } = useSubmit({ isAuth: true });
@@ -99,7 +99,6 @@ export default function RosterPage() {
   const [timeEditError, setTimeEditError] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Legend opened by default
   const [showLegend, setShowLegend] = useState(true);
 
   const fetchCustomerSites = useCallback(() => {
@@ -183,6 +182,8 @@ export default function RosterPage() {
     return { totals, grandTotal };
   }, [filteredSites, weekDays, weeksToView]);
 
+
+
   const guards = staffData?.guards || [];
 
   const prevWeek = () => setMonday((prev) => subWeeks(prev, weeksToView));
@@ -258,45 +259,43 @@ export default function RosterPage() {
   const guardShiftsList = getGuardShifts();
   const totalGuardHours = guardShiftsList.reduce((sum, s) => sum + Number(s.hours || 0), 0);
 
-  // Directly opens the clicked state in a new tab
   const openStateRosterInNewTab = (stateValue) => {
-    const url = new URL(window.location.href);
-    url.searchParams.set("state", stateValue);
-    window.open(url.toString(), "_blank");
+    const targetUrl = `${window.location.origin}${location.pathname}?state=${stateValue}`;
+    window.open(targetUrl, "_blank");
   };
-
   // =====================================================================
   // VIEW 1: OPERATIONS DASHBOARD (No state selected)
   // =====================================================================
   if (selectedStates.length === 0) {
     return (
-      <div className="wfm-dashboard-container d-flex flex-column align-items-center justify-content-center">
+      <div className="staffoo-page-container">
 
-        <div className="text-center mb-5">
-          <h2 className="fw-bold text-dark mb-2">Regional Roster Operations</h2>
-          <p className="text-muted" style={{ maxWidth: "500px", margin: "0 auto" }}>
-            Select a region below to manage sites, rosters, and shift assignments.
-          </p>
+        {/* White Header Card (Matches Payment History) */}
+        <div className="staffoo-header-card">
+          <h2>Regional Roster Operations</h2>
+          <p>Select a region below to manage sites, rosters, and shift assignments.</p>
         </div>
 
-        <div className="d-flex flex-wrap justify-content-center gap-3 px-3" style={{ maxWidth: "900px" }}>
+        {/* Grid of State Cards */}
+        <div className="staffoo-grid-container">
           {states_array.map((stateInfo) => (
             <button
               key={stateInfo.value}
               type="button"
-              className="region-card"
+              className="staffoo-state-card"
               onClick={() => openStateRosterInNewTab(stateInfo.value)}
             >
-              <div className="region-info">
-                <span className="region-name">{stateInfo.label}</span>
-                <span className="region-code">{stateInfo.value.toUpperCase()}</span>
+              <div className="state-card-left">
+                <span className="state-name">{stateInfo.label}</span>
+                <span className="state-code">{stateInfo.value.toUpperCase()}</span>
               </div>
-              <div className="region-action">
-                <i className="fa-solid fa-chevron-right"></i>
+              <div className="state-card-right">
+                <i className="fa-solid fa-arrow-right"></i>
               </div>
             </button>
           ))}
         </div>
+
       </div>
     );
   }

@@ -848,69 +848,121 @@
 }
 
 /* =========================================================================
-   OPERATIONS DASHBOARD VIEW
+   OPERATIONS DASHBOARD VIEW (MATCHING PAYMENT HISTORY STYLE)
    ========================================================================= */
 
-.wfm-dashboard-container {
-    width: 100%;
-    min-height: calc(100vh - 160px);
-    background: #ffffff;
+.staffoo-page-container {
+    padding: 30px;
+    max-width: 1200px;
+    margin: 0 auto;
     font-family: 'Inter', sans-serif;
-    padding: 60px 20px;
 }
 
-.region-card {
+/* The White Header Card */
+.staffoo-header-card {
     background: #ffffff;
-    border: 1px solid #e2e8f0;
-    border-radius: 8px;
-    padding: 16px 20px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    width: 260px;
-    cursor: pointer;
+    border-radius: 16px;
+    padding: 32px 40px;
+    margin-bottom: 24px;
     text-align: left;
+    /* Subtle shadow matching the Staffoo design */
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+}
+
+.staffoo-header-card h2 {
+    margin: 0 0 8px 0;
+    font-size: 24px;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.staffoo-header-card p {
+    margin: 0;
+    font-size: 15px;
+    color: #64748b;
+}
+
+/* The Grid for the State Cards */
+.staffoo-grid-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 20px;
+}
+
+/* Individual State Cards */
+.staffoo-state-card {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 24px 30px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border: 1px solid transparent;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+    cursor: pointer;
     transition: all 0.2s ease;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
-.region-card:hover {
+.staffoo-state-card:hover {
     border-color: #0A7C6E;
-    background-color: #f8fafc;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    transform: translateY(-3px);
+    box-shadow: 0 10px 25px rgba(10, 124, 110, 0.1);
 }
 
-.region-info {
+.state-card-left {
     display: flex;
     flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
 }
 
-.region-name {
-    font-weight: 600;
-    color: #1e293b;
-    font-size: 0.95rem;
-}
-
-.region-code {
-    font-size: 0.7rem;
+.state-name {
+    font-size: 18px;
     font-weight: 700;
-    color: #94a3b8;
-    text-transform: uppercase;
+    color: #1e293b;
+    transition: color 0.2s;
 }
 
-.region-action {
-    color: #cbd5e1;
-    font-size: 0.9rem;
-    transition: color 0.2s ease;
-}
-
-.region-card:hover .region-action {
+.staffoo-state-card:hover .state-name {
     color: #0A7C6E;
 }
 
+.state-code {
+    background: #f1f5f9;
+    color: #64748b;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 4px 12px;
+    border-radius: 20px;
+    letter-spacing: 0.5px;
+}
+
+.state-card-right {
+    color: #cbd5e1;
+    font-size: 18px;
+    transition: all 0.2s;
+    background: #f8fafc;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.staffoo-state-card:hover .state-card-right {
+    background: #0A7C6E;
+    color: #ffffff;
+    transform: translateX(4px);
+}
+
+/* Mobile Responsiveness */
 @media screen and (max-width: 768px) {
-    .region-card {
-        width: 100%;
-        max-width: 320px;
+    .staffoo-page-container {
+        padding: 15px;
+    }
+
+    .staffoo-header-card {
+        padding: 24px;
     }
 }

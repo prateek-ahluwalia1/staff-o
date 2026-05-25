@@ -49,17 +49,17 @@ const formatValue = (value) => {
     return Number.isFinite(n) ? n.toFixed(2) : "0.00";
 };
 
-// Standardizes the incoming API row data based on the new JSON structure
+// Standardizes the incoming API row data
 const normalizePaySheetRow = (row, index) => {
     return {
         id: row?.user_id ?? `staff-${index}`,
         staffId: row?.user_id ?? "-",
         staffName: row?.staff_name || "Unknown Staff",
+        staffPhone: row?.staff_phone || "",
+        staffType: row?.staff_type || "",
         customerName: row?.customer_name || "-",
         totalHours: formatValue(row?.total_hours),
         totalGross: formatValue(row?.total_gross),
-        morningHours: formatValue(row?.total_morning_hours),
-        nightHours: formatValue(row?.total_night_hours),
         shifts: Array.isArray(row?.shift_collection) ? row.shift_collection : [],
         raw: row,
     };
@@ -115,11 +115,10 @@ export default function PaySheet() {
 
         const rows = getArrayFromResponse(res).map(normalizePaySheetRow);
         setPaySheetData(rows);
-        setSelectedRowId(null); // reset expanded rows on new search
+        setSelectedRowId(null);
     }, [buildPayload, endDate, startDate, submitPaySheet]);
 
     const handleRowClick = (rowId) => {
-        // Toggle the accordion row open/close
         setSelectedRowId((prev) => (prev === rowId ? null : rowId));
     };
 
@@ -129,16 +128,55 @@ export default function PaySheet() {
             return;
         }
 
-        const exportRows = paySheetData.map((row) => ({
-            "Staff ID": row.staffId,
-            "Staff Name": row.staffName,
-            "Customer": row.customerName,
-            "Total Hours": row.totalHours,
-            "Morning Hours": row.morningHours,
-            "Night Hours": row.nightHours,
-            "Total Gross ($)": row.totalGross,
-            "Total Shifts": row.shifts.length,
-        }));
+        // Flattens out the shift array to perfectly match the Excel sheet columns provided
+        const exportRows = [];
+        paySheetData.forEach((row) => {
+            if (row.shifts && row.shifts.length > 0) {
+                row.shifts.forEach((shift) => {
+                    exportRows.push({
+                        "State": shift.state || "",
+                        "Site Name": shift.site_name || "",
+                        "Site Level": shift.site_level || "",
+                        "Staff": row.staffName || "",
+                        "Staff Phone": row.staffPhone || "",
+                        "Staff Type": row.staffType || "",
+                        "Customer": row.customerName || "",
+                        "Date": shift.date || "",
+                        "Shift Start": shift.shift_start || "",
+                        "Shift End": shift.shift_end || "",
+                        "Sign In": shift.sign_in || "-",
+                        "Sign Out": shift.sign_out || "-",
+                        "Hours": formatValue(shift.hours),
+                        "M-F Weekday": formatValue(shift.morning_hours),
+                        "M-F Day Rates": `$${formatValue(shift.mf_day_rate)}`,
+                        "M-F Weeknight": formatValue(shift.night_hours),
+                        "M-F Night Rates": `$${formatValue(shift.mf_night_rate)}`,
+                        "Saturday": formatValue(Number(shift.saturday_morning_hours || 0) + Number(shift.saturday_night_hours || 0)),
+                        "Saturday Rates": `$${formatValue(shift.saturday_morning_rate || 0)}`,
+                        "Sunday": formatValue(Number(shift.sunday_morning_hours || 0) + Number(shift.sunday_night_hours || 0)),
+                        "Sunday Rates": `$${formatValue(shift.sunday_morning_rate || 0)}`,
+                        "Public Holiday Hours": formatValue(Number(shift.ph_morning_hours || 0) + Number(shift.ph_night_hours || 0)),
+                        "Public Holiday Rates": `$${formatValue(shift.ph_morning_rate || 0)}`,
+                        "Travel Time": "0",
+                        "Travel Time Total": "$0.00",
+                        "Reimbursement Text": "",
+                        "Reimbursement": "$0",
+                        "Gross Amount": `$${formatValue(shift.gross_amount)}`,
+                        "Tax": "$0",
+                        "Super": "$0",
+                        "Net Payable": "$0",
+                        "Payroll": "award",
+                        "Account Holder": "",
+                        "Bank Name": "",
+                        "BSB": "",
+                        "Bank Account Number": "",
+                        "Site P.O/W.O": "",
+                        "Training": "no",
+                        "Operation Notes": "N/A"
+                    });
+                });
+            }
+        });
 
         const worksheet = XLSX.utils.json_to_sheet(exportRows);
         const workbook = XLSX.utils.book_new();
@@ -268,12 +306,19 @@ export default function PaySheet() {
                                                                 <table className="table table-sm table-bordered align-middle mb-0 timesheet-breakdown-table bg-white">
                                                                     <thead className="text-dark">
                                                                         <tr>
-                                                                            <th>Shift ID</th>
                                                                             <th>State</th>
                                                                             <th>Site Name</th>
                                                                             <th>Date</th>
-                                                                            <th>Time</th>
+                                                                            <th>Shift Start</th>
+                                                                            <th>Shift End</th>
+                                                                            <th>Sign In</th>
+                                                                            <th>Sign Out</th>
                                                                             <th>Hours</th>
+                                                                            <th>M-F Weekday</th>
+                                                                            <th>M-F Weeknight</th>
+                                                                            <th>Saturday</th>
+                                                                            <th>Sunday</th>
+                                                                            <th>PH Hours</th>
                                                                             <th>Gross Amount</th>
                                                                         </tr>
                                                                     </thead>
@@ -281,18 +326,25 @@ export default function PaySheet() {
                                                                         {row.shifts.length > 0 ? (
                                                                             row.shifts.map((shift) => (
                                                                                 <tr key={shift.shift_id}>
-                                                                                    <td>{shift.shift_id}</td>
                                                                                     <td>{shift.state || "-"}</td>
                                                                                     <td>{shift.site_name || "-"}</td>
                                                                                     <td>{shift.date}</td>
-                                                                                    <td>{shift.shift_start} - {shift.shift_end}</td>
+                                                                                    <td>{shift.shift_start}</td>
+                                                                                    <td>{shift.shift_end}</td>
+                                                                                    <td>{shift.sign_in}</td>
+                                                                                    <td>{shift.sign_out}</td>
                                                                                     <td>{formatValue(shift.hours)}</td>
+                                                                                    <td>{formatValue(shift.morning_hours)}</td>
+                                                                                    <td>{formatValue(shift.night_hours)}</td>
+                                                                                    <td>{formatValue(Number(shift.saturday_morning_hours || 0) + Number(shift.saturday_night_hours || 0))}</td>
+                                                                                    <td>{formatValue(Number(shift.sunday_morning_hours || 0) + Number(shift.sunday_night_hours || 0))}</td>
+                                                                                    <td>{formatValue(Number(shift.ph_morning_hours || 0) + Number(shift.ph_night_hours || 0))}</td>
                                                                                     <td className="text-success fw-bold">${formatValue(shift.gross_amount)}</td>
                                                                                 </tr>
                                                                             ))
                                                                         ) : (
                                                                             <tr>
-                                                                                <td colSpan="7" className="text-center text-muted py-3">
+                                                                                <td colSpan="14" className="text-center text-muted py-3">
                                                                                     No individual shifts found.
                                                                                 </td>
                                                                             </tr>

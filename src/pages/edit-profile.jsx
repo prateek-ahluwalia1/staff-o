@@ -453,20 +453,21 @@ export default function EditProfile() {
       return;
     }
 
-    // ========== EXPIRY DATE VALIDATION ==========
-    const currentDate = new Date();
-    const currentYear = currentDate.getFullYear() % 100; // Get last two digits, e.g., 2026 -> 26
-    const currentMonth = currentDate.getMonth() + 1; // Get current month 1-12
+    const currentYear = new Date().getFullYear();
+    const currentMonth = new Date().getMonth() + 1;
 
     const expMonth = parseInt(cardForm.expiry_month, 10);
     const expYear = parseInt(cardForm.expiry_year, 10);
 
-    // Prevent saving if the year is in the past, or if the year is current but the month is in the past
-    if (expYear < currentYear || (expYear === currentYear && expMonth < currentMonth)) {
-      toast.error("This card has expired. Please enter a valid future expiry date.");
+    if (expYear < currentYear || expYear > currentYear + 20) {
+      toast.error("Please enter a valid future year (e.g., 2026).");
       return;
     }
-    // ============================================
+
+    if (expYear === currentYear && expMonth < currentMonth) {
+      toast.error("The expiry date must be in the future.");
+      return;
+    }
 
     const updatedCards = [...formData.bank_details, cardForm];
 
@@ -524,13 +525,13 @@ export default function EditProfile() {
       setDocForm((prev) => ({ ...prev, [name]: checked }));
     } else if (type === "file") {
       const file = files[0];
-      if (file) {
-        const previewUrl = URL.createObjectURL(file);
-        setDocForm((prev) => ({
-          ...prev,
-          file_url: previewUrl,
-        }));
+      const MAX_SIZE_MB = 10;
 
+      if (file) {
+        if (file.size > MAX_SIZE_MB * 1024 * 1024) {
+          toast.error(`File is too large. Please upload a file smaller than ${MAX_SIZE_MB}MB.`);
+          return;
+        }
         const fd = new FormData();
         fd.append("file", file);
         fd.append("folder", "staff_documents");
@@ -1094,11 +1095,11 @@ export default function EditProfile() {
                       <input
                         type="text"
                         className="form-control text-center"
-                        placeholder="YY"
-                        maxLength="2"
+                        placeholder="YYYY"
+                        maxLength="4"
                         value={cardForm.expiry_year}
                         onChange={(e) => {
-                          const val = e.target.value.replace(/\D/g, "").slice(0, 2);
+                          const val = e.target.value.replace(/\D/g, "").slice(0, 4);
                           setCardForm((p) => ({ ...p, expiry_year: val }));
                         }}
                         required
@@ -1449,21 +1450,11 @@ export default function EditProfile() {
               name="document_no"
               value={docForm.document_no}
               onChange={(e) => {
-                // Allow only letters + numbers
-                let value = e.target.value.replace(/[^a-zA-Z0-9]/g, "");
-
-                // Limit to 20 chars
-                value = value.slice(0, 20);
-
-                setDocForm((prev) => ({
-                  ...prev,
-                  document_no: value,
-                }));
+                const value = e.target.value.replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
+                setDocForm((prev) => ({ ...prev, document_no: value }));
               }}
-              minLength={3}
+              minLength={5}
               maxLength={20}
-              pattern="^[A-Za-z0-9]{3,20}$"
-              title="Document number must be 3–20 characters (letters and numbers only)"
               required
             />
           </div>

@@ -39,7 +39,7 @@ export default function DocumentTable({ documents, onAddFile, onAddDocument }) {
         </div>
         {/* <button
           type="button"
-          className="btn btn-success"
+          className="btn btn-primary-custom"
           onClick={onAddDocument}
           style={{
             minWidth: 120,
@@ -176,7 +176,7 @@ export default function DocumentTable({ documents, onAddFile, onAddDocument }) {
                     }}
                   >
                     {doc.file ? (
-                      <Link                        href={`${apiURL}staff_documents/${doc.file}`}
+                      <Link href={`${apiURL}staff_documents/${doc.file}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         title="View file"

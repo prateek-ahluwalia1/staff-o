@@ -451,7 +451,6 @@ export default function PaySheet() {
                 </div>
             </div>
 
-            {/* ── Filter card ──────────────────────────────────────────────────── */}
             <div className="card border-0 ps-filter-card mb-4">
                 <div className="card-body py-3 px-4">
                     <div className="row g-3 align-items-end">

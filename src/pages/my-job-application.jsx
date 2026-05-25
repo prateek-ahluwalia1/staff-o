@@ -24,7 +24,7 @@ export default function MyJobApplications() {
   // Modal state
   const [selectedApp, setSelectedApp] = useState(null);
 
-  // 1. Fetch data based on date filters (Removed 'state' from payload)
+  // 1. Fetch data based on date filters
   const fetchCustomerSites = useCallback(() => {
     if (!userId) return;
 
@@ -55,9 +55,13 @@ export default function MyJobApplications() {
     }
   }, [userId, startDate, endDate, submit]);
 
+  // Initial fetch on component mount only
   useEffect(() => {
-    fetchCustomerSites();
-  }, [fetchCustomerSites]);
+    if (userId) {
+      fetchCustomerSites();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userId]); // Removed fetchCustomerSites so it doesn't auto-fetch on date change
 
   // 2. Flatten JSON Response (Sites -> Shifts)
   const applications = useMemo(() => {
@@ -121,7 +125,7 @@ export default function MyJobApplications() {
           </div>
 
           {/* --- DATE FILTERS --- */}
-          <div className="d-flex gap-2 mt-3 mt-md-0 align-items-center bg-white p-2 rounded shadow-sm border">
+          <div className="d-flex gap-2 mt-3 mt-md-0 align-items-end bg-white p-2 rounded shadow-sm border">
             <div className="d-flex flex-column">
               <label style={{ fontSize: '10px', fontWeight: 'bold', color: '#888', marginLeft: '2px' }}>FROM</label>
               <input
@@ -131,7 +135,7 @@ export default function MyJobApplications() {
                 onChange={(e) => setStartDate(e.target.value)}
               />
             </div>
-            <div style={{ height: '30px', width: '1px', background: '#eee', alignSelf: 'flex-end', margin: '0 5px' }}></div>
+            <div style={{ height: '30px', width: '1px', background: '#eee', margin: '0 5px', marginBottom: '2px' }}></div>
             <div className="d-flex flex-column">
               <label style={{ fontSize: '10px', fontWeight: 'bold', color: '#888', marginLeft: '2px' }}>TO</label>
               <input
@@ -141,6 +145,14 @@ export default function MyJobApplications() {
                 onChange={(e) => setEndDate(e.target.value)}
               />
             </div>
+            {/* --- NEW SEARCH BUTTON --- */}
+            <button
+              onClick={fetchCustomerSites}
+              className="btn btn-primary-custom btn-sm ms-2 mb-1 px-3 shadow-sm"
+              style={{ height: 'fit-content' }}
+            >
+              Search
+            </button>
           </div>
         </div>
 
@@ -185,7 +197,7 @@ export default function MyJobApplications() {
         </div>
       </div>
 
-      {/* --- MODAL SYSTEM --- (Kept as provided) */}
+      {/* --- MODAL SYSTEM --- */}
       {selectedApp && (
         <div className="modal-overlay" onClick={closeModal} style={{ zIndex: 9999, backgroundColor: "rgba(0,0,0,0.6)", position: "fixed", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", padding: "20px" }}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ width: "100%", maxWidth: "800px", maxHeight: "90vh", background: "#fff", borderRadius: "12px", display: "flex", flexDirection: "column", overflow: "hidden" }}>

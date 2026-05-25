@@ -14,9 +14,10 @@ import {
 
 export default function Login() {
   const dispatch = useDispatch();
-  const navigate = useNavigate(); // Initialize navigate
+  const navigate = useNavigate();
   const { submit, loading } = useSubmit();
 
+  // Login State
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
     email: "",
@@ -24,9 +25,15 @@ export default function Login() {
   });
   const [errors, setErrors] = useState({});
 
+  // Google Login State
   const [showRoleModal, setShowRoleModal] = useState(false);
   const [pendingGoogleToken, setPendingGoogleToken] = useState(null);
   const [selectedRole, setSelectedRole] = useState("contractor");
+
+  // Forgot Password State
+  const [showForgotModal, setShowForgotModal] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState("");
+  const [forgotError, setForgotError] = useState("");
 
   const fetchLatestUserProfile = async (token, authUser) => {
     const userId = extractUserId(authUser);
@@ -124,13 +131,20 @@ export default function Login() {
           return;
         }
 
-        const res = await submit("api/auth/google/callback", {
-          credential: googleToken,
-        }, { silentErrorToast: true });
+        const res = await submit(
+          "api/auth/google/callback",
+          {
+            credential: googleToken,
+          },
+          { silentErrorToast: true }
+        );
 
         if (!res) return;
 
-        if (res?.data?.success === false && res?.data?.message === "User not found.") {
+        if (
+          res?.data?.success === false &&
+          res?.data?.message === "User not found."
+        ) {
           setPendingGoogleToken(googleToken);
           setShowRoleModal(true);
           return;
@@ -150,7 +164,6 @@ export default function Login() {
 
           toast.success("Google login successful!");
 
-          // --- NEW: Redirect Customer ---
           if (latestProfile?.user_type === "customer") {
             navigate("/add-job");
           }
@@ -165,10 +178,14 @@ export default function Login() {
 
   const handleRoleSelectionSubmit = async () => {
     try {
-      const res = await submit("api/auth/google/callback", {
-        credential: pendingGoogleToken,
-        user_type: selectedRole,
-      }, { silentErrorToast: true });
+      const res = await submit(
+        "api/auth/google/callback",
+        {
+          credential: pendingGoogleToken,
+          user_type: selectedRole,
+        },
+        { silentErrorToast: true }
+      );
 
       if (!res) return;
 
@@ -188,7 +205,6 @@ export default function Login() {
         setShowRoleModal(false);
         setPendingGoogleToken(null);
 
-        // --- NEW: Redirect Customer ---
         if (latestProfile?.user_type === "customer") {
           navigate("/add-job");
         }
@@ -197,6 +213,38 @@ export default function Login() {
       }
     } catch {
       toast.error("Server connection error during account creation.");
+    }
+  };
+
+  // --- NEW: Forgot Password Handler ---
+  const handleForgotPasswordSubmit = async (e) => {
+    e.preventDefault();
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!forgotEmail.trim()) {
+      setForgotError("Email address is required.");
+      return;
+    } else if (!emailRegex.test(forgotEmail)) {
+      setForgotError("Please enter a valid email address.");
+      return;
+    }
+
+    setForgotError("");
+
+    try {
+      const res = await submit("api/password-reset-email", {
+        email: forgotEmail,
+      });
+
+      if (res && res.success !== false) {
+        toast.success(res.message || "Password reset link sent successfully!");
+        setShowForgotModal(false);
+        setForgotEmail("");
+      } else {
+        toast.error(res?.message || "Failed to send reset link.");
+      }
+    } catch (error) {
+      toast.error("Server error. Could not send reset link.");
     }
   };
 
@@ -211,11 +259,13 @@ export default function Login() {
                 <span className="label">Australia's #1 Security Platform</span>
               </div>
               <h1 className="auth-title">
-                Secure your work.<br />
+                Secure your work.
+                <br />
                 <span className="auth-line">Access trusted shifts.</span>
               </h1>
               <p className="auth-description">
-                Log in to manage your profile, assignments, and verified opportunities from one secure platform.
+                Log in to manage your profile, assignments, and verified
+                opportunities from one secure platform.
               </p>
 
               <div className="auth-checks">
@@ -259,7 +309,7 @@ export default function Login() {
                         maxLength={100}
                         disabled={loading}
                         style={{
-                          border: "1px solid #0A7C6E"
+                          border: "1px solid #0A7C6E",
                         }}
                       />
                       {errors.email && (
@@ -273,9 +323,24 @@ export default function Login() {
                     </div>
 
                     <div className="col-12">
-                      <label className="form-label small fw-medium mb-1">
-                        Password <span className="text-danger">*</span>
-                      </label>
+                      <div className="d-flex justify-content-between align-items-center mb-1">
+                        <label className="form-label small fw-medium mb-0">
+                          Password <span className="text-danger">*</span>
+                        </label>
+                        {/* --- NEW: Forgot Password Link --- */}
+                        <button
+                          type="button"
+                          className="btn btn-link p-0 text-decoration-none fw-medium"
+                          style={{ color: "#0A7C6E", fontSize: "13px" }}
+                          onClick={() => {
+                            setForgotEmail(formData.email); // Auto-fill if they already typed it
+                            setForgotError("");
+                            setShowForgotModal(true);
+                          }}
+                        >
+                          Forgot password?
+                        </button>
+                      </div>
                       <div className="position-relative">
                         <input
                           type={showPassword ? "text" : "password"}
@@ -288,7 +353,7 @@ export default function Login() {
                           maxLength={50}
                           disabled={loading}
                           style={{
-                            border: "1px solid #0A7C6E"
+                            border: "1px solid #0A7C6E",
                           }}
                         />
                         <button
@@ -376,7 +441,7 @@ export default function Login() {
                     to="/register"
                     className="fw-bold text-decoration-none"
                     style={{
-                      color: "#0A7C6E"
+                      color: "#0A7C6E",
                     }}
                   >
                     Sign up
@@ -387,6 +452,84 @@ export default function Login() {
           </div>
         </div>
       </section>
+
+      {/* --- FORGOT PASSWORD MODAL --- */}
+      {showForgotModal && (
+        <>
+          <div
+            className="modal-backdrop fade show"
+            style={{ zIndex: 1040, backgroundColor: "rgba(0,0,0,0.5)" }}
+          ></div>
+          <div
+            className="modal fade show d-block"
+            tabIndex="-1"
+            style={{ zIndex: 1050 }}
+          >
+            <div className="modal-dialog modal-dialog-centered">
+              <div className="modal-content rounded-4 border-0 shadow-lg">
+                <div className="modal-header border-0 pb-0">
+                  <h5 className="modal-title fw-bold">Reset Password</h5>
+                  <button
+                    type="button"
+                    className="btn-close"
+                    onClick={() => setShowForgotModal(false)}
+                    disabled={loading}
+                  ></button>
+                </div>
+                <div className="modal-body pt-3 pb-4 px-4">
+                  <p className="text-muted small mb-4">
+                    Enter your registered email address and we'll send you a link to reset your password.
+                  </p>
+
+                  <form onSubmit={handleForgotPasswordSubmit} noValidate>
+                    <div className="mb-4">
+                      <label className="form-label small fw-medium mb-1">
+                        Email Address <span className="text-danger">*</span>
+                      </label>
+                      <input
+                        type="email"
+                        className={`form-control py-2 ${forgotError ? "is-invalid" : ""
+                          }`}
+                        placeholder="name@example.com"
+                        value={forgotEmail}
+                        onChange={(e) => {
+                          setForgotEmail(e.target.value);
+                          if (forgotError) setForgotError("");
+                        }}
+                        disabled={loading}
+                        style={{ border: "1px solid #0A7C6E" }}
+                      />
+                      {forgotError && (
+                        <div
+                          className="invalid-feedback"
+                          style={{ fontSize: "12px" }}
+                        >
+                          {forgotError}
+                        </div>
+                      )}
+                    </div>
+
+                    <button
+                      type="submit"
+                      className="btn w-100 py-2 fw-semibold d-flex justify-content-center align-items-center gap-2"
+                      style={{
+                        background: "#0A7C6E",
+                        border: "none",
+                        borderRadius: "6px",
+                        color: "#fff",
+                      }}
+                      disabled={loading}
+                    >
+                      {loading && <i className="fa-solid fa-spinner fa-spin"></i>}
+                      {loading ? "Sending..." : "Send Reset Link"}
+                    </button>
+                  </form>
+                </div>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
 
       {/* --- ROLE SELECTION MODAL --- */}
       {showRoleModal && (
@@ -424,7 +567,10 @@ export default function Login() {
                   <label className="form-label small fw-medium mb-2">
                     Account Type <span className="text-danger">*</span>
                   </label>
-                  <div className="d-flex gap-2 flex-wrap mb-4" role="radiogroup">
+                  <div
+                    className="d-flex gap-2 flex-wrap mb-4"
+                    role="radiogroup"
+                  >
                     {[
                       { key: "customer", label: "Book a Guard" },
                       { key: "staff", label: "Apply for a Job" },
@@ -433,15 +579,17 @@ export default function Login() {
                       <label
                         key={role.key}
                         className={`btn btn-sm rounded-pill px-3 py-2 ${selectedRole === role.key
-                          ? "text-white"
-                          : "btn-light text-muted border"
+                            ? "text-white"
+                            : "btn-light text-muted border"
                           }`}
                         style={{
                           cursor: "pointer",
                           transition: "all 0.2s",
                           fontSize: "13px",
-                          backgroundColor: selectedRole === role.key ? "#0A7C6E" : undefined,
-                          borderColor: selectedRole === role.key ? "#0A7C6E" : undefined,
+                          backgroundColor:
+                            selectedRole === role.key ? "#0A7C6E" : undefined,
+                          borderColor:
+                            selectedRole === role.key ? "#0A7C6E" : undefined,
                         }}
                       >
                         <input
@@ -469,7 +617,9 @@ export default function Login() {
                     }}
                     disabled={loading}
                   >
-                    {loading && <i className="fa-solid fa-spinner fa-spin"></i>}
+                    {loading && (
+                      <i className="fa-solid fa-spinner fa-spin"></i>
+                    )}
                     {loading ? "Creating..." : "Create Account & Login"}
                   </button>
                 </div>

@@ -75,7 +75,7 @@ export default function PaySheet() {
     const [endDate, setEndDate] = useState(formatDateInput(weekRange.end));
 
     const [paySheetData, setPaySheetData] = useState([]);
-    const [selectedRowId, setSelectedRowId] = useState(null); // For expandable rows
+    const [selectedRowId, setSelectedRowId] = useState(null);
 
     const buildPayload = useCallback(() => {
         return {
@@ -191,7 +191,8 @@ export default function PaySheet() {
                                 Search
                             </button>
                             <button
-                                className="btn btn-sm btn-outline-primary-custom timesheet-action-btn px-4"
+                                className="btn btn-sm timesheet-action-btn px-4"
+                                style={{ border: "1px solid #0A7C6E", color: "#0A7C6E" }}
                                 onClick={handleExport}
                                 disabled={paySheetData.length === 0}
                             >

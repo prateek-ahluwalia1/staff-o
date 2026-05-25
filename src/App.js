@@ -57,6 +57,7 @@ const CallManagement = lazy(() => import("./pages/callManagement"));
 const PaySlip = lazy(() => import("./pages/PaySlip"));
 const Induction = lazy(() => import("./pages/Induction"));
 const PublicHolidays = lazy(() => import("./pages/PublicHolidays"));
+const PaySheet = lazy(() => import("./pages/PaySheet"));
 
 function AppContent() {
   const dispatch = useDispatch();
@@ -307,6 +308,7 @@ function AppContent() {
           />
           <Route path="/timesheet" element={<TimeSheet />} />
           <Route path="/job-tracker" element={<JobTracker />} />
+          <Route path="/pay-sheet" element={<PaySheet />} />
           <Route
             path="/visa-management"
             element={

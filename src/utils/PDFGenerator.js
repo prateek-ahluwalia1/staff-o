@@ -596,13 +596,23 @@ const PDFGenerator = {
     return doc;
   },
 
-  generateShiftReportPDF: (reportData) => {
+  generateShiftReportPDF: async (reportData) => {
     const { siteName, siteAddress, guardName, shiftStart, shiftEnd, totalHours, signinDetails, jobStatus } = reportData;
+
+    // Extract the comprehensive data from the new JSON structure
+    const signInOut = signinDetails?.sign_in_out || null;
+    const breaks = signinDetails?.break_details || null;
+    const patrols = signinDetails?.foot_patrol_report || [];
+    const incidents = signinDetails?.incident_report || [];
+
     const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4", compress: true });
     const pw = doc.internal.pageSize.getWidth(), ph = doc.internal.pageSize.getHeight(), mg = 15;
 
-    let y = renderModernHeader(doc, pw, "SHIFT REPORT");
+    let pn = 1;
+    const addPN = () => { doc.setFontSize(8); doc.setTextColor(...T.muted); doc.text(`Page ${pn}`, pw - mg - 10, ph - 8); };
+    let y = renderModernHeader(doc, pw, "MASTER SHIFT REPORT");
 
+    // --- 1. SHIFT SUMMARY HEADER ---
     const rightAlignParams = { align: "right" };
     doc.setFontSize(9); doc.setFont("helvetica", "bold"); doc.setTextColor(...T.muted); doc.text("Status", pw - mg - 25, y, rightAlignParams);
     doc.setTextColor(...T.text); doc.text(jobStatus ? jobStatus.toUpperCase() : "PENDING", pw - mg, y, rightAlignParams); y += 6;
@@ -626,12 +636,14 @@ const PDFGenerator = {
     if (shiftStart) { doc.text(`Start: ${shiftStart}`, rx, ry); ry += 4; } if (shiftEnd) { doc.text(`End: ${shiftEnd}`, rx, ry); }
 
     yp = Math.max(ly, ry) + 10;
-    doc.setFontSize(11); doc.setFont("helvetica", "bold"); doc.setTextColor(...T.navy); doc.text("Sign In / Out Logs", mg, yp); yp += 6;
+
+    // --- 2. ATTENDANCE LOGS ---
+    doc.setFontSize(11); doc.setFont("helvetica", "bold"); doc.setTextColor(...T.navy); doc.text("ATTENDANCE LOGS", mg, yp); yp += 6;
 
     const td = [];
-    if (signinDetails) {
-      td.push(["Sign In", signinDetails.signin_time || "-", signinDetails.location || "-", signinDetails.signin_notes || "No notes"]);
-      td.push(["Sign Out", signinDetails.signout_time || "-", signinDetails.signout_location || "-", signinDetails.signout_notes || "No notes"]);
+    if (signInOut) {
+      td.push(["Sign In", signInOut.signin_time || "-", signInOut.location || "-", signInOut.signin_notes || "No notes"]);
+      td.push(["Sign Out", signInOut.signout_time || "-", signInOut.signout_location || "-", signInOut.signout_notes || "No notes"]);
     } else {
       td.push(["-", "No sign in data available", "-", "-"]);
     }
@@ -645,7 +657,184 @@ const PDFGenerator = {
       columnStyles: { 0: { fontStyle: "bold", cellWidth: ptw * 0.15 }, 1: { cellWidth: ptw * 0.22 }, 2: { cellWidth: ptw * 0.33 }, 3: { cellWidth: ptw * 0.30 } }
     });
 
+    y = doc.lastAutoTable.finalY + 15;
+
+    // --- 2.5 BREAK LOGS ---
+    if (breaks) {
+      // Safely handle both single object or array of breaks
+      const breakList = Array.isArray(breaks) ? breaks : [breaks];
+
+      // Only render if there's actual data inside the array
+      if (breakList.length > 0 && Object.keys(breakList[0] || {}).length > 0) {
+        if (y > ph - 40) { addPN(); pn++; doc.addPage(); y = renderModernHeader(doc, pw, "MASTER SHIFT REPORT"); }
+
+        doc.setFontSize(11); doc.setFont("helvetica", "bold"); doc.setTextColor(...T.navy); doc.text("BREAK LOGS", mg, y); y += 6;
+
+        const breakTd = breakList.map(b => [
+          b.start_time || b.break_start || "-",
+          b.end_time || b.break_end || "-",
+          b.duration || b.break_duration || "-",
+          b.notes || b.break_notes || "-"
+        ]);
+
+        autoTable(doc, {
+          startY: y, head: [["Break Start", "Break End", "Duration", "Notes"]], body: breakTd, tableWidth: ptw, theme: "plain",
+          headStyles: { fillColor: T.navy, textColor: T.white, fontStyle: "bold", fontSize: 9, cellPadding: 4 },
+          bodyStyles: { fontSize: 9, textColor: T.text, cellPadding: { top: 5, bottom: 5, left: 4, right: 4 }, lineColor: T.lineGray, lineWidth: { bottom: 0.1 } },
+          margin: { left: mg, right: mg },
+        });
+        y = doc.lastAutoTable.finalY + 15;
+      }
+    }
+
+    // --- 3. FOOT PATROLS (If Any) ---
+    if (patrols && patrols.length > 0) {
+      if (y > ph - 40) { addPN(); pn++; doc.addPage(); y = renderModernHeader(doc, pw, "MASTER SHIFT REPORT"); }
+
+      doc.setFontSize(12); doc.setFont("helvetica", "bold"); doc.setTextColor(...T.navy); doc.text("FOOT PATROLS", mg, y); y += 4;
+      y = drawGoldLine(doc, y, pw, mg) + 4;
+
+      for (let i = 0; i < patrols.length; i++) {
+        const p = patrols[i];
+        if (y > ph - 70) { addPN(); pn++; doc.addPage(); y = renderModernHeader(doc, pw, "MASTER SHIFT REPORT"); }
+
+        doc.setFontSize(10); doc.setFont("helvetica", "bold"); doc.setTextColor(...T.gold); doc.text(`PATROL #${i + 1}`, mg, y); y += 6;
+        doc.setDrawColor(...T.border); doc.setFillColor(...T.soft); doc.rect(mg, y - 3, pw - mg * 2, 14, "FD");
+        doc.setFontSize(9); doc.setFont("helvetica", "bold"); doc.setTextColor(...T.text);
+        doc.text(`Date: ${p.date || "N/A"}`, mg + 3, y + 2); doc.text(`Time: ${p.time || "N/A"}`, pw / 2, y + 2);
+        doc.setFont("helvetica", "normal"); doc.text(`Detail: ${p.patrolling_detail || "N/A"}`, mg + 3, y + 7); y += 18;
+
+        let photos = [];
+        if (p.photo) {
+          try { photos = typeof p.photo === "string" ? JSON.parse(p.photo) : p.photo; } catch (e) { }
+        }
+
+        if (photos.length > 0) {
+          if (y > ph - 45) { addPN(); pn++; doc.addPage(); y = renderModernHeader(doc, pw, "MASTER SHIFT REPORT"); }
+          doc.setFontSize(9); doc.setFont("helvetica", "bold"); doc.setTextColor(...T.navy); doc.text("PHOTOS", mg, y); y += 6;
+          let imgX = mg;
+          for (let imgObj of photos) {
+            if (imgX + 45 > pw - mg) {
+              imgX = mg; y += 35;
+              if (y > ph - 40) { addPN(); pn++; doc.addPage(); y = renderModernHeader(doc, pw, "MASTER SHIFT REPORT"); }
+            }
+            const url = resolvePatrolUrl(imgObj.imgPath);
+            const b64 = await fetchImageBase64(url);
+            if (b64) {
+              doc.addImage(b64, "JPEG", imgX, y, 40, 30);
+            } else {
+              doc.setDrawColor(...T.border); doc.rect(imgX, y, 40, 30);
+              doc.setFontSize(7); doc.setTextColor(...T.muted); doc.text("Image N/A", imgX + 20, y + 15, { align: "center" });
+            }
+            imgX += 45;
+          }
+          y += 35;
+        }
+
+        if (p.signature) {
+          if (y > ph - 35) { addPN(); pn++; doc.addPage(); y = renderModernHeader(doc, pw, "MASTER SHIFT REPORT"); }
+          doc.setFontSize(9); doc.setFont("helvetica", "bold"); doc.setTextColor(...T.navy); doc.text("SIGNATURE", mg, y); y += 6;
+          const url = resolvePatrolUrl(p.signature);
+          const sigB64 = await fetchImageBase64(url);
+          if (sigB64) {
+            doc.addImage(sigB64, "JPEG", mg, y, 50, 25);
+          } else {
+            doc.setDrawColor(...T.border); doc.rect(mg, y, 50, 25);
+            doc.setFontSize(7); doc.setTextColor(...T.muted); doc.text("Signature N/A", mg + 25, y + 12.5, { align: "center" });
+          }
+          y += 30;
+        }
+        y += 10;
+      }
+    }
+
+    // --- 4. INCIDENT REPORTS (If Any) ---
+    if (incidents && incidents.length > 0) {
+      if (y > ph - 40) { addPN(); pn++; doc.addPage(); y = renderModernHeader(doc, pw, "MASTER SHIFT REPORT"); }
+
+      doc.setFontSize(12); doc.setFont("helvetica", "bold"); doc.setTextColor(...T.danger); doc.text("INCIDENT REPORTS", mg, y); y += 4;
+      y = drawGoldLine(doc, y, pw, mg) + 4;
+
+      for (let i = 0; i < incidents.length; i++) {
+        const inc = incidents[i];
+        if (y > ph - 80) { addPN(); pn++; doc.addPage(); y = renderModernHeader(doc, pw, "MASTER SHIFT REPORT"); }
+
+        doc.setFontSize(10); doc.setFont("helvetica", "bold"); doc.setTextColor(...T.danger); doc.text(`INCIDENT #${i + 1}`, mg, y); y += 6;
+        doc.setDrawColor(...T.border); doc.setFillColor(254, 242, 242); doc.rect(mg, y - 3, pw - mg * 2, 18, "FD");
+
+        doc.setFontSize(9); doc.setFont("helvetica", "bold"); doc.setTextColor(...T.text); let dy = y + 2;
+        doc.text(`Date: ${inc.incident_date || "N/A"}`, mg + 3, dy); doc.text(`Time: ${inc.incident_time || "N/A"}`, pw / 2, dy); dy += 5;
+        doc.text(`Incident Type: ${inc.injury_type || "N/A"}`, mg + 3, dy); doc.text(`Site: ${inc.site_name || "N/A"}`, pw / 2, dy); dy += 5;
+        doc.setFont("helvetica", "normal");
+        const incDetailText = doc.splitTextToSize(`Detail: ${inc.injury_detail || "N/A"}`, pw - mg * 2 - 6);
+        doc.text(incDetailText, mg + 3, dy);
+        y += 12 + (incDetailText.length * 4);
+
+        const tbStyles = {
+          theme: "plain", headStyles: { fillColor: T.navy, textColor: T.white, fontStyle: "bold", fontSize: 8, cellPadding: 3 },
+          bodyStyles: { fontSize: 8, textColor: T.text, cellPadding: 3, lineColor: T.lineGray, lineWidth: { bottom: 0.1 } },
+          margin: { left: mg, right: mg }
+        };
+
+        if (inc.people_involved?.length > 0) {
+          if (y > ph - 60) { addPN(); pn++; doc.addPage(); y = renderModernHeader(doc, pw, "MASTER SHIFT REPORT"); }
+          doc.setFontSize(9); doc.setFont("helvetica", "bold"); doc.setTextColor(...T.navy); doc.text("PEOPLE INVOLVED", mg, y); y += 4;
+          autoTable(doc, { startY: y, head: [["Name", "Gender", "Phone", "Email"]], body: inc.people_involved.map(p => [p.name || "—", p.gender || "—", p.phone || "—", p.email || "—"]), ...tbStyles });
+          y = doc.lastAutoTable.finalY + 6;
+        }
+
+        if (inc.vehicle?.length > 0) {
+          if (y > ph - 60) { addPN(); pn++; doc.addPage(); y = renderModernHeader(doc, pw, "MASTER SHIFT REPORT"); }
+          doc.setFontSize(9); doc.setFont("helvetica", "bold"); doc.setTextColor(...T.navy); doc.text("VEHICLES", mg, y); y += 4;
+          autoTable(doc, { startY: y, head: [["Make", "Model", "Type", "Registration"]], body: inc.vehicle.map(v => [v.make || "—", v.model || "—", v.vehicle_type || "—", v.vehicle_rander || "—"]), ...tbStyles });
+          y = doc.lastAutoTable.finalY + 6;
+        }
+
+        if (inc.wittness?.length > 0) {
+          if (y > ph - 60) { addPN(); pn++; doc.addPage(); y = renderModernHeader(doc, pw, "MASTER SHIFT REPORT"); }
+          doc.setFontSize(9); doc.setFont("helvetica", "bold"); doc.setTextColor(...T.navy); doc.text("WITNESSES", mg, y); y += 4;
+          autoTable(doc, { startY: y, head: [["Name", "Phone", "Email"]], body: inc.wittness.map(w => [w.witness_name || w.wittness_name || "—", w.witness_phone || w.wittness_phone || "—", w.witness_email || w.wittness_email || "—"]), ...tbStyles });
+          y = doc.lastAutoTable.finalY + 6;
+        }
+
+        let photos = [];
+        if (inc.photo) {
+          try { photos = typeof inc.photo === "string" ? JSON.parse(inc.photo) : inc.photo; } catch (e) { }
+        }
+
+        if (photos.length > 0) {
+          if (y > ph - 45) { addPN(); pn++; doc.addPage(); y = renderModernHeader(doc, pw, "MASTER SHIFT REPORT"); }
+          doc.setFontSize(9); doc.setFont("helvetica", "bold"); doc.setTextColor(...T.navy); doc.text("PHOTOS", mg, y); y += 6;
+          let imgX = mg;
+          for (let imgObj of photos) {
+            if (imgX + 45 > pw - mg) {
+              imgX = mg; y += 35;
+              if (y > ph - 40) { addPN(); pn++; doc.addPage(); y = renderModernHeader(doc, pw, "MASTER SHIFT REPORT"); }
+            }
+            const url = resolveIncidentUrl(imgObj.imgPath);
+            const b64 = await fetchImageBase64(url);
+            if (b64) { doc.addImage(b64, "JPEG", imgX, y, 40, 30); }
+            else { doc.setDrawColor(...T.border); doc.rect(imgX, y, 40, 30); doc.setFontSize(7); doc.setTextColor(...T.muted); doc.text("Image N/A", imgX + 20, y + 15, { align: "center" }); }
+            imgX += 45;
+          }
+          y += 35;
+        }
+
+        if (inc.signature) {
+          if (y > ph - 35) { addPN(); pn++; doc.addPage(); y = renderModernHeader(doc, pw, "MASTER SHIFT REPORT"); }
+          doc.setFontSize(9); doc.setFont("helvetica", "bold"); doc.setTextColor(...T.navy); doc.text("SIGNATURE", mg, y); y += 6;
+          const url = resolveIncidentUrl(inc.signature);
+          const sigB64 = await fetchImageBase64(url);
+          if (sigB64) { doc.addImage(sigB64, "JPEG", mg, y, 50, 25); }
+          else { doc.setDrawColor(...T.border); doc.rect(mg, y, 50, 25); doc.setFontSize(7); doc.setTextColor(...T.muted); doc.text("Signature N/A", mg + 25, y + 12.5, { align: "center" }); }
+          y += 30;
+        }
+        y += 10;
+      }
+    }
+
     renderModernFooter(doc, pw, ph);
+    addPN();
     return doc;
   },
 
@@ -673,7 +862,10 @@ const PDFGenerator = {
       doc.setDrawColor(...T.border); doc.setFillColor(...T.soft); doc.rect(mg, y - 3, pw - mg * 2, 14, "FD");
       doc.setFontSize(9); doc.setFont("helvetica", "bold"); doc.setTextColor(...T.text);
       doc.text(`Date: ${p.date || "N/A"}`, mg + 3, y + 2); doc.text(`Time: ${p.time || "N/A"}`, pw / 2, y + 2);
-      doc.setFont("helvetica", "normal"); doc.text(`Detail: ${p.patrolling_detail || "N/A"}`, mg + 3, y + 7); y += 18;
+      doc.setFont("helvetica", "normal");
+      const detailText = doc.splitTextToSize(`Detail: ${p.patrolling_detail || "N/A"}`, pw - mg * 2 - 6);
+      doc.text(detailText, mg + 3, y + 7);
+      y += 10 + (detailText.length * 4);
 
       let photos = [];
       if (p.photo) {

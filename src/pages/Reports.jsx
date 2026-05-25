@@ -5,6 +5,7 @@ import { Card } from "../components/Card";
 import reportimg from "../assets/images/reports.png";
 import jobtrackingimg from "../assets/images/jobtracker.png";
 import visaimg from "../assets/images/visa-check.png";
+import paysheetimg from "../assets/images/pay-sheet.png";
 
 const Reports = () => {
   const navigate = useNavigate();
@@ -62,6 +63,17 @@ const Reports = () => {
             image={visaimg}
             type="visacheck"
             onClick={() => navigate("/visa-management")}
+          />
+        </div>
+
+        <div className="col-12 col-md-6 col-lg-3">
+          <Card
+            title="Pay Sheet"
+            description="View and manage staff pay information."
+            accent="linear-gradient(135deg,#1d4ed8,#0ea5e9)"
+            image={paysheetimg}
+            type="paysheet"
+            onClick={() => navigate("/pay-sheet")}
           />
         </div>
       </div>

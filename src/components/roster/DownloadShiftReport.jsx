@@ -1,20 +1,22 @@
 import React, { useEffect, useState, useCallback } from "react";
 import PDFGenerator from "../../utils/PDFGenerator";
-import useSubmit from "../../hooks/useSubmit";
+import useFetch from "../../hooks/useFetch";
 import { toast } from "react-toastify";
 
 export default function DownloadShiftReport({ rosterId, guardId, shift, site }) {
-    const { submit, loading } = useSubmit({ isAuth: true });
-    const [isDownloading, setIsDownloading] = useState(false);
+    // 1. Construct the URL with query parameters for the GET request
+    const url = `api/guard/all-reports?guard_id=${guardId}&roster_id=${rosterId}`;
 
-    const handleDownload = useCallback(async () => {
+    // 2. Use useFetch. immediate: true (default) fetches as soon as the component mounts.
+    const { data: apiData, loading, refetch } = useFetch(url, { isAuth: true, immediate: true });
+
+    const [isGenerating, setIsGenerating] = useState(false);
+    const [hasInitialDownloaded, setHasInitialDownloaded] = useState(false);
+
+    // Make this function async
+    const createAndDownloadPDF = useCallback(async (reportApiData) => {
         try {
-            setIsDownloading(true);
-            const response = await submit("api/get-jobSignIn-jobSignOut", {
-                guard_id: guardId,
-                roster_id: rosterId,
-            });
-
+            setIsGenerating(true);
             const reportData = {
                 siteName: site?.displayName || site?.site_name,
                 siteAddress: site?.address,
@@ -23,30 +25,47 @@ export default function DownloadShiftReport({ rosterId, guardId, shift, site }) 
                 shiftEnd: shift?.end,
                 totalHours: shift?.hours,
                 jobStatus: shift?.job_status,
-                signinDetails: response?.data || null,
+                signinDetails: reportApiData?.data || reportApiData || null,
             };
-            const doc = PDFGenerator.generateShiftReportPDF(reportData);
+
+            // CRITICAL: Add "await" here!
+            const doc = await PDFGenerator.generateShiftReportPDF(reportData);
+
             PDFGenerator.downloadPDF(doc, `Shift_Report_${shift?.id || 'Doc'}.pdf`);
             toast.success("Report downloaded successfully!");
-
         } catch (error) {
             toast.error(error?.message || "Failed to generate report. Please try again.");
         } finally {
-            setIsDownloading(false);
+            setIsGenerating(false);
         }
-    }, [guardId, rosterId, shift, site, submit]);
+    }, [site, shift]);
 
-    // Auto-download when component mounts
+    // 3. Auto-download once the data successfully arrives from the hook
     useEffect(() => {
-        const autoDownload = async () => {
-            await handleDownload();
-        };
-        autoDownload();
-    }, [handleDownload]);
+        if (apiData && !loading && !hasInitialDownloaded) {
+            createAndDownloadPDF(apiData);
+            setHasInitialDownloaded(true);
+        }
+    }, [apiData, loading, hasInitialDownloaded, createAndDownloadPDF]);
+
+    // 4. Handle "Download Again" click
+    const handleDownloadAgain = async () => {
+        // If we already have the data in memory, reuse it instantly without hitting the server
+        if (apiData) {
+            createAndDownloadPDF(apiData);
+        } else {
+            // Fallback just in case data was lost
+            await refetch();
+            setHasInitialDownloaded(false); // Reset to allow the useEffect to trigger
+        }
+    };
+
+    // Calculate if we should show the loading spinner
+    const isBusy = loading || isGenerating || (apiData && !loading && !hasInitialDownloaded);
 
     return (
         <div className="d-flex flex-column align-items-center justify-content-center h-100 p-4">
-            {isDownloading || loading ? (
+            {isBusy ? (
                 <>
                     <div
                         style={{
@@ -88,8 +107,8 @@ export default function DownloadShiftReport({ rosterId, guardId, shift, site }) 
                         Your shift report has been successfully downloaded.
                     </p>
                     <button
-                        onClick={handleDownload}
-                        disabled={isDownloading || loading}
+                        onClick={handleDownloadAgain}
+                        disabled={isBusy}
                         className="btn btn-success d-flex align-items-center gap-2 px-4 py-2"
                         style={{ fontWeight: "600", fontSize: "15px" }}
                     >

@@ -4,7 +4,7 @@ import { toast } from "react-toastify";
 import useSubmit from "../hooks/useSubmit";
 import Loader from "../components/Loader";
 
-// --- Date Helpers ---
+// ── Date helpers ────────────────────────────────────────────────────────────
 const getWeekRange = () => {
     const now = new Date();
     const start = new Date(now);
@@ -13,29 +13,19 @@ const getWeekRange = () => {
     end.setDate(start.getDate() + 6);
     return { start, end };
 };
-
 const formatDateInput = (date) => {
     if (!(date instanceof Date) || Number.isNaN(date.getTime())) return "";
-    const y = date.getFullYear();
-    const m = String(date.getMonth() + 1).padStart(2, "0");
-    const d = String(date.getDate()).padStart(2, "0");
-    return `${y}-${m}-${d}`;
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 };
-
 const parseInputDate = (val) => {
     if (!val) return null;
     const d = new Date(val);
     return Number.isNaN(d.getTime()) ? null : d;
 };
-
 const formatDateForPayload = (date) => {
     if (!(date instanceof Date) || Number.isNaN(date.getTime())) return "";
-    const m = String(date.getMonth() + 1).padStart(2, "0");
-    const d = String(date.getDate()).padStart(2, "0");
-    const y = date.getFullYear();
-    return `${m}-${d}-${y}`;
+    return `${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}-${date.getFullYear()}`;
 };
-
 const getArrayFromResponse = (res) => {
     if (Array.isArray(res?.data)) return res.data;
     if (Array.isArray(res?.data?.data)) return res.data.data;
@@ -43,23 +33,41 @@ const getArrayFromResponse = (res) => {
     return [];
 };
 
-const fv = (value) => {
-    const n = Number(value);
-    return Number.isFinite(n) ? n : 0;
+// ── Value helpers ────────────────────────────────────────────────────────────
+// Returns a finite number or 0
+const fv = (v) => { const n = Number(v); return Number.isFinite(n) ? n : 0; };
+// Returns formatted string "1.23" — only used for display/export
+const fmt = (v) => fv(v).toFixed(2);
+// Returns the raw API string value, or "" if null/undefined/empty
+const apiStr = (v) => (v !== null && v !== undefined && String(v).trim() !== "" ? String(v).trim() : "");
+// Currency display: shows "$X.XX" if value is meaningful, else ""
+const fmtCurrency = (v) => {
+    const n = fv(v);
+    return n !== 0 ? `$${n.toFixed(2)}` : "";
+};
+// Numeric display: shows "X.XX" if > 0, else ""
+const fmtNum = (v) => {
+    const n = fv(v);
+    return n !== 0 ? n.toFixed(2) : "";
 };
 
-const fmt = (value) => fv(value).toFixed(2);
-
-const normalizePaySheetRow = (row, index) => ({
+// ── Normalize top-level API row ──────────────────────────────────────────────
+const normalizeRow = (row, index) => ({
     id: row?.user_id ?? `staff-${index}`,
-    staffId: row?.user_id ?? "-",
-    staffName: row?.staff_name || "Unknown Staff",
-    staffPhone: row?.staff_phone || "",
-    staffType: row?.staff_type || "",
-    customerName: row?.customer_name || "-",
+    staffName: apiStr(row?.staff_name) || "Unknown Staff",
+    staffPhone: apiStr(row?.staff_phone),
+    staffType: apiStr(row?.staff_type),
+    customerName: apiStr(row?.customer_name),
+    // Staff-level financial fields (may or may not be in API — use raw)
+    accountHolder: apiStr(row?.account_holder_name),
+    bankName: apiStr(row?.bank_name),
+    bsb: apiStr(row?.bsb),
+    bankAccountNum: apiStr(row?.bank_account_number),
+    payroll: apiStr(row?.payroll),
+    // Totals
     totalHours: fv(row?.total_hours),
-    totalMorningHours: fv(row?.total_morning_hours),
-    totalNightHours: fv(row?.total_night_hours),
+    totalMorning: fv(row?.total_morning_hours),
+    totalNight: fv(row?.total_night_hours),
     totalSatMorning: fv(row?.total_saturday_morning),
     totalSatNight: fv(row?.total_saturday_night),
     totalSunMorning: fv(row?.total_sunday_morning),
@@ -71,129 +79,130 @@ const normalizePaySheetRow = (row, index) => ({
     raw: row,
 });
 
-// All columns matching the complete paysheet screenshot
+// ── Column definitions ───────────────────────────────────────────────────────
 const COLUMNS = [
-    { key: "state", label: "State", width: 80 },
+    { key: "state", label: "State", width: 85 },
     { key: "site_name", label: "Site Name", width: 220 },
-    { key: "site_level", label: "Site Level", width: 70 },
-    { key: "staff", label: "Staff", width: 140 },
-    { key: "account_holder", label: "Account Holder Name", width: 140 },
-    { key: "staff_phone", label: "Staff Phone", width: 110 },
-    { key: "staff_type", label: "Staff Type", width: 90 },
+    { key: "site_level", label: "Site Level", width: 75 },
+    { key: "staff", label: "Staff", width: 145 },
+    { key: "account_holder", label: "Account Holder Name", width: 150 },
+    { key: "staff_phone", label: "Staff Phone", width: 115 },
+    { key: "staff_type", label: "Staff Type", width: 95 },
     { key: "customer", label: "Customer", width: 160 },
-    { key: "date", label: "Date", width: 90 },
-    { key: "shift_start", label: "Shift Start", width: 80 },
-    { key: "shift_end", label: "Shift End", width: 80 },
-    { key: "sign_in", label: "Sign In", width: 70 },
-    { key: "sign_out", label: "Sign Out", width: 70 },
-    { key: "hours", label: "Hours", width: 60 },
-    { key: "mf_weekday", label: "M-F Weekday", width: 90 },
-    { key: "mf_day_rates", label: "M-F Day Rates", width: 95 },
-    { key: "mf_weeknight", label: "M-F Weeknight", width: 95 },
-    { key: "mf_night_rates", label: "M-F Night Rates", width: 100 },
-    { key: "saturday", label: "Saturday", width: 75 },
-    { key: "saturday_rates", label: "Saturday Rates", width: 100 },
-    { key: "sunday", label: "Sunday", width: 70 },
-    { key: "sunday_rates", label: "Sunday Rates", width: 90 },
-    { key: "ph_hours", label: "Public Holiday Hours", width: 130 },
-    { key: "ph_rates", label: "Public Holiday Rates", width: 130 },
-    { key: "travel_time", label: "Travel Time", width: 85 },
-    { key: "travel_time_total", label: "Total Travel Time", width: 110 },
-    { key: "reimbursement_text", label: "Reimbursement Text", width: 130 },
-    { key: "reimbursement", label: "Reimbursement", width: 105 },
-    { key: "gross_amount", label: "Gross Amount", width: 100 },
-    { key: "tax", label: "Tax", width: 60 },
-    { key: "super", label: "Super", width: 60 },
-    { key: "net_payable", label: "Net Payable", width: 85 },
-    { key: "payroll", label: "Payroll", width: 70 },
-    { key: "bank_name", label: "Bank Name", width: 140 },
-    { key: "bsb", label: "BSB", width: 60 },
-    { key: "bank_account_number", label: "Bank Account Number", width: 130 },
-    { key: "site_po_wo", label: "Site P.O/W.O", width: 90 },
-    { key: "training", label: "Training", width: 70 },
-    { key: "operation_notes", label: "Operation Notes", width: 110 },
+    { key: "date", label: "Date", width: 100 },
+    { key: "shift_start", label: "Shift Start", width: 82 },
+    { key: "shift_end", label: "Shift End", width: 82 },
+    { key: "sign_in", label: "Sign In", width: 75 },
+    { key: "sign_out", label: "Sign Out", width: 75 },
+    { key: "hours", label: "Hours", width: 65 },
+    { key: "mf_weekday", label: "M-F Weekday", width: 95 },
+    { key: "mf_day_rates", label: "M-F Day Rates", width: 105 },
+    { key: "mf_weeknight", label: "M-F Weeknight", width: 100 },
+    { key: "mf_night_rates", label: "M-F Night Rates", width: 108 },
+    { key: "saturday", label: "Saturday", width: 82 },
+    { key: "saturday_rates", label: "Saturday Rates", width: 108 },
+    { key: "sunday", label: "Sunday", width: 75 },
+    { key: "sunday_rates", label: "Sunday Rates", width: 98 },
+    { key: "ph_hours", label: "Public Holiday Hours", width: 138 },
+    { key: "ph_rates", label: "Public Holiday Rates", width: 138 },
+    { key: "travel_time", label: "Travel Time", width: 92 },
+    { key: "travel_time_total", label: "Total Travel Time", width: 118 },
+    { key: "reimbursement_text", label: "Reimbursement Text", width: 138 },
+    { key: "reimbursement", label: "Reimbursement", width: 112 },
+    { key: "gross_amount", label: "Gross Amount", width: 112 },
+    { key: "tax", label: "Tax", width: 68 },
+    { key: "super_col", label: "Super", width: 68 },
+    { key: "net_payable", label: "Net Payable", width: 95 },
+    { key: "payroll", label: "Payroll", width: 80 },
+    { key: "bank_name", label: "Bank Name", width: 158 },
+    { key: "bsb", label: "BSB", width: 68 },
+    { key: "bank_account_number", label: "Bank Account Number", width: 145 },
+    { key: "site_po_wo", label: "Site P.O/W.O", width: 98 },
+    { key: "training", label: "Training", width: 80 },
+    { key: "operation_notes", label: "Operation Notes", width: 120 },
 ];
 
-// Maps a shift + staff row into a flat display row
-const buildShiftRow = (shift, staffRow) => ({
-    state: shift.state || "-",
-    site_name: shift.site_name || "-",
-    site_level: shift.site_level ?? "-",
-    staff: staffRow.staffName,
-    account_holder: staffRow.raw?.account_holder_name || "N/A",
-    staff_phone: staffRow.staffPhone || "-",
-    staff_type: staffRow.staffType || "-",
-    customer: staffRow.customerName,
-    date: shift.date || "-",
-    shift_start: shift.shift_start || "-",
-    shift_end: shift.shift_end || "-",
-    sign_in: shift.sign_in || "-",
-    sign_out: shift.sign_out || "-",
-    hours: fmt(shift.hours),
-    mf_weekday: fmt(shift.morning_hours),
-    mf_day_rates: `$${fmt(shift.mf_day_rate)}`,
-    mf_weeknight: fmt(shift.night_hours),
-    mf_night_rates: `$${fmt(shift.mf_night_rate)}`,
-    saturday: fmt(fv(shift.saturday_morning_hours) + fv(shift.saturday_night_hours)),
-    saturday_rates: `$${fmt(shift.saturday_morning_rate)}`,
-    sunday: fmt(fv(shift.sunday_morning_hours) + fv(shift.sunday_night_hours)),
-    sunday_rates: `$${fmt(shift.sunday_morning_rate)}`,
-    ph_hours: fmt(fv(shift.ph_morning_hours) + fv(shift.ph_night_hours)),
-    ph_rates: `$${fmt(shift.ph_morning_rate)}`,
-    travel_time: "0",
-    travel_time_total: "$0.00",
-    reimbursement_text: "N/A",
-    reimbursement: "$0",
-    gross_amount: `$${fmt(shift.gross_amount)}`,
-    tax: "",
-    super: "",
-    net_payable: "",
-    payroll: "N/A",
-    bank_name: staffRow.raw?.bank_name || "",
-    bsb: staffRow.raw?.bsb || "",
-    bank_account_number: staffRow.raw?.bank_account_number || "",
-    site_po_wo: staffRow.raw?.site_po_wo || "",
-    training: "no",
-    operation_notes: "N/A",
-    _isSubtotal: false,
-    _isGrandTotal: false,
+// ── Build a flat shift display/export row — 100% dynamic from API ────────────
+const buildShiftRow = (shift, staff) => ({
+    // Identity
+    state: apiStr(shift.state),
+    site_name: apiStr(shift.site_name),
+    site_level: apiStr(shift.site_level),
+    staff: staff.staffName,
+    account_holder: staff.accountHolder,
+    staff_phone: staff.staffPhone,
+    staff_type: staff.staffType,
+    customer: staff.customerName,
+    // Shift timing
+    date: apiStr(shift.date),
+    shift_start: apiStr(shift.shift_start),
+    shift_end: apiStr(shift.shift_end),
+    sign_in: apiStr(shift.sign_in),
+    sign_out: apiStr(shift.sign_out),
+    // Hours — show "" when 0
+    hours: fmtNum(shift.hours),
+    mf_weekday: fmtNum(shift.morning_hours),
+    mf_day_rates: fmtCurrency(shift.mf_day_rate),
+    mf_weeknight: fmtNum(shift.night_hours),
+    mf_night_rates: fmtCurrency(shift.mf_night_rate),
+    saturday: fmtNum(fv(shift.saturday_morning_hours) + fv(shift.saturday_night_hours)),
+    saturday_rates: fmtCurrency(fv(shift.saturday_morning_rate) + fv(shift.saturday_night_rate)),
+    sunday: fmtNum(fv(shift.sunday_morning_hours) + fv(shift.sunday_night_hours)),
+    sunday_rates: fmtCurrency(fv(shift.sunday_morning_rate) + fv(shift.sunday_night_rate)),
+    ph_hours: fmtNum(fv(shift.ph_morning_hours) + fv(shift.ph_night_hours)),
+    ph_rates: fmtCurrency(fv(shift.ph_morning_rate) + fv(shift.ph_night_rate)),
+    // Extras — from API if present, else blank (not hardcoded)
+    travel_time: fmtNum(shift.travel_time),
+    travel_time_total: fmtCurrency(shift.travel_time_total),
+    reimbursement_text: apiStr(shift.reimbursement_text),
+    reimbursement: fmtCurrency(shift.reimbursement),
+    gross_amount: fmtCurrency(shift.gross_amount),
+    tax: fmtCurrency(shift.tax),
+    super_col: fmtCurrency(shift.super),
+    net_payable: fmtCurrency(shift.net_payable),
+    payroll: apiStr(shift.payroll) || staff.payroll,
+    // Staff bank/payment info — from top-level staff object
+    bank_name: staff.bankName,
+    bsb: staff.bsb,
+    bank_account_number: staff.bankAccountNum,
+    site_po_wo: apiStr(shift.site_po_wo),
+    training: apiStr(shift.training),
+    operation_notes: apiStr(shift.operation_notes),
 });
 
-// Subtotal row for a staff group (matches the grey summary row in the screenshot)
-const buildSubtotalRow = (staffRow) => {
-    const totSat = fv(staffRow.totalSatMorning) + fv(staffRow.totalSatNight);
-    const totSun = fv(staffRow.totalSunMorning) + fv(staffRow.totalSunNight);
-    const totPh = fv(staffRow.totalPhMorning) + fv(staffRow.totalPhNight);
+// ── Subtotal row (grey separator between staff groups) ───────────────────────
+const buildSubtotalRow = (staff) => {
+    const sat = fv(staff.totalSatMorning) + fv(staff.totalSatNight);
+    const sun = fv(staff.totalSunMorning) + fv(staff.totalSunNight);
+    const ph = fv(staff.totalPhMorning) + fv(staff.totalPhNight);
+    const empty = (k) => ({ [k]: "" });
     return {
-        state: "", site_name: "", site_level: "", staff: "", account_holder: "",
-        staff_phone: "", staff_type: "", customer: "", date: "",
-        shift_start: "", shift_end: "", sign_in: "", sign_out: "",
-        hours: fmt(staffRow.totalHours),
-        mf_weekday: fmt(staffRow.totalMorningHours),
-        mf_day_rates: "",
-        mf_weeknight: fmt(staffRow.totalNightHours),
-        mf_night_rates: "",
-        saturday: fmt(totSat),
-        saturday_rates: "",
-        sunday: fmt(totSun),
-        sunday_rates: "",
-        ph_hours: fmt(totPh),
-        ph_rates: "",
-        travel_time: "0",
-        travel_time_total: "$0",
-        reimbursement_text: "",
-        reimbursement: "",
-        gross_amount: `$${fmt(staffRow.totalGross)}`,
-        tax: `$${fmt(0)}`,
-        super: `$${fmt(0)}`,
-        net_payable: `$${fmt(0)}`,
-        payroll: "",
-        bank_name: "", bsb: "", bank_account_number: "", site_po_wo: "", training: "", operation_notes: "",
-        _isSubtotal: true,
-        _isGrandTotal: false,
+        ...Object.fromEntries(COLUMNS.map((c) => [c.key, ""])),
+        hours: fmt(staff.totalHours),
+        mf_weekday: fmt(staff.totalMorning),
+        mf_weeknight: fmt(staff.totalNight),
+        saturday: fmt(sat),
+        sunday: fmt(sun),
+        ph_hours: fmt(ph),
+        gross_amount: fv(staff.totalGross) ? `$${fmt(staff.totalGross)}` : "",
+        ...empty("state"), // keep first cell empty so it doesn't look like a data row
     };
 };
 
+// ── Grand total row ───────────────────────────────────────────────────────────
+const buildGrandTotalRow = (totals) => ({
+    ...Object.fromEntries(COLUMNS.map((c) => [c.key, ""])),
+    state: "Grand Total",
+    hours: fmt(totals.hours),
+    mf_weekday: fmt(totals.mfDay),
+    mf_weeknight: fmt(totals.mfNight),
+    saturday: fmt(totals.sat),
+    sunday: fmt(totals.sun),
+    ph_hours: fmt(totals.ph),
+    gross_amount: fv(totals.gross) ? `$${fmt(totals.gross)}` : "",
+});
+
+// ── Main component ───────────────────────────────────────────────────────────
 export default function PaySheet() {
     const { submit: submitPaySheet, loading: paySheetLoading } = useSubmit({ isAuth: true });
 
@@ -203,474 +212,689 @@ export default function PaySheet() {
     const [paySheetData, setPaySheetData] = useState([]);
 
     const buildPayload = useCallback(() => ({
-        length: 0,
-        pageIndex: 0,
-        pageSize: 100,
+        length: 0, pageIndex: 0, pageSize: 100,
         start: formatDateForPayload(parseInputDate(startDate)),
         end: formatDateForPayload(parseInputDate(endDate)),
-    }), [endDate, startDate]);
+    }), [startDate, endDate]);
 
     const fetchPaySheet = useCallback(async () => {
-        const parsedStartDate = parseInputDate(startDate);
-        const parsedEndDate = parseInputDate(endDate);
-
-        if (!parsedStartDate || !parsedEndDate) {
-            toast.error("Please select a valid date range.");
-            return;
-        }
-        if (parsedEndDate < parsedStartDate) {
-            toast.error("End date cannot be earlier than start date.");
-            return;
-        }
-
-        const payload = buildPayload();
-        const res = await submitPaySheet("api/paysheet", payload, { method: "POST" });
-
+        const ps = parseInputDate(startDate);
+        const pe = parseInputDate(endDate);
+        if (!ps || !pe) { toast.error("Please select a valid date range."); return; }
+        if (pe < ps) { toast.error("End date cannot be earlier than start date."); return; }
+        const res = await submitPaySheet("api/paysheet", buildPayload(), { method: "POST" });
         if (!res || res.success === false || !res.data || res.data.length === 0) {
             toast.info(res?.message || "No paysheet records found.");
             setPaySheetData([]);
             return;
         }
+        setPaySheetData(getArrayFromResponse(res).map(normalizeRow));
+    }, [buildPayload, startDate, endDate, submitPaySheet]);
 
-        const rows = getArrayFromResponse(res).map(normalizePaySheetRow);
-        setPaySheetData(rows);
-    }, [buildPayload, endDate, startDate, submitPaySheet]);
+    // ── Grand totals memo ─────────────────────────────────────────────────────
+    const grandTotals = useMemo(() => ({
+        hours: paySheetData.reduce((s, r) => s + r.totalHours, 0),
+        mfDay: paySheetData.reduce((s, r) => s + r.totalMorning, 0),
+        mfNight: paySheetData.reduce((s, r) => s + r.totalNight, 0),
+        sat: paySheetData.reduce((s, r) => s + r.totalSatMorning + r.totalSatNight, 0),
+        sun: paySheetData.reduce((s, r) => s + r.totalSunMorning + r.totalSunNight, 0),
+        ph: paySheetData.reduce((s, r) => s + r.totalPhMorning + r.totalPhNight, 0),
+        gross: paySheetData.reduce((s, r) => s + r.totalGross, 0),
+        staff: paySheetData.length,
+        shifts: paySheetData.reduce((s, r) => s + r.shifts.length, 0),
+    }), [paySheetData]);
 
-    // Build flat rows for the table (shift rows + subtotal per staff + grand total)
+    // ── Flat table rows: shifts → subtotal → … → grand total ─────────────────
     const tableRows = useMemo(() => {
-        const result = [];
-        let grandHours = 0, grandMfDay = 0, grandMfNight = 0;
-        let grandSat = 0, grandSun = 0, grandPh = 0, grandGross = 0;
-
-        paySheetData.forEach((staffRow) => {
-            staffRow.shifts.forEach((shift) => {
-                result.push({ type: "shift", data: buildShiftRow(shift, staffRow) });
-            });
-            result.push({ type: "subtotal", data: buildSubtotalRow(staffRow) });
-
-            grandHours += fv(staffRow.totalHours);
-            grandMfDay += fv(staffRow.totalMorningHours);
-            grandMfNight += fv(staffRow.totalNightHours);
-            grandSat += fv(staffRow.totalSatMorning) + fv(staffRow.totalSatNight);
-            grandSun += fv(staffRow.totalSunMorning) + fv(staffRow.totalSunNight);
-            grandPh += fv(staffRow.totalPhMorning) + fv(staffRow.totalPhNight);
-            grandGross += fv(staffRow.totalGross);
+        const rows = [];
+        paySheetData.forEach((staff) => {
+            staff.shifts.forEach((shift) => rows.push({ type: "shift", data: buildShiftRow(shift, staff) }));
+            rows.push({ type: "subtotal", data: buildSubtotalRow(staff) });
         });
-
         if (paySheetData.length > 0) {
-            result.push({
-                type: "grandtotal",
-                data: {
-                    state: "Grand Total", site_name: "", site_level: "", staff: "",
-                    account_holder: "", staff_phone: "", staff_type: "", customer: "",
-                    date: "", shift_start: "", shift_end: "", sign_in: "", sign_out: "",
-                    hours: fmt(grandHours),
-                    mf_weekday: fmt(grandMfDay),
-                    mf_day_rates: "",
-                    mf_weeknight: fmt(grandMfNight),
-                    mf_night_rates: "",
-                    saturday: fmt(grandSat),
-                    saturday_rates: "",
-                    sunday: fmt(grandSun),
-                    sunday_rates: "",
-                    ph_hours: fmt(grandPh),
-                    ph_rates: "",
-                    travel_time: "0",
-                    travel_time_total: "$0",
-                    reimbursement_text: "",
-                    reimbursement: "",
-                    gross_amount: `$${fmt(grandGross)}`,
-                    tax: `$${fmt(0)}`,
-                    super: `$${fmt(0)}`,
-                    net_payable: `$${fmt(0)}`,
-                    payroll: `$${fmt(0)}`,
-                    bank_name: "", bsb: "", bank_account_number: "", site_po_wo: "", training: "", operation_notes: "",
-                    _isSubtotal: false,
-                    _isGrandTotal: true,
-                },
-            });
+            rows.push({ type: "grandtotal", data: buildGrandTotalRow(grandTotals) });
         }
-        return result;
-    }, [paySheetData]);
+        return rows;
+    }, [paySheetData, grandTotals]);
 
+    // ── Excel export ──────────────────────────────────────────────────────────
     const handleExport = () => {
-        if (paySheetData.length === 0) {
-            toast.info("No pay sheet rows available for export.");
-            return;
-        }
+        if (!paySheetData.length) { toast.info("No paysheet data to export."); return; }
 
         const exportRows = [];
-
-        paySheetData.forEach((staffRow) => {
-            staffRow.shifts.forEach((shift) => {
+        paySheetData.forEach((staff) => {
+            staff.shifts.forEach((shift) => {
+                const r = buildShiftRow(shift, staff);
                 exportRows.push({
-                    "State": shift.state || "",
-                    "Site Name": shift.site_name || "",
-                    "Site Level": shift.site_level || "",
-                    "Staff": staffRow.staffName,
-                    "Account Holder": staffRow.raw?.account_holder_name || "",
-                    "Staff Phone": staffRow.staffPhone,
-                    "Staff Type": staffRow.staffType,
-                    "Customer": staffRow.customerName,
-                    "Date": shift.date || "",
-                    "Shift Start": shift.shift_start || "",
-                    "Shift End": shift.shift_end || "",
-                    "Sign In": shift.sign_in || "-",
-                    "Sign Out": shift.sign_out || "-",
+                    "State": r.state,
+                    "Site Name": r.site_name,
+                    "Site Level": r.site_level,
+                    "Staff": r.staff,
+                    "Account Holder Name": r.account_holder,
+                    "Staff Phone": r.staff_phone,
+                    "Staff Type": r.staff_type,
+                    "Customer": r.customer,
+                    "Date": r.date,
+                    "Shift Start": r.shift_start,
+                    "Shift End": r.shift_end,
+                    "Sign In": r.sign_in,
+                    "Sign Out": r.sign_out,
                     "Hours": fv(shift.hours),
                     "M-F Weekday": fv(shift.morning_hours),
-                    "M-F Day Rates": `$${fmt(shift.mf_day_rate)}`,
+                    "M-F Day Rates": r.mf_day_rates,
                     "M-F Weeknight": fv(shift.night_hours),
-                    "M-F Night Rates": `$${fmt(shift.mf_night_rate)}`,
+                    "M-F Night Rates": r.mf_night_rates,
                     "Saturday": fv(shift.saturday_morning_hours) + fv(shift.saturday_night_hours),
-                    "Saturday Rates": `$${fmt(shift.saturday_morning_rate)}`,
+                    "Saturday Rates": r.saturday_rates,
                     "Sunday": fv(shift.sunday_morning_hours) + fv(shift.sunday_night_hours),
-                    "Sunday Rates": `$${fmt(shift.sunday_morning_rate)}`,
+                    "Sunday Rates": r.sunday_rates,
                     "Public Holiday Hours": fv(shift.ph_morning_hours) + fv(shift.ph_night_hours),
-                    "Public Holiday Rates": `$${fmt(shift.ph_morning_rate)}`,
-                    "Travel Time": 0,
-                    "Total Travel Time": "$0.00",
-                    "Reimbursement Text": "",
-                    "Reimbursement": "$0",
-                    "Gross Amount": `$${fmt(shift.gross_amount)}`,
-                    "Tax": "",
-                    "Super": "",
-                    "Net Payable": "",
-                    "Payroll": "award",
-                    "Bank Name": staffRow.raw?.bank_name || "",
-                    "BSB": staffRow.raw?.bsb || "",
-                    "Bank Account Number": staffRow.raw?.bank_account_number || "",
-                    "Site P.O/W.O": staffRow.raw?.site_po_wo || "",
-                    "Training": "no",
-                    "Operation Notes": "N/A",
+                    "Public Holiday Rates": r.ph_rates,
+                    "Travel Time": fv(shift.travel_time),
+                    "Total Travel Time": r.travel_time_total,
+                    "Reimbursement Text": r.reimbursement_text,
+                    "Reimbursement": r.reimbursement,
+                    "Gross Amount": r.gross_amount,
+                    "Tax": r.tax,
+                    "Super": r.super_col,
+                    "Net Payable": r.net_payable,
+                    "Payroll": r.payroll,
+                    "Bank Name": r.bank_name,
+                    "BSB": r.bsb,
+                    "Bank Account Number": r.bank_account_number,
+                    "Site P.O/W.O": r.site_po_wo,
+                    "Training": r.training,
+                    "Operation Notes": r.operation_notes,
+                    _type: "shift",
                 });
             });
 
-            // Subtotal row for this staff member
-            const totSat = fv(staffRow.totalSatMorning) + fv(staffRow.totalSatNight);
-            const totSun = fv(staffRow.totalSunMorning) + fv(staffRow.totalSunNight);
-            const totPh = fv(staffRow.totalPhMorning) + fv(staffRow.totalPhNight);
+            // Subtotal row per staff
+            const sat = staff.totalSatMorning + staff.totalSatNight;
+            const sun = staff.totalSunMorning + staff.totalSunNight;
+            const ph = staff.totalPhMorning + staff.totalPhNight;
+            const blankRow = Object.fromEntries(
+                ["State", "Site Name", "Site Level", "Staff", "Account Holder Name", "Staff Phone", "Staff Type",
+                    "Customer", "Date", "Shift Start", "Shift End", "Sign In", "Sign Out", "M-F Day Rates", "M-F Night Rates",
+                    "Saturday Rates", "Sunday Rates", "Public Holiday Rates", "Total Travel Time", "Reimbursement Text",
+                    "Reimbursement", "Tax", "Super", "Net Payable", "Payroll", "Bank Name", "BSB", "Bank Account Number",
+                    "Site P.O/W.O", "Training", "Operation Notes"].map((k) => [k, ""])
+            );
             exportRows.push({
-                "State": "",
-                "Site Name": "",
-                "Site Level": "",
-                "Staff": "",
-                "Account Holder": "",
-                "Staff Phone": "",
-                "Staff Type": "",
-                "Customer": "",
-                "Date": "",
-                "Shift Start": "",
-                "Shift End": "",
-                "Sign In": "",
-                "Sign Out": "",
-                "Hours": fv(staffRow.totalHours),
-                "M-F Weekday": fv(staffRow.totalMorningHours),
-                "M-F Day Rates": "",
-                "M-F Weeknight": fv(staffRow.totalNightHours),
-                "M-F Night Rates": "",
-                "Saturday": totSat,
-                "Saturday Rates": "",
-                "Sunday": totSun,
-                "Sunday Rates": "",
-                "Public Holiday Hours": totPh,
-                "Public Holiday Rates": "",
+                ...blankRow,
+                "Hours": staff.totalHours,
+                "M-F Weekday": staff.totalMorning,
+                "M-F Weeknight": staff.totalNight,
+                "Saturday": sat,
+                "Sunday": sun,
+                "Public Holiday Hours": ph,
                 "Travel Time": 0,
-                "Total Travel Time": "$0",
-                "Reimbursement Text": "",
-                "Reimbursement": "",
-                "Gross Amount": `$${fmt(staffRow.totalGross)}`,
-                "Tax": "$0.00",
-                "Super": "$0.00",
-                "Net Payable": "$0.00",
-                "Payroll": "$0.00",
-                "Bank Name": "",
-                "BSB": "",
-                "Bank Account Number": "",
-                "Site P.O/W.O": "",
-                "Training": "",
-                "Operation Notes": "",
-                _isSubtotal: true,
+                "Gross Amount": fv(staff.totalGross) ? `$${fmt(staff.totalGross)}` : "",
+                _type: "subtotal",
             });
         });
 
-        // Grand Total row
-        const grandHours = paySheetData.reduce((s, r) => s + fv(r.totalHours), 0);
-        const grandMfDay = paySheetData.reduce((s, r) => s + fv(r.totalMorningHours), 0);
-        const grandMfNight = paySheetData.reduce((s, r) => s + fv(r.totalNightHours), 0);
-        const grandSat = paySheetData.reduce((s, r) => s + fv(r.totalSatMorning) + fv(r.totalSatNight), 0);
-        const grandSun = paySheetData.reduce((s, r) => s + fv(r.totalSunMorning) + fv(r.totalSunNight), 0);
-        const grandPh = paySheetData.reduce((s, r) => s + fv(r.totalPhMorning) + fv(r.totalPhNight), 0);
-        const grandGross = paySheetData.reduce((s, r) => s + fv(r.totalGross), 0);
-
+        // Grand total row
         exportRows.push({
             "State": "Grand Total",
-            "Site Name": "", "Site Level": "", "Staff": "", "Account Holder": "",
-            "Staff Phone": "", "Staff Type": "", "Customer": "", "Date": "",
-            "Shift Start": "", "Shift End": "", "Sign In": "", "Sign Out": "",
-            "Hours": grandHours,
-            "M-F Weekday": grandMfDay,
+            "Site Name": "", "Site Level": "", "Staff": "", "Account Holder Name": "", "Staff Phone": "",
+            "Staff Type": "", "Customer": "", "Date": "", "Shift Start": "", "Shift End": "",
+            "Sign In": "", "Sign Out": "",
+            "Hours": grandTotals.hours,
+            "M-F Weekday": grandTotals.mfDay,
             "M-F Day Rates": "",
-            "M-F Weeknight": grandMfNight,
+            "M-F Weeknight": grandTotals.mfNight,
             "M-F Night Rates": "",
-            "Saturday": grandSat,
+            "Saturday": grandTotals.sat,
             "Saturday Rates": "",
-            "Sunday": grandSun,
+            "Sunday": grandTotals.sun,
             "Sunday Rates": "",
-            "Public Holiday Hours": grandPh,
+            "Public Holiday Hours": grandTotals.ph,
             "Public Holiday Rates": "",
             "Travel Time": 0,
-            "Total Travel Time": "$0",
+            "Total Travel Time": "",
             "Reimbursement Text": "",
             "Reimbursement": "",
-            "Gross Amount": `$${fmt(grandGross)}`,
-            "Tax": "$0.00",
-            "Super": "$0.00",
-            "Net Payable": "$0.00",
-            "Payroll": "$0.00",
-            "Bank Name": "", "BSB": "", "Bank Account Number": "",
-            "Site P.O/W.O": "", "Training": "", "Operation Notes": "",
-            _isGrandTotal: true,
+            "Gross Amount": fv(grandTotals.gross) ? `$${fmt(grandTotals.gross)}` : "",
+            "Tax": "", "Super": "", "Net Payable": "", "Payroll": "", "Bank Name": "", "BSB": "",
+            "Bank Account Number": "", "Site P.O/W.O": "", "Training": "", "Operation Notes": "",
+            _type: "grandtotal",
         });
 
-        // Strip internal flags before writing
-        const cleanRows = exportRows.map(({ _isSubtotal, _isGrandTotal, ...rest }) => rest);
+        const cleanRows = exportRows.map(({ _type, ...rest }) => rest);
+        const ws = XLSX.utils.json_to_sheet(cleanRows);
 
-        const worksheet = XLSX.utils.json_to_sheet(cleanRows);
-
-        // Style subtotal and grand total rows (light grey fill for subtotals, darker for grand total)
-        const range = XLSX.utils.decode_range(worksheet["!ref"]);
+        // Style subtotal / grandtotal rows
         const colCount = Object.keys(cleanRows[0]).length;
-
-        // Track which rows are subtotals / grand total for styling
-        let excelRow = 2; // 1-indexed; row 1 is header
-        exportRows.forEach((r) => {
-            if (r._isSubtotal || r._isGrandTotal) {
-                for (let c = 0; c <= colCount - 1; c++) {
-                    const cellRef = XLSX.utils.encode_cell({ r: excelRow - 1, c });
-                    if (!worksheet[cellRef]) worksheet[cellRef] = { t: "z" };
-                    worksheet[cellRef].s = {
-                        fill: { fgColor: { rgb: r._isGrandTotal ? "D9D9D9" : "F2F2F2" } },
-                        font: { bold: true },
+        exportRows.forEach((row, i) => {
+            if (row._type === "subtotal" || row._type === "grandtotal") {
+                const rgb = row._type === "grandtotal" ? "C8E6E3" : "E0E0E0";
+                for (let c = 0; c < colCount; c++) {
+                    const ref = XLSX.utils.encode_cell({ r: i + 1, c });
+                    if (!ws[ref]) ws[ref] = { t: "z", v: "" };
+                    ws[ref].s = {
+                        fill: { patternType: "solid", fgColor: { rgb } },
+                        font: { bold: true, sz: 10 },
                     };
                 }
             }
-            excelRow++;
         });
 
-        // Auto column widths
-        worksheet["!cols"] = COLUMNS.map((c) => ({ wch: Math.round(c.width / 7) }));
-
-        const workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, worksheet, "PaySheet Summary");
-        XLSX.writeFile(workbook, `paysheet_report_${Date.now()}.xlsx`);
+        ws["!cols"] = COLUMNS.map((c) => ({ wch: Math.round(c.width / 7) }));
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "PaySheet");
+        XLSX.writeFile(wb, `paysheet_${Date.now()}.xlsx`);
     };
 
-    const renderCell = (col, value) => {
-        if (col.key === "gross_amount") {
-            return <span style={{ color: "#0A7C6E", fontWeight: 600 }}>{value}</span>;
+    // ── Cell renderer ─────────────────────────────────────────────────────────
+    const renderCell = (col, value, rowType) => {
+        // Empty cell
+        if (value === "" || value === null || value === undefined) {
+            return <span className="ps-cell-empty">—</span>;
         }
+
+        // Grand total label in first col
+        if (col.key === "state" && rowType === "grandtotal") {
+            return <span className="ps-grandtotal-label">{value}</span>;
+        }
+
+        if (rowType === "shift") {
+            if (col.key === "gross_amount") {
+                return <span className="ps-gross-badge">{value}</span>;
+            }
+            if (col.key === "state") {
+                return <span className="ps-state-badge">{value}</span>;
+            }
+            if (col.key === "training") {
+                const isYes = value.toLowerCase() === "yes";
+                return <span className={`ps-pill ${isYes ? "ps-pill--yes" : "ps-pill--no"}`}>{value}</span>;
+            }
+            if (col.key === "payroll") {
+                return <span className="ps-payroll-badge">{value}</span>;
+            }
+            if (["mf_day_rates", "mf_night_rates", "saturday_rates", "sunday_rates", "ph_rates", "reimbursement", "tax", "super_col", "net_payable", "travel_time_total"].includes(col.key)) {
+                return <span className="ps-currency">{value}</span>;
+            }
+            if (["hours", "mf_weekday", "mf_weeknight", "saturday", "sunday", "ph_hours", "travel_time"].includes(col.key)) {
+                return <span className="ps-number">{value}</span>;
+            }
+            if (col.key === "sign_in" || col.key === "sign_out") {
+                return <span className="ps-time">{value}</span>;
+            }
+        }
+
         return value;
     };
+
+    const hasData = paySheetData.length > 0;
+
+    // ── Stat card config ──────────────────────────────────────────────────────
+    const statCards = useMemo(() => [
+        { label: "Staff Members", value: grandTotals.staff, icon: "fa-users", color: "#0A7C6E", bg: "#e6f7f4" },
+        { label: "Total Shifts", value: grandTotals.shifts, icon: "fa-calendar-check", color: "#2563eb", bg: "#eff6ff" },
+        { label: "Total Hours", value: `${fmt(grandTotals.hours)}h`, icon: "fa-clock", color: "#d97706", bg: "#fffbeb" },
+        { label: "Weekday Hours", value: `${fmt(grandTotals.mfDay)}h`, icon: "fa-sun", color: "#7c3aed", bg: "#faf5ff" },
+        { label: "Night Hours", value: `${fmt(grandTotals.mfNight)}h`, icon: "fa-moon", color: "#0e7490", bg: "#ecfeff" },
+        { label: "Weekend Hours", value: `${fmt(grandTotals.sat + grandTotals.sun)}h`, icon: "fa-umbrella-beach", color: "#be185d", bg: "#fdf2f8" },
+        { label: "PH Hours", value: `${fmt(grandTotals.ph)}h`, icon: "fa-star", color: "#b45309", bg: "#fffbeb" },
+        { label: "Total Gross", value: `$${fmt(grandTotals.gross)}`, icon: "fa-dollar-sign", color: "#059669", bg: "#ecfdf5" },
+    ], [grandTotals]);
 
     return (
         <div className="dashboard-main dashboard-tools-page">
             <div className="dashboard-page-header">
                 <div>
                     <h1>Pay Sheet</h1>
-                    <p>Review staff payment summaries and drill down into shift breakdowns.</p>
+                    <p>
+                        Search and export detailed paysheet records for your staff
+                    </p>
                 </div>
             </div>
 
-            {/* Filter bar */}
-            <div className="card border-0 shadow-sm mb-4">
-                <div className="card-body py-3">
-                    <div className="row g-2 w-100 timesheet-filter-grid align-items-end">
+            {/* ── Filter card ──────────────────────────────────────────────────── */}
+            <div className="card border-0 ps-filter-card mb-4">
+                <div className="card-body py-3 px-4">
+                    <div className="row g-3 align-items-end">
                         <div className="col-12 col-sm-6 col-lg-3">
-                            <label className="form-label small fw-bold text-muted mb-1">Start Date</label>
+                            <label className="ps-form-label">
+                                <i className="fa-regular fa-calendar-days me-1"></i>Start Date
+                            </label>
                             <input
                                 type="date"
-                                className="form-control"
+                                className="form-control ps-date-input"
                                 value={startDate}
                                 onChange={(e) => setStartDate(e.target.value)}
                             />
                         </div>
                         <div className="col-12 col-sm-6 col-lg-3">
-                            <label className="form-label small fw-bold text-muted mb-1">End Date</label>
+                            <label className="ps-form-label">
+                                <i className="fa-regular fa-calendar-days me-1"></i>End Date
+                            </label>
                             <input
                                 type="date"
-                                className="form-control"
+                                className="form-control ps-date-input"
                                 value={endDate}
                                 onChange={(e) => setEndDate(e.target.value)}
                             />
                         </div>
-                        <div className="col-12 col-sm-12 col-lg-6 d-flex gap-2 justify-content-end">
+                        <div className="col-12 col-lg-6 d-flex gap-2 justify-content-end">
                             <button
-                                className="btn btn-sm btn-primary-custom timesheet-action-btn px-4"
+                                className="btn ps-btn ps-btn-primary"
                                 onClick={fetchPaySheet}
                                 disabled={paySheetLoading}
                             >
                                 {paySheetLoading
-                                    ? <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                                    : <i className="fa-solid fa-search me-2"></i>}
-                                Search
+                                    ? <><span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true" />Searching…</>
+                                    : <><i className="fa-solid fa-magnifying-glass me-2" />Search</>}
                             </button>
                             <button
-                                className="btn btn-sm timesheet-action-btn px-4"
-                                style={{ border: "1px solid #0A7C6E", color: "#0A7C6E" }}
+                                className="btn ps-btn ps-btn-export"
                                 onClick={handleExport}
-                                disabled={paySheetData.length === 0}
+                                disabled={!hasData}
                             >
-                                <i className="fa-solid fa-file-excel me-2"></i> Export Excel
+                                <i className="fa-solid fa-file-excel me-2" />Export Excel
                             </button>
                         </div>
                     </div>
                 </div>
             </div>
 
-            {/* Complete paysheet table */}
-            <div className="card border-0 shadow-sm">
-                <div className="paysheet-table-shell">
-                    <div className="paysheet-scroll-wrapper">
-                        <table className="table table-sm table-hover align-middle mb-0 paysheet-main-table">
-                            <thead>
+            {/* ── Stat cards (only when data loaded) ───────────────────────────── */}
+            {hasData && (
+                <div className="row g-3 mb-4">
+                    {statCards.map((card) => (
+                        <div key={card.label} className="col-6 col-sm-4 col-xl-3">
+                            <div className="card border-0 ps-stat-card h-100">
+                                <div className="card-body p-3 d-flex align-items-center gap-3">
+                                    <div className="ps-stat-icon" style={{ background: card.bg, color: card.color }}>
+                                        <i className={`fa-solid ${card.icon}`} />
+                                    </div>
+                                    <div className="ps-stat-text">
+                                        <div className="ps-stat-value">{card.value}</div>
+                                        <div className="ps-stat-label">{card.label}</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            )}
+
+            {/* ── Main table card ───────────────────────────────────────────────── */}
+            <div className="card border-0 ps-table-card">
+                {/* Card header */}
+                <div className="ps-table-card-header">
+                    <div className="d-flex align-items-center gap-2">
+                        <div className="ps-table-icon">
+                            <i className="fa-solid fa-table-list" />
+                        </div>
+                        <div>
+                            <span className="ps-table-title">Complete Paysheet</span>
+                            {hasData && (
+                                <span className="ps-table-subtitle ms-2">
+                                    {grandTotals.shifts} shift{grandTotals.shifts !== 1 ? "s" : ""} across {grandTotals.staff} staff member{grandTotals.staff !== 1 ? "s" : ""}
+                                </span>
+                            )}
+                        </div>
+                    </div>
+                    {hasData && (
+                        <div className="d-flex gap-2">
+                            <div className="ps-summary-chip">
+                                <i className="fa-solid fa-clock me-1" />
+                                {fmt(grandTotals.hours)}h total
+                            </div>
+                            <div className="ps-summary-chip ps-summary-chip--green">
+                                <i className="fa-solid fa-dollar-sign me-1" />
+                                ${fmt(grandTotals.gross)} gross
+                            </div>
+                        </div>
+                    )}
+                </div>
+
+                {/* Scrollable table */}
+                <div className="ps-scroll-wrapper">
+                    <table className="ps-main-table">
+                        <thead>
+                            <tr>
+                                {COLUMNS.map((col) => (
+                                    <th key={col.key} style={{ minWidth: col.width }}>
+                                        {col.label}
+                                    </th>
+                                ))}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {paySheetLoading && (
                                 <tr>
-                                    {COLUMNS.map((col) => (
-                                        <th key={col.key} style={{ minWidth: col.width }}>
-                                            {col.label}
-                                        </th>
-                                    ))}
+                                    <td colSpan={COLUMNS.length} className="text-center py-5">
+                                        <Loader compact />
+                                    </td>
                                 </tr>
-                            </thead>
-                            <tbody>
-                                {paySheetLoading && (
-                                    <tr>
-                                        <td colSpan={COLUMNS.length} className="text-center py-5">
-                                            <Loader compact />
-                                        </td>
-                                    </tr>
-                                )}
+                            )}
 
-                                {!paySheetLoading && tableRows.length === 0 && (
-                                    <tr>
-                                        <td colSpan={COLUMNS.length} className="text-center text-muted py-5">
-                                            No paysheet records found for the selected dates.
-                                        </td>
-                                    </tr>
-                                )}
+                            {!paySheetLoading && tableRows.length === 0 && (
+                                <tr>
+                                    <td colSpan={COLUMNS.length}>
+                                        <div className="ps-empty-state">
+                                            <div className="ps-empty-icon">
+                                                <i className="fa-solid fa-file-invoice-dollar" />
+                                            </div>
+                                            <h5 className="ps-empty-title">No paysheet data</h5>
+                                            <p className="ps-empty-text">
+                                                Select a date range above and click <strong>Search</strong> to load paysheet records.
+                                            </p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            )}
 
-                                {!paySheetLoading && tableRows.map((row, idx) => {
-                                    if (row.type === "subtotal") {
-                                        return (
-                                            <tr key={`sub-${idx}`} className="paysheet-subtotal-row">
-                                                {COLUMNS.map((col) => (
-                                                    <td key={col.key} className="fw-bold">
-                                                        {renderCell(col, row.data[col.key])}
-                                                    </td>
-                                                ))}
-                                            </tr>
-                                        );
-                                    }
-                                    if (row.type === "grandtotal") {
-                                        return (
-                                            <tr key="grandtotal" className="paysheet-grandtotal-row">
-                                                {COLUMNS.map((col) => (
-                                                    <td key={col.key} className="fw-bold">
-                                                        {renderCell(col, row.data[col.key])}
-                                                    </td>
-                                                ))}
-                                            </tr>
-                                        );
-                                    }
+                            {!paySheetLoading && tableRows.map((row, idx) => {
+                                if (row.type === "subtotal") {
                                     return (
-                                        <tr key={`shift-${idx}`} className="paysheet-shift-row">
+                                        <tr key={`sub-${idx}`} className="ps-subtotal-row">
                                             {COLUMNS.map((col) => (
                                                 <td key={col.key}>
-                                                    {renderCell(col, row.data[col.key])}
+                                                    {renderCell(col, row.data[col.key], "subtotal")}
                                                 </td>
                                             ))}
                                         </tr>
                                     );
-                                })}
-                            </tbody>
-                        </table>
-                    </div>
+                                }
+                                if (row.type === "grandtotal") {
+                                    return (
+                                        <tr key="grandtotal" className="ps-grandtotal-row">
+                                            {COLUMNS.map((col) => (
+                                                <td key={col.key}>
+                                                    {renderCell(col, row.data[col.key], "grandtotal")}
+                                                </td>
+                                            ))}
+                                        </tr>
+                                    );
+                                }
+                                return (
+                                    <tr key={`shift-${idx}`} className="ps-shift-row">
+                                        {COLUMNS.map((col) => (
+                                            <td key={col.key}>
+                                                {renderCell(col, row.data[col.key], "shift")}
+                                            </td>
+                                        ))}
+                                    </tr>
+                                );
+                            })}
+                        </tbody>
+                    </table>
                 </div>
             </div>
 
+            {/* ── All styles ───────────────────────────────────────────────────── */}
             <style>{`
-                .paysheet-table-shell {
-                    overflow: hidden;
+                /* Page header */
+                .ps-page-header {
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                    flex-wrap: wrap;
+                    gap: 12px;
+                }
+                .ps-page-header-left {
+                    display: flex;
+                    align-items: center;
+                    gap: 14px;
+                }
+                .ps-page-icon {
+                    width: 48px; height: 48px;
+                    border-radius: 12px;
+                    background: linear-gradient(135deg, #0A7C6E, #0d9e8d);
+                    color: #fff;
+                    display: flex; align-items: center; justify-content: center;
+                    font-size: 1.3rem;
+                    box-shadow: 0 4px 12px rgba(10,124,110,0.3);
+                    flex-shrink: 0;
+                }
+                .ps-page-title  { font-size: 1.4rem; font-weight: 800; color: #111827; margin: 0; line-height: 1.2; }
+                .ps-page-subtitle { font-size: 0.82rem; color: #6b7280; margin: 2px 0 0; }
+
+                /* Filter card */
+                .ps-filter-card {
+                    border-radius: 12px;
+                    background: #fff;
+                    box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.04);
+                }
+                .ps-form-label {
+                    display: block;
+                    font-size: 0.78rem;
+                    font-weight: 700;
+                    color: #374151;
+                    margin-bottom: 6px;
+                    text-transform: uppercase;
+                    letter-spacing: 0.04em;
+                }
+                .ps-date-input {
                     border-radius: 8px;
+                    border: 1.5px solid #e5e7eb;
+                    font-size: 0.85rem;
+                    color: #111827;
+                    background: #fafafa;
+                    transition: border-color 0.15s, box-shadow 0.15s;
+                }
+                .ps-date-input:focus {
+                    border-color: #0A7C6E;
+                    box-shadow: 0 0 0 3px rgba(10,124,110,0.12);
+                    background: #fff;
+                    outline: none;
                 }
 
-                .paysheet-scroll-wrapper {
-                    overflow-x: auto;
-                    width: 100%;
+                /* Buttons */
+                .ps-btn {
+                    min-height: 40px;
+                    font-weight: 700;
+                    font-size: 0.84rem;
+                    border-radius: 9px;
+                    padding: 0 20px;
+                    transition: all 0.15s;
+                    display: inline-flex; align-items: center;
+                }
+                .ps-btn-primary {
+                    background: linear-gradient(135deg, #0A7C6E, #0d9e8d);
+                    color: #fff;
+                    border: none;
+                    box-shadow: 0 2px 8px rgba(10,124,110,0.3);
+                }
+                .ps-btn-primary:hover:not(:disabled) {
+                    background: linear-gradient(135deg, #086358, #0A7C6E);
+                    box-shadow: 0 4px 14px rgba(10,124,110,0.4);
+                    color: #fff;
+                    transform: translateY(-1px);
+                }
+                .ps-btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
+                .ps-btn-export {
+                    background: #fff;
+                    color: #0A7C6E;
+                    border: 2px solid #0A7C6E;
+                }
+                .ps-btn-export:hover:not(:disabled) {
+                    background: #0A7C6E;
+                    color: #fff;
+                    transform: translateY(-1px);
+                    box-shadow: 0 4px 14px rgba(10,124,110,0.3);
+                }
+                .ps-btn-export:disabled { opacity: 0.4; cursor: not-allowed; }
+
+                /* Stat cards */
+                .ps-stat-card {
+                    border-radius: 12px;
+                    background: #fff;
+                    box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.04);
+                    transition: transform 0.15s, box-shadow 0.15s;
+                }
+                .ps-stat-card:hover {
+                    transform: translateY(-2px);
+                    box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+                }
+                .ps-stat-icon {
+                    width: 44px; height: 44px; border-radius: 11px;
+                    display: flex; align-items: center; justify-content: center;
+                    font-size: 1.05rem; flex-shrink: 0;
+                }
+                .ps-stat-text { min-width: 0; }
+                .ps-stat-value { font-size: 1.1rem; font-weight: 800; color: #111827; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+                .ps-stat-label { font-size: 0.67rem; color: #6b7280; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 2px; }
+
+                /* Table card */
+                .ps-table-card {
+                    border-radius: 14px;
+                    overflow: hidden;
+                    box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.05);
+                }
+                .ps-table-card-header {
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                    flex-wrap: wrap;
+                    gap: 10px;
+                    padding: 14px 18px;
+                    background: linear-gradient(135deg, #f8fcfb 0%, #f0faf8 100%);
+                    border-bottom: 1.5px solid #d4ecea;
+                }
+                .ps-table-icon {
+                    width: 32px; height: 32px; border-radius: 8px;
+                    background: linear-gradient(135deg, #0A7C6E, #0d9e8d);
+                    color: #fff;
+                    display: flex; align-items: center; justify-content: center;
+                    font-size: 0.85rem;
+                }
+                .ps-table-title   { font-size: 0.92rem; font-weight: 800; color: #0A7C6E; }
+                .ps-table-subtitle { font-size: 0.78rem; color: #6b7280; font-weight: 500; }
+                .ps-summary-chip {
+                    display: inline-flex; align-items: center;
+                    background: #f3f4f6;
+                    color: #374151;
+                    font-size: 0.75rem;
+                    font-weight: 700;
+                    padding: 4px 12px;
+                    border-radius: 20px;
+                    border: 1px solid #e5e7eb;
+                }
+                .ps-summary-chip--green {
+                    background: #ecfdf5;
+                    color: #059669;
+                    border-color: #a7f3d0;
                 }
 
-                .paysheet-main-table {
-                    table-layout: auto;
+                /* Scroll wrapper */
+                .ps-scroll-wrapper { overflow-x: auto; width: 100%; }
+
+                /* Table */
+                .ps-main-table {
                     width: max-content;
                     min-width: 100%;
                     border-collapse: collapse;
+                    table-layout: auto;
                 }
-
-                .paysheet-main-table thead tr th {
-                    background-color: #e6f2f0;
-                    border-bottom: 2px solid #0A7C6E !important;
-                    font-size: 0.78rem;
-                    font-weight: 700;
+                .ps-main-table thead th {
+                    background: linear-gradient(180deg, #e8f5f3 0%, #daf0ed 100%);
+                    border-bottom: 2px solid #0A7C6E;
+                    border-right: 1px solid #c8e6e3;
+                    font-size: 0.7rem;
+                    font-weight: 800;
                     text-transform: uppercase;
-                    letter-spacing: 0.02em;
-                    padding: 0.65rem 0.6rem;
+                    letter-spacing: 0.05em;
+                    color: #0d5c53;
+                    padding: 10px 10px;
                     white-space: nowrap;
-                    text-align: left;
-                    vertical-align: middle;
                     position: sticky;
                     top: 0;
-                    z-index: 1;
+                    z-index: 2;
                 }
+                .ps-main-table thead th:last-child { border-right: none; }
 
-                .paysheet-main-table tbody tr td {
-                    font-size: 0.8rem;
-                    padding: 0.5rem 0.6rem;
+                .ps-main-table tbody td {
+                    font-size: 0.79rem;
+                    padding: 7px 10px;
                     white-space: nowrap;
-                    text-align: left;
+                    color: #374151;
+                    border-bottom: 1px solid #f0f5f4;
+                    border-right: 1px solid #f8fbfa;
                     vertical-align: middle;
-                    border-bottom: 1px solid #e2e8e6;
                 }
+                .ps-main-table tbody td:last-child { border-right: none; }
 
-                .paysheet-shift-row:nth-child(odd) td {
-                    background-color: #fff;
-                }
+                /* Shift rows */
+                .ps-shift-row td { background: #fff; }
+                .ps-shift-row:nth-child(even) td { background: #f8fdfb; }
+                .ps-shift-row:hover td { background: #edf7f5 !important; transition: background 0.1s; }
 
-                .paysheet-shift-row:nth-child(even) td {
-                    background-color: #f8fcfb;
-                }
-
-                .paysheet-shift-row:hover td {
-                    background-color: #e6f2f0;
-                }
-
-                .paysheet-subtotal-row td {
-                    background-color: #d9d9d9 !important;
-                    border-top: 2px solid #bbb;
-                    border-bottom: 2px solid #bbb;
+                /* Subtotal row */
+                .ps-subtotal-row td {
+                    background: #e2e2e2 !important;
+                    border-top: 2px solid #bdbdbd;
+                    border-bottom: 2px solid #bdbdbd;
                     font-weight: 700;
+                    color: #1f2937;
                 }
 
-                .paysheet-grandtotal-row td {
-                    background-color: #c8e6e3 !important;
-                    border-top: 2px solid #0A7C6E;
-                    font-weight: 700;
-                    font-size: 0.82rem;
+                /* Grand total row */
+                .ps-grandtotal-row td {
+                    background: linear-gradient(135deg, #d1fae5 0%, #c8e6e3 100%) !important;
+                    border-top: 2.5px solid #0A7C6E;
+                    border-bottom: 2.5px solid #0A7C6E;
+                    font-weight: 800;
+                    color: #064e46;
+                    font-size: 0.8rem;
                 }
 
-                .timesheet-action-btn {
-                    min-height: 38px;
-                    font-weight: 600;
+                /* Cell accents */
+                .ps-cell-empty { color: #d1d5db; font-size: 0.75rem; }
+
+                .ps-gross-badge {
+                    display: inline-flex; align-items: center;
+                    background: #ecfdf5; color: #059669;
+                    font-weight: 700; font-size: 0.77rem;
+                    padding: 2px 9px; border-radius: 20px;
+                    border: 1px solid #a7f3d0;
                 }
+                .ps-state-badge {
+                    display: inline-flex; align-items: center;
+                    background: #eff6ff; color: #1d4ed8;
+                    font-size: 0.68rem; font-weight: 800;
+                    padding: 2px 9px; border-radius: 20px;
+                    border: 1px solid #bfdbfe;
+                    text-transform: uppercase; letter-spacing: 0.05em;
+                }
+                .ps-pill {
+                    display: inline-flex; align-items: center;
+                    font-size: 0.69rem; font-weight: 700;
+                    padding: 2px 9px; border-radius: 20px;
+                    text-transform: capitalize;
+                }
+                .ps-pill--no  { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; }
+                .ps-pill--yes { background: #f0fdf4; color: #16a34a; border: 1px solid #bbf7d0; }
+                .ps-payroll-badge {
+                    display: inline-flex; align-items: center;
+                    background: #faf5ff; color: #7c3aed;
+                    font-size: 0.69rem; font-weight: 700;
+                    padding: 2px 9px; border-radius: 20px;
+                    border: 1px solid #e9d5ff;
+                }
+                .ps-currency { color: #1f2937; font-variant-numeric: tabular-nums; }
+                .ps-number   { color: #1d4ed8; font-weight: 600; font-variant-numeric: tabular-nums; }
+                .ps-time     { color: #6b7280; font-variant-numeric: tabular-nums; font-size: 0.78rem; }
+                .ps-grandtotal-label { font-weight: 800; font-size: 0.82rem; color: #064e46; }
+
+                /* Empty state */
+                .ps-empty-state {
+                    display: flex; flex-direction: column; align-items: center;
+                    padding: 60px 20px; text-align: center;
+                }
+                .ps-empty-icon {
+                    width: 72px; height: 72px; border-radius: 20px;
+                    background: linear-gradient(135deg, #f3f4f6, #e5e7eb);
+                    color: #9ca3af;
+                    display: flex; align-items: center; justify-content: center;
+                    font-size: 2rem; margin-bottom: 16px;
+                }
+                .ps-empty-title { font-size: 1rem; font-weight: 700; color: #374151; margin: 0 0 6px; }
+                .ps-empty-text  { font-size: 0.83rem; color: #9ca3af; margin: 0; max-width: 320px; }
             `}</style>
         </div>
     );

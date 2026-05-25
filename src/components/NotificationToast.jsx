@@ -35,7 +35,7 @@ function ToastBody({ title, message, data, page, onNavigate }) {
           style={{
             marginTop: "8px",
             padding: "4px 10px",
-            background: "#3B82F6",
+            background: "#0A7C6E",
             color: "#fff",
             border: "none",
             borderRadius: "4px",
@@ -67,7 +67,7 @@ export default function NotificationToast() {
 
     // Play notification bell sound
     const audio = new Audio("/assets/notification-bell.wav");
-    audio.play().catch(() => {});
+    audio.play().catch(() => { });
 
     const title = latestNotification?.title || latestNotification?.data?.title;
     const message =

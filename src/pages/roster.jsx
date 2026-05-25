@@ -493,19 +493,9 @@ export default function RosterPage() {
 
       {/* NEW: ADD SHIFT/SITE MODAL */}
       {modal?.type === "add_shift" && (
-        <div className="vr-modal-backdrop" onClick={closeModal}>
-          <div
-            className="vr-modal-container"
-            onClick={(e) => e.stopPropagation()}
-            style={{ width: '100vw', maxWidth: '100vw', height: '100vh', margin: 0, borderRadius: 0, overflow: 'auto' }}
-          >
-            <div className="vr-modal-header">
-              <h3>Add Shift / Job</h3>
-              <button onClick={closeModal}><i className="fa fa-times"></i></button>
-            </div>
-            <div className="vr-modal-content" style={{ padding: 0, height: '100%' }}>
-              <AddJob modalMode="embedded" onClose={closeModal} initialSite={modal.site?.siteData || modal.site} initialDate={modal.dateKey || modal.dateStr} />
-            </div>
+        <div className="embedded-job-backdrop" onClick={closeModal}>
+          <div className="embedded-job-shell" onClick={(e) => e.stopPropagation()}>
+            <AddJob modalMode="embedded" onClose={closeModal} initialSite={modal.site?.siteData || modal.site} initialDate={modal.dateKey || modal.dateStr} />
           </div>
         </div>
       )}

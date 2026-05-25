@@ -30,14 +30,19 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
 
   const userType = userdata?.data?.user_type || userdata?.user_type;
   const isAdmin = userType === "admin";
+  const isEmbedded = modalMode === "embedded";
 
   const { data: chargeratesData, loading: chargeratesLoading } = useFetch("api/get-chargerates", { isAuth: true });
   const { submit: submitJob, loading: submitLoading } = useSubmit({ isAuth: true });
   const { submit: uploadFile, loading: uploadLoading } = useSubmit({ isAuth: true });
 
-  const STEP_TITLES = isAdmin
-    ? ["Location", "Schedule", "Details"]
-    : ["Location", "Schedule", "Details", "Review & Confirm"];
+  const STEP_TITLES = isEmbedded
+    ? isAdmin
+      ? ["Overview", "Schedule", "Details"]
+      : ["Overview", "Schedule", "Details", "Review & Confirm"]
+    : isAdmin
+      ? ["Location", "Schedule", "Details"]
+      : ["Location", "Schedule", "Details", "Review & Confirm"];
 
   const [step, setStep] = useState(0);
   const [resolvingLocation, setResolvingLocation] = useState(false);
@@ -55,6 +60,73 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
   const [pendingDraft, setPendingDraft] = useState(null);
   const [postingJob, setPostingJob] = useState(false);
+  const [embeddedAccordion, setEmbeddedAccordion] = useState({
+    overview: false,
+    schedule: true,
+    details: false,
+    review: false
+  });
+
+  const toggleEmbeddedAccordion = (section) => {
+    setEmbeddedAccordion((prev) => ({ ...prev, [section]: !prev[section] }));
+  };
+
+  const renderEmbeddedSection = (section, title, subtitle, children) => (
+    <div className="embedded-accordion-section mb-4">
+      <button
+        type="button"
+        className={`embedded-accordion-header ${embeddedAccordion[section] ? "open" : ""}`}
+        onClick={() => toggleEmbeddedAccordion(section)}
+      >
+        <div>
+          <div className="fw-bold text-dark">{title}</div>
+          <div className="text-muted small">{subtitle}</div>
+        </div>
+        <span className="embedded-accordion-arrow">
+          {embeddedAccordion[section] ? (
+            <i className="fa fa-chevron-up"></i>
+          ) : (
+            <i className="fa fa-chevron-down"></i>
+          )}
+        </span>
+      </button>
+      {embeddedAccordion[section] && <div className="embedded-accordion-body">{children}</div>}
+    </div>
+  );
+
+  const renderEmbeddedAccordion = () => (
+    <>
+      <div className="embedded-accordion-root mb-3">
+        {renderEmbeddedSection(
+          "overview",
+          "Overview",
+          "Confirm the pre-filled site, customer and date before adding shift details.",
+          renderEmbeddedSummary()
+        )}
+
+        {renderEmbeddedSection(
+          "schedule",
+          "Schedule",
+          "Set the date, time and guard coverage for the shift.",
+          <ScheduleStep form={form} setField={setField} scheduleError={scheduleError} applyShiftToAllDays={applyShiftToAllDays} />
+        )}
+
+        {renderEmbeddedSection(
+          "details",
+          "Details",
+          "Add job type, description and attachments.",
+          <DetailsStep form={form} setField={setField} handleFile={handleFile} attachmentPreviews={attachmentPreviews} removeAttachment={removeAttachment} />
+        )}
+
+        {!isAdmin && renderEmbeddedSection(
+          "review",
+          "Review & Confirm",
+          "Review the job summary and submit the shift.",
+          <ReviewStep form={form} rate={breakdown} setStep={setStep} setField={setField} handleConfirm={handleConfirm} isSubmitting={isSubmitting} baseAmount={breakdown?.chargeTotalIncGst || 0} isAdmin={isAdmin} />
+        )}
+      </div>
+    </>
+  );
 
   const { data: customersRes, loading: loadingCustomers, refetch: refetchCustomers } = useFetch(
     isAdmin ? "api/admin/get-customers?limit=1000" : null,
@@ -382,6 +454,7 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
 
   function back() {
     if (step > 0) setStep(step - 1);
+    else if (isEmbedded && onClose) onClose();
     else navigate(-1);
   }
 
@@ -473,48 +546,54 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
   async function handleConfirm(e) {
     if (e) e.preventDefault();
 
-    // Validate all required fields before submission
+    // 1. Validate Location/Overview
     if (!form.coordinates) {
       toast.error("Location is required. Please select a location.");
-      setStep(0);
+      isEmbedded ? setEmbeddedAccordion((p) => ({ ...p, overview: true })) : setStep(0);
       return;
     }
 
+    // 2. Validate Schedule
     if (form.scheduleDays.length === 0) {
       toast.error("Schedule is required. Please select at least one date.");
-      setStep(1);
+      isEmbedded ? setEmbeddedAccordion((p) => ({ ...p, schedule: true })) : setStep(1);
       return;
     }
 
+    if (!validateSchedule(true)) {
+      isEmbedded ? setEmbeddedAccordion((p) => ({ ...p, schedule: true })) : setStep(1);
+      return;
+    }
+
+    // 3. Validate Details
     if (!form.title.trim()) {
       toast.error("Job title is required.");
-      setStep(2);
+      isEmbedded ? setEmbeddedAccordion((p) => ({ ...p, details: true })) : setStep(2);
       return;
     }
 
     if (!form.jobType) {
       toast.error("Job type is required.");
-      setStep(2);
+      isEmbedded ? setEmbeddedAccordion((p) => ({ ...p, details: true })) : setStep(2);
       return;
     }
 
+    // 4. Validate Review / Terms (For non-admin)
     if (!isAdmin && !form.termsAccepted) {
       toast.error("Accept Terms & Conditions to proceed.");
-      setStep(4);
+      isEmbedded ? setEmbeddedAccordion((p) => ({ ...p, review: true })) : setStep(3);
       return;
     }
 
-    if (!validateSchedule(true)) {
-      setStep(1);
-      return;
-    }
-
+    // 5. Validate Base Amount
     const baseAmount = breakdown?.chargeTotalIncGst || 0;
     if (baseAmount <= 0) {
       toast.error("Unable to calculate payment amount. Please check your schedule and try again.");
+      isEmbedded ? setEmbeddedAccordion((p) => ({ ...p, schedule: true })) : setStep(1);
       return;
     }
 
+    // If all validation passes, proceed to submit
     setPostingJob(true);
     try {
       const document_list = await uploadAllAttachments();
@@ -529,6 +608,7 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
         if (postRes?.success) {
           toast.success("Job posted successfully via Admin Override!");
           navigate("/my-job-applications");
+          if (isEmbedded && onClose) onClose(); // Close modal if embedded
         } else {
           toast.error(postRes?.message || "Job posting failed.");
         }
@@ -547,211 +627,303 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
 
   const isSubmitting = submitLoading || uploadLoading || postingJob;
 
-  return (
-    <>
-      <div className="dashboard-main">
-        <div className="dashboard-page-header mb-4 bg-white p-4 rounded-4 shadow-sm border border-light d-flex flex-wrap justify-content-between align-items-center gap-3">
+  const embeddedClientName = customerDetails?.name || initialSite?.customer_name || initialSite?.client_name || "Not selected";
+  const embeddedSiteName = initialSite?.site_name || initialSite?.displayName || initialSite?.title || form.location || "Unknown site";
+  const embeddedAddress = form.address || initialSite?.address || initialSite?.site_address || "Not available";
+  const embeddedDateValue = form.scheduleDays?.[0]?.date || "";
+  const embeddedDateLabel = embeddedDateValue
+    ? new Date(embeddedDateValue).toLocaleDateString("en-AU", { weekday: "short", day: "numeric", month: "short", year: "numeric" })
+    : "Date not set";
+  const embeddedJobTypeLabel = form.jobType ? (form.jobType === "others" ? form.customJobType || "Other" : form.jobType.replace(/-/g, " ")) : "Not set";
+
+  const renderEmbeddedSummary = () => (
+    <div className="embedded-summary-card">
+      <div className="d-flex flex-column gap-3">
+        <div className="d-flex justify-content-between align-items-center gap-3 flex-wrap">
           <div>
-            <h1 className="h4 fw-bold text-dark mb-1">Create Job</h1>
-            <p className="text-muted mb-0">Follow the steps to add a new job</p>
+            <h4 className="mb-1 fw-bold text-dark">Prefilled shift overview</h4>
+            <p className="text-muted small mb-0">Customer, location and date are prefilled for this roster entry. Review and continue to add shift times.</p>
           </div>
-
-          {isAdmin && (
-            <div className="bg-light border rounded-3 p-3" style={{ minWidth: "320px", maxWidth: "420px", width: "100%" }}>
-              <h6 className="fw-bold text-dark mb-2 d-flex align-items-center gap-2">
-                <i className="fa-solid fa-user-check text-primary"></i>
-                Select Client
-              </h6>
-              <Select
-                options={clientOptions}
-                value={clientOptions.find((opt) => opt.value === form.user_id) || clientOptions[0]}
-                onChange={(selected) => {
-                  const val = selected ? selected.value : "";
-                  setField("user_id", val);
-                  setSelectedSiteId("");
-                  setField("location", "");
-                  setField("address", "");
-                  setField("coordinates", "");
-                }}
-                placeholder={loadingCustomers ? "Loading clients..." : "Search clients..."}
-                isDisabled={loadingCustomers}
-                isSearchable={true}
-                classNamePrefix="react-select"
-                styles={{
-                  control: (base) => ({ ...base, minHeight: "40px", borderRadius: "0.5rem", boxShadow: "none" }),
-                  valueContainer: (base) => ({ ...base, paddingTop: 2, paddingBottom: 2 }),
-                  input: (base) => ({ ...base, margin: 0, padding: 0 }),
-                  indicatorsContainer: (base) => ({ ...base, height: "40px" }),
-                  option: (base, state) => ({
-                    ...base,
-                    fontWeight: state.data.isNew ? "bold" : "normal",
-                    color: state.data.isNew ? "#0A7C6E" : base.color,
-                    background: state.isSelected ? "#0A7C6E" : state.isFocused ? "#e9ecef" : "white"
-                  })
-                }}
-              />
-            </div>
-          )}
         </div>
-
-        {isAdmin && step === 0 && form.user_id && form.user_id !== "new" && (
-          <div className="mb-3">
-            <AdminClientProfile
-              customerDetails={customerDetails}
-              customerTotalHours={customerTotalHours}
-              siteOptions={siteOptions}
-              selectedSiteId={selectedSiteId}
-              onSiteSelect={(selected) => {
-                if (!selected) return;
-
-                // NEW: Interaction for handling Manual Map entry
-                if (selected.value === "manual" || selected.isManual) {
-                  setSelectedSiteId("manual");
-                  setField("location", "");
-                  setField("address", "");
-                  setField("coordinates", "");
-                  setLocationError("");
-
-                  // Smooth auto-scroll down to the Map step
-                  setTimeout(() => {
-                    const mapSection = document.getElementById("location-step-wrapper");
-                    if (mapSection) {
-                      mapSection.scrollIntoView({ behavior: "smooth", block: "start" });
-                      toast.info("Please set the location on the map below.");
-                    } else {
-                      window.scrollBy({ top: 500, behavior: "smooth" });
-                    }
-                  }, 150);
-                } else {
-                  setSelectedSiteId(selected.siteData.id);
-                  setField("location", selected.siteData.address || "");
-                  setField("address", selected.siteData.address || "");
-                  setField("coordinates", selected.siteData.coordinates || "");
-                  setLocationError("");
-                }
-              }}
-              loadingSites={loadingSites}
-            />
-          </div>
-        )}
-
-        {isAdmin && step === 0 && form.user_id === "new" && (
-          <div className="mb-3">
-            {form.user_id === "new" && (
-              <div className="card shadow-sm border-0 rounded-3 mb-4">
-                <div className="card-body p-4">
-                  <h6 className="fw-bold text-dark mb-3">
-                    <i className="fa-solid fa-user-plus text-primary me-2"></i>
-                    Create New Client
-                  </h6>
-                  <div className="row g-3">
-                    <div className="col-md-6">
-                      <label className="form-label small text-muted fw-bold mb-2">Full Name *</label>
-                      <input
-                        type="text"
-                        className="form-control"
-                        placeholder="Client name"
-                        value={newCustomer.name}
-                        onChange={(e) => setNewCustomer({ ...newCustomer, name: e.target.value })}
-                      />
-                    </div>
-                    <div className="col-md-6">
-                      <label className="form-label small text-muted fw-bold mb-2">Email *</label>
-                      <input
-                        type="email"
-                        className="form-control"
-                        placeholder="email@example.com"
-                        value={newCustomer.email}
-                        onChange={(e) => setNewCustomer({ ...newCustomer, email: e.target.value })}
-                      />
-                    </div>
-                    <div className="col-md-6">
-                      <label className="form-label small text-muted fw-bold mb-2">Phone</label>
-                      <input
-                        type="text"
-                        className="form-control"
-                        placeholder="Phone number"
-                        value={newCustomer.phone}
-                        onChange={(e) => setNewCustomer({ ...newCustomer, phone: e.target.value })}
-                      />
-                    </div>
-                    <div className="col-md-6">
-                      <label className="form-label small text-muted fw-bold mb-2">Company</label>
-                      <input
-                        type="text"
-                        className="form-control"
-                        placeholder="Company name"
-                        value={newCustomer.company_name}
-                        onChange={(e) => setNewCustomer({ ...newCustomer, company_name: e.target.value })}
-                      />
-                    </div>
-                  </div>
-                  <div className="d-flex justify-content-end gap-2 mt-4">
-                    <button
-                      type="button"
-                      className="btn btn-sm btn-outline-secondary rounded-2 px-4"
-                      onClick={() => setField("user_id", "")}
-                      disabled={submittingCustomer}
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      type="button"
-                      className="btn btn-sm btn-primary-custom rounded-2 px-5"
-                      onClick={handleCreateCustomer}
-                      disabled={submittingCustomer}
-                    >
-                      {submittingCustomer ? <>Saving...</> : <>Create & Continue</>}
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-
-        <div className="card shadow-sm list-card rounded-4 border-0">
-          <div className="card-body p-4">
-            {chargeratesLoading ? (<div className="text-center py-5">Loading rates...</div>) : (
-              <>
-                <StepProgress step={step} titles={STEP_TITLES} />
-
-                <form onSubmit={(e) => e.preventDefault()}>
-                  {/* WRAPPED LOCATION STEP for Auto-Scroll Interaction */}
-                  {step === 0 && (
-                    <div id="location-step-wrapper" className="pt-2">
-                      <LocationStep form={form} setField={setField} resolvingLocation={resolvingLocation} setResolvingLocation={setResolvingLocation} locationError={locationError} setLocationError={setLocationError} />
-                    </div>
-                  )}
-
-                  {step === 1 && <ScheduleStep form={form} setField={setField} scheduleError={scheduleError} applyShiftToAllDays={applyShiftToAllDays} />}
-                  {step === 2 && <DetailsStep form={form} setField={setField} handleFile={handleFile} attachmentPreviews={attachmentPreviews} removeAttachment={removeAttachment} />}
-
-                  {step === 3 && !isAdmin && <ReviewStep form={form} rate={breakdown} setStep={setStep} setField={setField} handleConfirm={handleConfirm} isSubmitting={isSubmitting} baseAmount={breakdown?.chargeTotalIncGst || 0} isAdmin={isAdmin} />}
-
-                  <div className="d-flex justify-content-between mt-5 pt-4 border-top">
-                    <button type="button" className="btn btn-outline-secondary rounded-pill px-4 fw-bold" onClick={back} disabled={isSubmitting}>← Back</button>
-
-                    {step < STEP_TITLES.length - 1 ? (
-                      <button type="button" className="btn btn-primary-custom btn-lg rounded-pill px-5 fw-bold shadow-sm" onClick={next} disabled={isSubmitting}>Next Step</button>
-                    ) : (
-                      isAdmin && (
-                        <button type="button" className="btn btn-dark btn-lg rounded-pill px-5 fw-bold shadow-sm" onClick={handleConfirm} disabled={isSubmitting}>
-                          {isSubmitting ? (
-                            <><span className="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>Processing...</>
-                          ) : (
-                            <><i className="fa-solid fa-paper-plane me-2"></i>Post Job Now</>
-                          )}
-                        </button>
-                      )
-                    )}
-                  </div>
-                </form>
-              </>
-            )}
-          </div>
+        <div className="embedded-summary-row">
+          <span className="text-muted">Customer</span>
+          <strong>{embeddedClientName}</strong>
+        </div>
+        <div className="embedded-summary-row">
+          <span className="text-muted">Site / Location</span>
+          <strong>{embeddedSiteName}</strong>
+        </div>
+        <div className="embedded-summary-row">
+          <span className="text-muted">Address</span>
+          <strong>{embeddedAddress}</strong>
+        </div>
+        <div className="embedded-summary-row">
+          <span className="text-muted">Job date</span>
+          <strong>{embeddedDateLabel}</strong>
+        </div>
+        <div className="embedded-summary-row">
+          <span className="text-muted">Job type</span>
+          <strong>{embeddedJobTypeLabel}</strong>
         </div>
       </div>
+    </div>
+  );
+
+  const renderContent = () => (
+    <>
+      {/* Hide the step progress bar if we are in embedded mode */}
+      {!isEmbedded && <StepProgress step={step} titles={STEP_TITLES} />}
+
+      <form onSubmit={(e) => e.preventDefault()}>
+        {isEmbedded ? (
+          <>
+            {renderEmbeddedAccordion()}
+            <div className="d-flex justify-content-between mt-5 pt-4 border-top">
+              {/* Changed "Back" to "Cancel" since there are no previous steps here */}
+              <button type="button" className="btn btn-outline-secondary rounded-pill px-4 fw-bold" onClick={back} disabled={isSubmitting}>
+                Cancel
+              </button>
+
+              {!isAdmin && (
+                <button type="button" className="btn btn-primary-custom btn-lg rounded-pill px-5 fw-bold shadow-sm" onClick={handleConfirm} disabled={isSubmitting}>
+                  {isSubmitting ? (
+                    <><span className="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>Processing...</>
+                  ) : (
+                    <><i className="fa-solid fa-paper-plane me-2"></i>Review & Pay</>
+                  )}
+                </button>
+              )}
+              {isAdmin && (
+                <button type="button" className="btn btn-dark btn-lg rounded-pill px-5 fw-bold shadow-sm" onClick={handleConfirm} disabled={isSubmitting}>
+                  {isSubmitting ? (
+                    <><span className="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>Processing...</>
+                  ) : (
+                    <><i className="fa-solid fa-paper-plane me-2"></i>Post Job Now</>
+                  )}
+                </button>
+              )}
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="dashboard-page-header mb-4 bg-white p-4 rounded-4 shadow-sm border border-light d-flex flex-wrap justify-content-between align-items-center gap-3">
+              <div>
+                <h1 className="h4 fw-bold text-dark mb-1">Create Job</h1>
+                <p className="text-muted mb-0">Follow the steps to add a new job</p>
+              </div>
+
+              {isAdmin && (
+                <div className="bg-light border rounded-3 p-3" style={{ minWidth: "320px", maxWidth: "420px", width: "100%" }}>
+                  <h6 className="fw-bold text-dark mb-2 d-flex align-items-center gap-2">
+                    <i className="fa-solid fa-user-check text-primary"></i>
+                    Select Client
+                  </h6>
+                  <Select
+                    options={clientOptions}
+                    value={clientOptions.find((opt) => opt.value === form.user_id) || clientOptions[0]}
+                    onChange={(selected) => {
+                      const val = selected ? selected.value : "";
+                      setField("user_id", val);
+                      setSelectedSiteId("");
+                      setField("location", "");
+                      setField("address", "");
+                      setField("coordinates", "");
+                    }}
+                    placeholder={loadingCustomers ? "Loading clients..." : "Search clients..."}
+                    isDisabled={loadingCustomers}
+                    isSearchable={true}
+                    classNamePrefix="react-select"
+                    styles={{
+                      control: (base) => ({ ...base, minHeight: "40px", borderRadius: "0.5rem", boxShadow: "none" }),
+                      valueContainer: (base) => ({ ...base, paddingTop: 2, paddingBottom: 2 }),
+                      input: (base) => ({ ...base, margin: 0, padding: 0 }),
+                      indicatorsContainer: (base) => ({ ...base, height: "40px" }),
+                      option: (base, state) => ({
+                        ...base,
+                        fontWeight: state.data.isNew ? "bold" : "normal",
+                        color: state.data.isNew ? "#0A7C6E" : base.color,
+                        background: state.isSelected ? "#0A7C6E" : state.isFocused ? "#e9ecef" : "white"
+                      })
+                    }}
+                  />
+                </div>
+              )}
+            </div>
+
+            {isAdmin && step === 0 && form.user_id && form.user_id !== "new" && (
+              <div className="mb-3">
+                <AdminClientProfile
+                  customerDetails={customerDetails}
+                  customerTotalHours={customerTotalHours}
+                  siteOptions={siteOptions}
+                  selectedSiteId={selectedSiteId}
+                  onSiteSelect={(selected) => {
+                    if (!selected) return;
+
+                    if (selected.value === "manual" || selected.isManual) {
+                      setSelectedSiteId("manual");
+                      setField("location", "");
+                      setField("address", "");
+                      setField("coordinates", "");
+                      setLocationError("");
+
+                      setTimeout(() => {
+                        const mapSection = document.getElementById("location-step-wrapper");
+                        if (mapSection) {
+                          mapSection.scrollIntoView({ behavior: "smooth", block: "start" });
+                          toast.info("Please set the location on the map below.");
+                        } else {
+                          window.scrollBy({ top: 500, behavior: "smooth" });
+                        }
+                      }, 150);
+                    } else {
+                      setSelectedSiteId(selected.siteData.id);
+                      setField("location", selected.siteData.address || "");
+                      setField("address", selected.siteData.address || "");
+                      setField("coordinates", selected.siteData.coordinates || "");
+                      setLocationError("");
+                    }
+                  }}
+                  loadingSites={loadingSites}
+                />
+              </div>
+            )}
+
+            {isAdmin && step === 0 && form.user_id === "new" && (
+              <div className="mb-3">
+                {form.user_id === "new" && (
+                  <div className="card shadow-sm border-0 rounded-3 mb-4">
+                    <div className="card-body p-4">
+                      <h6 className="fw-bold text-dark mb-3">
+                        <i className="fa-solid fa-user-plus text-primary me-2"></i>
+                        Create New Client
+                      </h6>
+                      <div className="row g-3">
+                        <div className="col-md-6">
+                          <label className="form-label small text-muted fw-bold mb-2">Full Name *</label>
+                          <input
+                            type="text"
+                            className="form-control"
+                            placeholder="Client name"
+                            value={newCustomer.name}
+                            onChange={(e) => setNewCustomer({ ...newCustomer, name: e.target.value })}
+                          />
+                        </div>
+                        <div className="col-md-6">
+                          <label className="form-label small text-muted fw-bold mb-2">Email *</label>
+                          <input
+                            type="email"
+                            className="form-control"
+                            placeholder="email@example.com"
+                            value={newCustomer.email}
+                            onChange={(e) => setNewCustomer({ ...newCustomer, email: e.target.value })}
+                          />
+                        </div>
+                        <div className="col-md-6">
+                          <label className="form-label small text-muted fw-bold mb-2">Phone</label>
+                          <input
+                            type="text"
+                            className="form-control"
+                            placeholder="Phone number"
+                            value={newCustomer.phone}
+                            onChange={(e) => setNewCustomer({ ...newCustomer, phone: e.target.value })}
+                          />
+                        </div>
+                        <div className="col-md-6">
+                          <label className="form-label small text-muted fw-bold mb-2">Company</label>
+                          <input
+                            type="text"
+                            className="form-control"
+                            placeholder="Company name"
+                            value={newCustomer.company_name}
+                            onChange={(e) => setNewCustomer({ ...newCustomer, company_name: e.target.value })}
+                          />
+                        </div>
+                      </div>
+                      <div className="d-flex justify-content-end gap-2 mt-4">
+                        <button
+                          type="button"
+                          className="btn btn-sm btn-outline-secondary rounded-2 px-4"
+                          onClick={() => setField("user_id", "")}
+                          disabled={submittingCustomer}
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn-sm btn-primary-custom rounded-2 px-5"
+                          onClick={handleCreateCustomer}
+                          disabled={submittingCustomer}
+                        >
+                          {submittingCustomer ? <>Saving...</> : <>Create & Continue</>}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            <div className="card shadow-sm list-card rounded-4 border-0">
+              <div className="card-body p-4">
+                {step === 0 && (
+                  <div id="location-step-wrapper" className="pt-2">
+                    <LocationStep form={form} setField={setField} resolvingLocation={resolvingLocation} setResolvingLocation={setResolvingLocation} locationError={locationError} setLocationError={setLocationError} />
+                  </div>
+                )}
+
+                {step === 1 && <ScheduleStep form={form} setField={setField} scheduleError={scheduleError} applyShiftToAllDays={applyShiftToAllDays} />}
+                {step === 2 && <DetailsStep form={form} setField={setField} handleFile={handleFile} attachmentPreviews={attachmentPreviews} removeAttachment={removeAttachment} />}
+
+                {step === 3 && !isAdmin && <ReviewStep form={form} rate={breakdown} setStep={setStep} setField={setField} handleConfirm={handleConfirm} isSubmitting={isSubmitting} baseAmount={breakdown?.chargeTotalIncGst || 0} isAdmin={isAdmin} />}
+
+                <div className="d-flex justify-content-between mt-5 pt-4 border-top">
+                  <button type="button" className="btn btn-outline-secondary rounded-pill px-4 fw-bold" onClick={back} disabled={isSubmitting}>← Back</button>
+
+                  {step < STEP_TITLES.length - 1 ? (
+                    <button type="button" className="btn btn-primary-custom btn-lg rounded-pill px-5 fw-bold shadow-sm" onClick={next} disabled={isSubmitting}>Next Step</button>
+                  ) : (
+                    isAdmin && (
+                      <button type="button" className="btn btn-dark btn-lg rounded-pill px-5 fw-bold shadow-sm" onClick={handleConfirm} disabled={isSubmitting}>
+                        {isSubmitting ? (
+                          <><span className="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>Processing...</>
+                        ) : (
+                          <><i className="fa-solid fa-paper-plane me-2"></i>Post Job Now</>
+                        )}
+                      </button>
+                    )
+                  )}
+                </div>
+              </div>
+            </div>
+          </>
+        )}
+      </form>
+    </>
+  );
+
+  if (isEmbedded) {
+    return (
+      <div className="embedded-job-modal">
+        <div className="embedded-job-header">
+          <div>
+            <h3 className="mb-1 fw-bold text-dark">{isAdmin ? "Add Shift" : "Create Job"}</h3>
+            <p className="text-muted small mb-0">Prefilled location and date. Use the schedule and details steps to set the shift time.</p>
+          </div>
+          <button type="button" className="btn-close" onClick={onClose} aria-label="Close">×</button>
+        </div>
+        <div className="embedded-job-body">
+          {/* THE FIX: Call renderContent() so the buttons and progress bar are rendered */}
+          {chargeratesLoading ? (<div className="text-center py-5">Loading rates...</div>) : renderContent()}
+        </div>
+        <PaymentModal open={paymentModalOpen} onClose={() => !postingJob && setPaymentModalOpen(false)} amountAud={pendingDraft?.amountAud || 0} jobTitle={form.title} onHoldPayment={handleHoldPayment} onSuccess={handlePaymentSuccess} savedCards={savedCards} />
+      </div>
+    );
+  }
+
+  return (
+    <>
+      {renderContent()}
       <PaymentModal open={paymentModalOpen} onClose={() => !postingJob && setPaymentModalOpen(false)} amountAud={pendingDraft?.amountAud || 0} jobTitle={form.title} onHoldPayment={handleHoldPayment} onSuccess={handlePaymentSuccess} savedCards={savedCards} />
     </>
   );

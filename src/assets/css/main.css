@@ -12476,7 +12476,7 @@ Large Mobile Screen
 
 .chat-send-btn {
     border: none;
-    background: linear-gradient(135deg, #0A7C6E, #3b82f6);
+    background: linear-gradient(135deg, #0A7C6E, #0A7C6E);
     color: #ffffff;
     border-radius: 14px;
     width: 48px;

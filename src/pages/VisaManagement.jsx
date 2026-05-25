@@ -363,7 +363,7 @@ export default function VisaManagement() {
                 .user-friendly-table tbody tr:last-child td { border-bottom: none; }
                 
                 input.form-control { border-radius: 0.5rem; border-color: #cbd5e1; padding: 0.6rem 1rem; }
-                input.form-control:focus { border-color: #3b82f6; box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1); }
+                input.form-control:focus { border-color: #0A7C6E; box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1); }
             `}</style>
         </div>
     );

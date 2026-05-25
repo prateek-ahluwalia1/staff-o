@@ -151,10 +151,10 @@ function CardForm({
     <form onSubmit={handleSubmit} noValidate>
       <div
         className="d-flex justify-content-between align-items-center rounded mb-4 p-3"
-        style={{ background: "linear-gradient(135deg,#6366f115,#3b82f615)" }}
+        style={{ background: "#0A7C6E" }}
       >
         <span className="text-muted small">{jobTitle || "Job posting"}</span>
-        <span className="fw-bold fs-5" style={{ color: "#3b82f6" }}>
+        <span className="fw-bold fs-5" style={{ color: "#0A7C6E" }}>
           {fmt(amountAud)}
         </span>
       </div>
@@ -171,8 +171,8 @@ function CardForm({
             <button
               type="button"
               className={`btn btn-sm ${paymentMode === "saved"
-                  ? "btn-primary-custom"
-                  : "btn-outline-primary"
+                ? "btn-primary-custom"
+                : "btn-outline-primary"
                 }`}
               onClick={() => {
                 setPaymentMode("saved");
@@ -185,8 +185,8 @@ function CardForm({
             <button
               type="button"
               className={`btn btn-sm ${paymentMode === "new"
-                  ? "btn-primary-custom"
-                  : "btn-outline-primary"
+                ? "btn-primary-custom"
+                : "btn-outline-primary"
                 }`}
               onClick={() => {
                 setPaymentMode("new");

@@ -340,8 +340,8 @@ const RatesList = ({ forcedType } = {}) => {
         }
         
         .form-control:focus {
-          border-color: #3b82f6;
-          box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+          border-color: #0A7C6E;
+          box-shadow: 0 0 0 4px rgba(10, 124, 110, 0.1);
           outline: none;
         }
         

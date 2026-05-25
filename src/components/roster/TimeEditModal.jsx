@@ -1,29 +1,72 @@
-import React, { useState } from "react";
+import React from "react";
 import { format } from "date-fns";
 
-const hoursOptions = Array.from({ length: 24 }, (_, i) =>
-  String(i).padStart(2, "0"),
-);
-const minutesOptions = Array.from({ length: 12 }, (_, i) =>
-  String(i * 5).padStart(2, "0"),
-);
+const CompactTimePicker = ({ value, onChange }) => {
+  const h = value ? value.split(":")[0] : "";
+  const m = value ? value.split(":")[1] : "";
 
-const getPart = (timeStr, part) => {
-  if (!timeStr) return "";
-  const split = timeStr.split(":");
-  return part === "hour" ? split[0] : split[1];
+  const handleHour = (e) => {
+    let val = e.target.value.replace(/\D/g, "");
+    if (val.length > 2) val = val.slice(-2);
+    if (parseInt(val) > 23) val = "23";
+    onChange(`${val}:${m || "00"}`);
+  };
+
+  const handleMin = (e) => {
+    let val = e.target.value.replace(/\D/g, "");
+    if (val.length > 2) val = val.slice(-2);
+    if (parseInt(val) > 59) val = "59";
+    onChange(`${h || "00"}:${val}`);
+  };
+
+  const handleBlur = () => {
+    const cleanH = h ? h.padStart(2, "0") : "";
+    const cleanM = m ? m.padStart(2, "0") : "";
+    if (cleanH || cleanM) {
+      onChange(`${cleanH || "00"}:${cleanM || "00"}`);
+    }
+  };
+
+  return (
+    <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+      <input
+        type="text"
+        placeholder="HH"
+        value={h}
+        onChange={handleHour}
+        onBlur={handleBlur}
+        style={{
+          width: "60px",
+          height: "48px",
+          textAlign: "center",
+          fontSize: "1.1rem",
+          fontWeight: "700",
+          border: "1px solid #d1d5db",
+          borderRadius: "12px",
+          padding: "0 8px",
+        }}
+      />
+      <span style={{ fontSize: "1.4rem", fontWeight: "700", color: "#6b7280" }}>:</span>
+      <input
+        type="text"
+        placeholder="MM"
+        value={m}
+        onChange={handleMin}
+        onBlur={handleBlur}
+        style={{
+          width: "60px",
+          height: "48px",
+          textAlign: "center",
+          fontSize: "1.1rem",
+          fontWeight: "700",
+          border: "1px solid #d1d5db",
+          borderRadius: "12px",
+          padding: "0 8px",
+        }}
+      />
+    </div>
+  );
 };
-
-const inputStyle = {
-  height: "48px",
-  borderRadius: "10px",
-  border: "1px solid #e5e7eb",
-  padding: "0 12px",
-  fontSize: "14px",
-  width: "100%",
-};
-
-const TABS = [{ id: "schedule", label: "Update Schedule", bg: "#e8f4fd" }];
 
 export default function TimeEditModal({
   modal,
@@ -35,17 +78,6 @@ export default function TimeEditModal({
   handleSave,
   saveLoading,
 }) {
-  const [activeTab, setActiveTab] = useState("schedule");
-
-  const handleTimeChange = (field, currentVal, type, newVal) => {
-    let h = getPart(currentVal, "hour") || "00";
-    let m = getPart(currentVal, "minute") || "00";
-    if (type === "hour") h = newVal;
-    if (type === "minute") m = newVal;
-    clearTimeEditError?.();
-    setEditForm((prev) => ({ ...prev, [field]: `${h}:${m}` }));
-  };
-
   const shift = modal?.shift;
   const site = modal?.site;
 
@@ -58,345 +90,132 @@ export default function TimeEditModal({
         left: 0,
         width: "100vw",
         height: "100vh",
-        backgroundColor: "rgba(0,0,0,0.5)",
+        backgroundColor: "rgba(0,0,0,0.45)",
         zIndex: 99999,
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
+        padding: "16px",
       }}
     >
       <div
         onClick={(e) => e.stopPropagation()}
         style={{
-          width: "85vw",
-          maxWidth: "1100px",
-          height: "auto",
-          maxHeight: "90vh",
+          width: "100%",
+          maxWidth: "780px",
+          maxHeight: "92vh",
           backgroundColor: "#fff",
-          display: "flex",
+          borderRadius: "20px",
           overflow: "hidden",
-          borderRadius: "12px",
-          boxShadow: "0 8px 32px rgba(0,0,0,0.18)",
+          boxShadow: "0 22px 80px rgba(16,24,40,0.18)",
+          display: "flex",
+          flexDirection: "column",
         }}
       >
-        {/* Left Sidebar */}
-        <div
-          style={{
-            width: "260px",
-            minWidth: "260px",
-            backgroundColor: "#fff",
-            borderRight: "1px solid #eaeaea",
-            display: "flex",
-            flexDirection: "column",
-          }}
-        >
-          <div className="p-4 border-bottom">
-            <h4 className="m-0 fw-bold text-center">Shift Time</h4>
+        <div style={{ padding: "24px 28px", borderBottom: "1px solid #eef2f7", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div>
+            <h3 style={{ margin: 0, fontSize: "1.2rem", fontWeight: 700 }}>Edit Shift Times</h3>
+            <p style={{ margin: "6px 0 0", color: "#6b7280", fontSize: "0.95rem" }}>
+              Update the times for this roster entry. Site, date, and guard assignment stay unchanged.
+            </p>
           </div>
+          <button
+            onClick={closeModal}
+            style={{
+              width: "36px",
+              height: "36px",
+              borderRadius: "50%",
+              border: "1px solid #e5e7eb",
+              background: "#fff",
+              color: "#111827",
+              fontSize: "18px",
+              lineHeight: 1,
+              cursor: "pointer",
+            }}
+          >
+            ×
+          </button>
+        </div>
 
-          {/* Shift Info Card */}
-          <div style={{ padding: "16px 12px" }}>
-            <div
-              style={{
-                background: "#f8f9fa",
-                borderRadius: "10px",
-                padding: "16px",
-                marginBottom: "12px",
-              }}
-            >
-              <div
-                style={{
-                  fontWeight: 700,
-                  fontSize: "14px",
-                  color: "#333",
-                  marginBottom: "6px",
-                }}
-              >
-                {site?.displayName || "Site"}
-              </div>
-              <div style={{ fontSize: "12px", color: "#666", marginBottom: 4 }}>
-                {modal?.dateStr}
-              </div>
-              {shift?.startDate && shift?.endDate && (
-                <div
-                  style={{
-                    fontSize: "13px",
-                    color: "#0A7C6E",
-                    fontWeight: 600,
-                  }}
-                >
-                  {format(shift.startDate, "HH:mm")} –{" "}
-                  {format(shift.endDate, "HH:mm")}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "24px", padding: "24px 28px", overflowY: "auto" }}>
+          <div style={{ minWidth: 0 }}>
+            <div style={{ background: "#f8fafc", borderRadius: "18px", padding: "22px", border: "1px solid #e2e8f0" }}>
+              <div style={{ marginBottom: "20px" }}>
+                <div style={{ fontSize: "0.75rem", letterSpacing: "0.14em", textTransform: "uppercase", color: "#6b7280" }}>Site</div>
+                <div style={{ fontSize: "1rem", fontWeight: 700, marginTop: "6px", color: "#111827" }}>
+                  {site?.displayName || "Roster site"}
                 </div>
-              )}
-              <div
-                style={{
-                  marginTop: "10px",
-                  fontSize: "12px",
-                  color: "#888",
-                }}
-              >
-                Guard: {shift?.guards?.name || "Unassigned"}
+                {site?.address && (
+                  <div style={{ marginTop: "8px", color: "#4b5563", fontSize: "0.92rem" }}>
+                    {site.address || site.site_address}
+                  </div>
+                )}
+              </div>
+
+              <div style={{ display: "grid", gap: "16px" }}>
+                <div>
+                  <div style={{ fontSize: "0.75rem", textTransform: "uppercase", color: "#6b7280", marginBottom: "6px" }}>Date</div>
+                  <div style={{ fontSize: "0.96rem", fontWeight: 600, color: "#111827" }}>{modal?.dateStr || "No date"}</div>
+                </div>
+                <div>
+                  <div style={{ fontSize: "0.75rem", textTransform: "uppercase", color: "#6b7280", marginBottom: "6px" }}>Current timing</div>
+                  <div style={{ fontSize: "0.96rem", fontWeight: 600, color: "#0f766e" }}>
+                    {shift?.startDate && shift?.endDate ? `${format(shift.startDate, "HH:mm")} – ${format(shift.endDate, "HH:mm")}` : "Not available"}
+                  </div>
+                </div>
+                <div>
+                  <div style={{ fontSize: "0.75rem", textTransform: "uppercase", color: "#6b7280", marginBottom: "6px" }}>Guard</div>
+                  <div style={{ fontSize: "0.96rem", fontWeight: 600, color: "#111827" }}>{shift?.guards?.name || "Unassigned"}</div>
+                </div>
               </div>
             </div>
+          </div>
 
-            {/* Tab Nav */}
-            <div className="overflow-auto py-2">
-              {TABS.map((tab) => {
-                const isActive = activeTab === tab.id;
-                return (
-                  <div
-                    key={tab.id}
-                    onClick={() => setActiveTab(tab.id)}
-                    style={{
-                      padding: "14px 16px",
-                      cursor: "pointer",
-                      background: isActive ? tab.bg : "transparent",
-                      border: isActive
-                        ? `2px solid ${tab.bg}`
-                        : "2px solid transparent",
-                      color: isActive ? "#000" : "#555",
-                      fontWeight: isActive ? "600" : "500",
-                      margin: "4px 0",
-                      borderRadius: "6px",
-                      display: "flex",
-                      alignItems: "center",
-                      fontSize: "14px",
-                    }}
-                  >
-                    {tab.label}
-                  </div>
-                );
-              })}
+          <div style={{ minWidth: 0 }}>
+            <div style={{ background: "#ffffff", borderRadius: "18px", padding: "22px", border: "1px solid #e5e8ef" }}>
+              <div style={{ marginBottom: "16px", fontSize: "0.95rem", fontWeight: 600, color: "#111827" }}>Edit schedule</div>
+              <div style={{ display: "grid", gap: "16px" }}>
+                <label style={{ fontSize: "0.9rem", fontWeight: 600, color: "#374151", marginBottom: "8px", display: "block" }}>Start time (24h format)</label>
+                <CompactTimePicker
+                  value={editForm.startTime}
+                  onChange={(val) => {
+                    clearTimeEditError?.();
+                    setEditForm((prev) => ({ ...prev, startTime: val }));
+                  }}
+                />
+                <label style={{ fontSize: "0.9rem", fontWeight: 600, color: "#374151", marginBottom: "8px", display: "block" }}>End time (24h format)</label>
+                <CompactTimePicker
+                  value={editForm.endTime}
+                  onChange={(val) => {
+                    clearTimeEditError?.();
+                    setEditForm((prev) => ({ ...prev, endTime: val }));
+                  }}
+                />
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Right Content Area */}
-        <div
-          style={{
-            flex: 1,
-            display: "flex",
-            flexDirection: "column",
-            backgroundColor: "#fff",
-            overflow: "hidden",
-          }}
-        >
-          {/* Header */}
-          <div className="d-flex justify-content-between align-items-center p-4 border-bottom">
-            <h3 className="m-0 fw-bold">Update Shift Times</h3>
-            <button
-              onClick={closeModal}
-              className="btn btn-danger text-white rounded-circle d-flex align-items-center justify-content-center p-0"
-              style={{
-                width: "32px",
-                height: "32px",
-                fontSize: "18px",
-                border: "none",
-              }}
-            >
-              &times;
-            </button>
-          </div>
-
-          {/* Content */}
-          <div className="p-4 overflow-auto flex-grow-1">
-            <p
-              style={{ color: "#666", marginBottom: "28px", fontSize: "15px" }}
-            >
-              Modify the start and end times for the shift at{" "}
-              <strong>{site?.displayName}</strong>.
-            </p>
-
-            {/* START */}
-            <div className="mb-5">
-              <h5
-                style={{
-                  fontWeight: 600,
-                  marginBottom: "16px",
-                  color: "#333",
-                  borderBottom: "2px solid #e8f4fd",
-                  paddingBottom: "10px",
-                }}
-              >
-                Start Time
-              </h5>
-              <div className="row g-3">
-                <div className="col-md-6">
-                  <label
-                    style={{
-                      fontWeight: 600,
-                      marginBottom: 8,
-                      fontSize: 14,
-                      color: "#555",
-                      display: "block",
-                    }}
-                  >
-                    Start Time (24h)
-                  </label>
-                  <div className="d-flex gap-2">
-                    <select
-                      className="form-select"
-                      style={inputStyle}
-                      value={getPart(editForm.startTime, "hour")}
-                      onChange={(e) =>
-                        handleTimeChange(
-                          "startTime",
-                          editForm.startTime,
-                          "hour",
-                          e.target.value,
-                        )
-                      }
-                    >
-                      <option value="" disabled>
-                        HH
-                      </option>
-                      {hoursOptions.map((h) => (
-                        <option key={h} value={h}>
-                          {h}
-                        </option>
-                      ))}
-                    </select>
-                    <span className="d-flex align-items-center fw-bold">:</span>
-                    <select
-                      className="form-select"
-                      style={inputStyle}
-                      value={getPart(editForm.startTime, "minute")}
-                      onChange={(e) =>
-                        handleTimeChange(
-                          "startTime",
-                          editForm.startTime,
-                          "minute",
-                          e.target.value,
-                        )
-                      }
-                    >
-                      <option value="" disabled>
-                        MM
-                      </option>
-                      {minutesOptions.map((m) => (
-                        <option key={m} value={m}>
-                          {m}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-              </div>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "18px 28px", borderTop: "1px solid #eef2f7" }}>
+          {timeEditError ? (
+            <div style={{ color: "#dc2626", fontSize: "0.95rem", fontWeight: 500 }}>
+              {timeEditError}
             </div>
-
-            {/* END */}
-            <div className="mb-4">
-              <h5
-                style={{
-                  fontWeight: 600,
-                  marginBottom: "16px",
-                  color: "#333",
-                  borderBottom: "2px solid #e8f4fd",
-                  paddingBottom: "10px",
-                }}
-              >
-                End Time
-              </h5>
-              <div className="row g-3">
-                <div className="col-md-6">
-                  <label
-                    style={{
-                      fontWeight: 600,
-                      marginBottom: 8,
-                      fontSize: 14,
-                      color: "#555",
-                      display: "block",
-                    }}
-                  >
-                    End Time (24h)
-                  </label>
-                  <div className="d-flex gap-2">
-                    <select
-                      className="form-select"
-                      style={inputStyle}
-                      value={getPart(editForm.endTime, "hour")}
-                      onChange={(e) =>
-                        handleTimeChange(
-                          "endTime",
-                          editForm.endTime,
-                          "hour",
-                          e.target.value,
-                        )
-                      }
-                    >
-                      <option value="" disabled>
-                        HH
-                      </option>
-                      {hoursOptions.map((h) => (
-                        <option key={h} value={h}>
-                          {h}
-                        </option>
-                      ))}
-                    </select>
-                    <span className="d-flex align-items-center fw-bold">:</span>
-                    <select
-                      className="form-select"
-                      style={inputStyle}
-                      value={getPart(editForm.endTime, "minute")}
-                      onChange={(e) =>
-                        handleTimeChange(
-                          "endTime",
-                          editForm.endTime,
-                          "minute",
-                          e.target.value,
-                        )
-                      }
-                    >
-                      <option value="" disabled>
-                        MM
-                      </option>
-                      {minutesOptions.map((m) => (
-                        <option key={m} value={m}>
-                          {m}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Footer */}
-          <div
-            style={{
-              background: "#f8f9fa",
-              padding: "16px 24px",
-              borderTop: "1px solid #eaeaea",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "flex-end",
-              gap: "12px",
-            }}
-          >
-            {timeEditError && (
-              <div
-                style={{
-                  color: "#dc3545",
-                  fontSize: "14px",
-                  fontWeight: 500,
-                  marginRight: "auto",
-                }}
-              >
-                {timeEditError}
-              </div>
-            )}
+          ) : (
+            <div style={{ color: "#6b7280", fontSize: "0.92rem" }}>Only time values may be changed here.</div>
+          )}
+          <div style={{ display: "flex", gap: "12px" }}>
             <button
               onClick={closeModal}
               type="button"
               style={{
-                padding: "10px 22px",
-                fontSize: "14px",
-                border: "1px solid #ddd",
+                padding: "11px 22px",
+                borderRadius: "12px",
+                border: "1px solid #d1d5db",
                 background: "#fff",
-                borderRadius: "8px",
+                color: "#111827",
                 cursor: "pointer",
+                fontSize: "0.95rem",
               }}
             >
               Cancel
@@ -406,16 +225,17 @@ export default function TimeEditModal({
               type="button"
               disabled={saveLoading}
               style={{
-                padding: "10px 28px",
-                fontSize: "14px",
-                borderRadius: "8px",
-                background: "#0A7C6E",
-                color: "#fff",
+                padding: "11px 22px",
+                borderRadius: "12px",
                 border: "none",
+                background: saveLoading ? "#6ee7b7" : "#0f766e",
+                color: "#fff",
                 cursor: "pointer",
+                fontSize: "0.95rem",
+                opacity: saveLoading ? 0.75 : 1,
               }}
             >
-              {saveLoading ? "Saving..." : "Save Schedule Changes"}
+              {saveLoading ? "Saving..." : "Save Changes"}
             </button>
           </div>
         </div>

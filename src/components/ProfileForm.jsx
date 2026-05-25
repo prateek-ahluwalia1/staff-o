@@ -30,30 +30,30 @@ export default function ProfileForm({
             <label htmlFor="name" className="form-label fw-semibold">
               Full Name <span className="text-danger">*</span>
             </label>
-           <input
-  type="text"
-  className="form-control"
-  id="name"
-  placeholder="e.g. Muhammad Nauman"
-  value={formData.name || ""}
-  onChange={(e) => {
-    let value = e.target.value
-      .replace(/[^a-zA-Z\s]/g, "") // only letters/spaces
-      .replace(/\s+/g, " "); // avoid multiple spaces
+            <input
+              type="text"
+              className="form-control"
+              id="name"
+              placeholder="e.g. Muhammad Nauman"
+              value={formData.name || ""}
+              onChange={(e) => {
+                let value = e.target.value
+                  .replace(/[^a-zA-Z\s]/g, "") // only letters/spaces
+                  .replace(/\s+/g, " "); // avoid multiple spaces
 
-    onChange({
-      target: {
-        id: "name",
-        value,
-      },
-    });
-  }}
-  required
-  minLength={3}
-  maxLength={20}
-  pattern="^[A-Za-z\s]{3,20}$"
-  title="Full Name must contain only letters and be 3-20 characters"
-/>
+                onChange({
+                  target: {
+                    id: "name",
+                    value,
+                  },
+                });
+              }}
+              required
+              minLength={3}
+              maxLength={20}
+              pattern="^[A-Za-z\s]{3,20}$"
+              title="Full Name must contain only letters and be 3-20 characters"
+            />
           </div>
 
           {/* Email (Read-Only) */}
@@ -107,7 +107,7 @@ export default function ProfileForm({
                         type="tel"
                         className={`form-control border-start-0 ps-0 ${isPhoneVerified ? 'border-success text-success fw-bold' : (!isPhoneVerified && formData.phone ? 'is-invalid border-danger' : '')}`}
                         id="phone"
-                        placeholder="+92 300 0000000"
+                        placeholder="+61 400 000 000"
                         value={formData.phone || ""}
                         readOnly
                         style={{ background: isPhoneVerified ? "#f2fdf5" : "#f8f9fa", cursor: "default" }}
@@ -146,12 +146,13 @@ export default function ProfileForm({
                       type="tel"
                       className="form-control border-start-0 ps-0"
                       id="phone"
-                      placeholder="+92 300 0000000"
+                      placeholder="+61 400 000 000"
                       value={formData.phone || ""}
                       onChange={onChange}
                       required
-                      pattern="^\+?[0-9\s\-]{7,15}$"
-                      title="Please enter a valid phone number"
+                      maxLength="15"
+                      pattern="^(?:\+?61|0)[2-478](?:[\s\-]*\d){8}$"
+                      title="Please enter a valid Australian phone number (e.g., 0400 000 000 or +61 400 000 000)"
                     />
                   </div>
                 )}
@@ -166,112 +167,112 @@ export default function ProfileForm({
                 <label htmlFor="company_name" className="form-label fw-semibold">
                   Company Name <span className="text-danger">*</span>
                 </label>
-               <input
-  type="text"
-  className="form-control"
-  id="company_name"
-  placeholder="e.g. Tech Solutions"
-  value={formData.company_name || ""}
-  onChange={(e) => {
-    let value = e.target.value
-      .replace(/[^a-zA-Z0-9\s]/g, "") // remove special chars
-      .replace(/\s+/g, " ");
+                <input
+                  type="text"
+                  className="form-control"
+                  id="company_name"
+                  placeholder="e.g. Tech Solutions"
+                  value={formData.company_name || ""}
+                  onChange={(e) => {
+                    let value = e.target.value
+                      .replace(/[^a-zA-Z0-9\s]/g, "") // remove special chars
+                      .replace(/\s+/g, " ");
 
-    onChange({
-      target: {
-        id: "company_name",
-        value,
-      },
-    });
-  }}
-  required
-  minLength={3}
-  maxLength={20}
-  pattern="^[A-Za-z0-9\s]{3,20}$"
-  title="Company Name must be 3-20 characters"
-/>
+                    onChange({
+                      target: {
+                        id: "company_name",
+                        value,
+                      },
+                    });
+                  }}
+                  required
+                  minLength={3}
+                  maxLength={20}
+                  pattern="^[A-Za-z0-9\s]{3,20}$"
+                  title="Company Name must be 3-20 characters"
+                />
               </div>
 
               <div>
                 <label htmlFor="abn" className="form-label fw-semibold">
                   ABN <span className="text-danger">*</span>
                 </label>
-             <input
-  type="text"
-  className="form-control"
-  id="abn"
-  placeholder="XX-XXX-XXX-XXX"
-  value={formData.abn || ""}
-  onChange={(e) => {
-    // Remove everything except digits
-    let value = e.target.value.replace(/\D/g, "");
+                <input
+                  type="text"
+                  className="form-control"
+                  id="abn"
+                  placeholder="XX-XXX-XXX-XXX"
+                  value={formData.abn || ""}
+                  onChange={(e) => {
+                    // Remove everything except digits
+                    let value = e.target.value.replace(/\D/g, "");
 
-    // Limit to 11 digits
-    value = value.substring(0, 11);
+                    // Limit to 11 digits
+                    value = value.substring(0, 11);
 
-    // Auto add dashes
-    if (value.length > 2 && value.length <= 5) {
-      value = value.replace(/^(\d{2})(\d+)/, "$1-$2");
-    } else if (value.length > 5 && value.length <= 8) {
-      value = value.replace(/^(\d{2})(\d{3})(\d+)/, "$1-$2-$3");
-    } else if (value.length > 8) {
-      value = value.replace(
-        /^(\d{2})(\d{3})(\d{3})(\d+)/,
-        "$1-$2-$3-$4"
-      );
-    }
+                    // Auto add dashes
+                    if (value.length > 2 && value.length <= 5) {
+                      value = value.replace(/^(\d{2})(\d+)/, "$1-$2");
+                    } else if (value.length > 5 && value.length <= 8) {
+                      value = value.replace(/^(\d{2})(\d{3})(\d+)/, "$1-$2-$3");
+                    } else if (value.length > 8) {
+                      value = value.replace(
+                        /^(\d{2})(\d{3})(\d{3})(\d+)/,
+                        "$1-$2-$3-$4"
+                      );
+                    }
 
-    onChange({
-      target: {
-        id: "abn",
-        value,
-      },
-    });
-  }}
-  required
-  maxLength={15}
-  pattern="^\d{2}-\d{3}-\d{3}-\d{3}$"
-  title="ABN must be in format 12-345-678-901"
-/>
+                    onChange({
+                      target: {
+                        id: "abn",
+                        value,
+                      },
+                    });
+                  }}
+                  required
+                  maxLength={15}
+                  pattern="^\d{2}-\d{3}-\d{3}-\d{3}$"
+                  title="ABN must be in format 12-345-678-901"
+                />
               </div>
               <div>
                 <label htmlFor="acn" className="form-label fw-semibold">
                   ACN
                 </label>
-             <input
-  type="text"
-  className="form-control"
-  id="acn"
-  placeholder="XXX-XXX-XXX"
-  value={formData.acn || ""}
-  onChange={(e) => {
-    // Keep only digits
-    let value = e.target.value.replace(/\D/g, "");
+                <input
+                  type="text"
+                  className="form-control"
+                  id="acn"
+                  placeholder="XXX-XXX-XXX"
+                  value={formData.acn || ""}
+                  onChange={(e) => {
+                    // Keep only digits
+                    let value = e.target.value.replace(/\D/g, "");
 
-    // Limit to 9 digits
-    value = value.substring(0, 9);
+                    // Limit to 9 digits
+                    value = value.substring(0, 9);
 
-    // Auto add dashes
-    if (value.length > 3 && value.length <= 6) {
-      value = value.replace(/^(\d{3})(\d+)/, "$1-$2");
-    } else if (value.length > 6) {
-      value = value.replace(
-        /^(\d{3})(\d{3})(\d+)/,
-        "$1-$2-$3"
-      );
-    }
+                    // Auto add dashes
+                    if (value.length > 3 && value.length <= 6) {
+                      value = value.replace(/^(\d{3})(\d+)/, "$1-$2");
+                    } else if (value.length > 6) {
+                      value = value.replace(
+                        /^(\d{3})(\d{3})(\d+)/,
+                        "$1-$2-$3"
+                      );
+                    }
 
-    onChange({
-      target: {
-        id: "acn",
-        value,
-      },
-    });
-  }}
-  maxLength={11}
-  pattern="^\d{3}-\d{3}-\d{3}$"
-  title="ACN must be in format 123-456-789"
-/>
+                    onChange({
+                      target: {
+                        id: "acn",
+                        value,
+                      },
+                    });
+                  }}
+                  maxLength={11}
+                  pattern="^\d{3}-\d{3}-\d{3}$"
+                  title="ACN must be in format 123-456-789"
+                />
               </div>
             </>
           )}
@@ -372,6 +373,7 @@ export default function ProfileForm({
               </div>
             </>
           )}
+
           <div style={{ gridColumn: "1 / -1", marginTop: "1rem" }}>
             <label htmlFor="address" className="form-label fw-semibold">
               Address <span className="text-danger">*</span>
@@ -388,11 +390,14 @@ export default function ProfileForm({
                 value={formData.address || ""}
                 onChange={onChange}
                 required
+                maxLength={155}
+                title="Address cannot exceed 155 characters"
                 autoComplete="off"
               />
             </div>
-            <div className="form-text mt-1 text-muted small">
-              Selecting an address will automatically fill your city, state, and country.
+            <div className="d-flex justify-content-between form-text mt-1 text-muted small">
+              <span>Selecting an address will automatically fill your city, state, and country.</span>
+              <span>Max 155 characters.</span>
             </div>
           </div>
 

@@ -1337,13 +1337,14 @@ export default function EditProfile() {
                 <input
                   type="tel"
                   className="form-control"
-                  placeholder="+92 300 0000000"
+                  placeholder="+61 400 000 000"
                   value={newPhoneInput}
                   onChange={(e) => setNewPhoneInput(e.target.value)}
                   required
                   autoFocus
-                  pattern="^\+?[0-9\s\-]{7,15}$"
-                  title="Please enter a valid phone number"
+                  maxLength="15"
+                  pattern="^(?:\+?61|0)[2-478](?:[\s\-]*\d){8}$"
+                  title="Please enter a valid Australian phone number (e.g., 0400 000 000 or +61 400 000 000)"
                 />
               </div>
               <div className="d-flex gap-2">
@@ -1441,30 +1442,30 @@ export default function EditProfile() {
 
           <div className="mb-3">
             <label className="form-label fw-semibold">Document Number</label>
-          <input
-  type="text"
-  className="form-control"
-  placeholder="e.g. ABC123456"
-  name="document_no"
-  value={docForm.document_no}
-  onChange={(e) => {
-    // Allow only letters + numbers
-    let value = e.target.value.replace(/[^a-zA-Z0-9]/g, "");
+            <input
+              type="text"
+              className="form-control"
+              placeholder="e.g. ABC123456"
+              name="document_no"
+              value={docForm.document_no}
+              onChange={(e) => {
+                // Allow only letters + numbers
+                let value = e.target.value.replace(/[^a-zA-Z0-9]/g, "");
 
-    // Limit to 20 chars
-    value = value.slice(0, 20);
+                // Limit to 20 chars
+                value = value.slice(0, 20);
 
-    setDocForm((prev) => ({
-      ...prev,
-      document_no: value,
-    }));
-  }}
-  minLength={3}
-  maxLength={20}
-  pattern="^[A-Za-z0-9]{3,20}$"
-  title="Document number must be 3–20 characters (letters and numbers only)"
-  required
-/>
+                setDocForm((prev) => ({
+                  ...prev,
+                  document_no: value,
+                }));
+              }}
+              minLength={3}
+              maxLength={20}
+              pattern="^[A-Za-z0-9]{3,20}$"
+              title="Document number must be 3–20 characters (letters and numbers only)"
+              required
+            />
           </div>
 
           <div className="mb-3">

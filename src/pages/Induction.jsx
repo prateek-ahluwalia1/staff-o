@@ -5,6 +5,8 @@ import "../assets/css/induction.css";
 import { useSelector } from "react-redux";
 import Loader from "../components/Loader";
 import { Link } from 'react-router-dom'
+import { apiURL } from "../utils/exports";
+import { toast } from "react-toastify";
 
 const getHistoryRows = (response) => {
     if (Array.isArray(response?.data?.data)) return response.data.data;
@@ -140,7 +142,16 @@ export default function Induction() {
     };
 
     const handleSaveInduction = async () => {
+        if (!formTitle.trim()) {
+            toast.error("Please enter a title for the induction.");
+            return;
+        }
+        if (formQuestions.length === 0 || !formQuestions[0].question.trim()) {
+            alert("Please add at least one question.");
+            return;
+        }
         const formData = new FormData();
+
         if (selectedInduction?.id) formData.append("id", selectedInduction.id);
         formData.append("title", formTitle);
         if (userId) formData.append("admin_id", userId);
@@ -192,7 +203,7 @@ export default function Induction() {
 
     const handleAssign = async () => {
         if (!shareState || selectedStaff.length === 0) {
-            alert("Please select both state and at least one staff member");
+            toast.error("Please select both state and at least one staff member");
             return;
         }
 
@@ -281,7 +292,7 @@ export default function Induction() {
                                                 </td>
                                                 <td>
                                                     {isCompleted && (
-                                                        <Link                                                            className="btn btn-sm bg-success bg-opacity-10 text-success border border-success"
+                                                        <Link className="btn btn-sm bg-success bg-opacity-10 text-success border border-success"
                                                             href={record?.certificate_path}
                                                             target="_blank"
                                                             rel="noopener noreferrer"
@@ -347,7 +358,7 @@ export default function Induction() {
                                 staffList.map(staff => (
                                     <div key={staff.id} className="form-check mb-2">
                                         <input
-                                            className="form-check-input"
+                                            className="form-check-input clean-input"
                                             type="checkbox"
                                             id={`staff-${staff.id}`}
                                             checked={selectedStaff.includes(staff.id)}
@@ -509,14 +520,15 @@ export default function Induction() {
                                                     <i className="fa fa-file-pdf-o text-danger" style={{ fontSize: '18px' }}></i>
                                                     <div>
                                                         <p className="mb-0 text-muted fw-medium line-clamp-1">File uploaded</p>
-                                                        <Link                                                            href={`https://apis.staffoo.com.au/induction_documents/${q.file_url}`}
+                                                        <a
+                                                            href={`${apiURL}induction_documents/${q.file_url}`}
                                                             target="_blank"
                                                             rel="noopener noreferrer"
                                                             className="text-primary small text-decoration-none text-break"
                                                             style={{ fontSize: '12px' }}
                                                         >
                                                             View PDF
-                                                        </Link>
+                                                        </a>
                                                     </div>
                                                 </div>
                                                 <button

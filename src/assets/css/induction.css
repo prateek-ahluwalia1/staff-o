@@ -7,12 +7,17 @@
 .staffoo-card {
   border-radius: 12px;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
-  border: 1px solid rgba(0,0,0,0.05) !important;
+  border: 1px solid rgba(0, 0, 0, 0.05) !important;
 }
 
 .staffoo-card:hover {
   transform: translateY(-3px);
-  box-shadow: 0 12px 24px rgba(0,0,0,0.06) !important;
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.06) !important;
+}
+
+.clean-input::placeholder {
+  font-size: 14px;
+  color: #9ca3af !important;
 }
 
 .action-icons button {
@@ -44,31 +49,38 @@
   align-items: center;
   z-index: 1050;
   padding: 20px;
-  backdrop-filter: blur(3px); 
+  backdrop-filter: blur(3px);
 }
 
 .custom-modal-content {
   background: white;
   width: 100%;
-  border-radius: 16px; 
+  border-radius: 16px;
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
   display: flex;
   flex-direction: column;
-  overflow: hidden; 
+  overflow: hidden;
+}
+
+.custom-modal-content {
+  display: flex;
+  flex-direction: column;
+  max-height: 90vh;
+  /* Prevents overflow of the viewport */
+  overflow: hidden;
 }
 
 .fullscreen-modal {
-  width: 100vw !important;
-  height: 100dvh !important; /* Switch to dynamic viewport height for mobile browsers */
-  max-width: none !important;
-  max-height: none !important;
+  height: 100vh;
+  width: 100vw;
 }
 
-.clean-input {
-  border: 1px solid #e2e8f0;
-  background-color: #f8fafc;
-  box-shadow: none !important;
-  transition: border-color 0.2s, background-color 0.2s;
+/* This is the scrolling area */
+.p-3.p-md-4.bg-light {
+  flex-grow: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  /* Smooth scrolling for mobile */
 }
 
 .clean-input:focus {
@@ -76,8 +88,13 @@
   background-color: #ffffff;
 }
 
-.hover-text-danger:hover { color: #dc3545 !important; }
-.hover-bg-light:hover { background-color: #f1f5f9 !important; }
+.hover-text-danger:hover {
+  color: #dc3545 !important;
+}
+
+.hover-bg-light:hover {
+  background-color: #f1f5f9 !important;
+}
 
 .custom-modal-content::-webkit-scrollbar {
   width: 8px;
@@ -102,18 +119,20 @@
 
 @media (max-width: 768px) {
   .staffoo-page {
-    padding: 16px; /* Less padding on small screens */
+    padding: 16px;
+    /* Less padding on small screens */
   }
 
   .custom-modal-overlay {
-    padding: 12px; /* Prevent modal from hugging screen edges too tightly */
+    padding: 12px;
+    /* Prevent modal from hugging screen edges too tightly */
   }
 
   /* Full width utilities for small screens */
   .w-sm-100 {
     width: 100% !important;
   }
-  
+
   .w-md-auto {
     width: auto !important;
   }
@@ -129,9 +148,10 @@
 .text-break {
   word-break: break-word;
 }
+
 .line-clamp-1 {
   display: -webkit-box;
   -webkit-line-clamp: 1;
-  -webkit-box-orient: vertical;  
+  -webkit-box-orient: vertical;
   overflow: hidden;
 }

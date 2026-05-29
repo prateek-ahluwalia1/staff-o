@@ -32,7 +32,7 @@ const Invoice = () => {
   const customersList = customersResponse?.data?.data || [];
 
   const [invoiceNo, setInvoiceNo] = useState(
-    `INV-${new Date().getFullYear()}-${String(Date.now()).slice(-5)}`,
+    `STAFFOO-${new Date().getFullYear()}-${String(Date.now()).slice(-5)}`,
   );
 
   const [currency, setCurrency] = useState("AUD");

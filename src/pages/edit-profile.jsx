@@ -706,13 +706,10 @@ export default function EditProfile() {
             const fieldId = id || name;
 
             if (fieldId === "address") {
-              // Block manual text input wipe if Google Maps is actively selecting a place
               if (isSelectingAddress.current) {
                 return;
               }
 
-              // Reset detailed location data when the user manually types into the input.
-              // This strictly enforces selecting from the dropdown.
               setFormData((prev) => ({
                 ...prev,
                 address: value,

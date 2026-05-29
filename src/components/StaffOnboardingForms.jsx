@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { toast } from "react-toastify";
 import PDFGenerator from "../utils/PDFGenerator";
 
-const TAB_LABELS = ["TFN Declaration", "Superannuation", "Employee Onboarding"];
+const TAB_LABELS = ["Onboarding", "TFN Declaration", "Superannuation"];
 
 const SectionTitle = ({ children, className = "" }) => (
     <h6 className={`border-bottom pb-2 mb-3 text-uppercase text-muted fw-bold small ${className}`.trim()}>
@@ -524,7 +524,7 @@ const StaffOnboardingForms = ({ submit, userId }) => {
         let pdfType = "";
         let fileName = "";
 
-        if (tabIndex === 0) {
+        if (tabIndex === 1) {
             endpoint = "api/tfn-declaration";
             pdfType = "tfn";
             fileName = `TFN_Declaration_${userId}_${new Date().getTime()}.pdf`;
@@ -535,7 +535,7 @@ const StaffOnboardingForms = ({ submit, userId }) => {
                 claim_threshold: tfnForm.threshold, help_debt: tfnForm.help, signature: tfnForm.sig1, date: tfnForm.date1
             };
             pdfFormData = { ...payload };
-        } else if (tabIndex === 1) {
+        } else if (tabIndex === 2) {
             endpoint = "api/superannuation";
             pdfType = "super_form";
             fileName = `Superannuation_${userId}_${new Date().getTime()}.pdf`;
@@ -545,7 +545,7 @@ const StaffOnboardingForms = ({ submit, userId }) => {
                 member_account: superForm.s_member, signature: superForm.sig2, date: superForm.date2
             };
             pdfFormData = { ...payload };
-        } else if (tabIndex === 2) {
+        } else if (tabIndex === 0) {
             endpoint = "api/onboarding";
             pdfType = "onboarding";
             fileName = `Employee_Onboarding_${userId}_${new Date().getTime()}.pdf`;
@@ -644,9 +644,22 @@ const StaffOnboardingForms = ({ submit, userId }) => {
             </div>
 
             {/* ========================================== */}
-            {/* FORM 1: TFN DECLARATION */}
+            {/* FORM 1: EMPLOYEE ONBOARDING */}
             {/* ========================================== */}
             {subTab === 0 && (
+                <EmployeeOnboardingForm
+                    values={onboardForm}
+                    loading={loading}
+                    onChange={handleOnboardChange}
+                    onSubmit={(e) => handleFormSubmit(e, 2)}
+                    dataModified={dataModified}
+                />
+            )}
+
+            {/* ========================================== */}
+            {/* FORM 2: TFN DECLARATION */}
+            {/* ========================================== */}
+            {subTab === 1 && (
                 <TfnDeclarationForm
                     values={tfnForm}
                     loading={loading}
@@ -657,27 +670,14 @@ const StaffOnboardingForms = ({ submit, userId }) => {
             )}
 
             {/* ========================================== */}
-            {/* FORM 2: SUPERANNUATION */}
+            {/* FORM 3: SUPERANNUATION */}
             {/* ========================================== */}
-            {subTab === 1 && (
+            {subTab === 2 && (
                 <SuperannuationForm
                     values={superForm}
                     loading={loading}
                     onChange={handleSuperChange}
                     onSubmit={(e) => handleFormSubmit(e, 1)}
-                    dataModified={dataModified}
-                />
-            )}
-
-            {/* ========================================== */}
-            {/* FORM 3: EMPLOYEE ONBOARDING */}
-            {/* ========================================== */}
-            {subTab === 2 && (
-                <EmployeeOnboardingForm
-                    values={onboardForm}
-                    loading={loading}
-                    onChange={handleOnboardChange}
-                    onSubmit={(e) => handleFormSubmit(e, 2)}
                     dataModified={dataModified}
                 />
             )}

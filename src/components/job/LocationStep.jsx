@@ -1,7 +1,6 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import { toast } from "react-toastify";
 
-// 1. Define the mapping dictionary outside the component to prevent recreation on renders
 const STATE_MAP = {
   'Victoria': 'vic',
   'New South Wales': 'nsw',
@@ -11,7 +10,7 @@ const STATE_MAP = {
   'South Australia': 'sa',
   'Australian Capital Territory': 'act',
   'ACT': 'act',
-  'Northern Territory': 'nt' // Added NT just in case!
+  'Northern Territory': 'nt'
 };
 
 export default function LocationStep({

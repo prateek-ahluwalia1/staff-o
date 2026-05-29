@@ -61,7 +61,7 @@ const SIDEBAR_TABS = [
   },
   {
     id: "download_report",
-    label: "Download Report",
+    label: "End Shift Report",
     bg: "#e8f5e9",
     activeBg: "#2e7d32",
     icon: "fa-download",

@@ -19,6 +19,7 @@ export default function Register() {
 
   const [userType, setUserType] = useState("contractor");
   const [showPassword, setShowPassword] = useState(false);
+  const [showVerifyModal, setShowVerifyModal] = useState(false);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -141,7 +142,8 @@ export default function Register() {
     }
 
     toast.success("Account created successfully!");
-    navigate("/login");
+    // Trigger verification modal instead of navigating immediately
+    setShowVerifyModal(true);
   };
 
   const handleGoogleRegister = useGoogleLogin({
@@ -397,6 +399,70 @@ export default function Register() {
           </div>
         </div>
       </section>
+
+      {/* Verify Email Popup Overlay */}
+      {showVerifyModal && (
+        <div
+          className="modal-backdrop-custom"
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            width: "100%",
+            height: "100%",
+            backgroundColor: "rgba(15, 23, 42, 0.7)",
+            backdropFilter: "blur(4px)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 1050,
+          }}
+        >
+          <div
+            className="modal-content-custom bg-white rounded-4 p-4 p-md-5 shadow-lg mx-3"
+            style={{ maxWidth: "450px", width: "100%", animation: "fadeIn 0.3s ease" }}
+          >
+            <div className="text-center mb-4">
+              <div
+                className="d-inline-flex align-items-center justify-content-center rounded-circle mb-3"
+                style={{ width: "80px", height: "80px", backgroundColor: "rgba(10, 124, 110, 0.1)" }}
+              >
+                <i className="fa-solid fa-envelope-open-text" style={{ fontSize: "36px", color: "#0A7C6E" }}></i>
+              </div>
+              <h3 className="fw-bold text-dark mb-2">Verify your email</h3>
+              <p className="text-muted small mb-0">
+                We've sent a verification link to <strong className="text-dark">{formData.email}</strong>.
+                Please check your inbox to activate your account.
+              </p>
+            </div>
+
+            <div className="d-flex flex-column gap-3">
+              <button
+                className="btn py-2 fw-bold w-100 d-flex align-items-center justify-content-center gap-2"
+                style={{ backgroundColor: "#0A7C6E", color: "#fff", borderRadius: "8px" }}
+                onClick={() => window.open("https://mail.google.com", "_blank")}
+              >
+                <i className="fa-brands fa-google"></i> Open Gmail
+              </button>
+
+              <button
+                className="btn btn-light py-2 fw-bold border w-100"
+                style={{ borderRadius: "8px", color: "#475569" }}
+                onClick={() => navigate("/login")}
+              >
+                Go to Login Page
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <style>{`
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(10px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
     </>
   );
 }

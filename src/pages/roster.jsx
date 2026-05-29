@@ -102,17 +102,22 @@ export default function RosterPage() {
   const [showLegend, setShowLegend] = useState(true);
 
   const fetchCustomerSites = useCallback(() => {
-    if (!userId || selectedStates.length === 0) return;
+    if (!userId) return;
+
+    // Require state selection for non-staff, bypass for staff
+    if (userRole !== "staff" && selectedStates.length === 0) return;
+
     const endDayOffset = weeksToView === 1 ? 6 : 13;
     const payload = {
       user_id: [userId],
-      states: selectedStates,
+      // If staff and no state is selected, pass all states to ensure they get their shifts
+      states: selectedStates.length > 0 ? selectedStates : states_array.map(s => s.value),
       start: format(monday, "MM-dd-yyyy"),
       end: format(addDays(monday, endDayOffset), "MM-dd-yyyy"),
       roster_id: "1",
     };
     submit("api/fetch-customer-sites", payload, { method: "POST" });
-  }, [userId, monday, weeksToView, submit, selectedStates]);
+  }, [userId, monday, weeksToView, submit, selectedStates, userRole]);
 
   useEffect(() => {
     fetchCustomerSites();
@@ -181,8 +186,6 @@ export default function RosterPage() {
     });
     return { totals, grandTotal };
   }, [filteredSites, weekDays, weeksToView]);
-
-
 
   const guards = staffData?.guards || [];
 
@@ -263,13 +266,13 @@ export default function RosterPage() {
     const targetUrl = `${window.location.origin}${location.pathname}?state=${stateValue}`;
     window.open(targetUrl, "_blank");
   };
+
   // =====================================================================
-  // VIEW 1: OPERATIONS DASHBOARD (No state selected)
+  // VIEW 1: OPERATIONS DASHBOARD (No state selected, and user is NOT staff)
   // =====================================================================
-  if (selectedStates.length === 0) {
+  if (userRole !== "staff" && selectedStates.length === 0) {
     return (
       <div className="staffoo-page-container">
-
         {/* White Header Card (Matches Payment History) */}
         <div className="staffoo-header-card">
           <h2>Regional Roster Operations</h2>
@@ -295,13 +298,12 @@ export default function RosterPage() {
             </button>
           ))}
         </div>
-
       </div>
     );
   }
 
   // =====================================================================
-  // VIEW 2: ROSTER MATRIX (If state is selected in the URL)
+  // VIEW 2: ROSTER MATRIX (If state is selected OR user is staff)
   // =====================================================================
 
   if (staffLoading || submitLoading) return <Loader />;

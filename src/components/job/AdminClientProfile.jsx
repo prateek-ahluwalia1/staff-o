@@ -49,8 +49,8 @@ export default function AdminClientProfile({
                                     />
                                 ) : (
                                     <div
-                                        className="bg-primary bg-opacity-10 text-primary fw-bold rounded d-flex align-items-center justify-content-center"
-                                        style={{ width: "100%", height: "100%", fontSize: 32 }}
+                                        className="bg-primary bg-opacity-10 text-white fw-bold rounded d-flex align-items-center justify-content-center"
+                                        style={{ width: "100%", height: "100%", fontSize: 32, }}
                                     >
                                         {initials}
                                     </div>

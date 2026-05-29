@@ -671,9 +671,6 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
 
   const renderContent = () => (
     <>
-      {/* Hide the step progress bar if we are in embedded mode */}
-      {!isEmbedded && <StepProgress step={step} titles={STEP_TITLES} />}
-
       <form onSubmit={(e) => e.preventDefault()}>
         {isEmbedded ? (
           <>
@@ -710,6 +707,7 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
               <div>
                 <h1 className="h4 fw-bold text-dark mb-1">Create Job</h1>
                 <p className="text-muted mb-0">Follow the steps to add a new job</p>
+                {!isEmbedded && <StepProgress step={step} titles={STEP_TITLES} />}
               </div>
 
               {isAdmin && (

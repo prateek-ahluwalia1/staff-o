@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { toast } from "react-toastify";
 import PDFGenerator from "../utils/PDFGenerator";
 
@@ -21,6 +21,74 @@ const ActionBar = ({ loading, saveLabel, disabled }) => (
         </button>
     </div>
 );
+
+// Address Autocomplete Wrapper for Google Maps Places API
+const AddressAutocomplete = ({ value, name, onChange, placeholder, required }) => {
+    const inputRef = useRef(null);
+
+    useEffect(() => {
+        let autocomplete;
+        let listener;
+
+        const initMap = () => {
+            if (!inputRef.current || !window.google?.maps?.places) return;
+
+            // Prevent multiple initializations on re-renders
+            if (inputRef.current.getAttribute("data-gmaps-initialized")) return;
+
+            autocomplete = new window.google.maps.places.Autocomplete(inputRef.current, {
+                fields: ["formatted_address", "geometry"],
+                types: ["address"],
+            });
+
+            inputRef.current.setAttribute("data-gmaps-initialized", "true");
+
+            listener = autocomplete.addListener("place_changed", () => {
+                const place = autocomplete.getPlace();
+
+                if (!place.geometry || !place.formatted_address) {
+                    toast.error("Please select a valid address from the dropdown suggestions.");
+                    return;
+                }
+
+                // Create a synthetic event to trigger the standard onChange handler
+                const event = {
+                    target: { name, value: place.formatted_address, type: "text" }
+                };
+                onChange(event);
+            });
+        };
+
+        const checkGoogleMaps = setInterval(() => {
+            if (window.google?.maps?.places) {
+                clearInterval(checkGoogleMaps);
+                initMap();
+            }
+        }, 500);
+
+        return () => {
+            clearInterval(checkGoogleMaps);
+            if (listener && window.google?.maps?.event) {
+                window.google.maps.event.removeListener(listener);
+            }
+        };
+    }, [name, onChange]);
+
+    return (
+        <input
+            ref={inputRef}
+            type="text"
+            className="form-control"
+            name={name}
+            placeholder={placeholder}
+            maxLength="200"
+            value={value}
+            onChange={onChange}
+            required={required}
+            autoComplete="off"
+        />
+    );
+};
 
 const TfnDeclarationForm = ({ values, loading, onChange, onSubmit, dataModified }) => (
     <form onSubmit={onSubmit} className="animate__animated animate__fadeIn">
@@ -57,7 +125,13 @@ const TfnDeclarationForm = ({ values, loading, onChange, onSubmit, dataModified 
         <SectionTitle className="mt-4">Residential Address</SectionTitle>
         <div className="mb-3">
             <label className="form-label small fw-bold text-muted">Full Address <span className="text-danger">*</span></label>
-            <input type="text" className="form-control" name="address" placeholder="Street address, suburb, state, postcode" maxLength="200" value={values.address} onChange={onChange} required />
+            <AddressAutocomplete
+                name="address"
+                value={values.address}
+                onChange={onChange}
+                placeholder="Street address, suburb, state, postcode"
+                required={true}
+            />
         </div>
 
         <SectionTitle className="mt-4">Employment</SectionTitle>
@@ -212,7 +286,13 @@ const EmployeeOnboardingForm = ({ values, loading, onChange, onSubmit, dataModif
             </div>
             <div className="col-md-6">
                 <label className="form-label small fw-bold text-muted">Residential Address <span className="text-danger">*</span></label>
-                <input type="text" className="form-control" name="o_addr" maxLength="200" value={values.o_addr} onChange={onChange} required />
+                <AddressAutocomplete
+                    name="o_addr"
+                    value={values.o_addr}
+                    onChange={onChange}
+                    placeholder="Street address, suburb, state, postcode"
+                    required={true}
+                />
             </div>
             <div className="col-md-6">
                 <label className="form-label small fw-bold text-muted">Mobile Phone <span className="text-danger">*</span></label>
@@ -651,7 +731,7 @@ const StaffOnboardingForms = ({ submit, userId }) => {
                     values={onboardForm}
                     loading={loading}
                     onChange={handleOnboardChange}
-                    onSubmit={(e) => handleFormSubmit(e, 2)}
+                    onSubmit={(e) => handleFormSubmit(e, 0)}
                     dataModified={dataModified}
                 />
             )}
@@ -664,7 +744,7 @@ const StaffOnboardingForms = ({ submit, userId }) => {
                     values={tfnForm}
                     loading={loading}
                     onChange={handleTfnChange}
-                    onSubmit={(e) => handleFormSubmit(e, 0)}
+                    onSubmit={(e) => handleFormSubmit(e, 1)}
                     dataModified={dataModified}
                 />
             )}
@@ -677,7 +757,7 @@ const StaffOnboardingForms = ({ submit, userId }) => {
                     values={superForm}
                     loading={loading}
                     onChange={handleSuperChange}
-                    onSubmit={(e) => handleFormSubmit(e, 1)}
+                    onSubmit={(e) => handleFormSubmit(e, 2)}
                     dataModified={dataModified}
                 />
             )}

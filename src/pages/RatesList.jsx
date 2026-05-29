@@ -5,9 +5,38 @@ import useSubmit from "../hooks/useSubmit";
 import { useSelector } from "react-redux";
 import Loader from "../components/Loader";
 import { toast } from "react-toastify";
-import { TIME_KEYS, SLOT_ROWS } from "../utils/exports";
+import { TIME_KEYS } from "../utils/exports";
 
 const RATE_CATEGORIES = ["def", "eba"];
+
+// Local mapping for the UI to combine Day/Night for Weekends & Public Holidays
+const UI_SLOT_ROWS = [
+  {
+    label: "Mon-Fri (Day 06:00 - 18:00)",
+    metro: "metro_mon_to_fri_day_rate",
+    reg: "reg_mon_to_fri_day_rate",
+  },
+  {
+    label: "Mon-Fri (Night 18:00 - 06:00)",
+    metro: "metro_mon_to_fri_night_rate",
+    reg: "reg_mon_to_fri_night_rate",
+  },
+  {
+    label: "Saturday",
+    metro: "metro_sat_day_rate",
+    reg: "reg_sat_day_rate",
+  },
+  {
+    label: "Sunday",
+    metro: "metro_sun_day_rate",
+    reg: "reg_sun_day_rate",
+  },
+  {
+    label: "Public Holiday",
+    metro: "metro_pub_holi_day_rate",
+    reg: "reg_pub_holi_day_rate",
+  },
+];
 
 const RatesList = ({ forcedType } = {}) => {
   const location = useLocation();
@@ -118,12 +147,23 @@ const RatesList = ({ forcedType } = {}) => {
       body.ot_base_rate = Number(body.ot_base_rate);
     }
 
-    RATE_CATEGORIES.forEach((c) =>
+    RATE_CATEGORIES.forEach((c) => {
+      // Duplicate Day values to Night values for combined UI fields
+      body[`${c}_metro_sat_night_rate`] = body[`${c}_metro_sat_day_rate`];
+      body[`${c}_reg_sat_night_rate`] = body[`${c}_reg_sat_day_rate`];
+
+      body[`${c}_metro_sun_night_rate`] = body[`${c}_metro_sun_day_rate`];
+      body[`${c}_reg_sun_night_rate`] = body[`${c}_reg_sun_day_rate`];
+
+      body[`${c}_metro_pub_holi_night_rate`] = body[`${c}_metro_pub_holi_day_rate`];
+      body[`${c}_reg_pub_holi_night_rate`] = body[`${c}_reg_pub_holi_day_rate`];
+
+      // Convert all to Numbers
       TIME_KEYS.forEach((t) => {
         const k = `${c}_${t}`;
-        if (body[k] !== "") body[k] = Number(body[k]);
-      }),
-    );
+        if (body[k] !== "" && body[k] !== undefined) body[k] = Number(body[k]);
+      });
+    });
 
     // Final scrub to guarantee no static/old keys go to the API
     delete body.name;
@@ -222,7 +262,7 @@ const RatesList = ({ forcedType } = {}) => {
               <thead className="table-light">
                 <tr>
                   <th className="ps-4 py-3">{firstColumn}</th>
-                  <th>Rate</th>
+                  <th>Rate Preview</th>
                   <th>Level</th>
                   <th>State</th>
                   <th width="120" className="pe-4">
@@ -250,7 +290,7 @@ const RatesList = ({ forcedType } = {}) => {
                       </small>
                     </td>
                     <td className="fw-bold text-success">
-                      ${Number(r.ot_base_rate || 0).toFixed(2)}
+                      ${Number((isCharge ? r.def_metro_mon_to_fri_day_rate : r.ot_base_rate) || 0).toFixed(2)}
                     </td>
                     <td>{r.level}</td>
                     <td>
@@ -481,7 +521,7 @@ const RatesList = ({ forcedType } = {}) => {
                   </div>
 
                   <div className="row g-4 mb-4">
-                    <div className="col-md-6">
+                    <div className={!isCharge ? "col-md-6" : "col-md-12"}>
                       <label className="form-label">Title / Role Name *</label>
                       <input
                         id="title"
@@ -494,23 +534,25 @@ const RatesList = ({ forcedType } = {}) => {
                       />
                     </div>
 
-                    <div className="col-md-6">
-                      <label className="form-label">Base Rate ($) *</label>
-                      <div className="input-icon-wrapper">
-                        <i className="fa fa-dollar-sign"></i>
-                        <input
-                          id="ot_base_rate"
-                          type="number"
-                          step="0.01"
-                          value={form.ot_base_rate}
-                          onChange={handleFormChange}
-                          disabled={isViewing}
-                          className="form-control"
-                          placeholder="Enter base rate"
-                          required
-                        />
+                    {!isCharge && (
+                      <div className="col-md-6">
+                        <label className="form-label">Base Rate ($) *</label>
+                        <div className="input-icon-wrapper">
+                          <i className="fa fa-dollar-sign"></i>
+                          <input
+                            id="ot_base_rate"
+                            type="number"
+                            step="0.01"
+                            value={form.ot_base_rate}
+                            onChange={handleFormChange}
+                            disabled={isViewing}
+                            className="form-control"
+                            placeholder="Enter base rate"
+                            required={!isCharge}
+                          />
+                        </div>
                       </div>
-                    </div>
+                    )}
                   </div>
 
                   <div className="row g-4">
@@ -562,7 +604,7 @@ const RatesList = ({ forcedType } = {}) => {
                             className={`fa ${cat === "def" ? "fa-clock" : "fa-briefcase"} text-primary`}
                           ></i>
                           {cat === "def"
-                            ? "Default Schedule Rates"
+                            ? "Award Rates"
                             : "EBA Agreement Rates"}
                         </div>
 
@@ -572,7 +614,7 @@ const RatesList = ({ forcedType } = {}) => {
                           <div>Regional Area ($)</div>
                         </div>
 
-                        {SLOT_ROWS.map((row) => {
+                        {UI_SLOT_ROWS.map((row) => {
                           const metroId = `${cat}_${row.metro}`;
                           const regId = `${cat}_${row.reg}`;
                           return (

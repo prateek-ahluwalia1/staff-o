@@ -1154,6 +1154,7 @@ export default function EditProfile() {
         userType !== "admin" && (
           <DocumentTable
             documents={filteredDocuments}
+            userType={userType} // <--- Simply pass the userType here
             onAddFile={(doc) => {
               setSelectedDoc(doc);
               if (!doc.document_no && !doc.document_expiry && !doc.file) {

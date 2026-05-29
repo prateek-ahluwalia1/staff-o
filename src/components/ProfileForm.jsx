@@ -318,8 +318,8 @@ export default function ProfileForm({
                             cursor: "pointer",
                             padding: "10px 20px",
                             borderRadius: "8px",
-                            border: isSelected ? "2px solid #0d6efd" : "2px solid #dee2e6",
-                            backgroundColor: isSelected ? "#0d6efd" : "#fff",
+                            border: isSelected ? "2px solid #0A7C6E" : "2px solid #dee2e6",
+                            backgroundColor: isSelected ? "#0A7C6E" : "#fff",
                             color: isSelected ? "white" : "#495057",
                             fontWeight: isSelected ? "600" : "500",
                             transition: "all 0.2s ease-in-out",
@@ -327,7 +327,7 @@ export default function ProfileForm({
                           }}
                           onMouseEnter={(e) => {
                             if (!isSelected) {
-                              e.currentTarget.style.borderColor = "#0d6efd";
+                              e.currentTarget.style.borderColor = "#0A7C6E";
                               e.currentTarget.style.backgroundColor = "#f8f9fa";
                             }
                           }}

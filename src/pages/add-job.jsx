@@ -472,16 +472,20 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
     );
 
     const baseAmount = breakdown?.chargeTotalIncGst || 0;
-    let finalAmountDueToday = baseAmount;
+
+    // Strict Rounding Helper
+    const roundToTwo = (num) => Math.round((num + Number.EPSILON) * 100) / 100;
+
     let discountApplied = 0;
+    let finalAmountDueToday = baseAmount;
     let balanceRemaining = 0;
 
     if (form.paymentOption === 'full') {
-      discountApplied = baseAmount * 0.05;
-      finalAmountDueToday = baseAmount - discountApplied;
+      discountApplied = roundToTwo(baseAmount * 0.05);
+      finalAmountDueToday = roundToTwo(baseAmount - discountApplied);
     } else if (form.paymentOption === 'split') {
-      finalAmountDueToday = baseAmount * 0.50;
-      balanceRemaining = baseAmount * 0.50;
+      finalAmountDueToday = roundToTwo(baseAmount * 0.50);
+      balanceRemaining = roundToTwo(baseAmount - finalAmountDueToday);
     }
 
     return {
@@ -494,10 +498,10 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
       payment_option: form.paymentOption,
       job_location_state: form.state,
       financials: {
-        base_total_inc_gst: Number(baseAmount.toFixed(2)),
-        discount_applied: Number(discountApplied.toFixed(2)),
-        amount_to_charge_today: Number(finalAmountDueToday.toFixed(2)),
-        balance_deferred: Number(balanceRemaining.toFixed(2))
+        base_total_inc_gst: baseAmount,
+        discount_applied: discountApplied,
+        amount_to_charge_today: finalAmountDueToday,
+        balance_deferred: balanceRemaining
       },
       is_document: (form.document_types && form.document_types.length > 0) || document_list.length > 0,
       document_list,
@@ -506,7 +510,6 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
       tasks: (form.tasks || []).map((t) => ({ task: t.task, task_start: t.task_start, task_end: t.task_end })),
     };
   }
-
   async function uploadAllAttachments() {
     const document_list = [];
     for (const file of form.attachments || []) {

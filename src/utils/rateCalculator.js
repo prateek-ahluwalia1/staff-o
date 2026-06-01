@@ -105,12 +105,13 @@ export function computeShiftBreakdown(scheduleDays, rates = null) {
 
   const segments = keyOrder.map((key) => {
     const [dayType, slot] = key.split("_");
-    const billableHours = Math.round(hoursMap.get(key) * 100) / 100;
+
+    const billableHours = Number(hoursMap.get(key).toFixed(2));
     const payRate = rates.pay[dayType]?.[slot] ?? 0;
     const chargeRate = rates.charge[dayType]?.[slot] ?? 0;
 
-    const payAmt = payRate * billableHours;
-    const chargeAmt = chargeRate * billableHours;
+    const payAmt = Number((payRate * billableHours).toFixed(2));
+    const chargeAmt = Number((chargeRate * billableHours).toFixed(2));
 
     payTotal += payAmt;
     chargeTotal += chargeAmt;
@@ -127,15 +128,21 @@ export function computeShiftBreakdown(scheduleDays, rates = null) {
     };
   });
 
+  payTotal = Number(payTotal.toFixed(2));
+  chargeTotal = Number(chargeTotal.toFixed(2));
+
   const GST_RATE = 0.1;
+  const payGst = Number((payTotal * GST_RATE).toFixed(2));
+  const chargeGst = Number((chargeTotal * GST_RATE).toFixed(2));
+
   return {
     segments,
-    totalHours: Math.round(totalBillableHours * 100) / 100,
+    totalHours: Number(totalBillableHours.toFixed(2)),
     payTotal,
     chargeTotal,
-    payGst: payTotal * GST_RATE,
-    chargeGst: chargeTotal * GST_RATE,
-    payTotalIncGst: payTotal + (payTotal * GST_RATE),
-    chargeTotalIncGst: chargeTotal + (chargeTotal * GST_RATE),
+    payGst,
+    chargeGst,
+    payTotalIncGst: Number((payTotal + payGst).toFixed(2)),
+    chargeTotalIncGst: Number((chargeTotal + chargeGst).toFixed(2)),
   };
 }

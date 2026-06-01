@@ -5,13 +5,22 @@ function fmt(v) {
   catch { return `$${Number(v).toFixed(2)}`; }
 }
 
+const roundToTwo = (num) => Math.round((num + Number.EPSILON) * 100) / 100;
+
 export default function RateBreakdown({ rate, jobTypeLabel = "Security Guard", paymentOption = "full" }) {
   if (!rate || !Array.isArray(rate.segments) || rate.segments.length === 0) return null;
 
   const { segments, chargeTotal, chargeGst, chargeTotalIncGst, totalHours } = rate;
-  const discountAmount = paymentOption === "full" ? chargeTotalIncGst * 0.05 : 0;
-  const amountDueToday = paymentOption === "full" ? chargeTotalIncGst - discountAmount : chargeTotalIncGst * 0.50;
-  const balanceDue = paymentOption === "split" ? chargeTotalIncGst * 0.50 : 0;
+
+  // STRICT ROUNDING
+  const discountAmount = paymentOption === "full" ? roundToTwo(chargeTotalIncGst * 0.05) : 0;
+
+  // Subtracting ensures the parts exactly add up to the whole (e.g. 841.50 - 42.08 = 799.42)
+  const amountDueToday = paymentOption === "full"
+    ? roundToTwo(chargeTotalIncGst - discountAmount)
+    : roundToTwo(chargeTotalIncGst * 0.50);
+
+  const balanceDue = paymentOption === "split" ? roundToTwo(chargeTotalIncGst - amountDueToday) : 0;
 
   return (
     <div className="border rounded-4 bg-white overflow-hidden shadow-sm" style={{ borderColor: "#e9ecef" }}>

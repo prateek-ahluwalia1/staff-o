@@ -4,19 +4,11 @@ import { NavLink } from "react-router-dom";
 
 const formatDisplayDate = (dateStr) => {
   if (!dateStr) return "";
-
-  // Safely parse YYYY-MM-DD to avoid timezone off-by-one-day bugs
   const parts = dateStr.split("-");
   if (parts.length === 3) {
     const d = new Date(parts[0], parts[1] - 1, parts[2]);
-    // Returns strictly standard AU format: dd/MM/yyyy
-    return d.toLocaleDateString("en-AU", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric"
-    });
+    return d.toLocaleDateString("en-AU", { day: "2-digit", month: "2-digit", year: "numeric" });
   }
-
   return dateStr;
 };
 
@@ -25,12 +17,19 @@ function fmt(v) {
   catch { return `$${Number(v).toFixed(2)}`; }
 }
 
+const roundToTwo = (num) => Math.round((num + Number.EPSILON) * 100) / 100;
+
 export default function ReviewStep({ form, rate, setField, handleConfirm, setStep, isSubmitting, baseAmount, isAdmin }) {
   const JOB_TYPE_LABELS = { "event-security": "Event Security", "static-security": "Static Security Guard", "corporate-security": "Corporate Security", "site-patrol": "Site Patrol Security", "others": "Others" };
   const jobTypeLabel = form.jobType === "others" && form.customJobType ? form.customJobType : JOB_TYPE_LABELS[form.jobType] || form.jobType || "Security Guard";
-  const activeAmount = form.paymentOption === 'full' ? baseAmount * 0.95 : baseAmount * 0.50;
 
-  // Helper variables for cleaner conditional classes
+  // STRICT ROUNDING TO FIX STRIPE DRIFT
+  const fullDiscount = roundToTwo(baseAmount * 0.05);
+  const fullTotal = roundToTwo(baseAmount - fullDiscount);
+  const splitUpfront = roundToTwo(baseAmount * 0.50);
+
+  const activeAmount = form.paymentOption === 'full' ? fullTotal : splitUpfront;
+
   const isFull = form.paymentOption === "full";
   const isSplit = form.paymentOption === "split";
 
@@ -106,7 +105,6 @@ export default function ReviewStep({ form, rate, setField, handleConfirm, setSte
           <h6 className="fw-bold mb-0">{isAdmin ? "Client Invoice Terms" : "Payment Options"}</h6>
         </div>
 
-        {/* UPDATED PAYMENT OPTIONS */}
         <div className="row g-3">
           <div className="col-md-6">
             <label className={`w-100 h-100 p-3 rounded-3 border transition-all ${isFull ? "border-primary bg-primary text-white shadow-sm" : "bg-white border-light-subtle hover-bg-gray"}`} style={{ cursor: "pointer" }}>
@@ -117,7 +115,7 @@ export default function ReviewStep({ form, rate, setField, handleConfirm, setSte
               </div>
               <div className={`small mb-3 ${isFull ? "text-white opacity-75" : "text-muted"}`}>Pay the total amount now and receive an instant 5% discount on your booking.</div>
               <div className={`mt-auto pt-2 border-top ${isFull ? "border-white border-opacity-25" : "border-light"}`}>
-                <div className={`fw-bold fs-5 ${isFull ? "text-white" : "text-dark"}`}>{fmt(baseAmount * 0.95)} <span className={`fs-6 fw-normal ${isFull ? "text-white opacity-75" : "text-muted"}`}>total</span></div>
+                <div className={`fw-bold fs-5 ${isFull ? "text-white" : "text-dark"}`}>{fmt(fullTotal)} <span className={`fs-6 fw-normal ${isFull ? "text-white opacity-75" : "text-muted"}`}>total</span></div>
               </div>
             </label>
           </div>
@@ -129,7 +127,7 @@ export default function ReviewStep({ form, rate, setField, handleConfirm, setSte
               </div>
               <div className={`small mb-3 ${isSplit ? "text-white opacity-75" : "text-muted"}`}>Pay 50% upfront to secure guards. The remaining 50% is charged upon shift completion.</div>
               <div className={`mt-auto pt-2 border-top ${isSplit ? "border-white border-opacity-25" : "border-light"}`}>
-                <div className={`fw-bold fs-5 ${isSplit ? "text-white" : "text-dark"}`}>{fmt(baseAmount * 0.5)} <span className={`fs-6 fw-normal ${isSplit ? "text-white opacity-75" : "text-muted"}`}>upfront</span></div>
+                <div className={`fw-bold fs-5 ${isSplit ? "text-white" : "text-dark"}`}>{fmt(splitUpfront)} <span className={`fs-6 fw-normal ${isSplit ? "text-white opacity-75" : "text-muted"}`}>upfront</span></div>
               </div>
             </label>
           </div>

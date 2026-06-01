@@ -5,7 +5,6 @@ import useSubmit from "../hooks/useSubmit";
 import Loader from "../components/Loader";
 import { toast } from "react-toastify";
 
-// State mapping dictionary for converting full state names to abbreviations
 const STATE_MAP = {
   'Victoria': 'vic',
   'New South Wales': 'nsw',
@@ -56,6 +55,10 @@ const ManageUsers = () => {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
+
+  // New State for Password Toggle
+  const [showPassword, setShowPassword] = useState(false);
+
   const userAutocompleteRef = useRef(null);
   const userAutocompleteListenerRef = useRef(null);
 
@@ -95,6 +98,7 @@ const ManageUsers = () => {
   }, [activeTab]);
 
   const openModal = useCallback((user = null) => {
+    setShowPassword(false); // Reset password visibility when opening
     if (user) {
       const extraInfo = getNestedData(user);
       setEditingUser(user);
@@ -150,9 +154,6 @@ const ManageUsers = () => {
     }
   }, [apiResponse, location.state, location.pathname, navigate, openModal]);
 
-  // State mapping dictionary for converting full state names to abbreviations
-  // (Moved outside component to avoid recreation on each render)
-
   useEffect(() => {
     if (!isModalOpen) return;
 
@@ -190,7 +191,6 @@ const ManageUsers = () => {
             if (!newCity) newCity = c.long_name;
           }
           if (c.types.includes("administrative_area_level_1")) {
-            // Map full state name to abbreviation
             newState = STATE_MAP[c.long_name] || c.short_name.toLowerCase();
           }
           if (c.types.includes("country")) newCountry = c.long_name;
@@ -214,7 +214,6 @@ const ManageUsers = () => {
       }
     }, 500);
 
-    // Try immediately in case Google is already loaded.
     initAutocomplete();
 
     return () => {
@@ -229,7 +228,6 @@ const ManageUsers = () => {
     setFormData((prev) => ({
       ...prev,
       [name]: value,
-      // If address is manually edited, force selecting from suggestions again.
       ...(name === "address"
         ? { coordinates: "", city: "", state: "", country: "" }
         : {}),
@@ -238,6 +236,16 @@ const ManageUsers = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // Strict Australian Phone Validation before submission
+    if (formData.phone && formData.phone.trim() !== "") {
+      const phoneRegex = /^(?:\+?61|0)[2-478](?:[\s]*\d){8}$/;
+      if (!phoneRegex.test(formData.phone)) {
+        toast.error("Please enter a valid Australian phone number (e.g., 0400 000 000 or +61 400 000 000).");
+        return;
+      }
+    }
+
     let url = "";
     const method = editingUser ? "PUT" : "POST";
 
@@ -503,7 +511,6 @@ const ManageUsers = () => {
                   className={`nav-link ${activeTab === role ? "active" : ""}`}
                   onClick={() => handleTabChange(role)}
                 >
-                  {/* Using chained ternaries */}
                   {role === "sub_contractor"
                     ? "Resource Partner"
                     : role === "customer"
@@ -701,37 +708,58 @@ const ManageUsers = () => {
                       required
                     />
                   </div>
+
                   <div className="col-md-6">
                     <label className="form-label">Email Address *</label>
                     <input
                       type="email"
-                      className="form-control"
+                      className={`form-control ${editingUser ? 'bg-light text-muted' : ''}`}
                       name="email"
                       value={formData.email}
                       onChange={handleInputChange}
                       required
+                      disabled={!!editingUser}
+                      title={editingUser ? "Email cannot be changed after registration" : ""}
                     />
                   </div>
+
                   <div className="col-md-6">
                     <label className="form-label">
                       Password {editingUser && "(Leave blank to keep)"}
                     </label>
-                    <input
-                      type="password"
-                      className="form-control"
-                      name="password"
-                      onChange={handleInputChange}
-                      required={!editingUser}
-                    />
+                    <div className="position-relative">
+                      <input
+                        type={showPassword ? "text" : "password"}
+                        className="form-control pe-5"
+                        name="password"
+                        onChange={handleInputChange}
+                        required={!editingUser}
+                      />
+                      <button
+                        type="button"
+                        className="btn btn-sm border-0 position-absolute end-0 top-50 translate-middle-y text-muted"
+                        onClick={() => setShowPassword(!showPassword)}
+                        tabIndex="-1"
+                      >
+                        <i className={`fa-solid ${showPassword ? 'fa-eye-slash' : 'fa-eye'}`}></i>
+                      </button>
+                    </div>
                   </div>
+
                   <div className="col-md-6">
                     <label className="form-label">Phone</label>
                     <input
-                      type="text"
+                      type="tel"
                       className="form-control"
                       name="phone"
+                      placeholder="e.g. 0400 000 000"
                       value={formData.phone}
-                      onChange={handleInputChange}
+                      onChange={(e) => {
+                        // Only allow digits, plus, dashes, and spaces
+                        const val = e.target.value.replace(/[^\d+\s-]/g, "");
+                        handleInputChange({ target: { name: "phone", value: val } });
+                      }}
+                      maxLength="15"
                     />
                   </div>
 

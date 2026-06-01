@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import useSubmit from "../../hooks/useSubmit";
 import Loader from "../Loader";
 import PDFGenerator from "../../utils/PDFGenerator";
-import { Link } from 'react-router-dom'
+import { Link } from 'react-router-dom';
 
 function fixUrl(url) {
   if (!url) return "";
@@ -11,14 +11,23 @@ function fixUrl(url) {
 
 function IncidentDetail({ report, onBack, meta }) {
   return (
-    <div style={{ overflowY: "auto" }}>
+    <div
+      className="custom-scrollbar"
+      style={{
+        overflowY: "auto",
+        overflowX: "hidden", /* Keep main wrapper strictly vertical */
+        maxHeight: "65vh",
+        paddingRight: "8px",
+        paddingBottom: "20px" /* Extra padding at bottom of modal */
+      }}
+    >
       <div className="d-flex align-items-center mb-3">
         <button
           className="btn btn-light rounded-circle me-3"
           onClick={onBack}
           style={{ width: "36px", height: "36px", padding: 0, fontWeight: 700 }}
         >
-          ‹
+          <i className="fa fa-arrow-left"></i>
         </button>
         <h5 className="m-0 fw-bold">Incident Report Details</h5>
       </div>
@@ -49,13 +58,13 @@ function IncidentDetail({ report, onBack, meta }) {
 
       {/* Incident Info */}
       <div className="row mb-3">
-        <div className="col-md-4">
+        <div className="col-md-4 mb-2 mb-md-0">
           <h6 className="fw-bold">Incident Date</h6>
-          <p className="text-muted">{report?.incident_date || "N/A"}</p>
+          <p className="text-muted mb-0">{report?.incident_date || "N/A"}</p>
         </div>
-        <div className="col-md-4">
+        <div className="col-md-4 mb-2 mb-md-0">
           <h6 className="fw-bold">Incident Time</h6>
-          <p className="text-muted">{report?.incident_time || "N/A"}</p>
+          <p className="text-muted mb-0">{report?.incident_time || "N/A"}</p>
         </div>
         <div className="col-md-4">
           <h6 className="fw-bold">Injury Type</h6>
@@ -74,38 +83,41 @@ function IncidentDetail({ report, onBack, meta }) {
       {report?.people_involved?.length > 0 && (
         <>
           <h6 className="fw-bold mb-2">People Involved</h6>
-          <table className="table table-bordered table-sm mb-3">
-            <thead className="table-light">
-              <tr>
-                <th>#</th>
-                <th>Name</th>
-                <th>Gender</th>
-                <th>Phone</th>
-                <th>Email</th>
-                <th>Body</th>
-                <th>Height</th>
-                <th>Weight</th>
-                <th>Hair</th>
-                <th>Marks</th>
-              </tr>
-            </thead>
-            <tbody>
-              {report.people_involved.map((p, i) => (
-                <tr key={i}>
-                  <td>{i + 1}</td>
-                  <td>{p.name || "N/A"}</td>
-                  <td>{p.gender || "N/A"}</td>
-                  <td>{p.phone || "N/A"}</td>
-                  <td>{p.email || "N/A"}</td>
-                  <td>{p.bodyType || "N/A"}</td>
-                  <td>{p.height || "N/A"}</td>
-                  <td>{p.weight || "N/A"}</td>
-                  <td>{p.hair || "N/A"}</td>
-                  <td>{p.marks || "N/A"}</td>
+          {/* Added paddingBottom so the scrollbar doesn't cover the last row */}
+          <div className="table-responsive custom-scrollbar mb-4" style={{ paddingBottom: "12px" }}>
+            <table className="table table-bordered table-sm mb-0">
+              <thead className="table-light">
+                <tr>
+                  <th style={{ whiteSpace: "nowrap" }}>#</th>
+                  <th style={{ whiteSpace: "nowrap" }}>Name</th>
+                  <th style={{ whiteSpace: "nowrap" }}>Gender</th>
+                  <th style={{ whiteSpace: "nowrap" }}>Phone</th>
+                  <th style={{ whiteSpace: "nowrap" }}>Email</th>
+                  <th style={{ whiteSpace: "nowrap" }}>Body</th>
+                  <th style={{ whiteSpace: "nowrap" }}>Height</th>
+                  <th style={{ whiteSpace: "nowrap" }}>Weight</th>
+                  <th style={{ whiteSpace: "nowrap" }}>Hair</th>
+                  <th style={{ whiteSpace: "nowrap" }}>Marks</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {report.people_involved.map((p, i) => (
+                  <tr key={i}>
+                    <td>{i + 1}</td>
+                    <td style={{ whiteSpace: "nowrap" }}>{p.name || "N/A"}</td>
+                    <td>{p.gender || "N/A"}</td>
+                    <td style={{ whiteSpace: "nowrap" }}>{p.phone || "N/A"}</td>
+                    <td>{p.email || "N/A"}</td>
+                    <td>{p.bodyType || "N/A"}</td>
+                    <td>{p.height || "N/A"}</td>
+                    <td>{p.weight || "N/A"}</td>
+                    <td>{p.hair || "N/A"}</td>
+                    <td>{p.marks || "N/A"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </>
       )}
 
@@ -113,28 +125,31 @@ function IncidentDetail({ report, onBack, meta }) {
       {report?.vehicle?.length > 0 && (
         <>
           <h6 className="fw-bold mb-2">Vehicles</h6>
-          <table className="table table-bordered table-sm mb-3">
-            <thead className="table-light">
-              <tr>
-                <th>#</th>
-                <th>Make</th>
-                <th>Model</th>
-                <th>Type</th>
-                <th>Rego</th>
-              </tr>
-            </thead>
-            <tbody>
-              {report.vehicle.map((v, i) => (
-                <tr key={i}>
-                  <td>{i + 1}</td>
-                  <td>{v.make || "N/A"}</td>
-                  <td>{v.model || "N/A"}</td>
-                  <td>{v.vehicle_type || "N/A"}</td>
-                  <td>{v.vehicle_rander || "N/A"}</td>
+          {/* Added paddingBottom */}
+          <div className="table-responsive custom-scrollbar mb-4" style={{ paddingBottom: "12px" }}>
+            <table className="table table-bordered table-sm mb-0">
+              <thead className="table-light">
+                <tr>
+                  <th style={{ whiteSpace: "nowrap" }}>#</th>
+                  <th style={{ whiteSpace: "nowrap" }}>Make</th>
+                  <th style={{ whiteSpace: "nowrap" }}>Model</th>
+                  <th style={{ whiteSpace: "nowrap" }}>Type</th>
+                  <th style={{ whiteSpace: "nowrap" }}>Rego</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {report.vehicle.map((v, i) => (
+                  <tr key={i}>
+                    <td>{i + 1}</td>
+                    <td style={{ whiteSpace: "nowrap" }}>{v.make || "N/A"}</td>
+                    <td style={{ whiteSpace: "nowrap" }}>{v.model || "N/A"}</td>
+                    <td style={{ whiteSpace: "nowrap" }}>{v.vehicle_type || "N/A"}</td>
+                    <td style={{ whiteSpace: "nowrap" }}>{v.vehicle_rander || "N/A"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </>
       )}
 
@@ -142,30 +157,33 @@ function IncidentDetail({ report, onBack, meta }) {
       {report?.wittness?.length > 0 && (
         <>
           <h6 className="fw-bold mb-2">Witnesses</h6>
-          <table className="table table-bordered table-sm mb-3">
-            <thead className="table-light">
-              <tr>
-                <th>#</th>
-                <th>Name</th>
-                <th>Phone</th>
-                <th>Email</th>
-                <th>Address</th>
-                <th>Detail</th>
-              </tr>
-            </thead>
-            <tbody>
-              {report.wittness.map((w, i) => (
-                <tr key={i}>
-                  <td>{i + 1}</td>
-                  <td>{w.witness_name || w.wittness_name || "N/A"}</td>
-                  <td>{w.witness_phone || w.wittness_phone || "N/A"}</td>
-                  <td>{w.witness_email || w.wittness_email || "N/A"}</td>
-                  <td>{w.witness_address || w.wittness_address || "N/A"}</td>
-                  <td>{w.witness_detail || w.wittness_detail || "N/A"}</td>
+          {/* Added paddingBottom */}
+          <div className="table-responsive custom-scrollbar mb-4" style={{ paddingBottom: "12px" }}>
+            <table className="table table-bordered table-sm mb-0">
+              <thead className="table-light">
+                <tr>
+                  <th style={{ whiteSpace: "nowrap" }}>#</th>
+                  <th style={{ whiteSpace: "nowrap" }}>Name</th>
+                  <th style={{ whiteSpace: "nowrap" }}>Phone</th>
+                  <th style={{ whiteSpace: "nowrap" }}>Email</th>
+                  <th style={{ minWidth: "150px" }}>Address</th>
+                  <th style={{ minWidth: "200px" }}>Detail</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {report.wittness.map((w, i) => (
+                  <tr key={i}>
+                    <td>{i + 1}</td>
+                    <td style={{ whiteSpace: "nowrap" }}>{w.witness_name || w.wittness_name || "N/A"}</td>
+                    <td style={{ whiteSpace: "nowrap" }}>{w.witness_phone || w.wittness_phone || "N/A"}</td>
+                    <td>{w.witness_email || w.wittness_email || "N/A"}</td>
+                    <td>{w.witness_address || w.wittness_address || "N/A"}</td>
+                    <td>{w.witness_detail || w.wittness_detail || "N/A"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </>
       )}
 
@@ -177,7 +195,7 @@ function IncidentDetail({ report, onBack, meta }) {
           return hasInfo ? (
             <>
               <h6 className="fw-bold mb-2">Emergency Services</h6>
-              <div className="row border rounded p-3 mb-3 bg-light">
+              <div className="row border rounded p-3 mb-4 bg-light m-0">
                 {[
                   ["Type", es.emergency_type],
                   ["Detail", es.emergency_detail],
@@ -188,8 +206,8 @@ function IncidentDetail({ report, onBack, meta }) {
                   ["Phone", es.phone],
                 ].map(([label, val]) =>
                   val ? (
-                    <div className="col-md-4 mb-1" key={label}>
-                      <strong>{label}:</strong> {val}
+                    <div className="col-12 col-md-6 col-lg-4 mb-2" key={label}>
+                      <strong>{label}:</strong> <span className="text-break">{val}</span>
                     </div>
                   ) : null,
                 )}
@@ -202,10 +220,10 @@ function IncidentDetail({ report, onBack, meta }) {
       {report?.photo?.length > 0 && (
         <>
           <h6 className="fw-bold mb-2">Photos</h6>
-          <div className="d-flex flex-wrap gap-2 mb-3">
+          <div className="d-flex flex-wrap gap-2 mb-4">
             {report.photo.map((ph, i) => (
               <div key={i} style={{ position: "relative" }}>
-                <Link                  href={fixUrl(ph.imgPath)}
+                <Link href={fixUrl(ph.imgPath)}
                   target="_blank"
                   rel="noopener noreferrer"
                 >
@@ -227,6 +245,7 @@ function IncidentDetail({ report, onBack, meta }) {
                       fontSize: "10px",
                       color: "#888",
                       textAlign: "center",
+                      marginTop: "4px"
                     }}
                   >
                     {ph.timestamp}
@@ -246,10 +265,13 @@ function IncidentDetail({ report, onBack, meta }) {
             src={fixUrl(report.signature)}
             alt="Signature"
             style={{
-              maxWidth: "200px",
+              maxWidth: "100%",
+              height: "auto",
+              maxHeight: "120px",
               border: "1px solid #ddd",
               borderRadius: "6px",
               marginBottom: "16px",
+              objectFit: "contain"
             }}
           />
         </>
@@ -338,7 +360,7 @@ export default function IncidentReport({ rosterId, guardId, shift, site }) {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-      <div style={{ marginBottom: "12px" }}>
+      <div style={{ marginBottom: "8px" }}>
         <button
           className="btn btn-success"
           onClick={async () => {
@@ -364,6 +386,7 @@ export default function IncidentReport({ rosterId, guardId, shift, site }) {
           Download Incident Report PDF
         </button>
       </div>
+
       {pdfError && (
         <div
           style={{
@@ -378,35 +401,59 @@ export default function IncidentReport({ rosterId, guardId, shift, site }) {
           {pdfError}
         </div>
       )}
-      {reports.map((report, i) => (
-        <div
-          key={report.id || i}
-          className="d-flex align-items-center justify-content-between p-3 border rounded shadow-sm"
-          style={{ borderRadius: "8px" }}
-        >
-          <div className="d-flex align-items-center gap-4">
-            <span className="badge bg-danger rounded-circle p-2 px-3 fs-6">
-              {i + 1}
-            </span>
-            <span className="text-muted">{report.incident_date || "—"}</span>
-            <span className="text-muted">{report.incident_time || "—"}</span>
-            <span className="badge bg-light text-dark border text-capitalize">
-              {report.injury_type || "—"}
-            </span>
-            {report.site_name && (
-              <span className="text-muted" style={{ fontSize: "13px" }}>
-                {report.site_name}
-              </span>
-            )}
-          </div>
-          <button
-            className="btn btn-danger rounded-pill px-4"
-            onClick={() => setSelectedReport(report)}
+
+      {/* Scrollable Container for List Items */}
+      <div
+        className="custom-scrollbar"
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: "12px",
+          maxHeight: "450px",
+          overflowY: "auto",
+          overflowX: "auto", /* FIXED */
+          paddingRight: "6px",
+          paddingBottom: "10px"
+        }}
+      >
+        {reports.map((report, i) => (
+          <div
+            key={report.id || i}
+            className="d-flex flex-column flex-md-row align-items-start align-items-md-center justify-content-between p-3 border rounded shadow-sm gap-3"
+            style={{ borderRadius: "8px", background: "#fff" }}
           >
-            Details
-          </button>
-        </div>
-      ))}
+            <div className="d-flex align-items-center gap-3 flex-wrap">
+              <span className="badge bg-danger rounded-circle p-2 px-3 fs-6">
+                {i + 1}
+              </span>
+              <span className="text-muted fw-medium" style={{ whiteSpace: "nowrap" }}>
+                <i className="fa-regular fa-calendar me-1"></i>
+                {report.incident_date || "—"}
+              </span>
+              <span className="text-muted fw-medium" style={{ whiteSpace: "nowrap" }}>
+                <i className="fa-regular fa-clock me-1"></i>
+                {report.incident_time || "—"}
+              </span>
+              <span className="badge bg-light text-danger border border-danger-subtle text-capitalize">
+                {report.injury_type || "—"}
+              </span>
+              {report.site_name && (
+                <span className="text-muted text-break" style={{ fontSize: "13px" }}>
+                  <i className="fa-solid fa-location-dot me-1 opacity-50"></i>
+                  {report.site_name}
+                </span>
+              )}
+            </div>
+
+            <button
+              className="btn btn-danger rounded-pill px-4 align-self-end align-self-md-auto text-nowrap"
+              onClick={() => setSelectedReport(report)}
+            >
+              Details
+            </button>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

@@ -3,7 +3,7 @@ import useSubmit from "../../hooks/useSubmit";
 import Loader from "../Loader";
 import { apiURL } from "../../utils/exports";
 import PDFGenerator from "../../utils/PDFGenerator";
-import { Link } from 'react-router-dom'
+import { Link } from 'react-router-dom';
 
 const BASE_URL = `${apiURL}footpatrol/`;
 
@@ -27,14 +27,23 @@ function PatrolDetail({ patrol, onBack, meta }) {
   const photos = parsePhotos(patrol.photo);
 
   return (
-    <div style={{ overflowY: "auto" }}>
+    <div
+      className="custom-scrollbar"
+      style={{
+        overflowY: "auto",
+        overflowX: "auto",
+        maxHeight: "65vh",
+        paddingRight: "8px",
+        paddingBottom: "20px"
+      }}
+    >
       <div className="d-flex align-items-center mb-3">
         <button
           className="btn btn-light rounded-circle me-3"
           onClick={onBack}
           style={{ width: "36px", height: "36px", padding: 0, fontWeight: 700 }}
         >
-          ‹
+          <i className="fa fa-arrow-left"></i>
         </button>
         <h5 className="m-0 fw-bold">Foot Patrol Report Details</h5>
       </div>
@@ -65,13 +74,13 @@ function PatrolDetail({ patrol, onBack, meta }) {
 
       {/* Patrol Info */}
       <div className="row mb-3">
-        <div className="col-md-6">
+        <div className="col-md-6 mb-2 mb-md-0">
           <h6 className="fw-bold">Patrol Date</h6>
-          <p className="text-muted">{patrol?.date || "N/A"}</p>
+          <p className="text-muted mb-0">{patrol?.date || "N/A"}</p>
         </div>
-        <div className="col-md-6">
+        <div className="col-md-6 mb-2 mb-md-0">
           <h6 className="fw-bold">Patrol Time</h6>
-          <p className="text-muted">{patrol?.time || "N/A"}</p>
+          <p className="text-muted mb-0">{patrol?.time || "N/A"}</p>
         </div>
       </div>
 
@@ -84,10 +93,10 @@ function PatrolDetail({ patrol, onBack, meta }) {
       {photos.length > 0 && (
         <>
           <h6 className="fw-bold mb-2">Photos</h6>
-          <div className="d-flex flex-wrap gap-2 mb-3">
+          <div className="d-flex flex-wrap gap-2 mb-4">
             {photos.map((ph, i) => (
-              <div key={i}>
-                <Link                  href={resolveUrl(ph.imgPath)}
+              <div key={i} style={{ position: "relative" }}>
+                <Link href={resolveUrl(ph.imgPath)}
                   target="_blank"
                   rel="noopener noreferrer"
                 >
@@ -109,6 +118,7 @@ function PatrolDetail({ patrol, onBack, meta }) {
                       fontSize: "10px",
                       color: "#888",
                       textAlign: "center",
+                      marginTop: "4px"
                     }}
                   >
                     {ph.timestamp}
@@ -128,10 +138,13 @@ function PatrolDetail({ patrol, onBack, meta }) {
             src={resolveUrl(patrol.signature)}
             alt="Signature"
             style={{
-              maxWidth: "200px",
+              maxWidth: "100%",
+              height: "auto",
+              maxHeight: "120px",
               border: "1px solid #ddd",
               borderRadius: "6px",
               marginBottom: "16px",
+              objectFit: "contain"
             }}
           />
         </>
@@ -220,7 +233,7 @@ export default function FootPatrolReport({ rosterId, guardId, shift, site }) {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-      <div style={{ marginBottom: "12px" }}>
+      <div style={{ marginBottom: "8px" }}>
         <button
           className="btn btn-success"
           onClick={async () => {
@@ -246,6 +259,7 @@ export default function FootPatrolReport({ rosterId, guardId, shift, site }) {
           Download Foot Patrol Report PDF
         </button>
       </div>
+
       {pdfError && (
         <div
           style={{
@@ -260,48 +274,70 @@ export default function FootPatrolReport({ rosterId, guardId, shift, site }) {
           {pdfError}
         </div>
       )}
-      {patrols.map((patrol, i) => (
-        <div
-          key={patrol.id || i}
-          className="d-flex align-items-center justify-content-between p-3 border rounded shadow-sm"
-          style={{ borderRadius: "8px" }}
-        >
-          <div className="d-flex align-items-center gap-4 flex-wrap">
-            <span className="badge bg-warning text-dark rounded-circle p-2 px-3 fs-6">
-              {i + 1}
-            </span>
-            <span className="text-muted">{patrol.date || "—"}</span>
-            <span className="text-muted">{patrol.time || "—"}</span>
-            {patrol.site_name && (
-              <span className="text-muted" style={{ fontSize: "13px" }}>
-                {patrol.site_name}
-              </span>
-            )}
-            {patrol.patrolling_detail && (
-              <span
-                className="text-secondary"
-                style={{
-                  fontSize: "13px",
-                  maxWidth: "200px",
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                  whiteSpace: "nowrap",
-                }}
-              >
-                {patrol.patrolling_detail}
-              </span>
-            )}
-          </div>
-          <button
-            className="btn btn-warning rounded-pill px-4 text-dark"
-            onClick={() => setSelectedPatrol(patrol)}
+
+      {/* Scrollable Container for List Items */}
+      <div
+        className="custom-scrollbar"
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: "12px",
+          maxHeight: "450px",
+          overflowY: "auto",
+          overflowX: "auto",
+          paddingRight: "6px",
+          paddingBottom: "10px"
+        }}
+      >
+        {patrols.map((patrol, i) => (
+          <div
+            key={patrol.id || i}
+            className="d-flex flex-column flex-md-row align-items-start align-items-md-center justify-content-between p-3 border rounded shadow-sm gap-3"
+            style={{ borderRadius: "8px", background: "#fff" }}
           >
-            Details
-          </button>
-        </div>
-      ))}
+            <div className="d-flex align-items-center gap-3 flex-wrap">
+              <span className="badge bg-warning text-dark rounded-circle p-2 px-3 fs-6">
+                {i + 1}
+              </span>
+              <span className="text-muted fw-medium" style={{ whiteSpace: "nowrap" }}>
+                <i className="fa-regular fa-calendar me-1"></i>
+                {patrol.date || "—"}
+              </span>
+              <span className="text-muted fw-medium" style={{ whiteSpace: "nowrap" }}>
+                <i className="fa-regular fa-clock me-1"></i>
+                {patrol.time || "—"}
+              </span>
+              {patrol.site_name && (
+                <span className="text-muted text-break" style={{ fontSize: "13px" }}>
+                  <i className="fa-solid fa-location-dot me-1 opacity-50"></i>
+                  {patrol.site_name}
+                </span>
+              )}
+              {patrol.patrolling_detail && (
+                <span
+                  className="text-secondary"
+                  style={{
+                    fontSize: "13px",
+                    maxWidth: "250px",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {patrol.patrolling_detail}
+                </span>
+              )}
+            </div>
+
+            <button
+              className="btn btn-warning rounded-pill px-4 text-dark align-self-end align-self-md-auto text-nowrap"
+              onClick={() => setSelectedPatrol(patrol)}
+            >
+              Details
+            </button>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
-
-

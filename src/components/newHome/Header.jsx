@@ -205,7 +205,7 @@ function Header() {
         {!token ? (
           <>
             <NavLink to="/login" className="btn-nav-ghost" style={{ color: '#fff', borderColor: '#fff' }}>Sign In</NavLink>
-            <NavLink to="/register" className="btn-nav-solid">Register Free</NavLink>
+            <NavLink to="/register" className="btn-nav-solid" style={{ border: "1px solid #0A7C6E" }}>Register Free</NavLink>
           </>
         ) : (
           <>

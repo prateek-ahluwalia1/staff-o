@@ -292,11 +292,11 @@ export default function ActivityDashboardModal({ modal, closeModal }) {
               style={{
                 width: "32px",
                 height: "32px",
-                fontSize: "25px",
+                fontSize: "20px",
                 border: "none",
               }}
             >
-              &times;
+              <i className="fa fa-times" />
             </button>
           </div>
 

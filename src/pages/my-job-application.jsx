@@ -127,7 +127,6 @@ export default function MyJobApplications() {
           {/* --- DATE FILTERS --- */}
           <div className="d-flex gap-2 mt-3 mt-md-0 align-items-end bg-white p-2 rounded shadow-sm border">
             <div className="d-flex flex-column">
-              <label style={{ fontSize: '10px', fontWeight: 'bold', color: '#888', marginLeft: '2px' }}>FROM</label>
               <input
                 type="date"
                 className="form-control form-control-sm border-0"
@@ -137,7 +136,6 @@ export default function MyJobApplications() {
             </div>
             <div style={{ height: '30px', width: '1px', background: '#eee', margin: '0 5px', marginBottom: '2px' }}></div>
             <div className="d-flex flex-column">
-              <label style={{ fontSize: '10px', fontWeight: 'bold', color: '#888', marginLeft: '2px' }}>TO</label>
               <input
                 type="date"
                 className="form-control form-control-sm border-0"
@@ -148,8 +146,8 @@ export default function MyJobApplications() {
             {/* --- NEW SEARCH BUTTON --- */}
             <button
               onClick={fetchCustomerSites}
-              className="btn btn-primary-custom btn-sm ms-2 mb-1 px-3 shadow-sm"
-              style={{ height: 'fit-content' }}
+              className="btn btn-primary-custom px-3 py-1"
+              style={{ height: 'fit-content', borderRadius: '20px', fontSize: '14px' }}
             >
               Search
             </button>

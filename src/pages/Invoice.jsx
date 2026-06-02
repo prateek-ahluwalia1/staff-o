@@ -22,7 +22,6 @@ const Invoice = () => {
   const isAdmin = userType === "admin";
 
   const { submit } = useSubmit({ isAuth: true });
-  // Added second useSubmit hook specifically for file uploads
   const { submit: uploadFile } = useSubmit({ isAuth: true });
 
   const { data: customersResponse } = useFetch(
@@ -89,7 +88,6 @@ const Invoice = () => {
   }, [userdata]);
 
   const handleFromChange = (updatedFrom) => {
-    // Restrict ABN to numbers only and max 11 digits
     if (updatedFrom.abn !== undefined) {
       updatedFrom.abn = updatedFrom.abn.replace(/\D/g, "").slice(0, 11);
     }
@@ -97,14 +95,11 @@ const Invoice = () => {
   };
 
   const handleToChange = (updatedTo) => {
-    // Restrict ABN to numbers only and max 11 digits
     if (updatedTo.abn !== undefined) {
       updatedTo.abn = updatedTo.abn.replace(/\D/g, "").slice(0, 11);
     }
-
     setTo((prev) => ({
       ...updatedTo,
-      // Force Name and Email to remain whatever was set by the customer dropdown
       name: prev.name,
       email: prev.email,
     }));
@@ -113,8 +108,6 @@ const Invoice = () => {
   const handleCustomerChange = (e) => {
     const id = e.target.value;
     setSelectedCustomerId(id);
-
-    // Convert both IDs to strings for a safe strict comparison
     const customer = customersList.find((c) => String(c.id) === String(id));
 
     if (customer) {
@@ -224,33 +217,12 @@ const Invoice = () => {
       toast.error(error);
       return;
     }
-
     try {
-      const invoiceData = {
-        invoiceNo,
-        currency,
-        startDate,
-        endDate,
-        dueDate,
-        from,
-        to,
-        items: lineItems,
-        subtotal,
-        gstAmount,
-        lateFeeAmount,
-        grandTotal,
-        includeGst,
-        gstPercent,
-        notes,
-        includeNotes,
-        paymentMethods,
-      };
-
+      const invoiceData = { invoiceNo, currency, startDate, endDate, dueDate, from, to, items: lineItems, subtotal, gstAmount, lateFeeAmount, grandTotal, includeGst, gstPercent, notes, includeNotes, paymentMethods };
       const doc = PDFGenerator.generateInvoicePDF(invoiceData);
       PDFGenerator.openPDFInNewTab(doc, invoiceNo);
     } catch (err) {
       toast.error("Failed to generate PDF preview.");
-      console.error(err);
     }
   };
 
@@ -260,37 +232,15 @@ const Invoice = () => {
       toast.error(error);
       return;
     }
-
     try {
-      const invoiceData = {
-        invoiceNo,
-        currency,
-        startDate,
-        endDate,
-        dueDate,
-        from,
-        to,
-        items: lineItems,
-        subtotal,
-        gstAmount,
-        lateFeeAmount,
-        grandTotal,
-        includeGst,
-        gstPercent,
-        notes,
-        includeNotes,
-        paymentMethods,
-      };
-
+      const invoiceData = { invoiceNo, currency, startDate, endDate, dueDate, from, to, items: lineItems, subtotal, gstAmount, lateFeeAmount, grandTotal, includeGst, gstPercent, notes, includeNotes, paymentMethods };
       const doc = PDFGenerator.generateInvoicePDF(invoiceData);
       if (download) {
         PDFGenerator.downloadPDF(doc, `${invoiceNo}.pdf`);
       }
       return doc;
-
     } catch (err) {
       toast.error("Failed to download PDF.");
-      console.error(err);
     }
   };
 
@@ -300,68 +250,38 @@ const Invoice = () => {
       toast.error(error);
       return;
     }
-
     setIsSending(true);
     try {
-      const invoiceData = {
-        invoiceNo,
-        currency,
-        startDate,
-        endDate,
-        dueDate,
-        from,
-        to,
-        items: lineItems,
-        subtotal,
-        gstAmount,
-        lateFeeAmount,
-        grandTotal,
-        includeGst,
-        gstPercent,
-        notes,
-        includeNotes,
-        paymentMethods,
-      };
-
-      // 1. Generate the PDF instance and convert to a File object
+      const invoiceData = { invoiceNo, currency, startDate, endDate, dueDate, from, to, items: lineItems, subtotal, gstAmount, lateFeeAmount, grandTotal, includeGst, gstPercent, notes, includeNotes, paymentMethods };
       const doc = PDFGenerator.generateInvoicePDF(invoiceData);
       const pdfBlob = doc.output("blob");
       const pdfFile = new File([pdfBlob], `${invoiceNo}.pdf`, { type: "application/pdf" });
 
-      // 2. Upload the PDF to the backend "uploads" folder
       const uploadFd = new FormData();
       uploadFd.append("file", pdfFile);
       uploadFd.append("folder", "uploads");
 
       const uploadRes = await uploadFile("api/upload-file", uploadFd, { method: "POST" });
-
       if (!uploadRes?.success) {
         throw new Error(uploadRes?.message || "Failed to upload invoice document to server.");
       }
 
-      // Extract the uploaded URL/Path from the upload API response
       const pdfUrl = uploadRes.path || uploadRes.data?.path || uploadRes.url || uploadRes.data?.url;
-
-      // Extract just the filename to match the required "invoice" payload format
       const invoiceFilename = typeof pdfUrl === 'string' ? pdfUrl.split('/').pop() : `${invoiceNo}.pdf`;
 
-      // 3. Send the final Invoice payload with the exact requested structure
       const payload = {
-        emails: [to.email], // Sending as an array of strings
-        invoice: invoiceFilename, // Sending just the uploaded filename
+        emails: [to.email],
+        invoice: invoiceFilename,
       };
 
       const res = await submit("api/admin/send-invoice", payload, { method: "POST" });
-
       if (res?.success || res?.status === 200) {
         toast.success(`Invoice sent successfully to ${to.email}`);
       } else {
         toast.error(res?.message || "Failed to send invoice email.");
       }
-
     } catch (err) {
       toast.error(err.message || "Failed to process invoice.");
-      console.error(err);
     } finally {
       setIsSending(false);
     }
@@ -379,18 +299,18 @@ const Invoice = () => {
   }
 
   return (
-    <div className="dashboard-main dashboard-tools-page invoice-page">
+    <div className="dashboard-main dashboard-tools-page invoice-page container-fluid px-0">
       {/* Header Section */}
-      <div className="dashboard-page-header">
-        <div>
-          <h1>Invoicing</h1>
-          <p>Create and send invoices with your existing accounts flow.</p>
+      <div className="dashboard-page-header d-flex flex-column flex-lg-row justify-content-between align-items-start align-items-lg-center">
+        <div className="mb-3 mb-lg-0">
+          <h1 className="mb-1">Invoicing</h1>
+          <p className="mb-0 text-muted">Create and send invoices with your existing accounts flow.</p>
         </div>
 
-        <div className="d-flex gap-2 flex-wrap">
+        <div className="d-flex flex-column flex-sm-row gap-2 w-100 w-lg-auto">
           <button
             type="button"
-            className="btn btn-outline-primary"
+            className="btn btn-outline-primary w-100 w-sm-auto"
             onClick={handlePreview}
             disabled={isSending}
           >
@@ -398,7 +318,7 @@ const Invoice = () => {
           </button>
           <button
             type="button"
-            className="btn btn-outline-primary"
+            className="btn btn-outline-primary w-100 w-sm-auto"
             onClick={handleDownload}
             disabled={isSending}
           >
@@ -407,7 +327,7 @@ const Invoice = () => {
 
           <button
             type="button"
-            className="btn btn-primary-custom"
+            className="btn btn-primary-custom w-100 w-sm-auto"
             onClick={handleSendInvoice}
             disabled={isSending}
           >
@@ -421,60 +341,63 @@ const Invoice = () => {
         </div>
       </div>
 
-      <div className="invoice-layout mt-4">
-        <div className="list-card">
-          {/* Toolbar */}
-          <InvoiceToolbar
-            selectedCustomerId={selectedCustomerId}
-            customersList={customersList}
-            startDate={startDate}
-            endDate={endDate}
-            isSearching={isSearching}
-            onCustomerChange={handleCustomerChange}
-            onStartDateChange={setStartDate}
-            onEndDateChange={setEndDate}
-            onSearch={handleSearch}
-          />
+      {/* Main Layout using Bootstrap Grid */}
+      <div className="row mt-4 flex-column-reverse flex-xl-row">
+        {/* Main Content Area */}
+        <div className="col-12 col-xl-8 col-xxl-9 mb-4">
+          <div className="list-card p-3 p-md-4 bg-white rounded shadow-sm">
+            <InvoiceToolbar
+              selectedCustomerId={selectedCustomerId}
+              customersList={customersList}
+              startDate={startDate}
+              endDate={endDate}
+              isSearching={isSearching}
+              onCustomerChange={handleCustomerChange}
+              onStartDateChange={setStartDate}
+              onEndDateChange={setEndDate}
+              onSearch={handleSearch}
+            />
 
-          {/* Form Section */}
-          <InvoiceForm
-            from={from}
-            to={to}
-            onFromChange={handleFromChange}
-            onToChange={handleToChange}
-          />
+            <InvoiceForm
+              from={from}
+              to={to}
+              onFromChange={handleFromChange}
+              onToChange={handleToChange}
+            />
 
-          {/* Line Items Section */}
-          <InvoiceLineItems lineItems={lineItems} />
+            <InvoiceLineItems lineItems={lineItems} />
+          </div>
         </div>
 
         {/* Settings Sidebar */}
-        <InvoiceSettings
-          invoiceNo={invoiceNo}
-          dueDate={dueDate}
-          currency={currency}
-          paymentMethods={paymentMethods}
-          lateFees={lateFees}
-          lateFeeValue={lateFeeValue}
-          includeNotes={includeNotes}
-          includeGst={includeGst}
-          gstPercent={gstPercent}
-          notes={notes}
-          subtotal={subtotal}
-          gstAmount={gstAmount}
-          lateFeeAmount={lateFeeAmount}
-          grandTotal={grandTotal}
-          onInvoiceNoChange={setInvoiceNo}
-          onDueDateChange={setDueDate}
-          onCurrencyChange={setCurrency}
-          onPaymentMethodToggle={togglePaymentMethod}
-          onLateFeeToggle={setLateFees}
-          onLateFeeValueChange={setLateFeeValue}
-          onIncludeNotesToggle={setIncludeNotes}
-          onIncludeGstToggle={setIncludeGst}
-          onGstPercentChange={setGstPercent}
-          onNotesChange={setNotes}
-        />
+        <div className="col-12 col-xl-4 col-xxl-3 mb-4">
+          <InvoiceSettings
+            invoiceNo={invoiceNo}
+            dueDate={dueDate}
+            currency={currency}
+            paymentMethods={paymentMethods}
+            lateFees={lateFees}
+            lateFeeValue={lateFeeValue}
+            includeNotes={includeNotes}
+            includeGst={includeGst}
+            gstPercent={gstPercent}
+            notes={notes}
+            subtotal={subtotal}
+            gstAmount={gstAmount}
+            lateFeeAmount={lateFeeAmount}
+            grandTotal={grandTotal}
+            onInvoiceNoChange={setInvoiceNo}
+            onDueDateChange={setDueDate}
+            onCurrencyChange={setCurrency}
+            onPaymentMethodToggle={togglePaymentMethod}
+            onLateFeeToggle={setLateFees}
+            onLateFeeValueChange={setLateFeeValue}
+            onIncludeNotesToggle={setIncludeNotes}
+            onIncludeGstToggle={setIncludeGst}
+            onGstPercentChange={setGstPercent}
+            onNotesChange={setNotes}
+          />
+        </div>
       </div>
     </div>
   );

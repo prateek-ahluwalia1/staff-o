@@ -32,17 +32,17 @@ const InvoiceToolbar = ({
       boxShadow: "0 .125rem .25rem rgba(0,0,0,.075)",
       borderColor: "#dee2e6",
       borderRadius: "0.375rem",
-      minHeight: "38px",
+      minHeight: "40px",
     }),
-    // This ensures the portal menu has a high z-index and sits above all other elements
     menuPortal: (base) => ({ ...base, zIndex: 9999 }),
   };
 
   return (
-    <div className="invoice-toolbar d-flex flex-nowrap align-items-center gap-2 mb-4 pb-4 border-bottom">
+    <div className="invoice-toolbar d-flex flex-column flex-lg-row align-items-stretch align-items-lg-center gap-3 mb-4 pb-4 border-bottom">
 
       {/* Customer Dropdown */}
-      <div className="flex-grow-1" style={{ minWidth: "180px", maxWidth: "240px" }}>
+      <div className="flex-grow-1 w-100">
+        <label className="d-block d-lg-none mb-1 small text-muted fw-bold">Select Customer</label>
         <Select
           options={customerOptions}
           value={selectedOption}
@@ -51,25 +51,25 @@ const InvoiceToolbar = ({
           isClearable={true}
           isSearchable={true}
           styles={customSelectStyles}
-          // THESE TWO LINES FIX THE HIDDEN OPTIONS ISSUE:
           menuPortalTarget={document.body}
           menuPosition="fixed"
         />
       </div>
 
       {/* Date Range */}
-      <div className="flex-grow-1" style={{ minWidth: "260px", maxWidth: "320px" }}>
-        <div className="d-flex flex-nowrap align-items-center gap-2">
+      <div className="flex-grow-1 w-100">
+        <label className="d-block d-lg-none mb-1 small text-muted fw-bold">Date Range</label>
+        <div className="d-flex flex-column flex-sm-row align-items-stretch align-items-sm-center gap-2">
           <input
             type="date"
-            className="form-control shadow-sm"
+            className="form-control shadow-sm flex-grow-1"
             value={startDate}
             onChange={(e) => onStartDateChange(e.target.value)}
           />
-          <span className="text-muted fw-bold px-1 small">to</span>
+          <span className="text-muted fw-bold px-1 text-center d-none d-sm-inline">to</span>
           <input
             type="date"
-            className="form-control shadow-sm"
+            className="form-control shadow-sm flex-grow-1"
             value={endDate}
             onChange={(e) => onEndDateChange(e.target.value)}
           />
@@ -77,14 +77,15 @@ const InvoiceToolbar = ({
       </div>
 
       {/* Search Button */}
-      <div className="ms-auto">
+      <div className="w-100 w-lg-auto mt-2 mt-lg-0">
         <button
           type="button"
-          className="btn text-white px-3 py-2 shadow-sm d-flex align-items-center gap-2 bg-primary text-nowrap"
+          className="btn text-white px-4 py-2 shadow-sm d-flex align-items-center justify-content-center gap-2 bg-primary w-100 text-nowrap"
           style={{
             borderRadius: "8px",
             fontWeight: "600",
-            fontSize: "0.95rem"
+            fontSize: "0.95rem",
+            minHeight: "40px"
           }}
           onClick={onSearch}
           disabled={isSearching}

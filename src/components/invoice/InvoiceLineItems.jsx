@@ -2,31 +2,32 @@ import React from "react";
 
 const InvoiceLineItems = ({ lineItems }) => {
   return (
-    <div className="mt-4">
-      <div className="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
-        <h3 className="invoice-block-title mb-0">Invoice Items</h3>
+    <div className="mt-5">
+      <div className="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+        <h3 className="invoice-block-title mb-0 border-bottom pb-2 w-100">Invoice Items</h3>
       </div>
 
-      <div className="table-responsive">
-        <table className="table-modern invoice-line-items-table">
+      <div className="table-responsive shadow-sm rounded border">
+        <table className="table table-hover table-modern invoice-line-items-table mb-0" style={{ minWidth: "600px" }}>
           <colgroup>
-            <col style={{ width: "54%" }} />
-            <col style={{ width: "12%" }} />
-            <col style={{ width: "17%" }} />
-            <col style={{ width: "17%" }} />
+            <col style={{ width: "50%" }} />
+            <col style={{ width: "15%" }} />
+            <col style={{ width: "15%" }} />
+            <col style={{ width: "20%" }} />
           </colgroup>
-          <thead>
+          <thead className="table-light">
             <tr>
-              <th>Item</th>
-              <th className="is-center">Hours</th>
-              <th className="is-right">Price</th>
-              <th className="is-right">Total</th>
+              <th className="p-3">Item</th>
+              <th className="text-center p-3">Hours</th>
+              <th className="text-end p-3">Price</th>
+              <th className="text-end p-3">Total</th>
             </tr>
           </thead>
           <tbody>
             {lineItems.length === 0 ? (
               <tr>
-                <td colSpan="4" className="text-center text-muted py-4">
+                <td colSpan="4" className="text-center text-muted py-5">
+                  <i className="fa-solid fa-inbox fa-2x mb-3 d-block opacity-50"></i>
                   Search to load invoice items.
                 </td>
               </tr>
@@ -36,18 +37,18 @@ const InvoiceLineItems = ({ lineItems }) => {
                   (Number(item.qty) || 0) * (Number(item.rate) || 0);
                 return (
                   <tr key={`invoice-item-${idx}`}>
-                    <td>
+                    <td className="p-2">
                       <input
-                        className="form-control"
+                        className="form-control bg-white"
                         placeholder="Service description"
                         value={item.description}
                         disabled
                         readOnly
                       />
                     </td>
-                    <td className="is-center">
+                    <td className="p-2">
                       <input
-                        className="form-control text-center"
+                        className="form-control text-center bg-white"
                         type="number"
                         min="1"
                         value={item.qty}
@@ -55,9 +56,9 @@ const InvoiceLineItems = ({ lineItems }) => {
                         readOnly
                       />
                     </td>
-                    <td className="is-right">
+                    <td className="p-2">
                       <input
-                        className="form-control text-end"
+                        className="form-control text-end bg-white"
                         type="number"
                         step="0.01"
                         min="0"
@@ -66,7 +67,9 @@ const InvoiceLineItems = ({ lineItems }) => {
                         readOnly
                       />
                     </td>
-                    <td className="fw-semibold is-right">${lineTotal.toFixed(2)}</td>
+                    <td className="fw-semibold text-end p-3 align-middle text-primary">
+                      ${lineTotal.toFixed(2)}
+                    </td>
                   </tr>
                 );
               })

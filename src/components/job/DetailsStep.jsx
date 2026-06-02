@@ -7,15 +7,27 @@ export default function DetailsStep({ form, setField, handleFile, attachmentPrev
   const [fileErrors, setFileErrors] = useState("");
 
   const MAX_FILE_SIZE = 10 * 1024 * 1024;
-  const MAX_DESCRIPTION_LENGTH = 500; // Adjusted based on your screenshot
+  const MAX_DESCRIPTION_LENGTH = 500;
 
   const JOB_TYPE_OPTIONS = [
     { value: "", label: "Select type" },
-    { label: 'Event Security', value: 'event-security' },
-    { label: 'Static Security Guard', value: 'static-security' },
-    { label: 'Corporate Security', value: 'corporate-security' },
-    { label: 'Site Patrol Security', value: 'site-patrol' },
-    { label: "Others", value: "others" },
+    { label: 'Crowd Controller (Standard venue/event)', value: 'Crowd Controller (Standard venue/event)' },
+    { label: 'Static Security Guard (Gatehouse, warehouse, construction site)', value: 'Static Security Guard (Gatehouse, warehouse, construction site)' },
+    { label: 'Patrol Guard (Foot or routine mobile patrol)', value: 'Patrol Guard (Foot or routine mobile patrol)' },
+    { label: 'Concierge/Front of House Guard', value: 'Concierge/Front of House Guard' },
+    { label: 'Security Officer - Monitoring/Control Room (Basic)', value: 'Security Officer - Monitoring/Control Room (Basic)' },
+    { label: 'Guard with a Trained Security Dog', value: 'Guard with a Trained Security Dog' },
+    { label: 'Armed Security Guard (Cash-in-Transit / Low-complexity)', value: 'Armed Security Guard (Cash-in-Transit / Low-complexity)' },
+    { label: 'Control Room Operator (Advanced/Full Systems)', value: 'Control Room Operator (Advanced/Full Systems)' },
+    { label: 'Event/Venue Supervisor (Small Team Leader)', value: 'Event/Venue Supervisor (Small Team Leader)' },
+    { label: 'Aviation/Maritime Security Protection Officer', value: 'Aviation/Maritime Security Protection Officer' },
+    { label: 'Senior Security Supervisor / Shift Supervisor', value: 'Senior Security Supervisor / Shift Supervisor' },
+    { label: 'Mobile Patrol Inspector / Fleet Coordinator', value: 'Mobile Patrol Inspector / Fleet Coordinator' },
+    { label: 'Control Room Shift Manager', value: 'Control Room Shift Manager' },
+    { label: 'Security Operations Manager', value: 'Security Operations Manager' },
+    { label: 'Regional Contract Manager', value: 'Regional Contract Manager' },
+    { label: 'Chief Security Instructor / Compliance Auditor', value: 'Chief Security Instructor / Compliance Auditor' },
+    { label: "Others (Custom Entry)", value: "others" },
   ];
 
   const selectedJobTypeOption = form.jobType

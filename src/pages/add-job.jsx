@@ -14,6 +14,23 @@ import ReviewStep from "../components/job/ReviewStep";
 import PaymentModal from "../components/job/PaymentModal";
 import AdminClientProfile from "../components/job/AdminClientProfile";
 
+const calculateJobLevel = (title) => {
+  if (!title) return 1;
+  const t = title.toLowerCase();
+
+  // Level 5
+  if (t.includes("operations manager") || t.includes("regional contract") || t.includes("chief security") || t.includes("compliance auditor")) return 5;
+  // Level 4
+  if (t.includes("senior security") || t.includes("shift supervisor") || t.includes("mobile patrol inspector") || t.includes("fleet coordinator") || t.includes("shift manager")) return 4;
+  // Level 3
+  if (t.includes("control room operator") || t.includes("venue supervisor") || t.includes("aviation") || t.includes("maritime")) return 3;
+  // Level 2
+  if (t.includes("monitoring") || t.includes("control room (basic)") || t.includes("dog") || t.includes("armed") || t.includes("cash-in-transit") || t.includes("cash in transit")) return 2;
+
+  // Default to Level 1
+  return 1;
+};
+
 export default function AddJob({ modalMode, onClose, initialSite, initialDate }) {
   const navigate = useNavigate();
   const { userdata } = useSelector((state) => state.auth);
@@ -66,6 +83,23 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
     details: false,
     review: false
   });
+
+  // --- DYNAMIC LEVEL & RATE CALCULATION ---
+  const activeJobTitle = form.jobType === "others" ? form.customJobType : form.jobType;
+  const calculatedLevel = useMemo(() => calculateJobLevel(activeJobTitle), [activeJobTitle]);
+
+  const selectedChargeRate = useMemo(() => {
+    const ratesList = chargeratesData?.data || [];
+    if (!ratesList.length) return null;
+
+    // Find the rate that matches the calculated level (1, 2, 3, 4, or 5)
+    const match = ratesList.find(r => String(r.level) === String(calculatedLevel));
+    return match || ratesList[0]; // Fallback to the first available rate if exact match fails
+  }, [chargeratesData, calculatedLevel]);
+
+  const dynamicRates = useMemo(() => mapApiRates(selectedChargeRate), [selectedChargeRate]);
+  const breakdown = useMemo(() => computeShiftBreakdown(form.scheduleDays, dynamicRates), [form.scheduleDays, dynamicRates]);
+
 
   const toggleEmbeddedAccordion = (section) => {
     setEmbeddedAccordion((prev) => ({ ...prev, [section]: !prev[section] }));
@@ -157,8 +191,6 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
   const [newCustomer, setNewCustomer] = useState({ name: "", email: "", phone: "", company_name: "" });
   const { submit: submitCustomer, loading: submittingCustomer } = useSubmit({ isAuth: true });
 
-  const dynamicRates = useMemo(() => mapApiRates(chargeratesData?.data?.[0]), [chargeratesData]);
-  const breakdown = useMemo(() => computeShiftBreakdown(form.scheduleDays, dynamicRates), [form.scheduleDays, dynamicRates]);
 
   const setField = useCallback((name, value) => {
     setForm((f) => {
@@ -340,7 +372,6 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
       return [8, 8, totalDuration - 16];
     };
 
-    // Use a Map to correctly bucket shifts into their absolute calendar dates
     const newScheduleDaysMap = new Map();
 
     form.scheduleDays.forEach(day => {
@@ -353,7 +384,6 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
         let startDec = sh + sm / 60;
         let endDec = eh + em / 60;
 
-        // If it crosses midnight natively (e.g. 08:00 to 08:00 or 18:00 to 06:00), add 24 to end
         if (endDec <= startDec) endDec += 24;
 
         let duration = endDec - startDec;
@@ -366,8 +396,6 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
         chunks.forEach(chunkDuration => {
           let currentEnd = currentStart + chunkDuration;
 
-          // Calculate how many days we've crossed relative to the original base date
-          // If a chunk starts at or after 24:00, it automatically belongs to the next day.
           let daysOffset = Math.floor(currentStart / 24);
           let actualDate = new Date(baseDate);
           actualDate.setDate(actualDate.getDate() + daysOffset);
@@ -380,13 +408,11 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
             endTime: formatTime(currentEnd)
           };
 
-          // Group the shift under its exact calendar date
           if (!newScheduleDaysMap.has(dateStr)) {
             newScheduleDaysMap.set(dateStr, { date: dateStr, shifts: [] });
           }
           newScheduleDaysMap.get(dateStr).shifts.push(chunkShift);
 
-          // If the chunk falls on a different day than the original container, flag a UI update
           if (dateStr !== day.date) wasModified = true;
 
           currentStart = currentEnd;
@@ -394,7 +420,6 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
       });
     });
 
-    // Convert Map back to an array, sorted chronologically
     const newDays = Array.from(newScheduleDaysMap.values()).sort((a, b) => new Date(a.date) - new Date(b.date));
 
     if (wasModified) {
@@ -437,7 +462,6 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
       return;
     }
     if (step === 2) {
-      // Validate Details step
       if (!form.title.trim()) {
         toast.error("Job title is required");
         return;
@@ -472,8 +496,6 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
     );
 
     const baseAmount = breakdown?.chargeTotalIncGst || 0;
-
-    // Strict Rounding Helper
     const roundToTwo = (num) => Math.round((num + Number.EPSILON) * 100) / 100;
 
     let discountApplied = 0;
@@ -492,7 +514,10 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
       user_id: form.user_id || userdata?.data?.id || userdata?.id || null,
       title: (form.title || "").trim(),
       job_type: form.jobType === "others" ? form.customJobType : form.jobType,
-      description: form.description, address: form.location || form.address, coordinates: form.coordinates || "",
+      job_level: calculatedLevel,
+      description: form.description,
+      address: form.location || form.address,
+      coordinates: form.coordinates || "",
       state: form.state,
       shifts: shiftsPayload,
       payment_option: form.paymentOption,
@@ -510,6 +535,7 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
       tasks: (form.tasks || []).map((t) => ({ task: t.task, task_start: t.task_start, task_end: t.task_end })),
     };
   }
+
   async function uploadAllAttachments() {
     const document_list = [];
     for (const file of form.attachments || []) {
@@ -549,14 +575,21 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
   async function handleConfirm(e) {
     if (e) e.preventDefault();
 
-    // 1. Validate Location/Overview
+    // 1. Validate Client Selection (For Admins)
+    if (isAdmin && (!form.user_id || form.user_id === "new")) {
+      toast.error("Please select or create a client before posting the job.");
+      isEmbedded ? setEmbeddedAccordion((p) => ({ ...p, overview: true })) : setStep(0);
+      return;
+    }
+
+    // 2. Validate Location/Overview
     if (!form.coordinates) {
       toast.error("Location is required. Please select a location.");
       isEmbedded ? setEmbeddedAccordion((p) => ({ ...p, overview: true })) : setStep(0);
       return;
     }
 
-    // 2. Validate Schedule
+    // 3. Validate Schedule
     if (form.scheduleDays.length === 0) {
       toast.error("Schedule is required. Please select at least one date.");
       isEmbedded ? setEmbeddedAccordion((p) => ({ ...p, schedule: true })) : setStep(1);
@@ -568,7 +601,7 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
       return;
     }
 
-    // 3. Validate Details
+    // 4. Validate Details
     if (!form.title.trim()) {
       toast.error("Job title is required.");
       isEmbedded ? setEmbeddedAccordion((p) => ({ ...p, details: true })) : setStep(2);
@@ -581,14 +614,14 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
       return;
     }
 
-    // 4. Validate Review / Terms (For non-admin)
+    // 5. Validate Review / Terms (For non-admin)
     if (!isAdmin && !form.termsAccepted) {
       toast.error("Accept Terms & Conditions to proceed.");
       isEmbedded ? setEmbeddedAccordion((p) => ({ ...p, review: true })) : setStep(3);
       return;
     }
 
-    // 5. Validate Base Amount
+    // 6. Validate Base Amount
     const baseAmount = breakdown?.chargeTotalIncGst || 0;
     if (baseAmount <= 0) {
       toast.error("Unable to calculate payment amount. Please check your schedule and try again.");
@@ -708,7 +741,7 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
           <>
             <div className="dashboard-page-header mb-4 bg-white p-4 rounded-4 shadow-sm border border-light d-flex flex-wrap justify-content-between align-items-center gap-3">
               <div>
-                <h1 className="h4 fw-bold text-dark mb-1">Create Job</h1>
+                <h1 className="h4 fw-bold text-dark mb-1">Create Job {`(Current Level is: ${calculatedLevel})`}</h1>
                 <p className="text-muted mb-0">Follow the steps to add a new job</p>
                 {!isEmbedded && <StepProgress step={step} titles={STEP_TITLES} />}
               </div>

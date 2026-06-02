@@ -1335,7 +1335,6 @@ h6 {
 }
 
 .herobgimage {
-    background: url(../images/hero-bg.jpg) no-repeat top;
     background-size: cover;
     background-attachment: fixed;
     text-align: center;

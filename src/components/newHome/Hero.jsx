@@ -1,7 +1,7 @@
 import React from 'react'
 import "../../styles/staffoo.css"
 import { Link } from 'react-router-dom'
-import heroImg from "../../assets/images/hero-img.jpeg"
+import heroImg from "../../assets/images/hero-img.jpg"
 
 function Hero() {
   return (

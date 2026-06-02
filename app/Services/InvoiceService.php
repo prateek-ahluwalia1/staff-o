@@ -106,7 +106,7 @@ class InvoiceService
                     border-top:2px solid #F0A500; background:#F7F9FC; padding-top:6px; }
         .charged td { font-weight:bold; color:#1A2E4A; }
         .balance td { font-weight:bold; color:#D97706; }
-        .footer { padding:14px 22px 10px; text-align:center; font-size:8px; color:#9CA3AF; }
+        .footer { padding:14px 22px 10px; text-align:center; font-size:10px; color:#9CA3AF; }
         .badge { background:#ECFDF5; color:#065F46; border:1px solid #6EE7B7;
                  padding:2px 8px; font-size:8px; }
         ';

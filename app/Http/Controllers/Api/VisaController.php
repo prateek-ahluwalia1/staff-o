@@ -52,7 +52,7 @@ class VisaController extends Controller
     // ✅ Get Visa Result
     public function result($id)
     {
-        $response = $this->vsure->getVisaResult($id);
+        $response = $this->vsure->appgetVisaResult($id);
 
         return response()->json($response);
     }

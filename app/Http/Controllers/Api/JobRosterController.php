@@ -221,7 +221,7 @@ class JobRosterController extends Controller
                     shifts:           $invoiceShifts,
                     baseTotal:        $invoiceBaseTotal,
                     transaction:      $transaction,
-                    invoiceNumber:    'INV-' . strtoupper(substr($paymentIntentId, -8)),
+                    invoiceNumber:    'STAFFOO -' . strtoupper(substr($paymentIntentId, -8)),
                     paymentIntentId:  $paymentIntentId,
                 );
             }

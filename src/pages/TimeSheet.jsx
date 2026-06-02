@@ -75,6 +75,13 @@ const formatHours = (value) => {
   return Number.isFinite(n) ? n.toFixed(2) : "0.00";
 };
 
+// Helper function to safely add two hour values
+const sumHours = (val1, val2) => {
+  const n1 = Number(val1) || 0;
+  const n2 = Number(val2) || 0;
+  return formatHours(n1 + n2);
+};
+
 const buildTimeRange = (start, end) => {
   const s = start || "-";
   const e = end || "-";
@@ -105,14 +112,10 @@ const normalizeTimesheetRow = (row, index) => {
       location: row?.location_name ?? `Staff: ${row?.name || "-"}`,
       customer: row?.customer_name ?? "-",
       staffName: row?.name || row?.staff_name || row?.guard_name || "-",
-      morningHours: formatHours(row?.morning_hours),
-      nightHours: formatHours(row?.night_hours),
-      saturdayMorningHours: formatHours(row?.saturday_morning_hours),
-      saturdayNightHours: formatHours(row?.saturday_night_hours),
-      sundayMorningHours: formatHours(row?.sunday_morning_hours),
-      sundayNightHours: formatHours(row?.sunday_night_hours),
-      phMorningHours: formatHours(row?.ph_morning_hours),
-      phNightHours: formatHours(row?.ph_night_hours),
+      regularHours: sumHours(row?.morning_hours, row?.night_hours),
+      saturdayHours: sumHours(row?.saturday_morning_hours, row?.saturday_night_hours),
+      sundayHours: sumHours(row?.sunday_morning_hours, row?.sunday_night_hours),
+      phHours: sumHours(row?.ph_morning_hours, row?.ph_night_hours),
       shiftCount: Array.isArray(row?.shift_collection)
         ? row.shift_collection.length
         : 0,
@@ -144,20 +147,22 @@ const normalizeTimesheetRow = (row, index) => {
     customer: row?.customer_name ?? row?.customer?.name ?? row?.customer ?? "-",
     staffName:
       row?.staff_name ?? row?.guard_name ?? row?.user?.name ?? row?.name ?? "-",
-    morningHours: formatHours(row?.morning_hours ?? row?.day_hours),
-    nightHours: formatHours(row?.night_hours),
-    saturdayMorningHours: formatHours(
+    regularHours: sumHours(
+      row?.morning_hours ?? row?.day_hours,
+      row?.night_hours
+    ),
+    saturdayHours: sumHours(
       row?.saturday_morning_hours ?? row?.saturday_hours,
+      row?.saturday_night_hours
     ),
-    saturdayNightHours: formatHours(row?.saturday_night_hours),
-    sundayMorningHours: formatHours(
+    sundayHours: sumHours(
       row?.sunday_morning_hours ?? row?.sunday_hours,
+      row?.sunday_night_hours
     ),
-    sundayNightHours: formatHours(row?.sunday_night_hours),
-    phMorningHours: formatHours(
+    phHours: sumHours(
       row?.ph_morning_hours ?? row?.public_holiday_hours,
+      row?.ph_night_hours
     ),
-    phNightHours: formatHours(row?.ph_night_hours),
     shiftCount: Array.isArray(row?.shift_collection)
       ? row.shift_collection.length
       : 0,
@@ -201,14 +206,10 @@ const normalizeBreakdown = (item, index, shiftCollectionIds = []) => {
     start: formatShiftDateTime(item?.start ?? item?.start_time),
     end: formatShiftDateTime(item?.end ?? item?.end_time),
     totalHours: formatHours(item?.hours),
-    morningHours: formatHours(item?.morning_hours),
-    nightHours: formatHours(item?.night_hours),
-    saturdayMorningHours: formatHours(item?.saturday_morning_hours),
-    saturdayNightHours: formatHours(item?.saturday_night_hours),
-    sundayMorningHours: formatHours(item?.sunday_morning_hours),
-    sundayNightHours: formatHours(item?.sunday_night_hours),
-    phMorningHours: formatHours(item?.ph_morning_hours),
-    phNightHours: formatHours(item?.ph_night_hours),
+    regularHours: sumHours(item?.morning_hours, item?.night_hours),
+    saturdayHours: sumHours(item?.saturday_morning_hours, item?.saturday_night_hours),
+    sundayHours: sumHours(item?.sunday_morning_hours, item?.sunday_night_hours),
+    phHours: sumHours(item?.ph_morning_hours, item?.ph_night_hours),
     shiftPayable: item?.shift_payable || "-",
     shiftChargeable: item?.shift_chargeable || "-",
     jobStatus: item?.job_status || "-",
@@ -501,14 +502,10 @@ export default function TimeSheet() {
       "Staff ID": row.raw?.id ?? row.raw?.guard_id ?? row.raw?.staff_id ?? "-",
       "Staff Name": row.staffName,
       "Total Hours": row.totalHours,
-      "Morning Hours": row.morningHours,
-      "Night Hours": row.nightHours,
-      "Saturday Morning": row.saturdayMorningHours,
-      "Saturday Night": row.saturdayNightHours,
-      "Sunday Morning": row.sundayMorningHours,
-      "Sunday Night": row.sundayNightHours,
-      "PH Morning": row.phMorningHours,
-      "PH Night": row.phNightHours,
+      "Regular Hours": row.regularHours,
+      "Saturday Hours": row.saturdayHours,
+      "Sunday Hours": row.sundayHours,
+      "Public Holiday Hours": row.phHours,
       "Shift Count": row.shiftCount,
     }));
 
@@ -605,28 +602,22 @@ export default function TimeSheet() {
       <div className="card border-0 shadow-sm">
         <div className="timesheet-table-shell">
           <table className="table table-sm table-hover align-middle mb-0 timesheet-main-table">
-            <thead
-              className="text-dark"
-            >
+            <thead className="text-dark">
               <tr>
                 <th>Staff ID</th>
                 <th>Name</th>
                 <th>Total Hours</th>
-                <th>Morning Hours</th>
-                <th>Night Hours</th>
-                <th title="Saturday Morning Hours">Sat M</th>
-                <th title="Saturday Night Hours">Sat N</th>
-                <th title="Sunday Morning Hours">Sun M</th>
-                <th title="Sunday Night Hours">Sun N</th>
-                <th title="Public Holiday Morning Hours">PH M</th>
-                <th title="Public Holiday Night Hours">PH N</th>
+                <th title="Regular Hours (Mon-Fri)">Regular</th>
+                <th title="Total Saturday Hours">Saturday</th>
+                <th title="Total Sunday Hours">Sunday</th>
+                <th title="Total Public Holiday Hours">Public Holiday</th>
                 <th>Shift Count</th>
               </tr>
             </thead>
             <tbody>
               {timesheetLoading && (
                 <tr>
-                  <td colSpan="12" className="text-center py-4">
+                  <td colSpan="8" className="text-center py-4">
                     <Loader compact />
                   </td>
                 </tr>
@@ -634,7 +625,7 @@ export default function TimeSheet() {
 
               {!timesheetLoading && timesheetData.length === 0 && (
                 <tr>
-                  <td colSpan="12" className="text-center text-muted py-5">
+                  <td colSpan="8" className="text-center text-muted py-5">
                     No timesheet records found.
                   </td>
                 </tr>
@@ -658,21 +649,17 @@ export default function TimeSheet() {
                             "-"}
                         </td>
                         <td>{row.staffName}</td>
-                        <td>{row.totalHours}</td>
-                        <td>{row.morningHours}</td>
-                        <td>{row.nightHours}</td>
-                        <td>{row.saturdayMorningHours}</td>
-                        <td>{row.saturdayNightHours}</td>
-                        <td>{row.sundayMorningHours}</td>
-                        <td>{row.sundayNightHours}</td>
-                        <td>{row.phMorningHours}</td>
-                        <td>{row.phNightHours}</td>
+                        <td className="fw-bold">{row.totalHours}</td>
+                        <td>{row.regularHours}</td>
+                        <td>{row.saturdayHours}</td>
+                        <td>{row.sundayHours}</td>
+                        <td>{row.phHours}</td>
                         <td>{row.shiftCount}</td>
                       </tr>
 
                       {isSelected && (
                         <tr className="timesheet-detail-row">
-                          <td colSpan="12" className="bg-light">
+                          <td colSpan="8" className="bg-light">
                             <div className="p-3">
                               <h6 className="fw-bold mb-3" style={{ color: "#0A7C6E" }}>
                                 Detailed Shift Breakdown: {row.staffName}
@@ -688,14 +675,10 @@ export default function TimeSheet() {
                                       <th>Start</th>
                                       <th>End</th>
                                       <th>Total</th>
-                                      <th>Morning</th>
-                                      <th>Night</th>
-                                      <th>Sat M</th>
-                                      <th>Sat N</th>
-                                      <th>Sun M</th>
-                                      <th>Sun N</th>
-                                      <th>PH M</th>
-                                      <th>PH N</th>
+                                      <th>Regular</th>
+                                      <th>Saturday</th>
+                                      <th>Sunday</th>
+                                      <th>Public Holiday</th>
                                       <th>Payable</th>
                                       <th>Chargeable</th>
                                       <th>Job</th>
@@ -707,10 +690,7 @@ export default function TimeSheet() {
                                   <tbody>
                                     {detailsLoading ? (
                                       <tr>
-                                        <td
-                                          colSpan="21"
-                                          className="text-center py-3"
-                                        >
+                                        <td colSpan="17" className="text-center py-3">
                                           Loading details...
                                         </td>
                                       </tr>
@@ -723,15 +703,11 @@ export default function TimeSheet() {
                                           <td>{item.guardName}</td>
                                           <td>{item.start}</td>
                                           <td>{item.end}</td>
-                                          <td>{item.totalHours}</td>
-                                          <td>{item.morningHours}</td>
-                                          <td>{item.nightHours}</td>
-                                          <td>{item.saturdayMorningHours}</td>
-                                          <td>{item.saturdayNightHours}</td>
-                                          <td>{item.sundayMorningHours}</td>
-                                          <td>{item.sundayNightHours}</td>
-                                          <td>{item.phMorningHours}</td>
-                                          <td>{item.phNightHours}</td>
+                                          <td className="fw-bold">{item.totalHours}</td>
+                                          <td>{item.regularHours}</td>
+                                          <td>{item.saturdayHours}</td>
+                                          <td>{item.sundayHours}</td>
+                                          <td>{item.phHours}</td>
                                           <td className="text-capitalize">
                                             {item.shiftPayable}
                                           </td>
@@ -767,7 +743,7 @@ export default function TimeSheet() {
                                     ) : (
                                       <tr>
                                         <td
-                                          colSpan="21"
+                                          colSpan="17"
                                           className="text-center text-muted py-4"
                                         >
                                           No breakdown data available for this
@@ -901,19 +877,14 @@ export default function TimeSheet() {
             min-height: 38px;
           }
 
+          /* Adjusted breakpoints for 8 columns */
           @media (max-width: 1200px) {
-            .timesheet-main-table th:nth-child(6),
-            .timesheet-main-table th:nth-child(7),
-            .timesheet-main-table th:nth-child(8),
-            .timesheet-main-table th:nth-child(9),
-            .timesheet-main-table th:nth-child(10),
-            .timesheet-main-table th:nth-child(11),
+            .timesheet-main-table th:nth-child(5), /* Saturday */
+            .timesheet-main-table th:nth-child(6), /* Sunday */
+            .timesheet-main-table th:nth-child(7), /* Public Holiday */
+            .timesheet-main-table td:nth-child(5),
             .timesheet-main-table td:nth-child(6),
-            .timesheet-main-table td:nth-child(7),
-            .timesheet-main-table td:nth-child(8),
-            .timesheet-main-table td:nth-child(9),
-            .timesheet-main-table td:nth-child(10),
-            .timesheet-main-table td:nth-child(11) {
+            .timesheet-main-table td:nth-child(7) {
               display: none;
             }
           }
@@ -925,10 +896,8 @@ export default function TimeSheet() {
               font-size: 0.75rem;
             }
 
-            .timesheet-main-table th:nth-child(4),
-            .timesheet-main-table th:nth-child(5),
-            .timesheet-main-table td:nth-child(4),
-            .timesheet-main-table td:nth-child(5) {
+            .timesheet-main-table th:nth-child(4), /* Regular Hours */
+            .timesheet-main-table td:nth-child(4) {
               display: none;
             }
           }

@@ -53,6 +53,16 @@ const fetchImageBase64 = async (url) => {
   }
 };
 
+const getTodayDate = () => {
+  const today = new Date();
+  return today.toISOString().split('T')[0];
+};
+
+const formatDateForDisplay = (dateStr) => {
+  if (!dateStr) return getTodayDate();
+  return dateStr;
+};
+
 const resolveIncidentUrl = (url) => {
   if (!url) return "";
   let cleanUrl = url.replace(/\\\//g, "/");
@@ -207,9 +217,13 @@ const generateTFNDeclarationPDF = (formData) => {
 
   y += 10;
   doc.setDrawColor(...T.text); doc.setLineWidth(0.5); doc.line(mg, y, mg + 75, y);
-  if (signature) {
-    doc.setFont("helvetica", "normal"); doc.setFontSize(8.5); doc.setTextColor(...T.text);
-    doc.text(String(signature), mg + 1, y - 1);
+  // Embed signature image if available (data URL from file upload)
+  if (signature && (signature.startsWith("data:") || signature.startsWith("http") || signature.startsWith("/uploads"))) {
+    try {
+      doc.addImage(signature, "PNG", mg + 1, y - 8, 20, 8);
+    } catch (e) {
+      console.warn("Could not embed signature image:", e);
+    }
   }
   y += 4;
   doc.setFont("helvetica", "bold"); doc.setFontSize(8.5); doc.setTextColor(...T.text);
@@ -218,7 +232,8 @@ const generateTFNDeclarationPDF = (formData) => {
   doc.setFont("helvetica", "normal"); doc.setFontSize(8.5);
   doc.setTextColor(...T.blue); doc.text("Date:", mg, y);
   doc.setTextColor(...T.text);
-  if (signed_date) doc.text(String(signed_date), mg + 12, y);
+  const tfnDate = formatDateForDisplay(signed_date);
+  doc.text(String(tfnDate), mg + 12, y);
 
   doc.setFontSize(10); doc.setFont("helvetica", "normal"); doc.setTextColor(...T.muted);
   doc.text("Staffoo is a brand of Capital Services Pty Ltd. ABN: 48 613 317 838, Truganina, VIC 3029.", pw / 2, ph - 8, { align: "center" });
@@ -306,9 +321,13 @@ const generateSuperannuationPDF = (formData) => {
   y += 60;
 
   doc.setDrawColor(...T.text); doc.setLineWidth(0.5); doc.line(mg, y, mg + 75, y);
-  if (signature) {
-    doc.setFont("helvetica", "normal"); doc.setFontSize(8.5); doc.setTextColor(...T.text);
-    doc.text(String(signature), mg + 1, y - 1);
+  // Embed signature image if available (data URL from file upload)
+  if (signature && (signature.startsWith("data:") || signature.startsWith("http") || signature.startsWith("/uploads"))) {
+    try {
+      doc.addImage(signature, "PNG", mg + 1, y - 8, 20, 8);
+    } catch (e) {
+      console.warn("Could not embed signature image:", e);
+    }
   }
   y += 4;
   doc.setFont("helvetica", "bold"); doc.setFontSize(8.5); doc.setTextColor(...T.text);
@@ -317,7 +336,8 @@ const generateSuperannuationPDF = (formData) => {
   doc.setFont("helvetica", "normal"); doc.setFontSize(8.5);
   doc.setTextColor(...T.blue); doc.text("Date:", mg, y);
   doc.setTextColor(...T.text);
-  if (signed_date) doc.text(String(signed_date), mg + 12, y);
+  const superDate = formatDateForDisplay(signed_date);
+  doc.text(String(superDate), mg + 12, y);
 
   doc.setFillColor(...T.navy); doc.rect(0, ph - 14, pw, 14, "F");
   doc.setFont("helvetica", "normal"); doc.setFontSize(10); doc.setTextColor(...T.white);
@@ -356,10 +376,10 @@ const generateEmployeeOnboardingPDF = (formData) => {
 
   const section = (title) => {
     checkPage(12);
-    const hdrH = 9, stripW = 6;
+    const hdrH = 9, stripW = 3;
     doc.setFillColor(241, 245, 249); doc.rect(mg, y, bw, hdrH, "F");
-    doc.setFillColor(...T.navy); doc.rect(mg, y, stripW, hdrH, "F");
-    doc.setFont("helvetica", "bold"); doc.setFontSize(8); doc.setTextColor(...T.navy);
+    doc.setFillColor(...T.blue); doc.rect(mg, y, stripW, hdrH, "F");
+    doc.setFont("helvetica", "bold"); doc.setFontSize(8); doc.setTextColor(...T.blue);
     doc.text(title, mg + pad + stripW, y + 5);
     y += hdrH + 3;
   };
@@ -478,7 +498,31 @@ const generateEmployeeOnboardingPDF = (formData) => {
   doc.text(declLines, mg + 24, y + 5);
   y += declBoxH + 6;
 
-  twoFld("Signature:", signature, "Date:", signed_date);
+  // Custom signature and date rendering
+  checkPage(13);
+  const sigHw = (bw - 4) / 2;
+
+  // Signature field
+  doc.setFont("helvetica", "bold"); doc.setFontSize(7.5); doc.setTextColor(...T.text);
+  doc.text("Signature:", mg, y);
+  doc.setDrawColor(...T.lineGray); doc.setLineWidth(0.3); doc.line(mg, y + 7, mg + sigHw, y + 7);
+  // Embed signature image if available (data URL from file upload)
+  if (signature && (signature.startsWith("data:") || signature.startsWith("http") || signature.startsWith("/uploads"))) {
+    try {
+      doc.addImage(signature, "PNG", mg + 1, y + 0.5, 15, 6);
+    } catch (e) {
+      console.warn("Could not embed signature image:", e);
+    }
+  }
+
+  // Date field with today's date
+  const displayDate = formatDateForDisplay(signed_date);
+  doc.setFont("helvetica", "bold"); doc.setFontSize(7.5); doc.setTextColor(...T.text);
+  doc.text("Date:", mg + sigHw + 4, y);
+  doc.setFont("helvetica", "normal"); doc.setFontSize(8); doc.setTextColor(...T.text);
+  doc.text(String(displayDate), mg + sigHw + 4, y + 5.5);
+  doc.setDrawColor(...T.lineGray); doc.setLineWidth(0.3); doc.line(mg + sigHw + 4, y + 7, mg + bw, y + 7);
+  y += 13;
 
   doc.setFontSize(10); doc.setFont("helvetica", "normal"); doc.setTextColor(...T.muted);
   doc.text("Staffoo is a brand of Capital Services Pty Ltd. ABN: 48 613 317 838, Truganina, VIC 3029.", pw / 2, ph - 7, { align: "center" });

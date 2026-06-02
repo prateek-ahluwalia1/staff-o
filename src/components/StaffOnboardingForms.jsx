@@ -33,7 +33,6 @@ const AddressAutocomplete = ({ value, name, onChange, placeholder, required }) =
         const initMap = () => {
             if (!inputRef.current || !window.google?.maps?.places) return;
 
-            // Prevent multiple initializations on re-renders
             if (inputRef.current.getAttribute("data-gmaps-initialized")) return;
 
             autocomplete = new window.google.maps.places.Autocomplete(inputRef.current, {
@@ -81,7 +80,7 @@ const AddressAutocomplete = ({ value, name, onChange, placeholder, required }) =
             className="form-control"
             name={name}
             placeholder={placeholder}
-            maxLength="200"
+            maxLength="500"
             value={value}
             onChange={onChange}
             required={required}
@@ -191,8 +190,14 @@ const TfnDeclarationForm = ({ values, loading, onChange, onSubmit, dataModified 
         <SectionTitle className="mt-4">Signature</SectionTitle>
         <div className="row g-3 mb-4">
             <div className="col-md-6">
-                <label className="form-label small fw-bold text-muted">Employee Signature <span className="text-danger">*</span></label>
-                <input type="text" className="form-control" name="sig1" placeholder="Type full name as signature" maxLength="50" value={values.sig1} onChange={onChange} required />
+                <label className="form-label small fw-bold text-muted">Employee Signature</label>
+                <div className="border rounded p-3 bg-light" style={{ minHeight: "120px", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    {values.sig1 ? (
+                        <img src={values.sig1} alt="Signature" style={{ maxWidth: "100%", maxHeight: "100px", objectFit: "contain" }} />
+                    ) : (
+                        <span className="text-muted small">No signature</span>
+                    )}
+                </div>
             </div>
             <div className="col-md-6">
                 <label className="form-label small fw-bold text-muted">Date <span className="text-danger">*</span></label>
@@ -259,8 +264,14 @@ const SuperannuationForm = ({ values, loading, onChange, onSubmit, dataModified 
         <SectionTitle className="mt-4">Signature</SectionTitle>
         <div className="row g-3 mb-4">
             <div className="col-md-6">
-                <label className="form-label small fw-bold text-muted">Employee Signature <span className="text-danger">*</span></label>
-                <input type="text" className="form-control" name="sig2" placeholder="Type full name as signature" maxLength="50" value={values.sig2} onChange={onChange} required />
+                <label className="form-label small fw-bold text-muted">Employee Signature</label>
+                <div className="border rounded p-3 bg-light" style={{ minHeight: "120px", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    {values.sig2 ? (
+                        <img src={values.sig2} alt="Signature" style={{ maxWidth: "100%", maxHeight: "100px", objectFit: "contain" }} />
+                    ) : (
+                        <span className="text-muted small">No signature</span>
+                    )}
+                </div>
             </div>
             <div className="col-md-6">
                 <label className="form-label small fw-bold text-muted">Date <span className="text-danger">*</span></label>
@@ -375,7 +386,7 @@ const EmployeeOnboardingForm = ({ values, loading, onChange, onSubmit, dataModif
         <div className="row g-3 mb-4">
             <div className="col-md-4">
                 <label className="form-label small fw-bold text-muted">Bank Name <span className="text-danger">*</span></label>
-                <input type="text" className="form-control" name="o_bank" placeholder="Commonwealth Bank" maxLength="100" value={values.o_bank} onChange={onChange} required />
+                <input type="text" className="form-control" name="o_bank" placeholder="XYZ Bank" maxLength="100" value={values.o_bank} onChange={onChange} required />
             </div>
             <div className="col-md-4">
                 <label className="form-label small fw-bold text-muted">BSB Number <span className="text-danger">*</span></label>
@@ -426,8 +437,14 @@ const EmployeeOnboardingForm = ({ values, loading, onChange, onSubmit, dataModif
         <SectionTitle className="mt-4">Declaration & Signature</SectionTitle>
         <div className="row g-3 mb-4">
             <div className="col-md-6">
-                <label className="form-label small fw-bold text-muted">Signature <span className="text-danger">*</span></label>
-                <input type="text" className="form-control" name="sig3" placeholder="Type full name as signature" maxLength="50" value={values.sig3} onChange={onChange} required />
+                <label className="form-label small fw-bold text-muted">Signature</label>
+                <div className="border rounded p-3 bg-light" style={{ minHeight: "120px", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    {values.sig3 ? (
+                        <img src={values.sig3} alt="Signature" style={{ maxWidth: "100%", maxHeight: "100px", objectFit: "contain" }} />
+                    ) : (
+                        <span className="text-muted small">No signature</span>
+                    )}
+                </div>
             </div>
             <div className="col-md-6">
                 <label className="form-label small fw-bold text-muted">Date <span className="text-danger">*</span></label>
@@ -655,9 +672,9 @@ const StaffOnboardingForms = ({ submit, userId }) => {
             toast.success("Form saved successfully!");
 
             // Update original data to track future changes
-            if (tabIndex === 0) setOriginalTfnForm({ ...tfnForm });
-            else if (tabIndex === 1) setOriginalSuperForm({ ...superForm });
-            else if (tabIndex === 2) setOriginalOnboardForm({ ...onboardForm });
+            if (tabIndex === 0) setOriginalOnboardForm({ ...onboardForm });
+            else if (tabIndex === 1) setOriginalTfnForm({ ...tfnForm });
+            else if (tabIndex === 2) setOriginalSuperForm({ ...superForm });
 
             setDataModified(false);
 
@@ -665,11 +682,11 @@ const StaffOnboardingForms = ({ submit, userId }) => {
             try {
                 let doc;
                 if (tabIndex === 0) {
-                    doc = PDFGenerator.generateTFNDeclarationPDF(pdfFormData);
-                } else if (tabIndex === 1) {
-                    doc = PDFGenerator.generateSuperannuationPDF(pdfFormData);
-                } else if (tabIndex === 2) {
                     doc = PDFGenerator.generateEmployeeOnboardingPDF(pdfFormData);
+                } else if (tabIndex === 1) {
+                    doc = PDFGenerator.generateTFNDeclarationPDF(pdfFormData);
+                } else if (tabIndex === 2) {
+                    doc = PDFGenerator.generateSuperannuationPDF(pdfFormData);
                 }
 
                 const uploadPayload = {

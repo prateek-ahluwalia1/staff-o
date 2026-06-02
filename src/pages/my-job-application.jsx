@@ -55,15 +55,13 @@ export default function MyJobApplications() {
     }
   }, [userId, startDate, endDate, submit]);
 
-  // Initial fetch on component mount only
   useEffect(() => {
     if (userId) {
       fetchCustomerSites();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [userId]); // Removed fetchCustomerSites so it doesn't auto-fetch on date change
+  }, [userId]);
 
-  // 2. Flatten JSON Response (Sites -> Shifts)
   const applications = useMemo(() => {
     if (!submitData?.data) return [];
     const flattenedShifts = [];

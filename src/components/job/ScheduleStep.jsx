@@ -104,8 +104,12 @@ export default function ScheduleStep({ form, setField, scheduleError = "" }) {
         current.setDate(current.getDate() + 1);
       }
 
-      newDays.sort((a, b) => new Date(a.date) - new Date(b.date));
+      newDays.sort((a, b) => parseLocalDate(a.date) - parseLocalDate(b.date));
       setField("scheduleDays", newDays);
+    } else if (!start && !end) {
+      // Clear dates when range is cleared
+      setField("scheduleDays", []);
+      setField("dateRange", [null, null]);
     }
   };
 
@@ -128,7 +132,7 @@ export default function ScheduleStep({ form, setField, scheduleError = "" }) {
           shifts: [{ id: Date.now().toString(), startTime: "", endTime: "", numGuards: 1 }],
         },
       ];
-      newDays.sort((a, b) => new Date(a.date) - new Date(b.date));
+      newDays.sort((a, b) => parseLocalDate(a.date) - parseLocalDate(b.date));
       setField("scheduleDays", newDays);
     }
   };
@@ -217,7 +221,7 @@ export default function ScheduleStep({ form, setField, scheduleError = "" }) {
             {form.scheduleMode === "custom" && <>Click Dates to Select/Deselect <span className="text-danger">*</span></>}
           </label>
 
-          {/* Secondary Multi-Select Toggle (Only shows if Multiple Days is active) */}
+          {/* Secondary Multi-Select Toggle */}
           {form.scheduleMode !== "single" && (
             <div className="bg-light p-1 rounded-pill border d-inline-flex shadow-sm">
               <button
@@ -238,7 +242,8 @@ export default function ScheduleStep({ form, setField, scheduleError = "" }) {
           )}
         </div>
 
-        <div className="position-relative" style={{ maxWidth: "450px" }}>
+        {/* FIX: Increased maxWidth to 400px and added pe-5 to all form-controls so text doesn't hide under the clear button */}
+        <div className="position-relative" style={{ width: "100%", maxWidth: "400px", zIndex: 1050 }}>
           {form.scheduleMode === "single" && (
             <DatePicker
               selected={selectedDateObjects[0] || null}
@@ -246,7 +251,8 @@ export default function ScheduleStep({ form, setField, scheduleError = "" }) {
               dateFormat="dd/MM/yyyy"
               placeholderText="Choose a date"
               minDate={new Date()}
-              className="form-control form-control-lg shadow-sm"
+              className="form-control form-control-lg shadow-sm w-100 pe-5"
+              isClearable
             />
           )}
 
@@ -256,15 +262,14 @@ export default function ScheduleStep({ form, setField, scheduleError = "" }) {
               startDate={form.dateRange[0]}
               endDate={form.dateRange[1]}
               onChange={handleRangeSelect}
-              highlightDates={selectedDateObjects} // Now shows individual selections on the range calendar too!
+              highlightDates={selectedDateObjects}
               dateFormat="dd/MM/yyyy"
               placeholderText="Start Date - End Date"
               minDate={new Date()}
-              className="form-control form-control-lg shadow-sm w-100"
-              isClearable
+              className="form-control shadow-sm w-100 custom-date-range"
+              popperPlacement="bottom-start"
             />
           )}
-
           {form.scheduleMode === "custom" && (
             <DatePicker
               selected={null}
@@ -274,7 +279,12 @@ export default function ScheduleStep({ form, setField, scheduleError = "" }) {
               dateFormat="dd/MM/yyyy"
               placeholderText="Select Multiple dates"
               minDate={new Date()}
-              className="form-control form-control-lg shadow-sm w-100"
+              className="form-control form-control-lg shadow-sm w-100 pe-5"
+              isClearable
+              popperPlacement="bottom-start"
+              onBlur={() => {
+                if (form.scheduleDays.length === 0) setField("scheduleDays", []);
+              }}
             />
           )}
         </div>
@@ -310,8 +320,10 @@ export default function ScheduleStep({ form, setField, scheduleError = "" }) {
             {/* Day Title Row */}
             <div className="d-flex justify-content-between align-items-center mb-2">
               <span className="fw-bold text-dark fs-6">
-                {new Date(day.date).toLocaleDateString("en-AU", { weekday: "short", day: "numeric", month: "short" })}
+                {parseLocalDate(day.date).toLocaleDateString("en-AU", { weekday: "short", day: "numeric", month: "short" })}
               </span>
+
+              {/* FIX: Removed the red cross (remove day) button as requested */}
               <button type="button" className="btn btn-sm text-primary p-0 border-0 fw-semibold small transition-all" style={{ opacity: 0.8 }} onMouseOver={(e) => e.target.style.opacity = 1} onMouseOut={(e) => e.target.style.opacity = 0.8} onClick={() => addShift(dayIndex)}>
                 + Add shift
               </button>

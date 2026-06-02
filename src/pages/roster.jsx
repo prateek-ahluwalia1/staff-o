@@ -415,7 +415,7 @@ export default function RosterPage() {
             {day.isHoliday && (
               <div className="vr-holiday-indicator text-warning" title={day.holidayName}>
                 <i className="fa-solid fa-star"></i>
-                Public Holiday
+                <span style={{ color: '#b45309' }}>{day.holidayName || 'Public Holiday'}</span>
               </div>
             )}
           </div>

@@ -35,6 +35,27 @@ const states_array = [
   { label: 'ACT', value: 'act' }
 ];
 
+// --- Holiday Parsing Helpers ---
+const parseHolidayDate = (value) => {
+  if (!value) return null;
+  if (/^\d{8}$/.test(value)) {
+    const year = Number(value.slice(0, 4));
+    const month = Number(value.slice(4, 6)) - 1;
+    const day = Number(value.slice(6, 8));
+    return new Date(year, month, day);
+  }
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+};
+
+const getDayKey = (date) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}${month}${day}`;
+};
+// -------------------------------
+
 function parseApiDate(dateValue) {
   if (!dateValue) return null;
   const parsed = parse(String(dateValue), API_DATE_FORMAT, new Date());
@@ -90,6 +111,7 @@ export default function RosterPage() {
   const { data: staffData, loading: staffLoading } = useFetch(`api/get-contractor-active-staff/${userId}`, { method: "POST", isAuth: true });
   const { submit, loading: submitLoading, data: submitData } = useSubmit({ isAuth: true });
   const { submit: saveUserAssignment, loading: saveLoading } = useSubmit({ isAuth: true });
+  const { submit: submitHolidayList } = useSubmit({ isAuth: true });
 
   const [monday, setMonday] = useState(() => startOfWeek(new Date(), { weekStartsOn: 1 }));
   const [modal, setModal] = useState(null);
@@ -98,19 +120,18 @@ export default function RosterPage() {
   const [editForm, setEditForm] = useState({ startTime: "", endTime: "" });
   const [timeEditError, setTimeEditError] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
-
   const [showLegend, setShowLegend] = useState(true);
+
+  // --- Public Holidays State ---
+  const [holidays, setHolidays] = useState([]);
 
   const fetchCustomerSites = useCallback(() => {
     if (!userId) return;
-
-    // Require state selection for non-staff, bypass for staff
     if (userRole !== "staff" && selectedStates.length === 0) return;
 
     const endDayOffset = weeksToView === 1 ? 6 : 13;
     const payload = {
       user_id: [userId],
-      // If staff and no state is selected, pass all states to ensure they get their shifts
       states: selectedStates.length > 0 ? selectedStates : states_array.map(s => s.value),
       start: format(monday, "MM-dd-yyyy"),
       end: format(addDays(monday, endDayOffset), "MM-dd-yyyy"),
@@ -119,14 +140,53 @@ export default function RosterPage() {
     submit("api/fetch-customer-sites", payload, { method: "POST" });
   }, [userId, monday, weeksToView, submit, selectedStates, userRole]);
 
+  const fetchHolidays = useCallback(async () => {
+    const statesToFetch = selectedStates.length > 0 ? selectedStates : states_array.map(s => s.value);
+    let allHolidays = [];
+
+    for (const state of statesToFetch) {
+      const res = await submitHolidayList(
+        'api/admin/get-public-holiday',
+        { state },
+        { method: 'POST', silentErrorToast: true }
+      );
+
+      let stateHolidays = [];
+      if (Array.isArray(res?.data?.data)) stateHolidays = res.data.data;
+      else if (Array.isArray(res?.data)) stateHolidays = res.data;
+      else if (Array.isArray(res?.holidays)) stateHolidays = res.holidays;
+
+      allHolidays = [...allHolidays, ...stateHolidays];
+    }
+    setHolidays(allHolidays);
+  }, [selectedStates, submitHolidayList]);
+
   useEffect(() => {
     fetchCustomerSites();
   }, [fetchCustomerSites]);
+
+  useEffect(() => {
+    if (userId && (userRole === "staff" || selectedStates.length > 0)) {
+      fetchHolidays();
+    }
+  }, [fetchHolidays, userId, userRole, selectedStates.length]);
+
+  const holidaysByDayKey = useMemo(() => {
+    return holidays.reduce((acc, holiday) => {
+      const date = parseHolidayDate(holiday?.date);
+      if (!date) return acc;
+      acc[getDayKey(date)] = holiday;
+      return acc;
+    }, {});
+  }, [holidays]);
 
   const weekDays = useMemo(() => {
     const totalDays = weeksToView === 1 ? 7 : 14;
     return Array.from({ length: totalDays }, (_, i) => {
       const d = addDays(monday, i);
+      const dKey = getDayKey(d);
+      const holiday = holidaysByDayKey[dKey];
+
       return {
         label: format(d, "EEE dd/MM"),
         dateObj: d,
@@ -134,10 +194,12 @@ export default function RosterPage() {
         key: format(d, "yyyy-MM-dd"),
         isToday: isToday(d),
         short: format(d, "EEE"),
-        num: format(d, "dd")
+        num: format(d, "dd"),
+        isHoliday: !!holiday,
+        holidayName: holiday ? holiday.holiday_name : null
       };
     });
-  }, [monday, weeksToView]);
+  }, [monday, weeksToView, holidaysByDayKey]);
 
   const weekTitle = useMemo(() => {
     const endDayOffset = weeksToView === 1 ? 6 : 13;
@@ -267,19 +329,13 @@ export default function RosterPage() {
     window.open(targetUrl, "_blank");
   };
 
-  // =====================================================================
-  // VIEW 1: OPERATIONS DASHBOARD (No state selected, and user is NOT staff)
-  // =====================================================================
   if (userRole !== "staff" && selectedStates.length === 0) {
     return (
       <div className="staffoo-page-container">
-        {/* White Header Card (Matches Payment History) */}
         <div className="staffoo-header-card">
           <h2>Regional Roster Operations</h2>
           <p>Select a region below to manage sites, rosters, and shift assignments.</p>
         </div>
-
-        {/* Grid of State Cards */}
         <div className="staffoo-grid-container">
           {states_array.map((stateInfo) => (
             <button
@@ -302,15 +358,10 @@ export default function RosterPage() {
     );
   }
 
-  // =====================================================================
-  // VIEW 2: ROSTER MATRIX (If state is selected OR user is staff)
-  // =====================================================================
-
   if (staffLoading || submitLoading) return <Loader />;
 
   return (
     <div className="vibrant-roster-app">
-      {/* --- HEADER --- */}
       <header className="vr-header">
         <div className="vr-nav">
           <button onClick={prevWeek} className="vr-icon-btn"><i className="fa fa-chevron-left"></i></button>
@@ -335,7 +386,6 @@ export default function RosterPage() {
         </div>
       </header>
 
-      {/* --- COLOR LEGEND --- */}
       {showLegend && (
         <div className="vr-legend-panel">
           <span className="vr-badge bg-pending">Pending</span>
@@ -351,18 +401,28 @@ export default function RosterPage() {
         </div>
       )}
 
-      {/* --- MATRIX HEADER (Days) --- */}
+      {/* --- MATRIX HEADER --- */}
       <div className="vr-matrix-header">
         <div className="vr-col-site">SITES & SUMMARY</div>
         {weekDays.map((day) => (
-          <div key={day.key} className={`vr-col-day ${day.isToday ? 'is-today' : ''}`}>
+          <div
+            key={day.key}
+            className={`vr-col-day ${day.isToday ? 'is-today' : ''} ${day.isHoliday ? 'is-holiday-header' : ''}`}
+            title={day.holidayName || ''}
+          >
             <div className="day-name">{day.short}</div>
             <div className="day-number">{day.num}</div>
+            {day.isHoliday && (
+              <div className="vr-holiday-indicator text-warning" title={day.holidayName}>
+                <i className="fa-solid fa-star"></i>
+                Public Holiday
+              </div>
+            )}
           </div>
         ))}
       </div>
 
-      {/* --- MATRIX BODY (Scrollable Zone) --- */}
+      {/* --- MATRIX BODY --- */}
       <div className="vr-matrix-body">
         {filteredSites.length === 0 ? (
           <div className="vr-no-data" style={{ padding: "40px", textAlign: "center", color: "#64748b" }}>
@@ -371,7 +431,6 @@ export default function RosterPage() {
         ) : (
           filteredSites.map((site) => (
             <div key={site.id} className="vr-matrix-row">
-
               <div className="vr-col-site vr-site-info">
                 <div className="vr-site-name">{site.displayName}</div>
                 <div>
@@ -382,24 +441,22 @@ export default function RosterPage() {
                 </div>
               </div>
 
-              {/* Day Cells */}
               {weekDays.map((day) => {
                 const dayShifts = site.jobRoster.filter((s) => isSameDay(s.startDate, day.dateObj));
                 return (
-                  <div key={day.key} className={`vr-col-day vr-day-cell ${day.isToday ? 'is-today' : ''}`}>
-
+                  <div
+                    key={day.key}
+                    className={`vr-col-day vr-day-cell ${day.isToday ? 'is-today' : ''} ${day.isHoliday ? 'is-holiday-cell' : ''}`}
+                  >
                     {dayShifts.length === 0 ? (
-                      /* Big faint + for entirely empty cells */
                       <div className="vr-empty-add-btn" onClick={() => openModalAction(site, null, day.dateLabel, "add_shift", day.key)}>
                         <i className="fa fa-plus"></i>
                       </div>
                     ) : (
                       <>
-                        {/* Render existing shifts */}
                         {dayShifts.map((shift) => {
                           const status = shift.job_status ? shift.job_status.replace('_', '-') : 'pending';
                           const hasNote = Boolean(extractOperationNoteText(shift));
-
                           return (
                             <div key={shift.id} className={`vr-shift-card bg-${status}`}>
                               {hasNote && <div className="vr-note-dot"></div>}
@@ -409,7 +466,6 @@ export default function RosterPage() {
                               <div className="vr-shift-guard">
                                 {shift?.guards?.name || "Unassigned"}
                               </div>
-
                               <div className="vr-shift-actions">
                                 <button title="Activity" onClick={() => openModalAction(site, shift, day.dateLabel, "activity")}>
                                   <i className="fa fa-list"></i>
@@ -431,8 +487,6 @@ export default function RosterPage() {
                             </div>
                           );
                         })}
-
-                        {/* Small subtle + for cells that already have shifts */}
                         <div className="vr-small-add-btn" onClick={() => openModalAction(site, null, day.dateLabel, "add_shift", day.key)}>
                           <i className="fa fa-plus"></i> Add
                         </div>
@@ -446,19 +500,19 @@ export default function RosterPage() {
         )}
       </div>
 
-      {/* --- MATRIX FOOTER (Totals) --- */}
+      {/* --- MATRIX FOOTER --- */}
       <div className="vr-matrix-footer">
         <div className="vr-col-site vr-total-label">
           GRAND TOTAL <span>{columnTotals.grandTotal.toFixed(1)}h</span>
         </div>
         {columnTotals.totals.map((total, i) => (
-          <div key={i} className="vr-col-day vr-total-val">
+          <div key={i} className={`vr-col-day vr-total-val ${weekDays[i].isHoliday ? 'is-holiday-cell' : ''}`}>
             {total.toFixed(1)}h
           </div>
         ))}
       </div>
 
-      {/* EXISTING MODALS */}
+      {/* Existing Modals */}
       {modal?.type === "activity" && <ActivityDashboardModal modal={modal} closeModal={closeModal} userRole={userRole} />}
       {modal?.type === "time" && <TimeEditModal modal={modal} closeModal={closeModal} editForm={editForm} setEditForm={setEditForm} timeEditError={timeEditError} clearTimeEditError={() => setTimeEditError("")} handleSave={handleSave} saveLoading={saveLoading} />}
       {modal?.type === "details" && <DetailsModal modal={modal} closeModal={closeModal} guardShiftsList={guardShiftsList} totalGuardHours={totalGuardHours} />}
@@ -492,7 +546,6 @@ export default function RosterPage() {
         </div>
       )}
 
-      {/* NEW: ADD SHIFT/SITE MODAL */}
       {modal?.type === "add_shift" && (
         <div className="embedded-job-backdrop" onClick={closeModal}>
           <div className="embedded-job-shell" onClick={(e) => e.stopPropagation()}>
@@ -500,6 +553,23 @@ export default function RosterPage() {
           </div>
         </div>
       )}
+
+      {/* Inline styles for quick Holiday UI highlighting */}
+      <style>{`
+        .is-holiday-header {
+          background-color: #fff8e1 !important;
+          color: #b45309 !important;
+          border-bottom: 2px solid #f59e0b !important;
+        }
+        .is-holiday-cell {
+          background-color: #fffbeb !important;
+        }
+        .vr-holiday-indicator {
+          font-size: 0.65rem;
+          margin-top: 2px;
+          opacity: 0.8;
+        }
+      `}</style>
     </div>
   );
 }

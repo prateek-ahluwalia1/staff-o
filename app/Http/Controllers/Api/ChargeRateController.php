@@ -69,9 +69,7 @@ class ChargeRateController extends Controller
 
     public function getChargeRate()
     {
-        $charge_rate = ChargeRate::where('status', 'active')->where('id', 1)
-            ->orderBy('title', 'asc')
-            ->get();
+        $charge_rate = ChargeRate::where('status', 'active')->orderBy('title', 'asc')->get();
 
         return response()->json(['success' => true, 'data' => $charge_rate]);  
     }

@@ -220,7 +220,7 @@ const generateTFNDeclarationPDF = (formData) => {
   doc.setTextColor(...T.text);
   if (signed_date) doc.text(String(signed_date), mg + 12, y);
 
-  doc.setFontSize(7); doc.setFont("helvetica", "normal"); doc.setTextColor(...T.muted);
+  doc.setFontSize(10); doc.setFont("helvetica", "normal"); doc.setTextColor(...T.muted);
   doc.text("Staffoo is a brand of Capital Services Pty Ltd. ABN: 48 613 317 838, Truganina, VIC 3029.", pw / 2, ph - 8, { align: "center" });
 
   return doc;
@@ -320,7 +320,7 @@ const generateSuperannuationPDF = (formData) => {
   if (signed_date) doc.text(String(signed_date), mg + 12, y);
 
   doc.setFillColor(...T.navy); doc.rect(0, ph - 14, pw, 14, "F");
-  doc.setFont("helvetica", "normal"); doc.setFontSize(7); doc.setTextColor(...T.white);
+  doc.setFont("helvetica", "normal"); doc.setFontSize(10); doc.setTextColor(...T.white);
   doc.text("Staffoo is a brand of Capital Services Pty Ltd.", pw / 2, ph - 5, { align: "center" });
 
   return doc;
@@ -480,7 +480,7 @@ const generateEmployeeOnboardingPDF = (formData) => {
 
   twoFld("Signature:", signature, "Date:", signed_date);
 
-  doc.setFontSize(7); doc.setFont("helvetica", "normal"); doc.setTextColor(...T.muted);
+  doc.setFontSize(10); doc.setFont("helvetica", "normal"); doc.setTextColor(...T.muted);
   doc.text("Staffoo is a brand of Capital Services Pty Ltd. ABN: 48 613 317 838, Truganina, VIC 3029.", pw / 2, ph - 7, { align: "center" });
 
   return doc;
@@ -517,7 +517,7 @@ const renderModernFooter = (doc, pw, ph, showStripeBadge = false) => {
     doc.text("✓ Payment Held via Stripe", pw / 2, fy + 4, { align: "center" });
     fy += 10;
   }
-  doc.setFontSize(7); doc.setFont("helvetica", "normal"); doc.setTextColor(...T.muted);
+  doc.setFontSize(10); doc.setFont("helvetica", "normal"); doc.setTextColor(...T.muted);
   doc.text("Thank you for choosing Staffoo Facility Services.", pw / 2, fy, { align: "center" });
   doc.text("For billing enquiries contact admin@staffoo.com.au | ABN: 48 613 317 838", pw / 2, fy + 4, { align: "center" });
 };

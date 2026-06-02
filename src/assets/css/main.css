@@ -2918,7 +2918,6 @@ a.wit-btn {
            == Video css==
 *************************************************/
 .videowraper {
-    background: url(../images/videobg.jpg) no-repeat top;
     background-size: cover;
     background-attachment: fixed;
     text-align: center;
@@ -3041,7 +3040,6 @@ a.wit-btn {
 
 /*Page Title*/
 .pageTitle {
-    background: url(../images/page-title-bg.jpg) no-repeat;
     background-size: cover;
     padding: 70px 0;
 }

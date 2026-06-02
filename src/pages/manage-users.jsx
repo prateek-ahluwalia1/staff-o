@@ -4,6 +4,8 @@ import useFetch from "../hooks/useFetch";
 import useSubmit from "../hooks/useSubmit";
 import Loader from "../components/Loader";
 import { toast } from "react-toastify";
+import DocumentTable from "../components/DocumentTable";
+import StaffOnboardingForms from "../components/StaffOnboardingForms";
 
 const STATE_MAP = {
   'Victoria': 'vic',
@@ -46,11 +48,13 @@ const ManageUsers = () => {
 
   const contractorsList = contractorsResponse?.data?.data || [];
   const { submit, loading: submitLoading } = useSubmit({ isAuth: true });
+  const { submit: uploadFile } = useSubmit({ isAuth: true });
 
   const [users, setUsers] = useState([]);
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [activeModalTab, setActiveModalTab] = useState("personal");
   const [editingUser, setEditingUser] = useState(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
@@ -58,6 +62,19 @@ const ManageUsers = () => {
 
   // New State for Password Toggle
   const [showPassword, setShowPassword] = useState(false);
+  const [showDocModal, setShowDocModal] = useState(false);
+  const [selectedDoc, setSelectedDoc] = useState(null);
+  const [docForm, setDocForm] = useState({
+    notes: "",
+    no: false,
+    exp: false,
+    document_no: "",
+    document_expiry: "",
+    file: null,
+    file_path: "",
+    file_url: "",
+    document_name: "",
+  });
 
   const userAutocompleteRef = useRef(null);
   const userAutocompleteListenerRef = useRef(null);
@@ -68,6 +85,8 @@ const ManageUsers = () => {
     password: "",
     phone: "",
     security_license_no: "",
+    gender: "",
+    staff_document_type: "",
     company_name: "",
     address: "",
     city: "",
@@ -78,6 +97,11 @@ const ManageUsers = () => {
   }), []);
 
   const [formData, setFormData] = useState(defaultFormState);
+
+  const staffDocuments = useMemo(() => {
+    if (!editingUser) return [];
+    return editingUser.documents || editingUser.staff?.documents || [];
+  }, [editingUser]);
 
   const handleTabChange = (role) => {
     setActiveTab(role);
@@ -99,6 +123,9 @@ const ManageUsers = () => {
 
   const openModal = useCallback((user = null) => {
     setShowPassword(false); // Reset password visibility when opening
+    setActiveModalTab("personal");
+    setShowDocModal(false);
+    setSelectedDoc(null);
     if (user) {
       const extraInfo = getNestedData(user);
       setEditingUser(user);
@@ -108,6 +135,8 @@ const ManageUsers = () => {
         password: "",
         phone: user.phone || extraInfo.phone || "",
         security_license_no: extraInfo.security_license_no || "",
+        gender: extraInfo.gender || "",
+        staff_document_type: extraInfo.staff_document_type || "",
         company_name: extraInfo.company_name || "",
         address: user.address || "",
         city: user.city || "",
@@ -232,6 +261,108 @@ const ManageUsers = () => {
         ? { coordinates: "", city: "", state: "", country: "" }
         : {}),
     }));
+  };
+
+  const handleDocFormChange = async (e) => {
+    const { name, value, type, checked, files } = e.target;
+    if (type === "checkbox") {
+      setDocForm((prev) => ({ ...prev, [name]: checked }));
+      return;
+    }
+
+    if (type === "file") {
+      const file = files[0];
+      if (!file) return;
+      const MAX_SIZE_MB = 10;
+      if (file.size > MAX_SIZE_MB * 1024 * 1024) {
+        toast.error(`File is too large. Please upload a file smaller than ${MAX_SIZE_MB}MB.`);
+        return;
+      }
+      const fd = new FormData();
+      fd.append("file", file);
+      fd.append("folder", "staff_documents");
+      const res = await uploadFile("api/upload-file", fd, { method: "POST" });
+      if (res?.success) {
+        setDocForm((prev) => ({
+          ...prev,
+          file: file,
+          file_path: res.path || res.data?.path || "",
+          file_url: res.url || res.data?.url || "",
+        }));
+      }
+      return;
+    }
+
+    setDocForm((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const openDocumentModal = (doc) => {
+    setSelectedDoc(doc);
+    if (doc) {
+      setDocForm({
+        notes: "",
+        no: doc.no || false,
+        exp: doc.exp || false,
+        document_no: doc.document_no || "",
+        document_expiry: doc.document_expiry || "",
+        file: null,
+        file_path: doc.file || "",
+        file_url: doc.file || "",
+        document_name: doc.document_name || doc.document_type || "",
+      });
+    } else {
+      setDocForm({
+        notes: "",
+        no: false,
+        exp: false,
+        document_no: "",
+        document_expiry: "",
+        file: null,
+        file_path: "",
+        file_url: "",
+        document_name: "",
+      });
+    }
+    setShowDocModal(true);
+  };
+
+  const closeDocumentModal = () => {
+    setShowDocModal(false);
+    setSelectedDoc(null);
+  };
+
+  const handleDocSubmit = async (e) => {
+    e.preventDefault();
+    if (!editingUser?.id) {
+      toast.error("Please save the profile first before uploading documents.");
+      return;
+    }
+
+    const payload = {
+      user_id: editingUser.id,
+      no: docForm.no,
+      exp: docForm.exp,
+      document_no: docForm.document_no,
+      document_expiry: docForm.document_expiry,
+      file: docForm.file_path,
+      document_name: docForm.document_name,
+      document_type: docForm.document_name,
+    };
+
+    if (selectedDoc?.id) {
+      payload.id = selectedDoc.id;
+    }
+
+    const url = selectedDoc ? "api/guard-update-documents" : "api/guard-add-documents";
+    const res = await submit(url, payload, { method: "POST" });
+    if (!res) return;
+    if (res.success) {
+      toast.success("Document saved successfully!");
+      closeDocumentModal();
+      refetch();
+    } else {
+      toast.error(res.message || "Failed to save document");
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -662,184 +793,376 @@ const ManageUsers = () => {
             </div>
 
             <div className="flex-grow-1 overflow-auto p-4 p-md-5">
-              <form id="userForm" onSubmit={handleSubmit}>
-                <div className="row g-4">
-                  <div className="col-12">
-                    <h6 className="section-divider mt-0">Personal Details</h6>
-                  </div>
+              <div className="d-flex gap-2 mb-4 flex-wrap">
+                <button
+                  type="button"
+                  className={`btn ${activeModalTab === "personal" ? "btn-primary-custom" : "btn-outline-primary"}`}
+                  onClick={() => setActiveModalTab("personal")}
+                >
+                  Personal Information
+                </button>
+                <button
+                  type="button"
+                  className={`btn ${activeModalTab === "documents" ? "btn-primary-custom" : "btn-outline-primary"}`}
+                  onClick={() => setActiveModalTab("documents")}
+                  disabled={activeTab !== "staff" || !editingUser}
+                  title={activeTab === "staff" ? (editingUser ? "Documents" : "Save the profile first to manage documents.") : "Documents are available for staff profiles only."}
+                >
+                  Documents
+                </button>
+                <button
+                  type="button"
+                  className={`btn ${activeModalTab === "onboarding" ? "btn-primary-custom" : "btn-outline-primary"}`}
+                  onClick={() => setActiveModalTab("onboarding")}
+                  disabled={activeTab !== "staff" || !editingUser}
+                  title={activeTab === "staff" ? (editingUser ? "Onboarding Forms" : "Save the profile first to manage onboarding forms.") : "Onboarding forms are available for staff profiles only."}
+                >
+                  Onboarding Forms
+                </button>
+              </div>
 
-                  {activeTab === "staff" && (
-                    <div className="col-12 mb-2">
-                      <div className="p-3 bg-primary-subtle rounded-3 border border-primary-subtle">
-                        <label className="form-label text-primary">
-                          Assign to Resource Partner *
-                        </label>
-                        <select
-                          className="form-select shadow-sm"
-                          name="user_id"
-                          value={formData.user_id}
-                          onChange={handleInputChange}
-                          required
-                        >
-                          <option value="" disabled>
-                            Select a Resource Partner
-                          </option>
-                          {contractorsList.map((contractor) => (
-                            <option key={contractor.id} value={contractor.id}>
-                              {contractor.name}{" "}
-                              {contractor.company_name
-                                ? `(${contractor.company_name})`
-                                : ""}
+              {activeModalTab === "personal" ? (
+                <form id="userForm" onSubmit={handleSubmit}>
+                  <div className="row g-4">
+                    <div className="col-12">
+                      <h6 className="section-divider mt-0">Personal Details</h6>
+                    </div>
+
+                    {activeTab === "staff" && (
+                      <div className="col-12 mb-2">
+                        <div className="p-3 bg-primary-subtle rounded-3 border border-primary-subtle">
+                          <label className="form-label text-primary">
+                            Assign to Resource Partner *
+                          </label>
+                          <select
+                            className="form-select shadow-sm"
+                            name="user_id"
+                            value={formData.user_id}
+                            onChange={handleInputChange}
+                            required
+                          >
+                            <option value="" disabled>
+                              Select a Resource Partner
                             </option>
-                          ))}
-                        </select>
+                            {contractorsList.map((contractor) => (
+                              <option key={contractor.id} value={contractor.id}>
+                                {contractor.name}{" "}
+                                {contractor.company_name
+                                  ? `(${contractor.company_name})`
+                                  : ""}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    )}
 
-                  <div className="col-md-6">
-                    <label className="form-label">Full Name *</label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      name="name"
-                      value={formData.name}
-                      onChange={handleInputChange}
-                      required
-                    />
-                  </div>
-
-                  <div className="col-md-6">
-                    <label className="form-label">Email Address *</label>
-                    <input
-                      type="email"
-                      className={`form-control ${editingUser ? 'bg-light text-muted' : ''}`}
-                      name="email"
-                      value={formData.email}
-                      onChange={handleInputChange}
-                      required
-                      disabled={!!editingUser}
-                      title={editingUser ? "Email cannot be changed after registration" : ""}
-                    />
-                  </div>
-
-                  <div className="col-md-6">
-                    <label className="form-label">
-                      Password {editingUser && "(Leave blank to keep)"}
-                    </label>
-                    <div className="position-relative">
-                      <input
-                        type={showPassword ? "text" : "password"}
-                        className="form-control pe-5"
-                        name="password"
-                        onChange={handleInputChange}
-                        required={!editingUser}
-                      />
-                      <button
-                        type="button"
-                        className="btn btn-sm border-0 position-absolute end-0 top-50 translate-middle-y text-muted"
-                        onClick={() => setShowPassword(!showPassword)}
-                        tabIndex="-1"
-                      >
-                        <i className={`fa-solid ${showPassword ? 'fa-eye-slash' : 'fa-eye'}`}></i>
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="col-md-6">
-                    <label className="form-label">Phone</label>
-                    <input
-                      type="tel"
-                      className="form-control"
-                      name="phone"
-                      placeholder="e.g. 0400 000 000"
-                      value={formData.phone}
-                      onChange={(e) => {
-                        // Only allow digits, plus, dashes, and spaces
-                        const val = e.target.value.replace(/[^\d+\s-]/g, "");
-                        handleInputChange({ target: { name: "phone", value: val } });
-                      }}
-                      maxLength="15"
-                    />
-                  </div>
-
-                  {activeTab === "staff" && (
                     <div className="col-md-6">
-                      <label className="form-label">
-                        Security License No <span className="text-danger">*</span>
-                      </label>
+                      <label className="form-label">Full Name *</label>
                       <input
                         type="text"
                         className="form-control"
-                        name="security_license_no"
-                        value={formData.security_license_no}
+                        name="name"
+                        value={formData.name}
                         onChange={handleInputChange}
                         required
                       />
                     </div>
-                  )}
 
-                  {activeTab !== "staff" && (
-                    <>
-                      <div className="col-12">
-                        <h6 className="section-divider">
-                          Professional Information
-                        </h6>
-                      </div>
-                      <div className="col-md-6">
-                        <label className="form-label">
-                          Company Name {activeTab === "sub_contractor" && "*"}
-                        </label>
+                    <div className="col-md-6">
+                      <label className="form-label">Email Address *</label>
+                      <input
+                        type="email"
+                        className={`form-control ${editingUser ? 'bg-light text-muted' : ''}`}
+                        name="email"
+                        value={formData.email}
+                        onChange={handleInputChange}
+                        required
+                        disabled={!!editingUser}
+                        title={editingUser ? "Email cannot be changed after registration" : ""}
+                      />
+                    </div>
+
+                    <div className="col-md-6">
+                      <label className="form-label">
+                        Password {editingUser && "(Leave blank to keep)"}
+                      </label>
+                      <div className="position-relative">
                         <input
-                          type="text"
-                          className="form-control"
-                          name="company_name"
-                          value={formData.company_name}
+                          type={showPassword ? "text" : "password"}
+                          className="form-control pe-5"
+                          name="password"
                           onChange={handleInputChange}
-                          required={activeTab === "sub_contractor"}
+                          required={!editingUser}
                         />
+                        <button
+                          type="button"
+                          className="btn btn-sm border-0 position-absolute end-0 top-50 translate-middle-y text-muted"
+                          onClick={() => setShowPassword(!showPassword)}
+                          tabIndex="-1"
+                        >
+                          <i className={`fa-solid ${showPassword ? 'fa-eye-slash' : 'fa-eye'}`}></i>
+                        </button>
                       </div>
+                    </div>
 
-                    </>
-                  )}
+                    <div className="col-md-6">
+                      <label className="form-label">Phone</label>
+                      <input
+                        type="tel"
+                        className="form-control"
+                        name="phone"
+                        placeholder="e.g. 0400 000 000"
+                        value={formData.phone}
+                        onChange={(e) => {
+                          const val = e.target.value.replace(/[^\d+\s-]/g, "");
+                          handleInputChange({ target: { name: "phone", value: val } });
+                        }}
+                        maxLength="15"
+                      />
+                    </div>
 
-                  <div className="col-12">
-                    <h6 className="section-divider">Address Information</h6>
-                  </div>
-                  <div className="col-12">
-                    <label className="form-label">Full Address</label>
-                    <input
-                      type="text"
-                      id="user-address"
-                      className="form-control"
-                      name="address"
-                      value={formData.address}
-                      onChange={handleInputChange}
-                      placeholder="Start typing and choose from Google suggestions"
-                    />
-                    <div className="form-text">
-                      Select from suggestions to auto-fill city, state, country
-                      and coordinates.
+                    {activeTab === "staff" && (
+                      <>
+                        <div className="col-md-6">
+                          <label className="form-label">
+                            Security License No <span className="text-danger">*</span>
+                          </label>
+                          <input
+                            type="text"
+                            className="form-control"
+                            name="security_license_no"
+                            value={formData.security_license_no}
+                            onChange={handleInputChange}
+                            required
+                          />
+                        </div>
+                        <div className="col-md-6">
+                          <label className="form-label">Residential Status</label>
+                          <select
+                            className="form-select"
+                            name="staff_document_type"
+                            value={formData.staff_document_type}
+                            onChange={handleInputChange}
+                          >
+                            <option value="">Select status</option>
+                            <option value="student_visa">Student Visa</option>
+                            <option value="bridging_visa">Bridging Visa</option>
+                            <option value="citizen">Citizen</option>
+                            <option value="permanent_residence">Permanent Residence</option>
+                            <option value="visa_485">Visa Subclass 485</option>
+                            <option value="other">Other</option>
+                          </select>
+                        </div>
+                        <div className="col-md-6">
+                          <label className="form-label">Gender</label>
+                          <select
+                            className="form-select"
+                            name="gender"
+                            value={formData.gender}
+                            onChange={handleInputChange}
+                          >
+                            <option value="">Select gender</option>
+                            <option value="male">Male</option>
+                            <option value="female">Female</option>
+                            <option value="other">Other</option>
+                          </select>
+                        </div>
+                      </>
+                    )}
+
+                    {activeTab !== "staff" && (
+                      <>
+                        <div className="col-12">
+                          <h6 className="section-divider">
+                            Professional Information
+                          </h6>
+                        </div>
+                        <div className="col-md-6">
+                          <label className="form-label">
+                            Company Name {activeTab === "sub_contractor" && "*"}
+                          </label>
+                          <input
+                            type="text"
+                            className="form-control"
+                            name="company_name"
+                            value={formData.company_name}
+                            onChange={handleInputChange}
+                            required={activeTab === "sub_contractor"}
+                          />
+                        </div>
+                      </>
+                    )}
+
+                    <div className="col-12">
+                      <h6 className="section-divider">Address Information</h6>
+                    </div>
+                    <div className="col-12">
+                      <label className="form-label">Full Address</label>
+                      <input
+                        type="text"
+                        id="user-address"
+                        className="form-control"
+                        name="address"
+                        value={formData.address}
+                        onChange={handleInputChange}
+                        placeholder="Start typing and choose from Google suggestions"
+                      />
+                      <div className="form-text">
+                        Select from suggestions to auto-fill city, state, country
+                        and coordinates.
+                      </div>
+                    </div>
+
+                    <div className="col-12">
+                      <label className="form-label">
+                        Coordinates {!editingUser && "*"}
+                      </label>
+                      <input
+                        type="text"
+                        className="form-control"
+                        name="coordinates"
+                        value={formData.coordinates}
+                        onChange={handleInputChange}
+                        placeholder="Auto-filled from selected address"
+                        readOnly
+                        required={!editingUser}
+                      />
                     </div>
                   </div>
-
-                  <div className="col-12">
-                    <label className="form-label">
-                      Coordinates {!editingUser && "*"}
-                    </label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      name="coordinates"
-                      value={formData.coordinates}
-                      onChange={handleInputChange}
-                      placeholder="Auto-filled from selected address"
-                      readOnly
-                      required={!editingUser}
-                    />
+                </form>
+              ) : activeModalTab === "documents" ? (
+                <div>
+                  <div className="d-flex justify-content-between align-items-center mb-4">
+                    <div>
+                      <h6 className="section-divider mt-0">Documents</h6>
+                      <p className="text-muted mb-0">Upload and manage staff documents.</p>
+                    </div>
+                    <button
+                      type="button"
+                      className="btn btn-outline-primary btn-sm"
+                      onClick={() => openDocumentModal(null)}
+                    >
+                      + Add Document
+                    </button>
                   </div>
+                  <DocumentTable
+                    documents={staffDocuments}
+                    userType="staff"
+                    onAddFile={openDocumentModal}
+                  />
+
+                  {showDocModal && (
+                    <div className="confirm-modal-backdrop" onClick={closeDocumentModal}>
+                      <div
+                        className="confirm-modal-card"
+                        onClick={(e) => e.stopPropagation()}
+                        style={{ maxWidth: "680px" }}
+                      >
+                        <div className="confirm-modal-header px-4 py-3 d-flex align-items-center gap-3">
+                          <span className="confirm-modal-icon">
+                            <i className="fa-solid fa-file-arrow-up"></i>
+                          </span>
+                          <div>
+                            <h5 className="mb-0 fw-bold">{selectedDoc ? "Update Document" : "Add Document"}</h5>
+                            <div className="small text-muted">Upload a staff verification file.</div>
+                          </div>
+                        </div>
+                        <form onSubmit={handleDocSubmit} className="p-4">
+                          <div className="row g-3">
+                            <div className="col-12">
+                              <label className="form-label">Document Name</label>
+                              <input
+                                type="text"
+                                className="form-control"
+                                name="document_name"
+                                value={docForm.document_name}
+                                onChange={handleDocFormChange}
+                                required
+                              />
+                            </div>
+                            <div className="col-md-6">
+                              <label className="form-label">Document No.</label>
+                              <input
+                                type="text"
+                                className="form-control"
+                                name="document_no"
+                                value={docForm.document_no}
+                                onChange={handleDocFormChange}
+                              />
+                            </div>
+                            <div className="col-md-6">
+                              <label className="form-label">Expiry Date</label>
+                              <input
+                                type="date"
+                                className="form-control"
+                                name="document_expiry"
+                                value={docForm.document_expiry}
+                                onChange={handleDocFormChange}
+                              />
+                            </div>
+                            <div className="col-12">
+                              <label className="form-label">Upload File</label>
+                              <input
+                                type="file"
+                                className="form-control"
+                                name="file"
+                                accept="application/pdf,image/*"
+                                onChange={handleDocFormChange}
+                              />
+                              {docForm.file_url && (
+                                <div className="form-text mt-2 text-success">
+                                  Existing file available. Save to keep or upload a new one.
+                                </div>
+                              )}
+                            </div>
+                            <div className="col-12">
+                              <label className="form-label">
+                                <input
+                                  type="checkbox"
+                                  name="no"
+                                  checked={docForm.no}
+                                  onChange={handleDocFormChange}
+                                  className="form-check-input me-2"
+                                />
+                                No document number
+                              </label>
+                            </div>
+                            <div className="col-12">
+                              <label className="form-label">
+                                <input
+                                  type="checkbox"
+                                  name="exp"
+                                  checked={docForm.exp}
+                                  onChange={handleDocFormChange}
+                                  className="form-check-input me-2"
+                                />
+                                No expiry date
+                              </label>
+                            </div>
+                          </div>
+                          <div className="mt-4 d-flex justify-content-end gap-2">
+                            <button
+                              type="button"
+                              className="btn btn-outline-secondary rounded-pill px-4"
+                              onClick={closeDocumentModal}
+                            >
+                              Cancel
+                            </button>
+                            <button type="submit" className="btn btn-primary-custom rounded-pill px-4">
+                              Save Document
+                            </button>
+                          </div>
+                        </form>
+                      </div>
+                    </div>
+                  )}
                 </div>
-              </form>
+              ) : (
+                <div>
+                  <StaffOnboardingForms submit={submit} userId={editingUser?.id} />
+                </div>
+              )}
             </div>
 
             <div className="p-4 border-top bg-white d-flex gap-3 justify-content-end">
@@ -850,18 +1173,20 @@ const ManageUsers = () => {
               >
                 Cancel
               </button>
-              <button
-                type="submit"
-                form="userForm"
-                className="btn btn-primary-custom rounded-pill px-5 fw-bold shadow"
-                disabled={submitLoading}
-              >
-                {submitLoading
-                  ? "Saving..."
-                  : editingUser
-                    ? "Update Profile"
-                    : "Create User"}
-              </button>
+              {activeModalTab === "personal" && (
+                <button
+                  type="submit"
+                  form="userForm"
+                  className="btn btn-primary-custom rounded-pill px-5 fw-bold shadow"
+                  disabled={submitLoading}
+                >
+                  {submitLoading
+                    ? "Saving..."
+                    : editingUser
+                      ? "Update Profile"
+                      : "Create User"}
+                </button>
+              )}
             </div>
           </div>
         </div>

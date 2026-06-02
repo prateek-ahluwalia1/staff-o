@@ -1579,9 +1579,7 @@ export default function EditProfile() {
             >
               {submitLoading
                 ? "Saving..."
-                : selectedDoc
-                  ? "Update Document"
-                  : "Save Document"}
+                : "Upload Document"}
             </button>
           </div>
         </form>

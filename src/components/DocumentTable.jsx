@@ -129,7 +129,7 @@ export default function DocumentTable({ documents, onAddFile, onAddDocument, use
                           style={{
                             background: "#f3f4f6",
                             border: "none",
-                            color: "#9ca3af", // Muted gray color
+                            color: "#9ca3af",
                             fontSize: 20,
                             cursor: "not-allowed",
                             borderRadius: 6,
@@ -142,7 +142,7 @@ export default function DocumentTable({ documents, onAddFile, onAddDocument, use
                       ) : (
                         <button
                           type="button"
-                          title="Update document"
+                          title="Upload document"
                           style={{
                             background: "#f3f4f6",
                             border: "none",

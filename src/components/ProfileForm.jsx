@@ -277,6 +277,29 @@ export default function ProfileForm({
             </>
           )}
 
+          {/* Staff Residential Status */}
+          {userType === "staff" && (
+            <div className="mt-2">
+              <label htmlFor="staff_document_type" className="form-label fw-semibold">
+                Residential Status
+              </label>
+              <select
+                className="form-select shadow-sm"
+                id="staff_document_type"
+                value={formData.staff_document_type || ""}
+                onChange={onChange}
+              >
+                <option value="">Select Residential Status</option>
+                <option value="student_visa">Student Visa</option>
+                <option value="bridging_visa">Bridging Visa</option>
+                <option value="citizen">Citizen</option>
+                <option value="permanent_residence">Permanent Residence</option>
+                <option value="visa_485">Visa Subclass 485</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+          )}
+
           {/* Staff Specific Fields */}
           {userType === "staff" && (
             <>
@@ -437,31 +460,7 @@ export default function ProfileForm({
               style={{ background: "#f1f3f5", cursor: "not-allowed" }}
             />
           </div>
-
-          {/* Staff Residential Status */}
-          {userType === "staff" && (
-            <div className="mt-2">
-              <label htmlFor="staff_document_type" className="form-label fw-semibold">
-                Residential Status
-              </label>
-              <select
-                className="form-select shadow-sm"
-                id="staff_document_type"
-                value={formData.staff_document_type || ""}
-                onChange={onChange}
-              >
-                <option value="">Select Residential Status</option>
-                <option value="student_visa">Student Visa</option>
-                <option value="bridging_visa">Bridging Visa</option>
-                <option value="citizen">Citizen</option>
-                <option value="permanent_residence">Permanent Residence</option>
-                <option value="visa_485">Visa Subclass 485</option>
-                <option value="other">Other</option>
-              </select>
-            </div>
-          )}
         </div>
-
         {userType !== "admin" && (
           <div className="settings-card-footer mt-4 pt-4 border-top d-flex justify-content-end">
             <button

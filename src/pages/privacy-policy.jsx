@@ -1,5 +1,4 @@
 import React from "react";
-
 import Header from "../components/newHome/Header";
 import Footer from "../components/newHome/Footer";
 
@@ -51,44 +50,159 @@ export default function PrivacyPolicy() {
     <>
       <Header />
 
-      <section className="content-hero">
-        <div className="container text-center">
-          <span className="contact-badge mb-3">
-            <i className="fa fa-shield" aria-hidden="true"></i>
-            Legal
-          </span>
-          <h1>Terms of Service & Privacy Policy</h1>
-          <p>
-            Staffoo is committed to protecting your privacy and handling your
-            information in accordance with Australian privacy law.
-          </p>
-        </div>
-      </section>
+      {/* INTERNAL STYLESHEET */}
+      <style>{`
+        .stf-privacy-page {
+          background-color: #0d1216;
+          color: #ffffff;
+          font-family: 'Inter', system-ui, -apple-system, sans-serif;
+          min-height: 100vh;
+          padding-bottom: 80px;
+        }
 
-      <section className="content-shell">
-        <div className="container">
-          <div className="content-card">
-            {sections.map((section) => (
-              <article key={section.title} className="mb-4">
-                <h2 className="h5 mb-2">{section.title}</h2>
-                <p className="mb-0">{section.content}</p>
-              </article>
-            ))}
-            <article className="mb-4">
-              <h2 className="h5 mb-2">Part 5: Contact Information</h2>
-              <p className="mb-1">Capital Services Pty Ltd</p>
-              <p className="mb-1">ABN: 48 613 317 838</p>
-              <p className="mb-1">
-                Registered Office: 21 Tanglewood Bvd, Truganina VIC 3029,
-                Australia
-              </p>
-              <p className="mb-1">Email: staffoapp@gmail.com</p>
-              <p className="mb-0">Phone: 0478916034</p>
-            </article>
-            <p className="mb-0 text-muted">Effective Date: March 14, 2026.</p>
+        .stf-container {
+          max-width: 900px;
+          margin: 0 auto;
+          padding: 0 24px;
+        }
+
+        /* Hero Section */
+        .stf-hero {
+          text-align: center;
+          padding: 80px 0 50px;
+        }
+        .stf-badge {
+          color: #0A7C6E;
+          text-transform: uppercase;
+          font-size: 0.75rem;
+          font-weight: 700;
+          letter-spacing: 1.5px;
+          margin-bottom: 24px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          gap: 10px;
+        }
+        .stf-hero h1 {
+          font-size: 3.5rem;
+          font-weight: 800;
+          margin: 0 0 24px 0;
+          line-height: 1.1;
+          letter-spacing: -1px;
+        }
+        .stf-hero p {
+          font-size: 1.125rem;
+          color: #9ca3af;
+          max-width: 650px;
+          margin: 0 auto;
+          line-height: 1.6;
+        }
+
+        /* Content Card */
+        .stf-card {
+          background-color: #12191d;
+          border: 1px solid #1f2933;
+          border-radius: 8px;
+          padding: 48px;
+        }
+
+        /* Typography & Layout for Legal Content */
+        .stf-policy-section {
+          margin-bottom: 32px;
+        }
+        .stf-policy-section h2 {
+          font-size: 1.2rem;
+          font-weight: 600;
+          color: #ffffff;
+          margin: 0 0 12px 0;
+        }
+        .stf-policy-section p {
+          color: #9ca3af;
+          line-height: 1.7;
+          margin: 0;
+          font-size: 1rem;
+        }
+
+        .stf-contact-details {
+          margin-top: 16px;
+        }
+        .stf-contact-details p {
+          margin-bottom: 6px;
+        }
+        .stf-contact-details p:last-child {
+          margin-bottom: 0;
+        }
+
+        .stf-date-effective {
+          margin-top: 48px;
+          padding-top: 24px;
+          border-top: 1px solid #1f2933;
+          color: #4b5563;
+          font-size: 0.9rem;
+          font-weight: 500;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+          .stf-hero h1 { font-size: 2.5rem; }
+          .stf-card { padding: 32px 24px; }
+          .stf-policy-section h2 { font-size: 1.1rem; }
+        }
+      `}</style>
+
+      <div className="stf-privacy-page">
+        {/* Hero Section */}
+        <section className="stf-hero">
+          <div className="stf-container">
+            <span className="stf-badge">
+              <i className="fa fa-shield" aria-hidden="true"></i>
+              Legal
+            </span>
+            <h1>Terms of Service & Privacy Policy</h1>
+            <p>
+              Staffoo is committed to protecting your privacy and handling your
+              information in accordance with Australian privacy law.
+            </p>
           </div>
-        </div>
-      </section>
+        </section>
+
+        {/* Content Section */}
+        <section>
+          <div className="stf-container">
+            <div className="stf-card">
+
+              {/* Dynamic Sections */}
+              {sections.map((section) => (
+                <article key={section.title} className="stf-policy-section">
+                  <h2>{section.title}</h2>
+                  <p>{section.content}</p>
+                </article>
+              ))}
+
+              {/* Static Contact Section */}
+              <article className="stf-policy-section">
+                <h2>Part 5: Contact Information</h2>
+                <div className="stf-contact-details">
+                  <p>Capital Services Pty Ltd</p>
+                  <p>ABN: 48 613 317 838</p>
+                  <p>
+                    Registered Office: 21 Tanglewood Bvd, Truganina VIC 3029,
+                    Australia
+                  </p>
+                  <p>Email: staffoapp@gmail.com</p>
+                  <p>Phone: 0478916034</p>
+                </div>
+              </article>
+
+              {/* Effective Date */}
+              <div className="stf-date-effective">
+                Effective Date: March 14, 2026.
+              </div>
+
+            </div>
+          </div>
+        </section>
+      </div>
 
       <Footer />
     </>

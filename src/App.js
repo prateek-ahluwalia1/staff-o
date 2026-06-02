@@ -27,10 +27,7 @@ const EditProfile = lazy(() => import("./pages/edit-profile"));
 const PublicProfilePreview = lazy(() => import("./pages/public-profile-view"));
 const MyJobApplications = lazy(() => import("./pages/my-job-application"));
 const RosterPage = lazy(() => import("./pages/roster"));
-const MyFavouriteJobs = lazy(() => import("./pages/my-favourite-jobs"));
 const JobAlerts = lazy(() => import("./pages/job-alerts"));
-const MyFollowings = lazy(() => import("./pages/my-followings"));
-const UserPackages = lazy(() => import("./pages/user-packages"));
 const PaymentHistory = lazy(() => import("./pages/payment-history"));
 const PayChargeRate = lazy(() => import("./pages/PayChargerate"));
 const RatesList = lazy(() => import("./pages/RatesList"));
@@ -234,7 +231,6 @@ function AppContent() {
                     <Route path="/edit-profile" element={<EditProfile />} />
                     <Route path="/add-job" element={<AddJob />} />
                     <Route path="/my-job-applications" element={<MyJobApplications />} />
-                    <Route path="/my-favourite-jobs" element={<MyFavouriteJobs />} />
                     <Route path="/job-alerts" element={<JobAlerts />} />
                     <Route
                         path="/roster"
@@ -260,8 +256,6 @@ function AppContent() {
                             </ProtectedRoute>
                         }
                     />
-                    <Route path="/my-followings" element={<MyFollowings />} />
-                    <Route path="/user-packages" element={<UserPackages />} />
                     <Route path="/payment-history" element={<PaymentHistory />} />
                     <Route path="/pay-charge-rate" element={<PayChargeRate />} />
                     <Route path="/rates/charge" element={<RatesList />} />

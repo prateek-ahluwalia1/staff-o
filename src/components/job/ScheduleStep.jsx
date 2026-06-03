@@ -266,6 +266,7 @@ export default function ScheduleStep({ form, setField, scheduleError = "" }) {
               dateFormat="dd/MM/yyyy"
               placeholderText="Start Date - End Date"
               minDate={new Date()}
+              isClearable
               className="form-control shadow-sm w-100 custom-date-range"
               popperPlacement="bottom-start"
             />
@@ -277,7 +278,7 @@ export default function ScheduleStep({ form, setField, scheduleError = "" }) {
               highlightDates={selectedDateObjects}
               shouldCloseOnSelect={false}
               dateFormat="dd/MM/yyyy"
-              placeholderText="Select Multiple dates"
+              placeholderText="Select dates"
               minDate={new Date()}
               className="form-control form-control-lg shadow-sm w-100 pe-5"
               isClearable

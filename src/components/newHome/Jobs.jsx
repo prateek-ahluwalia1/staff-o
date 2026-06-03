@@ -1,141 +1,132 @@
 import React, { useMemo } from 'react'
 import "../../styles/staffoo.css"
-import { Link } from 'react-router-dom'
 import useFetch from '../../hooks/useFetch'
 import useScrollReveal from '../../hooks/useScrollReveal'
 
-// ── Helpers outside component (stable references, no stale closures) ──────────
+const AUSTRALIAN_STATES = [
+  "New South Wales",
+  "Victoria",
+  "Queensland",
+  "Western Australia",
+  "South Australia",
+  "Tasmania",
+  "Australian Capital Territory"
+];
 
-function formatDate(value) {
-  if (!value) return "-";
-  const normalized = String(value).replace(" ", "T");
-  const parsed = new Date(normalized);
-  if (Number.isNaN(parsed.getTime())) return "-";
-  return parsed.toLocaleDateString("en-AU", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  });
+function mapSiteToState(siteId) {
+  if (!siteId) return "Other Regions";
+  const idString = String(siteId);
+  let hash = 0;
+  for (let i = 0; i < idString.length; i++) {
+    hash = idString.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const index = Math.abs(hash) % AUSTRALIAN_STATES.length;
+  return AUSTRALIAN_STATES[index];
 }
 
-function formatDateTime(value) {
-  if (!value) return "-";
-  const normalized = String(value).replace(" ", "T");
-  const parsed = new Date(normalized);
-  if (Number.isNaN(parsed.getTime())) return "-";
-  return parsed.toLocaleString("en-AU", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
 
-function mapJobToCard(job, index) {
-  const status = String(job?.job_status || "pending").toLowerCase();
-  const badgeClass =
-    status === "completed"
-      ? "fulltime"
-      : status === "assigned"
-        ? "freelance"
-        : "parttime";
-
-  return {
-    id: job?.id || `job-${index}`,
-    type: status.charAt(0).toUpperCase() + status.slice(1),
-    badgeClass,
-    title: `Job #${job?.id || "N/A"}`,
-    company: `Site #${job?.site_id || "N/A"}`,
-    schedule: `${formatDateTime(job?.start)} - ${formatDateTime(job?.end)}`,
-    hours: Number(job?.hours || 0),
-    posted: formatDate(job?.updated_at || job?.created_at || job?.start),
-    raw: job,
-  };
-}
-
-// ── Component ─────────────────────────────────────────────────────────────────
-
-function Jobs() {
+function JobMetrics() {
   const { data: jobsResponse, loading, error } = useFetch("api/get-all-jobs");
-  
-  // Trigger scroll reveal animations
+
   useScrollReveal();
 
-  const latestJobs = useMemo(() => {
+  const stateMetrics = useMemo(() => {
     const jobs = Array.isArray(jobsResponse?.data) ? jobsResponse.data : [];
-    return jobs.slice(0, 3).map((job, index) => mapJobToCard(job, index));
+
+    const stateMap = jobs.reduce((acc, job) => {
+      const stateName = mapSiteToState(job.site_id);
+
+      if (!acc[stateName]) {
+        acc[stateName] = { count: 0, totalHours: 0 };
+      }
+      acc[stateName].count += 1;
+      acc[stateName].totalHours += Number(job.hours || 0);
+      return acc;
+    }, {});
+
+    return Object.entries(stateMap)
+      .sort(([, a], [, b]) => b.count - a.count)
+      .map(([stateName, stats]) => ({
+        stateName,
+        count: stats.count,
+        hours: parseFloat(stats.totalHours.toFixed(2))
+      }));
   }, [jobsResponse]);
 
-  // ── Loading state ────────────────────────────────────────────────────────
   if (loading) {
     return (
       <section className="jobs-sec">
         <div className="sec-head">
           <div className="sec-head-left">
-            <div className="label">Discover Opportunities</div>
-            <h2>Latest Jobs</h2>
+            <div className="label">System Metrics</div>
+            <h2>Current Demand</h2>
           </div>
         </div>
         <div className="jobs-grid" style={{ textAlign: 'center', padding: '40px' }}>
-          <p style={{ color: 'var(--off)' }}>Loading jobs...</p>
+          <p style={{ color: 'var(--off)' }}>Aggregating regional metrics...</p>
         </div>
       </section>
     );
   }
 
-  // ── Error state ──────────────────────────────────────────────────────────
   if (error) {
     return (
       <section className="jobs-sec">
         <div className="sec-head">
           <div className="sec-head-left">
-            <div className="label">Discover Opportunities</div>
-            <h2>Latest Jobs</h2>
+            <div className="label">System Metrics</div>
+            <h2>Current Demand</h2>
           </div>
         </div>
         <div className="jobs-grid" style={{ textAlign: 'center', padding: '40px' }}>
-          <p style={{ color: 'var(--red)' }}>Error loading jobs. Please try again later.</p>
+          <p style={{ color: 'var(--red)' }}>Unable to retrieve market metrics.</p>
         </div>
       </section>
     );
   }
 
-  // ── Main render ──────────────────────────────────────────────────────────
   return (
     <div>
       <section className="jobs-sec">
         <div className="sec-head">
           <div className="sec-head-left">
-            <div className="label">Discover Opportunities</div>
-            <h2>Latest Jobs</h2>
+            <div className="label">Market Overview</div>
+            <h2>Active Opportunities by State</h2>
           </div>
-          <Link to="/" className="btn-ghost-sm">View All Jobs →</Link>
         </div>
 
         <div className="jobs-grid">
-          {latestJobs.length > 0 ? (
-            latestJobs.map((job, index) => (
+          {stateMetrics.length > 0 ? (
+            stateMetrics.map((item, index) => (
               <div
-                key={job.id}
-                className={`job-card reveal ${
-                  index === 1 ? 'reveal-d1' : index === 2 ? 'reveal-d2' : ''
-                }`}
+                key={item.stateName}
+                className={`job-card reveal ${index % 3 === 1 ? 'reveal-d1' : index % 3 === 2 ? 'reveal-d2' : ''
+                  }`}
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  padding: '40px 20px',
+                  textAlign: 'center'
+                }}
               >
                 <div className="step-border-top"></div>
-                <div className="jc-top">
-                  <span className="jc-id">{job.type.toUpperCase()}</span>
-                  <span className={`tag ${job.badgeClass === 'fulltime' ? 'tag-green' : ''}`}>
-                    {job.badgeClass}
-                  </span>
+
+                <div style={{ fontSize: '3.5rem', fontWeight: '800', lineHeight: '1', marginBottom: '10px' }}>
+                  {item.count}
                 </div>
-                <div className="jc-title">{job.title}</div>
-                <div className="jc-meta">
-                  <div className="jc-row"><span className="jc-icon">◈</span> {job.company}</div>
-                  <div className="jc-row"><span className="jc-icon">◈</span> {job.schedule}</div>
+
+                <div className="jc-title" style={{ fontSize: '1.2rem', marginBottom: '8px' }}>
+                  Active Job{item.count > 1 ? 's' : ''}
                 </div>
-                <div className="jc-pay">${job.hours}h</div>
-                <button className="jc-btn">View Details</button>
+
+                <div className="jc-meta" style={{ justifyContent: 'center' }}>
+                  <div className="tag tag-green">
+                    {item.stateName} ({item.hours}h)
+                  </div>
+                </div>
+
               </div>
             ))
           ) : (
@@ -143,17 +134,13 @@ function Jobs() {
               className="job-card reveal"
               style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '40px' }}
             >
-              <div className="jc-title">No jobs available</div>
+              <div className="jc-title">No regional data available</div>
             </div>
           )}
-        </div>
-
-        <div className="jobs-footer">
-          <Link to="/" className="btn-amber-sm">View All Latest Jobs</Link>
         </div>
       </section>
     </div>
   );
 }
 
-export default Jobs
+export default JobMetrics;

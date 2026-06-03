@@ -1,8 +1,8 @@
 import React from 'react'
 import "../../styles/staffoo.css"
 import demographicBanner1 from "../../assets/images/demographic-banner.png"
-import demographicBanner2 from "../../assets/images/demographic1.png"
-import demographicBanner3 from "../../assets/images/demographic2.png"
+import demographicBanner2 from "../../assets/images/demographic1.jpg"
+import demographicBanner3 from "../../assets/images/demographic2.jpg"
 
 function Demographics() {
   return (

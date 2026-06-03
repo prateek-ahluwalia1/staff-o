@@ -13,7 +13,6 @@ import { apiURL } from "./utils/exports";
 
 import ProtectedRoute from "./components/ProtectedRoute";
 import NotificationToast from "./components/NotificationToast";
-import WelfareCallModal from "./components/WelfareCallModal";
 import { useEcho } from "./hooks/useEcho";
 import { logOut } from "./store/slices/authSlice";
 
@@ -50,7 +49,6 @@ const JobTracker = lazy(() => import("./pages/JobTracker"));
 const VisaManagement = lazy(() => import("./pages/VisaManagement"));
 const WFMTools = lazy(() => import("./pages/wfm-tools"));
 const LeaveManagement = lazy(() => import("./pages/LeaveManagement"));
-const CallManagement = lazy(() => import("./pages/callManagement"));
 const PaySlip = lazy(() => import("./pages/PaySlip"));
 const Induction = lazy(() => import("./pages/Induction"));
 const PublicHolidays = lazy(() => import("./pages/PublicHolidays"));
@@ -133,7 +131,6 @@ function AppContent() {
     return (
         <>
             <NotificationToast />
-            <WelfareCallModal />
             <Routes>
                 {/* ===== PUBLIC ROUTES ===== */}
                 <Route
@@ -268,7 +265,6 @@ function AppContent() {
                             </ProtectedRoute>
                         }
                     />
-                    <Route path="/welfare-call" element={<CallManagement />} />
                     <Route
                         path="/leave"
                         element={

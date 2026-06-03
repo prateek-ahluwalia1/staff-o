@@ -2,8 +2,6 @@ import { configureStore } from "@reduxjs/toolkit";
 import authReducer from "./slices/authSlice";
 import notificationReducer from "./slices/notificationSlice";
 import chatReducer from "./slices/chatSlice";
-// import socketMiddleware from "./middleware/socketMiddleware";
-import welfareCallReducer from "./slices/welfareCallSlice";
 import sidebarReducer from "./slices/sidebarSlice";
 import { persistReducer, persistStore } from "redux-persist";
 import storage from "redux-persist/lib/storage";
@@ -24,7 +22,6 @@ const store = configureStore({
     auth: persistedAuthReducer,
     notifications: notificationReducer,
     chat: chatReducer,
-    welfareCall: welfareCallReducer,
     sidebar: sidebarReducer,
   },
   middleware: (getDefaultMiddleware) =>
@@ -33,7 +30,6 @@ const store = configureStore({
         ignoredActions: [FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER],
       },
     }),
-  // }).concat(socketMiddleware),
 });
 
 export const persistor = persistStore(store);

@@ -101,7 +101,18 @@ const TfnDeclarationForm = ({ values, loading, onChange, onSubmit, dataModified 
         <div className="row g-3 mb-3">
             <div className="col-md-2">
                 <label className="form-label small fw-bold text-muted">Title <span className="text-danger">*</span></label>
-                <input type="text" className="form-control" name="title" placeholder="Mr/Ms" maxLength="10" value={values.title} onChange={onChange} required />
+                <select
+                    className="form-select"
+                    name="title"
+                    value={values.title}
+                    onChange={onChange}
+                    required
+                >
+                    <option value="" disabled>Select</option>
+                    <option value="Mr">Mr</option>
+                    <option value="Ms">Ms</option>
+                    <option value="Mrs">Mrs</option>
+                </select>
             </div>
             <div className="col-md-5">
                 <label className="form-label small fw-bold text-muted">First Name <span className="text-danger">*</span></label>

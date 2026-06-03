@@ -134,7 +134,7 @@ function CardForm({
         style={{ background: "#0A7C6E" }}
       >
         <span className="text-white small">{jobTitle || "Job posting"}</span>
-        <span className="fw-bold fs-5" style={{ color: "#0A7C6E" }}>
+        <span className="fw-bold fs-5" style={{ color: "#FFF" }}>
           {fmt(amountAud)}
         </span>
       </div>
@@ -152,8 +152,8 @@ function CardForm({
             <button
               type="button"
               className={`btn btn-sm ${paymentMode === "saved"
-                  ? "btn-primary-custom"
-                  : "btn-outline-primary"
+                ? "btn-primary-custom"
+                : "btn-outline-primary"
                 }`}
               onClick={() => {
                 setPaymentMode("saved");
@@ -166,8 +166,8 @@ function CardForm({
             <button
               type="button"
               className={`btn btn-sm ${paymentMode === "new"
-                  ? "btn-primary-custom"
-                  : "btn-outline-primary"
+                ? "btn-primary-custom"
+                : "btn-outline-primary"
                 }`}
               onClick={() => {
                 setPaymentMode("new");

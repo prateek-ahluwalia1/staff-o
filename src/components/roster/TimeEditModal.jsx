@@ -125,15 +125,15 @@ export default function TimeEditModal({
               width: "36px",
               height: "36px",
               borderRadius: "50%",
-              border: "1px solid #e5e7eb",
-              background: "#fff",
+              border: "1px solid #fff",
+              background: "#0A7C6E",
               color: "#111827",
               fontSize: "18px",
               lineHeight: 1,
               cursor: "pointer",
             }}
           >
-            ×
+            <i className="fa fa-times" style={{ color: "#fff" }}></i>
           </button>
         </div>
 

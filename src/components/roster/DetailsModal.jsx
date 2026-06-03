@@ -454,15 +454,16 @@ export default function DetailsModal({
             </h3>
             <button
               onClick={closeModal}
-              className="btn btn-danger text-white rounded-circle d-flex align-items-center justify-content-center p-0"
+              className="text-white rounded-circle d-flex align-items-center justify-content-center p-0"
               style={{
                 width: "32px",
                 height: "32px",
                 fontSize: "18px",
                 border: "none",
+                background: "#0A7C6E",
               }}
             >
-              &times;
+              <i className="fa fa-times"></i>
             </button>
           </div>
 

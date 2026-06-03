@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { NavLink, useNavigate } from "react-router-dom";
+import { NavLink, useNavigate, useLocation } from "react-router-dom"; // Added useLocation
 import { useDispatch } from "react-redux";
 import { setToken, setUser } from "../store/slices/authSlice";
 import useSubmit from "../hooks/useSubmit";
@@ -14,10 +14,13 @@ import {
 
 export default function Register() {
   const navigate = useNavigate();
+  const location = useLocation(); // Hook to access the route state
   const dispatch = useDispatch();
   const { submit, loading } = useSubmit();
 
-  const [userType, setUserType] = useState("contractor");
+  // Initialize role based on router state, fallback to "contractor" if accessed directly
+  const [userType, setUserType] = useState(location.state?.role || "contractor");
+
   const [showPassword, setShowPassword] = useState(false);
   const [showVerifyModal, setShowVerifyModal] = useState(false);
 
@@ -59,12 +62,9 @@ export default function Register() {
     const { name, value } = e.target;
     let newValue = value;
 
-    // Input constraints: Prevent typing invalid characters
     if (name === "name") {
-      // Allow only letters and spaces
       newValue = value.replace(/[^a-zA-Z\s]/g, "");
     } else if (name === "phone") {
-      // Allow only numbers, plus sign, spaces, and dashes
       newValue = value.replace(/[^\d+\s-]/g, "");
     }
 
@@ -73,33 +73,27 @@ export default function Register() {
       [name]: newValue,
     }));
 
-    // Clear error for a specific field when the user starts typing
     if (errors[name]) {
       setErrors((prev) => ({ ...prev, [name]: null }));
     }
   };
 
-  // Comprehensive Validation function
   const validateForm = () => {
     const newErrors = {};
 
-    // Name Validation
     if (!formData.name.trim()) {
       newErrors.name = "Full name is required.";
     } else if (formData.name.trim().length < 2) {
       newErrors.name = "Full name must be at least 2 characters.";
     }
 
-    // Phone Validation (Optional, but validated if provided)
     if (formData.phone.trim()) {
-      // Strips spaces/dashes to check pure digit length
       const pureDigits = formData.phone.replace(/[\s-]/g, '');
       if (!/^\+?\d{10,15}$/.test(pureDigits)) {
         newErrors.phone = "Please enter a valid phone number (10-15 digits).";
       }
     }
 
-    // Email Validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!formData.email.trim()) {
       newErrors.email = "Email address is required.";
@@ -107,7 +101,6 @@ export default function Register() {
       newErrors.email = "Please enter a valid email address.";
     }
 
-    // Password Validation
     if (!formData.password) {
       newErrors.password = "Password is required.";
     } else if (formData.password.length < 8) {
@@ -142,7 +135,6 @@ export default function Register() {
     }
 
     toast.success("Account created successfully!");
-    // Trigger verification modal instead of navigating immediately
     setShowVerifyModal(true);
   };
 

@@ -1,9 +1,16 @@
 import React from 'react'
 import "../../styles/staffoo.css"
 import { Link } from 'react-router-dom'
+import { useSelector } from 'react-redux'
 import heroImg from "../../assets/images/hero-img.jpg"
 
 function Hero() {
+  // Check if the user is authenticated
+  const { token } = useSelector((state) => state.auth)
+
+  // Determine the correct path based on authentication status
+  const targetRoute = token ? "/dashboard" : "/login"
+
   return (
     <>
       <section className="hero">
@@ -18,8 +25,8 @@ function Hero() {
           </h1>
           <p className="hero-desc">Whether you're hiring security staff, looking for verified shifts, or managing assignments across Australia — Staffoo makes it fast, compliant, and reliable.</p>
           <div className="hero-ctas">
-            <Link to="/" className="btn-primary">Find Security Jobs</Link>
-            <Link to="/" className="btn-secondary">Post a Job</Link>
+            <Link to={targetRoute} className="btn-primary">Find Security Jobs</Link>
+            <Link to={targetRoute} className="btn-secondary">Post a Job</Link>
           </div>
           <div className="hero-stats">
             <div className="h-stat">

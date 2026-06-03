@@ -741,7 +741,7 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
           <>
             <div className="dashboard-page-header mb-4 bg-white p-4 rounded-4 shadow-sm border border-light d-flex flex-wrap justify-content-between align-items-center gap-3">
               <div>
-                <h1 className="h4 fw-bold text-dark mb-1">Create Job {`(Current Level is: ${calculatedLevel})`}</h1>
+                <h1 className="h4 fw-bold text-dark mb-1">Create Job</h1>
                 <p className="text-muted mb-0">Follow the steps to add a new job</p>
                 {!isEmbedded && <StepProgress step={step} titles={STEP_TITLES} />}
               </div>

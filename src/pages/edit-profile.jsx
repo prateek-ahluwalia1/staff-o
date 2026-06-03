@@ -1497,7 +1497,7 @@ export default function EditProfile() {
                       style={{
                         width: "100%",
                         height: "100%",
-                        maxHeight: "400px",
+                        maxHeight: "200px",
                         objectFit: "contain",
                         borderRadius: "8px",
                         opacity: uploadLoading ? 0.3 : 1,

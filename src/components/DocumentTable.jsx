@@ -60,7 +60,6 @@ export default function DocumentTable({ documents, onAddFile, onAddDocument, use
           <tbody>
             {documents && documents.length > 0 ? (
               documents.map((doc, idx) => {
-                // Determine if this is an existing file being edited by a staff member
                 const isStaffEditingExisting = userType === "staff" && doc.file;
 
                 return (

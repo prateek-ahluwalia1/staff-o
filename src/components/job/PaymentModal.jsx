@@ -31,6 +31,7 @@ function fmt(v) {
     return new Intl.NumberFormat("en-AU", {
       style: "currency",
       currency: "AUD",
+      minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     }).format(v);
   } catch {
@@ -55,20 +56,17 @@ function CardForm({
   const [cardComplete, setCardComplete] = useState(false);
   const [cardHolderName, setCardHolderName] = useState("");
 
-  // Restored Tabs & Selection State
   const [paymentMode, setPaymentMode] = useState(savedCards.length > 0 ? "saved" : "new");
   const [selectedSavedIndex, setSelectedSavedIndex] = useState(0);
 
   const cardholderValid = cardHolderName.trim().length >= 2;
 
-  // Submission always requires the Stripe form to be filled
   const canSubmit =
     !stripeDisabled &&
     Boolean(stripe) &&
     cardComplete &&
     cardholderValid;
 
-  // Auto-fill the card holder name input if they select a saved card
   useEffect(() => {
     if (paymentMode === "saved" && savedCards[selectedSavedIndex]) {
       const name = savedCards[selectedSavedIndex].card_holder_name;
@@ -94,7 +92,6 @@ function CardForm({
         return;
       }
 
-      // Always process through Stripe Elements securely
       const { paymentMethod, error } = await stripe.createPaymentMethod({
         type: "card",
         card: cardElement,
@@ -147,7 +144,6 @@ function CardForm({
           >
             Payment Method
           </label>
-          {/* TABS */}
           <div className="d-flex gap-2 mb-3">
             <button
               type="button"
@@ -179,7 +175,6 @@ function CardForm({
             </button>
           </div>
 
-          {/* SAVED CARDS VIEW (Full Details) */}
           {paymentMode === "saved" && (
             <div className="border rounded p-2" style={{ backgroundColor: "#f8f9fa" }}>
               <div className="text-muted small mb-2 px-1">
@@ -218,7 +213,6 @@ function CardForm({
                         {rawNumber || "No card number available"}
                       </div>
 
-                      {/* Optional: Show expiry or CVV if your backend provides it */}
                       <div className="d-flex gap-3 mt-1 text-muted small">
                         {card?.expiry && <span>Exp: {card.expiry}</span>}
                         {card?.cvv && <span>CVV: {card.cvv}</span>}
@@ -232,7 +226,6 @@ function CardForm({
         </div>
       )}
 
-      {/* --- SECURE STRIPE ENTRY --- */}
       <div className="mb-3">
         <label
           className="form-label fw-semibold mb-2"
@@ -266,7 +259,6 @@ function CardForm({
 
       {cardError && <div className="text-danger small mb-2">{cardError}</div>}
 
-      {/* --- STRIPE BRANDING --- */}
       <div className="d-flex justify-content-center align-items-center mt-4 mb-2 gap-1 opacity-75">
         <span className="text-muted fw-medium" style={{ fontSize: "12px" }}>
           Powered by
@@ -333,7 +325,6 @@ export default function PaymentModal({
           &times;
         </button>
 
-        {/* --- HEADER WITH STRIPE SECURITY INDICATOR --- */}
         <div className="d-flex justify-content-between align-items-start mb-4 pe-4">
           <div>
             <h5 className="fw-bold mb-1">Complete Payment</h5>

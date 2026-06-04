@@ -481,7 +481,6 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
     else if (isEmbedded && onClose) onClose();
     else navigate(-1);
   }
-
   function buildJobPayload(document_list = []) {
     const shiftsPayload = form.scheduleDays.flatMap(day =>
       day.shifts.map(shift => {

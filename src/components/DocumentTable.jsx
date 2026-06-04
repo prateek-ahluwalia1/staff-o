@@ -1,6 +1,5 @@
 import React from "react";
 import { apiURL } from "../utils/exports";
-import { Link } from 'react-router-dom';
 
 export default function DocumentTable({ documents, onAddFile, onAddDocument, userType }) {
   return (
@@ -79,7 +78,7 @@ export default function DocumentTable({ documents, onAddFile, onAddDocument, use
                     <td style={{ padding: "10px 16px", verticalAlign: "middle", border: "none" }}>{doc.document_expiry || "-"}</td>
                     <td style={{ padding: "10px 16px", verticalAlign: "middle", border: "none" }}>
                       {doc.file ? (
-                        <Link href={`${apiURL}staff_documents/${doc.file}`}
+                        <a href={`${apiURL}staff_documents/${doc.file}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           title="View file"
@@ -96,7 +95,7 @@ export default function DocumentTable({ documents, onAddFile, onAddDocument, use
                           onMouseOut={(e) => (e.currentTarget.style.background = "#eaf1fb")}
                         >
                           <i className="fa fa-eye" aria-hidden="true"></i>
-                        </Link>
+                        </a>
                       ) : (
                         <button
                           type="button"

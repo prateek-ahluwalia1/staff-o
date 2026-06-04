@@ -1,7 +1,14 @@
 import React from "react";
 
 function fmt(v) {
-  try { return new Intl.NumberFormat("en-AU", { style: "currency", currency: "AUD", maximumFractionDigits: 2 }).format(v); }
+  try {
+    return new Intl.NumberFormat("en-AU", {
+      style: "currency",
+      currency: "AUD",
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }).format(v);
+  }
   catch { return `$${Number(v).toFixed(2)}`; }
 }
 
@@ -15,7 +22,7 @@ export default function RateBreakdown({ rate, jobTypeLabel = "Security Guard", p
   // STRICT ROUNDING
   const discountAmount = paymentOption === "full" ? roundToTwo(chargeTotalIncGst * 0.05) : 0;
 
-  // Subtracting ensures the parts exactly add up to the whole (e.g. 841.50 - 42.08 = 799.42)
+  // Subtracting ensures the parts exactly add up to the whole
   const amountDueToday = paymentOption === "full"
     ? roundToTwo(chargeTotalIncGst - discountAmount)
     : roundToTwo(chargeTotalIncGst * 0.50);

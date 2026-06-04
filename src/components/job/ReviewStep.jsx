@@ -13,7 +13,14 @@ const formatDisplayDate = (dateStr) => {
 };
 
 function fmt(v) {
-  try { return new Intl.NumberFormat("en-AU", { style: "currency", currency: "AUD", maximumFractionDigits: 2 }).format(v); }
+  try {
+    return new Intl.NumberFormat("en-AU", {
+      style: "currency",
+      currency: "AUD",
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }).format(v);
+  }
   catch { return `$${Number(v).toFixed(2)}`; }
 }
 
@@ -23,7 +30,7 @@ export default function ReviewStep({ form, rate, setField, handleConfirm, setSte
   const JOB_TYPE_LABELS = { "event-security": "Event Security", "static-security": "Static Security Guard", "corporate-security": "Corporate Security", "site-patrol": "Site Patrol Security", "others": "Others" };
   const jobTypeLabel = form.jobType === "others" && form.customJobType ? form.customJobType : JOB_TYPE_LABELS[form.jobType] || form.jobType || "Security Guard";
 
-  // STRICT ROUNDING TO FIX STRIPE DRIFT
+  // STRICT ROUNDING
   const fullDiscount = roundToTwo(baseAmount * 0.05);
   const fullTotal = roundToTwo(baseAmount - fullDiscount);
   const splitUpfront = roundToTwo(baseAmount * 0.50);

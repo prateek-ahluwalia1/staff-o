@@ -551,6 +551,7 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
   async function handleHoldPayment({ paymentMethodId, cardHolderName, savedCard }) {
     if (!pendingDraft?.payload) return { success: false, message: "Missing job draft." };
     const holdBody = {
+      job_level: calculatedLevel,
       shifts: pendingDraft.payload.shifts, user_id: Number(pendingDraft.payload.user_id), card_holder_name: cardHolderName || savedCard?.card_holder_name || "",
       payment_method_id: paymentMethodId || savedCard?.payment_method_id || null, payment_option: pendingDraft.payload.payment_option,
       amount_to_charge: pendingDraft.payload.financials.amount_to_charge_today, requires_110_buffer: true

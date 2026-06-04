@@ -52,6 +52,9 @@ export function mapApiRates(chargeRecord, payRecord = null, prefix = "def_metro"
   };
 }
 
+// STRICT ROUNDING UTILITY
+const roundToTwo = (num) => Math.round((num + Number.EPSILON) * 100) / 100;
+
 export function computeShiftBreakdown(scheduleDays, rates = null) {
   if (!scheduleDays || !Array.isArray(scheduleDays) || scheduleDays.length === 0 || !rates) return null;
 
@@ -106,12 +109,13 @@ export function computeShiftBreakdown(scheduleDays, rates = null) {
   const segments = keyOrder.map((key) => {
     const [dayType, slot] = key.split("_");
 
-    const billableHours = Number(hoursMap.get(key).toFixed(2));
+    // Apply strict rounding mathematically instead of string toFixed
+    const billableHours = roundToTwo(hoursMap.get(key));
     const payRate = rates.pay[dayType]?.[slot] ?? 0;
     const chargeRate = rates.charge[dayType]?.[slot] ?? 0;
 
-    const payAmt = Number((payRate * billableHours).toFixed(2));
-    const chargeAmt = Number((chargeRate * billableHours).toFixed(2));
+    const payAmt = roundToTwo(payRate * billableHours);
+    const chargeAmt = roundToTwo(chargeRate * billableHours);
 
     payTotal += payAmt;
     chargeTotal += chargeAmt;
@@ -128,21 +132,21 @@ export function computeShiftBreakdown(scheduleDays, rates = null) {
     };
   });
 
-  payTotal = Number(payTotal.toFixed(2));
-  chargeTotal = Number(chargeTotal.toFixed(2));
+  payTotal = roundToTwo(payTotal);
+  chargeTotal = roundToTwo(chargeTotal);
 
   const GST_RATE = 0.1;
-  const payGst = Number((payTotal * GST_RATE).toFixed(2));
-  const chargeGst = Number((chargeTotal * GST_RATE).toFixed(2));
+  const payGst = roundToTwo(payTotal * GST_RATE);
+  const chargeGst = roundToTwo(chargeTotal * GST_RATE);
 
   return {
     segments,
-    totalHours: Number(totalBillableHours.toFixed(2)),
+    totalHours: roundToTwo(totalBillableHours),
     payTotal,
     chargeTotal,
     payGst,
     chargeGst,
-    payTotalIncGst: Number((payTotal + payGst).toFixed(2)),
-    chargeTotalIncGst: Number((chargeTotal + chargeGst).toFixed(2)),
+    payTotalIncGst: roundToTwo(payTotal + payGst),
+    chargeTotalIncGst: roundToTwo(chargeTotal + chargeGst),
   };
 }

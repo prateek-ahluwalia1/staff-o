@@ -137,6 +137,7 @@ export default function LocationStep({
     if (!googleReady || !inputRef.current || autocompleteRef.current) return;
 
     autocompleteRef.current = new window.google.maps.places.Autocomplete(inputRef.current, {
+      componentRestrictions: { country: "au" },
       fields: ["name", "address_components", "geometry", "formatted_address"],
     });
 

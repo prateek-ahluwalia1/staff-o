@@ -51,11 +51,12 @@ const Invoice = () => {
     abn: "",
     description: "",
   });
+
   const [to, setTo] = useState({
     name: "",
     email: "",
     phone: "",
-    abn: "",
+    acn: "", // Changed from abn to acn
     description: "",
   });
 
@@ -80,8 +81,8 @@ const Invoice = () => {
       setFrom({
         name: uData?.name || uData?.company_name || "The Scouts",
         email: uData?.email || "",
-        phone: uData?.phone || "",
-        abn: uData?.registration_number || "",
+        phone: "1800 782 366", // Hardcoded Phone
+        abn: "48 613 317 838", // Hardcoded ABN
         description: "",
       });
     }
@@ -95,8 +96,8 @@ const Invoice = () => {
   };
 
   const handleToChange = (updatedTo) => {
-    if (updatedTo.abn !== undefined) {
-      updatedTo.abn = updatedTo.abn.replace(/\D/g, "").slice(0, 11);
+    if (updatedTo.acn !== undefined) {
+      updatedTo.acn = updatedTo.acn.replace(/\D/g, "").slice(0, 11);
     }
     setTo((prev) => ({
       ...updatedTo,
@@ -115,11 +116,11 @@ const Invoice = () => {
         name: customer.name || "",
         email: customer.email || "",
         phone: customer.phone || customer.customer?.phone || "",
-        abn: customer.customer?.registration_number || "",
+        acn: customer.customer?.registration_number || "", // Use ACN
         description: "",
       });
     } else {
-      setTo({ name: "", email: "", phone: "", abn: "", description: "" });
+      setTo({ name: "", email: "", phone: "", acn: "", description: "" });
     }
   };
 

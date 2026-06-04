@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { toast } from "react-toastify";
 import PDFGenerator from "../utils/PDFGenerator";
 import { apiURL } from "../utils/exports";
@@ -14,9 +14,7 @@ const SectionTitle = ({ children, className = "" }) => (
 const ActionBar = ({ loading, saveLabel, disabled }) => (
     <div className="d-flex justify-content-end pt-3 border-top mt-4">
         <button type="submit" className="btn btn-primary-custom fw-bold px-4"
-            style={{
-                color: disabled ? "#ccc" : "#fff"
-            }}
+            style={{ color: disabled ? "#ccc" : "#fff" }}
             disabled={loading || disabled}>
             {loading ? "Saving..." : saveLabel}
         </button>
@@ -33,7 +31,6 @@ const AddressAutocomplete = ({ value, name, onChange, placeholder, required }) =
 
         const initMap = () => {
             if (!inputRef.current || !window.google?.maps?.places) return;
-
             if (inputRef.current.getAttribute("data-gmaps-initialized")) return;
 
             autocomplete = new window.google.maps.places.Autocomplete(inputRef.current, {
@@ -51,9 +48,7 @@ const AddressAutocomplete = ({ value, name, onChange, placeholder, required }) =
                     return;
                 }
 
-                const event = {
-                    target: { name, value: place.formatted_address, type: "text" }
-                };
+                const event = { target: { name, value: place.formatted_address, type: "text" } };
                 onChange(event);
             });
         };
@@ -101,13 +96,7 @@ const TfnDeclarationForm = ({ values, loading, onChange, onSubmit, dataModified 
         <div className="row g-3 mb-3">
             <div className="col-md-2">
                 <label className="form-label small fw-bold text-muted">Title <span className="text-danger">*</span></label>
-                <select
-                    className="form-select"
-                    name="title"
-                    value={values.title}
-                    onChange={onChange}
-                    required
-                >
+                <select className="form-select" name="title" value={values.title} onChange={onChange} required>
                     <option value="" disabled>Select</option>
                     <option value="Mr">Mr</option>
                     <option value="Ms">Ms</option>
@@ -135,13 +124,7 @@ const TfnDeclarationForm = ({ values, loading, onChange, onSubmit, dataModified 
         <SectionTitle className="mt-4">Residential Address</SectionTitle>
         <div className="mb-3">
             <label className="form-label small fw-bold text-muted">Full Address <span className="text-danger">*</span></label>
-            <AddressAutocomplete
-                name="address"
-                value={values.address}
-                onChange={onChange}
-                placeholder="Street address, suburb, state, postcode"
-                required={true}
-            />
+            <AddressAutocomplete name="address" value={values.address} onChange={onChange} placeholder="Street address, suburb, state, postcode" required={true} />
         </div>
 
         <SectionTitle className="mt-4">Employment</SectionTitle>
@@ -283,7 +266,6 @@ const SuperannuationForm = ({ values, loading, onChange, onSubmit, dataModified 
 );
 
 const EmployeeOnboardingForm = ({ values, loading, onChange, onSubmit, dataModified, onDocUpload }) => {
-    // Helper to resolve paths back to viewable URLs
     const resolveDocUrl = (pathOrUrl) => {
         if (!pathOrUrl) return "";
         if (pathOrUrl.startsWith("http")) return pathOrUrl;
@@ -304,13 +286,7 @@ const EmployeeOnboardingForm = ({ values, loading, onChange, onSubmit, dataModif
                 </div>
                 <div className="col-md-6">
                     <label className="form-label small fw-bold text-muted">Residential Address <span className="text-danger">*</span></label>
-                    <AddressAutocomplete
-                        name="o_addr"
-                        value={values.o_addr}
-                        onChange={onChange}
-                        placeholder="Street address, suburb, state, postcode"
-                        required={true}
-                    />
+                    <AddressAutocomplete name="o_addr" value={values.o_addr} onChange={onChange} placeholder="Street address, suburb, state, postcode" required={true} />
                 </div>
                 <div className="col-md-6">
                     <label className="form-label small fw-bold text-muted">Mobile Phone <span className="text-danger">*</span></label>
@@ -498,136 +474,125 @@ const EmployeeOnboardingForm = ({ values, loading, onChange, onSubmit, dataModif
     );
 };
 
+
+const getTodayDate = () => {
+    const today = new Date();
+    const offset = today.getTimezoneOffset() * 60000;
+    const localISOTime = (new Date(today - offset)).toISOString().slice(0, 10);
+    return localISOTime;
+};
+
+const toDateValue = (value) => {
+    if (!value) return getTodayDate();
+    return String(value).split("T")[0];
+};
+
+const normalizeTfnData = (data) => ({
+    tfn: data?.tfn ?? "",
+    title: data?.title ?? "",
+    first_name: data?.first_name ?? "",
+    surname: data?.surname ?? "",
+    prev_name: data?.previous_name ?? data?.prev_name ?? "",
+    dob: toDateValue(data?.dob),
+    address: data?.address ?? "",
+    basis: data?.basis_of_payment ?? data?.basis ?? "casual",
+    aus_res: String(data?.australian_resident ?? data?.aus_res ?? "").toLowerCase() === "1" ? "yes" : String(data?.australian_resident ?? data?.aus_res ?? "").toLowerCase() === "yes" ? "yes" : "no",
+    threshold: String(data?.claim_threshold ?? data?.threshold ?? "").toLowerCase() === "1" ? "yes" : String(data?.claim_threshold ?? data?.threshold ?? "").toLowerCase() === "yes" ? "yes" : "no",
+    help: String(data?.help_debt ?? data?.help ?? "").toLowerCase() === "1" ? "yes" : String(data?.help_debt ?? data?.help ?? "").toLowerCase() === "yes" ? "yes" : "no",
+    sig1: data?.signature ?? data?.sig1 ?? "",
+    date1: toDateValue(data?.signed_date ?? data?.date1),
+});
+
+const normalizeSuperData = (data) => ({
+    s_name: data?.full_name ?? data?.s_name ?? "",
+    s_empno: data?.employee_number ?? data?.s_empno ?? "",
+    fund_choice: data?.fund_choice ?? "employer",
+    s_fundname: data?.fund_name ?? data?.s_fundname ?? "",
+    s_fundabn: data?.fund_abn ?? data?.s_fundabn ?? "",
+    s_usi: data?.fund_usi ?? data?.s_usi ?? "",
+    s_member: data?.member_account ?? data?.s_member ?? "",
+    sig2: data?.signature ?? data?.sig2 ?? "",
+    date2: toDateValue(data?.signed_date ?? data?.date2),
+});
+
+const normalizeOnboardData = (data) => ({
+    o_name: data?.full_name ?? data?.o_name ?? "",
+    o_dob: toDateValue(data?.dob ?? data?.o_dob),
+    o_addr: data?.address ?? data?.o_addr ?? "",
+    o_phone: data?.mobile ?? data?.o_phone ?? "",
+    o_email: data?.email ?? data?.o_email ?? "",
+    o_passport: data?.passport_number ?? data?.o_passport ?? "",
+    o_pcountry: data?.passport_country ?? data?.o_pcountry ?? "",
+    o_pexpiry: toDateValue(data?.passport_expiry ?? data?.o_pexpiry),
+    work: data?.work_rights ?? data?.work ?? "citizen",
+    passport_doc: data?.passport_doc ?? "",
+    chk_primary: Boolean(data?.id_checks?.primary_id ?? data?.chk_primary ?? false),
+    chk_driver: Boolean(data?.id_checks?.drivers_license ?? data?.chk_driver ?? false),
+    chk_security: Boolean(data?.id_checks?.security_license ?? data?.chk_security ?? false),
+    chk_medicare: Boolean(data?.id_checks?.medicare_or_utility ?? data?.chk_medicare ?? false),
+    o_bank: data?.bank_name ?? data?.o_bank ?? "",
+    o_bsb: data?.bsb ?? data?.o_bsb ?? "",
+    o_acct: data?.account_number ?? data?.o_acct ?? "",
+    o_tfn: data?.tfn ?? data?.o_tfn ?? "",
+    o_superfund: data?.super_fund ?? data?.o_superfund ?? "",
+    o_superusi: data?.super_usi ?? data?.o_superusi ?? "",
+    o_member: data?.super_member ?? data?.o_member ?? "",
+    o_seclic: data?.security_license ?? data?.o_seclic ?? "",
+    o_seclicexp: toDateValue(data?.security_license_expiry ?? data?.o_seclicexp),
+    security_license_doc: data?.security_license_doc ?? "",
+    o_fa: data?.first_aid_cert ?? data?.o_fa ?? "",
+    o_faexp: toDateValue(data?.first_aid_expiry ?? data?.o_faexp),
+    first_aid_doc: data?.first_aid_doc ?? data?.first_aid ?? "",
+    sig3: data?.signature ?? data?.sig3 ?? "",
+    date3: toDateValue(data?.signed_date ?? data?.date3),
+});
+
+// ─── MAIN COMPONENT ──────────────────────────────────────────────────────────
 const StaffOnboardingForms = ({ submit, userId }) => {
     const [subTab, setSubTab] = useState(0);
     const [loading, setLoading] = useState(false);
     const [dataModified, setDataModified] = useState(false);
     const [formDataLoading, setFormDataLoading] = useState(true);
 
-    // Store original data for change detection
     const [originalTfnForm, setOriginalTfnForm] = useState(null);
     const [originalSuperForm, setOriginalSuperForm] = useState(null);
     const [originalOnboardForm, setOriginalOnboardForm] = useState(null);
 
-    // 1. TFN Form State
-    const [tfnForm, setTfnForm] = useState({
-        tfn: "", title: "", first_name: "", surname: "", prev_name: "", dob: "",
-        address: "", basis: "casual", aus_res: "yes", threshold: "yes", help: "no",
-        sig1: "", date1: new Date().toISOString().split('T')[0]
-    });
+    const [tfnForm, setTfnForm] = useState(normalizeTfnData({}));
+    const [superForm, setSuperForm] = useState(normalizeSuperData({}));
+    const [onboardForm, setOnboardForm] = useState(normalizeOnboardData({}));
 
-    // 2. Superannuation Form State
-    const [superForm, setSuperForm] = useState({
-        s_name: "", s_empno: "", fund_choice: "employer", s_fundname: "", s_fundabn: "",
-        s_usi: "", s_member: "", sig2: "", date2: new Date().toISOString().split('T')[0]
-    });
+    // Data fetching logic decoupled to allow re-fetching on save
+    const fetchFormData = useCallback(async (formType) => {
+        try {
+            const endpoint = `api/form-data?user_id=${encodeURIComponent(userId)}&type=${encodeURIComponent(formType)}`;
+            const res = await submit(endpoint, undefined, { method: "GET", silentErrorToast: true });
+            const fetchedData = res?.data ?? res;
 
-    // 3. Employee Onboarding Form State
-    const [onboardForm, setOnboardForm] = useState({
-        o_name: "", o_dob: "", o_addr: "", o_phone: "", o_email: "", o_passport: "",
-        o_pcountry: "", o_pexpiry: "", work: "citizen", passport_doc: "",
-        chk_primary: false, chk_driver: false, chk_security: false, chk_medicare: false,
-        o_bank: "", o_bsb: "", o_acct: "", o_tfn: "", o_superfund: "", o_superusi: "",
-        o_member: "", o_seclic: "", o_seclicexp: "", security_license_doc: "",
-        o_fa: "", o_faexp: "", first_aid_doc: "",
-        sig3: "", date3: new Date().toISOString().split('T')[0]
-    });
-
-    // Fetch existing form data on mount
-    useEffect(() => {
-        const toDateValue = (value) => {
-            if (!value) return "";
-            return String(value).split("T")[0];
-        };
-
-        const normalizeTfnData = (data) => ({
-            tfn: data?.tfn ?? "",
-            title: data?.title ?? "",
-            first_name: data?.first_name ?? "",
-            surname: data?.surname ?? "",
-            prev_name: data?.previous_name ?? data?.prev_name ?? "",
-            dob: toDateValue(data?.dob),
-            address: data?.address ?? "",
-            basis: data?.basis_of_payment ?? data?.basis ?? "casual",
-            aus_res: String(data?.australian_resident ?? data?.aus_res ?? "").toLowerCase() === "1" ? "yes" : String(data?.australian_resident ?? data?.aus_res ?? "").toLowerCase() === "yes" ? "yes" : "no",
-            threshold: String(data?.claim_threshold ?? data?.threshold ?? "").toLowerCase() === "1" ? "yes" : String(data?.claim_threshold ?? data?.threshold ?? "").toLowerCase() === "yes" ? "yes" : "no",
-            help: String(data?.help_debt ?? data?.help ?? "").toLowerCase() === "1" ? "yes" : String(data?.help_debt ?? data?.help ?? "").toLowerCase() === "yes" ? "yes" : "no",
-            sig1: data?.signature ?? data?.sig1 ?? "",
-            date1: toDateValue(data?.signed_date ?? data?.date1),
-        });
-
-        const normalizeSuperData = (data) => ({
-            s_name: data?.full_name ?? data?.s_name ?? "",
-            s_empno: data?.employee_number ?? data?.s_empno ?? "",
-            fund_choice: data?.fund_choice ?? "employer",
-            s_fundname: data?.fund_name ?? data?.s_fundname ?? "",
-            s_fundabn: data?.fund_abn ?? data?.s_fundabn ?? "",
-            s_usi: data?.fund_usi ?? data?.s_usi ?? "",
-            s_member: data?.member_account ?? data?.s_member ?? "",
-            sig2: data?.signature ?? data?.sig2 ?? "",
-            date2: toDateValue(data?.signed_date ?? data?.date2),
-        });
-
-        const normalizeOnboardData = (data) => ({
-            o_name: data?.full_name ?? data?.o_name ?? "",
-            o_dob: toDateValue(data?.dob ?? data?.o_dob),
-            o_addr: data?.address ?? data?.o_addr ?? "",
-            o_phone: data?.mobile ?? data?.o_phone ?? "",
-            o_email: data?.email ?? data?.o_email ?? "",
-            o_passport: data?.passport_number ?? data?.o_passport ?? "",
-            o_pcountry: data?.passport_country ?? data?.o_pcountry ?? "",
-            o_pexpiry: toDateValue(data?.passport_expiry ?? data?.o_pexpiry),
-            work: data?.work_rights ?? data?.work ?? "citizen",
-            passport_doc: data?.passport_doc ?? "",
-            chk_primary: Boolean(data?.id_checks?.primary_id ?? data?.chk_primary ?? false),
-            chk_driver: Boolean(data?.id_checks?.drivers_license ?? data?.chk_driver ?? false),
-            chk_security: Boolean(data?.id_checks?.security_license ?? data?.chk_security ?? false),
-            chk_medicare: Boolean(data?.id_checks?.medicare_or_utility ?? data?.chk_medicare ?? false),
-            o_bank: data?.bank_name ?? data?.o_bank ?? "",
-            o_bsb: data?.bsb ?? data?.o_bsb ?? "",
-            o_acct: data?.account_number ?? data?.o_acct ?? "",
-            o_tfn: data?.tfn ?? data?.o_tfn ?? "",
-            o_superfund: data?.super_fund ?? data?.o_superfund ?? "",
-            o_superusi: data?.super_usi ?? data?.o_superusi ?? "",
-            o_member: data?.super_member ?? data?.o_member ?? "",
-            o_seclic: data?.security_license ?? data?.o_seclic ?? "",
-            o_seclicexp: toDateValue(data?.security_license_expiry ?? data?.o_seclicexp),
-            security_license_doc: data?.security_license_doc ?? "",
-            o_fa: data?.first_aid_cert ?? data?.o_fa ?? "",
-            o_faexp: toDateValue(data?.first_aid_expiry ?? data?.o_faexp),
-            // The API response shows 'first_aid', but checking both just in case
-            first_aid_doc: data?.first_aid_doc ?? data?.first_aid ?? "",
-            sig3: data?.signature ?? data?.sig3 ?? "",
-            date3: toDateValue(data?.signed_date ?? data?.date3),
-        });
-
-        const fetchFormData = async (formType) => {
-            try {
-                const endpoint = `api/form-data?user_id=${encodeURIComponent(userId)}&type=${encodeURIComponent(formType)}`;
-                const res = await submit(endpoint, undefined, { method: "GET", silentErrorToast: true });
-                const fetchedData = res?.data ?? res;
-
-                if (fetchedData) {
-                    if (formType === "tfn") {
-                        const normalized = normalizeTfnData(fetchedData);
-                        setTfnForm(normalized);
-                        setOriginalTfnForm(normalized);
-                    } else if (formType === "superannuation") {
-                        const normalized = normalizeSuperData(fetchedData);
-                        setSuperForm(normalized);
-                        setOriginalSuperForm(normalized);
-                    } else if (formType === "onboarding") {
-                        const normalized = normalizeOnboardData(fetchedData);
-                        setOnboardForm(normalized);
-                        setOriginalOnboardForm(normalized);
-                    }
+            if (fetchedData) {
+                if (formType === "tfn") {
+                    const normalized = normalizeTfnData(fetchedData);
+                    setTfnForm(normalized);
+                    setOriginalTfnForm(normalized);
+                } else if (formType === "superannuation") {
+                    const normalized = normalizeSuperData(fetchedData);
+                    setSuperForm(normalized);
+                    setOriginalSuperForm(normalized);
+                } else if (formType === "onboarding") {
+                    const normalized = normalizeOnboardData(fetchedData);
+                    setOnboardForm(normalized);
+                    setOriginalOnboardForm(normalized);
                 }
-            } catch (error) {
-                console.error(`Error fetching ${formType} form data:`, error);
             }
-        };
+        } catch (error) {
+            console.error(`Error fetching ${formType} form data:`, error);
+        }
+    }, [userId, submit]);
 
+    // Initial load
+    useEffect(() => {
         if (userId) {
+            setFormDataLoading(true);
             Promise.all([
                 fetchFormData("tfn"),
                 fetchFormData("superannuation"),
@@ -636,7 +601,7 @@ const StaffOnboardingForms = ({ submit, userId }) => {
         } else {
             setFormDataLoading(false);
         }
-    }, [userId, submit]);
+    }, [fetchFormData, userId]);
 
     // Change Handlers
     const handleTfnChange = (e) => {
@@ -663,7 +628,6 @@ const StaffOnboardingForms = ({ submit, userId }) => {
         const file = e.target.files[0];
         if (!file) return;
 
-        // Check if file size is too large (e.g. 10MB limit)
         if (file.size > 10 * 1024 * 1024) {
             toast.error("File is too large. Please upload a file smaller than 10MB.");
             return;
@@ -672,7 +636,6 @@ const StaffOnboardingForms = ({ submit, userId }) => {
         const fd = new FormData();
         fd.append("file", file);
         fd.append("folder", "staff_documents");
-
 
         try {
             const res = await submit("api/upload-file", fd, { method: "POST" });
@@ -684,7 +647,6 @@ const StaffOnboardingForms = ({ submit, userId }) => {
                     setDataModified(JSON.stringify(updatedForm) !== JSON.stringify(originalOnboardForm));
                     return updatedForm;
                 });
-
             } else {
                 toast.error(res?.message || "Failed to upload document.");
             }
@@ -694,6 +656,7 @@ const StaffOnboardingForms = ({ submit, userId }) => {
         }
     };
 
+    // Submit Handler
     const handleFormSubmit = async (e, tabIndex) => {
         e.preventDefault();
         if (!userId) return toast.error("User ID missing. Cannot save form.");
@@ -712,7 +675,9 @@ const StaffOnboardingForms = ({ submit, userId }) => {
                 user_id: userId, tfn: tfnForm.tfn, title: tfnForm.title, first_name: tfnForm.first_name,
                 surname: tfnForm.surname, previous_name: tfnForm.prev_name, dob: tfnForm.dob,
                 address: tfnForm.address, basis_of_payment: tfnForm.basis, australian_resident: tfnForm.aus_res,
-                claim_threshold: tfnForm.threshold, help_debt: tfnForm.help, signature: tfnForm.sig1, date: tfnForm.date1
+                claim_threshold: tfnForm.threshold, help_debt: tfnForm.help,
+                signature: tfnForm.sig1,
+                signed_date: tfnForm.date1 // Fixed key mapped properly
             };
             pdfFormData = { ...payload };
         } else if (tabIndex === 2) {
@@ -722,7 +687,9 @@ const StaffOnboardingForms = ({ submit, userId }) => {
             payload = {
                 user_id: userId, full_name: superForm.s_name, employee_number: superForm.s_empno, fund_choice: superForm.fund_choice,
                 fund_name: superForm.s_fundname, fund_abn: superForm.s_fundabn, fund_usi: superForm.s_usi,
-                member_account: superForm.s_member, signature: superForm.sig2, date: superForm.date2
+                member_account: superForm.s_member,
+                signature: superForm.sig2,
+                signed_date: superForm.date2 // Fixed key mapped properly
             };
             pdfFormData = { ...payload };
         } else if (tabIndex === 0) {
@@ -743,10 +710,10 @@ const StaffOnboardingForms = ({ submit, userId }) => {
                 security_license: onboardForm.o_seclic, security_license_expiry: onboardForm.o_seclicexp,
                 security_license_doc: onboardForm.security_license_doc,
                 first_aid_cert: onboardForm.o_fa, first_aid_expiry: onboardForm.o_faexp,
-                // Passed as both to ensure safety against the API JSON key structure
                 first_aid_doc: onboardForm.first_aid_doc,
                 first_aid: onboardForm.first_aid_doc,
-                signature: onboardForm.sig3, date: onboardForm.date3
+                signature: onboardForm.sig3,
+                signed_date: onboardForm.date3 // Fixed key mapped properly
             };
             pdfFormData = { ...payload };
         }
@@ -760,14 +727,13 @@ const StaffOnboardingForms = ({ submit, userId }) => {
         if (saveSucceeded) {
             toast.success("Form saved successfully!");
 
-            // Update original data to track future changes
-            if (tabIndex === 0) setOriginalOnboardForm({ ...onboardForm });
-            else if (tabIndex === 1) setOriginalTfnForm({ ...tfnForm });
-            else if (tabIndex === 2) setOriginalSuperForm({ ...superForm });
+            // REFETCH DATA UPON SUCCESSFUL SAVE
+            if (tabIndex === 0) await fetchFormData("onboarding");
+            else if (tabIndex === 1) await fetchFormData("tfn");
+            else if (tabIndex === 2) await fetchFormData("superannuation");
 
             setDataModified(false);
 
-            // Generate and handle PDF download/upload
             try {
                 let doc;
                 if (tabIndex === 0) {
@@ -829,9 +795,6 @@ const StaffOnboardingForms = ({ submit, userId }) => {
                 ))}
             </div>
 
-            {/* ========================================== */}
-            {/* FORM 1: EMPLOYEE ONBOARDING */}
-            {/* ========================================== */}
             {subTab === 0 && (
                 <EmployeeOnboardingForm
                     values={onboardForm}
@@ -843,9 +806,6 @@ const StaffOnboardingForms = ({ submit, userId }) => {
                 />
             )}
 
-            {/* ========================================== */}
-            {/* FORM 2: TFN DECLARATION */}
-            {/* ========================================== */}
             {subTab === 1 && (
                 <TfnDeclarationForm
                     values={tfnForm}
@@ -856,9 +816,6 @@ const StaffOnboardingForms = ({ submit, userId }) => {
                 />
             )}
 
-            {/* ========================================== */}
-            {/* FORM 3: SUPERANNUATION */}
-            {/* ========================================== */}
             {subTab === 2 && (
                 <SuperannuationForm
                     values={superForm}

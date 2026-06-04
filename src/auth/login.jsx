@@ -216,7 +216,6 @@ export default function Login() {
     }
   };
 
-  // --- NEW: Forgot Password Handler ---
   const handleForgotPasswordSubmit = async (e) => {
     e.preventDefault();
 
@@ -327,13 +326,12 @@ export default function Login() {
                         <label className="form-label small fw-medium mb-0">
                           Password <span className="text-danger">*</span>
                         </label>
-                        {/* --- NEW: Forgot Password Link --- */}
                         <button
                           type="button"
                           className="btn btn-link p-0 text-decoration-none fw-medium"
                           style={{ color: "#0A7C6E", fontSize: "13px" }}
                           onClick={() => {
-                            setForgotEmail(formData.email); // Auto-fill if they already typed it
+                            setForgotEmail(formData.email);
                             setForgotError("");
                             setShowForgotModal(true);
                           }}
@@ -341,6 +339,8 @@ export default function Login() {
                           Forgot password?
                         </button>
                       </div>
+
+                      {/* Position-relative now ONLY wraps the input and button */}
                       <div className="position-relative">
                         <input
                           type={showPassword ? "text" : "password"}
@@ -367,15 +367,17 @@ export default function Login() {
                               }`}
                           ></i>
                         </button>
-                        {errors.password && (
-                          <div
-                            className="invalid-feedback"
-                            style={{ fontSize: "12px" }}
-                          >
-                            {errors.password}
-                          </div>
-                        )}
                       </div>
+
+                      {/* Error message sits outside the relative wrapper */}
+                      {errors.password && (
+                        <div
+                          className="invalid-feedback d-block"
+                          style={{ fontSize: "12px", marginTop: "0.25rem" }}
+                        >
+                          {errors.password}
+                        </div>
+                      )}
                     </div>
                   </div>
 

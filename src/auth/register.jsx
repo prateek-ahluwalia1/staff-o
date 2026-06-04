@@ -276,11 +276,12 @@ export default function Register() {
                       />
                       {errors.email && <div className="invalid-feedback" style={{ fontSize: '12px' }}>{errors.email}</div>}
                     </div>
-
                     <div className="col-md-6">
                       <label className="form-label small fw-medium mb-1">
                         Password <span className="text-danger">*</span>
                       </label>
+
+                      {/* The relative container now ONLY wraps the input and the button */}
                       <div className="position-relative">
                         <input
                           type={showPassword ? "text" : "password"}
@@ -301,8 +302,14 @@ export default function Register() {
                         >
                           <i className={`fa-solid ${showPassword ? 'fa-eye-slash' : 'fa-eye'}`}></i>
                         </button>
-                        {errors.password && <div className="invalid-feedback" style={{ fontSize: '12px' }}>{errors.password}</div>}
                       </div>
+
+                      {/* The error message sits completely outside the relative wrapper */}
+                      {errors.password && (
+                        <div className="invalid-feedback d-block" style={{ fontSize: '12px', marginTop: '0.25rem' }}>
+                          {errors.password}
+                        </div>
+                      )}
                     </div>
                   </div>
 

@@ -12,17 +12,6 @@ const PayChargerate = () => {
   const { userdata } = useSelector((state) => state.auth);
   const userType = userdata?.data?.user_type || userdata?.user_type;
 
-  if (userType !== "admin") {
-    return (
-      <div className="dashboard-main dashboard-tools-page">
-        <div className="dashboard-tools-access-state">
-          <i className="fa fa-lock"></i>
-          You do not have permission to access rates management.
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="dashboard-main dashboard-tools-page">
       <div className="dashboard-tools-header">
@@ -33,31 +22,38 @@ const PayChargerate = () => {
       </div>
 
       <div className="row g-4 dashboard-tools-grid">
-        <div className="col-12 col-md-6 col-lg-3">
-          <Card
-            title="Charge Rates"
-            description="Amount charged from customers."
-            accent="linear-gradient(135deg,#27ae60,#16a085)"
-            image={chargerateimg}
-            type="charge"
-            onClick={() =>
-              navigate("/rates/charge", { state: { rateType: "charge" } })
-            }
-          />
-        </div>
+        {/* Only show Charge Rates and Pay Rates to Admin */}
+        {userType === "admin" && (
+          <>
+            <div className="col-12 col-md-6 col-lg-3">
+              <Card
+                title="Charge Rates"
+                description="Amount charged from customers."
+                accent="linear-gradient(135deg,#27ae60,#16a085)"
+                image={chargerateimg}
+                type="charge"
+                onClick={() =>
+                  navigate("/rates/charge", { state: { rateType: "charge" } })
+                }
+              />
+            </div>
 
-        <div className="col-12 col-md-6 col-lg-3">
-          <Card
-            title="Pay Rates"
-            description="Amount paid to the staff."
-            accent="linear-gradient(135deg,#1abc9c,#2ecc71)"
-            image={payrateimg}
-            type="pay"
-            onClick={() =>
-              navigate("/rates/pay", { state: { rateType: "pay" } })
-            }
-          />
-        </div>
+            <div className="col-12 col-md-6 col-lg-3">
+              <Card
+                title="Pay Rates"
+                description="Amount paid to the staff."
+                accent="linear-gradient(135deg,#1abc9c,#2ecc71)"
+                image={payrateimg}
+                type="pay"
+                onClick={() =>
+                  navigate("/rates/pay", { state: { rateType: "pay" } })
+                }
+              />
+            </div>
+          </>
+        )}
+
+        {/* Visible to everyone */}
         <div className="col-12 col-md-6 col-lg-3">
           <Card
             title="Invoice"
@@ -68,6 +64,7 @@ const PayChargerate = () => {
             onClick={() => navigate("/accounts/invoice")}
           />
         </div>
+
         <div className="col-12 col-md-6 col-lg-3">
           <Card
             title="Pay Slip"

@@ -9,7 +9,6 @@ import { TIME_KEYS } from "../utils/exports";
 
 const RATE_CATEGORIES = ["def", "eba"];
 
-// Local mapping for the UI to combine Day/Night for Weekends & Public Holidays
 const UI_SLOT_ROWS = [
   {
     label: "Mon-Fri (Day 06:00 - 18:00)",
@@ -82,7 +81,7 @@ const RatesList = ({ forcedType } = {}) => {
   const makeInitialForm = useCallback(() => {
     const f = {
       title: "",
-      position: "",
+      position: "full_time", // Set 'full_time' as default
       level: "",
       state: "",
       ot_base_rate: "",
@@ -243,7 +242,7 @@ const RatesList = ({ forcedType } = {}) => {
         </div>
 
         <div className="d-flex align-items-center gap-2">
-          {rows.length === 0 && (
+          {rows.length < 5 && (
             <button
               className="btn btn-success btn-sm px-3 shadow-sm"
               onClick={openAddModal}
@@ -370,7 +369,7 @@ const RatesList = ({ forcedType } = {}) => {
           border-top: 1px solid #e2e8f0;
         }
 
-        .form-control {
+        .form-control, .form-select {
           border-radius: 10px;
           border: 1px solid #cbd5e1;
           padding: 0.7rem 1rem;
@@ -379,13 +378,13 @@ const RatesList = ({ forcedType } = {}) => {
           background-color: #ffffff;
         }
         
-        .form-control:focus {
+        .form-control:focus, .form-select:focus {
           border-color: #0A7C6E;
           box-shadow: 0 0 0 4px rgba(10, 124, 110, 0.1);
           outline: none;
         }
         
-        .form-control:disabled {
+        .form-control:disabled, .form-select:disabled {
           background-color: #f1f5f9;
           color: #64748b;
         }
@@ -558,14 +557,16 @@ const RatesList = ({ forcedType } = {}) => {
                   <div className="row g-4">
                     <div className="col-md-4">
                       <label className="form-label">Position / Category</label>
-                      <input
+                      <select
                         id="position"
                         value={form.position}
                         onChange={handleFormChange}
                         disabled={isViewing}
-                        className="form-control"
-                        placeholder="Enter position or category"
-                      />
+                        className="form-select form-control"
+                      >
+                        <option value="full_time">Full Time</option>
+                        <option value="casual">Casual</option>
+                      </select>
                     </div>
 
                     <div className="col-md-4">
@@ -582,14 +583,24 @@ const RatesList = ({ forcedType } = {}) => {
 
                     <div className="col-md-4">
                       <label className="form-label">Location State</label>
-                      <input
+                      <select
                         id="state"
                         value={form.state}
                         onChange={handleFormChange}
                         disabled={isViewing}
-                        className="form-control"
-                        placeholder="Enter state"
-                      />
+                        className="form-select form-control"
+                        required
+                      >
+                        <option value="" disabled>Select State...</option>
+                        <option value="NSW">New South Wales (NSW)</option>
+                        <option value="VIC">Victoria (VIC)</option>
+                        <option value="QLD">Queensland (QLD)</option>
+                        <option value="WA">Western Australia (WA)</option>
+                        <option value="SA">South Australia (SA)</option>
+                        <option value="TAS">Tasmania (TAS)</option>
+                        <option value="ACT">Australian Capital Territory (ACT)</option>
+                        <option value="NT">Northern Territory (NT)</option>
+                      </select>
                     </div>
                   </div>
                 </div>

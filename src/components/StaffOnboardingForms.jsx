@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { toast } from "react-toastify";
 import PDFGenerator from "../utils/PDFGenerator";
+import { apiURL } from "../utils/exports"; // Imported to resolve document paths
 
 const TAB_LABELS = ["Onboarding", "TFN Declaration", "Superannuation"];
 
@@ -201,14 +202,8 @@ const TfnDeclarationForm = ({ values, loading, onChange, onSubmit, dataModified 
         <SectionTitle className="mt-4">Signature</SectionTitle>
         <div className="row g-3 mb-4">
             <div className="col-md-6">
-                <label className="form-label small fw-bold text-muted">Employee Signature</label>
-                <div className="border rounded p-3 bg-light" style={{ minHeight: "120px", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                    {values.sig1 ? (
-                        <img src={values.sig1} alt="Signature" style={{ maxWidth: "100%", maxHeight: "100px", objectFit: "contain" }} />
-                    ) : (
-                        <span className="text-muted small">No signature</span>
-                    )}
-                </div>
+                <label className="form-label small fw-bold text-muted">Employee Signature (Type Name) <span className="text-danger">*</span></label>
+                <input type="text" className="form-control" name="sig1" placeholder="Type your full name" maxLength="100" value={values.sig1} onChange={onChange} required />
             </div>
             <div className="col-md-6">
                 <label className="form-label small fw-bold text-muted">Date <span className="text-danger">*</span></label>
@@ -275,14 +270,8 @@ const SuperannuationForm = ({ values, loading, onChange, onSubmit, dataModified 
         <SectionTitle className="mt-4">Signature</SectionTitle>
         <div className="row g-3 mb-4">
             <div className="col-md-6">
-                <label className="form-label small fw-bold text-muted">Employee Signature</label>
-                <div className="border rounded p-3 bg-light" style={{ minHeight: "120px", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                    {values.sig2 ? (
-                        <img src={values.sig2} alt="Signature" style={{ maxWidth: "100%", maxHeight: "100px", objectFit: "contain" }} />
-                    ) : (
-                        <span className="text-muted small">No signature</span>
-                    )}
-                </div>
+                <label className="form-label small fw-bold text-muted">Employee Signature (Type Name) <span className="text-danger">*</span></label>
+                <input type="text" className="form-control" name="sig2" placeholder="Type your full name" maxLength="100" value={values.sig2} onChange={onChange} required />
             </div>
             <div className="col-md-6">
                 <label className="form-label small fw-bold text-muted">Date <span className="text-danger">*</span></label>
@@ -294,178 +283,221 @@ const SuperannuationForm = ({ values, loading, onChange, onSubmit, dataModified 
     </form>
 );
 
-const EmployeeOnboardingForm = ({ values, loading, onChange, onSubmit, dataModified }) => (
-    <form onSubmit={onSubmit} className="animate__animated animate__fadeIn">
-        <SectionTitle>Personal Contact Details</SectionTitle>
-        <div className="row g-3 mb-4">
-            <div className="col-md-12">
-                <label className="form-label small fw-bold text-muted">Full Name (as per ID) <span className="text-danger">*</span></label>
-                <input type="text" className="form-control" name="o_name" maxLength="100" value={values.o_name} onChange={onChange} required />
-            </div>
-            <div className="col-md-6">
-                <label className="form-label small fw-bold text-muted">Date of birth <span className="text-danger">*</span></label>
-                <input type="date" className="form-control" name="o_dob" value={values.o_dob} onChange={onChange} required />
-            </div>
-            <div className="col-md-6">
-                <label className="form-label small fw-bold text-muted">Residential Address <span className="text-danger">*</span></label>
-                <AddressAutocomplete
-                    name="o_addr"
-                    value={values.o_addr}
-                    onChange={onChange}
-                    placeholder="Street address, suburb, state, postcode"
-                    required={true}
-                />
-            </div>
-            <div className="col-md-6">
-                <label className="form-label small fw-bold text-muted">Mobile Phone <span className="text-danger">*</span></label>
-                <input type="text" className="form-control" name="o_phone" placeholder="04xx xxx xxx" maxLength="15" value={values.o_phone} onChange={onChange} required />
-            </div>
-            <div className="col-md-6">
-                <label className="form-label small fw-bold text-muted">Personal Email <span className="text-danger">*</span></label>
-                <input type="email" className="form-control" name="o_email" placeholder="jane@email.com" maxLength="100" value={values.o_email} onChange={onChange} required />
-            </div>
-        </div>
+const EmployeeOnboardingForm = ({ values, loading, onChange, onSubmit, dataModified, onDocUpload }) => {
+    // Helper to resolve paths back to viewable URLs
+    const resolveDocUrl = (pathOrUrl) => {
+        if (!pathOrUrl) return "";
+        if (pathOrUrl.startsWith("http")) return pathOrUrl;
+        return `${apiURL}staff_documents/${pathOrUrl}`;
+    };
 
-        <SectionTitle>Passport & Work Rights</SectionTitle>
-        <div className="row g-3 mb-4">
-            <div className="col-md-4">
-                <label className="form-label small fw-bold text-muted">Passport No. <span className="text-danger">*</span></label>
-                <input type="text" className="form-control" name="o_passport" placeholder="PA1234567" maxLength="20" value={values.o_passport} onChange={onChange} required />
-            </div>
-            <div className="col-md-4">
-                <label className="form-label small fw-bold text-muted">Country of Issue <span className="text-danger">*</span></label>
-                <input type="text" className="form-control" name="o_pcountry" placeholder="Australia" maxLength="50" value={values.o_pcountry} onChange={onChange} required />
-            </div>
-            <div className="col-md-4">
-                <label className="form-label small fw-bold text-muted">Passport Expiry <span className="text-danger">*</span></label>
-                <input type="date" className="form-control" name="o_pexpiry" value={values.o_pexpiry} onChange={onChange} required />
-            </div>
-            <div className="col-md-12">
-                <label className="form-label small fw-bold text-muted d-block">Work rights status <span className="text-danger">*</span></label>
-                <div className="form-check form-check-inline">
-                    <input className="form-check-input" type="radio" name="work" value="citizen" checked={values.work === "citizen"} onChange={onChange} required />
-                    <label className="form-check-label">Australian Citizen / PR</label>
+    return (
+        <form onSubmit={onSubmit} className="animate__animated animate__fadeIn">
+            <SectionTitle>Personal Contact Details</SectionTitle>
+            <div className="row g-3 mb-4">
+                <div className="col-md-12">
+                    <label className="form-label small fw-bold text-muted">Full Name (as per ID) <span className="text-danger">*</span></label>
+                    <input type="text" className="form-control" name="o_name" maxLength="100" value={values.o_name} onChange={onChange} required />
                 </div>
-                <div className="form-check form-check-inline">
-                    <input className="form-check-input" type="radio" name="work" value="student" checked={values.work === "student"} onChange={onChange} />
-                    <label className="form-check-label">Student Visa (24hr cap)</label>
+                <div className="col-md-6">
+                    <label className="form-label small fw-bold text-muted">Date of birth <span className="text-danger">*</span></label>
+                    <input type="date" className="form-control" name="o_dob" value={values.o_dob} onChange={onChange} required />
                 </div>
-                <div className="form-check form-check-inline">
-                    <input className="form-check-input" type="radio" name="work" value="other" checked={values.work === "other"} onChange={onChange} />
-                    <label className="form-check-label">Other visa</label>
+                <div className="col-md-6">
+                    <label className="form-label small fw-bold text-muted">Residential Address <span className="text-danger">*</span></label>
+                    <AddressAutocomplete
+                        name="o_addr"
+                        value={values.o_addr}
+                        onChange={onChange}
+                        placeholder="Street address, suburb, state, postcode"
+                        required={true}
+                    />
+                </div>
+                <div className="col-md-6">
+                    <label className="form-label small fw-bold text-muted">Mobile Phone <span className="text-danger">*</span></label>
+                    <input type="text" className="form-control" name="o_phone" placeholder="04xx xxx xxx" maxLength="15" value={values.o_phone} onChange={onChange} required />
+                </div>
+                <div className="col-md-6">
+                    <label className="form-label small fw-bold text-muted">Personal Email <span className="text-danger">*</span></label>
+                    <input type="email" className="form-control" name="o_email" placeholder="jane@email.com" maxLength="100" value={values.o_email} onChange={onChange} required />
                 </div>
             </div>
-        </div>
 
-        <SectionTitle>100-Point ID Check (Attached)</SectionTitle>
-        <div className="bg-light p-3 border rounded mb-4">
-            <div className="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom text-muted small fw-bold">
-                <span>Document</span>
-                <span>Points</span>
-            </div>
-            <div className="d-flex justify-content-between align-items-center mb-2">
-                <div className="form-check mb-0">
-                    <input className="form-check-input" type="checkbox" id="chk1" name="chk_primary" checked={values.chk_primary} onChange={onChange} />
-                    <label className="form-check-label small" htmlFor="chk1">Birth cert, passport, or citizenship</label>
+            <SectionTitle>Passport & Work Rights</SectionTitle>
+            <div className="row g-3 mb-4">
+                <div className="col-md-4">
+                    <label className="form-label small fw-bold text-muted">Passport No. <span className="text-danger">*</span></label>
+                    <input type="text" className="form-control" name="o_passport" placeholder="PA1234567" maxLength="20" value={values.o_passport} onChange={onChange} required />
                 </div>
-                <span className="badge bg-primary-subtle text-white">70</span>
-            </div>
-            <div className="d-flex justify-content-between align-items-center mb-2">
-                <div className="form-check mb-0">
-                    <input className="form-check-input" type="checkbox" id="chk2" name="chk_driver" checked={values.chk_driver} onChange={onChange} />
-                    <label className="form-check-label small" htmlFor="chk2">Driver's licence or government photo ID</label>
+                <div className="col-md-4">
+                    <label className="form-label small fw-bold text-muted">Country of Issue <span className="text-danger">*</span></label>
+                    <input type="text" className="form-control" name="o_pcountry" placeholder="Australia" maxLength="50" value={values.o_pcountry} onChange={onChange} required />
                 </div>
-                <span className="badge bg-primary-subtle text-white">40</span>
-            </div>
-            <div className="d-flex justify-content-between align-items-center mb-2">
-                <div className="form-check mb-0">
-                    <input className="form-check-input" type="checkbox" id="chk3" name="chk_security" checked={values.chk_security} onChange={onChange} />
-                    <label className="form-check-label small" htmlFor="chk3">Security licence (mandatory)</label>
+                <div className="col-md-4">
+                    <label className="form-label small fw-bold text-muted">Passport Expiry <span className="text-danger">*</span></label>
+                    <input type="date" className="form-control" name="o_pexpiry" value={values.o_pexpiry} onChange={onChange} required />
                 </div>
-                <span className="badge bg-primary-subtle text-white">40</span>
-            </div>
-            <div className="d-flex justify-content-between align-items-center">
-                <div className="form-check mb-0">
-                    <input className="form-check-input" type="checkbox" id="chk4" name="chk_medicare" checked={values.chk_medicare} onChange={onChange} />
-                    <label className="form-check-label small" htmlFor="chk4">Medicare card / utility bill / bank statement</label>
-                </div>
-                <span className="badge bg-primary-subtle text-white">25</span>
-            </div>
-        </div>
 
-        <SectionTitle>Banking, Tax & Superannuation</SectionTitle>
-        <div className="row g-3 mb-4">
-            <div className="col-md-4">
-                <label className="form-label small fw-bold text-muted">Bank Name <span className="text-danger">*</span></label>
-                <input type="text" className="form-control" name="o_bank" placeholder="XYZ Bank" maxLength="100" value={values.o_bank} onChange={onChange} required />
-            </div>
-            <div className="col-md-4">
-                <label className="form-label small fw-bold text-muted">BSB Number <span className="text-danger">*</span></label>
-                <input type="text" className="form-control" name="o_bsb" placeholder="062-000" maxLength="7" value={values.o_bsb} onChange={onChange} required />
-            </div>
-            <div className="col-md-4">
-                <label className="form-label small fw-bold text-muted">Account Number <span className="text-danger">*</span></label>
-                <input type="text" className="form-control" name="o_acct" placeholder="12345678" maxLength="20" value={values.o_acct} onChange={onChange} required />
-            </div>
-            <div className="col-md-6">
-                <label className="form-label small fw-bold text-muted">TFN <span className="text-danger">*</span></label>
-                <input type="text" className="form-control" name="o_tfn" minLength="8" maxLength="11" value={values.o_tfn} onChange={onChange} required />
-            </div>
-            <div className="col-md-6">
-                <label className="form-label small fw-bold text-muted">Super Fund Name <span className="text-danger">*</span></label>
-                <input type="text" className="form-control" name="o_superfund" maxLength="100" value={values.o_superfund} onChange={onChange} required />
-            </div>
-            <div className="col-md-6">
-                <label className="form-label small fw-bold text-muted">Super USI <span className="text-danger">*</span></label>
-                <input type="text" className="form-control" name="o_superusi" maxLength="20" value={values.o_superusi} onChange={onChange} required />
-            </div>
-            <div className="col-md-6">
-                <label className="form-label small fw-bold text-muted">Member Number <span className="text-danger">*</span></label>
-                <input type="text" className="form-control" name="o_member" maxLength="50" value={values.o_member} onChange={onChange} required />
-            </div>
-        </div>
+                <div className="col-md-12">
+                    <label className="form-label small fw-bold text-muted">Upload Passport Document <span className="text-danger">*</span></label>
+                    <div className="d-flex align-items-center gap-3">
+                        <input type="file" className="form-control" style={{ maxWidth: "300px" }} accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" onChange={(e) => onDocUpload(e, "passport_doc")} />
+                        {values.passport_doc && (
+                            <a href={resolveDocUrl(values.passport_doc)} target="_blank" rel="noreferrer" className="text-primary small fw-bold text-decoration-none">
+                                📄 View Attached Document
+                            </a>
+                        )}
+                    </div>
+                </div>
 
-        <SectionTitle className="mt-4">Professional Licensing</SectionTitle>
-        <div className="row g-3 mb-4">
-            <div className="col-md-6">
-                <label className="form-label small fw-bold text-muted">Security Licence No. <span className="text-danger">*</span></label>
-                <input type="text" className="form-control" name="o_seclic" placeholder="VIC 123456" maxLength="50" value={values.o_seclic} onChange={onChange} required />
-            </div>
-            <div className="col-md-6">
-                <label className="form-label small fw-bold text-muted">Security Licence Expiry <span className="text-danger">*</span></label>
-                <input type="date" className="form-control" name="o_seclicexp" value={values.o_seclicexp} onChange={onChange} required />
-            </div>
-            <div className="col-md-6">
-                <label className="form-label small fw-bold text-muted">First Aid Certificate No. <span className="text-danger">*</span></label>
-                <input type="text" className="form-control" name="o_fa" placeholder="FA-001234" maxLength="50" value={values.o_fa} onChange={onChange} required />
-            </div>
-            <div className="col-md-6">
-                <label className="form-label small fw-bold text-muted">First Aid Expiry <span className="text-danger">*</span></label>
-                <input type="date" className="form-control" name="o_faexp" value={values.o_faexp} onChange={onChange} required />
-            </div>
-        </div>
-
-        <SectionTitle className="mt-4">Declaration & Signature</SectionTitle>
-        <div className="row g-3 mb-4">
-            <div className="col-md-6">
-                <label className="form-label small fw-bold text-muted">Signature</label>
-                <div className="border rounded p-3 bg-light" style={{ minHeight: "120px", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                    {values.sig3 ? (
-                        <img src={values.sig3} alt="Signature" style={{ maxWidth: "100%", maxHeight: "100px", objectFit: "contain" }} />
-                    ) : (
-                        <span className="text-muted small">No signature</span>
-                    )}
+                <div className="col-md-12">
+                    <label className="form-label small fw-bold text-muted d-block mt-2">Work rights status <span className="text-danger">*</span></label>
+                    <div className="form-check form-check-inline">
+                        <input className="form-check-input" type="radio" name="work" value="citizen" checked={values.work === "citizen"} onChange={onChange} required />
+                        <label className="form-check-label">Australian Citizen / PR</label>
+                    </div>
+                    <div className="form-check form-check-inline">
+                        <input className="form-check-input" type="radio" name="work" value="student" checked={values.work === "student"} onChange={onChange} />
+                        <label className="form-check-label">Student Visa (24hr cap)</label>
+                    </div>
+                    <div className="form-check form-check-inline">
+                        <input className="form-check-input" type="radio" name="work" value="other" checked={values.work === "other"} onChange={onChange} />
+                        <label className="form-check-label">Other visa</label>
+                    </div>
                 </div>
             </div>
-            <div className="col-md-6">
-                <label className="form-label small fw-bold text-muted">Date <span className="text-danger">*</span></label>
-                <input type="date" className="form-control" name="date3" value={values.date3} onChange={onChange} required />
-            </div>
-        </div>
 
-        <ActionBar loading={loading} saveLabel="Save Onboarding Form" disabled={!dataModified} />
-    </form>
-);
+            <SectionTitle>100-Point ID Check (Attached)</SectionTitle>
+            <div className="bg-light p-3 border rounded mb-4">
+                <div className="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom text-muted small fw-bold">
+                    <span>Document</span>
+                    <span>Points</span>
+                </div>
+                <div className="d-flex justify-content-between align-items-center mb-2">
+                    <div className="form-check mb-0">
+                        <input className="form-check-input" type="checkbox" id="chk1" name="chk_primary" checked={values.chk_primary} onChange={onChange} />
+                        <label className="form-check-label small" htmlFor="chk1">Birth cert, passport, or citizenship</label>
+                    </div>
+                    <span className="badge bg-primary-subtle text-white">70</span>
+                </div>
+                <div className="d-flex justify-content-between align-items-center mb-2">
+                    <div className="form-check mb-0">
+                        <input className="form-check-input" type="checkbox" id="chk2" name="chk_driver" checked={values.chk_driver} onChange={onChange} />
+                        <label className="form-check-label small" htmlFor="chk2">Driver's licence or government photo ID</label>
+                    </div>
+                    <span className="badge bg-primary-subtle text-white">40</span>
+                </div>
+                <div className="d-flex justify-content-between align-items-center mb-2">
+                    <div className="form-check mb-0">
+                        <input className="form-check-input" type="checkbox" id="chk3" name="chk_security" checked={values.chk_security} onChange={onChange} />
+                        <label className="form-check-label small" htmlFor="chk3">Security licence (mandatory)</label>
+                    </div>
+                    <span className="badge bg-primary-subtle text-white">40</span>
+                </div>
+                <div className="d-flex justify-content-between align-items-center">
+                    <div className="form-check mb-0">
+                        <input className="form-check-input" type="checkbox" id="chk4" name="chk_medicare" checked={values.chk_medicare} onChange={onChange} />
+                        <label className="form-check-label small" htmlFor="chk4">Medicare card / utility bill / bank statement</label>
+                    </div>
+                    <span className="badge bg-primary-subtle text-white">25</span>
+                </div>
+            </div>
+
+            <SectionTitle>Banking, Tax & Superannuation</SectionTitle>
+            <div className="row g-3 mb-4">
+                <div className="col-md-4">
+                    <label className="form-label small fw-bold text-muted">Bank Name <span className="text-danger">*</span></label>
+                    <input type="text" className="form-control" name="o_bank" placeholder="XYZ Bank" maxLength="100" value={values.o_bank} onChange={onChange} required />
+                </div>
+                <div className="col-md-4">
+                    <label className="form-label small fw-bold text-muted">BSB Number <span className="text-danger">*</span></label>
+                    <input type="text" className="form-control" name="o_bsb" placeholder="062-000" maxLength="7" value={values.o_bsb} onChange={onChange} required />
+                </div>
+                <div className="col-md-4">
+                    <label className="form-label small fw-bold text-muted">Account Number <span className="text-danger">*</span></label>
+                    <input type="text" className="form-control" name="o_acct" placeholder="12345678" maxLength="20" value={values.o_acct} onChange={onChange} required />
+                </div>
+                <div className="col-md-6">
+                    <label className="form-label small fw-bold text-muted">TFN <span className="text-danger">*</span></label>
+                    <input type="text" className="form-control" name="o_tfn" minLength="8" maxLength="11" value={values.o_tfn} onChange={onChange} required />
+                </div>
+                <div className="col-md-6">
+                    <label className="form-label small fw-bold text-muted">Super Fund Name <span className="text-danger">*</span></label>
+                    <input type="text" className="form-control" name="o_superfund" maxLength="100" value={values.o_superfund} onChange={onChange} required />
+                </div>
+                <div className="col-md-6">
+                    <label className="form-label small fw-bold text-muted">Super USI <span className="text-danger">*</span></label>
+                    <input type="text" className="form-control" name="o_superusi" maxLength="20" value={values.o_superusi} onChange={onChange} required />
+                </div>
+                <div className="col-md-6">
+                    <label className="form-label small fw-bold text-muted">Member Number <span className="text-danger">*</span></label>
+                    <input type="text" className="form-control" name="o_member" maxLength="50" value={values.o_member} onChange={onChange} required />
+                </div>
+            </div>
+
+            <SectionTitle className="mt-4">Professional Licensing</SectionTitle>
+            <div className="row g-3 mb-4">
+                <div className="col-md-6">
+                    <label className="form-label small fw-bold text-muted">Security Licence No. <span className="text-danger">*</span></label>
+                    <input type="text" className="form-control" name="o_seclic" placeholder="VIC 123456" maxLength="50" value={values.o_seclic} onChange={onChange} required />
+
+                    <div className="mt-3">
+                        <label className="form-label small fw-bold text-muted">Upload Security Licence Document <span className="text-danger">*</span></label>
+                        <div className="d-flex align-items-center gap-3">
+                            <input type="file" className="form-control" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" onChange={(e) => onDocUpload(e, "security_license_doc")} />
+                        </div>
+                        {values.security_license_doc && (
+                            <a href={resolveDocUrl(values.security_license_doc)} target="_blank" rel="noreferrer" className="text-primary small fw-bold text-decoration-none mt-2 d-inline-block">
+                                📄 View Attached Document
+                            </a>
+                        )}
+                    </div>
+                </div>
+
+                <div className="col-md-6">
+                    <label className="form-label small fw-bold text-muted">Security Licence Expiry <span className="text-danger">*</span></label>
+                    <input type="date" className="form-control" name="o_seclicexp" value={values.o_seclicexp} onChange={onChange} required />
+                </div>
+
+                <div className="col-md-6 mt-4">
+                    <label className="form-label small fw-bold text-muted">First Aid Certificate No. <span className="text-danger">*</span></label>
+                    <input type="text" className="form-control" name="o_fa" placeholder="FA-001234" maxLength="50" value={values.o_fa} onChange={onChange} required />
+
+                    <div className="mt-3">
+                        <label className="form-label small fw-bold text-muted">Upload First Aid Document <span className="text-danger">*</span></label>
+                        <div className="d-flex align-items-center gap-3">
+                            <input type="file" className="form-control" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" onChange={(e) => onDocUpload(e, "first_aid_doc")} />
+                        </div>
+                        {values.first_aid_doc && (
+                            <a href={resolveDocUrl(values.first_aid_doc)} target="_blank" rel="noreferrer" className="text-primary small fw-bold text-decoration-none mt-2 d-inline-block">
+                                📄 View Attached Document
+                            </a>
+                        )}
+                    </div>
+                </div>
+
+                <div className="col-md-6 mt-4">
+                    <label className="form-label small fw-bold text-muted">First Aid Expiry <span className="text-danger">*</span></label>
+                    <input type="date" className="form-control" name="o_faexp" value={values.o_faexp} onChange={onChange} required />
+                </div>
+            </div>
+
+            <SectionTitle className="mt-4">Declaration & Signature</SectionTitle>
+            <div className="row g-3 mb-4">
+                <div className="col-md-6">
+                    <label className="form-label small fw-bold text-muted">Employee Signature (Type Name) <span className="text-danger">*</span></label>
+                    <input type="text" className="form-control" name="sig3" placeholder="Type your full name" maxLength="100" value={values.sig3} onChange={onChange} required />
+                </div>
+                <div className="col-md-6">
+                    <label className="form-label small fw-bold text-muted">Date <span className="text-danger">*</span></label>
+                    <input type="date" className="form-control" name="date3" value={values.date3} onChange={onChange} required />
+                </div>
+            </div>
+
+            <ActionBar loading={loading} saveLabel="Save Onboarding Form" disabled={!dataModified} />
+        </form>
+    );
+};
 
 const StaffOnboardingForms = ({ submit, userId }) => {
     const [subTab, setSubTab] = useState(0);
@@ -494,10 +526,11 @@ const StaffOnboardingForms = ({ submit, userId }) => {
     // 3. Employee Onboarding Form State
     const [onboardForm, setOnboardForm] = useState({
         o_name: "", o_dob: "", o_addr: "", o_phone: "", o_email: "", o_passport: "",
-        o_pcountry: "", o_pexpiry: "", work: "citizen",
+        o_pcountry: "", o_pexpiry: "", work: "citizen", passport_doc: "",
         chk_primary: false, chk_driver: false, chk_security: false, chk_medicare: false,
         o_bank: "", o_bsb: "", o_acct: "", o_tfn: "", o_superfund: "", o_superusi: "",
-        o_member: "", o_seclic: "", o_seclicexp: "", o_fa: "", o_faexp: "",
+        o_member: "", o_seclic: "", o_seclicexp: "", security_license_doc: "",
+        o_fa: "", o_faexp: "", first_aid_doc: "",
         sig3: "", date3: new Date().toISOString().split('T')[0]
     });
 
@@ -546,6 +579,7 @@ const StaffOnboardingForms = ({ submit, userId }) => {
             o_pcountry: data?.passport_country ?? data?.o_pcountry ?? "",
             o_pexpiry: toDateValue(data?.passport_expiry ?? data?.o_pexpiry),
             work: data?.work_rights ?? data?.work ?? "citizen",
+            passport_doc: data?.passport_doc ?? "",
             chk_primary: Boolean(data?.id_checks?.primary_id ?? data?.chk_primary ?? false),
             chk_driver: Boolean(data?.id_checks?.drivers_license ?? data?.chk_driver ?? false),
             chk_security: Boolean(data?.id_checks?.security_license ?? data?.chk_security ?? false),
@@ -559,8 +593,11 @@ const StaffOnboardingForms = ({ submit, userId }) => {
             o_member: data?.super_member ?? data?.o_member ?? "",
             o_seclic: data?.security_license ?? data?.o_seclic ?? "",
             o_seclicexp: toDateValue(data?.security_license_expiry ?? data?.o_seclicexp),
+            security_license_doc: data?.security_license_doc ?? "",
             o_fa: data?.first_aid_cert ?? data?.o_fa ?? "",
             o_faexp: toDateValue(data?.first_aid_expiry ?? data?.o_faexp),
+            // The API response shows 'first_aid', but checking both just in case
+            first_aid_doc: data?.first_aid_doc ?? data?.first_aid ?? "",
             sig3: data?.signature ?? data?.sig3 ?? "",
             date3: toDateValue(data?.signed_date ?? data?.date3),
         });
@@ -622,6 +659,45 @@ const StaffOnboardingForms = ({ submit, userId }) => {
         setDataModified(JSON.stringify(updatedForm) !== JSON.stringify(originalOnboardForm));
     };
 
+    // Instant Document Upload Handler
+    const handleDocUpload = async (e, fieldName) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        // Check if file size is too large (e.g. 10MB limit)
+        if (file.size > 10 * 1024 * 1024) {
+            toast.error("File is too large. Please upload a file smaller than 10MB.");
+            return;
+        }
+
+        const fd = new FormData();
+        fd.append("file", file);
+        fd.append("folder", "staff_documents"); // Matching the folder used in EditProfile
+
+        toast.info("Uploading document, please wait...");
+
+        try {
+            const res = await submit("api/upload-file", fd, { method: "POST" });
+            if (res?.success || res?.path) {
+                // Extract ONLY the path as requested (not full URL)
+                const filePath = res.path || res.data?.path || "";
+
+                setOnboardForm((prev) => {
+                    const updatedForm = { ...prev, [fieldName]: filePath };
+                    setDataModified(JSON.stringify(updatedForm) !== JSON.stringify(originalOnboardForm));
+                    return updatedForm;
+                });
+
+                toast.success("Document uploaded successfully!");
+            } else {
+                toast.error(res?.message || "Failed to upload document.");
+            }
+        } catch (err) {
+            console.error("Doc upload failed", err);
+            toast.error("An error occurred while uploading.");
+        }
+    };
+
     const handleFormSubmit = async (e, tabIndex) => {
         e.preventDefault();
         if (!userId) return toast.error("User ID missing. Cannot save form.");
@@ -661,6 +737,7 @@ const StaffOnboardingForms = ({ submit, userId }) => {
                 user_id: userId, full_name: onboardForm.o_name, dob: onboardForm.o_dob, address: onboardForm.o_addr,
                 mobile: onboardForm.o_phone, email: onboardForm.o_email, passport_number: onboardForm.o_passport,
                 passport_country: onboardForm.o_pcountry, passport_expiry: onboardForm.o_pexpiry, work_rights: onboardForm.work,
+                passport_doc: onboardForm.passport_doc,
                 id_checks: {
                     primary_id: onboardForm.chk_primary, drivers_license: onboardForm.chk_driver,
                     security_license: onboardForm.chk_security, medicare_or_utility: onboardForm.chk_medicare
@@ -668,7 +745,12 @@ const StaffOnboardingForms = ({ submit, userId }) => {
                 bank_name: onboardForm.o_bank, bsb: onboardForm.o_bsb, account_number: onboardForm.o_acct, tfn: onboardForm.o_tfn,
                 super_fund: onboardForm.o_superfund, super_usi: onboardForm.o_superusi, super_member: onboardForm.o_member,
                 security_license: onboardForm.o_seclic, security_license_expiry: onboardForm.o_seclicexp,
-                first_aid_cert: onboardForm.o_fa, first_aid_expiry: onboardForm.o_faexp, signature: onboardForm.sig3, date: onboardForm.date3
+                security_license_doc: onboardForm.security_license_doc,
+                first_aid_cert: onboardForm.o_fa, first_aid_expiry: onboardForm.o_faexp,
+                // Passed as both to ensure safety against the API JSON key structure
+                first_aid_doc: onboardForm.first_aid_doc,
+                first_aid: onboardForm.first_aid_doc,
+                signature: onboardForm.sig3, date: onboardForm.date3
             };
             pdfFormData = { ...payload };
         }
@@ -761,6 +843,7 @@ const StaffOnboardingForms = ({ submit, userId }) => {
                     onChange={handleOnboardChange}
                     onSubmit={(e) => handleFormSubmit(e, 0)}
                     dataModified={dataModified}
+                    onDocUpload={handleDocUpload}
                 />
             )}
 

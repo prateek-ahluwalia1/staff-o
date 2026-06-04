@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { toast } from "react-toastify";
 import PDFGenerator from "../utils/PDFGenerator";
-import { apiURL } from "../utils/exports"; // Imported to resolve document paths
+import { apiURL } from "../utils/exports";
 
 const TAB_LABELS = ["Onboarding", "TFN Declaration", "Superannuation"];
 
@@ -51,7 +51,6 @@ const AddressAutocomplete = ({ value, name, onChange, placeholder, required }) =
                     return;
                 }
 
-                // Create a synthetic event to trigger the standard onChange handler
                 const event = {
                     target: { name, value: place.formatted_address, type: "text" }
                 };
@@ -672,14 +671,12 @@ const StaffOnboardingForms = ({ submit, userId }) => {
 
         const fd = new FormData();
         fd.append("file", file);
-        fd.append("folder", "staff_documents"); // Matching the folder used in EditProfile
+        fd.append("folder", "staff_documents");
 
-        toast.info("Uploading document, please wait...");
 
         try {
             const res = await submit("api/upload-file", fd, { method: "POST" });
             if (res?.success || res?.path) {
-                // Extract ONLY the path as requested (not full URL)
                 const filePath = res.path || res.data?.path || "";
 
                 setOnboardForm((prev) => {
@@ -688,7 +685,6 @@ const StaffOnboardingForms = ({ submit, userId }) => {
                     return updatedForm;
                 });
 
-                toast.success("Document uploaded successfully!");
             } else {
                 toast.error(res?.message || "Failed to upload document.");
             }

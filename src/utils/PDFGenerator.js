@@ -66,7 +66,9 @@ const formatDateForDisplay = (dateStr) => {
 const resolveIncidentUrl = (url) => {
   if (!url) return "";
   let cleanUrl = url.replace(/\\\//g, "/");
-  return cleanUrl.replace("/uploads/", "/incident/");
+  if (cleanUrl.startsWith("http")) return cleanUrl.replace("/uploads/", "/incident/");
+  if (cleanUrl.startsWith("/")) cleanUrl = cleanUrl.substring(1);
+  return "https://apis.staffoo.com.au/incident/" + cleanUrl;
 };
 
 const resolvePatrolUrl = (path) => {
@@ -75,6 +77,11 @@ const resolvePatrolUrl = (path) => {
   if (cleanPath.startsWith("http")) return cleanPath;
   if (cleanPath.startsWith("/")) cleanPath = cleanPath.substring(1);
   return "https://apis.staffoo.com.au/footpatrol/" + cleanPath;
+};
+
+const getImgFormat = (b64) => {
+  if (!b64) return "JPEG";
+  return b64.includes("image/png") ? "PNG" : "JPEG";
 };
 
 // ─── SHARED HEADER ───────────────────────────────────────────────────────────
@@ -217,13 +224,11 @@ const generateTFNDeclarationPDF = (formData) => {
 
   y += 10;
   doc.setDrawColor(...T.text); doc.setLineWidth(0.5); doc.line(mg, y, mg + 75, y);
-  // Embed signature image if available (data URL from file upload)
-  if (signature && (signature.startsWith("data:") || signature.startsWith("http") || signature.startsWith("/uploads"))) {
-    try {
-      doc.addImage(signature, "PNG", mg + 1, y - 8, 20, 8);
-    } catch (e) {
-      console.warn("Could not embed signature image:", e);
-    }
+  if (signature) {
+    doc.setFont("helvetica", "italic");
+    doc.setFontSize(10);
+    doc.setTextColor(...T.text);
+    doc.text(String(signature), mg + 1, y - 2);
   }
   y += 4;
   doc.setFont("helvetica", "bold"); doc.setFontSize(8.5); doc.setTextColor(...T.text);
@@ -321,13 +326,11 @@ const generateSuperannuationPDF = (formData) => {
   y += 60;
 
   doc.setDrawColor(...T.text); doc.setLineWidth(0.5); doc.line(mg, y, mg + 75, y);
-  // Embed signature image if available (data URL from file upload)
-  if (signature && (signature.startsWith("data:") || signature.startsWith("http") || signature.startsWith("/uploads"))) {
-    try {
-      doc.addImage(signature, "PNG", mg + 1, y - 8, 20, 8);
-    } catch (e) {
-      console.warn("Could not embed signature image:", e);
-    }
+  if (signature) {
+    doc.setFont("helvetica", "italic");
+    doc.setFontSize(10);
+    doc.setTextColor(...T.text);
+    doc.text(String(signature), mg + 1, y - 2);
   }
   y += 4;
   doc.setFont("helvetica", "bold"); doc.setFontSize(8.5); doc.setTextColor(...T.text);
@@ -506,13 +509,11 @@ const generateEmployeeOnboardingPDF = (formData) => {
   doc.setFont("helvetica", "bold"); doc.setFontSize(7.5); doc.setTextColor(...T.text);
   doc.text("Signature:", mg, y);
   doc.setDrawColor(...T.lineGray); doc.setLineWidth(0.3); doc.line(mg, y + 7, mg + sigHw, y + 7);
-  // Embed signature image if available (data URL from file upload)
-  if (signature && (signature.startsWith("data:") || signature.startsWith("http") || signature.startsWith("/uploads"))) {
-    try {
-      doc.addImage(signature, "PNG", mg + 1, y + 0.5, 15, 6);
-    } catch (e) {
-      console.warn("Could not embed signature image:", e);
-    }
+  if (signature) {
+    doc.setFont("helvetica", "italic");
+    doc.setFontSize(10);
+    doc.setTextColor(...T.text);
+    doc.text(String(signature), mg + 2, y + 5);
   }
 
   // Date field with today's date
@@ -774,7 +775,8 @@ const PDFGenerator = {
             const url = resolvePatrolUrl(imgObj.imgPath);
             const b64 = await fetchImageBase64(url);
             if (b64) {
-              doc.addImage(b64, "JPEG", imgX, y, 40, 30);
+              const format = getImgFormat(b64);
+              doc.addImage(b64, format, imgX, y, 40, 30);
             } else {
               doc.setDrawColor(...T.border); doc.rect(imgX, y, 40, 30);
               doc.setFontSize(7); doc.setTextColor(...T.muted); doc.text("Image N/A", imgX + 20, y + 15, { align: "center" });
@@ -790,7 +792,8 @@ const PDFGenerator = {
           const url = resolvePatrolUrl(p.signature);
           const sigB64 = await fetchImageBase64(url);
           if (sigB64) {
-            doc.addImage(sigB64, "JPEG", mg, y, 50, 25);
+            const format = getImgFormat(sigB64);
+            doc.addImage(sigB64, format, mg, y, 50, 25);
           } else {
             doc.setDrawColor(...T.border); doc.rect(mg, y, 50, 25);
             doc.setFontSize(7); doc.setTextColor(...T.muted); doc.text("Signature N/A", mg + 25, y + 12.5, { align: "center" });
@@ -894,7 +897,10 @@ const PDFGenerator = {
             }
             const url = resolveIncidentUrl(imgObj.imgPath);
             const b64 = await fetchImageBase64(url);
-            if (b64) { doc.addImage(b64, "JPEG", imgX, y, 40, 30); }
+            if (b64) {
+              const format = getImgFormat(b64);
+              doc.addImage(b64, format, imgX, y, 40, 30);
+            }
             else { doc.setDrawColor(...T.border); doc.rect(imgX, y, 40, 30); doc.setFontSize(7); doc.setTextColor(...T.muted); doc.text("Image N/A", imgX + 20, y + 15, { align: "center" }); }
             imgX += 45;
           }
@@ -906,7 +912,10 @@ const PDFGenerator = {
           doc.setFontSize(9); doc.setFont("helvetica", "bold"); doc.setTextColor(...T.navy); doc.text("SIGNATURE", mg, y); y += 6;
           const url = resolveIncidentUrl(inc.signature);
           const sigB64 = await fetchImageBase64(url);
-          if (sigB64) { doc.addImage(sigB64, "JPEG", mg, y, 50, 25); }
+          if (sigB64) {
+            const format = getImgFormat(sigB64);
+            doc.addImage(sigB64, format, mg, y, 50, 25);
+          }
           else { doc.setDrawColor(...T.border); doc.rect(mg, y, 50, 25); doc.setFontSize(7); doc.setTextColor(...T.muted); doc.text("Signature N/A", mg + 25, y + 12.5, { align: "center" }); }
           y += 30;
         }
@@ -969,7 +978,8 @@ const PDFGenerator = {
           const url = resolvePatrolUrl(imgObj.imgPath);
           const b64 = await fetchImageBase64(url);
           if (b64) {
-            doc.addImage(b64, "JPEG", imgX, y, 40, 30);
+            const format = getImgFormat(b64);
+            doc.addImage(b64, format, imgX, y, 40, 30);
           } else {
             doc.setDrawColor(...T.border); doc.rect(imgX, y, 40, 30);
             doc.setFontSize(7); doc.setTextColor(...T.muted); doc.text("Image N/A", imgX + 20, y + 15, { align: "center" });
@@ -985,7 +995,8 @@ const PDFGenerator = {
         const url = resolvePatrolUrl(p.signature);
         const sigB64 = await fetchImageBase64(url);
         if (sigB64) {
-          doc.addImage(sigB64, "JPEG", mg, y, 50, 25);
+          const format = getImgFormat(sigB64);
+          doc.addImage(sigB64, format, mg, y, 50, 25);
         } else {
           doc.setDrawColor(...T.border); doc.rect(mg, y, 50, 25);
           doc.setFontSize(7); doc.setTextColor(...T.muted); doc.text("Signature N/A", mg + 25, y + 12.5, { align: "center" });
@@ -1105,7 +1116,10 @@ const PDFGenerator = {
           }
           const url = resolveIncidentUrl(imgObj.imgPath);
           const b64 = await fetchImageBase64(url);
-          if (b64) { doc.addImage(b64, "JPEG", imgX, y, 40, 30); }
+          if (b64) {
+            const format = getImgFormat(b64);
+            doc.addImage(b64, format, imgX, y, 40, 30);
+          }
           else { doc.setDrawColor(...T.border); doc.rect(imgX, y, 40, 30); doc.setFontSize(7); doc.setTextColor(...T.muted); doc.text("Image N/A", imgX + 20, y + 15, { align: "center" }); }
           imgX += 45;
         }
@@ -1117,7 +1131,10 @@ const PDFGenerator = {
         doc.setFontSize(9); doc.setFont("helvetica", "bold"); doc.setTextColor(...T.navy); doc.text("SIGNATURE", mg, y); y += 6;
         const url = resolveIncidentUrl(inc.signature);
         const sigB64 = await fetchImageBase64(url);
-        if (sigB64) { doc.addImage(sigB64, "JPEG", mg, y, 50, 25); }
+        if (sigB64) {
+          const format = getImgFormat(sigB64);
+          doc.addImage(sigB64, format, mg, y, 50, 25);
+        }
         else { doc.setDrawColor(...T.border); doc.rect(mg, y, 50, 25); doc.setFontSize(7); doc.setTextColor(...T.muted); doc.text("Signature N/A", mg + 25, y + 12.5, { align: "center" }); }
         y += 30;
       }

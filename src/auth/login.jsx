@@ -350,7 +350,7 @@ export default function Login() {
                           placeholder="Password"
                           value={formData.password}
                           onChange={handleChange}
-                          maxLength={50}
+                          minLength={8}
                           disabled={loading}
                           style={{
                             border: "1px solid #0A7C6E",
@@ -581,8 +581,8 @@ export default function Login() {
                       <label
                         key={role.key}
                         className={`btn btn-sm rounded-pill px-3 py-2 ${selectedRole === role.key
-                            ? "text-white"
-                            : "btn-light text-muted border"
+                          ? "text-white"
+                          : "btn-light text-muted border"
                           }`}
                         style={{
                           cursor: "pointer",

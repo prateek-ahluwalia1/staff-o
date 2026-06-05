@@ -290,7 +290,7 @@ export default function Register() {
                           placeholder="Min. 8 chars"
                           value={formData.password}
                           onChange={handleChange}
-                          maxLength={8}
+                          minLength={8}
                           disabled={loading}
                           style={{ border: "1px solid #0A7C6E" }}
                         />

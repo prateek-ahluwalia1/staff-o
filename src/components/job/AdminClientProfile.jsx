@@ -25,7 +25,7 @@ export default function AdminClientProfile({
     const isVerified = customerDetails?.is_email_approved;
     const isOnline = customerDetails?.is_online;
 
-    const currentSelectedOption = siteOptions.find((s) => s.value === selectedSiteId) || null;
+    const currentSelectedOption = siteOptions.find((s) => String(s.value) === String(selectedSiteId)) || null;
 
     return (
         <div className="row g-3 mb-4">

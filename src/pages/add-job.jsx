@@ -188,7 +188,7 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
   }, [detailRes]);
 
   const [selectedSiteId, setSelectedSiteId] = useState("");
-  const [newCustomer, setNewCustomer] = useState({ name: "", email: "", phone: "", company_name: "" });
+  const [newCustomer, setNewCustomer] = useState({ name: "", email: "", phone: "", company_name: "", password: "" });
   const { submit: submitCustomer, loading: submittingCustomer } = useSubmit({ isAuth: true });
 
 
@@ -299,8 +299,8 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
   }, [customerSites]);
 
   const handleCreateCustomer = async () => {
-    if (!newCustomer.name || !newCustomer.email) {
-      toast.error("Name and Email are required");
+    if (!newCustomer.name || !newCustomer.email || !newCustomer.password) {
+      toast.error("Name, Email and Password are required");
       return;
     }
     try {
@@ -793,7 +793,12 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
                   selectedSiteId={selectedSiteId}
                   onSiteSelect={(selected) => {
                     if (!selected) return;
-
+                    setSelectedSiteId(selected ? selected.value : "");
+                    if (selected && selected.siteData) {
+                      setField("location", selected.siteData.address || "");
+                      setField("address", selected.siteData.address || "");
+                      setField("coordinates", selected.siteData.coordinates || "");
+                    }
                     if (selected.value === "manual" || selected.isManual) {
                       setSelectedSiteId("manual");
                       setField("location", "");
@@ -860,6 +865,7 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
                             className="form-control"
                             placeholder="Phone number"
                             value={newCustomer.phone}
+                            maxLength={20}
                             onChange={(e) => setNewCustomer({ ...newCustomer, phone: e.target.value })}
                           />
                         </div>
@@ -871,6 +877,16 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
                             placeholder="Company name"
                             value={newCustomer.company_name}
                             onChange={(e) => setNewCustomer({ ...newCustomer, company_name: e.target.value })}
+                          />
+                        </div>
+                        <div className="col-md-6">
+                          <label className="form-label small text-muted fw-bold mb-2">Password *</label>
+                          <input
+                            type="password"
+                            className="form-control"
+                            placeholder="Create a password"
+                            value={newCustomer.password}
+                            onChange={(e) => setNewCustomer({ ...newCustomer, password: e.target.value })}
                           />
                         </div>
                       </div>

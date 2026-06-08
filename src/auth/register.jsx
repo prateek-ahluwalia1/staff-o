@@ -14,11 +14,10 @@ import {
 
 export default function Register() {
   const navigate = useNavigate();
-  const location = useLocation(); // Hook to access the route state
+  const location = useLocation();
   const dispatch = useDispatch();
   const { submit, loading } = useSubmit();
 
-  // Initialize role based on router state, fallback to "contractor" if accessed directly
   const [userType, setUserType] = useState(location.state?.role || "contractor");
 
   const [showPassword, setShowPassword] = useState(false);
@@ -319,8 +318,8 @@ export default function Register() {
                     </label>
                     <div className="d-flex gap-2 auth-account-types" role="radiogroup">
                       {[
-                        { key: "customer", label: "Book a Guard" },
-                        { key: "staff", label: "Apply for a Job" },
+                        { key: "customer", label: "Client" },
+                        { key: "staff", label: "Staff" },
                         { key: "contractor", label: "Resource Partner" },
                       ].map((role) => (
                         <label

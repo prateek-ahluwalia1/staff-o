@@ -131,7 +131,7 @@ export default function SignInOutDetails({ rosterId, guardId, shift, site }) {
 
   const MapButton = ({ loc }) =>
     loc ? (
-      <Link        href={`https://maps.google.com/?q=${loc.lat},${loc.lng}`}
+      <Link href={`https://maps.google.com/?q=${loc.lat},${loc.lng}`}
         target="_blank"
         rel="noopener noreferrer"
         style={{
@@ -183,9 +183,9 @@ export default function SignInOutDetails({ rosterId, guardId, shift, site }) {
     >
       {/* ── Sign In Column ── */}
       <div>
-        <Field label="SignIn Date" value={signIn.date} />
-        <Field label="SignIn Time" value={signIn.time} />
-        <Field label="SignIn Notes" value={d.signin_notes} />
+        <Field label="Sign In Date" value={signIn.date} />
+        <Field label="Sign In Time" value={signIn.time} />
+        <Field label="Sign In Notes" value={d.signin_notes} />
         <ImageBox
           src={d.signin_selfie ? `${SELFIE_BASE}${d.signin_selfie}` : null}
           label="Sign In Picture"
@@ -199,7 +199,7 @@ export default function SignInOutDetails({ rosterId, guardId, shift, site }) {
               marginBottom: "10px",
             }}
           >
-            SignIN Location
+            Sign In Location
           </div>
           <MapButton loc={signInLoc} />
         </div>
@@ -207,9 +207,9 @@ export default function SignInOutDetails({ rosterId, guardId, shift, site }) {
 
       {/* ── Sign Out Column ── */}
       <div>
-        <Field label="SignOut Date" value={signOut.date} />
-        <Field label="SignOut Time" value={signOut.time} />
-        <Field label="SignOut Notes" value={d.signout_notes} />
+        <Field label="Sign Out Date" value={signOut.date} />
+        <Field label="Sign Out Time" value={signOut.time} />
+        <Field label="Sign Out Notes" value={d.signout_notes} />
         <ImageBox
           src={d.signout_selfie ? `${SELFIE_BASE}${d.signout_selfie}` : null}
           label="Sign Out Picture"
@@ -223,7 +223,7 @@ export default function SignInOutDetails({ rosterId, guardId, shift, site }) {
               marginBottom: "10px",
             }}
           >
-            SignOut Location
+            Sign Out Location
           </div>
           <MapButton loc={signOutLoc} />
         </div>

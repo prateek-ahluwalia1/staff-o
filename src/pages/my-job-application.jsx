@@ -17,9 +17,10 @@ export default function MyJobApplications() {
   const userId = userdata?.data?.id || userdata?.id;
   const { submit, loading, data: submitData } = useSubmit({ isAuth: true });
 
-  // --- Date Filter State (Initialized to Full Current Month) ---
+  // --- Filters State ---
   const [startDate, setStartDate] = useState(() => format(startOfMonth(new Date()), "yyyy-MM-dd"));
   const [endDate, setEndDate] = useState(() => format(endOfMonth(new Date()), "yyyy-MM-dd"));
+  const [searchQuery, setSearchQuery] = useState(""); // NEW: Search state
 
   // Modal state
   const [selectedApp, setSelectedApp] = useState(null);
@@ -62,6 +63,7 @@ export default function MyJobApplications() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId]);
 
+  // 2. Format raw data into a flat array
   const applications = useMemo(() => {
     if (!submitData?.data) return [];
     const flattenedShifts = [];
@@ -108,6 +110,17 @@ export default function MyJobApplications() {
     return flattenedShifts;
   }, [submitData]);
 
+  // 3. NEW: Filter the mapped applications by text search
+  const filteredApplications = useMemo(() => {
+    if (!searchQuery.trim()) return applications;
+    const lowerQuery = searchQuery.toLowerCase();
+
+    return applications.filter(app =>
+      app.title.toLowerCase().includes(lowerQuery) ||
+      app.location.toLowerCase().includes(lowerQuery)
+    );
+  }, [applications, searchQuery]);
+
   const openModal = (app) => setSelectedApp(app);
   const closeModal = () => setSelectedApp(null);
 
@@ -116,51 +129,75 @@ export default function MyJobApplications() {
   return (
     <>
       <div className="dashboard-main">
-        <div className="dashboard-page-header d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4">
+        <div className="dashboard-page-header d-flex flex-column flex-xl-row justify-content-between align-items-start align-items-xl-center mb-4">
           <div>
-            <h1>My Job Applications & Shifts</h1>
+            <h1>Job Applications & Shifts</h1>
             <p>Viewing shifts for the selected date range.</p>
           </div>
 
-          {/* --- DATE FILTERS --- */}
-          <div className="d-flex gap-2 mt-3 mt-md-0 align-items-end bg-white p-2 rounded shadow-sm border">
-            <div className="d-flex flex-column">
+          {/* --- FILTERS CONTAINER --- */}
+          <div className="d-flex flex-column flex-md-row gap-3 mt-3 mt-xl-0 align-items-md-center">
+
+            {/* --- NEW: TEXT SEARCH BAR --- */}
+            <div className="d-flex align-items-center bg-white p-1 px-2 rounded shadow-sm border" style={{ minWidth: '250px' }}>
+              <i className="fa-solid fa-magnifying-glass text-muted me-2 ms-1"></i>
               <input
-                type="date"
-                className="form-control form-control-sm border-0"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
+                type="text"
+                className="form-control form-control-sm border-0 shadow-none"
+                placeholder="Search site or address..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                style={{ backgroundColor: 'transparent' }}
               />
+              {searchQuery && (
+                <i
+                  className="fa-solid fa-xmark text-muted ms-2"
+                  style={{ cursor: "pointer" }}
+                  onClick={() => setSearchQuery("")}
+                ></i>
+              )}
             </div>
-            <div style={{ height: '30px', width: '1px', background: '#eee', margin: '0 5px', marginBottom: '2px' }}></div>
-            <div className="d-flex flex-column">
-              <input
-                type="date"
-                className="form-control form-control-sm border-0"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-              />
+
+            {/* --- DATE FILTERS --- */}
+            <div className="d-flex gap-2 align-items-end bg-white p-2 rounded shadow-sm border">
+              <div className="d-flex flex-column">
+                <input
+                  type="date"
+                  className="form-control form-control-sm border-0"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                />
+              </div>
+              <div style={{ height: '30px', width: '1px', background: '#eee', margin: '0 5px', marginBottom: '2px' }}></div>
+              <div className="d-flex flex-column">
+                <input
+                  type="date"
+                  className="form-control form-control-sm border-0"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                />
+              </div>
+              <button
+                onClick={fetchCustomerSites}
+                className="btn btn-primary-custom px-3 py-1"
+                style={{ height: 'fit-content', borderRadius: '20px', fontSize: '14px' }}
+              >
+                Search Dates
+              </button>
             </div>
-            {/* --- NEW SEARCH BUTTON --- */}
-            <button
-              onClick={fetchCustomerSites}
-              className="btn btn-primary-custom px-3 py-1"
-              style={{ height: 'fit-content', borderRadius: '20px', fontSize: '14px' }}
-            >
-              Search
-            </button>
+
           </div>
         </div>
 
         {/* --- CARDS GRID --- */}
         <div className="row row-cols-1 row-cols-lg-2 g-4 application-grid">
-          {applications.length === 0 ? (
+          {filteredApplications.length === 0 ? (
             <div className="col-12 text-center py-5 text-muted bg-light rounded shadow-sm">
-              <i className="fa-regular fa-calendar-xmark mb-3 d-block" style={{ fontSize: '2rem' }}></i>
-              No shifts found for this period.
+              <i className="fa-solid fa-magnifying-glass-minus mb-3 d-block" style={{ fontSize: '2rem' }}></i>
+              {applications.length > 0 ? "No shifts match your search." : "No shifts found for this period."}
             </div>
           ) : (
-            applications.map((app, index) => (
+            filteredApplications.map((app, index) => (
               <div className="col" key={app.id || index}>
                 <div className="application-card shadow-sm border-0">
                   <div className="application-header">
@@ -218,7 +255,7 @@ export default function MyJobApplications() {
               </div>
             </div>
             <div className="modal-footer" style={{ background: "#f8f9fa", padding: "16px 24px", borderTop: "1px solid #eaeaea", display: "flex", justifyContent: "flex-end" }}>
-              <button onClick={closeModal} className="btn btn-secondary px-4">Close</button>
+              <button onClick={closeModal} className="btn btn-primary-custom px-4">Close</button>
             </div>
           </div>
         </div>

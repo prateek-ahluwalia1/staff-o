@@ -574,8 +574,8 @@ export default function Login() {
                     role="radiogroup"
                   >
                     {[
-                      { key: "customer", label: "Book a Guard" },
-                      { key: "staff", label: "Apply for a Job" },
+                      { key: "customer", label: "Client" },
+                      { key: "staff", label: "Staff" },
                       { key: "contractor", label: "Resource Partner" },
                     ].map((role) => (
                       <label

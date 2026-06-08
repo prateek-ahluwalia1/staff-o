@@ -217,9 +217,14 @@ export default function RosterPage() {
       }).filter(Boolean);
 
       const totalHours = roster.reduce((sum, shift) => sum + Number(shift.hours || 0), 0);
+
+      // Safely check common relation names for the client payload
+      const clientName = site?.customers?.name || site?.customer?.name || site?.client?.name || "Unknown Client";
+
       return {
         id: site.id,
         displayName: site.site_name || "Unknown Site",
+        clientName: clientName,
         siteData: site,
         hoursDisplay: `${totalHours.toFixed(1)}h`,
         jobRoster: roster,
@@ -230,7 +235,12 @@ export default function RosterPage() {
   const filteredSites = useMemo(() => {
     if (!searchQuery.trim()) return sites;
     const lowerQuery = searchQuery.toLowerCase();
-    return sites.filter((site) => site.displayName.toLowerCase().includes(lowerQuery));
+
+    // Now searching against both the site name AND the associated client name
+    return sites.filter((site) =>
+      site.displayName.toLowerCase().includes(lowerQuery) ||
+      site.clientName.toLowerCase().includes(lowerQuery)
+    );
   }, [sites, searchQuery]);
 
   const columnTotals = useMemo(() => {
@@ -373,7 +383,7 @@ export default function RosterPage() {
         <div className="vr-actions">
           <div className="vr-search">
             <i className="fa fa-search"></i>
-            <input type="text" placeholder="Search Sites..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
+            <input type="text" placeholder="Search Sites or Clients..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
           </div>
           <div className="vr-toggles">
             <button className={weeksToView === 1 ? 'active' : ''} onClick={() => setWeeksToView(1)}>1W</button>
@@ -432,7 +442,14 @@ export default function RosterPage() {
           filteredSites.map((site) => (
             <div key={site.id} className="vr-matrix-row">
               <div className="vr-col-site vr-site-info">
-                <div className="vr-site-name">{site.displayName}</div>
+                <div className="vr-site-name" style={{ lineHeight: 1.2 }}>{site.displayName}</div>
+
+                {/* NEW: Display Client Name below site */}
+                <div style={{ fontSize: "11px", color: "#64748b", margin: "4px 0", fontWeight: "600", textTransform: "uppercase" }}>
+                  <i className="fa-regular fa-building" style={{ marginRight: '4px' }}></i>
+                  {site.clientName}
+                </div>
+
                 <div>
                   <span className="vr-site-hours">
                     <i className="fa fa-clock-o fas fa-clock" style={{ marginRight: '4px' }}></i>

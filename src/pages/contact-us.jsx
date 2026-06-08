@@ -129,7 +129,7 @@ export default function ContactUs() {
         }
         .stf-badge {
           color: #0A7C6E;
-          text-transform: uppercase;
+          
           font-size: 0.75rem;
           font-weight: 700;
           letter-spacing: 1.5px;

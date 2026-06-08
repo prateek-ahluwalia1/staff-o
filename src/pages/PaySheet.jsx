@@ -553,7 +553,7 @@ export default function PaySheet() {
                     font-weight: 700;
                     color: #374151;
                     margin-bottom: 6px;
-                    text-transform: uppercase;
+                    
                     letter-spacing: 0.04em;
                 }
                 .ps-date-input {
@@ -625,7 +625,7 @@ export default function PaySheet() {
                 }
                 .ps-stat-text { min-width: 0; }
                 .ps-stat-value { font-size: 1.1rem; font-weight: 800; color: #111827; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-                .ps-stat-label { font-size: 0.67rem; color: #6b7280; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 2px; }
+                .ps-stat-label { font-size: 0.67rem; color: #6b7280; font-weight: 700;  letter-spacing: 0.05em; margin-top: 2px; }
 
                 /* Table card */
                 .ps-table-card {
@@ -684,7 +684,7 @@ export default function PaySheet() {
                     border-right: 1px solid #c8e6e3;
                     font-size: 0.7rem;
                     font-weight: 800;
-                    text-transform: uppercase;
+                    
                     letter-spacing: 0.05em;
                     color: #0d5c53;
                     padding: 10px 10px;
@@ -746,7 +746,7 @@ export default function PaySheet() {
                     font-size: 0.68rem; font-weight: 800;
                     padding: 2px 9px; border-radius: 20px;
                     border: 1px solid #bfdbfe;
-                    text-transform: uppercase; letter-spacing: 0.05em;
+                     letter-spacing: 0.05em;
                 }
                 .ps-pill {
                     display: inline-flex; align-items: center;

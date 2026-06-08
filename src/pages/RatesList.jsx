@@ -81,7 +81,7 @@ const RatesList = ({ forcedType } = {}) => {
   const makeInitialForm = useCallback(() => {
     const f = {
       title: "",
-      position: "full_time", // Set 'full_time' as default
+      position: "full_time",
       level: "",
       state: "",
       ot_base_rate: "",
@@ -393,7 +393,7 @@ const RatesList = ({ forcedType } = {}) => {
           font-size: 0.75rem;
           font-weight: 700;
           color: #475569;
-          text-transform: uppercase;
+          
           letter-spacing: 0.05em;
           margin-bottom: 0.5rem;
         }
@@ -429,7 +429,7 @@ const RatesList = ({ forcedType } = {}) => {
           font-size: 0.8rem;
           font-weight: 700;
           color: #64748b;
-          text-transform: uppercase;
+          
           letter-spacing: 0.05em;
         }
 

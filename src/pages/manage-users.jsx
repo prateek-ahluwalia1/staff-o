@@ -490,7 +490,7 @@ const ManageUsers = () => {
           font-size: 0.75rem;
           font-weight: 700;
           color: #6c757d;
-          text-transform: uppercase;
+          
           letter-spacing: 0.5px;
         }
 
@@ -544,7 +544,7 @@ const ManageUsers = () => {
 
         .jobtracker-main-table > thead > tr > th {
           text-align: center;
-          text-transform: uppercase;
+          
           letter-spacing: 0.02em;
           font-weight: 700;
           border-right: 1px solid #d6e4ff;

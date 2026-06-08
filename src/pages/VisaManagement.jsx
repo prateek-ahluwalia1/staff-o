@@ -357,7 +357,7 @@ export default function VisaManagement() {
                 }
                 
                 .user-friendly-table { border-collapse: separate; border-spacing: 0; }
-                .user-friendly-table th { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.03em; font-weight: 600; padding: 1rem; border-bottom: 2px solid #e2e8f0; }
+                .user-friendly-table th { font-size: 0.85rem;  letter-spacing: 0.03em; font-weight: 600; padding: 1rem; border-bottom: 2px solid #e2e8f0; }
                 .user-friendly-table tbody tr { transition: background-color 0.2s ease; }
                 .user-friendly-table td { vertical-align: middle; padding: 1.25rem 1rem; border-bottom: 1px solid #f1f5f9; }
                 .user-friendly-table tbody tr:last-child td { border-bottom: none; }

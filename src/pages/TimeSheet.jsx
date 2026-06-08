@@ -805,7 +805,7 @@ export default function TimeSheet() {
             border-bottom: 2px solid #0A7C6E !important;
             font-size: 0.82rem;
             font-weight: 700;
-            text-transform: uppercase;
+            
             letter-spacing: 0.02em;
             text-align: center;
             line-height: 1.2;

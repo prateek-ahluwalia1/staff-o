@@ -360,7 +360,7 @@ h6 {
     background: #ff9000;
     font-size: 18px;
     color: #fff;
-    text-transform: uppercase;
+
     padding: 12px 30px;
     display: inline-block;
     border-radius: 4px;
@@ -386,7 +386,7 @@ h6 {
     background: #444;
     font-size: 18px;
     color: #fff;
-    text-transform: uppercase;
+
     padding: 12px 30px;
     display: inline-block;
     border-radius: 4px;
@@ -411,7 +411,7 @@ h6 {
     background: #77c30a;
     font-size: 18px;
     color: #fff;
-    text-transform: uppercase;
+
     padding: 12px 30px;
     display: inline-block;
     border-radius: 4px;
@@ -473,7 +473,7 @@ h6 {
     display: inline-block;
     text-align: center;
     margin-bottom: 24px;
-    text-transform: uppercase;
+
     cursor: pointer;
     padding: 0 20px;
 }
@@ -621,7 +621,7 @@ h6 {
     font-weight: 600;
     letter-spacing: 0.08em;
     color: #94a3b8;
-    text-transform: uppercase;
+
 }
 
 .main-navbar .main-menu {
@@ -1104,7 +1104,7 @@ h6 {
     color: #047857;
     background: rgba(34, 197, 94, 0.12);
     border-radius: 999px;
-    text-transform: uppercase;
+
     margin-bottom: 20px;
 }
 
@@ -2267,7 +2267,7 @@ h6 {
     color: #fff;
     border: none;
     font-size: 16px;
-    text-transform: uppercase;
+
     font-weight: 700;
     padding: 15px 20px;
 }
@@ -2352,7 +2352,7 @@ h6 {
     padding: 0 0 10px !important;
     padding-bottom: 5px !important;
     color: #444;
-    text-transform: uppercase;
+
     font-weight: bold;
     font-size: 57px;
 }
@@ -2368,7 +2368,7 @@ h6 {
 }
 
 .big-font {
-    text-transform: uppercase;
+
     font-weight: 800;
     font-size: 60px;
 }
@@ -2384,12 +2384,12 @@ h6 {
 }
 
 .slide-h3 span {
-    text-transform: uppercase;
+
     font-weight: bold;
 }
 
 .slide-head {
-    text-transform: uppercase;
+
     font-weight: 900;
     font-size: 30px;
 }
@@ -2400,7 +2400,7 @@ h6 {
 }
 
 .main-title {
-    text-transform: uppercase;
+
     font-weight: 800;
     font-size: 70px;
 }
@@ -2441,7 +2441,7 @@ h6 {
 a.wit-btn {
     background: #fff;
     color: #333 !important;
-    text-transform: uppercase;
+
 }
 
 .wit-line {
@@ -2457,7 +2457,7 @@ a.wit-btn {
 }
 
 .subTxt {
-    text-transform: uppercase;
+
     font-weight: bold;
     font-size: 17px;
     color: #333;
@@ -2474,7 +2474,7 @@ a.wit-btn {
     color: #787878 !important;
     font-size: 70px;
     font-weight: lighter;
-    text-transform: uppercase;
+
     letter-spacing: 2px
 }
 
@@ -2487,7 +2487,7 @@ a.wit-btn {
 .larger-text {
     font-size: 24px;
     font-weight: lighter;
-    text-transform: uppercase;
+
 }
 
 .witTxt {
@@ -2516,7 +2516,7 @@ a.wit-btn {
     padding: 15px 60px;
     color: #fff;
     font-size: 16px;
-    text-transform: uppercase;
+
 }
 
 .rounded-bord {
@@ -2554,7 +2554,7 @@ a.wit-btn {
     font-size: 36px;
     font-weight: 700;
     padding: 15px;
-    text-transform: uppercase;
+
     font-family: 'Montserrat', sans-serif;
 }
 
@@ -2751,7 +2751,7 @@ a.wit-btn {
     font-size: 30px;
     font-weight: 700;
     padding: 12px 20px;
-    text-transform: uppercase;
+
 }
 
 .topsearchwrap h5 {
@@ -2761,7 +2761,7 @@ a.wit-btn {
     font-size: 30px;
     font-weight: 700;
     padding: 12px 20px;
-    text-transform: uppercase;
+
 }
 
 .catelist li a {
@@ -3085,7 +3085,7 @@ a.wit-btn {
     color: #fff;
     padding: 13px 15px;
     font-size: 16px;
-    text-transform: uppercase;
+
     font-weight: 600;
     border-radius: 0;
     display: block;
@@ -3213,7 +3213,7 @@ a.wit-btn {
     border-radius: 0;
     width: 100%;
     color: #fff;
-    text-transform: uppercase;
+
     font-weight: 700;
     padding: 10px 15px;
 }
@@ -3295,7 +3295,7 @@ a.wit-btn {
     border-radius: 0;
     width: 100%;
     color: #0A7C6E;
-    text-transform: uppercase;
+
     font-weight: 700;
     padding: 10px 15px;
     text-align: center;
@@ -3935,7 +3935,7 @@ a.wit-btn {
     font-size: 16px;
     font-weight: 700;
     margin-bottom: 5px;
-    text-transform: uppercase;
+
 }
 
 .information>p {
@@ -3965,7 +3965,7 @@ a.wit-btn {
     color: #fff;
     display: inline-block;
     font-size: 16px;
-    text-transform: uppercase;
+
     font-weight: 600;
     padding: 18px 40px;
     margin-top: 20px;
@@ -4090,7 +4090,7 @@ a.wit-btn {
     padding: 10px;
     font-size: 16px;
     font-weight: 700;
-    text-transform: uppercase;
+
 }
 
 .formpanel .btn:hover {
@@ -4610,7 +4610,7 @@ ul.orderlist li:before {
     font-size: 16px;
     padding: 20px 0px;
     font-weight: bold;
-    text-transform: uppercase;
+
     margin-top: 8px;
 }
 
@@ -4902,7 +4902,7 @@ ul.orderlist li:before {
     font-size: 16px;
     padding: 25px 0px;
     font-weight: bold;
-    text-transform: uppercase;
+
 }
 
 .three-plan .order-1 a {
@@ -4919,7 +4919,7 @@ ul.orderlist li:before {
     font-size: 16px;
     padding: 25px 0px;
     font-weight: bold;
-    text-transform: uppercase;
+
 }
 
 .three-plan .order-2 a {
@@ -4936,7 +4936,7 @@ ul.orderlist li:before {
     font-size: 16px;
     padding: 25px 0px;
     font-weight: bold;
-    text-transform: uppercase;
+
 }
 
 .three-plan .order-3 a {
@@ -5230,7 +5230,7 @@ blockquote:after {
 }
 
 .comments form label {
-    text-transform: uppercase;
+
     font-weight: normal;
     margin-top: 20px;
     display: inline-block;
@@ -5409,7 +5409,7 @@ blockquote:after {
     display: inline-block;
     margin-right: 5px;
     margin-bottom: 5px;
-    text-transform: uppercase;
+
 }
 
 .tags a:hover {
@@ -5620,7 +5620,7 @@ blockquote:after {
     display: block;
     height: inherit;
     font-size: 10px !important;
-    text-transform: uppercase;
+
     background: #eceeef;
     border-radius: inherit;
     box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.12), inset 0 0 2px rgba(0, 0, 0, 0.15);
@@ -5758,7 +5758,7 @@ blockquote:after {
     padding: 10px 20px;
     color: #fff;
     border-color: #333;
-    text-transform: uppercase;
+
     font-weight: 600
 }
 
@@ -6398,7 +6398,7 @@ Large Mobile Screen
     font-size: 1.4rem;
     font-weight: 700;
     color: #ffffff;
-    text-transform: uppercase;
+
 }
 
 .city-badge {
@@ -6676,7 +6676,7 @@ Large Mobile Screen
     color: #0A7C6E;
     font-weight: 600;
     letter-spacing: 0.04em;
-    text-transform: uppercase;
+
     font-size: 0.75rem;
     margin-bottom: 14px;
 }
@@ -6777,7 +6777,7 @@ Large Mobile Screen
     color: #0A7C6E;
     font-weight: 600;
     letter-spacing: 0.05em;
-    text-transform: uppercase;
+
     font-size: 0.75rem;
 }
 
@@ -7068,7 +7068,7 @@ Large Mobile Screen
     border-radius: 999px;
     font-size: 0.75rem;
     font-weight: 600;
-    text-transform: uppercase;
+
     letter-spacing: 0.05em;
     margin-bottom: 4px;
 }
@@ -7152,7 +7152,7 @@ Large Mobile Screen
     display: block;
     font-size: 0.75rem;
     color: #94a3b8;
-    text-transform: uppercase;
+
     letter-spacing: 0.08em;
 }
 
@@ -7504,7 +7504,7 @@ Large Mobile Screen
     color: #0A7C6E;
     font-weight: 600;
     font-size: 0.8rem;
-    text-transform: uppercase;
+
     letter-spacing: 0.08em;
 }
 
@@ -7553,7 +7553,7 @@ Large Mobile Screen
     display: block;
     font-size: 0.8rem;
     color: #94a3b8;
-    text-transform: uppercase;
+
     letter-spacing: 0.08em;
     margin-bottom: 2px;
 }
@@ -7931,7 +7931,7 @@ Large Mobile Screen
     border-radius: 12px;
     font-weight: 600;
     font-size: 0.8rem;
-    text-transform: uppercase;
+
     letter-spacing: 0.08em;
 }
 
@@ -8164,7 +8164,7 @@ Large Mobile Screen
 .job-related .subtitle {
     font-weight: 600;
     color: #0A7C6E;
-    text-transform: uppercase;
+
     letter-spacing: 0.1em;
 }
 
@@ -8255,7 +8255,7 @@ Large Mobile Screen
     background: rgba(16, 185, 129, 0.15);
     color: #047857;
     font-weight: 600;
-    text-transform: uppercase;
+
     letter-spacing: 0.08em;
     font-size: 0.75rem;
     margin-bottom: 10px;
@@ -8598,7 +8598,7 @@ Large Mobile Screen
 .contact-info-list span {
     display: block;
     font-size: 0.8rem;
-    text-transform: uppercase;
+
     letter-spacing: 0.08em;
     color: #94a3b8;
 }
@@ -8642,7 +8642,7 @@ Large Mobile Screen
 .candidate-detail-grid span {
     display: block;
     font-size: 0.9rem;
-    text-transform: uppercase;
+
     letter-spacing: 0.05em;
     color: #94a3b8;
 }
@@ -9108,7 +9108,7 @@ Large Mobile Screen
     color: #0A7C6E;
     font-weight: 700;
     letter-spacing: 0.1em;
-    text-transform: uppercase;
+
     font-size: 0.75rem;
 }
 
@@ -10061,7 +10061,7 @@ Large Mobile Screen
 
 .package-chip .label {
     font-size: 0.75rem;
-    text-transform: uppercase;
+
     color: #64748b;
     font-weight: 700;
 }
@@ -10122,7 +10122,7 @@ Large Mobile Screen
 
 .package-detail-card.exact .detail-label {
     font-size: 0.78rem;
-    text-transform: uppercase;
+
     letter-spacing: 0.08em;
     color: #94a3b8;
     font-weight: 700;
@@ -10386,7 +10386,7 @@ Large Mobile Screen
     color: #0A7C6E;
     font-weight: 600;
     font-size: 0.85rem;
-    text-transform: uppercase;
+
     letter-spacing: 0.05em;
 }
 
@@ -10488,7 +10488,7 @@ Large Mobile Screen
 }
 
 .blog-hero-card p {
-    text-transform: uppercase;
+
     letter-spacing: 0.08em;
     color: rgba(255, 255, 255, 0.7);
     font-size: 0.82rem;
@@ -10705,7 +10705,7 @@ Large Mobile Screen
 .blog-date-badge .month {
     display: block;
     font-size: 0.75rem;
-    text-transform: uppercase;
+
     letter-spacing: 0.05em;
     margin-top: 4px;
     opacity: 0.9;
@@ -11030,7 +11030,7 @@ Large Mobile Screen
 }
 
 .popular-list li span {
-    text-transform: uppercase;
+
     letter-spacing: 0.08em;
     font-size: 0.7rem;
     color: #94a3b8;
@@ -11301,7 +11301,7 @@ Large Mobile Screen
     color: #0A7C6E;
     font-size: 0.75rem;
     font-weight: 600;
-    text-transform: uppercase;
+
     letter-spacing: 0.05em;
 }
 
@@ -11511,7 +11511,7 @@ Large Mobile Screen
     color: #ffffff !important;
     /* White text for contrast */
     text-align: center;
-    text-transform: uppercase;
+
     letter-spacing: 0.02em;
     font-weight: 700;
     border-right: 1px solid #0A7C6E !important;
@@ -11574,7 +11574,7 @@ Large Mobile Screen
 .package-detail-card span {
     display: block;
     font-size: 1.78rem;
-    text-transform: uppercase;
+
     letter-spacing: 0.08em;
     color: #fff;
     font-weight: 700;
@@ -12642,7 +12642,7 @@ Large Mobile Screen
 
 .table-modern thead {
     background: #f8fafc;
-    text-transform: uppercase;
+
     font-size: 0.8rem;
     letter-spacing: 0.05em;
 }
@@ -12757,7 +12757,7 @@ Large Mobile Screen
 
 .preview-caption {
     font-size: 0.78rem;
-    text-transform: uppercase;
+
     color: #64748b;
     letter-spacing: 0.04em;
     margin-bottom: 4px;
@@ -12955,7 +12955,7 @@ Large Mobile Screen
     border-radius: 6px;
     font-size: 0.72rem;
     font-weight: 700;
-    text-transform: uppercase;
+
     letter-spacing: 0.06em;
     margin-bottom: 6px;
 }
@@ -13068,7 +13068,7 @@ Large Mobile Screen
 .employer-stats span {
     font-size: 0.75rem;
     color: #94a3b8;
-    text-transform: uppercase;
+
     letter-spacing: 0.05em;
 }
 
@@ -13259,7 +13259,7 @@ Large Mobile Screen
     color: #0A7C6E;
     font-size: 0.85rem;
     font-weight: 700;
-    text-transform: uppercase;
+
     letter-spacing: 0.08em;
     margin-bottom: 20px;
 }
@@ -13407,7 +13407,7 @@ Large Mobile Screen
     color: #ffffff;
     font-size: 0.75rem;
     font-weight: 700;
-    text-transform: uppercase;
+
     letter-spacing: 0.05em;
 }
 
@@ -13654,7 +13654,7 @@ Large Mobile Screen
     color: #475569;
     font-weight: 600;
     font-size: 0.9rem;
-    text-transform: uppercase;
+
     letter-spacing: 0.05em;
     padding: 14px 16px;
     border-bottom: 2px solid #e2e8f0;
@@ -14391,7 +14391,7 @@ Large Mobile Screen
     border-radius: 30px;
     font-size: 0.85rem;
     font-weight: 600;
-    text-transform: uppercase;
+
     letter-spacing: 0.1em;
     margin-bottom: 20px;
     border: 1px solid rgba(37, 99, 235, 0.3);
@@ -14639,7 +14639,7 @@ Large Mobile Screen
     border-radius: 30px;
     font-size: 0.85rem;
     font-weight: 600;
-    text-transform: uppercase;
+
     letter-spacing: 0.1em;
     margin-bottom: 20px;
 }
@@ -14943,7 +14943,7 @@ Large Mobile Screen
     border-radius: 30px;
     font-size: 0.9rem;
     font-weight: 600;
-    text-transform: uppercase;
+
     letter-spacing: 0.08em;
     margin-bottom: 24px;
     border: 1px solid rgba(37, 99, 235, 0.2);

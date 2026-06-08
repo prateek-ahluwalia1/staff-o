@@ -44,7 +44,7 @@ html { scroll-behavior: smooth; } */
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.2em;
-  text-transform: uppercase;
+
   color: var(--amber);
 }
 
@@ -58,7 +58,7 @@ html { scroll-behavior: smooth; } */
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.12em;
-  text-transform: uppercase;
+
 }
 
 .tag-green {
@@ -146,7 +146,7 @@ nav a {
   font-size: 14px;
   font-weight: 600;
   letter-spacing: 0.1em;
-  text-transform: uppercase;
+
   color: var(--off);
   text-decoration: none;
   transition: color 0.2s;
@@ -171,7 +171,7 @@ nav a:hover {
   font-size: 13px;
   font-weight: 700;
   letter-spacing: 0.1em;
-  text-transform: uppercase;
+
   cursor: pointer;
   text-decoration: none;
   transition: all 0.2s;
@@ -191,7 +191,7 @@ nav a:hover {
   font-size: 13px;
   font-weight: 700;
   letter-spacing: 0.1em;
-  text-transform: uppercase;
+
   cursor: pointer;
   text-decoration: none;
   transition: background 0.2s;
@@ -301,7 +301,7 @@ nav a:hover {
   font-size: 15px;
   font-weight: 700;
   letter-spacing: 0.12em;
-  text-transform: uppercase;
+
   border: none;
   cursor: pointer;
   text-decoration: none;
@@ -321,7 +321,7 @@ nav a:hover {
   font-size: 15px;
   font-weight: 700;
   letter-spacing: 0.12em;
-  text-transform: uppercase;
+
   border: 1px solid var(--line3);
   cursor: pointer;
   text-decoration: none;
@@ -363,7 +363,7 @@ nav a:hover {
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.12em;
-  text-transform: uppercase;
+
   color: var(--faint);
 }
 
@@ -420,7 +420,7 @@ nav a:hover {
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.15em;
-  text-transform: uppercase;
+
   color: var(--amber);
   margin-bottom: 8px;
 }
@@ -491,7 +491,7 @@ nav a:hover {
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.08em;
-  text-transform: uppercase;
+
   color: var(--green);
 }
 
@@ -640,7 +640,7 @@ nav a:hover {
   font-size: 12px;
   color: rgba(10, 124, 110, 0.95);
   letter-spacing: 0.14em;
-  text-transform: uppercase;
+
 }
 
 .auth-account-types {
@@ -756,7 +756,7 @@ nav a:hover {
   font-size: 13px;
   font-weight: 700;
   letter-spacing: 0.15em;
-  text-transform: uppercase;
+
   color: var(--ink);
   display: flex;
   align-items: center;
@@ -815,7 +815,7 @@ nav a:hover {
   font-size: 13px;
   font-weight: 700;
   letter-spacing: 0.1em;
-  text-transform: uppercase;
+
   cursor: pointer;
   text-decoration: none;
   display: inline-flex;
@@ -838,7 +838,7 @@ nav a:hover {
   font-size: 13px;
   font-weight: 700;
   letter-spacing: 0.1em;
-  text-transform: uppercase;
+
   cursor: pointer;
   text-decoration: none;
   display: inline-block;
@@ -956,7 +956,7 @@ nav a:hover {
   font-size: 13px;
   font-weight: 700;
   letter-spacing: 0.1em;
-  text-transform: uppercase;
+
   cursor: pointer;
   transition: all 0.2s;
 }
@@ -1080,7 +1080,7 @@ nav a:hover {
   font-size: 13px;
   font-weight: 700;
   letter-spacing: 0.1em;
-  text-transform: uppercase;
+
   color: var(--off);
   transition: color 0.2s;
 }
@@ -1199,7 +1199,7 @@ nav a:hover {
   font-size: 20px;
   font-weight: 700;
   letter-spacing: 0.05em;
-  text-transform: uppercase;
+
   margin-bottom: 12px;
   position: relative;
   z-index: 1;
@@ -1298,7 +1298,7 @@ nav a:hover {
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.14em;
-  text-transform: uppercase;
+
   color: var(--green);
 }
 
@@ -1361,7 +1361,7 @@ nav a:hover {
   font-size: 18px;
   font-weight: 700;
   letter-spacing: 0.06em;
-  text-transform: uppercase;
+
   margin-bottom: 8px;
 }
 
@@ -1379,7 +1379,7 @@ nav a:hover {
   font-family: 'Barlow Condensed', sans-serif;
   font-size: 11px;
   letter-spacing: 0.1em;
-  text-transform: uppercase;
+
 }
 
 .demo-meta strong {
@@ -1468,7 +1468,7 @@ nav a:hover {
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.15em;
-  text-transform: uppercase;
+
 }
 
 .up-badge-client {
@@ -1559,7 +1559,7 @@ nav a:hover {
   font-size: 14px;
   font-weight: 700;
   letter-spacing: 0.12em;
-  text-transform: uppercase;
+
   cursor: pointer;
   border: none;
   transition: opacity 0.2s;
@@ -1673,7 +1673,7 @@ nav a:hover {
   font-size: 16px;
   font-weight: 700;
   letter-spacing: 0.06em;
-  text-transform: uppercase;
+
   margin-bottom: 6px;
 }
 
@@ -1730,7 +1730,7 @@ nav a:hover {
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.15em;
-  text-transform: uppercase;
+
   color: var(--green);
 }
 
@@ -1765,7 +1765,7 @@ nav a:hover {
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.12em;
-  text-transform: uppercase;
+
   color: var(--faint);
   margin-top: 2px;
 }
@@ -1901,7 +1901,7 @@ nav a:hover {
   color: var(--faint);
   font-family: 'Barlow Condensed', sans-serif;
   letter-spacing: 0.06em;
-  text-transform: uppercase;
+
 }
 
 /* --- ENHANCED APP SECTION LAYOUT --- */
@@ -2004,7 +2004,7 @@ nav a:hover {
   font-size: 9px;
   color: var(--faint);
   letter-spacing: 0.06em;
-  text-transform: uppercase;
+
 }
 
 .store-name {
@@ -2223,7 +2223,7 @@ footer {
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.2em;
-  text-transform: uppercase;
+
   color: var(--amber);
   margin-bottom: 20px;
   padding-bottom: 10px;

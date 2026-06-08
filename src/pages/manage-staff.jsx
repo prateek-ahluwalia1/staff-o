@@ -440,7 +440,7 @@ const ManageStaff = () => {
           font-size: 0.75rem;
           font-weight: 700;
           color: #6c757d;
-          text-transform: uppercase;
+          
           letter-spacing: 0.5px;
         }
 
@@ -474,7 +474,7 @@ const ManageStaff = () => {
 
         .manage-staff-table > thead > tr > th {
           background: #0A7C6E;
-          text-transform: uppercase;
+          
           letter-spacing: 0.02em;
           font-weight: 700;
           color: #fff;

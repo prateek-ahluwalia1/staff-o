@@ -54,7 +54,7 @@ export default function LatestJobs() {
         .view-toggle-btn { border-radius: 30px; padding: 0.4rem 1.2rem; font-weight: 500; transition: all 0.2s ease; }
         .icon-box { width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; background: #e9ecef; border-radius: 8px; color: #0A7C6E; }
         .badge-soft-primary { background-color: rgba(10, 124, 110, 0.1); color: #0A7C6E; border-radius: 6px; padding: 6px 10px; font-weight: 600; font-size: 0.8rem; }
-        .table-custom-header th { background-color: #f1f3f5; color: #495057; font-weight: 600; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.5px; padding: 1rem; }
+        .table-custom-header th { background-color: #f1f3f5; color: #495057; font-weight: 600;  font-size: 0.75rem; letter-spacing: 0.5px; padding: 1rem; }
         .table td { padding: 1rem; vertical-align: middle; }
         
         /* Custom Color Overrides (#0A7C6E) */

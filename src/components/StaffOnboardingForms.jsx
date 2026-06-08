@@ -578,7 +578,7 @@ const normalizeOnboardData = (data) => ({
 });
 
 // ─── MAIN COMPONENT ──────────────────────────────────────────────────────────
-const StaffOnboardingForms = ({ submit, userId }) => {
+const StaffOnboardingForms = ({ submit, userId, onProfileUpdate }) => {
     const [subTab, setSubTab] = useState(0);
     const [loading, setLoading] = useState(false);
     const [dataModified, setDataModified] = useState(false);
@@ -655,7 +655,6 @@ const StaffOnboardingForms = ({ submit, userId }) => {
         setDataModified(JSON.stringify(updatedForm) !== JSON.stringify(originalOnboardForm));
     };
 
-    // Instant Document Upload Handler
     const handleDocUpload = async (e, fieldName) => {
         const file = e.target.files[0];
         if (!file) return;
@@ -670,15 +669,44 @@ const StaffOnboardingForms = ({ submit, userId }) => {
         fd.append("folder", "staff_documents");
 
         try {
+            // A. Upload the physical file to the server
             const res = await submit("api/upload-file", fd, { method: "POST" });
+
             if (res?.success || res?.path) {
                 const filePath = res.path || res.data?.path || "";
 
+                // B. Update the local onboarding form state so the UI shows "View Attached Document"
                 setOnboardForm((prev) => {
                     const updatedForm = { ...prev, [fieldName]: filePath };
                     setDataModified(JSON.stringify(updatedForm) !== JSON.stringify(originalOnboardForm));
                     return updatedForm;
                 });
+
+                // C. Determine the correct Document Name for the database
+                let docName = "";
+                if (fieldName === "passport_doc") docName = "Passport";
+                else if (fieldName === "security_license_doc") docName = "Security License";
+                else if (fieldName === "first_aid_doc") docName = "First Aid Certificate";
+
+                // D. Instantly save it to the user's official documents list (Just like the Modal)
+                if (docName) {
+                    const docPayload = {
+                        user_id: userId,
+                        document_type: docName,
+                        document_name: docName,
+                        file: filePath
+                    };
+
+                    // Save document to backend
+                    await submit("api/guard-add-documents", docPayload, { method: "POST", silentErrorToast: true });
+
+                    // E. Gracefully fetch user data to update the missing items & completion percentage
+                    if (typeof onProfileUpdate === "function") {
+                        await onProfileUpdate();
+                    }
+                }
+
+                toast.success(`${docName || "Document"} uploaded and saved successfully!`);
             } else {
                 toast.error(res?.message || "Failed to upload document.");
             }
@@ -768,6 +796,10 @@ const StaffOnboardingForms = ({ submit, userId }) => {
             else if (tabIndex === 2) await fetchFormData("superannuation");
 
             setDataModified(false);
+
+            if (typeof onProfileUpdate === "function") {
+                await onProfileUpdate();
+            }
 
             try {
                 let doc;

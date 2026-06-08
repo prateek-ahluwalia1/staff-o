@@ -40,6 +40,21 @@ const INITIAL_FORM_STATE = {
   bank_details: [],
 };
 
+const DOC_TYPES = [
+  { value: "Passport", label: "Passport" },
+  { value: "Visa", label: "Visa" },
+  { value: "Driver License Front", label: "Driver License (Front)" },
+  { value: "Driver License Back", label: "Driver License (Back)" },
+  { value: "Security License", label: "Security License" },
+  { value: "Working with Children", label: "Working with Children Check (WWCC)" },
+  { value: "Employment Application Form", label: "Employment Application Form" },
+  { value: "TFN Declaration", label: "TFN Declaration" },
+  { value: "Superannuation Form", label: "Superannuation Form" },
+  { value: "First Aid", label: "First Aid Certificate" },
+  { value: "CPR", label: "CPR Certificate" },
+  { value: "Vaccination Certificate", label: "Vaccination Certificate" }
+];
+
 export default function EditProfile() {
   const dispatch = useDispatch();
   const { userdata } = useSelector((state) => state.auth);
@@ -740,9 +755,18 @@ export default function EditProfile() {
       )}
 
       {activeTab === "onboarding" && userType === "staff" && (
-        <StaffOnboardingForms submit={submit} userId={userId} />
+        <StaffOnboardingForms
+          submit={submit}
+          userId={userId}
+          // Pass this new function down
+          onProfileUpdate={async () => {
+            const refetchRes = await refetch();
+            if (refetchRes && (refetchRes.data || refetchRes.success)) {
+              dispatch(setUser({ userdata: refetchRes.data || refetchRes }));
+            }
+          }}
+        />
       )}
-
       {activeTab === "cards" && userType === "customer" && (
         <div className="card-section p-4 bg-white rounded shadow-sm border">
           {!isAddingCard ? (
@@ -1423,20 +1447,23 @@ export default function EditProfile() {
       <Modal open={showDocModal} onClose={() => setShowDocModal(false)}>
         <form onSubmit={handleDocSubmit} className="p-3 position-relative">
           <h5>{selectedDoc ? "Edit Document" : "Add New Document"}</h5>
+          <label className="form-label fw-semibold mt-2">Document Type *</label>
           <select
             className="form-control mb-3"
             name="document_name"
             value={docForm.document_name}
             onChange={handleDocFormChange}
-            required={!selectedDoc}
+            required
             disabled={!!selectedDoc}
           >
-            <option value="">
-              Select Type <span className="text-danger">*</span>
-            </option>
-            <option value="Passport">Passport</option>
-            <option value="Visa">Visa</option>
-            <option value="Casual Contract Form">Casual Contract Form</option>
+            <option value="">Select Type</option>
+
+            {/* Map through the new object array */}
+            {DOC_TYPES.map((doc) => (
+              <option key={doc.value} value={doc.value}>
+                {doc.label}
+              </option>
+            ))}
           </select>
 
           <div className="mb-3">

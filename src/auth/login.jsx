@@ -139,17 +139,6 @@ export default function Login() {
           { silentErrorToast: true }
         );
 
-        if (!res) return;
-
-        if (
-          res?.data?.success === false &&
-          res?.data?.message === "User not found."
-        ) {
-          setPendingGoogleToken(googleToken);
-          setShowRoleModal(true);
-          return;
-        }
-
         const normalized = normalizeAuthResponse(res);
 
         if (normalized?.token) {
@@ -168,14 +157,17 @@ export default function Login() {
             navigate("/add-job");
           }
         } else {
-          console.error("Google login error response:", res);
+          // --- NEW USER (OR LOGIN FAILED): OPEN REGISTRATION MODAL ---
+          // This catches the "User not found" scenario perfectly even if useSubmit returns undefined
+          setPendingGoogleToken(googleToken);
+          setShowRoleModal(true);
         }
-      } catch {
+      } catch (err) {
+        console.error("Google Login Error:", err);
         toast.error("Server connection error during Google login.");
       }
     },
   });
-
   const handleRoleSelectionSubmit = async () => {
     try {
       const res = await submit(

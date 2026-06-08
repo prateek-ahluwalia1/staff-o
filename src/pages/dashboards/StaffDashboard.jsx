@@ -90,7 +90,9 @@ export default function StaffDashboard() {
 
               {/* Flex container to hold contact pills nicely */}
               <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
-                <div className="profile-contact">
+                <div className="profile-contact"
+                style = {{textTransform: "none"}}
+                >
                   <i className="fa-solid fa-envelope"></i> {email}
                 </div>
               </div>

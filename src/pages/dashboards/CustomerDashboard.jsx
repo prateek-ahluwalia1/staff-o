@@ -108,7 +108,9 @@ export default function CustomerDashboard() {
                 <div className="profile-contact">
                   <i className="fa-solid fa-phone"></i> {phone}
                 </div>
-                <div className="profile-contact">
+                <div className="profile-contact"
+                style={{textTransform : "none"}}
+                >
                   <i className="fa-solid fa-envelope"></i> {email}
                 </div>
               </div>
@@ -160,7 +162,7 @@ export default function CustomerDashboard() {
       <section className="dashboard-panel">
         <div className="panel-heading">
           <h3>Your Jobs</h3>
-          <Link to="/jobs">Post New Job</Link>
+          <Link to="/add-job">Post New Job</Link>
         </div>
         <div className="table-responsive">
           <table className="table align-middle">

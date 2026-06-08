@@ -58,17 +58,61 @@ export default function RateBreakdown({ rate, jobTypeLabel = "Security Guard", p
               </tr>
             ))}
           </tbody>
-          <tfoot style={{ backgroundColor: "#fdfdfe" }}>
-            <tr><td colSpan="3" className="ps-4 py-2 border-0"></td><td className="text-end py-2 text-muted small fw-bold text-uppercase border-0 pt-3">Subtotal (ex GST)</td><td className="text-end pe-4 py-2 fw-bold text-dark border-0 pt-3">{fmt(chargeTotal)}</td></tr>
-            <tr><td colSpan="3" className="ps-4 py-1 border-0"></td><td className="text-end py-1 text-muted small fw-bold text-uppercase border-0">GST (10%)</td><td className="text-end pe-4 py-1 text-muted fw-medium border-0">{fmt(chargeGst)}</td></tr>
-            <tr className="border-bottom"><td colSpan="3" className="ps-4 py-3 border-0"></td><td className="text-end py-3 fw-bold text-dark fs-6 border-0">Total Quotation</td><td className="text-end pe-4 py-3 fw-bold text-dark fs-6 border-0">{fmt(chargeTotalIncGst)}</td></tr>
+
+          {/* UPDATED RECEIPT FOOTER */}
+          <tfoot style={{ backgroundColor: "#fff", fontFamily: "'Courier New', Courier, monospace", fontSize: "1.05rem", color: "#333"}}>
+            <tr>
+              {/* Reduced empty space to 2 columns */}
+              <td colSpan="2" className="border-0"></td>
+              {/* Increased label space to 2 columns */}
+              <td colSpan="2" className="py-2 border-0">Subtotal (Ex GST)</td>
+              <td className="text-end pe-4 py-2 border-0">{fmt(chargeTotal)}</td>
+            </tr>
+            <tr>
+              <td colSpan="2" className="border-0"></td>
+              <td colSpan="2" className="py-2 border-0">GST (10%)</td>
+              <td className="text-end pe-4 py-2 border-0">{fmt(chargeGst)}</td>
+            </tr>
+            <tr>
+              <td colSpan="2" className="border-0"></td>
+              {/* Spanning the horizontal rule across the remaining 3 columns */}
+              <td colSpan="3" className="pe-4 border-0 py-0">
+                <hr style={{ borderTop: "2px solid #333", margin: "0.5rem 0", opacity: 1 }} />
+              </td>
+            </tr>
+            <tr>
+              <td colSpan="2" className="border-0"></td>
+              <td colSpan="2" className="py-3 border-0">Quote Total</td>
+              <td className="text-end pe-4 py-3 border-0">{fmt(chargeTotalIncGst)}</td>
+            </tr>
+
+            {/* Dynamic discount/split row mapping */}
             {paymentOption === "full" && (
-              <tr className="bg-success bg-opacity-10"><td colSpan="3" className="ps-4 py-2 border-0"><span className="text-success small fw-bold"><i className="fa-solid fa-tag me-1"></i> 5% Pay-in-Full Discount Applied</span></td><td className="text-end py-2 text-success small fw-bold text-uppercase border-0">Less Discount</td><td className="text-end pe-4 py-2 fw-bold text-success border-0">-{fmt(discountAmount)}</td></tr>
+              <tr>
+                <td colSpan="2" className="border-0"></td>
+                <td colSpan="2" className="py-3 border-0">Pay In Full Discount (5%)</td>
+                <td className="text-end pe-4 py-3 border-0">-{fmt(discountAmount)}</td>
+              </tr>
             )}
             {paymentOption === "split" && (
-              <tr className="bg-warning bg-opacity-10"><td colSpan="3" className="ps-4 py-2 border-0"><span className="text-warning-emphasis small fw-bold"><i className="fa-solid fa-layer-group me-1"></i> 50% Deferred until Handshake Completion</span></td><td className="text-end py-2 text-warning-emphasis small fw-bold text-uppercase border-0">Balance Remaining</td><td className="text-end pe-4 py-2 fw-bold text-warning-emphasis border-0">{fmt(balanceDue)}</td></tr>
+              <tr>
+                <td colSpan="2" className="border-0"></td>
+                <td colSpan="2" className="py-3 border-0">Split Payment (50%)</td>
+                <td className="text-end pe-4 py-3 border-0">-{fmt(balanceDue)}</td>
+              </tr>
             )}
-            <tr><td colSpan="3" className="ps-4 py-3 border-top mt-2"></td><td className="text-end py-3 fw-bold text-dark fs-5 border-top mt-2">Payable Now</td><td className="text-end pe-4 py-3 fw-bold text-primary fs-4 border-top mt-2">{fmt(amountDueToday)}</td></tr>
+
+            <tr>
+              <td colSpan="2" className="border-0"></td>
+              <td colSpan="3" className="pe-4 border-0 py-0">
+                <hr style={{ borderTop: "2px solid #333", margin: "0.5rem 0", opacity: 1 }} />
+              </td>
+            </tr>
+            <tr>
+              <td colSpan="2" className="border-0"></td>
+              <td colSpan="2" className="py-3 border-0 fw-bold" style={{ fontSize: "1.15rem", color: "#000" }}>Amount Payable</td>
+              <td className="text-end pe-4 py-3 border-0 fw-bold" style={{ fontSize: "1.15rem", color: "#000" }}>{fmt(amountDueToday)}</td>
+            </tr>
           </tfoot>
         </table>
       </div>

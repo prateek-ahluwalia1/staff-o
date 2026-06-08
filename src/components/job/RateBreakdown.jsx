@@ -42,7 +42,7 @@ export default function RateBreakdown({ rate, jobTypeLabel = "Security Guard", p
             <tr className="border-bottom">
               <th className="text-muted fw-bold py-3 ps-4" style={{ width: "30%" }}>Description</th>
               <th className="text-muted fw-bold py-3" style={{ width: "25%" }}>Rate Type</th>
-              <th className="text-muted fw-bold py-3 text-center" style={{ width: "15%" }}>Qty (Hrs)</th>
+              <th className="text-muted fw-bold py-3 text-center" style={{ width: "15%" }}>Billable hours</th>
               <th className="text-muted fw-bold py-3 text-end" style={{ width: "15%" }}>Unit Price</th>
               <th className="text-muted fw-bold py-3 text-end pe-4" style={{ width: "15%" }}>Subtotal</th>
             </tr>

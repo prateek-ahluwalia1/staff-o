@@ -167,7 +167,7 @@ export default function DetailsStep({ form, setField, handleFile, attachmentPrev
           <label className="form-label small fw-bold mb-2 d-none d-md-block opacity-0 user-select-none">Aligner</label>
           <CardToggle
             icon="fa-solid fa-child-reaching"
-            label="Working with Children?"
+            label="Working with Children Check?"
             isYes={Array.isArray(form.document_types) && form.document_types.includes('working_with_children')}
             onToggle={(val) => toggleDocument('working_with_children', val)}
           />
@@ -178,7 +178,7 @@ export default function DetailsStep({ form, setField, handleFile, attachmentPrev
           <label className="form-label small fw-bold mb-2 d-none d-md-block opacity-0 user-select-none">Aligner</label>
           <CardToggle
             icon="fa-regular fa-id-card"
-            label="White Card?"
+            label="White Card Required?"
             isYes={Array.isArray(form.document_types) && form.document_types.includes('white_card')}
             onToggle={(val) => toggleDocument('white_card', val)}
           />

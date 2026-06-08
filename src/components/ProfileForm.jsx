@@ -305,95 +305,41 @@ export default function ProfileForm({
             <>
               <div>
                 <label className="form-label fw-semibold mb-3">Gender</label>
-                <div
-                  style={{
-                    display: "flex",
-                    gap: "15px",
-                    flexWrap: "wrap",
-                    position: "relative",
-                    top: "-8px",
-                  }}
-                >
-                  {["male", "female", "other"].map((option) => {
-                    const isSelected = formData.gender === option;
+                <div className="d-flex flex-column gap-2 ms-1">
+                  {[
+                    { id: "male", label: "Male" },
+                    { id: "female", label: "Female" },
+                    { id: "other", label: "Prefer not to say" }
+                  ].map((option) => {
+                    const isSelected = formData.gender === option.id;
                     return (
-                      <div key={option} style={{ display: "flex", alignItems: "center" }}>
+                      <div key={option.id} className="form-check">
                         <input
+                          className="form-check-input"
                           type="radio"
-                          id={`gender_${option}`}
+                          id={`gender_${option.id}`}
                           name="gender"
-                          value={option}
+                          value={option.id}
                           checked={isSelected}
                           onChange={(e) => {
                             onChange({
                               target: { id: "gender", value: e.target.value },
                             });
                           }}
-                          style={{ display: "none" }}
+                          style={{ cursor: "pointer" }}
                         />
                         <label
-                          htmlFor={`gender_${option}`}
-                          className="gender-radio-label shadow-sm"
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "8px",
-                            cursor: "pointer",
-                            padding: "10px 20px",
-                            borderRadius: "8px",
-                            border: isSelected ? "2px solid #0A7C6E" : "2px solid #dee2e6",
-                            backgroundColor: isSelected ? "#0A7C6E" : "#fff",
-                            color: isSelected ? "white" : "#495057",
-                            fontWeight: isSelected ? "600" : "500",
-                            transition: "all 0.2s ease-in-out",
-                            userSelect: "none",
-                          }}
-                          onMouseEnter={(e) => {
-                            if (!isSelected) {
-                              e.currentTarget.style.borderColor = "#0A7C6E";
-                              e.currentTarget.style.backgroundColor = "#f8f9fa";
-                            }
-                          }}
-                          onMouseLeave={(e) => {
-                            if (!isSelected) {
-                              e.currentTarget.style.borderColor = "#dee2e6";
-                              e.currentTarget.style.backgroundColor = "#fff";
-                            }
-                          }}
+                          className="form-check-label text-dark"
+                          htmlFor={`gender_${option.id}`}
+                          style={{ cursor: "pointer", fontSize: "1.05rem" }}
                         >
-                          <i
-                            className={`fa-solid ${option === "male"
-                              ? "fa-mars"
-                              : option === "female"
-                                ? "fa-venus"
-                                : "fa-circle-question"
-                              }`}
-                            style={{ fontSize: "1.1rem" }}
-                          ></i>
-                          <span style={{ textTransform: "capitalize" }}>
-                            {option}
-                          </span>
+                          {option.label}
                         </label>
                       </div>
                     );
                   })}
                 </div>
               </div>
-
-              {/* <div>
-                <label htmlFor="security_license_no" className="form-label fw-semibold">
-                  Security License No <span className="text-danger">*</span>
-                </label>
-                <input
-                  type="text"
-                  className="form-control"
-                  id="security_license_no"
-                  placeholder="Enter security license number"
-                  value={formData.security_license_no || ""}
-                  onChange={onChange}
-                  required
-                />
-              </div> */}
             </>
           )}
 

@@ -1,7 +1,42 @@
 import React from "react";
 import { apiURL } from "../utils/exports";
 
-export default function DocumentTable({ documents, onAddFile, onAddDocument, userType }) {
+// 🇦🇺 Date formatter
+const formatAUSDate = (dateString) => {
+  if (!dateString) return "-";
+
+  const date = new Date(dateString);
+  if (isNaN(date.getTime())) return "-";
+
+  const day = String(date.getDate()).padStart(2, "0");
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const year = date.getFullYear();
+
+  return `${day}/${month}/${year}`;
+};
+
+// expiry status
+const getExpiryStatus = (dateString) => {
+  if (!dateString) return "no-expiry";
+
+  const today = new Date();
+  const expiry = new Date(dateString);
+
+  if (isNaN(expiry.getTime())) return "no-expiry";
+
+  const diffDays = (expiry - today) / (1000 * 60 * 60 * 24);
+
+  if (diffDays < 0) return "expired";
+  if (diffDays <= 30) return "expiring";
+  return "valid";
+};
+
+export default function DocumentTable({
+  documents,
+  onAddFile,
+  onAddDocument,
+  userType,
+}) {
   return (
     <div
       className="settings-card"
@@ -13,6 +48,7 @@ export default function DocumentTable({ documents, onAddFile, onAddDocument, use
         padding: 0,
       }}
     >
+      {/* HEADER */}
       <div
         className="settings-card-header"
         style={{
@@ -35,6 +71,8 @@ export default function DocumentTable({ documents, onAddFile, onAddDocument, use
           </p>
         </div>
       </div>
+
+      {/* TABLE WRAPPER */}
       <div style={{ overflowX: "auto", padding: 24 }}>
         <table
           className="table table-bordered"
@@ -49,36 +87,107 @@ export default function DocumentTable({ documents, onAddFile, onAddDocument, use
         >
           <thead style={{ background: "#f3f4f6" }}>
             <tr>
-              <th style={{ fontWeight: 750, color: "#333", border: "none", padding: "12px 16px" }}>Document Name</th>
-              <th style={{ fontWeight: 750, color: "#333", border: "none", padding: "12px 16px" }}>DOC. No.</th>
-              <th style={{ fontWeight: 750, color: "#333", border: "none", padding: "12px 16px" }}>Expiration Date</th>
-              <th style={{ fontWeight: 750, color: "#333", border: "none", padding: "12px 16px" }}>File</th>
-              <th style={{ fontWeight: 750, color: "#333", border: "none", padding: "12px 16px" }}>Action</th>
+              <th style={{ fontWeight: 750, color: "#333", border: "none", padding: "12px 16px" }}>
+                Document Name
+              </th>
+              <th style={{ fontWeight: 750, color: "#333", border: "none", padding: "12px 16px" }}>
+                Document Number
+              </th>
+              <th style={{ fontWeight: 750, color: "#333", border: "none", padding: "12px 16px" }}>
+                Expiration Date
+              </th>
+              <th style={{ fontWeight: 750, color: "#333", border: "none", padding: "12px 16px" }}>
+                File
+              </th>
+              <th style={{ fontWeight: 750, color: "#333", border: "none", padding: "12px 16px" }}>
+                Action
+              </th>
             </tr>
           </thead>
+
           <tbody>
             {documents && documents.length > 0 ? (
               documents.map((doc, idx) => {
                 const isStaffEditingExisting = userType === "staff" && doc.file;
 
+                const status = getExpiryStatus(doc.document_expiry);
+
+                const rowStyle = {
+                  background:
+                    status === "expired"
+                      ? "#ffe5e5"
+                      : idx % 2 === 0
+                        ? "#fff"
+                        : "#f9fafb",
+                  transition: "background 0.2s",
+                  borderRadius: 8,
+                  boxShadow: "0 1px 2px rgba(0,0,0,0.01)",
+                };
+
                 return (
                   <tr
                     key={doc.id}
-                    style={{
-                      background: idx % 2 === 0 ? "#fff" : "#f9fafb",
-                      transition: "background 0.2s",
-                      borderRadius: 8,
-                      boxShadow: "0 1px 2px rgba(0,0,0,0.01)",
-                    }}
-                    onMouseOver={(e) => (e.currentTarget.style.background = "#f1f5f9")}
-                    onMouseOut={(e) => (e.currentTarget.style.background = idx % 2 === 0 ? "#fff" : "#f9fafb")}
+                    style={rowStyle}
+                    onMouseOver={(e) =>
+                      (e.currentTarget.style.background = "#f1f5f9")
+                    }
+                    onMouseOut={(e) =>
+                    (e.currentTarget.style.background =
+                      status === "expired"
+                        ? "#ffe5e5"
+                        : idx % 2 === 0
+                          ? "#fff"
+                          : "#f9fafb")
+                    }
                   >
-                    <td style={{ padding: "10px 16px", verticalAlign: "middle", border: "none" }}>{doc.document_name}</td>
-                    <td style={{ padding: "10px 16px", verticalAlign: "middle", border: "none" }}>{doc.document_no || "-"}</td>
-                    <td style={{ padding: "10px 16px", verticalAlign: "middle", border: "none" }}>{doc.document_expiry || "-"}</td>
+                    <td style={{ padding: "10px 16px", verticalAlign: "middle", border: "none" }}>
+                      {doc.document_name}
+
+                      {/* 🟡 Expiring badge */}
+                      {status === "expiring" && (
+                        <span
+                          style={{
+                            marginLeft: 8,
+                            fontSize: 11,
+                            padding: "2px 6px",
+                            background: "#fff3cd",
+                            color: "#856404",
+                            borderRadius: 4,
+                          }}
+                        >
+                          Expiring Soon
+                        </span>
+                      )}
+
+                      {/* 🔴 Expired badge */}
+                      {status === "expired" && (
+                        <span
+                          style={{
+                            marginLeft: 8,
+                            fontSize: 11,
+                            padding: "2px 6px",
+                            background: "#f8d7da",
+                            color: "#721c24",
+                            borderRadius: 4,
+                          }}
+                        >
+                          Expired
+                        </span>
+                      )}
+                    </td>
+
+                    <td style={{ padding: "10px 16px", verticalAlign: "middle", border: "none" }}>
+                      {doc.document_no || "-"}
+                    </td>
+
+                    <td style={{ padding: "10px 16px", verticalAlign: "middle", border: "none" }}>
+                      {formatAUSDate(doc.document_expiry)}
+                    </td>
+
                     <td style={{ padding: "10px 16px", verticalAlign: "middle", border: "none" }}>
                       {doc.file ? (
-                        <a href={`${apiURL}staff_documents/${doc.file}`}
+                        <a
+                          href={`${apiURL}staff_documents/${doc.file}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           title="View file"
@@ -91,8 +200,12 @@ export default function DocumentTable({ documents, onAddFile, onAddDocument, use
                             display: "inline-block",
                             transition: "background 0.2s",
                           }}
-                          onMouseOver={(e) => (e.currentTarget.style.background = "#dbeafe")}
-                          onMouseOut={(e) => (e.currentTarget.style.background = "#eaf1fb")}
+                          onMouseOver={(e) =>
+                            (e.currentTarget.style.background = "#dbeafe")
+                          }
+                          onMouseOut={(e) =>
+                            (e.currentTarget.style.background = "#eaf1fb")
+                          }
                         >
                           <i className="fa fa-eye" aria-hidden="true"></i>
                         </a>
@@ -112,13 +225,12 @@ export default function DocumentTable({ documents, onAddFile, onAddDocument, use
                             transition: "background 0.2s",
                           }}
                           onClick={() => onAddFile(doc)}
-                          onMouseOver={(e) => (e.currentTarget.style.background = "#d1fae5")}
-                          onMouseOut={(e) => (e.currentTarget.style.background = "#eafbe7")}
                         >
                           <i className="fa fa-plus" aria-hidden="true"></i>
                         </button>
                       )}
                     </td>
+
                     <td style={{ padding: "10px 16px", verticalAlign: "middle", border: "none" }}>
                       {isStaffEditingExisting ? (
                         <button
@@ -152,8 +264,6 @@ export default function DocumentTable({ documents, onAddFile, onAddDocument, use
                             transition: "background 0.2s",
                           }}
                           onClick={() => onAddFile(doc)}
-                          onMouseOver={(e) => (e.currentTarget.style.background = "#e0e7ef")}
-                          onMouseOut={(e) => (e.currentTarget.style.background = "#f3f4f6")}
                         >
                           <i className="fa fa-pencil" aria-hidden="true"></i>
                         </button>
@@ -164,7 +274,17 @@ export default function DocumentTable({ documents, onAddFile, onAddDocument, use
               })
             ) : (
               <tr>
-                <td colSpan={5} className="text-center" style={{ padding: 32, color: "#888", fontSize: 16, background: "#f9fafb", border: "none" }}>
+                <td
+                  colSpan={5}
+                  className="text-center"
+                  style={{
+                    padding: 32,
+                    color: "#888",
+                    fontSize: 16,
+                    background: "#f9fafb",
+                    border: "none",
+                  }}
+                >
                   No documents found.
                 </td>
               </tr>
@@ -172,6 +292,19 @@ export default function DocumentTable({ documents, onAddFile, onAddDocument, use
           </tbody>
         </table>
       </div>
+
+      {/* 📱 MOBILE RESPONSIVE (NO DESIGN CHANGE - CSS ONLY) */}
+      <style>
+        {`
+          @media (max-width: 768px) {
+            table {
+              display: block;
+              overflow-x: auto;
+              white-space: nowrap;
+            }
+          }
+        `}
+      </style>
     </div>
   );
 }

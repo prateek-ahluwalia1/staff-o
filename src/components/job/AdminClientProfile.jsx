@@ -60,28 +60,30 @@ export default function AdminClientProfile({
         letterSpacing: "0.06em",
         color: "#94a3b8",
         display: "block",
-        marginBottom: 2,
+        marginBottom: 4,
     };
 
     const valueStyle = { fontSize: "0.83rem", color: "#1e293b" };
 
     return (
         <div className="row g-3 mb-4">
-
             {/* ── LEFT: PROFILE CARD ── */}
-            <div className="col-lg-4">
+            <div className="col-lg-4 d-flex">
                 <div style={{
                     background: "white",
                     borderRadius: 14,
                     border: "1px solid #e8f0ef",
                     overflow: "hidden",
-                    boxShadow: "0 1px 4px rgba(10,124,110,0.06)"
+                    boxShadow: "0 1px 4px rgba(10,124,110,0.06)",
+                    width: "100%",
+                    height: "100%", // Ensures equal height with the right column
+                    display: "flex",
+                    flexDirection: "column"
                 }}>
                     {/* Thin brand top bar */}
                     <div style={{ height: 4, background: `linear-gradient(90deg, ${BRAND}, ${BRAND_DARK})` }} />
 
-                    <div style={{ padding: "16px 18px" }}>
-
+                    <div style={{ padding: "20px", flexGrow: 1, display: "flex", flexDirection: "column" }}>
                         {/* AVATAR + NAME + BADGES */}
                         <div className="d-flex align-items-center gap-3 mb-3 pb-3" style={{ borderBottom: "1px solid #f1f5f4" }}>
                             <div style={{ position: "relative", flexShrink: 0 }}>
@@ -154,7 +156,7 @@ export default function AdminClientProfile({
                         </div>
 
                         {/* CONTACT GRID */}
-                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px 20px" }}>
+                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px 12px", marginTop: "auto", marginBottom: "auto" }}>
                             {customerDetails?.customer?.company_name && (
                                 <div style={{ gridColumn: "1 / -1" }}>
                                     <span style={labelStyle}>Company</span>
@@ -191,18 +193,21 @@ export default function AdminClientProfile({
             </div>
 
             {/* ── RIGHT: SITES SELECTOR ── */}
-            <div className="col-lg-8">
+            <div className="col-lg-8 d-flex">
                 <div style={{
                     background: "white",
                     borderRadius: 14,
                     border: "1px solid #e8f0ef",
                     overflow: "hidden",
                     boxShadow: "0 1px 4px rgba(10,124,110,0.06)",
-                    height: "100%",
+                    width: "100%",
+                    height: "100%", // Ensures equal height
+                    display: "flex",
+                    flexDirection: "column"
                 }}>
                     <div style={{ height: 4, background: `linear-gradient(90deg, ${BRAND}, ${BRAND_DARK})` }} />
 
-                    <div style={{ padding: "16px 20px" }}>
+                    <div style={{ padding: "20px", flexGrow: 1, display: "flex", flexDirection: "column" }}>
                         {/* Header */}
                         <div className="d-flex align-items-center justify-content-between mb-3 pb-3" style={{ borderBottom: "1px solid #f1f5f4" }}>
                             <div className="d-flex align-items-center gap-2">
@@ -221,7 +226,7 @@ export default function AdminClientProfile({
 
                         {/* Dropdown */}
                         <div className="mb-3">
-                            <label style={{ ...labelStyle, marginBottom: 6 }}>Search &amp; Choose Location</label>
+                            <label style={{ ...labelStyle, marginBottom: 8 }}>Search &amp; Choose Location</label>
                             <Select
                                 options={siteOptions}
                                 value={currentSelectedOption}
@@ -260,38 +265,40 @@ export default function AdminClientProfile({
                         </div>
 
                         {/* Selected site summary */}
-                        {currentSelectedOption && !currentSelectedOption.isManual && (
-                            <div style={{ padding: "10px 14px", background: BRAND_LIGHT, borderRadius: 10, border: `1px solid ${BRAND}33` }}>
-                                <p style={{ fontWeight: 600, fontSize: "0.875rem", color: BRAND_DARK, margin: "0 0 2px" }}>
-                                    <i className="fa-solid fa-check-circle me-2" style={{ color: "#22c55e" }}></i>
-                                    {currentSelectedOption.siteData?.site_name || "Unnamed Site"}
-                                </p>
-                                <p style={{ fontSize: "0.78rem", color: "#64748b", margin: 0, paddingLeft: 20 }}>
-                                    {currentSelectedOption.siteData?.address}
-                                </p>
-                            </div>
-                        )}
-
-                        {currentSelectedOption?.isManual && (
-                            <div style={{ padding: "10px 14px", background: BRAND_LIGHT, borderRadius: 10, border: `1px solid ${BRAND}55` }}>
-                                <p style={{ fontWeight: 600, fontSize: "0.875rem", color: BRAND_DARK, margin: "0 0 2px" }}>
-                                    <i className="fa-solid fa-location-crosshairs me-2"></i>
-                                    Manual Entry Selected
-                                </p>
-                                <p style={{ fontSize: "0.78rem", color: "#475569", margin: 0, paddingLeft: 20 }}>
-                                    Use the map below to drop a pin and define your custom address.
-                                </p>
-                            </div>
-                        )}
-
-                        {!currentSelectedOption && (
-                            <div style={{ textAlign: "center", padding: "28px 0", color: "#94a3b8" }}>
-                                <div style={{ width: 48, height: 48, borderRadius: "50%", background: "#f8fafc", border: "1px solid #e2e8f0", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 10px" }}>
-                                    <i className="fa-solid fa-map" style={{ fontSize: 20, color: "#cbd5e1" }}></i>
+                        <div style={{ marginTop: "auto" }}>
+                            {currentSelectedOption && !currentSelectedOption.isManual && (
+                                <div style={{ padding: "12px 16px", background: BRAND_LIGHT, borderRadius: 10, border: `1px solid ${BRAND}33` }}>
+                                    <p style={{ fontWeight: 600, fontSize: "0.875rem", color: BRAND_DARK, margin: "0 0 4px" }}>
+                                        <i className="fa-solid fa-check-circle me-2" style={{ color: "#22c55e" }}></i>
+                                        {currentSelectedOption.siteData?.site_name || "Unnamed Site"}
+                                    </p>
+                                    <p style={{ fontSize: "0.78rem", color: "#64748b", margin: 0, paddingLeft: 24 }}>
+                                        {currentSelectedOption.siteData?.address}
+                                    </p>
                                 </div>
-                                <p style={{ fontSize: "0.82rem", margin: 0, color: "#94a3b8" }}>Select a site from the dropdown to continue</p>
-                            </div>
-                        )}
+                            )}
+
+                            {currentSelectedOption?.isManual && (
+                                <div style={{ padding: "12px 16px", background: BRAND_LIGHT, borderRadius: 10, border: `1px solid ${BRAND}55` }}>
+                                    <p style={{ fontWeight: 600, fontSize: "0.875rem", color: BRAND_DARK, margin: "0 0 4px" }}>
+                                        <i className="fa-solid fa-location-crosshairs me-2"></i>
+                                        Manual Entry Selected
+                                    </p>
+                                    <p style={{ fontSize: "0.78rem", color: "#475569", margin: 0, paddingLeft: 24 }}>
+                                        Use the map below to drop a pin and define your custom address.
+                                    </p>
+                                </div>
+                            )}
+
+                            {!currentSelectedOption && (
+                                <div style={{ textAlign: "center", padding: "16px 0", color: "#94a3b8" }}>
+                                    <div style={{ width: 48, height: 48, borderRadius: "50%", background: "#f8fafc", border: "1px solid #e2e8f0", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 10px" }}>
+                                        <i className="fa-solid fa-map" style={{ fontSize: 20, color: "#cbd5e1" }}></i>
+                                    </div>
+                                    <p style={{ fontSize: "0.82rem", margin: 0, color: "#94a3b8" }}>Select a site from the dropdown to continue</p>
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
             </div>

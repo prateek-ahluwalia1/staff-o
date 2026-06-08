@@ -3,6 +3,10 @@ import Select from "react-select";
 import { apiURL } from "../../utils/exports";
 import { Link } from 'react-router-dom';
 
+const BRAND = "#0A7C6E";
+const BRAND_LIGHT = "#E6F4F2";
+const BRAND_DARK = "#065E54";
+
 export default function AdminClientProfile({
     customerDetails,
     customerTotalHours,
@@ -27,140 +31,197 @@ export default function AdminClientProfile({
 
     const currentSelectedOption = siteOptions.find((s) => String(s.value) === String(selectedSiteId)) || null;
 
+    const selectStyles = {
+        control: (base, state) => ({
+            ...base,
+            minHeight: '40px',
+            borderRadius: '8px',
+            borderColor: state.isFocused ? BRAND : '#e2e8f0',
+            boxShadow: state.isFocused ? `0 0 0 3px ${BRAND}22` : 'none',
+            fontSize: '0.875rem',
+            transition: 'border-color 0.15s, box-shadow 0.15s',
+            '&:hover': { borderColor: BRAND }
+        }),
+        option: (base, state) => ({
+            ...base,
+            backgroundColor: state.isSelected ? BRAND : state.isFocused ? BRAND_LIGHT : 'white',
+            color: state.isSelected ? 'white' : '#1e293b',
+            fontSize: '0.875rem',
+        }),
+        menu: (base) => ({ ...base, zIndex: 9999, borderRadius: '10px', boxShadow: '0 8px 24px rgba(0,0,0,0.12)', overflow: 'hidden' }),
+        placeholder: (base) => ({ ...base, color: '#94a3b8', fontSize: '0.875rem' }),
+        singleValue: (base) => ({ ...base, color: '#1e293b' }),
+    };
+
+    const labelStyle = {
+        fontSize: "10px",
+        fontWeight: 700,
+        textTransform: "uppercase",
+        letterSpacing: "0.06em",
+        color: "#94a3b8",
+        display: "block",
+        marginBottom: 2,
+    };
+
+    const valueStyle = { fontSize: "0.83rem", color: "#1e293b" };
+
     return (
         <div className="row g-3 mb-4">
-            {/* LEFT: PROFILE INFO */}
+
+            {/* ── LEFT: PROFILE CARD ── */}
             <div className="col-lg-4">
-                <div className="card shadow-sm border-0 rounded-3 h-100">
-                    <div className="card-body p-4">
-                        {/* AVATAR */}
-                        <div className="mb-4 text-center">
-                            <div style={{ position: "relative", width: 90, height: 90, margin: "0 auto", border: "3px solid #111", borderRadius: "50%", overflow: "hidden" }}>
-                                {profileImage ? (
-                                    <img
-                                        src={`${profileImage.startsWith("http") ? profileImage : `${apiURL}storage/${profileImage}`}`}
-                                        alt="Profile"
-                                        style={{
-                                            width: "100%",
-                                            height: "100%",
-                                            borderRadius: "12px",
-                                            objectFit: "cover",
-                                        }}
-                                    />
-                                ) : (
-                                    <div
-                                        className="bg-primary bg-opacity-10 text-white fw-bold rounded d-flex align-items-center justify-content-center"
-                                        style={{ width: "100%", height: "100%", fontSize: 32, }}
-                                    >
-                                        {initials}
-                                    </div>
-                                )}
+                <div style={{
+                    background: "white",
+                    borderRadius: 14,
+                    border: "1px solid #e8f0ef",
+                    overflow: "hidden",
+                    boxShadow: "0 1px 4px rgba(10,124,110,0.06)"
+                }}>
+                    {/* Thin brand top bar */}
+                    <div style={{ height: 4, background: `linear-gradient(90deg, ${BRAND}, ${BRAND_DARK})` }} />
+
+                    <div style={{ padding: "16px 18px" }}>
+
+                        {/* AVATAR + NAME + BADGES */}
+                        <div className="d-flex align-items-center gap-3 mb-3 pb-3" style={{ borderBottom: "1px solid #f1f5f4" }}>
+                            <div style={{ position: "relative", flexShrink: 0 }}>
+                                <div style={{
+                                    width: 58, height: 58, borderRadius: "50%",
+                                    border: `2.5px solid ${BRAND}`,
+                                    overflow: "hidden",
+                                    background: BRAND_LIGHT,
+                                }}>
+                                    {profileImage ? (
+                                        <img
+                                            src={profileImage.startsWith("http") ? profileImage : `${apiURL}storage/${profileImage}`}
+                                            alt="Profile"
+                                            style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                                        />
+                                    ) : (
+                                        <div style={{
+                                            width: "100%", height: "100%",
+                                            background: BRAND,
+                                            color: "white",
+                                            fontWeight: 700,
+                                            fontSize: 20,
+                                            display: "flex", alignItems: "center", justifyContent: "center"
+                                        }}>
+                                            {initials}
+                                        </div>
+                                    )}
+                                </div>
                                 {isOnline && (
-                                    <div
-                                        style={{
-                                            position: "absolute",
-                                            bottom: 0,
-                                            right: 0,
-                                            width: 24,
-                                            height: 24,
-                                            borderRadius: "50%",
-                                            background: "#10b981",
-                                            border: "2px solid white",
-                                        }}
-                                    />
+                                    <div style={{
+                                        position: "absolute", bottom: 2, right: 2,
+                                        width: 13, height: 13, borderRadius: "50%",
+                                        background: "#22c55e", border: "2.5px solid white"
+                                    }} />
                                 )}
                             </div>
-                        </div>
 
-                        {/* NAME & BADGES */}
-                        <h6 className="fw-bold text-center text-dark mb-2">{customerDetails?.name || "Client"}</h6>
-                        <div className="d-flex flex-wrap justify-content-center gap-2 mb-4">
-                            {isVerified ? (
-                                <span className="badge bg-success text-white px-2 py-1" style={{ fontSize: "11px" }}>
-                                    <i className="fa-solid fa-check-circle me-1"></i> Verified
-                                </span>
-                            ) : (
-                                <span className="badge bg-warning text-dark px-2 py-1" style={{ fontSize: "11px" }}>
-                                    <i className="fa-solid fa-clock me-1"></i> Unverified
-                                </span>
-                            )}
-                            <span className={`badge ${isOnline ? "bg-success" : "bg-secondary"} text-white px-2 py-1`} style={{ fontSize: "11px" }}>
-                                {isOnline ? "Online" : "Offline"}
-                            </span>
-                            {customerDetails?.is_active !== undefined && (
-                                <span className={`badge ${customerDetails?.is_active ? "bg-primary" : "bg-danger"} text-white px-2 py-1`} style={{ fontSize: "11px" }}>
-                                    {customerDetails?.is_active ? "Active Account" : "Inactive Account"}
-                                </span>
-                            )}
-                        </div>
-
-                        {/* TOTAL HOURS */}
-                        <div className="mb-3 pb-3 border-bottom text-center">
-                            <small className="text-muted fw-bold d-block mb-2">Total Logged Hours</small>
-                            <span className="badge bg-dark bg-opacity-10 text-dark px-3 py-2 fs-6 rounded-pill border">
-                                <i className="fa-solid fa-clock text-primary me-2"></i>
-                                {customerTotalHours ? Number(customerTotalHours).toFixed(2) : "0.00"} Hrs
-                            </span>
-                        </div>
-
-                        {/* FULL CONTACT & PROFILE INFO */}
-                        {customerDetails?.customer?.company_name && (
-                            <div className="mb-3 pb-3 border-bottom">
-                                <small className="text-muted fw-bold d-block mb-1">Company</small>
-                                <span className="text-dark small">{customerDetails.customer.company_name}</span>
+                            <div className="flex-grow-1 min-w-0">
+                                <p style={{ fontWeight: 700, fontSize: "0.97rem", color: "#0f172a", margin: "0 0 5px", lineHeight: 1.2 }} className="text-truncate">
+                                    {customerDetails?.name || "Client"}
+                                </p>
+                                <div className="d-flex flex-wrap gap-1">
+                                    {isVerified ? (
+                                        <span style={{ fontSize: "10px", fontWeight: 600, padding: "2px 8px", borderRadius: 20, background: "#dcfce7", color: "#15803d" }}>
+                                            ✓ Verified
+                                        </span>
+                                    ) : (
+                                        <span style={{ fontSize: "10px", fontWeight: 600, padding: "2px 8px", borderRadius: 20, background: "#fef9c3", color: "#a16207" }}>
+                                            ⏳ Unverified
+                                        </span>
+                                    )}
+                                    <span style={{ fontSize: "10px", fontWeight: 600, padding: "2px 8px", borderRadius: 20, background: isOnline ? "#dcfce7" : "#f1f5f9", color: isOnline ? "#15803d" : "#64748b" }}>
+                                        {isOnline ? "● Online" : "○ Offline"}
+                                    </span>
+                                    {customerDetails?.is_active !== undefined && (
+                                        <span style={{ fontSize: "10px", fontWeight: 600, padding: "2px 8px", borderRadius: 20, background: customerDetails.is_active ? BRAND_LIGHT : "#fee2e2", color: customerDetails.is_active ? BRAND_DARK : "#b91c1c" }}>
+                                            {customerDetails.is_active ? "Active" : "Inactive"}
+                                        </span>
+                                    )}
+                                </div>
                             </div>
-                        )}
 
-                        <div className="mb-3 pb-3 border-bottom">
-                            <small className="text-muted fw-bold d-block mb-1">Email</small>
-                            <Link to={`mailto:${customerDetails?.email}`} className="text-primary text-decoration-none small fw-medium">
-                                {customerDetails?.email}
-                            </Link>
+                            {/* Hours pill */}
+                            <div style={{ flexShrink: 0, textAlign: "center", background: BRAND_LIGHT, borderRadius: 10, padding: "6px 10px", minWidth: 58 }}>
+                                <div style={{ fontSize: 9, fontWeight: 700, color: BRAND, textTransform: "uppercase", letterSpacing: "0.05em" }}>Hours</div>
+                                <div style={{ fontSize: "0.95rem", fontWeight: 700, color: BRAND_DARK, lineHeight: 1.2 }}>
+                                    {customerTotalHours ? Number(customerTotalHours).toFixed(2) : "0.00"}
+                                </div>
+                            </div>
                         </div>
 
-                        <div className="mb-3 pb-3 border-bottom">
-                            <small className="text-muted fw-bold d-block mb-1">Phone</small>
-                            <Link to={`tel:${customerDetails?.phone}`} className="text-primary text-decoration-none small fw-medium">
-                                {customerDetails?.phone || "N/A"}
-                            </Link>
-                        </div>
-
-                        <div className="mb-3 pb-3 border-bottom">
-                            <small className="text-muted fw-bold d-block mb-1">Location</small>
-                            <small className="text-dark">
-                                {customerDetails?.city || "N/A"}, {customerDetails?.state || "N/A"}
-                            </small>
-                        </div>
-
-                        {customerDetails?.created_at && (
+                        {/* CONTACT GRID */}
+                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px 20px" }}>
+                            {customerDetails?.customer?.company_name && (
+                                <div style={{ gridColumn: "1 / -1" }}>
+                                    <span style={labelStyle}>Company</span>
+                                    <span style={valueStyle}>{customerDetails.customer.company_name}</span>
+                                </div>
+                            )}
                             <div>
-                                <small className="text-muted fw-bold d-block mb-1">Member Since</small>
-                                <small className="text-dark">
-                                    {new Date(customerDetails.created_at).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })}
-                                </small>
+                                <span style={labelStyle}>Email</span>
+                                <Link to={`mailto:${customerDetails?.email}`} className="text-truncate d-block" style={{ ...valueStyle, color: BRAND, textDecoration: "none", fontWeight: 500 }}>
+                                    {customerDetails?.email}
+                                </Link>
                             </div>
-                        )}
+                            <div>
+                                <span style={labelStyle}>Phone</span>
+                                <Link to={`tel:${customerDetails?.phone}`} style={{ ...valueStyle, color: BRAND, textDecoration: "none", fontWeight: 500 }}>
+                                    {customerDetails?.phone || "N/A"}
+                                </Link>
+                            </div>
+                            <div>
+                                <span style={labelStyle}>Location</span>
+                                <span style={valueStyle}>{customerDetails?.city || "N/A"}, {customerDetails?.state || "N/A"}</span>
+                            </div>
+                            {customerDetails?.created_at && (
+                                <div>
+                                    <span style={labelStyle}>Member Since</span>
+                                    <span style={valueStyle}>
+                                        {new Date(customerDetails.created_at).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" })}
+                                    </span>
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
             </div>
 
-            {/* RIGHT: SITES SELECTOR */}
+            {/* ── RIGHT: SITES SELECTOR ── */}
             <div className="col-lg-8">
-                <div className="card shadow-sm border-0 rounded-3 h-100">
-                    <div className="card-body p-4">
-                        <div className="d-flex align-items-center justify-content-between mb-4 pb-3 border-bottom">
-                            <h6 className="fw-bold text-dark mb-0">
-                                <i className="fa-solid fa-map-location-dot text-primary me-2"></i>
-                                Select Response Site
-                            </h6>
-                            <span className="badge bg-light text-dark" style={{ fontSize: "12px" }}>
+                <div style={{
+                    background: "white",
+                    borderRadius: 14,
+                    border: "1px solid #e8f0ef",
+                    overflow: "hidden",
+                    boxShadow: "0 1px 4px rgba(10,124,110,0.06)",
+                    height: "100%",
+                }}>
+                    <div style={{ height: 4, background: `linear-gradient(90deg, ${BRAND}, ${BRAND_DARK})` }} />
+
+                    <div style={{ padding: "16px 20px" }}>
+                        {/* Header */}
+                        <div className="d-flex align-items-center justify-content-between mb-3 pb-3" style={{ borderBottom: "1px solid #f1f5f4" }}>
+                            <div className="d-flex align-items-center gap-2">
+                                <div style={{ width: 30, height: 30, borderRadius: 8, background: BRAND_LIGHT, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                                    <i className="fa-solid fa-map-location-dot" style={{ color: BRAND, fontSize: 13 }}></i>
+                                </div>
+                                <span style={{ fontWeight: 700, fontSize: "0.9rem", color: "#0f172a" }}>Select Response Site</span>
+                            </div>
+                            <span style={{
+                                fontSize: "11px", fontWeight: 600, padding: "3px 10px",
+                                borderRadius: 20, background: BRAND_LIGHT, color: BRAND_DARK
+                            }}>
                                 {siteOptions.filter(s => !s.isManual).length} Sites Available
                             </span>
                         </div>
 
-                        {/* REACT-SELECT IMPLEMENTATION (COMPACT SIZING) */}
-                        <div className="mb-4">
-                            <label className="form-label small text-muted fw-bold mb-2">Search & Choose Location</label>
+                        {/* Dropdown */}
+                        <div className="mb-3">
+                            <label style={{ ...labelStyle, marginBottom: 6 }}>Search &amp; Choose Location</label>
                             <Select
                                 options={siteOptions}
                                 value={currentSelectedOption}
@@ -169,38 +230,27 @@ export default function AdminClientProfile({
                                 isDisabled={loadingSites}
                                 isSearchable={true}
                                 classNamePrefix="react-select"
-                                styles={{
-                                    control: (base) => ({
-                                        ...base,
-                                        minHeight: '40px',
-                                        borderRadius: '0.375rem',
-                                        borderColor: '#dee2e6',
-                                        boxShadow: 'none',
-                                        fontSize: '0.9rem',
-                                        '&:hover': { borderColor: '#0d6efd' }
-                                    }),
-                                    menu: (base) => ({ ...base, zIndex: 9999, borderRadius: '0.5rem' })
-                                }}
+                                styles={selectStyles}
                                 formatOptionLabel={(option) => {
                                     if (option.isManual) {
                                         return (
-                                            <div className="text-primary fw-bold" style={{ fontSize: '0.9rem' }}>
+                                            <div style={{ fontSize: '0.875rem', fontWeight: 600, color: BRAND }}>
                                                 <i className="fa-solid fa-location-crosshairs me-2"></i>
                                                 {option.label}
                                             </div>
                                         );
                                     }
                                     return (
-                                        <div className="d-flex align-items-center justify-content-between" style={{ fontSize: '0.9rem' }}>
+                                        <div className="d-flex align-items-center justify-content-between" style={{ fontSize: '0.875rem' }}>
                                             <div>
-                                                <div className="fw-bold text-dark">{option.siteData?.site_name || "Unnamed Site"}</div>
-                                                <small className="text-muted d-block" style={{ fontSize: '0.75rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '300px' }}>
+                                                <div style={{ fontWeight: 600, color: "#0f172a" }}>{option.siteData?.site_name || "Unnamed Site"}</div>
+                                                <div style={{ fontSize: '0.75rem', color: "#94a3b8", whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '300px' }}>
                                                     {option.siteData?.address}
-                                                </small>
+                                                </div>
                                             </div>
                                             {option.siteData?.job_roster?.length > 0 && (
-                                                <span className="badge bg-success bg-opacity-10 text-success border border-success" style={{ fontSize: '0.75rem' }}>
-                                                    <i className="fa-solid fa-briefcase me-1"></i> {option.siteData.job_roster.length}
+                                                <span style={{ fontSize: '0.7rem', padding: "2px 8px", borderRadius: 12, background: "#dcfce7", color: "#15803d", fontWeight: 600 }}>
+                                                    <i className="fa-solid fa-briefcase me-1"></i>{option.siteData.job_roster.length}
                                                 </span>
                                             )}
                                         </div>
@@ -209,35 +259,37 @@ export default function AdminClientProfile({
                             />
                         </div>
 
-                        {/* DISPLAY SELECTED SITE SUMMARY */}
+                        {/* Selected site summary */}
                         {currentSelectedOption && !currentSelectedOption.isManual && (
-                            <div className="p-3 bg-light rounded-3 border">
-                                <h6 className="fw-bold text-dark mb-1">
-                                    <i className="fa-solid fa-check-circle text-success me-2"></i>
+                            <div style={{ padding: "10px 14px", background: BRAND_LIGHT, borderRadius: 10, border: `1px solid ${BRAND}33` }}>
+                                <p style={{ fontWeight: 600, fontSize: "0.875rem", color: BRAND_DARK, margin: "0 0 2px" }}>
+                                    <i className="fa-solid fa-check-circle me-2" style={{ color: "#22c55e" }}></i>
                                     {currentSelectedOption.siteData?.site_name || "Unnamed Site"}
-                                </h6>
-                                <p className="small text-muted mb-0 ms-4">
+                                </p>
+                                <p style={{ fontSize: "0.78rem", color: "#64748b", margin: 0, paddingLeft: 20 }}>
                                     {currentSelectedOption.siteData?.address}
                                 </p>
                             </div>
                         )}
 
                         {currentSelectedOption?.isManual && (
-                            <div className="p-3 bg-primary bg-opacity-10 rounded-3 border border-primary">
-                                <h6 className="fw-bold text-primary mb-1">
+                            <div style={{ padding: "10px 14px", background: BRAND_LIGHT, borderRadius: 10, border: `1px solid ${BRAND}55` }}>
+                                <p style={{ fontWeight: 600, fontSize: "0.875rem", color: BRAND_DARK, margin: "0 0 2px" }}>
                                     <i className="fa-solid fa-location-crosshairs me-2"></i>
                                     Manual Entry Selected
-                                </h6>
-                                <p className="small text-dark mb-0 ms-4">
-                                    Please use the map below to drop a pin and define your custom address.
+                                </p>
+                                <p style={{ fontSize: "0.78rem", color: "#475569", margin: 0, paddingLeft: 20 }}>
+                                    Use the map below to drop a pin and define your custom address.
                                 </p>
                             </div>
                         )}
 
                         {!currentSelectedOption && (
-                            <div className="text-center py-5 text-muted">
-                                <i className="fa-solid fa-map d-block mb-3 opacity-50" style={{ fontSize: 32 }}></i>
-                                <small>Please select a site from the dropdown to continue.</small>
+                            <div style={{ textAlign: "center", padding: "28px 0", color: "#94a3b8" }}>
+                                <div style={{ width: 48, height: 48, borderRadius: "50%", background: "#f8fafc", border: "1px solid #e2e8f0", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 10px" }}>
+                                    <i className="fa-solid fa-map" style={{ fontSize: 20, color: "#cbd5e1" }}></i>
+                                </div>
+                                <p style={{ fontSize: "0.82rem", margin: 0, color: "#94a3b8" }}>Select a site from the dropdown to continue</p>
                             </div>
                         )}
                     </div>

@@ -121,12 +121,16 @@ const hLine = (doc, x, y, w) => {
 const vLine = (doc, x, y1, y2) => {
   doc.setDrawColor(...T.border); doc.setLineWidth(0.3); doc.line(x, y1, x, y2);
 };
+
 const isCheckedValue = (value) => {
-  if (typeof value === "boolean") return value;
-  if (typeof value === "number") return value === 1;
-  const normalized = String(value || "").trim().toLowerCase();
-  return ["1", "true", "yes", "y", "checked", "on"].includes(normalized);
+  if (value === true || value === 1) return true;
+  if (typeof value === "string") {
+    const lower = value.trim().toLowerCase();
+    return lower === "true" || lower === "1" || lower === "yes" || lower === "on" || lower === "checked";
+  }
+  return false;
 };
+
 const checkbox = (doc, x, y, size = 3.5, ticked = false) => {
   doc.setDrawColor(...T.text); doc.setLineWidth(0.45); doc.rect(x, y, size, size);
   if (!ticked) return;
@@ -191,7 +195,7 @@ const generateTFNDeclarationPDF = (formData) => {
   doc.setFont("helvetica", "bold"); doc.setFontSize(8.5); doc.setTextColor(...T.text);
   doc.text("6. Basis of payment", mg + pad, y + 5.5);
   const bop = (basis_of_payment || "").toLowerCase();
-  const cbY = y + 9.5, lblY = y + 12.5; // Perfectly aligned with checkbox
+  const cbY = y + 9.5, lblY = y + 12.5;
   [
     { label: "Full-time", val: "full-time", x: mg + pad },
     { label: "Part-time", val: "part-time", x: mg + pad + 38 },
@@ -213,7 +217,7 @@ const generateTFNDeclarationPDF = (formData) => {
     doc.setFont("helvetica", "bold"); doc.setFontSize(8.5); doc.setTextColor(...T.text);
     doc.text(`${num}. ${q}`, mg + pad, y + 5.5);
     const isYes = isCheckedValue(val);
-    const ycbY = y + 9.5, ylblY = y + 12.5; // Perfectly aligned with checkbox
+    const ycbY = y + 9.5, ylblY = y + 12.5;
     checkbox(doc, mg + pad, ycbY, 3.5, isYes);
     doc.setFont("helvetica", "normal"); doc.setFontSize(8.5); doc.setTextColor(...T.text);
     doc.text("Yes", mg + pad + 5.5, ylblY);
@@ -317,7 +321,6 @@ const generateSuperannuationPDF = (formData) => {
     doc.setFont("helvetica", "bold"); doc.setFontSize(8.5); doc.setTextColor(...T.text);
     doc.text(label, mg + pad, ey);
     doc.setFont("helvetica", "normal"); doc.setTextColor(...T.muted);
-    // Adjusted X offset to give enough breathing room for longer labels
     doc.text(String(value), mg + pad + 35, ey);
   };
   eRow("Employer Name:", "Capital Services Pty Ltd", y + 17);
@@ -355,8 +358,9 @@ const generateSuperannuationPDF = (formData) => {
 const generateEmployeeOnboardingPDF = (formData) => {
   const {
     full_name, dob, address, mobile, email, passport_number, passport_country, passport_expiry, work_rights,
-    id_checks, bank_name, bsb, account_number, tfn, super_fund, super_usi, super_member,
+    visa_type, id_checks, bank_name, bsb, account_number, tfn, super_fund, super_usi, super_member,
     security_license, security_license_expiry, first_aid_cert, first_aid_expiry, signature, signed_date,
+    chk_primary, chk_driver, chk_security, chk_medicare
   } = formData;
 
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4", compress: true });
@@ -423,17 +427,41 @@ const generateEmployeeOnboardingPDF = (formData) => {
   checkPage(12);
   doc.setFont("helvetica", "bold"); doc.setFontSize(7.5); doc.setTextColor(...T.text);
   doc.text("Work Rights Status:", mg, y + 3);
-  const wr = (work_rights || "").toLowerCase();
-  [
+  const wr = String(work_rights || "").toLowerCase();
+
+  // ─── UPDATED: ADDED TEMPORARY VISA HOLDER OPTION ───
+  const options = [
     { label: "Australian Citizen/PR", match: "citizen", x: mg + 32 },
-    { label: "Student Visa (24hr Cap)", match: "student", x: mg + 32 + 46 },
-    { label: "Other Visa:", match: "other", x: mg + 32 + 92 },
-  ].forEach(({ label, match, x }) => {
+    { label: "Student Visa", match: "student", x: mg + 32 + 42 },
+    { label: "Temporary Visa", match: "temporary", x: mg + 32 + 72 },
+    { label: "Other Visa:", match: "other", x: mg + 32 + 104 },
+  ];
+
+  options.forEach(({ label, match, x }) => {
     checkbox(doc, x, y, 3.5, wr.includes(match));
     doc.setFont("helvetica", "normal"); doc.setFontSize(7.5); doc.setTextColor(...T.text);
     doc.text(label, x + 5.5, y + 3);
   });
+
+  if (wr.includes("other") && visa_type) {
+    doc.setFont("helvetica", "italic"); doc.setFontSize(7.5); doc.setTextColor(...T.blue);
+    doc.text(`(${visa_type})`, mg + 32 + 122, y + 3);
+  }
   y += 10;
+
+  let parsedChecks = {};
+  if (typeof id_checks === "string") {
+    try { parsedChecks = JSON.parse(id_checks); } catch (e) { }
+  } else if (id_checks && typeof id_checks === "object") {
+    parsedChecks = id_checks;
+  } else {
+    parsedChecks = {
+      primary_id: chk_primary,
+      drivers_license: chk_driver,
+      security_license: chk_security,
+      medicare_or_utility: chk_medicare
+    };
+  }
 
   section("3. 100-POINT IDENTIFICATION CHECK");
   checkPage(48);
@@ -443,10 +471,9 @@ const generateEmployeeOnboardingPDF = (formData) => {
   doc.setDrawColor(...T.border); doc.setLineWidth(0.3); doc.rect(mg, y, bw, 7);
   doc.setFont("helvetica", "bold"); doc.setFontSize(7.5); doc.setTextColor(...T.text);
 
-  // Perfectly Centered Columns
   doc.text("Document Type", mg + pad, y + 5);
   doc.text("Points", mg + idDocW + idPtsW / 2, y + 5, { align: "center" });
-  doc.text("Tick Attached", mg + idDocW + idPtsW + idTickW / 2, y + 5, { align: "center" });
+  doc.text("Attached", mg + idDocW + idPtsW + idTickW / 2, y + 5, { align: "center" });
   y += 7;
 
   [
@@ -459,9 +486,10 @@ const generateEmployeeOnboardingPDF = (formData) => {
     doc.setFont("helvetica", "normal"); doc.setFontSize(7.5); doc.setTextColor(...T.text);
     doc.text(text, mg + pad, y + 5.5);
 
-    // Centered values in columns
     doc.text(pts, mg + idDocW + idPtsW / 2, y + 5.5, { align: "center" });
-    checkbox(doc, mg + idDocW + idPtsW + idTickW / 2 - 1.75, y + 2.5, 3.5, isCheckedValue(id_checks && id_checks[key]));
+
+    const isTicked = isCheckedValue(parsedChecks[key]);
+    checkbox(doc, mg + idDocW + idPtsW + idTickW / 2 - 1.75, y + 2.5, 3.5, isTicked);
 
     hLine(doc, mg, y + rH, bw);
     vLine(doc, mg + idDocW, y, y + rH);
@@ -486,7 +514,6 @@ const generateEmployeeOnboardingPDF = (formData) => {
   checkPage(25);
   y += 2;
 
-  // Dynamic Declaration Box Height
   const declTxt = "I confirm that all information and attached documents are authentic. I agree to the Staffoo App Handshake Protocol for shift verification and, if a student, will strictly adhere to the 24-hour weekly cap.";
   const declLines = doc.splitTextToSize(declTxt, bw - 28);
   const declBoxH = 6 + (declLines.length * 3.5);
@@ -501,11 +528,9 @@ const generateEmployeeOnboardingPDF = (formData) => {
   doc.text(declLines, mg + 24, y + 5);
   y += declBoxH + 6;
 
-  // Custom signature and date rendering
   checkPage(13);
   const sigHw = (bw - 4) / 2;
 
-  // Signature field
   doc.setFont("helvetica", "bold"); doc.setFontSize(7.5); doc.setTextColor(...T.text);
   doc.text("Signature:", mg, y);
   doc.setDrawColor(...T.lineGray); doc.setLineWidth(0.3); doc.line(mg, y + 7, mg + sigHw, y + 7);
@@ -516,7 +541,6 @@ const generateEmployeeOnboardingPDF = (formData) => {
     doc.text(String(signature), mg + 2, y + 5);
   }
 
-  // Date field with today's date
   const displayDate = formatDateForDisplay(signed_date);
   doc.setFont("helvetica", "bold"); doc.setFontSize(7.5); doc.setTextColor(...T.text);
   doc.text("Date:", mg + sigHw + 4, y);
@@ -618,7 +642,7 @@ const PDFGenerator = {
       columnStyles: { 0: { cellWidth: ptw * 0.05, halign: "center" }, 1: { cellWidth: ptw * 0.40, halign: "left" }, 2: { cellWidth: ptw * 0.15, halign: "left" }, 3: { cellWidth: ptw * 0.10, halign: "center" }, 4: { cellWidth: ptw * 0.15, halign: "center" }, 5: { cellWidth: ptw * 0.15, halign: "right" } }
     });
 
-    y = doc.lastAutoTable.finalY + 15;
+    y = autoTable.finalY || doc.lastAutoTable.finalY + 15;
     y = drawGoldLine(doc, y, pw, mg);
 
     doc.setFontSize(11); doc.setFont("helvetica", "bold"); doc.setTextColor(...T.navy);
@@ -664,7 +688,6 @@ const PDFGenerator = {
     const addPN = () => { doc.setFontSize(8); doc.setTextColor(...T.muted); doc.text(`Page ${pn}`, pw - mg - 10, ph - 8); };
     let y = renderModernHeader(doc, pw, "MASTER SHIFT REPORT");
 
-    // --- 1. SHIFT SUMMARY HEADER ---
     const rightAlignParams = { align: "right" };
     doc.setFontSize(9); doc.setFont("helvetica", "bold"); doc.setTextColor(...T.muted); doc.text("Status", pw - mg - 25, y, rightAlignParams);
     doc.setTextColor(...T.text); doc.text(jobStatus ? jobStatus.toUpperCase() : "PENDING", pw - mg, y, rightAlignParams); y += 6;
@@ -689,7 +712,6 @@ const PDFGenerator = {
 
     yp = Math.max(ly, ry) + 10;
 
-    // --- 2. ATTENDANCE LOGS ---
     doc.setFontSize(11); doc.setFont("helvetica", "bold"); doc.setTextColor(...T.navy); doc.text("ATTENDANCE LOGS", mg, yp); yp += 6;
 
     const td = [];
@@ -711,7 +733,6 @@ const PDFGenerator = {
 
     y = doc.lastAutoTable.finalY + 15;
 
-    // --- 2.5 BREAK LOGS ---
     if (breaks) {
       const breakList = Array.isArray(breaks) ? breaks : [breaks];
       if (breakList.length > 0 && Object.keys(breakList[0] || {}).length > 0) {
@@ -736,7 +757,6 @@ const PDFGenerator = {
       }
     }
 
-    // --- 3. FOOT PATROLS (If Any) ---
     if (patrols && patrols.length > 0) {
       if (y > ph - 40) { addPN(); pn++; doc.addPage(); y = renderModernHeader(doc, pw, "MASTER SHIFT REPORT"); }
 
@@ -749,7 +769,6 @@ const PDFGenerator = {
 
         doc.setFontSize(10); doc.setFont("helvetica", "bold"); doc.setTextColor(...T.gold); doc.text(`PATROL #${i + 1}`, mg, y); y += 6;
 
-        // Dynamic Box Height
         const detailText = doc.splitTextToSize(`Detail: ${p.patrolling_detail || "N/A"}`, pw - mg * 2 - 6);
         const boxH = 10 + (detailText.length * 4.5);
         doc.setDrawColor(...T.border); doc.setFillColor(...T.soft); doc.rect(mg, y - 3, pw - mg * 2, boxH, "FD");
@@ -804,7 +823,6 @@ const PDFGenerator = {
       }
     }
 
-    // --- 4. INCIDENT REPORTS (If Any) ---
     if (incidents && incidents.length > 0) {
       if (y > ph - 40) { addPN(); pn++; doc.addPage(); y = renderModernHeader(doc, pw, "MASTER SHIFT REPORT"); }
 
@@ -817,7 +835,6 @@ const PDFGenerator = {
 
         doc.setFontSize(10); doc.setFont("helvetica", "bold"); doc.setTextColor(...T.danger); doc.text(`INCIDENT #${i + 1}`, mg, y); y += 6;
 
-        // Dynamic Box Height
         const incDetailText = doc.splitTextToSize(`Detail: ${inc.injury_detail || "N/A"}`, pw - mg * 2 - 6);
         const boxH = 14 + (incDetailText.length * 4.5);
         doc.setDrawColor(...T.border); doc.setFillColor(254, 242, 242); doc.rect(mg, y - 3, pw - mg * 2, boxH, "FD");
@@ -950,7 +967,6 @@ const PDFGenerator = {
 
       doc.setFontSize(10); doc.setFont("helvetica", "bold"); doc.setTextColor(...T.gold); doc.text(`PATROL #${i + 1}`, mg, y); y += 6;
 
-      // Dynamic Box Height
       const detailText = doc.splitTextToSize(`Detail: ${p.patrolling_detail || "N/A"}`, pw - mg * 2 - 6);
       const boxH = 10 + (detailText.length * 4.5);
       doc.setDrawColor(...T.border); doc.setFillColor(...T.soft); doc.rect(mg, y - 3, pw - mg * 2, boxH, "FD");
@@ -1036,7 +1052,6 @@ const PDFGenerator = {
 
       doc.setFontSize(10); doc.setFont("helvetica", "bold"); doc.setTextColor(...T.danger); doc.text(`INCIDENT #${i + 1}`, mg, y); y += 6;
 
-      // Dynamic Box Height
       const incDetailText = doc.splitTextToSize(`Detail: ${inc.injury_detail || "N/A"}`, pw - mg * 2 - 6);
       const boxH = 14 + (incDetailText.length * 4.5);
       doc.setDrawColor(...T.border); doc.setFillColor(254, 242, 242); doc.rect(mg, y - 3, pw - mg * 2, boxH, "FD");
@@ -1106,13 +1121,13 @@ const PDFGenerator = {
       }
 
       if (photos.length > 0) {
-        if (y > ph - 45) { addPN(); pn++; doc.addPage(); y = renderModernHeader(doc, pw, "INCIDENT REPORT"); }
+        if (y > ph - 45) { addPN(); pn++; doc.addPage(); y = renderModernHeader(doc, pw, "MASTER SHIFT REPORT"); }
         doc.setFontSize(9); doc.setFont("helvetica", "bold"); doc.setTextColor(...T.navy); doc.text("PHOTOS", mg, y); y += 6;
         let imgX = mg;
         for (let imgObj of photos) {
           if (imgX + 45 > pw - mg) {
             imgX = mg; y += 35;
-            if (y > ph - 40) { addPN(); pn++; doc.addPage(); y = renderModernHeader(doc, pw, "INCIDENT REPORT"); }
+            if (y > ph - 40) { addPN(); pn++; doc.addPage(); y = renderModernHeader(doc, pw, "MASTER SHIFT REPORT"); }
           }
           const url = resolveIncidentUrl(imgObj.imgPath);
           const b64 = await fetchImageBase64(url);
@@ -1127,7 +1142,7 @@ const PDFGenerator = {
       }
 
       if (inc.signature) {
-        if (y > ph - 35) { addPN(); pn++; doc.addPage(); y = renderModernHeader(doc, pw, "INCIDENT REPORT"); }
+        if (y > ph - 35) { addPN(); pn++; doc.addPage(); y = renderModernHeader(doc, pw, "MASTER SHIFT REPORT"); }
         doc.setFontSize(9); doc.setFont("helvetica", "bold"); doc.setTextColor(...T.navy); doc.text("SIGNATURE", mg, y); y += 6;
         const url = resolveIncidentUrl(inc.signature);
         const sigB64 = await fetchImageBase64(url);

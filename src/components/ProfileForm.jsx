@@ -380,7 +380,7 @@ export default function ProfileForm({
                 </div>
               </div>
 
-              <div>
+              {/* <div>
                 <label htmlFor="security_license_no" className="form-label fw-semibold">
                   Security License No <span className="text-danger">*</span>
                 </label>
@@ -393,7 +393,7 @@ export default function ProfileForm({
                   onChange={onChange}
                   required
                 />
-              </div>
+              </div> */}
             </>
           )}
 

@@ -118,7 +118,7 @@ const selectStyles = {
   option: (base, state) => ({
     ...base,
     backgroundColor: state.isSelected
-      ? "#0d6efd"
+      ? "#0A7C6E"
       : state.isFocused
         ? "#e7f1ff"
         : "#fff",
@@ -525,7 +525,7 @@ const PaySlip = () => {
                     <td>{row.end_date || "-"}</td>
                     <td>
                       {row.file_url ? (
-                        <Link                          href={row.file_url}
+                        <Link href={row.file_url}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="btn btn-sm btn-outline-primary"

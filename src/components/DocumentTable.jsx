@@ -41,6 +41,7 @@ export default function DocumentTable({
   documents,
   onAddFile,
   userType,
+  onVerify,
 }) {
   const processedDocuments = useMemo(() => {
     if (!documents) return [];
@@ -145,15 +146,36 @@ export default function DocumentTable({
                       )}
                     </td>
                     <td style={{ padding: "10px 16px", verticalAlign: "middle", border: "none" }}>
-                      {isStaffEditingExisting ? (
-                        <button disabled style={{ background: "#f3f4f6", border: "none", color: "#9ca3af", padding: 6, borderRadius: 6 }}>
-                          <i className="fa fa-lock" aria-hidden="true"></i>
-                        </button>
-                      ) : (
-                        <button type="button" onClick={() => onAddFile(doc)} style={{ background: "#f3f4f6", border: "none", color: "#0A7C6E", cursor: "pointer", padding: 6, borderRadius: 6 }}>
-                          <i className="fa fa-pencil" aria-hidden="true"></i>
-                        </button>
-                      )}
+                      <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                        {isStaffEditingExisting ? (
+                          <button disabled style={{ background: "#f3f4f6", border: "none", color: "#9ca3af", padding: 6, borderRadius: 6 }}>
+                            <i className="fa fa-lock" aria-hidden="true"></i>
+                          </button>
+                        ) : (
+                          <button type="button" onClick={() => onAddFile(doc)} style={{ background: "#f3f4f6", border: "none", color: "#0A7C6E", cursor: "pointer", padding: 6, borderRadius: 6 }}>
+                            <i className="fa fa-pencil" aria-hidden="true"></i>
+                          </button>
+                        )}
+
+                        {doc.file && (
+                          <button
+                            type="button"
+                            onClick={() => onVerify && onVerify(doc)}
+                            style={{
+                              background: "#0A7C6E",
+                              border: "none",
+                              color: "#fff",
+                              cursor: "pointer",
+                              padding: "4px 12px",
+                              borderRadius: 6,
+                              fontSize: "13px",
+                              fontWeight: "600"
+                            }}
+                          >
+                            Verify
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 );

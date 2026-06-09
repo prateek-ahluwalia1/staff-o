@@ -124,6 +124,10 @@ export default function EditProfile() {
     document_name: "",
   });
 
+  // Online Verification States
+  const [showVerifyModal, setShowVerifyModal] = useState(false);
+  const [verifyForm, setVerifyForm] = useState({ doc: null, license_number: "" });
+
   const isPhoneVerified = Boolean(
     userdata?.data?.contractor?.is_phone_verified ??
     userdata?.contractor?.is_phone_verified ??
@@ -246,7 +250,6 @@ export default function EditProfile() {
           newCountry = "";
 
         place.address_components?.forEach((c) => {
-          // Check for wider varieties of city classification
           if (
             c.types.includes("locality") ||
             c.types.includes("postal_town") ||
@@ -260,7 +263,6 @@ export default function EditProfile() {
           if (c.types.includes("country")) newCountry = c.long_name;
         });
 
-        // Set the block flag so onChange doesn't immediately wipe these
         isSelectingAddress.current = true;
 
         setFormData((prev) => ({
@@ -272,7 +274,6 @@ export default function EditProfile() {
           coordinates: `${place.geometry.location.lat()},${place.geometry.location.lng()}`,
         }));
 
-        // Release the block flag after 500ms
         setTimeout(() => {
           isSelectingAddress.current = false;
         }, 500);
@@ -350,7 +351,6 @@ export default function EditProfile() {
         return;
       }
 
-      // --- STRICT ADDRESS VALIDATION ---
       if (
         !formData.address ||
         !formData.city ||
@@ -362,7 +362,6 @@ export default function EditProfile() {
         );
         return;
       }
-      // ---------------------------------
 
       const payload = new FormData();
 
@@ -370,7 +369,7 @@ export default function EditProfile() {
         if (key === "bank_details") {
           payload.append("bank_details", JSON.stringify(formData.bank_details));
         } else if (key === "profile_image") {
-          // Skip - handled separately
+          // Skip
         } else {
           payload.append(key, formData[key]);
         }
@@ -607,6 +606,31 @@ export default function EditProfile() {
     }
   };
 
+  const handleVerifySubmit = async (e) => {
+    e.preventDefault();
+    if (!userId) {
+      toast.error("Unable to verify. Missing user id.");
+      return;
+    }
+
+    const payload = {
+      user_id: userId,
+      license_number: verifyForm.license_number,
+    };
+
+    const res = await submit("api/documents-online-verification", payload, {
+      method: "POST",
+    });
+
+    if (res?.success) {
+      toast.success("Document verified successfully!");
+      setShowVerifyModal(false);
+      refetch();
+    } else {
+      toast.error(res?.message || "Document verification failed.");
+    }
+  };
+
   const handleDeleteProfile = useCallback(
     async (e) => {
       if (e) e.preventDefault();
@@ -745,7 +769,7 @@ export default function EditProfile() {
           userType={userType}
           isPhoneVerified={isPhoneVerified}
           onChangePhone={() => {
-            setNewPhoneInput(formData.phone || ""); // Pre-populate with existing phone
+            setNewPhoneInput(formData.phone || "");
             setPhoneStep("input");
             setPhoneChangeError(null);
             setPhoneChangeSuccess(false);
@@ -758,7 +782,6 @@ export default function EditProfile() {
         <StaffOnboardingForms
           submit={submit}
           userId={userId}
-          // Pass this new function down
           onProfileUpdate={async () => {
             const refetchRes = await refetch();
             if (refetchRes && (refetchRes.data || refetchRes.success)) {
@@ -1046,7 +1069,6 @@ export default function EditProfile() {
                       value={cardForm.card_holder_name}
                       maxLength="30"
                       onChange={(e) => {
-                        // Limit to letters/spaces and strictly slice to 30 characters
                         const val = e.target.value.replace(/[^a-zA-Z\s]/g, "").slice(0, 30);
                         setCardForm((p) => ({
                           ...p,
@@ -1172,13 +1194,12 @@ export default function EditProfile() {
         </div>
       )}
 
-      {/* Document Modal */}
       {activeTab === "documents" &&
         userType !== "customer" &&
         userType !== "admin" && (
           <DocumentTable
             documents={filteredDocuments}
-            userType={userType} // <--- Simply pass the userType here
+            userType={userType}
             onAddFile={(doc) => {
               setSelectedDoc(doc);
               if (!doc.document_no && !doc.document_expiry && !doc.file) {
@@ -1218,6 +1239,13 @@ export default function EditProfile() {
                 document_name: "",
               });
               setShowDocModal(true);
+            }}
+            onVerify={(doc) => {
+              setVerifyForm({
+                doc,
+                license_number: "",
+              });
+              setShowVerifyModal(true);
             }}
           />
         )}
@@ -1443,7 +1471,7 @@ export default function EditProfile() {
         </div>
       </Modal>
 
-      {/* Document Modal */}
+      {/* Document Selection / Configuration Modal */}
       <Modal open={showDocModal} onClose={() => setShowDocModal(false)}>
         <form onSubmit={handleDocSubmit} className="p-3 position-relative">
           <h5>{selectedDoc ? "Edit Document" : "Add New Document"}</h5>
@@ -1457,8 +1485,6 @@ export default function EditProfile() {
             disabled={!!selectedDoc}
           >
             <option value="">Select Type</option>
-
-            {/* Map through the new object array */}
             {DOC_TYPES.map((doc) => (
               <option key={doc.value} value={doc.value}>
                 {doc.label}
@@ -1609,6 +1635,50 @@ export default function EditProfile() {
         </form>
       </Modal>
 
+      {/* Online Document Verification Modal */}
+      <Modal open={showVerifyModal} onClose={() => setShowVerifyModal(false)}>
+        <form onSubmit={handleVerifySubmit} className="p-3">
+          <h5>Verify Document</h5>
+          <p className="text-muted small mb-4">
+            Please provide the security license number to verify <strong>{verifyForm.doc?.document_name}</strong> online.
+          </p>
+
+          <div className="mb-4">
+            <label className="form-label fw-semibold">
+              Security License Number <span className="text-danger">*</span>
+            </label>
+            <input
+              type="text"
+              className="form-control"
+              placeholder="Enter security license number"
+              value={verifyForm.license_number}
+              onChange={(e) => setVerifyForm(prev => ({ ...prev, license_number: e.target.value }))}
+              required
+              autoFocus
+            />
+          </div>
+
+          <div className="d-flex gap-2">
+            <button
+              type="button"
+              className="btn btn-outline-secondary w-50"
+              onClick={() => setShowVerifyModal(false)}
+              disabled={submitLoading}
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="btn btn-primary-custom w-50"
+              disabled={submitLoading || !verifyForm.license_number}
+            >
+              {submitLoading ? "Verifying..." : "Verify Document"}
+            </button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Profile Delete Modal */}
       <Modal open={showDeleteModal} onClose={() => setShowDeleteModal(false)}>
         <div className="p-3">
           <h5 className="mb-1 text-danger fw-bold">

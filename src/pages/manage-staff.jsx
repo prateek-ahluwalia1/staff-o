@@ -450,7 +450,7 @@ const ManageStaff = () => {
           color: #1a1a1a;
           margin: 30px 0 15px;
           padding-left: 12px;
-          border-left: 4px solid #0d6efd;
+          border-left: 4px solid #0A7C6E;
         }
 
         .pac-container {
@@ -858,13 +858,13 @@ const ManageStaff = () => {
                       <h6 className="section-divider mt-0">Documents</h6>
                       <p className="text-muted mb-0">Upload and manage staff documents.</p>
                     </div>
-                    <button
+                    {/* <button
                       type="button"
                       className="btn btn-outline-primary btn-sm"
                       onClick={() => openDocumentModal(null)}
                     >
                       + Add Document
-                    </button>
+                    </button> */}
                   </div>
                   <DocumentTable
                     documents={staffDocuments}

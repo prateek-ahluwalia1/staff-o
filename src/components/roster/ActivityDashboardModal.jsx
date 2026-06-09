@@ -231,7 +231,9 @@ export default function ActivityDashboardModal({ modal, closeModal }) {
           {/* Left / Top Sidebar */}
           <div className="activity-sidebar">
             <div className="p-3 p-md-4 border-bottom d-flex justify-content-between align-items-center">
-              <h4 className="fw-bold">Job Activity</h4>
+              <h4 className="fw-bold"
+                style={{ marginBottom: 0, fontSize: "32px" }}
+              >Job Activity</h4>
               {/* Show close button here on mobile, hide on desktop */}
               <button
                 onClick={closeModal}

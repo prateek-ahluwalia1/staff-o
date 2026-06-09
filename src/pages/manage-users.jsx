@@ -500,7 +500,7 @@ const ManageUsers = () => {
           color: #1a1a1a;
           margin: 30px 0 15px;
           padding-left: 12px;
-          border-left: 4px solid #0d6efd;
+          border-left: 4px solid #0A7C6E;
         }
 
         .pac-container {
@@ -684,7 +684,7 @@ const ManageUsers = () => {
           >
             <thead
               className="table-primary text-dark"
-              style={{ borderBottom: "2px solid #0d6efd" }}
+              style={{ borderBottom: "2px solid #0A7C6E" }}
             >
               <tr className="text-muted small">
                 <th className="ps-4 py-3">NAME & EMAIL</th>
@@ -831,7 +831,7 @@ const ManageUsers = () => {
                     {activeTab === "staff" && (
                       <div className="col-12 mb-2">
                         <div className="p-3 bg-primary-subtle rounded-3 border border-primary-subtle">
-                          <label className="form-label text-primary">
+                          <label className="form-label text-white">
                             Assign to Resource Partner *
                           </label>
                           <select
@@ -1038,13 +1038,13 @@ const ManageUsers = () => {
                       <h6 className="section-divider mt-0">Documents</h6>
                       <p className="text-muted mb-0">Upload and manage staff documents.</p>
                     </div>
-                    <button
+                    {/* <button
                       type="button"
                       className="btn btn-outline-primary btn-sm"
                       onClick={() => openDocumentModal(null)}
                     >
                       + Add Document
-                    </button>
+                    </button> */}
                   </div>
                   <DocumentTable
                     documents={staffDocuments}

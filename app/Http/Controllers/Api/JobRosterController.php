@@ -31,6 +31,7 @@ use Stripe\Transfer;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
 use App\Mail\InvoiceMail;
 use App\Services\InvoiceService;
+use Illuminate\Support\Facades\Storage;
 
 class JobRosterController extends Controller
 {
@@ -2858,6 +2859,59 @@ public function autoUpdatePayslipStatus()
         return response()->json(['success' => true, 'message' => 'Invoice send successfully.']);
     }
 
+    public function sendPdfInvoice(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email',
+            'invoice_filename' => 'required|string'
+        ]);
+
+        try {
+
+            // Prevent directory traversal
+            $filename = basename($request->invoice_filename);
+
+            $storagePath = 'invoices/' . $filename;
+
+            // Check file exists
+            if (!Storage::disk('public')->exists($storagePath)) {
+
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invoice file not found.',
+                    'filename' => $filename,
+                ], 404);
+            }
+
+            // Public URL
+            $download_url = asset('storage/invoices/' . $filename);
+
+            $send = [
+                'subject'      => 'STAFFOO Invoice',
+                'message'      => 'Here is your invoice.',
+                'email'        => $request->email,
+                'attachment'   => null,
+                'download_url' => $download_url,
+                'filename'     => $filename,
+            ];
+
+            $this->systemEmail($send);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Invoice sent successfully.',
+                'download_url' => $download_url
+            ]);
+
+        } catch (\Exception $e) {
+
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+
     function systemEmail($prams)
     {
         $data = [
@@ -2869,7 +2923,7 @@ public function autoUpdatePayslipStatus()
         ];
         
         Mail::send('emails.systemGeneralEmail', $data, function($message) use ($data){
-            $message->from('no-reply@staffoo.com.au', 'Staffoo');
+            $message->from('no-reply@staffoo.com.au', 'STAFFOO');
             $message->to($data['email'])->subject($data['subject']);
             // No attachment - just send HTML email with button
         });

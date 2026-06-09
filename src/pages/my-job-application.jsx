@@ -211,7 +211,7 @@ export default function MyJobApplications() {
           </div>
         </div>
 
-        {/* --- CARDS GRID (3 COLUMNS ON XL SCREENS) --- */}
+        {/* --- CARDS GRID --- */}
         <div className="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-4 application-grid">
           {filteredApplications.length === 0 ? (
             <div className="col-12 text-center py-5 text-muted bg-light rounded shadow-sm w-100">
@@ -224,7 +224,6 @@ export default function MyJobApplications() {
                 <div className="card h-100 border-0 shadow-sm shift-card-hover" style={{ borderRadius: '16px' }}>
                   <div className="card-body p-4 d-flex flex-column">
 
-                    {/* Header: Status Badge & Created At */}
                     <div className="d-flex justify-content-between align-items-start mb-3">
                       <span
                         className={`badge rounded-pill px-3 py-2 fw-medium ${app.statusClass === 'offer' ? 'bg-success bg-opacity-10 text-success border border-success border-opacity-25' : 'bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25'}`}
@@ -238,7 +237,6 @@ export default function MyJobApplications() {
                       </div>
                     </div>
 
-                    {/* Title & Location */}
                     <h5 className="card-title fw-bold text-dark mb-2" style={{ fontSize: "1.15rem", letterSpacing: "-0.3px" }}>
                       {app.title}
                     </h5>
@@ -247,10 +245,7 @@ export default function MyJobApplications() {
                       {app.location}
                     </p>
 
-                    {/* Footer Section */}
                     <div className="mt-auto">
-
-                      {/* Shift Time Pill */}
                       <div className="d-flex align-items-center mb-4 p-3 rounded-3" style={{ backgroundColor: "#f8fafc", border: "1px solid #f1f5f9" }}>
                         <div className="rounded-circle d-flex align-items-center justify-content-center me-3" style={{ width: "32px", height: "32px", backgroundColor: "#e0f2fe", color: "#0ea5e9" }}>
                           <i className={`fa-solid ${app.pillIcon}`}></i>
@@ -258,7 +253,6 @@ export default function MyJobApplications() {
                         <span className="fw-semibold text-dark" style={{ fontSize: "13px" }}>{app.pillText}</span>
                       </div>
 
-                      {/* Assignment & View Button */}
                       <div className="d-flex justify-content-between align-items-center pt-3 border-top" style={{ borderColor: "#f8f9fa" }}>
                         <div className="d-flex flex-column">
                           <span className="text-muted mb-1" style={{ fontSize: "10px", textTransform: "uppercase", letterSpacing: "0.5px", fontWeight: 700 }}>
@@ -305,8 +299,9 @@ export default function MyJobApplications() {
             </div>
 
             <div className="modal-body" style={{ padding: "24px", overflowY: "auto", flex: 1 }}>
-              <div className="row g-4">
 
+              {/* Row 1: Site and Shift Info */}
+              <div className="row g-4 mb-4">
                 {/* Site Information Card */}
                 <div className="col-md-6">
                   <div className="p-4 bg-white rounded-4 h-100 shadow-sm border border-light">
@@ -341,8 +336,48 @@ export default function MyJobApplications() {
                     </div>
                   </div>
                 </div>
-
               </div>
+
+              {/* Row 2: Customer and Assignment Info */}
+              <div className="row g-4">
+                {/* Customer Details Card */}
+                <div className="col-md-6">
+                  <div className="p-4 bg-white rounded-4 h-100 shadow-sm border border-light">
+                    <h5 className="mb-4 d-flex align-items-center pb-3 border-bottom" style={{ fontSize: "16px", fontWeight: "700", color: "#1e293b" }}>
+                      <div className="rounded-circle d-flex align-items-center justify-content-center me-3" style={{ width: "36px", height: "36px", background: "#f3e8ff", color: "#9333ea" }}>
+                        <i className="fa-solid fa-user-tie"></i>
+                      </div>
+                      Customer Details
+                    </h5>
+                    <div className="d-flex flex-column gap-1">
+                      {/* Optional chaining ensures it doesn't break if customer is null */}
+                      <InfoRow icon="fa-user" label="Name" value={selectedApp.rawShift.customer?.name || "Unknown"} />
+                      <InfoRow icon="fa-envelope" label="Email" value={selectedApp.rawShift.customer?.email || "N/A"} />
+                      <InfoRow icon="fa-phone" label="Phone" value={selectedApp.rawShift.customer?.phone || "N/A"} />
+                      <InfoRow icon="fa-building-user" label="Client Type" value={selectedApp.rawShift.customer?.user_type || "N/A"} />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Assignment Details Card */}
+                <div className="col-md-6">
+                  <div className="p-4 bg-white rounded-4 h-100 shadow-sm border border-light">
+                    <h5 className="mb-4 d-flex align-items-center pb-3 border-bottom" style={{ fontSize: "16px", fontWeight: "700", color: "#1e293b" }}>
+                      <div className="rounded-circle d-flex align-items-center justify-content-center me-3" style={{ width: "36px", height: "36px", background: "#dcfce7", color: "#16a34a" }}>
+                        <i className="fa-solid fa-shield-halved"></i>
+                      </div>
+                      Assignment Details
+                    </h5>
+                    <div className="d-flex flex-column gap-1">
+                      <InfoRow icon="fa-user-shield" label="Assigned To" value={selectedApp.appliedVia} />
+                      <InfoRow icon="fa-id-badge" label="Job Type" value={selectedApp.rawShift.job_type || "N/A"} />
+                      <InfoRow icon="fa-bolt" label="ASAP Shift" value={selectedApp.rawShift.asap ? "Yes" : "No"} />
+                      <InfoRow icon="fa-money-bill" label="Job Amount" value={selectedApp.rawShift.job_amount ? `$${selectedApp.rawShift.job_amount}` : "N/A"} />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
             </div>
 
             <div className="modal-footer" style={{ background: "#fff", padding: "16px 24px", borderTop: "1px solid #e2e8f0", display: "flex", justifyContent: "flex-end" }}>

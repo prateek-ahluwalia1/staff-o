@@ -208,6 +208,7 @@ export default function RosterPage() {
 
   const sites = useMemo(() => {
     if (!submitData?.data) return [];
+
     return submitData.data.map((site) => {
       const roster = (site.job_roster || []).map((shift) => {
         const startDate = parseApiDate(shift.start);
@@ -218,8 +219,8 @@ export default function RosterPage() {
 
       const totalHours = roster.reduce((sum, shift) => sum + Number(shift.hours || 0), 0);
 
-      // Safely check common relation names for the client payload
-      const clientName = site?.customers?.name || site?.customer?.name || site?.client?.name || "Unknown Client";
+      const shiftWithCustomer = site.job_roster?.find(shift => shift?.customer?.name);
+      const clientName = shiftWithCustomer?.customer?.name || "Unknown Client";
 
       return {
         id: site.id,

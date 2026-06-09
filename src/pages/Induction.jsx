@@ -1,10 +1,11 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import useFetch from "../hooks/useFetch";
 import useSubmit from "../hooks/useSubmit";
 import "../assets/css/induction.css";
 import { useSelector } from "react-redux";
 import Loader from "../components/Loader";
-import { Link } from 'react-router-dom'
+import { Link } from 'react-router-dom';
+import Select from "react-select";
 import { apiURL } from "../utils/exports";
 import { toast } from "react-toastify";
 
@@ -20,9 +21,11 @@ const getHistoryRows = (response) => {
 export default function Induction() {
     const { userdata } = useSelector((state) => state.auth);
     const userId = userdata?.id || userdata?.data?.id;
+
     const { data: listResponse, loading: listLoading, refetch: refetchList } = useFetch("api/questionnaire-list", { isAuth: true });
     const { data: staffResponse } = useFetch("api/admin/get-staffoo-staff?limit=1000", { isAuth: true });
     const { data: historyResponse, loading: historyLoading, refetch: refetchHistory } = useFetch("", { isAuth: true, immediate: false });
+
     const { submit: submitSave, loading: isSaving } = useSubmit({ isAuth: true });
     const { submit: submitDelete, loading: isDeleting } = useSubmit({ isAuth: true });
     const { submit: submitAssign, loading: isAssigning } = useSubmit({ isAuth: true });
@@ -39,7 +42,31 @@ export default function Induction() {
         { id: 'NT', name: 'Northern Territory' }
     ];
 
-    const staffList = staffResponse?.data?.data || [];
+    const stateOptions = australianStates.map(state => ({
+        value: state.id,
+        label: state.name
+    }));
+
+
+    const staffList = useMemo(() => {
+        return staffResponse?.data?.data || [];
+    }, [staffResponse?.data?.data]);
+
+    const staffOptions = useMemo(() => {
+        const options = staffList.map(staff => ({
+            value: staff.id,
+            label: `${staff.name} (${staff.id})`
+        }));
+
+        return [
+            {
+                value: "all",
+                label: "Select All Staff"
+            },
+            ...options
+        ];
+    }, [staffList]);
+
     const inductions = listResponse?.data || listResponse || [];
     const historyRows = getHistoryRows(historyResponse);
 
@@ -54,9 +81,52 @@ export default function Induction() {
     ]);
 
     const [shareState, setShareState] = useState("");
-    const [selectedStaff, setSelectedStaff] = useState([]);
+    const [selectedStaff, setSelectedStaff] = useState([]); // Array of IDs
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [deleteInductionId, setDeleteInductionId] = useState(null);
+
+    // Reusing the react-select custom styles
+    const customSelectStyles = {
+        control: (provided, state) => ({
+            ...provided,
+            borderColor: state.isFocused ? '#0A7C6E' : '#d1d5db',
+            boxShadow: state.isFocused ? '0 0 0 1px #0A7C6E' : 'none',
+            '&:hover': {
+                borderColor: '#0A7C6E',
+            },
+        }),
+        option: (provided, state) => ({
+            ...provided,
+            backgroundColor: state.isSelected
+                ? '#0A7C6E'
+                : state.isFocused
+                    ? '#E6F4F2'
+                    : '#fff',
+            color: state.isSelected ? '#fff' : '#000',
+        }),
+        singleValue: (provided) => ({
+            ...provided,
+            color: '#0A7C6E',
+            fontWeight: 500,
+        }),
+        menuPortal: base => ({ ...base, zIndex: 9999 }),
+        multiValue: (provided) => ({
+            ...provided,
+            backgroundColor: '#E6F4F2',
+        }),
+        multiValueLabel: (provided) => ({
+            ...provided,
+            color: '#0A7C6E',
+        }),
+        multiValueRemove: (provided) => ({
+            ...provided,
+            color: '#0A7C6E',
+            ':hover': {
+                backgroundColor: '#0A7C6E',
+                color: 'white',
+            },
+        }),
+    };
 
     const openModal = (type, induction = null) => {
         setSelectedInduction(induction);
@@ -101,6 +171,9 @@ export default function Induction() {
     const closeModal = () => {
         setActiveModal(null);
         setSelectedInduction(null);
+        // Reset share states when closing modals
+        setShareState("");
+        setSelectedStaff([]);
     };
 
     const addSubtitle = () => setFormSubtitles([...formSubtitles, ""]);
@@ -216,17 +289,7 @@ export default function Induction() {
         const res = await submitAssign("api/assign-questionnaire", payload, { method: "POST" });
         if (res && res.success !== false) {
             closeModal();
-            setShareState("");
-            setSelectedStaff([]);
         }
-    };
-
-    const toggleStaff = (staffId) => {
-        setSelectedStaff(prev =>
-            prev.includes(staffId)
-                ? prev.filter(id => id !== staffId)
-                : [...prev, staffId]
-        );
     };
 
     const handleQuestionFileUpload = async (qIndex, file) => {
@@ -335,45 +398,51 @@ export default function Induction() {
                     <button onClick={closeModal} className="btn-close"></button>
                 </div>
                 <div className="p-3 p-md-4">
+
                     <div className="mb-4">
                         <label className="form-label text-muted small fw-bold">Select State *</label>
-                        <select
-                            className="form-select clean-input"
-                            value={shareState}
-                            onChange={e => setShareState(e.target.value)}
-                        >
-                            <option value="">Choose a state...</option>
-                            {australianStates.map(state => (
-                                <option key={state.id} value={state.id}>
-                                    {state.name}
-                                </option>
-                            ))}
-                        </select>
+                        <Select
+                            options={stateOptions}
+                            value={stateOptions.find((o) => o.value === shareState) || null}
+                            onChange={(selectedOption) => setShareState(selectedOption ? selectedOption.value : "")}
+                            placeholder="Choose a state..."
+                            isClearable
+                            styles={customSelectStyles}
+                            menuPortalTarget={document.body}
+                            menuPosition={'fixed'}
+                        />
                     </div>
 
                     <div className="mb-4">
                         <label className="form-label text-muted small fw-bold">Select Staff Members *</label>
-                        <div className="border rounded p-3 bg-light" style={{ maxHeight: '300px', overflowY: 'auto' }}>
-                            {staffList.length > 0 ? (
-                                staffList.map(staff => (
-                                    <div key={staff.id} className="form-check mb-2">
-                                        <input
-                                            className="form-check-input clean-input"
-                                            type="checkbox"
-                                            id={`staff-${staff.id}`}
-                                            checked={selectedStaff.includes(staff.id)}
-                                            onChange={() => toggleStaff(staff.id)}
-                                        />
-                                        <label className="form-check-label d-block text-break" htmlFor={`staff-${staff.id}`}>
-                                            <div className="fw-medium text-dark">{staff.name}</div>
-                                            <div className="text-muted small">{staff.email}</div>
-                                        </label>
-                                    </div>
-                                ))
-                            ) : (
-                                <p className="text-muted mb-0 text-center py-3">No staff members available</p>
+                        <Select
+                            isMulti
+                            options={staffOptions}
+                            value={staffOptions.filter(
+                                (o) => o.value !== "all" && selectedStaff.includes(o.value)
                             )}
-                        </div>
+                            onChange={(selectedOptions) => {
+                                if (!selectedOptions) {
+                                    setSelectedStaff([]);
+                                    return;
+                                }
+
+                                const hasSelectAll = selectedOptions.some(
+                                    option => option.value === "all"
+                                );
+
+                                if (hasSelectAll) {
+                                    setSelectedStaff(staffList.map(staff => staff.id));
+                                } else {
+                                    setSelectedStaff(selectedOptions.map(option => option.value));
+                                }
+                            }}
+                            placeholder="Search and select staff..."
+                            styles={customSelectStyles}
+                            closeMenuOnSelect={false}
+                            menuPortalTarget={document.body}
+                            menuPosition={'fixed'}
+                        />
                         {selectedStaff.length > 0 && (
                             <div className="mt-2 small text-primary">
                                 {selectedStaff.length} staff member{selectedStaff.length !== 1 ? 's' : ''} selected

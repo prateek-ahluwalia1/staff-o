@@ -39,15 +39,6 @@ export default function SettingsHeaderContent({
     <div className="settings-header-content" style={{ position: "relative" }}>
       {/* LEFT SIDE: Text block */}
       <div className="header-text-info">
-        {
-          userType !== "staff" && (
-            <span>
-              {userType === "contractor" ? "Resource Partner" : userType?.charAt(0)?.toUpperCase() + userType?.slice(1) || ""}{" "}
-              Profile
-            </span>
-          )
-        }
-
         <h2 style={{ display: "flex", alignItems: "center", gap: "8px" }}>
           {name || "Staff Member"}
           {verified && (

@@ -78,7 +78,7 @@ export default function MyJobApplications() {
         let pillIcon = "fa-clock";
         const currentStatus = shift.job_status ? shift.job_status.toLowerCase() : "pending";
 
-        if (currentStatus === "confirmed") {
+        if (currentStatus === "confirmed" || currentStatus === "completed") {
           statusClass = "offer";
           pillIcon = "fa-calendar-check";
         } else if (currentStatus === "pending") {

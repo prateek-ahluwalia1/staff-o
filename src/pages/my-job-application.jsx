@@ -115,7 +115,7 @@ export default function MyJobApplications() {
           role: site.site_description || "Site Security",
           company: site.state || "",
           applied: `Total Hours: ${shift.hours || 0}`,
-          appliedVia: shift.guards?.name ? `Assigned to: ${shift.guards.name}` : "Unassigned",
+          appliedVia: shift.guards?.name ? `${shift.guards.name}` : "Unassigned",
           pillIcon,
           pillText: formattedTime,
           createdAt: formattedCreatedAt
@@ -143,6 +143,18 @@ export default function MyJobApplications() {
 
   return (
     <>
+      <style>
+        {`
+          .shift-card-hover {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          }
+          .shift-card-hover:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1) !important;
+          }
+        `}
+      </style>
+
       <div className="dashboard-main">
         <div className="dashboard-page-header d-flex flex-column flex-xl-row justify-content-between align-items-start align-items-xl-center mb-4">
           <div>
@@ -156,7 +168,7 @@ export default function MyJobApplications() {
               <input
                 type="text"
                 className="form-control form-control-sm border-0 shadow-none py-2"
-                placeholder="Search site or address..."
+                placeholder="Search site or address"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 style={{ backgroundColor: 'transparent' }}
@@ -199,43 +211,77 @@ export default function MyJobApplications() {
           </div>
         </div>
 
-        <div className="row row-cols-1 row-cols-lg-2 g-4 application-grid">
+        {/* --- CARDS GRID (3 COLUMNS ON XL SCREENS) --- */}
+        <div className="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-4 application-grid">
           {filteredApplications.length === 0 ? (
-            <div className="col-12 text-center py-5 text-muted bg-light rounded shadow-sm">
+            <div className="col-12 text-center py-5 text-muted bg-light rounded shadow-sm w-100">
               <i className="fa-solid fa-magnifying-glass-minus mb-3 d-block" style={{ fontSize: '2rem' }}></i>
               {applications.length > 0 ? "No shifts match your search." : "No shifts found for this period."}
             </div>
           ) : (
             filteredApplications.map((app, index) => (
               <div className="col" key={app.id || index}>
-                <div className="application-card shadow-sm border-0">
-                  <div className="application-header">
-                    <span className={`status-chip ${app.statusClass}`}>{app.status}</span>
-                  </div>
+                <div className="card h-100 border-0 shadow-sm shift-card-hover" style={{ borderRadius: '16px' }}>
+                  <div className="card-body p-4 d-flex flex-column">
 
-                  <div className="application-title">
-                    <h4 className="fw-bold">{app.title}</h4>
-                    <div className="application-location mb-1" style={{ fontSize: "14px", color: "#666" }}>
-                      <i className="fa-solid fa-location-dot me-2 text-primary"></i>{app.location}
+                    {/* Header: Status Badge & Created At */}
+                    <div className="d-flex justify-content-between align-items-start mb-3">
+                      <span
+                        className={`badge rounded-pill px-3 py-2 fw-medium ${app.statusClass === 'offer' ? 'bg-success bg-opacity-10 text-success border border-success border-opacity-25' : 'bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25'}`}
+                        style={{ fontSize: '12px' }}
+                      >
+                        <i className={`fa-solid ${app.statusClass === 'offer' ? 'fa-circle-check' : 'fa-hourglass-half'} me-1`}></i>
+                        {app.status}
+                      </span>
+                      <div className="text-muted text-end" style={{ fontSize: "11px", fontWeight: 600, letterSpacing: '0.3px' }}>
+                        <i className="fa-regular fa-clock me-1"></i> {app.createdAt}
+                      </div>
                     </div>
-                    {/* --- CREATED AT ON THE CARD --- */}
-                    <div style={{ fontSize: "12px", color: "#888" }}>
-                      <i className="fa-solid fa-calendar-plus me-2 text-muted"></i>Posted: {app.createdAt}
-                    </div>
-                  </div>
 
-                  <div className="application-pill my-3" style={{ background: "#f1f3f5", padding: "8px 12px", borderRadius: "8px", fontSize: "14px", border: "1px solid #e9ecef" }}>
-                    <i className={`fa-solid ${app.pillIcon} me-2 text-primary`}></i>{app.pillText}
-                  </div>
+                    {/* Title & Location */}
+                    <h5 className="card-title fw-bold text-dark mb-2" style={{ fontSize: "1.15rem", letterSpacing: "-0.3px" }}>
+                      {app.title}
+                    </h5>
+                    <p className="card-text text-muted mb-3 d-flex align-items-start" style={{ fontSize: "13px", lineHeight: "1.4" }}>
+                      <i className="fa-solid fa-location-dot mt-1 me-2 text-primary" style={{ opacity: 0.8 }}></i>
+                      {app.location}
+                    </p>
 
-                  <div className="application-footer d-flex justify-content-between align-items-center mt-3 pt-3" style={{ borderTop: "1px solid #eee" }}>
-                    <div className="d-flex flex-column">
-                      <span style={{ fontSize: "12px" }} className="text-muted">{app.applied}</span>
-                      <span style={{ fontSize: "13px" }} className="fw-medium text-dark">{app.appliedVia}</span>
+                    {/* Footer Section */}
+                    <div className="mt-auto">
+
+                      {/* Shift Time Pill */}
+                      <div className="d-flex align-items-center mb-4 p-3 rounded-3" style={{ backgroundColor: "#f8fafc", border: "1px solid #f1f5f9" }}>
+                        <div className="rounded-circle d-flex align-items-center justify-content-center me-3" style={{ width: "32px", height: "32px", backgroundColor: "#e0f2fe", color: "#0ea5e9" }}>
+                          <i className={`fa-solid ${app.pillIcon}`}></i>
+                        </div>
+                        <span className="fw-semibold text-dark" style={{ fontSize: "13px" }}>{app.pillText}</span>
+                      </div>
+
+                      {/* Assignment & View Button */}
+                      <div className="d-flex justify-content-between align-items-center pt-3 border-top" style={{ borderColor: "#f8f9fa" }}>
+                        <div className="d-flex flex-column">
+                          <span className="text-muted mb-1" style={{ fontSize: "10px", textTransform: "uppercase", letterSpacing: "0.5px", fontWeight: 700 }}>
+                            Assignment
+                          </span>
+                          <span className="fw-bold text-dark" style={{ fontSize: "13px" }}>
+                            <i className="fa-regular fa-user me-1 text-primary opacity-75"></i> {app.appliedVia}
+                          </span>
+                          <span className="text-muted mt-1" style={{ fontSize: "12px", fontWeight: 500 }}>
+                            {app.applied}
+                          </span>
+                        </div>
+                        <button
+                          type="button"
+                          className="btn btn-primary-custom btn-sm rounded-pill px-4 fw-semibold shadow-sm"
+                          onClick={() => openModal(app)}
+                          style={{ height: "36px", fontSize: "13px" }}
+                        >
+                          View Details
+                        </button>
+                      </div>
+
                     </div>
-                    <button type="button" className="btn btn-primary-custom btn-sm rounded-pill px-4 shadow-sm" onClick={() => openModal(app)}>
-                      View details
-                    </button>
                   </div>
                 </div>
               </div>

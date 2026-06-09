@@ -4,11 +4,16 @@ import { startOfMonth, endOfMonth, format, parse } from "date-fns";
 import useSubmit from "../hooks/useSubmit";
 import Loader from "../components/Loader";
 
-// Helper component for modal rows
-const InfoRow = ({ label, value }) => (
-  <div style={{ display: "flex", justifyContent: "space-between", padding: "10px 0", borderBottom: "1px solid #f0f0f0" }}>
-    <span style={{ fontWeight: 600, color: "#333", fontSize: "14px" }}>{label}</span>
-    <span style={{ color: "#666", fontSize: "14px", textAlign: "right", maxWidth: "60%" }}>{value || "N/A"}</span>
+// Enhanced Helper component for modal rows
+const InfoRow = ({ label, value, icon }) => (
+  <div className="d-flex justify-content-between align-items-center py-2 border-bottom" style={{ borderColor: "#f8f9fa" }}>
+    <span className="text-muted d-flex align-items-center" style={{ fontSize: "14px", fontWeight: 500 }}>
+      {icon && <i className={`fa-solid ${icon} me-2`} style={{ width: '18px', textAlign: 'center', color: '#0A7C6E', opacity: 0.8 }}></i>}
+      {label}
+    </span>
+    <span className="text-dark fw-semibold text-end" style={{ fontSize: "14px", maxWidth: "60%" }}>
+      {value || "N/A"}
+    </span>
   </div>
 );
 
@@ -20,7 +25,7 @@ export default function MyJobApplications() {
   // --- Filters State ---
   const [startDate, setStartDate] = useState(() => format(startOfMonth(new Date()), "yyyy-MM-dd"));
   const [endDate, setEndDate] = useState(() => format(endOfMonth(new Date()), "yyyy-MM-dd"));
-  const [searchQuery, setSearchQuery] = useState(""); // NEW: Search state
+  const [searchQuery, setSearchQuery] = useState("");
 
   // Modal state
   const [selectedApp, setSelectedApp] = useState(null);
@@ -30,11 +35,9 @@ export default function MyJobApplications() {
     if (!userId) return;
 
     try {
-      // API expects MM-dd-yyyy
       const parsedStart = parse(startDate, "yyyy-MM-dd", new Date());
       const parsedEnd = parse(endDate, "yyyy-MM-dd", new Date());
 
-      // Validate that parsed dates are valid
       if (isNaN(parsedStart.getTime()) || isNaN(parsedEnd.getTime())) {
         console.error("Invalid date format");
         return;
@@ -90,6 +93,17 @@ export default function MyJobApplications() {
           formattedTime = `${format(sDate, "dd/MM/yyyy HH:mm")} to ${format(eDate, "HH:mm")}`;
         } catch (e) { }
 
+        // Parse Created At
+        let formattedCreatedAt = shift.created_at;
+        if (shift.created_at) {
+          try {
+            const cDate = new Date(shift.created_at);
+            formattedCreatedAt = format(cDate, "dd/MM/yyyy HH:mm");
+          } catch (e) {
+            console.error("Created At parsing error:", e);
+          }
+        }
+
         flattenedShifts.push({
           rawSite: site,
           rawShift: shift,
@@ -104,13 +118,14 @@ export default function MyJobApplications() {
           appliedVia: shift.guards?.name ? `Assigned to: ${shift.guards.name}` : "Unassigned",
           pillIcon,
           pillText: formattedTime,
+          createdAt: formattedCreatedAt
         });
       });
     });
     return flattenedShifts;
   }, [submitData]);
 
-  // 3. NEW: Filter the mapped applications by text search
+  // 3. Filter the mapped applications by text search
   const filteredApplications = useMemo(() => {
     if (!searchQuery.trim()) return applications;
     const lowerQuery = searchQuery.toLowerCase();
@@ -135,15 +150,12 @@ export default function MyJobApplications() {
             <p>Viewing shifts for the selected date range.</p>
           </div>
 
-          {/* --- FILTERS CONTAINER --- */}
           <div className="d-flex flex-column flex-md-row gap-3 mt-3 mt-xl-0 align-items-md-center">
-
-            {/* --- NEW: TEXT SEARCH BAR --- */}
             <div className="d-flex align-items-center bg-white p-1 px-2 rounded shadow-sm border" style={{ minWidth: '250px' }}>
               <i className="fa-solid fa-magnifying-glass text-muted me-2 ms-1"></i>
               <input
                 type="text"
-                className="form-control form-control-sm border-0 shadow-none"
+                className="form-control form-control-sm border-0 shadow-none py-2"
                 placeholder="Search site or address..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -158,7 +170,6 @@ export default function MyJobApplications() {
               )}
             </div>
 
-            {/* --- DATE FILTERS --- */}
             <div className="d-flex gap-2 align-items-end bg-white p-2 rounded shadow-sm border">
               <div className="d-flex flex-column">
                 <input
@@ -185,11 +196,9 @@ export default function MyJobApplications() {
                 Search Dates
               </button>
             </div>
-
           </div>
         </div>
 
-        {/* --- CARDS GRID --- */}
         <div className="row row-cols-1 row-cols-lg-2 g-4 application-grid">
           {filteredApplications.length === 0 ? (
             <div className="col-12 text-center py-5 text-muted bg-light rounded shadow-sm">
@@ -203,10 +212,15 @@ export default function MyJobApplications() {
                   <div className="application-header">
                     <span className={`status-chip ${app.statusClass}`}>{app.status}</span>
                   </div>
+
                   <div className="application-title">
                     <h4 className="fw-bold">{app.title}</h4>
-                    <div className="application-location" style={{ fontSize: "14px", color: "#666" }}>
+                    <div className="application-location mb-1" style={{ fontSize: "14px", color: "#666" }}>
                       <i className="fa-solid fa-location-dot me-2 text-primary"></i>{app.location}
+                    </div>
+                    {/* --- CREATED AT ON THE CARD --- */}
+                    <div style={{ fontSize: "12px", color: "#888" }}>
+                      <i className="fa-solid fa-calendar-plus me-2 text-muted"></i>Posted: {app.createdAt}
                     </div>
                   </div>
 
@@ -230,32 +244,63 @@ export default function MyJobApplications() {
         </div>
       </div>
 
-      {/* --- MODAL SYSTEM --- */}
+      {/* --- BEAUTIFIED MODAL --- */}
       {selectedApp && (
         <div className="modal-overlay" onClick={closeModal} style={{ zIndex: 9999, backgroundColor: "rgba(0,0,0,0.6)", position: "fixed", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", padding: "20px" }}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ width: "100%", maxWidth: "800px", maxHeight: "90vh", background: "#fff", borderRadius: "12px", display: "flex", flexDirection: "column", overflow: "hidden" }}>
-            <div className="modal-header d-flex justify-content-between align-items-center" style={{ background: "#0A7C6E", color: "#fff", padding: "16px 24px" }}>
-              <h3 style={{ margin: 0, fontSize: "18px", fontWeight: "600" }}>Shift & Site Details</h3>
-              <button onClick={closeModal} style={{ background: "transparent", border: "none", fontSize: "24px", color: "#fff", lineHeight: 1 }}>&times;</button>
+          <div className="modal-content shadow-lg border-0" onClick={(e) => e.stopPropagation()} style={{ width: "100%", maxWidth: "850px", maxHeight: "90vh", background: "#f8fafc", borderRadius: "16px", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+
+            <div className="modal-header d-flex justify-content-between align-items-center" style={{ background: "#0A7C6E", color: "#fff", padding: "20px 24px" }}>
+              <h3 style={{ margin: 0, fontSize: "20px", fontWeight: "700", letterSpacing: "0.5px" }}>
+                <i className="fa-solid fa-clipboard-check me-2 opacity-75"></i> Shift & Site Details
+              </h3>
+              <button onClick={closeModal} className="btn btn-sm" style={{ background: "rgba(255,255,255,0.2)", border: "none", color: "#fff", borderRadius: "50%", width: "32px", height: "32px", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <i className="fa-solid fa-xmark"></i>
+              </button>
             </div>
+
             <div className="modal-body" style={{ padding: "24px", overflowY: "auto", flex: 1 }}>
               <div className="row g-4">
+
+                {/* Site Information Card */}
                 <div className="col-md-6">
-                  <h5 style={{ borderBottom: "1px solid #eee", paddingBottom: "10px", fontSize: "16px" }}>Site Information</h5>
-                  <InfoRow label="Site Name" value={selectedApp.rawSite.site_name} />
-                  <InfoRow label="Address" value={selectedApp.rawSite.address} />
-                  <InfoRow label="Radius" value={`${selectedApp.rawSite.signin_radius}m`} />
+                  <div className="p-4 bg-white rounded-4 h-100 shadow-sm border border-light">
+                    <h5 className="mb-4 d-flex align-items-center pb-3 border-bottom" style={{ fontSize: "16px", fontWeight: "700", color: "#1e293b" }}>
+                      <div className="rounded-circle d-flex align-items-center justify-content-center me-3" style={{ width: "36px", height: "36px", background: "#e0f2fe", color: "#0ea5e9" }}>
+                        <i className="fa-solid fa-building"></i>
+                      </div>
+                      Site Information
+                    </h5>
+                    <div className="d-flex flex-column gap-1">
+                      <InfoRow icon="fa-signature" label="Site Name" value={selectedApp.rawSite.site_name} />
+                      <InfoRow icon="fa-map-pin" label="Address" value={selectedApp.rawSite.address} />
+                      <InfoRow icon="fa-location-crosshairs" label="Radius" value={`${selectedApp.rawSite.signin_radius}m`} />
+                    </div>
+                  </div>
                 </div>
+
+                {/* Shift Information Card */}
                 <div className="col-md-6">
-                  <h5 style={{ borderBottom: "1px solid #eee", paddingBottom: "10px", fontSize: "16px" }}>Shift Information</h5>
-                  <InfoRow label="Status" value={selectedApp.rawShift.job_status} />
-                  <InfoRow label="Total Hours" value={selectedApp.rawShift.hours} />
-                  <InfoRow label="Payable" value={selectedApp.rawShift.shift_payable} />
+                  <div className="p-4 bg-white rounded-4 h-100 shadow-sm border border-light">
+                    <h5 className="mb-4 d-flex align-items-center pb-3 border-bottom" style={{ fontSize: "16px", fontWeight: "700", color: "#1e293b" }}>
+                      <div className="rounded-circle d-flex align-items-center justify-content-center me-3" style={{ width: "36px", height: "36px", background: "#fef3c7", color: "#d97706" }}>
+                        <i className="fa-solid fa-clock-rotate-left"></i>
+                      </div>
+                      Shift Information
+                    </h5>
+                    <div className="d-flex flex-column gap-1">
+                      <InfoRow icon="fa-circle-info" label="Status" value={selectedApp.rawShift.job_status} />
+                      <InfoRow icon="fa-hourglass-half" label="Total Hours" value={selectedApp.rawShift.hours} />
+                      <InfoRow icon="fa-file-invoice-dollar" label="Payable" value={selectedApp.rawShift.shift_payable} />
+                      <InfoRow icon="fa-calendar-plus" label="Created At" value={selectedApp.createdAt} />
+                    </div>
+                  </div>
                 </div>
+
               </div>
             </div>
-            <div className="modal-footer" style={{ background: "#f8f9fa", padding: "16px 24px", borderTop: "1px solid #eaeaea", display: "flex", justifyContent: "flex-end" }}>
-              <button onClick={closeModal} className="btn btn-primary-custom px-4">Close</button>
+
+            <div className="modal-footer" style={{ background: "#fff", padding: "16px 24px", borderTop: "1px solid #e2e8f0", display: "flex", justifyContent: "flex-end" }}>
+              <button onClick={closeModal} className="btn btn-primary-custom px-4 rounded-pill fw-semibold shadow-sm">Close Window</button>
             </div>
           </div>
         </div>

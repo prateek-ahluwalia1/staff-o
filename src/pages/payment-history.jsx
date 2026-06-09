@@ -265,7 +265,7 @@ export default function PaymentHistory() {
                               href={
                                 tx.invoice_filename.startsWith("http")
                                   ? tx.invoice_filename
-                                  : `${apiURL}invoices/${tx.invoice_filename}`
+                                  : `${apiURL}storage/invoices/${tx.invoice_filename}`
                               }
                               target="_blank"
                               rel="noopener noreferrer"

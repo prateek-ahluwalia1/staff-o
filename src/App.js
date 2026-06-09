@@ -15,6 +15,22 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import NotificationToast from "./components/NotificationToast";
 import { useEcho } from "./hooks/useEcho";
 import { logOut } from "./store/slices/authSlice";
+import RetailSecurity from "./pages/solutions/retail-security";
+import Careers from "./pages/career";
+import WarehouseLogisticsSecurity from "./pages/solutions/warehouse-logistics-security";
+import CorporateSecurity from "./pages/solutions/corporate-security";
+import GovernmentSecurity from "./pages/solutions/government-security";
+import HealthcareSecurity from "./pages/solutions/healthcare-security";
+import TransportSecurity from "./pages/solutions/transport-security";
+import AviationSecurity from "./pages/solutions/aviation-security";
+import ForSecurityCompanies from "./pages/solutions/for-security-companies";
+import ForSecurityGuards from "./pages/solutions/for-security-guards";
+import SecuritySubcontractors from "./pages/solutions/security-subcontractors";
+import HireSecurityStaff from "./pages/solutions/hire-security-staff";
+import EventSecurityProviders from "./pages/solutions/for-event-security-providers";
+import CorporateSecurityTeams from "./pages/solutions/for-corporate-security-teams";
+import LabourHireAgencies from "./pages/solutions/for-labour-hire-agencies";
+import GPSGuardTracking from "./pages/features/gps-guard-tracking";
 
 const Login = lazy(() => import("./auth/login"));
 const Register = lazy(() => import("./auth/register"));
@@ -43,6 +59,8 @@ const AboutUs = lazy(() => import("./pages/about-us"));
 const TermsOfUse = lazy(() => import("./pages/terms-of-use"));
 const PrivacyPolicy = lazy(() => import("./pages/privacy-policy"));
 const NotFound = lazy(() => import("./pages/NotFound"));
+const DynamicPage = lazy(() => import("./pages/DynamicPage"));
+const EventSecurity = lazy(() => import("./pages/solutions/event-security"));
 const Reports = lazy(() => import("./pages/Reports"));
 const TimeSheet = lazy(() => import("./pages/TimeSheet"));
 const JobTracker = lazy(() => import("./pages/JobTracker"));
@@ -157,14 +175,7 @@ function AppContent() {
                         </ProtectedRoute>
                     }
                 />
-                <Route
-                    path="/contact-us"
-                    element={
-                        <ProtectedRoute public>
-                            <ContactUs />
-                        </ProtectedRoute>
-                    }
-                />
+
                 <Route
                     path="/faqs"
                     element={
@@ -173,30 +184,219 @@ function AppContent() {
                         </ProtectedRoute>
                     }
                 />
+
+
+                {/* solutions screen */}
+                <>
+                    <Route
+                        path="/solutions/event-security"
+                        element={
+                            <ProtectedRoute public>
+                                <EventSecurity />
+                            </ProtectedRoute>
+                        }
+                    />
+
+                    <Route
+                        path="/solutions/retail-security"
+                        element={
+                            <ProtectedRoute public>
+                                <RetailSecurity />
+                            </ProtectedRoute>
+                        }
+                    />
+
+                    <Route
+                        path="/solutions/warehouse-logistics-security"
+                        element={
+                            <ProtectedRoute public>
+                                <WarehouseLogisticsSecurity />
+                            </ProtectedRoute>
+                        }
+                    />
+
+                    <Route
+                        path="/solutions/corporate-security"
+                        element={
+                            <ProtectedRoute public>
+                                <CorporateSecurity />
+                            </ProtectedRoute>
+                        }
+                    />
+
+                    <Route
+                        path="/solutions/government-security"
+                        element={
+                            <ProtectedRoute public>
+                                <GovernmentSecurity />
+                            </ProtectedRoute>
+                        }
+                    />
+
+                    <Route
+                        path="/solutions/healthcare-security"
+                        element={
+                            <ProtectedRoute public>
+                                <HealthcareSecurity />
+                            </ProtectedRoute>
+                        }
+                    />
+
+                    <Route
+                        path="/solutions/transport-security"
+                        element={
+                            <ProtectedRoute public>
+                                <TransportSecurity />
+                            </ProtectedRoute>
+                        }
+                    />
+
+                    <Route
+                        path="/solutions/aviation-security"
+                        element={
+                            <ProtectedRoute public>
+                                <AviationSecurity />
+                            </ProtectedRoute>
+                        }
+                    />
+
+                    <Route
+                        path="/solutions/for-security-companies"
+                        element={
+                            <ProtectedRoute public>
+                                <ForSecurityCompanies />
+                            </ProtectedRoute>
+                        }
+                    />
+
+                    <Route
+                        path="/solutions/for-security-guards"
+                        element={
+                            <ProtectedRoute public>
+                                <ForSecurityGuards />
+                            </ProtectedRoute>
+                        }
+                    />
+
+                    <Route
+                        path="/solutions/security-subcontractors"
+                        element={
+                            <ProtectedRoute public>
+                                <SecuritySubcontractors />
+                            </ProtectedRoute>
+                        }
+                    />
+                    <Route
+                        path="/solutions/hire-security-staff"
+                        element={
+                            <ProtectedRoute public>
+                                <HireSecurityStaff />
+                            </ProtectedRoute>
+                        }
+                    />
+
+                    <Route
+                        path="/solutions/for-event-security-providers"
+                        element={
+                            <ProtectedRoute public>
+                                <EventSecurityProviders />
+                            </ProtectedRoute>
+                        }
+                    />
+                    <Route
+                        path="/solutions/for-corporate-security-teams"
+                        element={
+                            <ProtectedRoute public>
+                                <CorporateSecurityTeams />
+                            </ProtectedRoute>
+                        }
+                    />
+                    <Route
+                        path="/solutions/for-labour-hire-agencies"
+                        element={
+                            <ProtectedRoute public>
+                                <LabourHireAgencies />
+                            </ProtectedRoute>
+                        }
+                    />
+
+
+                </>
+
+
+                {/* Features screens routs */}
+                <>
+                    <Route
+                        path="/features/gps-guard-tracking"
+                        element={
+                            <ProtectedRoute public>
+                                <GPSGuardTracking />
+                            </ProtectedRoute>
+                        }
+                    />
+
+
+
+
+                </>
+
+
                 <Route
-                    path="/about-us"
+                    path="/resources/:slug"
                     element={
                         <ProtectedRoute public>
-                            <AboutUs />
+                            <DynamicPage category="Resources" />
                         </ProtectedRoute>
                     }
                 />
-                <Route
-                    path="/terms-of-use"
-                    element={
-                        <ProtectedRoute public>
-                            <TermsOfUse />
-                        </ProtectedRoute>
-                    }
-                />
-                <Route
-                    path="/privacy-policy"
-                    element={
-                        <ProtectedRoute public>
-                            <PrivacyPolicy />
-                        </ProtectedRoute>
-                    }
-                />
+
+                {/* company rounts */}
+                <>
+                    <Route
+                        path="/terms-of-use"
+                        element={
+                            <ProtectedRoute public>
+                                <TermsOfUse />
+                            </ProtectedRoute>
+                        }
+                    />
+                    <Route
+                        path="/privacy-policy"
+                        element={
+                            <ProtectedRoute public>
+                                <PrivacyPolicy />
+                            </ProtectedRoute>
+                        }
+                    />
+
+
+                    <Route
+                        path="about-us"
+                        element={
+                            <ProtectedRoute public>
+                                <AboutUs />
+                            </ProtectedRoute>
+                        }
+                    />
+                    <Route
+                        path="/contact-us"
+                        element={
+                            <ProtectedRoute public>
+                                <ContactUs />
+                            </ProtectedRoute>
+                        }
+                    />
+
+                    <Route
+                        path="/careers"
+                        element={
+                            <ProtectedRoute public>
+                                <Careers />
+                            </ProtectedRoute>
+                        }
+                    />
+                </>
+
 
                 {/* ===== AUTHENTICATION ROUTES ===== */}
                 <Route

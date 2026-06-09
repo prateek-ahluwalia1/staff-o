@@ -36,6 +36,7 @@ const INITIAL_FORM_STATE = {
   coordinates: "",
   staff_document_type: "",
   security_license_no: "",
+  date_of_birth: "",
   company_name: "",
   bank_details: [],
 };
@@ -190,6 +191,7 @@ export default function EditProfile() {
       gender: staff.gender || contractor.gender || d.gender || "",
       staff_document_type: staff.staff_document_type || "",
       security_license_no: staff.security_license_no || "",
+      date_of_birth: d.date_of_birth || staff.date_of_birth || "",
       company_name:
         d.company_name ||
         contractor.company_name ||
@@ -366,6 +368,7 @@ export default function EditProfile() {
       const payload = new FormData();
 
       Object.keys(formData).forEach((key) => {
+        payload.append(key, formData[key]);
         if (key === "bank_details") {
           payload.append("bank_details", JSON.stringify(formData.bank_details));
         } else if (key === "profile_image") {
@@ -613,21 +616,30 @@ export default function EditProfile() {
       return;
     }
 
-    const payload = {
-      user_id: userId,
-      license_number: verifyForm.license_number,
-    };
+    const docName = verifyForm.doc?.document_name;
+    let endpoint = "";
+    let payload = { user_id: userId };
 
-    const res = await submit("api/documents-online-verification", payload, {
+    // Switch based on document type to handle unique APIs and payloads
+    if (docName === "Security License") {
+      endpoint = "api/documents-online-verification";
+      payload.license_number = verifyForm.license_number;
+    } else {
+      // Fallback for future documents
+      toast.info(`Verification API for ${docName} is not yet implemented.`);
+      return;
+    }
+
+    const res = await submit(endpoint, payload, {
       method: "POST",
     });
 
     if (res?.success) {
-      toast.success("Document verified successfully!");
+      toast.success(`${docName} verified successfully!`);
       setShowVerifyModal(false);
       refetch();
     } else {
-      toast.error(res?.message || "Document verification failed.");
+      toast.error(res?.message || `${docName} verification failed.`);
     }
   };
 
@@ -1241,9 +1253,15 @@ export default function EditProfile() {
               setShowDocModal(true);
             }}
             onVerify={(doc) => {
+              // Block verification modal for unsupported documents
+              if (doc.document_name !== "Security License") {
+                toast.info(`Verification for ${doc.document_name} is coming soon.`);
+                return;
+              }
+
               setVerifyForm({
                 doc,
-                license_number: "",
+                license_number: "", // You can map generic fields here later
               });
               setShowVerifyModal(true);
             }}
@@ -1638,25 +1656,32 @@ export default function EditProfile() {
       {/* Online Document Verification Modal */}
       <Modal open={showVerifyModal} onClose={() => setShowVerifyModal(false)}>
         <form onSubmit={handleVerifySubmit} className="p-3">
-          <h5>Verify Document</h5>
+          <h5>Verify {verifyForm.doc?.document_name || "Document"}</h5>
           <p className="text-muted small mb-4">
-            Please provide the security license number to verify <strong>{verifyForm.doc?.document_name}</strong> online.
+            Please provide the necessary details to verify <strong>{verifyForm.doc?.document_name}</strong> online.
           </p>
 
-          <div className="mb-4">
-            <label className="form-label fw-semibold">
-              Security License Number <span className="text-danger">*</span>
-            </label>
-            <input
-              type="text"
-              className="form-control"
-              placeholder="Enter security license number"
-              value={verifyForm.license_number}
-              onChange={(e) => setVerifyForm(prev => ({ ...prev, license_number: e.target.value }))}
-              required
-              autoFocus
-            />
-          </div>
+          {/* Dynamically render fields based on document type */}
+          {verifyForm.doc?.document_name === "Security License" ? (
+            <div className="mb-4">
+              <label className="form-label fw-semibold">
+                Security License Number <span className="text-danger">*</span>
+              </label>
+              <input
+                type="text"
+                className="form-control"
+                placeholder="Enter security license number"
+                value={verifyForm.license_number}
+                onChange={(e) => setVerifyForm(prev => ({ ...prev, license_number: e.target.value }))}
+                required
+                autoFocus
+              />
+            </div>
+          ) : (
+            <div className="alert alert-info mb-4">
+              Verification form for this document type is coming soon.
+            </div>
+          )}
 
           <div className="d-flex gap-2">
             <button
@@ -1670,7 +1695,10 @@ export default function EditProfile() {
             <button
               type="submit"
               className="btn btn-primary-custom w-50"
-              disabled={submitLoading || !verifyForm.license_number}
+              disabled={
+                submitLoading ||
+                (verifyForm.doc?.document_name === "Security License" && !verifyForm.license_number)
+              }
             >
               {submitLoading ? "Verifying..." : "Verify Document"}
             </button>

@@ -390,6 +390,30 @@ export default function ProfileForm({
             </>
           )}
 
+          {/* Staff Date of Birth */}
+          {userType === "staff" && (
+            <div>
+              <label htmlFor="date_of_birth" className="form-label fw-semibold">
+                Date of Birth <span className="text-danger">*</span>
+              </label>
+              <div className="input-group shadow-sm rounded">
+                <span className="input-group-text bg-white text-muted border-end-0">
+                  <i className="fa-solid fa-calendar-days"></i>
+                </span>
+                <input
+                  type="date"
+                  className="form-control border-start-0 ps-0"
+                  id="date_of_birth"
+                  name="date_of_birth"
+                  value={formData.date_of_birth || ""}
+                  onChange={onChange}
+                  max={new Date().toISOString().split("T")[0]}
+                  required
+                />
+              </div>
+            </div>
+          )}
+
           <div style={{ gridColumn: "1 / -1", marginTop: "1rem" }}>
             <label htmlFor="address" className="form-label fw-semibold">
               Address <span className="text-danger">*</span>

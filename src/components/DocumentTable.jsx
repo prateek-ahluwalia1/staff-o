@@ -157,19 +157,20 @@ export default function DocumentTable({
                           </button>
                         )}
 
-                        {doc.file && (
+                        {/* Use 'doc' instead of 'document', and style it nicely */}
+                        {(doc.document_type === "security_license" || doc.document_name === "Security License") && (
                           <button
                             type="button"
-                            onClick={() => onVerify && onVerify(doc)}
+                            onClick={() => onVerify(doc)}
                             style={{
                               background: "#0A7C6E",
                               border: "none",
                               color: "#fff",
                               cursor: "pointer",
-                              padding: "4px 12px",
-                              borderRadius: 6,
-                              fontSize: "13px",
-                              fontWeight: "600"
+                              padding: "6px 12px",
+                              borderRadius: "6px",
+                              fontSize: "12px",
+                              fontWeight: "bold"
                             }}
                           >
                             Verify

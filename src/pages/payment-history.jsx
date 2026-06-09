@@ -147,8 +147,6 @@ export default function PaymentHistory() {
       setShowShareModal(false);
       setShareEmail("");
       setSelectedTx(null);
-    } else {
-      toast.error(res?.message || "Failed to share document.");
     }
   };
 

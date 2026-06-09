@@ -39,11 +39,6 @@ export default function SettingsHeaderContent({
     <div className="settings-header-content" style={{ position: "relative" }}>
       {/* LEFT SIDE: Text block */}
       <div className="header-text-info">
-        <span>
-          {userType === "contractor" ? "Resource Partner" : userType?.charAt(0)?.toUpperCase() + userType?.slice(1) || ""}{" "}
-          Profile
-        </span>
-
         <h2 style={{ display: "flex", alignItems: "center", gap: "8px" }}>
           {name || "Staff Member"}
           {verified && (
@@ -62,7 +57,7 @@ export default function SettingsHeaderContent({
         </p>
 
         <div className="settings-header-meta">
-          <span>
+          <span style={{ textTransform: "none" }}>
             <i className="fa-solid fa-envelope" aria-hidden="true"></i>
             {email || "No email"}
           </span>

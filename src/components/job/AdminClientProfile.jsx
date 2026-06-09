@@ -128,11 +128,11 @@ export default function AdminClientProfile({
                                 <div className="d-flex flex-wrap gap-1">
                                     {isVerified ? (
                                         <span style={{ fontSize: "10px", fontWeight: 600, padding: "2px 8px", borderRadius: 20, background: "#dcfce7", color: "#15803d" }}>
-                                            ✓ Verified
+                                            Email Verified
                                         </span>
                                     ) : (
                                         <span style={{ fontSize: "10px", fontWeight: 600, padding: "2px 8px", borderRadius: 20, background: "#fef9c3", color: "#a16207" }}>
-                                            ⏳ Unverified
+                                            Email Un Verified
                                         </span>
                                     )}
                                     <span style={{ fontSize: "10px", fontWeight: 600, padding: "2px 8px", borderRadius: 20, background: isOnline ? "#dcfce7" : "#f1f5f9", color: isOnline ? "#15803d" : "#64748b" }}>

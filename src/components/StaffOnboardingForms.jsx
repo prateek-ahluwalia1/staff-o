@@ -129,7 +129,7 @@ const TfnDeclarationForm = ({ values, loading, onChange, onSubmit, dataModified 
 
         <SectionTitle className="mt-4">Employment</SectionTitle>
         <div className="mb-4">
-            <label className="form-label small fw-bold text-muted d-block">Basis of payment <span className="text-danger">*</span></label>
+            <label className="form-label small fw-bold text-muted d-block">Employment Type <span className="text-danger">*</span></label>
             <div className="form-check form-check-inline">
                 <input className="form-check-input" type="radio" name="basis" value="full-time" checked={values.basis === "full-time"} onChange={onChange} required />
                 <label className="form-check-label">Full-time</label>
@@ -215,11 +215,11 @@ const SuperannuationForm = ({ values, loading, onChange, onSubmit, dataModified 
         <div className="mb-4">
             <div className="form-check mb-2">
                 <input className="form-check-input" type="radio" name="fund_choice" value="own" checked={values.fund_choice === "own"} onChange={onChange} required />
-                <label className="form-check-label">I nominate my own fund</label>
+                <label className="form-check-label">I nominate my own super fund</label>
             </div>
             <div className="form-check">
                 <input className="form-check-input" type="radio" name="fund_choice" value="employer" checked={values.fund_choice === "employer"} onChange={onChange} />
-                <label className="form-check-label">Employer-nominated (default)</label>
+                <label className="form-check-label">Use the employer's default super fund</label>
             </div>
         </div>
 
@@ -248,6 +248,22 @@ const SuperannuationForm = ({ values, loading, onChange, onSubmit, dataModified 
                 ABN: 48 613 317 838 · 21 Tanglewood Bvd, Truganina VIC 3029
             </div>
         )}
+
+        <SectionTitle className="mt-4">Declaration</SectionTitle>
+        <div className="mb-4 form-check">
+            <input
+                className="form-check-input"
+                type="checkbox"
+                id="super_confirm"
+                name="super_confirm"
+                checked={values.super_confirm}
+                onChange={onChange}
+                required
+            />
+            <label className="form-check-label text-muted small fw-medium" htmlFor="super_confirm">
+                I confirm that the superannuation fund details provided are correct. I understand my super contributions will be paid into the fund I have selected above.
+            </label>
+        </div>
 
         <SectionTitle className="mt-4">Signature</SectionTitle>
         <div className="row g-3 mb-4">
@@ -326,23 +342,34 @@ const EmployeeOnboardingForm = ({ values, loading, onChange, onSubmit, dataModif
                 </div>
 
                 <div className="col-md-12">
-                    <label className="form-label small fw-bold text-muted d-block mt-2">Work rights status <span className="text-danger">*</span></label>
-                    <div className="form-check form-check-inline">
-                        <input className="form-check-input" type="radio" name="work" value="citizen" checked={values.work === "citizen"} onChange={onChange} required />
-                        <label className="form-check-label">Australian Citizen / PR</label>
+                    <label className="form-label small fw-bold text-muted d-block mt-2 mb-3">Work Rights in Australia <span className="text-danger">*</span></label>
+                    <div className="form-check">
+                        <input className="form-check-input" type="radio" name="work" id="work_citizen" value="citizen" checked={values.work === "citizen"} onChange={onChange} required />
+                        <label className="form-check-label" htmlFor="work_citizen">Australian Citizen / Permanent Resident</label>
                     </div>
-                    <div className="form-check form-check-inline">
-                        <input className="form-check-input" type="radio" name="work" value="student" checked={values.work === "student"} onChange={onChange} />
-                        <label className="form-check-label">Student Visa (24hr cap)</label>
+                    <div className="form-check mt-2">
+                        <input className="form-check-input" type="radio" name="work" id="work_student" value="student" checked={values.work === "student"} onChange={onChange} />
+                        <label className="form-check-label" htmlFor="work_student">Student Visa</label>
                     </div>
-                    <div className="form-check form-check-inline">
-                        <input className="form-check-input" type="radio" name="work" value="other" checked={values.work === "other"} onChange={onChange} />
-                        <label className="form-check-label">Other visa</label>
+                    <div className="form-check mt-2">
+                        <input className="form-check-input" type="radio" name="work" id="work_temporary" value="temporary" checked={values.work === "temporary"} onChange={onChange} />
+                        <label className="form-check-label" htmlFor="work_temporary">Temporary Visa Holder</label>
+                    </div>
+                    <div className="form-check mt-2">
+                        <input className="form-check-input" type="radio" name="work" id="work_other" value="other" checked={values.work === "other"} onChange={onChange} />
+                        <label className="form-check-label" htmlFor="work_other">Other Visa (please specify)</label>
                     </div>
                 </div>
+
+                {values.work === "other" && (
+                    <div className="col-md-12 mt-2 animate__animated animate__fadeIn">
+                        <label className="form-label small fw-bold text-muted">Visa Type <span className="text-danger">*</span></label>
+                        <input type="text" className="form-control" name="o_visa_type" placeholder="Specify your visa type" maxLength="100" value={values.o_visa_type} onChange={onChange} required />
+                    </div>
+                )}
             </div>
 
-            <SectionTitle>100-Point ID Check (Attached)</SectionTitle>
+            <SectionTitle>100-Point ID Check</SectionTitle>
             <div className="bg-light p-3 border rounded mb-4">
                 <div className="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom text-muted small fw-bold">
                     <span>Document</span>
@@ -351,30 +378,30 @@ const EmployeeOnboardingForm = ({ values, loading, onChange, onSubmit, dataModif
                 <div className="d-flex justify-content-between align-items-center mb-2">
                     <div className="form-check mb-0">
                         <input className="form-check-input" type="checkbox" id="chk1" name="chk_primary" checked={values.chk_primary} onChange={onChange} />
-                        <label className="form-check-label small" htmlFor="chk1">Birth cert, passport, or citizenship</label>
+                        <label className="form-check-label small" htmlFor="chk1">Birth Certificate, Passport, or Citizenship Certificate</label>
                     </div>
-                    <span className="badge bg-primary-subtle text-white">70</span>
+                    <span className="text-muted small">70</span>
                 </div>
                 <div className="d-flex justify-content-between align-items-center mb-2">
                     <div className="form-check mb-0">
                         <input className="form-check-input" type="checkbox" id="chk2" name="chk_driver" checked={values.chk_driver} onChange={onChange} />
-                        <label className="form-check-label small" htmlFor="chk2">Driver's licence or government photo ID</label>
+                        <label className="form-check-label small" htmlFor="chk2">Driver Licence or Government Issued Photo ID</label>
                     </div>
-                    <span className="badge bg-primary-subtle text-white">40</span>
+                    <span className="text-muted small">40</span>
                 </div>
                 <div className="d-flex justify-content-between align-items-center mb-2">
                     <div className="form-check mb-0">
                         <input className="form-check-input" type="checkbox" id="chk3" name="chk_security" checked={values.chk_security} onChange={onChange} />
-                        <label className="form-check-label small" htmlFor="chk3">Security licence (mandatory)</label>
+                        <label className="form-check-label small" htmlFor="chk3">Security Licence (Mandatory)</label>
                     </div>
-                    <span className="badge bg-primary-subtle text-white">40</span>
+                    <span className="text-muted small">40</span>
                 </div>
                 <div className="d-flex justify-content-between align-items-center">
                     <div className="form-check mb-0">
                         <input className="form-check-input" type="checkbox" id="chk4" name="chk_medicare" checked={values.chk_medicare} onChange={onChange} />
-                        <label className="form-check-label small" htmlFor="chk4">Medicare card / utility bill / bank statement</label>
+                        <label className="form-check-label small" htmlFor="chk4">Medicare Card, Utility Bill, or Bank Statement</label>
                     </div>
-                    <span className="badge bg-primary-subtle text-white">25</span>
+                    <span className="text-muted small">25</span>
                 </div>
             </div>
 
@@ -434,12 +461,13 @@ const EmployeeOnboardingForm = ({ values, loading, onChange, onSubmit, dataModif
                     <input type="date" className="form-control" name="o_seclicexp" value={values.o_seclicexp} onChange={onChange} required />
                 </div>
 
+                {/* FIRST AID - NOW OPTIONAL */}
                 <div className="col-md-6 mt-4">
-                    <label className="form-label small fw-bold text-muted">First Aid Certificate No. <span className="text-danger">*</span></label>
-                    <input type="text" className="form-control" name="o_fa" placeholder="FA-001234" maxLength="50" value={values.o_fa} onChange={onChange} required />
+                    <label className="form-label small fw-bold text-muted">First Aid Certificate No.</label>
+                    <input type="text" className="form-control" name="o_fa" placeholder="FA-001234" maxLength="50" value={values.o_fa} onChange={onChange} />
 
                     <div className="mt-3">
-                        <label className="form-label small fw-bold text-muted">Upload First Aid Document <span className="text-danger">*</span></label>
+                        <label className="form-label small fw-bold text-muted">Upload First Aid Document</label>
                         <div className="d-flex align-items-center gap-3">
                             <input type="file" className="form-control" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" onChange={(e) => onDocUpload(e, "first_aid_doc")} />
                         </div>
@@ -452,8 +480,8 @@ const EmployeeOnboardingForm = ({ values, loading, onChange, onSubmit, dataModif
                 </div>
 
                 <div className="col-md-6 mt-4">
-                    <label className="form-label small fw-bold text-muted">First Aid Expiry <span className="text-danger">*</span></label>
-                    <input type="date" className="form-control" name="o_faexp" value={values.o_faexp} onChange={onChange} required />
+                    <label className="form-label small fw-bold text-muted">First Aid Expiry</label>
+                    <input type="date" className="form-control" name="o_faexp" value={values.o_faexp} onChange={onChange} />
                 </div>
             </div>
 
@@ -511,6 +539,7 @@ const normalizeSuperData = (data) => ({
     s_fundabn: data?.fund_abn ?? data?.s_fundabn ?? "",
     s_usi: data?.fund_usi ?? data?.s_usi ?? "",
     s_member: data?.member_account ?? data?.s_member ?? "",
+    super_confirm: data?.super_confirm ?? false, // New Declaration
     sig2: data?.signature ?? data?.sig2 ?? "",
     date2: toDateValue(data?.signed_date ?? data?.date2),
 });
@@ -524,7 +553,8 @@ const normalizeOnboardData = (data) => ({
     o_passport: data?.passport_number ?? data?.o_passport ?? "",
     o_pcountry: data?.passport_country ?? data?.o_pcountry ?? "",
     o_pexpiry: toDateValue(data?.passport_expiry ?? data?.o_pexpiry),
-    work: data?.work_rights ?? data?.work ?? "citizen",
+    work: data?.work_rights ?? data?.work ?? "citizen", // Work rights updated
+    o_visa_type: data?.visa_type ?? data?.o_visa_type ?? "", // New Visa Type
     passport_doc: data?.passport_doc ?? "",
     chk_primary: Boolean(data?.id_checks?.primary_id ?? data?.chk_primary ?? false),
     chk_driver: Boolean(data?.id_checks?.drivers_license ?? data?.chk_driver ?? false),
@@ -548,7 +578,7 @@ const normalizeOnboardData = (data) => ({
 });
 
 // ─── MAIN COMPONENT ──────────────────────────────────────────────────────────
-const StaffOnboardingForms = ({ submit, userId }) => {
+const StaffOnboardingForms = ({ submit, userId, onProfileUpdate }) => {
     const [subTab, setSubTab] = useState(0);
     const [loading, setLoading] = useState(false);
     const [dataModified, setDataModified] = useState(false);
@@ -605,13 +635,15 @@ const StaffOnboardingForms = ({ submit, userId }) => {
 
     // Change Handlers
     const handleTfnChange = (e) => {
-        const updatedForm = { ...tfnForm, [e.target.name]: e.target.value };
+        const { name, value, type, checked } = e.target;
+        const updatedForm = { ...tfnForm, [name]: type === "checkbox" ? checked : value };
         setTfnForm(updatedForm);
         setDataModified(JSON.stringify(updatedForm) !== JSON.stringify(originalTfnForm));
     };
 
     const handleSuperChange = (e) => {
-        const updatedForm = { ...superForm, [e.target.name]: e.target.value };
+        const { name, value, type, checked } = e.target;
+        const updatedForm = { ...superForm, [name]: type === "checkbox" ? checked : value };
         setSuperForm(updatedForm);
         setDataModified(JSON.stringify(updatedForm) !== JSON.stringify(originalSuperForm));
     };
@@ -623,7 +655,6 @@ const StaffOnboardingForms = ({ submit, userId }) => {
         setDataModified(JSON.stringify(updatedForm) !== JSON.stringify(originalOnboardForm));
     };
 
-    // Instant Document Upload Handler
     const handleDocUpload = async (e, fieldName) => {
         const file = e.target.files[0];
         if (!file) return;
@@ -638,15 +669,44 @@ const StaffOnboardingForms = ({ submit, userId }) => {
         fd.append("folder", "staff_documents");
 
         try {
+            // A. Upload the physical file to the server
             const res = await submit("api/upload-file", fd, { method: "POST" });
+
             if (res?.success || res?.path) {
                 const filePath = res.path || res.data?.path || "";
 
+                // B. Update the local onboarding form state so the UI shows "View Attached Document"
                 setOnboardForm((prev) => {
                     const updatedForm = { ...prev, [fieldName]: filePath };
                     setDataModified(JSON.stringify(updatedForm) !== JSON.stringify(originalOnboardForm));
                     return updatedForm;
                 });
+
+                // C. Determine the correct Document Name for the database
+                let docName = "";
+                if (fieldName === "passport_doc") docName = "Passport";
+                else if (fieldName === "security_license_doc") docName = "Security License";
+                else if (fieldName === "first_aid_doc") docName = "First Aid Certificate";
+
+                // D. Instantly save it to the user's official documents list (Just like the Modal)
+                if (docName) {
+                    const docPayload = {
+                        user_id: userId,
+                        document_type: docName,
+                        document_name: docName,
+                        file: filePath
+                    };
+
+                    // Save document to backend
+                    await submit("api/guard-add-documents", docPayload, { method: "POST", silentErrorToast: true });
+
+                    // E. Gracefully fetch user data to update the missing items & completion percentage
+                    if (typeof onProfileUpdate === "function") {
+                        await onProfileUpdate();
+                    }
+                }
+
+                toast.success(`${docName || "Document"} uploaded and saved successfully!`);
             } else {
                 toast.error(res?.message || "Failed to upload document.");
             }
@@ -677,7 +737,7 @@ const StaffOnboardingForms = ({ submit, userId }) => {
                 address: tfnForm.address, basis_of_payment: tfnForm.basis, australian_resident: tfnForm.aus_res,
                 claim_threshold: tfnForm.threshold, help_debt: tfnForm.help,
                 signature: tfnForm.sig1,
-                signed_date: tfnForm.date1 // Fixed key mapped properly
+                signed_date: tfnForm.date1
             };
             pdfFormData = { ...payload };
         } else if (tabIndex === 2) {
@@ -688,8 +748,9 @@ const StaffOnboardingForms = ({ submit, userId }) => {
                 user_id: userId, full_name: superForm.s_name, employee_number: superForm.s_empno, fund_choice: superForm.fund_choice,
                 fund_name: superForm.s_fundname, fund_abn: superForm.s_fundabn, fund_usi: superForm.s_usi,
                 member_account: superForm.s_member,
+                super_confirm: superForm.super_confirm,
                 signature: superForm.sig2,
-                signed_date: superForm.date2 // Fixed key mapped properly
+                signed_date: superForm.date2
             };
             pdfFormData = { ...payload };
         } else if (tabIndex === 0) {
@@ -699,7 +760,9 @@ const StaffOnboardingForms = ({ submit, userId }) => {
             payload = {
                 user_id: userId, full_name: onboardForm.o_name, dob: onboardForm.o_dob, address: onboardForm.o_addr,
                 mobile: onboardForm.o_phone, email: onboardForm.o_email, passport_number: onboardForm.o_passport,
-                passport_country: onboardForm.o_pcountry, passport_expiry: onboardForm.o_pexpiry, work_rights: onboardForm.work,
+                passport_country: onboardForm.o_pcountry, passport_expiry: onboardForm.o_pexpiry,
+                work_rights: onboardForm.work,
+                visa_type: onboardForm.work === "other" ? onboardForm.o_visa_type : "",
                 passport_doc: onboardForm.passport_doc,
                 id_checks: {
                     primary_id: onboardForm.chk_primary, drivers_license: onboardForm.chk_driver,
@@ -713,7 +776,7 @@ const StaffOnboardingForms = ({ submit, userId }) => {
                 first_aid_doc: onboardForm.first_aid_doc,
                 first_aid: onboardForm.first_aid_doc,
                 signature: onboardForm.sig3,
-                signed_date: onboardForm.date3 // Fixed key mapped properly
+                signed_date: onboardForm.date3
             };
             pdfFormData = { ...payload };
         }
@@ -733,6 +796,10 @@ const StaffOnboardingForms = ({ submit, userId }) => {
             else if (tabIndex === 2) await fetchFormData("superannuation");
 
             setDataModified(false);
+
+            if (typeof onProfileUpdate === "function") {
+                await onProfileUpdate();
+            }
 
             try {
                 let doc;

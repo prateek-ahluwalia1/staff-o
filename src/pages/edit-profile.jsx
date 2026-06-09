@@ -36,9 +36,25 @@ const INITIAL_FORM_STATE = {
   coordinates: "",
   staff_document_type: "",
   security_license_no: "",
+  date_of_birth: "",
   company_name: "",
   bank_details: [],
 };
+
+const DOC_TYPES = [
+  { value: "Passport", label: "Passport" },
+  { value: "Visa", label: "Visa" },
+  { value: "Driver License Front", label: "Driver License (Front)" },
+  { value: "Driver License Back", label: "Driver License (Back)" },
+  { value: "Security License", label: "Security License" },
+  { value: "Working with Children", label: "Working with Children Check (WWCC)" },
+  { value: "Employment Application Form", label: "Employment Application Form" },
+  { value: "TFN Declaration", label: "TFN Declaration" },
+  { value: "Superannuation Form", label: "Superannuation Form" },
+  { value: "First Aid", label: "First Aid Certificate" },
+  { value: "CPR", label: "CPR Certificate" },
+  { value: "Vaccination Certificate", label: "Vaccination Certificate" }
+];
 
 export default function EditProfile() {
   const dispatch = useDispatch();
@@ -109,6 +125,10 @@ export default function EditProfile() {
     document_name: "",
   });
 
+  // Online Verification States
+  const [showVerifyModal, setShowVerifyModal] = useState(false);
+  const [verifyForm, setVerifyForm] = useState({ doc: null, license_number: "" });
+
   const isPhoneVerified = Boolean(
     userdata?.data?.contractor?.is_phone_verified ??
     userdata?.contractor?.is_phone_verified ??
@@ -171,6 +191,7 @@ export default function EditProfile() {
       gender: staff.gender || contractor.gender || d.gender || "",
       staff_document_type: staff.staff_document_type || "",
       security_license_no: staff.security_license_no || "",
+      date_of_birth: d.date_of_birth || staff.date_of_birth || "",
       company_name:
         d.company_name ||
         contractor.company_name ||
@@ -231,7 +252,6 @@ export default function EditProfile() {
           newCountry = "";
 
         place.address_components?.forEach((c) => {
-          // Check for wider varieties of city classification
           if (
             c.types.includes("locality") ||
             c.types.includes("postal_town") ||
@@ -245,7 +265,6 @@ export default function EditProfile() {
           if (c.types.includes("country")) newCountry = c.long_name;
         });
 
-        // Set the block flag so onChange doesn't immediately wipe these
         isSelectingAddress.current = true;
 
         setFormData((prev) => ({
@@ -257,7 +276,6 @@ export default function EditProfile() {
           coordinates: `${place.geometry.location.lat()},${place.geometry.location.lng()}`,
         }));
 
-        // Release the block flag after 500ms
         setTimeout(() => {
           isSelectingAddress.current = false;
         }, 500);
@@ -335,7 +353,6 @@ export default function EditProfile() {
         return;
       }
 
-      // --- STRICT ADDRESS VALIDATION ---
       if (
         !formData.address ||
         !formData.city ||
@@ -347,15 +364,15 @@ export default function EditProfile() {
         );
         return;
       }
-      // ---------------------------------
 
       const payload = new FormData();
 
       Object.keys(formData).forEach((key) => {
+        payload.append(key, formData[key]);
         if (key === "bank_details") {
           payload.append("bank_details", JSON.stringify(formData.bank_details));
         } else if (key === "profile_image") {
-          // Skip - handled separately
+          // Skip
         } else {
           payload.append(key, formData[key]);
         }
@@ -592,6 +609,40 @@ export default function EditProfile() {
     }
   };
 
+  const handleVerifySubmit = async (e) => {
+    e.preventDefault();
+    if (!userId) {
+      toast.error("Unable to verify. Missing user id.");
+      return;
+    }
+
+    const docName = verifyForm.doc?.document_name;
+    let endpoint = "";
+    let payload = { user_id: userId };
+
+    // Switch based on document type to handle unique APIs and payloads
+    if (docName === "Security License") {
+      endpoint = "api/documents-online-verification";
+      payload.license_number = verifyForm.license_number;
+    } else {
+      // Fallback for future documents
+      toast.info(`Verification API for ${docName} is not yet implemented.`);
+      return;
+    }
+
+    const res = await submit(endpoint, payload, {
+      method: "POST",
+    });
+
+    if (res?.success) {
+      toast.success(`${docName} verified successfully!`);
+      setShowVerifyModal(false);
+      refetch();
+    } else {
+      toast.error(res?.message || `${docName} verification failed.`);
+    }
+  };
+
   const handleDeleteProfile = useCallback(
     async (e) => {
       if (e) e.preventDefault();
@@ -730,7 +781,7 @@ export default function EditProfile() {
           userType={userType}
           isPhoneVerified={isPhoneVerified}
           onChangePhone={() => {
-            setNewPhoneInput(formData.phone || ""); // Pre-populate with existing phone
+            setNewPhoneInput(formData.phone || "");
             setPhoneStep("input");
             setPhoneChangeError(null);
             setPhoneChangeSuccess(false);
@@ -740,9 +791,17 @@ export default function EditProfile() {
       )}
 
       {activeTab === "onboarding" && userType === "staff" && (
-        <StaffOnboardingForms submit={submit} userId={userId} />
+        <StaffOnboardingForms
+          submit={submit}
+          userId={userId}
+          onProfileUpdate={async () => {
+            const refetchRes = await refetch();
+            if (refetchRes && (refetchRes.data || refetchRes.success)) {
+              dispatch(setUser({ userdata: refetchRes.data || refetchRes }));
+            }
+          }}
+        />
       )}
-
       {activeTab === "cards" && userType === "customer" && (
         <div className="card-section p-4 bg-white rounded shadow-sm border">
           {!isAddingCard ? (
@@ -1022,7 +1081,6 @@ export default function EditProfile() {
                       value={cardForm.card_holder_name}
                       maxLength="30"
                       onChange={(e) => {
-                        // Limit to letters/spaces and strictly slice to 30 characters
                         const val = e.target.value.replace(/[^a-zA-Z\s]/g, "").slice(0, 30);
                         setCardForm((p) => ({
                           ...p,
@@ -1148,13 +1206,12 @@ export default function EditProfile() {
         </div>
       )}
 
-      {/* Document Modal */}
       {activeTab === "documents" &&
         userType !== "customer" &&
         userType !== "admin" && (
           <DocumentTable
             documents={filteredDocuments}
-            userType={userType} // <--- Simply pass the userType here
+            userType={userType}
             onAddFile={(doc) => {
               setSelectedDoc(doc);
               if (!doc.document_no && !doc.document_expiry && !doc.file) {
@@ -1194,6 +1251,19 @@ export default function EditProfile() {
                 document_name: "",
               });
               setShowDocModal(true);
+            }}
+            onVerify={(doc) => {
+              // Block verification modal for unsupported documents
+              if (doc.document_name !== "Security License") {
+                toast.info(`Verification for ${doc.document_name} is coming soon.`);
+                return;
+              }
+
+              setVerifyForm({
+                doc,
+                license_number: "", // You can map generic fields here later
+              });
+              setShowVerifyModal(true);
             }}
           />
         )}
@@ -1419,24 +1489,25 @@ export default function EditProfile() {
         </div>
       </Modal>
 
-      {/* Document Modal */}
+      {/* Document Selection / Configuration Modal */}
       <Modal open={showDocModal} onClose={() => setShowDocModal(false)}>
         <form onSubmit={handleDocSubmit} className="p-3 position-relative">
           <h5>{selectedDoc ? "Edit Document" : "Add New Document"}</h5>
+          <label className="form-label fw-semibold mt-2">Document Type *</label>
           <select
             className="form-control mb-3"
             name="document_name"
             value={docForm.document_name}
             onChange={handleDocFormChange}
-            required={!selectedDoc}
+            required
             disabled={!!selectedDoc}
           >
-            <option value="">
-              Select Type <span className="text-danger">*</span>
-            </option>
-            <option value="Passport">Passport</option>
-            <option value="Visa">Visa</option>
-            <option value="Casual Contract Form">Casual Contract Form</option>
+            <option value="">Select Type</option>
+            {DOC_TYPES.map((doc) => (
+              <option key={doc.value} value={doc.value}>
+                {doc.label}
+              </option>
+            ))}
           </select>
 
           <div className="mb-3">
@@ -1582,6 +1653,60 @@ export default function EditProfile() {
         </form>
       </Modal>
 
+      {/* Online Document Verification Modal */}
+      <Modal open={showVerifyModal} onClose={() => setShowVerifyModal(false)}>
+        <form onSubmit={handleVerifySubmit} className="p-3">
+          <h5>Verify {verifyForm.doc?.document_name || "Document"}</h5>
+          <p className="text-muted small mb-4">
+            Please provide the necessary details to verify <strong>{verifyForm.doc?.document_name}</strong> online.
+          </p>
+
+          {/* Dynamically render fields based on document type */}
+          {verifyForm.doc?.document_name === "Security License" ? (
+            <div className="mb-4">
+              <label className="form-label fw-semibold">
+                Security License Number <span className="text-danger">*</span>
+              </label>
+              <input
+                type="text"
+                className="form-control"
+                placeholder="Enter security license number"
+                value={verifyForm.license_number}
+                onChange={(e) => setVerifyForm(prev => ({ ...prev, license_number: e.target.value }))}
+                required
+                autoFocus
+              />
+            </div>
+          ) : (
+            <div className="alert alert-info mb-4">
+              Verification form for this document type is coming soon.
+            </div>
+          )}
+
+          <div className="d-flex gap-2">
+            <button
+              type="button"
+              className="btn btn-outline-secondary w-50"
+              onClick={() => setShowVerifyModal(false)}
+              disabled={submitLoading}
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="btn btn-primary-custom w-50"
+              disabled={
+                submitLoading ||
+                (verifyForm.doc?.document_name === "Security License" && !verifyForm.license_number)
+              }
+            >
+              {submitLoading ? "Verifying..." : "Verify Document"}
+            </button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Profile Delete Modal */}
       <Modal open={showDeleteModal} onClose={() => setShowDeleteModal(false)}>
         <div className="p-3">
           <h5 className="mb-1 text-danger fw-bold">

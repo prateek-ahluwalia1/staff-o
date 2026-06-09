@@ -4,7 +4,7 @@ import Footer from "../components/newHome/Footer";
 import useScrollReveal from "../hooks/useScrollReveal";
 import Hero from "../components/newHome/Hero";
 import Ticker from "../components/newHome/Ticker";
-import Jobs from "../components/newHome/Jobs";
+// import Jobs from "../components/newHome/Jobs";
 import Categories from "../components/newHome/Categories";
 import HowItWorks from "../components/newHome/HowItWorks";
 import Demographics from "../components/newHome/Demographics";
@@ -28,7 +28,7 @@ export default function Home() {
       <Header />
       <Hero />
       <Ticker />
-      <Jobs />
+      {/* <Jobs /> */}
       <Categories />
       <HowItWorks />
       <Demographics />

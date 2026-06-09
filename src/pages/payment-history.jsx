@@ -1,8 +1,13 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { useSelector } from "react-redux";
 import { useLocation } from "react-router-dom";
+import Select from "react-select";
 import useFetch from "../hooks/useFetch";
+import useSubmit from "../hooks/useSubmit";
 import Loader from "../components/Loader";
+import Modal from "../components/Modal";
+import { apiURL } from "../utils/exports";
+import { toast } from "react-toastify";
 
 const formatDate = (dateString) => {
   if (!dateString) return "-";
@@ -23,7 +28,6 @@ const formatAmount = (amount) => {
 
 const getStatusBadge = (status) => {
   const s = String(status || "").toLowerCase();
-  // Matching your API statuses: 'held' and 'captured'
   if (["paid", "succeeded", "success", "captured"].includes(s))
     return "pill bg-success bg-opacity-10 text-success border border-success border-opacity-25";
   if (["pending", "processing", "held"].includes(s))
@@ -48,12 +52,33 @@ export default function PaymentHistory() {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
+  // Share Modal States
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [selectedTx, setSelectedTx] = useState(null);
+  const [shareEmail, setShareEmail] = useState("");
+
   const { data: customersResponse } = useFetch(
     isAdmin ? "api/admin/get-customers?limit=1000" : null,
     { isAuth: true }
   );
 
-  const customersList = customersResponse?.data?.data || [];
+  const { submit: shareSubmit, loading: shareLoading } = useSubmit({
+    isAuth: true,
+  });
+
+  // Wrapped in useMemo to prevent the ESLint warning and unnecessary re-renders
+  const customersList = useMemo(() => {
+    return customersResponse?.data?.data || [];
+  }, [customersResponse?.data?.data]);
+
+  // Prepare options for react-select
+  const customerOptions = useMemo(() => {
+    return customersList.map((c) => ({
+      value: c.id,
+      label: `${c.name} (${c.id})`,
+      email: c.email,
+    }));
+  }, [customersList]);
 
   const fetchId = (isAdmin && selectedCustomerId) ? selectedCustomerId : loggedInUserId;
 
@@ -64,7 +89,10 @@ export default function PaymentHistory() {
 
   const transactions = paymentData?.data || [];
 
-  const selectedCustomerDetails = customersList.find(c => c.id.toString() === selectedCustomerId.toString());
+  const selectedCustomerDetails = customersList.find(
+    (c) => c.id.toString() === selectedCustomerId.toString()
+  );
+
   const displayTitle = isAdmin && selectedCustomerDetails
     ? `Payment History: ${selectedCustomerDetails.name}`
     : "Payment History";
@@ -74,13 +102,77 @@ export default function PaymentHistory() {
   const currentTransactions = transactions.slice(indexOfFirstItem, indexOfLastItem);
   const totalPages = Math.ceil(transactions.length / itemsPerPage);
 
-  const handleCustomerChange = (e) => {
-    setSelectedCustomerId(e.target.value);
+  const handleCustomerChange = (selectedOption) => {
+    setSelectedCustomerId(selectedOption ? selectedOption.value : "");
     setCurrentPage(1);
   };
 
   const handlePageChange = (pageNumber) => {
     setCurrentPage(pageNumber);
+  };
+
+  const handleShareClick = (tx) => {
+    setSelectedTx(tx);
+    // Set default email: Admin uses selected customer's email, Normal user uses their own email
+    let defaultEmail = "";
+    if (isAdmin && selectedCustomerDetails) {
+      defaultEmail = selectedCustomerDetails.email;
+    } else if (!isAdmin) {
+      defaultEmail = userdata?.email || userdata?.data?.email || "";
+    }
+
+    setShareEmail(defaultEmail);
+    setShowShareModal(true);
+  };
+
+  const handleShareSubmit = async (e) => {
+    e.preventDefault();
+    if (!shareEmail) {
+      toast.error("Please enter an email address.");
+      return;
+    }
+
+    const payload = {
+      email: shareEmail,
+      transaction_id: selectedTx.id,
+      invoice_filename: selectedTx.invoice_filename
+    };
+
+    const res = await shareSubmit("api/share-invoice", payload, {
+      method: "POST",
+    });
+
+    if (res?.success) {
+      toast.success("Document shared successfully!");
+      setShowShareModal(false);
+      setShareEmail("");
+      setSelectedTx(null);
+    }
+  };
+
+  const customSelectStyles = {
+    control: (provided, state) => ({
+      ...provided,
+      borderColor: state.isFocused ? '#0A7C6E' : '#d1d5db',
+      boxShadow: state.isFocused ? '0 0 0 1px #0A7C6E' : 'none',
+      '&:hover': {
+        borderColor: '#0A7C6E',
+      },
+    }),
+    option: (provided, state) => ({
+      ...provided,
+      backgroundColor: state.isSelected
+        ? '#0A7C6E'
+        : state.isFocused
+          ? '#E6F4F2'
+          : '#fff',
+      color: state.isSelected ? '#fff' : '#000',
+    }),
+    singleValue: (provided) => ({
+      ...provided,
+      color: '#0A7C6E',
+      fontWeight: 500,
+    }),
   };
 
   return (
@@ -99,18 +191,18 @@ export default function PaymentHistory() {
               <label className="form-label fw-bold text-primary mb-2">
                 <i className="fa-solid fa-users me-2"></i>Select Customer to View
               </label>
-              <select
-                className="form-select shadow-sm border-primary-subtle"
-                value={selectedCustomerId}
+              <Select
+                options={customerOptions}
+                value={
+                  customerOptions.find((o) => o.value === selectedCustomerId) || null
+                }
                 onChange={handleCustomerChange}
-              >
-                <option value="">-- Choose a Customer --</option>
-                {customersList.map((customer) => (
-                  <option key={customer.id} value={customer.id}>
-                    {customer.name} ({customer.email})
-                  </option>
-                ))}
-              </select>
+                placeholder="Choose a Customer"
+                isClearable
+                styles={customSelectStyles}
+                className="react-select-container"
+                classNamePrefix="react-select"
+              />
             </div>
           </div>
         )}
@@ -141,21 +233,16 @@ export default function PaymentHistory() {
                 <thead>
                   <tr>
                     <th>Date</th>
-                    <th>Job Roster IDs</th>
                     <th>Amount</th>
                     <th>Status</th>
                     <th>Transaction ID</th>
+                    <th className="text-center">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {currentTransactions.map((tx) => (
                     <tr key={tx.id}>
                       <td>{formatDate(tx.created_at)}</td>
-                      <td>
-                        <span className="text-muted small">
-                          {tx.job_roster_id ? tx.job_roster_id.replace(/[[\]"]/g, '') : "N/A"}
-                        </span>
-                      </td>
                       <td className="fw-semibold text-dark">
                         {formatAmount(tx.total_amount)}
                       </td>
@@ -169,10 +256,42 @@ export default function PaymentHistory() {
                           {tx.payment_intent_id}
                         </p>
                       </td>
+                      <td className="text-center">
+                        {tx.invoice_filename ? (
+                          <div className="d-flex gap-2 justify-content-center">
+                            <a
+                              href={
+                                tx.invoice_filename.startsWith("http")
+                                  ? tx.invoice_filename
+                                  : `${apiURL}storage/invoices/${tx.invoice_filename}`
+                              }
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="btn btn-sm btn-outline-primary"
+                              title="View Document"
+                              style={{ padding: "4px 10px" }}
+                            >
+                              <i className="fa fa-eye me-1"></i> View
+                            </a>
+                            <button
+                              type="button"
+                              className="btn btn-sm btn-outline-secondary"
+                              onClick={() => handleShareClick(tx)}
+                              title="Share Document"
+                              style={{ padding: "4px 10px" }}
+                            >
+                              <i className="fa fa-share-nodes me-1"></i> Share
+                            </button>
+                          </div>
+                        ) : (
+                          <span className="text-muted small">No Document</span>
+                        )}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
+
               {totalPages > 1 && (
                 <div className="d-flex flex-column flex-md-row justify-content-between align-items-center mt-4 pt-3 border-top">
                   <span className="text-muted small mb-3 mb-md-0">
@@ -219,6 +338,50 @@ export default function PaymentHistory() {
           )}
         </div>
       </div>
+
+      {/* Share Document Modal */}
+      <Modal open={showShareModal} onClose={() => setShowShareModal(false)}>
+        <form onSubmit={handleShareSubmit} className="p-4">
+          <h5 className="mb-3 fw-bold">Share Document</h5>
+          <p className="text-muted small mb-4">
+            Enter the email address you would like to send invoice
+            <strong> {selectedTx?.invoice_filename}</strong> to.
+          </p>
+
+          <div className="mb-4">
+            <label className="form-label fw-semibold">
+              Email Address <span className="text-danger">*</span>
+            </label>
+            <input
+              type="email"
+              className="form-control"
+              placeholder="e.g. user@example.com"
+              value={shareEmail}
+              onChange={(e) => setShareEmail(e.target.value)}
+              required
+              autoFocus
+            />
+          </div>
+
+          <div className="d-flex gap-2">
+            <button
+              type="button"
+              className="btn btn-outline-secondary w-50 fw-semibold"
+              onClick={() => setShowShareModal(false)}
+              disabled={shareLoading}
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="btn btn-primary-custom w-50 fw-semibold"
+              disabled={shareLoading || !shareEmail}
+            >
+              {shareLoading ? "Sending..." : "Send Document"}
+            </button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 }

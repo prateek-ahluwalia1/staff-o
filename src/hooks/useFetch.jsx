@@ -1,8 +1,11 @@
 import { useState, useEffect, useCallback } from "react";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 import { apiURL } from "../utils/exports";
+import { toast } from "react-toastify";
+import { logOut } from "../store/slices/authSlice";
 
 const useFetch = (endpoint, { isAuth = false, immediate = true } = {}) => {
+  const dispatch = useDispatch();
   const token = useSelector((state) => state.auth.token);
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState(null);
@@ -30,11 +33,17 @@ const useFetch = (endpoint, { isAuth = false, immediate = true } = {}) => {
           credentials: "include",
         });
 
+        // --- 401 LOGOUT HANDLER ---
+        if (res.status === 401) {
+          dispatch(logOut());
+          toast.error("Session expired. Please log in again.");
+          return;
+        }
+
         const json = await res.json();
 
         if (!res.ok) {
           console.error("Fetch error response:", json);
-          // Uncomment to show error toast to users:
           // toast.error(json.errors || json.message || "Something went wrong");
           return;
         }
@@ -43,13 +52,12 @@ const useFetch = (endpoint, { isAuth = false, immediate = true } = {}) => {
       } catch (err) {
         const message = err.message || "Network error";
         console.error("Fetch request failed:", message);
-        // Uncomment to show error toast to users:
         // toast.error(message);
       } finally {
         setLoading(false);
       }
     },
-    [endpoint, isAuth, token],
+    [endpoint, isAuth, token, dispatch],
   );
 
   useEffect(() => {

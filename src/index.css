@@ -17,3 +17,20 @@ code {
 .react-datepicker-wrapper {
   width: 60%;
 }
+
+.react-select__control--is-focused {
+  border-color: #0A7C6E !important;
+  box-shadow: 0 0 0 1px #0A7C6E !important;
+}
+
+.react-select__option--is-selected {
+  background-color: #0A7C6E !important;
+}
+
+.react-select__option--is-focused {
+  background-color: #E6F4F2 !important;
+}
+
+.react-select__single-value {
+  color: #0A7C6E !important;
+}

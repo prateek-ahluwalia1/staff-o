@@ -427,7 +427,7 @@ const JobTracker = () => {
           <table className="table table-hover align-middle mb-0 jobtracker-main-table">
             <thead
               className="table-primary text-dark"
-              style={{ borderBottom: "2px solid #0d6efd" }}
+              style={{ borderBottom: "2px solid #0A7C6E" }}
             >
               <tr>
                 <th>Job ID</th>

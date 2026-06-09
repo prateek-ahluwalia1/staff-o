@@ -857,17 +857,17 @@ nav a:hover {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 1px;
-  background: var(--line);
   margin-bottom: 40px;
 }
 
 .job-card {
-  background: var(--ink2);
+  background: var(--line2);
   padding: 28px;
   position: relative;
   cursor: pointer;
   transition: background 0.2s;
   overflow: hidden;
+  border: 1px solid var(--line2);
 }
 
 .job-card::before {

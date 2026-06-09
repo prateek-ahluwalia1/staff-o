@@ -1,9 +1,11 @@
 import { useState, useCallback } from "react";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 import { apiURL } from "../utils/exports";
 import { toast } from "react-toastify";
+import { logOut } from "../store/slices/authSlice";
 
 const useSubmit = ({ isAuth = false } = {}) => {
+  const dispatch = useDispatch();
   const token = useSelector((state) => state.auth.token);
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState(null);
@@ -11,7 +13,6 @@ const useSubmit = ({ isAuth = false } = {}) => {
   const submit = useCallback(
     async (endpoint, body, options = {}) => {
       const { method = "POST", silentErrorToast = false } = options;
-
       const isFormData = body instanceof FormData;
 
       setLoading(true);
@@ -42,6 +43,19 @@ const useSubmit = ({ isAuth = false } = {}) => {
 
         const res = await fetch(`${apiURL}${endpoint}`, fetchOptions);
 
+        // --- 401 LOGOUT HANDLER ---
+        if (res.status === 401) {
+          dispatch(logOut());
+          if (!silentErrorToast) {
+            toast.error("Session expired. Please log in again.");
+          }
+          return {
+            success: false,
+            error: "Unauthorized",
+            status: 401,
+          };
+        }
+
         const json = await res.json();
 
         if (!res.ok) {
@@ -60,7 +74,7 @@ const useSubmit = ({ isAuth = false } = {}) => {
 
           console.error("Submit API error:", errorMsg);
           if (!silentErrorToast) {
-            toast.error(errorMsg);
+            toast.error(errorMsg || "An error occurred");
           }
           return {
             success: false,
@@ -85,7 +99,7 @@ const useSubmit = ({ isAuth = false } = {}) => {
         setLoading(false);
       }
     },
-    [isAuth, token],
+    [isAuth, token, dispatch],
   );
 
   return { submit, loading, data };

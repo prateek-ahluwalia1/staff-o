@@ -9,6 +9,20 @@ export default function ProfileForm({
   onChangePhone,
   isPhoneVerified,
 }) {
+
+  // Define predefined options to detect when a custom "Other" value is being used
+  const predefinedStatuses = [
+    "student_visa",
+    "bridging_visa",
+    "citizen",
+    "permanent_residence",
+    "visa_485"
+  ];
+
+  // If the value exists and is NOT in the predefined list, it means it's a custom input
+  const showCustomStatus = formData.staff_document_type && !predefinedStatuses.includes(formData.staff_document_type);
+  const selectValue = showCustomStatus ? "other" : (formData.staff_document_type || "");
+
   return (
     <form className="settings-form" onSubmit={onSubmit}>
       <div className="settings-card shadow-sm border-0 rounded-3">
@@ -75,90 +89,89 @@ export default function ProfileForm({
               />
             </div>
           </div>
-          {
-            userType !== "admin" && (
-              <div>
-                <div className="d-flex justify-content-between align-items-end mb-2">
-                  <label htmlFor="phone" className="form-label fw-semibold mb-0">
-                    Phone <span className="text-danger">*</span>
-                  </label>
 
-                  {userType === "contractor" && formData.phone && (
-                    isPhoneVerified ? (
-                      <span className="badge bg-success bg-opacity-10 text-success border border-success rounded-pill px-2 py-1 shadow-sm" style={{ fontSize: "0.75rem" }}>
-                        Verified
-                      </span>
-                    ) : (
-                      <span className="badge bg-danger bg-opacity-10 text-danger border border-danger rounded-pill px-2 py-1 shadow-sm" style={{ fontSize: "0.75rem" }}>
-                        Not Verified
-                      </span>
-                    )
-                  )}
-                </div>
+          {userType !== "admin" && (
+            <div>
+              <div className="d-flex justify-content-between align-items-end mb-2">
+                <label htmlFor="phone" className="form-label fw-semibold mb-0">
+                  Phone <span className="text-danger">*</span>
+                </label>
 
-                {userType === "contractor" ? (
-                  <>
-                    <div className="input-group shadow-sm rounded">
-                      <span className={`input-group-text bg-white border-end-0 ${isPhoneVerified ? 'text-success border-success' : (!isPhoneVerified && formData.phone ? 'text-danger border-danger' : 'text-muted')}`}>
-                        <i className="fa-solid fa-phone"></i>
-                      </span>
+                {userType === "contractor" && formData.phone && (
+                  isPhoneVerified ? (
+                    <span className="badge bg-success bg-opacity-10 text-success border border-success rounded-pill px-2 py-1 shadow-sm" style={{ fontSize: "0.75rem" }}>
+                      Verified
+                    </span>
+                  ) : (
+                    <span className="badge bg-danger bg-opacity-10 text-danger border border-danger rounded-pill px-2 py-1 shadow-sm" style={{ fontSize: "0.75rem" }}>
+                      Not Verified
+                    </span>
+                  )
+                )}
+              </div>
 
-                      <input
-                        type="tel"
-                        className={`form-control border-start-0 ps-0 ${isPhoneVerified ? 'border-success text-success fw-bold' : (!isPhoneVerified && formData.phone ? 'is-invalid border-danger' : '')}`}
-                        id="phone"
-                        placeholder="+61 400 000 000"
-                        value={formData.phone || ""}
-                        readOnly
-                        style={{ background: isPhoneVerified ? "#f2fdf5" : "#f8f9fa", cursor: "default" }}
-                      />
-
-                      {/* Show checkmark icon inside input if verified */}
-                      {isPhoneVerified && (
-                        <span className="input-group-text bg-white border-success border-start-0 text-success px-2">
-                          <i className="fa-solid fa-circle-check"></i>
-                        </span>
-                      )}
-
-                      {/* Unified Action Button */}
-                      <button
-                        type="button"
-                        className={`btn fw-medium ${!formData.phone ? "btn-outline-primary" : isPhoneVerified ? "btn-success px-3" : "btn-danger"}`}
-                        onClick={onChangePhone}
-                        style={{ zIndex: 0 }}
-                      >
-                        {!formData.phone ? "Add Phone" : isPhoneVerified ? "Change" : "Verify Now"}
-                      </button>
-                    </div>
-                    {!isPhoneVerified && formData.phone && (
-                      <div className="form-text text-danger mt-2 small fw-medium">
-                        <i className="fa-solid fa-circle-info me-1"></i>
-                        Verification is required to enable full functionality.
-                      </div>
-                    )}
-                  </>
-                ) : (
+              {userType === "contractor" ? (
+                <>
                   <div className="input-group shadow-sm rounded">
-                    <span className="input-group-text bg-white text-muted border-end-0">
+                    <span className={`input-group-text bg-white border-end-0 ${isPhoneVerified ? 'text-success border-success' : (!isPhoneVerified && formData.phone ? 'text-danger border-danger' : 'text-muted')}`}>
                       <i className="fa-solid fa-phone"></i>
                     </span>
+
                     <input
                       type="tel"
-                      className="form-control border-start-0 ps-0"
+                      className={`form-control border-start-0 ps-0 ${isPhoneVerified ? 'border-success text-success fw-bold' : (!isPhoneVerified && formData.phone ? 'is-invalid border-danger' : '')}`}
                       id="phone"
                       placeholder="+61 400 000 000"
                       value={formData.phone || ""}
-                      onChange={onChange}
-                      required
-                      maxLength="15"
-                      pattern="^(?:\+?61|0)[2-478](?:[\s\-]*\d){8}$"
-                      title="Please enter a valid Australian phone number (e.g., 0400 000 000 or +61 400 000 000)"
+                      readOnly
+                      style={{ background: isPhoneVerified ? "#f2fdf5" : "#f8f9fa", cursor: "default" }}
                     />
+
+                    {/* Show checkmark icon inside input if verified */}
+                    {isPhoneVerified && (
+                      <span className="input-group-text bg-white border-success border-start-0 text-success px-2">
+                        <i className="fa-solid fa-circle-check"></i>
+                      </span>
+                    )}
+
+                    {/* Unified Action Button */}
+                    <button
+                      type="button"
+                      className={`btn fw-medium ${!formData.phone ? "btn-outline-primary" : isPhoneVerified ? "btn-success px-3" : "btn-danger"}`}
+                      onClick={onChangePhone}
+                      style={{ zIndex: 0 }}
+                    >
+                      {!formData.phone ? "Add Phone" : isPhoneVerified ? "Change" : "Verify Now"}
+                    </button>
                   </div>
-                )}
-              </div>
-            )
-          }
+                  {!isPhoneVerified && formData.phone && (
+                    <div className="form-text text-danger mt-2 small fw-medium">
+                      <i className="fa-solid fa-circle-info me-1"></i>
+                      Verification is required to enable full functionality.
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div className="input-group shadow-sm rounded">
+                  <span className="input-group-text bg-white text-muted border-end-0">
+                    <i className="fa-solid fa-phone"></i>
+                  </span>
+                  <input
+                    type="tel"
+                    className="form-control border-start-0 ps-0"
+                    id="phone"
+                    placeholder="+61 400 000 000"
+                    value={formData.phone || ""}
+                    onChange={onChange}
+                    required
+                    maxLength="15"
+                    pattern="^(?:\+?61|0)[2-478](?:[\s\-]*\d){8}$"
+                    title="Please enter a valid Australian phone number (e.g., 0400 000 000 or +61 400 000 000)"
+                  />
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Contractor Specific Fields */}
           {userType === "contractor" && (
@@ -279,122 +292,126 @@ export default function ProfileForm({
 
           {/* Staff Residential Status */}
           {userType === "staff" && (
-            <div className="mt-2">
-              <label htmlFor="staff_document_type" className="form-label fw-semibold">
-                Residential Status
-              </label>
-              <select
-                className="form-select shadow-sm"
-                id="staff_document_type"
-                value={formData.staff_document_type || ""}
-                onChange={onChange}
-              >
-                <option value="">Select Residential Status</option>
-                <option value="student_visa">Student Visa</option>
-                <option value="bridging_visa">Bridging Visa</option>
-                <option value="citizen">Citizen</option>
-                <option value="permanent_residence">Permanent Residence</option>
-                <option value="visa_485">Visa Subclass 485</option>
-                <option value="other">Other</option>
-              </select>
+            <div className="mt-2" style={{ gridColumn: showCustomStatus ? "1 / -1" : "auto" }}>
+              <div className="row g-3">
+                <div className={showCustomStatus ? "col-md-6" : "col-12"}>
+                  <label htmlFor="staff_document_type" className="form-label fw-semibold">
+                    Residential Status
+                  </label>
+                  <select
+                    className="form-select shadow-sm"
+                    id="staff_document_type"
+                    value={selectValue}
+                    onChange={(e) => {
+                      if (e.target.value === "other") {
+                        // Pass a distinct initial string to trigger the text input
+                        onChange({ target: { id: "staff_document_type", value: "Other (Please specify)" } });
+                      } else {
+                        onChange(e);
+                      }
+                    }}
+                  >
+                    <option value="">Select Residential Status</option>
+                    <option value="student_visa">Student Visa</option>
+                    <option value="bridging_visa">Bridging Visa</option>
+                    <option value="citizen">Citizen</option>
+                    <option value="permanent_residence">Permanent Residence</option>
+                    <option value="visa_485">Visa Subclass 485</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
+
+                {/* Custom Text Input if "Other" is selected */}
+                {showCustomStatus && (
+                  <div className="col-md-6" style={{ animation: "fadeIn 0.3s ease-in-out" }}>
+                    <label htmlFor="custom_staff_document" className="form-label fw-semibold text-muted">
+                      Please Specify <span className="text-danger">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      className="form-control shadow-sm border-primary"
+                      id="custom_staff_document"
+                      placeholder="Enter your residential status"
+                      value={formData.staff_document_type === "Other (Please specify)" ? "" : formData.staff_document_type}
+                      onChange={(e) => {
+                        onChange({
+                          target: { id: "staff_document_type", value: e.target.value }
+                        });
+                      }}
+                      required
+                      autoFocus
+                    />
+                  </div>
+                )}
+              </div>
             </div>
           )}
 
-          {/* Staff Specific Fields */}
+          {/* Staff Specific Fields (Gender) */}
           {userType === "staff" && (
             <>
-              <div>
+              <div className="mt-2">
                 <label className="form-label fw-semibold mb-3">Gender</label>
-                <div
-                  style={{
-                    display: "flex",
-                    gap: "15px",
-                    flexWrap: "wrap",
-                    position: "relative",
-                    top: "-8px",
-                  }}
-                >
-                  {["male", "female", "other"].map((option) => {
-                    const isSelected = formData.gender === option;
+                <div className="d-flex flex-column gap-2 ms-1">
+                  {[
+                    { id: "male", label: "Male" },
+                    { id: "female", label: "Female" },
+                    { id: "other", label: "Prefer not to say" }
+                  ].map((option) => {
+                    const isSelected = formData.gender === option.id;
                     return (
-                      <div key={option} style={{ display: "flex", alignItems: "center" }}>
+                      <div key={option.id} className="form-check">
                         <input
+                          className="form-check-input"
                           type="radio"
-                          id={`gender_${option}`}
+                          id={`gender_${option.id}`}
                           name="gender"
-                          value={option}
+                          value={option.id}
                           checked={isSelected}
                           onChange={(e) => {
                             onChange({
                               target: { id: "gender", value: e.target.value },
                             });
                           }}
-                          style={{ display: "none" }}
+                          style={{ cursor: "pointer" }}
                         />
                         <label
-                          htmlFor={`gender_${option}`}
-                          className="gender-radio-label shadow-sm"
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "8px",
-                            cursor: "pointer",
-                            padding: "10px 20px",
-                            borderRadius: "8px",
-                            border: isSelected ? "2px solid #0A7C6E" : "2px solid #dee2e6",
-                            backgroundColor: isSelected ? "#0A7C6E" : "#fff",
-                            color: isSelected ? "white" : "#495057",
-                            fontWeight: isSelected ? "600" : "500",
-                            transition: "all 0.2s ease-in-out",
-                            userSelect: "none",
-                          }}
-                          onMouseEnter={(e) => {
-                            if (!isSelected) {
-                              e.currentTarget.style.borderColor = "#0A7C6E";
-                              e.currentTarget.style.backgroundColor = "#f8f9fa";
-                            }
-                          }}
-                          onMouseLeave={(e) => {
-                            if (!isSelected) {
-                              e.currentTarget.style.borderColor = "#dee2e6";
-                              e.currentTarget.style.backgroundColor = "#fff";
-                            }
-                          }}
+                          className="form-check-label text-dark"
+                          htmlFor={`gender_${option.id}`}
+                          style={{ cursor: "pointer", fontSize: "1.05rem" }}
                         >
-                          <i
-                            className={`fa-solid ${option === "male"
-                              ? "fa-mars"
-                              : option === "female"
-                                ? "fa-venus"
-                                : "fa-circle-question"
-                              }`}
-                            style={{ fontSize: "1.1rem" }}
-                          ></i>
-                          <span style={{ textTransform: "capitalize" }}>
-                            {option}
-                          </span>
+                          {option.label}
                         </label>
                       </div>
                     );
                   })}
                 </div>
               </div>
+            </>
+          )}
 
-              <div>
-                <label htmlFor="security_license_no" className="form-label fw-semibold">
-                  Security License No <span className="text-danger">*</span>
-                </label>
+          {/* Staff Date of Birth */}
+          {userType === "staff" && (
+            <div>
+              <label htmlFor="date_of_birth" className="form-label fw-semibold">
+                Date of Birth <span className="text-danger">*</span>
+              </label>
+              <div className="input-group shadow-sm rounded">
+                <span className="input-group-text bg-white text-muted border-end-0">
+                  <i className="fa-solid fa-calendar-days"></i>
+                </span>
                 <input
-                  type="text"
-                  className="form-control"
-                  id="security_license_no"
-                  placeholder="Enter security license number"
-                  value={formData.security_license_no || ""}
+                  type="date"
+                  className="form-control border-start-0 ps-0"
+                  id="date_of_birth"
+                  name="date_of_birth"
+                  value={formData.date_of_birth || ""}
                   onChange={onChange}
+                  max={new Date().toISOString().split("T")[0]}
                   required
                 />
               </div>
-            </>
+            </div>
           )}
 
           <div style={{ gridColumn: "1 / -1", marginTop: "1rem" }}>
@@ -461,6 +478,7 @@ export default function ProfileForm({
             />
           </div>
         </div>
+
         {userType !== "admin" && (
           <div className="settings-card-footer mt-4 pt-4 border-top d-flex justify-content-end">
             <button

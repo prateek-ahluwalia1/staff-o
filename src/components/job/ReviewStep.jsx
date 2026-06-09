@@ -130,7 +130,7 @@ export default function ReviewStep({ form, rate, setField, handleConfirm, setSte
             <label className={`w-100 h-100 p-3 rounded-3 border transition-all ${isSplit ? "border-primary bg-primary text-white shadow-sm" : "bg-white border-light-subtle hover-bg-gray"}`} style={{ cursor: "pointer" }}>
               <input type="radio" className="d-none" name="payOpt" checked={isSplit} onChange={() => setField("paymentOption", "split")} disabled={isSubmitting} />
               <div className="d-flex justify-content-between align-items-start mb-2">
-                <span className={`fw-bold fs-6 ${isSplit ? "text-white" : "text-dark"}`}>50/50 Split</span>
+                <span className={`fw-bold fs-6 ${isSplit ? "text-white" : "text-dark"}`}>Split Payment (50/50)</span>
               </div>
               <div className={`small mb-3 ${isSplit ? "text-white opacity-75" : "text-muted"}`}>Pay 50% upfront to secure guards. The remaining 50% is charged upon shift completion.</div>
               <div className={`mt-auto pt-2 border-top ${isSplit ? "border-white border-opacity-25" : "border-light"}`}>
@@ -147,7 +147,7 @@ export default function ReviewStep({ form, rate, setField, handleConfirm, setSte
             <input id="terms" className="form-check-input mt-0" type="checkbox" style={{ width: "1.2rem", height: "1.2rem", cursor: "pointer" }} checked={form.termsAccepted} onChange={(e) => setField("termsAccepted", e.target.checked)} disabled={isSubmitting} />
             <label htmlFor="terms" className="form-check-label small fw-medium user-select-none" style={{ cursor: "pointer" }}>I agree to the <NavLink to="/terms-of-use" className="text-primary text-decoration-none fw-bold">Terms & Conditions</NavLink></label>
           </div>
-          <div className="small text-muted ps-4" style={{ fontSize: "0.8rem" }}>*Note: A 10% incidental authorization hold may be applied by Stripe to cover potential un-planned overtime. This is released upon completion.</div>
+          <div className="small text-muted ps-4" style={{ fontSize: "0.8rem" }}>*Note: A 10% incidental authorisation hold may be applied by Stripe to cover potential Unplanned overtime. The hold will be released after completion of the shift.</div>
         </div>
       )}
 

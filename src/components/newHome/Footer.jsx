@@ -109,7 +109,7 @@ function Footer() {
         </div>
 
         <div className="footer-bottom">
-          <span>© 2026 STAFFOO PTY LTD · ABN 00 000 000 000 · ALL RIGHTS RESERVED</span>
+          <span>© 2026 STAFFOO PTY LTD · ABN 48 613 317 838 · ALL RIGHTS RESERVED</span>
           <div className="footer-bottom-links">
             <Link to="/privacy-policy">Privacy</Link>
             <Link to="/terms-of-use">Terms</Link>

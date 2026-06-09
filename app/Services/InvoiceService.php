@@ -53,7 +53,7 @@ class InvoiceService
                 <td>{$start}</td>
                 <td>{$end}</td>
                 <td style='text-align:center;'>{$guards}</td>
-                <td style='text-align:center;'>{$hours}h</td>
+                <td style='text-align:center;'>{$hours}</td>
                 <td style='text-align:right;'>{$amount}</td>
             </tr>";
         }
@@ -136,10 +136,10 @@ class InvoiceService
         $html .= "<div class='section-title'>Shift Details</div>";
         $html .= "<div class='table-wrap'><table class='st'><thead><tr>";
         $html .= "<th style='width:5%;'>#</th>";
-        $html .= "<th style='width:26%;'>Start Date / Time</th>";
-        $html .= "<th style='width:26%;'>End Date / Time</th>";
+        $html .= "<th style='width:26%;'>Start Date</th>";
+        $html .= "<th style='width:26%;'>End Date</th>";
         $html .= "<th style='width:12%;text-align:center;'>Guards</th>";
-        $html .= "<th style='width:14%;text-align:center;'>Hrs / Guard</th>";
+        $html .= "<th style='width:14%;text-align:center;'>Hours</th>";
         $html .= "<th style='width:17%;text-align:right;'>Amount (AUD)</th>";
         $html .= "</tr></thead><tbody>{$shiftRows}</tbody></table></div>";
 
@@ -150,7 +150,7 @@ class InvoiceService
         $html .= "<div class='table-wrap'><table class='tt'>";
         $html .= "<tr><td class='lbl'>Subtotal</td><td class='amt'>{$baseTotal}</td></tr>";
         $html .= "<tr><td class='lbl'>{$discountLabel}</td><td class='amt' style='color:#D97706;'>- {$discount}</td></tr>";
-        $html .= "<tr><td class='lbl'>GST / Service Fee (10%)</td><td class='amt'>{$serviceFee}</td></tr>";
+        $html .= "<tr><td class='lbl'>GST (10%)</td><td class='amt'>{$serviceFee}</td></tr>";
         $html .= "<tr class='grand'><td class='lbl'>Total Amount</td><td class='amt'>{$grandTotal}</td></tr>";
         $html .= "<tr class='charged'><td class='lbl'>Amount Charged Now</td><td class='amt'>{$amtCharged}</td></tr>";
         $html .= "<tr class='balance'><td class='lbl'>Balance Remaining</td><td class='amt'>{$balance}</td></tr>";
@@ -160,9 +160,9 @@ class InvoiceService
 
         // Footer
         $html .= "<div class='footer'>";
-        $html .= "<span class='badge'>&#10003; Payment Held via Stripe</span><br><br>";
-        $html .= "Thank you for choosing Staffoo Facility Services.<br>";
-        $html .= "For billing enquiries contact <strong>admin@staffoo.com.au</strong>";
+        $html .= "<span class='badge'>Payment held via Stripe, and the hold will be released after completion of the shift.</span><br><br>";
+        $html .= "Thank you for choosing STAFFOO.<br>";
+        $html .= "For billing enquiries contact <strong>billing@staffoo.com.au</strong>";
         $html .= " &nbsp;|&nbsp; ABN: 48 613 317 838";
         $html .= "</div></body></html>";
 

@@ -50,7 +50,7 @@
   </div>
 
   <div class="footer">
-    &copy; {{ date('Y') }} Staffoo Security Services &nbsp;|&nbsp; ABN: XX XXX XXX XXX<br>
+    &copy; {{ date('Y') }} STAFFOO &nbsp;|&nbsp; ABN: 48 613 317 838<br>
     billing@staffoo.com.au
   </div>
 

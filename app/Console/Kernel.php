@@ -15,6 +15,7 @@ class Kernel extends ConsoleKernel
         // $schedule->command('notifications:asap-job')->everyThirtyMinutes()->withoutOverlapping();
         $schedule->command('notifications:asap-job')->cron('0,30 * * * *')->withoutOverlapping();
         $schedule->command('app:sync-public-holidays')->twiceYearly(1, 1);
+        $schedule->command('app:check-missing-inductions')->dailyAt('10:00');
     }
 
     /**

@@ -24,7 +24,7 @@ class AdminStaffController extends Controller
     public function index(Request $request)
     {
         $query = User::where('user_type', 'staff')
-            ->with('staff');
+            ->with('staff', 'documents');
 
         // Search functionality
         if ($request->has('search')) {

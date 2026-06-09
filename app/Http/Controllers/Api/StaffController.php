@@ -21,6 +21,7 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Validator;
 use Twilio\Rest\Client;
 use Illuminate\Support\Facades\Mail;
+use Carbon\Carbon;
 
 class StaffController extends Controller
 {
@@ -75,7 +76,7 @@ class StaffController extends Controller
             $documentScore = ($filledDocuments / $totalDocuments) * $documentWeight;
         }
 
-        // NEW CONDITION: Labour Hire Required (only for contractors in Victoria or Queensland)
+        // // NEW CONDITION: Labour Hire Required (only for contractors in Victoria or Queensland)
         if ($user->user_type === 'contractor' && in_array(strtolower($user->state), ['victoria', 'queensland'])) {
             $labourHireDoc = $documents->firstWhere('document_type', 'labour_hire');
 
@@ -639,6 +640,8 @@ class StaffController extends Controller
                     'gender' => 'sometimes|nullable|in:male,female,other',
                     'phone' => 'sometimes|nullable|string',
                     'staff_document_type' => 'sometimes|nullable|string',
+                    'security_license_no' => 'sometimes|nullable|string',
+                    'dob' => 'sometimes|nullable|string'
                 ]);
             }
 
@@ -1096,6 +1099,7 @@ class StaffController extends Controller
             'member_account'  => 'nullable|string|max:50',
             'signature'       => 'nullable|string|max:150',
             'date'            => 'nullable|date',
+            'super_confirmation' => 'nullable',
         ]);
 
         $record = Superannuation::updateOrCreate(
@@ -1124,7 +1128,8 @@ class StaffController extends Controller
             'passport_number'         => 'nullable|string|max:20',
             'passport_country'        => 'nullable|string|max:100',
             'passport_expiry'         => 'nullable|string',
-            'work_rights'             => 'nullable|in:citizen,student,other',
+            'passport_doc'            => 'nullable|string',
+            'work_rights'             => 'nullable|string',
             'id_checks'               => 'nullable|array',
             'bank_name'               => 'nullable|string|max:100',
             'bsb'                     => 'nullable|string|max:10',
@@ -1135,8 +1140,10 @@ class StaffController extends Controller
             'super_member'            => 'nullable|string|max:50',
             'security_license'        => 'nullable|string|max:50',
             'security_license_expiry' => 'nullable|string',
+            'security_license_doc'    => 'nullable|string',
             'first_aid_cert'          => 'nullable|string|max:50',
             'first_aid_expiry'        => 'nullable|string',
+            'first_aid_doc'           => 'nullable|string',
             'signature'               => 'nullable|string|max:150',
             'date'                    => 'nullable|string',
         ]);
@@ -1149,6 +1156,63 @@ class StaffController extends Controller
                 'signed_date' => $request->date,
             ]
         );
+
+       if ($request->filled(['security_license', 'security_license_expiry', 'security_license_doc'])) {
+    
+                        // Find the existing document
+            $document = Document::where('user_id', $request->user_id)
+            ->where('document_type', 'security_license')
+            ->first();
+
+            // Only update if it exists
+            if ($document) {
+                $formattedExpiry = Carbon::parse($request->security_license_expiry)->format('Y-m-d');
+                
+                $document->update([
+                    'document_no'     => $request->security_license,
+                    'file'            => $request->security_license_doc,
+                    'document_expiry' => $formattedExpiry
+                ]);
+            }
+        }
+
+        if ($request->filled(['passport_number', 'passport_expiry', 'passport_doc'])) {
+            
+            // Find the existing document
+            $document = Document::where('user_id', $request->user_id)
+                                ->where('document_type', 'passport')
+                                ->first();
+
+            // Only update if it exists
+            if ($document) {
+                $formattedExpiry = Carbon::parse($request->passport_expiry)->format('Y-m-d');
+                
+                $document->update([
+                    'document_no'     => $request->passport_number,
+                    'file'            => $request->passport_doc,
+                    'document_expiry' => $formattedExpiry
+                ]);
+            }
+        }
+
+        if ($request->filled(['first_aid_cert', 'first_aid_expiry', 'first_aid_doc'])) {
+            
+            // Find the existing document
+            $document = Document::where('user_id', $request->user_id)
+                                ->where('document_type', 'first_aid')
+                                ->first();
+
+            // Only update if it exists
+            if ($document) {
+                $formattedExpiry = Carbon::parse($request->first_aid_expiry)->format('Y-m-d');
+                
+                $document->update([
+                    'document_no'     => $request->first_aid_cert,
+                    'file'            => $request->first_aid_doc,
+                    'document_expiry' => $formattedExpiry
+                ]);
+            }
+        }
 
         $status = $record->wasRecentlyCreated ? 201 : 200;
         $message = $record->wasRecentlyCreated ? 'Onboarding saved.' : 'Onboarding updated.';
@@ -1276,5 +1340,91 @@ class StaffController extends Controller
             'type'    => $type,
             'data'    => $record
         ], 200);
+    }
+
+    function check_victoria_license($request)
+    {
+        $url = "https://www.lars.police.vic.gov.au/LARS/LARS.asp?File=/Components/Screens/PSINFP03/PSINFP03.asp?Process=SEARCH";
+        $input_xml = "<XML><HEADER><PROCESS>SEARCH</PROCESS><TIMESTAMP>20211020043340</TIMESTAMP><SECURITYTOKEN>02A42A1B-588D-4EE8-8760-2A81E6221A9A</SECURITYTOKEN></HEADER><PAYLOAD><GNDTLE01 id='idSearchPane'><CONTROL name='dropdownlist'>%</CONTROL><CONTROL name='searchtext'></CONTROL><CONTROL name='SearchCriteriadropdownlist'>X</CONTROL><CONTROL name='SearchAuthNb'>" . $request->license_number . "</CONTROL><CONTROL name='Index'></CONTROL><CONTROL name='Page'>1</CONTROL></GNDTLE01></PAYLOAD></XML>";
+
+            // new here
+        $headers = array(
+            "Content-type: text/xml",
+            "Content-length: " . strlen($input_xml),
+            "Connection: close",
+        );
+
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $input_xml);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+
+        $data = curl_exec($ch);
+        curl_close($ch);
+
+        if (strpos($data, 'No Results Found')) {
+            return response()->json(['success' => false, 'message' => 'Sorry! Your license is not valid according to LRD Victoria Database.']);
+        } else {
+            $data = explode('ALT="Spacer"/></td></tr><tr valign=\'top\' RecordKey=\'', $data);
+            if (isset($data[1])) {
+                $data = explode('bgcolor=\'white\' row=\'1\'  onmouseover="PSINFE04_fMouseOver(this);"  onmouseout="PSINFE04_fMouseOut(this);"  ondblclick="fDetails();"  onclick="PSINFE04_fMouseClick(this);">', $data[1]);
+
+                $data = str_replace('</tr><tr style=\'font-size:4px\'><td align=\'right\' bgcolor=\'#BDC3D6\' colspan=\'6\'>&nbsp;</td></tr></table>
+                    </td></tr><tr style=\'font-size:4px\'><td align=\'right\' bgcolor=\'#BDC3D6\' colspan=\'6\'>&nbsp;</td></tr></table>
+                    </td></tr><tr style=\'font-size:4px\'><td align=\'right\' bgcolor=\'#BDC3D6\' colspan=\'6\'>&nbsp;</td></tr></table>', '', $data[1]);
+                $data = str_replace('</tr></table>', '', $data);
+                $data = str_replace('</td>', '', $data);
+                $data = str_replace('&nbsp;', '', $data);
+                $data = explode('<td>', $data);
+                if (isset($data[4])) {
+                    return response()->json(['success' => true, 'message' => 'Congrats! Your License is valid and verified from the LRD Victoria Database.', 'expiry' => $data[4]]);
+                } else {
+                    return response()->json(['success' => false, 'message' => 'Sorry! Your license is not valid according to LRD Victoria Database.']);
+                }
+            } else {
+                return response()->json(['success' => false, 'message' => 'Sorry! Your license is not valid according to LRD Victoria Database.']);
+            }
+        }
+    }
+
+    function check_queensland_license($request, $name)
+    {
+        $url = "https://ftlr.fairtrading.qld.gov.au/home/search?LicenceNumber=" . $request->license_number . "&GivenName=&LastName=&CompanyName=&MasterType=";
+            // new here
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
+
+        $result = curl_exec($ch);
+        curl_close($ch);
+        $result = json_decode($result, true);
+        if (count($result) > 0) {
+            if ($result[0]['licenceNumber'] == $request->license_number) {
+                $expiry = date('d/m/Y', strtotime($result[0]['expiryDateStr']));
+                return response()->json(['success' => true, 'message' => 'Congrats! Your License is valid and verified from the LRD Queensland Database.', 'expiry' => $expiry]);
+            } else {
+                return response()->json(['success' => false, 'message' => 'Sorry! Your license is not valid according to LRD Queensland Database.', 'name' => strtolower($name)]);
+            }
+        } else {
+            return response()->json(['success' => false, 'message' => 'Sorry! Your license is not valid according to LRD Queensland Database.']);
+        }
+    }
+
+
+    function documentsOnlineVerification(Request $request)
+    {
+        if ($request->has('user_id')) {
+            $guard = DB::table('users')->where('id', $request->user_id)->select('state', 'name')->first();
+            if ($guard->state == 'Queensland') {
+                return $this->check_queensland_license($request, $guard->name);
+            } else {
+                return $this->check_victoria_license($request);
+            }
+        } else {
+            return $this->check_victoria_license($request);
+        }
     }
 }

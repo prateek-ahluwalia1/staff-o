@@ -1,68 +1,144 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>STAFFOO</title>
+    <title>STAFFOO - Verify Your Email</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
-<body>
-    <table style="padding: 0; border:0; width:100%; background-color:#f2f8f9;">
+<body style="margin:0; padding:0; background-color:#f0f7fa; font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+    <!-- MAIN CONTAINER -->
+    <table style="width:100%; background-color:#f0f7fa; border-collapse:collapse; mso-table-lspace:0; mso-table-rspace:0;" cellpadding="0" cellspacing="0" border="0">
         <tbody>
             <tr>
-                <td>
-                    <table style="background-color: #f2f8f9; max-width:670px; margin:0 auto; width:100%; border:0; text-align:center;">
+                <td align="center" style="paddinHg:30px 15px;">
+                    <!-- CENTERED CARD (max-width 600px) -->
+                    <table style="max-width:600px; width:100%; background-color:#ffffff; border-radius:24px; box-shadow:0 12px 35px rgba(0,0,0,0.05); border-collapse:collapse; overflow:hidden; mso-table-lspace:0; mso-table-rspace:0;" cellpadding="0" cellspacing="0" border="0">
                         <tbody>
-                            <tr><td style="height:80px;">&nbsp;</td></tr>
-
+                            <!-- Top brand wave / header decoration (optional but fresh) -->
                             <tr>
-                                <td style="text-align:center;">
-                                    <img src="https://app.staffoo.com.au/static/media/staffo.3365b0bc69fe5ebfe45c.png" width="125" height="120" style="display: block; border: 0px;" >
+                                <td style="background: linear-gradient(135deg, #0F2B3D 0%, #1B4F6E 100%); height:8px; font-size:0; line-height:0;">&nbsp;</td>
+                            </tr>
+                            
+                            <!-- Logo Section : updated with your new logo path -->
+                            <tr>
+                                <td style="padding: 32px 32px 16px 32px; text-align: center;">
+                                    <img src="https://apis.staffoo.com.au/uploads/staffologo.png" alt="STAFFOO Logo" width="150" height="50" style="display:block; border:0; width:150px; height:auto; margin:0 auto;">
                                 </td>
                             </tr>
 
+                            <!-- Hero / Greeting -->
                             <tr>
-                                <td>
-                                    <table style="width:100%; border:0; max-width:670px; background:#fff; border-radius:3px; text-align:center; box-shadow:0 1px 3px rgba(0,0,0,0.16);">
-                                        <tbody>
-                                            <tr><td style="height:40px;">&nbsp;</td></tr>
+                                <td style="padding: 0 32px 12px 32px; text-align: center;">
+                                    <h1 style="color:#0F2B3D; font-weight:600; font-size:28px; margin:0 0 8px 0; letter-spacing:-0.3px;">Verify your email address</h1>
+                                    <p style="color:#5A6872; font-size:16px; line-height:1.5; margin:0;">You're just one step away from unlocking the full power of STAFFOO.</p>
+                                </td>
+                            </tr>
 
-                                            <tr>
-                                                <td style="padding:0 15px;">
-                                                    <h1 style="color:rgb(0, 163, 126); font-weight:400; margin:0;font-size:32px;">STAFFOO</h1>
-                                                    <h4>User Verify Email</h4>
-                                                    <p><b>Email: {{$email}}</b></p>
+                            <!-- Divider style (soft) -->
+                            <tr>
+                                <td style="padding: 0 32px;">
+                                    <hr style="border:0; height:1px; background:#E2E8F0; margin:12px 0 20px 0;">
+                                </td>
+                            </tr>
 
-                                                    <!-- Clickable Button -->
-                                                <p style="margin: 20px 0;">
-                                                    <a href="https://apis.staffoo.com.au/api/email-verification/{{$email}}/{{$token}}"
-                                                    target="_blank"
-                                                    role="button"
-                                                    style="background-color:#3075BA; color:#ffffff; padding:15px 25px; border-radius:5px; text-decoration:none;
-                                                            display:inline-block; font-weight:bold; font-size:16px; line-height:20px; min-width:200px;
-                                                            cursor:pointer; -webkit-touch-callout: none;">
-                                                    Click Here To Verify
-                                                    </a>
+                            <!-- Email and verification message -->
+                            <tr>
+                                <td style="padding: 0 32px 12px 32px; text-align: center;">
+                                    <table style="background-color:#F8FCFE; border-radius:20px; padding:16px 20px; width:100%; border-collapse:collapse; mso-table-lspace:0; mso-table-rspace:0;" cellpadding="0" cellspacing="0">
+                                        <tr>
+                                            <td style="text-align:center;">
+                                                <p style="font-size:14px; font-weight:500; color:#1F5E7E; margin:0 0 6px 0; letter-spacing:0.3px;">VERIFICATION REQUEST FOR</p>
+                                                <p style="font-size:20px; font-weight:600; color:#0F2B3D; margin:0; background:#FFFFFF; display:inline-block; padding:6px 18px; border-radius:40px; box-shadow:0 1px 2px rgba(0,0,0,0.03);">
+                                                    {{$email}}
                                                 </p>
-                                                </td>
-                                            </tr>
+                                            </td>
+                                        </tr>
+                                    </table>
+                                </td>
+                            </tr>
+                            
+                            <!-- Call To Action Button (modern, rounded, gradient style) -->
+                            <tr>
+                                <td style="padding: 24px 32px 12px 32px; text-align: center;">
+                                    <a href="https://apis.staffoo.com.au/api/email-verification/{{$email}}/{{$token}}"
+                                       target="_blank"
+                                       style="background: linear-gradient(105deg, #00A37E 0%, #018F6E 100%); color:#ffffff; padding:14px 32px; border-radius:60px; text-decoration:none; font-weight:600; font-size:16px; display:inline-block; box-shadow:0 6px 14px rgba(0,163,126,0.25); transition: all 0.2s ease; mso-padding-alt:0; text-align:center;">
+                                        ✓ Verify my account
+                                    </a>
+                                </td>
+                            </tr>
 
-                                            <tr><td style="height:40px;">&nbsp;</td></tr>
-                                        </tbody>
+                            <!-- New Registration text + welcome message -->
+                            <tr>
+                                <td style="padding: 16px 32px 12px 32px;">
+                                    <table style="background:#F2F9F6; border-radius:20px; width:100%; border-collapse:collapse;" cellpadding="0" cellspacing="0">
+                                        <tr>
+                                            <td style="padding: 20px 24px;">
+                                                <p style="font-size:15px; font-weight:600; color:#006B51; margin:0 0 8px 0; display:flex; align-items:center; gap:8px;">
+                                                    Ready to elevate your team?
+                                                </p>
+                                                <p style="font-size:14px; color:#2D4A5E; line-height:1.5; margin:0 0 10px 0;">
+                                                    Thanks for registering with <strong>STAFFOO</strong>
+                                                    Once you verify your Email, you can:
+                                                </p>
+                                                <ul style="margin:6px 0 0 20px; padding-left:0; color:#2C5A6E; font-size:14px; line-height:1.6;">
+                                                    <li>Create & assign shifts instantly</li>
+                                                    <li>Track attendance and performance metrics</li>
+                                                    <li>Access real-time analytics & payroll insights</li>
+                                                </ul>
+                                            </td>
+                                        </tr>
                                     </table>
                                 </td>
                             </tr>
 
-                            <tr><td style="height:20px;">&nbsp;</td></tr>
-
+                            <!-- Extra security note + support -->
                             <tr>
-                                <td style="text-align:center;">
-                                    <p style="font-size:14px; color:#455056bd; line-height:18px; margin:0 0 0;">
-                                        We're delighted to welcome you to a new era of staff management innovation with
-                                        <strong><a href="https://app.staffoo.com.au/" style="color:#3075BA; text-decoration:none;"> STAFFOO </a></strong>.
+                                <td style="padding: 8px 32px 20px 32px; text-align: center;">
+                                    <p style="font-size:13px; color:#6A7F8F; margin:0 0 8px 0;">
+                                        Didn't request this? You can safely ignore this Email.
+                                    </p>
+                                    <p style="font-size:13px; color:#6A7F8F; margin:0;">
+                                        Need help? <a href="https://staffoo.com.au/contact-us" style="color:#00A37E; text-decoration:none; font-weight:500;">Contact support</a> or visit our <a href="https://staffoo.com.au/" style="color:#00A37E; text-decoration:none;">Help Center</a>
                                     </p>
                                 </td>
                             </tr>
 
-                            <tr><td style="height:80px;">&nbsp;</td></tr>
+                            <!-- Footer with social / company info -->
+                            <tr>
+                                <td style="background-color:#F9FCFD; border-top:1px solid #EAF0F4; padding:24px 32px 28px 32px; text-align: center;">
+                                    <table style="width:100%; border-collapse:collapse;" cellpadding="0" cellspacing="0">
+                                        <tr>
+                                            <td style="text-align:center;">
+                                                <p style="font-weight:600; margin:0 0 12px 0; color:#1B4F6E; font-size:15px;">STAFFOO — Smarter workforce, better results</p>
+                                                <p style="font-size:12px; color:#8DA1AE; margin:0 0 10px 0;">
+                                                    © 2025 STAFFOO All rights reserved.
+                                                </p>
+                                                <div style="margin-top: 12px;">
+                                                    <a href="https://staffoo.com.au/about-us" style="color:#00A37E; text-decoration:none; font-size:12px; margin:0 8px;">About</a> 
+                                                    <span style="color:#C8D6DE;">|</span> 
+                                                    <a href="https://staffoo.com.au/privacy-policy" style="color:#00A37E; text-decoration:none; font-size:12px; margin:0 8px;">Privacy</a>
+                                                    <span style="color:#C8D6DE;">|</span>
+                                                    <a href="https://staffoo.com.au/terms-of-use" style="color:#00A37E; text-decoration:none; font-size:12px; margin:0 8px;">Terms</a>
+                                                </div>
+                                                <!-- tiny app badge hint (optional) -->
+                                                <p style="font-size:11px; color:#A8BBC9; margin-top:18px; margin-bottom:0;">
+                                                     Manage shifts, track time & grow with STAFFOO
+                                                </p>
+                                            </td>
+                                        </tr>
+                                    </table>
+                                </td>
+                            </tr>
                         </tbody>
+                    </table>
+                    
+                    <table style="max-width:600px; width:100%; margin-top:16px;" cellpadding="0" cellspacing="0">
+                        <tr>
+                            <td style="text-align:center; font-size:11px; color:#92A6B3; padding:10px 10px 0px;">
+                                <p>This is an automated message — please do not reply directly to this email.</p>
+                            </td>
+                        </tr>
                     </table>
                 </td>
             </tr>

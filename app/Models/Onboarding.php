@@ -12,6 +12,7 @@ class Onboarding extends Model {
         'passport_country','passport_expiry','work_rights','id_checks',
         'bank_name','bsb','account_number','tfn','super_fund','super_usi',
         'super_member','security_license','security_license_expiry',
-        'first_aid_cert','first_aid_expiry','signature','signed_date','user_id'
+        'first_aid_cert','first_aid_expiry','signature','signed_date','user_id',
+        'security_license_doc','passport_doc','first_aid_doc'
     ];
 }

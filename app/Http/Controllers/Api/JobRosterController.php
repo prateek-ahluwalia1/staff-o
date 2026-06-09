@@ -136,8 +136,8 @@ class JobRosterController extends Controller
                 ]);
     
                 $invoiceShifts[] = [
-                    'start'          => $start,
-                    'end'            => $end,
+                    'start'          => date('d-m-Y', strtotime($start)),
+                    'end'            => date('d-m-Y', strtotime($end)),
                     'numberOfGuards' => (int) $shift['numberOfGuards'],
                     'hours'          => round($totalShiftHours, 2),
                     'amount'         => round($jobAmount * $shift['numberOfGuards'], 2),
@@ -342,7 +342,7 @@ private function saveInvoicePdf($pdfBytes, string $invoiceNumber, string $client
         $cleanClientName = preg_replace('/[^A-Za-z0-9]/', '_', $clientName);
         
         // Generate filename: invoice_20241225_ABC123_John_Doe.pdf
-        $filename = "invoice-{$invoiceNumber}.pdf";
+        $filename = "Invoice-{$invoiceNumber}.pdf";
         $filePath = $directory . DIRECTORY_SEPARATOR . $filename;
 
         DB::table('job_rosters')
@@ -354,12 +354,6 @@ private function saveInvoicePdf($pdfBytes, string $invoiceNumber, string $client
         
         // Save the PDF
         file_put_contents($filePath, $pdfBytes);
-        
-        Log::channel('daily')->info('[Invoice] PDF saved successfully', [
-            'invoice_number' => $invoiceNumber,
-            'file_path' => $filePath,
-            'size_bytes' => strlen($pdfBytes)
-        ]);
         
     } catch (\Exception $e) {
         Log::channel('daily')->warning('[Invoice] Failed to save PDF to folder', [
@@ -384,12 +378,12 @@ private function saveInvoicePdf($pdfBytes, string $invoiceNumber, string $client
         ->where('user_type', 'staff')
         ->whereNotNull('coordinates')
         ->whereNotNull('notification_token')
-        ->whereHas('guardQuestionnaireDetails', function ($query) {
-            $query->whereNotNull('certificate_path');
-        })
-        ->whereDoesntHave('guardQuestionnaireDetails', function ($query) {
-            $query->whereNull('certificate_path');
-        })
+        // ->whereHas('guardQuestionnaireDetails', function ($query) {
+        //     $query->whereNotNull('certificate_path');
+        // })
+        // ->whereDoesntHave('guardQuestionnaireDetails', function ($query) {
+        //     $query->whereNull('certificate_path');
+        // })
         ->select('id', 'name', 'coordinates', 'notification_token')
         ->get();
 
@@ -939,9 +933,9 @@ private function saveInvoicePdf($pdfBytes, string $invoiceNumber, string $client
         } else {
             $signin_radius = 0.31;
         }
-        // if ($distance > $signin_radius) {
-        //     return response()->json(['success' => false, 'error' => 'You are ' . number_format($distance, 2) . ' km away from your job!', 'message' => 'You are ' . number_format($distance, 2) . ' km away from your job!', 'code' => 404]);
-        // }
+        if ($distance > $signin_radius) {
+            return response()->json(['success' => false, 'error' => 'You are ' . number_format($distance, 2) . ' km away from your job!', 'message' => 'You are ' . number_format($distance, 2) . ' km away from your job!', 'code' => 404]);
+        }
         $is_already_signin = JobRosterActivity::where(['job_roster_id' => $id])->first();
         if (!empty($is_already_signin)) {
             return response()->json(['success' => false, 'error' => 'You are already signin in this job!', 'message' => 'You are already signin in this job!', 'code' => 404]);
@@ -1036,7 +1030,7 @@ private function saveInvoicePdf($pdfBytes, string $invoiceNumber, string $client
             $public_path =  rtrim(app()->basePath('public/'), '');
             $public_path = str_replace('portal/public', '', $public_path);
             $public_path = str_replace('apis/public', '', $public_path);
-            $public_path = str_replace('https://apis.staffoo.com.au/', 'apis.247staffingsolutions.com.au/public', $public_path);
+            $public_path = str_replace('https://apis-nfc.arrowbyte.com.au/', 'apis.247staffingsolutions.com.au/public', $public_path);
             $destinationPath = $public_path . $folder . '/';
             if (!is_dir($destinationPath)) {
                 @mkdir($destinationPath, 0755, true);
@@ -2449,7 +2443,7 @@ public function holdPayment(Request $request)
 
         Stripe::setApiKey(config('services.stripe.secret'));
 
-        $chargeRate = ChargeRate::find(1);
+        $chargeRate = ChargeRate::where('level', $request->job_level)->first();
 
         if (!$chargeRate) {
             return response()->json([
@@ -2881,11 +2875,11 @@ public function autoUpdatePayslipStatus()
         });
     }
 
-     public function getUserTransactions($user_id)
+    public function getUserTransactions($user_id)
     {
         // Get all transactions for the user
         $transactions = Transaction::where('user_id', $user_id)
-            ->orderBy('created_at', 'desc') // or 'transaction_date'
+            ->orderBy('created_at', 'desc')
             ->get();
 
         // Check if transactions exist
@@ -2896,9 +2890,32 @@ public function autoUpdatePayslipStatus()
             ], 200);
         }
 
+        $transactionsWithInvoices = $transactions->map(function ($transaction) {
+            $jobRosterIds = is_string($transaction->job_roster_id) 
+                ? json_decode($transaction->job_roster_id, true) 
+                : $transaction->job_roster_id;
+            
+            $firstJobRosterId = is_array($jobRosterIds) && count($jobRosterIds) > 0 
+                ? $jobRosterIds[0] 
+                : null;
+            
+            $invoiceFilename = null;
+            if ($firstJobRosterId) {
+                $jobRoster = JobRoster::where('id', $firstJobRosterId)
+                    ->select('invoice_filename')
+                    ->first();
+                
+                $invoiceFilename = $jobRoster ? $jobRoster->invoice_filename : null;
+            }
+            
+            $transaction->invoice_filename = $invoiceFilename;
+            
+            return $transaction;
+        });
+
         return response()->json([
             'message' => 'Transactions retrieved successfully',
-            'data' => $transactions
+            'data' => $transactionsWithInvoices
         ], 200);
     }
 

@@ -135,7 +135,7 @@ class JobRosterActiviteController extends Controller
 
    }
 
-       public function storeOperationNotes(Request $request)
+      public function storeOperationNotes(Request $request)
     {
        $storeOperationNotes = JobRoster::where('id', $request->roster_id)->first();
        if(!empty($storeOperationNotes->operation_notes)){

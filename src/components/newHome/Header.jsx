@@ -24,6 +24,7 @@ function Header() {
   const [showNotifications, setShowNotifications] = useState(false)
   const [showUserMenu, setShowUserMenu] = useState(false)
   const [isMobileOpen, setIsMobileOpen] = useState(false)
+  const [openDropdown, setOpenDropdown] = useState(null)
 
   const notificationsEndpoint = useMemo(
     () => (userId ? `api/notifications/user/${userId}` : null),
@@ -62,6 +63,17 @@ function Header() {
       dispatch(setUnreadCount(unreadData))
     }
   }, [dispatch, unreadData])
+
+  useEffect(() => {
+    if (isMobileOpen) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = ''
+    }
+    return () => {
+      document.body.style.overflow = ''
+    }
+  }, [isMobileOpen])
 
   const getNotificationTitle = (notif) =>
     notif?.title || notif?.data?.title || 'Notification'
@@ -174,9 +186,26 @@ function Header() {
     }
   }, [showNotifications])
 
+  const handleLinkClick = useCallback(() => {
+    if (window.innerWidth < 992) {
+      setIsMobileOpen(false)
+      setOpenDropdown(null)
+    }
+  }, [])
+
   return (
-    <header className="staffoo-header" style={{ backgroundColor: '#1a1a1a', padding: '12px 20px' }}>
-      <div className="nav-left">
+    <header
+      className="staffoo-header"
+      style={{
+        backgroundColor: '#1a1a1a',
+        padding: '12px 20px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        flexWrap: 'nowrap',
+        gap: '16px',
+      }}
+    >      <div className="nav-left">
         {/* Updated Logo Layout containing your image asset */}
         <NavLink className="logo d-flex align-items-center" to="/" style={{ textDecoration: 'none' }}>
           <img
@@ -185,10 +214,110 @@ function Header() {
             style={{ height: "45px", width: "auto", display: "block" }}
           />
         </NavLink>
-        <nav>
-          <NavLink to="/" style={{ color: '#ccc' }}>Home</NavLink>
-          <NavLink to="/contact-us" style={{ color: '#ccc' }}>Contact Us</NavLink>
-          <NavLink to="/about-us" style={{ color: '#ccc' }}>About</NavLink>
+        <nav className={`main-nav ${isMobileOpen ? 'mobile-open' : ''}`} style={{ display: 'flex', alignItems: 'center', gap: '32px' }}>
+          <div className={`nav-item-dropdown ${openDropdown === 'solutions' ? 'mobile-expanded' : ''}`}>
+            <span onClick={() => { if (window.innerWidth < 992) setOpenDropdown(openDropdown === 'solutions' ? null : 'solutions') }} style={{ color: '#ccc', cursor: 'pointer', fontFamily: "'Barlow Condensed', sans-serif", fontSize: '14px', fontWeight: 600, letterSpacing: '0.1em' }}>Solutions <i className="fa fa-chevron-down" style={{ fontSize: '10px', marginLeft: '4px' }}></i></span>
+            <div className="dropdown-content multi-col">
+              <div className="dropdown-column">
+                <div className="dropdown-title">Sectors</div>
+                <NavLink to="/solutions/event-security" onClick={handleLinkClick}>Event Security</NavLink>
+                <NavLink to="/solutions/retail-security" onClick={handleLinkClick}>Retail Security</NavLink>
+                <NavLink to="/solutions/warehouse-logistics-security" onClick={handleLinkClick}>Warehouse Logistics Security</NavLink>
+                <NavLink to="/solutions/corporate-security" onClick={handleLinkClick}>Corporate Security</NavLink>
+                <NavLink to="/solutions/government-security" onClick={handleLinkClick}>Government Security</NavLink>
+                <NavLink to="/solutions/healthcare-security" onClick={handleLinkClick}>Healthcare Security</NavLink>
+                <NavLink to="/solutions/transport-security" onClick={handleLinkClick}>Transport Security</NavLink>
+                <NavLink to="/solutions/aviation-security" onClick={handleLinkClick}>Aviation Security</NavLink>
+              </div>
+              <div className="dropdown-column">
+                <div className="dropdown-title">Use Cases</div>
+                <NavLink to="/solutions/for-security-companies" onClick={handleLinkClick}>For Security Companies</NavLink>
+                <NavLink to="/solutions/for-security-guards" onClick={handleLinkClick}>For Security Guards</NavLink>
+                <NavLink to="/solutions/security-subcontractors" onClick={handleLinkClick}>Security Subcontractors</NavLink>
+                <NavLink to="/solutions/hire-security-staff" onClick={handleLinkClick}>Hire Security Staff</NavLink>
+                <NavLink to="/solutions/for-event-security-providers" onClick={handleLinkClick}>For Event Security Providers</NavLink>
+                <NavLink to="/solutions/for-corporate-security-teams" onClick={handleLinkClick}>For Corporate Security Teams</NavLink>
+                <NavLink to="/solutions/for-labour-hire-agencies" onClick={handleLinkClick}>For Labour Hire Agencies</NavLink>
+              </div>
+            </div>
+          </div>
+
+          <div className={`nav-item-dropdown ${openDropdown === 'features' ? 'mobile-expanded' : ''}`}>
+            <span onClick={() => { if (window.innerWidth < 992) setOpenDropdown(openDropdown === 'features' ? null : 'features') }} style={{ color: '#ccc', cursor: 'pointer', fontFamily: "'Barlow Condensed', sans-serif", fontSize: '14px', fontWeight: 600, letterSpacing: '0.1em' }}>Features <i className="fa fa-chevron-down" style={{ fontSize: '10px', marginLeft: '4px' }}></i></span>
+            <div className="dropdown-content">
+              <NavLink to="/features/gps-guard-tracking" onClick={handleLinkClick}>GPS Guard Tracking</NavLink>
+              <NavLink to="/features/time-rooster" onClick={handleLinkClick}>Time Rooster</NavLink>
+              <NavLink to="/features/security-staff-recruitment" onClick={handleLinkClick}>Security Staff Recruitment</NavLink>
+              <NavLink to="/features/visa-document-verification" onClick={handleLinkClick}>Visa/Document Verification</NavLink>
+              <NavLink to="/features/attendance-analytics" onClick={handleLinkClick}>Attendance Analytics</NavLink>
+              <NavLink to="/features/tracking-dashboard" onClick={handleLinkClick}>Tracking Dashboard</NavLink>
+              <NavLink to="/features/payslip-pay-sheet" onClick={handleLinkClick}>Payslip, Pay Sheet</NavLink>
+              <NavLink to="/features/job-handshake" onClick={handleLinkClick}>Job Handshake</NavLink>
+              <NavLink to="/features/workforce-dashboard" onClick={handleLinkClick}>Workforce Dashboard</NavLink>
+            </div>
+          </div>
+
+          <NavLink to="/pricing" onClick={handleLinkClick} style={{ color: '#ccc', textDecoration: 'none', fontFamily: "'Barlow Condensed', sans-serif", fontSize: '14px', fontWeight: 600, letterSpacing: '0.1em' }}>Pricing</NavLink>
+
+          <div className={`nav-item-dropdown ${openDropdown === 'resources' ? 'mobile-expanded' : ''}`}>
+            <span onClick={() => { if (window.innerWidth < 992) setOpenDropdown(openDropdown === 'resources' ? null : 'resources') }} style={{ color: '#ccc', cursor: 'pointer', fontFamily: "'Barlow Condensed', sans-serif", fontSize: '14px', fontWeight: 600, letterSpacing: '0.1em' }}>Resources <i className="fa fa-chevron-down" style={{ fontSize: '10px', marginLeft: '4px' }}></i></span>
+            <div className="dropdown-content">
+              <NavLink to="/resources/blogs" onClick={handleLinkClick}>Blogs</NavLink>
+              <NavLink to="/resources/pr-news" onClick={handleLinkClick}>PR/News</NavLink>
+              <NavLink to="/resources/case-studies" onClick={handleLinkClick}>Case Studies</NavLink>
+            </div>
+          </div>
+
+          <div className={`nav-item-dropdown ${openDropdown === 'company' ? 'mobile-expanded' : ''}`}>
+            <span onClick={() => { if (window.innerWidth < 992) setOpenDropdown(openDropdown === 'company' ? null : 'company') }} style={{ color: '#ccc', cursor: 'pointer', fontFamily: "'Barlow Condensed', sans-serif", fontSize: '14px', fontWeight: 600, letterSpacing: '0.1em' }}>Company <i className="fa fa-chevron-down" style={{ fontSize: '10px', marginLeft: '4px' }}></i></span>
+            <div className="dropdown-content">
+              <NavLink to="/about-us" onClick={handleLinkClick}>About Us</NavLink>
+              <NavLink to="/contact-us" onClick={handleLinkClick}>Contact Us</NavLink>
+              <NavLink to="/careers" onClick={handleLinkClick}>Careers</NavLink>
+              <NavLink to="/privacy-policy" onClick={handleLinkClick}>Privacy Policy</NavLink>
+              <NavLink to="/terms-of-use" onClick={handleLinkClick}>Terms and Condition</NavLink>
+            </div>
+          </div>
+
+          {/* Mobile Auth Links */}
+          <div className="mobile-auth-links">
+            <div style={{ height: '1px', backgroundColor: 'rgba(255,255,255,0.1)', margin: '16px 0' }}></div>
+            {!token ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <NavLink to="/login" onClick={handleLinkClick} style={{ color: '#fff', border: '1px solid #fff', textAlign: 'center', padding: '10px 16px', borderRadius: '4px', textDecoration: 'none', fontWeight: 'bold' }}>Sign In</NavLink>
+                <NavLink to="/register" onClick={handleLinkClick} style={{ backgroundColor: '#0A7C6E', color: '#fff', border: '1px solid #0A7C6E', textAlign: 'center', padding: '10px 16px', borderRadius: '4px', textDecoration: 'none', fontWeight: 'bold' }}>Register Free</NavLink>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <NavLink to="/dashboard" onClick={handleLinkClick} style={{ color: '#ccc', textDecoration: 'none', fontFamily: "'Barlow Condensed', sans-serif", fontSize: '14px', fontWeight: 600, letterSpacing: '0.1em' }}><i className="fa fa-home" style={{ marginRight: '8px' }}></i> Dashboard</NavLink>
+                <NavLink to="/edit-profile" onClick={handleLinkClick} style={{ color: '#ccc', textDecoration: 'none', fontFamily: "'Barlow Condensed', sans-serif", fontSize: '14px', fontWeight: 600, letterSpacing: '0.1em' }}><i className="fa fa-user-circle" style={{ marginRight: '8px' }}></i> Edit Profile</NavLink>
+                <NavLink to="/payment-history" onClick={handleLinkClick} style={{ color: '#ccc', textDecoration: 'none', fontFamily: "'Barlow Condensed', sans-serif", fontSize: '14px', fontWeight: 600, letterSpacing: '0.1em' }}><i className="fa fa-credit-card" style={{ marginRight: '8px' }}></i> Payment History</NavLink>
+                <NavLink to="/notifications" onClick={handleLinkClick} style={{ color: '#ccc', textDecoration: 'none', fontFamily: "'Barlow Condensed', sans-serif", fontSize: '14px', fontWeight: 600, letterSpacing: '0.1em' }}>
+                  <i className="fa fa-bell" style={{ marginRight: '8px' }}></i> Notifications
+                  {unreadCount > 0 && <span style={{ marginLeft: '8px', backgroundColor: '#dc3545', color: '#fff', borderRadius: '50%', padding: '2px 6px', fontSize: '10px' }}>{unreadCount}</span>}
+                </NavLink>
+                <button
+                  onClick={async () => {
+                    try {
+                      handleLinkClick()
+                      await submit(
+                        `api/logout/${userId}`,
+                        {},
+                        { method: 'POST' },
+                      )
+                      dispatch(logOut())
+                      navigate('/login')
+                    } catch (error) {
+                      console.error('Logout error:', error)
+                    }
+                  }}
+                  style={{ color: '#ff6b6b', background: 'none', border: 'none', padding: 0, textAlign: 'left', fontFamily: "'Barlow Condensed', sans-serif", fontSize: '14px', fontWeight: 600, letterSpacing: '0.1em', cursor: 'pointer' }}
+                >
+                  <i className="fa fa-sign-out" style={{ marginRight: '8px' }}></i> Logout
+                </button>
+              </div>
+            )}
+          </div>
         </nav>
       </div>
 
@@ -196,12 +325,12 @@ function Header() {
         className="mobile-menu-btn"
         onClick={toggleMobileMenu}
         aria-label="Toggle menu"
-        style={{ display: 'none', background: 'none', border: 'none', cursor: 'pointer', color: '#fff' }}
+        style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#fff', fontSize: '20px' }}
       >
-        <i className="fa fa-bars"></i>
+        <i className={`fa ${isMobileOpen ? 'fa-times' : 'fa-bars'}`}></i>
       </button>
 
-      <div className="nav-right" style={{ display: token && isMobileOpen ? 'flex' : undefined }}>
+      <div className="nav-right">
         {!token ? (
           <>
             <NavLink to="/login" className="btn-nav-ghost" style={{ color: '#fff', borderColor: '#fff' }}>Sign In</NavLink>

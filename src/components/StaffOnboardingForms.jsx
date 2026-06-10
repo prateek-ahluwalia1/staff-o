@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
+import { useSelector } from "react-redux";
 import { toast } from "react-toastify";
 import PDFGenerator from "../utils/PDFGenerator";
 import { apiURL } from "../utils/exports";
@@ -13,9 +14,12 @@ const SectionTitle = ({ children, className = "" }) => (
 
 const ActionBar = ({ loading, saveLabel, disabled }) => (
     <div className="d-flex justify-content-end pt-3 border-top mt-4">
-        <button type="submit" className="btn btn-primary-custom fw-bold px-4"
+        <button
+            type="submit"
+            className="btn btn-primary-custom fw-bold px-4"
             style={{ color: disabled ? "#ccc" : "#fff" }}
-            disabled={loading || disabled}>
+            disabled={loading || disabled}
+        >
             {loading ? "Saving..." : saveLabel}
         </button>
     </div>
@@ -42,12 +46,10 @@ const AddressAutocomplete = ({ value, name, onChange, placeholder, required }) =
 
             listener = autocomplete.addListener("place_changed", () => {
                 const place = autocomplete.getPlace();
-
                 if (!place.geometry || !place.formatted_address) {
                     toast.error("Please select a valid address from the dropdown suggestions.");
                     return;
                 }
-
                 const event = { target: { name, value: place.formatted_address, type: "text" } };
                 onChange(event);
             });
@@ -84,6 +86,7 @@ const AddressAutocomplete = ({ value, name, onChange, placeholder, required }) =
     );
 };
 
+// ─── TFN DECLARATION FORM (centered labels for selects & radios) ───────────
 const TfnDeclarationForm = ({ values, loading, onChange, onSubmit, dataModified }) => (
     <form onSubmit={onSubmit} className="animate__animated animate__fadeIn">
         <SectionTitle>Tax File Number</SectionTitle>
@@ -93,9 +96,9 @@ const TfnDeclarationForm = ({ values, loading, onChange, onSubmit, dataModified 
         </div>
 
         <SectionTitle className="mt-4">Personal Details</SectionTitle>
-        <div className="row g-3 mb-3">
+        <div className="row g-3 mb-3 align-items-center">
             <div className="col-md-2">
-                <label className="form-label small fw-bold text-muted">Title <span className="text-danger">*</span></label>
+                <label className="form-label small fw-bold text-muted mb-0">Title <span className="text-danger">*</span></label>
                 <select className="form-select" name="title" value={values.title} onChange={onChange} required>
                     <option value="" disabled>Select</option>
                     <option value="Mr">Mr</option>
@@ -128,55 +131,79 @@ const TfnDeclarationForm = ({ values, loading, onChange, onSubmit, dataModified 
         </div>
 
         <SectionTitle className="mt-4">Employment</SectionTitle>
-        <div className="mb-4">
-            <label className="form-label small fw-bold text-muted d-block">Employment Type <span className="text-danger">*</span></label>
-            <div className="form-check form-check-inline">
-                <input className="form-check-input" type="radio" name="basis" value="full-time" checked={values.basis === "full-time"} onChange={onChange} required />
-                <label className="form-check-label">Full-time</label>
+        {/* Horizontal layout for employment type label + radio group */}
+        <div className="row align-items-center mb-4">
+            <div className="col-md-3">
+                <label className="form-label small fw-bold text-muted mb-0">Employment Type <span className="text-danger">*</span></label>
             </div>
-            <div className="form-check form-check-inline">
-                <input className="form-check-input" type="radio" name="basis" value="part-time" checked={values.basis === "part-time"} onChange={onChange} />
-                <label className="form-check-label">Part-time</label>
-            </div>
-            <div className="form-check form-check-inline">
-                <input className="form-check-input" type="radio" name="basis" value="casual" checked={values.basis === "casual"} onChange={onChange} />
-                <label className="form-check-label">Casual</label>
+            <div className="col-md-9">
+                <div className="d-flex flex-wrap gap-3 align-items-center">
+                    <div className="form-check">
+                        <input className="form-check-input" type="radio" name="basis" value="full-time" checked={values.basis === "full-time"} onChange={onChange} required />
+                        <label className="form-check-label">Full-time</label>
+                    </div>
+                    <div className="form-check">
+                        <input className="form-check-input" type="radio" name="basis" value="part-time" checked={values.basis === "part-time"} onChange={onChange} />
+                        <label className="form-check-label">Part-time</label>
+                    </div>
+                    <div className="form-check">
+                        <input className="form-check-input" type="radio" name="basis" value="casual" checked={values.basis === "casual"} onChange={onChange} />
+                        <label className="form-check-label">Casual</label>
+                    </div>
+                </div>
             </div>
         </div>
 
         <SectionTitle className="mt-4">Declarations</SectionTitle>
-        <div className="row g-3 mb-4">
+        {/* Horizontal layouts for declaration radio groups */}
+        <div className="row align-items-center mb-3">
             <div className="col-md-4">
-                <label className="form-label small fw-bold text-muted d-block">Australian resident for tax? <span className="text-danger">*</span></label>
-                <div className="form-check form-check-inline">
-                    <input className="form-check-input" type="radio" name="aus_res" value="yes" checked={values.aus_res === "yes"} onChange={onChange} required />
-                    <label className="form-check-label">Yes</label>
-                </div>
-                <div className="form-check form-check-inline">
-                    <input className="form-check-input" type="radio" name="aus_res" value="no" checked={values.aus_res === "no"} onChange={onChange} />
-                    <label className="form-check-label">No</label>
+                <label className="form-label small fw-bold text-muted mb-0">Australian resident for tax? <span className="text-danger">*</span></label>
+            </div>
+            <div className="col-md-8">
+                <div className="d-flex gap-3 align-items-center">
+                    <div className="form-check">
+                        <input className="form-check-input" type="radio" name="aus_res" value="yes" checked={values.aus_res === "yes"} onChange={onChange} required />
+                        <label className="form-check-label">Yes</label>
+                    </div>
+                    <div className="form-check">
+                        <input className="form-check-input" type="radio" name="aus_res" value="no" checked={values.aus_res === "no"} onChange={onChange} />
+                        <label className="form-check-label">No</label>
+                    </div>
                 </div>
             </div>
+        </div>
+        <div className="row align-items-center mb-3">
             <div className="col-md-4">
-                <label className="form-label small fw-bold text-muted d-block">Claim tax-free threshold? <span className="text-danger">*</span></label>
-                <div className="form-check form-check-inline">
-                    <input className="form-check-input" type="radio" name="threshold" value="yes" checked={values.threshold === "yes"} onChange={onChange} required />
-                    <label className="form-check-label">Yes</label>
-                </div>
-                <div className="form-check form-check-inline">
-                    <input className="form-check-input" type="radio" name="threshold" value="no" checked={values.threshold === "no"} onChange={onChange} />
-                    <label className="form-check-label">No</label>
+                <label className="form-label small fw-bold text-muted mb-0">Claim tax-free threshold? <span className="text-danger">*</span></label>
+            </div>
+            <div className="col-md-8">
+                <div className="d-flex gap-3 align-items-center">
+                    <div className="form-check">
+                        <input className="form-check-input" type="radio" name="threshold" value="yes" checked={values.threshold === "yes"} onChange={onChange} required />
+                        <label className="form-check-label">Yes</label>
+                    </div>
+                    <div className="form-check">
+                        <input className="form-check-input" type="radio" name="threshold" value="no" checked={values.threshold === "no"} onChange={onChange} />
+                        <label className="form-check-label">No</label>
+                    </div>
                 </div>
             </div>
+        </div>
+        <div className="row align-items-center mb-4">
             <div className="col-md-4">
-                <label className="form-label small fw-bold text-muted d-block">HELP / VSL / FS / SSL debt? <span className="text-danger">*</span></label>
-                <div className="form-check form-check-inline">
-                    <input className="form-check-input" type="radio" name="help" value="yes" checked={values.help === "yes"} onChange={onChange} required />
-                    <label className="form-check-label">Yes</label>
-                </div>
-                <div className="form-check form-check-inline">
-                    <input className="form-check-input" type="radio" name="help" value="no" checked={values.help === "no"} onChange={onChange} />
-                    <label className="form-check-label">No</label>
+                <label className="form-label small fw-bold text-muted mb-0">HELP / VSL / FS / SSL debt? <span className="text-danger">*</span></label>
+            </div>
+            <div className="col-md-8">
+                <div className="d-flex gap-3 align-items-center">
+                    <div className="form-check">
+                        <input className="form-check-input" type="radio" name="help" value="yes" checked={values.help === "yes"} onChange={onChange} required />
+                        <label className="form-check-label">Yes</label>
+                    </div>
+                    <div className="form-check">
+                        <input className="form-check-input" type="radio" name="help" value="no" checked={values.help === "no"} onChange={onChange} />
+                        <label className="form-check-label">No</label>
+                    </div>
                 </div>
             </div>
         </div>
@@ -197,6 +224,7 @@ const TfnDeclarationForm = ({ values, loading, onChange, onSubmit, dataModified 
     </form>
 );
 
+// ─── SUPERANNUATION FORM (centered labels for radios) ──────────────────────
 const SuperannuationForm = ({ values, loading, onChange, onSubmit, dataModified }) => (
     <form onSubmit={onSubmit} className="animate__animated animate__fadeIn">
         <SectionTitle>Employee Details</SectionTitle>
@@ -212,14 +240,16 @@ const SuperannuationForm = ({ values, loading, onChange, onSubmit, dataModified 
         </div>
 
         <SectionTitle className="mt-4">Fund Choice <span className="text-danger">*</span></SectionTitle>
-        <div className="mb-4">
-            <div className="form-check mb-2">
-                <input className="form-check-input" type="radio" name="fund_choice" value="own" checked={values.fund_choice === "own"} onChange={onChange} required />
-                <label className="form-check-label">I nominate my own super fund</label>
-            </div>
-            <div className="form-check">
-                <input className="form-check-input" type="radio" name="fund_choice" value="employer" checked={values.fund_choice === "employer"} onChange={onChange} />
-                <label className="form-check-label">Use the employer's default super fund</label>
+        <div className="row align-items-center mb-4">
+            <div className="col-md-12">
+                <div className="form-check mb-2">
+                    <input className="form-check-input" type="radio" name="fund_choice" value="own" checked={values.fund_choice === "own"} onChange={onChange} required />
+                    <label className="form-check-label">I nominate my own super fund</label>
+                </div>
+                <div className="form-check">
+                    <input className="form-check-input" type="radio" name="fund_choice" value="employer" checked={values.fund_choice === "employer"} onChange={onChange} />
+                    <label className="form-check-label">Use the employer's default super fund</label>
+                </div>
             </div>
         </div>
 
@@ -281,6 +311,7 @@ const SuperannuationForm = ({ values, loading, onChange, onSubmit, dataModified 
     </form>
 );
 
+// ─── EMPLOYEE ONBOARDING FORM (centered labels for radios & checkboxes) ─────
 const EmployeeOnboardingForm = ({ values, loading, onChange, onSubmit, dataModified, onDocUpload }) => {
     const resolveDocUrl = (pathOrUrl) => {
         if (!pathOrUrl) return "";
@@ -331,7 +362,7 @@ const EmployeeOnboardingForm = ({ values, loading, onChange, onSubmit, dataModif
 
                 <div className="col-md-12">
                     <label className="form-label small fw-bold text-muted">Upload Passport Document <span className="text-danger">*</span></label>
-                    <div className="d-flex align-items-center gap-3">
+                    <div className="d-flex align-items-center gap-3 flex-wrap">
                         <input type="file" className="form-control" style={{ maxWidth: "300px" }} accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" onChange={(e) => onDocUpload(e, "passport_doc")} />
                         {values.passport_doc && (
                             <a href={resolveDocUrl(values.passport_doc)} target="_blank" rel="noreferrer" className="text-primary small fw-bold text-decoration-none">
@@ -341,23 +372,32 @@ const EmployeeOnboardingForm = ({ values, loading, onChange, onSubmit, dataModif
                     </div>
                 </div>
 
+                {/* Work Rights radio group - horizontal label */}
                 <div className="col-md-12">
-                    <label className="form-label small fw-bold text-muted d-block mt-2 mb-3">Work Rights in Australia <span className="text-danger">*</span></label>
-                    <div className="form-check">
-                        <input className="form-check-input" type="radio" name="work" id="work_citizen" value="citizen" checked={values.work === "citizen"} onChange={onChange} required />
-                        <label className="form-check-label" htmlFor="work_citizen">Australian Citizen / Permanent Resident</label>
-                    </div>
-                    <div className="form-check mt-2">
-                        <input className="form-check-input" type="radio" name="work" id="work_student" value="student" checked={values.work === "student"} onChange={onChange} />
-                        <label className="form-check-label" htmlFor="work_student">Student Visa</label>
-                    </div>
-                    <div className="form-check mt-2">
-                        <input className="form-check-input" type="radio" name="work" id="work_temporary" value="temporary" checked={values.work === "temporary"} onChange={onChange} />
-                        <label className="form-check-label" htmlFor="work_temporary">Temporary Visa Holder</label>
-                    </div>
-                    <div className="form-check mt-2">
-                        <input className="form-check-input" type="radio" name="work" id="work_other" value="other" checked={values.work === "other"} onChange={onChange} />
-                        <label className="form-check-label" htmlFor="work_other">Other Visa (please specify)</label>
+                    <div className="row align-items-center mt-2">
+                        <div className="col-md-3">
+                            <label className="form-label small fw-bold text-muted mb-0">Work Rights in Australia <span className="text-danger">*</span></label>
+                        </div>
+                        <div className="col-md-9">
+                            <div className="d-flex flex-column gap-2">
+                                <div className="form-check">
+                                    <input className="form-check-input" type="radio" name="work" id="work_citizen" value="citizen" checked={values.work === "citizen"} onChange={onChange} required />
+                                    <label className="form-check-label" htmlFor="work_citizen">Australian Citizen / Permanent Resident</label>
+                                </div>
+                                <div className="form-check">
+                                    <input className="form-check-input" type="radio" name="work" id="work_student" value="student" checked={values.work === "student"} onChange={onChange} />
+                                    <label className="form-check-label" htmlFor="work_student">Student Visa</label>
+                                </div>
+                                <div className="form-check">
+                                    <input className="form-check-input" type="radio" name="work" id="work_temporary" value="temporary" checked={values.work === "temporary"} onChange={onChange} />
+                                    <label className="form-check-label" htmlFor="work_temporary">Temporary Visa Holder</label>
+                                </div>
+                                <div className="form-check">
+                                    <input className="form-check-input" type="radio" name="work" id="work_other" value="other" checked={values.work === "other"} onChange={onChange} />
+                                    <label className="form-check-label" htmlFor="work_other">Other Visa (please specify)</label>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -445,7 +485,7 @@ const EmployeeOnboardingForm = ({ values, loading, onChange, onSubmit, dataModif
 
                     <div className="mt-3">
                         <label className="form-label small fw-bold text-muted">Upload Security Licence Document <span className="text-danger">*</span></label>
-                        <div className="d-flex align-items-center gap-3">
+                        <div className="d-flex align-items-center gap-3 flex-wrap">
                             <input type="file" className="form-control" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" onChange={(e) => onDocUpload(e, "security_license_doc")} />
                         </div>
                         {values.security_license_doc && (
@@ -461,14 +501,13 @@ const EmployeeOnboardingForm = ({ values, loading, onChange, onSubmit, dataModif
                     <input type="date" className="form-control" name="o_seclicexp" value={values.o_seclicexp} onChange={onChange} required />
                 </div>
 
-                {/* FIRST AID - NOW OPTIONAL */}
                 <div className="col-md-6 mt-4">
                     <label className="form-label small fw-bold text-muted">First Aid Certificate No.</label>
                     <input type="text" className="form-control" name="o_fa" placeholder="FA-001234" maxLength="50" value={values.o_fa} onChange={onChange} />
 
                     <div className="mt-3">
                         <label className="form-label small fw-bold text-muted">Upload First Aid Document</label>
-                        <div className="d-flex align-items-center gap-3">
+                        <div className="d-flex align-items-center gap-3 flex-wrap">
                             <input type="file" className="form-control" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" onChange={(e) => onDocUpload(e, "first_aid_doc")} />
                         </div>
                         {values.first_aid_doc && (
@@ -502,7 +541,7 @@ const EmployeeOnboardingForm = ({ values, loading, onChange, onSubmit, dataModif
     );
 };
 
-
+// ─── HELPER FUNCTIONS ───────────────────────────────────────────────────────
 const getTodayDate = () => {
     const today = new Date();
     const offset = today.getTimezoneOffset() * 60000;
@@ -515,70 +554,77 @@ const toDateValue = (value) => {
     return String(value).split("T")[0];
 };
 
-const normalizeTfnData = (data) => ({
-    tfn: data?.tfn ?? "",
-    title: data?.title ?? "",
-    first_name: data?.first_name ?? "",
-    surname: data?.surname ?? "",
-    prev_name: data?.previous_name ?? data?.prev_name ?? "",
-    dob: toDateValue(data?.dob),
-    address: data?.address ?? "",
-    basis: data?.basis_of_payment ?? data?.basis ?? "casual",
-    aus_res: String(data?.australian_resident ?? data?.aus_res ?? "").toLowerCase() === "1" ? "yes" : String(data?.australian_resident ?? data?.aus_res ?? "").toLowerCase() === "yes" ? "yes" : "no",
-    threshold: String(data?.claim_threshold ?? data?.threshold ?? "").toLowerCase() === "1" ? "yes" : String(data?.claim_threshold ?? data?.threshold ?? "").toLowerCase() === "yes" ? "yes" : "no",
-    help: String(data?.help_debt ?? data?.help ?? "").toLowerCase() === "1" ? "yes" : String(data?.help_debt ?? data?.help ?? "").toLowerCase() === "yes" ? "yes" : "no",
-    sig1: data?.signature ?? data?.sig1 ?? "",
-    date1: toDateValue(data?.signed_date ?? data?.date1),
+// ─── NORMALIZATION FUNCTIONS (merging userdata) ─────────────────────────────
+const normalizeTfnData = (apiData, userdata) => {
+    return {
+        tfn: apiData?.tfn ?? "",
+        title: apiData?.title ?? "",
+        first_name: apiData?.first_name ?? "",
+        surname: apiData?.surname ?? "",
+        prev_name: apiData?.previous_name ?? apiData?.prev_name ?? "",
+        dob: apiData?.dob ? toDateValue(apiData.dob) : (userdata?.staff?.date_of_birth ? toDateValue(userdata.staff.date_of_birth) : getTodayDate()),
+        address: apiData?.address ?? userdata?.address ?? "",
+        basis: apiData?.basis_of_payment ?? apiData?.basis ?? "casual",
+        aus_res: String(apiData?.australian_resident ?? apiData?.aus_res ?? "").toLowerCase() === "1" ? "yes" : String(apiData?.australian_resident ?? apiData?.aus_res ?? "").toLowerCase() === "yes" ? "yes" : "no",
+        threshold: String(apiData?.claim_threshold ?? apiData?.threshold ?? "").toLowerCase() === "1" ? "yes" : String(apiData?.claim_threshold ?? apiData?.threshold ?? "").toLowerCase() === "yes" ? "yes" : "no",
+        help: String(apiData?.help_debt ?? apiData?.help ?? "").toLowerCase() === "1" ? "yes" : String(apiData?.help_debt ?? apiData?.help ?? "").toLowerCase() === "yes" ? "yes" : "no",
+        sig1: apiData?.signature ?? apiData?.sig1 ?? "",
+        date1: apiData?.signed_date ? toDateValue(apiData.signed_date) : getTodayDate(),
+    };
+};
+
+const normalizeSuperData = (apiData, userdata) => ({
+    s_name: apiData?.full_name ?? apiData?.s_name ?? userdata?.name ?? "",
+    s_empno: apiData?.employee_number ?? apiData?.s_empno ?? "",
+    fund_choice: apiData?.fund_choice ?? "employer",
+    s_fundname: apiData?.fund_name ?? apiData?.s_fundname ?? "",
+    s_fundabn: apiData?.fund_abn ?? apiData?.s_fundabn ?? "",
+    s_usi: apiData?.fund_usi ?? apiData?.s_usi ?? "",
+    s_member: apiData?.member_account ?? apiData?.s_member ?? "",
+    super_confirm: apiData?.super_confirm ?? false,
+    sig2: apiData?.signature ?? apiData?.sig2 ?? "",
+    date2: apiData?.signed_date ? toDateValue(apiData.signed_date) : getTodayDate(),
 });
 
-const normalizeSuperData = (data) => ({
-    s_name: data?.full_name ?? data?.s_name ?? "",
-    s_empno: data?.employee_number ?? data?.s_empno ?? "",
-    fund_choice: data?.fund_choice ?? "employer",
-    s_fundname: data?.fund_name ?? data?.s_fundname ?? "",
-    s_fundabn: data?.fund_abn ?? data?.s_fundabn ?? "",
-    s_usi: data?.fund_usi ?? data?.s_usi ?? "",
-    s_member: data?.member_account ?? data?.s_member ?? "",
-    super_confirm: data?.super_confirm ?? false,
-    sig2: data?.signature ?? data?.sig2 ?? "",
-    date2: toDateValue(data?.signed_date ?? data?.date2),
-});
-
-const normalizeOnboardData = (data) => ({
-    o_name: data?.full_name ?? data?.o_name ?? "",
-    o_dob: toDateValue(data?.dob ?? data?.o_dob),
-    o_addr: data?.address ?? data?.o_addr ?? "",
-    o_phone: data?.mobile ?? data?.o_phone ?? "",
-    o_email: data?.email ?? data?.o_email ?? "",
-    o_passport: data?.passport_number ?? data?.o_passport ?? "",
-    o_pcountry: data?.passport_country ?? data?.o_pcountry ?? "",
-    o_pexpiry: toDateValue(data?.passport_expiry ?? data?.o_pexpiry),
-    work: data?.work_rights ?? data?.work ?? "citizen",
-    o_visa_type: data?.visa_type ?? data?.o_visa_type ?? "",
-    passport_doc: data?.passport_doc ?? "",
-    chk_primary: Boolean(data?.id_checks?.primary_id ?? data?.chk_primary ?? false),
-    chk_driver: Boolean(data?.id_checks?.drivers_license ?? data?.chk_driver ?? false),
-    chk_security: Boolean(data?.id_checks?.security_license ?? data?.chk_security ?? false),
-    chk_medicare: Boolean(data?.id_checks?.medicare_or_utility ?? data?.chk_medicare ?? false),
-    o_bank: data?.bank_name ?? data?.o_bank ?? "",
-    o_bsb: data?.bsb ?? data?.o_bsb ?? "",
-    o_acct: data?.account_number ?? data?.o_acct ?? "",
-    o_tfn: data?.tfn ?? data?.o_tfn ?? "",
-    o_superfund: data?.super_fund ?? data?.o_superfund ?? "",
-    o_superusi: data?.super_usi ?? data?.o_superusi ?? "",
-    o_member: data?.super_member ?? data?.o_member ?? "",
-    o_seclic: data?.security_license ?? data?.o_seclic ?? "",
-    o_seclicexp: toDateValue(data?.security_license_expiry ?? data?.o_seclicexp),
-    security_license_doc: data?.security_license_doc ?? "",
-    o_fa: data?.first_aid_cert ?? data?.o_fa ?? "",
-    o_faexp: toDateValue(data?.first_aid_expiry ?? data?.o_faexp),
-    first_aid_doc: data?.first_aid_doc ?? data?.first_aid ?? "",
-    sig3: data?.signature ?? data?.sig3 ?? "",
-    date3: toDateValue(data?.signed_date ?? data?.date3),
-});
+const normalizeOnboardData = (apiData, userdata) => {
+    const staff = userdata?.staff || {};
+    return {
+        o_name: apiData?.full_name ?? apiData?.o_name ?? userdata?.name ?? "",
+        o_dob: apiData?.dob ? toDateValue(apiData.dob) : (staff?.date_of_birth ? toDateValue(staff.date_of_birth) : getTodayDate()),
+        o_addr: apiData?.address ?? apiData?.o_addr ?? userdata?.address ?? "",
+        o_phone: apiData?.mobile ?? apiData?.o_phone ?? staff?.phone ?? userdata?.phone ?? "",
+        o_email: apiData?.email ?? apiData?.o_email ?? userdata?.email ?? "",
+        o_passport: apiData?.passport_number ?? apiData?.o_passport ?? "",
+        o_pcountry: apiData?.passport_country ?? apiData?.o_pcountry ?? "",
+        o_pexpiry: apiData?.passport_expiry ? toDateValue(apiData.passport_expiry) : "",
+        work: apiData?.work_rights ?? apiData?.work ?? "citizen",
+        o_visa_type: apiData?.visa_type ?? apiData?.o_visa_type ?? "",
+        passport_doc: apiData?.passport_doc ?? "",
+        chk_primary: Boolean(apiData?.id_checks?.primary_id ?? apiData?.chk_primary ?? false),
+        chk_driver: Boolean(apiData?.id_checks?.drivers_license ?? apiData?.chk_driver ?? false),
+        chk_security: Boolean(apiData?.id_checks?.security_license ?? apiData?.chk_security ?? false),
+        chk_medicare: Boolean(apiData?.id_checks?.medicare_or_utility ?? apiData?.chk_medicare ?? false),
+        o_bank: apiData?.bank_name ?? apiData?.o_bank ?? "",
+        o_bsb: apiData?.bsb ?? apiData?.o_bsb ?? "",
+        o_acct: apiData?.account_number ?? apiData?.o_acct ?? "",
+        o_tfn: apiData?.tfn ?? apiData?.o_tfn ?? "",
+        o_superfund: apiData?.super_fund ?? apiData?.o_superfund ?? "",
+        o_superusi: apiData?.super_usi ?? apiData?.o_superusi ?? "",
+        o_member: apiData?.super_member ?? apiData?.o_member ?? "",
+        o_seclic: apiData?.security_license ?? apiData?.o_seclic ?? staff?.security_license_no ?? "",
+        o_seclicexp: apiData?.security_license_expiry ? toDateValue(apiData.security_license_expiry) : "",
+        security_license_doc: apiData?.security_license_doc ?? "",
+        o_fa: apiData?.first_aid_cert ?? apiData?.o_fa ?? "",
+        o_faexp: apiData?.first_aid_expiry ? toDateValue(apiData.first_aid_expiry) : "",
+        first_aid_doc: apiData?.first_aid_doc ?? "",
+        sig3: apiData?.signature ?? apiData?.sig3 ?? "",
+        date3: apiData?.signed_date ? toDateValue(apiData.signed_date) : getTodayDate(),
+    };
+};
 
 // ─── MAIN COMPONENT ──────────────────────────────────────────────────────────
 const StaffOnboardingForms = ({ submit, userId, onProfileUpdate }) => {
+    const { userdata } = useSelector((state) => state.auth);
     const [subTab, setSubTab] = useState(0);
     const [loading, setLoading] = useState(false);
     const [dataModified, setDataModified] = useState(false);
@@ -588,9 +634,9 @@ const StaffOnboardingForms = ({ submit, userId, onProfileUpdate }) => {
     const [originalSuperForm, setOriginalSuperForm] = useState(null);
     const [originalOnboardForm, setOriginalOnboardForm] = useState(null);
 
-    const [tfnForm, setTfnForm] = useState(normalizeTfnData({}));
-    const [superForm, setSuperForm] = useState(normalizeSuperData({}));
-    const [onboardForm, setOnboardForm] = useState(normalizeOnboardData({}));
+    const [tfnForm, setTfnForm] = useState(() => normalizeTfnData({}, userdata));
+    const [superForm, setSuperForm] = useState(() => normalizeSuperData({}, userdata));
+    const [onboardForm, setOnboardForm] = useState(() => normalizeOnboardData({}, userdata));
 
     const fetchFormData = useCallback(async (formType) => {
         try {
@@ -600,15 +646,15 @@ const StaffOnboardingForms = ({ submit, userId, onProfileUpdate }) => {
 
             if (fetchedData) {
                 if (formType === "tfn") {
-                    const normalized = normalizeTfnData(fetchedData);
+                    const normalized = normalizeTfnData(fetchedData, userdata);
                     setTfnForm(normalized);
                     setOriginalTfnForm(normalized);
                 } else if (formType === "superannuation") {
-                    const normalized = normalizeSuperData(fetchedData);
+                    const normalized = normalizeSuperData(fetchedData, userdata);
                     setSuperForm(normalized);
                     setOriginalSuperForm(normalized);
                 } else if (formType === "onboarding") {
-                    const normalized = normalizeOnboardData(fetchedData);
+                    const normalized = normalizeOnboardData(fetchedData, userdata);
                     setOnboardForm(normalized);
                     setOriginalOnboardForm(normalized);
                 }
@@ -616,7 +662,7 @@ const StaffOnboardingForms = ({ submit, userId, onProfileUpdate }) => {
         } catch (error) {
             console.error(`Error fetching ${formType} form data:`, error);
         }
-    }, [userId, submit]);
+    }, [userId, submit, userdata]);
 
     useEffect(() => {
         if (userId) {
@@ -652,30 +698,21 @@ const StaffOnboardingForms = ({ submit, userId, onProfileUpdate }) => {
         setDataModified(JSON.stringify(updatedForm) !== JSON.stringify(originalOnboardForm));
     };
 
-    // Correctly captures the path and assigns it to specific form fields WITHOUT calling guard-add-documents
     const handleDocUpload = async (e, fieldName) => {
         const file = e.target.files[0];
         if (!file) return;
-
         if (file.size > 10 * 1024 * 1024) {
             toast.error("File is too large. Please upload a file smaller than 10MB.");
             return;
         }
-
         const fd = new FormData();
         fd.append("file", file);
         fd.append("folder", "staff_documents");
-
         try {
-            // Upload the physical file to the server
             const res = await submit("api/upload-file", fd, { method: "POST" });
-
             if (res?.success && res?.path) {
-                const filePath = res.path;
-
-                // Only update the local React state. Wait for form submission to save to database.
                 setOnboardForm((prev) => {
-                    const updatedForm = { ...prev, [fieldName]: filePath };
+                    const updatedForm = { ...prev, [fieldName]: res.path };
                     setDataModified(JSON.stringify(updatedForm) !== JSON.stringify(originalOnboardForm));
                     return updatedForm;
                 });
@@ -728,7 +765,6 @@ const StaffOnboardingForms = ({ submit, userId, onProfileUpdate }) => {
             endpoint = "api/onboarding";
             pdfType = "onboarding";
             fileName = `Employee_Onboarding_${userId}_${new Date().getTime()}.pdf`;
-
             payload = {
                 user_id: userId,
                 full_name: onboardForm.o_name,
@@ -743,14 +779,23 @@ const StaffOnboardingForms = ({ submit, userId, onProfileUpdate }) => {
                 visa_type: onboardForm.work === "other" ? onboardForm.o_visa_type : "",
                 passport_doc: onboardForm.passport_doc,
                 id_checks: {
-                    primary_id: onboardForm.chk_primary, drivers_license: onboardForm.chk_driver,
-                    security_license: onboardForm.chk_security, medicare_or_utility: onboardForm.chk_medicare
+                    primary_id: onboardForm.chk_primary,
+                    drivers_license: onboardForm.chk_driver,
+                    security_license: onboardForm.chk_security,
+                    medicare_or_utility: onboardForm.chk_medicare
                 },
-                bank_name: onboardForm.o_bank, bsb: onboardForm.o_bsb, account_number: onboardForm.o_acct, tfn: onboardForm.o_tfn,
-                super_fund: onboardForm.o_superfund, super_usi: onboardForm.o_superusi, super_member: onboardForm.o_member,
-                security_license: onboardForm.o_seclic, security_license_expiry: onboardForm.o_seclicexp,
+                bank_name: onboardForm.o_bank,
+                bsb: onboardForm.o_bsb,
+                account_number: onboardForm.o_acct,
+                tfn: onboardForm.o_tfn,
+                super_fund: onboardForm.o_superfund,
+                super_usi: onboardForm.o_superusi,
+                super_member: onboardForm.o_member,
+                security_license: onboardForm.o_seclic,
+                security_license_expiry: onboardForm.o_seclicexp,
                 security_license_doc: onboardForm.security_license_doc,
-                first_aid_cert: onboardForm.o_fa, first_aid_expiry: onboardForm.o_faexp,
+                first_aid_cert: onboardForm.o_fa,
+                first_aid_expiry: onboardForm.o_faexp,
                 first_aid_doc: onboardForm.first_aid_doc,
                 signature: onboardForm.sig3,
                 signed_date: onboardForm.date3
@@ -766,40 +811,18 @@ const StaffOnboardingForms = ({ submit, userId, onProfileUpdate }) => {
 
         if (saveSucceeded) {
             toast.success("Form saved successfully!");
-
             if (tabIndex === 0) await fetchFormData("onboarding");
             else if (tabIndex === 1) await fetchFormData("tfn");
             else if (tabIndex === 2) await fetchFormData("superannuation");
-
             setDataModified(false);
-
-            if (typeof onProfileUpdate === "function") {
-                await onProfileUpdate();
-            }
-
+            if (typeof onProfileUpdate === "function") await onProfileUpdate();
             try {
                 let doc;
-                if (tabIndex === 0) {
-                    doc = PDFGenerator.generateEmployeeOnboardingPDF(pdfFormData);
-                } else if (tabIndex === 1) {
-                    doc = PDFGenerator.generateTFNDeclarationPDF(pdfFormData);
-                } else if (tabIndex === 2) {
-                    doc = PDFGenerator.generateSuperannuationPDF(pdfFormData);
-                }
-
-                const uploadPayload = {
-                    user_id: userId,
-                    type: pdfType,
-                    folder: "onboarding_forms",
-                };
-
-                await PDFGenerator.downloadAndUploadPDF(
-                    doc,
-                    fileName,
-                    "api/upload-staff-file",
-                    uploadPayload,
-                    submit
-                );
+                if (tabIndex === 0) doc = PDFGenerator.generateEmployeeOnboardingPDF(pdfFormData);
+                else if (tabIndex === 1) doc = PDFGenerator.generateTFNDeclarationPDF(pdfFormData);
+                else if (tabIndex === 2) doc = PDFGenerator.generateSuperannuationPDF(pdfFormData);
+                const uploadPayload = { user_id: userId, type: pdfType, folder: "onboarding_forms" };
+                await PDFGenerator.downloadAndUploadPDF(doc, fileName, "api/upload-staff-file", uploadPayload, submit);
             } catch (pdfError) {
                 console.error("PDF generation/upload error:", pdfError);
             }

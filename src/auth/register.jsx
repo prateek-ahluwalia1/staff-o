@@ -18,7 +18,12 @@ export default function Register() {
   const dispatch = useDispatch();
   const { submit, loading } = useSubmit();
 
-  const [userType, setUserType] = useState(location.state?.role || "contractor");
+  // FIX: Normalize incoming role to lowercase to ensure it matches your keys perfectly
+  const incomingRole = location.state?.role?.toLowerCase();
+  const validRoles = ["customer", "staff", "contractor"];
+  const [userType, setUserType] = useState(
+    validRoles.includes(incomingRole) ? incomingRole : "contractor"
+  );
 
   const [showPassword, setShowPassword] = useState(false);
   const [showVerifyModal, setShowVerifyModal] = useState(false);
@@ -275,12 +280,11 @@ export default function Register() {
                       />
                       {errors.email && <div className="invalid-feedback" style={{ fontSize: '12px' }}>{errors.email}</div>}
                     </div>
+
                     <div className="col-md-6">
                       <label className="form-label small fw-medium mb-1">
                         Password <span className="text-danger">*</span>
                       </label>
-
-                      {/* The relative container now ONLY wraps the input and the button */}
                       <div className="position-relative">
                         <input
                           type={showPassword ? "text" : "password"}
@@ -302,8 +306,6 @@ export default function Register() {
                           <i className={`fa-solid ${showPassword ? 'fa-eye-slash' : 'fa-eye'}`}></i>
                         </button>
                       </div>
-
-                      {/* The error message sits completely outside the relative wrapper */}
                       {errors.password && (
                         <div className="invalid-feedback d-block" style={{ fontSize: '12px', marginTop: '0.25rem' }}>
                           {errors.password}
@@ -312,6 +314,7 @@ export default function Register() {
                     </div>
                   </div>
 
+                  {/* FIX: Improved Radio Buttons for Account Type */}
                   <div className="mb-3 mt-1">
                     <label className="form-label small fw-medium mb-2">
                       Account Type <span className="text-danger">*</span>
@@ -321,31 +324,39 @@ export default function Register() {
                         { key: "customer", label: "Client" },
                         { key: "staff", label: "Staff" },
                         { key: "contractor", label: "Resource Partner" },
-                      ].map((role) => (
-                        <label
-                          key={role.key}
-                          className={`btn btn-sm rounded-pill px-3 py-1 auth-role-button ${userType === role.key ? "active" : ""}`}
-                          style={{
-                            cursor: "pointer",
-                            transition: "all 0.2s",
-                            fontSize: "13px",
-                            border: userType === role.key ? "2px solid #0A7C6E" : "1px solid #fff",
-                            backgroundColor: "rgba(10, 124, 110, 0.1)",
-                            color: userType === role.key ? "#0A7C6E" : "#fff",
-                          }}
-                        >
-                          <input
-                            type="radio"
-                            name="userRole"
-                            className="visually-hidden"
-                            value={role.key}
-                            checked={userType === role.key}
-                            onChange={() => !loading && setUserType(role.key)}
-                            disabled={loading}
-                          />
-                          {role.label}
-                        </label>
-                      ))}
+                      ].map((role) => {
+                        const isActive = userType === role.key;
+
+                        return (
+                          <label
+                            key={role.key}
+                            className={`btn btn-sm rounded-pill px-3 py-1 auth-role-button ${isActive ? "active" : ""}`}
+                            style={{
+                              cursor: loading ? "not-allowed" : "pointer",
+                              transition: "all 0.2s",
+                              fontSize: "13px",
+                              border: isActive ? "2px solid #0A7C6E" : "1px solid #6c757d",
+                              backgroundColor: isActive ? "rgba(10, 124, 110, 0.1)" : "transparent",
+                              color: isActive ? "#0A7C6E" : "#6c757d",
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "6px"
+                            }}
+                          >
+                            <input
+                              type="radio"
+                              name="userRole"
+                              className="visually-hidden"
+                              value={role.key}
+                              checked={isActive}
+                              onChange={() => !loading && setUserType(role.key)}
+                              disabled={loading}
+                            />
+                            {isActive && <i className="fa-solid fa-circle-check"></i>}
+                            {role.label}
+                          </label>
+                        );
+                      })}
                     </div>
                   </div>
 

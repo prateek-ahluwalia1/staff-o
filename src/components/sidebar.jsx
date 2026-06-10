@@ -106,7 +106,6 @@ const Sidebar = memo(function Sidebar() {
 
   const staffNav = [
     { to: "/dashboard", icon: "fa-solid fa-table-columns", label: "Dashboard" },
-    { to: "/roster", icon: "fa-solid fa-calendar-days", label: "Roster" },
     {
       to: "/my-job-applications",
       icon: "fa-solid fa-clipboard-user",
@@ -221,7 +220,7 @@ const Sidebar = memo(function Sidebar() {
           return (
             <li key={item.label} title={!isExpanded ? item.label : ""}>
               {disabled ? (
-                <Link                  href="/"
+                <Link href="/"
                   onClick={(e) => e.preventDefault()}
                   className="disabled-nav"
                   aria-disabled="true"

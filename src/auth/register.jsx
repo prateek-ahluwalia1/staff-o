@@ -352,7 +352,7 @@ export default function Register() {
                               onChange={() => !loading && setUserType(role.key)}
                               disabled={loading}
                             />
-                            {isActive && <i className="fa-solid fa-circle-check"></i>}
+                            {isActive ? <i className="fa-solid fa-circle-check"></i> : <i className="fa-regular fa-circle"></i>}
                             {role.label}
                           </label>
                         );

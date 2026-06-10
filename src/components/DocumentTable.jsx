@@ -41,7 +41,6 @@ export default function DocumentTable({
   documents,
   onAddFile,
   userType,
-  onVerify,
 }) {
   const processedDocuments = useMemo(() => {
     if (!documents) return [];
@@ -154,26 +153,6 @@ export default function DocumentTable({
                         ) : (
                           <button type="button" onClick={() => onAddFile(doc)} style={{ background: "#f3f4f6", border: "none", color: "#0A7C6E", cursor: "pointer", padding: 6, borderRadius: 6 }}>
                             <i className="fa fa-pencil" aria-hidden="true"></i>
-                          </button>
-                        )}
-
-                        {/* Use 'doc' instead of 'document', and style it nicely */}
-                        {(doc.document_type === "security_license" || doc.document_name === "Security License") && (
-                          <button
-                            type="button"
-                            onClick={() => onVerify(doc)}
-                            style={{
-                              background: "#0A7C6E",
-                              border: "none",
-                              color: "#fff",
-                              cursor: "pointer",
-                              padding: "6px 12px",
-                              borderRadius: "6px",
-                              fontSize: "12px",
-                              fontWeight: "bold"
-                            }}
-                          >
-                            Verify
                           </button>
                         )}
                       </div>

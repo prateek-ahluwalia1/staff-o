@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { NavLink, useNavigate, useLocation } from "react-router-dom"; // Added useLocation
+import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { setToken, setUser } from "../store/slices/authSlice";
 import useSubmit from "../hooks/useSubmit";
@@ -329,6 +329,9 @@ export default function Register() {
                             cursor: "pointer",
                             transition: "all 0.2s",
                             fontSize: "13px",
+                            border: userType === role.key ? "2px solid #0A7C6E" : "1px solid #fff",
+                            backgroundColor: "rgba(10, 124, 110, 0.1)",
+                            color: userType === role.key ? "#0A7C6E" : "#fff",
                           }}
                         >
                           <input

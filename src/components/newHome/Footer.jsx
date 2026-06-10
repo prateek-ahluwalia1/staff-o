@@ -68,11 +68,11 @@ function Footer() {
             </div>
             <div className="footer-contact-item">
               <span className="fci-icon"><i className="fa fa-envelope" aria-hidden="true"></i></span>
-              <a href="mailto:staffoapp@gmail.com" style={{ color: 'inherit', textDecoration: 'none' }}>staffoapp@gmail.com</a>
+              <a href="mailto:staffoapp@gmail.com" style={{ color: 'inherit', textDecoration: 'none', textTransform: 'none' }}>staffoapp@gmail.com</a>
             </div>
             <div className="footer-contact-item">
               <span className="fci-icon"><i className="fa fa-phone" aria-hidden="true"></i></span>
-              <a href="tel:0478916034" style={{ color: 'inherit', textDecoration: 'none' }}>0478916034</a>
+              <a href="tel:0478916034" style={{ color: 'inherit', textDecoration: 'none', textTransform: 'none' }}>0478916034</a>
             </div>
 
             {/* Shared the social icon structure using standard anchor tags for external link handling */}

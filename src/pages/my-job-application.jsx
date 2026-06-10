@@ -5,14 +5,14 @@ import useSubmit from "../hooks/useSubmit";
 import Loader from "../components/Loader";
 
 // Enhanced Helper component for modal rows
-const InfoRow = ({ label, value, icon }) => (
+const InfoRow = ({ label, value, icon, transform = true }) => (
   <div className="d-flex justify-content-between align-items-center py-2 border-bottom" style={{ borderColor: "#f8f9fa" }}>
     <span className="text-muted d-flex align-items-center" style={{ fontSize: "14px", fontWeight: 500 }}>
       {icon && <i className={`fa-solid ${icon} me-2`} style={{ width: '18px', textAlign: 'center', color: '#0A7C6E', opacity: 0.8 }}></i>}
       {label}
     </span>
     <span className="text-dark fw-semibold text-end" style={{ fontSize: "14px", maxWidth: "60%" }}>
-      {value || "N/A"}
+      {transform ? value || "N/A" : <span style={{ textTransform: "none" }}>{value || "N/A"}</span>}
     </span>
   </div>
 );
@@ -352,7 +352,7 @@ export default function MyJobApplications() {
                     <div className="d-flex flex-column gap-1">
                       {/* Optional chaining ensures it doesn't break if customer is null */}
                       <InfoRow icon="fa-user" label="Name" value={selectedApp.rawShift.customer?.name || "Unknown"} />
-                      <InfoRow icon="fa-envelope" label="Email" value={selectedApp.rawShift.customer?.email || "N/A"} />
+                      <InfoRow icon="fa-envelope" label="Email" value={selectedApp.rawShift.customer?.email || "N/A"} transform={false} />
                       <InfoRow icon="fa-phone" label="Phone" value={selectedApp.rawShift.customer?.phone || "N/A"} />
                       <InfoRow icon="fa-building-user" label="Client Type" value={selectedApp.rawShift.customer?.user_type || "N/A"} />
                     </div>

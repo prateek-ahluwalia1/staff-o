@@ -587,7 +587,9 @@ const ManageStaff = () => {
                   <tr key={user.id}>
                     <td className="ps-4">
                       <div className="fw-bold text-dark">{user.name}</div>
-                      <div className="text-muted small">{user.email}</div>
+                      <div className="text-muted small"
+                        style={{ textTransform: "none" }}
+                      >{user.email}</div>
                     </td>
                     <td>
                       <div className="text-dark small">

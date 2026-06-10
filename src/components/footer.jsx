@@ -89,7 +89,9 @@ const Footer = memo(function Footer() {
                 </li>
                 <li>
                   <i className="fa fa-envelope" aria-hidden="true"></i>
-                  <Link to="mailto:staffoapp@gmail.com">staffoapp@gmail.com</Link>
+                  <Link to="mailto:staffoapp@gmail.com"
+                    style={{ textTransform: "none" }}
+                  >staffoapp@gmail.com</Link>
                 </li>
                 <li>
                   <i className="fa fa-phone" aria-hidden="true"></i>

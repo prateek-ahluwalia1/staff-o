@@ -95,7 +95,6 @@ export default function EditProfile() {
   });
 
   const [profilePhoto, setProfilePhoto] = useState(null);
-  const [profileImageFile, setProfileImageFile] = useState(null);
   const [formData, setFormData] = useState(INITIAL_FORM_STATE);
   const [activeTab, setActiveTab] = useState("personal");
 
@@ -335,7 +334,6 @@ export default function EditProfile() {
 
         if (res?.success) {
           toast.success("Avatar updated successfully!");
-          setProfileImageFile(null);
           refetch();
         } else {
           toast.error(res?.message || "Failed to save avatar");
@@ -372,34 +370,28 @@ export default function EditProfile() {
 
       const payload = new FormData();
 
+      // Append all form fields EXCEPT profile_image
       Object.keys(formData).forEach((key) => {
-        payload.append(key, formData[key]);
+        if (key === "profile_image") return; // skip image field
         if (key === "bank_details") {
           payload.append("bank_details", JSON.stringify(formData.bank_details));
-        } else if (key === "profile_image") {
-          // Skip
         } else {
           payload.append(key, formData[key]);
         }
       });
-
-      if (profileImageFile) {
-        payload.append("profile_image", profileImageFile);
-      }
 
       const res = await submit(`api/user-update/${userId}`, payload, {
         method: "POST",
       });
       if (res === undefined) return;
       toast.success("Profile updated successfully!");
-      setProfileImageFile(null);
       if (res.data) dispatch(setUser({ userdata: res.data }));
       const refetchRes = await refetch();
       if (refetchRes?.success && refetchRes?.data) {
         dispatch(setUser({ userdata: refetchRes.data }));
       }
     },
-    [formData, submit, userId, dispatch, refetch, profileImageFile]
+    [formData, submit, userId, dispatch, refetch]
   );
 
   const handleClosePhoneModal = () => {

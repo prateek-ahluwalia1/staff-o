@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { apiURL } from "../utils/exports";
-import { toast } from "react-toastify";
+// import { toast } from "react-toastify";
 import { logOut } from "../store/slices/authSlice";
 
 const useFetch = (endpoint, { isAuth = false, immediate = true } = {}) => {
@@ -32,11 +32,8 @@ const useFetch = (endpoint, { isAuth = false, immediate = true } = {}) => {
           headers,
           credentials: "include",
         });
-
-        // --- 401 LOGOUT HANDLER ---
         if (res.status === 401) {
           dispatch(logOut());
-          toast.error("Session expired. Please log in again.");
           return;
         }
 

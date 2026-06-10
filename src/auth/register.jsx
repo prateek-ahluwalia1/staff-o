@@ -335,7 +335,7 @@ export default function Register() {
                               cursor: loading ? "not-allowed" : "pointer",
                               transition: "all 0.2s",
                               fontSize: "13px",
-                              border: isActive ? "2px solid #0A7C6E" : "1px solid #6c757d",
+                              border: isActive ? "1px solid #0A7C6E" : "1px solid #6c757d",
                               backgroundColor: isActive ? "rgba(10, 124, 110, 0.1)" : "transparent",
                               color: isActive ? "#0A7C6E" : "#6c757d",
                               display: "flex",

@@ -43,12 +43,8 @@ const useSubmit = ({ isAuth = false } = {}) => {
 
         const res = await fetch(`${apiURL}${endpoint}`, fetchOptions);
 
-        // --- 401 LOGOUT HANDLER ---
         if (res.status === 401) {
           dispatch(logOut());
-          if (!silentErrorToast) {
-            toast.error("Session expired. Please log in again.");
-          }
           return {
             success: false,
             error: "Unauthorized",

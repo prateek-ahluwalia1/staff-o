@@ -539,7 +539,7 @@ const normalizeSuperData = (data) => ({
     s_fundabn: data?.fund_abn ?? data?.s_fundabn ?? "",
     s_usi: data?.fund_usi ?? data?.s_usi ?? "",
     s_member: data?.member_account ?? data?.s_member ?? "",
-    super_confirm: data?.super_confirm ?? false, // New Declaration
+    super_confirm: data?.super_confirm ?? false,
     sig2: data?.signature ?? data?.sig2 ?? "",
     date2: toDateValue(data?.signed_date ?? data?.date2),
 });
@@ -553,8 +553,8 @@ const normalizeOnboardData = (data) => ({
     o_passport: data?.passport_number ?? data?.o_passport ?? "",
     o_pcountry: data?.passport_country ?? data?.o_pcountry ?? "",
     o_pexpiry: toDateValue(data?.passport_expiry ?? data?.o_pexpiry),
-    work: data?.work_rights ?? data?.work ?? "citizen", // Work rights updated
-    o_visa_type: data?.visa_type ?? data?.o_visa_type ?? "", // New Visa Type
+    work: data?.work_rights ?? data?.work ?? "citizen",
+    o_visa_type: data?.visa_type ?? data?.o_visa_type ?? "",
     passport_doc: data?.passport_doc ?? "",
     chk_primary: Boolean(data?.id_checks?.primary_id ?? data?.chk_primary ?? false),
     chk_driver: Boolean(data?.id_checks?.drivers_license ?? data?.chk_driver ?? false),
@@ -592,7 +592,6 @@ const StaffOnboardingForms = ({ submit, userId, onProfileUpdate }) => {
     const [superForm, setSuperForm] = useState(normalizeSuperData({}));
     const [onboardForm, setOnboardForm] = useState(normalizeOnboardData({}));
 
-    // Data fetching logic decoupled to allow re-fetching on save
     const fetchFormData = useCallback(async (formType) => {
         try {
             const endpoint = `api/form-data?user_id=${encodeURIComponent(userId)}&type=${encodeURIComponent(formType)}`;
@@ -619,7 +618,6 @@ const StaffOnboardingForms = ({ submit, userId, onProfileUpdate }) => {
         }
     }, [userId, submit]);
 
-    // Initial load
     useEffect(() => {
         if (userId) {
             setFormDataLoading(true);
@@ -633,7 +631,6 @@ const StaffOnboardingForms = ({ submit, userId, onProfileUpdate }) => {
         }
     }, [fetchFormData, userId]);
 
-    // Change Handlers
     const handleTfnChange = (e) => {
         const { name, value, type, checked } = e.target;
         const updatedForm = { ...tfnForm, [name]: type === "checkbox" ? checked : value };
@@ -655,6 +652,7 @@ const StaffOnboardingForms = ({ submit, userId, onProfileUpdate }) => {
         setDataModified(JSON.stringify(updatedForm) !== JSON.stringify(originalOnboardForm));
     };
 
+    // Correctly captures the path and assigns it to specific form fields WITHOUT calling guard-add-documents
     const handleDocUpload = async (e, fieldName) => {
         const file = e.target.files[0];
         if (!file) return;
@@ -669,44 +667,18 @@ const StaffOnboardingForms = ({ submit, userId, onProfileUpdate }) => {
         fd.append("folder", "staff_documents");
 
         try {
-            // A. Upload the physical file to the server
+            // Upload the physical file to the server
             const res = await submit("api/upload-file", fd, { method: "POST" });
 
-            if (res?.success || res?.path) {
-                const filePath = res.path || res.data?.path || "";
+            if (res?.success && res?.path) {
+                const filePath = res.path;
 
-                // B. Update the local onboarding form state so the UI shows "View Attached Document"
+                // Only update the local React state. Wait for form submission to save to database.
                 setOnboardForm((prev) => {
                     const updatedForm = { ...prev, [fieldName]: filePath };
                     setDataModified(JSON.stringify(updatedForm) !== JSON.stringify(originalOnboardForm));
                     return updatedForm;
                 });
-
-                // C. Determine the correct Document Name for the database
-                let docName = "";
-                if (fieldName === "passport_doc") docName = "Passport";
-                else if (fieldName === "security_license_doc") docName = "Security License";
-                else if (fieldName === "first_aid_doc") docName = "First Aid Certificate";
-
-                // D. Instantly save it to the user's official documents list (Just like the Modal)
-                if (docName) {
-                    const docPayload = {
-                        user_id: userId,
-                        document_type: docName,
-                        document_name: docName,
-                        file: filePath
-                    };
-
-                    // Save document to backend
-                    await submit("api/guard-add-documents", docPayload, { method: "POST", silentErrorToast: true });
-
-                    // E. Gracefully fetch user data to update the missing items & completion percentage
-                    if (typeof onProfileUpdate === "function") {
-                        await onProfileUpdate();
-                    }
-                }
-
-                toast.success(`${docName || "Document"} uploaded and saved successfully!`);
             } else {
                 toast.error(res?.message || "Failed to upload document.");
             }
@@ -716,7 +688,6 @@ const StaffOnboardingForms = ({ submit, userId, onProfileUpdate }) => {
         }
     };
 
-    // Submit Handler
     const handleFormSubmit = async (e, tabIndex) => {
         e.preventDefault();
         if (!userId) return toast.error("User ID missing. Cannot save form.");
@@ -757,10 +728,17 @@ const StaffOnboardingForms = ({ submit, userId, onProfileUpdate }) => {
             endpoint = "api/onboarding";
             pdfType = "onboarding";
             fileName = `Employee_Onboarding_${userId}_${new Date().getTime()}.pdf`;
+
             payload = {
-                user_id: userId, full_name: onboardForm.o_name, dob: onboardForm.o_dob, address: onboardForm.o_addr,
-                mobile: onboardForm.o_phone, email: onboardForm.o_email, passport_number: onboardForm.o_passport,
-                passport_country: onboardForm.o_pcountry, passport_expiry: onboardForm.o_pexpiry,
+                user_id: userId,
+                full_name: onboardForm.o_name,
+                dob: onboardForm.o_dob,
+                address: onboardForm.o_addr,
+                mobile: onboardForm.o_phone,
+                email: onboardForm.o_email,
+                passport_number: onboardForm.o_passport,
+                passport_country: onboardForm.o_pcountry,
+                passport_expiry: onboardForm.o_pexpiry,
                 work_rights: onboardForm.work,
                 visa_type: onboardForm.work === "other" ? onboardForm.o_visa_type : "",
                 passport_doc: onboardForm.passport_doc,
@@ -774,7 +752,6 @@ const StaffOnboardingForms = ({ submit, userId, onProfileUpdate }) => {
                 security_license_doc: onboardForm.security_license_doc,
                 first_aid_cert: onboardForm.o_fa, first_aid_expiry: onboardForm.o_faexp,
                 first_aid_doc: onboardForm.first_aid_doc,
-                first_aid: onboardForm.first_aid_doc,
                 signature: onboardForm.sig3,
                 signed_date: onboardForm.date3
             };
@@ -790,7 +767,6 @@ const StaffOnboardingForms = ({ submit, userId, onProfileUpdate }) => {
         if (saveSucceeded) {
             toast.success("Form saved successfully!");
 
-            // REFETCH DATA UPON SUCCESSFUL SAVE
             if (tabIndex === 0) await fetchFormData("onboarding");
             else if (tabIndex === 1) await fetchFormData("tfn");
             else if (tabIndex === 2) await fetchFormData("superannuation");

@@ -1,13 +1,22 @@
 import React, { useState, useEffect } from "react";
 import useSubmit from "../../hooks/useSubmit";
 import Loader from "../Loader";
-import PDFGenerator from "../../utils/PDFGenerator";
 import { Link } from 'react-router-dom';
 
 function fixUrl(url) {
   if (!url) return "";
   return url.replace("/uploads/", "/incident/");
 }
+
+const triggerUrlDownload = (fileUrl, filename) => {
+  const link = document.createElement("a");
+  link.href = fileUrl;
+  link.target = "_blank";
+  link.setAttribute("download", filename);
+  document.body.appendChild(link);
+  link.click();
+  link.parentNode.removeChild(link);
+};
 
 function IncidentDetail({ report, onBack, meta }) {
   return (
@@ -280,177 +289,63 @@ function IncidentDetail({ report, onBack, meta }) {
   );
 }
 
-export default function IncidentReport({ rosterId, guardId, shift, site }) {
+export default function IncidentReport({ rosterId, guardId }) {
   const [selectedReport, setSelectedReport] = useState(null);
   const [pdfError, setPdfError] = useState(null);
-  const { submit, loading, data, error } = useSubmit({ isAuth: true });
+
+  const { submit: fetchIncidents, loading: dataLoading, data, error } = useSubmit({ isAuth: true });
+  const { submit: downloadPdfSubmit, loading: pdfLoading } = useSubmit({ isAuth: true });
 
   useEffect(() => {
     if (rosterId) {
-      submit("api/guard-incident-report", {
-        guard_id: guardId,
-        roster_id: rosterId,
-      });
+      fetchIncidents("api/guard-incident-report", { guard_id: guardId, roster_id: rosterId });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rosterId, guardId]);
+  }, [rosterId, guardId, fetchIncidents]);
 
-  const meta = {
-    staff: data?.staff,
-    loaction: data?.loaction,
-    customer: data?.customer,
-    shift_start: data?.shift_start,
-    shift_end: data?.shift_end,
-  };
+  const meta = { staff: data?.staff, loaction: data?.loaction, customer: data?.customer, shift_start: data?.shift_start, shift_end: data?.shift_end };
 
-  if (selectedReport) {
-    return (
-      <IncidentDetail
-        report={selectedReport}
-        onBack={() => setSelectedReport(null)}
-        meta={meta}
-      />
-    );
-  }
-
-  if (loading) {
-    return (
-      <div
-        style={{ display: "flex", justifyContent: "center", padding: "40px" }}
-      >
-        <Loader compact />
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div
-        style={{
-          padding: "20px",
-          background: "#fff3f3",
-          borderRadius: "8px",
-          color: "#c0392b",
-          fontSize: "14px",
-        }}
-      >
-        Failed to load incident reports. Please try again.
-      </div>
-    );
-  }
+  if (selectedReport) return <IncidentDetail report={selectedReport} onBack={() => setSelectedReport(null)} meta={meta} />;
+  if (dataLoading) return <div style={{ display: "flex", justifyContent: "center", padding: "40px" }}><Loader compact /></div>;
+  if (error) return <div style={{ padding: "20px", background: "#fff3f3", borderRadius: "8px", color: "#c0392b", fontSize: "14px" }}>Failed to load incident reports. Please try again.</div>;
 
   const reports = data?.data || [];
+  if (reports.length === 0) return <div style={{ textAlign: "center", padding: "48px 20px", color: "#888", fontSize: "14px", background: "#f8f9fa", borderRadius: "8px" }}>No incident reports found for this shift.</div>;
 
-  if (reports.length === 0) {
-    return (
-      <div
-        style={{
-          textAlign: "center",
-          padding: "48px 20px",
-          color: "#888",
-          fontSize: "14px",
-          background: "#f8f9fa",
-          borderRadius: "8px",
-        }}
-      >
-        No incident reports found for this shift.
-      </div>
-    );
-  }
+  const handleDownload = async () => {
+    setPdfError(null);
+    const payload = { roster_id: rosterId, guard_id: guardId };
+
+    // Expect JSON response with { success, path }
+    const response = await downloadPdfSubmit("api/generate-incident-report", payload);
+
+    if (response?.success && response?.path) {
+      triggerUrlDownload(response.path, `Incident_Reports_${new Date().toISOString().split('T')[0]}.pdf`);
+    } else {
+      setPdfError("Failed to fetch PDF link from server.");
+    }
+  };
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
       <div style={{ marginBottom: "8px" }}>
-        <button
-          className="btn btn-success"
-          onClick={async () => {
-            try {
-              setPdfError(null);
-              const reportData = {
-                incidents: reports,
-                siteName: site?.displayName || site?.site_name,
-                guardName: shift?.guards?.name || data?.staff || "Unassigned",
-                shiftStart: data?.shift_start,
-                shiftEnd: data?.shift_end,
-              };
-              const doc = await PDFGenerator.generateIncidentReportPDF(reportData);
-              PDFGenerator.downloadPDF(doc, `Incident_Reports_${new Date().toISOString().split('T')[0]}.pdf`);
-            } catch (error) {
-              setPdfError("Failed to generate PDF report");
-              console.error(error);
-            }
-          }}
-          style={{ display: "flex", alignItems: "center", gap: "8px" }}
-        >
-          <i className="fa fa-download"></i>
-          Download Incident Report PDF
+        <button className="btn btn-success" onClick={handleDownload} disabled={pdfLoading} style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          {pdfLoading ? <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> : <i className="fa fa-download"></i>}
+          {pdfLoading ? "Downloading..." : "Download Incident Report PDF"}
         </button>
       </div>
 
-      {pdfError && (
-        <div
-          style={{
-            padding: "10px 12px",
-            background: "#ffe6e6",
-            border: "1px solid #ff6b6b",
-            borderRadius: "6px",
-            color: "#c92a2a",
-            fontSize: "13px",
-          }}
-        >
-          {pdfError}
-        </div>
-      )}
+      {pdfError && <div style={{ padding: "10px 12px", background: "#ffe6e6", border: "1px solid #ff6b6b", borderRadius: "6px", color: "#c92a2a", fontSize: "13px" }}>{pdfError}</div>}
 
-      {/* Scrollable Container for List Items */}
-      <div
-        className="custom-scrollbar"
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          gap: "12px",
-          maxHeight: "450px",
-          overflowY: "auto",
-          overflowX: "auto", /* FIXED */
-          paddingRight: "6px",
-          paddingBottom: "10px"
-        }}
-      >
+      <div className="custom-scrollbar" style={{ display: "flex", flexDirection: "column", gap: "12px", maxHeight: "450px", overflowY: "auto", overflowX: "auto", paddingRight: "6px", paddingBottom: "10px" }}>
         {reports.map((report, i) => (
-          <div
-            key={report.id || i}
-            className="d-flex flex-column flex-md-row align-items-start align-items-md-center justify-content-between p-3 border rounded shadow-sm gap-3"
-            style={{ borderRadius: "8px", background: "#fff" }}
-          >
+          <div key={report.id || i} className="d-flex flex-column flex-md-row align-items-start align-items-md-center justify-content-between p-3 border rounded shadow-sm gap-3" style={{ borderRadius: "8px", background: "#fff" }}>
             <div className="d-flex align-items-center gap-3 flex-wrap">
-              <span className="badge bg-danger rounded-circle p-2 px-3 fs-6">
-                {i + 1}
-              </span>
-              <span className="text-muted fw-medium" style={{ whiteSpace: "nowrap" }}>
-                <i className="fa-regular fa-calendar me-1"></i>
-                {report.incident_date || "—"}
-              </span>
-              <span className="text-muted fw-medium" style={{ whiteSpace: "nowrap" }}>
-                <i className="fa-regular fa-clock me-1"></i>
-                {report.incident_time || "—"}
-              </span>
-              <span className="badge bg-light text-danger border border-danger-subtle text-capitalize">
-                {report.injury_type || "—"}
-              </span>
-              {report.site_name && (
-                <span className="text-muted text-break" style={{ fontSize: "13px" }}>
-                  <i className="fa-solid fa-location-dot me-1 opacity-50"></i>
-                  {report.site_name}
-                </span>
-              )}
+              <span className="badge bg-danger rounded-circle p-2 px-3 fs-6">{i + 1}</span>
+              <span className="text-muted fw-medium" style={{ whiteSpace: "nowrap" }}><i className="fa-regular fa-calendar me-1"></i>{report.incident_date || "—"}</span>
+              <span className="text-muted fw-medium" style={{ whiteSpace: "nowrap" }}><i className="fa-regular fa-clock me-1"></i>{report.incident_time || "—"}</span>
+              <span className="badge bg-light text-danger border border-danger-subtle text-capitalize">{report.injury_type || "—"}</span>
             </div>
-
-            <button
-              className="btn btn-danger rounded-pill px-4 align-self-end align-self-md-auto text-nowrap"
-              onClick={() => setSelectedReport(report)}
-            >
-              Details
-            </button>
+            <button className="btn btn-danger rounded-pill px-4 align-self-end align-self-md-auto text-nowrap" onClick={() => setSelectedReport(report)}>Details</button>
           </div>
         ))}
       </div>

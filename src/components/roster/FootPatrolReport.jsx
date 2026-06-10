@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import useSubmit from "../../hooks/useSubmit";
 import Loader from "../Loader";
 import { apiURL } from "../../utils/exports";
-import PDFGenerator from "../../utils/PDFGenerator";
 import { Link } from 'react-router-dom';
 
 const BASE_URL = `${apiURL}footpatrol/`;
@@ -22,6 +21,16 @@ function resolveUrl(path) {
   if (path.startsWith("http")) return path;
   return BASE_URL + path;
 }
+
+const triggerUrlDownload = (fileUrl, filename) => {
+  const link = document.createElement("a");
+  link.href = fileUrl;
+  link.target = "_blank";
+  link.setAttribute("download", filename);
+  document.body.appendChild(link);
+  link.click();
+  link.parentNode.removeChild(link);
+};
 
 function PatrolDetail({ patrol, onBack, meta }) {
   const photos = parsePhotos(patrol.photo);
@@ -153,188 +162,63 @@ function PatrolDetail({ patrol, onBack, meta }) {
   );
 }
 
-export default function FootPatrolReport({ rosterId, guardId, shift, site }) {
+export default function FootPatrolReport({ rosterId, guardId }) {
   const [selectedPatrol, setSelectedPatrol] = useState(null);
   const [pdfError, setPdfError] = useState(null);
-  const { submit, loading, data, error } = useSubmit({ isAuth: true });
+
+  const { submit: fetchPatrols, loading: dataLoading, data, error } = useSubmit({ isAuth: true });
+  const { submit: downloadPdfSubmit, loading: pdfLoading } = useSubmit({ isAuth: true });
 
   useEffect(() => {
     if (rosterId) {
-      submit("api/guard-foot-patrol-report", {
-        guard_id: guardId,
-        roster_id: rosterId,
-      });
+      fetchPatrols("api/guard-foot-patrol-report", { guard_id: guardId, roster_id: rosterId });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rosterId, guardId]);
+  }, [rosterId, guardId, fetchPatrols]);
 
-  const meta = {
-    staff: data?.staff,
-    loaction: data?.loaction,
-    customer: data?.customer,
-    shift_start: data?.shift_start,
-    shift_end: data?.shift_end,
-  };
+  const meta = { staff: data?.staff, loaction: data?.loaction, customer: data?.customer, shift_start: data?.shift_start, shift_end: data?.shift_end };
 
-  if (selectedPatrol) {
-    return (
-      <PatrolDetail
-        patrol={selectedPatrol}
-        onBack={() => setSelectedPatrol(null)}
-        meta={meta}
-      />
-    );
-  }
-
-  if (loading) {
-    return (
-      <div
-        style={{ display: "flex", justifyContent: "center", padding: "40px" }}
-      >
-        <Loader compact />
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div
-        style={{
-          padding: "20px",
-          background: "#fff3f3",
-          borderRadius: "8px",
-          color: "#c0392b",
-          fontSize: "14px",
-        }}
-      >
-        Failed to load foot patrol report. Please try again.
-      </div>
-    );
-  }
+  if (selectedPatrol) return <PatrolDetail patrol={selectedPatrol} onBack={() => setSelectedPatrol(null)} meta={meta} />;
+  if (dataLoading) return <div style={{ display: "flex", justifyContent: "center", padding: "40px" }}><Loader compact /></div>;
+  if (error) return <div style={{ padding: "20px", background: "#fff3f3", borderRadius: "8px", color: "#c0392b", fontSize: "14px" }}>Failed to load foot patrol report. Please try again.</div>;
 
   const patrols = data?.data || [];
+  if (patrols.length === 0) return <div style={{ textAlign: "center", padding: "48px 20px", color: "#888", fontSize: "14px", background: "#f8f9fa", borderRadius: "8px" }}>No foot patrol reports found for this shift.</div>;
 
-  if (patrols.length === 0) {
-    return (
-      <div
-        style={{
-          textAlign: "center",
-          padding: "48px 20px",
-          color: "#888",
-          fontSize: "14px",
-          background: "#f8f9fa",
-          borderRadius: "8px",
-        }}
-      >
-        No foot patrol reports found for this shift.
-      </div>
-    );
-  }
+  const handleDownload = async () => {
+    setPdfError(null);
+    const payload = { roster_id: rosterId, guard_id: guardId };
+
+    // Expect JSON response with { success, path }
+    const response = await downloadPdfSubmit("api/generate-foot-report", payload);
+
+    if (response?.success && response?.path) {
+      triggerUrlDownload(response.path, `Foot_Patrol_Reports_${new Date().toISOString().split('T')[0]}.pdf`);
+    } else {
+      setPdfError("Failed to fetch PDF link from server.");
+    }
+  };
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
       <div style={{ marginBottom: "8px" }}>
-        <button
-          className="btn btn-success"
-          onClick={async () => {
-            try {
-              setPdfError(null);
-              const reportData = {
-                patrols: patrols,
-                siteName: site?.displayName || site?.site_name,
-                guardName: shift?.guards?.name || data?.staff || "Unassigned",
-                shiftStart: data?.shift_start,
-                shiftEnd: data?.shift_end,
-              };
-              const doc = await PDFGenerator.generateFootPatrolReportPDF(reportData);
-              PDFGenerator.downloadPDF(doc, `Foot_Patrol_Reports_${new Date().toISOString().split('T')[0]}.pdf`);
-            } catch (error) {
-              setPdfError("Failed to generate PDF report");
-              console.error(error);
-            }
-          }}
-          style={{ display: "flex", alignItems: "center", gap: "8px" }}
-        >
-          <i className="fa fa-download"></i>
-          Download Foot Patrol Report PDF
+        <button className="btn btn-success" onClick={handleDownload} disabled={pdfLoading} style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          {pdfLoading ? <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> : <i className="fa fa-download"></i>}
+          {pdfLoading ? "Downloading..." : "Download Foot Patrol Report PDF"}
         </button>
       </div>
 
-      {pdfError && (
-        <div
-          style={{
-            padding: "10px 12px",
-            background: "#ffe6e6",
-            border: "1px solid #ff6b6b",
-            borderRadius: "6px",
-            color: "#c92a2a",
-            fontSize: "13px",
-          }}
-        >
-          {pdfError}
-        </div>
-      )}
+      {pdfError && <div style={{ padding: "10px 12px", background: "#ffe6e6", border: "1px solid #ff6b6b", borderRadius: "6px", color: "#c92a2a", fontSize: "13px" }}>{pdfError}</div>}
 
-      {/* Scrollable Container for List Items */}
-      <div
-        className="custom-scrollbar"
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          gap: "12px",
-          maxHeight: "450px",
-          overflowY: "auto",
-          overflowX: "auto",
-          paddingRight: "6px",
-          paddingBottom: "10px"
-        }}
-      >
+      <div className="custom-scrollbar" style={{ display: "flex", flexDirection: "column", gap: "12px", maxHeight: "450px", overflowY: "auto", overflowX: "auto", paddingRight: "6px", paddingBottom: "10px" }}>
         {patrols.map((patrol, i) => (
-          <div
-            key={patrol.id || i}
-            className="d-flex flex-column flex-md-row align-items-start align-items-md-center justify-content-between p-3 border rounded shadow-sm gap-3"
-            style={{ borderRadius: "8px", background: "#fff" }}
-          >
+          <div key={patrol.id || i} className="d-flex flex-column flex-md-row align-items-start align-items-md-center justify-content-between p-3 border rounded shadow-sm gap-3" style={{ borderRadius: "8px", background: "#fff" }}>
             <div className="d-flex align-items-center gap-3 flex-wrap">
-              <span className="badge bg-warning text-dark rounded-circle p-2 px-3 fs-6">
-                {i + 1}
-              </span>
-              <span className="text-muted fw-medium" style={{ whiteSpace: "nowrap" }}>
-                <i className="fa-regular fa-calendar me-1"></i>
-                {patrol.date || "—"}
-              </span>
-              <span className="text-muted fw-medium" style={{ whiteSpace: "nowrap" }}>
-                <i className="fa-regular fa-clock me-1"></i>
-                {patrol.time || "—"}
-              </span>
-              {patrol.site_name && (
-                <span className="text-muted text-break" style={{ fontSize: "13px" }}>
-                  <i className="fa-solid fa-location-dot me-1 opacity-50"></i>
-                  {patrol.site_name}
-                </span>
-              )}
-              {patrol.patrolling_detail && (
-                <span
-                  className="text-secondary"
-                  style={{
-                    fontSize: "13px",
-                    maxWidth: "250px",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  {patrol.patrolling_detail}
-                </span>
-              )}
+              <span className="badge bg-warning text-dark rounded-circle p-2 px-3 fs-6">{i + 1}</span>
+              <span className="text-muted fw-medium" style={{ whiteSpace: "nowrap" }}><i className="fa-regular fa-calendar me-1"></i>{patrol.date || "—"}</span>
+              <span className="text-muted fw-medium" style={{ whiteSpace: "nowrap" }}><i className="fa-regular fa-clock me-1"></i>{patrol.time || "—"}</span>
+              {patrol.site_name && <span className="text-muted text-break" style={{ fontSize: "13px" }}><i className="fa-solid fa-location-dot me-1 opacity-50"></i>{patrol.site_name}</span>}
             </div>
-
-            <button
-              className="btn btn-warning rounded-pill px-4 text-dark align-self-end align-self-md-auto text-nowrap"
-              onClick={() => setSelectedPatrol(patrol)}
-            >
-              Details
-            </button>
+            <button className="btn btn-warning rounded-pill px-4 text-dark align-self-end align-self-md-auto text-nowrap" onClick={() => setSelectedPatrol(patrol)}>Details</button>
           </div>
         ))}
       </div>

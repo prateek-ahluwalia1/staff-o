@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\DB;
 use App\Models\JobRoster;
 use App\Models\JobRosterTask;
 use App\Models\JobRosterActivity;
+use Dompdf\Dompdf;
 
 class JobRosterActiviteController extends Controller
 {
@@ -277,5 +278,317 @@ class JobRosterActiviteController extends Controller
         }
 
         return response()->json($response);
+    }
+
+    public function generateIncidentReport(Request $request)
+    {
+        $request->validate([
+            'roster_id' => 'required',
+            'guard_id'  => 'required',
+        ]);
+    
+        // ── Fetch all incident reports for this roster + guard ──
+        $reports = DB::table('incident_reports')
+            ->where('roster_id', $request->roster_id)
+            ->where('guard_id',  $request->guard_id)
+            ->select(
+                'id', 'site_name', 'incident_date', 'incident_time',
+                'injury_type', 'injury_detail', 'people_involved',
+                'vehicle', 'emergency_services', 'wittness', 'photo', 'signature'
+            )
+            ->get();
+    
+        if ($reports->isEmpty()) {
+            return response()->json([
+                'success' => false,
+                'code'    => 404,
+                'message' => 'No incident reports found for this roster and guard.',
+            ]);
+        }
+    
+        // Decode JSON columns on each report
+        $reports = $reports->map(function ($report) {
+            $report->people_involved    = !empty($report->people_involved)    ? json_decode($report->people_involved,    true) : [];
+            $report->vehicle            = !empty($report->vehicle)            ? json_decode($report->vehicle,            true) : [];
+            $report->emergency_services = !empty($report->emergency_services) ? json_decode($report->emergency_services, true) : [];
+            $report->wittness           = !empty($report->wittness)           ? json_decode($report->wittness,           true) : [];
+            $report->photo              = !empty($report->photo)              ? json_decode($report->photo,              true) : [];
+            return $report;
+        });
+    
+        // ── Fetch roster / shift info ──
+        $roster      = \App\Models\JobRoster::where('id', $request->roster_id)->first();
+        $staff       = null;
+        $location    = null;
+        $shift_start = '';
+        $shift_end   = '';
+    
+        if ($roster) {
+            $staff       = !empty($roster->assigned_to) ? getUserName($roster->assigned_to) : 'N/A';
+            $location    = !empty($roster->site_id)    ? getSiteName($roster->site_id)    : 'N/A';
+            $shift_start = !empty($roster->start)      ? usaToAusDateTime($roster->start) : '';
+            $shift_end   = !empty($roster->end)        ? usaToAusDateTime($roster->end)   : '';
+        }
+    
+        // ── Render Blade view to HTML ──
+        $html = view('incident-report', [
+            'reports'     => $reports,
+            'staff'       => $staff,
+            'location'    => $location,
+            'shift_start' => $shift_start,
+            'shift_end'   => $shift_end,
+            'total'       => $reports->count(),
+        ])->render();
+    
+        // ── Generate PDF with Dompdf ──
+        $dompdf = new Dompdf();
+        $dompdf->loadHtml($html);
+        $dompdf->setPaper('A4', 'portrait');
+        $dompdf->render();
+        $output = $dompdf->output();
+    
+        // ── Save file ──
+        $public_path = public_path();
+        $public_path = str_replace('247StaffingSolution/public/', '', $public_path);
+        $folder      = '/incident';
+        $path        = $public_path . $folder;
+    
+        if (!file_exists($path)) {
+            mkdir($path, 0755, true);
+        }
+    
+        $file_name = time() . '_incident_report.pdf';
+        file_put_contents($path . '/' . $file_name, $output);
+    
+    
+        // ── Also save PDF path back to each incident_report row ──
+        $pdf_url = 'https://' . request()->getHttpHost() . '/incident/' . $file_name;
+        // DB::table('incident_reports')
+        //     ->where('roster_id', $request->roster_id)
+        //     ->where('guard_id',  $request->guard_id)
+        //     ->update(['pdf' => $pdf_url]);
+    
+        return response()->json([
+            'success' => true,
+            'message' => 'Incident Report generated successfully.',
+            'path'    => $pdf_url,
+        ]);
+    }
+    
+    public function generateFootPatrolReport(Request $request)
+    {
+        $request->validate([
+            'roster_id' => 'required',
+            'guard_id'  => 'required',
+        ]);
+    
+        // ── Fetch all foot patrol reports for this roster + guard ──
+        $reports = DB::table('foot_patrol_reports')
+            ->where('roster_id', $request->roster_id)
+            ->where('guard_id',  $request->guard_id)
+            ->select('id', 'site_name', 'date', 'time', 'patrolling_detail', 'photo', 'signature')
+            ->get();
+    
+        if ($reports->isEmpty()) {
+            return response()->json([
+                'success' => false,
+                'code'    => 404,
+                'message' => 'No foot patrol reports found for this roster and guard.',
+            ]);
+        }
+    
+        // Decode JSON columns
+        $reports = $reports->map(function ($report) {
+            $report->photo     = !empty($report->photo)     ? json_decode($report->photo,     true) : [];
+            return $report;
+        });
+    
+        // ── Fetch roster / shift info ──
+        $roster      = \App\Models\JobRoster::where('id', $request->roster_id)->first();
+        $staff       = null;
+        $location    = null;
+        $shift_start = '';
+        $shift_end   = '';
+    
+        if ($roster) {
+            $staff       = !empty($roster->assigned_to) ? getUserName($roster->assigned_to) : 'N/A';
+            $location    = !empty($roster->site_id)    ? getSiteName($roster->site_id)    : 'N/A';
+            $shift_start = !empty($roster->start)      ? usaToAusDateTime($roster->start) : '';
+            $shift_end   = !empty($roster->end)        ? usaToAusDateTime($roster->end)   : '';
+        }
+    
+        // ── Render Blade view to HTML ──
+        $html = view('foot-patrol-report', [
+            'reports'     => $reports,
+            'staff'       => $staff,
+            'location'    => $location,
+            'shift_start' => $shift_start,
+            'shift_end'   => $shift_end,
+            'total'       => $reports->count(),
+        ])->render();
+    
+        // ── Generate PDF with Dompdf ──
+        $dompdf = new Dompdf();
+        $dompdf->loadHtml($html);
+        $dompdf->setPaper('A4', 'portrait');
+        $dompdf->render();
+        $output = $dompdf->output();
+    
+        // ── Save file ──
+        $public_path = public_path();
+        $public_path = str_replace('247StaffingSolution/public/', '', $public_path);
+        $folder      = '/foot_patrol';
+        $path        = $public_path . $folder;
+    
+        if (!file_exists($path)) {
+            mkdir($path, 0755, true);
+        }
+    
+        $file_name = time() . '_foot_patrol_report.pdf';
+        file_put_contents($path . '/' . $file_name, $output);
+    
+        // ── Save PDF path back to each foot_patrol_report row ──
+        $pdf_url = 'https://' . request()->getHttpHost() . '/foot_patrol/' . $file_name;
+        // DB::table('foot_patrol_reports')
+        //     ->where('roster_id', $request->roster_id)
+        //     ->where('guard_id',  $request->guard_id)
+        //     ->update(['pdf' => $pdf_url]);
+    
+        return response()->json([
+            'success' => true,
+            'message' => 'Foot Patrol Report generated successfully.',
+            'path'    => $pdf_url,
+        ]);
+    }
+
+    public function generateMasterShiftReport(Request $request)
+    {
+        $request->validate([
+            'roster_id' => 'required',
+            'guard_id'  => 'required',
+        ]);
+    
+        // ── 1. Incident Reports ──
+        $incidentReports = DB::table('incident_reports')
+            ->where('roster_id', $request->roster_id)
+            ->where('guard_id',  $request->guard_id)
+            ->select(
+                'id', 'site_name', 'incident_date', 'incident_time',
+                'injury_type', 'injury_detail', 'people_involved',
+                'vehicle', 'emergency_services', 'wittness', 'photo', 'signature'
+            )
+            ->get()
+            ->map(function ($r) {
+                $r->people_involved    = !empty($r->people_involved)    ? json_decode($r->people_involved,    true) : [];
+                $r->vehicle            = !empty($r->vehicle)            ? json_decode($r->vehicle,            true) : [];
+                $r->emergency_services = !empty($r->emergency_services) ? json_decode($r->emergency_services, true) : [];
+                $r->wittness           = !empty($r->wittness)           ? json_decode($r->wittness,           true) : [];
+                $r->photo              = !empty($r->photo)              ? json_decode($r->photo,              true) : [];
+                return $r;
+            });
+    
+        // ── 2. Foot Patrol Reports ──
+        $footPatrolReports = DB::table('foot_patrol_reports')
+            ->where('roster_id', $request->roster_id)
+            ->where('guard_id',  $request->guard_id)
+            ->select('id', 'site_name', 'date', 'time', 'patrolling_detail', 'photo', 'signature')
+            ->get()
+            ->map(function ($r) {
+                $r->photo = !empty($r->photo) ? json_decode($r->photo, true) : [];
+                return $r;
+            });
+    
+        // ── 3. Attendance / Sign In-Out ──
+        $guardActivity = JobRosterActivity::where('guard_id', $request->guard_id)
+            ->where('job_roster_id', $request->roster_id)
+            ->select('id', 'signin_time', 'location', 'signin_notes',
+                        'signout_time', 'signout_notes')
+            ->first();
+    
+        // ── 4. Break Details ──
+        $breakDetails = DB::table('job_breaks')
+            ->where('roster_id', $request->roster_id)
+            ->where('guard_id',  $request->guard_id)
+            ->select('id', 'start_time', 'end_time', 'notes', 'inform_to')
+            ->get();
+    
+        // ── 5. Roster / shift info ──
+        $roster      = \App\Models\JobRoster::where('id', $request->roster_id)->first();
+        $staff       = 'N/A';
+        $location    = 'N/A';
+        $shift_start = '';
+        $shift_end   = '';
+        $total_hours = 'N/A';
+        $status      = 'COMPLETED';
+    
+        if ($roster) {
+            $staff       = !empty($roster->assigned_to) ? getUserName($roster->assigned_to) : 'N/A';
+            $location    = !empty($roster->site_id)    ? getSiteName($roster->site_id)    : 'N/A';
+            $shift_start = !empty($roster->start)      ? usaToAusDateTime($roster->start) : '';
+            $shift_end   = !empty($roster->end)        ? usaToAusDateTime($roster->end)   : '';
+    
+            if ($roster->start && $roster->end) {
+                $minutes     = \Carbon\Carbon::parse($roster->start)
+                                ->diffInMinutes(\Carbon\Carbon::parse($roster->end));
+                $total_hours = round($minutes / 60, 1) . ' Hrs';
+            }
+        }
+    
+        if ($incidentReports->isEmpty() && $footPatrolReports->isEmpty() && !$guardActivity && $breakDetails->isEmpty() && !$roster) {
+            return response()->json([
+                'success' => false,
+                'code'    => 404,
+                'message' => 'No records found for this roster and guard combination.',
+            ]);
+        }
+    
+        // ── Render Blade view ──
+        $html = view('master-shift-report', [
+            'staff'              => $staff,
+            'location'           => $location,
+            'shift_start'        => $shift_start,
+            'shift_end'          => $shift_end,
+            'total_hours'        => $total_hours,
+            'status'             => $status,
+            'report_date'        => now()->format('d/m/Y'),
+            'guardActivity'      => $guardActivity,
+            'breakDetails'       => $breakDetails,
+            'footPatrolReports'  => $footPatrolReports,
+            'incidentReports'    => $incidentReports,
+        ])->render();
+    
+        // ── Generate PDF with Dompdf ──
+        $dompdf = new Dompdf();
+        $dompdf->loadHtml($html);
+        $dompdf->setPaper('A4', 'portrait');
+        $dompdf->render();
+        $output = $dompdf->output();
+    
+        // ── Save file ──
+        $public_path = public_path();
+        $public_path = str_replace('247StaffingSolution/public/', '', $public_path);
+        $folder      = '/shift_report';
+        $path        = $public_path . $folder;
+    
+        if (!file_exists($path)) {
+            mkdir($path, 0755, true);
+        }
+    
+        $file_name = time() . '_master_shift_report.pdf';
+        file_put_contents($path . '/' . $file_name, $output);
+    
+        // ── Save to transient_files ──
+        // DB::table('transient_files')->insert([
+        //     'folder'    => 'shift_report',
+        //     'file_name' => $file_name,
+        // ]);
+    
+        $pdf_url = 'https://' . request()->getHttpHost() . '/shift_report/' . $file_name;
+    
+        return response()->json([
+            'success' => true,
+            'message' => 'Master Shift Report generated successfully.',
+            'path'    => $pdf_url,
+        ]);
     }
 }

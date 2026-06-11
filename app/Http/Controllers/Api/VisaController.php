@@ -15,7 +15,6 @@ class VisaController extends Controller
         $this->vsure = $vsure;
     }
 
-    // ✅ Create Visa Check
     public function create(Request $request)
     {
         $request->validate([
@@ -52,7 +51,7 @@ class VisaController extends Controller
     // ✅ Get Visa Result
     public function result($id)
     {
-        $response = $this->vsure->appgetVisaResult($id);
+        $response = $this->vsure->getVisaResult($id);
 
         return response()->json($response);
     }

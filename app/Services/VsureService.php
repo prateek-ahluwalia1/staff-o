@@ -61,7 +61,7 @@ class VsureService
         ];
     }
 
-    public function appgetVisaResult($id)
+    public function getVisaResult($id)
     {
         $token = $this->getAccessToken();
         if (!$token) {

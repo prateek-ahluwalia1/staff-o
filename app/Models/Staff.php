@@ -17,7 +17,8 @@ class Staff extends Model
         'tfn_form',
         'super_form',
         'onboarding_form',
-        'security_license_no'
+        'security_license_no',
+        'date_of_birth'
     ];
 
     /* ======================

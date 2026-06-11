@@ -25,80 +25,207 @@ use Carbon\Carbon;
 
 class StaffController extends Controller
 {
-    private function calculateProfileCompletion(User $user): int
-    {
-        $baseWeight = 50;
-        $documentWeight = 50;
+    
+//     private function calculateProfileCompletion(User $user)
+// {
+//     $baseWeight = 50;
+//     $documentWeight = 50;
 
-        // Base fields for all users
-        $baseFields = ['name', 'email', 'user_type'];
-        
-        // Additional fields for staff users
-        $staffFields = ['tfn_form', 'super_form', 'onboarding_form'];
-        
-        // Merge fields based on user type
-        $allBaseFields = $baseFields;
-        if ($user->user_type === 'staff') {
-            $allBaseFields = array_merge($baseFields, $staffFields);
+//     // Base fields for all users
+//     $baseFields = ['name', 'email', 'user_type'];
+    
+//     // Additional fields for staff users
+//     $staffFields = ['tfn_form', 'super_form', 'onboarding_form'];
+    
+//     // Merge fields based on user type
+//     $allBaseFields = $baseFields;
+//     if ($user->user_type === 'staff') {
+//         $allBaseFields = array_merge($baseFields, $staffFields);
+//     }
+    
+//     $filledBase = 0;
+//     foreach ($allBaseFields as $field) {
+//         if ($field === 'tfn_form' || $field === 'super_form' || $field === 'onboarding_form') {
+//             // Check staff relationship fields
+//             if ($user->staff && !empty($user->staff->{$field})) {
+//                 $filledBase++;
+//             }
+//         } else {
+//             if (!empty($user->{$field})) {
+//                 $filledBase++;
+//             }
+//         }
+//     }
+    
+//     // Calculate base score with proper weighting
+//     $baseScore = ($filledBase / count($allBaseFields)) * $baseWeight;
+
+//     // Get documents
+//     $documents = $user->documents ?? collect();
+    
+//     // Filter out labour_hire documents for contractors in Victoria or Queensland
+//     $isContractorInVicOrQld = ($user->user_type === 'contractor' && 
+//                                 in_array(strtolower($user->state), ['victoria', 'queensland']));
+    
+//     if ($isContractorInVicOrQld) {
+//         // Exclude labour_hire documents from calculation
+//         $filteredDocuments = $documents->filter(function ($doc) {
+//             return $doc->document_type !== 'labour_hire';
+//         });
+//     } else {
+//         $filteredDocuments = $documents;
+//     }
+    
+//     $totalDocuments = $filteredDocuments->count();
+//     $filledDocuments = 0;
+    
+//     if ($totalDocuments > 0) {
+//         $filledDocuments = $filteredDocuments->filter(function ($doc) {
+//             return !empty($doc->document_no);
+//         })->count();
+//     }
+
+//     $documentScore = 0;
+//     if ($totalDocuments > 0) {
+//         $documentScore = ($filledDocuments / $totalDocuments) * $documentWeight;
+//     }
+
+//     // Calculate final percentage
+//     if ($user->user_type == 'contractor') {
+//         $percentage = (int) round($baseScore + $documentScore);
+//     } elseif ($user->user_type == 'staff') {
+//         // Staff have no document score, base score is out of 100
+//         $percentage = (int) round($baseScore + $documentScore);
+//     } else {
+//         // Other user types (customer, etc.)
+//         $percentage = (int) round($baseScore + 50);
+//     }
+
+//     return min($percentage, 100);
+// }
+private function calculateProfileCompletion(User $user): int
+{
+    $baseWeight = 50;
+    $documentWeight = 50;
+
+    $baseFields = ['name', 'email', 'user_type'];
+    
+    $staffFields = ['tfn_form', 'super_form', 'onboarding_form'];
+    
+    $allBaseFields = $baseFields;
+    if ($user->user_type === 'staff') {
+        $allBaseFields = array_merge($baseFields, $staffFields);
+    }
+    
+    $filledBase = 0;
+    foreach ($allBaseFields as $field) {
+        if (in_array($field, ['tfn_form', 'super_form', 'onboarding_form'])) {
+            if ($user->staff && !empty($user->staff->{$field})) {
+                $filledBase++;
+            }
+        } else {
+            if (!empty($user->{$field})) {
+                $filledBase++;
+            }
         }
-        
-        $filledBase = 0;
-        foreach ($allBaseFields as $field) {
-            if ($field === 'tfn_form' || $field === 'super_form' || $field === 'onboarding_form') {
-                // Check staff relationship fields
-                if ($user->staff && !empty($user->staff->{$field})) {
-                    $filledBase++;
+    }
+    
+    $baseScore = ($filledBase / count($allBaseFields)) * $baseWeight;
+
+    // Document scoring
+    $documents = $user->documents ?? collect();
+    $totalDocuments = $documents->count();
+    $filledDocuments = 0;
+    $documentScore = 0;
+
+    if ($user->user_type === 'staff') {
+        $documentPoints = [
+            'passport'              => 70,
+            'citizen_ship'          => 70,
+            'medicare'              => 25,
+            'birth_certificate'     => 25,
+            'security_license'      => 40,
+            'driver_license_front'  => 70,
+            'driver_license_back'   => 0,
+            'working_with_children' => 0,
+            'first_aid'             => 0,
+            'cpr'                   => 0,
+            'visa'                  => 0,
+        ];
+
+        $totalDocPoints = 0;
+
+        foreach ($documents as $document) {
+            $docName = strtolower(str_replace(' ', '_', $document->document_name));
+
+            $hasFile = !empty($document->file);
+            $hasValidExpiry = false;
+
+            if (!empty($document->document_expiry)) {
+                if ($document->document_expiry === 'current, pending renewal') {
+                    $hasValidExpiry = true;
+                } else {
+                    $expiryDate = \Carbon\Carbon::parse($document->document_expiry);
+                    $hasValidExpiry = $expiryDate->isFuture();
                 }
-            } else {
-                // Check regular user fields
-                if (!empty($user->{$field})) {
-                    $filledBase++;
+            }
+
+            if ($hasFile && $hasValidExpiry) {
+                $totalDocPoints += $documentPoints[$docName] ?? 0;
+            }
+        }
+
+        $documentScore = min(($totalDocPoints / 100) * $documentWeight, $documentWeight);
+
+        $totalScore = $baseScore + $documentScore;
+        $oldStatus = $user->is_active;
+        $newStatus = ($baseScore >= $baseWeight && $totalDocPoints >= 100) ? 1 : 0;
+
+        if ($user->is_active !== $newStatus) {
+            $user->is_active = $newStatus;
+            $user->save();
+
+            if ($newStatus === 1 && $oldStatus != 1) {
+                $notificationData = [
+                    'notification_token' => $user->notification_token,
+                    'message'            => "Congratulations! Your account is now active.",
+                    'title'              => 'Account Activated',
+                    'page'               => 'account-verified',
+                ];
+
+                if (function_exists('send_push_notification')) {
+                    send_push_notification($notificationData);
                 }
             }
         }
-        
-        // Calculate base score with proper weighting
-        $baseScore = ($filledBase / count($allBaseFields)) * $baseWeight;
 
-        // Document scoring
-        $documents = $user->documents ?? collect();
-        $totalDocuments = $user->documents ? $user->documents->count() : 0;
-        $filledDocuments = 0;
-        
+    } else {
         if ($totalDocuments > 0) {
-            $filledDocuments = $user->documents->filter(function ($doc) {
+            $filledDocuments = $documents->filter(function ($doc) {
                 return !empty($doc->document_no);
             })->count();
-        }
 
-        $documentScore = 0;
-        if ($totalDocuments > 0) {
             $documentScore = ($filledDocuments / $totalDocuments) * $documentWeight;
         }
 
-        // // NEW CONDITION: Labour Hire Required (only for contractors in Victoria or Queensland)
+        // Contractor labour hire penalty
         if ($user->user_type === 'contractor' && in_array(strtolower($user->state), ['victoria', 'queensland'])) {
             $labourHireDoc = $documents->firstWhere('document_type', 'labour_hire');
-
-            // If not exists OR document_no empty → apply penalty
             if (!$labourHireDoc || empty($labourHireDoc->document_no)) {
                 $documentScore = $documentScore * 0.5;
             }
         }
-
-        // Calculate final percentage
-        if ($user->user_type == 'contractor') {
-            $percentage = (int) round($baseScore + $documentScore);
-        } elseif ($user->user_type == 'staff') {
-            // Staff have no document score, base score is out of 100
-            $percentage = (int) round($baseScore + $documentScore);
-        } else {
-            // Other user types (customer, etc.)
-            $percentage = (int) round($baseScore + 50);
-        }
-
-        return min($percentage, 100);
     }
+
+    // Final percentage
+    if (in_array($user->user_type, ['contractor', 'staff'])) {
+        $percentage = (int) round($baseScore + $documentScore);
+    } else {
+        $percentage = (int) round($baseScore + 50);
+    }
+
+    return min($percentage, 100);
+}
 
     public function createStaff(Request $request)
     {
@@ -285,7 +412,7 @@ class StaffController extends Controller
             'email' => 'sometimes|required|email|unique:users,email,' . $userId,
             'phone' => 'nullable|string',
             'password' => 'nullable|min:6|confirmed',
-            'profile_image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            // 'profile_image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'gender' => 'nullable|in:male,female,other',
             'is_active' => 'nullable|in:0,1',
             'address' => 'nullable',
@@ -571,6 +698,108 @@ class StaffController extends Controller
 
         return response()->json(['message' => "Staff Documents Updated Successfully!", 'code' => 200, 'success' => true]);
     }
+    
+    //  public function documentsPoints(User $user)
+    // {
+    //     $documentPoints = [
+    //         'passport' => 70,
+    //         'citizen_ship' => 70,
+    //         'medicare' => 25,
+    //         'birth_certificate' => 25,
+    //         'security_license' => 40,
+    //         'driver_license_front' => 70,
+    //         'driver_license_back' => 0,
+    //         'working_with_children' => 0,
+    //         'first_aid' => 0,
+    //         'cpr' => 0,
+    //         'visa' => 0,
+    //     ];
+
+    //     $updateDocuments = Document::where('user_id', $user->id)->first();
+        
+    //     if (!$updateDocuments) {
+    //         return response()->json(['message' => "Document not found!", 'code' => 404, 'success' => false]);
+    //     }
+        
+    //     $allUserDocuments = Document::where('user_id', $user->id)->get();
+        
+    //     $totalPoints = 0;
+    //     $validDocuments = [];
+    //     $invalidDocuments = [];
+        
+    //     foreach ($allUserDocuments as $document) {
+    //         $docName = strtolower(str_replace(' ', '_', $document->document_name));
+            
+    //         $hasFile = !empty($document->file);
+    //         $hasValidExpiry = false;
+            
+    //         if (!empty($document->document_expiry)) {
+    //             if ($document->document_expiry == 'current, pending renewal') {
+    //                 $hasValidExpiry = true;
+    //             } else {
+    //                 $expiryDate = \Carbon\Carbon::parse($document->document_expiry);
+    //                 $hasValidExpiry = $expiryDate->isFuture();
+    //             }
+    //         }
+            
+    //         if ($hasFile && $hasValidExpiry) {
+    //             $points = $documentPoints[$docName] ?? 0;
+    //             $totalPoints += $points;
+                
+    //             $validDocuments[] = [
+    //                 'document_name' => $document->document_name,
+    //                 'points' => $points,
+    //                 'expiry' => $document->document_expiry,
+    //                 'document_no' => $document->document_no
+    //             ];
+    //         } else {
+    //             $invalidDocuments[] = [
+    //                 'document_name' => $document->document_name,
+    //                 'reason' => !$hasFile ? 'No file uploaded' : 'Invalid or missing expiry',
+    //                 'expiry' => $document->document_expiry ?? 'Not provided'
+    //             ];
+    //         }
+    //     }
+        
+    //     $accountStatus = $totalPoints >= 100 ? 1 : 0;
+        
+    //     $user = User::find($user->id);
+    //     if ($user) {
+    //         $oldStatus = $user->is_active;
+    //         $user->is_active = $accountStatus;
+    //         $user->save();
+            
+    //         // Send notification if account becomes active from inactive
+    //         if ($totalPoints >= 100 && $oldStatus != 1) {
+                 
+    //             $notificationData = [
+    //                 'notification_token' => $user->notification_token,
+    //                 'message' => "Congratulations! Your account is now active with {$totalPoints} verification points.",
+    //                 'title' => 'Account Activated',
+    //                 'page' => 'account-verified',
+    //             ];
+                
+    //             if (function_exists('send_push_notification')) {
+    //                 send_push_notification($notificationData);
+    //             }   
+    //         }
+    //     }
+        
+    //     return response()->json([
+    //         'message' => "Staff Documents Updated Successfully!",
+    //         'code' => 200,
+    //         'success' => true,
+    //         'data' => [
+    //             'total_points' => $totalPoints,
+    //             'required_points' => 100,
+    //             'account_status' => $accountStatus,
+    //             'valid_documents' => $validDocuments,
+    //             'invalid_documents' => $invalidDocuments,
+    //             'points_remaining' => $totalPoints >= 100 ? 0 : (100 - $totalPoints),
+    //             'is_verified' => $totalPoints >= 100
+    //         ]
+    //     ]);
+    // }
 
     public function editUser($id)
     {
@@ -585,6 +814,7 @@ class StaffController extends Controller
         }
 
         $percentage = $this->calculateProfileCompletion($user);
+        // $verificationPoints = $this->documentsPoints($user);
 
         if ($percentage === 100 && (int) $user->is_active !== 1) {
             $user->is_active = 1;
@@ -630,18 +860,18 @@ class StaffController extends Controller
                     'phone' => 'nullable|string|max:20',
                     'acn' => 'nullable|string',
                     'abn' => 'nullable|string',
-                    'profile_image' => 'sometimes|nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+                    // 'profile_image' => 'sometimes|nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
                 ]);
             }
 
             if ($user->user_type === 'staff') {
                 $rules = array_merge($rules, [
-                    'profile_image' => 'sometimes|nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+                    // 'profile_image' => 'sometimes|nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
                     'gender' => 'sometimes|nullable|in:male,female,other',
                     'phone' => 'sometimes|nullable|string',
                     'staff_document_type' => 'sometimes|nullable|string',
                     'security_license_no' => 'sometimes|nullable|string',
-                    'dob' => 'sometimes|nullable|string'
+                    'date_of_birth' => 'sometimes|nullable|string'
                 ]);
             }
 
@@ -809,7 +1039,8 @@ class StaffController extends Controller
                     'gender',
                     'phone',
                     'staff_document_type',
-                    'security_license_no'
+                    'security_license_no',
+                    'date_of_birth'
                 ])->toArray();
 
                 if ($request->hasFile('profile_image')) {
@@ -1341,8 +1572,8 @@ class StaffController extends Controller
             'data'    => $record
         ], 200);
     }
-
-    function check_victoria_license($request)
+    
+     function check_victoria_license($request)
     {
         $url = "https://www.lars.police.vic.gov.au/LARS/LARS.asp?File=/Components/Screens/PSINFP03/PSINFP03.asp?Process=SEARCH";
         $input_xml = "<XML><HEADER><PROCESS>SEARCH</PROCESS><TIMESTAMP>20211020043340</TIMESTAMP><SECURITYTOKEN>02A42A1B-588D-4EE8-8760-2A81E6221A9A</SECURITYTOKEN></HEADER><PAYLOAD><GNDTLE01 id='idSearchPane'><CONTROL name='dropdownlist'>%</CONTROL><CONTROL name='searchtext'></CONTROL><CONTROL name='SearchCriteriadropdownlist'>X</CONTROL><CONTROL name='SearchAuthNb'>" . $request->license_number . "</CONTROL><CONTROL name='Index'></CONTROL><CONTROL name='Page'>1</CONTROL></GNDTLE01></PAYLOAD></XML>";
@@ -1416,8 +1647,8 @@ class StaffController extends Controller
 
     function documentsOnlineVerification(Request $request)
     {
-        if ($request->has('user_id')) {
-            $guard = DB::table('users')->where('id', $request->user_id)->select('state', 'name')->first();
+        if ($request->has('guard_id')) {
+            $guard = DB::table('users')->where('id', $request->guard_id)->select('state', 'name')->first();
             if ($guard->state == 'Queensland') {
                 return $this->check_queensland_license($request, $guard->name);
             } else {

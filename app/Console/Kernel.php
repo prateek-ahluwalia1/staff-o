@@ -4,6 +4,7 @@ namespace App\Console;
 
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
+use App\Jobs\SendJobNotificationJob;
 
 class Kernel extends ConsoleKernel
 {
@@ -12,10 +13,11 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule): void
     {
-        // $schedule->command('notifications:asap-job')->everyThirtyMinutes()->withoutOverlapping();
-        $schedule->command('notifications:asap-job')->cron('0,30 * * * *')->withoutOverlapping();
-        $schedule->command('app:sync-public-holidays')->twiceYearly(1, 1);
+        // $schedule->command('notifications:asap-job')->everyMinute();
         $schedule->command('app:check-missing-inductions')->dailyAt('10:00');
+        // $schedule->command('app:sync-public-holidays')->twiceYearly(1, 1);
+        // $schedule->job(new SendJobNotificationJob)->everyMinute();
+
     }
 
     /**

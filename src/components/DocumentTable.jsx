@@ -111,7 +111,7 @@ export default function DocumentTable({
           <tbody>
             {processedDocuments.length > 0 ? (
               processedDocuments.map((doc, idx) => {
-                const isStaffEditingExisting = userType === "staff" && doc.file;
+                // const isStaffEditingExisting = userType === "staff" && doc.file;
                 const status = getExpiryStatus(doc.document_expiry);
                 const displayLabel = DOC_CONFIG[doc.document_type]?.label || doc.document_name;
 
@@ -146,15 +146,15 @@ export default function DocumentTable({
                     </td>
                     <td style={{ padding: "10px 16px", verticalAlign: "middle", border: "none" }}>
                       <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-                        {isStaffEditingExisting ? (
+                        {/* {isStaffEditingExisting ? (
                           <button disabled style={{ background: "#f3f4f6", border: "none", color: "#9ca3af", padding: 6, borderRadius: 6 }}>
                             <i className="fa fa-lock" aria-hidden="true"></i>
                           </button>
-                        ) : (
-                          <button type="button" onClick={() => onAddFile(doc)} style={{ background: "#f3f4f6", border: "none", color: "#0A7C6E", cursor: "pointer", padding: 6, borderRadius: 6 }}>
-                            <i className="fa fa-pencil" aria-hidden="true"></i>
-                          </button>
-                        )}
+                        ) : ( */}
+                        <button type="button" onClick={() => onAddFile(doc)} style={{ background: "#f3f4f6", border: "none", color: "#0A7C6E", cursor: "pointer", padding: 6, borderRadius: 6 }}>
+                          <i className="fa fa-pencil" aria-hidden="true"></i>
+                        </button>
+                        {/* )} */}
                       </div>
                     </td>
                   </tr>

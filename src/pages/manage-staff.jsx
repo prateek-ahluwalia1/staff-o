@@ -260,6 +260,7 @@ const ManageStaff = () => {
         {
           fields: ["address_components", "geometry", "formatted_address"],
           types: ["address"],
+          componentRestrictions: { country: "au" },
         },
       );
 
@@ -690,7 +691,7 @@ const ManageStaff = () => {
                 >
                   Documents
                 </button>
-                <button
+                {/* <button
                   type="button"
                   className={`btn ${activeModalTab === "onboarding" ? "btn-primary-custom" : "btn-outline-primary"}`}
                   onClick={() => setActiveModalTab("onboarding")}
@@ -698,7 +699,7 @@ const ManageStaff = () => {
                   title={editingUser ? "Onboarding Forms" : "Save the profile first to manage onboarding forms."}
                 >
                   Onboarding Forms
-                </button>
+                </button> */}
               </div>
 
               {activeModalTab === "personal" ? (

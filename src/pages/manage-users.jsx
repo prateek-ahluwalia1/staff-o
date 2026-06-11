@@ -195,6 +195,7 @@ const ManageUsers = () => {
 
       const autocomplete = new window.google.maps.places.Autocomplete(addressInput, {
         fields: ["address_components", "geometry", "formatted_address"],
+        componentRestrictions: { country: "au" },
       });
 
       addressInput.setAttribute("data-gmaps-initialized", "true");
@@ -803,24 +804,24 @@ const ManageUsers = () => {
                 >
                   Personal Information
                 </button>
-                <button
-                  type="button"
-                  className={`btn ${activeModalTab === "documents" ? "btn-primary-custom" : "btn-outline-primary"}`}
-                  onClick={() => setActiveModalTab("documents")}
-                  disabled={activeTab !== "staff" || !editingUser}
-                  title={activeTab === "staff" ? (editingUser ? "Documents" : "Save the profile first to manage documents.") : "Documents are available for staff profiles only."}
-                >
-                  Documents
-                </button>
-                <button
-                  type="button"
-                  className={`btn ${activeModalTab === "onboarding" ? "btn-primary-custom" : "btn-outline-primary"}`}
-                  onClick={() => setActiveModalTab("onboarding")}
-                  disabled={activeTab !== "staff" || !editingUser}
-                  title={activeTab === "staff" ? (editingUser ? "Onboarding Forms" : "Save the profile first to manage onboarding forms.") : "Onboarding forms are available for staff profiles only."}
-                >
-                  Onboarding Forms
-                </button>
+                {activeTab === "staff" && editingUser && (
+                  <>
+                    <button
+                      type="button"
+                      className={`btn ${activeModalTab === "documents" ? "btn-primary-custom" : "btn-outline-primary"}`}
+                      onClick={() => setActiveModalTab("documents")}
+                    >
+                      Documents
+                    </button>
+                    <button
+                      type="button"
+                      className={`btn ${activeModalTab === "onboarding" ? "btn-primary-custom" : "btn-outline-primary"}`}
+                      onClick={() => setActiveModalTab("onboarding")}
+                    >
+                      Verification Forms
+                    </button>
+                  </>
+                )}
               </div>
 
               {activeModalTab === "personal" ? (

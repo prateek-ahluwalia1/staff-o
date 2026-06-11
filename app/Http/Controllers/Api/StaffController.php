@@ -1658,4 +1658,31 @@ private function calculateProfileCompletion(User $user): int
             return $this->check_victoria_license($request);
         }
     }
+
+    public function updatePolicyAccepted($userId)
+    {
+        try {
+            $staff = Staff::where('user_id', $userId)->first();
+            
+            if (!$staff) {
+                return response()->json(['success' => false, 'message' => 'Staff not found for this user_id']);
+            }
+            
+            $staff->is_policy_accepted = 1;
+            $staff->save();
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Staff status updated successfully',
+                'data' => $staff
+            ]);
+            
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to update staff status',
+                'error' => $e->getMessage()
+            ]);
+        }
+    }
 }

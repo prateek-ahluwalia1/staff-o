@@ -18,7 +18,8 @@ class Staff extends Model
         'super_form',
         'onboarding_form',
         'security_license_no',
-        'date_of_birth'
+        'date_of_birth',
+        'is_policy_accepted'
     ];
 
     /* ======================

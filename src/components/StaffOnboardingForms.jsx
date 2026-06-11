@@ -40,6 +40,7 @@ const AddressAutocomplete = ({ value, name, onChange, placeholder, required }) =
             autocomplete = new window.google.maps.places.Autocomplete(inputRef.current, {
                 fields: ["formatted_address", "geometry"],
                 types: ["address"],
+                componentRestrictions: { country: "au" },
             });
 
             inputRef.current.setAttribute("data-gmaps-initialized", "true");

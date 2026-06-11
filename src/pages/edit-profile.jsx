@@ -116,6 +116,7 @@ export default function EditProfile() {
   const [showDocModal, setShowDocModal] = useState(false);
   const [selectedDoc, setSelectedDoc] = useState(null);
   const [verifyingDoc, setVerifyingDoc] = useState(false);
+  const [visaDetails, setVisaDetails] = useState(null);
   const [docForm, setDocForm] = useState({
     notes: "",
     no: false,
@@ -234,6 +235,7 @@ export default function EditProfile() {
       autocomplete = new window.google.maps.places.Autocomplete(addressInput, {
         fields: ["address_components", "geometry", "formatted_address"],
         types: ["address"],
+        componentRestrictions: { country: "au" },
       });
 
       addressInput.setAttribute("data-gmaps-initialized", "true");
@@ -310,6 +312,27 @@ export default function EditProfile() {
       return true;
     });
   }, [profileData?.data?.documents, formData.state]);
+
+  // Helper: safe JSON parse
+  const safeJsonParse = (value) => {
+    if (typeof value !== "string") return null;
+    try {
+      return JSON.parse(value);
+    } catch {
+      return null;
+    }
+  };
+
+  // Helper: unwrap visa response
+  const unwrapVisaResponse = (payload) => {
+    if (!payload) return null;
+    if (payload?.json?.data) return payload.json.data;
+    const parsedBody = safeJsonParse(payload?.body);
+    if (parsedBody?.data) return parsedBody.data;
+    if (payload?.data?.data) return payload.data.data;
+    if (payload?.data && typeof payload.data === "object") return payload.data;
+    return payload;
+  };
 
   const handleAvatarUpload = useCallback(
     async (file) => {
@@ -522,7 +545,6 @@ export default function EditProfile() {
     setCardToDeleteIndex(null);
   };
 
-  // Document verification inside modal
   const handleVerifyDocumentNumber = async () => {
     if (!userId) {
       toast.error("Missing user id.");
@@ -537,39 +559,153 @@ export default function EditProfile() {
       return;
     }
 
-    setVerifyingDoc(true);
-    try {
-      const res = await submit(
-        "api/documents-online-verification",
-        {
-          user_id: userId,
-          document_type: docForm.document_name,
-          license_number: docForm.document_no,
-        },
-        { method: "POST" }
-      );
+    // SECURITY LICENSE verification
+    if (docForm.document_name === "Security License") {
+      setVerifyingDoc(true);
+      try {
+        const res = await submit(
+          "api/documents-online-verification",
+          {
+            user_id: userId,
+            document_type: docForm.document_name,
+            license_number: docForm.document_no,
+          },
+          { method: "POST" }
+        );
 
-      if (res?.success && res?.data) {
-        const expiryDate = res.data.expiry_date || res.data.document_expiry;
-        if (expiryDate) {
-          setDocForm((prev) => ({
-            ...prev,
-            document_expiry: expiryDate,
-            is_verified: true,
-          }));
-          toast.success("Document number verified. Expiry date pre‑filled.");
+        if (res?.success && res?.data) {
+          const expiryDate = res.data.expiry_date || res.data.document_expiry;
+          if (expiryDate) {
+            setDocForm((prev) => ({
+              ...prev,
+              document_expiry: expiryDate,
+              is_verified: true,
+            }));
+            toast.success("Security License verified. Expiry date locked.");
+          } else {
+            setDocForm((prev) => ({ ...prev, is_verified: true }));
+            toast.warning("Verification succeeded but no expiry date returned.");
+          }
         } else {
-          setDocForm((prev) => ({ ...prev, is_verified: true }));
+          setDocForm((prev) => ({ ...prev, is_verified: false }));
+          toast.error(res?.message || "Security License verification failed.");
         }
-      } else {
-        setDocForm((prev) => ({ ...prev, is_verified: false }));
+      } catch (err) {
+        console.error(err);
+        toast.error("Verification request failed.");
+      } finally {
+        setVerifyingDoc(false);
       }
-    } catch (err) {
-      console.error(err);
-      toast.error("Verification request failed.");
-    } finally {
-      setVerifyingDoc(false);
+      return;
     }
+
+    // VISA verification using /api/admin/visa-check
+    if (docForm.document_name === "Visa") {
+      // Get user data from Redux
+      const user = userdata?.data || userdata;
+      const staff = user?.staff || {};
+      const fullName = (user?.name || "").trim();
+      let givenName = fullName;
+      let familyName = fullName;
+      const nameParts = fullName.split(/\s+/);
+      if (nameParts.length > 1) {
+        givenName = nameParts.slice(0, -1).join(" ");
+        familyName = nameParts[nameParts.length - 1];
+      }
+      const dob = staff?.date_of_birth || user?.date_of_birth || "";
+      if (!dob) {
+        toast.error("Date of birth is missing from your profile. Please update your personal information first.");
+        return;
+      }
+      const countryCode = (user?.country || "AUS").toUpperCase().slice(0, 3);
+      const passportNumber = docForm.document_no.toUpperCase();
+
+      const payload = {
+        passport: passportNumber,
+        country: countryCode,
+        family_name: familyName,
+        given_name: givenName,
+        dob: dob,
+      };
+
+      setVerifyingDoc(true);
+      let checkId = null;
+      let pollInterval = null;
+      let timeoutId = null;
+
+      const cleanup = () => {
+        if (pollInterval) clearInterval(pollInterval);
+        if (timeoutId) clearTimeout(timeoutId);
+      };
+
+      try {
+        const createRes = await submit("api/admin/visa-check", payload, { method: "POST" });
+        const createData = unwrapVisaResponse(createRes);
+        if (!createData?.id) {
+          toast.error("Could not submit visa verification request.");
+          setVerifyingDoc(false);
+          return;
+        }
+        checkId = createData.id;
+        toast.info("Verification in progress. Please wait...");
+
+        // Poll for result every 2 seconds
+        pollInterval = setInterval(async () => {
+          try {
+            const resultRes = await submit(`api/admin/visa-result/${checkId}`, null, { method: "GET" });
+            const resultData = unwrapVisaResponse(resultRes);
+            if (resultData?.status === "completed" && resultData?.visa?.australia) {
+              cleanup();
+              const visaInfo = resultData.visa.australia;
+              const expiryDate = visaInfo.expiry_date || visaInfo.valid_until;
+              setVisaDetails({
+                visa_type: visaInfo.type_name || visaInfo.class || "N/A",
+                work_entitlement: visaInfo.work_entitlement || "N/A",
+                location: visaInfo.location || "N/A",
+                check_id: checkId,
+              });
+              if (expiryDate) {
+                setDocForm((prev) => ({
+                  ...prev,
+                  document_expiry: expiryDate,
+                  is_verified: true,
+                }));
+                toast.success("Visa verified. Expiry date locked.");
+              } else {
+                setDocForm((prev) => ({ ...prev, is_verified: true }));
+                toast.warning("Visa verified but no expiry date found.");
+              }
+              setVerifyingDoc(false);
+            } else if (resultData?.status === "failed") {
+              cleanup();
+              toast.error("Visa verification failed. Please check the passport number.");
+              setDocForm((prev) => ({ ...prev, is_verified: false }));
+              setVisaDetails(null);
+              setVerifyingDoc(false);
+            }
+          } catch (err) {
+            console.error("Polling error", err);
+          }
+        }, 2000);
+
+        // Timeout after 30 seconds
+        timeoutId = setTimeout(() => {
+          cleanup();
+          if (verifyingDoc) {
+            toast.error("Verification timed out. Please try again later.");
+            setVerifyingDoc(false);
+          }
+        }, 30000);
+      } catch (err) {
+        console.error(err);
+        toast.error("Visa verification request failed.");
+        cleanup();
+        setVerifyingDoc(false);
+      }
+      return;
+    }
+
+    toast.info(`Verification is not supported for ${docForm.document_name}. You can manually set the expiry date.`);
   };
 
   const handleDocNumberChange = (e) => {
@@ -580,13 +716,18 @@ export default function EditProfile() {
       is_verified: false,
       document_expiry: "",
     }));
+    setVisaDetails(null);
   };
 
   const handleDocFormChange = async (e) => {
     const { name, value, type, checked, files } = e.target;
 
-    // Block changes to expiry date if already verified
-    if (name === "document_expiry" && docForm.is_verified) {
+    // Block changes to expiry date if already verified for Security License or Visa
+    if (
+      name === "document_expiry" &&
+      docForm.is_verified &&
+      (docForm.document_name === "Security License" || docForm.document_name === "Visa")
+    ) {
       return;
     }
 
@@ -654,6 +795,7 @@ export default function EditProfile() {
     if (res.success) {
       toast.success("Document saved successfully!");
       setShowDocModal(false);
+      setVisaDetails(null);
       refetch();
     } else {
       toast.error(res.message || "Failed to save document");
@@ -1117,9 +1259,10 @@ export default function EditProfile() {
                 file_path: "",
                 file_url: doc.file,
                 document_name: doc.document_name,
-                is_verified: !!doc.document_expiry, // if expiry exists, consider verified
+                is_verified: !!doc.document_expiry,
               });
             }
+            setVisaDetails(null);
             setShowDocModal(true);
           }}
           onAddDocument={() => {
@@ -1136,6 +1279,7 @@ export default function EditProfile() {
               document_name: "",
               is_verified: false,
             });
+            setVisaDetails(null);
             setShowDocModal(true);
           }}
         />
@@ -1232,66 +1376,94 @@ export default function EditProfile() {
         </div>
       </Modal>
 
-      {/* Document Modal with built-in verification */}
-      <Modal open={showDocModal} onClose={() => setShowDocModal(false)}>
-        <form onSubmit={handleDocSubmit} className="p-3 position-relative">
+      {/* Document Modal – single column, scrollable, locked expiry for Visa/Security */}
+      <Modal
+        open={showDocModal}
+        onClose={() => {
+          setShowDocModal(false);
+          setVisaDetails(null);
+        }}
+      >
+        <form
+          onSubmit={handleDocSubmit}
+          className="p-3"
+          style={{ maxHeight: "80vh", overflowY: "auto" }}
+        >
           <h5>{selectedDoc ? "Edit Document" : "Add New Document"}</h5>
-          <label className="form-label fw-semibold mt-2">Document Type *</label>
-          <select
-            className="form-control mb-3"
-            name="document_name"
-            value={docForm.document_name}
-            onChange={handleDocFormChange}
-            required
-            disabled={!!selectedDoc}
-          >
-            <option value="">Select Type</option>
-            {DOC_TYPES.map((doc) => (
-              <option key={doc.value} value={doc.value}>{doc.label}</option>
-            ))}
-          </select>
 
-          {/* Document Number with Verify button */}
+          {/* Document Type */}
+          <div className="mb-3">
+            <label className="form-label fw-semibold">
+              Document Type <span className="text-danger">*</span>
+            </label>
+            <select
+              className="form-control"
+              name="document_name"
+              value={docForm.document_name}
+              onChange={handleDocFormChange}
+              required
+              disabled={!!selectedDoc}
+            >
+              <option value="">Select Type</option>
+              {DOC_TYPES.map((doc) => (
+                <option key={doc.value} value={doc.value}>
+                  {doc.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Document Number */}
           <div className="mb-3">
             <label className="form-label fw-semibold">
               Document Number <span className="text-danger">*</span>
             </label>
-            <div className="input-group">
+            {(docForm.document_name === "Security License" ||
+              docForm.document_name === "Visa") ? (
+              <div className="input-group">
+                <input
+                  type="text"
+                  className="form-control"
+                  placeholder="e.g. ABC123456"
+                  value={docForm.document_no}
+                  onChange={handleDocNumberChange}
+                  required
+                />
+                <button
+                  type="button"
+                  className="btn btn-outline-primary"
+                  onClick={handleVerifyDocumentNumber}
+                  disabled={verifyingDoc || !docForm.document_no}
+                >
+                  {verifyingDoc ? (
+                    <>
+                      <span className="spinner-border spinner-border-sm me-1" />
+                      Verifying...
+                    </>
+                  ) : (
+                    "Verify"
+                  )}
+                </button>
+              </div>
+            ) : (
               <input
                 type="text"
                 className="form-control"
                 placeholder="e.g. ABC123456"
                 value={docForm.document_no}
                 onChange={handleDocNumberChange}
-                readOnly={docForm.is_verified}
-                style={{ backgroundColor: docForm.is_verified ? "#e9ecef" : "white" }}
                 required
               />
-              <button
-                type="button"
-                className="btn btn-outline-primary"
-                onClick={handleVerifyDocumentNumber}
-                disabled={verifyingDoc || !docForm.document_no || docForm.is_verified}
-              >
-                {verifyingDoc ? (
-                  <>
-                    <span className="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
-                    Verifying...
-                  </>
-                ) : (
-                  "Verify"
-                )}
-              </button>
-            </div>
+            )}
             {docForm.is_verified && (
               <div className="form-text text-success">
-                <i className="fa-solid fa-check-circle me-1"></i>
+                <i className="fa-solid fa-check-circle me-1" />
                 Document number verified.
               </div>
             )}
           </div>
 
-          {/* Expiry Date – disabled after verification */}
+          {/* Expiry Date – always disabled for Visa & Security License */}
           <div className="mb-3">
             <label className="form-label fw-semibold">
               Expiry Date <span className="text-danger">*</span>
@@ -1303,51 +1475,125 @@ export default function EditProfile() {
               value={docForm.document_expiry}
               onChange={handleDocFormChange}
               required
-              readOnly={docForm.is_verified}
-              disabled
-              style={{ backgroundColor: docForm.is_verified ? "#e9ecef" : "white" }}
+              disabled={
+                docForm.document_name === "Security License" ||
+                docForm.document_name === "Visa"
+              }
+              style={{
+                backgroundColor:
+                  docForm.document_name === "Security License" ||
+                    docForm.document_name === "Visa"
+                    ? "#e9ecef"
+                    : "white",
+              }}
             />
-            {docForm.is_verified && (
-              <div className="form-text text-muted">Expiry date is locked after verification.</div>
-            )}
+            {(docForm.document_name === "Security License" ||
+              docForm.document_name === "Visa") && (
+                <div className="form-text text-muted">
+                  The expiry date is set automatically after verification.
+                </div>
+              )}
           </div>
 
+          {/* Visa Details Card */}
+          {docForm.document_name === "Visa" && docForm.is_verified && visaDetails && (
+            <div className="mb-3 p-3 bg-light border rounded-3">
+              <div className="d-flex align-items-center gap-2 mb-2">
+                <i className="fa-solid fa-passport text-primary"></i>
+                <strong className="small text-uppercase text-muted">
+                  Visa Verification Details
+                </strong>
+              </div>
+              <div className="row g-2 small">
+                <div className="col-6"><span className="text-muted">Visa Type:</span></div>
+                <div className="col-6 fw-medium">{visaDetails.visa_type}</div>
+                <div className="col-6"><span className="text-muted">Work Entitlement:</span></div>
+                <div className="col-6 fw-medium">{visaDetails.work_entitlement}</div>
+                <div className="col-6"><span className="text-muted">Location:</span></div>
+                <div className="col-6 fw-medium">{visaDetails.location}</div>
+                {visaDetails.check_id && (
+                  <>
+                    <div className="col-6"><span className="text-muted">Verification ID:</span></div>
+                    <div className="col-6 fw-medium text-truncate" title={visaDetails.check_id}>
+                      {visaDetails.check_id}
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* File Upload */}
           <div className="mb-3">
-            <label className="form-label fw-semibold">Document/Image <span className="text-danger">*</span></label>
-            <div className="position-relative border rounded p-3 text-center bg-light" style={{ minHeight: "250px", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <label className="form-label fw-semibold">
+              Document/Image <span className="text-danger">*</span>
+            </label>
+            <div
+              className="position-relative border rounded p-3 text-center bg-light"
+              style={{ minHeight: "200px", display: "flex", alignItems: "center", justifyContent: "center" }}
+            >
               {docForm.file_url ? (
                 <>
                   {docForm.file_url.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
-                    <img src={docForm.file_url.startsWith("http") ? docForm.file_url : `${apiURL}staff_documents/${docForm.file_url}`} alt="Document Preview" style={{ width: "100%", height: "100%", maxHeight: "200px", objectFit: "contain", borderRadius: "8px", opacity: uploadLoading ? 0.3 : 1 }} />
+                    <img
+                      src={
+                        docForm.file_url.startsWith("http")
+                          ? docForm.file_url
+                          : `${apiURL}staff_documents/${docForm.file_url}`
+                      }
+                      alt="Preview"
+                      style={{ width: "100%", maxHeight: "200px", objectFit: "contain", borderRadius: "8px", opacity: uploadLoading ? 0.3 : 1 }}
+                    />
                   ) : (
                     <div className="text-center">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" fill="#6c757d" className="bi bi-file-earmark mb-3" viewBox="0 0 16 16">
+                      <svg width="64" height="64" fill="#6c757d" className="bi bi-file-earmark mb-3" viewBox="0 0 16 16">
                         <path d="M14 4.5V14a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-9a2 2 0 0 1 2-2h5.5L14 4.5zm-3 0A1.5 1.5 0 0 0 9.5 3V1H4a1 1 0 0 0-1 1v9a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V4.5h-2z" />
                       </svg>
                     </div>
                   )}
                   {uploadLoading && (
                     <div className="position-absolute top-50 start-50 translate-middle">
-                      <div className="spinner-border text-primary" role="status"></div>
+                      <div className="spinner-border text-primary" />
                       <p className="small mt-1">Uploading...</p>
                     </div>
                   )}
                 </>
               ) : (
                 <div className="text-center">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="#ccc" className="bi bi-cloud-upload mb-3" viewBox="0 0 16 16">
+                  <svg width="48" height="48" fill="#ccc" className="bi bi-cloud-upload mb-3" viewBox="0 0 16 16">
                     <path fillRule="evenodd" d="M4.406 1.342a.5.5 0 0 1 .98 0l.745 2.985h3.138a.5.5 0 0 1 .369.883l-2.54 1.874 1.009 3.26a.5.5 0 0 1-.759.544L8 8.71l-2.609 1.905a.5.5 0 1 1-.758-.544l1.009-3.26-2.54-1.874a.5.5 0 0 1 .369-.883h3.138l.745-2.985z" />
                   </svg>
                   <p className="text-muted">Click to upload document/image</p>
                 </div>
               )}
             </div>
-            <input type="file" className="form-control mt-2" onChange={handleDocFormChange} name="file" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.gif,.webp" />
+            <input
+              type="file"
+              className="form-control mt-2"
+              onChange={handleDocFormChange}
+              name="file"
+              accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.gif,.webp"
+            />
           </div>
 
+          {/* Buttons */}
           <div className="d-flex gap-2">
-            <button type="button" className="btn btn-outline-secondary w-50" onClick={() => setShowDocModal(false)} disabled={uploadLoading || submitLoading}>Cancel</button>
-            <button type="submit" className="btn btn-success w-50" disabled={uploadLoading || submitLoading || !docForm.document_expiry || !docForm.file_url}>
+            <button
+              type="button"
+              className="btn btn-outline-secondary w-50"
+              onClick={() => {
+                setShowDocModal(false);
+                setVisaDetails(null);
+              }}
+              disabled={uploadLoading || submitLoading}
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="btn btn-success w-50"
+              disabled={uploadLoading || submitLoading || !docForm.document_expiry || !docForm.file_url}
+            >
               {submitLoading ? "Saving..." : "Upload"}
             </button>
           </div>

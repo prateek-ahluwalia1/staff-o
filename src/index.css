@@ -34,3 +34,24 @@ code {
 .react-select__single-value {
   color: #0A7C6E !important;
 }
+
+.doc-fullscreen-modal.modal {
+  max-width: 100vw;
+  width: 100vw;
+  height: 100vh;
+  margin: 0;
+  border-radius: 0;
+}
+
+.doc-fullscreen-modal .modal-dialog {
+  max-width: 100vw !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  margin: 0 !important;
+  border-radius: 0 !important;
+}
+
+.doc-fullscreen-modal .modal-content {
+  height: 100vh;
+  border-radius: 0;
+}

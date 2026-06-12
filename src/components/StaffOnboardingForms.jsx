@@ -4,70 +4,143 @@ import { toast } from "react-toastify";
 import PDFGenerator from "../utils/PDFGenerator";
 import { apiURL } from "../utils/exports";
 
+/* ---------- Helpers ---------- */
+
 const TAB_LABELS = ["Onboarding", "TFN Declaration", "Superannuation"];
+const todayDDMMYYYY = () => {
+    const d = new Date();
+    const day = String(d.getDate()).padStart(2, "0");
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    return `${day}/${month}/${d.getFullYear()}`;
+};
 
-const SectionTitle = ({ children, className = "" }) => (
-    <h6 className={`border-bottom pb-2 mb-3 text-uppercase text-muted fw-bold small ${className}`.trim()}>
-        {children}
-    </h6>
-);
+const isoToDisplay = (val) => {
+    if (!val) return "";
+    if (/^\d{2}\/\d{2}\/\d{4}$/.test(val)) return val;
+    const match = val.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (match) {
+        // eslint-disable-next-line
+        const [_, y, m, d] = match;
+        return `${d}/${m}/${y}`;
+    }
+    return val;
+};
 
-const ActionBar = ({ loading, saveLabel, disabled }) => (
-    <div className="d-flex justify-content-end pt-3 border-top mt-4">
-        <button
-            type="submit"
-            className="btn btn-primary-custom fw-bold px-4"
-            style={{ color: disabled ? "#ccc" : "#fff" }}
-            disabled={loading || disabled}
-        >
-            {loading ? "Saving..." : saveLabel}
-        </button>
-    </div>
-);
+const displayToISO = (val) => {
+    if (!val) return "";
+    const match = val.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+    if (match) {
+        // eslint-disable-next-line
+        const [_, d, m, y] = match;
+        return `${y}-${m}-${d}`;
+    }
+    return val;
+};
 
-// Address Autocomplete Wrapper for Google Maps Places API
+/* ---------- Reusable Date Input (DD/MM/YYYY visible) ---------- */
+const DateInput = ({ name, value, onChange, required, disabled, placeholder, max }) => {
+    const pickerRef = useRef(null);
+    const currentValue = value || "";
+
+    const openPicker = (e) => {
+        e.preventDefault();
+        if (pickerRef.current) {
+            try {
+                pickerRef.current.showPicker();
+            } catch (err) {
+                pickerRef.current.focus();
+            }
+        }
+    };
+
+    const handleTextChange = (e) => {
+        let val = e.target.value.replace(/\D/g, "");
+        if (val.length > 8) val = val.slice(0, 8);
+        if (val.length > 2 && val.length <= 4) val = val.replace(/^(\d{2})(\d+)/, "$1/$2");
+        else if (val.length > 4) val = val.replace(/^(\d{2})(\d{2})(\d+)/, "$1/$2/$3");
+        onChange({ target: { name, value: val } });
+    };
+
+    const handlePickerChange = (e) => {
+        const iso = e.target.value; // YYYY-MM-DD
+        if (iso) {
+            const [y, m, d] = iso.split("-");
+            onChange({ target: { name, value: `${d}/${m}/${y}` } });
+        }
+    };
+
+    return (
+        <div className="input-group">
+            <button
+                type="button"
+                className="input-group-text bg-white text-muted border-end-0"
+                onClick={openPicker}
+                disabled={disabled}
+                style={{ cursor: "pointer" }}
+                title="Open calendar"
+            >
+                <i className="fa-solid fa-calendar-days text-primary"></i>
+            </button>
+            <input
+                type="date"
+                ref={pickerRef}
+                className="position-absolute"
+                style={{ opacity: 0, width: 0, height: 0, pointerEvents: "none" }}
+                value={displayToISO(currentValue)}
+                onChange={handlePickerChange}
+                disabled={disabled}
+                max={max ? displayToISO(max) : undefined}
+            />
+            <input
+                type="text"
+                className="form-control border-start-0 ps-0"
+                placeholder={placeholder || "DD/MM/YYYY"}
+                value={currentValue}
+                onChange={handleTextChange}
+                required={required}
+                disabled={disabled}
+                maxLength={10}
+                pattern="^(0[1-9]|[12][0-9]|3[01])/(0[1-9]|1[012])/\d{4}$"
+                title="Enter a date in DD/MM/YYYY format"
+            />
+        </div>
+    );
+};
+
+/* ---------- Address Autocomplete ---------- */
 const AddressAutocomplete = ({ value, name, onChange, placeholder, required }) => {
+    // ... (unchanged) ...
     const inputRef = useRef(null);
-
     useEffect(() => {
         let autocomplete;
         let listener;
-
         const initMap = () => {
             if (!inputRef.current || !window.google?.maps?.places) return;
             if (inputRef.current.getAttribute("data-gmaps-initialized")) return;
-
             autocomplete = new window.google.maps.places.Autocomplete(inputRef.current, {
                 fields: ["formatted_address", "geometry"],
                 types: ["address"],
                 componentRestrictions: { country: "au" },
             });
-
             inputRef.current.setAttribute("data-gmaps-initialized", "true");
-
             listener = autocomplete.addListener("place_changed", () => {
                 const place = autocomplete.getPlace();
                 if (!place.geometry || !place.formatted_address) {
                     toast.error("Please select a valid address from the dropdown suggestions.");
                     return;
                 }
-                const event = { target: { name, value: place.formatted_address, type: "text" } };
-                onChange(event);
+                onChange({ target: { name, value: place.formatted_address } });
             });
         };
-
-        const checkGoogleMaps = setInterval(() => {
+        const check = setInterval(() => {
             if (window.google?.maps?.places) {
-                clearInterval(checkGoogleMaps);
+                clearInterval(check);
                 initMap();
             }
         }, 500);
-
         return () => {
-            clearInterval(checkGoogleMaps);
-            if (listener && window.google?.maps?.event) {
-                window.google.maps.event.removeListener(listener);
-            }
+            clearInterval(check);
+            if (listener && window.google?.maps?.event) window.google.maps.event.removeListener(listener);
         };
     }, [name, onChange]);
 
@@ -87,7 +160,27 @@ const AddressAutocomplete = ({ value, name, onChange, placeholder, required }) =
     );
 };
 
-// ─── TFN DECLARATION FORM (centered labels for selects & radios) ───────────
+/* ---------- Section Title ---------- */
+const SectionTitle = ({ children, className = "" }) => (
+    <h6 className={`border-bottom pb-2 mb-3 text-uppercase text-muted fw-bold small ${className}`.trim()}>
+        {children}
+    </h6>
+);
+
+const ActionBar = ({ loading, saveLabel, disabled }) => (
+    <div className="d-flex justify-content-end pt-3 border-top mt-4">
+        <button
+            type="submit"
+            className="btn btn-primary-custom fw-bold px-4"
+            style={{ color: disabled ? "#ccc" : "#fff" }}
+            disabled={loading || disabled}
+        >
+            {loading ? "Saving..." : saveLabel}
+        </button>
+    </div>
+);
+
+/* ---------- TFN Declaration Form ---------- */
 const TfnDeclarationForm = ({ values, loading, onChange, onSubmit, dataModified }) => (
     <form onSubmit={onSubmit} className="animate__animated animate__fadeIn">
         <SectionTitle>Tax File Number</SectionTitle>
@@ -121,7 +214,7 @@ const TfnDeclarationForm = ({ values, loading, onChange, onSubmit, dataModified 
             </div>
             <div className="col-md-6">
                 <label className="form-label small fw-bold text-muted">Date of Birth <span className="text-danger">*</span></label>
-                <input type="date" className="form-control" name="dob" value={values.dob} onChange={onChange} required />
+                <DateInput name="dob" value={values.dob} onChange={onChange} required />
             </div>
         </div>
 
@@ -132,82 +225,46 @@ const TfnDeclarationForm = ({ values, loading, onChange, onSubmit, dataModified 
         </div>
 
         <SectionTitle className="mt-4">Employment</SectionTitle>
-        {/* Horizontal layout for employment type label + radio group */}
         <div className="row align-items-center mb-4">
             <div className="col-md-3">
                 <label className="form-label small fw-bold text-muted mb-0">Employment Type <span className="text-danger">*</span></label>
             </div>
             <div className="col-md-9">
                 <div className="d-flex flex-wrap gap-3 align-items-center">
-                    <div className="form-check">
-                        <input className="form-check-input" type="radio" name="basis" value="full-time" checked={values.basis === "full-time"} onChange={onChange} required />
-                        <label className="form-check-label">Full-time</label>
-                    </div>
-                    <div className="form-check">
-                        <input className="form-check-input" type="radio" name="basis" value="part-time" checked={values.basis === "part-time"} onChange={onChange} />
-                        <label className="form-check-label">Part-time</label>
-                    </div>
-                    <div className="form-check">
-                        <input className="form-check-input" type="radio" name="basis" value="casual" checked={values.basis === "casual"} onChange={onChange} />
-                        <label className="form-check-label">Casual</label>
-                    </div>
+                    {["full-time", "part-time", "casual"].map((opt) => (
+                        <div className="form-check" key={opt}>
+                            <input className="form-check-input" type="radio" name="basis" value={opt} checked={values.basis === opt} onChange={onChange} required />
+                            <label className="form-check-label">{opt.charAt(0).toUpperCase() + opt.slice(1)}</label>
+                        </div>
+                    ))}
                 </div>
             </div>
         </div>
 
         <SectionTitle className="mt-4">Declarations</SectionTitle>
-        {/* Horizontal layouts for declaration radio groups */}
-        <div className="row align-items-center mb-3">
-            <div className="col-md-4">
-                <label className="form-label small fw-bold text-muted mb-0">Australian resident for tax? <span className="text-danger">*</span></label>
-            </div>
-            <div className="col-md-8">
-                <div className="d-flex gap-3 align-items-center">
-                    <div className="form-check">
-                        <input className="form-check-input" type="radio" name="aus_res" value="yes" checked={values.aus_res === "yes"} onChange={onChange} required />
-                        <label className="form-check-label">Yes</label>
-                    </div>
-                    <div className="form-check">
-                        <input className="form-check-input" type="radio" name="aus_res" value="no" checked={values.aus_res === "no"} onChange={onChange} />
-                        <label className="form-check-label">No</label>
+        {[
+            { label: "Australian resident for tax?", name: "aus_res" },
+            { label: "Claim tax-free threshold?", name: "threshold" },
+            { label: "HELP / VSL / FS / SSL debt?", name: "help" },
+        ].map(({ label, name }) => (
+            <div className="row align-items-center mb-3" key={name}>
+                <div className="col-md-4">
+                    <label className="form-label small fw-bold text-muted mb-0">{label} <span className="text-danger">*</span></label>
+                </div>
+                <div className="col-md-8">
+                    <div className="d-flex gap-3 align-items-center">
+                        <div className="form-check">
+                            <input className="form-check-input" type="radio" name={name} value="yes" checked={values[name] === "yes"} onChange={onChange} required />
+                            <label className="form-check-label">Yes</label>
+                        </div>
+                        <div className="form-check">
+                            <input className="form-check-input" type="radio" name={name} value="no" checked={values[name] === "no"} onChange={onChange} />
+                            <label className="form-check-label">No</label>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
-        <div className="row align-items-center mb-3">
-            <div className="col-md-4">
-                <label className="form-label small fw-bold text-muted mb-0">Claim tax-free threshold? <span className="text-danger">*</span></label>
-            </div>
-            <div className="col-md-8">
-                <div className="d-flex gap-3 align-items-center">
-                    <div className="form-check">
-                        <input className="form-check-input" type="radio" name="threshold" value="yes" checked={values.threshold === "yes"} onChange={onChange} required />
-                        <label className="form-check-label">Yes</label>
-                    </div>
-                    <div className="form-check">
-                        <input className="form-check-input" type="radio" name="threshold" value="no" checked={values.threshold === "no"} onChange={onChange} />
-                        <label className="form-check-label">No</label>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div className="row align-items-center mb-4">
-            <div className="col-md-4">
-                <label className="form-label small fw-bold text-muted mb-0">HELP / VSL / FS / SSL debt? <span className="text-danger">*</span></label>
-            </div>
-            <div className="col-md-8">
-                <div className="d-flex gap-3 align-items-center">
-                    <div className="form-check">
-                        <input className="form-check-input" type="radio" name="help" value="yes" checked={values.help === "yes"} onChange={onChange} required />
-                        <label className="form-check-label">Yes</label>
-                    </div>
-                    <div className="form-check">
-                        <input className="form-check-input" type="radio" name="help" value="no" checked={values.help === "no"} onChange={onChange} />
-                        <label className="form-check-label">No</label>
-                    </div>
-                </div>
-            </div>
-        </div>
+        ))}
 
         <SectionTitle className="mt-4">Signature</SectionTitle>
         <div className="row g-3 mb-4">
@@ -217,7 +274,7 @@ const TfnDeclarationForm = ({ values, loading, onChange, onSubmit, dataModified 
             </div>
             <div className="col-md-6">
                 <label className="form-label small fw-bold text-muted">Date <span className="text-danger">*</span></label>
-                <input type="date" className="form-control" name="date1" value={values.date1} onChange={onChange} required />
+                <DateInput name="date1" value={values.date1} onChange={onChange} required />
             </div>
         </div>
 
@@ -225,7 +282,7 @@ const TfnDeclarationForm = ({ values, loading, onChange, onSubmit, dataModified 
     </form>
 );
 
-// ─── SUPERANNUATION FORM (centered labels for radios) ──────────────────────
+/* ---------- Superannuation Form ---------- */
 const SuperannuationForm = ({ values, loading, onChange, onSubmit, dataModified }) => (
     <form onSubmit={onSubmit} className="animate__animated animate__fadeIn">
         <SectionTitle>Employee Details</SectionTitle>
@@ -291,8 +348,10 @@ const SuperannuationForm = ({ values, loading, onChange, onSubmit, dataModified 
                 onChange={onChange}
                 required
             />
-            <label className="form-check-label text-muted small fw-medium" htmlFor="super_confirm">
-                I confirm that the superannuation fund details provided are correct. I understand my super contributions will be paid into the fund I have selected above.
+            <label className="form-check-label text-muted small fw-medium" htmlFor="super_confirm"
+                style={{ textTransform: "none" }}
+            >
+                I confirm that the superannuation fund details provided are correct.
             </label>
         </div>
 
@@ -304,7 +363,7 @@ const SuperannuationForm = ({ values, loading, onChange, onSubmit, dataModified 
             </div>
             <div className="col-md-6">
                 <label className="form-label small fw-bold text-muted">Date <span className="text-danger">*</span></label>
-                <input type="date" className="form-control" name="date2" value={values.date2} onChange={onChange} required />
+                <DateInput name="date2" value={values.date2} onChange={onChange} required />
             </div>
         </div>
 
@@ -312,7 +371,7 @@ const SuperannuationForm = ({ values, loading, onChange, onSubmit, dataModified 
     </form>
 );
 
-// ─── EMPLOYEE ONBOARDING FORM (centered labels for radios & checkboxes) ─────
+/* ---------- Employee Onboarding Form ---------- */
 const EmployeeOnboardingForm = ({ values, loading, onChange, onSubmit, dataModified, onDocUpload }) => {
     const resolveDocUrl = (pathOrUrl) => {
         if (!pathOrUrl) return "";
@@ -330,7 +389,7 @@ const EmployeeOnboardingForm = ({ values, loading, onChange, onSubmit, dataModif
                 </div>
                 <div className="col-md-6">
                     <label className="form-label small fw-bold text-muted">Date of birth <span className="text-danger">*</span></label>
-                    <input type="date" className="form-control" name="o_dob" value={values.o_dob} onChange={onChange} required />
+                    <DateInput name="o_dob" value={values.o_dob} onChange={onChange} required />
                 </div>
                 <div className="col-md-6">
                     <label className="form-label small fw-bold text-muted">Residential Address <span className="text-danger">*</span></label>
@@ -358,7 +417,7 @@ const EmployeeOnboardingForm = ({ values, loading, onChange, onSubmit, dataModif
                 </div>
                 <div className="col-md-4">
                     <label className="form-label small fw-bold text-muted">Passport Expiry <span className="text-danger">*</span></label>
-                    <input type="date" className="form-control" name="o_pexpiry" value={values.o_pexpiry} onChange={onChange} required />
+                    <DateInput name="o_pexpiry" value={values.o_pexpiry} onChange={onChange} required />
                 </div>
 
                 <div className="col-md-12">
@@ -373,7 +432,7 @@ const EmployeeOnboardingForm = ({ values, loading, onChange, onSubmit, dataModif
                     </div>
                 </div>
 
-                {/* Work Rights radio group - horizontal label */}
+                {/* Work Rights – keep existing layout but improved */}
                 <div className="col-md-12">
                     <div className="row align-items-center mt-2">
                         <div className="col-md-3">
@@ -381,22 +440,17 @@ const EmployeeOnboardingForm = ({ values, loading, onChange, onSubmit, dataModif
                         </div>
                         <div className="col-md-9">
                             <div className="d-flex flex-column gap-2">
-                                <div className="form-check">
-                                    <input className="form-check-input" type="radio" name="work" id="work_citizen" value="citizen" checked={values.work === "citizen"} onChange={onChange} required />
-                                    <label className="form-check-label" htmlFor="work_citizen">Australian Citizen / Permanent Resident</label>
-                                </div>
-                                <div className="form-check">
-                                    <input className="form-check-input" type="radio" name="work" id="work_student" value="student" checked={values.work === "student"} onChange={onChange} />
-                                    <label className="form-check-label" htmlFor="work_student">Student Visa</label>
-                                </div>
-                                <div className="form-check">
-                                    <input className="form-check-input" type="radio" name="work" id="work_temporary" value="temporary" checked={values.work === "temporary"} onChange={onChange} />
-                                    <label className="form-check-label" htmlFor="work_temporary">Temporary Visa Holder</label>
-                                </div>
-                                <div className="form-check">
-                                    <input className="form-check-input" type="radio" name="work" id="work_other" value="other" checked={values.work === "other"} onChange={onChange} />
-                                    <label className="form-check-label" htmlFor="work_other">Other Visa (please specify)</label>
-                                </div>
+                                {[
+                                    { value: "citizen", label: "Australian Citizen / Permanent Resident" },
+                                    { value: "student", label: "Student Visa" },
+                                    { value: "temporary", label: "Temporary Visa Holder" },
+                                    { value: "other", label: "Other Visa (please specify)" },
+                                ].map((opt) => (
+                                    <div className="form-check" key={opt.value}>
+                                        <input className="form-check-input" type="radio" name="work" value={opt.value} checked={values.work === opt.value} onChange={onChange} required />
+                                        <label className="form-check-label">{opt.label}</label>
+                                    </div>
+                                ))}
                             </div>
                         </div>
                     </div>
@@ -412,38 +466,20 @@ const EmployeeOnboardingForm = ({ values, loading, onChange, onSubmit, dataModif
 
             <SectionTitle>100-Point ID Check</SectionTitle>
             <div className="bg-light p-3 border rounded mb-4">
-                <div className="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom text-muted small fw-bold">
-                    <span>Document</span>
-                    <span>Points</span>
-                </div>
-                <div className="d-flex justify-content-between align-items-center mb-2">
-                    <div className="form-check mb-0">
-                        <input className="form-check-input" type="checkbox" id="chk1" name="chk_primary" checked={values.chk_primary} onChange={onChange} />
-                        <label className="form-check-label small" htmlFor="chk1">Birth Certificate, Passport, or Citizenship Certificate</label>
+                {[
+                    { label: "Birth Certificate, Passport, or Citizenship Certificate", points: 70, name: "chk_primary" },
+                    { label: "Driver Licence or Government Issued Photo ID", points: 40, name: "chk_driver" },
+                    { label: "Security Licence (Mandatory)", points: 40, name: "chk_security" },
+                    { label: "Medicare Card, Utility Bill, or Bank Statement", points: 25, name: "chk_medicare" },
+                ].map((item) => (
+                    <div className="d-flex justify-content-between align-items-center mb-2" key={item.name}>
+                        <div className="form-check mb-0">
+                            <input className="form-check-input" type="checkbox" id={item.name} name={item.name} checked={values[item.name]} onChange={onChange} />
+                            <label className="form-check-label small" htmlFor={item.name}>{item.label}</label>
+                        </div>
+                        <span className="text-muted small">{item.points}</span>
                     </div>
-                    <span className="text-muted small">70</span>
-                </div>
-                <div className="d-flex justify-content-between align-items-center mb-2">
-                    <div className="form-check mb-0">
-                        <input className="form-check-input" type="checkbox" id="chk2" name="chk_driver" checked={values.chk_driver} onChange={onChange} />
-                        <label className="form-check-label small" htmlFor="chk2">Driver Licence or Government Issued Photo ID</label>
-                    </div>
-                    <span className="text-muted small">40</span>
-                </div>
-                <div className="d-flex justify-content-between align-items-center mb-2">
-                    <div className="form-check mb-0">
-                        <input className="form-check-input" type="checkbox" id="chk3" name="chk_security" checked={values.chk_security} onChange={onChange} />
-                        <label className="form-check-label small" htmlFor="chk3">Security Licence (Mandatory)</label>
-                    </div>
-                    <span className="text-muted small">40</span>
-                </div>
-                <div className="d-flex justify-content-between align-items-center">
-                    <div className="form-check mb-0">
-                        <input className="form-check-input" type="checkbox" id="chk4" name="chk_medicare" checked={values.chk_medicare} onChange={onChange} />
-                        <label className="form-check-label small" htmlFor="chk4">Medicare Card, Utility Bill, or Bank Statement</label>
-                    </div>
-                    <span className="text-muted small">25</span>
-                </div>
+                ))}
             </div>
 
             <SectionTitle>Banking, Tax & Superannuation</SectionTitle>
@@ -496,10 +532,9 @@ const EmployeeOnboardingForm = ({ values, loading, onChange, onSubmit, dataModif
                         )}
                     </div>
                 </div>
-
                 <div className="col-md-6">
                     <label className="form-label small fw-bold text-muted">Security Licence Expiry <span className="text-danger">*</span></label>
-                    <input type="date" className="form-control" name="o_seclicexp" value={values.o_seclicexp} onChange={onChange} required />
+                    <DateInput name="o_seclicexp" value={values.o_seclicexp} onChange={onChange} required />
                 </div>
 
                 <div className="col-md-6 mt-4">
@@ -518,10 +553,9 @@ const EmployeeOnboardingForm = ({ values, loading, onChange, onSubmit, dataModif
                         )}
                     </div>
                 </div>
-
                 <div className="col-md-6 mt-4">
                     <label className="form-label small fw-bold text-muted">First Aid Expiry</label>
-                    <input type="date" className="form-control" name="o_faexp" value={values.o_faexp} onChange={onChange} />
+                    <DateInput name="o_faexp" value={values.o_faexp} onChange={onChange} />
                 </div>
             </div>
 
@@ -533,7 +567,7 @@ const EmployeeOnboardingForm = ({ values, loading, onChange, onSubmit, dataModif
                 </div>
                 <div className="col-md-6">
                     <label className="form-label small fw-bold text-muted">Date <span className="text-danger">*</span></label>
-                    <input type="date" className="form-control" name="date3" value={values.date3} onChange={onChange} required />
+                    <DateInput name="date3" value={values.date3} onChange={onChange} required />
                 </div>
             </div>
 
@@ -542,37 +576,22 @@ const EmployeeOnboardingForm = ({ values, loading, onChange, onSubmit, dataModif
     );
 };
 
-// ─── HELPER FUNCTIONS ───────────────────────────────────────────────────────
-const getTodayDate = () => {
-    const today = new Date();
-    const offset = today.getTimezoneOffset() * 60000;
-    const localISOTime = (new Date(today - offset)).toISOString().slice(0, 10);
-    return localISOTime;
-};
-
-const toDateValue = (value) => {
-    if (!value) return getTodayDate();
-    return String(value).split("T")[0];
-};
-
-// ─── NORMALIZATION FUNCTIONS (merging userdata) ─────────────────────────────
-const normalizeTfnData = (apiData, userdata) => {
-    return {
-        tfn: apiData?.tfn ?? "",
-        title: apiData?.title ?? "",
-        first_name: apiData?.first_name ?? "",
-        surname: apiData?.surname ?? "",
-        prev_name: apiData?.previous_name ?? apiData?.prev_name ?? "",
-        dob: apiData?.dob ? toDateValue(apiData.dob) : (userdata?.staff?.date_of_birth ? toDateValue(userdata.staff.date_of_birth) : getTodayDate()),
-        address: apiData?.address ?? userdata?.address ?? "",
-        basis: apiData?.basis_of_payment ?? apiData?.basis ?? "casual",
-        aus_res: String(apiData?.australian_resident ?? apiData?.aus_res ?? "").toLowerCase() === "1" ? "yes" : String(apiData?.australian_resident ?? apiData?.aus_res ?? "").toLowerCase() === "yes" ? "yes" : "no",
-        threshold: String(apiData?.claim_threshold ?? apiData?.threshold ?? "").toLowerCase() === "1" ? "yes" : String(apiData?.claim_threshold ?? apiData?.threshold ?? "").toLowerCase() === "yes" ? "yes" : "no",
-        help: String(apiData?.help_debt ?? apiData?.help ?? "").toLowerCase() === "1" ? "yes" : String(apiData?.help_debt ?? apiData?.help ?? "").toLowerCase() === "yes" ? "yes" : "no",
-        sig1: apiData?.signature ?? apiData?.sig1 ?? "",
-        date1: apiData?.signed_date ? toDateValue(apiData.signed_date) : getTodayDate(),
-    };
-};
+/* ---------- Normalization (DD/MM/YYYY in state) ---------- */
+const normalizeTfnData = (apiData, userdata) => ({
+    tfn: apiData?.tfn ?? "",
+    title: apiData?.title ?? "",
+    first_name: apiData?.first_name ?? "",
+    surname: apiData?.surname ?? "",
+    prev_name: apiData?.previous_name ?? apiData?.prev_name ?? "",
+    dob: apiData?.dob ? isoToDisplay(apiData.dob) : (userdata?.staff?.date_of_birth ? isoToDisplay(userdata.staff.date_of_birth) : todayDDMMYYYY()),
+    address: apiData?.address ?? userdata?.address ?? "",
+    basis: apiData?.basis_of_payment ?? apiData?.basis ?? "casual",
+    aus_res: String(apiData?.australian_resident ?? apiData?.aus_res ?? "").toLowerCase() === "1" ? "yes" : String(apiData?.australian_resident ?? apiData?.aus_res ?? "").toLowerCase() === "yes" ? "yes" : "no",
+    threshold: String(apiData?.claim_threshold ?? apiData?.threshold ?? "").toLowerCase() === "1" ? "yes" : String(apiData?.claim_threshold ?? apiData?.threshold ?? "").toLowerCase() === "yes" ? "yes" : "no",
+    help: String(apiData?.help_debt ?? apiData?.help ?? "").toLowerCase() === "1" ? "yes" : String(apiData?.help_debt ?? apiData?.help ?? "").toLowerCase() === "yes" ? "yes" : "no",
+    sig1: apiData?.signature ?? apiData?.sig1 ?? "",
+    date1: apiData?.signed_date ? isoToDisplay(apiData.signed_date) : todayDDMMYYYY(),
+});
 
 const normalizeSuperData = (apiData, userdata) => ({
     s_name: apiData?.full_name ?? apiData?.s_name ?? userdata?.name ?? "",
@@ -584,20 +603,20 @@ const normalizeSuperData = (apiData, userdata) => ({
     s_member: apiData?.member_account ?? apiData?.s_member ?? "",
     super_confirm: apiData?.super_confirm ?? false,
     sig2: apiData?.signature ?? apiData?.sig2 ?? "",
-    date2: apiData?.signed_date ? toDateValue(apiData.signed_date) : getTodayDate(),
+    date2: apiData?.signed_date ? isoToDisplay(apiData.signed_date) : todayDDMMYYYY(),
 });
 
 const normalizeOnboardData = (apiData, userdata) => {
     const staff = userdata?.staff || {};
     return {
         o_name: apiData?.full_name ?? apiData?.o_name ?? userdata?.name ?? "",
-        o_dob: apiData?.dob ? toDateValue(apiData.dob) : (staff?.date_of_birth ? toDateValue(staff.date_of_birth) : getTodayDate()),
+        o_dob: apiData?.dob ? isoToDisplay(apiData.dob) : (staff?.date_of_birth ? isoToDisplay(staff.date_of_birth) : todayDDMMYYYY()),
         o_addr: apiData?.address ?? apiData?.o_addr ?? userdata?.address ?? "",
         o_phone: apiData?.mobile ?? apiData?.o_phone ?? staff?.phone ?? userdata?.phone ?? "",
         o_email: apiData?.email ?? apiData?.o_email ?? userdata?.email ?? "",
         o_passport: apiData?.passport_number ?? apiData?.o_passport ?? "",
         o_pcountry: apiData?.passport_country ?? apiData?.o_pcountry ?? "",
-        o_pexpiry: apiData?.passport_expiry ? toDateValue(apiData.passport_expiry) : "",
+        o_pexpiry: apiData?.passport_expiry ? isoToDisplay(apiData.passport_expiry) : "",
         work: apiData?.work_rights ?? apiData?.work ?? "citizen",
         o_visa_type: apiData?.visa_type ?? apiData?.o_visa_type ?? "",
         passport_doc: apiData?.passport_doc ?? "",
@@ -613,17 +632,17 @@ const normalizeOnboardData = (apiData, userdata) => {
         o_superusi: apiData?.super_usi ?? apiData?.o_superusi ?? "",
         o_member: apiData?.super_member ?? apiData?.o_member ?? "",
         o_seclic: apiData?.security_license ?? apiData?.o_seclic ?? staff?.security_license_no ?? "",
-        o_seclicexp: apiData?.security_license_expiry ? toDateValue(apiData.security_license_expiry) : "",
+        o_seclicexp: apiData?.security_license_expiry ? isoToDisplay(apiData.security_license_expiry) : "",
         security_license_doc: apiData?.security_license_doc ?? "",
         o_fa: apiData?.first_aid_cert ?? apiData?.o_fa ?? "",
-        o_faexp: apiData?.first_aid_expiry ? toDateValue(apiData.first_aid_expiry) : "",
+        o_faexp: apiData?.first_aid_expiry ? isoToDisplay(apiData.first_aid_expiry) : "",
         first_aid_doc: apiData?.first_aid_doc ?? "",
         sig3: apiData?.signature ?? apiData?.sig3 ?? "",
-        date3: apiData?.signed_date ? toDateValue(apiData.signed_date) : getTodayDate(),
+        date3: apiData?.signed_date ? isoToDisplay(apiData.signed_date) : todayDDMMYYYY(),
     };
 };
 
-// ─── MAIN COMPONENT ──────────────────────────────────────────────────────────
+/* ---------- Main Component ---------- */
 const StaffOnboardingForms = ({ submit, userId, onProfileUpdate }) => {
     const { userdata } = useSelector((state) => state.auth);
     const [subTab, setSubTab] = useState(0);
@@ -834,8 +853,8 @@ const StaffOnboardingForms = ({ submit, userId, onProfileUpdate }) => {
         <div className="bg-white rounded p-4 border shadow-sm mt-3">
             <div className="d-flex justify-content-between align-items-center mb-4">
                 <div>
-                    <h4 className="fw-bold mb-1">Staffoo Verification Forms</h4>
-                    <span className="text-muted small">Capital Services Pty Ltd &nbsp;·&nbsp; ABN: 48 613 317 838</span>
+                    <h4 className="fw-bold mb-1">Staff Verification Forms</h4>
+                    <span className="text-muted small">Capital Services Pty Ltd · ABN: 48 613 317 838</span>
                 </div>
             </div>
 

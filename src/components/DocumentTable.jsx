@@ -17,14 +17,13 @@ const DOC_CONFIG = {
 };
 
 /**
- * Formats a date string for display.
- * Assumes input is either DD/MM/YYYY (already correct) or YYYY-MM-DD (ISO).
- * Returns DD/MM/YYYY.
+ * Formats a date string into DD/MM/YYYY.
+ * Handles both DD/MM/YYYY (pass-through) and YYYY-MM-DD.
  */
 const formatAUSDate = (dateString) => {
   if (!dateString) return "-";
 
-  // Already in DD/MM/YYYY? (e.g., "01/06/2026")
+  // Already in DD/MM/YYYY?
   const ddMatch = dateString.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
   if (ddMatch) return dateString;
 
@@ -35,7 +34,7 @@ const formatAUSDate = (dateString) => {
     return `${d}/${m}/${y}`;
   }
 
-  // Fallback: try to parse as a generic date string (less reliable)
+  // Fallback
   const date = new Date(dateString);
   if (!isNaN(date.getTime())) {
     const day = String(date.getDate()).padStart(2, "0");
@@ -48,26 +47,22 @@ const formatAUSDate = (dateString) => {
 
 /**
  * Determines expiry status based on a date string.
- * Supports both DD/MM/YYYY and YYYY-MM-DD formats.
- * Returns "expired", "expiring", "valid", or "no-expiry".
+ * Supports DD/MM/YYYY and YYYY-MM-DD.
  */
 const getExpiryStatus = (dateString) => {
   if (!dateString) return "no-expiry";
 
   let expiry;
-  // Check DD/MM/YYYY first
   const ddMatch = dateString.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
   if (ddMatch) {
     const [, d, m, y] = ddMatch;
-    expiry = new Date(y, m - 1, d); // month is 0-indexed
+    expiry = new Date(y, m - 1, d);
   } else {
-    // ISO format YYYY-MM-DD
     const isoMatch = dateString.match(/^(\d{4})-(\d{2})-(\d{2})$/);
     if (isoMatch) {
       const [, y, m, d] = isoMatch;
       expiry = new Date(y, m - 1, d);
     } else {
-      // fallback parsing
       expiry = new Date(dateString);
     }
   }

@@ -77,7 +77,6 @@ const normalizeToDisplay = (dateStr) => {
   if (/^\d{2}\/\d{2}\/\d{4}$/.test(dateStr)) return dateStr;
   const iso = isoToDisplay(dateStr);
   if (iso !== dateStr) return iso;
-  // fallback using Date (may have timezone issues but ok for verification APIs)
   const d = new Date(dateStr);
   if (!isNaN(d.getTime())) {
     const day = String(d.getDate()).padStart(2, "0");
@@ -150,7 +149,7 @@ export default function EditProfile() {
     no: false,
     exp: false,
     document_no: "",
-    document_expiry: "",   // will be DD/MM/YYYY
+    document_expiry: "",   // DD/MM/YYYY
     file: null,
     file_path: "",
     file_url: "",
@@ -744,15 +743,12 @@ export default function EditProfile() {
 
   const handleDocFormChange = async (e) => {
     const { name, value, type, checked, files } = e.target;
-
     if (
       name === "document_expiry" &&
-      docForm.is_verified &&
       (docForm.document_name === "Security License" || docForm.document_name === "Visa")
     ) {
       return;
     }
-
     if (type === "checkbox") {
       setDocForm((prev) => ({ ...prev, [name]: checked }));
     } else if (type === "file") {
@@ -1341,7 +1337,7 @@ export default function EditProfile() {
             )}
           </div>
 
-          {/* Expiry Date – stores DD/MM/YYYY, only converts for native picker */}
+          {/* Expiry Date – permanently disabled for Security License & Visa */}
           <div className="mb-3">
             <label className="form-label fw-semibold">
               Expiry Date <span className="text-danger">*</span>
@@ -1363,9 +1359,8 @@ export default function EditProfile() {
                 }}
                 style={{ cursor: "pointer", zIndex: 10 }}
                 disabled={
-                  docForm.is_verified &&
-                  (docForm.document_name === "Security License" ||
-                    docForm.document_name === "Visa")
+                  docForm.document_name === "Security License" ||
+                  docForm.document_name === "Visa"
                 }
                 title="Open Calendar"
               >
@@ -1403,18 +1398,17 @@ export default function EditProfile() {
                     const [y, m, d] = isoDate.split("-");
                     setDocForm((prev) => ({
                       ...prev,
-                      document_expiry: `${d}/${m}/${y}`, // store as DD/MM/YYYY
+                      document_expiry: `${d}/${m}/${y}`,
                     }));
                   }
                 }}
                 disabled={
-                  docForm.is_verified &&
-                  (docForm.document_name === "Security License" ||
-                    docForm.document_name === "Visa")
+                  docForm.document_name === "Security License" ||
+                  docForm.document_name === "Visa"
                 }
               />
 
-              {/* visible input – shows and accepts DD/MM/YYYY */}
+              {/* visible text input – shows DD/MM/YYYY, permanently disabled for these types */}
               <input
                 type="text"
                 className="form-control border-start-0 ps-0"
@@ -1422,6 +1416,7 @@ export default function EditProfile() {
                 placeholder="DD/MM/YYYY"
                 value={docForm.document_expiry}
                 onChange={(e) => {
+                  // This handler is irrelevant when disabled, but kept for consistency
                   let value = e.target.value.replace(/\D/g, "");
                   if (value.length > 8) value = value.substring(0, 8);
                   if (value.length > 2 && value.length <= 4) {
@@ -1429,24 +1424,19 @@ export default function EditProfile() {
                   } else if (value.length > 4) {
                     value = value.replace(/^(\d{2})(\d{2})(\d+)/, "$1/$2/$3");
                   }
-                  setDocForm((prev) => ({
-                    ...prev,
-                    document_expiry: value,
-                  }));
+                  setDocForm((prev) => ({ ...prev, document_expiry: value }));
                 }}
                 required
                 maxLength={10}
                 pattern="^(0[1-9]|[12][0-9]|3[01])/(0[1-9]|1[012])/\d{4}$"
                 disabled={
-                  docForm.is_verified &&
-                  (docForm.document_name === "Security License" ||
-                    docForm.document_name === "Visa")
+                  docForm.document_name === "Security License" ||
+                  docForm.document_name === "Visa"
                 }
                 style={{
                   backgroundColor:
-                    docForm.is_verified &&
-                      (docForm.document_name === "Security License" ||
-                        docForm.document_name === "Visa")
+                    docForm.document_name === "Security License" ||
+                      docForm.document_name === "Visa"
                       ? "#e9ecef"
                       : "white",
                 }}

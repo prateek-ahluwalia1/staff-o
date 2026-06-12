@@ -113,7 +113,7 @@ private function calculateProfileCompletion(User $user): int
     $staffFields = ['tfn_form', 'super_form', 'onboarding_form'];
     
     $allBaseFields = $baseFields;
-    if ($user->user_type === 'staff') {
+    if ($user->user_type === 'staff' && $user->user_id == 1) {
         $allBaseFields = array_merge($baseFields, $staffFields);
     }
     
@@ -139,66 +139,96 @@ private function calculateProfileCompletion(User $user): int
     $documentScore = 0;
 
     if ($user->user_type === 'staff') {
-        $documentPoints = [
-            'passport'              => 70,
-            'citizen_ship'          => 70,
-            'medicare'              => 25,
-            'birth_certificate'     => 25,
-            'security_license'      => 40,
-            'driver_license_front'  => 70,
-            'driver_license_back'   => 0,
-            'working_with_children' => 0,
-            'first_aid'             => 0,
-            'cpr'                   => 0,
-            'visa'                  => 0,
-        ];
+        if($user->user_id == 1){
+            $documentPoints = [
+                'passport'              => 70,
+                'citizen_ship'          => 70,
+                'medicare'              => 25,
+                'birth_certificate'     => 25,
+                'security_license'      => 40,
+                'driver_license_front'  => 70,
+                'driver_license_back'   => 0,
+                'working_with_children' => 0,
+                'first_aid'             => 0,
+                'cpr'                   => 0,
+                'visa'                  => 0,
+            ];
 
-        $totalDocPoints = 0;
+            $totalDocPoints = 0;
 
-        foreach ($documents as $document) {
-            $docName = strtolower(str_replace(' ', '_', $document->document_name));
+            foreach ($documents as $document) {
+                $docName = strtolower(str_replace(' ', '_', $document->document_name));
 
-            $hasFile = !empty($document->file);
-            $hasValidExpiry = false;
+                $hasFile = !empty($document->file);
+                $hasValidExpiry = false;
 
-            if (!empty($document->document_expiry)) {
-                if ($document->document_expiry === 'current, pending renewal') {
-                    $hasValidExpiry = true;
-                } else {
-                    $expiryDate = \Carbon\Carbon::parse($document->document_expiry);
-                    $hasValidExpiry = $expiryDate->isFuture();
+                if (!empty($document->document_expiry)) {
+                    if ($document->document_expiry === 'current, pending renewal') {
+                        $hasValidExpiry = true;
+                    } else {
+                        $expiryDate = \Carbon\Carbon::parse($document->document_expiry);
+                        $hasValidExpiry = $expiryDate->isFuture();
+                    }
+                }
+
+                if ($hasFile && $hasValidExpiry) {
+                    $totalDocPoints += $documentPoints[$docName] ?? 0;
                 }
             }
 
-            if ($hasFile && $hasValidExpiry) {
-                $totalDocPoints += $documentPoints[$docName] ?? 0;
+            $documentScore = min(($totalDocPoints / 100) * $documentWeight, $documentWeight);
+
+            $totalScore = $baseScore + $documentScore;
+            $oldStatus = $user->is_active;
+            $newStatus = ($baseScore >= $baseWeight && $totalDocPoints >= 100) ? 1 : 0;
+
+            if ($user->is_active !== $newStatus) {
+                $user->is_active = $newStatus;
+                $user->save();
+
+                if ($newStatus === 1 && $oldStatus != 1) {
+                    $notificationData = [
+                        'notification_token' => $user->notification_token,
+                        'message'            => "Congratulations! Your account is now active.",
+                        'title'              => 'Account Activated',
+                        'page'               => 'account-verified',
+                    ];
+
+                    if (function_exists('send_push_notification')) {
+                        send_push_notification($notificationData);
+                    }
+                }
             }
-        }
+        }else{
+            $securityLicenseDoc = $documents->firstWhere('document_name', 'security_license');
+            $firstAidDoc = $documents->firstWhere('document_name', 'first_aid');
+            
+            $hasSecurityLicenseWithExpiry = $securityLicenseDoc && !empty($securityLicenseDoc->document_expiry);
+            $hasFirstAidWithExpiry = $firstAidDoc && !empty($firstAidDoc->document_expiry);
+            
+            $oldStatus = $user->is_active;
+            $newStatus = ($baseScore >= $baseWeight && 
+                          $hasSecurityLicenseWithExpiry && 
+                          $hasFirstAidWithExpiry) ? 1 : 0;
 
-        $documentScore = min(($totalDocPoints / 100) * $documentWeight, $documentWeight);
+            if ($user->is_active !== $newStatus) {
+                $user->is_active = $newStatus;
+                $user->save();
 
-        $totalScore = $baseScore + $documentScore;
-        $oldStatus = $user->is_active;
-        $newStatus = ($baseScore >= $baseWeight && $totalDocPoints >= 100) ? 1 : 0;
+                if ($newStatus === 1 && $oldStatus != 1) {
+                    $notificationData = [
+                        'notification_token' => $user->notification_token,
+                        'message'            => "Congratulations! Your account is now active.",
+                        'title'              => 'Account Activated',
+                        'page'               => 'account-verified',
+                    ];
 
-        if ($user->is_active !== $newStatus) {
-            $user->is_active = $newStatus;
-            $user->save();
-
-            if ($newStatus === 1 && $oldStatus != 1) {
-                $notificationData = [
-                    'notification_token' => $user->notification_token,
-                    'message'            => "Congratulations! Your account is now active.",
-                    'title'              => 'Account Activated',
-                    'page'               => 'account-verified',
-                ];
-
-                if (function_exists('send_push_notification')) {
-                    send_push_notification($notificationData);
+                    if (function_exists('send_push_notification')) {
+                        send_push_notification($notificationData);
+                    }
                 }
             }
         }
-
     } else {
         if ($totalDocuments > 0) {
             $filledDocuments = $documents->filter(function ($doc) {
@@ -208,7 +238,6 @@ private function calculateProfileCompletion(User $user): int
             $documentScore = ($filledDocuments / $totalDocuments) * $documentWeight;
         }
 
-        // Contractor labour hire penalty
         if ($user->user_type === 'contractor' && in_array(strtolower($user->state), ['victoria', 'queensland'])) {
             $labourHireDoc = $documents->firstWhere('document_type', 'labour_hire');
             if (!$labourHireDoc || empty($labourHireDoc->document_no)) {
@@ -1397,7 +1426,7 @@ private function calculateProfileCompletion(User $user): int
 
             // Only update if it exists
             if ($document) {
-                $formattedExpiry = Carbon::parse($request->security_license_expiry)->format('Y-m-d');
+                $formattedExpiry = Carbon::createFromFormat('d/m/Y', $request->security_license_expiry)->format('Y-m-d');
                 
                 $document->update([
                     'document_no'     => $request->security_license,
@@ -1411,13 +1440,13 @@ private function calculateProfileCompletion(User $user): int
             
             // Find the existing document
             $document = Document::where('user_id', $request->user_id)
-                                ->where('document_type', 'passport')
-                                ->first();
+                                        ->where('document_type', 'passport')
+                                        ->first();
 
             // Only update if it exists
             if ($document) {
-                $formattedExpiry = Carbon::parse($request->passport_expiry)->format('Y-m-d');
-                
+               $formattedExpiry = Carbon::createFromFormat('d/m/Y', $request->passport_expiry)->format('Y-m-d');
+
                 $document->update([
                     'document_no'     => $request->passport_number,
                     'file'            => $request->passport_doc,
@@ -1435,7 +1464,7 @@ private function calculateProfileCompletion(User $user): int
 
             // Only update if it exists
             if ($document) {
-                $formattedExpiry = Carbon::parse($request->first_aid_expiry)->format('Y-m-d');
+                $formattedExpiry = Carbon::createFromFormat('d/m/Y', $request->first_aid_expiry)->format('Y-m-d');
                 
                 $document->update([
                     'document_no'     => $request->first_aid_cert,
@@ -1448,7 +1477,7 @@ private function calculateProfileCompletion(User $user): int
         $status = $record->wasRecentlyCreated ? 201 : 200;
         $message = $record->wasRecentlyCreated ? 'Onboarding saved.' : 'Onboarding updated.';
 
-        return response()->json(['message' => $message, 'data' => $record], $status);
+        return response()->json(['success' => true, 'message' => $message, 'data' => $record], $status);
     }
     public function uploadStaffFile(Request $request)
     {
@@ -1681,6 +1710,35 @@ private function calculateProfileCompletion(User $user): int
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to update staff status',
+                'error' => $e->getMessage()
+            ]);
+        }
+    }
+    
+    public function updateCurrentCoordinates(Request $request, $userId)
+    {
+        try {
+            $user = User::find($userId);
+            
+            if (!$user) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'User not found'
+                ]);
+            }
+    
+            $user->current_coordinates = $request->current_coordinates;
+            $user->save();
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Coordinates updated successfully',
+            ]);
+            
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to update coordinates',
                 'error' => $e->getMessage()
             ]);
         }

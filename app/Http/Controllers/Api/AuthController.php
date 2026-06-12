@@ -3,24 +3,15 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\User;
-use App\Models\Customer;
-use App\Models\Contractor;
-use App\Models\DocumentCategory;
-use App\Models\Staff;
-use App\Models\Document;
-use Exception;
+use App\Models\{User, Customer, Contractor, Staff, Document, DocumentCategory, Questionnaire};
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\{Hash, DB, Log};
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 use App\Mail\StaffOnboardingMail;
-use App\Models\Questionnaire;
 use Carbon\Carbon;
-use Vonage\Client;
-use Vonage\Client\Credentials\Basic;
-use Vonage\SMS\Message\SMS;
+use Exception;
 
 class AuthController extends Controller
 {
@@ -35,7 +26,7 @@ class AuthController extends Controller
         ]); 
         
         if($data['user_type'] == 'staff'){
-            $capitalUser = User::where('user_type', 'customer')
+            $capitalUser = User::where('id', 1)->where('user_type', 'contractor')
             ->where('name', 'Capital Security')
             ->firstOrFail();
         }else{
@@ -102,6 +93,7 @@ class AuthController extends Controller
                 'profile_image' => $profileImagePath ?? $data['profile_image'] ?? null,
                 'gender' => $data['gender'] ?? null,
                 'phone' => $data['phone'] ?? null,
+                'dob' => $data['dob'] ?? null
             ]);
 
             $inductions = Questionnaire::all();
@@ -150,47 +142,56 @@ class AuthController extends Controller
         ], 201);
     }
 
-    public function sendOTP($phone, $otp)
+     public function sendOTP(?string $phone, int $otp): bool
     {
-        try {
-            if (empty($phone)) {
-                \Log::error('OTP Error: Phone is null');
-                return false;
-            }
-
-            $phone = $this->formatPhone($phone);
-
-            $basic  = new Basic(env('VONAGE_KEY'), env('VONAGE_SECRET'));
-            $client = new Client($basic);
-
-            $response = $client->sms()->send(
-                new SMS(
-                    $phone,
-                    env('VONAGE_BRAND'),
-                    "Your verification OTP is: $otp"
-                )
-            );
-
-            $message = $response->current();
-
-            if ($message->getStatus() != 0) {
-                \Log::error('Vonage Error: ' . $message->getErrorText());
-                return false;
-            }
-
-            return true;
-
-        } catch (\Exception $e) {
-            \Log::error('Vonage Exception: ' . $e->getMessage());
+        if (empty($phone)) {
+            Log::error('OTP Error: Phone is null');
             return false;
         }
+
+        $phone = $this->formatPhone($phone);
+
+        return $this->yeastar->sendSmsOtp($phone, (string) $otp);
     }
+
+    // ─── Resend OTP ────────────────────────────────────────────────────
+
+    public function resendOtp(Request $request)
+    {
+        $request->validate(['phone' => 'required|string']);
+
+        $user = User::where('phone', $request->phone)->first();
+
+        if (!$user) {
+            return response()->json(['message' => 'User not found'], 404);
+        }
+
+        if ($user->phone_verified) {
+            return response()->json(['message' => 'Phone already verified'], 400);
+        }
+
+        $otp = rand(100000, 999999);
+
+        $user->update([
+            'phone_otp'            => $otp,
+        ]);
+
+        $sent = $this->sendOTP($user->phone, $otp);
+
+        if (!$sent) {
+            return response()->json(['message' => 'Failed to send OTP, try again'], 500);
+        }
+
+        return response()->json(['message' => 'OTP resent successfully']);
+    }
+
+    // ─── Verify Phone ──────────────────────────────────────────────────
 
     public function verifyPhone(Request $request)
     {
         $request->validate([
-            'phone' => 'required',
-            'otp' => 'required'
+            'phone' => 'required|string',
+            'otp'   => 'required|string',
         ]);
 
         $user = User::where('phone', $request->phone)->first();
@@ -199,21 +200,50 @@ class AuthController extends Controller
             return response()->json(['message' => 'User not found'], 404);
         }
 
+        if ($user->phone_verified) {
+            return response()->json(['message' => 'Phone already verified'], 200);
+        }
+
+        // Check OTP expiry first
+        // if (!$user->phone_otp_expires_at || now()->gt($user->phone_otp_expires_at)) {
+        //     return response()->json([
+        //         'message' => 'OTP expired, please request a new one',
+        //     ], 400);
+        // }
+
+        // Then check OTP value
         if ($user->phone_otp != $request->otp) {
             return response()->json(['message' => 'Invalid OTP'], 400);
         }
 
-        if (now()->gt($user->phone_otp_expires_at)) {
-            return response()->json(['message' => 'OTP expired'], 400);
-        }
-
         $user->update([
-            'phone_verified' => 1,
-            'phone_otp' => null,
-            'phone_otp_expires_at' => null,
+            'phone_verified'       => 1,
+            'phone_otp'            => null,
+            // 'phone_otp_expires_at' => null,
         ]);
 
-        return response()->json(['message' => 'Phone verified']);
+        return response()->json(['message' => 'Phone verified successfully']);
+    }
+
+    // ─── Format Phone ──────────────────────────────────────────────────
+
+    protected function formatPhone(string $phone): string
+    {
+        // Remove spaces, dashes, parentheses
+        $phone = preg_replace('/[\s\-\(\)]/', '', $phone);
+
+        // Australian numbers: 04xx → +614xx
+        if (str_starts_with($phone, '04')) {
+            return '+61' . substr($phone, 1);
+        }
+
+        // Already has country code
+        if (str_starts_with($phone, '+')) {
+            return $phone;
+        }
+
+        // Default: prepend + if looks like it has country code already
+        return '+' . ltrim($phone, '0');
     }
     
     public function EmailVerify($email)
@@ -419,12 +449,14 @@ class AuthController extends Controller
 
         if (! $user) {
             return response()->json([
+                'success' => false,
                 'message' => 'User Not Found.'
             ], 401);
         }
 
         if ($user->is_email_approved == 0) {
             return response()->json([
+                'success' => false,
                 'message' => 'Please verify your email first'
             ], 403);
         }
@@ -439,6 +471,7 @@ class AuthController extends Controller
 
         if (! $user || ! Hash::check($request->password, $user->password)) {
             return response()->json([
+                'success' => false,
                 'message' => 'Invalid credentials'
             ], 401);
         }
@@ -657,7 +690,7 @@ class AuthController extends Controller
     private function registerStaffViaGoogle(array $google)
     {
         // Same logic as your registerStaff() — link to Capital Security
-        $capitalUser = User::where('user_type', 'customer')
+        $capitalUser = User::where('id', 1)->where('user_type', 'contractor')
             ->where('name', 'Capital Security')
             ->first();
 
@@ -763,7 +796,7 @@ class AuthController extends Controller
                 $message->subject('Reset Your Password');
             });
 
-            return response()->json(['message' => 'Password reset email sent. Check your inbox.'], 200);
+            return response()->json(['success' => true, 'message' => 'Password reset email sent. Check your inbox.'], 200);
 
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500);
@@ -781,7 +814,7 @@ class AuthController extends Controller
             $passwordReset = DB::table('password_reset_tokens')->where('token', $request->token)->first();
 
             if (!$passwordReset) {
-                return response()->json(['message' => 'This password reset token is invalid.<br>Verify with the latest link.'], 404);
+                return response()->json(['success' => false, 'message' => 'This password reset token is invalid.<br>Verify with the latest link.'], 404);
             }
 
             $user = User::where('email', $passwordReset->email)->first();
@@ -790,7 +823,7 @@ class AuthController extends Controller
 
             DB::table('password_reset_tokens')->where('email', $passwordReset->email)->delete();
 
-            return response()->json(['message' => 'Password has been successfully reset.'], 200);
+            return response()->json(['success' => true, 'message' => 'Password has been successfully reset.'], 200);
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500);
         }

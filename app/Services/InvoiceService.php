@@ -71,6 +71,7 @@ class InvoiceService
 
         $baseTotal  = '$' . number_format((float) $d['base_total'],     2);
         $discount   = '$' . number_format((float) $d['discount'],       2);
+        $baseFinalTotal = '$' . number_format((float) $d['service_fee'] + (float) $d['base_total'], 2);
         $serviceFee = '$' . number_format((float) $d['service_fee'],    2);
         $grandTotal = '$' . number_format((float) $d['grand_total'],    2);
         $amtCharged = '$' . number_format((float) $d['amount_charged'], 2);
@@ -149,9 +150,9 @@ class InvoiceService
         $html .= "<div class='section-title'>Payment Breakdown</div>";
         $html .= "<div class='table-wrap'><table class='tt'>";
         $html .= "<tr><td class='lbl'>Subtotal</td><td class='amt'>{$baseTotal}</td></tr>";
-        $html .= "<tr><td class='lbl'>{$discountLabel}</td><td class='amt' style='color:#D97706;'>- {$discount}</td></tr>";
         $html .= "<tr><td class='lbl'>GST (10%)</td><td class='amt'>{$serviceFee}</td></tr>";
-        $html .= "<tr class='grand'><td class='lbl'>Total Amount</td><td class='amt'>{$grandTotal}</td></tr>";
+        $html .= "<tr class='grand'><td class='lbl'>Total Amount</td><td class='amt'>{$baseFinalTotal}</td></tr>";
+        $html .= "<tr><td class='lbl'>{$discountLabel}</td><td class='amt' style='color:#D97706;'>- {$discount}</td></tr>";
         $html .= "<tr class='charged'><td class='lbl'>Amount Charged Now</td><td class='amt'>{$amtCharged}</td></tr>";
         $html .= "<tr class='balance'><td class='lbl'>Balance Remaining</td><td class='amt'>{$balance}</td></tr>";
         $html .= "</table></div>";

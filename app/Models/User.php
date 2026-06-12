@@ -30,7 +30,8 @@ class User extends Authenticatable
             'last_seen',
             'notification_token',
             'staffo_id',
-            'phone_otp'
+            'phone_otp',
+            'current_coordinates'
         ];
     
         protected $hidden = [

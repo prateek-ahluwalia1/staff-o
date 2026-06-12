@@ -119,7 +119,9 @@ class JobRosterController extends Controller
                     ($chargeRate->def_metro_mon_to_fri_day_rate   * ($hours['morning']          ?? 0)) +
                     ($chargeRate->def_metro_mon_to_fri_night_rate * ($hours['night']             ?? 0)) +
                     ($chargeRate->def_metro_sat_day_rate          * (($hours['saturday_morning'] ?? 0) + ($hours['saturday_night'] ?? 0))) +
-                    ($chargeRate->def_metro_sun_day_rate          * (($hours['sunday_morning']   ?? 0) + ($hours['sunday_night']   ?? 0)));
+                    ($chargeRate->def_metro_sun_day_rate          * (($hours['sunday_morning']   ?? 0) + ($hours['sunday_night']   ?? 0))) +
+                    ($chargeRate->def_metro_pub_holi_day_rate     * (($hours['ph_morning'] ?? 0) + ($hours['ph_night'] ?? 0)));
+;
     
                 $serviceFee  = round($jobAmount * 0.10, 2);
                 $totalAmount = round($jobAmount + $serviceFee, 2);
@@ -185,18 +187,6 @@ class JobRosterController extends Controller
     
                     $jobId = JobRoster::insertGetId($roster);
                     $createdJobIds[] = $jobId;
-    
-                    // TASKS
-                    // if (!empty($request->tasks)) {
-                    //     foreach ($request->tasks as $task) {
-                    //         JobRosterTask::create([
-                    //             'job_roster_id' => $jobId,
-                    //             'task'          => $task['task'],
-                    //             'task_start'    => dbFormateDateTime($task['task_start']),
-                    //             'task_end'      => dbFormateDateTime($task['task_end']),
-                    //         ]);
-                    //     }
-                    // }
     
                     $createdJob = JobRoster::with('site')->find($jobId);
     
@@ -370,14 +360,14 @@ private function saveInvoicePdf($pdfBytes, string $invoiceNumber, string $client
      */
     private function sendNotificationsWithinRadius($siteCoordinates, $jobIds, $userId, $roster)
     {
-        $radiusKm = 500; // 5km radius
+        $radiusKm = 5; // 5km radius
         $notifiedUsers = [];
 
         // Get all staff with user_id = 1
         $staff = User::where('user_id', 1)
         ->where('is_active', 1)
         ->where('user_type', 'staff')
-        ->whereNotNull('coordinates')
+        ->whereNotNull('current_coordinates')
         ->whereNotNull('notification_token')
         // ->whereHas('guardQuestionnaireDetails', function ($query) {
         //     $query->whereNotNull('certificate_path');
@@ -385,23 +375,23 @@ private function saveInvoicePdf($pdfBytes, string $invoiceNumber, string $client
         // ->whereDoesntHave('guardQuestionnaireDetails', function ($query) {
         //     $query->whereNull('certificate_path');
         // })
-        ->select('id', 'name', 'coordinates', 'notification_token')
+            ->select('id', 'name', 'current_coordinates', 'coordinates', 'notification_token')
         ->get();
 
         if($staff->isEmpty()){
             $staff = User::where('is_active', 1)
             // ->whereNotIn('user_id', $userId)
             ->where('user_type', 'contractor')
-            ->whereNotNull('coordinates')
+            ->whereNotNull('current_coordinates')
             ->whereNotNull('notification_token')
-            ->select('id', 'name', 'coordinates', 'notification_token')
+            ->select('id', 'name', 'current_coordinates', 'coordinates', 'notification_token')
             ->get();
         }
 
 
         foreach ($staff as $staffMember) {
             // Calculate distance between site and staff
-            $distance = $this->calculateDistance($siteCoordinates, $staffMember->coordinates);
+            $distance = $this->calculateDistance($siteCoordinates, $staffMember->current_coordinates);
 
             // Check if within 5km radius
             if ($distance <= $radiusKm) {
@@ -433,7 +423,7 @@ private function saveInvoicePdf($pdfBytes, string $invoiceNumber, string $client
         }
 
         // Update each job roster with notified users
-        $this->updateJobRosterWithNotifiedUsers($jobIds, $notifiedUsers, $radiusKm);
+        // $this->updateJobRosterWithNotifiedUsers($jobIds, $notifiedUsers, $radiusKm);
 
         return $notifiedUsers;
     }
@@ -484,7 +474,7 @@ private function saveInvoicePdf($pdfBytes, string $invoiceNumber, string $client
 
     public function getContractorStaff($id)
     {
-        $guards = User::where('user_id', $id)->with('staff')->where('user_type', 'staff')->get();
+        $guards = User::where('user_id', $id)->with('staff','documents')->where('user_type', 'staff')->get();
 
         if (!$guards) {
             return response()->json([
@@ -1606,7 +1596,7 @@ private function saveInvoicePdf($pdfBytes, string $invoiceNumber, string $client
                 $q->whereBetween('start', [$start, $end])
                     ->where('roster_id', $roster_id)
                     ->orderBy('start', 'asc')
-                    ->with('guards');
+                    ->with('guards','customer');
 
                 if ($user->user_type === 'staff') {
                     $q->where('assigned_to', $user->id);
@@ -2469,30 +2459,41 @@ $baseTotal_arr = [];
                 ($chargeRate->def_metro_sat_day_rate * ($hours['saturday_morning'] ?? 0)) +
                 ($chargeRate->def_metro_sat_night_rate * ($hours['saturday_night'] ?? 0)) +
                 ($chargeRate->def_metro_sun_day_rate * ($hours['sunday_morning'] ?? 0)) +
-                ($chargeRate->def_metro_sun_night_rate * ($hours['sunday_night'] ?? 0));
+                ($chargeRate->def_metro_sun_night_rate * ($hours['sunday_night'] ?? 0)) +
+                ($chargeRate->def_metro_pub_holi_day_rate * ($hours['ph_morning'] ?? 0)) +
+                ($chargeRate->def_metro_pub_holi_night_rate * ($hours['ph_night'] ?? 0));
 
             $hours_array[] = $hours;
             $baseTotal_arr[] = $shiftAmount; 
-            $baseTotal += ($shiftAmount * $shift['numberOfGuards']);
+            $baseTotal += round(($shiftAmount * $shift['numberOfGuards']));
         }
 
         // APPLY DISCOUNT (ONLY FULL)
         $discount = 0;
 
-        if ($request->payment_option === 'full') {
-            $discount = round($baseTotal * 0.05, 2);
-        }
+        // if ($request->payment_option === 'full') {
+        //     $discount = round($baseTotal * 0.05, 2);
+        // }
 
-        $discountedTotal = $baseTotal - $discount;
+        // $discountedTotal = round($baseTotal - $discount);
+
+        // // GST / SERVICE FEE (UNCHANGED LOGIC)
+        // $serviceFee = round($discountedTotal * 0.10, 2);
+        // $grandTotal = round($discountedTotal + $serviceFee, 2);
+
 
         // GST / SERVICE FEE (UNCHANGED LOGIC)
-        $serviceFee = round($discountedTotal * 0.10, 2);
-        $grandTotal = round($discountedTotal + $serviceFee, 2);
+        $serviceFee = round($baseTotal * 0.10, 2);
+        $baseFinalTotal = round($baseTotal + $serviceFee);
+        if ($request->payment_option === 'full') {
+            $discount = round($baseFinalTotal * 0.05, 2);
+        }
+        $grandTotal = round($baseFinalTotal - $discount, 2);    
 
         // SPLIT LOGIC (AFTER GST)
         if ($request->payment_option === 'split') {
             $amountToCharge = round($grandTotal * 0.5, 2);
-            $balance = $grandTotal - $amountToCharge;
+            $balance = round($grandTotal - $amountToCharge);
         } else {
             $amountToCharge = $grandTotal;
             $balance = 0;

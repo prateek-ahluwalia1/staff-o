@@ -171,13 +171,13 @@ class SendJobNotificationJob implements ShouldQueue
         $guards = User::where('user_id', 1)
             ->where('is_active', 1)
             ->where('user_type', 'staff')
-            ->whereNotNull('coordinates')
+            ->whereNotNull('current_coordinates')
             ->whereNotNull('notification_token')
-            ->select('id', 'name', 'coordinates', 'notification_token')
+            ->select('id', 'name', 'current_coordinates', 'notification_token')
             ->get();
 
         $inRange = $guards->filter(
-            fn($g) => $this->isWithinRadius($siteCoords, $g->coordinates, $radiusKm)
+            fn($g) => $this->isWithinRadius($siteCoords, $g->current_coordinates, $radiusKm)
         );
 
         if ($inRange->isEmpty()) {
@@ -202,7 +202,7 @@ class SendJobNotificationJob implements ShouldQueue
         $staffooGuards = User::where('user_id', 1)
             ->where('is_active', 1)
             ->where('user_type', 'staff')
-            ->whereNotNull('coordinates')
+            ->whereNotNull('current_coordinates')
             ->whereNotNull('notification_token')
             ->select('id', 'name', 'notification_token')
             ->get();
@@ -210,7 +210,7 @@ class SendJobNotificationJob implements ShouldQueue
         $resourcePartners = User::whereNotIn('id', [1])
             ->where('user_type', 'contractor')
             ->where('is_active', 1)
-            ->whereNotNull('coordinates')
+            ->whereNotNull('current_coordinates')
             ->whereNotNull('notification_token')
             ->select('id', 'name', 'notification_token')
             ->get();

@@ -60,7 +60,7 @@ const ManageUsers = () => {
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
 
-  // New State for Password Toggle
+  // Password Toggle and Document States
   const [showPassword, setShowPassword] = useState(false);
   const [showDocModal, setShowDocModal] = useState(false);
   const [selectedDoc, setSelectedDoc] = useState(null);
@@ -122,7 +122,7 @@ const ManageUsers = () => {
   }, [activeTab]);
 
   const openModal = useCallback((user = null) => {
-    setShowPassword(false); // Reset password visibility when opening
+    setShowPassword(false);
     setActiveModalTab("personal");
     setShowDocModal(false);
     setSelectedDoc(null);
@@ -151,7 +151,6 @@ const ManageUsers = () => {
     }
     setIsModalOpen(true);
   }, [defaultFormState, getNestedData]);
-
 
   const closeModal = () => {
     setIsModalOpen(false);
@@ -454,6 +453,58 @@ const ManageUsers = () => {
   return (
     <div className="dashboard-main dashboard-tools-page">
       <style>{`
+        /* Premium Typography & Layout */
+        .dashboard-page-header h1 {
+          font-weight: 800;
+          letter-spacing: -0.02em;
+          color: #111827;
+        }
+
+        /* Beautiful Table Headers */
+        .premium-thead {
+          background-color: #0A7C6E !important;
+        }
+        
+        .premium-thead th {
+          color: #ffffff !important;
+          font-weight: 600;
+          letter-spacing: 0.05em;
+          text-transform: uppercase;
+          font-size: 0.75rem;
+          padding: 1.1rem 1rem !important;
+          border: none !important;
+          white-space: nowrap;
+        }
+
+        /* Data Rows formatting for better alignment */
+        .jobtracker-data-row td {
+          padding: 1.1rem 1rem !important;
+          vertical-align: middle;
+        }
+
+        /* Nav Pills (Tabs) Styling */
+        .jobtracker-tabs .nav-link {
+          border-radius: 8px;
+          padding: 0.5rem 1rem;
+          font-size: 0.88rem;
+          font-weight: 600;
+          color: #475569;
+          background: transparent;
+          border: 1px solid transparent;
+          transition: all 0.2s ease-in-out;
+        }
+
+        .jobtracker-tabs .nav-link:hover {
+          background: #f1f5f9;
+        }
+
+        .jobtracker-tabs .nav-link.active {
+          background: #0A7C6E;
+          color: #ffffff;
+          box-shadow: 0 4px 6px -1px rgba(10, 124, 110, 0.2);
+        }
+        
+        /* Modal Backdrop & Container */
         .full-screen-modal {
           position: fixed;
           top: 0;
@@ -461,115 +512,93 @@ const ManageUsers = () => {
           width: 100vw;
           height: 100vh;
           z-index: 1060;
-          background: rgba(255, 255, 255, 0.9);
-          backdrop-filter: blur(12px);
+          background: rgba(0, 0, 0, 0.4);
+          backdrop-filter: blur(8px);
           display: flex;
           justify-content: center;
           align-items: center;
           animation: modalFadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
-        @keyframes modalFadeIn {
-          from { opacity: 0; transform: translateY(20px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-
         .modal-inner-content {
           width: 95%;
-          max-width: 1000px;
+          max-width: 900px;
           height: 90vh;
-          background: #fff;
-          border-radius: 24px;
-          box-shadow: 0 40px 100px -20px rgba(0, 0, 0, 0.2);
+          background: #ffffff;
+          border-radius: 20px;
+          box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
           display: flex;
           flex-direction: column;
           overflow: hidden;
-          border: 1px solid rgba(0,0,0,0.05);
+        }
+
+        /* Form Inputs */
+        .form-control, .form-select {
+          background-color: #f3f4f6;
+          border: 2px solid transparent;
+          border-radius: 12px;
+          padding: 0.75rem 1rem;
+          font-size: 0.95rem;
+          color: #111827;
+          transition: all 0.2s ease-in-out;
+        }
+
+        .form-control:focus, .form-select:focus {
+          background-color: #ffffff;
+          border-color: #000000;
+          box-shadow: none;
+          outline: none;
         }
 
         .form-label {
-          font-size: 0.75rem;
-          font-weight: 700;
-          color: #6c757d;
-          
-          letter-spacing: 0.5px;
+          font-size: 0.8rem;
+          font-weight: 600;
+          color: #4b5563;
+          margin-bottom: 0.4rem;
         }
 
+        /* Segmented Controls for Tabs inside Modal */
+        .modal-tabs-container {
+          background: #f3f4f6;
+          padding: 4px;
+          border-radius: 12px;
+          display: inline-flex;
+          flex-wrap: wrap;
+          gap: 4px;
+        }
+
+        .modal-tabs-container .btn {
+          border-radius: 8px;
+          border: none;
+          font-weight: 600;
+          font-size: 0.85rem;
+          color: #6b7280;
+          padding: 0.5rem 1rem;
+          transition: all 0.2s;
+        }
+
+        .modal-tabs-container .btn-primary-custom {
+          background: #ffffff;
+          color: #000000;
+          box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .modal-tabs-container .btn-outline-primary:hover {
+          color: #111827;
+          background: rgba(255,255,255,0.5);
+        }
+
+        /* Clean Dividers */
         .section-divider {
           font-size: 1.1rem;
-          font-weight: 800;
-          color: #1a1a1a;
-          margin: 30px 0 15px;
-          padding-left: 12px;
-          border-left: 4px solid #0A7C6E;
-        }
-
-        .pac-container {
-          z-index: 2000 !important;
-        }
-
-        .jobtracker-tabs .nav-link {
-          border-radius: 5px;
-          padding: 0.45rem 0.9rem;
-          font-size: 0.88rem;
-          font-weight: 600;
-          color: #475569;
-          background: #f8fafc;
-          border: 1px solid #dbe3ef;
-        }
-
-        .jobtracker-tabs .nav-link.active {
-          background: #0A7C6E;
-          border-color: #0A7C6E;
-          color: #fff;
-        }
-
-        .jobtracker-action-btn {
-          min-height: 38px;
-        }
-
-        .jobtracker-main-table {
-          table-layout: fixed;
-          width: 100%;
-        }
-
-        .jobtracker-main-table > thead > tr > th,
-        .jobtracker-main-table > tbody > tr > td {
-          padding: 0.65rem 0.55rem;
-          font-size: 0.82rem;
-          line-height: 1.25;
-          white-space: normal;
-          word-break: break-word;
-          vertical-align: middle;
-        }
-
-        .jobtracker-main-table > thead > tr > th {
-          text-align: center;
-          
-          letter-spacing: 0.02em;
           font-weight: 700;
-          border-right: 1px solid #d6e4ff;
+          color: #111827;
+          margin: 25px 0 15px;
+          padding-bottom: 10px;
+          border-bottom: 1px solid #e5e7eb;
         }
 
-        .jobtracker-main-table > thead > tr > th:last-child,
-        .jobtracker-main-table > tbody > tr > td:last-child {
-          border-right: 0;
-        }
-
-        .jobtracker-main-table > tbody > tr.jobtracker-data-row > td {
-          background: #fff;
-          border-bottom: 1px solid #d9e1ea;
-          border-right: 1px solid #edf1f6;
-        }
-
-        .jobtracker-main-table > tbody > tr.jobtracker-data-row:nth-of-type(odd) > td {
-          background: #fbfdff;
-        }
-
-        .jobtracker-main-table > tbody > tr.jobtracker-data-row:hover > td {
-          background: #eef5ff;
-        }
-
+        /* Sub-Modal styles (For Delete and Documents) */
         .confirm-modal-backdrop {
           position: fixed;
           inset: 0;
@@ -594,8 +623,8 @@ const ManageUsers = () => {
         }
 
         .confirm-modal-header {
-          background: linear-gradient(135deg, #fff1f2 0%, #ffe4e6 100%);
-          border-bottom: 1px solid #fecdd3;
+          background: #f8fafc;
+          border-bottom: 1px solid #e2e8f0;
         }
 
         .confirm-modal-icon {
@@ -609,31 +638,35 @@ const ManageUsers = () => {
           color: #dc2626;
         }
 
-        @media (max-width: 992px) {
-          .jobtracker-filter-row > div {
-            flex: 0 0 auto;
-          }
+        .confirm-modal-icon.icon-doc {
+          background: #e0f2fe;
+          color: #0284c7;
         }
 
-        @media (max-width: 768px) {
-          .jobtracker-main-table > thead > tr > th,
-          .jobtracker-main-table > tbody > tr > td {
-            padding: 0.5rem 0.4rem;
-            font-size: 0.74rem;
-          }
+        .pac-container {
+          z-index: 2000 !important;
+          border-radius: 12px;
+          box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+          border: 1px solid #e5e7eb;
+          margin-top: 4px;
+        }
+
+        @keyframes modalFadeIn {
+          from { opacity: 0; transform: scale(0.98); }
+          to { opacity: 1; transform: scale(1); }
         }
       `}</style>
 
       <div className="dashboard-page-header">
         <div>
           <h1>User Management</h1>
-          <p>
+          <p className="text-muted">
             Manage permissions and details for all account types.
           </p>
         </div>
       </div>
 
-      <div className="card border-0 shadow-sm mb-4">
+      <div className="card border-0 shadow-sm mb-4" style={{ borderRadius: "16px" }}>
         <div className="card-body py-3 d-flex justify-content-between align-items-center gap-2 flex-wrap">
           <ul className="nav nav-pills jobtracker-tabs gap-2 flex-wrap mb-0">
             {["customer", "sub_contractor", "staff"].map((role) => (
@@ -654,7 +687,7 @@ const ManageUsers = () => {
           </ul>
 
           <button
-            className="btn btn-sm btn-primary-custom jobtracker-action-btn"
+            className="btn btn-dark jobtracker-action-btn fw-bold px-4 rounded-pill"
             onClick={() => openModal()}
           >
             <i className="fa-solid fa-plus me-1"></i> Add{" "}
@@ -678,17 +711,14 @@ const ManageUsers = () => {
       )}
 
       {/* Table Card */}
-      <div className="card border-0 shadow-sm">
+      <div className="card border-0 shadow-sm" style={{ borderRadius: "16px", overflow: "hidden" }}>
         <div className="table-responsive jobtracker-table-shell">
           <table
             className={`table table-hover align-middle mb-0 jobtracker-main-table ${loading ? "opacity-50" : ""}`}
           >
-            <thead
-              className="table-primary text-dark"
-              style={{ borderBottom: "2px solid #0A7C6E" }}
-            >
-              <tr className="text-muted small">
-                <th className="ps-4 py-3">NAME & EMAIL</th>
+            <thead className="premium-thead">
+              <tr>
+                <th className="ps-4">NAME & EMAIL</th>
                 {activeTab !== "staff" && <th>BUSINESS & PHONE</th>}
                 <th>LOCATION</th>
                 <th className="text-center pe-4">ACTIONS</th>
@@ -697,12 +727,12 @@ const ManageUsers = () => {
             <tbody>
               {users.length > 0 ? (
                 users.map((user) => (
-                  <tr key={user.id} className="jobtracker-data-row">
+                  <tr key={user.id} className="jobtracker-data-row border-bottom">
                     <td className="ps-4">
                       <div className="fw-bold text-dark">{user.name}</div>
-                      <div className="text-muted small"
-                        style={{ textTransform: "none" }}
-                      >{user.email}</div>
+                      <div className="text-muted small" style={{ textTransform: "none" }}>
+                        {user.email}
+                      </div>
                     </td>
                     {activeTab !== "staff" && (
                       <td>
@@ -723,16 +753,16 @@ const ManageUsers = () => {
                     <td className="text-center pe-4">
                       <div className="btn-group">
                         <button
-                          className="btn btn-outline-primary btn-sm rounded-circle me-2 border-0"
+                          className="btn btn-light btn-sm rounded-circle me-2 border"
                           onClick={() => openModal(user)}
                         >
-                          <i className="fa-solid fa-pen"></i>
+                          <i className="fa-solid fa-pen text-dark"></i>
                         </button>
                         <button
-                          className="btn btn-outline-danger btn-sm rounded-circle border-0"
+                          className="btn btn-light btn-sm rounded-circle border"
                           onClick={() => openDeleteModal(user)}
                         >
-                          <i className="fa-solid fa-trash"></i>
+                          <i className="fa-solid fa-trash text-danger"></i>
                         </button>
                       </div>
                     </td>
@@ -780,26 +810,34 @@ const ManageUsers = () => {
       {isModalOpen && (
         <div className="full-screen-modal">
           <div className="modal-inner-content">
-            <div className="p-4 border-bottom bg-light d-flex justify-content-between align-items-center">
+            <div className="px-5 py-4 border-bottom bg-white d-flex justify-content-between align-items-center">
               <div>
-                <h4 className="fw-bold mb-0">
+                <h4 className="fw-bold mb-1">
                   {editingUser ? "Update Profile" : "Create New User"}
                 </h4>
                 <p className="text-muted small mb-0">
                   Role:{" "}
-                  <span className="text-primary fw-bold text-uppercase">
+                  <span className="text-dark fw-bold text-uppercase">
                     {activeTab.replace("_", " ")}
                   </span>
                 </p>
               </div>
-              <button className="btn-close" onClick={closeModal}></button>
+              <button className="btn-close shadow-none" onClick={closeModal}></button>
             </div>
 
-            <div className="flex-grow-1 overflow-auto p-4 p-md-5">
-              <div className="d-flex gap-2 mb-4 flex-wrap">
+            <div
+              className="flex-grow-1 overflow-auto px-5 py-4"
+              onScroll={() => {
+                // Programmatically blur input to hide detached Google Maps Autocomplete
+                if (document.activeElement?.id === "user-address") {
+                  document.activeElement.blur();
+                }
+              }}
+            >
+              <div className="modal-tabs-container mb-4">
                 <button
                   type="button"
-                  className={`btn ${activeModalTab === "personal" ? "btn-primary-custom" : "btn-outline-primary"}`}
+                  className={`btn ${activeModalTab === "personal" ? "btn-primary-custom text-white" : "btn-outline-primary"}`}
                   onClick={() => setActiveModalTab("personal")}
                 >
                   Personal Information
@@ -808,14 +846,14 @@ const ManageUsers = () => {
                   <>
                     <button
                       type="button"
-                      className={`btn ${activeModalTab === "documents" ? "btn-primary-custom" : "btn-outline-primary"}`}
+                      className={`btn ${activeModalTab === "documents" ? "btn-primary-custom text-white" : "btn-outline-primary"}`}
                       onClick={() => setActiveModalTab("documents")}
                     >
                       Documents
                     </button>
                     <button
                       type="button"
-                      className={`btn ${activeModalTab === "onboarding" ? "btn-primary-custom" : "btn-outline-primary"}`}
+                      className={`btn ${activeModalTab === "onboarding" ? "btn-primary-custom text-white" : "btn-outline-primary"}`}
                       onClick={() => setActiveModalTab("onboarding")}
                     >
                       Verification Forms
@@ -833,12 +871,12 @@ const ManageUsers = () => {
 
                     {activeTab === "staff" && (
                       <div className="col-12 mb-2">
-                        <div className="p-3 bg-primary-subtle rounded-3 border border-primary-subtle">
-                          <label className="form-label text-white">
+                        <div className="p-3 bg-light rounded-4 border">
+                          <label className="form-label">
                             Assign to Resource Partner *
                           </label>
                           <select
-                            className="form-select shadow-sm"
+                            className="form-select bg-white"
                             name="user_id"
                             value={formData.user_id}
                             onChange={handleInputChange}
@@ -888,7 +926,7 @@ const ManageUsers = () => {
 
                     <div className="col-md-6">
                       <label className="form-label">
-                        Password {editingUser && "(Leave blank to keep)"}
+                        Password {editingUser && <span className="text-muted fw-normal">(Leave blank to keep)</span>}
                       </label>
                       <div className="position-relative">
                         <input
@@ -954,7 +992,6 @@ const ManageUsers = () => {
                             <option value="citizen">Citizen</option>
                             <option value="permanent_residence">Permanent Residence</option>
                             <option value="visa_485">Visa Subclass 485</option>
-                            <option value="other">Other</option>
                           </select>
                         </div>
                         <div className="col-md-6">
@@ -968,7 +1005,7 @@ const ManageUsers = () => {
                             <option value="">Select gender</option>
                             <option value="male">Male</option>
                             <option value="female">Female</option>
-                            <option value="other">Other</option>
+                            <option value="other">Prefer Not to Say</option>
                           </select>
                         </div>
                       </>
@@ -1011,7 +1048,7 @@ const ManageUsers = () => {
                         onChange={handleInputChange}
                         placeholder="Start typing and choose from Google suggestions"
                       />
-                      <div className="form-text">
+                      <div className="form-text mt-2 text-muted">
                         Select from suggestions to auto-fill city, state, country
                         and coordinates.
                       </div>
@@ -1023,7 +1060,7 @@ const ManageUsers = () => {
                       </label>
                       <input
                         type="text"
-                        className="form-control"
+                        className="form-control bg-white"
                         name="coordinates"
                         value={formData.coordinates}
                         onChange={handleInputChange}
@@ -1038,16 +1075,9 @@ const ManageUsers = () => {
                 <div>
                   <div className="d-flex justify-content-between align-items-center mb-4">
                     <div>
-                      <h6 className="section-divider mt-0">Documents</h6>
-                      <p className="text-muted mb-0">Upload and manage staff documents.</p>
+                      <h6 className="section-divider mt-0 border-0 mb-1">Documents</h6>
+                      <p className="text-muted mb-0 small">Upload and manage staff documents.</p>
                     </div>
-                    {/* <button
-                      type="button"
-                      className="btn btn-outline-primary btn-sm"
-                      onClick={() => openDocumentModal(null)}
-                    >
-                      + Add Document
-                    </button> */}
                   </div>
                   <DocumentTable
                     documents={staffDocuments}
@@ -1063,7 +1093,7 @@ const ManageUsers = () => {
                         style={{ maxWidth: "680px" }}
                       >
                         <div className="confirm-modal-header px-4 py-3 d-flex align-items-center gap-3">
-                          <span className="confirm-modal-icon">
+                          <span className="confirm-modal-icon icon-doc">
                             <i className="fa-solid fa-file-arrow-up"></i>
                           </span>
                           <div>
@@ -1119,26 +1149,24 @@ const ManageUsers = () => {
                                 </div>
                               )}
                             </div>
-                            <div className="col-12">
-                              <label className="form-label">
+                            <div className="col-12 d-flex gap-4">
+                              <label className="form-label d-flex align-items-center">
                                 <input
                                   type="checkbox"
                                   name="no"
                                   checked={docForm.no}
                                   onChange={handleDocFormChange}
-                                  className="form-check-input me-2"
+                                  className="form-check-input me-2 mt-0"
                                 />
                                 No document number
                               </label>
-                            </div>
-                            <div className="col-12">
-                              <label className="form-label">
+                              <label className="form-label d-flex align-items-center">
                                 <input
                                   type="checkbox"
                                   name="exp"
                                   checked={docForm.exp}
                                   onChange={handleDocFormChange}
-                                  className="form-check-input me-2"
+                                  className="form-check-input me-2 mt-0"
                                 />
                                 No expiry date
                               </label>
@@ -1147,12 +1175,12 @@ const ManageUsers = () => {
                           <div className="mt-4 d-flex justify-content-end gap-2">
                             <button
                               type="button"
-                              className="btn btn-outline-secondary rounded-pill px-4"
+                              className="btn btn-outline-secondary rounded-pill px-4 fw-bold"
                               onClick={closeDocumentModal}
                             >
                               Cancel
                             </button>
-                            <button type="submit" className="btn btn-primary-custom rounded-pill px-4">
+                            <button type="submit" className="btn btn-dark rounded-pill px-4 fw-bold shadow-sm">
                               Save Document
                             </button>
                           </div>
@@ -1168,10 +1196,10 @@ const ManageUsers = () => {
               )}
             </div>
 
-            <div className="p-4 border-top bg-white d-flex gap-3 justify-content-end">
+            <div className="px-5 py-4 border-top bg-light d-flex gap-3 justify-content-end">
               <button
                 type="button"
-                className="btn btn-light rounded-pill px-5 fw-bold text-muted"
+                className="btn btn-light rounded-pill px-5 fw-bold text-muted border"
                 onClick={closeModal}
               >
                 Cancel
@@ -1180,7 +1208,7 @@ const ManageUsers = () => {
                 <button
                   type="submit"
                   form="userForm"
-                  className="btn btn-primary-custom rounded-pill px-5 fw-bold shadow"
+                  className="btn btn-dark rounded-pill px-5 fw-bold shadow-sm"
                   disabled={submitLoading}
                 >
                   {submitLoading
@@ -1195,6 +1223,7 @@ const ManageUsers = () => {
         </div>
       )}
 
+      {/* DELETE MODAL */}
       {isDeleteModalOpen && (
         <div className="confirm-modal-backdrop" onClick={closeDeleteModal}>
           <div
@@ -1223,7 +1252,7 @@ const ManageUsers = () => {
             <div className="px-4 py-3 border-top d-flex justify-content-end gap-2 bg-light">
               <button
                 type="button"
-                className="btn btn-outline-secondary rounded-pill px-4"
+                className="btn btn-outline-secondary rounded-pill px-4 fw-bold"
                 onClick={closeDeleteModal}
                 disabled={deleteLoading}
               >
@@ -1231,7 +1260,7 @@ const ManageUsers = () => {
               </button>
               <button
                 type="button"
-                className="btn btn-danger rounded-pill px-4"
+                className="btn btn-danger rounded-pill px-4 fw-bold shadow-sm"
                 onClick={confirmDelete}
                 disabled={deleteLoading}
               >

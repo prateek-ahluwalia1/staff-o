@@ -249,7 +249,7 @@ export default function ScheduleStep({ form, setField, scheduleError = "" }) {
               selected={selectedDateObjects[0] || null}
               onChange={handleSingleDateSelect}
               dateFormat="dd/MM/yyyy"
-              placeholderText="Choose a date"
+              placeholderText="Choose a Date"
               minDate={new Date()}
               className="form-control form-control-lg shadow-sm w-100 pe-5"
               isClearable
@@ -278,7 +278,7 @@ export default function ScheduleStep({ form, setField, scheduleError = "" }) {
               highlightDates={selectedDateObjects}
               shouldCloseOnSelect={false}
               dateFormat="dd/MM/yyyy"
-              placeholderText="Select dates"
+              placeholderText="Select Dates"
               minDate={new Date()}
               className="form-control form-control-lg shadow-sm w-100 pe-5"
               isClearable

@@ -147,7 +147,7 @@ export default function ReviewStep({ form, rate, setField, handleConfirm, setSte
             <input id="terms" className="form-check-input mt-0" type="checkbox" style={{ width: "1.2rem", height: "1.2rem", cursor: "pointer" }} checked={form.termsAccepted} onChange={(e) => setField("termsAccepted", e.target.checked)} disabled={isSubmitting} />
             <label htmlFor="terms" className="form-check-label small fw-medium user-select-none" style={{ cursor: "pointer" }}>I agree to the <NavLink to="/terms-of-use" className="text-primary text-decoration-none fw-bold">Terms & Conditions</NavLink></label>
           </div>
-          <div className="small text-muted ps-4" style={{ fontSize: "0.8rem" }}>*Note: A 10% incidental authorisation hold may be applied by Stripe to cover potential Unplanned overtime. The hold will be released after completion of the shift.</div>
+          <div className="small text-muted ps-4" style={{ fontSize: "0.8rem", textTransform: "none" }}>*Note: A 10% incidental authorisation hold may be applied by Stripe to cover potential Unplanned overtime. The hold will be released after completion of the shift.</div>
         </div>
       )}
 

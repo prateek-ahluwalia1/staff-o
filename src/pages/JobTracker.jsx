@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useMemo, useState, useRef } from "react";
 import Select, { components } from "react-select";
 import * as XLSX from "xlsx";
 import { toast } from "react-toastify";
@@ -8,6 +8,7 @@ import Loader from "../components/Loader";
 
 const ALL_OPTION_VALUE = "ALL";
 
+// ── Week range helper ──
 const getWeekRange = () => {
   const now = new Date();
   const start = new Date(now);
@@ -17,12 +18,13 @@ const getWeekRange = () => {
   return { start, end };
 };
 
+// ── Date formatting helpers ──
 const formatDateInput = (date) => {
   if (!(date instanceof Date) || Number.isNaN(date.getTime())) return "";
   const y = date.getFullYear();
   const m = String(date.getMonth() + 1).padStart(2, "0");
   const d = String(date.getDate()).padStart(2, "0");
-  return `${y}-${m}-${d}`;
+  return `${y}-${m}-${d}`; // YYYY-MM-DD for internal state
 };
 
 const parseInputDate = (val) => {
@@ -33,10 +35,35 @@ const parseInputDate = (val) => {
 
 const formatDateForPayload = (date) => {
   if (!(date instanceof Date) || Number.isNaN(date.getTime())) return "";
-  const mm = String(date.getMonth() + 1).padStart(2, "0");
   const dd = String(date.getDate()).padStart(2, "0");
+  const mm = String(date.getMonth() + 1).padStart(2, "0");
   const yyyy = date.getFullYear();
-  return `${mm}/${dd}/${yyyy}`;
+  return `${dd}/${mm}/${yyyy}`; // DD/MM/YYYY for API payloads
+};
+
+const formatDisplayDate = (dateStr) => {
+  if (!dateStr) return "";
+  if (/^\d{2}\/\d{2}\/\d{4}$/.test(dateStr)) return dateStr; // already DD/MM/YYYY
+  const isoMatch = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (isoMatch) {
+    const [, y, m, d] = isoMatch;
+    return `${d}/${m}/${y}`;
+  }
+  const d = new Date(dateStr);
+  if (Number.isNaN(d.getTime())) return dateStr;
+  const day = String(d.getDate()).padStart(2, "0");
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  return `${day}/${month}/${d.getFullYear()}`;
+};
+
+const toISODate = (val) => {
+  if (!val) return "";
+  const match = val.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+  if (match) {
+    const [, d, m, y] = match;
+    return `${y}-${m}-${d}`;
+  }
+  return val;
 };
 
 const formatDateTime = (value) => {
@@ -49,7 +76,6 @@ const formatDateTime = (value) => {
   const yyyy = parsed.getFullYear();
   const hh = String(parsed.getHours()).padStart(2, "0");
   const min = String(parsed.getMinutes()).padStart(2, "0");
-
   return `${dd}/${mm}/${yyyy} ${hh}:${min}`;
 };
 
@@ -136,6 +162,7 @@ const normalizeRow = (row, index) => {
   };
 };
 
+// ── Multi‑select helpers ──
 const buildSelectOptions = (items, labelBuilder) =>
   [{ value: ALL_OPTION_VALUE, label: "Select/Unselect All" }, ...items].map(
     (item) => {
@@ -229,6 +256,77 @@ const selectStyles = {
   }),
 };
 
+// ── Hybrid date input (DD/MM/YYYY visible, YYYY-MM-DD state) ──
+const DateFilterInput = ({ value, onChange, placeholder }) => {
+  const pickerRef = useRef(null);
+  const [displayValue, setDisplayValue] = useState(formatDisplayDate(value));
+
+  React.useEffect(() => {
+    setDisplayValue(formatDisplayDate(value));
+  }, [value]);
+
+  const handleTextChange = (e) => {
+    let val = e.target.value.replace(/\D/g, "");
+    if (val.length > 8) val = val.slice(0, 8);
+    if (val.length > 2 && val.length <= 4)
+      val = val.replace(/^(\d{2})(\d+)/, "$1/$2");
+    else if (val.length > 4)
+      val = val.replace(/^(\d{2})(\d{2})(\d+)/, "$1/$2/$3");
+    setDisplayValue(val);
+    const iso = toISODate(val);
+    onChange(iso || val); // send YYYY-MM-DD or partial to parent
+  };
+
+  const handlePickerChange = (e) => {
+    const isoDate = e.target.value; // YYYY-MM-DD
+    onChange(isoDate);
+  };
+
+  const openPicker = (e) => {
+    e.preventDefault();
+    if (pickerRef.current) {
+      try {
+        pickerRef.current.showPicker();
+      } catch (_) {
+        pickerRef.current.focus();
+      }
+    }
+  };
+
+  return (
+    <div className="input-group">
+      <button
+        type="button"
+        className="input-group-text bg-white border-end-0"
+        onClick={openPicker}
+        style={{ cursor: "pointer" }}
+        title="Open calendar"
+      >
+        <i className="fa-regular fa-calendar text-muted"></i>
+      </button>
+      <input
+        type="date"
+        ref={pickerRef}
+        className="position-absolute"
+        style={{ opacity: 0, width: 0, height: 0, pointerEvents: "none" }}
+        value={value}
+        onChange={handlePickerChange}
+      />
+      <input
+        type="text"
+        className="form-control border-start-0"
+        placeholder={placeholder || "DD/MM/YYYY"}
+        value={displayValue}
+        onChange={handleTextChange}
+        maxLength={10}
+        pattern="^(0[1-9]|[12][0-9]|3[01])/(0[1-9]|1[012])/\d{4}$"
+        title="Enter a date in DD/MM/YYYY format"
+      />
+    </div>
+  );
+};
+
+// ── Main JobTracker Component ──
 const JobTracker = () => {
   const { submit, loading } = useSubmit({ isAuth: true });
   const { data: customerResponse, loading: customerLoading } = useFetch(
@@ -279,7 +377,6 @@ const JobTracker = () => {
       .map((customer) => Number(customer.id))
       .filter((id) => Number.isFinite(id));
 
-    // Removed the dynamic status, defaults to empty string to fetch all records
     const payload = {
       from_to: `${formatDateForPayload(parsedStartDate)} - ${formatDateForPayload(parsedEndDate)}`,
       type: "preview",
@@ -384,20 +481,19 @@ const JobTracker = () => {
                 isLoading={customerLoading}
               />
             </div>
+            {/* ─── Hybrid date inputs ─── */}
             <div className="col-6 col-lg-2">
-              <input
-                type="date"
-                className="form-control"
+              <DateFilterInput
                 value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
+                onChange={setStartDate}
+                placeholder="Start date"
               />
             </div>
             <div className="col-6 col-lg-2">
-              <input
-                type="date"
-                className="form-control"
+              <DateFilterInput
                 value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
+                onChange={setEndDate}
+                placeholder="End date"
               />
             </div>
             <div className="col-6 col-lg-2 d-grid">
@@ -422,6 +518,7 @@ const JobTracker = () => {
         </div>
       </div>
 
+      {/* ─── Table (unchanged) ─── */}
       <div className="card border-0 shadow-sm">
         <div className="table-responsive jobtracker-table-shell">
           <table className="table table-hover align-middle mb-0 jobtracker-main-table">
@@ -510,7 +607,6 @@ const JobTracker = () => {
 
           .jobtracker-main-table > thead > tr > th {
             text-align: center;
-            
             letter-spacing: 0.02em;
             font-weight: 700;
             border-right: 1px solid #d6e4ff;

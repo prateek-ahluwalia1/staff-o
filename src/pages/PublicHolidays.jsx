@@ -17,11 +17,14 @@ const AUSTRALIAN_STATES = [
     { code: 'act', name: 'ACT' },
 ];
 
-const getMonthLabel = (date) => date.toLocaleDateString('en-AU', { month: 'long', year: 'numeric' });
+const getMonthLabel = (date) =>
+    date.toLocaleDateString('en-AU', { month: 'long', year: 'numeric' });
 
+// ---------- Date helpers ----------
 const parseHolidayDate = (value) => {
     if (!value) return null;
 
+    // Handle YYYYMMDD format from API
     if (/^\d{8}$/.test(value)) {
         const year = Number(value.slice(0, 4));
         const month = Number(value.slice(4, 6)) - 1;
@@ -29,19 +32,20 @@ const parseHolidayDate = (value) => {
         return new Date(year, month, day);
     }
 
+    // Fallback for ISO or other formats
     const parsed = new Date(value);
     return Number.isNaN(parsed.getTime()) ? null : parsed;
 };
 
-const toInputDate = (value) => {
-    const parsed = parseHolidayDate(value);
-    if (!parsed) return '';
-
-    const year = parsed.getFullYear();
-    const month = String(parsed.getMonth() + 1).padStart(2, '0');
-    const day = String(parsed.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
+// Converts any holiday date value to DD/MM/YYYY
+const formatDateDDMMYYYY = (value) => {
+    const date = parseHolidayDate(value);
+    if (!date) return '';
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    return `${day}/${month}/${date.getFullYear()}`;
 };
+
 
 const getDayKey = (date) => {
     const year = date.getFullYear();
@@ -57,6 +61,7 @@ const getHolidayCollection = (response) => {
     return [];
 };
 
+// ---------- Component ----------
 const PublicHolidays = () => {
     const { submit: submitHolidayList, loading: listLoading } = useSubmit({ isAuth: true });
 
@@ -89,13 +94,12 @@ const PublicHolidays = () => {
         fetchHolidays();
     }, [fetchHolidays]);
 
-
     const holidaysByDayKey = useMemo(() => {
-        return holidays.reduce((accumulator, holiday) => {
+        return holidays.reduce((acc, holiday) => {
             const date = parseHolidayDate(holiday?.date);
-            if (!date) return accumulator;
-            accumulator[getDayKey(date)] = holiday;
-            return accumulator;
+            if (!date) return acc;
+            acc[getDayKey(date)] = holiday;
+            return acc;
         }, {});
     }, [holidays]);
 
@@ -117,7 +121,7 @@ const PublicHolidays = () => {
         const daysInMonth = getDaysInMonth(currentMonth);
         const firstDay = getFirstDayOfMonth(currentMonth);
 
-        for (let index = 0; index < firstDay; index += 1) {
+        for (let i = 0; i < firstDay; i += 1) {
             days.push(null);
         }
 
@@ -250,9 +254,14 @@ const PublicHolidays = () => {
                                                         {holiday.holiday_name}
                                                     </h4>
                                                 </div>
-                                                <span className="holiday-item-date">{toInputDate(holiday.date)}</span>
+                                                {/* ---------- FIXED: use DD/MM/YYYY ---------- */}
+                                                <span className="holiday-item-date">
+                                                    {formatDateDDMMYYYY(holiday.date)}
+                                                </span>
                                             </div>
-                                            <p className="holiday-item-info mb-2">{holiday.information || holiday.holiday_information}</p>
+                                            <p className="holiday-item-info mb-2">
+                                                {holiday.information || holiday.holiday_information}
+                                            </p>
                                         </div>
                                     );
                                 })

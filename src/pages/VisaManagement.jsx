@@ -2,7 +2,7 @@ import React, { useState, useCallback } from "react";
 import { toast } from "react-toastify";
 import useSubmit from "../hooks/useSubmit";
 import Loader from "../components/Loader";
-import { Link } from 'react-router-dom'
+import { Link } from "react-router-dom";
 
 const initialForm = {
     passport: "",
@@ -13,7 +13,6 @@ const initialForm = {
 };
 
 // --- Utilities & Parsers ---
-
 const safeJsonParse = (value) => {
     if (typeof value !== "string") return null;
     try {
@@ -33,27 +32,144 @@ const unwrapVisaResponse = (payload) => {
     return payload;
 };
 
+// --- Date helpers ---
+const toISODate = (val) => {
+    if (!val) return "";
+    const match = val.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+    if (match) {
+        const [, d, m, y] = match;
+        return `${y}-${m}-${d}`;
+    }
+    return val; // already YYYY-MM-DD or partial
+};
+
+const toDisplayDate = (val) => {
+    if (!val) return "";
+    if (/^\d{2}\/\d{2}\/\d{4}$/.test(val)) return val;
+    const match = val.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (match) {
+        const [, y, m, d] = match;
+        return `${d}/${m}/${y}`;
+    }
+    return val;
+};
+
+// Always returns DD/MM/YYYY for short date display
 const formatShortDate = (value) => {
     if (!value || value === "-") return "-";
-    const parsed = new Date(String(value));
-    if (Number.isNaN(parsed.getTime())) return String(value);
-    return parsed.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+    // Try parsing ISO or DD/MM/YYYY
+    const dd = toDisplayDate(value);
+    if (dd && dd !== value) return dd;
+    const parsed = new Date(value);
+    if (!Number.isNaN(parsed.getTime())) {
+        const day = String(parsed.getDate()).padStart(2, "0");
+        const month = String(parsed.getMonth() + 1).padStart(2, "0");
+        return `${day}/${month}/${parsed.getFullYear()}`;
+    }
+    return String(value);
+};
+
+// --- Hybrid Date Input for DOB ---
+const DateInput = ({ name, value, onChange, required }) => {
+    const [displayValue, setDisplayValue] = useState(toDisplayDate(value));
+    const pickerRef = React.useRef(null);
+
+    React.useEffect(() => {
+        setDisplayValue(toDisplayDate(value));
+    }, [value]);
+
+    const handleTextChange = (e) => {
+        let val = e.target.value.replace(/\D/g, "");
+        if (val.length > 8) val = val.slice(0, 8);
+        if (val.length > 2 && val.length <= 4)
+            val = val.replace(/^(\d{2})(\d+)/, "$1/$2");
+        else if (val.length > 4)
+            val = val.replace(/^(\d{2})(\d{2})(\d+)/, "$1/$2/$3");
+        setDisplayValue(val);
+        const iso = toISODate(val);
+        onChange({ target: { name, value: iso || val } });
+    };
+
+    const handlePickerChange = (e) => {
+        const isoDate = e.target.value; // YYYY-MM-DD
+        onChange({ target: { name, value: isoDate } });
+    };
+
+    const openPicker = (e) => {
+        e.preventDefault();
+        if (pickerRef.current) {
+            try {
+                pickerRef.current.showPicker();
+            } catch (_) {
+                pickerRef.current.focus();
+            }
+        }
+    };
+
+    return (
+        <div className="input-group">
+            <button
+                type="button"
+                className="input-group-text bg-white border-end-0"
+                onClick={openPicker}
+                style={{ cursor: "pointer" }}
+                title="Open calendar"
+            >
+                <i className="fa-regular fa-calendar text-muted"></i>
+            </button>
+            <input
+                type="date"
+                ref={pickerRef}
+                className="position-absolute"
+                style={{ opacity: 0, width: 0, height: 0, pointerEvents: "none" }}
+                value={value}
+                onChange={handlePickerChange}
+                required={required}
+            />
+            <input
+                type="text"
+                className="form-control border-start-0"
+                placeholder="DD/MM/YYYY"
+                value={displayValue}
+                onChange={handleTextChange}
+                required={required}
+                maxLength={10}
+                pattern="^(0[1-9]|[12][0-9]|3[01])/(0[1-9]|1[012])/\d{4}$"
+                title="Enter a date in DD/MM/YYYY format"
+            />
+        </div>
+    );
 };
 
 // --- UI Components ---
-
 const StatusBadge = ({ status }) => {
     const s = (status || "").toLowerCase();
     if (s === "completed" || s === "success") {
-        return <span className="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-2 py-1 rounded-pill"><i className="fa-solid fa-circle-check me-1"></i> Verified</span>;
+        return (
+            <span className="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-2 py-1 rounded-pill">
+                <i className="fa-solid fa-circle-check me-1"></i> Verified
+            </span>
+        );
     }
     if (s === "pending" || s === "processing") {
-        return <span className="badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25 px-2 py-1 rounded-pill"><i className="fa-solid fa-clock-rotate-left me-1"></i> Pending</span>;
+        return (
+            <span className="badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25 px-2 py-1 rounded-pill">
+                <i className="fa-solid fa-clock-rotate-left me-1"></i> Pending
+            </span>
+        );
     }
     if (s === "failed" || s === "error") {
-        return <span className="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25 px-2 py-1 rounded-pill"><i className="fa-solid fa-circle-xmark me-1"></i> Failed</span>;
+        return (
+            <span className="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25 px-2 py-1 rounded-pill">
+                <i className="fa-solid fa-circle-xmark me-1"></i> Failed
+            </span>
+        );
     }
-    return <span className="badge bg-secondary px-2 py-1 rounded-pill">{status?.toUpperCase() || "UNKNOWN"}</span>;
+    return (
+        <span className="badge bg-secondary px-2 py-1 rounded-pill">
+            {status?.toUpperCase() || "UNKNOWN"}
+        </span>
+    );
 };
 
 const DetailField = ({ label, value, colSize = "col-12 col-sm-6" }) => (
@@ -66,7 +182,6 @@ const DetailField = ({ label, value, colSize = "col-12 col-sm-6" }) => (
 );
 
 // --- Main Component ---
-
 export default function VisaManagement() {
     const { submit: submitVisaCheck, loading: checkingVisa } = useSubmit({ isAuth: true });
     const { submit: submitVisaResult } = useSubmit({ isAuth: true });
@@ -89,7 +204,7 @@ export default function VisaManagement() {
             country: formData.country.trim().toUpperCase(),
             family_name: formData.family_name.trim(),
             given_name: formData.given_name.trim(),
-            dob: formData.dob,
+            dob: formData.dob, // Already YYYY-MM-DD
         };
 
         if (!payload.passport || !payload.country || !payload.family_name || !payload.given_name || !payload.dob) {
@@ -110,30 +225,32 @@ export default function VisaManagement() {
         }
     };
 
-    const handleFetchResult = useCallback(async (id) => {
-        if (!id) return;
-        setActiveLoadingId(id);
+    const handleFetchResult = useCallback(
+        async (id) => {
+            if (!id) return;
+            setActiveLoadingId(id);
 
-        const res = await submitVisaResult(`api/admin/visa-result/${id}`, null, { method: "GET" });
-        const data = unwrapVisaResponse(res);
+            const res = await submitVisaResult(`api/admin/visa-result/${id}`, null, { method: "GET" });
+            const data = unwrapVisaResponse(res);
 
-        if (data?.id) {
-            setVisaChecksList((prev) => prev.map((item) => (item.id === id ? data : item)));
-            setSelectedCheckDetail(data);
+            if (data?.id) {
+                setVisaChecksList((prev) => prev.map((item) => (item.id === id ? data : item)));
+                setSelectedCheckDetail(data);
 
-            if (data.status === "completed") {
-                toast.success("Verification complete. Report is ready to view.");
+                if (data.status === "completed") {
+                    toast.success("Verification complete. Report is ready to view.");
+                } else {
+                    toast.info("Still processing. Please check again in a moment.");
+                }
             } else {
-                toast.info("Still processing. Please check again in a moment.");
+                toast.error("Could not retrieve the latest status.");
             }
-        } else {
-            toast.error("Could not retrieve the latest status.");
-        }
 
-        setActiveLoadingId(null);
-    }, [submitVisaResult]);
+            setActiveLoadingId(null);
+        },
+        [submitVisaResult],
+    );
 
-    // Derived values for the Detailed View
     const doc = selectedCheckDetail?.document || {};
     const visa = selectedCheckDetail?.visa?.australia || {};
     const result = selectedCheckDetail?.result || {};
@@ -155,33 +272,77 @@ export default function VisaManagement() {
             {/* Request Form */}
             <div className="card border-0 shadow-sm mb-4">
                 <div className="card-header bg-white border-bottom py-3">
-                    <h6 className="mb-0 fw-bold text-primary"><i className="fa-solid fa-user-plus me-2"></i>New Verification Request</h6>
+                    <h6 className="mb-0 fw-bold text-primary">
+                        <i className="fa-solid fa-user-plus me-2"></i>New Verification Request
+                    </h6>
                 </div>
                 <div className="card-body bg-light bg-opacity-50">
                     <form onSubmit={handleVisaCheck}>
                         <div className="row g-3 align-items-end">
                             <div className="col-12 col-md-6 col-xl-2">
                                 <label className="form-label text-dark fw-semibold mb-1">First/Given Name</label>
-                                <input type="text" className="form-control" name="given_name" value={formData.given_name} onChange={handleInputChange} placeholder="e.g. John" required />
+                                <input
+                                    type="text"
+                                    className="form-control"
+                                    name="given_name"
+                                    value={formData.given_name}
+                                    onChange={handleInputChange}
+                                    placeholder="e.g. John"
+                                    required
+                                />
                             </div>
                             <div className="col-12 col-md-6 col-xl-2">
                                 <label className="form-label text-dark fw-semibold mb-1">Last/Family Name</label>
-                                <input type="text" className="form-control" name="family_name" value={formData.family_name} onChange={handleInputChange} placeholder="e.g. Smith" required />
+                                <input
+                                    type="text"
+                                    className="form-control"
+                                    name="family_name"
+                                    value={formData.family_name}
+                                    onChange={handleInputChange}
+                                    placeholder="e.g. Smith"
+                                    required
+                                />
                             </div>
                             <div className="col-12 col-md-4 col-xl-2">
                                 <label className="form-label text-dark fw-semibold mb-1">Date of Birth</label>
-                                <input type="date" className="form-control" name="dob" value={formData.dob} onChange={handleInputChange} required />
+                                <DateInput
+                                    name="dob"
+                                    value={formData.dob}
+                                    onChange={handleInputChange}
+                                    required
+                                />
                             </div>
                             <div className="col-12 col-md-4 col-xl-2">
                                 <label className="form-label text-dark fw-semibold mb-1">Passport Number</label>
-                                <input type="text" className="form-control text-uppercase" name="passport" value={formData.passport} onChange={handleInputChange} placeholder="e.g. N1234567" required />
+                                <input
+                                    type="text"
+                                    className="form-control text-uppercase"
+                                    name="passport"
+                                    value={formData.passport}
+                                    onChange={handleInputChange}
+                                    placeholder="e.g. N1234567"
+                                    required
+                                />
                             </div>
                             <div className="col-12 col-md-4 col-xl-2">
                                 <label className="form-label text-dark fw-semibold mb-1">Issuing Country</label>
-                                <input type="text" className="form-control text-uppercase" name="country" value={formData.country} onChange={handleInputChange} placeholder="e.g. AUS" maxLength={3} required />
+                                <input
+                                    type="text"
+                                    className="form-control text-uppercase"
+                                    name="country"
+                                    value={formData.country}
+                                    onChange={handleInputChange}
+                                    placeholder="e.g. AUS"
+                                    maxLength={3}
+                                    required
+                                />
                             </div>
                             <div className="col-12 col-xl-2 d-grid mt-4 mt-xl-0">
-                                <button type="submit" className="btn btn-primary-custom fw-bold py-2 shadow-sm position-relative" disabled={checkingVisa}>
+                                <button
+                                    type="submit"
+                                    className="btn btn-primary-custom fw-bold py-2 shadow-sm position-relative"
+                                    disabled={checkingVisa}
+                                >
                                     <span style={{ opacity: checkingVisa ? 0 : 1 }}>
                                         Submit Request
                                     </span>
@@ -218,12 +379,13 @@ export default function VisaManagement() {
                                 {visaChecksList.length === 0 && (
                                     <tr>
                                         <td colSpan="5" className="text-center text-muted py-5">
-                                            <div className="mb-2 fs-3 text-light"><i className="fa-solid fa-folder-open"></i></div>
+                                            <div className="mb-2 fs-3 text-light">
+                                                <i className="fa-solid fa-folder-open"></i>
+                                            </div>
                                             No checks submitted yet.
                                         </td>
                                     </tr>
                                 )}
-
                                 {visaChecksList.map((item) => {
                                     const itemIsCompleted = item.status === "completed";
                                     const isLoadingThisRow = activeLoadingId === item.id;
@@ -245,7 +407,8 @@ export default function VisaManagement() {
                                             <td>{formatShortDate(item.requested_at)}</td>
                                             <td className="text-end pe-4">
                                                 <button
-                                                    className={`btn btn-sm rounded-pill px-3 fw-semibold position-relative ${itemIsCompleted ? 'btn-outline-primary-custom' : 'btn-primary-custom'}`}
+                                                    className={`btn btn-sm rounded-pill px-3 fw-semibold position-relative ${itemIsCompleted ? "btn-outline-primary-custom" : "btn-primary-custom"
+                                                        }`}
                                                     onClick={() => handleFetchResult(item.id)}
                                                     disabled={isLoadingThisRow}
                                                 >
@@ -272,60 +435,86 @@ export default function VisaManagement() {
             {selectedCheckDetail && (
                 <div className="card border-0 shadow-sm mt-4">
                     <div className="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
-                        <h6 className="mb-0 fw-bold text-primary"><i className="fa-regular fa-file-lines me-2"></i>Verification Report</h6>
-                        <span className="badge bg-light text-dark border font-monospace text-muted">Ref: {selectedCheckDetail.id}</span>
+                        <h6 className="mb-0 fw-bold text-primary">
+                            <i className="fa-regular fa-file-lines me-2"></i>Verification Report
+                        </h6>
+                        <span className="badge bg-light text-dark border font-monospace text-muted">
+                            Ref: {selectedCheckDetail.id}
+                        </span>
                     </div>
-
                     <div className="card-body p-4">
-
-                        {/* Status Banner */}
                         {isCompleted ? (
-                            <div className={`border-start border-4 ${isSuccess ? 'border-success bg-success' : 'border-warning bg-warning'} bg-opacity-10 p-3 mb-4 rounded-end d-flex align-items-center`}>
-                                <div className={`fs-3 me-3 ${isSuccess ? 'text-success' : 'text-warning'}`}>
-                                    {isSuccess ? <i className="fa-solid fa-circle-check"></i> : <i className="fa-solid fa-triangle-exclamation"></i>}
+                            <div
+                                className={`border-start border-4 ${isSuccess ? "border-success bg-success" : "border-warning bg-warning"
+                                    } bg-opacity-10 p-3 mb-4 rounded-end d-flex align-items-center`}
+                            >
+                                <div className={`fs-3 me-3 ${isSuccess ? "text-success" : "text-warning"}`}>
+                                    {isSuccess ? (
+                                        <i className="fa-solid fa-circle-check"></i>
+                                    ) : (
+                                        <i className="fa-solid fa-triangle-exclamation"></i>
+                                    )}
                                 </div>
                                 <div>
-                                    <h6 className={`fw-bold mb-1 ${isSuccess ? 'text-success' : 'text-warning'}`}>{result.message || "Verification Completed"}</h6>
-                                    <p className="mb-0 small text-dark opacity-75">{visa.entitlement_description || "Please review the detailed visa conditions below."}</p>
+                                    <h6 className={`fw-bold mb-1 ${isSuccess ? "text-success" : "text-warning"}`}>
+                                        {result.message || "Verification Completed"}
+                                    </h6>
+                                    <p className="mb-0 small text-dark opacity-75">
+                                        {visa.entitlement_description || "Please review the detailed visa conditions below."}
+                                    </p>
                                 </div>
                             </div>
                         ) : (
                             <div className="border-start border-4 border-secondary bg-secondary bg-opacity-10 p-3 mb-4 rounded-end d-flex align-items-center">
-                                <div className="fs-3 me-3 text-secondary"><i className="fa-solid fa-hourglass-half"></i></div>
+                                <div className="fs-3 me-3 text-secondary">
+                                    <i className="fa-solid fa-hourglass-half"></i>
+                                </div>
                                 <div>
                                     <h6 className="fw-bold mb-1 text-secondary">Verification in Progress</h6>
-                                    <p className="mb-0 small text-dark opacity-75">This request is being processed. Click "Check Status" above to refresh.</p>
+                                    <p className="mb-0 small text-dark opacity-75">
+                                        This request is being processed. Click "Check Status" above to refresh.
+                                    </p>
                                 </div>
                             </div>
                         )}
 
                         <div className="row g-5">
-                            {/* Applicant Data */}
                             <div className="col-12 col-lg-6">
-                                <h6 className="text-uppercase text-muted fw-bold letter-spacing-1 mb-3 border-bottom pb-2">Applicant Details</h6>
+                                <h6 className="text-uppercase text-muted fw-bold letter-spacing-1 mb-3 border-bottom pb-2">
+                                    Applicant Details
+                                </h6>
                                 <div className="row g-3">
-                                    <DetailField label="Full Name" value={`${doc.given_name || ""} ${doc.family_name || ""}`} colSize="col-12" />
+                                    <DetailField
+                                        label="Full Name"
+                                        value={`${doc.given_name || ""} ${doc.family_name || ""}`}
+                                        colSize="col-12"
+                                    />
                                     <DetailField label="Date of Birth" value={formatShortDate(doc.date_of_birth)} />
                                     <DetailField label="Passport Number" value={doc.identifier} />
                                     <DetailField label="Issuing Country" value={doc.country} />
                                 </div>
                             </div>
 
-                            {/* Visa Data */}
                             {isCompleted && (
                                 <div className="col-12 col-lg-6">
-                                    <h6 className="text-uppercase text-muted fw-bold letter-spacing-1 mb-3 border-bottom pb-2">Visa Conditions</h6>
+                                    <h6 className="text-uppercase text-muted fw-bold letter-spacing-1 mb-3 border-bottom pb-2">
+                                        Visa Conditions
+                                    </h6>
                                     <div className="row g-3">
                                         <DetailField label="Visa Type / Class" value={visa.type_name || visa.class} colSize="col-12" />
                                         <DetailField label="Work Entitlement" value={visa.work_entitlement} />
                                         <DetailField label="Location" value={visa.location} />
 
-                                        {/* Attachment Handling in Grid */}
                                         <div className="col-12 col-sm-6">
                                             <label className="form-label text-muted fw-semibold mb-1 small">Official Document</label>
                                             <div className="min-h-form-field d-flex align-items-center">
                                                 {attachment?.download_url ? (
-                                                    <Link to={attachment.download_url} target="_blank" rel="noreferrer" className="btn btn-outline-primary btn-sm rounded-pill px-3">
+                                                    <Link
+                                                        to={attachment.download_url}
+                                                        target="_blank"
+                                                        rel="noreferrer"
+                                                        className="btn btn-outline-primary btn-sm rounded-pill px-3"
+                                                    >
                                                         <i className="fa-solid fa-file-pdf me-1"></i> Download PDF
                                                     </Link>
                                                 ) : (
@@ -342,29 +531,28 @@ export default function VisaManagement() {
             )}
 
             <style>{`
-                .letter-spacing-1 { letter-spacing: 0.05em; }
-                .min-h-form-field { min-height: 38px; }
-                
-                /* Custom center + scale class for Loaders inside buttons */
-                .loader-center-scale {
-                    position: absolute;
-                    top: 50%;
-                    left: 50%;
-                    transform: translate(-50%, -50%) scale(0.65); /* Shrinks the loader by 35% */
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                }
-                
-                .user-friendly-table { border-collapse: separate; border-spacing: 0; }
-                .user-friendly-table th { font-size: 0.85rem;  letter-spacing: 0.03em; font-weight: 600; padding: 1rem; border-bottom: 2px solid #e2e8f0; }
-                .user-friendly-table tbody tr { transition: background-color 0.2s ease; }
-                .user-friendly-table td { vertical-align: middle; padding: 1.25rem 1rem; border-bottom: 1px solid #f1f5f9; }
-                .user-friendly-table tbody tr:last-child td { border-bottom: none; }
-                
-                input.form-control { border-radius: 0.5rem; border-color: #cbd5e1; padding: 0.6rem 1rem; }
-                input.form-control:focus { border-color: #0A7C6E; box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1); }
-            `}</style>
+        .letter-spacing-1 { letter-spacing: 0.05em; }
+        .min-h-form-field { min-height: 38px; }
+        
+        .loader-center-scale {
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%) scale(0.65);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+        
+        .user-friendly-table { border-collapse: separate; border-spacing: 0; }
+        .user-friendly-table th { font-size: 0.85rem; letter-spacing: 0.03em; font-weight: 600; padding: 1rem; border-bottom: 2px solid #e2e8f0; }
+        .user-friendly-table tbody tr { transition: background-color 0.2s ease; }
+        .user-friendly-table td { vertical-align: middle; padding: 1.25rem 1rem; border-bottom: 1px solid #f1f5f9; }
+        .user-friendly-table tbody tr:last-child td { border-bottom: none; }
+        
+        input.form-control { border-radius: 0.5rem; border-color: #cbd5e1; padding: 0.6rem 1rem; }
+        input.form-control:focus { border-color: #0A7C6E; box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1); }
+      `}</style>
         </div>
     );
 }

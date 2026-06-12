@@ -1,4 +1,4 @@
-import React, { Fragment, useCallback, useMemo, useState } from "react";
+import React, { Fragment, useCallback, useMemo, useState, useRef } from "react";
 import Select, { components } from "react-select";
 import * as XLSX from "xlsx";
 import { toast } from "react-toastify";
@@ -17,6 +17,7 @@ const getWeekRange = () => {
   return { start, end };
 };
 
+// ── Date helpers ──
 const formatDateInput = (date) => {
   if (!(date instanceof Date) || Number.isNaN(date.getTime())) return "";
   const y = date.getFullYear();
@@ -39,15 +40,101 @@ const formatDateForPayload = (date) => {
   return `${m}-${d}-${y}`;
 };
 
-const formatApiDate = (dateStr) => {
-  if (!dateStr) return "-";
-  if (/^\d{2}-\d{2}-\d{4}$/.test(dateStr)) return dateStr;
-
+// Converts any date string to DD/MM/YYYY for display
+const formatDisplayDate = (dateStr) => {
+  if (!dateStr) return "";
+  if (/^\d{2}\/\d{2}\/\d{4}$/.test(dateStr)) return dateStr;
+  const isoMatch = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (isoMatch) {
+    const [, y, m, d] = isoMatch;
+    return `${d}/${m}/${y}`;
+  }
   const d = new Date(dateStr);
   if (Number.isNaN(d.getTime())) return dateStr;
   const day = String(d.getDate()).padStart(2, "0");
   const month = String(d.getMonth() + 1).padStart(2, "0");
-  return `${day}-${month}-${d.getFullYear()}`;
+  return `${day}/${month}/${d.getFullYear()}`;
+};
+
+// Converts DD/MM/YYYY to YYYY-MM-DD
+const toISODate = (val) => {
+  if (!val) return "";
+  const match = val.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+  if (match) {
+    const [, d, m, y] = match;
+    return `${y}-${m}-${d}`;
+  }
+  return val;
+};
+
+// ── Hybrid date input ──
+const DateFilterInput = ({ value, onChange, placeholder }) => {
+  const pickerRef = useRef(null);
+  const [displayValue, setDisplayValue] = useState(formatDisplayDate(value));
+
+  React.useEffect(() => {
+    setDisplayValue(formatDisplayDate(value));
+  }, [value]);
+
+  const handleTextChange = (e) => {
+    let val = e.target.value.replace(/\D/g, "");
+    if (val.length > 8) val = val.slice(0, 8);
+    if (val.length > 2 && val.length <= 4)
+      val = val.replace(/^(\d{2})(\d+)/, "$1/$2");
+    else if (val.length > 4)
+      val = val.replace(/^(\d{2})(\d{2})(\d+)/, "$1/$2/$3");
+    setDisplayValue(val);
+    const iso = toISODate(val);
+    onChange(iso || val);
+  };
+
+  const handlePickerChange = (e) => {
+    const isoDate = e.target.value;
+    onChange(isoDate);
+  };
+
+  const openPicker = (e) => {
+    e.preventDefault();
+    if (pickerRef.current) {
+      try {
+        pickerRef.current.showPicker();
+      } catch (_) {
+        pickerRef.current.focus();
+      }
+    }
+  };
+
+  return (
+    <div className="input-group">
+      <button
+        type="button"
+        className="input-group-text bg-white border-end-0"
+        onClick={openPicker}
+        style={{ cursor: "pointer" }}
+        title="Open calendar"
+      >
+        <i className="fa-regular fa-calendar text-muted"></i>
+      </button>
+      <input
+        type="date"
+        ref={pickerRef}
+        className="position-absolute"
+        style={{ opacity: 0, width: 0, height: 0, pointerEvents: "none" }}
+        value={value}
+        onChange={handlePickerChange}
+      />
+      <input
+        type="text"
+        className="form-control border-start-0"
+        placeholder={placeholder || "DD/MM/YYYY"}
+        value={displayValue}
+        onChange={handleTextChange}
+        maxLength={10}
+        pattern="^(0[1-9]|[12][0-9]|3[01])/(0[1-9]|1[012])/\d{4}$"
+        title="Enter a date in DD/MM/YYYY format"
+      />
+    </div>
+  );
 };
 
 const toBooleanStatus = (val) => {
@@ -69,13 +156,11 @@ const getArrayFromResponse = (res) => {
   return [];
 };
 
-// Formats numbers to explicitly show 2 decimal places
 const formatHours = (value) => {
   const n = Number(value);
   return Number.isFinite(n) ? n.toFixed(2) : "0.00";
 };
 
-// Helper function to safely add two hour values
 const sumHours = (val1, val2) => {
   const n1 = Number(val1) || 0;
   const n2 = Number(val2) || 0;
@@ -92,13 +177,12 @@ const formatShiftDateTime = (value) => {
   if (!value || value === "1970-01-01 00:00") return "-";
   const parsed = new Date(String(value).replace(" ", "T"));
   if (Number.isNaN(parsed.getTime())) return String(value);
-
   const dd = String(parsed.getDate()).padStart(2, "0");
   const mm = String(parsed.getMonth() + 1).padStart(2, "0");
   const yyyy = parsed.getFullYear();
   const hh = String(parsed.getHours()).padStart(2, "0");
   const min = String(parsed.getMinutes()).padStart(2, "0");
-  return `${dd}-${mm}-${yyyy} ${hh}:${min}`;
+  return `${dd}/${mm}/${yyyy} ${hh}:${min}`;
 };
 
 const normalizeTimesheetRow = (row, index) => {
@@ -113,8 +197,14 @@ const normalizeTimesheetRow = (row, index) => {
       customer: row?.customer_name ?? "-",
       staffName: row?.name || row?.staff_name || row?.guard_name || "-",
       regularHours: sumHours(row?.morning_hours, row?.night_hours),
-      saturdayHours: sumHours(row?.saturday_morning_hours, row?.saturday_night_hours),
-      sundayHours: sumHours(row?.sunday_morning_hours, row?.sunday_night_hours),
+      saturdayHours: sumHours(
+        row?.saturday_morning_hours,
+        row?.saturday_night_hours
+      ),
+      sundayHours: sumHours(
+        row?.sunday_morning_hours,
+        row?.sunday_night_hours
+      ),
       phHours: sumHours(row?.ph_morning_hours, row?.ph_night_hours),
       shiftCount: Array.isArray(row?.shift_collection)
         ? row.shift_collection.length
@@ -144,7 +234,8 @@ const normalizeTimesheetRow = (row, index) => {
     id: row?.id ?? row?.timesheet_id ?? row?.roster_id ?? index + 1,
     location:
       row?.location_name ?? row?.location ?? row?.site_name ?? row?.site ?? "-",
-    customer: row?.customer_name ?? row?.customer?.name ?? row?.customer ?? "-",
+    customer:
+      row?.customer_name ?? row?.customer?.name ?? row?.customer ?? "-",
     staffName:
       row?.staff_name ?? row?.guard_name ?? row?.user?.name ?? row?.name ?? "-",
     regularHours: sumHours(
@@ -166,27 +257,33 @@ const normalizeTimesheetRow = (row, index) => {
     shiftCount: Array.isArray(row?.shift_collection)
       ? row.shift_collection.length
       : 0,
-    startDate: formatApiDate(row?.start_date ?? row?.date ?? row?.shift_date),
+    startDate: formatDisplayDate(
+      row?.start_date ?? row?.date ?? row?.shift_date
+    ),
     scheduleTime: buildTimeRange(scheduleStart, scheduleEnd),
     authTime: buildTimeRange(authStart, authEnd),
     authorizedTotalHours: formatHours(
       row?.authorized_total_hours ??
       row?.authorised_total_hours ??
-      row?.authorized_hours,
+      row?.authorized_hours
     ),
     actualFinishTime:
       row?.actual_finish_time ??
       row?.actual_end_time ??
       row?.finish_time ??
       "-",
-    status: toBooleanStatus(row?.status ?? row?.is_approved ?? row?.is_active),
+    status: toBooleanStatus(
+      row?.status ?? row?.is_approved ?? row?.is_active
+    ),
     statusBy:
       row?.status_change_by ??
       row?.status_by ??
       row?.updated_by?.name ??
       row?.approved_by?.name ??
       "N/A",
-    totalHours: formatHours(row?.total_hours ?? row?.hours ?? row?.total_time),
+    totalHours: formatHours(
+      row?.total_hours ?? row?.hours ?? row?.total_time
+    ),
     raw: row,
   };
 };
@@ -207,8 +304,14 @@ const normalizeBreakdown = (item, index, shiftCollectionIds = []) => {
     end: formatShiftDateTime(item?.end ?? item?.end_time),
     totalHours: formatHours(item?.hours),
     regularHours: sumHours(item?.morning_hours, item?.night_hours),
-    saturdayHours: sumHours(item?.saturday_morning_hours, item?.saturday_night_hours),
-    sundayHours: sumHours(item?.sunday_morning_hours, item?.sunday_night_hours),
+    saturdayHours: sumHours(
+      item?.saturday_morning_hours,
+      item?.saturday_night_hours
+    ),
+    sundayHours: sumHours(
+      item?.sunday_morning_hours,
+      item?.sunday_night_hours
+    ),
     phHours: sumHours(item?.ph_morning_hours, item?.ph_night_hours),
     shiftPayable: item?.shift_payable || "-",
     shiftChargeable: item?.shift_chargeable || "-",
@@ -219,6 +322,7 @@ const normalizeBreakdown = (item, index, shiftCollectionIds = []) => {
   };
 };
 
+// ── Select & multi‑select helpers (unchanged) ──
 const buildSelectOptions = (items, labelBuilder) =>
   [{ value: ALL_OPTION_VALUE, label: "Select/Unselect All" }, ...items].map(
     (item) => {
@@ -227,7 +331,7 @@ const buildSelectOptions = (items, labelBuilder) =>
         value: String(item.id),
         label: labelBuilder(item),
       };
-    },
+    }
   );
 
 const getRealOptionValues = (options) =>
@@ -254,7 +358,7 @@ const normalizeMultiSelectValues = (
   selectedOptions,
   actionMeta,
   currentValues,
-  options,
+  options
 ) => {
   const clickedValue = String(actionMeta?.option?.value || "");
   const realValues = getRealOptionValues(options);
@@ -263,17 +367,14 @@ const normalizeMultiSelectValues = (
     return isAllSelected(currentValues, options) ? [] : realValues;
   }
 
-  const values = (selectedOptions || [])
+  return (selectedOptions || [])
     .map((opt) => String(opt.value))
     .filter((value) => value !== ALL_OPTION_VALUE);
-
-  return values;
 };
 
 const CheckboxOption = (props) => {
   const isAll = String(props.value) === ALL_OPTION_VALUE;
   const checked = isAll ? props.selectProps.isAllSelected : props.isSelected;
-
   return (
     <components.Option {...props}>
       <div className="d-flex align-items-center gap-2">
@@ -306,14 +407,15 @@ const selectStyles = {
   option: (base, state) => ({
     ...base,
     backgroundColor: state.isSelected
-      ? "#0A7C6E" // Updated to Green
+      ? "#0A7C6E"
       : state.isFocused
-        ? "#e6f2f0" // Light Green
+        ? "#e6f2f0"
         : "#fff",
     color: state.isSelected ? "#fff" : "#212529",
   }),
 };
 
+// ── Main component ──
 export default function TimeSheet() {
   const { submit: submitTimesheet, loading: timesheetLoading } = useSubmit({
     isAuth: true,
@@ -326,17 +428,20 @@ export default function TimeSheet() {
   });
   const { data: customersResponse, loading: customersLoading } = useFetch(
     "api/admin/get-customers?limit=1000",
-    { isAuth: true },
+    { isAuth: true }
   );
 
   const customersList = useMemo(() => {
-    const list = customersResponse?.data?.data || customersResponse?.data || [];
+    const list =
+      customersResponse?.data?.data || customersResponse?.data || [];
     return Array.isArray(list) ? list : [];
   }, [customersResponse]);
 
   const weekRange = useMemo(() => getWeekRange(), []);
   const [selectedCustomerValues, setSelectedCustomerValues] = useState([]);
-  const [startDate, setStartDate] = useState(formatDateInput(weekRange.start));
+  const [startDate, setStartDate] = useState(
+    formatDateInput(weekRange.start)
+  );
   const [endDate, setEndDate] = useState(formatDateInput(weekRange.end));
 
   const [timesheetData, setTimesheetData] = useState([]);
@@ -348,14 +453,14 @@ export default function TimeSheet() {
     () =>
       buildSelectOptions(
         customersList,
-        (customer) => `${customer.id} - ${customer.name || "Unknown"}`,
+        (customer) => `${customer.id} - ${customer.name || "Unknown"}`
       ),
-    [customersList],
+    [customersList]
   );
 
   const customerAllSelected = useMemo(
     () => isAllSelected(selectedCustomerValues, customerOptions),
-    [selectedCustomerValues, customerOptions],
+    [selectedCustomerValues, customerOptions]
   );
 
   const buildPayload = useCallback(() => {
@@ -377,12 +482,7 @@ export default function TimeSheet() {
             .map((id) => Number(id))
             .filter((id) => Number.isFinite(id)),
     };
-  }, [
-    customersList,
-    endDate,
-    selectedCustomerValues,
-    startDate,
-  ]);
+  }, [customersList, endDate, selectedCustomerValues, startDate]);
 
   const fetchTimesheets = useCallback(async () => {
     const parsedStartDate = parseInputDate(startDate);
@@ -435,9 +535,7 @@ export default function TimeSheet() {
       const res = await submitDetails(
         "api/get-timesheet-details",
         detailsPayload,
-        {
-          method: "POST",
-        },
+        { method: "POST" }
       );
 
       if (!res) {
@@ -446,11 +544,11 @@ export default function TimeSheet() {
       }
 
       const details = getArrayFromResponse(res).map((item, index) =>
-        normalizeBreakdown(item, index, row.raw?.shift_collection || []),
+        normalizeBreakdown(item, index, row.raw?.shift_collection || [])
       );
       setBreakdownData(details);
     },
-    [submitDetails],
+    [submitDetails]
   );
 
   const handleRowClick = async (row) => {
@@ -459,7 +557,6 @@ export default function TimeSheet() {
       setBreakdownData([]);
       return;
     }
-
     setSelectedRowId(row.id);
     setBreakdownData([]);
     await fetchBreakdown(row);
@@ -467,28 +564,22 @@ export default function TimeSheet() {
 
   const handleToggleManualApproval = async (item) => {
     const rosterId = item?.rosterId;
-
     if (!rosterId) {
       toast.error("Roster ID is missing for this shift.");
       return;
     }
-
     setTogglingRosterId(rosterId);
-
     const res = await submitManualApproval(
       "api/job-status-manual-approved",
       { roster_id: rosterId },
-      { method: "POST" },
+      { method: "POST" }
     );
-
     setTogglingRosterId(null);
-
     if (!res) return;
-
     setBreakdownData((prev) =>
       prev.map((row) =>
-        row.rosterId === rosterId ? { ...row, active: !row.active } : row,
-      ),
+        row.rosterId === rosterId ? { ...row, active: !row.active } : row
+      )
     );
   };
 
@@ -497,9 +588,9 @@ export default function TimeSheet() {
       toast.info("No timesheet rows available for export.");
       return;
     }
-
     const exportRows = timesheetData.map((row) => ({
-      "Staff ID": row.raw?.id ?? row.raw?.guard_id ?? row.raw?.staff_id ?? "-",
+      "Staff ID":
+        row.raw?.id ?? row.raw?.guard_id ?? row.raw?.staff_id ?? "-",
       "Staff Name": row.staffName,
       "Total Hours": row.totalHours,
       "Regular Hours": row.regularHours,
@@ -508,7 +599,6 @@ export default function TimeSheet() {
       "Public Holiday Hours": row.phHours,
       "Shift Count": row.shiftCount,
     }));
-
     const worksheet = XLSX.utils.json_to_sheet(exportRows);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Timesheet");
@@ -520,9 +610,7 @@ export default function TimeSheet() {
       <div className="dashboard-page-header">
         <div>
           <h1>Time Sheet</h1>
-          <p>
-            Filter, review, and drill into shift breakdowns.
-          </p>
+          <p>Filter, review, and drill into shift breakdowns.</p>
         </div>
       </div>
 
@@ -540,7 +628,7 @@ export default function TimeSheet() {
                 controlShouldRenderValue={false}
                 value={resolveSelectedOptions(
                   customerOptions,
-                  selectedCustomerValues,
+                  selectedCustomerValues
                 )}
                 isAllSelected={customerAllSelected}
                 onChange={(selected, actionMeta) =>
@@ -549,36 +637,33 @@ export default function TimeSheet() {
                       selected,
                       actionMeta,
                       selectedCustomerValues,
-                      customerOptions,
-                    ),
+                      customerOptions
+                    )
                   )
                 }
                 placeholder={getSelectPlaceholder(
                   "Select Customers",
                   selectedCustomerValues.length,
-                  customersList.length,
+                  customersList.length
                 )}
                 isLoading={customersLoading}
               />
             </div>
             <div className="col-12 col-sm-6 col-lg-3">
-              <input
-                type="date"
-                className="form-control"
+              <DateFilterInput
                 value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
+                onChange={setStartDate}
+                placeholder="Start date"
               />
             </div>
             <div className="col-12 col-sm-6 col-lg-3">
-              <input
-                type="date"
-                className="form-control"
+              <DateFilterInput
                 value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
+                onChange={setEndDate}
+                placeholder="End date"
               />
             </div>
 
-            {/* Grouped Search and Export Buttons */}
             <div className="col-12 col-sm-12 col-lg-2 d-flex gap-2">
               <button
                 className="btn btn-sm btn-primary-custom timesheet-action-btn w-100 px-2"
@@ -599,6 +684,7 @@ export default function TimeSheet() {
         </div>
       </div>
 
+      {/* ── Table (unchanged) ── */}
       <div className="card border-0 shadow-sm">
         <div className="timesheet-table-shell">
           <table className="table table-sm table-hover align-middle mb-0 timesheet-main-table">
@@ -661,7 +747,10 @@ export default function TimeSheet() {
                         <tr className="timesheet-detail-row">
                           <td colSpan="8" className="bg-light">
                             <div className="p-3">
-                              <h6 className="fw-bold mb-3" style={{ color: "#0A7C6E" }}>
+                              <h6
+                                className="fw-bold mb-3"
+                                style={{ color: "#0A7C6E" }}
+                              >
                                 Detailed Shift Breakdown: {row.staffName}
                               </h6>
                               <div className="table-responsive">
@@ -690,7 +779,10 @@ export default function TimeSheet() {
                                   <tbody>
                                     {detailsLoading ? (
                                       <tr>
-                                        <td colSpan="17" className="text-center py-3">
+                                        <td
+                                          colSpan="17"
+                                          className="text-center py-3"
+                                        >
                                           Loading details...
                                         </td>
                                       </tr>
@@ -703,7 +795,9 @@ export default function TimeSheet() {
                                           <td>{item.guardName}</td>
                                           <td>{item.start}</td>
                                           <td>{item.end}</td>
-                                          <td className="fw-bold">{item.totalHours}</td>
+                                          <td className="fw-bold">
+                                            {item.totalHours}
+                                          </td>
                                           <td>{item.regularHours}</td>
                                           <td>{item.saturdayHours}</td>
                                           <td>{item.sundayHours}</td>
@@ -732,7 +826,7 @@ export default function TimeSheet() {
                                                 }
                                                 onChange={() =>
                                                   handleToggleManualApproval(
-                                                    item,
+                                                    item
                                                   )
                                                 }
                                               />
@@ -766,7 +860,7 @@ export default function TimeSheet() {
         </div>
       </div>
 
-      {(customersLoading) && (
+      {customersLoading && (
         <div className="mt-3 text-muted small">
           Loading filters customers...
         </div>
@@ -777,16 +871,13 @@ export default function TimeSheet() {
           .timesheet-filter-grid .css-b62m3t-container {
             width: 100%;
           }
-
           .timesheet-table-shell {
             overflow: hidden;
           }
-
           .timesheet-main-table {
             table-layout: fixed;
             width: 100%;
           }
-
           .timesheet-main-table > thead > tr > th,
           .timesheet-main-table > tbody > tr > td {
             padding: 0.5rem 0.4rem;
@@ -796,7 +887,6 @@ export default function TimeSheet() {
             word-break: break-word;
             vertical-align: middle;
           }
-
           .timesheet-main-table > thead > tr > th {
             background-color: #e6f2f0;
             white-space: normal;
@@ -805,48 +895,38 @@ export default function TimeSheet() {
             border-bottom: 2px solid #0A7C6E !important;
             font-size: 0.82rem;
             font-weight: 700;
-            
             letter-spacing: 0.02em;
             text-align: center;
             line-height: 1.2;
             padding-top: 0.6rem;
             padding-bottom: 0.6rem;
           }
-
           .timesheet-main-table > thead > tr > th:last-child {
             border-right: 0;
           }
-
           .timesheet-main-table > tbody > tr.timesheet-summary-row > td {
             border-bottom: 1px solid #e2e8e6;
             border-right: 1px solid #edf2f0;
             background-color: #fff;
           }
-
           .timesheet-main-table > tbody > tr.timesheet-summary-row > td:not(:nth-child(2)) {
             text-align: center;
           }
-
           .timesheet-main-table > tbody > tr.timesheet-summary-row > td:last-child {
             border-right: 0;
           }
-
           .timesheet-main-table > tbody > tr.timesheet-summary-row:nth-of-type(odd) > td {
             background-color: #f8fcfb;
           }
-
           .timesheet-main-table > tbody > tr.timesheet-summary-row:hover > td {
             background-color: #e6f2f0;
           }
-
           .timesheet-main-table > tbody > tr.timesheet-detail-row > td {
             border-bottom: 2px solid #b8d0cc;
           }
-
           .timesheet-main-table .table-bordered > :not(caption) > * > * {
             border-color: #dce8e6;
           }
-
           .timesheet-breakdown-table th,
           .timesheet-breakdown-table td {
             font-size: 0.78rem;
@@ -858,45 +938,37 @@ export default function TimeSheet() {
             text-align: left;
             line-height: 1.25;
           }
-
           .timesheet-breakdown-table thead th {
             background-color: #e6f2f0;
             border-bottom: 2px solid #0A7C6E;
             font-weight: 700;
           }
-
           .timesheet-breakdown-table tbody td {
             background-color: #fff;
           }
-
           .timesheet-breakdown-table tbody tr:nth-child(even) td {
             background-color: #f8fcfb;
           }
-
           .timesheet-action-btn {
             min-height: 38px;
           }
-
-          /* Adjusted breakpoints for 8 columns */
           @media (max-width: 1200px) {
-            .timesheet-main-table th:nth-child(5), /* Saturday */
-            .timesheet-main-table th:nth-child(6), /* Sunday */
-            .timesheet-main-table th:nth-child(7), /* Public Holiday */
+            .timesheet-main-table th:nth-child(5),
+            .timesheet-main-table th:nth-child(6),
+            .timesheet-main-table th:nth-child(7),
             .timesheet-main-table td:nth-child(5),
             .timesheet-main-table td:nth-child(6),
             .timesheet-main-table td:nth-child(7) {
               display: none;
             }
           }
-
           @media (max-width: 768px) {
             .timesheet-main-table th,
             .timesheet-main-table td {
               padding: 0.45rem 0.3rem;
               font-size: 0.75rem;
             }
-
-            .timesheet-main-table th:nth-child(4), /* Regular Hours */
+            .timesheet-main-table th:nth-child(4),
             .timesheet-main-table td:nth-child(4) {
               display: none;
             }

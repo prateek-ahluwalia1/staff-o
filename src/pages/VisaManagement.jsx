@@ -199,12 +199,13 @@ export default function VisaManagement() {
     const handleVisaCheck = async (e) => {
         if (e) e.preventDefault();
 
+        // Convert DOB from YYYY-MM-DD (internal state) to DD/MM/YYYY for the API
         const payload = {
             passport: formData.passport.trim(),
             country: formData.country.trim().toUpperCase(),
             family_name: formData.family_name.trim(),
             given_name: formData.given_name.trim(),
-            dob: formData.dob, // Already YYYY-MM-DD
+            dob: toDisplayDate(formData.dob), // ✅ Now DD/MM/YYYY
         };
 
         if (!payload.passport || !payload.country || !payload.family_name || !payload.given_name || !payload.dob) {
@@ -220,8 +221,6 @@ export default function VisaManagement() {
             setSelectedCheckDetail(null);
             toast.success("Request submitted successfully. You can check the status below.");
             setFormData(initialForm);
-        } else {
-            toast.error("We couldn't submit the request. Please check your connection and try again.");
         }
     };
 
@@ -531,28 +530,28 @@ export default function VisaManagement() {
             )}
 
             <style>{`
-        .letter-spacing-1 { letter-spacing: 0.05em; }
-        .min-h-form-field { min-height: 38px; }
-        
-        .loader-center-scale {
-          position: absolute;
-          top: 50%;
-          left: 50%;
-          transform: translate(-50%, -50%) scale(0.65);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        }
-        
-        .user-friendly-table { border-collapse: separate; border-spacing: 0; }
-        .user-friendly-table th { font-size: 0.85rem; letter-spacing: 0.03em; font-weight: 600; padding: 1rem; border-bottom: 2px solid #e2e8f0; }
-        .user-friendly-table tbody tr { transition: background-color 0.2s ease; }
-        .user-friendly-table td { vertical-align: middle; padding: 1.25rem 1rem; border-bottom: 1px solid #f1f5f9; }
-        .user-friendly-table tbody tr:last-child td { border-bottom: none; }
-        
-        input.form-control { border-radius: 0.5rem; border-color: #cbd5e1; padding: 0.6rem 1rem; }
-        input.form-control:focus { border-color: #0A7C6E; box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1); }
-      `}</style>
+                .letter-spacing-1 { letter-spacing: 0.05em; }
+                .min-h-form-field { min-height: 38px; }
+                
+                .loader-center-scale {
+                  position: absolute;
+                  top: 50%;
+                  left: 50%;
+                  transform: translate(-50%, -50%) scale(0.65);
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+                }
+                
+                .user-friendly-table { border-collapse: separate; border-spacing: 0; }
+                .user-friendly-table th { font-size: 0.85rem; letter-spacing: 0.03em; font-weight: 600; padding: 1rem; border-bottom: 2px solid #e2e8f0; }
+                .user-friendly-table tbody tr { transition: background-color 0.2s ease; }
+                .user-friendly-table td { vertical-align: middle; padding: 1.25rem 1rem; border-bottom: 1px solid #f1f5f9; }
+                .user-friendly-table tbody tr:last-child td { border-bottom: none; }
+                
+                input.form-control { border-radius: 0.5rem; border-color: #cbd5e1; padding: 0.6rem 1rem; }
+                input.form-control:focus { border-color: #0A7C6E; box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1); }
+            `}</style>
         </div>
     );
 }

@@ -16,8 +16,22 @@ const DOC_CONFIG = {
   vaccination: { label: "Vaccination Certificate", sort: 12 },
 };
 
+/**
+ * Formats a date string into DD/MM/YYYY.
+ * Handles YYYY-MM-DD directly to avoid timezone shift,
+ * falls back to new Date() parsing for other formats.
+ */
 const formatAUSDate = (dateString) => {
   if (!dateString) return "-";
+
+  // If already in ISO YYYY-MM-DD format, parse manually
+  const isoMatch = dateString.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (isoMatch) {
+    const [, y, m, d] = isoMatch;
+    return `${d}/${m}/${y}`;
+  }
+
+  // Fallback: attempt to parse with Date
   const date = new Date(dateString);
   if (isNaN(date.getTime())) return "-";
   const day = String(date.getDate()).padStart(2, "0");
@@ -28,9 +42,19 @@ const formatAUSDate = (dateString) => {
 
 const getExpiryStatus = (dateString) => {
   if (!dateString) return "no-expiry";
-  const today = new Date();
-  const expiry = new Date(dateString);
+  // Use the same manual parse for ISO to get accurate date object
+  let expiry;
+  const isoMatch = dateString.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (isoMatch) {
+    const [, y, m, d] = isoMatch;
+    expiry = new Date(y, m - 1, d); // local midnight
+  } else {
+    expiry = new Date(dateString);
+  }
   if (isNaN(expiry.getTime())) return "no-expiry";
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
   const diffDays = (expiry - today) / (1000 * 60 * 60 * 24);
   if (diffDays < 0) return "expired";
   if (diffDays <= 30) return "expiring";
@@ -111,7 +135,6 @@ export default function DocumentTable({
           <tbody>
             {processedDocuments.length > 0 ? (
               processedDocuments.map((doc, idx) => {
-                // const isStaffEditingExisting = userType === "staff" && doc.file;
                 const status = getExpiryStatus(doc.document_expiry);
                 const displayLabel = DOC_CONFIG[doc.document_type]?.label || doc.document_name;
 
@@ -146,15 +169,9 @@ export default function DocumentTable({
                     </td>
                     <td style={{ padding: "10px 16px", verticalAlign: "middle", border: "none" }}>
                       <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-                        {/* {isStaffEditingExisting ? (
-                          <button disabled style={{ background: "#f3f4f6", border: "none", color: "#9ca3af", padding: 6, borderRadius: 6 }}>
-                            <i className="fa fa-lock" aria-hidden="true"></i>
-                          </button>
-                        ) : ( */}
                         <button type="button" onClick={() => onAddFile(doc)} style={{ background: "#f3f4f6", border: "none", color: "#0A7C6E", cursor: "pointer", padding: 6, borderRadius: 6 }}>
                           <i className="fa fa-pencil" aria-hidden="true"></i>
                         </button>
-                        {/* )} */}
                       </div>
                     </td>
                   </tr>

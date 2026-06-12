@@ -32,7 +32,7 @@ const useFetch = (endpoint, { isAuth = false, immediate = true } = {}) => {
           headers,
           credentials: "include",
         });
-        if (res.status === 401) {
+        if (res.status === 401 && res.message && res.message.toLowerCase() === "unauthenticated") {
           dispatch(logOut());
           return;
         }

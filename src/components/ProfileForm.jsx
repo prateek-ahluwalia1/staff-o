@@ -1,5 +1,33 @@
 import React, { useRef } from "react";
 
+// ----- Date Helpers -----
+// Convert YYYY-MM-DD -> DD/MM/YYYY for display
+const toDisplayDate = (val) => {
+  if (!val) return "";
+  // If it's already DD/MM/YYYY, return as is (safety)
+  if (/^\d{2}\/\d{2}\/\d{4}$/.test(val)) return val;
+  const match = val.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (match) {
+    // eslint-disable-next-line
+    const [_, y, m, d] = match;
+    return `${d}/${m}/${y}`;
+  }
+  return val;
+};
+
+// Convert DD/MM/YYYY -> YYYY-MM-DD for storing
+const toISODate = (val) => {
+  if (!val) return "";
+  const match = val.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+  if (match) {
+    // eslint-disable-next-line
+    const [_, d, m, y] = match;
+    return `${y}-${m}-${d}`;
+  }
+  return val; // fallback (shouldn't happen)
+};
+// --------------------------
+
 export default function ProfileForm({
   formData,
   onChange,
@@ -11,7 +39,7 @@ export default function ProfileForm({
 }) {
   const datePickerRef = useRef(null);
 
-  // Define predefined options to detect when a custom "Other" value is being used
+  // Predefined statuses to detect custom "Other" value
   const predefinedStatuses = [
     "student_visa",
     "bridging_visa",
@@ -20,31 +48,8 @@ export default function ProfileForm({
     "visa_485"
   ];
 
-  // If the value exists and is NOT in the predefined list, it means it's a custom input
   const showCustomStatus = formData.staff_document_type && !predefinedStatuses.includes(formData.staff_document_type);
   const selectValue = showCustomStatus ? "other" : (formData.staff_document_type || "");
-
-  // --- Date Formatting Helpers to handle API (YYYY-MM-DD) vs UI (DD/MM/YYYY) ---
-  const formatDisplayDate = (val) => {
-    if (!val) return "";
-    // If date comes from API as YYYY-MM-DD, convert to DD/MM/YYYY for UI
-    if (val.match(/^\d{4}-\d{2}-\d{2}$/)) {
-      const [y, m, d] = val.split("-");
-      return `${d}/${m}/${y}`;
-    }
-    return val;
-  };
-
-  const formatPickerDate = (val) => {
-    if (!val) return "";
-    // Native calendar picker explicitly requires YYYY-MM-DD format
-    if (val.match(/^\d{4}-\d{2}-\d{2}$/)) return val;
-    if (val.match(/^\d{2}\/\d{2}\/\d{4}$/)) {
-      const [d, m, y] = val.split("/");
-      return `${y}-${m}-${d}`;
-    }
-    return "";
-  };
 
   return (
     <form className="settings-form" onSubmit={onSubmit}>
@@ -75,9 +80,8 @@ export default function ProfileForm({
               value={formData.name || ""}
               onChange={(e) => {
                 let value = e.target.value
-                  .replace(/[^a-zA-Z\s]/g, "") // only letters/spaces
-                  .replace(/\s+/g, " "); // avoid multiple spaces
-
+                  .replace(/[^a-zA-Z\s]/g, "")
+                  .replace(/\s+/g, " ");
                 onChange({
                   target: {
                     id: "name",
@@ -139,7 +143,6 @@ export default function ProfileForm({
                     <span className={`input-group-text bg-white border-end-0 ${isPhoneVerified ? 'text-success border-success' : (!isPhoneVerified && formData.phone ? 'text-danger border-danger' : 'text-muted')}`}>
                       <i className="fa-solid fa-phone"></i>
                     </span>
-
                     <input
                       type="tel"
                       className={`form-control border-start-0 ps-0 ${isPhoneVerified ? 'border-success text-success fw-bold' : (!isPhoneVerified && formData.phone ? 'is-invalid border-danger' : '')}`}
@@ -149,15 +152,11 @@ export default function ProfileForm({
                       readOnly
                       style={{ background: isPhoneVerified ? "#f2fdf5" : "#f8f9fa", cursor: "default" }}
                     />
-
-                    {/* Show checkmark icon inside input if verified */}
                     {isPhoneVerified && (
                       <span className="input-group-text bg-white border-success border-start-0 text-success px-2">
                         <i className="fa-solid fa-circle-check"></i>
                       </span>
                     )}
-
-                    {/* Unified Action Button */}
                     <button
                       type="button"
                       className={`btn fw-medium ${!formData.phone ? "btn-outline-primary" : isPhoneVerified ? "btn-success px-3" : "btn-danger"}`}
@@ -211,9 +210,8 @@ export default function ProfileForm({
                   value={formData.company_name || ""}
                   onChange={(e) => {
                     let value = e.target.value
-                      .replace(/[^a-zA-Z0-9\s]/g, "") // remove special chars
+                      .replace(/[^a-zA-Z0-9\s]/g, "")
                       .replace(/\s+/g, " ");
-
                     onChange({
                       target: {
                         id: "company_name",
@@ -240,13 +238,8 @@ export default function ProfileForm({
                   placeholder="XX-XXX-XXX-XXX"
                   value={formData.abn || ""}
                   onChange={(e) => {
-                    // Remove everything except digits
                     let value = e.target.value.replace(/\D/g, "");
-
-                    // Limit to 11 digits
                     value = value.substring(0, 11);
-
-                    // Auto add dashes
                     if (value.length > 2 && value.length <= 5) {
                       value = value.replace(/^(\d{2})(\d+)/, "$1-$2");
                     } else if (value.length > 5 && value.length <= 8) {
@@ -257,7 +250,6 @@ export default function ProfileForm({
                         "$1-$2-$3-$4"
                       );
                     }
-
                     onChange({
                       target: {
                         id: "abn",
@@ -282,13 +274,8 @@ export default function ProfileForm({
                   placeholder="XXX-XXX-XXX"
                   value={formData.acn || ""}
                   onChange={(e) => {
-                    // Keep only digits
                     let value = e.target.value.replace(/\D/g, "");
-
-                    // Limit to 9 digits
                     value = value.substring(0, 9);
-
-                    // Auto add dashes
                     if (value.length > 3 && value.length <= 6) {
                       value = value.replace(/^(\d{3})(\d+)/, "$1-$2");
                     } else if (value.length > 6) {
@@ -297,7 +284,6 @@ export default function ProfileForm({
                         "$1-$2-$3"
                       );
                     }
-
                     onChange({
                       target: {
                         id: "acn",
@@ -327,7 +313,6 @@ export default function ProfileForm({
                     value={selectValue}
                     onChange={(e) => {
                       if (e.target.value === "other") {
-                        // Pass a distinct initial string to trigger the text input
                         onChange({ target: { id: "staff_document_type", value: "Other (Please specify)" } });
                       } else {
                         onChange(e);
@@ -344,7 +329,6 @@ export default function ProfileForm({
                   </select>
                 </div>
 
-                {/* Custom Text Input if "Other" is selected */}
                 {showCustomStatus && (
                   <div className="col-md-6" style={{ animation: "fadeIn 0.3s ease-in-out" }}>
                     <label htmlFor="custom_staff_document" className="form-label fw-semibold text-muted">
@@ -413,15 +397,14 @@ export default function ProfileForm({
             </>
           )}
 
-          {/* Staff Date of Birth (Hybrid Calendar/Text Input) */}
+          {/* Staff Date of Birth – Hybrid: Display DD/MM/YYYY, Store YYYY-MM-DD */}
           {userType === "staff" && (
             <div>
               <label htmlFor="date_of_birth" className="form-label fw-semibold">
                 Date of Birth <span className="text-danger">*</span>
               </label>
               <div className="input-group shadow-sm rounded position-relative">
-
-                {/* Button that triggers the hidden native calendar */}
+                {/* Calendar trigger button */}
                 <button
                   type="button"
                   className="input-group-text bg-white text-muted border-end-0"
@@ -441,13 +424,13 @@ export default function ProfileForm({
                   <i className="fa-solid fa-calendar-days text-primary"></i>
                 </button>
 
-                {/* Hidden Native Date Input */}
+                {/* Hidden native date input – always YYYY-MM-DD */}
                 <input
                   type="date"
                   ref={datePickerRef}
                   className="position-absolute"
                   style={{ opacity: 0, width: 0, height: 0, pointerEvents: "none", bottom: 0, left: 40 }}
-                  value={formatPickerDate(formData.date_of_birth)}
+                  value={formData.date_of_birth || ""} // stored as YYYY-MM-DD
                   onChange={(e) => {
                     const val = e.target.value; // Returns YYYY-MM-DD
                     if (val) {
@@ -464,14 +447,14 @@ export default function ProfileForm({
                   max={new Date().toISOString().split("T")[0]}
                 />
 
-                {/* Visible Text Input for Manual Entry */}
+                {/* Visible text input – displays DD/MM/YYYY, allows manual typing */}
                 <input
                   type="text"
                   className="form-control border-start-0 ps-0"
                   id="date_of_birth"
                   name="date_of_birth"
                   placeholder="DD/MM/YYYY"
-                  value={formatDisplayDate(formData.date_of_birth)}
+                  value={toDisplayDate(formData.date_of_birth)}
                   onChange={(e) => {
                     let value = e.target.value.replace(/\D/g, "");
                     if (value.length > 8) value = value.substring(0, 8);
@@ -480,11 +463,13 @@ export default function ProfileForm({
                     } else if (value.length > 4) {
                       value = value.replace(/^(\d{2})(\d{2})(\d+)/, "$1/$2/$3");
                     }
+                    // Convert to ISO if valid DD/MM/YYYY
+                    const isoValue = toISODate(value);
                     onChange({
                       target: {
                         id: "date_of_birth",
                         name: "date_of_birth",
-                        value,
+                        value: isoValue || value, // keep incomplete input visible
                       },
                     });
                   }}

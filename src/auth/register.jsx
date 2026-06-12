@@ -11,6 +11,7 @@ import {
   normalizeAuthResponse,
   extractUserId,
 } from "../utils/authResponseNormalizer";
+import googleIcon from "../assets/images/google-color.svg";
 
 export default function Register() {
   const navigate = useNavigate();
@@ -178,7 +179,7 @@ export default function Register() {
           console.error("Google signup error response:", res);
         }
       } catch {
-        toast.error("Server connection error during Google signup.");
+        console.error("Server connection error during Google signup.");
       }
     },
   });
@@ -239,7 +240,6 @@ export default function Register() {
                         value={formData.name}
                         onChange={handleChange}
                         maxLength={50}
-                        disabled={loading}
                         style={{ border: "1px solid #0A7C6E" }}
                       />
                       {errors.name && <div className="invalid-feedback" style={{ fontSize: '12px' }}>{errors.name}</div>}
@@ -257,7 +257,6 @@ export default function Register() {
                         value={formData.phone}
                         onChange={handleChange}
                         maxLength={20}
-                        disabled={loading}
                         style={{ border: "1px solid #0A7C6E" }}
                       />
                       {errors.phone && <div className="invalid-feedback" style={{ fontSize: '12px' }}>{errors.phone}</div>}
@@ -275,7 +274,6 @@ export default function Register() {
                         value={formData.email}
                         onChange={handleChange}
                         maxLength={100}
-                        disabled={loading}
                         style={{ border: "1px solid #0A7C6E" }}
                       />
                       {errors.email && <div className="invalid-feedback" style={{ fontSize: '12px' }}>{errors.email}</div>}
@@ -294,7 +292,6 @@ export default function Register() {
                           value={formData.password}
                           onChange={handleChange}
                           minLength={8}
-                          disabled={loading}
                           style={{ border: "1px solid #0A7C6E" }}
                         />
                         <button
@@ -350,7 +347,6 @@ export default function Register() {
                               value={role.key}
                               checked={isActive}
                               onChange={() => !loading && setUserType(role.key)}
-                              disabled={loading}
                             />
                             {isActive ? <i className="fa-solid fa-circle-check"></i> : <i className="fa-regular fa-circle"></i>}
                             {role.label}
@@ -393,7 +389,7 @@ export default function Register() {
                   style={{ borderRadius: "6px" }}
                 >
                   <img
-                    src="https://www.svgrepo.com/show/475656/google-color.svg"
+                    src={googleIcon}
                     alt="Google"
                     width={16}
                   />
@@ -443,7 +439,9 @@ export default function Register() {
               </div>
               <h3 className="fw-bold text-dark mb-2">Verify your email</h3>
               <p className="text-muted small mb-0">
-                We've sent a verification link to <strong className="text-dark">{formData.email}</strong>.
+                We've sent a verification link to <strong className="text-dark"
+                  style={{ textTransform: "none" }}
+                >{formData.email}</strong>.
                 Please check your inbox to activate your account.
               </p>
             </div>

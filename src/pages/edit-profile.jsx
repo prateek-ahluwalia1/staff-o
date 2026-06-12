@@ -59,6 +59,35 @@ const DOC_TYPES = [
   { value: "Birth Certificate", label: "Birth Certificate" },
 ];
 
+// ========== DATE HELPERS (DD/MM/YYYY everywhere) ==========
+const isoToDisplay = (val) => {
+  if (!val) return "";
+  if (/^\d{2}\/\d{2}\/\d{4}$/.test(val)) return val; // already DD/MM/YYYY
+  const match = val.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (match) {
+    // eslint-disable-next-line
+    const [_, y, m, d] = match;
+    return `${d}/${m}/${y}`;
+  }
+  return val;
+};
+
+const normalizeToDisplay = (dateStr) => {
+  if (!dateStr) return "";
+  if (/^\d{2}\/\d{2}\/\d{4}$/.test(dateStr)) return dateStr;
+  const iso = isoToDisplay(dateStr);
+  if (iso !== dateStr) return iso;
+  // fallback using Date (may have timezone issues but ok for verification APIs)
+  const d = new Date(dateStr);
+  if (!isNaN(d.getTime())) {
+    const day = String(d.getDate()).padStart(2, "0");
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    return `${day}/${month}/${d.getFullYear()}`;
+  }
+  return dateStr;
+};
+// ===========================================================
+
 export default function EditProfile() {
   const dispatch = useDispatch();
   const { userdata } = useSelector((state) => state.auth);
@@ -99,7 +128,6 @@ export default function EditProfile() {
   const [isAddingCard, setIsAddingCard] = useState(false);
   const [cardForm, setCardForm] = useState(INITIAL_CARD_STATE);
 
-  // Card Delete Modal States
   const [showCardDeleteModal, setShowCardDeleteModal] = useState(false);
   const [cardToDeleteIndex, setCardToDeleteIndex] = useState(null);
 
@@ -122,7 +150,7 @@ export default function EditProfile() {
     no: false,
     exp: false,
     document_no: "",
-    document_expiry: "",
+    document_expiry: "",   // will be DD/MM/YYYY
     file: null,
     file_path: "",
     file_url: "",
@@ -191,7 +219,7 @@ export default function EditProfile() {
       gender: staff.gender || contractor.gender || d.gender || "",
       staff_document_type: staff.staff_document_type || "",
       security_license_no: staff.security_license_no || "",
-      date_of_birth: d.date_of_birth || staff.date_of_birth || "",
+      date_of_birth: isoToDisplay(d.date_of_birth || staff.date_of_birth || ""),
       company_name:
         d.company_name ||
         contractor.company_name ||
@@ -313,7 +341,6 @@ export default function EditProfile() {
     });
   }, [profileData?.data?.documents, formData.state]);
 
-  // Helper: safe JSON parse
   const safeJsonParse = (value) => {
     if (typeof value !== "string") return null;
     try {
@@ -323,7 +350,6 @@ export default function EditProfile() {
     }
   };
 
-  // Helper: unwrap visa response
   const unwrapVisaResponse = (payload) => {
     if (!payload) return null;
     if (payload?.json?.data) return payload.json.data;
@@ -384,11 +410,11 @@ export default function EditProfile() {
       const payload = new FormData();
 
       Object.keys(formData).forEach((key) => {
-        if (key === "profile_image") return; // skip image – uploaded separately
+        if (key === "profile_image") return;
         if (key === "bank_details") {
           payload.append("bank_details", JSON.stringify(formData.bank_details));
         } else {
-          payload.append(key, formData[key]);
+          payload.append(key, formData[key]); // date_of_birth already DD/MM/YYYY
         }
       });
 
@@ -578,7 +604,7 @@ export default function EditProfile() {
           if (expiryDate) {
             setDocForm((prev) => ({
               ...prev,
-              document_expiry: expiryDate,
+              document_expiry: normalizeToDisplay(expiryDate),
               is_verified: true,
             }));
             toast.success("Security License verified. Expiry date locked.");
@@ -599,9 +625,8 @@ export default function EditProfile() {
       return;
     }
 
-    // VISA verification using /api/admin/visa-check
+    // VISA verification
     if (docForm.document_name === "Visa") {
-      // Get user data from Redux
       const user = userdata?.data || userdata;
       const staff = user?.staff || {};
       const fullName = (user?.name || "").trim();
@@ -649,7 +674,6 @@ export default function EditProfile() {
         checkId = createData.id;
         toast.info("Verification in progress. Please wait...");
 
-        // Poll for result every 2 seconds
         pollInterval = setInterval(async () => {
           try {
             const resultRes = await submit(`api/admin/visa-result/${checkId}`, null, { method: "GET" });
@@ -667,7 +691,7 @@ export default function EditProfile() {
               if (expiryDate) {
                 setDocForm((prev) => ({
                   ...prev,
-                  document_expiry: expiryDate,
+                  document_expiry: normalizeToDisplay(expiryDate),
                   is_verified: true,
                 }));
                 toast.success("Visa verified. Expiry date locked.");
@@ -688,7 +712,6 @@ export default function EditProfile() {
           }
         }, 2000);
 
-        // Timeout after 30 seconds
         timeoutId = setTimeout(() => {
           cleanup();
           if (verifyingDoc) {
@@ -722,7 +745,6 @@ export default function EditProfile() {
   const handleDocFormChange = async (e) => {
     const { name, value, type, checked, files } = e.target;
 
-    // Block changes to expiry date if already verified for Security License or Visa
     if (
       name === "document_expiry" &&
       docForm.is_verified &&
@@ -769,7 +791,7 @@ export default function EditProfile() {
       no: docForm.no,
       exp: docForm.exp,
       document_no: docForm.document_no,
-      document_expiry: docForm.document_expiry,
+      document_expiry: docForm.document_expiry, // DD/MM/YYYY
       file: docForm.file_path,
     };
     if (selectedDoc) {
@@ -869,18 +891,15 @@ export default function EditProfile() {
       <div style={{ display: "flex", gap: 16, marginBottom: 20 }}>
         {userType !== "admin" && (
           <button
-            className={`btn ${activeTab === "personal" ? "btn-primary-custom" : "btn-outline-primary"
-              }`}
+            className={`btn ${activeTab === "personal" ? "btn-primary-custom" : "btn-outline-primary"}`}
             onClick={() => setActiveTab("personal")}
           >
             Personal Information
           </button>
         )}
-
         {userType === "customer" && (
           <button
-            className={`btn ${activeTab === "cards" ? "btn-primary-custom" : "btn-outline-primary"
-              }`}
+            className={`btn ${activeTab === "cards" ? "btn-primary-custom" : "btn-outline-primary"}`}
             onClick={() => {
               setActiveTab("cards");
               setIsAddingCard(false);
@@ -891,8 +910,7 @@ export default function EditProfile() {
         )}
         {userType !== "customer" && userType !== "admin" && (
           <button
-            className={`btn ${activeTab === "documents" ? "btn-primary-custom" : "btn-outline-primary"
-              }`}
+            className={`btn ${activeTab === "documents" ? "btn-primary-custom" : "btn-outline-primary"}`}
             onClick={() => setActiveTab("documents")}
           >
             Documents
@@ -977,53 +995,20 @@ export default function EditProfile() {
 
               {formData.bank_details.length === 0 ? (
                 <div className="text-center p-5 border rounded bg-light text-muted">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="48"
-                    height="48"
-                    fill="currentColor"
-                    className="bi bi-credit-card mb-3 opacity-50"
-                    viewBox="0 0 16 16"
-                  >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="currentColor" className="bi bi-credit-card mb-3 opacity-50" viewBox="0 0 16 16">
                     <path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V4zm2-1a1 1 0 0 0-1 1v1h14V4a1 1 0 0 0-1-1H2zm13 4H1v5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V7z" />
                     <path d="M2 10a1 1 0 0 1 1-1h1a1 1 0 0 1 1 1v1a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1v-1z" />
                   </svg>
                   <h5>No cards saved yet</h5>
-                  <p className="small">
-                    Add a payment method to easily checkout.
-                  </p>
+                  <p className="small">Add a payment method to easily checkout.</p>
                 </div>
               ) : (
                 <div className="row">
                   {formData.bank_details.map((card, index) => (
                     <div key={index} className="col-md-6 col-lg-4 mb-4">
-                      <div
-                        className="card-preview position-relative text-white p-4 rounded-4 shadow-sm h-100"
-                        style={{
-                          background:
-                            "linear-gradient(135deg, #1e3c72 0%, #2a5298 100%)",
-                          boxShadow: "0 10px 20px rgba(0,0,0,0.15)",
-                        }}
-                      >
-                        <button
-                          className="btn btn-sm btn-danger position-absolute"
-                          style={{
-                            top: "12px",
-                            right: "12px",
-                            opacity: 0.9,
-                            padding: "4px 8px",
-                          }}
-                          onClick={() => handleRemoveCardClick(index)}
-                          disabled={submitLoading}
-                          title="Remove Card"
-                        >
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            width="14"
-                            height="14"
-                            fill="currentColor"
-                            viewBox="0 0 16 16"
-                          >
+                      <div className="card-preview position-relative text-white p-4 rounded-4 shadow-sm h-100" style={{ background: "linear-gradient(135deg, #1e3c72 0%, #2a5298 100%)", boxShadow: "0 10px 20px rgba(0,0,0,0.15)" }}>
+                        <button className="btn btn-sm btn-danger position-absolute" style={{ top: "12px", right: "12px", opacity: 0.9, padding: "4px 8px" }} onClick={() => handleRemoveCardClick(index)} disabled={submitLoading} title="Remove Card">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
                             <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0z" />
                             <path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4zM2.5 3h11V2h-11z" />
                           </svg>
@@ -1037,15 +1022,11 @@ export default function EditProfile() {
                           </svg>
                           <span className="fst-italic" style={{ opacity: 0.8, fontSize: "1.2rem", marginRight: "30px" }}>VISA</span>
                         </div>
-                        <h5 className="mb-4" style={{ letterSpacing: "2px", fontFamily: "monospace", textShadow: "1px 1px 2px rgba(0,0,0,0.5)" }}>
-                          {card.card_number || "**** **** **** ****"}
-                        </h5>
+                        <h5 className="mb-4" style={{ letterSpacing: "2px", fontFamily: "monospace", textShadow: "1px 1px 2px rgba(0,0,0,0.5)" }}>{card.card_number || "**** **** **** ****"}</h5>
                         <div className="d-flex justify-content-between text-uppercase" style={{ fontSize: "0.85rem", opacity: 0.9 }}>
                           <div>
                             <div style={{ fontSize: "0.6rem", opacity: 0.7 }}>Card Holder</div>
-                            <div style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "150px" }}>
-                              {card.card_holder_name || "YOUR NAME"}
-                            </div>
+                            <div style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "150px" }}>{card.card_holder_name || "YOUR NAME"}</div>
                           </div>
                           <div className="text-end">
                             <div style={{ fontSize: "0.6rem", opacity: 0.7 }}>Expires</div>
@@ -1061,16 +1042,7 @@ export default function EditProfile() {
           ) : (
             <div className="row align-items-center">
               <div className="col-md-5 mb-4 mb-md-0 d-flex justify-content-center">
-                <div
-                  className="card-preview position-relative text-white p-4 rounded-4 shadow-lg"
-                  style={{
-                    background: "linear-gradient(135deg, #1e3c72 0%, #2a5298 100%)",
-                    width: "100%",
-                    maxWidth: "360px",
-                    height: "220px",
-                    boxShadow: "0 10px 20px rgba(0,0,0,0.15)",
-                  }}
-                >
+                <div className="card-preview position-relative text-white p-4 rounded-4 shadow-lg" style={{ background: "linear-gradient(135deg, #1e3c72 0%, #2a5298 100%)", width: "100%", maxWidth: "360px", height: "220px", boxShadow: "0 10px 20px rgba(0,0,0,0.15)" }}>
                   <div className="d-flex justify-content-between align-items-center mb-4">
                     <svg width="40" height="30" viewBox="0 0 40 30" fill="none">
                       <rect width="40" height="30" rx="4" fill="#E2E8F0" opacity="0.8" />
@@ -1080,15 +1052,11 @@ export default function EditProfile() {
                     </svg>
                     <span className="fst-italic" style={{ opacity: 0.8, fontSize: "1.2rem" }}>VISA</span>
                   </div>
-                  <h4 className="mb-4" style={{ letterSpacing: "2px", fontFamily: "monospace", textShadow: "1px 1px 2px rgba(0,0,0,0.5)" }}>
-                    {cardForm.card_number || "**** **** **** ****"}
-                  </h4>
+                  <h4 className="mb-4" style={{ letterSpacing: "2px", fontFamily: "monospace", textShadow: "1px 1px 2px rgba(0,0,0,0.5)" }}>{cardForm.card_number || "**** **** **** ****"}</h4>
                   <div className="d-flex justify-content-between text-uppercase" style={{ fontSize: "0.85rem", opacity: 0.9 }}>
                     <div>
                       <div style={{ fontSize: "0.6rem", opacity: 0.7 }}>Card Holder</div>
-                      <div style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "180px" }}>
-                        {cardForm.card_holder_name || "YOUR NAME"}
-                      </div>
+                      <div style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "180px" }}>{cardForm.card_holder_name || "YOUR NAME"}</div>
                     </div>
                     <div className="text-end">
                       <div style={{ fontSize: "0.6rem", opacity: 0.7 }}>Expires</div>
@@ -1097,7 +1065,6 @@ export default function EditProfile() {
                   </div>
                 </div>
               </div>
-
               <div className="col-md-7">
                 <div className="d-flex justify-content-between align-items-center mb-3">
                   <div className="d-flex align-items-center">
@@ -1107,120 +1074,39 @@ export default function EditProfile() {
                     <h4 className="mb-0">Secure Payment Information</h4>
                   </div>
                 </div>
-                <p className="text-muted small mb-4">
-                  Your payment details are encrypted and securely stored.
-                </p>
+                <p className="text-muted small mb-4">Your payment details are encrypted and securely stored.</p>
 
                 <form onSubmit={handleSaveNewCard}>
                   <div className="mb-3">
-                    <label className="form-label text-muted small fw-bold">
-                      Name on Card <span className="text-danger">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      placeholder="e.g. John Doe"
-                      value={cardForm.card_holder_name}
-                      maxLength="30"
-                      onChange={(e) => {
-                        const val = e.target.value.replace(/[^a-zA-Z\s]/g, "").slice(0, 30);
-                        setCardForm((p) => ({ ...p, card_holder_name: val.toUpperCase() }));
-                      }}
-                      required
-                    />
+                    <label className="form-label text-muted small fw-bold">Name on Card <span className="text-danger">*</span></label>
+                    <input type="text" className="form-control" placeholder="e.g. John Doe" value={cardForm.card_holder_name} maxLength="30" onChange={(e) => { const val = e.target.value.replace(/[^a-zA-Z\s]/g, "").slice(0, 30); setCardForm((p) => ({ ...p, card_holder_name: val.toUpperCase() })); }} required />
                   </div>
-
                   <div className="mb-3">
-                    <label className="form-label text-muted small fw-bold">
-                      Card Number <span className="text-danger">*</span>
-                    </label>
+                    <label className="form-label text-muted small fw-bold">Card Number <span className="text-danger">*</span></label>
                     <div className="input-group">
-                      <input
-                        type="text"
-                        className="form-control"
-                        placeholder="0000 0000 0000 0000"
-                        value={cardForm.card_number}
-                        onChange={handleCardNumberChange}
-                        required
-                      />
+                      <input type="text" className="form-control" placeholder="0000 0000 0000 0000" value={cardForm.card_number} onChange={handleCardNumberChange} required />
                       <span className="input-group-text bg-white">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" className="bi bi-credit-card" viewBox="0 0 16 16">
-                          <path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V4zm2-1a1 1 0 0 0-1 1v1h14V4a1 1 0 0 0-1-1H2zm13 4H1v5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V7z" />
-                          <path d="M2 10a1 1 0 0 1 1-1h1a1 1 0 0 1 1 1v1a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1v-1z" />
-                        </svg>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" className="bi bi-credit-card" viewBox="0 0 16 16"><path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V4zm2-1a1 1 0 0 0-1 1v1h14V4a1 1 0 0 0-1-1H2zm13 4H1v5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V7z" /><path d="M2 10a1 1 0 0 1 1-1h1a1 1 0 0 1 1 1v1a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1v-1z" /></svg>
                       </span>
                     </div>
                   </div>
-
                   <div className="row mb-4">
                     <div className="col-4">
                       <label className="form-label text-muted small fw-bold">Exp Month <span className="text-danger">*</span></label>
-                      <input
-                        type="text"
-                        className="form-control text-center"
-                        placeholder="MM"
-                        maxLength="2"
-                        value={cardForm.expiry_month}
-                        onChange={(e) => {
-                          let val = e.target.value.replace(/\D/g, "").slice(0, 2);
-                          if (val.length === 2 && parseInt(val, 10) > 12) val = "12";
-                          else if (val.length === 2 && parseInt(val, 10) === 0) val = "01";
-                          setCardForm((p) => ({ ...p, expiry_month: val }));
-                        }}
-                        required
-                      />
+                      <input type="text" className="form-control text-center" placeholder="MM" maxLength="2" value={cardForm.expiry_month} onChange={(e) => { let val = e.target.value.replace(/\D/g, "").slice(0, 2); if (val.length === 2 && parseInt(val, 10) > 12) val = "12"; else if (val.length === 2 && parseInt(val, 10) === 0) val = "01"; setCardForm((p) => ({ ...p, expiry_month: val })); }} required />
                     </div>
                     <div className="col-4">
                       <label className="form-label text-muted small fw-bold">Exp Year <span className="text-danger">*</span></label>
-                      <input
-                        type="text"
-                        className="form-control text-center"
-                        placeholder="YYYY"
-                        maxLength="4"
-                        value={cardForm.expiry_year}
-                        onChange={(e) => {
-                          const val = e.target.value.replace(/\D/g, "").slice(0, 4);
-                          setCardForm((p) => ({ ...p, expiry_year: val }));
-                        }}
-                        required
-                      />
+                      <input type="text" className="form-control text-center" placeholder="YYYY" maxLength="4" value={cardForm.expiry_year} onChange={(e) => { const val = e.target.value.replace(/\D/g, "").slice(0, 4); setCardForm((p) => ({ ...p, expiry_year: val })); }} required />
                     </div>
                     <div className="col-4">
                       <label className="form-label text-muted small fw-bold">CVV <span className="text-danger">*</span></label>
-                      <input
-                        type="password"
-                        className="form-control text-center"
-                        placeholder="***"
-                        maxLength="3"
-                        value={cardForm.cvv}
-                        onChange={(e) => {
-                          const val = e.target.value.replace(/\D/g, "");
-                          setCardForm((p) => ({ ...p, cvv: val }));
-                        }}
-                        required
-                      />
+                      <input type="password" className="form-control text-center" placeholder="***" maxLength="3" value={cardForm.cvv} onChange={(e) => { const val = e.target.value.replace(/\D/g, ""); setCardForm((p) => ({ ...p, cvv: val })); }} required />
                     </div>
                   </div>
-
                   <div className="d-flex gap-2">
-                    <button
-                      type="button"
-                      className="btn btn-outline-secondary w-50 py-2 fw-bold"
-                      onClick={() => {
-                        setIsAddingCard(false);
-                        setCardForm(INITIAL_CARD_STATE);
-                      }}
-                      disabled={submitLoading}
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      type="submit"
-                      className="btn btn-primary-custom w-50 py-2 fw-bold shadow-sm"
-                      disabled={submitLoading}
-                    >
-                      {submitLoading ? "Saving..." : "Save Card"}
-                    </button>
+                    <button type="button" className="btn btn-outline-secondary w-50 py-2 fw-bold" onClick={() => { setIsAddingCard(false); setCardForm(INITIAL_CARD_STATE); }} disabled={submitLoading}>Cancel</button>
+                    <button type="submit" className="btn btn-primary-custom w-50 py-2 fw-bold shadow-sm" disabled={submitLoading}>{submitLoading ? "Saving..." : "Save Card"}</button>
                   </div>
                 </form>
               </div>
@@ -1254,9 +1140,9 @@ export default function EditProfile() {
                 no: false,
                 exp: false,
                 document_no: doc.document_no || "",
-                document_expiry: doc.document_expiry || "",
+                document_expiry: isoToDisplay(doc.document_expiry) || "",
                 file: null,
-                file_path: "",
+                file_path: doc.file || "",
                 file_url: doc.file,
                 document_name: doc.document_name,
                 is_verified: !!doc.document_expiry,
@@ -1294,9 +1180,7 @@ export default function EditProfile() {
             </svg>
             <h5 className="mb-0 text-danger fw-bold">Danger Zone</h5>
           </div>
-          <p className="text-muted mb-3">
-            Deleting your profile is permanent and cannot be undone. All your data will be permanently deleted.
-          </p>
+          <p className="text-muted mb-3">Deleting your profile is permanent and cannot be undone. All your data will be permanently deleted.</p>
           <button className="btn btn-danger" onClick={() => { setShowDeleteModal(true); setDeleteConfirmText(""); }} disabled={deleteLoading}>
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-trash me-2" viewBox="0 0 16 16">
               <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0z" />
@@ -1376,7 +1260,7 @@ export default function EditProfile() {
         </div>
       </Modal>
 
-      {/* Document Modal – single column, scrollable, locked expiry for Visa/Security */}
+      {/* Document Modal – full DD/MM/YYYY handling */}
       <Modal
         open={showDocModal}
         onClose={() => {
@@ -1457,30 +1341,117 @@ export default function EditProfile() {
             )}
           </div>
 
-          {/* Expiry Date – always disabled for Visa & Security License */}
+          {/* Expiry Date – stores DD/MM/YYYY, only converts for native picker */}
           <div className="mb-3">
             <label className="form-label fw-semibold">
               Expiry Date <span className="text-danger">*</span>
             </label>
-            <input
-              type="date"
-              className="form-control"
-              name="document_expiry"
-              value={docForm.document_expiry}
-              onChange={handleDocFormChange}
-              required
-              disabled={
-                docForm.document_name === "Security License" ||
-                docForm.document_name === "Visa"
-              }
-              style={{
-                backgroundColor:
-                  docForm.document_name === "Security License" ||
-                    docForm.document_name === "Visa"
-                    ? "#e9ecef"
-                    : "white",
-              }}
-            />
+            <div className="input-group position-relative">
+              <button
+                type="button"
+                className="input-group-text bg-white text-muted border-end-0"
+                onClick={(e) => {
+                  e.preventDefault();
+                  const hiddenPicker = document.getElementById("doc_expiry_picker");
+                  if (hiddenPicker) {
+                    try {
+                      hiddenPicker.showPicker();
+                    } catch (err) {
+                      hiddenPicker.focus();
+                    }
+                  }
+                }}
+                style={{ cursor: "pointer", zIndex: 10 }}
+                disabled={
+                  docForm.is_verified &&
+                  (docForm.document_name === "Security License" ||
+                    docForm.document_name === "Visa")
+                }
+                title="Open Calendar"
+              >
+                <i className="fa-solid fa-calendar-days text-primary"></i>
+              </button>
+
+              {/* hidden native date input (needs YYYY-MM-DD) */}
+              <input
+                type="date"
+                id="doc_expiry_picker"
+                className="position-absolute"
+                style={{
+                  opacity: 0,
+                  width: 0,
+                  height: 0,
+                  pointerEvents: "none",
+                  bottom: 0,
+                  left: 40,
+                }}
+                value={
+                  docForm.document_expiry
+                    ? (() => {
+                      const parts = docForm.document_expiry.split("/");
+                      if (parts.length === 3) {
+                        const [d, m, y] = parts;
+                        return `${y}-${m}-${d}`;
+                      }
+                      return "";
+                    })()
+                    : ""
+                }
+                onChange={(e) => {
+                  const isoDate = e.target.value;
+                  if (isoDate) {
+                    const [y, m, d] = isoDate.split("-");
+                    setDocForm((prev) => ({
+                      ...prev,
+                      document_expiry: `${d}/${m}/${y}`, // store as DD/MM/YYYY
+                    }));
+                  }
+                }}
+                disabled={
+                  docForm.is_verified &&
+                  (docForm.document_name === "Security License" ||
+                    docForm.document_name === "Visa")
+                }
+              />
+
+              {/* visible input – shows and accepts DD/MM/YYYY */}
+              <input
+                type="text"
+                className="form-control border-start-0 ps-0"
+                name="document_expiry"
+                placeholder="DD/MM/YYYY"
+                value={docForm.document_expiry}
+                onChange={(e) => {
+                  let value = e.target.value.replace(/\D/g, "");
+                  if (value.length > 8) value = value.substring(0, 8);
+                  if (value.length > 2 && value.length <= 4) {
+                    value = value.replace(/^(\d{2})(\d+)/, "$1/$2");
+                  } else if (value.length > 4) {
+                    value = value.replace(/^(\d{2})(\d{2})(\d+)/, "$1/$2/$3");
+                  }
+                  setDocForm((prev) => ({
+                    ...prev,
+                    document_expiry: value,
+                  }));
+                }}
+                required
+                maxLength={10}
+                pattern="^(0[1-9]|[12][0-9]|3[01])/(0[1-9]|1[012])/\d{4}$"
+                disabled={
+                  docForm.is_verified &&
+                  (docForm.document_name === "Security License" ||
+                    docForm.document_name === "Visa")
+                }
+                style={{
+                  backgroundColor:
+                    docForm.is_verified &&
+                      (docForm.document_name === "Security License" ||
+                        docForm.document_name === "Visa")
+                      ? "#e9ecef"
+                      : "white",
+                }}
+              />
+            </div>
           </div>
 
           {/* Visa Details Card */}

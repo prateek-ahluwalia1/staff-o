@@ -43,7 +43,7 @@ const useSubmit = ({ isAuth = false } = {}) => {
 
         const res = await fetch(`${apiURL}${endpoint}`, fetchOptions);
 
-        if (res.status === 401) {
+        if (res.status === 401 && res.message && res.message.toLowerCase() === "unauthenticated") {
           dispatch(logOut());
           return { success: false, error: "Unauthorized", status: 401 };
         }

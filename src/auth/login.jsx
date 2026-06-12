@@ -11,6 +11,7 @@ import {
   normalizeAuthResponse,
   extractUserId,
 } from "../utils/authResponseNormalizer";
+import googleIcon from "../assets/images/google-color.svg";
 
 export default function Login() {
   const dispatch = useDispatch();
@@ -164,7 +165,6 @@ export default function Login() {
         }
       } catch (err) {
         console.error("Google Login Error:", err);
-        toast.error("Server connection error during Google login.");
       }
     },
   });
@@ -200,11 +200,9 @@ export default function Login() {
         if (latestProfile?.user_type === "customer") {
           navigate("/add-job");
         }
-      } else {
-        toast.error(res.message || "Could not complete account creation.");
       }
     } catch {
-      toast.error("Server connection error during account creation.");
+      console.error("Server connection error during account creation.");
     }
   };
 
@@ -231,11 +229,9 @@ export default function Login() {
         toast.success(res.message || "Password reset link sent successfully!");
         setShowForgotModal(false);
         setForgotEmail("");
-      } else {
-        toast.error(res?.message || "Failed to send reset link.");
       }
     } catch (error) {
-      toast.error("Server error. Could not send reset link.");
+      console.error("Server error. Could not send reset link.", error);
     }
   };
 
@@ -298,7 +294,6 @@ export default function Login() {
                         value={formData.email}
                         onChange={handleChange}
                         maxLength={100}
-                        disabled={loading}
                         style={{
                           border: "1px solid #0A7C6E",
                         }}
@@ -343,7 +338,6 @@ export default function Login() {
                           value={formData.password}
                           onChange={handleChange}
                           minLength={8}
-                          disabled={loading}
                           style={{
                             border: "1px solid #0A7C6E",
                           }}
@@ -414,7 +408,7 @@ export default function Login() {
                   style={{ borderRadius: "6px" }}
                 >
                   <img
-                    src="https://www.svgrepo.com/show/475656/google-color.svg"
+                    src={googleIcon}
                     alt="Google"
                     width={16}
                   />
@@ -490,7 +484,6 @@ export default function Login() {
                           setForgotEmail(e.target.value);
                           if (forgotError) setForgotError("");
                         }}
-                        disabled={loading}
                         style={{ border: "1px solid #0A7C6E" }}
                       />
                       {forgotError && (
@@ -593,7 +586,6 @@ export default function Login() {
                           value={role.key}
                           checked={selectedRole === role.key}
                           onChange={() => !loading && setSelectedRole(role.key)}
-                          disabled={loading}
                         />
                         {role.label}
                       </label>

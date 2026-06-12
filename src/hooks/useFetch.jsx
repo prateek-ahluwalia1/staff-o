@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { apiURL } from "../utils/exports";
-// import { toast } from "react-toastify";
 import { logOut } from "../store/slices/authSlice";
 
 const useFetch = (endpoint, { isAuth = false, immediate = true } = {}) => {
@@ -32,24 +31,23 @@ const useFetch = (endpoint, { isAuth = false, immediate = true } = {}) => {
           headers,
           credentials: "include",
         });
-        if (res.status === 401 && res.message && res.message.toLowerCase() === "unauthenticated") {
+
+        const json = await res.json();
+
+        // ✅ Check authentication after JSON parsing
+        if (res.status === 401 && json.message === "Unauthenticated.") {
           dispatch(logOut());
           return;
         }
 
-        const json = await res.json();
-
         if (!res.ok) {
           console.error("Fetch error response:", json);
-          // toast.error(json.errors || json.message || "Something went wrong");
           return;
         }
 
         setData(json);
       } catch (err) {
-        const message = err.message || "Network error";
-        console.error("Fetch request failed:", message);
-        // toast.error(message);
+        console.error("Fetch request failed:", err.message);
       } finally {
         setLoading(false);
       }

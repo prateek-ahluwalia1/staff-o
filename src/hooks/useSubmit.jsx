@@ -43,16 +43,25 @@ const useSubmit = ({ isAuth = false } = {}) => {
 
         const res = await fetch(`${apiURL}${endpoint}`, fetchOptions);
 
-        if (res.status === 401 && res.message && res.message.toLowerCase() === "unauthenticated") {
-          dispatch(logOut());
-          return { success: false, error: "Unauthorized", status: 401 };
+        if (res.status === 401) {
+          // For blob responses, we can't parse JSON, so treat as auth error
+          if (responseType === "blob") {
+            dispatch(logOut());
+            return { success: false, error: "Unauthorized", status: 401 };
+          }
+
+          const errorJson = await res.json();
+          if (errorJson.message === "Unauthenticated.") {
+            dispatch(logOut());
+          }
+          if (!silentErrorToast) toast.error(errorJson.message || "Unauthorized");
+          return { success: false, error: errorJson.message, status: 401, data: errorJson };
         }
 
-        // --- BLOB HANDLING FOR PDF DOWNLOADS ---
+        // --- BLOB HANDLING ---
         if (responseType === "blob") {
           const contentType = res.headers.get("content-type");
 
-          // If the backend sent JSON instead of a PDF (likely an error message)
           if (contentType && contentType.includes("application/json")) {
             const errorJson = await res.json();
             throw new Error(errorJson.message || errorJson.error || "Server returned JSON instead of PDF");
@@ -61,7 +70,6 @@ const useSubmit = ({ isAuth = false } = {}) => {
           if (!res.ok) throw new Error("Failed to generate document");
 
           const rawBlob = await res.blob();
-          // Explicitly cast to PDF to prevent browser corruption
           return new Blob([rawBlob], { type: "application/pdf" });
         }
 

@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useRef, useEffect } from "react";
 import Select, { components } from "react-select";
 import { useSelector } from "react-redux";
 import { toast } from "react-toastify";
@@ -10,6 +10,103 @@ import { Link } from 'react-router-dom'
 const todayISO = new Date().toISOString().split("T")[0];
 const ALL_OPTION_VALUE = "ALL";
 
+// ── Date helpers ──────────────────────────────────────────────────────────────
+const formatDisplayDate = (dateStr) => {
+  if (!dateStr) return "";
+  if (/^\d{2}\/\d{2}\/\d{4}$/.test(dateStr)) return dateStr;
+  const isoMatch = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (isoMatch) {
+    const [, y, m, d] = isoMatch;
+    return `${d}/${m}/${y}`;
+  }
+  const d = new Date(dateStr);
+  if (Number.isNaN(d.getTime())) return dateStr;
+  const day = String(d.getDate()).padStart(2, "0");
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  return `${day}/${month}/${d.getFullYear()}`;
+};
+
+const toISODate = (val) => {
+  if (!val) return "";
+  const match = val.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+  if (match) {
+    const [, d, m, y] = match;
+    return `${y}-${m}-${d}`;
+  }
+  return val;
+};
+
+// ── Hybrid Date Input ─────────────────────────────────────────────────────────
+const DateFilterInput = ({ value, onChange, placeholder, required }) => {
+  const pickerRef = useRef(null);
+  const [displayValue, setDisplayValue] = useState(formatDisplayDate(value));
+
+  useEffect(() => {
+    setDisplayValue(formatDisplayDate(value));
+  }, [value]);
+
+  const handleTextChange = (e) => {
+    let val = e.target.value.replace(/\D/g, "");
+    if (val.length > 8) val = val.slice(0, 8);
+    if (val.length > 2 && val.length <= 4) val = val.replace(/^(\d{2})(\d+)/, "$1/$2");
+    else if (val.length > 4) val = val.replace(/^(\d{2})(\d{2})(\d+)/, "$1/$2/$3");
+    setDisplayValue(val);
+    const iso = toISODate(val);
+    if (onChange) onChange(iso || val);
+  };
+
+  const handlePickerChange = (e) => {
+    const isoDate = e.target.value;
+    if (onChange) onChange(isoDate);
+  };
+
+  const openPicker = (e) => {
+    e.preventDefault();
+    if (pickerRef.current) {
+      try {
+        pickerRef.current.showPicker();
+      } catch (_) {
+        pickerRef.current.focus();
+      }
+    }
+  };
+
+  return (
+    <div className="input-group">
+      <button
+        type="button"
+        className="input-group-text bg-white border-end-0"
+        onClick={openPicker}
+        style={{ cursor: "pointer" }}
+        title="Open calendar"
+      >
+        <i className="fa-regular fa-calendar text-muted"></i>
+      </button>
+      <input
+        type="date"
+        ref={pickerRef}
+        className="position-absolute"
+        style={{ opacity: 0, width: 0, height: 0, pointerEvents: "none" }}
+        value={value}
+        onChange={handlePickerChange}
+        required={required}
+      />
+      <input
+        type="text"
+        className="form-control border-start-0"
+        placeholder={placeholder || "DD/MM/YYYY"}
+        value={displayValue}
+        onChange={handleTextChange}
+        required={required}
+        maxLength={10}
+        pattern="^(0[1-9]|[12][0-9]|3[01])/(0[1-9]|1[012])/\d{4}$"
+        title="Enter a date in DD/MM/YYYY format"
+      />
+    </div>
+  );
+};
+
+// ── Generic utilities ─────────────────────────────────────────────────────────
 const toArray = (value) => {
   if (Array.isArray(value)) return value;
   if (!value) return [];
@@ -33,6 +130,7 @@ const isRequestSuccessful = (res) => {
   return Boolean(statusFlag);
 };
 
+// ── Multi‑select helpers ─────────────────────────────────────────────────────
 const buildSelectOptions = (items, labelBuilder) =>
   [{ value: ALL_OPTION_VALUE, label: "Select/Unselect All" }, ...items].map(
     (item) => {
@@ -126,6 +224,7 @@ const selectStyles = {
   }),
 };
 
+// ── Main Component ────────────────────────────────────────────────────────────
 const PaySlip = () => {
   const { userdata } = useSelector((state) => state.auth || {});
   const userType = userdata?.data?.user_type || userdata?.user_type;
@@ -415,22 +514,20 @@ const PaySlip = () => {
                   <label className="form-label small fw-semibold text-muted mb-1">
                     Start Date
                   </label>
-                  <input
-                    type="date"
-                    className="form-control"
+                  <DateFilterInput
                     value={filterStartDate}
-                    onChange={(e) => setFilterStartDate(e.target.value)}
+                    onChange={setFilterStartDate}
+                    placeholder="Start date"
                   />
                 </div>
                 <div className="col-6 col-lg-2">
                   <label className="form-label small fw-semibold text-muted mb-1">
                     End Date
                   </label>
-                  <input
-                    type="date"
-                    className="form-control"
+                  <DateFilterInput
                     value={filterEndDate}
-                    onChange={(e) => setFilterEndDate(e.target.value)}
+                    onChange={setFilterEndDate}
+                    placeholder="End date"
                   />
                 </div>
                 <div className="col-6 col-lg-2 d-grid">
@@ -521,11 +618,12 @@ const PaySlip = () => {
                         row.name ||
                         `Guard #${row.guard_id || "-"}`}
                     </td>
-                    <td>{row.start_date || "-"}</td>
-                    <td>{row.end_date || "-"}</td>
+                    <td>{formatDisplayDate(row.start_date)}</td>
+                    <td>{formatDisplayDate(row.end_date)}</td>
                     <td>
                       {row.file_url ? (
-                        <Link href={row.file_url}
+                        <Link
+                          to={row.file_url}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="btn btn-sm btn-outline-primary"
@@ -597,20 +695,20 @@ const PaySlip = () => {
               <div className="row g-3">
                 <div className="col-12 col-md-6">
                   <label className="form-label fw-semibold">Start Date</label>
-                  <input
-                    type="date"
-                    className="form-control"
+                  <DateFilterInput
                     value={uploadStartDate}
-                    onChange={(e) => setUploadStartDate(e.target.value)}
+                    onChange={setUploadStartDate}
+                    placeholder="Start date"
+                    required
                   />
                 </div>
                 <div className="col-12 col-md-6">
                   <label className="form-label fw-semibold">End Date</label>
-                  <input
-                    type="date"
-                    className="form-control"
+                  <DateFilterInput
                     value={uploadEndDate}
-                    onChange={(e) => setUploadEndDate(e.target.value)}
+                    onChange={setUploadEndDate}
+                    placeholder="End date"
+                    required
                   />
                 </div>
 

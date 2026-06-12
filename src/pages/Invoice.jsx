@@ -9,7 +9,9 @@ import InvoiceSettings from "../components/invoice/InvoiceSettings";
 import InvoiceToolbar from "../components/invoice/InvoiceToolbar";
 import PDFGenerator from "../utils/PDFGenerator";
 
+
 const formatDateForRange = (dateStr) => {
+  // Already returns DD/MM/YYYY (used for API)
   if (!dateStr) return "";
   const [year, month, day] = dateStr.split("-");
   if (!year || !month || !day) return "";
@@ -33,11 +35,10 @@ const Invoice = () => {
   const [invoiceNo, setInvoiceNo] = useState(
     `STAFFOO-${new Date().getFullYear()}-${String(Date.now()).slice(-5)}`,
   );
-
   const [currency, setCurrency] = useState("AUD");
 
   const [startDate, setStartDate] = useState(
-    new Date().toISOString().split("T")[0],
+    new Date().toISOString().split("T")[0], // YYYY-MM-DD
   );
   const [endDate, setEndDate] = useState("");
   const [dueDate, setDueDate] = useState("");
@@ -56,7 +57,7 @@ const Invoice = () => {
     name: "",
     email: "",
     phone: "",
-    acn: "", // Changed from abn to acn
+    acn: "",
     description: "",
   });
 
@@ -81,8 +82,8 @@ const Invoice = () => {
       setFrom({
         name: uData?.name || uData?.company_name || "The Scouts",
         email: uData?.email || "",
-        phone: "1800 782 366", // Hardcoded Phone
-        abn: "48 613 317 838", // Hardcoded ABN
+        phone: "1800 782 366",
+        abn: "48 613 317 838",
         description: "",
       });
     }
@@ -116,7 +117,7 @@ const Invoice = () => {
         name: customer.name || "",
         email: customer.email || "",
         phone: customer.phone || customer.customer?.phone || "",
-        acn: customer.customer?.registration_number || "", // Use ACN
+        acn: customer.customer?.registration_number || "",
         description: "",
       });
     } else {

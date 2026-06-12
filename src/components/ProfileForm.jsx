@@ -1,33 +1,5 @@
 import React, { useRef } from "react";
 
-// ----- Date Helpers -----
-// Convert YYYY-MM-DD -> DD/MM/YYYY for display
-const toDisplayDate = (val) => {
-  if (!val) return "";
-  // If it's already DD/MM/YYYY, return as is (safety)
-  if (/^\d{2}\/\d{2}\/\d{4}$/.test(val)) return val;
-  const match = val.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-  if (match) {
-    // eslint-disable-next-line
-    const [_, y, m, d] = match;
-    return `${d}/${m}/${y}`;
-  }
-  return val;
-};
-
-// Convert DD/MM/YYYY -> YYYY-MM-DD for storing
-const toISODate = (val) => {
-  if (!val) return "";
-  const match = val.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
-  if (match) {
-    // eslint-disable-next-line
-    const [_, d, m, y] = match;
-    return `${y}-${m}-${d}`;
-  }
-  return val; // fallback (shouldn't happen)
-};
-// --------------------------
-
 export default function ProfileForm({
   formData,
   onChange,
@@ -45,11 +17,15 @@ export default function ProfileForm({
     "bridging_visa",
     "citizen",
     "permanent_residence",
-    "visa_485"
+    "visa_485",
   ];
 
-  const showCustomStatus = formData.staff_document_type && !predefinedStatuses.includes(formData.staff_document_type);
-  const selectValue = showCustomStatus ? "other" : (formData.staff_document_type || "");
+  const showCustomStatus =
+    formData.staff_document_type &&
+    !predefinedStatuses.includes(formData.staff_document_type);
+  const selectValue = showCustomStatus
+    ? "other"
+    : formData.staff_document_type || "";
 
   return (
     <form className="settings-form" onSubmit={onSubmit}>
@@ -397,7 +373,7 @@ export default function ProfileForm({
             </>
           )}
 
-          {/* Staff Date of Birth – Hybrid: Display DD/MM/YYYY, Store YYYY-MM-DD */}
+          {/* Staff Date of Birth – stores DD/MM/YYYY, displays DD/MM/YYYY */}
           {userType === "staff" && (
             <div>
               <label htmlFor="date_of_birth" className="form-label fw-semibold">
@@ -424,22 +400,42 @@ export default function ProfileForm({
                   <i className="fa-solid fa-calendar-days text-primary"></i>
                 </button>
 
-                {/* Hidden native date input – always YYYY-MM-DD */}
+                {/* Hidden native date input – expects YYYY-MM-DD */}
                 <input
                   type="date"
                   ref={datePickerRef}
                   className="position-absolute"
-                  style={{ opacity: 0, width: 0, height: 0, pointerEvents: "none", bottom: 0, left: 40 }}
-                  value={formData.date_of_birth || ""} // stored as YYYY-MM-DD
+                  style={{
+                    opacity: 0,
+                    width: 0,
+                    height: 0,
+                    pointerEvents: "none",
+                    bottom: 0,
+                    left: 40,
+                  }}
+                  value={
+                    formData.date_of_birth
+                      ? (() => {
+                        // Convert DD/MM/YYYY -> YYYY-MM-DD for the picker
+                        const parts = formData.date_of_birth.split("/");
+                        if (parts.length === 3) {
+                          const [d, m, y] = parts;
+                          return `${y}-${m}-${d}`;
+                        }
+                        return "";
+                      })()
+                      : ""
+                  }
                   onChange={(e) => {
-                    const val = e.target.value; // Returns YYYY-MM-DD
-                    if (val) {
-                      const [y, m, d] = val.split('-');
+                    const isoDate = e.target.value; // YYYY-MM-DD
+                    if (isoDate) {
+                      const [y, m, d] = isoDate.split("-");
+                      // Store as DD/MM/YYYY
                       onChange({
                         target: {
                           id: "date_of_birth",
                           name: "date_of_birth",
-                          value: `${d}/${m}/${y}`, // Pass back as DD/MM/YYYY
+                          value: `${d}/${m}/${y}`,
                         },
                       });
                     }
@@ -447,29 +443,31 @@ export default function ProfileForm({
                   max={new Date().toISOString().split("T")[0]}
                 />
 
-                {/* Visible text input – displays DD/MM/YYYY, allows manual typing */}
+                {/* Visible text input – shows and accepts DD/MM/YYYY */}
                 <input
                   type="text"
                   className="form-control border-start-0 ps-0"
                   id="date_of_birth"
                   name="date_of_birth"
                   placeholder="DD/MM/YYYY"
-                  value={toDisplayDate(formData.date_of_birth)}
+                  value={formData.date_of_birth || ""}
                   onChange={(e) => {
                     let value = e.target.value.replace(/\D/g, "");
                     if (value.length > 8) value = value.substring(0, 8);
                     if (value.length > 2 && value.length <= 4) {
                       value = value.replace(/^(\d{2})(\d+)/, "$1/$2");
                     } else if (value.length > 4) {
-                      value = value.replace(/^(\d{2})(\d{2})(\d+)/, "$1/$2/$3");
+                      value = value.replace(
+                        /^(\d{2})(\d{2})(\d+)/,
+                        "$1/$2/$3"
+                      );
                     }
-                    // Convert to ISO if valid DD/MM/YYYY
-                    const isoValue = toISODate(value);
+                    // Store directly as DD/MM/YYYY (may be partial)
                     onChange({
                       target: {
                         id: "date_of_birth",
                         name: "date_of_birth",
-                        value: isoValue || value, // keep incomplete input visible
+                        value,
                       },
                     });
                   }}

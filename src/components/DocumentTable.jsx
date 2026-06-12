@@ -17,40 +17,61 @@ const DOC_CONFIG = {
 };
 
 /**
- * Formats a date string into DD/MM/YYYY.
- * Handles YYYY-MM-DD directly to avoid timezone shift,
- * falls back to new Date() parsing for other formats.
+ * Formats a date string for display.
+ * Assumes input is either DD/MM/YYYY (already correct) or YYYY-MM-DD (ISO).
+ * Returns DD/MM/YYYY.
  */
 const formatAUSDate = (dateString) => {
   if (!dateString) return "-";
 
-  // If already in ISO YYYY-MM-DD format, parse manually
+  // Already in DD/MM/YYYY? (e.g., "01/06/2026")
+  const ddMatch = dateString.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+  if (ddMatch) return dateString;
+
+  // ISO format YYYY-MM-DD
   const isoMatch = dateString.match(/^(\d{4})-(\d{2})-(\d{2})$/);
   if (isoMatch) {
     const [, y, m, d] = isoMatch;
     return `${d}/${m}/${y}`;
   }
 
-  // Fallback: attempt to parse with Date
+  // Fallback: try to parse as a generic date string (less reliable)
   const date = new Date(dateString);
-  if (isNaN(date.getTime())) return "-";
-  const day = String(date.getDate()).padStart(2, "0");
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const year = date.getFullYear();
-  return `${day}/${month}/${year}`;
+  if (!isNaN(date.getTime())) {
+    const day = String(date.getDate()).padStart(2, "0");
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    return `${day}/${month}/${date.getFullYear()}`;
+  }
+
+  return "-";
 };
 
+/**
+ * Determines expiry status based on a date string.
+ * Supports both DD/MM/YYYY and YYYY-MM-DD formats.
+ * Returns "expired", "expiring", "valid", or "no-expiry".
+ */
 const getExpiryStatus = (dateString) => {
   if (!dateString) return "no-expiry";
-  // Use the same manual parse for ISO to get accurate date object
+
   let expiry;
-  const isoMatch = dateString.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-  if (isoMatch) {
-    const [, y, m, d] = isoMatch;
-    expiry = new Date(y, m - 1, d); // local midnight
+  // Check DD/MM/YYYY first
+  const ddMatch = dateString.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+  if (ddMatch) {
+    const [, d, m, y] = ddMatch;
+    expiry = new Date(y, m - 1, d); // month is 0-indexed
   } else {
-    expiry = new Date(dateString);
+    // ISO format YYYY-MM-DD
+    const isoMatch = dateString.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (isoMatch) {
+      const [, y, m, d] = isoMatch;
+      expiry = new Date(y, m - 1, d);
+    } else {
+      // fallback parsing
+      expiry = new Date(dateString);
+    }
   }
+
   if (isNaN(expiry.getTime())) return "no-expiry";
 
   const today = new Date();
@@ -68,7 +89,6 @@ export default function DocumentTable({
 }) {
   const processedDocuments = useMemo(() => {
     if (!documents) return [];
-
     return [...documents].sort((a, b) => {
       const orderA = DOC_CONFIG[a.document_type]?.sort || 99;
       const orderB = DOC_CONFIG[b.document_type]?.sort || 99;

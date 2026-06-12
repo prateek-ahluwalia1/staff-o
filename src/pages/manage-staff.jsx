@@ -70,7 +70,6 @@ const ManageStaff = () => {
     email: "",
     password: "",
     phone: "",
-    security_license_no: "",
     gender: "",
     staff_document_type: "",
     address: "",
@@ -105,7 +104,6 @@ const ManageStaff = () => {
         email: user.email || "",
         password: "",
         phone: user.staff?.phone || "",
-        security_license_no: user.staff?.security_license_no || "",
         gender: user.staff?.gender || "",
         staff_document_type: user.staff?.staff_document_type || "",
         address: user.address || "",
@@ -261,7 +259,7 @@ const ManageStaff = () => {
           fields: ["address_components", "geometry", "formatted_address"],
           types: ["address"],
           componentRestrictions: { country: "au" },
-        },
+        }
       );
 
       addressInput.setAttribute("data-gmaps-initialized", "true");
@@ -294,7 +292,7 @@ const ManageStaff = () => {
             country: newCountry || prev.country,
             coordinates: `${place.geometry.location.lat()},${place.geometry.location.lng()}`,
           }));
-        },
+        }
       );
     };
 
@@ -312,7 +310,7 @@ const ManageStaff = () => {
 
       if (staffAutocompleteListenerRef.current && window.google) {
         window.google.maps.event.removeListener(
-          staffAutocompleteListenerRef.current,
+          staffAutocompleteListenerRef.current
         );
       }
 
@@ -340,7 +338,7 @@ const ManageStaff = () => {
 
     if (!editingUser && !formData.coordinates) {
       toast.error(
-        "Please select an address from Google suggestions to capture coordinates.",
+        "Please select an address from Google suggestions to capture coordinates."
       );
       return;
     }
@@ -361,7 +359,7 @@ const ManageStaff = () => {
       toast.success(
         editingUser
           ? "Staff member updated successfully!"
-          : "Staff member created successfully!",
+          : "Staff member created successfully!"
       );
       refetch();
       closeModal();
@@ -404,6 +402,62 @@ const ManageStaff = () => {
   return (
     <div className="container mt-4 pb-5">
       <style>{`
+        /* Premium Typography & Layout */
+        .dashboard-page-header h1 {
+          font-weight: 800;
+          letter-spacing: -0.02em;
+          color: #111827;
+        }
+
+        /* --- PERFECT ALIGNMENT & DIVIDERS --- */
+        .jobtracker-table-shell {
+          border-radius: 12px;
+          border: 1px solid #e2e8f0;
+          background: #ffffff;
+          overflow: hidden;
+        }
+
+        .jobtracker-main-table {
+          table-layout: fixed; /* STRICT mathematical alignment */
+          width: 100%;
+          border-collapse: collapse;
+          margin: 0;
+        }
+
+        .premium-thead th {
+          background-color: #0A7C6E !important;
+          color: #ffffff !important;
+          font-weight: 600;
+          letter-spacing: 0.05em;
+          text-transform: uppercase;
+          font-size: 0.75rem;
+          padding: 1.2rem 1.5rem !important;
+          border: none !important;
+          border-right: 1px solid rgba(255, 255, 255, 0.1) !important; /* Subtle vertical header divider */
+          white-space: nowrap;
+        }
+        
+        .premium-thead th:last-child {
+          border-right: none !important;
+        }
+
+        .jobtracker-data-row td {
+          padding: 1.2rem 1.5rem !important;
+          vertical-align: middle;
+          border-bottom: 1px solid #e2e8f0 !important; /* Crisp horizontal row dividers */
+          border-right: 1px solid #f8fafc; /* Extremely subtle vertical dividers to ensure perfect grid vision */
+        }
+
+        .jobtracker-data-row td:last-child {
+          border-right: none;
+        }
+
+        .jobtracker-data-row:last-child td {
+          border-bottom: none !important; /* Removes bottom border on the very last row so it doesn't double-up with container */
+        }
+        /* ------------------------------------ */
+        
+        /* Modal Backdrop & Container */
         .full-screen-modal {
           position: fixed;
           top: 0;
@@ -411,97 +465,93 @@ const ManageStaff = () => {
           width: 100vw;
           height: 100vh;
           z-index: 1060;
-          background: rgba(255, 255, 255, 0.9);
-          backdrop-filter: blur(12px);
+          background: rgba(0, 0, 0, 0.4);
+          backdrop-filter: blur(8px);
           display: flex;
           justify-content: center;
           align-items: center;
           animation: modalFadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
-        @keyframes modalFadeIn {
-          from { opacity: 0; transform: translateY(20px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-
         .modal-inner-content {
           width: 95%;
-          max-width: 1000px;
+          max-width: 900px;
           height: 90vh;
-          background: #fff;
-          border-radius: 24px;
-          box-shadow: 0 40px 100px -20px rgba(0, 0, 0, 0.2);
+          background: #ffffff;
+          border-radius: 20px;
+          box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
           display: flex;
           flex-direction: column;
           overflow: hidden;
-          border: 1px solid rgba(0,0,0,0.05);
+        }
+
+        /* Form Inputs */
+        .form-control, .form-select {
+          background-color: #f3f4f6;
+          border: 2px solid transparent;
+          border-radius: 12px;
+          padding: 0.75rem 1rem;
+          font-size: 0.95rem;
+          color: #111827;
+          transition: all 0.2s ease-in-out;
+        }
+
+        .form-control:focus, .form-select:focus {
+          background-color: #ffffff;
+          border-color: #000000;
+          box-shadow: none;
+          outline: none;
         }
 
         .form-label {
-          font-size: 0.75rem;
-          font-weight: 700;
-          color: #6c757d;
-          
-          letter-spacing: 0.5px;
+          font-size: 0.8rem;
+          font-weight: 600;
+          color: #4b5563;
+          margin-bottom: 0.4rem;
         }
 
+        /* Segmented Controls for Tabs inside Modal */
+        .modal-tabs-container {
+          background: #f3f4f6;
+          padding: 4px;
+          border-radius: 12px;
+          display: inline-flex;
+          flex-wrap: wrap;
+          gap: 4px;
+        }
+
+        .modal-tabs-container .btn {
+          border-radius: 8px;
+          border: none;
+          font-weight: 600;
+          font-size: 0.85rem;
+          color: #6b7280;
+          padding: 0.5rem 1rem;
+          transition: all 0.2s;
+        }
+
+        .modal-tabs-container .btn-primary-custom {
+          background: #ffffff;
+          color: #000000;
+          box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .modal-tabs-container .btn-outline-primary:hover:not(:disabled) {
+          color: #111827;
+          background: rgba(255,255,255,0.5);
+        }
+
+        /* Clean Dividers */
         .section-divider {
           font-size: 1.1rem;
-          font-weight: 800;
-          color: #1a1a1a;
-          margin: 30px 0 15px;
-          padding-left: 12px;
-          border-left: 4px solid #0A7C6E;
-        }
-
-        .pac-container {
-          z-index: 2000 !important;
-        }
-
-        .manage-staff-table {
-          table-layout: fixed;
-          width: 100%;
-        }
-
-        .manage-staff-table > thead > tr > th,
-        .manage-staff-table > tbody > tr > td {
-          padding: 0.72rem 0.58rem;
-          font-size: 0.85rem;
-          line-height: 1.28;
-          white-space: normal;
-          word-break: break-word;
-          vertical-align: middle;
-        }
-
-        .manage-staff-table > thead > tr > th {
-          background: #0A7C6E;
-          
-          letter-spacing: 0.02em;
           font-weight: 700;
-          color: #fff;
-          border-bottom: 2px solid #0A7C6E;
-          border-right: 1px solid #d3e3ff;
+          color: #111827;
+          margin: 25px 0 15px;
+          padding-bottom: 10px;
+          border-bottom: 1px solid #e5e7eb;
         }
 
-        .manage-staff-table > thead > tr > th:last-child,
-        .manage-staff-table > tbody > tr > td:last-child {
-          border-right: 0;
-        }
-
-        .manage-staff-table > tbody > tr > td {
-          background: #ffffff;
-          border-bottom: 1px solid #d9e3ef;
-          border-right: 1px solid #edf2f8;
-        }
-
-        .manage-staff-table > tbody > tr:nth-of-type(odd) > td {
-          background: #fbfdff;
-        }
-
-        .manage-staff-table > tbody > tr:hover > td {
-          background: #eef5ff;
-        }
-
+        /* Sub-Modal styles (For Delete and Documents) */
         .confirm-modal-backdrop {
           position: fixed;
           inset: 0;
@@ -526,8 +576,8 @@ const ManageStaff = () => {
         }
 
         .confirm-modal-header {
-          background: linear-gradient(135deg, #fff1f2 0%, #ffe4e6 100%);
-          border-bottom: 1px solid #fecdd3;
+          background: #f8fafc;
+          border-bottom: 1px solid #e2e8f0;
         }
 
         .confirm-modal-icon {
@@ -540,18 +590,36 @@ const ManageStaff = () => {
           background: #fee2e2;
           color: #dc2626;
         }
+
+        .confirm-modal-icon.icon-doc {
+          background: #e0f2fe;
+          color: #0284c7;
+        }
+
+        .pac-container {
+          z-index: 2000 !important;
+          border-radius: 12px;
+          box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+          border: 1px solid #e5e7eb;
+          margin-top: 4px;
+        }
+
+        @keyframes modalFadeIn {
+          from { opacity: 0; transform: scale(0.98); }
+          to { opacity: 1; transform: scale(1); }
+        }
       `}</style>
 
       {/* Header Section */}
       <div className="d-flex justify-content-between align-items-end mb-4">
         <div>
-          <h2 className="fw-bold text-dark mb-1">Staff Management</h2>
+          <h2 className="fw-bold text-dark mb-1" style={{ letterSpacing: "-0.02em" }}>Staff Management</h2>
           <p className="text-muted mb-0">
             Manage permissions and details for your team members.
           </p>
         </div>
         <button
-          className="btn btn-primary-custom rounded-pill px-4 py-2 shadow-sm fw-bold"
+          className="btn btn-dark rounded-pill px-4 py-2 shadow-sm fw-bold"
           onClick={() => openModal()}
         >
           <i className="fa-solid fa-plus me-2"></i> Add Staff
@@ -569,54 +637,53 @@ const ManageStaff = () => {
       )}
 
       {/* Table Card */}
-      <div className="card border-0 shadow-sm rounded-4 overflow-hidden">
+      <div className="card border-0 shadow-sm rounded-4 overflow-hidden mb-4 jobtracker-table-shell">
         <div className="table-responsive">
           <table
-            className={`table table-hover align-middle mb-0 manage-staff-table ${loading ? "opacity-50" : ""}`}
+            className={`table table-hover align-middle mb-0 jobtracker-main-table ${loading ? "opacity-50" : ""}`}
           >
-            <thead>
-              <tr className="text-muted small">
-                <th className="ps-4 py-3">NAME & EMAIL</th>
-                <th>PHONE</th>
-                <th>LOCATION</th>
-                <th className="text-center pe-4">ACTIONS</th>
+            <thead className="premium-thead">
+              <tr>
+                <th className="text-start" style={{ width: "35%" }}>NAME & EMAIL</th>
+                <th className="text-start" style={{ width: "25%" }}>PHONE</th>
+                <th className="text-start" style={{ width: "25%" }}>LOCATION</th>
+                <th className="text-center" style={{ width: "15%" }}>ACTIONS</th>
               </tr>
             </thead>
             <tbody>
               {staff.length > 0 ? (
                 staff.map((user) => (
-                  <tr key={user.id}>
-                    <td className="ps-4">
+                  <tr key={user.id} className="jobtracker-data-row">
+                    <td className="text-start">
                       <div className="fw-bold text-dark">{user.name}</div>
-                      <div className="text-muted small"
-                        style={{ textTransform: "none" }}
-                      >{user.email}</div>
+                      <div className="text-muted small" style={{ textTransform: "none" }}>
+                        {user.email}
+                      </div>
                     </td>
-                    <td>
+                    <td className="text-start">
                       <div className="text-dark small">
                         {user.staff?.phone || "N/A"}
                       </div>
                     </td>
-                    <td>
+                    <td className="text-start">
                       {user.city || "—"}{" "}
                       <span className="text-muted small">
                         ({user.country || "N/A"})
                       </span>
                     </td>
-
-                    <td className="text-center pe-4">
+                    <td className="text-center">
                       <div className="btn-group">
                         <button
-                          className="btn btn-outline-primary btn-sm rounded-circle me-2 border-0"
+                          className="btn btn-light btn-sm rounded-circle me-2 border"
                           onClick={() => openModal(user)}
                         >
-                          <i className="fa-solid fa-pen"></i>
+                          <i className="fa-solid fa-pen text-dark"></i>
                         </button>
                         <button
-                          className="btn btn-outline-danger btn-sm rounded-circle border-0"
+                          className="btn btn-light btn-sm rounded-circle border"
                           onClick={() => openDeleteModal(user)}
                         >
-                          <i className="fa-solid fa-trash"></i>
+                          <i className="fa-solid fa-trash text-danger"></i>
                         </button>
                       </div>
                     </td>
@@ -624,7 +691,7 @@ const ManageStaff = () => {
                 ))
               ) : (
                 <tr>
-                  <td colSpan="5" className="text-center py-5 text-muted">
+                  <td colSpan="4" className="text-center py-5 text-muted">
                     No staff records found.
                   </td>
                 </tr>
@@ -664,17 +731,24 @@ const ManageStaff = () => {
       {isModalOpen && (
         <div className="full-screen-modal">
           <div className="modal-inner-content">
-            <div className="p-4 border-bottom bg-light d-flex justify-content-between align-items-center">
+            <div className="px-5 py-4 border-bottom bg-white d-flex justify-content-between align-items-center">
               <div>
-                <h4 className="fw-bold mb-0">
+                <h4 className="fw-bold mb-1">
                   {editingUser ? "Update Staff Profile" : "Add New Staff"}
                 </h4>
               </div>
-              <button className="btn-close" onClick={closeModal}></button>
+              <button className="btn-close shadow-none" onClick={closeModal}></button>
             </div>
 
-            <div className="flex-grow-1 overflow-auto p-4 p-md-5">
-              <div className="d-flex gap-2 mb-4 flex-wrap">
+            <div
+              className="flex-grow-1 overflow-auto px-5 py-4"
+              onScroll={() => {
+                if (document.activeElement?.id === "staff-address") {
+                  document.activeElement.blur();
+                }
+              }}
+            >
+              <div className="modal-tabs-container mb-4">
                 <button
                   type="button"
                   className={`btn ${activeModalTab === "personal" ? "btn-primary-custom" : "btn-outline-primary"}`}
@@ -735,7 +809,7 @@ const ManageStaff = () => {
 
                     <div className="col-md-6">
                       <label className="form-label">
-                        Password {editingUser && "(Leave blank to keep)"}
+                        Password {editingUser && <span className="text-muted fw-normal">(Leave blank to keep)</span>}
                       </label>
                       <div className="position-relative">
                         <input
@@ -773,19 +847,6 @@ const ManageStaff = () => {
                     </div>
 
                     <div className="col-md-6">
-                      <label className="form-label">
-                        Security License No <span className="text-danger">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        className="form-control"
-                        name="security_license_no"
-                        value={formData.security_license_no}
-                        onChange={handleInputChange}
-                        required
-                      />
-                    </div>
-                    <div className="col-md-6">
                       <label className="form-label">Residential Status</label>
                       <select
                         className="form-select"
@@ -799,7 +860,6 @@ const ManageStaff = () => {
                         <option value="citizen">Citizen</option>
                         <option value="permanent_residence">Permanent Residence</option>
                         <option value="visa_485">Visa Subclass 485</option>
-                        <option value="other">Other</option>
                       </select>
                     </div>
                     <div className="col-md-6">
@@ -813,7 +873,7 @@ const ManageStaff = () => {
                         <option value="">Select gender</option>
                         <option value="male">Male</option>
                         <option value="female">Female</option>
-                        <option value="other">Other</option>
+                        <option value="other">Prefer Not to Say</option>
                       </select>
                     </div>
 
@@ -831,7 +891,7 @@ const ManageStaff = () => {
                         onChange={handleInputChange}
                         placeholder="Start typing and choose from Google suggestions"
                       />
-                      <div className="form-text">
+                      <div className="form-text mt-2 text-muted">
                         Select from suggestions to auto-fill city, state, country
                         and coordinates.
                       </div>
@@ -843,7 +903,7 @@ const ManageStaff = () => {
                       </label>
                       <input
                         type="text"
-                        className="form-control"
+                        className="form-control bg-white"
                         name="coordinates"
                         value={formData.coordinates}
                         onChange={handleInputChange}
@@ -858,16 +918,9 @@ const ManageStaff = () => {
                 <div>
                   <div className="d-flex justify-content-between align-items-center mb-4">
                     <div>
-                      <h6 className="section-divider mt-0">Documents</h6>
-                      <p className="text-muted mb-0">Upload and manage staff documents.</p>
+                      <h6 className="section-divider mt-0 border-0 mb-1">Documents</h6>
+                      <p className="text-muted mb-0 small">Upload and manage staff documents.</p>
                     </div>
-                    {/* <button
-                      type="button"
-                      className="btn btn-outline-primary btn-sm"
-                      onClick={() => openDocumentModal(null)}
-                    >
-                      + Add Document
-                    </button> */}
                   </div>
                   <DocumentTable
                     documents={staffDocuments}
@@ -883,7 +936,7 @@ const ManageStaff = () => {
                         style={{ maxWidth: "680px" }}
                       >
                         <div className="confirm-modal-header px-4 py-3 d-flex align-items-center gap-3">
-                          <span className="confirm-modal-icon">
+                          <span className="confirm-modal-icon icon-doc">
                             <i className="fa-solid fa-file-arrow-up"></i>
                           </span>
                           <div>
@@ -939,26 +992,24 @@ const ManageStaff = () => {
                                 </div>
                               )}
                             </div>
-                            <div className="col-12">
-                              <label className="form-label">
+                            <div className="col-12 d-flex gap-4">
+                              <label className="form-label d-flex align-items-center">
                                 <input
                                   type="checkbox"
                                   name="no"
                                   checked={docForm.no}
                                   onChange={handleDocFormChange}
-                                  className="form-check-input me-2"
+                                  className="form-check-input me-2 mt-0"
                                 />
                                 No document number
                               </label>
-                            </div>
-                            <div className="col-12">
-                              <label className="form-label">
+                              <label className="form-label d-flex align-items-center">
                                 <input
                                   type="checkbox"
                                   name="exp"
                                   checked={docForm.exp}
                                   onChange={handleDocFormChange}
-                                  className="form-check-input me-2"
+                                  className="form-check-input me-2 mt-0"
                                 />
                                 No expiry date
                               </label>
@@ -967,12 +1018,12 @@ const ManageStaff = () => {
                           <div className="mt-4 d-flex justify-content-end gap-2">
                             <button
                               type="button"
-                              className="btn btn-outline-secondary rounded-pill px-4"
+                              className="btn btn-outline-secondary rounded-pill px-4 fw-bold"
                               onClick={closeDocumentModal}
                             >
                               Cancel
                             </button>
-                            <button type="submit" className="btn btn-primary-custom rounded-pill px-4">
+                            <button type="submit" className="btn btn-dark rounded-pill px-4 fw-bold shadow-sm">
                               Save Document
                             </button>
                           </div>
@@ -988,10 +1039,10 @@ const ManageStaff = () => {
               )}
             </div>
 
-            <div className="p-4 border-top bg-white d-flex gap-3 justify-content-end">
+            <div className="px-5 py-4 border-top bg-light d-flex gap-3 justify-content-end">
               <button
                 type="button"
-                className="btn btn-light rounded-pill px-5 fw-bold text-muted"
+                className="btn btn-light rounded-pill px-5 fw-bold text-muted border"
                 onClick={closeModal}
               >
                 Cancel
@@ -1000,7 +1051,7 @@ const ManageStaff = () => {
                 <button
                   type="submit"
                   form="staffForm"
-                  className="btn btn-primary-custom rounded-pill px-5 fw-bold shadow"
+                  className="btn btn-dark rounded-pill px-5 fw-bold shadow-sm"
                   disabled={submitLoading}
                 >
                   {submitLoading
@@ -1015,6 +1066,7 @@ const ManageStaff = () => {
         </div>
       )}
 
+      {/* DELETE MODAL */}
       {isDeleteModalOpen && (
         <div className="confirm-modal-backdrop" onClick={closeDeleteModal}>
           <div
@@ -1042,7 +1094,7 @@ const ManageStaff = () => {
             <div className="px-4 py-3 border-top d-flex justify-content-end gap-2 bg-light">
               <button
                 type="button"
-                className="btn btn-outline-secondary rounded-pill px-4"
+                className="btn btn-outline-secondary rounded-pill px-4 fw-bold"
                 onClick={closeDeleteModal}
                 disabled={deleteLoading}
               >
@@ -1050,7 +1102,7 @@ const ManageStaff = () => {
               </button>
               <button
                 type="button"
-                className="btn btn-danger rounded-pill px-4"
+                className="btn btn-danger rounded-pill px-4 fw-bold shadow-sm"
                 onClick={confirmDelete}
                 disabled={deleteLoading}
               >

@@ -992,28 +992,6 @@ const ManageStaff = () => {
                                 </div>
                               )}
                             </div>
-                            <div className="col-12 d-flex gap-4">
-                              <label className="form-label d-flex align-items-center">
-                                <input
-                                  type="checkbox"
-                                  name="no"
-                                  checked={docForm.no}
-                                  onChange={handleDocFormChange}
-                                  className="form-check-input me-2 mt-0"
-                                />
-                                No document number
-                              </label>
-                              <label className="form-label d-flex align-items-center">
-                                <input
-                                  type="checkbox"
-                                  name="exp"
-                                  checked={docForm.exp}
-                                  onChange={handleDocFormChange}
-                                  className="form-check-input me-2 mt-0"
-                                />
-                                No expiry date
-                              </label>
-                            </div>
                           </div>
                           <div className="mt-4 d-flex justify-content-end gap-2">
                             <button

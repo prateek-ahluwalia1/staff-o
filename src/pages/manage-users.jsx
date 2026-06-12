@@ -6,6 +6,7 @@ import Loader from "../components/Loader";
 import { toast } from "react-toastify";
 import DocumentTable from "../components/DocumentTable";
 import StaffOnboardingForms from "../components/StaffOnboardingForms";
+import { apiURL } from "../utils/exports"; // Required for image preview
 
 const STATE_MAP = {
   'Victoria': 'vic',
@@ -18,6 +19,71 @@ const STATE_MAP = {
   'ACT': 'act',
   'Northern Territory': 'nt'
 };
+
+const DOC_TYPES = [
+  { value: "Passport", label: "Passport" },
+  { value: "Visa", label: "Visa" },
+  { value: "Driver License Front", label: "Driver License (Front)" },
+  { value: "Driver License Back", label: "Driver License (Back)" },
+  { value: "Security License", label: "Security License" },
+  { value: "Working with Children", label: "Working with Children Check (WWCC)" },
+  { value: "Employment Application Form", label: "Employment Application Form" },
+  { value: "TFN Declaration", label: "TFN Declaration" },
+  { value: "Superannuation Form", label: "Superannuation Form" },
+  { value: "First Aid", label: "First Aid Certificate" },
+  { value: "CPR", label: "CPR Certificate" },
+  { value: "Vaccination Certificate", label: "Vaccination Certificate" },
+  { value: "Citizen Ship", label: "Citizen Ship Certificate" },
+  { value: "Medicare", label: "Medicare Certificate" },
+  { value: "Birth Certificate", label: "Birth Certificate" },
+];
+
+// ========== DATE HELPERS ==========
+const isoToDisplay = (val) => {
+  if (!val) return "";
+  if (/^\d{2}\/\d{2}\/\d{4}$/.test(val)) return val;
+  const match = val.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (match) {
+    // eslint-disable-next-line
+    const [_, y, m, d] = match;
+    return `${d}/${m}/${y}`;
+  }
+  return val;
+};
+
+const normalizeToDisplay = (dateStr) => {
+  if (!dateStr) return "";
+  if (/^\d{2}\/\d{2}\/\d{4}$/.test(dateStr)) return dateStr;
+  const iso = isoToDisplay(dateStr);
+  if (iso !== dateStr) return iso;
+  const d = new Date(dateStr);
+  if (!isNaN(d.getTime())) {
+    const day = String(d.getDate()).padStart(2, "0");
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    return `${day}/${month}/${d.getFullYear()}`;
+  }
+  return dateStr;
+};
+
+const safeJsonParse = (value) => {
+  if (typeof value !== "string") return null;
+  try {
+    return JSON.parse(value);
+  } catch {
+    return null;
+  }
+};
+
+const unwrapVisaResponse = (payload) => {
+  if (!payload) return null;
+  if (payload?.json?.data) return payload.json.data;
+  const parsedBody = safeJsonParse(payload?.body);
+  if (parsedBody?.data) return parsedBody.data;
+  if (payload?.data?.data) return payload.data.data;
+  if (payload?.data && typeof payload.data === "object") return payload.data;
+  return payload;
+};
+// ===================================
 
 const ManageUsers = () => {
   const location = useLocation();
@@ -41,14 +107,12 @@ const ManageUsers = () => {
 
   const { data: contractorsResponse } = useFetch(
     "api/admin/get-contractors?limit=1000",
-    {
-      isAuth: true,
-    },
+    { isAuth: true }
   );
 
   const contractorsList = contractorsResponse?.data?.data || [];
   const { submit, loading: submitLoading } = useSubmit({ isAuth: true });
-  const { submit: uploadFile } = useSubmit({ isAuth: true });
+  const { submit: uploadFile, loading: uploadLoading } = useSubmit({ isAuth: true });
 
   const [users, setUsers] = useState([]);
   const [totalPages, setTotalPages] = useState(1);
@@ -60,10 +124,12 @@ const ManageUsers = () => {
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
 
-  // Password Toggle and Document States
+  // Password & Advanced Document States
   const [showPassword, setShowPassword] = useState(false);
   const [showDocModal, setShowDocModal] = useState(false);
   const [selectedDoc, setSelectedDoc] = useState(null);
+  const [verifyingDoc, setVerifyingDoc] = useState(false);
+  const [visaDetails, setVisaDetails] = useState(null);
   const [docForm, setDocForm] = useState({
     notes: "",
     no: false,
@@ -74,6 +140,7 @@ const ManageUsers = () => {
     file_path: "",
     file_url: "",
     document_name: "",
+    is_verified: false,
   });
 
   const userAutocompleteRef = useRef(null);
@@ -117,6 +184,7 @@ const ManageUsers = () => {
   const getNestedData = useCallback((user) => {
     if (activeTab === "customer") return user.customer || {};
     if (activeTab === "sub_contractor") return user.contractor || {};
+    if (activeTab === "staff") return user.staff || {}; // FIX: Added staff check
     return {};
   }, [activeTab]);
 
@@ -133,9 +201,9 @@ const ManageUsers = () => {
         email: user.email || "",
         password: "",
         phone: user.phone || extraInfo.phone || "",
-        gender: extraInfo.gender || "",
-        staff_document_type: extraInfo.staff_document_type || "",
-        company_name: extraInfo.company_name || "",
+        gender: user.gender || extraInfo.gender || "",
+        staff_document_type: user.staff_document_type || extraInfo.staff_document_type || "",
+        company_name: user.company_name || extraInfo.company_name || "",
         address: user.address || "",
         city: user.city || "",
         state: user.state || "",
@@ -261,39 +329,7 @@ const ManageUsers = () => {
     }));
   };
 
-  const handleDocFormChange = async (e) => {
-    const { name, value, type, checked, files } = e.target;
-    if (type === "checkbox") {
-      setDocForm((prev) => ({ ...prev, [name]: checked }));
-      return;
-    }
-
-    if (type === "file") {
-      const file = files[0];
-      if (!file) return;
-      const MAX_SIZE_MB = 10;
-      if (file.size > MAX_SIZE_MB * 1024 * 1024) {
-        toast.error(`File is too large. Please upload a file smaller than ${MAX_SIZE_MB}MB.`);
-        return;
-      }
-      const fd = new FormData();
-      fd.append("file", file);
-      fd.append("folder", "staff_documents");
-      const res = await uploadFile("api/upload-file", fd, { method: "POST" });
-      if (res?.success) {
-        setDocForm((prev) => ({
-          ...prev,
-          file: file,
-          file_path: res.path || res.data?.path || "",
-          file_url: res.url || res.data?.url || "",
-        }));
-      }
-      return;
-    }
-
-    setDocForm((prev) => ({ ...prev, [name]: value }));
-  };
-
+  // ----- DOCUMENT LOGIC START -----
   const openDocumentModal = (doc) => {
     setSelectedDoc(doc);
     if (doc) {
@@ -302,11 +338,12 @@ const ManageUsers = () => {
         no: doc.no || false,
         exp: doc.exp || false,
         document_no: doc.document_no || "",
-        document_expiry: doc.document_expiry || "",
+        document_expiry: isoToDisplay(doc.document_expiry) || "",
         file: null,
         file_path: doc.file || "",
         file_url: doc.file || "",
         document_name: doc.document_name || doc.document_type || "",
+        is_verified: !!doc.document_expiry,
       });
     } else {
       setDocForm({
@@ -319,14 +356,227 @@ const ManageUsers = () => {
         file_path: "",
         file_url: "",
         document_name: "",
+        is_verified: false,
       });
     }
+    setVisaDetails(null);
     setShowDocModal(true);
   };
 
   const closeDocumentModal = () => {
     setShowDocModal(false);
     setSelectedDoc(null);
+    setVisaDetails(null);
+  };
+
+  const handleDocNumberChange = (e) => {
+    const value = e.target.value.replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
+    setDocForm((prev) => ({
+      ...prev,
+      document_no: value,
+      is_verified: false,
+      document_expiry: "",
+    }));
+    setVisaDetails(null);
+  };
+
+  const handleDocFormChange = async (e) => {
+    const { name, value, type, checked, files } = e.target;
+
+    if (
+      name === "document_expiry" &&
+      docForm.is_verified &&
+      (docForm.document_name === "Security License" || docForm.document_name === "Visa")
+    ) {
+      return;
+    }
+
+    if (type === "checkbox") {
+      setDocForm((prev) => ({ ...prev, [name]: checked }));
+    } else if (type === "file") {
+      const file = files[0];
+      const MAX_SIZE_MB = 10;
+      if (file) {
+        if (file.size > MAX_SIZE_MB * 1024 * 1024) {
+          toast.error(`File too large. Max ${MAX_SIZE_MB}MB.`);
+          return;
+        }
+        const fd = new FormData();
+        fd.append("file", file);
+        fd.append("folder", "staff_documents");
+        const res = await uploadFile("api/upload-file", fd, { method: "POST" });
+        if (res?.success) {
+          setDocForm((prev) => ({
+            ...prev,
+            file_path: res.path || res.data?.path || "",
+            file_url: res.url || res.data?.url || "",
+          }));
+        }
+      }
+    } else {
+      setDocForm((prev) => ({ ...prev, [name]: value }));
+    }
+  };
+
+  const handleVerifyDocumentNumber = async () => {
+    if (!editingUser?.id) {
+      toast.error("Missing user id. Please save the user profile first.");
+      return;
+    }
+    if (!docForm.document_no || docForm.document_no.trim() === "") {
+      toast.error("Please enter a document number first.");
+      return;
+    }
+    if (!docForm.document_name) {
+      toast.error("Please select a document type.");
+      return;
+    }
+
+    // Security License
+    if (docForm.document_name === "Security License") {
+      setVerifyingDoc(true);
+      try {
+        const res = await submit(
+          "api/documents-online-verification",
+          {
+            user_id: editingUser.id,
+            document_type: docForm.document_name,
+            license_number: docForm.document_no,
+          },
+          { method: "POST" }
+        );
+
+        if (res?.success && res?.data) {
+          const expiryDate = res.data.expiry_date || res.data.document_expiry;
+          if (expiryDate) {
+            setDocForm((prev) => ({
+              ...prev,
+              document_expiry: normalizeToDisplay(expiryDate),
+              is_verified: true,
+            }));
+            toast.success("Security License verified. Expiry date locked.");
+          } else {
+            setDocForm((prev) => ({ ...prev, is_verified: true }));
+            toast.warning("Verification succeeded but no expiry date returned.");
+          }
+        } else {
+          setDocForm((prev) => ({ ...prev, is_verified: false }));
+          toast.error(res?.message || "Security License verification failed.");
+        }
+      } catch (err) {
+        console.error(err);
+        toast.error("Verification request failed.");
+      } finally {
+        setVerifyingDoc(false);
+      }
+      return;
+    }
+
+    // Visa Verification
+    if (docForm.document_name === "Visa") {
+      const user = editingUser;
+      const staff = user?.staff || {};
+      const fullName = (user?.name || "").trim();
+      let givenName = fullName;
+      let familyName = fullName;
+      const nameParts = fullName.split(/\s+/);
+      if (nameParts.length > 1) {
+        givenName = nameParts.slice(0, -1).join(" ");
+        familyName = nameParts[nameParts.length - 1];
+      }
+      const dob = staff?.date_of_birth || user?.date_of_birth || "";
+
+      if (!dob) {
+        toast.error("Date of birth is missing. Please update personal information first.");
+        return;
+      }
+      const countryCode = (user?.country || "AUS").toUpperCase().slice(0, 3);
+      const passportNumber = docForm.document_no.toUpperCase();
+
+      const payload = {
+        passport: passportNumber,
+        country: countryCode,
+        family_name: familyName,
+        given_name: givenName,
+        dob: dob,
+      };
+
+      setVerifyingDoc(true);
+      let checkId = null;
+      let pollInterval = null;
+      let timeoutId = null;
+
+      const cleanup = () => {
+        if (pollInterval) clearInterval(pollInterval);
+        if (timeoutId) clearTimeout(timeoutId);
+      };
+
+      try {
+        const createRes = await submit("api/admin/visa-check", payload, { method: "POST" });
+        const createData = unwrapVisaResponse(createRes);
+        if (!createData?.id) {
+          toast.error("Could not submit visa verification request.");
+          setVerifyingDoc(false);
+          return;
+        }
+        checkId = createData.id;
+        toast.info("Verification in progress. Please wait...");
+
+        pollInterval = setInterval(async () => {
+          try {
+            const resultRes = await submit(`api/admin/visa-result/${checkId}`, null, { method: "GET" });
+            const resultData = unwrapVisaResponse(resultRes);
+            if (resultData?.status === "completed" && resultData?.visa?.australia) {
+              cleanup();
+              const visaInfo = resultData.visa.australia;
+              const expiryDate = visaInfo.expiry_date || visaInfo.valid_until;
+              setVisaDetails({
+                visa_type: visaInfo.type_name || visaInfo.class || "N/A",
+                work_entitlement: visaInfo.work_entitlement || "N/A",
+                location: visaInfo.location || "N/A",
+                check_id: checkId,
+              });
+              if (expiryDate) {
+                setDocForm((prev) => ({
+                  ...prev,
+                  document_expiry: normalizeToDisplay(expiryDate),
+                  is_verified: true,
+                }));
+                toast.success("Visa verified. Expiry date locked.");
+              } else {
+                setDocForm((prev) => ({ ...prev, is_verified: true }));
+                toast.warning("Visa verified but no expiry date found.");
+              }
+              setVerifyingDoc(false);
+            } else if (resultData?.status === "failed") {
+              cleanup();
+              toast.error("Visa verification failed. Please check the passport number.");
+              setDocForm((prev) => ({ ...prev, is_verified: false }));
+              setVisaDetails(null);
+              setVerifyingDoc(false);
+            }
+          } catch (err) {
+            console.error("Polling error", err);
+          }
+        }, 2000);
+
+        timeoutId = setTimeout(() => {
+          cleanup();
+          if (verifyingDoc) {
+            toast.error("Verification timed out. Please try again later.");
+            setVerifyingDoc(false);
+          }
+        }, 30000);
+      } catch (err) {
+        console.error(err);
+        toast.error("Visa verification request failed.");
+        cleanup();
+        setVerifyingDoc(false);
+      }
+      return;
+    }
+
+    toast.info(`Verification is not supported for ${docForm.document_name}. You can manually set the expiry date.`);
   };
 
   const handleDocSubmit = async (e) => {
@@ -336,23 +586,34 @@ const ManageUsers = () => {
       return;
     }
 
-    const payload = {
+    let payload = {
       user_id: editingUser.id,
       no: docForm.no,
       exp: docForm.exp,
       document_no: docForm.document_no,
       document_expiry: docForm.document_expiry,
       file: docForm.file_path,
-      document_name: docForm.document_name,
-      document_type: docForm.document_name,
     };
-
-    if (selectedDoc?.id) {
-      payload.id = selectedDoc.id;
+    if (selectedDoc) {
+      payload = {
+        ...payload,
+        id: selectedDoc.id,
+        document_type: selectedDoc.document_type,
+        document_name: selectedDoc.document_name,
+      };
+    } else {
+      payload = {
+        ...payload,
+        document_type: docForm.document_name,
+        document_name: docForm.document_name,
+      };
     }
 
-    const url = selectedDoc ? "api/guard-update-documents" : "api/guard-add-documents";
-    const res = await submit(url, payload, { method: "POST" });
+    const res = await submit(
+      selectedDoc ? "api/guard-update-documents" : "api/guard-add-documents",
+      payload,
+      { method: "POST" }
+    );
     if (!res) return;
     if (res.success) {
       toast.success("Document saved successfully!");
@@ -362,11 +623,11 @@ const ManageUsers = () => {
       toast.error(res.message || "Failed to save document");
     }
   };
+  // ----- DOCUMENT LOGIC END -----
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Strict Australian Phone Validation before submission
     if (formData.phone && formData.phone.trim() !== "") {
       const phoneRegex = /^(?:\+?61|0)[2-478](?:[\s]*\d){8}$/;
       if (!phoneRegex.test(formData.phone)) {
@@ -394,7 +655,6 @@ const ManageUsers = () => {
 
     const payload = { ...formData };
     if (editingUser && !payload.password) delete payload.password;
-
     if (activeTab !== "staff") delete payload.user_id;
 
     try {
@@ -425,7 +685,6 @@ const ManageUsers = () => {
 
   const confirmDelete = async () => {
     if (!deleteTarget?.id) return;
-
     let url = "";
     if (activeTab === "customer") url = `api/admin/customers-delete/${deleteTarget.id}`;
     else if (activeTab === "sub_contractor")
@@ -458,27 +717,53 @@ const ManageUsers = () => {
           color: #111827;
         }
 
-        /* Beautiful Table Headers */
-        .premium-thead {
-          background-color: #0A7C6E !important;
+        /* --- PERFECT ALIGNMENT & DIVIDERS --- */
+        .jobtracker-table-shell {
+          border-radius: 12px;
+          border: 1px solid #e2e8f0;
+          background: #ffffff;
+          overflow: hidden;
         }
-        
+
+        .jobtracker-main-table {
+          table-layout: fixed;
+          width: 100%;
+          border-collapse: collapse;
+          margin: 0;
+        }
+
         .premium-thead th {
+          background-color: #0A7C6E !important;
           color: #ffffff !important;
           font-weight: 600;
           letter-spacing: 0.05em;
           text-transform: uppercase;
           font-size: 0.75rem;
-          padding: 1.1rem 1rem !important;
+          padding: 1.2rem 1.5rem !important;
           border: none !important;
+          border-right: 1px solid rgba(255, 255, 255, 0.1) !important;
           white-space: nowrap;
         }
-
-        /* Data Rows formatting for better alignment */
-        .jobtracker-data-row td {
-          padding: 1.1rem 1rem !important;
-          vertical-align: middle;
+        
+        .premium-thead th:last-child {
+          border-right: none !important;
         }
+
+        .jobtracker-data-row td {
+          padding: 1.2rem 1.5rem !important;
+          vertical-align: middle;
+          border-bottom: 1px solid #e2e8f0 !important;
+          border-right: 1px solid #f8fafc;
+        }
+
+        .jobtracker-data-row td:last-child {
+          border-right: none;
+        }
+
+        .jobtracker-data-row:last-child td {
+          border-bottom: none !important;
+        }
+        /* ------------------------------------ */
 
         /* Nav Pills (Tabs) Styling */
         .jobtracker-tabs .nav-link {
@@ -581,7 +866,7 @@ const ManageUsers = () => {
           box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         }
 
-        .modal-tabs-container .btn-outline-primary:hover {
+        .modal-tabs-container .btn-outline-primary:hover:not(:disabled) {
           color: #111827;
           background: rgba(255,255,255,0.5);
         }
@@ -596,7 +881,7 @@ const ManageUsers = () => {
           border-bottom: 1px solid #e5e7eb;
         }
 
-        /* Sub-Modal styles (For Delete and Documents) */
+        /* Sub-Modal styles */
         .confirm-modal-backdrop {
           position: fixed;
           inset: 0;
@@ -698,7 +983,6 @@ const ManageUsers = () => {
         </div>
       </div>
 
-      {/* Error Alert */}
       {error && (
         <div className="alert alert-danger rounded-3 shadow-sm border-0 d-flex align-items-center mb-4">
           <i className="fa-solid fa-circle-exclamation me-3"></i>
@@ -711,29 +995,37 @@ const ManageUsers = () => {
       {/* Table Card */}
       <div className="card border-0 shadow-sm" style={{ borderRadius: "16px", overflow: "hidden" }}>
         <div className="table-responsive jobtracker-table-shell">
-          <table
-            className={`table table-hover align-middle mb-0 jobtracker-main-table ${loading ? "opacity-50" : ""}`}
-          >
+          <table className={`table table-hover align-middle mb-0 jobtracker-main-table ${loading ? "opacity-50" : ""}`}>
             <thead className="premium-thead">
               <tr>
-                <th className="ps-4">NAME & EMAIL</th>
-                {activeTab !== "staff" && <th>BUSINESS & PHONE</th>}
-                <th>LOCATION</th>
-                <th className="text-center pe-4">ACTIONS</th>
+                <th style={{ width: activeTab === "staff" ? "45%" : "30%", textAlign: "left", paddingLeft: "1.5rem" }}>
+                  NAME & EMAIL
+                </th>
+                {activeTab !== "staff" && (
+                  <th style={{ width: "25%", textAlign: "left" }}>
+                    BUSINESS & PHONE
+                  </th>
+                )}
+                <th style={{ width: activeTab === "staff" ? "35%" : "25%", textAlign: "left" }}>
+                  LOCATION
+                </th>
+                <th style={{ width: "20%", textAlign: "center" }}>
+                  ACTIONS
+                </th>
               </tr>
             </thead>
             <tbody>
               {users.length > 0 ? (
                 users.map((user) => (
-                  <tr key={user.id} className="jobtracker-data-row border-bottom">
-                    <td className="ps-4">
+                  <tr key={user.id} className="jobtracker-data-row">
+                    <td style={{ textAlign: "left", paddingLeft: "1.5rem" }}>
                       <div className="fw-bold text-dark">{user.name}</div>
                       <div className="text-muted small" style={{ textTransform: "none" }}>
                         {user.email}
                       </div>
                     </td>
                     {activeTab !== "staff" && (
-                      <td>
+                      <td style={{ textAlign: "left" }}>
                         <div className="fw-medium text-dark">
                           {getNestedData(user).company_name || "—"}
                         </div>
@@ -742,13 +1034,13 @@ const ManageUsers = () => {
                         </div>
                       </td>
                     )}
-                    <td>
+                    <td style={{ textAlign: "left" }}>
                       {user.city || "—"}{" "}
                       <span className="text-muted small">
                         ({user.country || "N/A"})
                       </span>
                     </td>
-                    <td className="text-center pe-4">
+                    <td style={{ textAlign: "center" }}>
                       <div className="btn-group">
                         <button
                           className="btn btn-light btn-sm rounded-circle me-2 border"
@@ -777,11 +1069,9 @@ const ManageUsers = () => {
           </table>
         </div>
 
-        {/* Pagination Footer */}
         <div className="card-footer bg-white border-top py-3 px-4 d-flex justify-content-between align-items-center">
           <div className="text-muted small">
-            Showing Page <strong>{page}</strong> of{" "}
-            <strong>{totalPages}</strong>
+            Showing Page <strong>{page}</strong> of <strong>{totalPages}</strong>
             <span className="mx-2">•</span>
             Total <strong>{totalItems}</strong> records
           </div>
@@ -826,7 +1116,6 @@ const ManageUsers = () => {
             <div
               className="flex-grow-1 overflow-auto px-5 py-4"
               onScroll={() => {
-                // Programmatically blur input to hide detached Google Maps Autocomplete
                 if (document.activeElement?.id === "user-address") {
                   document.activeElement.blur();
                 }
@@ -1075,7 +1364,7 @@ const ManageUsers = () => {
                       <div
                         className="confirm-modal-card"
                         onClick={(e) => e.stopPropagation()}
-                        style={{ maxWidth: "680px" }}
+                        style={{ maxWidth: "750px" }}
                       >
                         <div className="confirm-modal-header px-4 py-3 d-flex align-items-center gap-3">
                           <span className="confirm-modal-icon icon-doc">
@@ -1086,87 +1375,239 @@ const ManageUsers = () => {
                             <div className="small text-muted">Upload a staff verification file.</div>
                           </div>
                         </div>
-                        <form onSubmit={handleDocSubmit} className="p-4">
-                          <div className="row g-3">
-                            <div className="col-12">
-                              <label className="form-label">Document Name</label>
+
+                        <form onSubmit={handleDocSubmit} className="p-4" style={{ maxHeight: "70vh", overflowY: "auto" }}>
+
+                          {/* Document Type */}
+                          <div className="mb-3">
+                            <label className="form-label fw-bold text-dark">
+                              Document Type <span className="text-danger">*</span>
+                            </label>
+                            <select
+                              className="form-control bg-light border-0"
+                              name="document_name"
+                              value={docForm.document_name}
+                              onChange={handleDocFormChange}
+                              required
+                              disabled={!!selectedDoc}
+                            >
+                              <option value="">Select Type</option>
+                              {DOC_TYPES.map((doc) => (
+                                <option key={doc.value} value={doc.value}>
+                                  {doc.label}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+
+                          {/* Document Number with Verification */}
+                          <div className="mb-3">
+                            <label className="form-label fw-bold text-dark">
+                              Document Number <span className="text-danger">*</span>
+                            </label>
+                            {(docForm.document_name === "Security License" || docForm.document_name === "Visa") ? (
+                              <div className="input-group">
+                                <input
+                                  type="text"
+                                  className="form-control bg-light border-0"
+                                  placeholder="e.g. ABC123456"
+                                  value={docForm.document_no}
+                                  onChange={handleDocNumberChange}
+                                  required
+                                />
+                                <button
+                                  type="button"
+                                  className="btn btn-dark fw-bold px-4 border-0"
+                                  onClick={handleVerifyDocumentNumber}
+                                  disabled={verifyingDoc || !docForm.document_no}
+                                >
+                                  {verifyingDoc ? (
+                                    <>
+                                      <span className="spinner-border spinner-border-sm me-1" />
+                                      Verifying...
+                                    </>
+                                  ) : (
+                                    "Verify"
+                                  )}
+                                </button>
+                              </div>
+                            ) : (
                               <input
                                 type="text"
-                                className="form-control"
-                                name="document_name"
-                                value={docForm.document_name}
-                                onChange={handleDocFormChange}
+                                className="form-control bg-light border-0"
+                                placeholder="e.g. ABC123456"
+                                value={docForm.document_no}
+                                onChange={handleDocNumberChange}
                                 required
                               />
-                            </div>
-                            <div className="col-md-6">
-                              <label className="form-label">Document No.</label>
-                              <input
-                                type="text"
-                                className="form-control"
-                                name="document_no"
-                                value={docForm.document_no}
-                                onChange={handleDocFormChange}
-                              />
-                            </div>
-                            <div className="col-md-6">
-                              <label className="form-label">Expiry Date</label>
+                            )}
+                          </div>
+
+                          {/* Expiry Date Date Picker Logic */}
+                          <div className="mb-3">
+                            <label className="form-label fw-bold text-dark">
+                              Expiry Date <span className="text-danger">*</span>
+                            </label>
+                            <div className="input-group position-relative shadow-sm rounded-3 overflow-hidden">
+                              <button
+                                type="button"
+                                className="input-group-text bg-light text-muted border-0"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  const hiddenPicker = document.getElementById("doc_expiry_picker");
+                                  if (hiddenPicker) {
+                                    try { hiddenPicker.showPicker(); } catch (err) { hiddenPicker.focus(); }
+                                  }
+                                }}
+                                style={{ cursor: "pointer", zIndex: 10 }}
+                                disabled={docForm.is_verified && (docForm.document_name === "Security License" || docForm.document_name === "Visa")}
+                                title="Open Calendar"
+                              >
+                                <i className="fa-solid fa-calendar-days text-dark"></i>
+                              </button>
+
                               <input
                                 type="date"
-                                className="form-control"
+                                id="doc_expiry_picker"
+                                className="position-absolute"
+                                style={{ opacity: 0, width: 0, height: 0, pointerEvents: "none", bottom: 0, left: 40 }}
+                                value={
+                                  docForm.document_expiry
+                                    ? (() => {
+                                      const parts = docForm.document_expiry.split("/");
+                                      if (parts.length === 3) {
+                                        const [d, m, y] = parts;
+                                        return `${y}-${m}-${d}`;
+                                      }
+                                      return "";
+                                    })()
+                                    : ""
+                                }
+                                onChange={(e) => {
+                                  const isoDate = e.target.value;
+                                  if (isoDate) {
+                                    const [y, m, d] = isoDate.split("-");
+                                    setDocForm((prev) => ({
+                                      ...prev,
+                                      document_expiry: `${d}/${m}/${y}`,
+                                    }));
+                                  }
+                                }}
+                                disabled={docForm.is_verified && (docForm.document_name === "Security License" || docForm.document_name === "Visa")}
+                              />
+
+                              <input
+                                type="text"
+                                className="form-control bg-light border-0 ps-0"
                                 name="document_expiry"
+                                placeholder="DD/MM/YYYY"
                                 value={docForm.document_expiry}
-                                onChange={handleDocFormChange}
+                                onChange={(e) => {
+                                  let value = e.target.value.replace(/\D/g, "");
+                                  if (value.length > 8) value = value.substring(0, 8);
+                                  if (value.length > 2 && value.length <= 4) {
+                                    value = value.replace(/^(\d{2})(\d+)/, "$1/$2");
+                                  } else if (value.length > 4) {
+                                    value = value.replace(/^(\d{2})(\d{2})(\d+)/, "$1/$2/$3");
+                                  }
+                                  setDocForm((prev) => ({
+                                    ...prev,
+                                    document_expiry: value,
+                                  }));
+                                }}
+                                required
+                                maxLength={10}
+                                pattern="^(0[1-9]|[12][0-9]|3[01])/(0[1-9]|1[012])/\d{4}$"
+                                disabled={docForm.is_verified && (docForm.document_name === "Security License" || docForm.document_name === "Visa")}
                               />
                             </div>
-                            <div className="col-12">
-                              <label className="form-label">Upload File</label>
-                              <input
-                                type="file"
-                                className="form-control"
-                                name="file"
-                                accept="application/pdf,image/*"
-                                onChange={handleDocFormChange}
-                              />
-                              {docForm.file_url && (
-                                <div className="form-text mt-2 text-success">
-                                  Existing file available. Save to keep or upload a new one.
+                          </div>
+
+                          {/* Visa Details Alert */}
+                          {docForm.document_name === "Visa" && docForm.is_verified && visaDetails && (
+                            <div className="mb-4 p-3 bg-light border rounded-3">
+                              <div className="d-flex align-items-center gap-2 mb-2">
+                                <i className="fa-solid fa-passport text-primary"></i>
+                                <strong className="small text-uppercase text-muted">Visa Verification Details</strong>
+                              </div>
+                              <div className="row g-2 small">
+                                <div className="col-6"><span className="text-muted">Visa Type:</span></div>
+                                <div className="col-6 fw-medium">{visaDetails.visa_type}</div>
+                                <div className="col-6"><span className="text-muted">Work Entitlement:</span></div>
+                                <div className="col-6 fw-medium">{visaDetails.work_entitlement}</div>
+                                <div className="col-6"><span className="text-muted">Location:</span></div>
+                                <div className="col-6 fw-medium">{visaDetails.location}</div>
+                                {visaDetails.check_id && (
+                                  <>
+                                    <div className="col-6"><span className="text-muted">Verification ID:</span></div>
+                                    <div className="col-6 fw-medium text-truncate" title={visaDetails.check_id}>{visaDetails.check_id}</div>
+                                  </>
+                                )}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* File Upload Preview */}
+                          <div className="mb-4">
+                            <label className="form-label fw-bold text-dark">
+                              Document/Image <span className="text-danger">*</span>
+                            </label>
+                            <div
+                              className="position-relative border border-2 border-dashed rounded-4 p-4 text-center bg-light"
+                              style={{ minHeight: "200px", display: "flex", alignItems: "center", justifyContent: "center" }}
+                            >
+                              {docForm.file_url ? (
+                                <>
+                                  {docForm.file_url.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
+                                    <img
+                                      src={docForm.file_url.startsWith("http") ? docForm.file_url : `${apiURL}staff_documents/${docForm.file_url}`}
+                                      alt="Preview"
+                                      style={{ width: "100%", maxHeight: "200px", objectFit: "contain", borderRadius: "8px", opacity: uploadLoading ? 0.3 : 1 }}
+                                    />
+                                  ) : (
+                                    <div className="text-center">
+                                      <i className="fa-solid fa-file-pdf fa-3x text-muted mb-3"></i>
+                                      <p className="fw-bold text-secondary mb-0">Document Selected</p>
+                                    </div>
+                                  )}
+                                  {uploadLoading && (
+                                    <div className="position-absolute top-50 start-50 translate-middle">
+                                      <div className="spinner-border text-primary" />
+                                      <p className="small mt-1 fw-bold text-dark">Uploading...</p>
+                                    </div>
+                                  )}
+                                </>
+                              ) : (
+                                <div className="text-center">
+                                  <i className="fa-solid fa-cloud-arrow-up fa-3x text-muted mb-3"></i>
+                                  <p className="text-muted fw-medium mb-0">Click to upload document/image</p>
                                 </div>
                               )}
                             </div>
-                            <div className="col-12 d-flex gap-4">
-                              <label className="form-label d-flex align-items-center">
-                                <input
-                                  type="checkbox"
-                                  name="no"
-                                  checked={docForm.no}
-                                  onChange={handleDocFormChange}
-                                  className="form-check-input me-2 mt-0"
-                                />
-                                No document number
-                              </label>
-                              <label className="form-label d-flex align-items-center">
-                                <input
-                                  type="checkbox"
-                                  name="exp"
-                                  checked={docForm.exp}
-                                  onChange={handleDocFormChange}
-                                  className="form-check-input me-2 mt-0"
-                                />
-                                No expiry date
-                              </label>
-                            </div>
+                            <input
+                              type="file"
+                              className="form-control mt-3 bg-light border-0"
+                              onChange={handleDocFormChange}
+                              name="file"
+                              accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.gif,.webp"
+                            />
                           </div>
-                          <div className="mt-4 d-flex justify-content-end gap-2">
+
+                          <div className="mt-2 pt-3 border-top d-flex justify-content-end gap-2">
                             <button
                               type="button"
-                              className="btn btn-outline-secondary rounded-pill px-4 fw-bold"
+                              className="btn btn-light rounded-pill px-5 fw-bold text-muted border"
                               onClick={closeDocumentModal}
+                              disabled={uploadLoading || submitLoading}
                             >
                               Cancel
                             </button>
-                            <button type="submit" className="btn btn-dark rounded-pill px-4 fw-bold shadow-sm">
-                              Save Document
+                            <button
+                              type="submit"
+                              className="btn btn-dark rounded-pill px-5 fw-bold shadow-sm"
+                              disabled={uploadLoading || submitLoading || !docForm.document_expiry || !docForm.file_url}
+                            >
+                              {submitLoading ? "Saving..." : "Upload Document"}
                             </button>
                           </div>
                         </form>

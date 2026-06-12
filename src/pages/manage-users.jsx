@@ -6,7 +6,7 @@ import Loader from "../components/Loader";
 import { toast } from "react-toastify";
 import DocumentTable from "../components/DocumentTable";
 import StaffOnboardingForms from "../components/StaffOnboardingForms";
-import { apiURL } from "../utils/exports"; // Required for image preview
+import { apiURL } from "../utils/exports";
 
 const STATE_MAP = {
   'Victoria': 'vic',
@@ -135,7 +135,7 @@ const ManageUsers = () => {
     no: false,
     exp: false,
     document_no: "",
-    document_expiry: "",
+    document_expiry: "",   // will be DD/MM/YYYY
     file: null,
     file_path: "",
     file_url: "",
@@ -184,7 +184,7 @@ const ManageUsers = () => {
   const getNestedData = useCallback((user) => {
     if (activeTab === "customer") return user.customer || {};
     if (activeTab === "sub_contractor") return user.contractor || {};
-    if (activeTab === "staff") return user.staff || {}; // FIX: Added staff check
+    if (activeTab === "staff") return user.staff || {};
     return {};
   }, [activeTab]);
 
@@ -232,13 +232,11 @@ const ManageUsers = () => {
 
       if (location.state?.editUserId) {
         const userToEdit = fetchedUsers.find((u) => u.id === location.state.editUserId);
-
         if (userToEdit) {
           openModal(userToEdit);
         } else {
           toast.info("User located on a different page. Please use search or pagination.");
         }
-
         navigate(location.pathname, { replace: true, state: {} });
       }
     } else {
@@ -252,7 +250,6 @@ const ManageUsers = () => {
     if (!isModalOpen) return;
 
     let checkGoogleMaps;
-
     const initAutocomplete = () => {
       const addressInput = document.getElementById("user-address");
       if (!addressInput || !window.google || !window.google.maps) return;
@@ -268,14 +265,12 @@ const ManageUsers = () => {
 
       userAutocompleteListenerRef.current = autocomplete.addListener("place_changed", () => {
         const place = autocomplete.getPlace();
-
         if (!place.geometry) {
           toast.error("Please select a valid address from the dropdown suggestions.");
           return;
         }
 
         let newCity = "", newState = "", newCountry = "";
-
         place.address_components?.forEach((c) => {
           if (
             c.types.includes("locality") ||
@@ -383,9 +378,9 @@ const ManageUsers = () => {
   const handleDocFormChange = async (e) => {
     const { name, value, type, checked, files } = e.target;
 
+    // *** ALWAYS DISABLED for Security License & Visa ***
     if (
       name === "document_expiry" &&
-      docForm.is_verified &&
       (docForm.document_name === "Security License" || docForm.document_name === "Visa")
     ) {
       return;
@@ -432,7 +427,7 @@ const ManageUsers = () => {
       return;
     }
 
-    // Security License
+    // Security License verification
     if (docForm.document_name === "Security License") {
       setVerifyingDoc(true);
       try {
@@ -472,7 +467,7 @@ const ManageUsers = () => {
       return;
     }
 
-    // Visa Verification
+    // VISA verification
     if (docForm.document_name === "Visa") {
       const user = editingUser;
       const staff = user?.staff || {};
@@ -485,7 +480,6 @@ const ManageUsers = () => {
         familyName = nameParts[nameParts.length - 1];
       }
       const dob = staff?.date_of_birth || user?.date_of_birth || "";
-
       if (!dob) {
         toast.error("Date of birth is missing. Please update personal information first.");
         return;
@@ -591,7 +585,7 @@ const ManageUsers = () => {
       no: docForm.no,
       exp: docForm.exp,
       document_no: docForm.document_no,
-      document_expiry: docForm.document_expiry,
+      document_expiry: docForm.document_expiry,   // DD/MM/YYYY
       file: docForm.file_path,
     };
     if (selectedDoc) {
@@ -717,7 +711,6 @@ const ManageUsers = () => {
           color: #111827;
         }
 
-        /* --- PERFECT ALIGNMENT & DIVIDERS --- */
         .jobtracker-table-shell {
           border-radius: 12px;
           border: 1px solid #e2e8f0;
@@ -763,9 +756,7 @@ const ManageUsers = () => {
         .jobtracker-data-row:last-child td {
           border-bottom: none !important;
         }
-        /* ------------------------------------ */
 
-        /* Nav Pills (Tabs) Styling */
         .jobtracker-tabs .nav-link {
           border-radius: 8px;
           padding: 0.5rem 1rem;
@@ -787,7 +778,6 @@ const ManageUsers = () => {
           box-shadow: 0 4px 6px -1px rgba(10, 124, 110, 0.2);
         }
         
-        /* Modal Backdrop & Container */
         .full-screen-modal {
           position: fixed;
           top: 0;
@@ -815,7 +805,6 @@ const ManageUsers = () => {
           overflow: hidden;
         }
 
-        /* Form Inputs */
         .form-control, .form-select {
           background-color: #f3f4f6;
           border: 2px solid transparent;
@@ -840,7 +829,6 @@ const ManageUsers = () => {
           margin-bottom: 0.4rem;
         }
 
-        /* Segmented Controls for Tabs inside Modal */
         .modal-tabs-container {
           background: #f3f4f6;
           padding: 4px;
@@ -871,7 +859,6 @@ const ManageUsers = () => {
           background: rgba(255,255,255,0.5);
         }
 
-        /* Clean Dividers */
         .section-divider {
           font-size: 1.1rem;
           font-weight: 700;
@@ -881,7 +868,6 @@ const ManageUsers = () => {
           border-bottom: 1px solid #e5e7eb;
         }
 
-        /* Sub-Modal styles */
         .confirm-modal-backdrop {
           position: fixed;
           inset: 0;
@@ -1377,7 +1363,6 @@ const ManageUsers = () => {
                         </div>
 
                         <form onSubmit={handleDocSubmit} className="p-4" style={{ maxHeight: "70vh", overflowY: "auto" }}>
-
                           {/* Document Type */}
                           <div className="mb-3">
                             <label className="form-label fw-bold text-dark">
@@ -1443,7 +1428,7 @@ const ManageUsers = () => {
                             )}
                           </div>
 
-                          {/* Expiry Date Date Picker Logic */}
+                          {/* Expiry Date – ALWAYS disabled for Security License & Visa */}
                           <div className="mb-3">
                             <label className="form-label fw-bold text-dark">
                               Expiry Date <span className="text-danger">*</span>
@@ -1460,7 +1445,7 @@ const ManageUsers = () => {
                                   }
                                 }}
                                 style={{ cursor: "pointer", zIndex: 10 }}
-                                disabled={docForm.is_verified && (docForm.document_name === "Security License" || docForm.document_name === "Visa")}
+                                disabled={docForm.document_name === "Security License" || docForm.document_name === "Visa"}
                                 title="Open Calendar"
                               >
                                 <i className="fa-solid fa-calendar-days text-dark"></i>
@@ -1493,7 +1478,7 @@ const ManageUsers = () => {
                                     }));
                                   }
                                 }}
-                                disabled={docForm.is_verified && (docForm.document_name === "Security License" || docForm.document_name === "Visa")}
+                                disabled={docForm.document_name === "Security License" || docForm.document_name === "Visa"}
                               />
 
                               <input
@@ -1518,7 +1503,13 @@ const ManageUsers = () => {
                                 required
                                 maxLength={10}
                                 pattern="^(0[1-9]|[12][0-9]|3[01])/(0[1-9]|1[012])/\d{4}$"
-                                disabled={docForm.is_verified && (docForm.document_name === "Security License" || docForm.document_name === "Visa")}
+                                disabled={docForm.document_name === "Security License" || docForm.document_name === "Visa"}
+                                style={{
+                                  backgroundColor:
+                                    docForm.document_name === "Security License" || docForm.document_name === "Visa"
+                                      ? "#e9ecef"
+                                      : "white",
+                                }}
                               />
                             </div>
                           </div>

@@ -518,20 +518,46 @@ const drawGoldLine = (doc, y, pw, mg = 15) => {
   doc.line(mg, y, pw - mg, y);
   return y + 8;
 };
-
 const renderModernFooter = (doc, pw, ph, showStripeBadge = false) => {
+  // Use the real page width to ensure true centring
+  const pageWidth = doc.internal.pageSize.getWidth();  // e.g. 210 for A4
+  const centerX = pageWidth / 2;
+
   let fy = ph - 22;
+
   if (showStripeBadge) {
+    // Badge dimensions
+    const badgeWidth = 56;
+    const badgeHeight = 6;
+    const badgeX = centerX - badgeWidth / 2;
+
+    // Draw badge background
     doc.setDrawColor(...T.greenBorder);
     doc.setFillColor(...T.greenFill);
-    doc.rect(pw / 2 - 28, fy, 56, 6, "FD");
-    doc.setFontSize(7); doc.setFont("helvetica", "bold"); doc.setTextColor(...T.greenText);
-    doc.text("✓ Payment Held via Stripe", pw / 2, fy + 4, { align: "center" });
-    fy += 10;
+    doc.rect(badgeX, fy, badgeWidth, badgeHeight, "FD");
+
+    // Prepare text
+    const text = "✓ Payment Held via Stripe";
+    doc.setFontSize(7);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(...T.greenText);
+
+    // Measure text width to centre it perfectly
+    const textWidth = doc.getTextWidth(text);
+    const textX = badgeX + (badgeWidth - textWidth) / 4;
+    const textY = fy + badgeHeight / 2 + 0.6; // visual vertical centring (font size 7)
+
+    doc.text(text, textX, textY);
+
+    fy += 10; // leave space after badge
   }
-  doc.setFontSize(10); doc.setFont("helvetica", "normal"); doc.setTextColor(...T.muted);
-  doc.text("Thank you for choosing Staffoo Facility Services.", pw / 2, fy, { align: "center" });
-  doc.text("For billing enquiries contact admin@staffoo.com.au | ABN: 48 613 317 838", pw / 2, fy + 4, { align: "center" });
+
+  // Rest of the footer (same centring logic)
+  doc.setFontSize(10);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(...T.muted);
+  doc.text("Thank you for choosing Staffoo Facility Services.", centerX, fy, { align: "center" });
+  doc.text("For billing enquiries contact admin@staffoo.com.au | ABN: 48 613 317 838", centerX, fy + 4, { align: "center" });
 };
 
 const PDFGenerator = {
@@ -560,7 +586,7 @@ const PDFGenerator = {
       doc.setFont("helvetica", "normal"); doc.text(String(val), rValX, y + yOff, rightAlignParams);
     };
 
-    addRMeta("Invoice #:", `INV-${invoiceNo}`, 0);
+    addRMeta("Invoice #:", `${invoiceNo}`, 0);
     addRMeta("Date:", startDate, 6);
     if (dueDate) addRMeta("Due Date:", dueDate, 12);
     addRMeta("Payment Option:", "Full Payment", 18);

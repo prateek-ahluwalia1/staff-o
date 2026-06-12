@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useRef } from "react";
 
 export default function ProfileForm({
   formData,
@@ -9,6 +9,7 @@ export default function ProfileForm({
   onChangePhone,
   isPhoneVerified,
 }) {
+  const datePickerRef = useRef(null);
 
   // Define predefined options to detect when a custom "Other" value is being used
   const predefinedStatuses = [
@@ -22,6 +23,28 @@ export default function ProfileForm({
   // If the value exists and is NOT in the predefined list, it means it's a custom input
   const showCustomStatus = formData.staff_document_type && !predefinedStatuses.includes(formData.staff_document_type);
   const selectValue = showCustomStatus ? "other" : (formData.staff_document_type || "");
+
+  // --- Date Formatting Helpers to handle API (YYYY-MM-DD) vs UI (DD/MM/YYYY) ---
+  const formatDisplayDate = (val) => {
+    if (!val) return "";
+    // If date comes from API as YYYY-MM-DD, convert to DD/MM/YYYY for UI
+    if (val.match(/^\d{4}-\d{2}-\d{2}$/)) {
+      const [y, m, d] = val.split("-");
+      return `${d}/${m}/${y}`;
+    }
+    return val;
+  };
+
+  const formatPickerDate = (val) => {
+    if (!val) return "";
+    // Native calendar picker explicitly requires YYYY-MM-DD format
+    if (val.match(/^\d{4}-\d{2}-\d{2}$/)) return val;
+    if (val.match(/^\d{2}\/\d{2}\/\d{4}$/)) {
+      const [d, m, y] = val.split("/");
+      return `${y}-${m}-${d}`;
+    }
+    return "";
+  };
 
   return (
     <form className="settings-form" onSubmit={onSubmit}>
@@ -390,25 +413,85 @@ export default function ProfileForm({
             </>
           )}
 
-          {/* Staff Date of Birth */}
+          {/* Staff Date of Birth (Hybrid Calendar/Text Input) */}
           {userType === "staff" && (
             <div>
               <label htmlFor="date_of_birth" className="form-label fw-semibold">
                 Date of Birth <span className="text-danger">*</span>
               </label>
-              <div className="input-group shadow-sm rounded">
-                <span className="input-group-text bg-white text-muted border-end-0">
-                  <i className="fa-solid fa-calendar-days"></i>
-                </span>
+              <div className="input-group shadow-sm rounded position-relative">
+
+                {/* Button that triggers the hidden native calendar */}
+                <button
+                  type="button"
+                  className="input-group-text bg-white text-muted border-end-0"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    if (datePickerRef.current) {
+                      try {
+                        datePickerRef.current.showPicker();
+                      } catch (err) {
+                        datePickerRef.current.focus();
+                      }
+                    }
+                  }}
+                  style={{ cursor: "pointer", zIndex: 10 }}
+                  title="Open Calendar"
+                >
+                  <i className="fa-solid fa-calendar-days text-primary"></i>
+                </button>
+
+                {/* Hidden Native Date Input */}
                 <input
                   type="date"
+                  ref={datePickerRef}
+                  className="position-absolute"
+                  style={{ opacity: 0, width: 0, height: 0, pointerEvents: "none", bottom: 0, left: 40 }}
+                  value={formatPickerDate(formData.date_of_birth)}
+                  onChange={(e) => {
+                    const val = e.target.value; // Returns YYYY-MM-DD
+                    if (val) {
+                      const [y, m, d] = val.split('-');
+                      onChange({
+                        target: {
+                          id: "date_of_birth",
+                          name: "date_of_birth",
+                          value: `${d}/${m}/${y}`, // Pass back as DD/MM/YYYY
+                        },
+                      });
+                    }
+                  }}
+                  max={new Date().toISOString().split("T")[0]}
+                />
+
+                {/* Visible Text Input for Manual Entry */}
+                <input
+                  type="text"
                   className="form-control border-start-0 ps-0"
                   id="date_of_birth"
                   name="date_of_birth"
-                  value={formData.date_of_birth || ""}
-                  onChange={onChange}
-                  max={new Date().toISOString().split("T")[0]}
+                  placeholder="DD/MM/YYYY"
+                  value={formatDisplayDate(formData.date_of_birth)}
+                  onChange={(e) => {
+                    let value = e.target.value.replace(/\D/g, "");
+                    if (value.length > 8) value = value.substring(0, 8);
+                    if (value.length > 2 && value.length <= 4) {
+                      value = value.replace(/^(\d{2})(\d+)/, "$1/$2");
+                    } else if (value.length > 4) {
+                      value = value.replace(/^(\d{2})(\d{2})(\d+)/, "$1/$2/$3");
+                    }
+                    onChange({
+                      target: {
+                        id: "date_of_birth",
+                        name: "date_of_birth",
+                        value,
+                      },
+                    });
+                  }}
                   required
+                  maxLength={10}
+                  pattern="^(0[1-9]|[12][0-9]|3[01])/(0[1-9]|1[012])/\d{4}$"
+                  title="Please enter a valid date in DD/MM/YYYY format"
                 />
               </div>
             </div>

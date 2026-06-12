@@ -1455,12 +1455,6 @@ export default function EditProfile() {
                 required
               />
             )}
-            {docForm.is_verified && (
-              <div className="form-text text-success">
-                <i className="fa-solid fa-check-circle me-1" />
-                Document number verified.
-              </div>
-            )}
           </div>
 
           {/* Expiry Date – always disabled for Visa & Security License */}
@@ -1487,12 +1481,6 @@ export default function EditProfile() {
                     : "white",
               }}
             />
-            {(docForm.document_name === "Security License" ||
-              docForm.document_name === "Visa") && (
-                <div className="form-text text-muted">
-                  The expiry date is set automatically after verification.
-                </div>
-              )}
           </div>
 
           {/* Visa Details Card */}

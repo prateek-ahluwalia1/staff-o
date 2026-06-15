@@ -255,7 +255,7 @@ export default function MyJobApplications() {
 
                       <div className="d-flex justify-content-between align-items-center pt-3 border-top" style={{ borderColor: "#f8f9fa" }}>
                         <div className="d-flex flex-column">
-                          <span className="text-muted mb-1" style={{ fontSize: "10px", textTransform: "uppercase", letterSpacing: "0.5px", fontWeight: 700 }}>
+                          <span className="text-muted mb-1" style={{ fontSize: "10px", letterSpacing: "0.5px", fontWeight: 700 }}>
                             Assignment
                           </span>
                           <span className="fw-bold text-dark" style={{ fontSize: "13px" }}>

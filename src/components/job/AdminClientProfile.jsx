@@ -56,7 +56,7 @@ export default function AdminClientProfile({
     const labelStyle = {
         fontSize: "10px",
         fontWeight: 700,
-        textTransform: "uppercase",
+
         letterSpacing: "0.06em",
         color: "#94a3b8",
         display: "block",
@@ -148,7 +148,7 @@ export default function AdminClientProfile({
 
                             {/* Hours pill */}
                             <div style={{ flexShrink: 0, textAlign: "center", background: BRAND_LIGHT, borderRadius: 10, padding: "6px 10px", minWidth: 58 }}>
-                                <div style={{ fontSize: 9, fontWeight: 700, color: BRAND, textTransform: "uppercase", letterSpacing: "0.05em" }}>Hours</div>
+                                <div style={{ fontSize: 9, fontWeight: 700, color: BRAND, letterSpacing: "0.05em" }}>Hours</div>
                                 <div style={{ fontSize: "0.95rem", fontWeight: 700, color: BRAND_DARK, lineHeight: 1.2 }}>
                                     {customerTotalHours ? Number(customerTotalHours).toFixed(2) : "0.00"}
                                 </div>

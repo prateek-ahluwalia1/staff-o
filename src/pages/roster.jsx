@@ -446,7 +446,7 @@ export default function RosterPage() {
                 <div className="vr-site-name" style={{ lineHeight: 1.2 }}>{site.displayName}</div>
 
                 {/* NEW: Display Client Name below site */}
-                <div style={{ fontSize: "11px", color: "#64748b", margin: "4px 0", fontWeight: "600", textTransform: "uppercase" }}>
+                <div style={{ fontSize: "11px", color: "#64748b", margin: "4px 0", fontWeight: "600" }}>
                   <i className="fa-regular fa-building" style={{ marginRight: '4px' }}></i>
                   {site.clientName}
                 </div>

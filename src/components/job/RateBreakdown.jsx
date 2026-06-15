@@ -38,7 +38,7 @@ export default function RateBreakdown({ rate, jobTypeLabel = "Security Guard", p
 
       <div className="table-responsive">
         <table className="table mb-0 table-borderless align-middle">
-          <thead style={{ backgroundColor: "#f8f9fa", fontSize: "12px", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+          <thead style={{ backgroundColor: "#f8f9fa", fontSize: "12px", letterSpacing: "0.5px" }}>
             <tr className="border-bottom">
               <th className="text-muted fw-bold py-3 ps-4" style={{ width: "30%" }}>Description</th>
               <th className="text-muted fw-bold py-3" style={{ width: "25%" }}>Rate Type</th>
@@ -60,7 +60,7 @@ export default function RateBreakdown({ rate, jobTypeLabel = "Security Guard", p
           </tbody>
 
           {/* UPDATED RECEIPT FOOTER */}
-          <tfoot style={{ backgroundColor: "#fff", fontFamily: "'Courier New', Courier, monospace", fontSize: "1.05rem", color: "#333"}}>
+          <tfoot style={{ backgroundColor: "#fff", fontFamily: "'Courier New', Courier, monospace", fontSize: "1.05rem", color: "#333" }}>
             <tr>
               {/* Reduced empty space to 2 columns */}
               <td colSpan="2" className="border-0"></td>

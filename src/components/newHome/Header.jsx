@@ -289,7 +289,7 @@ function Header() {
               </div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                <NavLink to="/dashboard" onClick={handleLinkClick} style={{ color: '#ccc', textDecoration: 'none', fontFamily: "'Barlow Condensed', sans-serif", fontSize: '14px', fontWeight: 600, letterSpacing: '0.1em' }}><i className="fa fa-home" style={{ marginRight: '8px' }}></i> Dashboard</NavLink>
+                <NavLink to="/edit-profile" onClick={handleLinkClick} style={{ color: '#ccc', textDecoration: 'none', fontFamily: "'Barlow Condensed', sans-serif", fontSize: '14px', fontWeight: 600, letterSpacing: '0.1em' }}><i className="fa fa-user" style={{ marginRight: '8px' }}></i> My Profile</NavLink>
                 <NavLink to="/notifications" onClick={handleLinkClick} style={{ color: '#ccc', textDecoration: 'none', fontFamily: "'Barlow Condensed', sans-serif", fontSize: '14px', fontWeight: 600, letterSpacing: '0.1em' }}>
                   <i className="fa fa-bell" style={{ marginRight: '8px' }}></i> Notifications
                   {unreadCount > 0 && <span style={{ marginLeft: '8px', backgroundColor: '#dc3545', color: '#fff', borderRadius: '50%', padding: '2px 6px', fontSize: '10px' }}>{unreadCount}</span>}
@@ -498,7 +498,7 @@ function Header() {
                   }}
                 >
                   <NavLink
-                    to="/dashboard"
+                    to="/edit-profile"
                     onClick={() => setShowUserMenu(false)}
                     style={{
                       display: 'block',
@@ -517,8 +517,8 @@ function Header() {
                       e.target.style.color = '#fff'
                     }}
                   >
-                    <i className="fa fa-home" style={{ marginRight: '8px' }}></i>
-                    Dashboard
+                    <i className="fa fa-user" style={{ marginRight: '8px' }}></i>
+                    My Profile
                   </NavLink>
                   <button
                     onClick={async () => {

@@ -4,7 +4,7 @@ import { apiURL } from "../utils/exports";
 import { toast } from "react-toastify";
 import { logOut } from "../store/slices/authSlice";
 
-const useSubmit = ({ isAuth = false } = {}) => {
+const useSubmit = ({ isAuth = false, BaseURL = apiURL } = {}) => {
   const dispatch = useDispatch();
   const token = useSelector((state) => state.auth.token);
   const [loading, setLoading] = useState(false);
@@ -21,6 +21,7 @@ const useSubmit = ({ isAuth = false } = {}) => {
       try {
         const headers = {
           Accept: responseType === "blob" ? "application/pdf, application/json" : "application/json",
+          credentials: 'include',
         };
 
         if (!isFormData) {
@@ -41,7 +42,7 @@ const useSubmit = ({ isAuth = false } = {}) => {
           fetchOptions.body = isFormData ? body : JSON.stringify(body);
         }
 
-        const res = await fetch(`${apiURL}${endpoint}`, fetchOptions);
+        const res = await fetch(`${BaseURL}${endpoint}`, fetchOptions);
 
         if (res.status === 401) {
           // For blob responses, we can't parse JSON, so treat as auth error

@@ -76,6 +76,9 @@ const isoToDisplay = (val) => {
 const normalizeToDisplay = (dateStr) => {
   if (!dateStr) return "";
   if (/^\d{2}\/\d{2}\/\d{4}$/.test(dateStr)) return dateStr;
+  if (/^\d{2}-\d{2}-\d{4}$/.test(dateStr)) {
+    return dateStr.replace(/-/g, "/");
+  }
   const iso = isoToDisplay(dateStr);
   if (iso !== dateStr) return iso;
   const d = new Date(dateStr);
@@ -111,6 +114,12 @@ export default function EditProfile() {
   } = useFetch(endpoint, { isAuth: true });
 
   const { submit, loading: submitLoading } = useSubmit({ isAuth: true });
+  // eslint-disable-next-line
+  const { submit: submitSecurityLicense } = useSubmit({
+    isAuth: true,
+    BaseURL: "https://apis.thescouts.com.au/",
+  });
+
   const { submit: uploadFile, loading: uploadLoading } = useSubmit({
     isAuth: true,
   });
@@ -144,7 +153,6 @@ export default function EditProfile() {
   const [showDocModal, setShowDocModal] = useState(false);
   const [selectedDoc, setSelectedDoc] = useState(null);
   const [verifyingDoc, setVerifyingDoc] = useState(false);
-  const [visaDetails, setVisaDetails] = useState(null);
   const [docForm, setDocForm] = useState({
     notes: "",
     no: false,
@@ -342,24 +350,6 @@ export default function EditProfile() {
     });
   }, [profileData?.data?.documents, formData.state]);
 
-  const safeJsonParse = (value) => {
-    if (typeof value !== "string") return null;
-    try {
-      return JSON.parse(value);
-    } catch {
-      return null;
-    }
-  };
-
-  const unwrapVisaResponse = (payload) => {
-    if (!payload) return null;
-    if (payload?.json?.data) return payload.json.data;
-    const parsedBody = safeJsonParse(payload?.body);
-    if (parsedBody?.data) return parsedBody.data;
-    if (payload?.data?.data) return payload.data.data;
-    if (payload?.data && typeof payload.data === "object") return payload.data;
-    return payload;
-  };
 
   const handleAvatarUpload = useCallback(
     async (file) => {
@@ -415,7 +405,7 @@ export default function EditProfile() {
         if (key === "bank_details") {
           payload.append("bank_details", JSON.stringify(formData.bank_details));
         } else {
-          payload.append(key, formData[key]); // date_of_birth already DD/MM/YYYY
+          payload.append(key, formData[key]);
         }
       });
 
@@ -586,12 +576,11 @@ export default function EditProfile() {
       return;
     }
 
-    // SECURITY LICENSE verification
     if (docForm.document_name === "Security License") {
       setVerifyingDoc(true);
       try {
-        const res = await submit(
-          "api/documents-online-verification",
+        const res = await submitSecurityLicense(
+          "api/documents-online-verification-staffoo",
           {
             user_id: userId,
             document_type: docForm.document_name,
@@ -600,19 +589,15 @@ export default function EditProfile() {
           { method: "POST" }
         );
 
-        if (res?.success && res?.data) {
-          const expiryDate = res.data.expiry_date || res.data.document_expiry;
-          if (expiryDate) {
-            setDocForm((prev) => ({
-              ...prev,
-              document_expiry: normalizeToDisplay(expiryDate),
-              is_verified: true,
-            }));
-            toast.success("Security License verified. Expiry date locked.");
-          } else {
-            setDocForm((prev) => ({ ...prev, is_verified: true }));
-            toast.warning("Verification succeeded but no expiry date returned.");
-          }
+        if (res?.success && res?.expiry) {
+          // expiry is "15/09/2026" (after JSON parse, slashes are fine)
+          const expiryStr = res.expiry.replace(/\\\//g, "/"); // safety clean
+          setDocForm((prev) => ({
+            ...prev,
+            document_expiry: expiryStr,   // already DD/MM/YYYY
+            is_verified: true,
+          }));
+          toast.success("Security License verified. Expiry date locked.");
         } else {
           setDocForm((prev) => ({ ...prev, is_verified: false }));
           toast.error(res?.message || "Security License verification failed.");
@@ -625,7 +610,6 @@ export default function EditProfile() {
       }
       return;
     }
-
     // VISA verification
     if (docForm.document_name === "Visa") {
       const user = userdata?.data || userdata;
@@ -637,11 +621,6 @@ export default function EditProfile() {
       if (nameParts.length > 1) {
         givenName = nameParts.slice(0, -1).join(" ");
         familyName = nameParts[nameParts.length - 1];
-      }
-      const dob = staff?.date_of_birth || user?.date_of_birth || "";
-      if (!dob) {
-        toast.error("Date of birth is missing from your profile. Please update your personal information first.");
-        return;
       }
       const rawDob = staff?.date_of_birth || user?.date_of_birth || "";
       if (!rawDob) {
@@ -666,90 +645,33 @@ export default function EditProfile() {
       const payload = {
         passport: passportNumber,
         country: countryCode,
-        // family_name: familyName,
-        family_name: "Abdul Hadi",
-        // given_name: givenName,
-        given_name: "Abdul Hadi",
-        // dob: dobISO,
-        dob: "1999-05-22",
+        family_name: familyName,
+        given_name: givenName,
+        dob: dobISO,
       };
 
       setVerifyingDoc(true);
-      let checkId = null;
-      let pollInterval = null;
-      let timeoutId = null;
-
-      const cleanup = () => {
-        if (pollInterval) clearInterval(pollInterval);
-        if (timeoutId) clearTimeout(timeoutId);
-      };
-
       try {
-        const createRes = await submit("api/admin/visa-check", payload, { method: "POST" });
-        const createData = unwrapVisaResponse(createRes);
-        if (!createData?.id) {
-          toast.error("Could not submit visa verification request.");
-          setVerifyingDoc(false);
-          return;
+        const res = await submit("api/admin/visa-check", payload, { method: "POST" });
+        if (res?.success && res?.data?.expired_at) {
+          const displayExpiry = normalizeToDisplay(res.data.expired_at); // converts DD-MM-YYYY -> DD/MM/YYYY
+          setDocForm((prev) => ({
+            ...prev,
+            document_expiry: displayExpiry,
+            is_verified: true,
+          }));
+          toast.success("Visa verified. Expiry date locked.");
+        } else {
+          setDocForm((prev) => ({ ...prev, is_verified: false }));
         }
-        checkId = createData.id;
-        toast.info("Verification in progress. Please wait...");
-
-        pollInterval = setInterval(async () => {
-          try {
-            const resultRes = await submit(`api/admin/visa-result/${checkId}`, null, { method: "GET" });
-            const resultData = unwrapVisaResponse(resultRes);
-            if (resultData?.status === "completed" && resultData?.visa?.australia) {
-              cleanup();
-              const visaInfo = resultData.visa.australia;
-              const expiryDate = visaInfo.expiry_date || visaInfo.valid_until;
-              setVisaDetails({
-                visa_type: visaInfo.type_name || visaInfo.class || "N/A",
-                work_entitlement: visaInfo.work_entitlement || "N/A",
-                location: visaInfo.location || "N/A",
-                check_id: checkId,
-              });
-              if (expiryDate) {
-                setDocForm((prev) => ({
-                  ...prev,
-                  document_expiry: normalizeToDisplay(expiryDate),
-                  is_verified: true,
-                }));
-                toast.success("Visa verified. Expiry date locked.");
-              } else {
-                setDocForm((prev) => ({ ...prev, is_verified: true }));
-                toast.warning("Visa verified but no expiry date found.");
-              }
-              setVerifyingDoc(false);
-            } else if (resultData?.status === "failed") {
-              cleanup();
-              toast.error("Visa verification failed. Please check the passport number.");
-              setDocForm((prev) => ({ ...prev, is_verified: false }));
-              setVisaDetails(null);
-              setVerifyingDoc(false);
-            }
-          } catch (err) {
-            console.error("Polling error", err);
-          }
-        }, 2000);
-
-        timeoutId = setTimeout(() => {
-          cleanup();
-          if (verifyingDoc) {
-            toast.error("Verification timed out. Please try again later.");
-            setVerifyingDoc(false);
-          }
-        }, 30000);
       } catch (err) {
         console.error(err);
-        toast.error("Visa verification request failed.");
-        cleanup();
+      } finally {
         setVerifyingDoc(false);
       }
       return;
     }
 
-    toast.info(`Verification is not supported for ${docForm.document_name}. You can manually set the expiry date.`);
   };
 
   const handleDocNumberChange = (e) => {
@@ -760,7 +682,6 @@ export default function EditProfile() {
       is_verified: false,
       document_expiry: "",
     }));
-    setVisaDetails(null);
   };
 
   const handleDocFormChange = async (e) => {
@@ -835,7 +756,6 @@ export default function EditProfile() {
     if (res.success) {
       toast.success("Document saved successfully!");
       setShowDocModal(false);
-      setVisaDetails(null);
       refetch();
     } else {
       toast.error(res.message || "Failed to save document");
@@ -1166,7 +1086,6 @@ export default function EditProfile() {
                 is_verified: !!doc.document_expiry,
               });
             }
-            setVisaDetails(null);
             setShowDocModal(true);
           }}
           onAddDocument={() => {
@@ -1183,7 +1102,6 @@ export default function EditProfile() {
               document_name: "",
               is_verified: false,
             });
-            setVisaDetails(null);
             setShowDocModal(true);
           }}
         />
@@ -1283,7 +1201,6 @@ export default function EditProfile() {
         open={showDocModal}
         onClose={() => {
           setShowDocModal(false);
-          setVisaDetails(null);
         }}
       >
         <form
@@ -1466,34 +1383,6 @@ export default function EditProfile() {
             </div>
           </div>
 
-          {/* Visa Details Card */}
-          {docForm.document_name === "Visa" && docForm.is_verified && visaDetails && (
-            <div className="mb-3 p-3 bg-light border rounded-3">
-              <div className="d-flex align-items-center gap-2 mb-2">
-                <i className="fa-solid fa-passport text-primary"></i>
-                <strong className="small text-uppercase text-muted">
-                  Visa Verification Details
-                </strong>
-              </div>
-              <div className="row g-2 small">
-                <div className="col-6"><span className="text-muted">Visa Type:</span></div>
-                <div className="col-6 fw-medium">{visaDetails.visa_type}</div>
-                <div className="col-6"><span className="text-muted">Work Entitlement:</span></div>
-                <div className="col-6 fw-medium">{visaDetails.work_entitlement}</div>
-                <div className="col-6"><span className="text-muted">Location:</span></div>
-                <div className="col-6 fw-medium">{visaDetails.location}</div>
-                {visaDetails.check_id && (
-                  <>
-                    <div className="col-6"><span className="text-muted">Verification ID:</span></div>
-                    <div className="col-6 fw-medium text-truncate" title={visaDetails.check_id}>
-                      {visaDetails.check_id}
-                    </div>
-                  </>
-                )}
-              </div>
-            </div>
-          )}
-
           {/* File Upload */}
           <div className="mb-3">
             <label className="form-label fw-semibold">
@@ -1554,7 +1443,6 @@ export default function EditProfile() {
               className="btn btn-outline-secondary w-50"
               onClick={() => {
                 setShowDocModal(false);
-                setVisaDetails(null);
               }}
               disabled={uploadLoading || submitLoading}
             >

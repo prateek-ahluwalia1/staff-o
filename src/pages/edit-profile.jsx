@@ -643,7 +643,24 @@ export default function EditProfile() {
         toast.error("Date of birth is missing from your profile. Please update your personal information first.");
         return;
       }
-      const countryCode = (user?.origin_country || user?.country || "AUS").toUpperCase().slice(0, 3);
+      const rawDob = staff?.date_of_birth || user?.date_of_birth || "";
+      if (!rawDob) {
+        toast.error("Date of birth is missing. Please update your personal information first.");
+        return;
+      }
+      const dobParts = rawDob.split("/");
+      if (dobParts.length !== 3) {
+        toast.error("Invalid date of birth format. Please re‑save your profile.");
+        return;
+      }
+      const dobISO = `${dobParts[2]}-${dobParts[1]}-${dobParts[0]}`; // YYYY-MM-DD
+
+      const originCountry = user?.origin_country || user?.staff?.origin_country;
+      if (!originCountry) {
+        toast.error("Please save your country of origin in your profile before verifying your visa.");
+        return;
+      }
+      const countryCode = originCountry.toUpperCase().slice(0, 3);
       const passportNumber = docForm.document_no.toUpperCase();
 
       const payload = {
@@ -651,7 +668,7 @@ export default function EditProfile() {
         country: countryCode,
         family_name: familyName,
         given_name: givenName,
-        dob: dob,
+        dob: dobISO,
       };
 
       setVerifyingDoc(true);

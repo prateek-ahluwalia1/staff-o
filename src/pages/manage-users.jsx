@@ -6,6 +6,7 @@ import Loader from "../components/Loader";
 import { toast } from "react-toastify";
 import DocumentTable from "../components/DocumentTable";
 import StaffOnboardingForms from "../components/StaffOnboardingForms";
+import ProfileForm from "../components/ProfileForm";
 import { apiURL } from "../utils/exports";
 
 const STATE_MAP = {
@@ -44,7 +45,6 @@ const isoToDisplay = (val) => {
   if (/^\d{2}\/\d{2}\/\d{4}$/.test(val)) return val;
   const match = val.match(/^(\d{4})-(\d{2})-(\d{2})$/);
   if (match) {
-    // eslint-disable-next-line
     const [_, y, m, d] = match;
     return `${d}/${m}/${y}`;
   }
@@ -95,8 +95,6 @@ const ManageUsers = () => {
   const contractorsList = contractorsResponse?.data?.data || [];
   const { submit, loading: submitLoading } = useSubmit({ isAuth: true });
   const { submit: uploadFile, loading: uploadLoading } = useSubmit({ isAuth: true });
-
-  // External Security License verification hook
   const { submit: submitSecurityLicense } = useSubmit({
     isAuth: true,
     BaseURL: "https://apis.thescouts.com.au/",
@@ -130,9 +128,6 @@ const ManageUsers = () => {
     is_verified: false,
   });
 
-  const userAutocompleteRef = useRef(null);
-  const userAutocompleteListenerRef = useRef(null);
-
   const defaultFormState = useMemo(() => ({
     name: "",
     email: "",
@@ -157,6 +152,17 @@ const ManageUsers = () => {
     if (!editingUser) return [];
     return editingUser.documents || editingUser.staff?.documents || [];
   }, [editingUser]);
+
+  // ---- ProfileForm change handler ----
+  const handleProfileFormChange = useCallback((e) => {
+    const { id, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [id]: value,
+      // When address changes manually, reset auto‑filled fields
+      ...(id === "address" ? { coordinates: "", city: "", state: "", country: "" } : {}),
+    }));
+  }, []);
 
   const handleTabChange = (role) => {
     setActiveTab(role);
@@ -237,12 +243,16 @@ const ManageUsers = () => {
     }
   }, [apiResponse, location.state, location.pathname, navigate, openModal]);
 
+  // Google Maps Autocomplete (attached to #address, the id used by ProfileForm)
+  const autocompleteRef = useRef(null);
+  const autocompleteListenerRef = useRef(null);
+
   useEffect(() => {
-    if (!isModalOpen) return;
+    if (!isModalOpen || activeModalTab !== "personal") return;
 
     let checkGoogleMaps;
     const initAutocomplete = () => {
-      const addressInput = document.getElementById("user-address");
+      const addressInput = document.getElementById("address");
       if (!addressInput || !window.google || !window.google.maps) return;
       if (addressInput.getAttribute("data-gmaps-initialized")) return;
 
@@ -252,9 +262,9 @@ const ManageUsers = () => {
       });
 
       addressInput.setAttribute("data-gmaps-initialized", "true");
-      userAutocompleteRef.current = autocomplete;
+      autocompleteRef.current = autocomplete;
 
-      userAutocompleteListenerRef.current = autocomplete.addListener("place_changed", () => {
+      autocompleteListenerRef.current = autocomplete.addListener("place_changed", () => {
         const place = autocomplete.getPlace();
         if (!place.geometry) {
           toast.error("Please select a valid address from the dropdown suggestions.");
@@ -277,7 +287,7 @@ const ManageUsers = () => {
           if (c.types.includes("country")) newCountry = c.long_name;
         });
 
-        setFormData((prev) => ({
+        setFormData(prev => ({
           ...prev,
           address: place.formatted_address,
           city: newCity || prev.city,
@@ -299,23 +309,12 @@ const ManageUsers = () => {
 
     return () => {
       clearInterval(checkGoogleMaps);
-      if (userAutocompleteListenerRef.current && window.google)
-        window.google.maps.event.removeListener(userAutocompleteListenerRef.current);
+      if (autocompleteListenerRef.current && window.google)
+        window.google.maps.event.removeListener(autocompleteListenerRef.current);
     };
-  }, [isModalOpen]);
+  }, [isModalOpen, activeModalTab]);
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-      ...(name === "address"
-        ? { coordinates: "", city: "", state: "", country: "" }
-        : {}),
-    }));
-  };
-
-  // ----- DOCUMENT LOGIC START -----
+  // ----- DOCUMENT LOGIC (same as before) -----
   const openDocumentModal = (doc) => {
     setSelectedDoc(doc);
     if (doc) {
@@ -355,7 +354,7 @@ const ManageUsers = () => {
 
   const handleDocNumberChange = (e) => {
     const value = e.target.value.replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
-    setDocForm((prev) => ({
+    setDocForm(prev => ({
       ...prev,
       document_no: value,
       is_verified: false,
@@ -374,7 +373,7 @@ const ManageUsers = () => {
     }
 
     if (type === "checkbox") {
-      setDocForm((prev) => ({ ...prev, [name]: checked }));
+      setDocForm(prev => ({ ...prev, [name]: checked }));
     } else if (type === "file") {
       const file = files[0];
       const MAX_SIZE_MB = 10;
@@ -388,7 +387,7 @@ const ManageUsers = () => {
         fd.append("folder", "staff_documents");
         const res = await uploadFile("api/upload-file", fd, { method: "POST" });
         if (res?.success) {
-          setDocForm((prev) => ({
+          setDocForm(prev => ({
             ...prev,
             file_path: res.path || res.data?.path || "",
             file_url: res.url || res.data?.url || "",
@@ -396,7 +395,7 @@ const ManageUsers = () => {
         }
       }
     } else {
-      setDocForm((prev) => ({ ...prev, [name]: value }));
+      setDocForm(prev => ({ ...prev, [name]: value }));
     }
   };
 
@@ -414,7 +413,6 @@ const ManageUsers = () => {
       return;
     }
 
-    // ---------- SECURITY LICENSE VERIFICATION ----------
     if (docForm.document_name === "Security License") {
       setVerifyingDoc(true);
       try {
@@ -429,14 +427,14 @@ const ManageUsers = () => {
         );
         if (res?.success && res?.expiry) {
           const expiryStr = res.expiry.replace(/\\\//g, "/");
-          setDocForm((prev) => ({
+          setDocForm(prev => ({
             ...prev,
             document_expiry: expiryStr,
             is_verified: true,
           }));
           toast.success("Security License verified. Expiry date locked.");
         } else {
-          setDocForm((prev) => ({ ...prev, is_verified: false }));
+          setDocForm(prev => ({ ...prev, is_verified: false }));
           toast.error(res?.message || "Security License verification failed.");
         }
       } catch (err) {
@@ -448,7 +446,6 @@ const ManageUsers = () => {
       return;
     }
 
-    // ---------- VISA VERIFICATION ----------
     if (docForm.document_name === "Visa") {
       const user = editingUser;
       const staff = user?.staff || {};
@@ -461,7 +458,6 @@ const ManageUsers = () => {
         familyName = nameParts[nameParts.length - 1];
       }
 
-      // Use date_of_birth from the editingUser (already updated via form)
       const rawDob = staff?.date_of_birth || user?.date_of_birth || formData.date_of_birth || "";
       if (!rawDob) {
         toast.error("Date of birth is missing. Please update personal information first.");
@@ -474,7 +470,6 @@ const ManageUsers = () => {
       }
       const dobISO = `${dobParts[2]}-${dobParts[1]}-${dobParts[0]}`;
 
-      // Use origin_country from the editingUser (updated via form)
       const originCountry = staff?.origin_country || user?.origin_country || formData.origin_country || "";
       if (!originCountry) {
         toast.error("Please save your country of origin in your profile before verifying your visa.");
@@ -496,14 +491,14 @@ const ManageUsers = () => {
         const res = await submit("api/admin/visa-check", payload, { method: "POST" });
         if (res?.success && res?.data?.expired_at) {
           const displayExpiry = normalizeToDisplay(res.data.expired_at);
-          setDocForm((prev) => ({
+          setDocForm(prev => ({
             ...prev,
             document_expiry: displayExpiry,
             is_verified: true,
           }));
           toast.success("Visa verified. Expiry date locked.");
         } else {
-          setDocForm((prev) => ({ ...prev, is_verified: false }));
+          setDocForm(prev => ({ ...prev, is_verified: false }));
           toast.error(res?.message || "Visa verification failed.");
         }
       } catch (err) {
@@ -556,8 +551,47 @@ const ManageUsers = () => {
     if (!res) return;
     if (res.success) {
       toast.success("Document saved successfully!");
+
+      // ----- UPDATE EDITING USER IMMEDIATELY -----
+      // Use returned document data if available, otherwise build from form
+      const savedDoc = res.data?.document || res.data || {};
+
+      setEditingUser((prev) => {
+        const currentDocs = prev?.documents || [];
+        if (selectedDoc) {
+          // Update existing document
+          const updatedDocs = currentDocs.map((d) =>
+            d.id === selectedDoc.id
+              ? {
+                ...d,
+                document_no: docForm.document_no,
+                document_expiry: docForm.document_expiry,
+                file: docForm.file_path || d.file,
+                ...savedDoc,
+              }
+              : d
+          );
+          return { ...prev, documents: updatedDocs };
+        } else {
+          // Add new document
+          const newDoc = {
+            id: savedDoc.id || Date.now(), // temporary id if missing
+            document_name: docForm.document_name,
+            document_no: docForm.document_no,
+            document_expiry: docForm.document_expiry,
+            file: docForm.file_path,
+            ...savedDoc,
+          };
+          return {
+            ...prev,
+            documents: [...currentDocs, newDoc],
+          };
+        }
+      });
+      // -------------------------------------------
+
       closeDocumentModal();
-      refetch();
+      refetch(); // still update the users list in background
     } else {
       toast.error(res.message || "Failed to save document");
     }
@@ -575,7 +609,6 @@ const ManageUsers = () => {
       }
     }
 
-    // Validate date of birth if provided
     if (formData.date_of_birth && !/^\d{2}\/\d{2}\/\d{4}$/.test(formData.date_of_birth)) {
       toast.error("Please enter the date of birth in DD/MM/YYYY format.");
       return;
@@ -742,27 +775,6 @@ const ManageUsers = () => {
           flex-direction: column;
           overflow: hidden;
         }
-        .form-control, .form-select {
-          background-color: #f3f4f6;
-          border: 2px solid transparent;
-          border-radius: 12px;
-          padding: 0.75rem 1rem;
-          font-size: 0.95rem;
-          color: #111827;
-          transition: all 0.2s ease-in-out;
-        }
-        .form-control:focus, .form-select:focus {
-          background-color: #ffffff;
-          border-color: #000000;
-          box-shadow: none;
-          outline: none;
-        }
-        .form-label {
-          font-size: 0.8rem;
-          font-weight: 600;
-          color: #4b5563;
-          margin-bottom: 0.4rem;
-        }
         .modal-tabs-container {
           background: #f3f4f6;
           padding: 4px;
@@ -789,14 +801,6 @@ const ManageUsers = () => {
           color: #111827;
           background: rgba(255,255,255,0.5);
         }
-        .section-divider {
-          font-size: 1.1rem;
-          font-weight: 700;
-          color: #111827;
-          margin: 25px 0 15px;
-          padding-bottom: 10px;
-          border-bottom: 1px solid #e5e7eb;
-        }
         .confirm-modal-backdrop {
           position: fixed;
           inset: 0;
@@ -810,7 +814,7 @@ const ManageUsers = () => {
         }
         .confirm-modal-card {
           width: 100%;
-          max-width: 480px;
+          max-width: 750px;
           border-radius: 20px;
           border: 1px solid #e2e8f0;
           background: #ffffff;
@@ -829,10 +833,6 @@ const ManageUsers = () => {
           display: inline-flex;
           align-items: center;
           justify-content: center;
-          background: #fee2e2;
-          color: #dc2626;
-        }
-        .confirm-modal-icon.icon-doc {
           background: #e0f2fe;
           color: #0284c7;
         }
@@ -852,9 +852,7 @@ const ManageUsers = () => {
       <div className="dashboard-page-header">
         <div>
           <h1>User Management</h1>
-          <p className="text-muted"
-            style={{ textTransform: "none" }}
-          >
+          <p className="text-muted" style={{ textTransform: "none" }}>
             Manage permissions and details for all account types.
           </p>
         </div>
@@ -1026,7 +1024,7 @@ const ManageUsers = () => {
             <div
               className="flex-grow-1 overflow-auto px-5 py-4"
               onScroll={() => {
-                if (document.activeElement?.id === "user-address") {
+                if (document.activeElement?.id === "address") {
                   document.activeElement.blur();
                 }
               }}
@@ -1060,232 +1058,104 @@ const ManageUsers = () => {
               </div>
 
               {activeModalTab === "personal" ? (
-                <form id="userForm" onSubmit={handleSubmit}>
-                  <div className="row g-4">
-                    <div className="col-12">
-                      <h6 className="section-divider mt-0">Personal Details</h6>
-                    </div>
-
-                    {activeTab === "staff" && (
-                      <div className="col-12 mb-2">
-                        <div className="p-3 bg-light rounded-4 border">
-                          <label className="form-label">
-                            Assign to Resource Partner *
-                          </label>
-                          <select
-                            className="form-select bg-white"
-                            name="user_id"
-                            value={formData.user_id}
-                            onChange={handleInputChange}
-                            required
-                          >
-                            <option value="" disabled>
-                              Select a Resource Partner
-                            </option>
-                            {contractorsList.map((contractor) => (
-                              <option key={contractor.id} value={contractor.id}>
-                                {contractor.name}{" "}
-                                {contractor.company_name
-                                  ? `(${contractor.company_name})`
-                                  : ""}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                      </div>
-                    )}
-
-                    <div className="col-md-6">
-                      <label className="form-label">Full Name *</label>
-                      <input
-                        type="text"
-                        className="form-control"
-                        name="name"
-                        value={formData.name}
-                        onChange={handleInputChange}
-                        required
-                      />
-                    </div>
-
-                    <div className="col-md-6">
-                      <label className="form-label">Email Address *</label>
-                      <input
-                        type="email"
-                        className={`form-control ${editingUser ? 'bg-light text-muted' : ''}`}
-                        name="email"
-                        value={formData.email}
-                        onChange={handleInputChange}
-                        required
-                        disabled={!!editingUser}
-                        title={editingUser ? "Email cannot be changed after registration" : ""}
-                      />
-                    </div>
-
-                    <div className="col-md-6">
-                      <label className="form-label">
-                        Password {editingUser && <span className="text-muted fw-normal">(Leave blank to keep)</span>}
-                      </label>
-                      <div className="position-relative">
-                        <input
-                          type={showPassword ? "text" : "password"}
-                          className="form-control pe-5"
-                          name="password"
-                          onChange={handleInputChange}
-                          required={!editingUser}
-                        />
-                        <button
-                          type="button"
-                          className="btn btn-sm border-0 position-absolute end-0 top-50 translate-middle-y text-muted"
-                          onClick={() => setShowPassword(!showPassword)}
-                          tabIndex="-1"
-                        >
-                          <i className={`fa-solid ${showPassword ? 'fa-eye-slash' : 'fa-eye'}`}></i>
-                        </button>
-                      </div>
-                    </div>
-
-                    <div className="col-md-6">
-                      <label className="form-label">Phone</label>
-                      <input
-                        type="tel"
-                        className="form-control"
-                        name="phone"
-                        placeholder="e.g. 0400 000 000"
-                        value={formData.phone}
-                        onChange={(e) => {
-                          const val = e.target.value.replace(/[^\d+\s-]/g, "");
-                          handleInputChange({ target: { name: "phone", value: val } });
-                        }}
-                        maxLength="15"
-                      />
-                    </div>
-
-                    {activeTab === "staff" && (
-                      <>
-                        <div className="col-md-6">
-                          <label className="form-label">Residential Status</label>
-                          <select
-                            className="form-select"
-                            name="staff_document_type"
-                            value={formData.staff_document_type}
-                            onChange={handleInputChange}
-                          >
-                            <option value="">Select status</option>
-                            <option value="student_visa">Student Visa</option>
-                            <option value="bridging_visa">Bridging Visa</option>
-                            <option value="citizen">Citizen</option>
-                            <option value="permanent_residence">Permanent Residence</option>
-                            <option value="visa_485">Visa Subclass 485</option>
-                          </select>
-                        </div>
-                        <div className="col-md-6">
-                          <label className="form-label">Gender</label>
-                          <select
-                            className="form-select"
-                            name="gender"
-                            value={formData.gender}
-                            onChange={handleInputChange}
-                          >
-                            <option value="">Select gender</option>
-                            <option value="male">Male</option>
-                            <option value="female">Female</option>
-                            <option value="other">Prefer Not to Say</option>
-                          </select>
-                        </div>
-                      </>
-                    )}
-
-                    {/* ---------- NEW: Date of Birth & Origin Country ---------- */}
-                    <div className="col-12">
-                      <h6 className="section-divider">Identity Details</h6>
-                    </div>
-                    <div className="col-md-6">
-                      <label className="form-label">Date of Birth</label>
-                      <input
-                        type="text"
-                        className="form-control"
-                        name="date_of_birth"
-                        placeholder="DD/MM/YYYY"
-                        value={formData.date_of_birth}
-                        onChange={handleInputChange}
-                        maxLength={10}
-                        pattern="^(0[1-9]|[12][0-9]|3[01])/(0[1-9]|1[012])/\d{4}$"
-                        title="Enter a valid date in DD/MM/YYYY format"
-                      />
-                    </div>
-                    <div className="col-md-6">
-                      <label className="form-label">Country of Origin</label>
-                      <input
-                        type="text"
-                        className="form-control"
-                        name="origin_country"
-                        placeholder="e.g. Australia"
-                        value={formData.origin_country}
-                        onChange={handleInputChange}
-                        maxLength="50"
-                      />
-                    </div>
-
-                    {activeTab !== "staff" && (
-                      <>
-                        <div className="col-12">
-                          <h6 className="section-divider">
-                            Professional Information
-                          </h6>
-                        </div>
-                        <div className="col-md-6">
-                          <label className="form-label">
-                            Company Name {activeTab === "sub_contractor" && "*"}
-                          </label>
+                <ProfileForm
+                  formData={{
+                    name: formData.name,
+                    email: formData.email,
+                    phone: formData.phone,
+                    address: formData.address,
+                    city: formData.city,
+                    state: formData.state,
+                    country: formData.country,
+                    coordinates: formData.coordinates,
+                    gender: formData.gender,
+                    staff_document_type: formData.staff_document_type,
+                    company_name: formData.company_name,
+                    date_of_birth: formData.date_of_birth,
+                    origin_country: formData.origin_country,
+                    // ProfileForm doesn't use these, but they won't break:
+                    abn: "",
+                    acn: "",
+                  }}
+                  onChange={handleProfileFormChange}
+                  onSubmit={handleSubmit}
+                  loading={submitLoading}
+                  userType={
+                    activeTab === "staff" ? "staff" :
+                      activeTab === "sub_contractor" ? "contractor" :
+                        "customer"
+                  }
+                  onChangePhone={() => { }}
+                  isPhoneVerified={false}
+                  footer={
+                    <button
+                      type="submit"
+                      form="profile-form"
+                      className="btn btn-dark rounded-pill px-5 fw-bold shadow-sm"
+                      disabled={submitLoading}
+                    >
+                      {submitLoading ? "Saving..." : editingUser ? "Update Profile" : "Create User"}
+                    </button>
+                  }
+                  extraFields={
+                    <>
+                      {/* Password field (not in ProfileForm) */}
+                      <div className="col-md-6">
+                        <label className="form-label">
+                          Password {editingUser && <span className="text-muted fw-normal">(Leave blank to keep)</span>}
+                        </label>
+                        <div className="position-relative">
                           <input
-                            type="text"
-                            className="form-control"
-                            name="company_name"
-                            value={formData.company_name}
-                            onChange={handleInputChange}
-                            required={activeTab === "sub_contractor"}
+                            type={showPassword ? "text" : "password"}
+                            className="form-control pe-5"
+                            name="password"
+                            value={formData.password}
+                            onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
+                            required={!editingUser}
                           />
+                          <button
+                            type="button"
+                            className="btn btn-sm border-0 position-absolute end-0 top-50 translate-middle-y text-muted"
+                            onClick={() => setShowPassword(!showPassword)}
+                            tabIndex="-1"
+                          >
+                            <i className={`fa-solid ${showPassword ? 'fa-eye-slash' : 'fa-eye'}`}></i>
+                          </button>
                         </div>
-                      </>
-                    )}
-
-                    <div className="col-12">
-                      <h6 className="section-divider">Address Information</h6>
-                    </div>
-                    <div className="col-12">
-                      <label className="form-label">Full Address</label>
-                      <input
-                        type="text"
-                        id="user-address"
-                        className="form-control"
-                        name="address"
-                        value={formData.address}
-                        onChange={handleInputChange}
-                        placeholder="Start typing and choose from Google suggestions"
-                      />
-                      <div className="form-text mt-2 text-muted">
-                        Select from suggestions to auto-fill city, state, country
-                        and coordinates.
                       </div>
-                    </div>
 
-                    <div className="col-12">
-                      <label className="form-label">
-                        Coordinates {!editingUser && "*"}
-                      </label>
-                      <input
-                        type="text"
-                        className="form-control bg-white"
-                        name="coordinates"
-                        value={formData.coordinates}
-                        onChange={handleInputChange}
-                        placeholder="Auto-filled from selected address"
-                        readOnly
-                        required={!editingUser}
-                      />
-                    </div>
-                  </div>
-                </form>
+                      {/* Staff assignment */}
+                      {activeTab === "staff" && (
+                        <div className="col-12 mb-2">
+                          <div className="p-3 bg-light rounded-4 border">
+                            <label className="form-label">
+                              Assign to Resource Partner *
+                            </label>
+                            <select
+                              className="form-select bg-white"
+                              name="user_id"
+                              value={formData.user_id}
+                              onChange={(e) => setFormData(prev => ({ ...prev, user_id: e.target.value }))}
+                              required
+                            >
+                              <option value="" disabled>
+                                Select a Resource Partner
+                              </option>
+                              {contractorsList.map((contractor) => (
+                                <option key={contractor.id} value={contractor.id}>
+                                  {contractor.name}{" "}
+                                  {contractor.company_name
+                                    ? `(${contractor.company_name})`
+                                    : ""}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                        </div>
+                      )}
+                    </>
+                  }
+                />
               ) : activeModalTab === "documents" ? (
                 <div>
                   <div className="d-flex justify-content-between align-items-center mb-4">
@@ -1305,7 +1175,6 @@ const ManageUsers = () => {
                       <div
                         className="confirm-modal-card"
                         onClick={(e) => e.stopPropagation()}
-                        style={{ maxWidth: "750px" }}
                       >
                         <div className="confirm-modal-header px-4 py-3 d-flex align-items-center gap-3">
                           <span className="confirm-modal-icon icon-doc">
@@ -1340,7 +1209,7 @@ const ManageUsers = () => {
                             </select>
                           </div>
 
-                          {/* Document Number with Verify button */}
+                          {/* Document Number + Verify */}
                           <div className="mb-3">
                             <label className="form-label fw-bold text-dark">
                               Document Number <span className="text-danger">*</span>
@@ -1383,7 +1252,7 @@ const ManageUsers = () => {
                             )}
                           </div>
 
-                          {/* Expiry Date – ALWAYS disabled for Security License & Visa */}
+                          {/* Expiry Date */}
                           <div className="mb-3">
                             <label className="form-label fw-bold text-dark">
                               Expiry Date <span className="text-danger">*</span>
@@ -1427,7 +1296,7 @@ const ManageUsers = () => {
                                   const isoDate = e.target.value;
                                   if (isoDate) {
                                     const [y, m, d] = isoDate.split("-");
-                                    setDocForm((prev) => ({
+                                    setDocForm(prev => ({
                                       ...prev,
                                       document_expiry: `${d}/${m}/${y}`,
                                     }));
@@ -1450,7 +1319,7 @@ const ManageUsers = () => {
                                   } else if (value.length > 4) {
                                     value = value.replace(/^(\d{2})(\d{2})(\d+)/, "$1/$2/$3");
                                   }
-                                  setDocForm((prev) => ({
+                                  setDocForm(prev => ({
                                     ...prev,
                                     document_expiry: value,
                                   }));
@@ -1469,7 +1338,7 @@ const ManageUsers = () => {
                             </div>
                           </div>
 
-                          {/* File Upload Preview */}
+                          {/* File Upload */}
                           <div className="mb-4">
                             <label className="form-label fw-bold text-dark">
                               Document/Image <span className="text-danger">*</span>
@@ -1552,20 +1421,7 @@ const ManageUsers = () => {
               >
                 Cancel
               </button>
-              {activeModalTab === "personal" && (
-                <button
-                  type="submit"
-                  form="userForm"
-                  className="btn btn-dark rounded-pill px-5 fw-bold shadow-sm"
-                  disabled={submitLoading}
-                >
-                  {submitLoading
-                    ? "Saving..."
-                    : editingUser
-                      ? "Update Profile"
-                      : "Create User"}
-                </button>
-              )}
+              {/* The submit button is inside ProfileForm's footer prop, already rendered */}
             </div>
           </div>
         </div>

@@ -10,6 +10,8 @@ export default function ProfileForm({
   userType,
   onChangePhone,
   isPhoneVerified,
+  extraFields = null,
+  footer = null,
 }) {
   const datePickerRef = useRef(null);
 
@@ -37,7 +39,7 @@ export default function ProfileForm({
   ) || null;
 
   return (
-    <form className="settings-form" onSubmit={onSubmit}>
+    <form id="profile-form" className="settings-form" onSubmit={onSubmit}>
       <div className="settings-card shadow-sm border-0 rounded-3">
         <div className="settings-card-header border-bottom mb-4 pb-3">
           <div>
@@ -586,21 +588,14 @@ export default function ProfileForm({
           </div>
         </div>
 
-        {userType !== "admin" && (
+        {footer ? (
           <div className="settings-card-footer mt-4 pt-4 border-top d-flex justify-content-end">
-            <button
-              type="submit"
-              className="btn btn-primary-custom px-5 py-2 fw-bold shadow-sm"
-              disabled={loading}
-            >
-              {loading ? (
-                <>
-                  <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                  Saving...
-                </>
-              ) : (
-                "Save Changes"
-              )}
+            {footer}
+          </div>
+        ) : (
+          <div className="settings-card-footer mt-4 pt-4 border-top d-flex justify-content-end">
+            <button type="submit" className="btn btn-primary-custom px-5 py-2 fw-bold shadow-sm" disabled={loading}>
+              {loading ? (<> <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Saving... </>) : ("Save Changes")}
             </button>
           </div>
         )}

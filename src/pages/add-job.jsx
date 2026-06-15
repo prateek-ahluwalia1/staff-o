@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useCallback, useEffect } from "react";
+import React, { useMemo, useState, useCallback, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import Select from "react-select";
@@ -13,6 +13,7 @@ import DetailsStep from "../components/job/DetailsStep";
 import ReviewStep from "../components/job/ReviewStep";
 import PaymentModal from "../components/job/PaymentModal";
 import AdminClientProfile from "../components/job/AdminClientProfile";
+
 
 const calculateJobLevel = (title) => {
   if (!title) return 1;
@@ -77,10 +78,18 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
   const [pendingDraft, setPendingDraft] = useState(null);
   const [postingJob, setPostingJob] = useState(false);
+
+  // --- ADMIN ASSIGNMENT STATE ---
+  const [postingMode, setPostingMode] = useState("broadcast");
+  const [assignedStaff, setAssignedStaff] = useState("");
+
+  const clientSelectRef = useRef(null);
+
   const [embeddedAccordion, setEmbeddedAccordion] = useState({
     overview: false,
     schedule: true,
     details: false,
+    assignment: false,
     review: false
   });
 
@@ -91,10 +100,8 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
   const selectedChargeRate = useMemo(() => {
     const ratesList = chargeratesData?.data || [];
     if (!ratesList.length) return null;
-
-    // Find the rate that matches the calculated level (1, 2, 3, 4, or 5)
     const match = ratesList.find(r => String(r.level) === String(calculatedLevel));
-    return match || ratesList[0]; // Fallback to the first available rate if exact match fails
+    return match || ratesList[0];
   }, [chargeratesData, calculatedLevel]);
 
   const dynamicRates = useMemo(() => mapApiRates(selectedChargeRate), [selectedChargeRate]);
@@ -128,6 +135,82 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
     </div>
   );
 
+  // --- ADMIN STAFF FETCHING (MANUAL TRIGGER FOR POST) ---
+  const [staffOptions, setStaffOptions] = useState([]);
+  const [staffLoading, setStaffLoading] = useState(false);
+  const { submit: fetchStaff } = useSubmit({ isAuth: true });
+
+  // Get the logged-in Admin's ID
+  const currentUserId = userdata?.data?.id || userdata?.id;
+
+  useEffect(() => {
+    const getActiveStaff = async () => {
+      // 1. Check currentUserId instead of form.user_id
+      if (isAdmin && postingMode === "assign" && currentUserId) {
+        setStaffLoading(true);
+        try {
+          // 2. Pass currentUserId to the endpoint
+          const res = await fetchStaff(`api/get-contractor-active-staff/${currentUserId}`, {}, { method: "POST" });
+
+          const list = res?.data || res || [];
+          const formattedOptions = (Array.isArray(list) ? list : []).map(s => ({
+            value: s.id,
+            label: s.name ? s.name : `${s.first_name || ''} ${s.last_name || ''}`.trim() || s.email || `Staff #${s.id}`
+          }));
+
+          setStaffOptions(formattedOptions);
+        } catch (error) {
+          console.error("Failed to fetch staff:", error);
+          toast.error("Failed to load staff list.");
+        } finally {
+          setStaffLoading(false);
+        }
+      }
+    };
+
+    getActiveStaff();
+  }, [isAdmin, postingMode, currentUserId]); // Updated dependencies
+
+  // --- UI FOR ADMIN POSTING ---
+  const renderAdminAssignment = () => (
+    <div className="p-4 bg-light rounded-4 border mt-4">
+      <h6 className="fw-bold text-dark mb-3">
+        <i className="fa-solid fa-users-gear text-primary me-2"></i>Job Posting Method
+      </h6>
+      <div className="d-flex flex-column flex-md-row gap-3 mb-3">
+        <label className={`flex-grow-1 p-3 rounded-3 border transition-all ${postingMode === "broadcast" ? "border-primary bg-white shadow-sm" : "border-light-subtle bg-white opacity-75"}`} style={{ cursor: "pointer" }}>
+          <input type="radio" name="postMode" className="d-none" checked={postingMode === "broadcast"} onChange={() => setPostingMode("broadcast")} />
+          <div className="fw-bold text-dark mb-1"><i className="fa-solid fa-tower-broadcast text-primary me-2"></i>Broadcast Job</div>
+          <div className="small text-muted">Job will be available for all eligible staff to apply.</div>
+        </label>
+        <label className={`flex-grow-1 p-3 rounded-3 border transition-all ${postingMode === "assign" ? "border-primary bg-white shadow-sm" : "border-light-subtle bg-white opacity-75"}`} style={{ cursor: "pointer" }}>
+          <input type="radio" name="postMode" className="d-none" checked={postingMode === "assign"} onChange={() => setPostingMode("assign")} />
+          <div className="fw-bold text-dark mb-1"><i className="fa-solid fa-user-check text-success me-2"></i>Assign to Staff</div>
+          <div className="small text-muted">Directly assign this job to a specific staff member.</div>
+        </label>
+      </div>
+
+      {postingMode === "assign" && (
+        <div className="mt-3 bg-white p-3 rounded-3 border shadow-sm">
+          <label className="form-label small fw-bold text-dark mb-2">Select Staff Member <span className="text-danger">*</span></label>
+          <Select
+            options={staffOptions}
+            value={staffOptions.find(opt => opt.value === assignedStaff) || null}
+            onChange={(selected) => setAssignedStaff(selected ? selected.value : "")}
+            placeholder={staffLoading ? "Loading staff..." : "Search and select staff..."}
+            isDisabled={staffLoading || staffOptions.length === 0}
+            isSearchable={true}
+            classNamePrefix="react-select"
+            noOptionsMessage={() => staffLoading ? "Loading..." : "No active staff found"}
+            styles={{
+              control: (base) => ({ ...base, minHeight: "45px", borderRadius: "0.5rem" })
+            }}
+          />
+        </div>
+      )}
+    </div>
+  );
+
   const renderEmbeddedAccordion = () => (
     <>
       <div className="embedded-accordion-root mb-3">
@@ -150,6 +233,13 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
           "Details",
           "Add job type, description and attachments.",
           <DetailsStep form={form} setField={setField} handleFile={handleFile} attachmentPreviews={attachmentPreviews} removeAttachment={removeAttachment} />
+        )}
+
+        {isAdmin && renderEmbeddedSection(
+          "assignment",
+          "Assignment Options",
+          "Broadcast job or assign to specific staff.",
+          renderAdminAssignment()
         )}
 
         {!isAdmin && renderEmbeddedSection(
@@ -481,6 +571,7 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
     else if (isEmbedded && onClose) onClose();
     else navigate(-1);
   }
+
   function buildJobPayload(document_list = []) {
     const shiftsPayload = form.scheduleDays.flatMap(day =>
       day.shifts.map(shift => {
@@ -578,7 +669,15 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
     // 1. Validate Client Selection (For Admins)
     if (isAdmin && (!form.user_id || form.user_id === "new")) {
       toast.error("Please select or create a client before posting the job.");
-      isEmbedded ? setEmbeddedAccordion((p) => ({ ...p, overview: true })) : setStep(0);
+      if (isEmbedded) {
+        setEmbeddedAccordion((p) => ({ ...p, overview: true }));
+      } else {
+        // Scroll to top and focus the dropdown, keeping them on the current step
+        window.scrollTo({ top: 0, behavior: "smooth" });
+        if (clientSelectRef.current) {
+          clientSelectRef.current.focus();
+        }
+      }
       return;
     }
 
@@ -614,6 +713,13 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
       return;
     }
 
+    // 4.5 Validate Admin Assignment
+    if (isAdmin && postingMode === "assign" && !assignedStaff) {
+      toast.error("Please select a staff member to assign the job.");
+      isEmbedded ? setEmbeddedAccordion((p) => ({ ...p, assignment: true })) : setStep(2);
+      return;
+    }
+
     // 5. Validate Review / Terms (For non-admin)
     if (!isAdmin && !form.termsAccepted) {
       toast.error("Accept Terms & Conditions to proceed.");
@@ -638,13 +744,15 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
       if (isAdmin) {
         const postRes = await submitJob("api/job-post", {
           ...payload,
-          payment_intent_id: "admin_override_no_payment"
+          payment_intent_id: "admin_override_no_payment",
+          posting_type: postingMode,
+          assigned_staff_id: postingMode === "assign" ? assignedStaff : null
         }, { method: "POST" });
 
         if (postRes?.success) {
           toast.success("Job posted successfully via Admin Override!");
           navigate("/my-job-applications");
-          if (isEmbedded && onClose) onClose(); // Close modal if embedded
+          if (isEmbedded && onClose) onClose();
         } else {
           toast.error(postRes?.message || "Job posting failed.");
         }
@@ -712,7 +820,6 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
           <>
             {renderEmbeddedAccordion()}
             <div className="d-flex justify-content-between mt-5 pt-4 border-top">
-              {/* Changed "Back" to "Cancel" since there are no previous steps here */}
               <button type="button" className="btn btn-outline-secondary rounded-pill px-4 fw-bold" onClick={back} disabled={isSubmitting}>
                 Cancel
               </button>
@@ -756,14 +863,12 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
                   </h6>
                   <Select
                     options={clientOptions}
+                    ref={clientSelectRef}
                     value={clientOptions.find((opt) => opt.value === form.user_id) || clientOptions[0]}
                     onChange={(selected) => {
                       const val = selected ? selected.value : "";
                       setField("user_id", val);
                       setSelectedSiteId("");
-                      setField("location", "");
-                      setField("address", "");
-                      setField("coordinates", "");
                     }}
                     placeholder={loadingCustomers ? "Loading clients..." : "Search clients..."}
                     isDisabled={loadingCustomers}
@@ -925,22 +1030,34 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
                 )}
 
                 {step === 1 && <ScheduleStep form={form} setField={setField} scheduleError={scheduleError} applyShiftToAllDays={applyShiftToAllDays} />}
-                {step === 2 && <DetailsStep form={form} setField={setField} handleFile={handleFile} attachmentPreviews={attachmentPreviews} removeAttachment={removeAttachment} />}
 
-                {step === 3 && !isAdmin && <ReviewStep form={form} rate={breakdown} setStep={setStep} setField={setField} handleConfirm={handleConfirm} isSubmitting={isSubmitting} baseAmount={breakdown?.chargeTotalIncGst || 0} isAdmin={isAdmin} />}
+                {step === 2 && (
+                  <>
+                    <DetailsStep form={form} setField={setField} handleFile={handleFile} attachmentPreviews={attachmentPreviews} removeAttachment={removeAttachment} />
+                    {isAdmin && renderAdminAssignment()}
+                  </>
+                )}
 
-                <div className="d-flex justify-content-between mt-5 pt-4 border-top">
+                {step === 3 && !isAdmin && <ReviewStep form={form} rate={breakdown} setStep={setStep} setField={setField} handleConfirm={handleConfirm} isSubmitting={isSubmitting} baseAmount={breakdown?.chargeTotalIncGst || 0} isAdmin={isAdmin} />}    <div className="d-flex justify-content-between mt-5 pt-4 border-top">
                   <button type="button" className="btn btn-outline-secondary rounded-pill px-4 fw-bold" onClick={back} disabled={isSubmitting}>← Back</button>
 
                   {step < STEP_TITLES.length - 1 ? (
                     <button type="button" className="btn btn-primary-custom btn-lg rounded-pill px-5 fw-bold shadow-sm" onClick={next} disabled={isSubmitting}>Next Step</button>
                   ) : (
-                    isAdmin && (
+                    isAdmin ? (
                       <button type="button" className="btn btn-dark btn-lg rounded-pill px-5 fw-bold shadow-sm" onClick={handleConfirm} disabled={isSubmitting}>
                         {isSubmitting ? (
                           <><span className="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>Processing...</>
                         ) : (
                           <><i className="fa-solid fa-paper-plane me-2"></i>Post Job Now</>
+                        )}
+                      </button>
+                    ) : (
+                      <button type="button" className="btn btn-success btn-lg rounded-pill px-5 fw-bold shadow-sm" onClick={handleConfirm} disabled={isSubmitting}>
+                        {isSubmitting ? (
+                          <><span className="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>Processing...</>
+                        ) : (
+                          <><i className="fa-solid fa-paper-plane me-2"></i>Review & Pay</>
                         )}
                       </button>
                     )
@@ -965,7 +1082,6 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
           <button type="button" className="btn-close" onClick={onClose} aria-label="Close">×</button>
         </div>
         <div className="embedded-job-body">
-          {/* THE FIX: Call renderContent() so the buttons and progress bar are rendered */}
           {chargeratesLoading ? (<div className="text-center py-5">Loading rates...</div>) : renderContent()}
         </div>
         <PaymentModal open={paymentModalOpen} onClose={() => !postingJob && setPaymentModalOpen(false)} amountAud={pendingDraft?.amountAud || 0} jobTitle={form.title} onHoldPayment={handleHoldPayment} onSuccess={handlePaymentSuccess} savedCards={savedCards} />

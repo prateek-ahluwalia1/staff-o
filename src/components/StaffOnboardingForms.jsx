@@ -727,7 +727,7 @@ const StaffOnboardingForms = ({ submit, userId, onProfileUpdate }) => {
 
     const fetchFormData = useCallback(async (formType) => {
         try {
-            const endpoint = `api/form-data?user_id=${encodeURIComponent(userId)}&type=${encodeURIComponent(formType)}`;
+            const endpoint = `api/get-staff-info/424`;
             const res = await submit(endpoint, undefined, { method: "GET", silentErrorToast: true });
             const fetchedData = res?.data ?? res;
 

@@ -27,6 +27,7 @@ const INITIAL_FORM_STATE = {
   email: "",
   phone: "",
   address: "",
+  origin_country: "",
   abn: "",
   acn: "",
   gender: "",
@@ -206,6 +207,7 @@ export default function EditProfile() {
     setFormData({
       name: d.name || "",
       email: d.email || "",
+      origin_country: staff.origin_country || d.origin_country || "",
       abn: d.abn || contractor.abn || "",
       acn: d.acn || contractor.acn || "",
       phone: staff.phone || contractor.phone || customer.phone || d.phone || "",
@@ -641,7 +643,7 @@ export default function EditProfile() {
         toast.error("Date of birth is missing from your profile. Please update your personal information first.");
         return;
       }
-      const countryCode = (user?.country || "AUS").toUpperCase().slice(0, 3);
+      const countryCode = (user?.origin_country || user?.country || "AUS").toUpperCase().slice(0, 3);
       const passportNumber = docForm.document_no.toUpperCase();
 
       const payload = {

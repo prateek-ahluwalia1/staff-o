@@ -1,4 +1,6 @@
 import React, { useRef } from "react";
+import { COUNTRIES } from "../utils/exports";
+import Select from "react-select";
 
 export default function ProfileForm({
   formData,
@@ -11,7 +13,6 @@ export default function ProfileForm({
 }) {
   const datePickerRef = useRef(null);
 
-  // Predefined statuses to detect custom "Other" value
   const predefinedStatuses = [
     "student_visa",
     "bridging_visa",
@@ -26,6 +27,14 @@ export default function ProfileForm({
   const selectValue = showCustomStatus
     ? "other"
     : formData.staff_document_type || "";
+  const countryOptions = COUNTRIES.map(c => ({
+    value: c.code,
+    label: c.name,
+  }));
+
+  const selectedCountry = countryOptions.find(
+    opt => opt.value === formData.origin_country
+  ) || null;
 
   return (
     <form className="settings-form" onSubmit={onSubmit}>
@@ -334,6 +343,144 @@ export default function ProfileForm({
           {userType === "staff" && (
             <>
               <div className="mt-2">
+                <label htmlFor="origin_country" className="form-label fw-semibold">
+                  Country of Origin <span className="text-danger">*</span>
+                </label>
+                <Select
+                  inputId="origin_country"
+                  options={countryOptions}
+                  value={selectedCountry}
+                  onChange={(selectedOption) => {
+                    onChange({
+                      target: {
+                        id: "origin_country",
+                        value: selectedOption ? selectedOption.value : "",
+                      },
+                    });
+                  }}
+                  placeholder="Search and select your country of origin..."
+                  isClearable
+                  isSearchable
+                  styles={{
+                    control: (base) => ({
+                      ...base,
+                      minHeight: "38px",
+                      borderColor: "#ced4da",
+                      boxShadow: "none",
+                      "&:hover": {
+                        borderColor: "#0A7C6E",
+                      },
+                    }),
+                  }}
+                />
+                <div className="form-text">
+                  Your passport or nationality country – used for visa checks.
+                </div>
+              </div>
+              <div>
+                <label htmlFor="date_of_birth" className="form-label fw-semibold">
+                  Date of Birth <span className="text-danger">*</span>
+                </label>
+                <div className="input-group shadow-sm rounded position-relative">
+                  {/* Calendar trigger button */}
+                  <button
+                    type="button"
+                    className="input-group-text bg-white text-muted border-end-0"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      if (datePickerRef.current) {
+                        try {
+                          datePickerRef.current.showPicker();
+                        } catch (err) {
+                          datePickerRef.current.focus();
+                        }
+                      }
+                    }}
+                    style={{ cursor: "pointer", zIndex: 10 }}
+                    title="Open Calendar"
+                  >
+                    <i className="fa-solid fa-calendar-days text-primary"></i>
+                  </button>
+
+                  {/* Hidden native date input – expects YYYY-MM-DD */}
+                  <input
+                    type="date"
+                    ref={datePickerRef}
+                    className="position-absolute"
+                    style={{
+                      opacity: 0,
+                      width: 0,
+                      height: 0,
+                      pointerEvents: "none",
+                      bottom: 0,
+                      left: 40,
+                    }}
+                    value={
+                      formData.date_of_birth
+                        ? (() => {
+                          // Convert DD/MM/YYYY -> YYYY-MM-DD for the picker
+                          const parts = formData.date_of_birth.split("/");
+                          if (parts.length === 3) {
+                            const [d, m, y] = parts;
+                            return `${y}-${m}-${d}`;
+                          }
+                          return "";
+                        })()
+                        : ""
+                    }
+                    onChange={(e) => {
+                      const isoDate = e.target.value; // YYYY-MM-DD
+                      if (isoDate) {
+                        const [y, m, d] = isoDate.split("-");
+                        // Store as DD/MM/YYYY
+                        onChange({
+                          target: {
+                            id: "date_of_birth",
+                            name: "date_of_birth",
+                            value: `${d}/${m}/${y}`,
+                          },
+                        });
+                      }
+                    }}
+                    max={new Date().toISOString().split("T")[0]}
+                  />
+
+                  {/* Visible text input – shows and accepts DD/MM/YYYY */}
+                  <input
+                    type="text"
+                    className="form-control border-start-0 ps-0"
+                    id="date_of_birth"
+                    name="date_of_birth"
+                    placeholder="DD/MM/YYYY"
+                    value={formData.date_of_birth || ""}
+                    onChange={(e) => {
+                      let value = e.target.value.replace(/\D/g, "");
+                      if (value.length > 8) value = value.substring(0, 8);
+                      if (value.length > 2 && value.length <= 4) {
+                        value = value.replace(/^(\d{2})(\d+)/, "$1/$2");
+                      } else if (value.length > 4) {
+                        value = value.replace(
+                          /^(\d{2})(\d{2})(\d+)/,
+                          "$1/$2/$3"
+                        );
+                      }
+                      // Store directly as DD/MM/YYYY (may be partial)
+                      onChange({
+                        target: {
+                          id: "date_of_birth",
+                          name: "date_of_birth",
+                          value,
+                        },
+                      });
+                    }}
+                    required
+                    maxLength={10}
+                    pattern="^(0[1-9]|[12][0-9]|3[01])/(0[1-9]|1[012])/\d{4}$"
+                    title="Please enter a valid date in DD/MM/YYYY format"
+                  />
+                </div>
+              </div>
+              <div className="mt-2">
                 <label className="form-label fw-semibold mb-3">Gender</label>
                 <div className="d-flex flex-column gap-2 ms-1">
                   {[
@@ -372,114 +519,6 @@ export default function ProfileForm({
               </div>
             </>
           )}
-
-          {/* Staff Date of Birth – stores DD/MM/YYYY, displays DD/MM/YYYY */}
-          {userType === "staff" && (
-            <div>
-              <label htmlFor="date_of_birth" className="form-label fw-semibold">
-                Date of Birth <span className="text-danger">*</span>
-              </label>
-              <div className="input-group shadow-sm rounded position-relative">
-                {/* Calendar trigger button */}
-                <button
-                  type="button"
-                  className="input-group-text bg-white text-muted border-end-0"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    if (datePickerRef.current) {
-                      try {
-                        datePickerRef.current.showPicker();
-                      } catch (err) {
-                        datePickerRef.current.focus();
-                      }
-                    }
-                  }}
-                  style={{ cursor: "pointer", zIndex: 10 }}
-                  title="Open Calendar"
-                >
-                  <i className="fa-solid fa-calendar-days text-primary"></i>
-                </button>
-
-                {/* Hidden native date input – expects YYYY-MM-DD */}
-                <input
-                  type="date"
-                  ref={datePickerRef}
-                  className="position-absolute"
-                  style={{
-                    opacity: 0,
-                    width: 0,
-                    height: 0,
-                    pointerEvents: "none",
-                    bottom: 0,
-                    left: 40,
-                  }}
-                  value={
-                    formData.date_of_birth
-                      ? (() => {
-                        // Convert DD/MM/YYYY -> YYYY-MM-DD for the picker
-                        const parts = formData.date_of_birth.split("/");
-                        if (parts.length === 3) {
-                          const [d, m, y] = parts;
-                          return `${y}-${m}-${d}`;
-                        }
-                        return "";
-                      })()
-                      : ""
-                  }
-                  onChange={(e) => {
-                    const isoDate = e.target.value; // YYYY-MM-DD
-                    if (isoDate) {
-                      const [y, m, d] = isoDate.split("-");
-                      // Store as DD/MM/YYYY
-                      onChange({
-                        target: {
-                          id: "date_of_birth",
-                          name: "date_of_birth",
-                          value: `${d}/${m}/${y}`,
-                        },
-                      });
-                    }
-                  }}
-                  max={new Date().toISOString().split("T")[0]}
-                />
-
-                {/* Visible text input – shows and accepts DD/MM/YYYY */}
-                <input
-                  type="text"
-                  className="form-control border-start-0 ps-0"
-                  id="date_of_birth"
-                  name="date_of_birth"
-                  placeholder="DD/MM/YYYY"
-                  value={formData.date_of_birth || ""}
-                  onChange={(e) => {
-                    let value = e.target.value.replace(/\D/g, "");
-                    if (value.length > 8) value = value.substring(0, 8);
-                    if (value.length > 2 && value.length <= 4) {
-                      value = value.replace(/^(\d{2})(\d+)/, "$1/$2");
-                    } else if (value.length > 4) {
-                      value = value.replace(
-                        /^(\d{2})(\d{2})(\d+)/,
-                        "$1/$2/$3"
-                      );
-                    }
-                    // Store directly as DD/MM/YYYY (may be partial)
-                    onChange({
-                      target: {
-                        id: "date_of_birth",
-                        name: "date_of_birth",
-                        value,
-                      },
-                    });
-                  }}
-                  required
-                  maxLength={10}
-                  pattern="^(0[1-9]|[12][0-9]|3[01])/(0[1-9]|1[012])/\d{4}$"
-                  title="Please enter a valid date in DD/MM/YYYY format"
-                />
-              </div>
-            </div>
-          )}
-
           <div style={{ gridColumn: "1 / -1", marginTop: "1rem" }}>
             <label htmlFor="address" className="form-label fw-semibold">
               Address <span className="text-danger">*</span>

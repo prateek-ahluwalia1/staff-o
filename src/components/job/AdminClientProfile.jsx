@@ -165,7 +165,7 @@ export default function AdminClientProfile({
                             )}
                             <div>
                                 <span style={labelStyle}>Email</span>
-                                <Link to={`mailto:${customerDetails?.email}`} className="text-truncate d-block" style={{ ...valueStyle, color: BRAND, textDecoration: "none", fontWeight: 500 }}>
+                                <Link to={`mailto:${customerDetails?.email}`} className="text-truncate d-block" style={{ ...valueStyle, color: BRAND, textDecoration: "none", fontWeight: 500, textTransform: "none" }}>
                                     {customerDetails?.email}
                                 </Link>
                             </div>

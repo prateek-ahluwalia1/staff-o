@@ -230,7 +230,6 @@ const ManageStaff = () => {
   const handleDocFormChange = async (e) => {
     const { name, value, type, checked, files } = e.target;
 
-    // Always disabled for Security License & Visa
     if (
       name === "document_expiry" &&
       (docForm.document_name === "Security License" || docForm.document_name === "Visa")
@@ -279,7 +278,7 @@ const ManageStaff = () => {
       return;
     }
 
-    // ---------- SECURITY LICENSE VERIFICATION (external API) ----------
+    // SECURITY LICENSE VERIFICATION
     if (docForm.document_name === "Security License") {
       setVerifyingDoc(true);
       try {
@@ -293,7 +292,7 @@ const ManageStaff = () => {
           { method: "POST" }
         );
         if (res?.success && res?.expiry) {
-          const expiryStr = res.expiry.replace(/\\\//g, "/"); // safety clean
+          const expiryStr = res.expiry.replace(/\\\//g, "/");
           setDocForm((prev) => ({
             ...prev,
             document_expiry: expiryStr,
@@ -313,7 +312,7 @@ const ManageStaff = () => {
       return;
     }
 
-    // ---------- VISA VERIFICATION ----------
+    // VISA VERIFICATION
     if (docForm.document_name === "Visa") {
       const user = editingUser;
       const staff = user?.staff || {};
@@ -326,7 +325,6 @@ const ManageStaff = () => {
         familyName = nameParts[nameParts.length - 1];
       }
 
-      // Use date_of_birth from staff or editingUser (already updated via form)
       const rawDob = staff?.date_of_birth || user?.date_of_birth || formData.date_of_birth || "";
       if (!rawDob) {
         toast.error("Date of birth is missing. Please update personal information first.");
@@ -337,9 +335,8 @@ const ManageStaff = () => {
         toast.error("Invalid date of birth format. Please re‑save the profile.");
         return;
       }
-      const dobISO = `${dobParts[2]}-${dobParts[1]}-${dobParts[0]}`; // YYYY-MM-DD
+      const dobISO = `${dobParts[2]}-${dobParts[1]}-${dobParts[0]}`;
 
-      // Use origin_country from staff or editingUser (updated via form)
       const originCountry = staff?.origin_country || user?.origin_country || formData.origin_country || "";
       if (!originCountry) {
         toast.error("Please save your country of origin in your profile before verifying your visa.");
@@ -383,6 +380,7 @@ const ManageStaff = () => {
     toast.info(`Verification is not supported for ${docForm.document_name}. You can manually set the expiry date.`);
   };
 
+  // ===== UPDATED handleDocSubmit – immediate local update =====
   const handleDocSubmit = async (e) => {
     e.preventDefault();
     if (!editingUser?.id) {
@@ -395,7 +393,7 @@ const ManageStaff = () => {
       no: docForm.no,
       exp: docForm.exp,
       document_no: docForm.document_no,
-      document_expiry: docForm.document_expiry,   // DD/MM/YYYY
+      document_expiry: docForm.document_expiry,
       file: docForm.file_path,
       document_name: docForm.document_name,
       document_type: docForm.document_name,
@@ -410,8 +408,43 @@ const ManageStaff = () => {
     if (!res) return;
     if (res.success) {
       toast.success("Document saved successfully!");
+
+      // ----- UPDATE EDITING USER IMMEDIATELY -----
+      const savedDoc = res.data?.document || res.data || {};
+
+      setEditingUser((prev) => {
+        const currentDocs = prev?.documents || [];
+        if (selectedDoc) {
+          // Update existing document
+          const updatedDocs = currentDocs.map((d) =>
+            d.id === selectedDoc.id
+              ? {
+                ...d,
+                document_no: docForm.document_no,
+                document_expiry: docForm.document_expiry,
+                file: docForm.file_path || d.file,
+                ...savedDoc,
+              }
+              : d
+          );
+          return { ...prev, documents: updatedDocs };
+        } else {
+          // Add new document
+          const newDoc = {
+            id: savedDoc.id || Date.now(),
+            document_name: docForm.document_name,
+            document_no: docForm.document_no,
+            document_expiry: docForm.document_expiry,
+            file: docForm.file_path,
+            ...savedDoc,
+          };
+          return { ...prev, documents: [...currentDocs, newDoc] };
+        }
+      });
+      // -------------------------------------------
+
       closeDocumentModal();
-      refetch();
+      refetch(); // still sync the main list in background
     } else {
       toast.error(res.message || "Failed to save document");
     }
@@ -896,7 +929,6 @@ const ManageStaff = () => {
                       </select>
                     </div>
 
-                    {/* ---------- Date of Birth & Country of Origin ---------- */}
                     <div className="col-12"><h6 className="section-divider">Identity Details</h6></div>
                     <div className="col-md-6">
                       <label className="form-label">Date of Birth</label>

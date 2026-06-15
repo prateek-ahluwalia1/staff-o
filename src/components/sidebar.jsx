@@ -1,6 +1,6 @@
 import React, { memo, useCallback, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import { NavLink, useNavigate } from "react-router-dom";
+import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import { logOut } from "../store/slices/authSlice";
 import { Link } from 'react-router-dom'
 import {
@@ -13,6 +13,7 @@ import staffologo from "../assets/images/staffo.png";
 const Sidebar = memo(function Sidebar() {
   const { userdata } = useSelector((state) => state.auth);
   const { isExpanded } = useSelector((state) => state.sidebar);
+  const location = useLocation();
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { submit } = useSubmit({ isAuth: true });
@@ -29,7 +30,6 @@ const Sidebar = memo(function Sidebar() {
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, [dispatch]);
-
   const handleLogout = useCallback(
     async (e) => {
       e.preventDefault();
@@ -173,6 +173,15 @@ const Sidebar = memo(function Sidebar() {
   };
 
   const navItems = navConfig[type] || contractorNav;
+  useEffect(() => {
+    if (isProfileActive) return;
+    const protectedRoutes = navItems
+      .filter((item) => item.to !== "/edit-profile")
+      .map((item) => item.to);
+    if (protectedRoutes.includes(location.pathname)) {
+      navigate("/edit-profile", { replace: true });
+    }
+  }, [location.pathname, isProfileActive, navItems, navigate]);
 
   return (
     <aside className={`dashboard-sidebar ${isExpanded ? "expanded" : ""}`}>

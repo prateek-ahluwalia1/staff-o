@@ -360,7 +360,7 @@ export default function ProfileForm({
                       },
                     });
                   }}
-                  placeholder="Search and select your country of origin..."
+                  placeholder="select your country of origin"
                   isClearable
                   isSearchable
                   styles={{

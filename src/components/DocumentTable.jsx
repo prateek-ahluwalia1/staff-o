@@ -119,7 +119,7 @@ export default function DocumentTable({
           <h3 style={{ margin: 0, fontWeight: 750, fontSize: 22, color: "#222" }}>
             Documents
           </h3>
-          <p style={{ margin: 0, color: "#888", fontSize: 14 }}>
+          <p style={{ margin: 0, color: "#888", fontSize: 14, textTransform: "none" }}>
             All documents associated with your profile.
           </p>
         </div>

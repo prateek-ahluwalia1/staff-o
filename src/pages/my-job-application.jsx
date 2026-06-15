@@ -159,7 +159,7 @@ export default function MyJobApplications() {
         <div className="dashboard-page-header d-flex flex-column flex-xl-row justify-content-between align-items-start align-items-xl-center mb-4">
           <div>
             <h1>Job Applications & Shifts</h1>
-            <p>Viewing shifts for the selected date range.</p>
+            <p style={{ textTransform: 'none' }}>Viewing shifts for the selected date range.</p>
           </div>
 
           <div className="d-flex flex-column flex-md-row gap-3 mt-3 mt-xl-0 align-items-md-center">

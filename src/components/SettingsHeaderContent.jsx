@@ -51,7 +51,7 @@ export default function SettingsHeaderContent({
           )}
         </h2>
 
-        <p>
+        <p style={{ textTransform: "none" }}>
           Keep your information up to date so your profile stays accurate and
           complete.
         </p>

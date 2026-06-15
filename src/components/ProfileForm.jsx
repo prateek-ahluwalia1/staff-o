@@ -45,7 +45,9 @@ export default function ProfileForm({
               Profile
             </p>
             <h3 className="fw-bold mb-2">Personal Information</h3>
-            <p className="text-muted mb-0">
+            <p className="text-muted mb-0"
+              style={{ textTransform: 'none' }}
+            >
               These details power your profile and keep your account information current.
             </p>
           </div>

@@ -336,7 +336,7 @@ const ChatRoom = () => {
       <div className="dashboard-page-header">
         <div>
           <h1>{CATEGORY_LABELS[category] || "Communications"} Chat</h1>
-          <p>Manage conversations, start calls, and keep communication in one place.</p>
+          <p style={{ textTransform: 'none' }}>Manage conversations, start calls, and keep communication in one place.</p>
         </div>
         <div>
           {/* Only Admins see the back button to categories */}

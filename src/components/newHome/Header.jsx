@@ -290,8 +290,6 @@ function Header() {
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                 <NavLink to="/dashboard" onClick={handleLinkClick} style={{ color: '#ccc', textDecoration: 'none', fontFamily: "'Barlow Condensed', sans-serif", fontSize: '14px', fontWeight: 600, letterSpacing: '0.1em' }}><i className="fa fa-home" style={{ marginRight: '8px' }}></i> Dashboard</NavLink>
-                <NavLink to="/edit-profile" onClick={handleLinkClick} style={{ color: '#ccc', textDecoration: 'none', fontFamily: "'Barlow Condensed', sans-serif", fontSize: '14px', fontWeight: 600, letterSpacing: '0.1em' }}><i className="fa fa-user-circle" style={{ marginRight: '8px' }}></i> Edit Profile</NavLink>
-                <NavLink to="/payment-history" onClick={handleLinkClick} style={{ color: '#ccc', textDecoration: 'none', fontFamily: "'Barlow Condensed', sans-serif", fontSize: '14px', fontWeight: 600, letterSpacing: '0.1em' }}><i className="fa fa-credit-card" style={{ marginRight: '8px' }}></i> Payment History</NavLink>
                 <NavLink to="/notifications" onClick={handleLinkClick} style={{ color: '#ccc', textDecoration: 'none', fontFamily: "'Barlow Condensed', sans-serif", fontSize: '14px', fontWeight: 600, letterSpacing: '0.1em' }}>
                   <i className="fa fa-bell" style={{ marginRight: '8px' }}></i> Notifications
                   {unreadCount > 0 && <span style={{ marginLeft: '8px', backgroundColor: '#dc3545', color: '#fff', borderRadius: '50%', padding: '2px 6px', fontSize: '10px' }}>{unreadCount}</span>}
@@ -521,52 +519,6 @@ function Header() {
                   >
                     <i className="fa fa-home" style={{ marginRight: '8px' }}></i>
                     Dashboard
-                  </NavLink>
-                  <NavLink
-                    to="/edit-profile"
-                    onClick={() => setShowUserMenu(false)}
-                    style={{
-                      display: 'block',
-                      padding: '12px 16px',
-                      color: '#fff',
-                      textDecoration: 'none',
-                      borderBottom: '1px solid #444',
-                      transition: 'background-color 0.2s, color 0.2s',
-                    }}
-                    onMouseEnter={(e) => {
-                      e.target.style.backgroundColor = '#333'
-                      e.target.style.color = '#0A7C6E'
-                    }}
-                    onMouseLeave={(e) => {
-                      e.target.style.backgroundColor = 'transparent'
-                      e.target.style.color = '#fff'
-                    }}
-                  >
-                    <i className="fa fa-user-circle" style={{ marginRight: '8px' }}></i>
-                    Edit Profile
-                  </NavLink>
-                  <NavLink
-                    to="/payment-history"
-                    onClick={() => setShowUserMenu(false)}
-                    style={{
-                      display: 'block',
-                      padding: '12px 16px',
-                      color: '#fff',
-                      textDecoration: 'none',
-                      borderBottom: '1px solid #444',
-                      transition: 'background-color 0.2s, color 0.2s',
-                    }}
-                    onMouseEnter={(e) => {
-                      e.target.style.backgroundColor = '#333'
-                      e.target.style.color = '#0A7C6E'
-                    }}
-                    onMouseLeave={(e) => {
-                      e.target.style.backgroundColor = 'transparent'
-                      e.target.style.color = '#fff'
-                    }}
-                  >
-                    <i className="fa fa-credit-card" style={{ marginRight: '8px' }}></i>
-                    Payment History
                   </NavLink>
                   <button
                     onClick={async () => {

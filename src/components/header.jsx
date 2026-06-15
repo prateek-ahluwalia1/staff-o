@@ -320,11 +320,6 @@ const Header = memo(function Header({ withSidebar = false }) {
                     </NavLink>
                   </li>
                   <li>
-                    <NavLink className="dropdown-item" to="/payment-history">
-                      Payment History
-                    </NavLink>
-                  </li>
-                  <li>
                     <button
                       type="button"
                       className="dropdown-item text-danger"
@@ -532,14 +527,6 @@ const Header = memo(function Header({ withSidebar = false }) {
                       <li>
                         <NavLink className="dropdown-item" to="/edit-profile">
                           Edit Profile
-                        </NavLink>
-                      </li>
-                      <li>
-                        <NavLink
-                          className="dropdown-item"
-                          to="/payment-history"
-                        >
-                          Payment History
                         </NavLink>
                       </li>
                       <li>

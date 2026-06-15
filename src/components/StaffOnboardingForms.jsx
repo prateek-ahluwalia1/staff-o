@@ -178,6 +178,39 @@ const ActionBar = ({ loading, saveLabel, disabled }) => (
     </div>
 );
 
+const mapStaffInfoToOnboardForm = (staff) => ({
+    o_name: staff.name || "",
+    o_dob: staff.date_of_birth || "",
+    o_addr: staff.address || "",
+    o_phone: staff.phone || "",
+    o_email: staff.email || "",
+    o_passport: staff.passport_no || "",
+    o_pcountry: "Australia",
+    o_pexpiry: staff.passport_expiry ? isoToDisplay(staff.passport_expiry) : "",
+    passport_doc: staff.passport_attachment || "",
+    o_seclic: staff.security_license_no || "",
+    o_seclicexp: staff.security_license_expiry ? isoToDisplay(staff.security_license_expiry) : "",
+    security_license_doc: staff.security_license_file || "",
+    o_fa: staff.first_aid_no || "",
+    o_faexp: staff.first_aid_expiry ? isoToDisplay(staff.first_aid_expiry) : "",
+    first_aid_doc: staff.first_aid_file || "",
+    work: "citizen",
+    o_visa_type: "",
+    chk_primary: false,
+    chk_driver: false,
+    chk_security: false,
+    chk_medicare: false,
+    o_bank: "",
+    o_bsb: "",
+    o_acct: "",
+    o_tfn: "",
+    o_superfund: "",
+    o_superusi: "",
+    o_member: "",
+    sig3: "",
+    date3: todayDDMMYYYY(),
+});
+
 /* ---------- TFN Declaration Form ---------- */
 const TfnDeclarationForm = ({ values, loading, onChange, onSubmit, dataModified }) => (
     <form onSubmit={onSubmit} className="animate__animated animate__fadeIn">
@@ -727,42 +760,80 @@ const StaffOnboardingForms = ({ submit, userId, onProfileUpdate }) => {
 
     const fetchFormData = useCallback(async (formType) => {
         try {
-            const endpoint = `api/get-staff-info/424`;
+            const endpoint = `api/form-data?user_id=${encodeURIComponent(userId)}&type=${encodeURIComponent(formType)}`;
             const res = await submit(endpoint, undefined, { method: "GET", silentErrorToast: true });
             const fetchedData = res?.data ?? res;
 
-            if (fetchedData) {
-                if (formType === "tfn") {
+            if (formType === "tfn") {
+                if (fetchedData) {
                     const normalized = normalizeTfnData(fetchedData);
                     setTfnForm(normalized);
                     setOriginalTfnForm(normalized);
-                } else if (formType === "superannuation") {
+                }
+            } else if (formType === "superannuation") {
+                if (fetchedData) {
                     const normalized = normalizeSuperData(fetchedData);
                     setSuperForm(normalized);
                     setOriginalSuperForm(normalized);
-                } else if (formType === "onboarding") {
+                }
+            } else if (formType === "onboarding") {
+                // Only overwrite if saved data actually contains something meaningful
+                if (fetchedData) {
                     const normalized = normalizeOnboardData(fetchedData);
-                    setOnboardForm(normalized);
-                    setOriginalOnboardForm(normalized);
+                    // Check if the normalized form has any real content
+                    const hasContent = normalized.o_name.trim() !== ""
+                        || normalized.o_addr.trim() !== ""
+                        || normalized.o_phone.trim() !== ""
+                        || normalized.o_email.trim() !== ""
+                        || normalized.o_passport.trim() !== ""
+                        || normalized.o_seclic.trim() !== "";
+
+                    if (hasContent) {
+                        setOnboardForm(normalized);
+                        setOriginalOnboardForm(normalized);
+                    }
+                    // else: keep the pre‑filled data from staff info
                 }
             }
         } catch (error) {
             console.error(`Error fetching ${formType} form data:`, error);
         }
     }, [userId, submit]);
-
     useEffect(() => {
-        if (userId) {
+        if (!userId) {
+            setFormDataLoading(false);
+            return;
+        }
+
+        const initForms = async () => {
             setFormDataLoading(true);
-            Promise.all([
+            try {
+                // Step 1: pre‑fill onboarding from staff profile
+                const staffRes = await submit(
+                    `api/get-staff-info/${userId}`,
+                    undefined,
+                    { method: 'GET', silentErrorToast: true }
+                );
+                if (staffRes?.success && staffRes?.data) {
+                    const prefilledOnboard = mapStaffInfoToOnboardForm(staffRes.data);
+                    setOnboardForm(prefilledOnboard);
+                    setOriginalOnboardForm(prefilledOnboard);
+                }
+            } catch (err) {
+                console.warn("Could not fetch staff info for pre‑fill:", err);
+            }
+
+            // Step 2: fetch saved form data (will overwrite pre‑fill if data exists)
+            await Promise.all([
                 fetchFormData("tfn"),
                 fetchFormData("superannuation"),
-                fetchFormData("onboarding")
-            ]).finally(() => setFormDataLoading(false));
-        } else {
+                fetchFormData("onboarding"),
+            ]);
             setFormDataLoading(false);
-        }
-    }, [fetchFormData, userId]);
+        };
+
+        initForms();
+    }, [userId, submit, fetchFormData]);
 
 
     const handleTfnChange = (e) => {

@@ -3,10 +3,10 @@ import useFetch from "../hooks/useFetch";
 import useSubmit from "../hooks/useSubmit";
 import Loader from "../components/Loader";
 import DocumentTable from "../components/DocumentTable";
-// import StaffOnboardingForms from "../components/StaffOnboardingForms";
+import StaffOnboardingForms from "../components/StaffOnboardingForms";
 import { useSelector } from "react-redux";
 import { toast } from "react-toastify";
-import { apiURL } from "../utils/exports"; // needed for image preview
+import { apiURL } from "../utils/exports";
 
 // ========== DATE HELPERS ==========
 const isoToDisplay = (val) => {
@@ -14,7 +14,6 @@ const isoToDisplay = (val) => {
   if (/^\d{2}\/\d{2}\/\d{4}$/.test(val)) return val;
   const match = val.match(/^(\d{4})-(\d{2})-(\d{2})$/);
   if (match) {
-    // eslint-disable-next-line
     const [_, y, m, d] = match;
     return `${d}/${m}/${y}`;
   }
@@ -24,6 +23,7 @@ const isoToDisplay = (val) => {
 const normalizeToDisplay = (dateStr) => {
   if (!dateStr) return "";
   if (/^\d{2}\/\d{2}\/\d{4}$/.test(dateStr)) return dateStr;
+  if (/^\d{2}-\d{2}-\d{4}$/.test(dateStr)) return dateStr.replace(/-/g, "/");
   const iso = isoToDisplay(dateStr);
   if (iso !== dateStr) return iso;
   const d = new Date(dateStr);
@@ -33,25 +33,6 @@ const normalizeToDisplay = (dateStr) => {
     return `${day}/${month}/${d.getFullYear()}`;
   }
   return dateStr;
-};
-
-const safeJsonParse = (value) => {
-  if (typeof value !== "string") return null;
-  try {
-    return JSON.parse(value);
-  } catch {
-    return null;
-  }
-};
-
-const unwrapVisaResponse = (payload) => {
-  if (!payload) return null;
-  if (payload?.json?.data) return payload.json.data;
-  const parsedBody = safeJsonParse(payload?.body);
-  if (parsedBody?.data) return parsedBody.data;
-  if (payload?.data?.data) return payload.data.data;
-  if (payload?.data && typeof payload.data === "object") return payload.data;
-  return payload;
 };
 // ===================================
 
@@ -72,6 +53,12 @@ const ManageStaff = () => {
   const { submit, loading: submitLoading } = useSubmit({ isAuth: true });
   const { submit: uploadFile, loading: uploadLoading } = useSubmit({ isAuth: true });
 
+  // External Security License verification hook
+  const { submit: submitSecurityLicense } = useSubmit({
+    isAuth: true,
+    BaseURL: "https://apis.thescouts.com.au/",
+  });
+
   const [staff, setStaff] = useState([]);
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
@@ -86,7 +73,6 @@ const ManageStaff = () => {
   const [showDocModal, setShowDocModal] = useState(false);
   const [selectedDoc, setSelectedDoc] = useState(null);
   const [verifyingDoc, setVerifyingDoc] = useState(false);
-  const [visaDetails, setVisaDetails] = useState(null);
   const [docForm, setDocForm] = useState({
     notes: "",
     no: false,
@@ -129,6 +115,8 @@ const ManageStaff = () => {
     state: "",
     country: "",
     coordinates: "",
+    date_of_birth: "",
+    origin_country: "",
   };
 
   const [formData, setFormData] = useState(defaultFormState);
@@ -150,19 +138,22 @@ const ManageStaff = () => {
     setShowDocModal(false);
     setSelectedDoc(null);
     if (user) {
+      const staffData = user.staff || {};
       setEditingUser(user);
       setFormData({
         name: user.name || "",
         email: user.email || "",
         password: "",
-        phone: user.staff?.phone || "",
-        gender: user.staff?.gender || "",
-        staff_document_type: user.staff?.staff_document_type || "",
+        phone: staffData.phone || "",
+        gender: staffData.gender || "",
+        staff_document_type: staffData.staff_document_type || "",
         address: user.address || "",
         city: user.city || "",
         state: user.state || "",
         country: user.country || "",
-        coordinates: user.coordinates || user.staff?.coordinates || "",
+        coordinates: user.coordinates || staffData.coordinates || "",
+        date_of_birth: isoToDisplay(staffData.date_of_birth || user.date_of_birth || ""),
+        origin_country: staffData.origin_country || user.origin_country || "",
       });
     } else {
       setEditingUser(null);
@@ -217,14 +208,12 @@ const ManageStaff = () => {
         is_verified: false,
       });
     }
-    setVisaDetails(null);
     setShowDocModal(true);
   };
 
   const closeDocumentModal = () => {
     setShowDocModal(false);
     setSelectedDoc(null);
-    setVisaDetails(null);
   };
 
   const handleDocNumberChange = (e) => {
@@ -235,13 +224,12 @@ const ManageStaff = () => {
       is_verified: false,
       document_expiry: "",
     }));
-    setVisaDetails(null);
   };
 
   const handleDocFormChange = async (e) => {
     const { name, value, type, checked, files } = e.target;
 
-    // *** ALWAYS DISABLED for Security License & Visa ***
+    // Always disabled for Security License & Visa
     if (
       name === "document_expiry" &&
       (docForm.document_name === "Security License" || docForm.document_name === "Visa")
@@ -290,33 +278,27 @@ const ManageStaff = () => {
       return;
     }
 
-    // Security License
+    // ---------- SECURITY LICENSE VERIFICATION (external API) ----------
     if (docForm.document_name === "Security License") {
       setVerifyingDoc(true);
       try {
-        const res = await submit(
-          "api/documents-online-verification",
+        const res = await submitSecurityLicense(
+          "api/documents-online-verification-staffoo",
           {
             user_id: editingUser.id,
-            document_type: docForm.document_name,
+            document_type: "Security License",
             license_number: docForm.document_no,
           },
           { method: "POST" }
         );
-
-        if (res?.success && res?.data) {
-          const expiryDate = res.data.expiry_date || res.data.document_expiry;
-          if (expiryDate) {
-            setDocForm((prev) => ({
-              ...prev,
-              document_expiry: normalizeToDisplay(expiryDate),
-              is_verified: true,
-            }));
-            toast.success("Security License verified. Expiry date locked.");
-          } else {
-            setDocForm((prev) => ({ ...prev, is_verified: true }));
-            toast.warning("Verification succeeded but no expiry date returned.");
-          }
+        if (res?.success && res?.expiry) {
+          const expiryStr = res.expiry.replace(/\\\//g, "/"); // safety clean
+          setDocForm((prev) => ({
+            ...prev,
+            document_expiry: expiryStr,
+            is_verified: true,
+          }));
+          toast.success("Security License verified. Expiry date locked.");
         } else {
           setDocForm((prev) => ({ ...prev, is_verified: false }));
           toast.error(res?.message || "Security License verification failed.");
@@ -330,7 +312,7 @@ const ManageStaff = () => {
       return;
     }
 
-    // Visa
+    // ---------- VISA VERIFICATION ----------
     if (docForm.document_name === "Visa") {
       const user = editingUser;
       const staff = user?.staff || {};
@@ -342,12 +324,27 @@ const ManageStaff = () => {
         givenName = nameParts.slice(0, -1).join(" ");
         familyName = nameParts[nameParts.length - 1];
       }
-      const dob = staff?.date_of_birth || user?.date_of_birth || "";
-      if (!dob) {
+
+      // Use date_of_birth from staff or editingUser (already updated via form)
+      const rawDob = staff?.date_of_birth || user?.date_of_birth || formData.date_of_birth || "";
+      if (!rawDob) {
         toast.error("Date of birth is missing. Please update personal information first.");
         return;
       }
-      const countryCode = (user?.country || "AUS").toUpperCase().slice(0, 3);
+      const dobParts = rawDob.split("/");
+      if (dobParts.length !== 3) {
+        toast.error("Invalid date of birth format. Please re‑save the profile.");
+        return;
+      }
+      const dobISO = `${dobParts[2]}-${dobParts[1]}-${dobParts[0]}`; // YYYY-MM-DD
+
+      // Use origin_country from staff or editingUser (updated via form)
+      const originCountry = staff?.origin_country || user?.origin_country || formData.origin_country || "";
+      if (!originCountry) {
+        toast.error("Please save your country of origin in your profile before verifying your visa.");
+        return;
+      }
+      const countryCode = originCountry.toUpperCase().slice(0, 3);
       const passportNumber = docForm.document_no.toUpperCase();
 
       const payload = {
@@ -355,79 +352,28 @@ const ManageStaff = () => {
         country: countryCode,
         family_name: familyName,
         given_name: givenName,
-        dob: dob,
+        dob: dobISO,
       };
 
       setVerifyingDoc(true);
-      let checkId = null;
-      let pollInterval = null;
-      let timeoutId = null;
-
-      const cleanup = () => {
-        if (pollInterval) clearInterval(pollInterval);
-        if (timeoutId) clearTimeout(timeoutId);
-      };
-
       try {
-        const createRes = await submit("api/admin/visa-check", payload, { method: "POST" });
-        const createData = unwrapVisaResponse(createRes);
-        if (!createData?.id) {
-          toast.error("Could not submit visa verification request.");
-          setVerifyingDoc(false);
-          return;
+        const res = await submit("api/admin/visa-check", payload, { method: "POST" });
+        if (res?.success && res?.data?.expired_at) {
+          const displayExpiry = normalizeToDisplay(res.data.expired_at);
+          setDocForm((prev) => ({
+            ...prev,
+            document_expiry: displayExpiry,
+            is_verified: true,
+          }));
+          toast.success("Visa verified. Expiry date locked.");
+        } else {
+          setDocForm((prev) => ({ ...prev, is_verified: false }));
+          toast.error(res?.message || "Visa verification failed.");
         }
-        checkId = createData.id;
-        toast.info("Verification in progress. Please wait...");
-
-        pollInterval = setInterval(async () => {
-          try {
-            const resultRes = await submit(`api/admin/visa-result/${checkId}`, null, { method: "GET" });
-            const resultData = unwrapVisaResponse(resultRes);
-            if (resultData?.status === "completed" && resultData?.visa?.australia) {
-              cleanup();
-              const visaInfo = resultData.visa.australia;
-              const expiryDate = visaInfo.expiry_date || visaInfo.valid_until;
-              setVisaDetails({
-                visa_type: visaInfo.type_name || visaInfo.class || "N/A",
-                work_entitlement: visaInfo.work_entitlement || "N/A",
-                location: visaInfo.location || "N/A",
-                check_id: checkId,
-              });
-              if (expiryDate) {
-                setDocForm((prev) => ({
-                  ...prev,
-                  document_expiry: normalizeToDisplay(expiryDate),
-                  is_verified: true,
-                }));
-                toast.success("Visa verified. Expiry date locked.");
-              } else {
-                setDocForm((prev) => ({ ...prev, is_verified: true }));
-                toast.warning("Visa verified but no expiry date found.");
-              }
-              setVerifyingDoc(false);
-            } else if (resultData?.status === "failed") {
-              cleanup();
-              toast.error("Visa verification failed. Please check the passport number.");
-              setDocForm((prev) => ({ ...prev, is_verified: false }));
-              setVisaDetails(null);
-              setVerifyingDoc(false);
-            }
-          } catch (err) {
-            console.error("Polling error", err);
-          }
-        }, 2000);
-
-        timeoutId = setTimeout(() => {
-          cleanup();
-          if (verifyingDoc) {
-            toast.error("Verification timed out. Please try again later.");
-            setVerifyingDoc(false);
-          }
-        }, 30000);
       } catch (err) {
         console.error(err);
         toast.error("Visa verification request failed.");
-        cleanup();
+      } finally {
         setVerifyingDoc(false);
       }
       return;
@@ -470,7 +416,7 @@ const ManageStaff = () => {
     }
   };
 
-  // Google Maps Autocomplete (unchanged)
+  // Google Maps Autocomplete
   useEffect(() => {
     if (!isModalOpen) return;
 
@@ -548,6 +494,12 @@ const ManageStaff = () => {
       return;
     }
 
+    // Validate date of birth if provided
+    if (formData.date_of_birth && !/^\d{2}\/\d{2}\/\d{4}$/.test(formData.date_of_birth)) {
+      toast.error("Please enter the date of birth in DD/MM/YYYY format.");
+      return;
+    }
+
     const method = editingUser ? "PUT" : "POST";
     const url = editingUser
       ? `api/admin/update-staff/${editingUser.id}`
@@ -589,10 +541,12 @@ const ManageStaff = () => {
 
   if (loading && staff.length === 0) return <Loader />;
 
+  // Determine if the logged-in user is admin (id === 1)
+  const isAdmin = loggedInContractorId === 1;
+
   return (
     <div className="container mt-4 pb-5">
       <style>{`
-        /* Premium Typography & Layout */
         .dashboard-page-header h1 {
           font-weight: 800;
           letter-spacing: -0.02em;
@@ -889,6 +843,12 @@ const ManageStaff = () => {
               <div className="modal-tabs-container mb-4">
                 <button type="button" className={`btn ${activeModalTab === "personal" ? "btn-primary-custom" : "btn-outline-primary"}`} onClick={() => setActiveModalTab("personal")}>Personal Information</button>
                 <button type="button" className={`btn ${activeModalTab === "documents" ? "btn-primary-custom" : "btn-outline-primary"}`} onClick={() => setActiveModalTab("documents")} disabled={!editingUser} title={editingUser ? "Documents" : "Save the profile first to manage documents."}>Documents</button>
+                {/* Conditionally show Onboarding tab for admin (user_id === 1) */}
+                {isAdmin && (
+                  <button type="button" className={`btn ${activeModalTab === "onboarding" ? "btn-primary-custom" : "btn-outline-primary"}`} onClick={() => setActiveModalTab("onboarding")} disabled={!editingUser} title={editingUser ? "Staff Verification Forms" : "Save the profile first."}>
+                    Onboarding
+                  </button>
+                )}
               </div>
 
               {activeModalTab === "personal" ? (
@@ -935,6 +895,35 @@ const ManageStaff = () => {
                       </select>
                     </div>
 
+                    {/* ---------- Date of Birth & Country of Origin ---------- */}
+                    <div className="col-12"><h6 className="section-divider">Identity Details</h6></div>
+                    <div className="col-md-6">
+                      <label className="form-label">Date of Birth</label>
+                      <input
+                        type="text"
+                        className="form-control"
+                        name="date_of_birth"
+                        placeholder="DD/MM/YYYY"
+                        value={formData.date_of_birth}
+                        onChange={handleInputChange}
+                        maxLength={10}
+                        pattern="^(0[1-9]|[12][0-9]|3[01])/(0[1-9]|1[012])/\d{4}$"
+                        title="Enter a valid date in DD/MM/YYYY format"
+                      />
+                    </div>
+                    <div className="col-md-6">
+                      <label className="form-label">Country of Origin</label>
+                      <input
+                        type="text"
+                        className="form-control"
+                        name="origin_country"
+                        placeholder="e.g. Australia"
+                        value={formData.origin_country}
+                        onChange={handleInputChange}
+                        maxLength="50"
+                      />
+                    </div>
+
                     <div className="col-12"><h6 className="section-divider">Address Information</h6></div>
                     <div className="col-12">
                       <label className="form-label">Full Address</label>
@@ -979,7 +968,6 @@ const ManageStaff = () => {
                               onChange={(e) => {
                                 handleDocFormChange({ target: { name: "document_name", value: e.target.value } });
                                 setDocForm((prev) => ({ ...prev, document_expiry: "", is_verified: false }));
-                                setVisaDetails(null);
                               }}
                               required
                               disabled={!!selectedDoc}
@@ -1084,30 +1072,6 @@ const ManageStaff = () => {
                             </div>
                           </div>
 
-                          {/* Visa Details Card */}
-                          {docForm.document_name === "Visa" && docForm.is_verified && visaDetails && (
-                            <div className="mb-4 p-3 bg-light border rounded-3">
-                              <div className="d-flex align-items-center gap-2 mb-2">
-                                <i className="fa-solid fa-passport text-primary"></i>
-                                <strong className="small text-uppercase text-muted">Visa Verification Details</strong>
-                              </div>
-                              <div className="row g-2 small">
-                                <div className="col-6"><span className="text-muted">Visa Type:</span></div>
-                                <div className="col-6 fw-medium">{visaDetails.visa_type}</div>
-                                <div className="col-6"><span className="text-muted">Work Entitlement:</span></div>
-                                <div className="col-6 fw-medium">{visaDetails.work_entitlement}</div>
-                                <div className="col-6"><span className="text-muted">Location:</span></div>
-                                <div className="col-6 fw-medium">{visaDetails.location}</div>
-                                {visaDetails.check_id && (
-                                  <>
-                                    <div className="col-6"><span className="text-muted">Verification ID:</span></div>
-                                    <div className="col-6 fw-medium text-truncate" title={visaDetails.check_id}>{visaDetails.check_id}</div>
-                                  </>
-                                )}
-                              </div>
-                            </div>
-                          )}
-
                           {/* File Upload Preview */}
                           <div className="mb-4">
                             <label className="form-label fw-bold text-dark">Document/Image <span className="text-danger">*</span></label>
@@ -1153,6 +1117,10 @@ const ManageStaff = () => {
                       </div>
                     </div>
                   )}
+                </div>
+              ) : activeModalTab === "onboarding" && isAdmin ? (
+                <div>
+                  <StaffOnboardingForms submit={submit} userId={editingUser?.id} />
                 </div>
               ) : null}
             </div>

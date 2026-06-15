@@ -3,6 +3,8 @@ import { toast } from "react-toastify";
 import useSubmit from "../hooks/useSubmit";
 import Loader from "../components/Loader";
 import { Link } from "react-router-dom";
+import { COUNTRIES } from "../utils/exports";
+import Select from "react-select";
 
 const initialForm = {
     passport: "",
@@ -11,6 +13,11 @@ const initialForm = {
     given_name: "",
     dob: "",
 };
+
+const countryOptions = COUNTRIES.map((c) => ({
+    value: c.code,
+    label: `${c.name} (${c.code})`,
+}));
 
 // --- Utilities & Parsers ---
 const safeJsonParse = (value) => {
@@ -40,7 +47,7 @@ const toISODate = (val) => {
         const [, d, m, y] = match;
         return `${y}-${m}-${d}`;
     }
-    return val; // already YYYY-MM-DD or partial
+    return val;
 };
 
 const toDisplayDate = (val) => {
@@ -54,10 +61,8 @@ const toDisplayDate = (val) => {
     return val;
 };
 
-// Always returns DD/MM/YYYY for short date display
 const formatShortDate = (value) => {
     if (!value || value === "-") return "-";
-    // Try parsing ISO or DD/MM/YYYY
     const dd = toDisplayDate(value);
     if (dd && dd !== value) return dd;
     const parsed = new Date(value);
@@ -67,6 +72,14 @@ const formatShortDate = (value) => {
         return `${day}/${month}/${parsed.getFullYear()}`;
     }
     return String(value);
+};
+
+const toYYYYMMDD = (val) => {
+    if (!val) return "";
+    if (/^\d{4}-\d{2}-\d{2}$/.test(val)) return val.replace(/-/g, "");
+    const match = val.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+    if (match) return `${match[3]}${match[2]}${match[1]}`;
+    return val.replace(/\D/g, "");
 };
 
 // --- Hybrid Date Input for DOB ---
@@ -91,7 +104,7 @@ const DateInput = ({ name, value, onChange, required }) => {
     };
 
     const handlePickerChange = (e) => {
-        const isoDate = e.target.value; // YYYY-MM-DD
+        const isoDate = e.target.value;
         onChange({ target: { name, value: isoDate } });
     };
 
@@ -196,16 +209,22 @@ export default function VisaManagement() {
         setFormData((prev) => ({ ...prev, [name]: value }));
     };
 
+    const handleCountryChange = (selectedOption) => {
+        setFormData((prev) => ({
+            ...prev,
+            country: selectedOption ? selectedOption.value : "",
+        }));
+    };
+
     const handleVisaCheck = async (e) => {
         if (e) e.preventDefault();
 
-        // Convert DOB from YYYY-MM-DD (internal state) to DD/MM/YYYY for the API
         const payload = {
             passport: formData.passport.trim(),
             country: formData.country.trim().toUpperCase(),
             family_name: formData.family_name.trim(),
             given_name: formData.given_name.trim(),
-            dob: toDisplayDate(formData.dob), // ✅ Now DD/MM/YYYY
+            dob: toYYYYMMDD(formData.dob),   // yyyymmdd
         };
 
         if (!payload.passport || !payload.country || !payload.family_name || !payload.given_name || !payload.dob) {
@@ -232,10 +251,28 @@ export default function VisaManagement() {
             const res = await submitVisaResult(`api/admin/visa-result/${id}`, null, { method: "GET" });
             const data = unwrapVisaResponse(res);
 
-            if (data?.id) {
-                setVisaChecksList((prev) => prev.map((item) => (item.id === id ? data : item)));
+            // New response: { expired_at: "DD-MM-YYYY" }
+            if (data?.expired_at) {
+                setVisaChecksList((prev) =>
+                    prev.map((item) =>
+                        item.id === id
+                            ? { ...item, status: "completed", expired_at: data.expired_at }
+                            : item
+                    )
+                );
+                setSelectedCheckDetail((prev) =>
+                    prev?.id === id
+                        ? { ...prev, status: "completed", expired_at: data.expired_at }
+                        : prev
+                );
+                toast.success("Verification complete. Visa expiry date retrieved.");
+            }
+            // Old response format (fallback)
+            else if (data?.id) {
+                setVisaChecksList((prev) =>
+                    prev.map((item) => (item.id === id ? data : item))
+                );
                 setSelectedCheckDetail(data);
-
                 if (data.status === "completed") {
                     toast.success("Verification complete. Report is ready to view.");
                 } else {
@@ -253,17 +290,18 @@ export default function VisaManagement() {
     const doc = selectedCheckDetail?.document || {};
     const visa = selectedCheckDetail?.visa?.australia || {};
     const result = selectedCheckDetail?.result || {};
-    const attachment = Array.isArray(selectedCheckDetail?.attachments) ? selectedCheckDetail.attachments[0] : null;
+    const attachment = Array.isArray(selectedCheckDetail?.attachments)
+        ? selectedCheckDetail.attachments[0]
+        : null;
     const isCompleted = selectedCheckDetail?.status === "completed";
-    const isSuccess = result.code === "SUCCESS";
+    const isSuccess = result.code === "SUCCESS" || !!selectedCheckDetail?.expired_at;
 
     return (
         <div className="dashboard-main dashboard-tools-page">
             <div className="dashboard-page-header mb-4">
                 <div>
                     <h1 className="h3 fw-bold text-dark">Visa Verification</h1>
-                    <p className="text-muted"
-                        style={{ textTransform: "none" }}>
+                    <p className="text-muted">
                         Submit passport details to verify applicant work rights and visa status.
                     </p>
                 </div>
@@ -326,15 +364,15 @@ export default function VisaManagement() {
                             </div>
                             <div className="col-12 col-md-4 col-xl-2">
                                 <label className="form-label text-dark fw-semibold mb-1">Issuing Country</label>
-                                <input
-                                    type="text"
-                                    className="form-control text-uppercase"
-                                    name="country"
-                                    value={formData.country}
-                                    onChange={handleInputChange}
-                                    placeholder="e.g. AUS"
-                                    maxLength={3}
-                                    required
+                                <Select
+                                    options={countryOptions}
+                                    value={countryOptions.find((opt) => opt.value === formData.country) || null}
+                                    onChange={handleCountryChange}
+                                    placeholder="Select country..."
+                                    isClearable
+                                    isSearchable
+                                    className="react-select-container"
+                                    classNamePrefix="react-select"
                                 />
                             </div>
                             <div className="col-12 col-xl-2 d-grid mt-4 mt-xl-0">
@@ -457,10 +495,14 @@ export default function VisaManagement() {
                                 </div>
                                 <div>
                                     <h6 className={`fw-bold mb-1 ${isSuccess ? "text-success" : "text-warning"}`}>
-                                        {result.message || "Verification Completed"}
+                                        {selectedCheckDetail?.expired_at
+                                            ? "Visa Verified – Expiry Date Available"
+                                            : result.message || "Verification Completed"}
                                     </h6>
                                     <p className="mb-0 small text-dark opacity-75">
-                                        {visa.entitlement_description || "Please review the detailed visa conditions below."}
+                                        {selectedCheckDetail?.expired_at
+                                            ? `Visa expires on ${formatShortDate(selectedCheckDetail.expired_at)}`
+                                            : visa.entitlement_description || "Please review the detailed visa conditions below."}
                                     </p>
                                 </div>
                             </div>
@@ -498,13 +540,22 @@ export default function VisaManagement() {
                             {isCompleted && (
                                 <div className="col-12 col-lg-6">
                                     <h6 className="text-uppercase text-muted fw-bold letter-spacing-1 mb-3 border-bottom pb-2">
-                                        Visa Conditions
+                                        Visa Information
                                     </h6>
                                     <div className="row g-3">
-                                        <DetailField label="Visa Type / Class" value={visa.type_name || visa.class} colSize="col-12" />
-                                        <DetailField label="Work Entitlement" value={visa.work_entitlement} />
-                                        <DetailField label="Location" value={visa.location} />
-
+                                        {selectedCheckDetail?.expired_at ? (
+                                            <DetailField
+                                                label="Visa Expiry Date"
+                                                value={formatShortDate(selectedCheckDetail.expired_at)}
+                                                colSize="col-12"
+                                            />
+                                        ) : (
+                                            <>
+                                                <DetailField label="Visa Type / Class" value={visa.type_name || visa.class} colSize="col-12" />
+                                                <DetailField label="Work Entitlement" value={visa.work_entitlement} />
+                                                <DetailField label="Location" value={visa.location} />
+                                            </>
+                                        )}
                                         <div className="col-12 col-sm-6">
                                             <label className="form-label text-muted fw-semibold mb-1 small">Official Document</label>
                                             <div className="min-h-form-field d-flex align-items-center">
@@ -552,6 +603,20 @@ export default function VisaManagement() {
                 
                 input.form-control { border-radius: 0.5rem; border-color: #cbd5e1; padding: 0.6rem 1rem; }
                 input.form-control:focus { border-color: #0A7C6E; box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1); }
+
+                /* react-select overrides */
+                .react-select-container .react-select__control {
+                    border-radius: 0.5rem;
+                    border-color: #cbd5e1;
+                    min-height: 38px;
+                }
+                .react-select-container .react-select__control:hover {
+                    border-color: #0A7C6E;
+                }
+                .react-select-container .react-select__control--is-focused {
+                    border-color: #0A7C6E;
+                    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+                }
             `}</style>
         </div>
     );

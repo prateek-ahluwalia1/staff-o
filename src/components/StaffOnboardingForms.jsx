@@ -3,9 +3,9 @@ import { useSelector } from "react-redux";
 import { toast } from "react-toastify";
 import PDFGenerator from "../utils/PDFGenerator";
 import { apiURL } from "../utils/exports";
+import useSubmit from "../hooks/useSubmit";
 
 /* ---------- Helpers ---------- */
-
 const TAB_LABELS = ["Onboarding", "TFN Declaration", "Superannuation"];
 const todayDDMMYYYY = () => {
     const d = new Date();
@@ -19,7 +19,6 @@ const isoToDisplay = (val) => {
     if (/^\d{2}\/\d{2}\/\d{4}$/.test(val)) return val;
     const match = val.match(/^(\d{4})-(\d{2})-(\d{2})$/);
     if (match) {
-        // eslint-disable-next-line
         const [_, y, m, d] = match;
         return `${d}/${m}/${y}`;
     }
@@ -30,7 +29,6 @@ const displayToISO = (val) => {
     if (!val) return "";
     const match = val.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
     if (match) {
-        // eslint-disable-next-line
         const [_, d, m, y] = match;
         return `${y}-${m}-${d}`;
     }
@@ -62,7 +60,7 @@ const DateInput = ({ name, value, onChange, required, disabled, placeholder, max
     };
 
     const handlePickerChange = (e) => {
-        const iso = e.target.value; // YYYY-MM-DD
+        const iso = e.target.value;
         if (iso) {
             const [y, m, d] = iso.split("-");
             onChange({ target: { name, value: `${d}/${m}/${y}` } });
@@ -109,7 +107,6 @@ const DateInput = ({ name, value, onChange, required, disabled, placeholder, max
 
 /* ---------- Address Autocomplete ---------- */
 const AddressAutocomplete = ({ value, name, onChange, placeholder, required }) => {
-    // ... (unchanged) ...
     const inputRef = useRef(null);
     useEffect(() => {
         let autocomplete;
@@ -372,7 +369,16 @@ const SuperannuationForm = ({ values, loading, onChange, onSubmit, dataModified 
 );
 
 /* ---------- Employee Onboarding Form ---------- */
-const EmployeeOnboardingForm = ({ values, loading, onChange, onSubmit, dataModified, onDocUpload }) => {
+const EmployeeOnboardingForm = ({
+    values,
+    loading,
+    onChange,
+    onSubmit,
+    dataModified,
+    onDocUpload,
+    verifyingSecurityLicense,
+    onVerifySecurityLicense,
+}) => {
     const resolveDocUrl = (pathOrUrl) => {
         if (!pathOrUrl) return "";
         if (pathOrUrl.startsWith("http")) return pathOrUrl;
@@ -432,14 +438,16 @@ const EmployeeOnboardingForm = ({ values, loading, onChange, onSubmit, dataModif
                     </div>
                 </div>
 
-                {/* Work Rights – keep existing layout but improved */}
+                {/* Work Rights */}
                 <div className="col-md-12">
                     <div className="row align-items-center mt-2">
                         <div className="col-md-3">
-                            <label className="form-label small fw-bold text-muted mb-0">Work Rights in Australia <span className="text-danger">*</span></label>
+                            <label className="form-label small fw-bold text-muted mb-0">
+                                Work Rights in Australia <span className="text-danger">*</span>
+                            </label>
                         </div>
                         <div className="col-md-9">
-                            <div className="d-flex flex-column gap-2">
+                            <div className="d-flex flex-row flex-wrap gap-3">
                                 {[
                                     { value: "citizen", label: "Australian Citizen / Permanent Resident" },
                                     { value: "student", label: "Student Visa" },
@@ -447,8 +455,16 @@ const EmployeeOnboardingForm = ({ values, loading, onChange, onSubmit, dataModif
                                     { value: "other", label: "Other Visa (please specify)" },
                                 ].map((opt) => (
                                     <div className="form-check" key={opt.value}>
-                                        <input className="form-check-input" type="radio" name="work" value={opt.value} checked={values.work === opt.value} onChange={onChange} required />
-                                        <label className="form-check-label">{opt.label}</label>
+                                        <input
+                                            className="form-check-input"
+                                            type="radio"
+                                            name="work"
+                                            value={opt.value}
+                                            checked={values.work === opt.value}
+                                            onChange={onChange}
+                                            required
+                                        />
+                                        <label className="form-check-label text-nowrap">{opt.label}</label>
                                     </div>
                                 ))}
                             </div>
@@ -518,23 +534,69 @@ const EmployeeOnboardingForm = ({ values, loading, onChange, onSubmit, dataModif
             <div className="row g-3 mb-4">
                 <div className="col-md-6">
                     <label className="form-label small fw-bold text-muted">Security Licence No. <span className="text-danger">*</span></label>
-                    <input type="text" className="form-control" name="o_seclic" placeholder="VIC 123456" maxLength="50" value={values.o_seclic} onChange={onChange} required />
+                    <div className="input-group">
+                        <input
+                            type="text"
+                            className="form-control"
+                            name="o_seclic"
+                            placeholder="VIC 123456"
+                            maxLength="50"
+                            value={values.o_seclic}
+                            onChange={onChange}
+                            required
+                        />
+                        <button
+                            type="button"
+                            className="btn btn-outline-primary"
+                            onClick={onVerifySecurityLicense}
+                            disabled={verifyingSecurityLicense || !values.o_seclic}
+                        >
+                            {verifyingSecurityLicense ? (
+                                <>
+                                    <span className="spinner-border spinner-border-sm me-1" />
+                                    Verifying...
+                                </>
+                            ) : (
+                                "Verify"
+                            )}
+                        </button>
+                    </div>
 
                     <div className="mt-3">
-                        <label className="form-label small fw-bold text-muted">Upload Security Licence Document <span className="text-danger">*</span></label>
-                        <div className="d-flex align-items-center gap-3 flex-wrap">
-                            <input type="file" className="form-control" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" onChange={(e) => onDocUpload(e, "security_license_doc")} />
-                        </div>
-                        {values.security_license_doc && (
-                            <a href={resolveDocUrl(values.security_license_doc)} target="_blank" rel="noreferrer" className="text-primary small fw-bold text-decoration-none mt-2 d-inline-block">
-                                📄 View Attached Document
-                            </a>
+                        <label className="form-label small fw-bold text-muted">
+                            Upload Security Licence Document <span className="text-danger">*</span>
+                        </label>
+                        {!values.o_seclicexp ? (
+                            <div className="text-muted small bg-light p-2 rounded border">
+                                <i className="fa fa-info-circle me-1"></i>
+                                Please verify the security licence first to enable document upload.
+                            </div>
+                        ) : (
+                            <div className="d-flex align-items-center gap-3 flex-wrap">
+                                <input
+                                    type="file"
+                                    className="form-control"
+                                    accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                                    onChange={(e) => onDocUpload(e, "security_license_doc")}
+                                />
+                                {values.security_license_doc && (
+                                    <a href={resolveDocUrl(values.security_license_doc)} target="_blank" rel="noreferrer" className="text-primary small fw-bold text-decoration-none">
+                                        📄 View Attached Document
+                                    </a>
+                                )}
+                            </div>
                         )}
                     </div>
                 </div>
                 <div className="col-md-6">
                     <label className="form-label small fw-bold text-muted">Security Licence Expiry <span className="text-danger">*</span></label>
-                    <DateInput name="o_seclicexp" value={values.o_seclicexp} onChange={onChange} required />
+                    <DateInput
+                        name="o_seclicexp"
+                        value={values.o_seclicexp}
+                        onChange={onChange}
+                        required
+                        disabled={true} // always disabled – filled by verification
+                    />
                 </div>
 
                 <div className="col-md-6 mt-4">
@@ -576,7 +638,7 @@ const EmployeeOnboardingForm = ({ values, loading, onChange, onSubmit, dataModif
     );
 };
 
-/* ---------- Normalization (DD/MM/YYYY in state) ---------- */
+/* ---------- Normalization ---------- */
 const normalizeTfnData = (apiData, userdata) => ({
     tfn: apiData?.tfn ?? "",
     title: apiData?.title ?? "",
@@ -650,6 +712,14 @@ const StaffOnboardingForms = ({ submit, userId, onProfileUpdate }) => {
     const [dataModified, setDataModified] = useState(false);
     const [formDataLoading, setFormDataLoading] = useState(true);
 
+    // Only security license verification state
+    const [verifyingSecurityLicense, setVerifyingSecurityLicense] = useState(false);
+
+    const { submit: submitSecurityLicense } = useSubmit({
+        isAuth: true,
+        BaseURL: "https://apis.thescouts.com.au/",
+    });
+
     const [originalTfnForm, setOriginalTfnForm] = useState(null);
     const [originalSuperForm, setOriginalSuperForm] = useState(null);
     const [originalOnboardForm, setOriginalOnboardForm] = useState(null);
@@ -713,9 +783,53 @@ const StaffOnboardingForms = ({ submit, userId, onProfileUpdate }) => {
 
     const handleOnboardChange = (e) => {
         const { name, value, type, checked } = e.target;
+        // Clear security licence expiry when licence number changes
+        if (name === "o_seclic") {
+            const updatedForm = {
+                ...onboardForm,
+                [name]: value,
+                o_seclicexp: "", // reset expiry
+            };
+            setOnboardForm(updatedForm);
+            setDataModified(JSON.stringify(updatedForm) !== JSON.stringify(originalOnboardForm));
+            return;
+        }
         const updatedForm = { ...onboardForm, [name]: type === "checkbox" ? checked : value };
         setOnboardForm(updatedForm);
         setDataModified(JSON.stringify(updatedForm) !== JSON.stringify(originalOnboardForm));
+    };
+
+    // Security License verification
+    const handleVerifySecurityLicense = async () => {
+        if (!userId || !onboardForm.o_seclic) {
+            toast.error("Please enter a Security Licence number first.");
+            return;
+        }
+        setVerifyingSecurityLicense(true);
+        try {
+            const res = await submitSecurityLicense(
+                "api/documents-online-verification-staffoo",
+                {
+                    user_id: userId,
+                    document_type: "Security License",
+                    license_number: onboardForm.o_seclic,
+                },
+                { method: "POST" }
+            );
+            if (res?.success && res?.expiry) {
+                const expiryStr = res.expiry.replace(/\\\//g, "/");
+                setOnboardForm(prev => ({ ...prev, o_seclicexp: expiryStr }));
+                setDataModified(JSON.stringify({ ...onboardForm, o_seclicexp: expiryStr }) !== JSON.stringify(originalOnboardForm));
+                toast.success("Security License verified. Expiry date locked.");
+            } else {
+                toast.error(res?.message || "Security License verification failed.");
+            }
+        } catch (err) {
+            console.error(err);
+            toast.error("Verification request failed.");
+        } finally {
+            setVerifyingSecurityLicense(false);
+        }
     };
 
     const handleDocUpload = async (e, fieldName) => {
@@ -731,7 +845,7 @@ const StaffOnboardingForms = ({ submit, userId, onProfileUpdate }) => {
         try {
             const res = await submit("api/upload-file", fd, { method: "POST" });
             if (res?.success && res?.path) {
-                setOnboardForm((prev) => {
+                setOnboardForm(prev => {
                     const updatedForm = { ...prev, [fieldName]: res.path };
                     setDataModified(JSON.stringify(updatedForm) !== JSON.stringify(originalOnboardForm));
                     return updatedForm;
@@ -889,6 +1003,8 @@ const StaffOnboardingForms = ({ submit, userId, onProfileUpdate }) => {
                     onSubmit={(e) => handleFormSubmit(e, 0)}
                     dataModified={dataModified}
                     onDocUpload={handleDocUpload}
+                    verifyingSecurityLicense={verifyingSecurityLicense}
+                    onVerifySecurityLicense={handleVerifySecurityLicense}
                 />
             )}
 

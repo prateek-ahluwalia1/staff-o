@@ -54,6 +54,7 @@ const isoToDisplay = (val) => {
 const normalizeToDisplay = (dateStr) => {
   if (!dateStr) return "";
   if (/^\d{2}\/\d{2}\/\d{4}$/.test(dateStr)) return dateStr;
+  if (/^\d{2}-\d{2}-\d{4}$/.test(dateStr)) return dateStr.replace(/-/g, "/");
   const iso = isoToDisplay(dateStr);
   if (iso !== dateStr) return iso;
   const d = new Date(dateStr);
@@ -63,25 +64,6 @@ const normalizeToDisplay = (dateStr) => {
     return `${day}/${month}/${d.getFullYear()}`;
   }
   return dateStr;
-};
-
-const safeJsonParse = (value) => {
-  if (typeof value !== "string") return null;
-  try {
-    return JSON.parse(value);
-  } catch {
-    return null;
-  }
-};
-
-const unwrapVisaResponse = (payload) => {
-  if (!payload) return null;
-  if (payload?.json?.data) return payload.json.data;
-  const parsedBody = safeJsonParse(payload?.body);
-  if (parsedBody?.data) return parsedBody.data;
-  if (payload?.data?.data) return payload.data.data;
-  if (payload?.data && typeof payload.data === "object") return payload.data;
-  return payload;
 };
 // ===================================
 
@@ -114,6 +96,12 @@ const ManageUsers = () => {
   const { submit, loading: submitLoading } = useSubmit({ isAuth: true });
   const { submit: uploadFile, loading: uploadLoading } = useSubmit({ isAuth: true });
 
+  // External Security License verification hook
+  const { submit: submitSecurityLicense } = useSubmit({
+    isAuth: true,
+    BaseURL: "https://apis.thescouts.com.au/",
+  });
+
   const [users, setUsers] = useState([]);
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
@@ -129,13 +117,12 @@ const ManageUsers = () => {
   const [showDocModal, setShowDocModal] = useState(false);
   const [selectedDoc, setSelectedDoc] = useState(null);
   const [verifyingDoc, setVerifyingDoc] = useState(false);
-  const [visaDetails, setVisaDetails] = useState(null);
   const [docForm, setDocForm] = useState({
     notes: "",
     no: false,
     exp: false,
     document_no: "",
-    document_expiry: "",   // will be DD/MM/YYYY
+    document_expiry: "",
     file: null,
     file_path: "",
     file_url: "",
@@ -160,6 +147,8 @@ const ManageUsers = () => {
     country: "",
     coordinates: "",
     user_id: "",
+    date_of_birth: "",
+    origin_country: "",
   }), []);
 
   const [formData, setFormData] = useState(defaultFormState);
@@ -210,6 +199,8 @@ const ManageUsers = () => {
         country: user.country || "",
         coordinates: user.coordinates || "",
         user_id: user.user_id || "",
+        date_of_birth: isoToDisplay(user.date_of_birth || extraInfo.date_of_birth || ""),
+        origin_country: user.origin_country || extraInfo.origin_country || "",
       });
     } else {
       setEditingUser(null);
@@ -354,14 +345,12 @@ const ManageUsers = () => {
         is_verified: false,
       });
     }
-    setVisaDetails(null);
     setShowDocModal(true);
   };
 
   const closeDocumentModal = () => {
     setShowDocModal(false);
     setSelectedDoc(null);
-    setVisaDetails(null);
   };
 
   const handleDocNumberChange = (e) => {
@@ -372,13 +361,11 @@ const ManageUsers = () => {
       is_verified: false,
       document_expiry: "",
     }));
-    setVisaDetails(null);
   };
 
   const handleDocFormChange = async (e) => {
     const { name, value, type, checked, files } = e.target;
 
-    // *** ALWAYS DISABLED for Security License & Visa ***
     if (
       name === "document_expiry" &&
       (docForm.document_name === "Security License" || docForm.document_name === "Visa")
@@ -427,33 +414,27 @@ const ManageUsers = () => {
       return;
     }
 
-    // Security License verification
+    // ---------- SECURITY LICENSE VERIFICATION ----------
     if (docForm.document_name === "Security License") {
       setVerifyingDoc(true);
       try {
-        const res = await submit(
-          "api/documents-online-verification",
+        const res = await submitSecurityLicense(
+          "api/documents-online-verification-staffoo",
           {
             user_id: editingUser.id,
-            document_type: docForm.document_name,
+            document_type: "Security License",
             license_number: docForm.document_no,
           },
           { method: "POST" }
         );
-
-        if (res?.success && res?.data) {
-          const expiryDate = res.data.expiry_date || res.data.document_expiry;
-          if (expiryDate) {
-            setDocForm((prev) => ({
-              ...prev,
-              document_expiry: normalizeToDisplay(expiryDate),
-              is_verified: true,
-            }));
-            toast.success("Security License verified. Expiry date locked.");
-          } else {
-            setDocForm((prev) => ({ ...prev, is_verified: true }));
-            toast.warning("Verification succeeded but no expiry date returned.");
-          }
+        if (res?.success && res?.expiry) {
+          const expiryStr = res.expiry.replace(/\\\//g, "/");
+          setDocForm((prev) => ({
+            ...prev,
+            document_expiry: expiryStr,
+            is_verified: true,
+          }));
+          toast.success("Security License verified. Expiry date locked.");
         } else {
           setDocForm((prev) => ({ ...prev, is_verified: false }));
           toast.error(res?.message || "Security License verification failed.");
@@ -467,7 +448,7 @@ const ManageUsers = () => {
       return;
     }
 
-    // VISA verification
+    // ---------- VISA VERIFICATION ----------
     if (docForm.document_name === "Visa") {
       const user = editingUser;
       const staff = user?.staff || {};
@@ -479,12 +460,27 @@ const ManageUsers = () => {
         givenName = nameParts.slice(0, -1).join(" ");
         familyName = nameParts[nameParts.length - 1];
       }
-      const dob = staff?.date_of_birth || user?.date_of_birth || "";
-      if (!dob) {
+
+      // Use date_of_birth from the editingUser (already updated via form)
+      const rawDob = staff?.date_of_birth || user?.date_of_birth || formData.date_of_birth || "";
+      if (!rawDob) {
         toast.error("Date of birth is missing. Please update personal information first.");
         return;
       }
-      const countryCode = (user?.country || "AUS").toUpperCase().slice(0, 3);
+      const dobParts = rawDob.split("/");
+      if (dobParts.length !== 3) {
+        toast.error("Invalid date of birth format. Please re‑save the profile.");
+        return;
+      }
+      const dobISO = `${dobParts[2]}-${dobParts[1]}-${dobParts[0]}`;
+
+      // Use origin_country from the editingUser (updated via form)
+      const originCountry = staff?.origin_country || user?.origin_country || formData.origin_country || "";
+      if (!originCountry) {
+        toast.error("Please save your country of origin in your profile before verifying your visa.");
+        return;
+      }
+      const countryCode = originCountry.toUpperCase().slice(0, 3);
       const passportNumber = docForm.document_no.toUpperCase();
 
       const payload = {
@@ -492,79 +488,28 @@ const ManageUsers = () => {
         country: countryCode,
         family_name: familyName,
         given_name: givenName,
-        dob: dob,
+        dob: dobISO,
       };
 
       setVerifyingDoc(true);
-      let checkId = null;
-      let pollInterval = null;
-      let timeoutId = null;
-
-      const cleanup = () => {
-        if (pollInterval) clearInterval(pollInterval);
-        if (timeoutId) clearTimeout(timeoutId);
-      };
-
       try {
-        const createRes = await submit("api/admin/visa-check", payload, { method: "POST" });
-        const createData = unwrapVisaResponse(createRes);
-        if (!createData?.id) {
-          toast.error("Could not submit visa verification request.");
-          setVerifyingDoc(false);
-          return;
+        const res = await submit("api/admin/visa-check", payload, { method: "POST" });
+        if (res?.success && res?.data?.expired_at) {
+          const displayExpiry = normalizeToDisplay(res.data.expired_at);
+          setDocForm((prev) => ({
+            ...prev,
+            document_expiry: displayExpiry,
+            is_verified: true,
+          }));
+          toast.success("Visa verified. Expiry date locked.");
+        } else {
+          setDocForm((prev) => ({ ...prev, is_verified: false }));
+          toast.error(res?.message || "Visa verification failed.");
         }
-        checkId = createData.id;
-        toast.info("Verification in progress. Please wait...");
-
-        pollInterval = setInterval(async () => {
-          try {
-            const resultRes = await submit(`api/admin/visa-result/${checkId}`, null, { method: "GET" });
-            const resultData = unwrapVisaResponse(resultRes);
-            if (resultData?.status === "completed" && resultData?.visa?.australia) {
-              cleanup();
-              const visaInfo = resultData.visa.australia;
-              const expiryDate = visaInfo.expiry_date || visaInfo.valid_until;
-              setVisaDetails({
-                visa_type: visaInfo.type_name || visaInfo.class || "N/A",
-                work_entitlement: visaInfo.work_entitlement || "N/A",
-                location: visaInfo.location || "N/A",
-                check_id: checkId,
-              });
-              if (expiryDate) {
-                setDocForm((prev) => ({
-                  ...prev,
-                  document_expiry: normalizeToDisplay(expiryDate),
-                  is_verified: true,
-                }));
-                toast.success("Visa verified. Expiry date locked.");
-              } else {
-                setDocForm((prev) => ({ ...prev, is_verified: true }));
-                toast.warning("Visa verified but no expiry date found.");
-              }
-              setVerifyingDoc(false);
-            } else if (resultData?.status === "failed") {
-              cleanup();
-              toast.error("Visa verification failed. Please check the passport number.");
-              setDocForm((prev) => ({ ...prev, is_verified: false }));
-              setVisaDetails(null);
-              setVerifyingDoc(false);
-            }
-          } catch (err) {
-            console.error("Polling error", err);
-          }
-        }, 2000);
-
-        timeoutId = setTimeout(() => {
-          cleanup();
-          if (verifyingDoc) {
-            toast.error("Verification timed out. Please try again later.");
-            setVerifyingDoc(false);
-          }
-        }, 30000);
       } catch (err) {
         console.error(err);
         toast.error("Visa verification request failed.");
-        cleanup();
+      } finally {
         setVerifyingDoc(false);
       }
       return;
@@ -585,7 +530,7 @@ const ManageUsers = () => {
       no: docForm.no,
       exp: docForm.exp,
       document_no: docForm.document_no,
-      document_expiry: docForm.document_expiry,   // DD/MM/YYYY
+      document_expiry: docForm.document_expiry,
       file: docForm.file_path,
     };
     if (selectedDoc) {
@@ -628,6 +573,12 @@ const ManageUsers = () => {
         toast.error("Please enter a valid Australian phone number (e.g., 0400 000 000 or +61 400 000 000).");
         return;
       }
+    }
+
+    // Validate date of birth if provided
+    if (formData.date_of_birth && !/^\d{2}\/\d{2}\/\d{4}$/.test(formData.date_of_birth)) {
+      toast.error("Please enter the date of birth in DD/MM/YYYY format.");
+      return;
     }
 
     let url = "";
@@ -704,27 +655,23 @@ const ManageUsers = () => {
   return (
     <div className="dashboard-main dashboard-tools-page">
       <style>{`
-        /* Premium Typography & Layout */
         .dashboard-page-header h1 {
           font-weight: 800;
           letter-spacing: -0.02em;
           color: #111827;
         }
-
         .jobtracker-table-shell {
           border-radius: 12px;
           border: 1px solid #e2e8f0;
           background: #ffffff;
           overflow: hidden;
         }
-
         .jobtracker-main-table {
           table-layout: fixed;
           width: 100%;
           border-collapse: collapse;
           margin: 0;
         }
-
         .premium-thead th {
           background-color: #0A7C6E !important;
           color: #ffffff !important;
@@ -737,26 +684,21 @@ const ManageUsers = () => {
           border-right: 1px solid rgba(255, 255, 255, 0.1) !important;
           white-space: nowrap;
         }
-        
         .premium-thead th:last-child {
           border-right: none !important;
         }
-
         .jobtracker-data-row td {
           padding: 1.2rem 1.5rem !important;
           vertical-align: middle;
           border-bottom: 1px solid #e2e8f0 !important;
           border-right: 1px solid #f8fafc;
         }
-
         .jobtracker-data-row td:last-child {
           border-right: none;
         }
-
         .jobtracker-data-row:last-child td {
           border-bottom: none !important;
         }
-
         .jobtracker-tabs .nav-link {
           border-radius: 8px;
           padding: 0.5rem 1rem;
@@ -767,17 +709,14 @@ const ManageUsers = () => {
           border: 1px solid transparent;
           transition: all 0.2s ease-in-out;
         }
-
         .jobtracker-tabs .nav-link:hover {
           background: #f1f5f9;
         }
-
         .jobtracker-tabs .nav-link.active {
           background: #0A7C6E;
           color: #ffffff;
           box-shadow: 0 4px 6px -1px rgba(10, 124, 110, 0.2);
         }
-        
         .full-screen-modal {
           position: fixed;
           top: 0;
@@ -792,7 +731,6 @@ const ManageUsers = () => {
           align-items: center;
           animation: modalFadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
         }
-
         .modal-inner-content {
           width: 95%;
           max-width: 900px;
@@ -804,7 +742,6 @@ const ManageUsers = () => {
           flex-direction: column;
           overflow: hidden;
         }
-
         .form-control, .form-select {
           background-color: #f3f4f6;
           border: 2px solid transparent;
@@ -814,21 +751,18 @@ const ManageUsers = () => {
           color: #111827;
           transition: all 0.2s ease-in-out;
         }
-
         .form-control:focus, .form-select:focus {
           background-color: #ffffff;
           border-color: #000000;
           box-shadow: none;
           outline: none;
         }
-
         .form-label {
           font-size: 0.8rem;
           font-weight: 600;
           color: #4b5563;
           margin-bottom: 0.4rem;
         }
-
         .modal-tabs-container {
           background: #f3f4f6;
           padding: 4px;
@@ -837,7 +771,6 @@ const ManageUsers = () => {
           flex-wrap: wrap;
           gap: 4px;
         }
-
         .modal-tabs-container .btn {
           border-radius: 8px;
           border: none;
@@ -847,18 +780,15 @@ const ManageUsers = () => {
           padding: 0.5rem 1rem;
           transition: all 0.2s;
         }
-
         .modal-tabs-container .btn-primary-custom {
           background: #ffffff;
           color: #000000;
           box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         }
-
         .modal-tabs-container .btn-outline-primary:hover:not(:disabled) {
           color: #111827;
           background: rgba(255,255,255,0.5);
         }
-
         .section-divider {
           font-size: 1.1rem;
           font-weight: 700;
@@ -867,7 +797,6 @@ const ManageUsers = () => {
           padding-bottom: 10px;
           border-bottom: 1px solid #e5e7eb;
         }
-
         .confirm-modal-backdrop {
           position: fixed;
           inset: 0;
@@ -879,7 +808,6 @@ const ManageUsers = () => {
           justify-content: center;
           padding: 1rem;
         }
-
         .confirm-modal-card {
           width: 100%;
           max-width: 480px;
@@ -890,12 +818,10 @@ const ManageUsers = () => {
           overflow: hidden;
           animation: modalFadeIn 0.2s ease-out;
         }
-
         .confirm-modal-header {
           background: #f8fafc;
           border-bottom: 1px solid #e2e8f0;
         }
-
         .confirm-modal-icon {
           width: 42px;
           height: 42px;
@@ -906,12 +832,10 @@ const ManageUsers = () => {
           background: #fee2e2;
           color: #dc2626;
         }
-
         .confirm-modal-icon.icon-doc {
           background: #e0f2fe;
           color: #0284c7;
         }
-
         .pac-container {
           z-index: 2000 !important;
           border-radius: 12px;
@@ -919,7 +843,6 @@ const ManageUsers = () => {
           border: 1px solid #e5e7eb;
           margin-top: 4px;
         }
-
         @keyframes modalFadeIn {
           from { opacity: 0; transform: scale(0.98); }
           to { opacity: 1; transform: scale(1); }
@@ -980,7 +903,6 @@ const ManageUsers = () => {
         </div>
       )}
 
-      {/* Table Card */}
       <div className="card border-0 shadow-sm" style={{ borderRadius: "16px", overflow: "hidden" }}>
         <div className="table-responsive jobtracker-table-shell">
           <table className={`table table-hover align-middle mb-0 jobtracker-main-table ${loading ? "opacity-50" : ""}`}>
@@ -1273,6 +1195,37 @@ const ManageUsers = () => {
                       </>
                     )}
 
+                    {/* ---------- NEW: Date of Birth & Origin Country ---------- */}
+                    <div className="col-12">
+                      <h6 className="section-divider">Identity Details</h6>
+                    </div>
+                    <div className="col-md-6">
+                      <label className="form-label">Date of Birth</label>
+                      <input
+                        type="text"
+                        className="form-control"
+                        name="date_of_birth"
+                        placeholder="DD/MM/YYYY"
+                        value={formData.date_of_birth}
+                        onChange={handleInputChange}
+                        maxLength={10}
+                        pattern="^(0[1-9]|[12][0-9]|3[01])/(0[1-9]|1[012])/\d{4}$"
+                        title="Enter a valid date in DD/MM/YYYY format"
+                      />
+                    </div>
+                    <div className="col-md-6">
+                      <label className="form-label">Country of Origin</label>
+                      <input
+                        type="text"
+                        className="form-control"
+                        name="origin_country"
+                        placeholder="e.g. Australia"
+                        value={formData.origin_country}
+                        onChange={handleInputChange}
+                        maxLength="50"
+                      />
+                    </div>
+
                     {activeTab !== "staff" && (
                       <>
                         <div className="col-12">
@@ -1387,7 +1340,7 @@ const ManageUsers = () => {
                             </select>
                           </div>
 
-                          {/* Document Number with Verification */}
+                          {/* Document Number with Verify button */}
                           <div className="mb-3">
                             <label className="form-label fw-bold text-dark">
                               Document Number <span className="text-danger">*</span>
@@ -1515,30 +1468,6 @@ const ManageUsers = () => {
                               />
                             </div>
                           </div>
-
-                          {/* Visa Details Alert */}
-                          {docForm.document_name === "Visa" && docForm.is_verified && visaDetails && (
-                            <div className="mb-4 p-3 bg-light border rounded-3">
-                              <div className="d-flex align-items-center gap-2 mb-2">
-                                <i className="fa-solid fa-passport text-primary"></i>
-                                <strong className="small text-uppercase text-muted">Visa Verification Details</strong>
-                              </div>
-                              <div className="row g-2 small">
-                                <div className="col-6"><span className="text-muted">Visa Type:</span></div>
-                                <div className="col-6 fw-medium">{visaDetails.visa_type}</div>
-                                <div className="col-6"><span className="text-muted">Work Entitlement:</span></div>
-                                <div className="col-6 fw-medium">{visaDetails.work_entitlement}</div>
-                                <div className="col-6"><span className="text-muted">Location:</span></div>
-                                <div className="col-6 fw-medium">{visaDetails.location}</div>
-                                {visaDetails.check_id && (
-                                  <>
-                                    <div className="col-6"><span className="text-muted">Verification ID:</span></div>
-                                    <div className="col-6 fw-medium text-truncate" title={visaDetails.check_id}>{visaDetails.check_id}</div>
-                                  </>
-                                )}
-                              </div>
-                            </div>
-                          )}
 
                           {/* File Upload Preview */}
                           <div className="mb-4">

@@ -27,7 +27,9 @@ const Reports = () => {
     <div className="dashboard-main dashboard-tools-page">
       <div className="dashboard-tools-header">
         <h2 className="dashboard-tools-title">Reports Management</h2>
-        <p className="dashboard-tools-subtitle">
+        <p className="dashboard-tools-subtitle"
+          style={{ textTransform: "none" }}
+        >
           Choose a category to manage your reports.
         </p>
       </div>

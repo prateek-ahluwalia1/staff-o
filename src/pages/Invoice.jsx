@@ -306,7 +306,9 @@ const Invoice = () => {
       <div className="dashboard-page-header d-flex flex-column flex-lg-row justify-content-between align-items-start align-items-lg-center">
         <div className="mb-3 mb-lg-0">
           <h1 className="mb-1">Invoicing</h1>
-          <p className="mb-0 text-muted">Create and send invoices with your existing accounts flow.</p>
+          <p className="mb-0 text-muted"
+            style={{ textTransform: "none" }}
+          >Create and send invoices with your existing accounts flow.</p>
         </div>
 
         <div className="d-flex flex-column flex-sm-row gap-2 w-100 w-lg-auto">

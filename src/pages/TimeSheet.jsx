@@ -610,7 +610,9 @@ export default function TimeSheet() {
       <div className="dashboard-page-header">
         <div>
           <h1>Time Sheet</h1>
-          <p>Filter, review, and drill into shift breakdowns.</p>
+          <p
+            style={{ textTransform: "none" }}
+          >Filter, review, and drill into shift breakdowns.</p>
         </div>
       </div>
 

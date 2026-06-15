@@ -430,7 +430,9 @@ export default function PaySheet() {
             <div className="dashboard-page-header">
                 <div>
                     <h1>Pay Sheet</h1>
-                    <p>Search and export detailed paysheet records for your staff</p>
+                    <p
+                        style={{ textTransform: "none" }}
+                    >Search and export detailed paysheet records for your staff</p>
                 </div>
             </div>
 
@@ -566,7 +568,9 @@ export default function PaySheet() {
                                                 <i className="fa-solid fa-file-invoice-dollar" />
                                             </div>
                                             <h5 className="ps-empty-title">No paysheet data</h5>
-                                            <p className="ps-empty-text">
+                                            <p className="ps-empty-text"
+                                                style={{ textTransform: "none" }}
+                                            >
                                                 Select a date range above and click <strong>Search</strong> to load paysheet records.
                                             </p>
                                         </div>

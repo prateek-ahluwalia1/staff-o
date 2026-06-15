@@ -295,7 +295,7 @@ export default function AdminClientProfile({
                                     <div style={{ width: 48, height: 48, borderRadius: "50%", background: "#f8fafc", border: "1px solid #e2e8f0", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 10px" }}>
                                         <i className="fa-solid fa-map" style={{ fontSize: 20, color: "#cbd5e1" }}></i>
                                     </div>
-                                    <p style={{ fontSize: "0.82rem", margin: 0, color: "#94a3b8" }}>Select a site from the dropdown to continue</p>
+                                    <p style={{ fontSize: "0.82rem", margin: 0, color: "#94a3b8", textTransform: "none" }}>Select a site from the dropdown to continue</p>
                                 </div>
                             )}
                         </div>

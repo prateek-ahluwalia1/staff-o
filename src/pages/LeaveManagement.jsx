@@ -269,7 +269,9 @@ const LeaveManagement = () => {
       <div className="dashboard-page-header leave-page-header">
         <div>
           <h1>Leave Management</h1>
-          <p>Review, approve, and manage staff leave requests.</p>
+          <p
+            style={{ textTransform: "none" }}
+          >Review, approve, and manage staff leave requests.</p>
         </div>
 
         <div className="leave-header-actions d-flex gap-3 align-items-center">
@@ -405,6 +407,7 @@ const LeaveManagement = () => {
                   <td
                     colSpan={canManageLeaveActions ? "10" : "9"}
                     className="text-center py-5 text-muted"
+                    style={{ textTransform: "none" }}
                   >
                     No {activeLeaveTab} leaves found.
                   </td>
@@ -508,7 +511,9 @@ const LeaveManagement = () => {
             ))}
           </div>
         ) : (
-          <div className="text-center py-5 text-muted">
+          <div className="text-center py-5 text-muted"
+            style={{ textTransform: "none" }}
+          >
             No {activeLeaveTab} leaves found.
           </div>
         )}
@@ -581,7 +586,7 @@ const LeaveManagement = () => {
                     <option value="" disabled>
                       {isAdmin && !selectedContractorId
                         ? "Select Resource Partner first"
-                        : "Choose a staff member"}
+                        : "Choose a Staff Member"}
                     </option>
                     {staffList.map((staff) => (
                       <option key={staff.id} value={staff.id}>

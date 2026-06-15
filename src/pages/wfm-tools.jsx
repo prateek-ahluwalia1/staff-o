@@ -14,7 +14,9 @@ const WFMTools = () => {
     <div className="dashboard-main dashboard-tools-page">
       <div className="dashboard-tools-header">
         <h2 className="dashboard-tools-title">WFM Tools</h2>
-        <p className="dashboard-tools-subtitle">
+        <p className="dashboard-tools-subtitle"
+          style={{ textTransform: "none" }}
+        >
           Leave tools are managed here. Calls now start directly from chat.
         </p>
       </div>

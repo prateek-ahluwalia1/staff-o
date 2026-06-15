@@ -143,7 +143,9 @@ const PublicHolidays = () => {
                     <div className="holiday-topbar">
                         <div className="holiday-topbar-copy">
                             <h2 className="h4 m-0 text-dark fw-bold">Public Holidays</h2>
-                            <p className="mb-0 text-muted small">
+                            <p className="mb-0 text-muted small"
+                                style={{ textTransform: "none" }}
+                            >
                                 View public holidays for {selectedStateLabel}.
                             </p>
                         </div>

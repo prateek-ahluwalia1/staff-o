@@ -162,9 +162,9 @@ export const Card = ({
 
       <div className="card-body d-flex flex-column">
         <h5 style={{ fontWeight: 700 }}>{title}</h5>
-        <p style={{ color: "#6b7280", fontSize: 14 }}>{description}</p>
+        <p style={{ color: "#6b7280", fontSize: 14, textTransform: "none" }}>{description}</p>
 
-        <div className="mt-auto">
+        <div className="mt-2">
           <button
             className="btn btn-primary-custom w-100"
             style={{ borderRadius: 12, paddingTop: 12, paddingBottom: 12, fontWeight: 700 }}

@@ -236,7 +236,9 @@ const RatesList = ({ forcedType } = {}) => {
       <div className="dashboard-page-header">
         <div>
           <h1>{title}</h1>
-          <p>
+          <p
+            style={{ textTransform: "none" }}
+          >
             Manage {isCharge ? "charges" : "payments"} by job level and state
           </p>
         </div>

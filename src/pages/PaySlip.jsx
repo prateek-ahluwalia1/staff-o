@@ -257,12 +257,13 @@ const PaySlip = () => {
     [staffResponse],
   );
 
+  // ⬇️ UPDATED: Now shows Name - User ID instead of Name - Email
   const staffOptions = useMemo(
     () =>
       buildSelectOptions(
         staffList,
         (staff) =>
-          `${staff.name || `Staff #${staff.id}`} - ${staff.email || "N/A"}`,
+          `${staff.name || `Staff #${staff.id}`} - ${staff.user_id || "N/A"}`,
       ),
     [staffList],
   );
@@ -440,7 +441,9 @@ const PaySlip = () => {
       <div className="dashboard-page-header">
         <div>
           <h1>Pay Slip</h1>
-          <p>
+          <p
+            style={{ textTransform: "none" }}
+          >
             Upload and map payslip PDFs to date ranges, then fetch or auto-sync
             staff payslips.
           </p>
@@ -468,8 +471,10 @@ const PaySlip = () => {
         <div className="card-body">
           <div className="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
             <h6 className="fw-bold m-0">Staff Guard Filters</h6>
-            <span className="text-muted small">
-              Select staff and date range like Timesheet
+            <span className="text-muted small"
+              style={{ textTransform: "none" }}
+            >
+              Select staff and date range
             </span>
           </div>
 
@@ -604,7 +609,9 @@ const PaySlip = () => {
 
               {!actionLoading && guardPayslipRows.length === 0 && (
                 <tr>
-                  <td colSpan="4" className="text-center text-muted py-5">
+                  <td colSpan="4" className="text-center text-muted py-5"
+                    style={{ textTransform: "none" }}
+                  >
                     No guard payslip data loaded yet.
                   </td>
                 </tr>

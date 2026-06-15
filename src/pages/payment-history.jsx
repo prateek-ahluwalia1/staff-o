@@ -180,7 +180,9 @@ export default function PaymentHistory() {
       <div className="dashboard-page-header">
         <div>
           <h1>{displayTitle}</h1>
-          <p>All shift payments, transactions, and receipts in a single place.</p>
+          <p style={{ textTransform: "none" }}>
+            All shift payments, transactions, and receipts in a single place.
+          </p>
         </div>
       </div>
 
@@ -213,7 +215,9 @@ export default function PaymentHistory() {
           {isAdmin && !selectedCustomerId ? (
             <div className="text-center py-5 bg-light rounded border border-dashed">
               <i className="fa-solid fa-hand-pointer text-primary fs-1 mb-3 opacity-50"></i>
-              <h6 className="text-muted mb-0">Please select a customer from the dropdown to view transactions.</h6>
+              <h6 className="text-muted mb-0"
+                style={{ textTransform: "none" }}
+              >Please select a customer from the dropdown to view transactions.</h6>
             </div>
           ) : loading ? (
             <Loader />

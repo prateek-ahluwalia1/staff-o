@@ -552,7 +552,9 @@ const JobTracker = () => {
 
               {!loading && rows.length === 0 && (
                 <tr>
-                  <td colSpan="12" className="text-center text-muted py-5">
+                  <td colSpan="12" className="text-center text-muted py-5"
+                    style={{ textTransform: "none" }}
+                  >
                     No job tracker records found.
                   </td>
                 </tr>

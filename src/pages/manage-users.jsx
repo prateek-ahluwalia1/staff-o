@@ -929,7 +929,9 @@ const ManageUsers = () => {
       <div className="dashboard-page-header">
         <div>
           <h1>User Management</h1>
-          <p className="text-muted">
+          <p className="text-muted"
+            style={{ textTransform: "none" }}
+          >
             Manage permissions and details for all account types.
           </p>
         </div>

@@ -345,7 +345,7 @@ export default function RosterPage() {
       <div className="staffoo-page-container">
         <div className="staffoo-header-card">
           <h2>Regional Roster Operations</h2>
-          <p>Select a region below to manage sites, rosters, and shift assignments.</p>
+          <p style={{ textTransform: "none" }}>Select a region below to manage sites, rosters, and shift assignments.</p>
         </div>
         <div className="staffoo-grid-container">
           {states_array.map((stateInfo) => (

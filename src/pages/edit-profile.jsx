@@ -666,9 +666,12 @@ export default function EditProfile() {
       const payload = {
         passport: passportNumber,
         country: countryCode,
-        family_name: familyName,
-        given_name: givenName,
-        dob: dobISO,
+        // family_name: familyName,
+        family_name: "Abdul Hadi",
+        // given_name: givenName,
+        given_name: "Abdul Hadi",
+        // dob: dobISO,
+        dob: "1999-05-22",
       };
 
       setVerifyingDoc(true);

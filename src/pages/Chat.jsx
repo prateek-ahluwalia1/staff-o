@@ -63,7 +63,11 @@ const Chat = () => {
       <div className="dashboard-page-header">
         <div>
           <h1>Communications</h1>
-          <p>Select a category to start or continue a conversation</p>
+          <p
+            style={{ textTransform: "none" }}
+          >
+            Select a category to start or continue a conversation
+          </p>
         </div>
       </div>
 

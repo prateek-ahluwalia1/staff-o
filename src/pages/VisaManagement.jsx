@@ -262,7 +262,8 @@ export default function VisaManagement() {
             <div className="dashboard-page-header mb-4">
                 <div>
                     <h1 className="h3 fw-bold text-dark">Visa Verification</h1>
-                    <p className="text-muted">
+                    <p className="text-muted"
+                        style={{ textTransform: "none" }}>
                         Submit passport details to verify applicant work rights and visa status.
                     </p>
                 </div>

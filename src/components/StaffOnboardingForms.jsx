@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { useSelector } from "react-redux";
 import { toast } from "react-toastify";
 import PDFGenerator from "../utils/PDFGenerator";
 import { apiURL } from "../utils/exports";
@@ -19,6 +18,7 @@ const isoToDisplay = (val) => {
     if (/^\d{2}\/\d{2}\/\d{4}$/.test(val)) return val;
     const match = val.match(/^(\d{4})-(\d{2})-(\d{2})$/);
     if (match) {
+        // eslint-disable-next-line
         const [_, y, m, d] = match;
         return `${d}/${m}/${y}`;
     }
@@ -29,6 +29,7 @@ const displayToISO = (val) => {
     if (!val) return "";
     const match = val.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
     if (match) {
+        // eslint-disable-next-line
         const [_, d, m, y] = match;
         return `${y}-${m}-${d}`;
     }
@@ -638,15 +639,14 @@ const EmployeeOnboardingForm = ({
     );
 };
 
-/* ---------- Normalization ---------- */
-const normalizeTfnData = (apiData, userdata) => ({
+const normalizeTfnData = (apiData) => ({
     tfn: apiData?.tfn ?? "",
     title: apiData?.title ?? "",
     first_name: apiData?.first_name ?? "",
     surname: apiData?.surname ?? "",
     prev_name: apiData?.previous_name ?? apiData?.prev_name ?? "",
-    dob: apiData?.dob ? isoToDisplay(apiData.dob) : (userdata?.staff?.date_of_birth ? isoToDisplay(userdata.staff.date_of_birth) : todayDDMMYYYY()),
-    address: apiData?.address ?? userdata?.address ?? "",
+    dob: apiData?.dob ? isoToDisplay(apiData.dob) : todayDDMMYYYY(),
+    address: apiData?.address ?? "",
     basis: apiData?.basis_of_payment ?? apiData?.basis ?? "casual",
     aus_res: String(apiData?.australian_resident ?? apiData?.aus_res ?? "").toLowerCase() === "1" ? "yes" : String(apiData?.australian_resident ?? apiData?.aus_res ?? "").toLowerCase() === "yes" ? "yes" : "no",
     threshold: String(apiData?.claim_threshold ?? apiData?.threshold ?? "").toLowerCase() === "1" ? "yes" : String(apiData?.claim_threshold ?? apiData?.threshold ?? "").toLowerCase() === "yes" ? "yes" : "no",
@@ -655,8 +655,8 @@ const normalizeTfnData = (apiData, userdata) => ({
     date1: apiData?.signed_date ? isoToDisplay(apiData.signed_date) : todayDDMMYYYY(),
 });
 
-const normalizeSuperData = (apiData, userdata) => ({
-    s_name: apiData?.full_name ?? apiData?.s_name ?? userdata?.name ?? "",
+const normalizeSuperData = (apiData) => ({
+    s_name: apiData?.full_name ?? apiData?.s_name ?? "",
     s_empno: apiData?.employee_number ?? apiData?.s_empno ?? "",
     fund_choice: apiData?.fund_choice ?? "employer",
     s_fundname: apiData?.fund_name ?? apiData?.s_fundname ?? "",
@@ -668,45 +668,41 @@ const normalizeSuperData = (apiData, userdata) => ({
     date2: apiData?.signed_date ? isoToDisplay(apiData.signed_date) : todayDDMMYYYY(),
 });
 
-const normalizeOnboardData = (apiData, userdata) => {
-    const staff = userdata?.staff || {};
-    return {
-        o_name: apiData?.full_name ?? apiData?.o_name ?? userdata?.name ?? "",
-        o_dob: apiData?.dob ? isoToDisplay(apiData.dob) : (staff?.date_of_birth ? isoToDisplay(staff.date_of_birth) : todayDDMMYYYY()),
-        o_addr: apiData?.address ?? apiData?.o_addr ?? userdata?.address ?? "",
-        o_phone: apiData?.mobile ?? apiData?.o_phone ?? staff?.phone ?? userdata?.phone ?? "",
-        o_email: apiData?.email ?? apiData?.o_email ?? userdata?.email ?? "",
-        o_passport: apiData?.passport_number ?? apiData?.o_passport ?? "",
-        o_pcountry: apiData?.passport_country ?? apiData?.o_pcountry ?? "",
-        o_pexpiry: apiData?.passport_expiry ? isoToDisplay(apiData.passport_expiry) : "",
-        work: apiData?.work_rights ?? apiData?.work ?? "citizen",
-        o_visa_type: apiData?.visa_type ?? apiData?.o_visa_type ?? "",
-        passport_doc: apiData?.passport_doc ?? "",
-        chk_primary: Boolean(apiData?.id_checks?.primary_id ?? apiData?.chk_primary ?? false),
-        chk_driver: Boolean(apiData?.id_checks?.drivers_license ?? apiData?.chk_driver ?? false),
-        chk_security: Boolean(apiData?.id_checks?.security_license ?? apiData?.chk_security ?? false),
-        chk_medicare: Boolean(apiData?.id_checks?.medicare_or_utility ?? apiData?.chk_medicare ?? false),
-        o_bank: apiData?.bank_name ?? apiData?.o_bank ?? "",
-        o_bsb: apiData?.bsb ?? apiData?.o_bsb ?? "",
-        o_acct: apiData?.account_number ?? apiData?.o_acct ?? "",
-        o_tfn: apiData?.tfn ?? apiData?.o_tfn ?? "",
-        o_superfund: apiData?.super_fund ?? apiData?.o_superfund ?? "",
-        o_superusi: apiData?.super_usi ?? apiData?.o_superusi ?? "",
-        o_member: apiData?.super_member ?? apiData?.o_member ?? "",
-        o_seclic: apiData?.security_license ?? apiData?.o_seclic ?? staff?.security_license_no ?? "",
-        o_seclicexp: apiData?.security_license_expiry ? isoToDisplay(apiData.security_license_expiry) : "",
-        security_license_doc: apiData?.security_license_doc ?? "",
-        o_fa: apiData?.first_aid_cert ?? apiData?.o_fa ?? "",
-        o_faexp: apiData?.first_aid_expiry ? isoToDisplay(apiData.first_aid_expiry) : "",
-        first_aid_doc: apiData?.first_aid_doc ?? "",
-        sig3: apiData?.signature ?? apiData?.sig3 ?? "",
-        date3: apiData?.signed_date ? isoToDisplay(apiData.signed_date) : todayDDMMYYYY(),
-    };
-};
+const normalizeOnboardData = (apiData) => ({
+    o_name: apiData?.full_name ?? apiData?.o_name ?? "",
+    o_dob: apiData?.dob ? isoToDisplay(apiData.dob) : todayDDMMYYYY(),
+    o_addr: apiData?.address ?? apiData?.o_addr ?? "",
+    o_phone: apiData?.mobile ?? apiData?.o_phone ?? "",
+    o_email: apiData?.email ?? apiData?.o_email ?? "",
+    o_passport: apiData?.passport_number ?? apiData?.o_passport ?? "",
+    o_pcountry: apiData?.passport_country ?? apiData?.o_pcountry ?? "",
+    o_pexpiry: apiData?.passport_expiry ? isoToDisplay(apiData.passport_expiry) : "",
+    work: apiData?.work_rights ?? apiData?.work ?? "citizen",
+    o_visa_type: apiData?.visa_type ?? apiData?.o_visa_type ?? "",
+    passport_doc: apiData?.passport_doc ?? "",
+    chk_primary: Boolean(apiData?.id_checks?.primary_id ?? apiData?.chk_primary ?? false),
+    chk_driver: Boolean(apiData?.id_checks?.drivers_license ?? apiData?.chk_driver ?? false),
+    chk_security: Boolean(apiData?.id_checks?.security_license ?? apiData?.chk_security ?? false),
+    chk_medicare: Boolean(apiData?.id_checks?.medicare_or_utility ?? apiData?.chk_medicare ?? false),
+    o_bank: apiData?.bank_name ?? apiData?.o_bank ?? "",
+    o_bsb: apiData?.bsb ?? apiData?.o_bsb ?? "",
+    o_acct: apiData?.account_number ?? apiData?.o_acct ?? "",
+    o_tfn: apiData?.tfn ?? apiData?.o_tfn ?? "",
+    o_superfund: apiData?.super_fund ?? apiData?.o_superfund ?? "",
+    o_superusi: apiData?.super_usi ?? apiData?.o_superusi ?? "",
+    o_member: apiData?.super_member ?? apiData?.o_member ?? "",
+    o_seclic: apiData?.security_license ?? apiData?.o_seclic ?? "",
+    o_seclicexp: apiData?.security_license_expiry ? isoToDisplay(apiData.security_license_expiry) : "",
+    security_license_doc: apiData?.security_license_doc ?? "",
+    o_fa: apiData?.first_aid_cert ?? apiData?.o_fa ?? "",
+    o_faexp: apiData?.first_aid_expiry ? isoToDisplay(apiData.first_aid_expiry) : "",
+    first_aid_doc: apiData?.first_aid_doc ?? "",
+    sig3: apiData?.signature ?? apiData?.sig3 ?? "",
+    date3: apiData?.signed_date ? isoToDisplay(apiData.signed_date) : todayDDMMYYYY(),
+});
 
 /* ---------- Main Component ---------- */
 const StaffOnboardingForms = ({ submit, userId, onProfileUpdate }) => {
-    const { userdata } = useSelector((state) => state.auth);
     const [subTab, setSubTab] = useState(0);
     const [loading, setLoading] = useState(false);
     const [dataModified, setDataModified] = useState(false);
@@ -724,9 +720,10 @@ const StaffOnboardingForms = ({ submit, userId, onProfileUpdate }) => {
     const [originalSuperForm, setOriginalSuperForm] = useState(null);
     const [originalOnboardForm, setOriginalOnboardForm] = useState(null);
 
-    const [tfnForm, setTfnForm] = useState(() => normalizeTfnData({}, userdata));
-    const [superForm, setSuperForm] = useState(() => normalizeSuperData({}, userdata));
-    const [onboardForm, setOnboardForm] = useState(() => normalizeOnboardData({}, userdata));
+    const [tfnForm, setTfnForm] = useState(() => normalizeTfnData({}));
+    const [superForm, setSuperForm] = useState(() => normalizeSuperData({}));
+    const [onboardForm, setOnboardForm] = useState(() => normalizeOnboardData({}));
+
 
     const fetchFormData = useCallback(async (formType) => {
         try {
@@ -736,15 +733,15 @@ const StaffOnboardingForms = ({ submit, userId, onProfileUpdate }) => {
 
             if (fetchedData) {
                 if (formType === "tfn") {
-                    const normalized = normalizeTfnData(fetchedData, userdata);
+                    const normalized = normalizeTfnData(fetchedData);
                     setTfnForm(normalized);
                     setOriginalTfnForm(normalized);
                 } else if (formType === "superannuation") {
-                    const normalized = normalizeSuperData(fetchedData, userdata);
+                    const normalized = normalizeSuperData(fetchedData);
                     setSuperForm(normalized);
                     setOriginalSuperForm(normalized);
                 } else if (formType === "onboarding") {
-                    const normalized = normalizeOnboardData(fetchedData, userdata);
+                    const normalized = normalizeOnboardData(fetchedData);
                     setOnboardForm(normalized);
                     setOriginalOnboardForm(normalized);
                 }
@@ -752,7 +749,7 @@ const StaffOnboardingForms = ({ submit, userId, onProfileUpdate }) => {
         } catch (error) {
             console.error(`Error fetching ${formType} form data:`, error);
         }
-    }, [userId, submit, userdata]);
+    }, [userId, submit]);
 
     useEffect(() => {
         if (userId) {
@@ -766,6 +763,7 @@ const StaffOnboardingForms = ({ submit, userId, onProfileUpdate }) => {
             setFormDataLoading(false);
         }
     }, [fetchFormData, userId]);
+
 
     const handleTfnChange = (e) => {
         const { name, value, type, checked } = e.target;

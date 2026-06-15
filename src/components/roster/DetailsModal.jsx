@@ -95,7 +95,7 @@ export default function DetailsModal({
                 >
                   {shift?.guards?.name || "Unassigned Shift"}
                 </h5>
-                <p style={{ margin: 0, color: "#666", fontSize: "14px" }}>
+                <p style={{ margin: 0, color: "#666", fontSize: "14px", textTransform: "none" }}>
                   {shift?.guards?.email ||
                     "Please assign a guard to see details"}
                 </p>

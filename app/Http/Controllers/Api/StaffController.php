@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Resources\GetAllGuardDocuments;
 use App\Models\Customer;
 use App\Http\Controllers\Controller;
+use App\Http\Resources\UserEditResource;
 use App\Models\Contractor;
 use App\Models\Document;
 use App\Models\DocumentCategory;
@@ -714,7 +715,12 @@ private function calculateProfileCompletion(User $user): int
         if (!empty($request->document_expiry) && $request->document_expiry == 'current, pending renewal') {
             $updateDocuments->document_expiry = $request->document_expiry;
         } else {
-            $updateDocuments->document_expiry = !empty($request->document_expiry) ? dbFormate($request->document_expiry) : '';
+            if (str_contains($request->document_expiry, '/')) {
+                $formattedExpiry = Carbon::createFromFormat('d/m/Y', $request->document_expiry)->format('Y-m-d');
+            } else {
+                $formattedExpiry = Carbon::parse($request->document_expiry)->format('Y-m-d');
+            }
+            $updateDocuments->document_expiry = $formattedExpiry;
         }
         $updateDocuments->document_no = (!empty($request->document_no) && $request->has('document_no') ? $request->document_no : '');
         $updateDocuments->document_type = (!empty($request->document_type) && $request->has('document_type') ? $request->document_type : '');
@@ -855,6 +861,27 @@ private function calculateProfileCompletion(User $user): int
         return response()->json(['success' => true, 'code' => 200, 'data' => $user]);
     }
 
+    public function getStaffInfo($id)
+    {
+        $user = User::findOrFail($id);
+
+        if ($user->user_type === 'customer') {
+            $user->load(['customer']);
+        } elseif ($user->user_type === 'contractor') {
+            $user->load('contractor', 'documents');
+        } elseif ($user->user_type === 'staff') {
+            $user->load('staff', 'documents');
+        }
+
+        $data = new UserEditResource($user);
+
+        return response()->json([
+            'success' => true, 
+            'code'    => 200, 
+            'data'    =>  $data,
+        ]);    
+    }
+
     public function updateUser(Request $request, $id)
     {
         try {
@@ -900,7 +927,8 @@ private function calculateProfileCompletion(User $user): int
                     'phone' => 'sometimes|nullable|string',
                     'staff_document_type' => 'sometimes|nullable|string',
                     'security_license_no' => 'sometimes|nullable|string',
-                    'date_of_birth' => 'sometimes|nullable|string'
+                    'date_of_birth' => 'sometimes|nullable|string',
+                    'origin_country' => 'sometimes|nullable|string'
                 ]);
             }
 
@@ -1069,7 +1097,8 @@ private function calculateProfileCompletion(User $user): int
                     'phone',
                     'staff_document_type',
                     'security_license_no',
-                    'date_of_birth'
+                    'date_of_birth',
+                    'origin_country'
                 ])->toArray();
 
                 if ($request->hasFile('profile_image')) {
@@ -1426,7 +1455,12 @@ private function calculateProfileCompletion(User $user): int
 
             // Only update if it exists
             if ($document) {
-                $formattedExpiry = Carbon::createFromFormat('d/m/Y', $request->security_license_expiry)->format('Y-m-d');
+            
+                if (str_contains($request->security_license_expiry, '/')) {
+                    $formattedExpiry = Carbon::createFromFormat('d/m/Y', $request->security_license_expiry)->format('Y-m-d');
+                } else {
+                    $formattedExpiry = Carbon::parse($request->security_license_expiry)->format('Y-m-d');
+                }
                 
                 $document->update([
                     'document_no'     => $request->security_license,
@@ -1440,13 +1474,17 @@ private function calculateProfileCompletion(User $user): int
             
             // Find the existing document
             $document = Document::where('user_id', $request->user_id)
-                                        ->where('document_type', 'passport')
-                                        ->first();
+                                ->where('document_type', 'passport')
+                                ->first();
 
             // Only update if it exists
             if ($document) {
-               $formattedExpiry = Carbon::createFromFormat('d/m/Y', $request->passport_expiry)->format('Y-m-d');
-
+                if (str_contains($request->passport_expiry, '/')) {
+                    $formattedExpiry = Carbon::createFromFormat('d/m/Y', $request->passport_expiry)->format('Y-m-d');
+                } else {
+                    $formattedExpiry = Carbon::parse($request->passport_expiry)->format('Y-m-d');
+                }
+                
                 $document->update([
                     'document_no'     => $request->passport_number,
                     'file'            => $request->passport_doc,
@@ -1464,7 +1502,11 @@ private function calculateProfileCompletion(User $user): int
 
             // Only update if it exists
             if ($document) {
-                $formattedExpiry = Carbon::createFromFormat('d/m/Y', $request->first_aid_expiry)->format('Y-m-d');
+                if (str_contains($request->first_aid_expiry, '/')) {
+                    $formattedExpiry = Carbon::createFromFormat('d/m/Y', $request->first_aid_expiry)->format('Y-m-d');
+                } else {
+                    $formattedExpiry = Carbon::parse($request->first_aid_expiry)->format('Y-m-d');
+                }
                 
                 $document->update([
                     'document_no'     => $request->first_aid_cert,
@@ -1591,23 +1633,39 @@ private function calculateProfileCompletion(User $user): int
         if (!$record) {
             return response()->json([
                 'message' => 'No record found for this user and type.',
-                'data'    => null
+                'data'    => null,
+                'success' => false
             ], 404);
         }
 
         return response()->json([
+            'success' => true,
             'message' => 'Success.',
             'type'    => $type,
             'data'    => $record
         ], 200);
     }
     
-     function check_victoria_license($request)
+    function documentsOnlineVerification(Request $request)
+    {
+        if ($request->has('guard_id')) {
+            $guard = DB::table('users')->where('id', $request->guard_id)->select('state', 'name')->first();
+            if ($guard->state == 'Queensland') {
+                return $this->check_queensland_license($request, $guard->name);
+            } else {
+                return $this->check_victoria_license($request);
+            }
+        } else {
+            return $this->check_victoria_license($request);
+        }
+    }
+    
+    function check_victoria_license($request)
     {
         $url = "https://www.lars.police.vic.gov.au/LARS/LARS.asp?File=/Components/Screens/PSINFP03/PSINFP03.asp?Process=SEARCH";
-        $input_xml = "<XML><HEADER><PROCESS>SEARCH</PROCESS><TIMESTAMP>20211020043340</TIMESTAMP><SECURITYTOKEN>02A42A1B-588D-4EE8-8760-2A81E6221A9A</SECURITYTOKEN></HEADER><PAYLOAD><GNDTLE01 id='idSearchPane'><CONTROL name='dropdownlist'>%</CONTROL><CONTROL name='searchtext'></CONTROL><CONTROL name='SearchCriteriadropdownlist'>X</CONTROL><CONTROL name='SearchAuthNb'>" . $request->license_number . "</CONTROL><CONTROL name='Index'></CONTROL><CONTROL name='Page'>1</CONTROL></GNDTLE01></PAYLOAD></XML>";
-
-            // new here
+        // $input_xml = "<XML><HEADER><PROCESS>SEARCH</PROCESS><TIMESTAMP>20211020043340</TIMESTAMP><SECURITYTOKEN>02A42A1B-588D-4EE8-8760-2A81E6221A9A</SECURITYTOKEN></HEADER><PAYLOAD><GNDTLE01 id='idSearchPane'><CONTROL name='dropdownlist'>%</CONTROL><CONTROL name='searchtext'></CONTROL><CONTROL name='SearchCriteriadropdownlist'>X</CONTROL><CONTROL name='SearchAuthNb'>" . $request->license_number . "</CONTROL><CONTROL name='Index'></CONTROL><CONTROL name='Page'>1</CONTROL></GNDTLE01></PAYLOAD></XML>";
+        
+        $input_xml = "<XML><HEADER><PROCESS>SEARCH</PROCESS><TIMESTAMP>20260612123337</TIMESTAMP><SECURITYTOKEN>5EBA2312-7715-44DD-9449-82B571E499AC</SECURITYTOKEN></HEADER><PAYLOAD><GNDTLE01 id='idSearchPane'><CONTROL name='dropdownlist'>%</CONTROL><CONTROL name='searchtext'></CONTROL><CONTROL name='SearchCriteriadropdownlist'>X</CONTROL><CONTROL name='SearchAuthNb'>Z1942240S</CONTROL><CONTROL name='Index'></CONTROL><CONTROL name='Page'>1</CONTROL></GNDTLE01></PAYLOAD></XML>";            // new here
         $headers = array(
             "Content-type: text/xml",
             "Content-length: " . strlen($input_xml),
@@ -1617,17 +1675,17 @@ private function calculateProfileCompletion(User $user): int
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, $url);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-        curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 30);
         curl_setopt($ch, CURLOPT_POST, true);
         curl_setopt($ch, CURLOPT_POSTFIELDS, $input_xml);
         curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
-
         $data = curl_exec($ch);
         curl_close($ch);
-
+        
         if (strpos($data, 'No Results Found')) {
-            return response()->json(['success' => false, 'message' => 'Sorry! Your license is not valid according to LRD Victoria Database.']);
+            return response()->json(['success' => false, 'message' => 'Sorry! Your license is not valid according to LRD Victoria Database. 1']);
         } else {
+            return [$data];
             $data = explode('ALT="Spacer"/></td></tr><tr valign=\'top\' RecordKey=\'', $data);
             if (isset($data[1])) {
                 $data = explode('bgcolor=\'white\' row=\'1\'  onmouseover="PSINFE04_fMouseOver(this);"  onmouseout="PSINFE04_fMouseOut(this);"  ondblclick="fDetails();"  onclick="PSINFE04_fMouseClick(this);">', $data[1]);
@@ -1642,10 +1700,10 @@ private function calculateProfileCompletion(User $user): int
                 if (isset($data[4])) {
                     return response()->json(['success' => true, 'message' => 'Congrats! Your License is valid and verified from the LRD Victoria Database.', 'expiry' => $data[4]]);
                 } else {
-                    return response()->json(['success' => false, 'message' => 'Sorry! Your license is not valid according to LRD Victoria Database.']);
+                    return response()->json(['success' => false, 'message' => 'Sorry! Your license is not valid according to LRD Victoria Database. 2']);
                 }
             } else {
-                return response()->json(['success' => false, 'message' => 'Sorry! Your license is not valid according to LRD Victoria Database.']);
+                return response()->json(['success' => false, 'message' => 'Sorry! Your license is not valid according to LRD Victoria Database. 3']);
             }
         }
     }
@@ -1670,21 +1728,6 @@ private function calculateProfileCompletion(User $user): int
             }
         } else {
             return response()->json(['success' => false, 'message' => 'Sorry! Your license is not valid according to LRD Queensland Database.']);
-        }
-    }
-
-
-    function documentsOnlineVerification(Request $request)
-    {
-        if ($request->has('guard_id')) {
-            $guard = DB::table('users')->where('id', $request->guard_id)->select('state', 'name')->first();
-            if ($guard->state == 'Queensland') {
-                return $this->check_queensland_license($request, $guard->name);
-            } else {
-                return $this->check_victoria_license($request);
-            }
-        } else {
-            return $this->check_victoria_license($request);
         }
     }
 

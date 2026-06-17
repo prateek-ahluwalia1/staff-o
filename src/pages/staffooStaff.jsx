@@ -415,7 +415,6 @@ const StaffooStaff = () => {
 
         const url = selectedDoc ? "api/guard-update-documents" : "api/guard-add-documents";
         const res = await submit(url, payload, { method: "POST" });
-        if (!res) return;
         if (res.success) {
             toast.success("Document saved successfully!");
 
@@ -555,10 +554,11 @@ const StaffooStaff = () => {
 
         try {
             const res = await submit(url, payload, { method });
-            if (res === undefined) return;
-            toast.success(editingUser ? "Staff member updated successfully!" : "Staff member created successfully!");
-            refetch();
-            closeModal();
+            if (res.success) {
+                toast.success(editingUser ? "Staff member updated successfully!" : "Staff member created successfully!");
+                refetch();
+                closeModal();
+            }
         } catch (err) {
             toast.error(err.message || "Submission failed");
         }
@@ -579,10 +579,11 @@ const StaffooStaff = () => {
         try {
             setDeleteLoading(true);
             const res = await submit(url, null, { method: "DELETE" });
-            if (res === undefined) return;
-            toast.success("Staff member deleted successfully!");
-            refetch();
-            closeDeleteModal();
+            if (res.success) {
+                toast.success("Staff member deleted successfully!");
+                refetch();
+                closeDeleteModal();
+            }
         } catch (err) {
             toast.error("Delete failed: " + err.message);
         } finally {

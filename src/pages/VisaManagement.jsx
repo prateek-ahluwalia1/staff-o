@@ -74,14 +74,6 @@ const formatShortDate = (value) => {
     return String(value);
 };
 
-const toYYYYMMDD = (val) => {
-    if (!val) return "";
-    if (/^\d{4}-\d{2}-\d{2}$/.test(val)) return val.replace(/-/g, "");
-    const match = val.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
-    if (match) return `${match[3]}${match[2]}${match[1]}`;
-    return val.replace(/\D/g, "");
-};
-
 // --- Hybrid Date Input for DOB ---
 const DateInput = ({ name, value, onChange, required }) => {
     const [displayValue, setDisplayValue] = useState(toDisplayDate(value));
@@ -224,7 +216,7 @@ export default function VisaManagement() {
             country: formData.country.trim().toUpperCase(),
             family_name: formData.family_name.trim(),
             given_name: formData.given_name.trim(),
-            dob: toYYYYMMDD(formData.dob),   // yyyymmdd
+            dob: toISODate(formData.dob),
         };
 
         if (!payload.passport || !payload.country || !payload.family_name || !payload.given_name || !payload.dob) {

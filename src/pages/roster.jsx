@@ -12,6 +12,7 @@ import {
   isValid,
   isSameDay,
 } from "date-fns";
+import Select from "react-select";
 import useSubmit from "../hooks/useSubmit";
 import Loader from "../components/Loader";
 import useFetch from "../hooks/useFetch";
@@ -101,6 +102,9 @@ export default function RosterPage() {
   const userId = userdata?.data?.id || userdata?.id;
   const userRole = userdata?.data?.user_type || userdata?.user_type;
 
+  // Determine which contractor ID to use for fetching staff
+  const staffContractorId = userRole === "admin" ? 1 : userId;
+
   const selectedStates = useMemo(() => {
     return (new URLSearchParams(location.search).get("state") || "")
       .split(",")
@@ -108,7 +112,15 @@ export default function RosterPage() {
       .filter(Boolean);
   }, [location.search]);
 
-  const { data: staffData, loading: staffLoading } = useFetch(`api/get-contractor-active-staff/${userId}`, { method: "POST", isAuth: true });
+  // Fetch staff list using the appropriate contractor ID
+  const {
+    data: staffData,
+    loading: staffLoading,
+  } = useFetch(`api/get-contractor-active-staff/${staffContractorId}`, {
+    method: "POST",
+    isAuth: true,
+  });
+
   const { submit, loading: submitLoading, data: submitData } = useSubmit({ isAuth: true });
   const { submit: saveUserAssignment, loading: saveLoading } = useSubmit({ isAuth: true });
   const { submit: submitHolidayList } = useSubmit({ isAuth: true });
@@ -237,7 +249,6 @@ export default function RosterPage() {
     if (!searchQuery.trim()) return sites;
     const lowerQuery = searchQuery.toLowerCase();
 
-    // Now searching against both the site name AND the associated client name
     return sites.filter((site) =>
       site.displayName.toLowerCase().includes(lowerQuery) ||
       site.clientName.toLowerCase().includes(lowerQuery)
@@ -260,7 +271,16 @@ export default function RosterPage() {
     return { totals, grandTotal };
   }, [filteredSites, weekDays, weeksToView]);
 
-  const guards = staffData?.guards || [];
+  // Stable guards array, preventing unnecessary useMemo recalculations
+  const guards = useMemo(() => staffData?.guards || [], [staffData?.guards]);
+
+  // Prepare options for React-Select
+  const guardOptions = useMemo(() => {
+    return guards.map((g) => ({
+      value: g.id,
+      label: g.name,
+    }));
+  }, [guards]);
 
   const prevWeek = () => setMonday((prev) => subWeeks(prev, weeksToView));
   const nextWeek = () => setMonday((prev) => addWeeks(prev, weeksToView));
@@ -445,7 +465,6 @@ export default function RosterPage() {
               <div className="vr-col-site vr-site-info">
                 <div className="vr-site-name" style={{ lineHeight: 1.2 }}>{site.displayName}</div>
 
-                {/* NEW: Display Client Name below site */}
                 <div style={{ fontSize: "11px", color: "#64748b", margin: "4px 0", fontWeight: "600" }}>
                   <i className="fa-regular fa-building" style={{ marginRight: '4px' }}></i>
                   {site.clientName}
@@ -501,6 +520,11 @@ export default function RosterPage() {
                                     <i className="fa fa-user-plus"></i>
                                   </button>
                                 )}
+                                {userRole === "admin" && !shift.assigned_to && (
+                                  <button title="Assign" onClick={() => openModalAction(site, shift, day.dateLabel, "admin_assign")}>
+                                    <i className="fa fa-user-plus"></i>
+                                  </button>
+                                )}
                               </div>
                             </div>
                           );
@@ -535,6 +559,7 @@ export default function RosterPage() {
       {modal?.type === "time" && <TimeEditModal modal={modal} closeModal={closeModal} editForm={editForm} setEditForm={setEditForm} timeEditError={timeEditError} clearTimeEditError={() => setTimeEditError("")} handleSave={handleSave} saveLoading={saveLoading} />}
       {modal?.type === "details" && <DetailsModal modal={modal} closeModal={closeModal} guardShiftsList={guardShiftsList} totalGuardHours={totalGuardHours} />}
 
+      {/* ADMIN ASSIGN MODAL – with React‑Select */}
       {modal?.type === "admin_assign" && (
         <div className="vr-modal-backdrop" onClick={closeModal}>
           <div className="vr-modal-container" onClick={(e) => e.stopPropagation()}>
@@ -550,15 +575,31 @@ export default function RosterPage() {
               </div>
               <div className="vr-input-group">
                 <label>Select Staff Member</label>
-                <select value={selectedUserId} onChange={(e) => setSelectedUserId(e.target.value)}>
-                  <option value="" disabled>Choose...</option>
-                  {guards.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}
-                </select>
+                <Select
+                  options={guardOptions}
+                  value={guardOptions.find((opt) => opt.value === selectedUserId) || null}
+                  onChange={(selectedOption) =>
+                    setSelectedUserId(selectedOption ? selectedOption.value : "")
+                  }
+                  placeholder="Search or select a guard..."
+                  isClearable
+                  isSearchable
+                  menuPortalTarget={document.body}
+                  styles={{ menuPortal: (base) => ({ ...base, zIndex: 9999 }) }}
+                  className="react-select-container"
+                  classNamePrefix="react-select"
+                />
               </div>
             </div>
             <div className="vr-modal-footer">
               <button className="vr-btn-cancel" onClick={closeModal}>Cancel</button>
-              <button className="vr-btn-confirm" onClick={handleSave} disabled={saveLoading}>{saveLoading ? "Saving..." : "Confirm"}</button>
+              <button
+                className="vr-btn-confirm"
+                onClick={handleSave}
+                disabled={saveLoading}
+              >
+                {saveLoading ? "Saving..." : "Confirm"}
+              </button>
             </div>
           </div>
         </div>
@@ -567,7 +608,12 @@ export default function RosterPage() {
       {modal?.type === "add_shift" && (
         <div className="embedded-job-backdrop" onClick={closeModal}>
           <div className="embedded-job-shell" onClick={(e) => e.stopPropagation()}>
-            <AddJob modalMode="embedded" onClose={closeModal} initialSite={modal.site?.siteData || modal.site} initialDate={modal.dateKey || modal.dateStr} />
+            <AddJob
+              modalMode="embedded"
+              onClose={closeModal}
+              initialSite={modal.site?.siteData || modal.site}
+              initialDate={modal.dateKey || modal.dateStr}
+            />
           </div>
         </div>
       )}

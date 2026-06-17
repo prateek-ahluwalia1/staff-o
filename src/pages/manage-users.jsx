@@ -228,12 +228,19 @@ const ManageUsers = () => {
   useEffect(() => {
     if (apiResponse?.success && apiResponse?.data?.data) {
       const fetchedUsers = apiResponse.data.data;
-      setUsers(fetchedUsers);
+      const filteredUsers =
+        activeTab === "staff"
+          ? fetchedUsers.filter((user) => {
+            const partnerId = user.user_id ?? user.staff?.user_id;
+            return partnerId != 1;
+          })
+          : fetchedUsers;
+      setUsers(filteredUsers);
       setTotalPages(apiResponse.data.last_page || 1);
-      setTotalItems(apiResponse.data.total || 0);
+      setTotalItems(filteredUsers.length);
 
       if (location.state?.editUserId) {
-        const userToEdit = fetchedUsers.find((u) => u.id === location.state.editUserId);
+        const userToEdit = filteredUsers.find((u) => u.id === location.state.editUserId);
         if (userToEdit) {
           openModal(userToEdit);
         } else {

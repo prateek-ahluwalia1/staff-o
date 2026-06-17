@@ -129,6 +129,7 @@ const ManageUsers = () => {
     is_verified: false,
   });
 
+  // defaultFormState now includes abn & acn as empty strings
   const defaultFormState = useMemo(() => ({
     name: "",
     email: "",
@@ -142,9 +143,11 @@ const ManageUsers = () => {
     state: "",
     country: "",
     coordinates: "",
-    user_id: "",       // resource partner ID for staff
+    user_id: "",
     date_of_birth: "",
     origin_country: "",
+    abn: "",
+    acn: "",
   }), []);
 
   const [formData, setFormData] = useState(defaultFormState);
@@ -160,7 +163,6 @@ const ManageUsers = () => {
     setFormData(prev => ({
       ...prev,
       [id]: value,
-      // When address changes manually, reset auto‑filled fields
       ...(id === "address" ? { coordinates: "", city: "", state: "", country: "" } : {}),
     }));
   }, []);
@@ -205,9 +207,11 @@ const ManageUsers = () => {
         state: user.state || "",
         country: user.country || "",
         coordinates: user.coordinates || "",
-        user_id: user.user_id || "",          // pre‑fill partner ID
+        user_id: user.user_id || "",
         date_of_birth: isoToDisplay(user.date_of_birth || extraInfo.date_of_birth || ""),
         origin_country: user.origin_country || extraInfo.origin_country || "",
+        abn: user.abn || extraInfo.abn || "",
+        acn: user.acn || extraInfo.acn || "",
       });
     } else {
       setEditingUser(null);
@@ -675,7 +679,6 @@ const ManageUsers = () => {
         refetch();
         closeDeleteModal();
       }
-
     } catch (err) {
       toast.error("Delete failed: " + err.message);
     } finally {
@@ -1024,7 +1027,6 @@ const ManageUsers = () => {
       {isModalOpen && (
         <div className="full-screen-modal">
           <div className="modal-inner-content">
-            {/* UPDATED MODAL HEADER START */}
             <div className="px-5 py-4 border-bottom bg-white d-flex justify-content-between align-items-start">
               <div className="flex-grow-1 pe-4">
                 <h4 className="fw-bold mb-1">
@@ -1042,7 +1044,6 @@ const ManageUsers = () => {
                       Assign to Resource Partner *
                     </label>
                     <Select
-                      // Add the .filter() method right here before .map()
                       options={contractorsList
                         .filter((contractor) => contractor.id != 1)
                         .map((contractor) => ({
@@ -1091,10 +1092,8 @@ const ManageUsers = () => {
                   </div>
                 )}
               </div>
-
               <button className="btn-close shadow-none mt-1" onClick={closeModal}></button>
             </div>
-            {/* UPDATED MODAL HEADER END */}
 
             <div
               className="flex-grow-1 overflow-auto px-5 py-4"
@@ -1148,8 +1147,8 @@ const ManageUsers = () => {
                     company_name: formData.company_name,
                     date_of_birth: formData.date_of_birth,
                     origin_country: formData.origin_country,
-                    abn: "",
-                    acn: "",
+                    abn: formData.abn || "",
+                    acn: formData.acn || "",
                   }}
                   onChange={handleProfileFormChange}
                   onSubmit={handleSubmit}
@@ -1174,7 +1173,6 @@ const ManageUsers = () => {
                   }
                   extraFields={
                     <>
-                      {/* Password field */}
                       <div className="col-md-6">
                         <label className="form-label">
                           Password {editingUser && <span className="text-muted fw-normal">(Leave blank to keep)</span>}
@@ -1198,7 +1196,6 @@ const ManageUsers = () => {
                           </button>
                         </div>
                       </div>
-
                     </>
                   }
                 />
@@ -1215,7 +1212,6 @@ const ManageUsers = () => {
                     userType="staff"
                     onAddFile={openDocumentModal}
                   />
-
                   {showDocModal && (
                     <div className="confirm-modal-backdrop" onClick={closeDocumentModal}>
                       <div
@@ -1231,7 +1227,6 @@ const ManageUsers = () => {
                             <div className="small text-muted">Upload a staff verification file.</div>
                           </div>
                         </div>
-
                         <form onSubmit={handleDocSubmit} className="p-4" style={{ maxHeight: "70vh", overflowY: "auto" }}>
                           {/* Document Type */}
                           <div className="mb-3">
@@ -1454,7 +1449,7 @@ const ManageUsers = () => {
                 </div>
               ) : (
                 <div>
-                  <StaffOnboardingForms submit={submit} userId={editingUser?.id} />
+                  <StaffOnboardingForms submit={submit} userId={editingUser?.id} contractorId={1} />
                 </div>
               )}
             </div>
@@ -1490,14 +1485,12 @@ const ManageUsers = () => {
                 </div>
               </div>
             </div>
-
             <div className="px-4 py-4">
               <p className="mb-0 text-dark">
                 Delete <strong>{deleteTarget?.name || "this user"}</strong> from{" "}
                 <strong>{activeTab.replace("_", " ")}</strong> records?
               </p>
             </div>
-
             <div className="px-4 py-3 border-top d-flex justify-content-end gap-2 bg-light">
               <button
                 type="button"

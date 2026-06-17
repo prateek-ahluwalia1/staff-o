@@ -55,7 +55,10 @@ export default function PaymentHistory() {
   // Share Modal States
   const [showShareModal, setShowShareModal] = useState(false);
   const [selectedTx, setSelectedTx] = useState(null);
-  const [shareEmail, setShareEmail] = useState("");
+
+  // NEW: Multiple Emails State
+  const [shareEmails, setShareEmails] = useState([]);
+  const [currentEmailInput, setCurrentEmailInput] = useState("");
 
   const { data: customersResponse } = useFetch(
     isAdmin ? "api/admin/get-customers?limit=1000" : null,
@@ -66,12 +69,10 @@ export default function PaymentHistory() {
     isAuth: true,
   });
 
-  // Wrapped in useMemo to prevent the ESLint warning and unnecessary re-renders
   const customersList = useMemo(() => {
     return customersResponse?.data?.data || [];
   }, [customersResponse?.data?.data]);
 
-  // Prepare options for react-select
   const customerOptions = useMemo(() => {
     return customersList.map((c) => ({
       value: c.id,
@@ -113,7 +114,6 @@ export default function PaymentHistory() {
 
   const handleShareClick = (tx) => {
     setSelectedTx(tx);
-    // Set default email: Admin uses selected customer's email, Normal user uses their own email
     let defaultEmail = "";
     if (isAdmin && selectedCustomerDetails) {
       defaultEmail = selectedCustomerDetails.email;
@@ -121,19 +121,43 @@ export default function PaymentHistory() {
       defaultEmail = userdata?.email || userdata?.data?.email || "";
     }
 
-    setShareEmail(defaultEmail);
+    // Initialize with default email if available
+    setShareEmails(defaultEmail ? [defaultEmail] : []);
+    setCurrentEmailInput("");
     setShowShareModal(true);
+  };
+
+  // NEW: Add email to array
+  const handleAddEmail = () => {
+    const trimmedEmail = currentEmailInput.trim();
+    if (trimmedEmail && !shareEmails.includes(trimmedEmail)) {
+      setShareEmails([...shareEmails, trimmedEmail]);
+      setCurrentEmailInput("");
+    }
+  };
+
+  // NEW: Remove email from array
+  const handleRemoveEmail = (emailToRemove) => {
+    setShareEmails(shareEmails.filter((email) => email !== emailToRemove));
   };
 
   const handleShareSubmit = async (e) => {
     e.preventDefault();
-    if (!shareEmail) {
-      toast.error("Please enter an email address.");
+
+    // Catch edge case: user typed an email but forgot to click "+" before submitting
+    let finalEmails = [...shareEmails];
+    if (currentEmailInput.trim() && !shareEmails.includes(currentEmailInput.trim())) {
+      finalEmails.push(currentEmailInput.trim());
+    }
+
+    if (finalEmails.length === 0) {
+      toast.error("Please add at least one email address.");
       return;
     }
 
+    // UPDATED: Sending payload as an array
     const payload = {
-      email: shareEmail,
+      emails: finalEmails, // Check if your backend expects 'emails' or 'email' for the array key
       transaction_id: selectedTx.id,
       invoice_filename: selectedTx.invoice_filename
     };
@@ -145,7 +169,8 @@ export default function PaymentHistory() {
     if (res?.success) {
       toast.success("Document shared successfully!");
       setShowShareModal(false);
-      setShareEmail("");
+      setShareEmails([]);
+      setCurrentEmailInput("");
       setSelectedTx(null);
     }
   };
@@ -215,9 +240,9 @@ export default function PaymentHistory() {
           {isAdmin && !selectedCustomerId ? (
             <div className="text-center py-5 bg-light rounded border border-dashed">
               <i className="fa-solid fa-hand-pointer text-primary fs-1 mb-3 opacity-50"></i>
-              <h6 className="text-muted mb-0"
-                style={{ textTransform: "none" }}
-              >Please select a customer from the dropdown to view transactions.</h6>
+              <h6 className="text-muted mb-0" style={{ textTransform: "none" }}>
+                Please select a customer from the dropdown to view transactions.
+              </h6>
             </div>
           ) : loading ? (
             <Loader />
@@ -348,30 +373,71 @@ export default function PaymentHistory() {
         <form onSubmit={handleShareSubmit} className="p-4">
           <h5 className="mb-3 fw-bold">Share Document</h5>
           <p className="text-muted small mb-4">
-            Enter the email address you would like to send invoice
+            Enter the email addresses you would like to send invoice
             <strong> {selectedTx?.invoice_filename}</strong> to.
           </p>
 
           <div className="mb-4">
             <label className="form-label fw-semibold">
-              Email Address <span className="text-danger">*</span>
+              Email Addresses <span className="text-danger">*</span>
             </label>
-            <input
-              type="email"
-              className="form-control"
-              placeholder="e.g. user@example.com"
-              value={shareEmail}
-              onChange={(e) => setShareEmail(e.target.value)}
-              required
-              autoFocus
-            />
+
+            {/* NEW: Input group for adding multiple emails */}
+            <div className="d-flex gap-2">
+              <input
+                type="email"
+                className="form-control"
+                placeholder="e.g. user@example.com"
+                value={currentEmailInput}
+                onChange={(e) => setCurrentEmailInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    handleAddEmail();
+                  }
+                }}
+              />
+              <button
+                type="button"
+                className="btn btn-secondary px-3"
+                onClick={handleAddEmail}
+                disabled={!currentEmailInput.trim()}
+                title="Add Email"
+              >
+                <i className="fa-solid fa-plus"></i>
+              </button>
+            </div>
+
+            {/* NEW: Display selected emails as badges */}
+            {shareEmails.length > 0 && (
+              <div className="d-flex flex-wrap gap-2 mt-3">
+                {shareEmails.map((email, index) => (
+                  <span
+                    key={index}
+                    className="badge bg-light text-dark border d-flex align-items-center gap-2 py-2 px-3"
+                    style={{ fontSize: "0.85rem", textTransform: "none" }}
+                  >
+                    {email}
+                    <i
+                      className="fa-solid fa-xmark text-danger"
+                      style={{ cursor: "pointer", fontSize: "1rem" }}
+                      onClick={() => handleRemoveEmail(email)}
+                      title="Remove Email"
+                    ></i>
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
 
-          <div className="d-flex gap-2">
+          <div className="d-flex gap-2 mt-4">
             <button
               type="button"
               className="btn btn-outline-secondary w-50 fw-semibold"
-              onClick={() => setShowShareModal(false)}
+              onClick={() => {
+                setShowShareModal(false);
+                setCurrentEmailInput("");
+              }}
               disabled={shareLoading}
             >
               Cancel
@@ -379,7 +445,7 @@ export default function PaymentHistory() {
             <button
               type="submit"
               className="btn btn-primary-custom w-50 fw-semibold"
-              disabled={shareLoading || !shareEmail}
+              disabled={shareLoading || (shareEmails.length === 0 && !currentEmailInput.trim())}
             >
               {shareLoading ? "Sending..." : "Send Document"}
             </button>

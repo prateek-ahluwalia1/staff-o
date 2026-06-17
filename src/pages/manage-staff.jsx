@@ -1,9 +1,10 @@
-import React, { useState, useEffect, useRef, useMemo } from "react";
+import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import useFetch from "../hooks/useFetch";
 import useSubmit from "../hooks/useSubmit";
 import Loader from "../components/Loader";
 import DocumentTable from "../components/DocumentTable";
 import StaffOnboardingForms from "../components/StaffOnboardingForms";
+import ProfileForm from "../components/ProfileForm";
 import { useSelector } from "react-redux";
 import { toast } from "react-toastify";
 import { apiURL } from "../utils/exports";
@@ -36,6 +37,24 @@ const normalizeToDisplay = (dateStr) => {
   return dateStr;
 };
 // ===================================
+
+const DOC_TYPES = [
+  { value: "Passport", label: "Passport" },
+  { value: "Visa", label: "Visa" },
+  { value: "Driver License Front", label: "Driver License (Front)" },
+  { value: "Driver License Back", label: "Driver License (Back)" },
+  { value: "Security License", label: "Security License" },
+  { value: "Working with Children", label: "Working with Children Check (WWCC)" },
+  { value: "Employment Application Form", label: "Employment Application Form" },
+  { value: "TFN Declaration", label: "TFN Declaration" },
+  { value: "Superannuation Form", label: "Superannuation Form" },
+  { value: "First Aid", label: "First Aid Certificate" },
+  { value: "CPR", label: "CPR Certificate" },
+  { value: "Vaccination Certificate", label: "Vaccination Certificate" },
+  { value: "Citizen Ship", label: "Citizen Ship Certificate" },
+  { value: "Medicare", label: "Medicare Certificate" },
+  { value: "Birth Certificate", label: "Birth Certificate" },
+];
 
 const ManageStaff = () => {
   const { userdata } = useSelector((state) => state.auth);
@@ -79,7 +98,7 @@ const ManageStaff = () => {
     no: false,
     exp: false,
     document_no: "",
-    document_expiry: "",   // DD/MM/YYYY
+    document_expiry: "",
     file: null,
     file_path: "",
     file_url: "",
@@ -89,8 +108,9 @@ const ManageStaff = () => {
 
   const [showPassword, setShowPassword] = useState(false);
 
-  const staffAutocompleteRef = useRef(null);
-  const staffAutocompleteListenerRef = useRef(null);
+  // Google Maps Autocomplete refs
+  const autocompleteRef = useRef(null);
+  const autocompleteListenerRef = useRef(null);
 
   useEffect(() => {
     if (apiResponse?.success && apiResponse?.guards) {
@@ -104,21 +124,24 @@ const ManageStaff = () => {
     }
   }, [apiResponse]);
 
-  const defaultFormState = {
-    name: "",
-    email: "",
-    password: "",
-    phone: "",
-    gender: "",
-    staff_document_type: "",
-    address: "",
-    city: "",
-    state: "",
-    country: "",
-    coordinates: "",
-    date_of_birth: "",
-    origin_country: "",
-  };
+  const defaultFormState = useMemo(
+    () => ({
+      name: "",
+      email: "",
+      password: "",
+      phone: "",
+      gender: "",
+      staff_document_type: "",
+      address: "",
+      city: "",
+      state: "",
+      country: "",
+      coordinates: "",
+      date_of_birth: "",
+      origin_country: "",
+    }),
+    []
+  );
 
   const [formData, setFormData] = useState(defaultFormState);
 
@@ -126,6 +149,16 @@ const ManageStaff = () => {
     if (!editingUser) return [];
     return editingUser.documents || editingUser.staff?.documents || [];
   }, [editingUser]);
+
+  // ---- ProfileForm change handler ----
+  const handleProfileFormChange = useCallback((e) => {
+    const { id, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [id]: value,
+      ...(id === "address" ? { coordinates: "", city: "", state: "", country: "" } : {}),
+    }));
+  }, []);
 
   const handlePageChange = (newPage) => {
     if (newPage >= 1 && newPage <= totalPages) {
@@ -166,17 +199,6 @@ const ManageStaff = () => {
   const closeModal = () => {
     setIsModalOpen(false);
     setEditingUser(null);
-  };
-
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-      ...(name === "address"
-        ? { coordinates: "", city: "", state: "", country: "" }
-        : {}),
-    }));
   };
 
   // --- Document helpers ---
@@ -278,7 +300,6 @@ const ManageStaff = () => {
       return;
     }
 
-    // SECURITY LICENSE VERIFICATION
     if (docForm.document_name === "Security License") {
       setVerifyingDoc(true);
       try {
@@ -312,7 +333,6 @@ const ManageStaff = () => {
       return;
     }
 
-    // VISA VERIFICATION
     if (docForm.document_name === "Visa") {
       const user = editingUser;
       const staff = user?.staff || {};
@@ -380,7 +400,6 @@ const ManageStaff = () => {
     toast.info(`Verification is not supported for ${docForm.document_name}. You can manually set the expiry date.`);
   };
 
-  // ===== UPDATED handleDocSubmit – immediate local update =====
   const handleDocSubmit = async (e) => {
     e.preventDefault();
     if (!editingUser?.id) {
@@ -409,13 +428,10 @@ const ManageStaff = () => {
     if (res.success) {
       toast.success("Document saved successfully!");
 
-      // ----- UPDATE EDITING USER IMMEDIATELY -----
       const savedDoc = res.data?.document || res.data || {};
-
       setEditingUser((prev) => {
         const currentDocs = prev?.documents || [];
         if (selectedDoc) {
-          // Update existing document
           const updatedDocs = currentDocs.map((d) =>
             d.id === selectedDoc.id
               ? {
@@ -429,7 +445,6 @@ const ManageStaff = () => {
           );
           return { ...prev, documents: updatedDocs };
         } else {
-          // Add new document
           const newDoc = {
             id: savedDoc.id || Date.now(),
             document_name: docForm.document_name,
@@ -441,42 +456,41 @@ const ManageStaff = () => {
           return { ...prev, documents: [...currentDocs, newDoc] };
         }
       });
-      // -------------------------------------------
 
       closeDocumentModal();
-      refetch(); // still sync the main list in background
+      refetch();
     } else {
       toast.error(res.message || "Failed to save document");
     }
   };
 
-  // Google Maps Autocomplete
+  // Google Maps Autocomplete for ProfileForm's #address input
   useEffect(() => {
-    if (!isModalOpen) return;
+    if (!isModalOpen || activeModalTab !== "personal") return;
 
     let checkGoogleMaps;
     const initAutocomplete = () => {
-      const addressInput = document.getElementById("staff-address");
+      const addressInput = document.getElementById("address");
       if (!addressInput || !window.google?.maps?.places) return;
       if (addressInput.getAttribute("data-gmaps-initialized")) return;
 
       const autocomplete = new window.google.maps.places.Autocomplete(addressInput, {
         fields: ["address_components", "geometry", "formatted_address"],
-        types: ["address"],
         componentRestrictions: { country: "au" },
       });
 
       addressInput.setAttribute("data-gmaps-initialized", "true");
-      staffAutocompleteRef.current = autocomplete;
+      autocompleteRef.current = autocomplete;
 
-      staffAutocompleteListenerRef.current = autocomplete.addListener("place_changed", () => {
+      autocompleteListenerRef.current = autocomplete.addListener("place_changed", () => {
         const place = autocomplete.getPlace();
         if (!place?.geometry) return;
 
         let newCity = "", newState = "", newCountry = "";
         place.address_components?.forEach((component) => {
           if (component.types.includes("locality")) newCity = component.long_name;
-          if (component.types.includes("administrative_area_level_1")) newState = component.long_name;
+          if (component.types.includes("administrative_area_level_1"))
+            newState = component.short_name.toLowerCase();
           if (component.types.includes("country")) newCountry = component.long_name;
         });
 
@@ -502,15 +516,15 @@ const ManageStaff = () => {
 
     return () => {
       clearInterval(checkGoogleMaps);
-      if (staffAutocompleteListenerRef.current && window.google) {
-        window.google.maps.event.removeListener(staffAutocompleteListenerRef.current);
+      if (autocompleteListenerRef.current && window.google) {
+        window.google.maps.event.removeListener(autocompleteListenerRef.current);
       }
-      const addressInput = document.getElementById("staff-address");
+      const addressInput = document.getElementById("address");
       if (addressInput) addressInput.removeAttribute("data-gmaps-initialized");
-      staffAutocompleteRef.current = null;
-      staffAutocompleteListenerRef.current = null;
+      autocompleteRef.current = null;
+      autocompleteListenerRef.current = null;
     };
-  }, [isModalOpen]);
+  }, [isModalOpen, activeModalTab]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -528,7 +542,6 @@ const ManageStaff = () => {
       return;
     }
 
-    // Validate date of birth if provided
     if (formData.date_of_birth && !/^\d{2}\/\d{2}\/\d{4}$/.test(formData.date_of_birth)) {
       toast.error("Please enter the date of birth in DD/MM/YYYY format.");
       return;
@@ -554,8 +567,15 @@ const ManageStaff = () => {
     }
   };
 
-  const openDeleteModal = (user) => { setDeleteTarget(user); setIsDeleteModalOpen(true); };
-  const closeDeleteModal = () => { if (deleteLoading) return; setIsDeleteModalOpen(false); setDeleteTarget(null); };
+  const openDeleteModal = (user) => {
+    setDeleteTarget(user);
+    setIsDeleteModalOpen(true);
+  };
+  const closeDeleteModal = () => {
+    if (deleteLoading) return;
+    setIsDeleteModalOpen(false);
+    setDeleteTarget(null);
+  };
   const confirmDelete = async () => {
     if (!deleteTarget?.id) return;
     const url = `api/admin/staff-delete/${deleteTarget.id}`;
@@ -574,9 +594,6 @@ const ManageStaff = () => {
   };
 
   if (loading && staff.length === 0) return <Loader />;
-
-  // Determine if the logged-in user is admin (id === 1)
-  const isAdmin = loggedInContractorId === 1;
 
   return (
     <div className="container mt-4 pb-5">
@@ -660,30 +677,6 @@ const ManageStaff = () => {
           overflow: hidden;
         }
 
-        .form-control, .form-select {
-          background-color: #f3f4f6;
-          border: 2px solid transparent;
-          border-radius: 12px;
-          padding: 0.75rem 1rem;
-          font-size: 0.95rem;
-          color: #111827;
-          transition: all 0.2s ease-in-out;
-        }
-
-        .form-control:focus, .form-select:focus {
-          background-color: #ffffff;
-          border-color: #000000;
-          box-shadow: none;
-          outline: none;
-        }
-
-        .form-label {
-          font-size: 0.8rem;
-          font-weight: 600;
-          color: #4b5563;
-          margin-bottom: 0.4rem;
-        }
-
         .modal-tabs-container {
           background: #f3f4f6;
           padding: 4px;
@@ -714,15 +707,6 @@ const ManageStaff = () => {
           background: rgba(255,255,255,0.5);
         }
 
-        .section-divider {
-          font-size: 1.1rem;
-          font-weight: 700;
-          color: #111827;
-          margin: 25px 0 15px;
-          padding-bottom: 10px;
-          border-bottom: 1px solid #e5e7eb;
-        }
-
         .confirm-modal-backdrop {
           position: fixed;
           inset: 0;
@@ -737,7 +721,7 @@ const ManageStaff = () => {
 
         .confirm-modal-card {
           width: 100%;
-          max-width: 480px;
+          max-width: 750px;
           border-radius: 20px;
           border: 1px solid #e2e8f0;
           background: #ffffff;
@@ -784,10 +768,17 @@ const ManageStaff = () => {
       {/* Header */}
       <div className="d-flex justify-content-between align-items-end mb-4">
         <div>
-          <h2 className="fw-bold text-dark mb-1" style={{ letterSpacing: "-0.02em" }}>Staff Management</h2>
-          <p className="text-muted mb-0">Manage permissions and details for your team members.</p>
+          <h2 className="fw-bold text-dark mb-1" style={{ letterSpacing: "-0.02em" }}>
+            Staff Management
+          </h2>
+          <p className="text-muted mb-0">
+            Manage permissions and details for your team members.
+          </p>
         </div>
-        <button className="btn btn-dark rounded-pill px-4 py-2 shadow-sm fw-bold" onClick={() => openModal()}>
+        <button
+          className="btn btn-dark rounded-pill px-4 py-2 shadow-sm fw-bold"
+          onClick={() => openModal()}
+        >
           <i className="fa-solid fa-plus me-2"></i> Add Staff
         </button>
       </div>
@@ -796,20 +787,33 @@ const ManageStaff = () => {
       {error && (
         <div className="alert alert-danger rounded-3 shadow-sm border-0 d-flex align-items-center mb-4">
           <i className="fa-solid fa-circle-exclamation me-3"></i>
-          <div><strong>Error:</strong> {error.message}</div>
+          <div>
+            <strong>Error:</strong> {error.message}
+          </div>
         </div>
       )}
 
       {/* Table */}
       <div className="card border-0 shadow-sm rounded-4 overflow-hidden mb-4 jobtracker-table-shell">
         <div className="table-responsive">
-          <table className={`table table-hover align-middle mb-0 jobtracker-main-table ${loading ? "opacity-50" : ""}`}>
+          <table
+            className={`table table-hover align-middle mb-0 jobtracker-main-table ${loading ? "opacity-50" : ""
+              }`}
+          >
             <thead className="premium-thead">
               <tr>
-                <th className="text-start" style={{ width: "35%" }}>NAME & EMAIL</th>
-                <th className="text-start" style={{ width: "25%" }}>PHONE</th>
-                <th className="text-start" style={{ width: "25%" }}>LOCATION</th>
-                <th className="text-center" style={{ width: "15%" }}>ACTIONS</th>
+                <th className="text-start" style={{ width: "35%" }}>
+                  NAME & EMAIL
+                </th>
+                <th className="text-start" style={{ width: "25%" }}>
+                  PHONE
+                </th>
+                <th className="text-start" style={{ width: "25%" }}>
+                  LOCATION
+                </th>
+                <th className="text-center" style={{ width: "15%" }}>
+                  ACTIONS
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -818,7 +822,9 @@ const ManageStaff = () => {
                   <tr key={user.id} className="jobtracker-data-row">
                     <td className="text-start">
                       <div className="fw-bold text-dark">{user.name}</div>
-                      <div className="text-muted small" style={{ textTransform: "none" }}>{user.email}</div>
+                      <div className="text-muted small" style={{ textTransform: "none" }}>
+                        {user.email}
+                      </div>
                     </td>
                     <td className="text-start">
                       <div className="text-dark small">{user.staff?.phone || "N/A"}</div>
@@ -829,10 +835,16 @@ const ManageStaff = () => {
                     </td>
                     <td className="text-center">
                       <div className="btn-group">
-                        <button className="btn btn-light btn-sm rounded-circle me-2 border" onClick={() => openModal(user)}>
+                        <button
+                          className="btn btn-light btn-sm rounded-circle me-2 border"
+                          onClick={() => openModal(user)}
+                        >
                           <i className="fa-solid fa-pen text-dark"></i>
                         </button>
-                        <button className="btn btn-light btn-sm rounded-circle border" onClick={() => openDeleteModal(user)}>
+                        <button
+                          className="btn btn-light btn-sm rounded-circle border"
+                          onClick={() => openDeleteModal(user)}
+                        >
                           <i className="fa-solid fa-trash text-danger"></i>
                         </button>
                       </div>
@@ -841,7 +853,9 @@ const ManageStaff = () => {
                 ))
               ) : (
                 <tr>
-                  <td colSpan="4" className="text-center py-5 text-muted">No staff records found.</td>
+                  <td colSpan="4" className="text-center py-5 text-muted">
+                    No staff records found.
+                  </td>
                 </tr>
               )}
             </tbody>
@@ -851,13 +865,22 @@ const ManageStaff = () => {
         <div className="card-footer bg-white border-top py-3 px-4 d-flex justify-content-between align-items-center">
           <div className="text-muted small">
             Showing Page <strong>{page}</strong> of <strong>{totalPages}</strong>
-            <span className="mx-2">•</span> Total <strong>{totalItems}</strong> records
+            <span className="mx-2">•</span>
+            Total <strong>{totalItems}</strong> records
           </div>
           <div className="d-flex gap-2">
-            <button className="btn btn-sm btn-outline-secondary rounded-pill px-3" onClick={() => handlePageChange(page - 1)} disabled={page === 1}>
+            <button
+              className="btn btn-sm btn-outline-secondary rounded-pill px-3"
+              onClick={() => handlePageChange(page - 1)}
+              disabled={page === 1}
+            >
               <i className="fa-solid fa-chevron-left me-1"></i> Prev
             </button>
-            <button className="btn btn-sm btn-outline-secondary rounded-pill px-3" onClick={() => handlePageChange(page + 1)} disabled={page === totalPages || totalPages === 0}>
+            <button
+              className="btn btn-sm btn-outline-secondary rounded-pill px-3"
+              onClick={() => handlePageChange(page + 1)}
+              disabled={page === totalPages || totalPages === 0}
+            >
               Next <i className="fa-solid fa-chevron-right ms-1"></i>
             </button>
           </div>
@@ -869,179 +892,269 @@ const ManageStaff = () => {
         <div className="full-screen-modal">
           <div className="modal-inner-content">
             <div className="px-5 py-4 border-bottom bg-white d-flex justify-content-between align-items-center">
-              <div><h4 className="fw-bold mb-1">{editingUser ? "Update Staff Profile" : "Add New Staff"}</h4></div>
+              <h4 className="fw-bold mb-0">
+                {editingUser ? "Update Staff Profile" : "Add New Staff"}
+              </h4>
               <button className="btn-close shadow-none" onClick={closeModal}></button>
             </div>
 
-            <div className="flex-grow-1 overflow-auto px-5 py-4" onScroll={() => { if (document.activeElement?.id === "staff-address") document.activeElement.blur(); }}>
+            <div
+              className="flex-grow-1 overflow-auto px-5 py-4"
+              onScroll={() => {
+                if (document.activeElement?.id === "address") {
+                  document.activeElement.blur();
+                }
+              }}
+            >
               <div className="modal-tabs-container mb-4">
-                <button type="button" className={`btn ${activeModalTab === "personal" ? "btn-primary-custom" : "btn-outline-primary"}`} onClick={() => setActiveModalTab("personal")}>Personal Information</button>
-                <button type="button" className={`btn ${activeModalTab === "documents" ? "btn-primary-custom" : "btn-outline-primary"}`} onClick={() => setActiveModalTab("documents")} disabled={!editingUser} title={editingUser ? "Documents" : "Save the profile first to manage documents."}>Documents</button>
-                {/* Conditionally show Onboarding tab for admin (user_id === 1) */}
-                {isAdmin && (
-                  <button type="button" className={`btn ${activeModalTab === "onboarding" ? "btn-primary-custom" : "btn-outline-primary"}`} onClick={() => setActiveModalTab("onboarding")} disabled={!editingUser} title={editingUser ? "Staff Verification Forms" : "Save the profile first."}>
-                    Onboarding
-                  </button>
+                <button
+                  type="button"
+                  className={`btn ${activeModalTab === "personal"
+                    ? "btn-primary-custom text-white"
+                    : "btn-outline-primary"
+                    }`}
+                  onClick={() => setActiveModalTab("personal")}
+                >
+                  Personal Information
+                </button>
+                {editingUser && (
+                  <>
+                    <button
+                      type="button"
+                      className={`btn ${activeModalTab === "documents" ? "btn-primary-custom text-white" : "btn-outline-primary"}`}
+                      onClick={() => setActiveModalTab("documents")}
+                    >
+                      Documents
+                    </button>
+                    <button
+                      type="button"
+                      className={`btn ${activeModalTab === "onboarding" ? "btn-primary-custom text-white" : "btn-outline-primary"}`}
+                      onClick={() => setActiveModalTab("onboarding")}
+                    >
+                      Verification Forms
+                    </button>
+                  </>
                 )}
               </div>
 
               {activeModalTab === "personal" ? (
-                <form id="staffForm" onSubmit={handleSubmit}>
-                  <div className="row g-4">
-                    <div className="col-12"><h6 className="section-divider mt-0">Personal Details</h6></div>
+                <ProfileForm
+                  formData={{
+                    name: formData.name,
+                    email: formData.email,
+                    phone: formData.phone,
+                    address: formData.address,
+                    city: formData.city,
+                    state: formData.state,
+                    country: formData.country,
+                    coordinates: formData.coordinates,
+                    gender: formData.gender,
+                    staff_document_type: formData.staff_document_type,
+                    date_of_birth: formData.date_of_birth,
+                    origin_country: formData.origin_country,
+                    abn: "",
+                    acn: "",
+                    company_name: "",
+                  }}
+                  onChange={handleProfileFormChange}
+                  onSubmit={handleSubmit}
+                  loading={submitLoading}
+                  isEdit={!!editingUser}
+                  userType="staff"
+                  onChangePhone={() => { }}
+                  isPhoneVerified={false}
+                  footer={
+                    <button
+                      type="submit"
+                      form="profile-form"
+                      className="btn btn-dark rounded-pill px-5 fw-bold shadow-sm"
+                      disabled={submitLoading}
+                    >
+                      {submitLoading
+                        ? "Saving..."
+                        : editingUser
+                          ? "Update Profile"
+                          : "Create Staff"}
+                    </button>
+                  }
+                  extraFields={
                     <div className="col-md-6">
-                      <label className="form-label">Full Name *</label>
-                      <input type="text" className="form-control" name="name" value={formData.name} onChange={handleInputChange} required />
-                    </div>
-                    <div className="col-md-6">
-                      <label className="form-label">Email Address *</label>
-                      <input type="email" className={`form-control ${editingUser ? 'bg-light text-muted' : ''}`} name="email" value={formData.email} onChange={handleInputChange} required disabled={!!editingUser} title={editingUser ? "Email cannot be changed after registration" : ""} />
-                    </div>
-                    <div className="col-md-6">
-                      <label className="form-label">Password {editingUser && <span className="text-muted fw-normal">(Leave blank to keep)</span>}</label>
+                      <label className="form-label">
+                        Password{" "}
+                        {editingUser && (
+                          <span className="text-muted fw-normal">
+                            (Leave blank to keep)
+                          </span>
+                        )}
+                      </label>
                       <div className="position-relative">
-                        <input type={showPassword ? "text" : "password"} className="form-control pe-5" name="password" onChange={handleInputChange} required={!editingUser} />
-                        <button type="button" className="btn btn-sm border-0 position-absolute end-0 top-50 translate-middle-y text-muted" onClick={() => setShowPassword(!showPassword)} tabIndex="-1"><i className={`fa-solid ${showPassword ? 'fa-eye-slash' : 'fa-eye'}`}></i></button>
+                        <input
+                          type={showPassword ? "text" : "password"}
+                          className="form-control pe-5"
+                          value={formData.password}
+                          onChange={(e) =>
+                            setFormData((prev) => ({
+                              ...prev,
+                              password: e.target.value,
+                            }))
+                          }
+                          required={!editingUser}
+                        />
+                        <button
+                          type="button"
+                          className="btn btn-sm border-0 position-absolute end-0 top-50 translate-middle-y text-muted"
+                          onClick={() => setShowPassword(!showPassword)}
+                          tabIndex="-1"
+                        >
+                          <i
+                            className={`fa-solid ${showPassword ? "fa-eye-slash" : "fa-eye"
+                              }`}
+                          ></i>
+                        </button>
                       </div>
                     </div>
-                    <div className="col-md-6">
-                      <label className="form-label">Phone</label>
-                      <input type="tel" className="form-control" name="phone" placeholder="e.g. 0400 000 000" value={formData.phone} onChange={(e) => { const val = e.target.value.replace(/[^\d+\s-]/g, ""); handleInputChange({ target: { name: "phone", value: val } }); }} maxLength="15" />
-                    </div>
-                    <div className="col-md-6">
-                      <label className="form-label">Residential Status</label>
-                      <select className="form-select" name="staff_document_type" value={formData.staff_document_type} onChange={handleInputChange}>
-                        <option value="">Select status</option>
-                        <option value="student_visa">Student Visa</option>
-                        <option value="bridging_visa">Bridging Visa</option>
-                        <option value="citizen">Citizen</option>
-                        <option value="permanent_residence">Permanent Residence</option>
-                        <option value="visa_485">Visa Subclass 485</option>
-                      </select>
-                    </div>
-                    <div className="col-md-6">
-                      <label className="form-label">Gender</label>
-                      <select className="form-select" name="gender" value={formData.gender} onChange={handleInputChange}>
-                        <option value="">Select gender</option>
-                        <option value="male">Male</option>
-                        <option value="female">Female</option>
-                        <option value="other">Prefer Not to Say</option>
-                      </select>
-                    </div>
-
-                    <div className="col-12"><h6 className="section-divider">Identity Details</h6></div>
-                    <div className="col-md-6">
-                      <label className="form-label">Date of Birth</label>
-                      <input
-                        type="text"
-                        className="form-control"
-                        name="date_of_birth"
-                        placeholder="DD/MM/YYYY"
-                        value={formData.date_of_birth}
-                        onChange={handleInputChange}
-                        maxLength={10}
-                        pattern="^(0[1-9]|[12][0-9]|3[01])/(0[1-9]|1[012])/\d{4}$"
-                        title="Enter a valid date in DD/MM/YYYY format"
-                      />
-                    </div>
-                    <div className="col-md-6">
-                      <label className="form-label">Country of Origin</label>
-                      <input
-                        type="text"
-                        className="form-control"
-                        name="origin_country"
-                        placeholder="e.g. Australia"
-                        value={formData.origin_country}
-                        onChange={handleInputChange}
-                        maxLength="50"
-                      />
-                    </div>
-
-                    <div className="col-12"><h6 className="section-divider">Address Information</h6></div>
-                    <div className="col-12">
-                      <label className="form-label">Full Address</label>
-                      <input type="text" id="staff-address" className="form-control" name="address" value={formData.address} onChange={handleInputChange} placeholder="Start typing and choose from Google suggestions" />
-                      <div className="form-text mt-2 text-muted">Select from suggestions to auto-fill city, state, country and coordinates.</div>
-                    </div>
-                    <div className="col-12">
-                      <label className="form-label">Coordinates {!editingUser && "*"}</label>
-                      <input type="text" className="form-control bg-white" name="coordinates" value={formData.coordinates} onChange={handleInputChange} placeholder="Auto-filled from selected address" readOnly required={!editingUser} />
-                    </div>
-                  </div>
-                </form>
+                  }
+                />
               ) : activeModalTab === "documents" ? (
                 <div>
                   <div className="d-flex justify-content-between align-items-center mb-4">
                     <div>
-                      <h6 className="section-divider mt-0 border-0 mb-1">Documents</h6>
-                      <p className="text-muted mb-0 small">Upload and manage staff documents.</p>
+                      <h6 className="section-divider mt-0 border-0 mb-1">
+                        Documents
+                      </h6>
+                      <p className="text-muted mb-0 small">
+                        Upload and manage staff documents.
+                      </p>
                     </div>
                   </div>
-                  <DocumentTable documents={staffDocuments} userType="staff" onAddFile={openDocumentModal} />
+                  <DocumentTable
+                    documents={staffDocuments}
+                    userType="staff"
+                    onAddFile={openDocumentModal}
+                  />
 
                   {showDocModal && (
-                    <div className="confirm-modal-backdrop" onClick={closeDocumentModal}>
-                      <div className="confirm-modal-card" onClick={(e) => e.stopPropagation()} style={{ maxWidth: "750px" }}>
+                    <div
+                      className="confirm-modal-backdrop"
+                      onClick={closeDocumentModal}
+                    >
+                      <div
+                        className="confirm-modal-card"
+                        onClick={(e) => e.stopPropagation()}
+                      >
                         <div className="confirm-modal-header px-4 py-3 d-flex align-items-center gap-3">
-                          <span className="confirm-modal-icon icon-doc"><i className="fa-solid fa-file-arrow-up"></i></span>
+                          <span className="confirm-modal-icon icon-doc">
+                            <i className="fa-solid fa-file-arrow-up"></i>
+                          </span>
                           <div>
-                            <h5 className="mb-0 fw-bold">{selectedDoc ? "Update Document" : "Add Document"}</h5>
-                            <div className="small text-muted">Upload a staff verification file.</div>
+                            <h5 className="mb-0 fw-bold">
+                              {selectedDoc ? "Update Document" : "Add Document"}
+                            </h5>
+                            <div className="small text-muted">
+                              Upload a staff verification file.
+                            </div>
                           </div>
                         </div>
 
-                        <form onSubmit={handleDocSubmit} className="p-4" style={{ maxHeight: "70vh", overflowY: "auto" }}>
+                        <form
+                          onSubmit={handleDocSubmit}
+                          className="p-4"
+                          style={{ maxHeight: "70vh", overflowY: "auto" }}
+                        >
                           {/* Document Type */}
                           <div className="mb-3">
-                            <label className="form-label fw-bold text-dark">Document Type <span className="text-danger">*</span></label>
+                            <label className="form-label fw-bold text-dark">
+                              Document Type <span className="text-danger">*</span>
+                            </label>
                             <select
                               className="form-control bg-light border-0"
                               name="document_name"
                               value={docForm.document_name}
-                              onChange={(e) => {
-                                handleDocFormChange({ target: { name: "document_name", value: e.target.value } });
-                                setDocForm((prev) => ({ ...prev, document_expiry: "", is_verified: false }));
-                              }}
+                              onChange={handleDocFormChange}
                               required
                               disabled={!!selectedDoc}
                             >
                               <option value="">Select Type</option>
-                              {["Passport", "Visa", "Driver License Front", "Driver License Back", "Security License", "Working with Children", "Employment Application Form", "TFN Declaration", "Superannuation Form", "First Aid", "CPR", "Vaccination Certificate", "Citizen Ship", "Medicare", "Birth Certificate"].map(type => (
-                                <option key={type} value={type}>{type}</option>
+                              {DOC_TYPES.map((type) => (
+                                <option key={type.value} value={type.value}>
+                                  {type.label}
+                                </option>
                               ))}
                             </select>
                           </div>
 
-                          {/* Document Number + Verify button */}
+                          {/* Document Number + Verify */}
                           <div className="mb-3">
-                            <label className="form-label fw-bold text-dark">Document Number <span className="text-danger">*</span></label>
-                            {(docForm.document_name === "Security License" || docForm.document_name === "Visa") ? (
+                            <label className="form-label fw-bold text-dark">
+                              Document Number <span className="text-danger">*</span>
+                            </label>
+                            {(docForm.document_name === "Security License" ||
+                              docForm.document_name === "Visa") ? (
                               <div className="input-group">
-                                <input type="text" className="form-control bg-light border-0" placeholder="e.g. ABC123456" value={docForm.document_no} onChange={handleDocNumberChange} required />
-                                <button type="button" className="btn btn-dark fw-bold px-4 border-0" onClick={handleVerifyDocumentNumber} disabled={verifyingDoc || !docForm.document_no}>
-                                  {verifyingDoc ? (<><span className="spinner-border spinner-border-sm me-1" /> Verifying...</>) : "Verify"}
+                                <input
+                                  type="text"
+                                  className="form-control bg-light border-0"
+                                  placeholder="e.g. ABC123456"
+                                  value={docForm.document_no}
+                                  onChange={handleDocNumberChange}
+                                  required
+                                />
+                                <button
+                                  type="button"
+                                  className="btn btn-dark fw-bold px-4 border-0"
+                                  onClick={handleVerifyDocumentNumber}
+                                  disabled={verifyingDoc || !docForm.document_no}
+                                >
+                                  {verifyingDoc ? (
+                                    <>
+                                      <span className="spinner-border spinner-border-sm me-1" />
+                                      Verifying...
+                                    </>
+                                  ) : (
+                                    "Verify"
+                                  )}
                                 </button>
                               </div>
                             ) : (
-                              <input type="text" className="form-control bg-light border-0" placeholder="e.g. ABC123456" value={docForm.document_no} onChange={handleDocNumberChange} required />
+                              <input
+                                type="text"
+                                className="form-control bg-light border-0"
+                                placeholder="e.g. ABC123456"
+                                value={docForm.document_no}
+                                onChange={handleDocNumberChange}
+                                required
+                              />
                             )}
                           </div>
 
-                          {/* Expiry Date – ALWAYS disabled for Security License & Visa */}
+                          {/* Expiry Date */}
                           <div className="mb-3">
-                            <label className="form-label fw-bold text-dark">Expiry Date <span className="text-danger">*</span></label>
+                            <label className="form-label fw-bold text-dark">
+                              Expiry Date <span className="text-danger">*</span>
+                            </label>
                             <div className="input-group position-relative shadow-sm rounded-3 overflow-hidden">
-                              <button type="button" className="input-group-text bg-light text-muted border-0"
+                              <button
+                                type="button"
+                                className="input-group-text bg-light text-muted border-0"
                                 onClick={(e) => {
                                   e.preventDefault();
-                                  const hiddenPicker = document.getElementById("doc_expiry_picker");
-                                  if (hiddenPicker) {
-                                    try { hiddenPicker.showPicker(); } catch (err) { hiddenPicker.focus(); }
+                                  const picker =
+                                    document.getElementById("doc_expiry_picker");
+                                  if (picker) {
+                                    try {
+                                      picker.showPicker();
+                                    } catch (err) {
+                                      picker.focus();
+                                    }
                                   }
                                 }}
                                 style={{ cursor: "pointer", zIndex: 10 }}
-                                disabled={docForm.document_name === "Security License" || docForm.document_name === "Visa"}
-                                title="Open Calendar">
+                                disabled={
+                                  docForm.document_name === "Security License" ||
+                                  docForm.document_name === "Visa"
+                                }
+                                title="Open Calendar"
+                              >
                                 <i className="fa-solid fa-calendar-days text-dark"></i>
                               </button>
 
@@ -1049,11 +1162,19 @@ const ManageStaff = () => {
                                 type="date"
                                 id="doc_expiry_picker"
                                 className="position-absolute"
-                                style={{ opacity: 0, width: 0, height: 0, pointerEvents: "none", bottom: 0, left: 40 }}
+                                style={{
+                                  opacity: 0,
+                                  width: 0,
+                                  height: 0,
+                                  pointerEvents: "none",
+                                  bottom: 0,
+                                  left: 40,
+                                }}
                                 value={
                                   docForm.document_expiry
                                     ? (() => {
-                                      const parts = docForm.document_expiry.split("/");
+                                      const parts =
+                                        docForm.document_expiry.split("/");
                                       if (parts.length === 3) {
                                         const [d, m, y] = parts;
                                         return `${y}-${m}-${d}`;
@@ -1072,7 +1193,10 @@ const ManageStaff = () => {
                                     }));
                                   }
                                 }}
-                                disabled={docForm.document_name === "Security License" || docForm.document_name === "Visa"}
+                                disabled={
+                                  docForm.document_name === "Security License" ||
+                                  docForm.document_name === "Visa"
+                                }
                               />
 
                               <input
@@ -1083,9 +1207,19 @@ const ManageStaff = () => {
                                 value={docForm.document_expiry}
                                 onChange={(e) => {
                                   let value = e.target.value.replace(/\D/g, "");
-                                  if (value.length > 8) value = value.substring(0, 8);
-                                  if (value.length > 2 && value.length <= 4) value = value.replace(/^(\d{2})(\d+)/, "$1/$2");
-                                  else if (value.length > 4) value = value.replace(/^(\d{2})(\d{2})(\d+)/, "$1/$2/$3");
+                                  if (value.length > 8)
+                                    value = value.substring(0, 8);
+                                  if (value.length > 2 && value.length <= 4) {
+                                    value = value.replace(
+                                      /^(\d{2})(\d+)/,
+                                      "$1/$2"
+                                    );
+                                  } else if (value.length > 4) {
+                                    value = value.replace(
+                                      /^(\d{2})(\d{2})(\d+)/,
+                                      "$1/$2/$3"
+                                    );
+                                  }
                                   setDocForm((prev) => ({
                                     ...prev,
                                     document_expiry: value,
@@ -1094,10 +1228,15 @@ const ManageStaff = () => {
                                 required
                                 maxLength={10}
                                 pattern="^(0[1-9]|[12][0-9]|3[01])/(0[1-9]|1[012])/\d{4}$"
-                                disabled={docForm.document_name === "Security License" || docForm.document_name === "Visa"}
+                                disabled={
+                                  docForm.document_name === "Security License" ||
+                                  docForm.document_name === "Visa"
+                                }
                                 style={{
                                   backgroundColor:
-                                    docForm.document_name === "Security License" || docForm.document_name === "Visa"
+                                    docForm.document_name ===
+                                      "Security License" ||
+                                      docForm.document_name === "Visa"
                                       ? "#e9ecef"
                                       : "white",
                                 }}
@@ -1105,44 +1244,94 @@ const ManageStaff = () => {
                             </div>
                           </div>
 
-                          {/* File Upload Preview */}
+                          {/* File Upload */}
                           <div className="mb-4">
-                            <label className="form-label fw-bold text-dark">Document/Image <span className="text-danger">*</span></label>
-                            <div className="position-relative border border-2 border-dashed rounded-4 p-4 text-center bg-light" style={{ minHeight: "200px", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                            <label className="form-label fw-bold text-dark">
+                              Document/Image <span className="text-danger">*</span>
+                            </label>
+                            <div
+                              className="position-relative border border-2 border-dashed rounded-4 p-4 text-center bg-light"
+                              style={{
+                                minHeight: "200px",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                              }}
+                            >
                               {docForm.file_url ? (
                                 <>
-                                  {docForm.file_url.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
+                                  {docForm.file_url.match(
+                                    /\.(jpg|jpeg|png|gif|webp)$/i
+                                  ) ? (
                                     <img
-                                      src={docForm.file_url.startsWith("http") ? docForm.file_url : `${apiURL}staff_documents/${docForm.file_url}`}
+                                      src={
+                                        docForm.file_url.startsWith("http")
+                                          ? docForm.file_url
+                                          : `${apiURL}staff_documents/${docForm.file_url}`
+                                      }
                                       alt="Preview"
-                                      style={{ width: "100%", maxHeight: "200px", objectFit: "contain", borderRadius: "8px", opacity: uploadLoading ? 0.3 : 1 }}
+                                      style={{
+                                        width: "100%",
+                                        maxHeight: "200px",
+                                        objectFit: "contain",
+                                        borderRadius: "8px",
+                                        opacity: uploadLoading ? 0.3 : 1,
+                                      }}
                                     />
                                   ) : (
                                     <div className="text-center">
                                       <i className="fa-solid fa-file-pdf fa-3x text-muted mb-3"></i>
-                                      <p className="fw-bold text-secondary mb-0">Document Selected</p>
+                                      <p className="fw-bold text-secondary mb-0">
+                                        Document Selected
+                                      </p>
                                     </div>
                                   )}
                                   {uploadLoading && (
                                     <div className="position-absolute top-50 start-50 translate-middle">
                                       <div className="spinner-border text-primary" />
-                                      <p className="small mt-1 fw-bold text-dark">Uploading...</p>
+                                      <p className="small mt-1 fw-bold text-dark">
+                                        Uploading...
+                                      </p>
                                     </div>
                                   )}
                                 </>
                               ) : (
                                 <div className="text-center">
                                   <i className="fa-solid fa-cloud-arrow-up fa-3x text-muted mb-3"></i>
-                                  <p className="text-muted fw-medium mb-0">Click to upload document/image</p>
+                                  <p className="text-muted fw-medium mb-0">
+                                    Click to upload document/image
+                                  </p>
                                 </div>
                               )}
                             </div>
-                            <input type="file" className="form-control mt-3 bg-light border-0" onChange={handleDocFormChange} name="file" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.gif,.webp" />
+                            <input
+                              type="file"
+                              className="form-control mt-3 bg-light border-0"
+                              onChange={handleDocFormChange}
+                              name="file"
+                              accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.gif,.webp"
+                            />
                           </div>
 
                           <div className="mt-2 pt-3 border-top d-flex justify-content-end gap-2">
-                            <button type="button" className="btn btn-light rounded-pill px-5 fw-bold text-muted border" onClick={closeDocumentModal} disabled={uploadLoading || submitLoading}>Cancel</button>
-                            <button type="submit" className="btn btn-dark rounded-pill px-5 fw-bold shadow-sm" disabled={uploadLoading || submitLoading || !docForm.document_expiry || !docForm.file_url}>
+                            <button
+                              type="button"
+                              className="btn btn-light rounded-pill px-5 fw-bold text-muted border"
+                              onClick={closeDocumentModal}
+                              disabled={uploadLoading || submitLoading}
+                            >
+                              Cancel
+                            </button>
+                            <button
+                              type="submit"
+                              className="btn btn-dark rounded-pill px-5 fw-bold shadow-sm"
+                              disabled={
+                                uploadLoading ||
+                                submitLoading ||
+                                !docForm.document_expiry ||
+                                !docForm.file_url
+                              }
+                            >
                               {submitLoading ? "Saving..." : "Upload Document"}
                             </button>
                           </div>
@@ -1151,20 +1340,25 @@ const ManageStaff = () => {
                     </div>
                   )}
                 </div>
-              ) : activeModalTab === "onboarding" && isAdmin ? (
+              ) : activeModalTab === "onboarding" ? (
                 <div>
-                  <StaffOnboardingForms submit={submit} userId={editingUser?.id} />
+                  <StaffOnboardingForms
+                    submit={submit}
+                    userId={editingUser?.id}
+                    contractorId={loggedInContractorId}
+                  />
                 </div>
               ) : null}
             </div>
 
             <div className="px-5 py-4 border-top bg-light d-flex gap-3 justify-content-end">
-              <button type="button" className="btn btn-light rounded-pill px-5 fw-bold text-muted border" onClick={closeModal}>Cancel</button>
-              {activeModalTab === "personal" && (
-                <button type="submit" form="staffForm" className="btn btn-dark rounded-pill px-5 fw-bold shadow-sm" disabled={submitLoading}>
-                  {submitLoading ? "Saving..." : editingUser ? "Update Profile" : "Add Staff"}
-                </button>
-              )}
+              <button
+                type="button"
+                className="btn btn-light rounded-pill px-5 fw-bold text-muted border"
+                onClick={closeModal}
+              >
+                Cancel
+              </button>
             </div>
           </div>
         </div>
@@ -1173,20 +1367,43 @@ const ManageStaff = () => {
       {/* Delete Modal */}
       {isDeleteModalOpen && (
         <div className="confirm-modal-backdrop" onClick={closeDeleteModal}>
-          <div className="confirm-modal-card" onClick={(e) => e.stopPropagation()}>
+          <div
+            className="confirm-modal-card"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="confirm-modal-header px-4 py-3 d-flex align-items-center gap-3">
-              <span className="confirm-modal-icon"><i className="fa-solid fa-triangle-exclamation"></i></span>
+              <span className="confirm-modal-icon">
+                <i className="fa-solid fa-triangle-exclamation"></i>
+              </span>
               <div>
                 <h5 className="mb-0 fw-bold text-danger">Confirm Deletion</h5>
-                <div className="small text-muted">This action cannot be undone.</div>
+                <div className="small text-muted">
+                  This action cannot be undone.
+                </div>
               </div>
             </div>
             <div className="px-4 py-4">
-              <p className="mb-0 text-dark">Delete <strong>{deleteTarget?.name || "this staff member"}</strong> from your team records?</p>
+              <p className="mb-0 text-dark">
+                Delete{" "}
+                <strong>{deleteTarget?.name || "this staff member"}</strong>{" "}
+                from your team records?
+              </p>
             </div>
             <div className="px-4 py-3 border-top d-flex justify-content-end gap-2 bg-light">
-              <button type="button" className="btn btn-outline-secondary rounded-pill px-4 fw-bold" onClick={closeDeleteModal} disabled={deleteLoading}>Cancel</button>
-              <button type="button" className="btn btn-danger rounded-pill px-4 fw-bold shadow-sm" onClick={confirmDelete} disabled={deleteLoading}>
+              <button
+                type="button"
+                className="btn btn-outline-secondary rounded-pill px-4 fw-bold"
+                onClick={closeDeleteModal}
+                disabled={deleteLoading}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="btn btn-danger rounded-pill px-4 fw-bold shadow-sm"
+                onClick={confirmDelete}
+                disabled={deleteLoading}
+              >
                 {deleteLoading ? "Deleting..." : "Yes, Delete"}
               </button>
             </div>

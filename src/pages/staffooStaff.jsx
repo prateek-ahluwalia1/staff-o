@@ -887,37 +887,31 @@ const StaffooStaff = () => {
                                 <button
                                     type="button"
                                     className={`btn ${activeModalTab === "personal"
-                                        ? "btn-primary-custom"
+                                        ? "btn-primary-custom text-white"
                                         : "btn-outline-primary"
                                         }`}
                                     onClick={() => setActiveModalTab("personal")}
                                 >
                                     Personal Information
                                 </button>
-                                <button
-                                    type="button"
-                                    className={`btn ${activeModalTab === "documents"
-                                        ? "btn-primary-custom"
-                                        : "btn-outline-primary"
-                                        }`}
-                                    onClick={() => setActiveModalTab("documents")}
-                                    disabled={!editingUser}
-                                    title={editingUser ? "Documents" : "Save the profile first to manage documents."}
-                                >
-                                    Documents
-                                </button>
-                                <button
-                                    type="button"
-                                    className={`btn ${activeModalTab === "onboarding"
-                                        ? "btn-primary-custom"
-                                        : "btn-outline-primary"
-                                        }`}
-                                    onClick={() => setActiveModalTab("onboarding")}
-                                    disabled={!editingUser}
-                                    title={editingUser ? "Staff Verification Forms" : "Save the profile first."}
-                                >
-                                    Onboarding
-                                </button>
+                                {editingUser && (
+                                    <>
+                                        <button
+                                            type="button"
+                                            className={`btn ${activeModalTab === "documents" ? "btn-primary-custom text-white" : "btn-outline-primary"}`}
+                                            onClick={() => setActiveModalTab("documents")}
+                                        >
+                                            Documents
+                                        </button>
+                                        <button
+                                            type="button"
+                                            className={`btn ${activeModalTab === "onboarding" ? "btn-primary-custom text-white" : "btn-outline-primary"}`}
+                                            onClick={() => setActiveModalTab("onboarding")}
+                                        >
+                                            Verification Forms
+                                        </button>
+                                    </>
+                                )}
                             </div>
 
                             {activeModalTab === "personal" ? (

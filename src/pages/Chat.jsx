@@ -25,7 +25,7 @@ const ALL_CATEGORIES = [
   {
     key: "contractors",
     label: "Resource Partners",
-    desc: "Connect and collaborate with Resource Partners",
+    desc: "Connect with Resource Partners",
     accent: "linear-gradient(135deg,#16a34a,#15803d)",
     image: chat3img,
   },

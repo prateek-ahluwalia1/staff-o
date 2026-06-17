@@ -372,8 +372,10 @@ export default function PaymentHistory() {
       <Modal open={showShareModal} onClose={() => setShowShareModal(false)}>
         <form onSubmit={handleShareSubmit} className="p-4">
           <h5 className="mb-3 fw-bold">Share Document</h5>
-          <p className="text-muted small mb-4">
-            Enter the email addresses you would like to send invoice
+          <p className="text-muted small mb-4"
+            style={{ textTransform: "none" }}
+          >
+            Enter the email addresses you would like to send
             <strong> {selectedTx?.invoice_filename}</strong> to.
           </p>
 

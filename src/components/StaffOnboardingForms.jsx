@@ -333,11 +333,15 @@ const SuperannuationForm = ({ values, loading, onChange, onSubmit, dataModified 
             <div className="col-md-12">
                 <div className="form-check mb-2">
                     <input className="form-check-input" type="radio" name="fund_choice" value="own" checked={values.fund_choice === "own"} onChange={onChange} required />
-                    <label className="form-check-label">I nominate my own super fund</label>
+                    <label className="form-check-label"
+                        style={{ textTransform: "none" }}
+                    >I nominate my own super fund</label>
                 </div>
                 <div className="form-check">
                     <input className="form-check-input" type="radio" name="fund_choice" value="employer" checked={values.fund_choice === "employer"} onChange={onChange} />
-                    <label className="form-check-label">Use the employer's default super fund</label>
+                    <label className="form-check-label"
+                        style={{ textTransform: "none" }}
+                    >Use the employer's default super fund</label>
                 </div>
             </div>
         </div>

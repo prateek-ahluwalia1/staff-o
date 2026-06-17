@@ -70,6 +70,7 @@ const PaySlip = lazy(() => import("./pages/PaySlip"));
 const Induction = lazy(() => import("./pages/Induction"));
 const PublicHolidays = lazy(() => import("./pages/PublicHolidays"));
 const PaySheet = lazy(() => import("./pages/PaySheet"));
+const StafooStaff = lazy(() => import("./pages/staffooStaff"));
 
 function AppContent() {
     const dispatch = useDispatch();
@@ -469,6 +470,14 @@ function AppContent() {
                         element={
                             <ProtectedRoute allowedRoles={["admin"]}>
                                 <PublicHolidays />
+                            </ProtectedRoute>
+                        }
+                    />
+                    <Route
+                        path="/staff-management"
+                        element={
+                            <ProtectedRoute allowedRoles={["admin"]}>
+                                <StafooStaff />
                             </ProtectedRoute>
                         }
                     />

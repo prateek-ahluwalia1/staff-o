@@ -4,6 +4,7 @@ import { useSelector } from "react-redux";
 import { Card } from "../components/Card";
 import leaveimg from "../assets/images/leave.png";
 import publicHolidayImg from "../assets/images/public-holiday.png";
+import staffoostaffimg from "../assets/images/capital-security-staff.png";
 const WFMTools = () => {
   const navigate = useNavigate();
   const { userdata } = useSelector((state) => state.auth);
@@ -42,6 +43,16 @@ const WFMTools = () => {
                 image={publicHolidayImg}
                 type="holidays"
                 onClick={() => navigate("/holidays")}
+              />
+            </div>
+            <div className="col-12 col-md-6 col-lg-3">
+              <Card
+                title="Staffoo Staff"
+                description="Used to display the detailed overview of staff members."
+                accent="linear-gradient(135deg,#27ae60,#16a085)"
+                image={staffoostaffimg}
+                type="staff"
+                onClick={() => navigate("/staff-management")}
               />
             </div>
           </>

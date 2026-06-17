@@ -8,6 +8,7 @@ import DocumentTable from "../components/DocumentTable";
 import StaffOnboardingForms from "../components/StaffOnboardingForms";
 import ProfileForm from "../components/ProfileForm";
 import { apiURL } from "../utils/exports";
+import Select from "react-select";
 
 const STATE_MAP = {
   'Victoria': 'vic',
@@ -141,7 +142,7 @@ const ManageUsers = () => {
     state: "",
     country: "",
     coordinates: "",
-    user_id: "",
+    user_id: "",       // resource partner ID for staff
     date_of_birth: "",
     origin_country: "",
   }), []);
@@ -204,7 +205,7 @@ const ManageUsers = () => {
         state: user.state || "",
         country: user.country || "",
         coordinates: user.coordinates || "",
-        user_id: user.user_id || "",
+        user_id: user.user_id || "",          // pre‑fill partner ID
         date_of_birth: isoToDisplay(user.date_of_birth || extraInfo.date_of_birth || ""),
         origin_country: user.origin_country || extraInfo.origin_country || "",
       });
@@ -553,13 +554,11 @@ const ManageUsers = () => {
       toast.success("Document saved successfully!");
 
       // ----- UPDATE EDITING USER IMMEDIATELY -----
-      // Use returned document data if available, otherwise build from form
       const savedDoc = res.data?.document || res.data || {};
 
       setEditingUser((prev) => {
         const currentDocs = prev?.documents || [];
         if (selectedDoc) {
-          // Update existing document
           const updatedDocs = currentDocs.map((d) =>
             d.id === selectedDoc.id
               ? {
@@ -573,9 +572,8 @@ const ManageUsers = () => {
           );
           return { ...prev, documents: updatedDocs };
         } else {
-          // Add new document
           const newDoc = {
-            id: savedDoc.id || Date.now(), // temporary id if missing
+            id: savedDoc.id || Date.now(),
             document_name: docForm.document_name,
             document_no: docForm.document_no,
             document_expiry: docForm.document_expiry,
@@ -591,7 +589,7 @@ const ManageUsers = () => {
       // -------------------------------------------
 
       closeDocumentModal();
-      refetch(); // still update the users list in background
+      refetch();
     } else {
       toast.error(res.message || "Failed to save document");
     }
@@ -637,7 +635,7 @@ const ManageUsers = () => {
 
     try {
       const res = await submit(url, payload, { method });
-      if (res === undefined) return;
+      if (!res) return;
       toast.success(
         editingUser
           ? "User updated successfully!"
@@ -906,7 +904,7 @@ const ManageUsers = () => {
           <table className={`table table-hover align-middle mb-0 jobtracker-main-table ${loading ? "opacity-50" : ""}`}>
             <thead className="premium-thead">
               <tr>
-                <th style={{ width: activeTab === "staff" ? "45%" : "30%", textAlign: "left", paddingLeft: "1.5rem" }}>
+                <th style={{ width: activeTab === "staff" ? "30%" : "30%", textAlign: "left", paddingLeft: "1.5rem" }}>
                   NAME & EMAIL
                 </th>
                 {activeTab !== "staff" && (
@@ -914,7 +912,12 @@ const ManageUsers = () => {
                     BUSINESS & PHONE
                   </th>
                 )}
-                <th style={{ width: activeTab === "staff" ? "35%" : "25%", textAlign: "left" }}>
+                {activeTab === "staff" && (
+                  <th style={{ width: "25%", textAlign: "left" }}>
+                    RESOURCE PARTNER
+                  </th>
+                )}
+                <th style={{ width: activeTab === "staff" ? "25%" : "25%", textAlign: "left" }}>
                   LOCATION
                 </th>
                 <th style={{ width: "20%", textAlign: "center" }}>
@@ -940,6 +943,19 @@ const ManageUsers = () => {
                         <div className="text-muted small">
                           {user.phone || getNestedData(user).phone || "N/A"}
                         </div>
+                      </td>
+                    )}
+                    {activeTab === "staff" && (
+                      <td style={{ textAlign: "left" }}>
+                        {(() => {
+                          const contractorId = user.user_id || user.staff?.user_id;
+                          const contractor = contractorsList.find(c => c.id == contractorId);
+                          return (
+                            <div className="fw-medium text-dark">
+                              {contractor ? contractor.name : "—"}
+                            </div>
+                          );
+                        })()}
                       </td>
                     )}
                     <td style={{ textAlign: "left" }}>
@@ -968,7 +984,7 @@ const ManageUsers = () => {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={activeTab === "staff" ? 3 : 4} className="text-center py-5 text-muted">
+                  <td colSpan={activeTab === "staff" ? 4 : 4} className="text-center py-5 text-muted">
                     No records found for this category.
                   </td>
                 </tr>
@@ -1006,8 +1022,9 @@ const ManageUsers = () => {
       {isModalOpen && (
         <div className="full-screen-modal">
           <div className="modal-inner-content">
-            <div className="px-5 py-4 border-bottom bg-white d-flex justify-content-between align-items-center">
-              <div>
+            {/* UPDATED MODAL HEADER START */}
+            <div className="px-5 py-4 border-bottom bg-white d-flex justify-content-between align-items-start">
+              <div className="flex-grow-1 pe-4">
                 <h4 className="fw-bold mb-1">
                   {editingUser ? "Update Profile" : "Create New User"}
                 </h4>
@@ -1017,9 +1034,65 @@ const ManageUsers = () => {
                     {activeTab.replace("_", " ")}
                   </span>
                 </p>
+                {activeTab === "staff" && (
+                  <div className="mt-4 p-3 bg-white rounded-4 border shadow-sm w-100">
+                    <label className="form-label fw-bold mb-2">
+                      Assign to Resource Partner *
+                    </label>
+                    <Select
+                      // Add the .filter() method right here before .map()
+                      options={contractorsList
+                        .filter((contractor) => contractor.id != 1)
+                        .map((contractor) => ({
+                          value: contractor.id,
+                          label: `${contractor.name} ${contractor.company_name ? `(${contractor.company_name})` : ""}`
+                        }))}
+                      value={
+                        contractorsList
+                          .filter((c) => c.id == formData.user_id)
+                          .map((c) => ({
+                            value: c.id,
+                            label: `${c.name} ${c.company_name ? `(${c.company_name})` : ""}`
+                          }))[0] || null
+                      }
+                      onChange={(selectedOption) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          user_id: selectedOption ? selectedOption.value : "",
+                        }))
+                      }
+                      placeholder={
+                        contractorsList.filter(c => c.id != 1).length === 0
+                          ? "No resource partners available"
+                          : "Select a Resource Partner"
+                      }
+                      isDisabled={contractorsList.filter(c => c.id != 1).length === 0}
+                      isClearable
+                      classNamePrefix="react-select"
+                      styles={{
+                        control: (base) => ({
+                          ...base,
+                          borderColor: '#dee2e6',
+                          padding: '2px',
+                          borderRadius: '0.375rem',
+                          boxShadow: 'none',
+                          '&:hover': {
+                            borderColor: '#c0c6cc'
+                          }
+                        }),
+                        menu: (base) => ({
+                          ...base,
+                          zIndex: 9999
+                        })
+                      }}
+                    />
+                  </div>
+                )}
               </div>
-              <button className="btn-close shadow-none" onClick={closeModal}></button>
+
+              <button className="btn-close shadow-none mt-1" onClick={closeModal}></button>
             </div>
+            {/* UPDATED MODAL HEADER END */}
 
             <div
               className="flex-grow-1 overflow-auto px-5 py-4"
@@ -1073,13 +1146,13 @@ const ManageUsers = () => {
                     company_name: formData.company_name,
                     date_of_birth: formData.date_of_birth,
                     origin_country: formData.origin_country,
-                    // ProfileForm doesn't use these, but they won't break:
                     abn: "",
                     acn: "",
                   }}
                   onChange={handleProfileFormChange}
                   onSubmit={handleSubmit}
                   loading={submitLoading}
+                  isEdit={!!editingUser}
                   userType={
                     activeTab === "staff" ? "staff" :
                       activeTab === "sub_contractor" ? "contractor" :
@@ -1099,7 +1172,7 @@ const ManageUsers = () => {
                   }
                   extraFields={
                     <>
-                      {/* Password field (not in ProfileForm) */}
+                      {/* Password field */}
                       <div className="col-md-6">
                         <label className="form-label">
                           Password {editingUser && <span className="text-muted fw-normal">(Leave blank to keep)</span>}
@@ -1124,35 +1197,6 @@ const ManageUsers = () => {
                         </div>
                       </div>
 
-                      {/* Staff assignment */}
-                      {activeTab === "staff" && (
-                        <div className="col-12 mb-2">
-                          <div className="p-3 bg-light rounded-4 border">
-                            <label className="form-label">
-                              Assign to Resource Partner *
-                            </label>
-                            <select
-                              className="form-select bg-white"
-                              name="user_id"
-                              value={formData.user_id}
-                              onChange={(e) => setFormData(prev => ({ ...prev, user_id: e.target.value }))}
-                              required
-                            >
-                              <option value="" disabled>
-                                Select a Resource Partner
-                              </option>
-                              {contractorsList.map((contractor) => (
-                                <option key={contractor.id} value={contractor.id}>
-                                  {contractor.name}{" "}
-                                  {contractor.company_name
-                                    ? `(${contractor.company_name})`
-                                    : ""}
-                                </option>
-                              ))}
-                            </select>
-                          </div>
-                        </div>
-                      )}
                     </>
                   }
                 />
@@ -1421,7 +1465,6 @@ const ManageUsers = () => {
               >
                 Cancel
               </button>
-              {/* The submit button is inside ProfileForm's footer prop, already rendered */}
             </div>
           </div>
         </div>

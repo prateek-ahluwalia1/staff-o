@@ -12,6 +12,7 @@ export default function ProfileForm({
   isPhoneVerified,
   extraFields = null,
   footer = null,
+  isEdit = false, // <-- Added isEdit prop to determine Add/Edit mode
 }) {
   const datePickerRef = useRef(null);
 
@@ -65,7 +66,7 @@ export default function ProfileForm({
               type="text"
               className="form-control"
               id="name"
-              placeholder="e.g. Muhammad Nauman"
+              placeholder="Full Name"
               value={formData.name || ""}
               onChange={(e) => {
                 let value = e.target.value
@@ -86,7 +87,7 @@ export default function ProfileForm({
             />
           </div>
 
-          {/* Email (Read-Only) */}
+          {/* Email (Conditionally Read-Only) */}
           <div>
             <label htmlFor="email" className="form-label fw-semibold">
               Email Address <span className="text-danger">*</span>
@@ -99,11 +100,22 @@ export default function ProfileForm({
                 type="email"
                 className="form-control border-start-0 ps-0"
                 id="email"
+                placeholder="user@example.com"
                 value={formData.email || ""}
-                readOnly
-                style={{ background: "#f8f9fa", cursor: "default" }}
+                onChange={onChange}
+                readOnly={isEdit}
+                required
+                style={{
+                  background: isEdit ? "#f8f9fa" : "#ffffff",
+                  cursor: isEdit ? "default" : "text"
+                }}
               />
             </div>
+            {isEdit && (
+              <div className="form-text text-muted small mt-1">
+                Email address cannot be changed after creation.
+              </div>
+            )}
           </div>
 
           {userType !== "admin" && (
@@ -587,6 +599,12 @@ export default function ProfileForm({
             />
           </div>
         </div>
+
+        {extraFields && (
+          <div className="row mt-4">
+            {extraFields}
+          </div>
+        )}
 
         {footer ? (
           <div className="settings-card-footer mt-4 pt-4 border-top d-flex justify-content-end">

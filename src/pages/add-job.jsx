@@ -150,10 +150,10 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
         setStaffLoading(true);
         try {
           // 2. Pass currentUserId to the endpoint
-          const res = await fetchStaff(`api/get-contractor-active-staff/${currentUserId}`, {}, { method: "POST" });
+          const res = await fetchStaff(`api/get-contractor-active-staff/1`, {}, { method: "POST" });
 
-          const list = res?.data || res || [];
-          const formattedOptions = (Array.isArray(list) ? list : []).map(s => ({
+          const list = res?.data?.guards || res || [];
+          const formattedOptions = (Array.isArray(list?.guards) ? list?.guards : []).map(s => ({
             value: s.id,
             label: s.name ? s.name : `${s.first_name || ''} ${s.last_name || ''}`.trim() || s.email || `Staff #${s.id}`
           }));

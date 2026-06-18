@@ -5,10 +5,9 @@ import { receiveNewMessage, handleMessageDeleted } from "../store/slices/chatSli
 import { getEchoInstance, destroyEchoInstance } from "../echo";
 import { toast } from "react-toastify";
 
-const playAlertSound = (type) => {
-  const audioFile =
-    type === "chat" ? "/sounds/chat.mp3" : "/sounds/notification.mp3";
-  const audio = new Audio(audioFile);
+// Single sound file for all alert types
+const playAlertSound = () => {
+  const audio = new Audio("/sounds/notification.wav");
   audio.play().catch((err) => console.warn("Audio autoplay blocked:", err));
 };
 
@@ -17,7 +16,6 @@ export const useEcho = () => {
   const { token, userdata } = useSelector((state) => state.auth);
 
   const userId = userdata?.id ?? userdata?.data?.id;
-
 
   useEffect(() => {
     if (!token || !userId) return;
@@ -47,20 +45,18 @@ export const useEcho = () => {
       .listen(eventName, (data) => {
         console.log("🔔 Echo event received:", data);
 
-
         if (data.message_id && data.message) {
-          playAlertSound("chat");
+          // ----- Chat message -----
+          playAlertSound();   // play sound for chat
           const senderName = data.sender_name || data.user?.name || "Someone";
           toast.info(`New message from ${senderName}`, { icon: "💬" });
           dispatch(receiveNewMessage(data));
         } else if (data.type === "message_deleted" && data.message_id) {
+          // ----- Deleted message (no toast/sound needed) -----
           dispatch(handleMessageDeleted(data.message_id));
         } else {
-          playAlertSound("notification");
-          toast.success(
-            data.title || data.message || "You have a new notification!",
-            { icon: "🔔" },
-          );
+          // ----- All other notifications -----
+          // No sound here – NotificationToast handles the sound & rich toast
           dispatch(addNotification(data));
         }
       })

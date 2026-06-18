@@ -8,6 +8,7 @@ const useFetch = (endpoint, { isAuth = false, immediate = true } = {}) => {
   const token = useSelector((state) => state.auth.token);
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState(null);
+  const [error, setError] = useState(null);   // 👈 add error state
 
   const fetchData = useCallback(
     async (overrideEndpoint) => {
@@ -15,6 +16,7 @@ const useFetch = (endpoint, { isAuth = false, immediate = true } = {}) => {
       if (!url) return;
 
       setLoading(true);
+      setError(null);       // clear any previous error
 
       try {
         const headers = {
@@ -34,20 +36,26 @@ const useFetch = (endpoint, { isAuth = false, immediate = true } = {}) => {
 
         const json = await res.json();
 
-        // ✅ Check authentication after JSON parsing
+        // Handle unauthenticated
         if (res.status === 401 && json.message === "Unauthenticated.") {
           dispatch(logOut());
+          setData(null);
+          setError("Unauthenticated.");
           return;
         }
 
         if (!res.ok) {
-          console.error("Fetch error response:", json);
+          // 👇 reset data and store the error message
+          setData(null);
+          setError(json.message || "Request failed");
           return;
         }
 
         setData(json);
       } catch (err) {
         console.error("Fetch request failed:", err.message);
+        setData(null);
+        setError(err.message);
       } finally {
         setLoading(false);
       }
@@ -61,7 +69,7 @@ const useFetch = (endpoint, { isAuth = false, immediate = true } = {}) => {
     }
   }, [immediate, endpoint, fetchData]);
 
-  return { data, loading, refetch: fetchData };
+  return { data, loading, error, refetch: fetchData };   // 👈 expose error
 };
 
 export default useFetch;

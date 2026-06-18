@@ -16,11 +16,11 @@ const AllNotifications = () => {
   const userId = userdata?.id ?? userdata?.data?.id;
 
   const notificationsEndpoint = useMemo(
-    () => (userId ? `/notifications/user/${userId}` : null),
+    () => (userId ? `notifications/user/${userId}` : null),
     [userId],
   );
   const unreadEndpoint = useMemo(
-    () => (userId ? `/notifications/unread/${userId}` : null),
+    () => (userId ? `notifications/unread/${userId}` : null),
     [userId],
   );
 

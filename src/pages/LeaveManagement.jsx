@@ -99,10 +99,24 @@ const LeaveManagement = () => {
     }));
   };
 
+  // Keep for API submission (sends MM-DD-YYYY)
   const formatDate = (dateString) => {
     if (!dateString) return "";
     const [year, month, day] = dateString.split("-");
     return `${month}-${day}-${year}`;
+  };
+
+  // NEW: Display formatter – always DD/MM/YYYY
+  const displayDate = (dateString) => {
+    if (!dateString) return "";
+    // Handle ISO date string (YYYY-MM-DD) or timestamp-derived ISO
+    const clean = dateString.split("T")[0]; // remove time part if present
+    const parts = clean.split("-");
+    if (parts.length === 3) {
+      const [year, month, day] = parts;
+      return `${day}/${month}/${year}`;
+    }
+    return dateString; // fallback if unexpected format
   };
 
   const handleSubmitLeaveRequest = async (e) => {
@@ -123,6 +137,7 @@ const LeaveManagement = () => {
       return;
     }
 
+    // Build API payload with MM-DD-YYYY (backend expected)
     const formattedDateRange = `${formatDate(formData.startDate)} - ${formatDate(formData.endDate)}`;
 
     const payload = {
@@ -208,18 +223,41 @@ const LeaveManagement = () => {
     leave.user_type ||
     "Staff";
 
+  // UPDATED: Uses displayDate for DD/MM/YYYY
   const getLeaveDateRange = (leave) => {
     const start = leave.start_date || leave.startDate || "";
     const end = leave.end_date || leave.endDate || "";
 
-    if (start && end) return `${start} - ${end}`;
-    return leave.date || "N/A";
+    if (start && end) return `${displayDate(start)} - ${displayDate(end)}`;
+    // fallback to legacy 'date' field – if it's already a formatted string, we could try to parse it
+    if (leave.date) {
+      // If the legacy date string is "MM-DD-YYYY - MM-DD-YYYY", we can try to convert each part
+      const parts = leave.date.split(" - ");
+      if (parts.length === 2) {
+        // Convert each MM-DD-YYYY to DD/MM/YYYY
+        const convertLegacy = (str) => {
+          const [m, d, y] = str.split("-");
+          if (m && d && y) return `${d}/${m}/${y}`;
+          return str;
+        };
+        return `${convertLegacy(parts[0])} - ${convertLegacy(parts[1])}`;
+      }
+      // If it's a single legacy date, try to convert
+      const [m, d, y] = leave.date.split("-");
+      if (m && d && y) return `${d}/${m}/${y}`;
+    }
+    return "N/A";
   };
 
-  const getLeaveStartDate = (leave) =>
-    leave.start_date || leave.startDate || "N/A";
+  const getLeaveStartDate = (leave) => {
+    const raw = leave.start_date || leave.startDate || "";
+    return displayDate(raw) || "N/A";
+  };
 
-  const getLeaveEndDate = (leave) => leave.end_date || leave.endDate || "N/A";
+  const getLeaveEndDate = (leave) => {
+    const raw = leave.end_date || leave.endDate || "";
+    return displayDate(raw) || "N/A";
+  };
 
   const getLeaveDays = (leave) =>
     Number(leave.days) + 1 || Number(leave.approved_days) + 1 || "N/A";
@@ -227,7 +265,9 @@ const LeaveManagement = () => {
   const getRequestedDate = (leave) => {
     const timestamp = Number(leave.date_added);
     if (!Number.isNaN(timestamp) && timestamp > 0) {
-      return new Date(timestamp * 1000).toLocaleDateString();
+      // Convert timestamp to ISO date string, then display as DD/MM/YYYY
+      const iso = new Date(timestamp * 1000).toISOString(); // "2026-06-18T..."
+      return displayDate(iso);
     }
     return "N/A";
   };
@@ -585,7 +625,7 @@ const LeaveManagement = () => {
                   >
                     <option value="" disabled>
                       {isAdmin && !selectedContractorId
-                        ? "Select Resource Partner first"
+                        ? "Select Resource Partner First"
                         : "Choose a Staff Member"}
                     </option>
                     {staffList.map((staff) => (

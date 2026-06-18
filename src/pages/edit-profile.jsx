@@ -364,7 +364,10 @@ export default function EditProfile() {
         });
         if (res?.success) {
           toast.success("Avatar updated successfully!");
-          refetch();
+          const refetchRes = await refetch();
+          if (refetchRes?.data) {
+            dispatch(setUser({ userdata: refetchRes.data }));
+          }
         } else {
           toast.error(res?.message || "Failed to save avatar");
           setProfilePhoto(null);
@@ -469,7 +472,11 @@ export default function EditProfile() {
       toast.success("Phone updated successfully!");
       setFormData((prev) => ({ ...prev, phone: newPhoneInput }));
       if (res.data) dispatch(setUser({ userdata: res.data }));
-      refetch();
+      const refetchRes = await refetch();
+      if (refetchRes?.data) {
+        dispatch(setUser({ userdata: refetchRes.data }));
+      }
+
       setTimeout(() => {
         handleClosePhoneModal();
       }, 1500);
@@ -526,7 +533,10 @@ export default function EditProfile() {
     setIsAddingCard(false);
     setCardForm(INITIAL_CARD_STATE);
     if (res.data) dispatch(setUser({ userdata: res.data }));
-    refetch();
+    const refetchRes = await refetch();
+    if (refetchRes?.data) {
+      dispatch(setUser({ userdata: refetchRes.data }));
+    }
     toast.success("Card added successfully!");
   };
 
@@ -556,7 +566,11 @@ export default function EditProfile() {
 
     setFormData((prev) => ({ ...prev, bank_details: updatedCards }));
     if (res.data) dispatch(setUser({ userdata: res.data }));
-    refetch();
+    const refetchRes = await refetch();
+    if (refetchRes?.data) {
+      dispatch(setUser({ userdata: refetchRes.data }));
+    }
+
     toast.success("Card removed successfully!");
     setShowCardDeleteModal(false);
     setCardToDeleteIndex(null);
@@ -725,14 +739,16 @@ export default function EditProfile() {
       toast.error("Unable to save document. Missing user id.");
       return;
     }
+
     let payload = {
       user_id: userId,
       no: docForm.no,
       exp: docForm.exp,
       document_no: docForm.document_no,
-      document_expiry: docForm.document_expiry, // DD/MM/YYYY
+      document_expiry: docForm.document_expiry,
       file: docForm.file_path,
     };
+
     if (selectedDoc) {
       payload = {
         ...payload,
@@ -747,16 +763,21 @@ export default function EditProfile() {
         document_name: docForm.document_name,
       };
     }
+
     const res = await submit(
       selectedDoc ? "api/guard-update-documents" : "api/guard-add-documents",
       payload,
       { method: "POST" }
     );
+
     if (!res) return;
+
     if (res.success) {
       toast.success("Document saved successfully!");
       setShowDocModal(false);
-      refetch();
+
+      // ✅ Hard refresh to reload user data and unlock sidebar
+      window.location.reload();
     } else {
       toast.error(res.message || "Failed to save document");
     }

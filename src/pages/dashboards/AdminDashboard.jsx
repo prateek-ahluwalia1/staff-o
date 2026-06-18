@@ -98,7 +98,7 @@ export default function AdminDashboard() {
               <h3>Admin Panel - {username}</h3>
               <p className="profile-role">Platform Management & Analytics</p>
               <div className="profile-contact"
-              style={{textTransform: "none"}}
+                style={{ textTransform: "none" }}
               >
                 <i className="fa-solid fa-envelope"></i> {email}
               </div>
@@ -205,7 +205,13 @@ export default function AdminDashboard() {
       <section className="dashboard-panel">
         <div className="panel-heading">
           <h3>Top Performing Resource Partners</h3>
-          <Link to="/manage-users" className="view-all-link">View All Resource Partners</Link>
+          <Link
+            to="/manage-users"
+            state={{ targetTab: 'sub_contractor' }}
+            className="view-all-link"
+          >
+            View All Resource Partners
+          </Link>
         </div>
         <div className="table-responsive">
           <table className="table align-middle">

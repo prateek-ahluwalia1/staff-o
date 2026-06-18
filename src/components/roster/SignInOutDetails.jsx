@@ -65,6 +65,17 @@ const ImageBox = ({ src, label }) => (
   </div>
 );
 
+// Helper to reformat MM/DD/YYYY → DD/MM/YYYY
+const formatDateToDDMMYYYY = (dateStr) => {
+  if (!dateStr) return null;
+  const parts = dateStr.split('/');
+  if (parts.length === 3) {
+    // parts[0] = month, parts[1] = day, parts[2] = year
+    return `${parts[1]}/${parts[0]}/${parts[2]}`;
+  }
+  return dateStr; // fallback if format is unexpected
+};
+
 export default function SignInOutDetails({ rosterId, guardId, shift, site }) {
   const { submit, loading, data, error } = useSubmit({ isAuth: true });
 
@@ -183,8 +194,8 @@ export default function SignInOutDetails({ rosterId, guardId, shift, site }) {
     >
       {/* ── Sign In Column ── */}
       <div>
-        <Field label="Sign In Date" value={signIn.date} />
-        <Field label="Sign In Time" value={signIn.time} />
+        <Field label="Sign In Date" value={formatDateToDDMMYYYY(signIn.date)} />
+        <Field label="Sign Out Date" value={formatDateToDDMMYYYY(signOut.date)} />
         <Field label="Sign In Notes" value={d.signin_notes} />
         <ImageBox
           src={d.signin_selfie ? `${SELFIE_BASE}${d.signin_selfie}` : null}
@@ -207,8 +218,8 @@ export default function SignInOutDetails({ rosterId, guardId, shift, site }) {
 
       {/* ── Sign Out Column ── */}
       <div>
-        <Field label="Sign Out Date" value={signOut.date} />
-        <Field label="Sign Out Time" value={signOut.time} />
+        <Field label="Sign In Date" value={formatDateToDDMMYYYY(signIn.date)} />
+        <Field label="Sign Out Date" value={formatDateToDDMMYYYY(signOut.date)} />
         <Field label="Sign Out Notes" value={d.signout_notes} />
         <ImageBox
           src={d.signout_selfie ? `${SELFIE_BASE}${d.signout_selfie}` : null}

@@ -12,7 +12,7 @@ export default function ProfileForm({
   isPhoneVerified,
   extraFields = null,
   footer = null,
-  isEdit = false, // <-- Added isEdit prop to determine Add/Edit mode
+  isEdit = false,
 }) {
   const datePickerRef = useRef(null);
 
@@ -36,7 +36,7 @@ export default function ProfileForm({
   }));
 
   const selectedCountry = countryOptions.find(
-    opt => opt.value === formData.origin_country
+    opt => opt.value === formData.origin_country || opt.label === formData.origin_country
   ) || null;
 
   return (

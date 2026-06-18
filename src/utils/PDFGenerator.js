@@ -372,25 +372,39 @@ const generateEmployeeOnboardingPDF = (formData) => {
   doc.text("Work Rights Status:", mg, y + 3);
   const wr = String(work_rights || "").toLowerCase();
 
-  // ─── UPDATED: ADDED TEMPORARY VISA HOLDER OPTION ───
-  const options = [
-    { label: "Australian Citizen/PR", match: "citizen", x: mg + 32 },
-    { label: "Student Visa", match: "student", x: mg + 32 + 42 },
-    { label: "Temporary Visa", match: "temporary", x: mg + 32 + 72 },
-    { label: "Other Visa:", match: "other", x: mg + 32 + 104 },
-  ];
+  // Work Rights – 2 options per row, 2 rows
+  const col1X = mg + 32;               // left column checkbox x
+  const col2X = mg + 120;              // right column checkbox x (adjust if needed)
+  const row1Y = y;
+  const row2Y = y + 10;                // vertical gap between rows
 
-  options.forEach(({ label, match, x }) => {
-    checkbox(doc, x, y, 3.5, wr.includes(match));
-    doc.setFont("helvetica", "normal"); doc.setFontSize(7.5); doc.setTextColor(...T.text);
-    doc.text(label, x + 5.5, y + 3);
-  });
+  // Row 1
+  checkbox(doc, col1X, row1Y, 3.5, wr.includes("citizen"));
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(7.5);
+  doc.setTextColor(...T.text);
+  doc.text("Australian Citizen / Permanent Resident", col1X + 5.5, row1Y + 3);
+
+  checkbox(doc, col2X, row1Y, 3.5, wr.includes("student"));
+  doc.text("Student Visa", col2X + 5.5, row1Y + 3);
+
+  // Row 2
+  checkbox(doc, col1X, row2Y, 3.5, wr.includes("temporary"));
+  doc.text("Temporary Visa Holder", col1X + 5.5, row2Y + 3);
+
+  checkbox(doc, col2X, row2Y, 3.5, wr.includes("other"));
+  doc.text("Other Visa:", col2X + 5.5, row2Y + 3);
 
   if (wr.includes("other") && visa_type) {
-    doc.setFont("helvetica", "italic"); doc.setFontSize(7.5); doc.setTextColor(...T.blue);
-    doc.text(`(${visa_type})`, mg + 32 + 122, y + 3);
+    doc.setFont("helvetica", "italic");
+    doc.setFontSize(7.5);
+    doc.setTextColor(...T.blue);
+    // place visa type in parentheses right after "Other Visa:"
+    const otherLabelWidth = doc.getTextWidth("Other Visa:");
+    doc.text(`(${visa_type})`, col2X + 5.5 + otherLabelWidth + 1, row2Y + 3);
   }
-  y += 10;
+
+  y = row2Y + 10;   // final y after both rows (keeps vertical rhythm)
 
   let parsedChecks = {};
   if (typeof id_checks === "string") {
@@ -448,7 +462,7 @@ const generateEmployeeOnboardingPDF = (formData) => {
   twoFld("Bank Name:", bank_name, "BSB Number:", bsb);
   twoFld("Account Number:", account_number, "Tax File Number (TFN):", tfn);
   oneFld("Superannuation Fund Name:", super_fund);
-  oneFld("Super Fund USI / Member Number:", `${super_usi || ""}   /   ${super_member || ""}`);
+  twoFld("Super Fund USI:", super_usi, "Member Number:", super_member);
 
   section("5. PROFESSIONAL LICENSING");
   twoFld("Security License No:", security_license, "Security License Expiry:", security_license_expiry);

@@ -5,7 +5,6 @@ import useSubmit from "../hooks/useSubmit";
 import Loader from "../components/Loader";
 import { toast } from "react-toastify";
 import DocumentTable from "../components/DocumentTable";
-import StaffOnboardingForms from "../components/StaffOnboardingForms";
 import ProfileForm from "../components/ProfileForm";
 import { apiURL } from "../utils/exports";
 import Select from "react-select";
@@ -1127,13 +1126,6 @@ const ManageUsers = () => {
                     >
                       Documents
                     </button>
-                    <button
-                      type="button"
-                      className={`btn ${activeModalTab === "onboarding" ? "btn-primary-custom text-white" : "btn-outline-primary"}`}
-                      onClick={() => setActiveModalTab("onboarding")}
-                    >
-                      Verification Forms
-                    </button>
                   </>
                 )}
               </div>
@@ -1455,9 +1447,7 @@ const ManageUsers = () => {
                   )}
                 </div>
               ) : (
-                <div>
-                  <StaffOnboardingForms submit={submit} userId={editingUser?.id} contractorId={1} />
-                </div>
+                null
               )}
             </div>
 

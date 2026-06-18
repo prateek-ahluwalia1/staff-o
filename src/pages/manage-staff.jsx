@@ -3,7 +3,6 @@ import useFetch from "../hooks/useFetch";
 import useSubmit from "../hooks/useSubmit";
 import Loader from "../components/Loader";
 import DocumentTable from "../components/DocumentTable";
-import StaffOnboardingForms from "../components/StaffOnboardingForms";
 import ProfileForm from "../components/ProfileForm";
 import { useSelector } from "react-redux";
 import { toast } from "react-toastify";
@@ -1342,14 +1341,6 @@ const ManageStaff = () => {
                       </div>
                     </div>
                   )}
-                </div>
-              ) : activeModalTab === "onboarding" ? (
-                <div>
-                  <StaffOnboardingForms
-                    submit={submit}
-                    userId={editingUser?.id}
-                    contractorId={loggedInContractorId}
-                  />
                 </div>
               ) : null}
             </div>

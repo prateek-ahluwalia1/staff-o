@@ -42,9 +42,9 @@ class SendJobNotificationJob implements ShouldQueue
     public function handle()
     {
         $jobs = JobRoster::with(['site'])
-            ->whereNull('assigned_to')
-            ->where('start', '>=', now())
-            ->get();
+                    ->whereNull('assigned_to')
+                    ->where('start', '>=', now())
+                    ->get();
 
         if ($jobs->isEmpty()) {
             return;
@@ -88,7 +88,7 @@ class SendJobNotificationJob implements ShouldQueue
         // -----------------------------------------------------------------
         // STAGE 2 — Minute 5: ADD 25 km guards (15 km already notified)
         // -----------------------------------------------------------------
-        if ($minutesSincePost === 5 || $minutesSincePost >= 5 && $minutesSincePost <= 6) {
+        if ($minutesSincePost === 5) {
               $admins = User::where('user_type', 'admin')
                          ->where('is_active', 1)
                          ->get();
@@ -123,7 +123,7 @@ class SendJobNotificationJob implements ShouldQueue
         // -----------------------------------------------------------------
         // STAGE 3 — Minute 10: ADD 35 km guards (15+25 km already notified)
         // -----------------------------------------------------------------
-        if ($minutesSincePost === 10 || $minutesSincePost >= 10 && $minutesSincePost <= 11) {
+        if ($minutesSincePost === 10) {
 
               $admins = User::where('user_type', 'admin')
                          ->where('is_active', 1)
@@ -158,7 +158,7 @@ class SendJobNotificationJob implements ShouldQueue
         // -----------------------------------------------------------------
         // STAGE 4 — Minute 15: ADD 45 km + Resource Partners + City-Wide
         // -----------------------------------------------------------------
-        if ($minutesSincePost === 15 || $minutesSincePost >= 15 && $minutesSincePost <= 16) {
+        if ($minutesSincePost === 15) {
 
               $admins = User::where('user_type', 'admin')
                          ->where('is_active', 1)
@@ -345,7 +345,7 @@ class SendJobNotificationJob implements ShouldQueue
         $admin      = User::find(1);
 
         // 1. Email alert
-        // Mail::to($adminEmail)->queue(new UnassignedJobsAlert(collect([$job])));
+        Mail::to($adminEmail)->queue(new UnassignedJobsAlert(collect([$job])));
 
         Log::warning("Job #{$job->id}: Admin escalation triggered — email, portal, highlighted.");
     }

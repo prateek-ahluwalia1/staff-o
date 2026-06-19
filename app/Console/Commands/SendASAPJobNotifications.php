@@ -96,12 +96,18 @@ class SendASAPJobNotifications extends Command
             // ← Fetch ALL active staff — no global exclusion
             // Each job filters its own notified users individually
             $guards = User::where('user_id', 1)
-                ->where('is_active', 1)
-                ->where('user_type', 'staff')
-                ->whereNotNull('coordinates')
-                ->whereNotNull('notification_token')
-                ->select('id', 'name', 'notification_token', 'coordinates')
-                ->get();
+            ->where('is_active', 1)
+            ->where('user_type', 'staff')
+            ->whereNotNull('coordinates')
+            ->whereNotNull('notification_token')
+            // ->whereHas('guardQuestionnaireDetails', function ($query) {
+            //     $query->whereNotNull('certificate_path');
+            // })
+            // ->whereDoesntHave('guardQuestionnaireDetails', function ($query) {
+            //     $query->whereNull('certificate_path');
+            // })
+            ->select('id', 'name', 'coordinates', 'notification_token')
+            ->get();
 
             Log::info('First cycle guards fetched', [
                 'total_guards' => $guards->count(),

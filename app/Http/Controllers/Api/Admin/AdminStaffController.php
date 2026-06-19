@@ -106,19 +106,41 @@ class AdminStaffController extends Controller
     }
 
 
-    public function createStaff(Request $request)
-    {
+   public function createStaff(Request $request)
+{
+    try {
+        // Validate request
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|unique:users,email',
+            'password' => 'required|string|min:8',
+            'user_id' => 'required|exists:users,id',
+            'phone' => 'required|string|max:20',
+            // 'gender' => 'nullable|string|in:male,female,other',
+            'address' => 'nullable|string|max:500',
+            'city' => 'nullable|string|max:100',
+            'state' => 'nullable|string|max:100',
+            'country' => 'nullable|string|max:100',
+            'coordinates' => 'nullable|string',
+            'profile_image' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+            'staff_document_type' => 'nullable|string|max:100',
+            'security_license_no' => 'nullable|string|max:100',
+        ]);
+
+        DB::beginTransaction();
+
+        // Create user
         $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'password' => Hash::make($validated['password']),
             'user_type' => 'staff',
-            'user_id' => $request->user_id,
-            'address' => $request->address ?? null,
-            'city' => $request->city ?? null,
-            'state' => $request->state ?? null,
-            'country' => $request->country ?? null,
-            'coordinates' => $request->coordinates ?? null,
+            'user_id' => $validated['user_id'],
+            'address' => $validated['address'] ?? null,
+            'city' => $validated['city'] ?? null,
+            'state' => $validated['state'] ?? null,
+            'country' => $validated['country'] ?? null,
+            'coordinates' => $validated['coordinates'] ?? null,
             'is_active' => 0,
         ]);
 
@@ -126,23 +148,25 @@ class AdminStaffController extends Controller
         $user->is_email_approved = 1;
         $user->save();
         
+        // Handle profile image
         $profileImagePath = null;
         if ($request->hasFile('profile_image')) {
             $profileImagePath = $request->file('profile_image')->store('staff-profiles', 'public');
         }
 
+        // Create staff
         $staff = Staff::create([
             'user_id' => $user->id,
-            'profile_image' => $profileImagePath ?? $request->profile_image,
-            'gender' => $request->gender,
-            'phone' => $request->phone,
-            'staff_document_type' => $request->staff_document_type,
-            'security_license_no' => $request->security_license_no
+            'profile_image' => $profileImagePath ?? $validated['profile_image'] ?? null,
+            'gender' => $validated['gender'] ?? null,
+            'phone' => $validated['phone'],
+            'staff_document_type' => $validated['staff_document_type'] ?? null,
+            'security_license_no' => $validated['security_license_no'] ?? null
         ]);
         
         $old_data = Staff::where('user_id', $user->id)->first();
 
-            $capitalUser = User::where('id', $request->user_id)
+        $capitalUser = User::where('id', $validated['user_id'])
             ->where('name', 'Capital Security')
             ->first();
             
@@ -150,7 +174,7 @@ class AdminStaffController extends Controller
         {   
             $check_old_data_exist = Document::where('user_id', $user->id)->where('document_category', '!=', 'other-doc')->first();
             if((!isset($old_data)) || (isset($old_data->staff_document_type) && !$check_old_data_exist)){
-                $document_categories = DocumentCategory::where('document_category', $request->staff_document_type)->first();
+                $document_categories = DocumentCategory::where('document_category', $validated['staff_document_type'] ?? null)->first();
                 if($document_categories){
                     foreach (json_decode($document_categories->document_type) as $key => $value) {  
                         $guard_documents = new Document();
@@ -162,9 +186,9 @@ class AdminStaffController extends Controller
                     }
                 }
             }else{
-                if($old_data->staff_document_type != $request->staff_document_type){
-                    if($request->has('staff_document_type') && !empty($request->staff_document_type)){
-                        $document_categories = DocumentCategory::where('document_category', $request->staff_document_type)->first();
+                if($old_data->staff_document_type != ($validated['staff_document_type'] ?? null)){
+                    if($request->has('staff_document_type') && !empty($validated['staff_document_type'])){
+                        $document_categories = DocumentCategory::where('document_category', $validated['staff_document_type'])->first();
                         
                         if($document_categories){
                             $old_docs = Document::where('user_id', $user->id)
@@ -179,9 +203,7 @@ class AdminStaffController extends Controller
                             $new_doc_keys = array_keys($new_doc_types);
                             
                             $to_delete_types = array_diff($old_doc_types, $new_doc_keys);
-                            
                             $to_add_types = array_diff($new_doc_keys, $old_doc_types);
-                            
                             $common_types = array_intersect($old_doc_types, $new_doc_keys);
                             
                             if(!empty($common_types)) {
@@ -194,21 +216,17 @@ class AdminStaffController extends Controller
                                 
                                 Document::whereIn('id', $common_doc_ids)
                                             ->update(['document_category' => $new_document_category]);
-                                
                             }
                             
                             if(!empty($to_delete_types)) {
                                 $docs_to_delete = $old_docs->whereIn('document_type', $to_delete_types);
-                                
                                 foreach($docs_to_delete as $doc) {
-                                    $doc_id = $doc->id;
                                     $doc->delete();
                                 }
                             }
                             
                             if(!empty($to_add_types)) {
                                 $documents_to_insert = [];
-                                
                                 foreach($to_add_types as $doc_type) {
                                     if(!Document::where(['user_id' => $user->id, 'document_type' => $doc_type])->exists()) {
                                         $documents_to_insert[] = [
@@ -224,14 +242,6 @@ class AdminStaffController extends Controller
                                 
                                 if(!empty($documents_to_insert)) {
                                     Document::insert($documents_to_insert);
-                                    
-                                    foreach($documents_to_insert as $new_doc) {
-                                        $saved_doc = Document::where([
-                                            'user_id' => $new_doc['user_id'],
-                                            'document_type' => $new_doc['document_type']
-                                        ])->first();
-                                        
-                                    }
                                 }
                             }
                             
@@ -247,7 +257,7 @@ class AdminStaffController extends Controller
                 }
             }
         }else{
-           $document_categories = DocumentCategory::where('document_category', 'contractor_staff')->first();
+            $document_categories = DocumentCategory::where('document_category', 'contractor_staff')->first();
 
             if($document_categories){
                 foreach (json_decode($document_categories->document_type) as $key => $value) {  
@@ -261,50 +271,86 @@ class AdminStaffController extends Controller
             }
         }
 
+        // Create induction records
+        $inductions = Questionnaire::all();
+        $now = Carbon::now();
+        $inductionHistoryData = [];
+        $guardQuestionnaireDetailsData = [];
+
+        foreach ($inductions as $induction) {
+            $inductionHistoryData[] = [
+                'guard_id' => $user->id,
+                'induction_id' => $induction->id,
+                'state' => "Victoria",
+                'read_status' => 0,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ];
+
+            $guardQuestionnaireDetailsData[] = [
+                'guard_id' => $user->id,
+                'questionnaire_id' => $induction->id,
+                'marks' => 0,
+                'certificate_path' => null,
+                'expiry_date' => null,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ];
+        }
         
-            $inductions = Questionnaire::all();
+        DB::table('induction_history')->insert($inductionHistoryData);
+        DB::table('guard_questionnaire_details')->insert($guardQuestionnaireDetailsData);
 
-            $now = Carbon::now();
-            $inductionHistoryData = [];
-            $guardQuestionnaireDetailsData = [];
+        DB::commit();
 
-            foreach ($inductions as $induction) {
-                $inductionHistoryData[] = [
-                    'guard_id' => $user->id,
-                    'induction_id' => $induction->id,
-                    'state' => "Victoria",
-                    'read_status' => 0,
-                    'created_at' => $now,
-                    'updated_at' => $now,
-                ];
-
-                $guardQuestionnaireDetailsData[] = [
-                    'guard_id' => $user->id,
-                    'questionnaire_id' => $induction->id,
-                    'marks' => 0,
-                    'certificate_path' => null,
-                    'expiry_date' => null,
-                    'created_at' => $now,
-                    'updated_at' => $now,
-                ];
-            }
-            
-            DB::table('induction_history')->insert($inductionHistoryData);
-            DB::table('guard_questionnaire_details')->insert($guardQuestionnaireDetailsData);
-
-        // Send email verification
-        // $this->guardEmailVerifay($request->email, $request->header('Business-Id'), $request->password);
-            
         return response()->json([
-            'message' => "Staff registered successfully.",
-            'code' => 200,
             'success' => true,
+            'message' => 'Staff registered successfully.',
+            'code' => 200,
             'data' => [
                 'user' => $user,
                 'staff' => $staff
             ]
         ], 200);
+
+    } catch (\Illuminate\Validation\ValidationException $e) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Validation failed.',
+            'code' => 422,
+            'errors' => $e->errors()
+        ], 422);
+
+    } catch (\Illuminate\Database\QueryException $e) {
+        DB::rollBack();
+        \Log::error('Database error in createStaff: ' . $e->getMessage(), [
+            'trace' => $e->getTraceAsString(),
+            'request_data' => $request->all()
+        ]);
+
+        return response()->json([
+            'success' => false,
+            'message' => 'Database error occurred. Please try again.',
+            'code' => 500,
+            'error' => config('app.debug') ? $e->getMessage() : null
+        ], 500);
+
+    } catch (\Exception $e) {
+        DB::rollBack();
+        \Log::error('Error in createStaff: ' . $e->getMessage(), [
+            'trace' => $e->getTraceAsString(),
+            'request_data' => $request->all()
+        ]);
+
+        return response()->json([
+            'success' => false,
+            'message' => 'An error occurred while creating staff. Please try again.',
+            'code' => 500,
+            'error' => config('app.debug') ? $e->getMessage() : null
+        ], 500);
     }
+}
+
 
     public function updateStaff(Request $request, $userId)
     {
@@ -386,6 +432,15 @@ class AdminStaffController extends Controller
 
         }
         
+        if ($request->has('date_of_birth')) {
+            $staff->date_of_birth = $request->date_of_birth;
+
+        }
+
+        if ($request->has('date_of_birth')) {
+            $staff->origin_country = $request->origin_country;
+
+        }
 
         $staff->save();
 

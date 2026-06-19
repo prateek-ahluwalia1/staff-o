@@ -201,8 +201,8 @@ private function calculateProfileCompletion(User $user): int
                 }
             }
         }else{
-            $securityLicenseDoc = $documents->firstWhere('document_name', 'security_license');
-            $firstAidDoc = $documents->firstWhere('document_name', 'first_aid');
+            $securityLicenseDoc = $documents->firstWhere('document_type', 'security_license');
+            $firstAidDoc = $documents->firstWhere('document_type', 'first_aid');
             
             $hasSecurityLicenseWithExpiry = $securityLicenseDoc && !empty($securityLicenseDoc->document_expiry);
             $hasFirstAidWithExpiry = $firstAidDoc && !empty($firstAidDoc->document_expiry);
@@ -1061,7 +1061,6 @@ private function calculateProfileCompletion(User $user): int
                             if (!empty($to_delete_types)) {
                                 Document::where('user_id', $user->id)
                                     ->where('document_category', '!=', 'other-doc')
-                                    ->whereNull('file')
                                     ->whereIn('document_type', $to_delete_types)
                                     ->delete();
                             }
@@ -1348,7 +1347,7 @@ private function calculateProfileCompletion(User $user): int
             'first_name'         => 'required|string|max:100',
             'surname'            => 'required|string|max:100',
             'previous_name'      => 'nullable|string|max:100',
-            'dob'                => 'nullable|date',
+            'dob'                => 'nullable|string',
             'address'            => 'nullable|string|max:255',
             'basis_of_payment'   => 'nullable|in:full-time,part-time,casual',
             'australian_resident'=> 'nullable|in:yes,no',

@@ -5,21 +5,20 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Password Fields Example</title>
-    <!-- Include Bootstrap CSS -->
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     <style>
         .password-field {
             position: relative; /* Allows positioning of the icon next to the input */
-            }
+        }
 
-            .password-toggle {
+        .password-toggle {
             position: absolute;
             top: 70%;
             right: 10px; /* Adjust right padding as needed */
             transform: translateY(-50%); /* Center the icon vertically */
             cursor: pointer;
             color: #ccc; /* Adjust color as needed */
-            }
+        }
         body {
             background: linear-gradient(to bottom, #6c757d, #EEF9FC);
             color: white;
@@ -40,8 +39,8 @@
                 <div class="card text-white" style="border-radius: 1rem;">
                 <div class="card-body p-5 text-center">
 
-                    <div class="logo-container d-flex justify-content-center pb-5">
-                    <img src="https://apis.staffoo.com.au/uploads/staffologo.png" alt="Logo" width="150" height="50">
+                    <div class="logo-container pb-5">
+                        <img src="https://apis.staffoo.com.au/uploads/staffologo.png" alt="Logo" class="w-50" style="height: auto;">
                     </div>
 
                     <div id="messageContainer"></div>
@@ -55,16 +54,14 @@
                         class="form-control form-control-lg" />
                     </div>
 
-                    <div class="form-outline text-black-50 form-white mb-4 password-field">
-                    <label class="form-label" for="password">Password</label>
-                    <input id="password" type="password" name="password" required autocomplete="new-password" class="form-control form-control-lg" />
-                    <i class="fas fa-eye-slash password-toggle"></i>
+                    <div class="form-outline text-black-50 form-white mb-4 password-field text-left">
+                        <label class="form-label" for="password">Password</label>
+                        <input id="password" type="password" name="password" required autocomplete="new-password" class="form-control form-control-lg" />
                     </div>
 
-                    <div class="form-outline text-black-50 form-white mb-4 password-field">
-                    <label class="form-label" for="confirmPassword">Confirm Password</label>
-                    <input id="confirmPassword" type="password" name="password_confirmation" required autocomplete="new-password" class="form-control form-control-lg" />
-                    <i class="fas fa-eye-slash password-toggle"></i>
+                    <div class="form-outline text-black-50 form-white mb-4 password-field text-left">
+                        <label class="form-label" for="confirmPassword">Confirm Password</label>
+                        <input id="confirmPassword" type="password" name="password_confirmation" required autocomplete="new-password" class="form-control form-control-lg" />
                     </div>
 
                     <button type="submit" class="btn btn-outline-dark btn-lg px-5">Reset Password</button>
@@ -78,7 +75,6 @@
         </div>
         </section>
 
-    <!-- Include Bootstrap JS (optional) -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css" integrity="sha512-KfkfwYDsLkIlwQp6LFnl8zNdLGxu9YAA1QvwINks4PhcElQSvqcyVLLD9aMhXd13uQjoXtEKNosOWaZqXgel0g==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
@@ -120,7 +116,7 @@
 
                         var loginButton = $('<button class="btn btn-info">Login</button>');
                         loginButton.click(function () {
-                            window.location.href = 'https://app.staffoo.com.au/login';
+                            window.location.href = 'https://staffoo.com.au/login';
                         });
                         $('#messageContainer').after(loginButton);
 

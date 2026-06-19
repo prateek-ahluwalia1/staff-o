@@ -43,13 +43,15 @@ return [
         'client_secret' => env('GOOGLE_CLIENT_SECRET'),
         'redirect'      => env('GOOGLE_REDIRECT_URI'),
     ],
-
-    'vsure' => [
-    'auth_url' => env('VSURE_AUTH_URL', 'https://login.vsure.com.au'),
-    'api_url' => env('VSURE_API_URL', 'https://platform.vsure.com.au/v2'),
-    'client_id' => env('VSURE_CLIENT_ID'),
+    
+  'vsure' => [
+    'auth_url'      => env('VSURE_AUTH_URL', 'https://login.vsure.com.au'),
+    'api_url'       => env('VSURE_API_URL', 'https://platform.vsure.com.au/v2'),
+    'client_id'     => env('VSURE_CLIENT_ID'),
     'client_secret' => env('VSURE_CLIENT_SECRET'),
-    'audience' => env('VSURE_AUDIENCE', 'https://platform.vsure.com.au/v2'),
-    'scope' => env('VSURE_SCOPE', 'aus:sandbox'),
+    'audience'      => env('VSURE_AUDIENCE', 'https://platform.vsure.com.au/v2'),
+    'scope'         => env('VSURE_SCOPE', 'aus:production'),
+    'environment'   => env('VSURE_ENV', 'live'),
 ],
+
 ];

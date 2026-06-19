@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Notification;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class NotificationController extends Controller
 {
@@ -80,9 +81,15 @@ class NotificationController extends Controller
      */
     public function getUserNotifications($userId)
     {
-        $notifications = Notification::where('receiver_id', $userId)
-            ->orderBy('created_at', 'desc')
+        $guard = DB::table('users')->where('id', $userId)->select('state', 'name', 'user_type')->first();
+        if($guard->user_type == 'admin'){
+            $notifications = Notification::orderBy('created_at', 'desc')
             ->paginate(20);
+        }else{
+        $notifications = Notification::where('user_id', $userId)
+            ->orderBy('created_at', 'desc')
+            ->paginate(20);    
+        }
 
         return response()->json([
             'success' => true,

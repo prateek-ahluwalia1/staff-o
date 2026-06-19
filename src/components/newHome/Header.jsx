@@ -10,13 +10,17 @@ import {
 } from '../../store/slices/notificationSlice'
 import useSubmit from '../../hooks/useSubmit'
 import useFetch from '../../hooks/useFetch'
-import staffologo from "../../assets/images/staffo.png" // Imported image asset
+import staffologo from "../../assets/images/staffo.png"
 import { getProfileImageUrlFromUserdata } from '../../utils/profileImage'
 import "../../styles/staffoo.css"
 
 function Header() {
   const { token, userdata } = useSelector((state) => state.auth)
-  const { items, unreadCount } = useSelector((state) => state.notifications)
+
+  // FIXED: Provide safety fallbacks so it always stays an array/number
+  const items = useSelector((state) => state.notifications.items) || []
+  const unreadCount = useSelector((state) => state.notifications.unreadCount) || 0
+
   const dispatch = useDispatch()
   const navigate = useNavigate()
   const userId = userdata?.id || userdata?.data?.id
@@ -52,14 +56,20 @@ function Header() {
     },
   )
 
+  // FIXED: Target the nested array (.data.data) instead of the whole paginated object
   useEffect(() => {
-    if (notificationsData) {
+    if (notificationsData?.success && notificationsData?.data?.data) {
+      dispatch(setNotifications(notificationsData.data.data))
+    } else if (Array.isArray(notificationsData)) {
       dispatch(setNotifications(notificationsData))
     }
   }, [dispatch, notificationsData])
 
+  // FIXED: Target the actual integer count from the response
   useEffect(() => {
-    if (unreadData !== null && unreadData !== undefined) {
+    if (unreadData?.success !== undefined) {
+      dispatch(setUnreadCount(unreadData.count))
+    } else if (unreadData !== null && unreadData !== undefined) {
       dispatch(setUnreadCount(unreadData))
     }
   }, [dispatch, unreadData])
@@ -154,7 +164,7 @@ function Header() {
     if (!notif?.id || notif.read_at) return
 
     dispatch(markNotificationRead(notif.id))
-    await submit(`/notifications/read/${notif.id}`, {}, { method: 'POST' })
+    await submit(`api/notifications/read/${notif.id}`, {}, { method: 'POST' })
   }
 
   const toggleNotifications = async () => {
@@ -419,11 +429,8 @@ function Header() {
                           <div style={{ fontWeight: '600', fontSize: '14px', color: '#fff' }}>
                             {getNotificationTitle(notif)}
                           </div>
-                          <div style={{ fontSize: '13px', color: '#aaa', marginTop: '4px' }}>
+                          <div className='mt-2 fw-bold' style={{ fontSize: '13px', color: '#aaa', marginTop: '4px', textTransform: "none" }}>
                             {getNotificationMessage(notif)}
-                          </div>
-                          <div style={{ fontSize: '11px', color: '#777', marginTop: '4px' }}>
-                            {notif.created_at || 'Just now'}
                           </div>
                         </li>
                       ))

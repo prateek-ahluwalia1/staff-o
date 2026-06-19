@@ -16,7 +16,6 @@ export const useEcho = () => {
   const { token, userdata } = useSelector((state) => state.auth);
 
   const userId = userdata?.id ?? userdata?.data?.id;
-
   useEffect(() => {
     if (!token || !userId) return;
 

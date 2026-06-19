@@ -70,7 +70,7 @@ const PayChargerate = () => {
         <div className="col-12 col-md-6 col-lg-3">
           <Card
             title="Pay Slip"
-            description="It is used to generate a pay slip for the staff"
+            description="It is used to generate a pay slip"
             accent="linear-gradient(135deg,#1abc9c,#2ecc71)"
             image={payslipimg}
             type="pay-slip"

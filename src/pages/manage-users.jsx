@@ -918,9 +918,13 @@ const ManageUsers = () => {
                 <th style={{ width: activeTab === "staff" ? "30%" : "30%", textAlign: "left", paddingLeft: "1.5rem" }}>
                   NAME & EMAIL
                 </th>
-                {activeTab !== "staff" && (
+                {activeTab === "sub_contractor" ? (
                   <th style={{ width: "25%", textAlign: "left" }}>
                     BUSINESS & PHONE
+                  </th>
+                ) : (
+                  <th style={{ width: "25%", textAlign: "left" }}>
+                    PHONE
                   </th>
                 )}
                 {activeTab === "staff" && (
@@ -946,11 +950,17 @@ const ManageUsers = () => {
                         {user.email}
                       </div>
                     </td>
-                    {activeTab !== "staff" && (
+                    {activeTab === "sub_contractor" ? (
                       <td style={{ textAlign: "left" }}>
                         <div className="fw-medium text-dark">
                           {getNestedData(user).company_name || "—"}
                         </div>
+                        <div className="text-muted small">
+                          {user.phone || getNestedData(user).phone || "N/A"}
+                        </div>
+                      </td>
+                    ) : (
+                      <td style={{ textAlign: "left" }}>
                         <div className="text-muted small">
                           {user.phone || getNestedData(user).phone || "N/A"}
                         </div>

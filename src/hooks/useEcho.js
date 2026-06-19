@@ -5,10 +5,16 @@ import { receiveNewMessage, handleMessageDeleted } from "../store/slices/chatSli
 import { getEchoInstance, destroyEchoInstance } from "../echo";
 import { toast } from "react-toastify";
 
-// Single sound file for all alert types
+// 1. Singleton Audio instance to prevent overlapping sounds and memory leaks
+let audioInstance = null;
 const playAlertSound = () => {
-  const audio = new Audio("/sounds/notification.wav");
-  audio.play().catch((err) => console.warn("Audio autoplay blocked:", err));
+  if (!audioInstance) {
+    audioInstance = new Audio("/sounds/notification.wav");
+  }
+
+  // Reset to start so rapid messages don't overlap or fail
+  audioInstance.currentTime = 0;
+  audioInstance.play().catch((err) => console.warn("Audio autoplay blocked by browser:", err));
 };
 
 export const useEcho = () => {
@@ -16,6 +22,7 @@ export const useEcho = () => {
   const { token, userdata } = useSelector((state) => state.auth);
 
   const userId = userdata?.id ?? userdata?.data?.id;
+
   useEffect(() => {
     if (!token || !userId) return;
 
@@ -46,16 +53,17 @@ export const useEcho = () => {
 
         if (data.message_id && data.message) {
           // ----- Chat message -----
-          playAlertSound();   // play sound for chat
+          playAlertSound();
           const senderName = data.sender_name || data.user?.name || "Someone";
           toast.info(`New message from ${senderName}`, { icon: "💬" });
           dispatch(receiveNewMessage(data));
+
         } else if (data.type === "message_deleted" && data.message_id) {
           // ----- Deleted message (no toast/sound needed) -----
           dispatch(handleMessageDeleted(data.message_id));
+
         } else {
           // ----- All other notifications -----
-          // No sound here – NotificationToast handles the sound & rich toast
           dispatch(addNotification(data));
         }
       })
@@ -64,14 +72,21 @@ export const useEcho = () => {
       });
 
     return () => {
+      // Clean up connection listeners
       pusherConn.unbind("connected", onConnected);
       pusherConn.unbind("failed", onFailed);
       pusherConn.unbind("error", onError);
+
+      // 2. Stop listening AND fully leave the channel to free up Pusher limits
       echo.private(channelName).stopListening(eventName);
+      echo.leaveChannel(channelName);
     };
   }, [token, userId, dispatch]);
 
+  // Clean up the entire Echo instance if the token disappears (e.g., Logout)
   useEffect(() => {
-    if (!token) destroyEchoInstance();
+    if (!token) {
+      destroyEchoInstance();
+    }
   }, [token]);
 };

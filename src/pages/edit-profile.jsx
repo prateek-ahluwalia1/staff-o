@@ -1051,11 +1051,11 @@ export default function EditProfile() {
                   </div>
                   <div className="row mb-4">
                     <div className="col-4">
-                      <label className="form-label text-muted small fw-bold">Exp Month <span className="text-danger">*</span></label>
+                      <label className="form-label text-muted small fw-bold">Expiry Month <span className="text-danger">*</span></label>
                       <input type="text" className="form-control text-center" placeholder="MM" maxLength="2" value={cardForm.expiry_month} onChange={(e) => { let val = e.target.value.replace(/\D/g, "").slice(0, 2); if (val.length === 2 && parseInt(val, 10) > 12) val = "12"; else if (val.length === 2 && parseInt(val, 10) === 0) val = "01"; setCardForm((p) => ({ ...p, expiry_month: val })); }} required />
                     </div>
                     <div className="col-4">
-                      <label className="form-label text-muted small fw-bold">Exp Year <span className="text-danger">*</span></label>
+                      <label className="form-label text-muted small fw-bold">Expiry Year <span className="text-danger">*</span></label>
                       <input type="text" className="form-control text-center" placeholder="YYYY" maxLength="4" value={cardForm.expiry_year} onChange={(e) => { const val = e.target.value.replace(/\D/g, "").slice(0, 4); setCardForm((p) => ({ ...p, expiry_year: val })); }} required />
                     </div>
                     <div className="col-4">

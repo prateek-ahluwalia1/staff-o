@@ -5,7 +5,10 @@ import { useSelector } from 'react-redux'
 import heroImg from "../../assets/images/hero-img.jpg"
 
 function Hero() {
+  // Check if the user is authenticated
   const { token } = useSelector((state) => state.auth)
+
+  // Determine the correct path based on authentication status
   const targetRoute = token ? "/edit-profile" : "/login"
 
   return (

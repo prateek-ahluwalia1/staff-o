@@ -225,6 +225,9 @@ export default function VisaManagement() {
         }
 
         const res = await submitVisaCheck("api/admin/visa-check", payload, { method: "POST" });
+        if (res.success) {
+            toast.success(`Your Visa will expire on ${res?.data?.expired_at}`)
+        }
         const data = unwrapVisaResponse(res);
 
         if (data?.id) {

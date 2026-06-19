@@ -30,6 +30,7 @@ use Stripe\Stripe;
 use Stripe\Transfer;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
 use App\Mail\InvoiceMail;
+use App\Models\EmailHistory;
 use App\Services\InvoiceService;
 use Illuminate\Support\Facades\Storage;
 
@@ -123,7 +124,11 @@ class JobRosterController extends Controller
                     ($chargeRate->def_metro_pub_holi_day_rate     * (($hours['ph_morning'] ?? 0) + ($hours['ph_night'] ?? 0)));
 ;
     
-                $serviceFee  = round($jobAmount * 0.10, 2);
+                $cleanBaseTotal = (float) str_replace([',', '$'], '', $jobAmount);
+                $feeRaw = $cleanBaseTotal * 0.10;
+                $serviceFee = round($feeRaw, 2);
+                $displayedFee = number_format($serviceFee, 2);
+                $serviceFee  = $displayedFee;
                 $totalAmount = round($jobAmount + $serviceFee, 2);
     
                 // ─── COLLECT FOR INVOICE ──────────────────────────────────
@@ -166,7 +171,7 @@ class JobRosterController extends Controller
                         'roster_id'        => $jobNewRoster->id,
                         'job_instrcutions' => $jobInstructionsValue,
                         'created_by'       => $request->user_id,
-                        'assigned_to'      => null,
+                        'assigned_to'      => $request->assigned_staff_id ?? null,
                         'notified_users'   => json_encode([]),
     
                         'payment_intent_id' => $isAdminOverride ? null : $paymentIntentId,
@@ -183,6 +188,8 @@ class JobRosterController extends Controller
                         'ph_morning_hours'       => $hours['ph_morning']        ?? 0,
                         'ph_night_hours'         => $hours['ph_night']          ?? 0,
                         'hours'                  => $guardWorkingHours,
+                        'created_at'             => now(),
+                        'updated_at'             => now()
                     ];
     
                     $jobId = JobRoster::insertGetId($roster);
@@ -190,12 +197,15 @@ class JobRosterController extends Controller
     
                     $createdJob = JobRoster::with('site')->find($jobId);
     
-                    $this->sendNotificationsWithinRadius(
-                        $site->coordinates,
-                        [$jobId],
-                        $request->user_id,
-                        $createdJob
-                    );
+                    if($request->posting_type == 'broadcast')
+                    {
+                        $this->sendNotificationsWithinRadius(
+                            $site->coordinates,
+                            [$jobId],
+                            $request->user_id,
+                            $createdJob
+                        );   
+                    }
                 }
             }
     
@@ -360,7 +370,7 @@ private function saveInvoicePdf($pdfBytes, string $invoiceNumber, string $client
      */
     private function sendNotificationsWithinRadius($siteCoordinates, $jobIds, $userId, $roster)
     {
-        $radiusKm = 5; // 5km radius
+        $radiusKm = 15; // 5km radius
         $notifiedUsers = [];
 
         // Get all staff with user_id = 1
@@ -400,7 +410,7 @@ private function saveInvoicePdf($pdfBytes, string $invoiceNumber, string $client
                 if ($staffMember->notification_token) {
                     $notificationSent = send_push_notification([
                         'notification_token' => $staffMember->notification_token,
-                        'message'            => "New ASAP job available within 5km of your location. Please check your app.",
+                        'message'            => "New job available within 15km of your location. Please check your app.",
                         'title'              => 'ASAP Job Nearby',
                         'page'               => 'asap-job-list',
                         'data'               => [
@@ -500,12 +510,12 @@ private function saveInvoicePdf($pdfBytes, string $invoiceNumber, string $client
         ->where('is_active', 1)
         ->where('user_type', 'staff')
         ->whereNotNull('coordinates')
-        ->whereHas('guardQuestionnaireDetails', function ($query) {
-            $query->whereNotNull('certificate_path');
-        })
-        ->whereDoesntHave('guardQuestionnaireDetails', function ($query) {
-            $query->whereNull('certificate_path');
-        })
+        // ->whereHas('guardQuestionnaireDetails', function ($query) {
+        //     $query->whereNotNull('certificate_path');
+        // })
+        // ->whereDoesntHave('guardQuestionnaireDetails', function ($query) {
+        //     $query->whereNull('certificate_path');
+        // })
         ->select('id', 'name', 'coordinates', 'notification_token')
         ->get();
 
@@ -832,7 +842,7 @@ private function saveInvoicePdf($pdfBytes, string $invoiceNumber, string $client
         // return $this->sendResponse();
         // }
 
-        $job = JobRoster::where('id', $id)->with('site')->first();
+        $job = JobRoster::where('id', $id)->with('site', 'guards')->first();
         if (!$job || !$job->site) {
             return response()->json([
                 'success' => false,
@@ -909,7 +919,7 @@ private function saveInvoicePdf($pdfBytes, string $invoiceNumber, string $client
             return response()->json(['success' => false, 'message' => 'Please send coordinates.', 'code' => 404]);
         }
 
-        $coordinates = explode(',', $request->input('location'));
+        $coordinates = explode(',', $job->guards->current_coordinates);
 
 
         if ($job->site->coordinates == null ||  $job->site->coordinates == '') {
@@ -2465,26 +2475,20 @@ $baseTotal_arr = [];
 
             $hours_array[] = $hours;
             $baseTotal_arr[] = $shiftAmount; 
-            $baseTotal += round(($shiftAmount * $shift['numberOfGuards']));
+            $baseTotal += round(($shiftAmount * $shift['numberOfGuards']), 2);
         }
 
         // APPLY DISCOUNT (ONLY FULL)
         $discount = 0;
 
-        // if ($request->payment_option === 'full') {
-        //     $discount = round($baseTotal * 0.05, 2);
-        // }
-
-        // $discountedTotal = round($baseTotal - $discount);
-
-        // // GST / SERVICE FEE (UNCHANGED LOGIC)
-        // $serviceFee = round($discountedTotal * 0.10, 2);
-        // $grandTotal = round($discountedTotal + $serviceFee, 2);
-
-
         // GST / SERVICE FEE (UNCHANGED LOGIC)
-        $serviceFee = round($baseTotal * 0.10, 2);
-        $baseFinalTotal = round($baseTotal + $serviceFee);
+        $cleanBaseTotal = (float) str_replace([',', '$'], '', $baseTotal);
+        $feeRaw = $cleanBaseTotal * 0.10;
+        $serviceFee = round($feeRaw, 2);
+        $displayedFee = number_format($serviceFee, 2);
+        $serviceFee  = $displayedFee;
+
+        $baseFinalTotal = round($baseTotal + $serviceFee, 2);
         if ($request->payment_option === 'full') {
             $discount = round($baseFinalTotal * 0.05, 2);
         }
@@ -2493,14 +2497,14 @@ $baseTotal_arr = [];
         // SPLIT LOGIC (AFTER GST)
         if ($request->payment_option === 'split') {
             $amountToCharge = round($grandTotal * 0.5, 2);
-            $balance = round($grandTotal - $amountToCharge);
+            $balance = round($grandTotal - $amountToCharge, 2);
         } else {
             $amountToCharge = $grandTotal;
             $balance = 0;
         }
         // return [$baseTotal, $discount. $discountedTotal, $serviceFee, $grandTotal, $amountToCharge, $hours_array,$baseTotal_arr];
 
-        $amountInCents = (int) round($amountToCharge * 100);
+        $amountInCents = (int) round($amountToCharge * 100, 2);
 
         // ─── USER / CUSTOMER ──────────────────────
         $user = User::findOrFail($request->user_id);
@@ -2863,20 +2867,15 @@ public function autoUpdatePayslipStatus()
     public function sendPdfInvoice(Request $request)
     {
         $request->validate([
-            'email' => 'required|email',
             'invoice_filename' => 'required|string'
         ]);
 
         try {
 
-            // Prevent directory traversal
             $filename = basename($request->invoice_filename);
-
             $storagePath = 'invoices/' . $filename;
 
-            // Check file exists
             if (!Storage::disk('public')->exists($storagePath)) {
-
                 return response()->json([
                     'success' => false,
                     'message' => 'Invoice file not found.',
@@ -2884,28 +2883,105 @@ public function autoUpdatePayslipStatus()
                 ], 404);
             }
 
-            // Public URL
             $download_url = asset('storage/invoices/' . $filename);
 
-            $send = [
-                'subject'      => 'STAFFOO Invoice',
-                'message'      => 'Here is your invoice.',
-                'email'        => $request->email,
-                'attachment'   => null,
-                'download_url' => $download_url,
-                'filename'     => $filename,
-            ];
+            $transactionId = $request->transaction_id;
 
-            $this->systemEmail($send);
+            $successfulEmails = [];
+            $failedEmails = [];
+
+            foreach ($request->emails as $e) {
+                try {
+                    $send = [
+                        'subject'      => 'STAFFOO Invoice',
+                        'message'      => 'Here is your invoice.',
+                        'email'        => $e,
+                        'attachment'   => null,
+                        'download_url' => $download_url,
+                        'filename'     => $filename,
+                    ];
+                    
+                    $this->systemEmail($send);
+
+                    EmailHistory::create([
+                        'file_name' => $filename,
+                        'email' => $e,
+                        'transaction_id' => $transactionId,
+                        'status' => 'sent',
+                        'response' => 'Email sent successfully'
+                    ]);
+
+                    $successfulEmails[] = $e;
+
+                } catch (\Exception $emailException) {
+                    EmailHistory::create([
+                        'file_name' => $filename,
+                        'email' => $e,
+                        'transaction_id' => $transactionId,
+                        'status' => 'failed',
+                        'response' => $emailException->getMessage()
+                    ]);
+
+                    $failedEmails[] = $e;
+                }
+            }
+
+            $message = 'Invoice sent successfully.';
+            if (count($failedEmails) > 0) {
+                $message = 'Some emails failed to send. Successful: ' . count($successfulEmails) . ', Failed: ' . count($failedEmails);
+            }
 
             return response()->json([
                 'success' => true,
-                'message' => 'Invoice sent successfully.',
-                'download_url' => $download_url
+                'message' => $message,
+                'download_url' => $download_url,
+                'transaction_id' => $transactionId,
+                'successful_emails' => $successfulEmails,
+                'failed_emails' => $failedEmails,
+                'total_sent' => count($successfulEmails)
             ]);
 
         } catch (\Exception $e) {
+            try {
+                EmailHistory::create([
+                    'file_name' => $request->invoice_filename ?? 'unknown',
+                    'email' => $request->email ?? 'unknown',
+                    'transaction_id' => 'ERROR-' . time(),
+                    'status' => 'failed',
+                    'response' => $e->getMessage()
+                ]);
+            } catch (\Exception $historyError) {
+            }
 
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function getEmailHistoryByTransaction($transaction_id)
+    {
+        try {
+            $histories = EmailHistory::where('transaction_id', $transaction_id)
+                                    ->orderBy('created_at', 'desc')
+                                    ->get();
+
+            if ($histories->isEmpty()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No email history found for this transaction ID.'
+                ], 404);
+            }
+
+            return response()->json([
+                'success' => true,
+                'transaction_id' => $transaction_id,
+                'total_emails' => $histories->count(),
+                'data' => $histories
+            ]);
+
+        } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
                 'message' => $e->getMessage()
@@ -3083,6 +3159,69 @@ public function autoUpdatePayslipStatus()
             return response()->json([
                 'message' => 'Handover failed.',
                 'error'   => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get available jobs (unassigned and future)
+     */
+    public function getAvailableJobs(Request $request)
+    {
+        try {
+            $perPage = $validated['per_page'] ?? 15;
+            $type = $validated['type'] ?? null;
+
+            // Build query
+            $query = JobRoster::with(['site'])
+                ->whereNull('assigned_to')
+                ->where('start', '>', now())
+                ->orderBy('start', 'asc');
+
+            $jobs = $query->paginate($perPage);
+
+            // Format response
+            $formattedJobs = $jobs->through(function ($roster) {
+                return [
+                    'id' => $roster->id,
+                    'site_name' => $roster->site->site_name ?? null,
+                    'site_address' => $roster->site->address ?? null,
+                    'site_id' => $roster->site->id ?? null,
+                    'state' => $roster->site->state ?? null,
+                    'coordinates' => $roster->site->coordinates ?? null,
+                    'start_time' => $roster->start,
+                    'end_time' => $roster->end,
+                    'day_of_week' => $roster->shift_date ? date('l', strtotime($roster->start)) : null,
+                    'job_status' => $roster->job_status,
+                    'publish_status' => $roster->publish_status,
+                    'assigned_to' => $roster->assigned_to,
+                    'created_at' => $roster->created_at,
+                ];
+            });
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Available jobs retrieved successfully.',
+                'code' => 200,
+                'data' => [
+                    'jobs' => $formattedJobs,
+                    'pagination' => [
+                        'current_page' => $jobs->currentPage(),
+                        'last_page' => $jobs->lastPage(),
+                        'per_page' => $jobs->perPage(),
+                        'total' => $jobs->total(),
+                        'next_page_url' => $jobs->nextPageUrl(),
+                        'prev_page_url' => $jobs->previousPageUrl(),
+                    ],
+                ]
+            ], 200);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'An error occurred while fetching available jobs.',
+                'code' => 500,
+                'error' => $e->getMessage(),
             ], 500);
         }
     }

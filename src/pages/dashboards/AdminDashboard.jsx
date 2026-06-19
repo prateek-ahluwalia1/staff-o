@@ -49,8 +49,14 @@ export default function AdminDashboard() {
       totalCustomers: dashData.customer_count || 0,
       totalJobs: dashData.total_jobs || 0,
       completedJobs: dashData.completed_jobs_count || 0,
-      totalRevenue: dashData.total_revenue?.toLocaleString() || "0",
-      thisMonthRevenue: dashData.this_month_revenue?.toLocaleString() || "0",
+      totalRevenue: Number(dashData.total_revenue || 0).toLocaleString(undefined, {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      }),
+      thisMonthRevenue: Number(dashData.this_month_revenue || 0).toLocaleString(undefined, {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      }),
     });
 
     const mappedContractors = (dashData.contractors || [])
@@ -231,7 +237,12 @@ export default function AdminDashboard() {
                     <td className="fw-500">{contractor.name}</td>
                     <td>{contractor.staff}</td>
                     <td>{contractor.jobs}</td>
-                    <td className="fw-500 text-success">${contractor.revenue}</td>
+                    <td className="fw-500 text-success">
+                      ${Number(contractor.revenue).toLocaleString(undefined, {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })}
+                    </td>
                     <td>
                       <NavLink
                         to='/manage-users'

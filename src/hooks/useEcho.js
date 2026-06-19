@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { addNotification } from "../store/slices/notificationSlice";
 import { receiveNewMessage, handleMessageDeleted } from "../store/slices/chatSlice";
 import { getEchoInstance, destroyEchoInstance } from "../echo";
 import { toast } from "react-toastify";
@@ -53,6 +54,10 @@ export const useEcho = () => {
         } else if (data.type === "message_deleted" && data.message_id) {
           // ----- Deleted message (no toast/sound needed) -----
           dispatch(handleMessageDeleted(data.message_id));
+        } else {
+          // ----- All other notifications -----
+          // No sound here – NotificationToast handles the sound & rich toast
+          dispatch(addNotification(data));
         }
       })
       .error((error) => {

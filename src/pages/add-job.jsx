@@ -750,7 +750,7 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
         }, { method: "POST" });
 
         if (postRes?.success) {
-          toast.success("Job posted successfully via Admin");
+          toast.success("Job posted successfully via Admin Override!");
           navigate("/my-job-applications");
           if (isEmbedded && onClose) onClose();
         } else {

@@ -2,32 +2,24 @@ import React, { useState, useCallback, useMemo, useEffect } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
 import { NavLink, useNavigate } from 'react-router-dom'
 import { logOut } from '../../store/slices/authSlice'
+import {
+  setNotifications,
+  setUnreadCount,
+  markNotificationRead,
+  markAllRead,
+} from '../../store/slices/notificationSlice'
 import useSubmit from '../../hooks/useSubmit'
 import useFetch from '../../hooks/useFetch'
-import staffologo from "../../assets/images/staffo.png"
+import staffologo from "../../assets/images/staffo.png" // Imported image asset
 import { getProfileImageUrlFromUserdata } from '../../utils/profileImage'
 import "../../styles/staffoo.css"
 
-// --- Date Formatter Helper ---
-const formatDate = (dateString) => {
-  if (!dateString) return "Just now";
-  const d = new Date(dateString);
-  if (isNaN(d.getTime())) return "Just now";
-  const day = String(d.getDate()).padStart(2, '0');
-  const month = String(d.getMonth() + 1).padStart(2, '0');
-  const year = d.getFullYear();
-  return `${day}/${month}/${year}`;
-};
-
 function Header() {
   const { token, userdata } = useSelector((state) => state.auth)
+  const { items, unreadCount } = useSelector((state) => state.notifications)
   const dispatch = useDispatch()
   const navigate = useNavigate()
   const userId = userdata?.id || userdata?.data?.id
-
-  // --- Local State for Notifications (No Redux!) ---
-  const [localNotifications, setLocalNotifications] = useState([])
-  const [localUnreadCount, setLocalUnreadCount] = useState(0)
 
   const [showNotifications, setShowNotifications] = useState(false)
   const [showUserMenu, setShowUserMenu] = useState(false)
@@ -60,34 +52,17 @@ function Header() {
     },
   )
 
-  // 1. Populate local notifications directly from the API
   useEffect(() => {
     if (notificationsData) {
-      const list = notificationsData?.data?.data ?? notificationsData?.data ?? [];
-      setLocalNotifications(list)
+      dispatch(setNotifications(notificationsData))
     }
-  }, [notificationsData])
+  }, [dispatch, notificationsData])
 
-  // 2. Keep the local unread badge synced with the API response
   useEffect(() => {
     if (unreadData !== null && unreadData !== undefined) {
-      const count = unreadData?.data?.count ?? unreadData?.count ?? 0;
-      setLocalUnreadCount(count)
+      dispatch(setUnreadCount(unreadData))
     }
-  }, [unreadData])
-
-  // 3. 🔴 Catch live notifications from WebSockets
-  useEffect(() => {
-    const handleLiveNotification = (event) => {
-      const newNotif = event.detail;
-      // Inject the new notification and increase badge instantly
-      setLocalNotifications(prev => [newNotif, ...prev]);
-      setLocalUnreadCount(prev => prev + 1);
-    };
-
-    window.addEventListener('live-notification', handleLiveNotification);
-    return () => window.removeEventListener('live-notification', handleLiveNotification);
-  }, []);
+  }, [dispatch, unreadData])
 
   useEffect(() => {
     if (isMobileOpen) {
@@ -178,14 +153,8 @@ function Header() {
   const markSingleNotificationRead = async (notif) => {
     if (!notif?.id || notif.read_at) return
 
-    // Optimistic local state update & subtract from badge
-    setLocalNotifications((prev) =>
-      prev.map((n) => (n.id === notif.id ? { ...n, read_at: new Date().toISOString() } : n))
-    )
-    setLocalUnreadCount((prev) => Math.max(0, prev - 1))
-
-    await submit(`api/notifications/read/${notif.id}`, {}, { method: 'POST' })
-    await refetchUnreadCount()
+    dispatch(markNotificationRead(notif.id))
+    await submit(`/notifications/read/${notif.id}`, {}, { method: 'POST' })
   }
 
   const toggleNotifications = async () => {
@@ -196,13 +165,8 @@ function Header() {
       await Promise.all([refetchNotifications(), refetchUnreadCount()])
     }
 
-    if (nextState && userId && localUnreadCount > 0) {
-      // Optimistic local state update (mark all as read visually immediately)
-      setLocalNotifications((prev) =>
-        prev.map((n) => ({ ...n, read_at: n.read_at || new Date().toISOString() }))
-      )
-      setLocalUnreadCount(0) // Clear the badge instantly
-
+    if (nextState && userId) {
+      dispatch(markAllRead())
       await submit(
         `api/notifications/mark-all-read/${userId}`,
         {},
@@ -241,8 +205,8 @@ function Header() {
         flexWrap: 'nowrap',
         gap: '16px',
       }}
-    >
-      <div className="nav-left">
+    >      <div className="nav-left">
+        {/* Updated Logo Layout containing your image asset */}
         <NavLink className="logo d-flex align-items-center" to="/" style={{ textDecoration: 'none' }}>
           <img
             src={staffologo}
@@ -328,7 +292,7 @@ function Header() {
                 <NavLink to="/edit-profile" onClick={handleLinkClick} style={{ color: '#ccc', textDecoration: 'none', fontFamily: "'Barlow Condensed', sans-serif", fontSize: '14px', fontWeight: 600, letterSpacing: '0.1em' }}><i className="fa fa-user" style={{ marginRight: '8px' }}></i> My Profile</NavLink>
                 <NavLink to="/notifications" onClick={handleLinkClick} style={{ color: '#ccc', textDecoration: 'none', fontFamily: "'Barlow Condensed', sans-serif", fontSize: '14px', fontWeight: 600, letterSpacing: '0.1em' }}>
                   <i className="fa fa-bell" style={{ marginRight: '8px' }}></i> Notifications
-                  {localUnreadCount > 0 && <span style={{ marginLeft: '8px', backgroundColor: '#dc3545', color: '#fff', borderRadius: '50%', padding: '2px 6px', fontSize: '10px' }}>{localUnreadCount}</span>}
+                  {unreadCount > 0 && <span style={{ marginLeft: '8px', backgroundColor: '#dc3545', color: '#fff', borderRadius: '50%', padding: '2px 6px', fontSize: '10px' }}>{unreadCount}</span>}
                 </NavLink>
                 <button
                   onClick={async () => {
@@ -388,7 +352,7 @@ function Header() {
                 onMouseLeave={(e) => (e.target.style.color = '#fff')}
               >
                 <i className="fa fa-bell"></i>
-                {localUnreadCount > 0 && (
+                {unreadCount > 0 && (
                   <span
                     style={{
                       position: 'absolute',
@@ -406,7 +370,7 @@ function Header() {
                       fontWeight: 'bold',
                     }}
                   >
-                    {localUnreadCount}
+                    {unreadCount}
                   </span>
                 )}
               </button>
@@ -437,42 +401,32 @@ function Header() {
                       overflowY: 'auto',
                     }}
                   >
-                    {localNotifications.length > 0 ? (
-                      localNotifications.map((notif, index) => {
-                        const isRead = Boolean(notif.read_at);
-                        return (
-                          <li
-                            key={notif.id || index}
-                            onClick={() => markSingleNotificationRead(notif)}
-                            style={{
-                              padding: '12px 16px',
-                              borderBottom: '1px solid #444',
-                              cursor: isRead ? 'default' : 'pointer',
-                              whiteSpace: 'normal',
-                              transition: 'background-color 0.2s',
-                              backgroundColor: isRead ? 'transparent' : 'rgba(10, 124, 110, 0.15)', // Light theme-color highlight for unread
-                            }}
-                            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#333')}
-                            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = isRead ? 'transparent' : 'rgba(10, 124, 110, 0.15)')}
-                          >
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
-                              <div style={{ fontWeight: '600', fontSize: '14px', color: isRead ? '#bbb' : '#fff' }}>
-                                {getNotificationTitle(notif)}
-                              </div>
-                              {/* Indicator dot for unread inside list */}
-                              {!isRead && (
-                                <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#0A7C6E', marginTop: '4px', flexShrink: 0 }}></div>
-                              )}
-                            </div>
-                            <div style={{ fontSize: '13px', color: isRead ? '#777' : '#aaa', marginTop: '4px' }}>
-                              {getNotificationMessage(notif)}
-                            </div>
-                            <div style={{ fontSize: '11px', color: '#555', marginTop: '4px' }}>
-                              {formatDate(notif.created_at)}
-                            </div>
-                          </li>
-                        )
-                      })
+                    {items.length > 0 ? (
+                      items.map((notif, index) => (
+                        <li
+                          key={notif.id || index}
+                          onClick={() => markSingleNotificationRead(notif)}
+                          style={{
+                            padding: '12px 16px',
+                            borderBottom: '1px solid #444',
+                            cursor: 'pointer',
+                            whiteSpace: 'normal',
+                            transition: 'background-color 0.2s',
+                          }}
+                          onMouseEnter={(e) => (e.target.style.backgroundColor = '#333')}
+                          onMouseLeave={(e) => (e.target.style.backgroundColor = 'transparent')}
+                        >
+                          <div style={{ fontWeight: '600', fontSize: '14px', color: '#fff' }}>
+                            {getNotificationTitle(notif)}
+                          </div>
+                          <div style={{ fontSize: '13px', color: '#aaa', marginTop: '4px' }}>
+                            {getNotificationMessage(notif)}
+                          </div>
+                          <div style={{ fontSize: '11px', color: '#777', marginTop: '4px' }}>
+                            {notif.created_at || 'Just now'}
+                          </div>
+                        </li>
+                      ))
                     ) : (
                       <li style={{ padding: '12px', textAlign: 'center', color: '#777', fontSize: '13px' }}>
                         No new notifications

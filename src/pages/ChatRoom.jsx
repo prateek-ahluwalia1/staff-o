@@ -444,7 +444,7 @@ const ChatRoom = () => {
                               </div>
                               <div
                                 className="text-muted text-truncate"
-                                style={{ fontSize: "0.72rem" }}
+                                style={{ fontSize: "0.72rem", textTransform: "none" }}
                               >
                                 {uData?.email}
                               </div>

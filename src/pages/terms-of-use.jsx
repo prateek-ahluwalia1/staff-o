@@ -31,7 +31,7 @@ const sections = [
   {
     title: "Part 5: Contact Information",
     content:
-      "For support or administrative inquiries, contact Capital Services Pty Ltd at 21 Tanglewood Bvd, Truganina VIC 3029, Australia. Email: staffoapp@gmail.com. Phone: 0478916034.",
+      "For support or administrative inquiries, contact Capital Services Pty Ltd at 21 Tanglewood Bvd, Truganina VIC 3029, Australia. Email: admin@staffoo.com.au. Phone: 1800 782 366.",
   },
 ];
 

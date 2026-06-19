@@ -20,6 +20,11 @@ const STATE_MAP = {
   'ACT': 'act',
   'Northern Territory': 'nt'
 };
+const roleLabels = {
+  customer: "Client",
+  sub_contractor: "Resource Partner",
+  staff: "Staff",
+};
 
 const DOC_TYPES = [
   { value: "Passport", label: "Passport" },
@@ -27,7 +32,7 @@ const DOC_TYPES = [
   { value: "Driver License Front", label: "Driver License (Front)" },
   { value: "Driver License Back", label: "Driver License (Back)" },
   { value: "Security License", label: "Security License" },
-  { value: "Working With Children Check", label: "Working with Children Check (WWCC)" },
+  { value: "Working with Children Check", label: "Working with Children Check (WWCC)" },
   { value: "Employment Application Form", label: "Employment Application Form" },
   { value: "TFN Declaration", label: "TFN Declaration" },
   { value: "Superannuation Form", label: "Superannuation Form" },
@@ -37,6 +42,7 @@ const DOC_TYPES = [
   { value: "Citizen Ship", label: "Citizen Ship Certificate" },
   { value: "Medicare", label: "Medicare Certificate" },
   { value: "Birth Certificate", label: "Birth Certificate" },
+  { value: "White Card", label: "White Card" },
 ];
 
 // ========== DATE HELPERS ==========
@@ -1050,8 +1056,10 @@ const ManageUsers = () => {
                 </h4>
                 <p className="text-muted small mb-0">
                   Role:{" "}
-                  <span className="text-dark fw-bold text-uppercase">
-                    {activeTab.replace("_", " ")}
+                  <span className="text-dark fw-bold">
+                    <span className="text-dark fw-bold">
+                      {roleLabels[activeTab] || activeTab.replace("_", " ")}
+                    </span>
                   </span>
                 </p>
                 {activeTab === "staff" && (

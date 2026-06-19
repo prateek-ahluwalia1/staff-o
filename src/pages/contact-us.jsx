@@ -473,8 +473,8 @@ export default function ContactUs() {
                     </span>
                     <div className="stf-info-text">
                       <h5>Email</h5>
-                      <Link to="mailto:staffoapp@gmail.com">
-                        staffoapp@gmail.com
+                      <Link to="mailto:admin@staffoo.com.au">
+                        admin@staffoo.com.au
                       </Link>
                     </div>
                   </li>
@@ -484,7 +484,7 @@ export default function ContactUs() {
                     </span>
                     <div className="stf-info-text">
                       <h5>Phone</h5>
-                      <Link to="tel:0478916034">0478916034</Link>
+                      <Link to="tel:1800 782 366">1800 782 366</Link>
                     </div>
                   </li>
                   <li>

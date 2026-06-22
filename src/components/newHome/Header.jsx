@@ -226,7 +226,7 @@ function Header() {
         </NavLink>
         <nav className={`main-nav ${isMobileOpen ? 'mobile-open' : ''}`} style={{ display: 'flex', alignItems: 'center', gap: '32px' }}>
           <div className={`nav-item-dropdown ${openDropdown === 'solutions' ? 'mobile-expanded' : ''}`}>
-            <span onClick={() => { if (window.innerWidth < 992) setOpenDropdown(openDropdown === 'solutions' ? null : 'solutions') }} style={{ color: '#ccc', cursor: 'pointer', fontFamily: "'Barlow Condensed', sans-serif", fontSize: '14px', fontWeight: 600, letterSpacing: '0.1em' }}>Solutions <i className="fa fa-chevron-down" style={{ fontSize: '10px', marginLeft: '4px' }}></i></span>
+            <span onClick={() => { if (window.innerWidth < 992) setOpenDropdown(openDropdown === 'solutions' ? null : 'solutions') }} style={{ color: '#ccc', cursor: 'pointer', fontFamily: "'Barlow Condensed', sans-serif", fontSize: '14px', fontWeight: 600, letterSpacing: '0.1em' }}>Solutions <i className="fa fa-chevron-down" style={{ color: '#0A7C6E', fontSize: '11px', fontWeight: 'semibold', marginLeft: '3px' }}></i></span>
             <div className="dropdown-content multi-col">
               <div className="dropdown-column">
                 <div className="dropdown-title">Sectors</div>
@@ -253,7 +253,7 @@ function Header() {
           </div>
 
           <div className={`nav-item-dropdown ${openDropdown === 'features' ? 'mobile-expanded' : ''}`}>
-            <span onClick={() => { if (window.innerWidth < 992) setOpenDropdown(openDropdown === 'features' ? null : 'features') }} style={{ color: '#ccc', cursor: 'pointer', fontFamily: "'Barlow Condensed', sans-serif", fontSize: '14px', fontWeight: 600, letterSpacing: '0.1em' }}>Features <i className="fa fa-chevron-down" style={{ fontSize: '10px', marginLeft: '4px' }}></i></span>
+            <span onClick={() => { if (window.innerWidth < 992) setOpenDropdown(openDropdown === 'features' ? null : 'features') }} style={{ color: '#ccc', cursor: 'pointer', fontFamily: "'Barlow Condensed', sans-serif", fontSize: '14px', fontWeight: 600, letterSpacing: '0.1em' }}>Features <i className="fa fa-chevron-down" style={{ color: '#0A7C6E', fontSize: '11px', marginLeft: '3px' }}></i></span>
             <div className="dropdown-content">
               <NavLink to="/features/gps-guard-tracking" onClick={handleLinkClick}>GPS Guard Tracking</NavLink>
               <NavLink to="/features/time-rooster" onClick={handleLinkClick}>Time Rooster</NavLink>
@@ -270,7 +270,7 @@ function Header() {
           <NavLink to="/pricing" onClick={handleLinkClick} style={{ color: '#ccc', textDecoration: 'none', fontFamily: "'Barlow Condensed', sans-serif", fontSize: '14px', fontWeight: 600, letterSpacing: '0.1em' }}>Pricing</NavLink>
 
           <div className={`nav-item-dropdown ${openDropdown === 'resources' ? 'mobile-expanded' : ''}`}>
-            <span onClick={() => { if (window.innerWidth < 992) setOpenDropdown(openDropdown === 'resources' ? null : 'resources') }} style={{ color: '#ccc', cursor: 'pointer', fontFamily: "'Barlow Condensed', sans-serif", fontSize: '14px', fontWeight: 600, letterSpacing: '0.1em' }}>Resources <i className="fa fa-chevron-down" style={{ fontSize: '10px', marginLeft: '4px' }}></i></span>
+            <span onClick={() => { if (window.innerWidth < 992) setOpenDropdown(openDropdown === 'resources' ? null : 'resources') }} style={{ color: '#ccc', cursor: 'pointer', fontFamily: "'Barlow Condensed', sans-serif", fontSize: '14px', fontWeight: 600, letterSpacing: '0.1em' }}>Resources <i className="fa fa-chevron-down" style={{ color: '#0A7C6E', fontSize: '11px', marginLeft: '3px' }}></i></span>
             <div className="dropdown-content">
               <NavLink to="/resources/blogs" onClick={handleLinkClick}>Blogs</NavLink>
               <NavLink to="/resources/pr-news" onClick={handleLinkClick}>PR/News</NavLink>
@@ -279,7 +279,7 @@ function Header() {
           </div>
 
           <div className={`nav-item-dropdown ${openDropdown === 'company' ? 'mobile-expanded' : ''}`}>
-            <span onClick={() => { if (window.innerWidth < 992) setOpenDropdown(openDropdown === 'company' ? null : 'company') }} style={{ color: '#ccc', cursor: 'pointer', fontFamily: "'Barlow Condensed', sans-serif", fontSize: '14px', fontWeight: 600, letterSpacing: '0.1em' }}>Company <i className="fa fa-chevron-down" style={{ fontSize: '10px', marginLeft: '4px' }}></i></span>
+            <span onClick={() => { if (window.innerWidth < 992) setOpenDropdown(openDropdown === 'company' ? null : 'company') }} style={{ color: '#ccc', cursor: 'pointer', fontFamily: "'Barlow Condensed', sans-serif", fontSize: '14px', fontWeight: 600, letterSpacing: '0.1em' }}>Company <i className="fa fa-chevron-down" style={{ color: '#0A7C6E', fontSize: '11px', marginLeft: '3px' }}></i></span>
             <div className="dropdown-content">
               <NavLink to="/about-us" onClick={handleLinkClick}>About Us</NavLink>
               <NavLink to="/contact-us" onClick={handleLinkClick}>Contact Us</NavLink>
@@ -294,7 +294,7 @@ function Header() {
             <div style={{ height: '1px', backgroundColor: 'rgba(255,255,255,0.1)', margin: '16px 0' }}></div>
             {!token ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                <NavLink to="/login" onClick={handleLinkClick} style={{ color: '#fff', border: '1px solid #fff', textAlign: 'center', padding: '10px 16px', borderRadius: '4px', textDecoration: 'none', fontWeight: 'bold' }}>Sign In</NavLink>
+                <NavLink to="/login" onClick={handleLinkClick} style={{ color: '#fff', border: '1px solid #fff', textAlign: 'center', padding: '10px 16px', borderRadius: '5px', textDecoration: 'none', fontWeight: 'bold' }}>Sign In</NavLink>
                 <NavLink to="/register" onClick={handleLinkClick} style={{ backgroundColor: '#0A7C6E', color: '#fff', border: '1px solid #0A7C6E', textAlign: 'center', padding: '10px 16px', borderRadius: '4px', textDecoration: 'none', fontWeight: 'bold' }}>Register Free</NavLink>
               </div>
             ) : (
@@ -341,8 +341,56 @@ function Header() {
       <div className="nav-right">
         {!token ? (
           <>
-            <NavLink to="/login" className="btn-nav-ghost" style={{ color: '#fff', borderColor: '#fff' }}>Sign In</NavLink>
-            <NavLink to="/register" className="btn-nav-solid" style={{ border: "1px solid #0A7C6E" }}>Register Free</NavLink>
+            <NavLink to="/login" className="btn-nav-ghost">
+              Sign In
+            </NavLink>
+
+            <NavLink to="/register" className="btn-nav-solid">
+              Register Free
+            </NavLink>
+
+            <style>{`
+    .btn-nav-ghost {
+      color: #fff;
+      border: 1px solid #fff;
+      text-align: center;
+      padding: 10px 16px;
+      border-radius: 5px;
+      text-decoration: none;
+      font-weight: bold;
+      transition: all 0.3s ease;
+      display: inline-block;
+      margin-right: 10px;
+    }
+
+    .btn-nav-ghost:hover {
+      background: #fff;
+      color: #0A7C6E;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 14px rgba(0,0,0,0.15);
+    }
+
+    .btn-nav-solid {
+      background: #0A7C6E;
+      color: #fff;
+      border: 1px solid #0A7C6E;
+      text-align: center;
+      padding: 10px 16px;
+      border-radius: 5px;
+      text-decoration: none;
+      font-weight: bold;
+      box-shadow: 0 4px 12px rgba(10,124,110,0.3);
+      transition: all 0.3s ease;
+      display: inline-block;
+    }
+
+    .btn-nav-solid:hover {
+      background: #08695d;
+      border-color: #08695d;
+      transform: translateY(-2px);
+      box-shadow: 0 8px 18px rgba(10,124,110,0.4);
+    }
+  `}</style>
           </>
         ) : (
           <>

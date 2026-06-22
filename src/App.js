@@ -31,6 +31,7 @@ import EventSecurityProviders from "./pages/solutions/for-event-security-provide
 import CorporateSecurityTeams from "./pages/solutions/for-corporate-security-teams";
 import LabourHireAgencies from "./pages/solutions/for-labour-hire-agencies";
 import GPSGuardTracking from "./pages/features/gps-guard-tracking";
+import EventSecurityHero from "./pages/solutions/event-security";
 
 const Login = lazy(() => import("./auth/login"));
 const Register = lazy(() => import("./auth/register"));
@@ -184,7 +185,7 @@ function AppContent() {
                         path="/solutions/event-security"
                         element={
                             <ProtectedRoute public>
-                                <EventSecurity />
+                                <EventSecurityHero />
                             </ProtectedRoute>
                         }
                     />
@@ -337,7 +338,24 @@ function AppContent() {
                     path="/resources/:slug"
                     element={
                         <ProtectedRoute public>
-                            <DynamicPage category="Resources" />
+                            < EventSecurityHero />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/features/:slug"
+                    element={
+                        <ProtectedRoute public>
+                            < EventSecurityHero />
+                        </ProtectedRoute>
+                    }
+                />
+
+                <Route
+                    path="/pricing"
+                    element={
+                        <ProtectedRoute public>
+                            < EventSecurityHero />
                         </ProtectedRoute>
                     }
                 />
@@ -523,7 +541,12 @@ function AppContent() {
                 </Route>
 
                 {/* ===== CATCH-ALL ===== */}
-                <Route path="*" element={<NotFound />} />
+                {/* <Route path="*" element={
+                    <NotFound />
+                } /> */}
+                <Route path="*" element={
+                    <NotFound />
+                } />
             </Routes>
         </>
     );

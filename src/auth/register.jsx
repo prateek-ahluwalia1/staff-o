@@ -200,11 +200,15 @@ export default function Register() {
                 Build your identity.<br />
                 <span className="auth-line">Join trusted teams.</span>
               </h1>
-              <p className="auth-description">
+              <p className="auth-description"
+                style={{ textTransform: "none" }}
+              >
                 Create your profile, connect with verified clients, and grow your opportunities with one secure platform.
               </p>
 
-              <div className="auth-checks">
+              <div className="auth-checks"
+                style={{ textTransform: "none" }}
+              >
                 <div className="auth-check">
                   <i className="fa-solid fa-circle-check"></i>
                   <span>Verified jobs and trusted clients</span>
@@ -378,7 +382,7 @@ export default function Register() {
 
                 <div className="auth-divider">
                   <hr />
-                  <span>or</span>
+                  <span>Or</span>
                   <hr />
                 </div>
 
@@ -396,7 +400,7 @@ export default function Register() {
                   <span className="text-white fw-medium" style={{ fontSize: "14px" }}>Google</span>
                 </button>
 
-                <p className="text-center mt-3 mb-0" style={{ fontSize: "13px" }}>
+                <p className="text-center mt-3 mb-0" style={{ fontSize: "13px", textTransform: "none" }}>
                   Already have an account?{" "}
                   <NavLink to="/login" className="fw-bold text-decoration-none" style={{ color: "#0A7C6E" }}>
                     Sign in
@@ -438,7 +442,9 @@ export default function Register() {
                 <i className="fa-solid fa-envelope-open-text" style={{ fontSize: "36px", color: "#0A7C6E" }}></i>
               </div>
               <h3 className="fw-bold text-dark mb-2">Verify your email</h3>
-              <p className="text-muted small mb-0">
+              <p className="text-muted small mb-0"
+                style={{ textTransform: "none" }}
+              >
                 We've sent a verification link to <strong className="text-dark"
                   style={{ textTransform: "none" }}
                 >{formData.email}</strong>.
@@ -447,14 +453,6 @@ export default function Register() {
             </div>
 
             <div className="d-flex flex-column gap-3">
-              <button
-                className="btn py-2 fw-bold w-100 d-flex align-items-center justify-content-center gap-2"
-                style={{ backgroundColor: "#0A7C6E", color: "#fff", borderRadius: "8px" }}
-                onClick={() => window.open("https://mail.google.com", "_blank")}
-              >
-                <i className="fa-brands fa-google"></i> Open Gmail
-              </button>
-
               <button
                 className="btn btn-light py-2 fw-bold border w-100"
                 style={{ borderRadius: "8px", color: "#475569" }}

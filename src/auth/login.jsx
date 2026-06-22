@@ -250,12 +250,16 @@ export default function Login() {
                 <br />
                 <span className="auth-line">Access trusted shifts.</span>
               </h1>
-              <p className="auth-description">
+              <p className="auth-description"
+                style={{ textTransform: "none" }}
+              >
                 Log in to manage your profile, assignments, and verified
                 opportunities from one secure platform.
               </p>
 
-              <div className="auth-checks">
+              <div className="auth-checks"
+                style={{ textTransform: "none" }}
+              >
                 <div className="auth-check">
                   <i className="fa-solid fa-circle-check"></i>
                   <span>Verified shifts and trusted clients</span>
@@ -397,7 +401,7 @@ export default function Login() {
 
                 <div className="auth-divider">
                   <hr />
-                  <span>or</span>
+                  <span>Or</span>
                   <hr />
                 </div>
 
@@ -422,7 +426,7 @@ export default function Login() {
 
                 <p
                   className="text-center mt-4 mb-0"
-                  style={{ fontSize: "13px" }}
+                  style={{ fontSize: "13px", textTransform: "none" }}
                 >
                   Don't have an account?{" "}
                   <NavLink

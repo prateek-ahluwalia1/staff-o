@@ -1,7 +1,7 @@
 import React from "react";
 import Header from "../../components/newHome/Header";
 import Footer from "../../components/newHome/Footer";
-import teamsimg from "../../assets/images/teams.png";
+// import teamsimg from "../../assets/images/teams.png";
 
 
 export default function EventSecurityHero() {

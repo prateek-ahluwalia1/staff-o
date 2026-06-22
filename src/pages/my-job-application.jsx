@@ -233,7 +233,7 @@ export default function MyJobApplications() {
                         {app.status}
                       </span>
                       <div className="text-muted text-end" style={{ fontSize: "11px", fontWeight: 600, letterSpacing: '0.3px' }}>
-                        <i className="fa-regular fa-clock me-1"></i> {app.createdAt}
+                        <i className="fa-regular fa-clock me-1"></i> Created At: {app.createdAt}
                       </div>
                     </div>
 

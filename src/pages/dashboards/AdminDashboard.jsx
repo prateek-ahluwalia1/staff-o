@@ -15,6 +15,16 @@ import "./DashboardStyles.css";
 import dashboardBanner from "../../assets/images/dashboard-banner.png";
 import { NavLink } from "react-router-dom";
 
+// Helper function to safely format numbers to exactly 2 decimal places with commas
+const formatCurrency = (value) => {
+  const num = Number(value);
+  if (isNaN(num)) return "0.00";
+  return num.toLocaleString(undefined, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+};
+
 export default function AdminDashboard() {
   const { userdata } = useSelector((state) => state.auth);
   const email = userdata?.data?.email || userdata?.email || "No Email";
@@ -31,8 +41,8 @@ export default function AdminDashboard() {
     totalCustomers: 0,
     totalJobs: 0,
     completedJobs: 0,
-    totalRevenue: "0",
-    thisMonthRevenue: "0",
+    totalRevenue: "0.00",
+    thisMonthRevenue: "0.00",
   });
 
   const [topContractors, setTopContractors] = useState([]);
@@ -49,8 +59,9 @@ export default function AdminDashboard() {
       totalCustomers: dashData.customer_count || 0,
       totalJobs: dashData.total_jobs || 0,
       completedJobs: dashData.completed_jobs_count || 0,
-      totalRevenue: dashData.total_revenue?.toLocaleString() || "0",
-      thisMonthRevenue: dashData.this_month_revenue?.toLocaleString() || "0",
+      // Apply the rounding formatter to revenue fields
+      totalRevenue: formatCurrency(dashData.total_revenue),
+      thisMonthRevenue: formatCurrency(dashData.this_month_revenue),
     });
 
     const mappedContractors = (dashData.contractors || [])
@@ -59,9 +70,12 @@ export default function AdminDashboard() {
         name: c.name,
         staff: c.staff_count || 0,
         jobs: c.total_jobs || 0,
-        revenue: c.revenue || 0,
+        // Apply the rounding formatter to individual contractor revenue
+        revenue: formatCurrency(c.revenue),
+        // Keep raw revenue for sorting purposes
+        rawRevenue: Number(c.revenue) || 0,
       }))
-      .sort((a, b) => b.revenue - a.revenue);
+      .sort((a, b) => b.rawRevenue - a.rawRevenue);
 
     setTopContractors(mappedContractors);
   }, [fetchResponse]);
@@ -98,7 +112,7 @@ export default function AdminDashboard() {
               <h3>Admin Panel - {username}</h3>
               <p className="profile-role">Platform Management & Analytics</p>
               <div className="profile-contact"
-              style={{textTransform: "none"}}
+                style={{ textTransform: "none" }}
               >
                 <i className="fa-solid fa-envelope"></i> {email}
               </div>
@@ -205,7 +219,13 @@ export default function AdminDashboard() {
       <section className="dashboard-panel">
         <div className="panel-heading">
           <h3>Top Performing Resource Partners</h3>
-          <Link to="/manage-users" className="view-all-link">View All Resource Partners</Link>
+          <Link
+            to="/manage-users"
+            state={{ targetTab: 'sub_contractor' }}
+            className="view-all-link"
+          >
+            View All Resource Partners
+          </Link>
         </div>
         <div className="table-responsive">
           <table className="table align-middle">

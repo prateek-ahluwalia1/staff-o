@@ -465,7 +465,9 @@ export default function Login() {
                   ></button>
                 </div>
                 <div className="modal-body pt-3 pb-4 px-4">
-                  <p className="text-muted small mb-4">
+                  <p className="text-muted small mb-4"
+                    style={{ textTransform: "none" }}
+                  >
                     Enter your registered email address and we'll send you a link to reset your password.
                   </p>
 
@@ -545,7 +547,9 @@ export default function Login() {
                   ></button>
                 </div>
                 <div className="modal-body pt-3 pb-4 px-4">
-                  <p className="text-muted small mb-4">
+                  <p className="text-muted small mb-4"
+                    style={{ textTransform: "none" }}
+                  >
                     It looks like you don't have an account yet. Please select
                     your account type to securely create your profile and
                     continue.

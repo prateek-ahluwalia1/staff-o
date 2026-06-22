@@ -5,7 +5,6 @@ import useSubmit from "../hooks/useSubmit";
 import Loader from "../components/Loader";
 import { toast } from "react-toastify";
 import DocumentTable from "../components/DocumentTable";
-import StaffOnboardingForms from "../components/StaffOnboardingForms";
 import ProfileForm from "../components/ProfileForm";
 import { apiURL } from "../utils/exports";
 import Select from "react-select";
@@ -21,6 +20,11 @@ const STATE_MAP = {
   'ACT': 'act',
   'Northern Territory': 'nt'
 };
+const roleLabels = {
+  customer: "Client",
+  sub_contractor: "Resource Partner",
+  staff: "Staff",
+};
 
 const DOC_TYPES = [
   { value: "Passport", label: "Passport" },
@@ -28,16 +32,17 @@ const DOC_TYPES = [
   { value: "Driver License Front", label: "Driver License (Front)" },
   { value: "Driver License Back", label: "Driver License (Back)" },
   { value: "Security License", label: "Security License" },
-  { value: "Working with Children", label: "Working with Children Check (WWCC)" },
+  { value: "Working with Children Check", label: "Working with Children Check (WWCC)" },
   { value: "Employment Application Form", label: "Employment Application Form" },
   { value: "TFN Declaration", label: "TFN Declaration" },
   { value: "Superannuation Form", label: "Superannuation Form" },
-  { value: "First Aid", label: "First Aid Certificate" },
-  { value: "CPR", label: "CPR Certificate" },
+  { value: "First Aid Certificate", label: "First Aid Certificate" },
+  { value: "CPR Certificate", label: "CPR Certificate" },
   { value: "Vaccination Certificate", label: "Vaccination Certificate" },
   { value: "Citizen Ship", label: "Citizen Ship Certificate" },
   { value: "Medicare", label: "Medicare Certificate" },
   { value: "Birth Certificate", label: "Birth Certificate" },
+  { value: "White Card", label: "White Card" },
 ];
 
 // ========== DATE HELPERS ==========
@@ -919,9 +924,13 @@ const ManageUsers = () => {
                 <th style={{ width: activeTab === "staff" ? "30%" : "30%", textAlign: "left", paddingLeft: "1.5rem" }}>
                   NAME & EMAIL
                 </th>
-                {activeTab !== "staff" && (
+                {activeTab === "sub_contractor" ? (
                   <th style={{ width: "25%", textAlign: "left" }}>
                     BUSINESS & PHONE
+                  </th>
+                ) : (
+                  <th style={{ width: "25%", textAlign: "left" }}>
+                    PHONE
                   </th>
                 )}
                 {activeTab === "staff" && (
@@ -947,11 +956,17 @@ const ManageUsers = () => {
                         {user.email}
                       </div>
                     </td>
-                    {activeTab !== "staff" && (
+                    {activeTab === "sub_contractor" ? (
                       <td style={{ textAlign: "left" }}>
                         <div className="fw-medium text-dark">
                           {getNestedData(user).company_name || "—"}
                         </div>
+                        <div className="text-muted small">
+                          {user.phone || getNestedData(user).phone || "N/A"}
+                        </div>
+                      </td>
+                    ) : (
+                      <td style={{ textAlign: "left" }}>
                         <div className="text-muted small">
                           {user.phone || getNestedData(user).phone || "N/A"}
                         </div>
@@ -1041,8 +1056,10 @@ const ManageUsers = () => {
                 </h4>
                 <p className="text-muted small mb-0">
                   Role:{" "}
-                  <span className="text-dark fw-bold text-uppercase">
-                    {activeTab.replace("_", " ")}
+                  <span className="text-dark fw-bold">
+                    <span className="text-dark fw-bold">
+                      {roleLabels[activeTab] || activeTab.replace("_", " ")}
+                    </span>
                   </span>
                 </p>
                 {activeTab === "staff" && (
@@ -1126,13 +1143,6 @@ const ManageUsers = () => {
                       onClick={() => setActiveModalTab("documents")}
                     >
                       Documents
-                    </button>
-                    <button
-                      type="button"
-                      className={`btn ${activeModalTab === "onboarding" ? "btn-primary-custom text-white" : "btn-outline-primary"}`}
-                      onClick={() => setActiveModalTab("onboarding")}
-                    >
-                      Verification Forms
                     </button>
                   </>
                 )}
@@ -1455,9 +1465,7 @@ const ManageUsers = () => {
                   )}
                 </div>
               ) : (
-                <div>
-                  <StaffOnboardingForms submit={submit} userId={editingUser?.id} contractorId={1} />
-                </div>
+                null
               )}
             </div>
 

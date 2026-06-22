@@ -48,12 +48,12 @@ const DOC_TYPES = [
   { value: "Driver License Front", label: "Driver License (Front)" },
   { value: "Driver License Back", label: "Driver License (Back)" },
   { value: "Security License", label: "Security License" },
-  { value: "Working with Children", label: "Working with Children Check (WWCC)" },
+  { value: "Working With Children Check", label: "Working with Children Check (WWCC)" },
   { value: "Employment Application Form", label: "Employment Application Form" },
   { value: "TFN Declaration", label: "TFN Declaration" },
   { value: "Superannuation Form", label: "Superannuation Form" },
-  { value: "First Aid", label: "First Aid Certificate" },
-  { value: "CPR", label: "CPR Certificate" },
+  { value: "First Aid Certificate", label: "First Aid Certificate" },
+  { value: "CPR Certificate", label: "CPR Certificate" },
   { value: "Vaccination Certificate", label: "Vaccination Certificate" },
   { value: "Citizen Ship", label: "Citizen Ship Certificate" },
   { value: "Medicare", label: "Medicare Certificate" },
@@ -364,7 +364,10 @@ export default function EditProfile() {
         });
         if (res?.success) {
           toast.success("Avatar updated successfully!");
-          refetch();
+          const refetchRes = await refetch();
+          if (refetchRes?.data) {
+            dispatch(setUser({ userdata: refetchRes.data }));
+          }
         } else {
           toast.error(res?.message || "Failed to save avatar");
           setProfilePhoto(null);
@@ -469,7 +472,11 @@ export default function EditProfile() {
       toast.success("Phone updated successfully!");
       setFormData((prev) => ({ ...prev, phone: newPhoneInput }));
       if (res.data) dispatch(setUser({ userdata: res.data }));
-      refetch();
+      const refetchRes = await refetch();
+      if (refetchRes?.data) {
+        dispatch(setUser({ userdata: refetchRes.data }));
+      }
+
       setTimeout(() => {
         handleClosePhoneModal();
       }, 1500);
@@ -526,7 +533,10 @@ export default function EditProfile() {
     setIsAddingCard(false);
     setCardForm(INITIAL_CARD_STATE);
     if (res.data) dispatch(setUser({ userdata: res.data }));
-    refetch();
+    const refetchRes = await refetch();
+    if (refetchRes?.data) {
+      dispatch(setUser({ userdata: refetchRes.data }));
+    }
     toast.success("Card added successfully!");
   };
 
@@ -556,7 +566,11 @@ export default function EditProfile() {
 
     setFormData((prev) => ({ ...prev, bank_details: updatedCards }));
     if (res.data) dispatch(setUser({ userdata: res.data }));
-    refetch();
+    const refetchRes = await refetch();
+    if (refetchRes?.data) {
+      dispatch(setUser({ userdata: refetchRes.data }));
+    }
+
     toast.success("Card removed successfully!");
     setShowCardDeleteModal(false);
     setCardToDeleteIndex(null);
@@ -725,14 +739,16 @@ export default function EditProfile() {
       toast.error("Unable to save document. Missing user id.");
       return;
     }
+
     let payload = {
       user_id: userId,
       no: docForm.no,
       exp: docForm.exp,
       document_no: docForm.document_no,
-      document_expiry: docForm.document_expiry, // DD/MM/YYYY
+      document_expiry: docForm.document_expiry,
       file: docForm.file_path,
     };
+
     if (selectedDoc) {
       payload = {
         ...payload,
@@ -747,16 +763,21 @@ export default function EditProfile() {
         document_name: docForm.document_name,
       };
     }
+
     const res = await submit(
       selectedDoc ? "api/guard-update-documents" : "api/guard-add-documents",
       payload,
       { method: "POST" }
     );
+
     if (!res) return;
+
     if (res.success) {
       toast.success("Document saved successfully!");
       setShowDocModal(false);
-      refetch();
+
+      // ✅ Hard refresh to reload user data and unlock sidebar
+      window.location.reload();
     } else {
       toast.error(res.message || "Failed to save document");
     }
@@ -1030,11 +1051,11 @@ export default function EditProfile() {
                   </div>
                   <div className="row mb-4">
                     <div className="col-4">
-                      <label className="form-label text-muted small fw-bold">Exp Month <span className="text-danger">*</span></label>
+                      <label className="form-label text-muted small fw-bold">Expiry Month <span className="text-danger">*</span></label>
                       <input type="text" className="form-control text-center" placeholder="MM" maxLength="2" value={cardForm.expiry_month} onChange={(e) => { let val = e.target.value.replace(/\D/g, "").slice(0, 2); if (val.length === 2 && parseInt(val, 10) > 12) val = "12"; else if (val.length === 2 && parseInt(val, 10) === 0) val = "01"; setCardForm((p) => ({ ...p, expiry_month: val })); }} required />
                     </div>
                     <div className="col-4">
-                      <label className="form-label text-muted small fw-bold">Exp Year <span className="text-danger">*</span></label>
+                      <label className="form-label text-muted small fw-bold">Expiry Year <span className="text-danger">*</span></label>
                       <input type="text" className="form-control text-center" placeholder="YYYY" maxLength="4" value={cardForm.expiry_year} onChange={(e) => { const val = e.target.value.replace(/\D/g, "").slice(0, 4); setCardForm((p) => ({ ...p, expiry_year: val })); }} required />
                     </div>
                     <div className="col-4">

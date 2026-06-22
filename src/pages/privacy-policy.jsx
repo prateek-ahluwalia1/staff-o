@@ -189,8 +189,8 @@ export default function PrivacyPolicy() {
                     Registered Office: 21 Tanglewood Bvd, Truganina VIC 3029,
                     Australia
                   </p>
-                  <p>Email: staffoapp@gmail.com</p>
-                  <p>Phone: 0478916034</p>
+                  <p>Email: admin@staffoo.com.au</p>
+                  <p>Phone: 1800 782 366</p>
                 </div>
               </article>
 

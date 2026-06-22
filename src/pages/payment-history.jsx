@@ -8,6 +8,7 @@ import Loader from "../components/Loader";
 import Modal from "../components/Modal";
 import { apiURL } from "../utils/exports";
 import { toast } from "react-toastify";
+import HistoryModal from "../components/HistoryModal";
 
 const formatDate = (dateString) => {
   if (!dateString) return "-";
@@ -45,21 +46,25 @@ export default function PaymentHistory() {
   const loggedInUserId = userdata?.id || userdata?.data?.id;
   const isAdmin = user_type === "admin";
 
+  // --- Search & Pagination States ---
   const [selectedCustomerId, setSelectedCustomerId] = useState(
     location.state?.targetUserId || ""
   );
-
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
-  // Share Modal States
+  // --- Share Modal States ---
   const [showShareModal, setShowShareModal] = useState(false);
   const [selectedTx, setSelectedTx] = useState(null);
-
-  // NEW: Multiple Emails State
   const [shareEmails, setShareEmails] = useState([]);
   const [currentEmailInput, setCurrentEmailInput] = useState("");
 
+  // --- History Modal States ---
+  const [showHistoryModal, setShowHistoryModal] = useState(false);
+  const [historyTx, setHistoryTx] = useState(null);
+  const [historyTxId, setHistoryTxId] = useState(null); // Used to trigger useFetch
+
+  // --- Custom Hooks ---
   const { data: customersResponse } = useFetch(
     isAdmin ? "api/admin/get-customers?limit=1000" : null,
     { isAuth: true }
@@ -69,6 +74,19 @@ export default function PaymentHistory() {
     isAuth: true,
   });
 
+  const fetchId = isAdmin && selectedCustomerId ? selectedCustomerId : loggedInUserId;
+
+  const { data: paymentData, loading, error } = useFetch(
+    fetchId ? `api/user-transactions/${fetchId}` : null,
+    { isAuth: true }
+  );
+
+  const { data: historyDataResponse, loading: historyLoading, error: historyError } = useFetch(
+    historyTxId ? `api/admin/invoice/history/${historyTxId}` : null,
+    { isAuth: true }
+  );
+
+  // --- Derived Data ---
   const customersList = useMemo(() => {
     return customersResponse?.data?.data || [];
   }, [customersResponse?.data?.data]);
@@ -81,14 +99,11 @@ export default function PaymentHistory() {
     }));
   }, [customersList]);
 
-  const fetchId = (isAdmin && selectedCustomerId) ? selectedCustomerId : loggedInUserId;
-
-  const { data: paymentData, loading, error } = useFetch(
-    fetchId ? `api/user-transactions/${fetchId}` : null,
-    { isAuth: true }
-  );
-
   const transactions = paymentData?.data || [];
+
+  const invoiceHistory = Array.isArray(historyDataResponse?.data)
+    ? historyDataResponse.data
+    : [];
 
   const selectedCustomerDetails = customersList.find(
     (c) => c.id.toString() === selectedCustomerId.toString()
@@ -103,6 +118,7 @@ export default function PaymentHistory() {
   const currentTransactions = transactions.slice(indexOfFirstItem, indexOfLastItem);
   const totalPages = Math.ceil(transactions.length / itemsPerPage);
 
+  // --- Handlers ---
   const handleCustomerChange = (selectedOption) => {
     setSelectedCustomerId(selectedOption ? selectedOption.value : "");
     setCurrentPage(1);
@@ -121,13 +137,11 @@ export default function PaymentHistory() {
       defaultEmail = userdata?.email || userdata?.data?.email || "";
     }
 
-    // Initialize with default email if available
     setShareEmails(defaultEmail ? [defaultEmail] : []);
     setCurrentEmailInput("");
     setShowShareModal(true);
   };
 
-  // NEW: Add email to array
   const handleAddEmail = () => {
     const trimmedEmail = currentEmailInput.trim();
     if (trimmedEmail && !shareEmails.includes(trimmedEmail)) {
@@ -136,7 +150,6 @@ export default function PaymentHistory() {
     }
   };
 
-  // NEW: Remove email from array
   const handleRemoveEmail = (emailToRemove) => {
     setShareEmails(shareEmails.filter((email) => email !== emailToRemove));
   };
@@ -144,7 +157,6 @@ export default function PaymentHistory() {
   const handleShareSubmit = async (e) => {
     e.preventDefault();
 
-    // Catch edge case: user typed an email but forgot to click "+" before submitting
     let finalEmails = [...shareEmails];
     if (currentEmailInput.trim() && !shareEmails.includes(currentEmailInput.trim())) {
       finalEmails.push(currentEmailInput.trim());
@@ -155,9 +167,8 @@ export default function PaymentHistory() {
       return;
     }
 
-    // UPDATED: Sending payload as an array
     const payload = {
-      emails: finalEmails, 
+      emails: finalEmails, // Check if your backend expects 'emails' or 'email' for the array key
       transaction_id: selectedTx.id,
       invoice_filename: selectedTx.invoice_filename
     };
@@ -175,6 +186,19 @@ export default function PaymentHistory() {
     }
   };
 
+  const handleHistoryClick = (tx) => {
+    setHistoryTx(tx);
+    setHistoryTxId(tx.id); // Triggers the useFetch hook
+    setShowHistoryModal(true);
+  };
+
+  const handleCloseHistoryModal = () => {
+    setShowHistoryModal(false);
+    setHistoryTx(null);
+    setHistoryTxId(null); // Resets the useFetch hook
+  };
+
+  // --- Styles ---
   const customSelectStyles = {
     control: (provided, state) => ({
       ...provided,
@@ -286,35 +310,47 @@ export default function PaymentHistory() {
                         </p>
                       </td>
                       <td className="text-center">
-                        {tx.invoice_filename ? (
-                          <div className="d-flex gap-2 justify-content-center">
-                            <a
-                              href={
-                                tx.invoice_filename.startsWith("http")
-                                  ? tx.invoice_filename
-                                  : `${apiURL}storage/invoices/${tx.invoice_filename}`
-                              }
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="btn btn-sm btn-outline-primary"
-                              title="View Document"
-                              style={{ padding: "4px 10px" }}
-                            >
-                              <i className="fa fa-eye me-1"></i> View
-                            </a>
-                            <button
-                              type="button"
-                              className="btn btn-sm btn-outline-secondary"
-                              onClick={() => handleShareClick(tx)}
-                              title="Share Document"
-                              style={{ padding: "4px 10px" }}
-                            >
-                              <i className="fa fa-share-nodes me-1"></i> Share
-                            </button>
-                          </div>
-                        ) : (
-                          <span className="text-muted small">No Document</span>
-                        )}
+                        <div className="d-flex gap-2 justify-content-center">
+                          {tx.invoice_filename ? (
+                            <>
+                              <a
+                                href={
+                                  tx.invoice_filename.startsWith("http")
+                                    ? tx.invoice_filename
+                                    : `${apiURL}storage/invoices/${tx.invoice_filename}`
+                                }
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="btn btn-sm btn-outline-primary"
+                                title="View Document"
+                                style={{ padding: "4px 10px" }}
+                              >
+                                <i className="fa fa-eye me-1"></i> View
+                              </a>
+                              <button
+                                type="button"
+                                className="btn btn-sm btn-outline-secondary"
+                                onClick={() => handleShareClick(tx)}
+                                title="Share Document"
+                                style={{ padding: "4px 10px" }}
+                              >
+                                <i className="fa fa-share-nodes me-1"></i> Share
+                              </button>
+                            </>
+                          ) : (
+                            <span className="text-muted small align-self-center">No Document</span>
+                          )}
+
+                          <button
+                            type="button"
+                            className="btn btn-sm btn-outline-info"
+                            onClick={() => handleHistoryClick(tx)}
+                            title="View History"
+                            style={{ padding: "4px 10px" }}
+                          >
+                            <i className="fa-solid fa-clock-rotate-left me-1"></i> History
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -372,9 +408,7 @@ export default function PaymentHistory() {
       <Modal open={showShareModal} onClose={() => setShowShareModal(false)}>
         <form onSubmit={handleShareSubmit} className="p-4">
           <h5 className="mb-3 fw-bold">Share Document</h5>
-          <p className="text-muted small mb-4"
-            style={{ textTransform: "none" }}
-          >
+          <p className="text-muted small mb-4" style={{ textTransform: "none" }}>
             Enter the email addresses you would like to send
             <strong> {selectedTx?.invoice_filename}</strong> to.
           </p>
@@ -384,7 +418,6 @@ export default function PaymentHistory() {
               Email Addresses <span className="text-danger">*</span>
             </label>
 
-            {/* NEW: Input group for adding multiple emails */}
             <div className="d-flex gap-2">
               <input
                 type="email"
@@ -410,7 +443,6 @@ export default function PaymentHistory() {
               </button>
             </div>
 
-            {/* NEW: Display selected emails as badges */}
             {shareEmails.length > 0 && (
               <div className="d-flex flex-wrap gap-2 mt-3">
                 {shareEmails.map((email, index) => (
@@ -454,6 +486,18 @@ export default function PaymentHistory() {
           </div>
         </form>
       </Modal>
+
+      <HistoryModal
+        open={showHistoryModal}
+        key={historyTxId}
+        onClose={handleCloseHistoryModal}
+        historyLoading={historyLoading}
+        historyError={historyError}
+        historyTx={historyTx}
+        invoiceHistory={invoiceHistory}
+        formatDate={formatDate}
+      />
+
     </div>
   );
 }

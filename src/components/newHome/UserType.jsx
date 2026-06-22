@@ -10,7 +10,7 @@ function UserType() {
   const handleNavigation = (role) => {
     if (token) {
       // If logged in, send them straight to their dashboard
-      navigate("/dashboard")
+      navigate("/edit-profile")
     } else {
       // If not logged in, send to register and pass the specific role in router state
       navigate("/register", { state: { role } })

@@ -89,13 +89,13 @@ const Footer = memo(function Footer() {
                 </li>
                 <li>
                   <i className="fa fa-envelope" aria-hidden="true"></i>
-                  <Link to="mailto:staffoapp@gmail.com"
+                  <Link to="mailto:admin@staffoo.com.au"
                     style={{ textTransform: "none" }}
-                  >staffoapp@gmail.com</Link>
+                  >admin@staffoo.com.au</Link>
                 </li>
                 <li>
                   <i className="fa fa-phone" aria-hidden="true"></i>
-                  <Link to="tel:0478916034">0478916034</Link>
+                  <Link to="tel:1800 782 366">1800 782 366</Link>
                 </li>
               </ul>
 

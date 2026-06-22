@@ -15,7 +15,11 @@ import { getProfileImageUrlFromUserdata } from "../utils/profileImage";
 
 const Header = memo(function Header({ withSidebar = false }) {
   const { token, userdata } = useSelector((state) => state.auth);
-  const { items, unreadCount } = useSelector((state) => state.notifications);
+
+  // Safely extract items and unreadCount, defaulting items to an array
+  const items = useSelector((state) => state.notifications.items) || [];
+  const unreadCount = useSelector((state) => state.notifications.unreadCount) || 0;
+
   const { isExpanded: sidebarExpanded } = useSelector((state) => state.sidebar);
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -51,15 +55,21 @@ const Header = memo(function Header({ withSidebar = false }) {
     },
   );
 
+  // FIXED: Properly extract the array from the paginated API response
   useEffect(() => {
-    if (notificationsData) {
+    if (notificationsData?.success && notificationsData?.data?.data) {
+      dispatch(setNotifications(notificationsData.data.data));
+    } else if (Array.isArray(notificationsData)) {
       dispatch(setNotifications(notificationsData));
     }
   }, [dispatch, notificationsData]);
 
+  // FIXED: Properly extract the count from the API response
   useEffect(() => {
-    if (unreadData !== null && unreadData !== undefined) {
-      dispatch(setUnreadCount(unreadData));
+    if (unreadData?.success !== undefined) {
+      dispatch(setUnreadCount(unreadData.count));
+    } else if (unreadData !== null && unreadData !== undefined) {
+      dispatch(setUnreadCount(unreadData)); // Fallback
     }
   }, [dispatch, unreadData]);
 
@@ -128,7 +138,6 @@ const Header = memo(function Header({ withSidebar = false }) {
       );
     }
 
-    // Show initials badge instead of default photo
     return (
       <div
         style={{
@@ -153,7 +162,7 @@ const Header = memo(function Header({ withSidebar = false }) {
     if (!notif?.id || notif.read_at) return;
 
     dispatch(markNotificationRead(notif.id));
-    await submit(`/notifications/read/${notif.id}`, {}, { method: "POST" });
+    await submit(`api/notifications/read/${notif.id}`, {}, { method: "POST" });
   };
 
   const toggleNotifications = async () => {
@@ -269,12 +278,6 @@ const Header = memo(function Header({ withSidebar = false }) {
                             </div>
                             <div className="small text-muted">
                               {getNotificationMessage(notif)}
-                            </div>
-                            <div
-                              className="text-muted"
-                              style={{ fontSize: "11px" }}
-                            >
-                              {notif.created_at || "Just now"}
                             </div>
                           </li>
                         ))
@@ -440,17 +443,13 @@ const Header = memo(function Header({ withSidebar = false }) {
                                   markSingleNotificationRead(notif)
                                 }
                               >
-                                <div className="small text-dark fw-semibold">
+                                <div className="small text-dark fw-bold">
                                   {getNotificationTitle(notif)}
                                 </div>
-                                <div className="small text-muted">
-                                  {getNotificationMessage(notif)}
-                                </div>
-                                <div
-                                  className="text-muted"
-                                  style={{ fontSize: "11px" }}
+                                <div className="small text-muted mt-2"
+                                  style={{ textTransform: "none" }}
                                 >
-                                  {notif.created_at || "Just now"}
+                                  {getNotificationMessage(notif)}
                                 </div>
                               </li>
                             ))

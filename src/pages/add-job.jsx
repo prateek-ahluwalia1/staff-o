@@ -622,7 +622,7 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
       document_list,
       document_types: form.document_types || [],
       job_instruction: form.description || "",
-      tasks: (form.tasks || []).map((t) => ({ task: t.task, task_start: t.task_start, task_end: t.task_end })),
+      posting_type: isAdmin ? postingMode : "broadcast"
     };
   }
 
@@ -750,7 +750,7 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
         }, { method: "POST" });
 
         if (postRes?.success) {
-          toast.success("Job posted successfully via Admin Override!");
+          toast.success("Job posted successfully via Admin!");
           navigate("/my-job-applications");
           if (isEmbedded && onClose) onClose();
         } else {

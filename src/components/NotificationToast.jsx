@@ -65,8 +65,8 @@ export default function NotificationToast() {
     if (lastShownRef.current === sig) return;
     lastShownRef.current = sig;
 
-    // Play notification bell sound
-    const audio = new Audio("/assets/notification-bell.wav");
+    // Play the same sound file used everywhere
+    const audio = new Audio("/sounds/notification.wav");
     audio.play().catch(() => { });
 
     const title = latestNotification?.title || latestNotification?.data?.title;

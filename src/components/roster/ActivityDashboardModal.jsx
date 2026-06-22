@@ -38,13 +38,13 @@ const SIDEBAR_TABS = [
     activeBg: "#bf360c",
     icon: "fa-exclamation-circle",
   },
-  {
-    id: "shift_tasks",
-    label: "Shift Task",
-    bg: "#e0f7fa",
-    activeBg: "#0097a7",
-    icon: "fa-tasks",
-  },
+  // {
+  //   id: "shift_tasks",
+  //   label: "Shift Task",
+  //   bg: "#e0f7fa",
+  //   activeBg: "#0097a7",
+  //   icon: "fa-tasks",
+  // },
   {
     id: "operation_notes",
     label: "Operation Notes",

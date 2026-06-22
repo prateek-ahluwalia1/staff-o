@@ -12,7 +12,7 @@ export default function ProfileForm({
   isPhoneVerified,
   extraFields = null,
   footer = null,
-  isEdit = false, // <-- Added isEdit prop to determine Add/Edit mode
+  isEdit = false,
 }) {
   const datePickerRef = useRef(null);
 
@@ -23,6 +23,18 @@ export default function ProfileForm({
     "permanent_residence",
     "visa_485",
   ];
+
+  const AU_STATE_MAP = {
+    nsw: "New South Wales",
+    vic: "Victoria",
+    qld: "Queensland",
+    sa: "South Australia",
+    wa: "Western Australia",
+    tas: "Tasmania",
+    act: "Australian Capital Territory",
+    nt: "Northern Territory",
+  };
+
 
   const showCustomStatus =
     formData.staff_document_type &&
@@ -36,7 +48,7 @@ export default function ProfileForm({
   }));
 
   const selectedCountry = countryOptions.find(
-    opt => opt.value === formData.origin_country
+    opt => opt.value === formData.origin_country || opt.label === formData.origin_country
   ) || null;
 
   return (
@@ -581,9 +593,15 @@ export default function ProfileForm({
               className="form-control"
               id="state"
               placeholder="Auto-filled state"
-              value={formData.state || ""}
+              value={
+                AU_STATE_MAP[formData.state?.toLowerCase()] || formData.state || ""
+              }
               readOnly
-              style={{ background: "#f1f3f5", cursor: "not-allowed" }}
+              style={{
+                background: "#f1f3f5",
+                cursor: "not-allowed",
+                textTransform: "capitalize",
+              }}
             />
           </div>
           <div>

@@ -371,7 +371,6 @@ export default function MyJobApplications() {
                     <div className="d-flex flex-column gap-1">
                       <InfoRow icon="fa-user-shield" label="Assigned To" value={selectedApp.appliedVia} />
                       <InfoRow icon="fa-id-badge" label="Job Type" value={selectedApp.rawShift.job_type || "N/A"} />
-                      <InfoRow icon="fa-bolt" label="ASAP Shift" value={selectedApp.rawShift.asap ? "Yes" : "No"} />
                       <InfoRow icon="fa-money-bill" label="Job Amount" value={selectedApp.rawShift.job_amount ? `$${selectedApp.rawShift.job_amount}` : "N/A"} />
                     </div>
                   </div>

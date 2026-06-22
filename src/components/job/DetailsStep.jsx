@@ -119,7 +119,7 @@ export default function DetailsStep({ form, setField, handleFile, attachmentPrev
       {/* ROW 1: JOB TYPE & REQUIREMENTS */}
       <div className="row g-4 mb-4">
         {/* Job Type */}
-        <div className="col-md-4 d-flex flex-column">
+        <div className="col-md-3 d-flex flex-column">
           <label className="form-label small fw-bold text-dark mb-2">
             Job Type <span className="text-danger">*</span>
           </label>
@@ -133,7 +133,7 @@ export default function DetailsStep({ form, setField, handleFile, attachmentPrev
             styles={{
               control: (base, state) => ({
                 ...base,
-                minHeight: "50px", // Matched with CardToggle
+                minHeight: "50px",
                 borderRadius: "0.5rem",
                 boxShadow: state.isFocused ? "0 0 0 1px #0A7C6E" : "none",
                 borderColor: validationErrors.jobType ? "#dc3545" : (state.isFocused ? "#0A7C6E" : "#dee2e6"),
@@ -162,12 +162,12 @@ export default function DetailsStep({ form, setField, handleFile, attachmentPrev
         </div>
 
         {/* Working with Children */}
-        <div className="col-md-4 d-flex flex-column">
+        <div className="col-md-5 d-flex flex-column">
           {/* Added fw-bold to the aligner to perfectly match the pixel height of the real label */}
           <label className="form-label small fw-bold mb-2 d-none d-md-block opacity-0 user-select-none">Aligner</label>
           <CardToggle
             icon="fa-solid fa-child-reaching"
-            label="Working with Children Check?"
+            label="Working with Children Check Required?"
             isYes={Array.isArray(form.document_types) && form.document_types.includes('working_with_children')}
             onToggle={(val) => toggleDocument('working_with_children', val)}
           />

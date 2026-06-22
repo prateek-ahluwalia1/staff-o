@@ -7,6 +7,15 @@ const BRAND = "#0A7C6E";
 const BRAND_LIGHT = "#E6F4F2";
 const BRAND_DARK = "#065E54";
 
+const formatDateToDDMMYYYY = (dateStr) => {
+    if (!dateStr) return "N/A";
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return dateStr; // fallback
+    const day = String(d.getDate()).padStart(2, '0');
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    return `${day}/${month}/${d.getFullYear()}`;
+};
+
 export default function AdminClientProfile({
     customerDetails,
     customerTotalHours,
@@ -183,7 +192,7 @@ export default function AdminClientProfile({
                                 <div>
                                     <span style={labelStyle}>Member Since</span>
                                     <span style={valueStyle}>
-                                        {new Date(customerDetails.created_at).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" })}
+                                        {formatDateToDDMMYYYY(customerDetails.created_at)}
                                     </span>
                                 </div>
                             )}

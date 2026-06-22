@@ -622,7 +622,7 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
       document_list,
       document_types: form.document_types || [],
       job_instruction: form.description || "",
-      tasks: (form.tasks || []).map((t) => ({ task: t.task, task_start: t.task_start, task_end: t.task_end })),
+      posting_type: isAdmin ? postingMode : "broadcast"
     };
   }
 

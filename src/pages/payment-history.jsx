@@ -157,7 +157,7 @@ export default function PaymentHistory() {
 
     // UPDATED: Sending payload as an array
     const payload = {
-      emails: finalEmails, // Check if your backend expects 'emails' or 'email' for the array key
+      emails: finalEmails, 
       transaction_id: selectedTx.id,
       invoice_filename: selectedTx.invoice_filename
     };

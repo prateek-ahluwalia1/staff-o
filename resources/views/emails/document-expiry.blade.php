@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Document Expiry Alert</title>
+    <title>Document Expiry Alert - Summary Report</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -9,7 +9,7 @@
             color: #333;
         }
         .container {
-            max-width: 600px;
+            max-width: 800px;
             margin: 0 auto;
             padding: 20px;
             background: #f9f9f9;
@@ -68,70 +68,173 @@
             border-radius: 12px;
             font-size: 12px;
         }
+        .user-section {
+            background: #f8f9fa;
+            padding: 15px;
+            margin: 15px 0;
+            border-left: 4px solid #007bff;
+            border-radius: 4px;
+        }
+        .user-section h3 {
+            margin-top: 0;
+            color: #007bff;
+        }
+        .summary-box {
+            background: #e9ecef;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 15px 0;
+            display: inline-block;
+        }
+        .summary-box span {
+            font-weight: bold;
+            color: #dc3545;
+        }
+        .doc-table {
+            background: white;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .doc-table th {
+            background: #007bff;
+            color: white;
+        }
+        .urgent {
+            color: #dc3545;
+            font-weight: bold;
+        }
+        .warning {
+            color: #ffc107;
+            font-weight: bold;
+        }
+        .info {
+            color: #17a2b8;
+            font-weight: bold;
+        }
+        .badge-danger {
+            background: #dc3545;
+            color: white;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+        }
+        .badge-warning {
+            background: #ffc107;
+            color: #333;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+        }
+        .badge-info {
+            background: #17a2b8;
+            color: white;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h2>⚠️ Document Expiry Alert</h2>
+            <h2>⚠️ Document Expiry Alert - Summary Report</h2>
         </div>
         
         <div class="content">
             <p>Dear Admin,</p>
             
             <div class="alert">
-                <strong>A staff member's document is about to expire!</strong>
+                <strong>⚠️ Multiple documents are about to expire!</strong>
                 <br>
                 Please review the details below and take necessary action.
             </div>
             
-            <h3>Staff Details:</h3>
-            <table>
-                <tr>
-                    <th>Staff Name</th>
-                    <td><strong>{{ $details['staff_name'] }}</strong></td>
-                </tr>
-                <tr>
-                    <th>Staff Email</th>
-                    <td>{{ $details['staff_email'] }}</td>
-                </tr>
-                <tr>
-                    <th>Document Name</th>
-                    <td><strong>{{ $details['document_name'] }}</strong></td>
-                </tr>
-                <tr>
-                    <th>Expiry Date</th>
-                    <td><strong style="color: #dc3545;">{{ $details['expiry_date'] }}</strong></td>
-                </tr>
-                <tr>
-                    <th>Days Remaining</th>
-                    <td>
-                        <span class="badge">
-                            {{ $details['days_remaining'] }} days
-                        </span>
-                    </td>
-                </tr>
-            </table>
-            
+            <!-- Summary Section -->
             <div style="margin: 20px 0;">
-                <p><strong>Message:</strong></p>
-                <p style="background: #f4f4f4; padding: 10px; border-radius: 4px;">
-                    {{ $details['message'] }}
-                </p>
+                <h3>📊 Summary Report</h3>
+                <div class="summary-box">
+                    <p><strong>Total Users:</strong> <span>{{ $details['total_users'] }}</span></p>
+                    <p><strong>Total Expiring Documents:</strong> <span>{{ $details['total_documents'] }}</span></p>
+                    <p><strong>Generated at:</strong> {{ $details['generated_at'] }}</p>
+                </div>
             </div>
-            
-            <p style="margin-top: 20px;">
-                <strong>Suggested Actions:</strong>
-                <ul>
-                    <li>Contact the staff member to renew the document</li>
-                    <li>Check if any renewal process needs to be initiated</li>
-                    <li>Update the document record after renewal</li>
-                </ul>
-            </p>
             
             <hr>
             
-            <p style="color: #666;">
+            <!-- User-wise Documents -->
+            <h3>📋 Detailed Report</h3>
+            
+            @foreach($details['users_data'] as $userData)
+                <div class="user-section">
+                    <h3>👤 User: {{ $userData['user']->name }}</h3>
+                    <p><strong>Email:</strong> {{ $userData['user']->email }}</p>
+                    <p><strong>Total Documents Expiring:</strong> {{ count($userData['documents']) }}</p>
+                    
+                    <table class="doc-table">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Document Name</th>
+                                <th>Expiry Date</th>
+                                <th>Days Remaining</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($userData['documents'] as $index => $doc)
+                                <tr>
+                                    <td>{{ $index + 1 }}</td>
+                                    <td><strong>{{ $doc['document_name'] }}</strong></td>
+                                    <td><strong style="color: #dc3545;">{{ $doc['expiry_date'] }}</strong></td>
+                                    <td>
+                                        @if($doc['days_remaining'] <= 7)
+                                            <span class="badge-danger">{{ $doc['days_remaining'] }} days</span>
+                                        @elseif($doc['days_remaining'] <= 15)
+                                            <span class="badge-warning">{{ $doc['days_remaining'] }} days</span>
+                                        @else
+                                            <span class="badge-info">{{ $doc['days_remaining'] }} days</span>
+                                        @endif
+                                    </td>
+                                    <td>
+                                        @if($doc['days_remaining'] <= 7)
+                                            <span style="color: #dc3545;">🔴 Urgent</span>
+                                        @elseif($doc['days_remaining'] <= 15)
+                                            <span style="color: #ffc107;">🟡 Warning</span>
+                                        @else
+                                            <span style="color: #17a2b8;">🔵 Info</span>
+                                        @endif
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            @endforeach
+            
+            <hr>
+            
+            <!-- Actions Section -->
+            <div style="margin: 20px 0;">
+                <h3>✅ Suggested Actions:</h3>
+                <ul>
+                    <li>Contact the staff members to renew their documents</li>
+                    <li>Check if any renewal processes need to be initiated</li>
+                    <li>Update the document records after renewal</li>
+                    <li>Prioritize documents with <span style="color: #dc3545;">🔴 Urgent</span> status (7 days or less)</li>
+                </ul>
+            </div>
+            
+            <div style="background: #d4edda; border: 1px solid #28a745; padding: 15px; border-radius: 4px; margin: 20px 0;">
+                <p style="margin: 0; color: #155724;">
+                    <strong>💡 Note:</strong> 
+                    This is a consolidated report of all expiring documents. 
+                    Individual notifications have already been sent to the respective users.
+                </p>
+            </div>
+            
+            <hr>
+            
+            <p style="color: #666; font-size: 14px;">
                 This is an automated notification from the Staff Document Management System.
                 <br>
                 Please do not reply to this email.

@@ -86,7 +86,7 @@ class NotificationController extends Controller
             $notifications = Notification::orderBy('created_at', 'desc')
             ->paginate(20);
         }else{
-        $notifications = Notification::where('user_id', $userId)
+        $notifications = Notification::where('id', $userId)
             ->orderBy('created_at', 'desc')
             ->paginate(20);    
         }

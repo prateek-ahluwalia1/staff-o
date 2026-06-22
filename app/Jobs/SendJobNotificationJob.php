@@ -41,6 +41,7 @@ class SendJobNotificationJob implements ShouldQueue
      */
     public function handle()
     {
+
         $jobs = JobRoster::with(['site'])
                     ->whereNull('assigned_to')
                     ->where('start', '>=', now())
@@ -115,7 +116,7 @@ class SendJobNotificationJob implements ShouldQueue
             }
             // Only notify guards in the 15–25 km ring (15 km already got notified)
             $guards = $this->getStaffooGuardsByRadius($siteCoords, 25);
-            $this->notifyUsers($guards, $job, 'New Job Available', "A new security job is available within 25 km of you.", 25);
+            $this->notifyUsers($guards, $job, "New Job Available", "A new security job is available within 25 km of you.", 25);
             Log::info("Job #{$job->id} Stage 2: Notified {$guards->count()} guard(s) in 15–25 km ring.");
             return;
         }
@@ -150,7 +151,7 @@ class SendJobNotificationJob implements ShouldQueue
                 
             }
             $guards = $this->getStaffooGuardsByRadius($siteCoords, 35);
-            $this->notifyUsers($guards, $job, 'New Job Available', "A new security job is available within 35 km of you.", 35);
+            $this->notifyUsers($guards, $job, "New Job Available", "A new security job is available within 35 km of you.", 35);
             Log::info("Job #{$job->id} Stage 3: Notified {$guards->count()} guard(s) in 25–35 km ring.");
             return;
         }
@@ -186,15 +187,15 @@ class SendJobNotificationJob implements ShouldQueue
             }
             // 35–45 km ring guards
             $guards = $this->getStaffooGuardsByRadius($siteCoords, 45);
-            $this->notifyUsers($guards, $job, 'Urgent Job Available', "An urgent security job is available within 45 km of you.", 45);
+            $this->notifyUsers($guards, $job, "Urgent Job Available", "An urgent security job is available within 45 km of you.", 45);
 
             // Resource partners (city-wide, no radius)
             $partners = $this->getResourcePartners();
-            $this->notifyUsers($partners, $job, 'Urgent Job Available', "An urgent security job in your city needs filling.", 45);
+            $this->notifyUsers($partners, $job, "Urgent Job Available", "An urgent security job in your city needs filling.", 45);
 
             // All remaining staffoo guards city-wide not yet notified (beyond 45 km)
             $cityGuards = $this->getStaffooGuardsBeyondRadius($siteCoords, 45);
-            $this->notifyUsers($cityGuards, $job, 'Urgent Job Available', "An urgent security job in your city needs filling.", 45);
+            $this->notifyUsers($cityGuards, $job, "Urgent Job Available", "An urgent security job in your city needs filling.", 45);
 
             Log::info("Job #{$job->id} Stage 4: City-wide broadcast sent.");
             return;
@@ -217,7 +218,7 @@ class SendJobNotificationJob implements ShouldQueue
         // -----------------------------------------------------------------
         // ADMIN ESCALATION — 60 min elapsed after rebroadcast started (min 80)
         // -----------------------------------------------------------------
-        if ($minutesSincePost >= 80) {
+        if ($minutesSincePost >= 80 && $minutesSincePost <= 82) {
             $window   = (int) (($minutesSincePost - 80) / 15);
             $cacheKey = "admin_escalation_job_{$job->id}_w{$window}";
 
@@ -295,7 +296,7 @@ class SendJobNotificationJob implements ShouldQueue
     /**
      * Notify a collection of users via App + SMS + Email.
      */
-    private function notifyUsers($users, JobRoster $job, string $title, string $message, $radius)
+    private function notifyUsers($users, JobRoster $job, $title, $message, $radius)
     {
         if ($users->isEmpty()) {
             return;
@@ -385,13 +386,15 @@ class SendJobNotificationJob implements ShouldQueue
     /**
      * Send email notification to a user.
      */
-    private function sendEmail(User $user, string $title, string $message, JobRoster $job)
+    private function sendEmail(User $user, $title, $message, JobRoster $job)
     {
         if (empty($user->email)) {
             return;
         }
 
-        // Mail::to($user->email)->queue(new \App\Mail\JobNotificationMail($job, $title, $message));
+        Mail::to($user->email)->queue(new \App\Mail\JobNotificationMail($job, $title, $message));
+        Log::warning("Job #{$job->id}: user email, portal, highlighted.");
+
     }
 
     // =========================================================================

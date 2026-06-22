@@ -46,36 +46,51 @@ class CheckDocumentExpiry extends Command
 
             $this->info("Found {$users->count()} active staff users.");
             
-            $expiringDocuments = [];
             $today = Carbon::now();
             $notificationCount = 0;
-            $emailCount = 0;
+            $allExpiringDocuments = [];
+            $usersWithExpiringDocs = [];
 
             foreach ($users as $user) {
                 $userDocuments = $this->processUserDocuments($user, $today);
                 
                 if (!empty($userDocuments)) {
-                    $expiringDocuments = array_merge($expiringDocuments, $userDocuments);
+                    // Store for consolidated email
+                    $usersWithExpiringDocs[] = [
+                        'user' => $user,
+                        'documents' => $userDocuments
+                    ];
                     
+                    // Add to all documents list
                     foreach ($userDocuments as $doc) {
-                        // Send notifications
+                        $allExpiringDocuments[] = [
+                            'user' => $user,
+                            'document' => $doc['document'],
+                            'days_remaining' => $doc['days_remaining'],
+                            'expiry_date' => $doc['expiry_date']
+                        ];
+                    }
+                    
+                    // Send notification for each document
+                    foreach ($userDocuments as $doc) {
                         $this->sendNotifications($user, $doc['document'], $doc['days_remaining']);
                         $notificationCount++;
-                        
-                        // Send email to admin
-                        $this->sendAdminEmail($user, $doc['document'], $doc['days_remaining']);
-                        $emailCount++;
                     }
                 }
-                
+            }
+
+            // Send ONE consolidated email with ALL expiring documents from ALL users
+            if (!empty($allExpiringDocuments)) {
+                $this->sendConsolidatedAdminEmail($allExpiringDocuments);
             }
 
             // Log the activity
             Log::info('Document expiry check completed', [
                 'total_users' => $users->count(),
-                'expiring_documents' => count($expiringDocuments),
+                'users_with_expiring_docs' => count($usersWithExpiringDocs),
+                'expiring_documents' => count($allExpiringDocuments),
                 'notifications_sent' => $notificationCount,
-                'emails_sent' => $emailCount
+                'emails_sent' => !empty($allExpiringDocuments) ? 1 : 0
             ]);
 
             return 0;
@@ -98,7 +113,6 @@ class CheckDocumentExpiry extends Command
                     ->where('is_active', 1)
                     ->with('documents');
 
-
         return $query->get();
     }
 
@@ -119,7 +133,6 @@ class CheckDocumentExpiry extends Command
             $daysRemaining = $today->diffInDays($expiryDate, false);
 
             if ($daysRemaining >= 0 && $daysRemaining <= 30) {  
-
                 $expiringDocs[] = [
                     'document' => $document,
                     'days_remaining' => $daysRemaining,
@@ -132,6 +145,55 @@ class CheckDocumentExpiry extends Command
     }
 
     /**
+     * Send ONE consolidated email to admin with ALL expiring documents from ALL users
+     */
+    private function sendConsolidatedAdminEmail($allExpiringDocuments)
+    {
+        try {
+            // Get admin email from config or use default
+            $adminEmail = "admin@staffoo.com.au";
+            
+            // Group documents by user for better organization
+            $groupedDocuments = [];
+            foreach ($allExpiringDocuments as $item) {
+                $userId = $item['user']->id;
+                if (!isset($groupedDocuments[$userId])) {
+                    $groupedDocuments[$userId] = [
+                        'user' => $item['user'],
+                        'documents' => []
+                    ];
+                }
+                $groupedDocuments[$userId]['documents'][] = [
+                    'document_name' => $item['document']->document_name ?? $item['document']->name,
+                    'expiry_date' => Carbon::parse($item['document']->document_expiry)->format('d-m-Y'),
+                    'days_remaining' => $item['days_remaining']
+                ];
+            }
+
+            // Prepare email data
+            $details = [
+                'total_documents' => count($allExpiringDocuments),
+                'total_users' => count($groupedDocuments),
+                'users_data' => $groupedDocuments,
+                'generated_at' => Carbon::now()->format('d-m-Y H:i:s'),
+                'message' => "There are " . count($allExpiringDocuments) . " document(s) expiring across " . count($groupedDocuments) . " staff user(s). Please review and take necessary action."
+            ];
+
+            Mail::to($adminEmail)->send(new DocumentExpiryMail($details));
+            
+            $this->line("   📧 ONE consolidated email sent to admin: {$adminEmail}");
+            $this->line("   📊 Contains: " . count($allExpiringDocuments) . " documents from " . count($groupedDocuments) . " users");
+
+        } catch (\Exception $e) {
+            $this->warn("   ⚠️ Failed to send consolidated email to admin: " . $e->getMessage());
+            Log::error('Admin consolidated email failed', [
+                'document_count' => count($allExpiringDocuments),
+                'error' => $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
      * Send all notifications (User + Admin via Pusher)
      */
     private function sendNotifications($user, $document, $daysRemaining)
@@ -141,7 +203,7 @@ class CheckDocumentExpiry extends Command
             $notification = [
                 'user_id' => $user->id,
                 'document_id' => $document->id,
-                'document_name' => $document->name ?? 'Document',
+                'document_name' => $document->document_name ?? 'Document',
                 'expiry_date' => $document->document_expiry,
                 'days_remaining' => $daysRemaining,
                 'notification_type' => 'both',
@@ -173,47 +235,47 @@ class CheckDocumentExpiry extends Command
     /**
      * Send Pusher notification to user
      */
-        private function sendUserPusherNotification($user, $document, $daysRemaining)
-        {
-            try {
-                // For APP push notification
-                $notificationData = [
-                    'notification_token' => $user->notification_token,
-                    'message'            => "Your document '{$document->name}' will expire in {$daysRemaining} days. Please renew it before.",
-                    'title'              => 'Document Expire',
-                    'page'               => 'document-expire',
-                ];
+    private function sendUserPusherNotification($user, $document, $daysRemaining)
+    {
+        try {
+            // For APP push notification
+            $notificationData = [
+                'notification_token' => $user->notification_token,
+                'message'            => "Your document '{$document->name}' will expire in {$daysRemaining} days. Please renew it before.",
+                'title'              => 'Document Expire',
+                'page'               => 'document-expire',
+            ];
 
-                if (function_exists('send_push_notification')) {
-                    send_push_notification($notificationData);
-                }
-
-                // For PORTAL notification using DynamicUserNotification
-                $userId = $user->id;
-                $message = "Your document '{$document->name}' will expire in {$daysRemaining} days. Please renew it before.";
-                $title = "Document Expire";
-                $type = 'document_expiry';
-                $data = [
-                    'document_id' => $document->id,
-                    'document_name' => $document->name,
-                    'expiry_date' => $document->document_expiry,
-                    'days_remaining' => $daysRemaining
-                ];
-
-                $this->saveNotification(null, $userId, $title, $message, $type, $data);
-                // Fire the broadcast event — Pusher delivers it to the private channel
-                broadcast(new DynamicUserNotification($userId, $message, $title, $data, $type));
-                
-                $this->line("   📱 Pusher notification sent to user: {$user->name}");
-
-            } catch (\Exception $e) {
-                $this->warn("   ⚠️ Failed to send Pusher notification to user: " . $e->getMessage());
-                Log::error('User Pusher notification failed', [
-                    'user_id' => $user->id,
-                    'error' => $e->getMessage()
-                ]);
+            if (function_exists('send_push_notification')) {
+                send_push_notification($notificationData);
             }
+
+            // For PORTAL notification using DynamicUserNotification
+            $userId = $user->id;
+            $message = "Your document '{$document->name}' will expire in {$daysRemaining} days. Please renew it before.";
+            $title = "Document Expire";
+            $type = 'document_expiry';
+            $data = [
+                'document_id' => $document->id,
+                'document_name' => $document->name,
+                'expiry_date' => $document->document_expiry,
+                'days_remaining' => $daysRemaining
+            ];
+
+            $this->saveNotification(null, $userId, $title, $message, $type, $data);
+            // Fire the broadcast event — Pusher delivers it to the private channel
+            broadcast(new DynamicUserNotification($userId, $message, $title, $data, $type));
+            
+            $this->line("   📱 Pusher notification sent to user: {$user->name}");
+
+        } catch (\Exception $e) {
+            $this->warn("   ⚠️ Failed to send Pusher notification to user: " . $e->getMessage());
+            Log::error('User Pusher notification failed', [
+                'user_id' => $user->id,
+                'error' => $e->getMessage()
+            ]);
         }
+    }
 
     /**
      * Send Pusher notification to admin using DynamicUserNotification
@@ -238,10 +300,10 @@ class CheckDocumentExpiry extends Command
                 'staff_name' => $user->name,
                 'staff_email' => $user->email,
                 'document_id' => $document->id,
-                'document_name' => $document->name,
+                'document_name' => $document->document_name,
                 'expiry_date' => $document->document_expiry,
                 'days_remaining' => $daysRemaining,
-                'notification_id' => $notification->id ?? null
+                'notification_id' => $notification['id'] ?? null
             ];
 
             foreach ($admins as $admin) {
@@ -266,39 +328,7 @@ class CheckDocumentExpiry extends Command
         }
     }
 
-    /**
-     * Send email to admin
-     */
-    private function sendAdminEmail($user, $document, $daysRemaining)
-    {
-        try {
-            // Get admin email from config or use default
-            $adminEmail = "shahbazkhan062@gmail.com";
-            
-            $details = [
-                'staff_name' => $user->name,
-                'staff_email' => $user->email,
-                'document_name' => $document->name,
-                'expiry_date' => Carbon::parse($document->document_expiry)->format('d-m-Y'),
-                'days_remaining' => $daysRemaining,
-                'message' => "Staff user '{$user->name}' has a document '{$document->name}' expiring in {$daysRemaining} days. Please take necessary action."
-            ];
-
-            Mail::to($adminEmail)->send(new DocumentExpiryMail($details));
-            
-            $this->line("   📧 Email sent to admin: {$adminEmail}");
-
-        } catch (\Exception $e) {
-            $this->warn("   ⚠️ Failed to send email to admin: " . $e->getMessage());
-            Log::error('Admin email failed', [
-                'user_id' => $user->id,
-                'document_id' => $document->id,
-                'error' => $e->getMessage()
-            ]);
-        }
-    }
-
-     private function saveNotification($receiverId, $guardId, $title, $message, $type, $data = [])
+    private function saveNotification($receiverId, $guardId, $title, $message, $type, $data = [])
     {
         try {
             Notification::create([

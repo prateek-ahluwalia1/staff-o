@@ -19,6 +19,7 @@ use App\Models\JobRosterTask;
 use App\Models\Transaction;
 use App\Models\User;
 use DateTime;
+use App\Models\EmailHistory;
 use Exception;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
@@ -30,9 +31,9 @@ use Stripe\Stripe;
 use Stripe\Transfer;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
 use App\Mail\InvoiceMail;
-use App\Models\EmailHistory;
 use App\Services\InvoiceService;
 use Illuminate\Support\Facades\Storage;
+
 
 class JobRosterController extends Controller
 {
@@ -120,10 +121,10 @@ class JobRosterController extends Controller
                     ($chargeRate->def_metro_mon_to_fri_day_rate   * ($hours['morning']          ?? 0)) +
                     ($chargeRate->def_metro_mon_to_fri_night_rate * ($hours['night']             ?? 0)) +
                     ($chargeRate->def_metro_sat_day_rate          * (($hours['saturday_morning'] ?? 0) + ($hours['saturday_night'] ?? 0))) +
-                    ($chargeRate->def_metro_sun_day_rate          * (($hours['sunday_morning']   ?? 0) + ($hours['sunday_night']   ?? 0))) +
+                    ($chargeRate->def_metro_sun_day_rate          * (($hours['sunday_morning']   ?? 0) + ($hours['sunday_night']   ?? 0)))+
                     ($chargeRate->def_metro_pub_holi_day_rate     * (($hours['ph_morning'] ?? 0) + ($hours['ph_night'] ?? 0)));
-;
     
+                // $serviceFee  = round($jobAmount * 0.10, 2);
                 $cleanBaseTotal = (float) str_replace([',', '$'], '', $jobAmount);
                 $feeRaw = $cleanBaseTotal * 0.10;
                 $serviceFee = round($feeRaw, 2);
@@ -197,15 +198,16 @@ class JobRosterController extends Controller
     
                     $createdJob = JobRoster::with('site')->find($jobId);
     
-                    if($request->posting_type == 'broadcast')
-                    {
+                    // if($request->posting_type == 'broadcast')
+                    // {
                         $this->sendNotificationsWithinRadius(
                             $site->coordinates,
                             [$jobId],
                             $request->user_id,
                             $createdJob
                         );   
-                    }
+                        
+                    // }
                 }
             }
     
@@ -356,6 +358,12 @@ private function saveInvoicePdf($pdfBytes, string $invoiceNumber, string $client
         // Save the PDF
         file_put_contents($filePath, $pdfBytes);
         
+        // Log::channel('daily')->info('[Invoice] PDF saved successfully', [
+        //     'invoice_number' => $invoiceNumber,
+        //     'file_path' => $filePath,
+        //     'size_bytes' => strlen($pdfBytes)
+        // ]);
+        
     } catch (\Exception $e) {
         Log::channel('daily')->warning('[Invoice] Failed to save PDF to folder', [
             'invoice_number' => $invoiceNumber,
@@ -373,7 +381,7 @@ private function saveInvoicePdf($pdfBytes, string $invoiceNumber, string $client
         $radiusKm = 15; // 5km radius
         $notifiedUsers = [];
 
-        // Get all staff with user_id = 1
+          // Get all staff with user_id = 1
         $staff = User::where('user_id', 1)
         ->where('is_active', 1)
         ->where('user_type', 'staff')
@@ -385,8 +393,9 @@ private function saveInvoicePdf($pdfBytes, string $invoiceNumber, string $client
         // ->whereDoesntHave('guardQuestionnaireDetails', function ($query) {
         //     $query->whereNull('certificate_path');
         // })
-            ->select('id', 'name', 'current_coordinates', 'coordinates', 'notification_token')
+            ->select('id', 'name', 'email', 'current_coordinates', 'coordinates', 'notification_token')
         ->get();
+        
 
         if($staff->isEmpty()){
             $staff = User::where('is_active', 1)
@@ -400,18 +409,16 @@ private function saveInvoicePdf($pdfBytes, string $invoiceNumber, string $client
 
 
         foreach ($staff as $staffMember) {
-            // Calculate distance between site and staff
             $distance = $this->calculateDistance($siteCoordinates, $staffMember->current_coordinates);
-
-            // Check if within 5km radius
+            
             if ($distance <= $radiusKm) {
 
                 // Send notification if token exists
                 if ($staffMember->notification_token) {
                     $notificationSent = send_push_notification([
                         'notification_token' => $staffMember->notification_token,
-                        'message'            => "New job available within 15km of your location. Please check your app.",
-                        'title'              => 'ASAP Job Nearby',
+                        'message'            => "A new security job is available within 15 km of you. Please check your app.",
+                        'title'              => 'New Job Available',
                         'page'               => 'asap-job-list',
                         'data'               => [
                             'distance' => round($distance, 2),
@@ -420,6 +427,7 @@ private function saveInvoicePdf($pdfBytes, string $invoiceNumber, string $client
                             'roster' => $roster
                         ]
                     ]);
+                    
 
                     if ($notificationSent) {
                         $notifiedUsers[] = [
@@ -429,6 +437,8 @@ private function saveInvoicePdf($pdfBytes, string $invoiceNumber, string $client
                         ];
                     }
                 }
+                
+                $this->sendEmail($staffMember, 'New Job Available', "A new security job is available within 15 km of you. Please check your app.", $roster);
             }
         }
 
@@ -436,6 +446,15 @@ private function saveInvoicePdf($pdfBytes, string $invoiceNumber, string $client
         // $this->updateJobRosterWithNotifiedUsers($jobIds, $notifiedUsers, $radiusKm);
 
         return $notifiedUsers;
+    }
+    
+     private function sendEmail(User $user, string $title, string $message, JobRoster $job)
+    {
+        if (empty($user->email)) {
+            return;
+        }
+
+        Mail::to($user->email)->queue(new \App\Mail\JobNotificationMail($job, $title, $message));
     }
 
     /**
@@ -764,35 +783,35 @@ private function saveInvoicePdf($pdfBytes, string $invoiceNumber, string $client
             }
             if ($flag == 0) {
 
-                if ($roster->is_document == 1) {
-                    $document_types = $roster->document_list;
+                // if ($roster->is_document == 1) {
+                //     $document_types = $roster->document_list;
 
-                    $document_category = DocumentCategory::where('document_category', 'job_doc')->first();
+                //     $document_category = DocumentCategory::where('document_category', 'job_doc')->first();
 
-                    if ($document_category && !empty($document_types)) {
-                        foreach (json_decode($document_category->document_type) as $doc_key => $doc_name) {
-                            $document_types_array = json_decode($document_types, true) ?? [];
-                            if (in_array($doc_key, $document_types_array)) {
+                //     if ($document_category && !empty($document_types)) {
+                //         foreach (json_decode($document_category->document_type) as $doc_key => $doc_name) {
+                //             $document_types_array = json_decode($document_types, true) ?? [];
+                //             if (in_array($doc_key, $document_types_array)) {
 
-                                $already_exists = Document::where([
-                                    'user_id'       => $id,
-                                    'document_type' => $doc_key,
-                                ])->first();
+                //                 $already_exists = Document::where([
+                //                     'user_id'       => $id,
+                //                     'document_type' => $doc_key,
+                //                 ])->first();
 
-                                if ($already_exists) {
-                                    continue;
-                                }
+                //                 if ($already_exists) {
+                //                     continue;
+                //                 }
 
-                                $guard_document                    = new Document();
-                                $guard_document->user_id           = $id;
-                                $guard_document->document_category = $document_category->document_category;
-                                $guard_document->document_type     = $doc_key;
-                                $guard_document->document_name     = $doc_name;
-                                $guard_document->save();
-                            }
-                        }
-                    }
-                }
+                //                 $guard_document                    = new Document();
+                //                 $guard_document->user_id           = $id;
+                //                 $guard_document->document_category = $document_category->document_category;
+                //                 $guard_document->document_type     = $doc_key;
+                //                 $guard_document->document_name     = $doc_name;
+                //                 $guard_document->save();
+                //             }
+                //         }
+                //     }
+                // }
 
 
                 DB::table('job_rosters')
@@ -1031,7 +1050,7 @@ private function saveInvoicePdf($pdfBytes, string $invoiceNumber, string $client
             $public_path =  rtrim(app()->basePath('public/'), '');
             $public_path = str_replace('portal/public', '', $public_path);
             $public_path = str_replace('apis/public', '', $public_path);
-            $public_path = str_replace('https://apis-nfc.arrowbyte.com.au/', 'apis.247staffingsolutions.com.au/public', $public_path);
+            $public_path = str_replace('https://apis.staffoo.com.au/', 'apis.247staffingsolutions.com.au/public', $public_path);
             $destinationPath = $public_path . $folder . '/';
             if (!is_dir($destinationPath)) {
                 @mkdir($destinationPath, 0755, true);
@@ -1601,13 +1620,14 @@ private function saveInvoicePdf($pdfBytes, string $invoiceNumber, string $client
 
         if (!empty($states)) {
         $sites->whereIn('state', $states);
+
         }
         $sites = $sites->with(['jobRoster' => function ($q) use ($start, $end, $roster_id, $user, $contractorUserIds) {
                 $q->whereBetween('start', [$start, $end])
                     ->where('roster_id', $roster_id)
                     ->orderBy('start', 'asc')
                     ->with('guards','customer');
-
+                    
                 if ($user->user_type === 'staff') {
                     $q->where('assigned_to', $user->id);
                 }
@@ -2472,28 +2492,39 @@ $baseTotal_arr = [];
                 ($chargeRate->def_metro_sun_night_rate * ($hours['sunday_night'] ?? 0)) +
                 ($chargeRate->def_metro_pub_holi_day_rate * ($hours['ph_morning'] ?? 0)) +
                 ($chargeRate->def_metro_pub_holi_night_rate * ($hours['ph_night'] ?? 0));
-
+                
             $hours_array[] = $hours;
             $baseTotal_arr[] = $shiftAmount; 
-            $baseTotal += round(($shiftAmount * $shift['numberOfGuards']), 2);
+            $baseTotal += round($shiftAmount * $shift['numberOfGuards'], 2);
         }
 
         // APPLY DISCOUNT (ONLY FULL)
         $discount = 0;
 
+        // if ($request->payment_option === 'full') {
+        //     $discount = round($baseTotal * 0.05, 2);
+        // }
+
+        // $discountedTotal = round($baseTotal - $discount);
+
+        // // GST / SERVICE FEE (UNCHANGED LOGIC)
+        // $serviceFee = round($discountedTotal * 0.10, 2);
+        // $grandTotal = round($discountedTotal + $serviceFee, 2);
+
+
         // GST / SERVICE FEE (UNCHANGED LOGIC)
-        $cleanBaseTotal = (float) str_replace([',', '$'], '', $baseTotal);
+        // $serviceFee = round($baseTotal * 0.10, 2);
+         $cleanBaseTotal = (float) str_replace([',', '$'], '', $baseTotal);
         $feeRaw = $cleanBaseTotal * 0.10;
         $serviceFee = round($feeRaw, 2);
         $displayedFee = number_format($serviceFee, 2);
         $serviceFee  = $displayedFee;
-
         $baseFinalTotal = round($baseTotal + $serviceFee, 2);
         if ($request->payment_option === 'full') {
             $discount = round($baseFinalTotal * 0.05, 2);
         }
         $grandTotal = round($baseFinalTotal - $discount, 2);    
-
+        
         // SPLIT LOGIC (AFTER GST)
         if ($request->payment_option === 'split') {
             $amountToCharge = round($grandTotal * 0.5, 2);
@@ -2863,7 +2894,7 @@ public function autoUpdatePayslipStatus()
         
         return response()->json(['success' => true, 'message' => 'Invoice send successfully.']);
     }
-
+    
     public function sendPdfInvoice(Request $request)
     {
         $request->validate([
@@ -2959,8 +2990,8 @@ public function autoUpdatePayslipStatus()
             ], 500);
         }
     }
-
-    public function getEmailHistoryByTransaction($transaction_id)
+    
+     public function getEmailHistoryByTransaction($transaction_id)
     {
         try {
             $histories = EmailHistory::where('transaction_id', $transaction_id)
@@ -3000,7 +3031,7 @@ public function autoUpdatePayslipStatus()
         ];
         
         Mail::send('emails.systemGeneralEmail', $data, function($message) use ($data){
-            $message->from('no-reply@staffoo.com.au', 'STAFFOO');
+            $message->from('no-reply@staffoo.com.au', 'Staffoo');
             $message->to($data['email'])->subject($data['subject']);
             // No attachment - just send HTML email with button
         });
@@ -3162,8 +3193,8 @@ public function autoUpdatePayslipStatus()
             ], 500);
         }
     }
-
-    /**
+    
+     /**
      * Get available jobs (unassigned and future)
      */
     public function getAvailableJobs(Request $request)

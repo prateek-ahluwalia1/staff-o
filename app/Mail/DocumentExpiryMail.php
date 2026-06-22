@@ -23,7 +23,7 @@ class DocumentExpiryMail extends Mailable implements ShouldQueue
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: '⚠️ Document Expiry Alert - ' . $this->details['staff_name'],
+            subject: '⚠️ Document Expiry Alert - Summary Report',
         );
     }
 

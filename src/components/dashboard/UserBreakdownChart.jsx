@@ -5,10 +5,10 @@ export default function UserBreakdownChart({ data }) {
   // We also filter out any roles with 0 users so they don't clog the pie chart.
   const chartData = data
     ? [
-        { name: "Staff", value: data.staff || 0 },
-        { name: "Contractors", value: data.contractors || 0 },
-        { name: "Customers", value: data.customers || 0 },
-      ].filter((item) => item.value > 0)
+      { name: "Staff", value: data.staff || 0 },
+      { name: "Contractors", value: data.contractors || 0 },
+      { name: "Customers", value: data.s || 0 },
+    ].filter((item) => item.value > 0)
     : [];
 
   const COLORS = ["#45B7D1", "#4ECDC4", "#96CEB4"];
@@ -36,7 +36,7 @@ export default function UserBreakdownChart({ data }) {
                 />
               ))}
             </Pie>
-            <Tooltip 
+            <Tooltip
               contentStyle={{
                 backgroundColor: "#fff",
                 border: "none",

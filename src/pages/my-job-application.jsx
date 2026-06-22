@@ -347,14 +347,13 @@ export default function MyJobApplications() {
                       <div className="rounded-circle d-flex align-items-center justify-content-center me-3" style={{ width: "36px", height: "36px", background: "#f3e8ff", color: "#9333ea" }}>
                         <i className="fa-solid fa-user-tie"></i>
                       </div>
-                      Customer Details
+                      Client Details
                     </h5>
                     <div className="d-flex flex-column gap-1">
                       {/* Optional chaining ensures it doesn't break if customer is null */}
                       <InfoRow icon="fa-user" label="Name" value={selectedApp.rawShift.customer?.name || "Unknown"} />
                       <InfoRow icon="fa-envelope" label="Email" value={selectedApp.rawShift.customer?.email || "N/A"} transform={false} />
                       <InfoRow icon="fa-phone" label="Phone" value={selectedApp.rawShift.customer?.phone || "N/A"} />
-                      <InfoRow icon="fa-building-user" label="Client Type" value={selectedApp.rawShift.customer?.user_type || "N/A"} />
                     </div>
                   </div>
                 </div>

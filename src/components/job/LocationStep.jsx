@@ -189,7 +189,9 @@ export default function LocationStep({
       <div className="d-flex justify-content-between align-items-center mb-3">
         <div>
           <h5 className="mb-1 fw-bold text-dark">Interactive Map <span className="text-danger fw-bold">*</span></h5>
-          <p className="text-muted small mb-0">Search below, move the pin, or use current location.</p>
+          <p className="text-muted small mb-0"
+            style={{ textTransform: "none" }}
+          >Search below, move the pin, or use current location.</p>
         </div>
       </div>
 

@@ -561,7 +561,9 @@ export default function ProfileForm({
                     }),
                   }}
                 />
-                <div className="form-text">
+                <div className="form-text"
+                  style={{ textTransform: "none" }}
+                >
                   Your passport or nationality country – used for visa checks.
                 </div>
               </div>
@@ -588,7 +590,9 @@ export default function ProfileForm({
                 autoComplete="off"
               />
             </div>
-            <div className="d-flex justify-content-between form-text mt-1 text-muted small">
+            <div className="d-flex justify-content-between form-text mt-1 text-muted small"
+              style={{ textTransform: "none" }}
+            >
               <span>Selecting an address will automatically fill your city, state, and country.</span>
               <span>Max 155 characters.</span>
             </div>

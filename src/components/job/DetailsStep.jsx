@@ -113,7 +113,9 @@ export default function DetailsStep({ form, setField, handleFile, attachmentPrev
       {/* HEADER */}
       <div className="mb-4 pb-2 border-bottom">
         <h4 className="mb-1 text-dark fw-bold">Job Details</h4>
-        <p className="text-muted small mb-0">Define the core requirements, describe the job, and provide any necessary attachments.</p>
+        <p className="text-muted small mb-0"
+          style={{ textTransform: "none" }}
+        >Define the core requirements, describe the job, and provide any necessary attachments.</p>
       </div>
 
       {/* ROW 1: JOB TYPE & REQUIREMENTS */}

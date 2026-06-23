@@ -116,7 +116,7 @@ export default function TimeEditModal({
           <div>
             <h3 style={{ margin: 0, fontSize: "1.2rem", fontWeight: 700 }}>Edit Shift Times</h3>
             <p style={{ margin: "6px 0 0", color: "#6b7280", fontSize: "0.95rem", textTransform: "none" }}>
-              Update the times for this roster entry. Site, date, and guard assignment stay unchanged.
+              Update the times for this roster entry. Site, date, and staff assignment stay unchanged.
             </p>
           </div>
           <button
@@ -167,7 +167,7 @@ export default function TimeEditModal({
                   </div>
                 </div>
                 <div>
-                  <div style={{ fontSize: "1rem", fontWeight: 600, color: "#6b7280", marginBottom: "6px" }}>Guard Assignment</div>
+                  <div style={{ fontSize: "1rem", fontWeight: 600, color: "#6b7280", marginBottom: "6px" }}>Staff Assignment</div>
                   <div style={{ fontSize: "1.1rem", fontWeight: 800, color: "#111827" }}>{shift?.guards?.name || "Unassigned"}</div>
                 </div>
               </div>

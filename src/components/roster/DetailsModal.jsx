@@ -8,7 +8,7 @@ const parseApiDate = (dateValue) => {
 };
 
 const SIDEBAR_TABS = [
-  { id: "guard", label: "Guard Information", bg: "#e8f4fd" },
+  { id: "guard", label: "Staff Information", bg: "#e8f4fd" },
   { id: "shift", label: "Shift Information", bg: "#e8f8e8" },
   { id: "schedule", label: "All Shifts", bg: "#fff9c4" },
 ];
@@ -44,10 +44,22 @@ export default function DetailsModal({
   guardShiftsList = [],
   totalGuardHours = 0,
 }) {
-  const [activeTab, setActiveTab] = useState("guard");
-
   const shift = modal?.shift;
   const site = modal?.site;
+
+  // 1. Determine if a guard is actively assigned
+  const hasGuard = Boolean(shift?.guards && shift?.guards?.name);
+
+  // 2. Default to "shift" if no guard is assigned
+  const [activeTab, setActiveTab] = useState(hasGuard ? "guard" : "shift");
+
+  // 3. Filter tabs so only "Shift Information" is visible for pending/unassigned shifts
+  const visibleTabs = SIDEBAR_TABS.filter((tab) => {
+    if (!hasGuard) {
+      return tab.id === "shift";
+    }
+    return true;
+  });
 
   const renderContent = () => {
     switch (activeTab) {
@@ -97,7 +109,7 @@ export default function DetailsModal({
                 </h5>
                 <p style={{ margin: 0, color: "#666", fontSize: "14px", textTransform: "none" }}>
                   {shift?.guards?.email ||
-                    "Please assign a guard to see details"}
+                    "Please assign staff to see details"}
                 </p>
               </div>
             </div>
@@ -218,7 +230,7 @@ export default function DetailsModal({
               }}
             >
               <h5 style={{ margin: 0, fontSize: "16px", color: "#333" }}>
-                Guard Shift Schedule
+                Staff Shift Schedule
               </h5>
               <span
                 style={{
@@ -306,7 +318,7 @@ export default function DetailsModal({
                   fontSize: "14px",
                 }}
               >
-                No other shifts found for this guard.
+                No other shifts found for this staff.
               </div>
             )}
           </div>
@@ -358,57 +370,58 @@ export default function DetailsModal({
           }}
         >
           <div className="p-4 border-bottom">
-            <h4 className="m-0 fw-bold text-center">Staff Detail</h4>
+            <h3 className="m-0 fw-bold p-1 text-center">Shift Detail</h3>
           </div>
 
-          {/* Guard avatar preview in sidebar */}
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              padding: "20px 12px 8px",
-              borderBottom: "1px solid #f0f0f0",
-            }}
-          >
+          {/* Guard avatar preview in sidebar - Hidden if no guard */}
+          {hasGuard && (
             <div
               style={{
-                width: "56px",
-                height: "56px",
-                borderRadius: "50%",
-                background: "#0A7C6E",
                 display: "flex",
+                flexDirection: "column",
                 alignItems: "center",
-                justifyContent: "center",
-                fontSize: "20px",
-                color: "#fff",
-                fontWeight: 700,
-                marginBottom: "8px",
+                padding: "20px 12px 8px",
+                borderBottom: "1px solid #f0f0f0",
               }}
             >
-              {shift?.guards?.name
-                ? shift.guards.name.charAt(0).toUpperCase()
-                : "?"}
+              <div
+                style={{
+                  width: "56px",
+                  height: "56px",
+                  borderRadius: "50%",
+                  background: "#0A7C6E",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: "20px",
+                  color: "#fff",
+                  fontWeight: 700,
+                  marginBottom: "8px",
+                }}
+              >
+                {shift.guards.name.charAt(0).toUpperCase()}
+              </div>
+              <div
+                style={{
+                  fontWeight: 600,
+                  fontSize: "13px",
+                  color: "#333",
+                  textAlign: "center",
+                }}
+              >
+                {shift.guards.name}
+              </div>
+              <div
+                style={{ fontSize: "11px", color: "#888", textAlign: "center" }}
+              >
+                {site?.displayName}
+              </div>
             </div>
-            <div
-              style={{
-                fontWeight: 600,
-                fontSize: "13px",
-                color: "#333",
-                textAlign: "center",
-              }}
-            >
-              {shift?.guards?.name || "Unassigned"}
-            </div>
-            <div
-              style={{ fontSize: "11px", color: "#888", textAlign: "center" }}
-            >
-              {site?.displayName}
-            </div>
-          </div>
+          )}
 
           <div className="overflow-auto py-2">
-            {SIDEBAR_TABS.map((tab) => {
+            {/* Map over visibleTabs instead of SIDEBAR_TABS */}
+            {visibleTabs.map((tab) => {
               const isActive = activeTab === tab.id;
               return (
                 <div
@@ -450,7 +463,7 @@ export default function DetailsModal({
           {/* Header */}
           <div className="d-flex justify-content-between align-items-center p-4 border-bottom">
             <h3 className="m-0 fw-bold">
-              {SIDEBAR_TABS.find((t) => t.id === activeTab)?.label}
+              {visibleTabs.find((t) => t.id === activeTab)?.label}
             </h3>
             <button
               onClick={closeModal}

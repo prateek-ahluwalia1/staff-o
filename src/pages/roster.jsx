@@ -271,10 +271,8 @@ export default function RosterPage() {
     return { totals, grandTotal };
   }, [filteredSites, weekDays, weeksToView]);
 
-  // Stable guards array, preventing unnecessary useMemo recalculations
   const guards = useMemo(() => staffData?.guards || [], [staffData?.guards]);
 
-  // Prepare options for React-Select
   const guardOptions = useMemo(() => {
     return guards.map((g) => ({
       value: g.id,
@@ -515,12 +513,8 @@ export default function RosterPage() {
                                     <i className="fa fa-edit fas fa-edit"></i>
                                   </button>
                                 )}
-                                {userRole === "contractor" && !shift.assigned_to && (
-                                  <button title="Assign" onClick={() => openModalAction(site, shift, day.dateLabel, "admin_assign")}>
-                                    <i className="fa fa-user-plus"></i>
-                                  </button>
-                                )}
-                                {userRole === "admin" && !shift.assigned_to && (
+                                {/* Check based strictly on lack of assigned staff */}
+                                {(userRole === "contractor" || userRole === "admin") && !shift.assigned_to && (
                                   <button title="Assign" onClick={() => openModalAction(site, shift, day.dateLabel, "admin_assign")}>
                                     <i className="fa fa-user-plus"></i>
                                   </button>
@@ -564,7 +558,7 @@ export default function RosterPage() {
         <div className="vr-modal-backdrop" onClick={closeModal}>
           <div className="vr-modal-container" onClick={(e) => e.stopPropagation()}>
             <div className="vr-modal-header">
-              <h3>Assign Guard</h3>
+              <h3>Assign Staff</h3>
               <button onClick={closeModal}><i className="fa fa-times"></i></button>
             </div>
             <div className="vr-modal-content">
@@ -581,7 +575,7 @@ export default function RosterPage() {
                   onChange={(selectedOption) =>
                     setSelectedUserId(selectedOption ? selectedOption.value : "")
                   }
-                  placeholder="Search or select a guard..."
+                  placeholder="Search or select a staff..."
                   isClearable
                   isSearchable
                   menuPortalTarget={document.body}

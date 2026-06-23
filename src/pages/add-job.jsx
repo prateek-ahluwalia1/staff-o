@@ -181,12 +181,16 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
         <label className={`flex-grow-1 p-3 rounded-3 border transition-all ${postingMode === "broadcast" ? "border-primary bg-white shadow-sm" : "border-light-subtle bg-white opacity-75"}`} style={{ cursor: "pointer" }}>
           <input type="radio" name="postMode" className="d-none" checked={postingMode === "broadcast"} onChange={() => setPostingMode("broadcast")} />
           <div className="fw-bold text-dark mb-1"><i className="fa-solid fa-tower-broadcast text-primary me-2"></i>Broadcast Job</div>
-          <div className="small text-muted">Job will be available for all eligible staff to apply.</div>
+          <div className="small text-muted"
+            style={{ textTransform: "none" }}
+          >Job will be available for all eligible staff to apply.</div>
         </label>
         <label className={`flex-grow-1 p-3 rounded-3 border transition-all ${postingMode === "assign" ? "border-primary bg-white shadow-sm" : "border-light-subtle bg-white opacity-75"}`} style={{ cursor: "pointer" }}>
           <input type="radio" name="postMode" className="d-none" checked={postingMode === "assign"} onChange={() => setPostingMode("assign")} />
           <div className="fw-bold text-dark mb-1"><i className="fa-solid fa-user-check text-success me-2"></i>Assign to Staff</div>
-          <div className="small text-muted">Directly assign this job to a specific staff member.</div>
+          <div className="small text-muted"
+            style={{ textTransform: "none" }}
+          >Directly assign this job to a specific staff member.</div>
         </label>
       </div>
 
@@ -786,11 +790,13 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
         <div className="d-flex justify-content-between align-items-center gap-3 flex-wrap">
           <div>
             <h4 className="mb-1 fw-bold text-dark">Prefilled shift overview</h4>
-            <p className="text-muted small mb-0">Customer, location and date are prefilled for this roster entry. Review and continue to add shift times.</p>
+            <p className="text-muted small mb-0"
+              style={{ textTransform: "none" }}
+            >Client, location and date are prefilled for this roster entry. Review and continue to add shift times.</p>
           </div>
         </div>
         <div className="embedded-summary-row">
-          <span className="text-muted">Customer</span>
+          <span className="text-muted">Client</span>
           <strong>{embeddedClientName}</strong>
         </div>
         <div className="embedded-summary-row">
@@ -1077,7 +1083,9 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
         <div className="embedded-job-header">
           <div>
             <h3 className="mb-1 fw-bold text-dark">{isAdmin ? "Add Shift" : "Create Job"}</h3>
-            <p className="text-muted small mb-0">Prefilled location and date. Use the schedule and details steps to set the shift time.</p>
+            <p className="text-muted small mb-0"
+              style={{ textTransform: "none" }}
+            >Prefilled location and date. Use the schedule and details steps to set the shift time.</p>
           </div>
           <button type="button" className="btn-close" onClick={onClose} aria-label="Close">×</button>
         </div>

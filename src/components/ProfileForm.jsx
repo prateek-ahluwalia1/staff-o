@@ -370,40 +370,24 @@ export default function ProfileForm({
           {/* Staff Specific Fields (Gender) */}
           {userType === "staff" && (
             <>
-              <div className="mt-2">
-                <label htmlFor="origin_country" className="form-label fw-semibold">
-                  Country of Origin <span className="text-danger">*</span>
+              {/* Security License Number – staff only */}
+              <div>
+                <label htmlFor="security_license_no" className="form-label fw-semibold">
+                  Security License Number <span className="text-danger">*</span>
                 </label>
-                <Select
-                  inputId="origin_country"
-                  options={countryOptions}
-                  value={selectedCountry}
-                  onChange={(selectedOption) => {
-                    onChange({
-                      target: {
-                        id: "origin_country",
-                        value: selectedOption ? selectedOption.value : "",
-                      },
-                    });
-                  }}
-                  placeholder="select your country of origin"
-                  isClearable
-                  isSearchable
-                  styles={{
-                    control: (base) => ({
-                      ...base,
-                      minHeight: "38px",
-                      borderColor: "#ced4da",
-                      boxShadow: "none",
-                      "&:hover": {
-                        borderColor: "#0A7C6E",
-                      },
-                    }),
-                  }}
+                <input
+                  type="text"
+                  className="form-control"
+                  id="security_license_no"
+                  placeholder="e.g. 12345678-01"
+                  value={formData.security_license_no || ""}
+                  onChange={onChange}
+                  required
+                  minLength={5}
+                  maxLength={20}
+                  pattern="^[A-Za-z0-9\-]+$"
+                  title="License number can contain letters, numbers, and hyphens (5‑20 characters)"
                 />
-                <div className="form-text">
-                  Your passport or nationality country – used for visa checks.
-                </div>
               </div>
               <div>
                 <label htmlFor="date_of_birth" className="form-label fw-semibold">
@@ -543,6 +527,42 @@ export default function ProfileForm({
                       </div>
                     );
                   })}
+                </div>
+              </div>
+
+              <div className="mt-2">
+                <label htmlFor="origin_country" className="form-label fw-semibold">
+                  Country of Origin <span className="text-danger">*</span>
+                </label>
+                <Select
+                  inputId="origin_country"
+                  options={countryOptions}
+                  value={selectedCountry}
+                  onChange={(selectedOption) => {
+                    onChange({
+                      target: {
+                        id: "origin_country",
+                        value: selectedOption ? selectedOption.value : "",
+                      },
+                    });
+                  }}
+                  placeholder="select your country of origin"
+                  isClearable
+                  isSearchable
+                  styles={{
+                    control: (base) => ({
+                      ...base,
+                      minHeight: "38px",
+                      borderColor: "#ced4da",
+                      boxShadow: "none",
+                      "&:hover": {
+                        borderColor: "#0A7C6E",
+                      },
+                    }),
+                  }}
+                />
+                <div className="form-text">
+                  Your passport or nationality country – used for visa checks.
                 </div>
               </div>
             </>

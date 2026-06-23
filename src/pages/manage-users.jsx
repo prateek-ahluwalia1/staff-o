@@ -142,6 +142,7 @@ const ManageUsers = () => {
     phone: "",
     gender: "",
     staff_document_type: "",
+    security_license_no: "",
     company_name: "",
     address: "",
     city: "",
@@ -212,6 +213,7 @@ const ManageUsers = () => {
         state: user.state || "",
         country: user.country || "",
         coordinates: user.coordinates || "",
+        security_license_no: extraInfo.security_license_no || "",
         user_id: user.user_id || "",
         date_of_birth: isoToDisplay(user.date_of_birth || extraInfo.date_of_birth || ""),
         origin_country: user.origin_country || extraInfo.origin_country || "",
@@ -1166,6 +1168,7 @@ const ManageUsers = () => {
                     origin_country: formData.origin_country,
                     abn: formData.abn || "",
                     acn: formData.acn || "",
+                    security_license_no: formData.security_license_no || "",
                   }}
                   onChange={handleProfileFormChange}
                   onSubmit={handleSubmit}

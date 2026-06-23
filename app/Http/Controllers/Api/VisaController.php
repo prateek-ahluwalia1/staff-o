@@ -15,6 +15,7 @@ class VisaController extends Controller
         $this->vsure = $vsure;
     }
 
+    // ✅ Create Visa Check
     public function create(Request $request)
     {
         $request->validate([
@@ -27,7 +28,7 @@ class VisaController extends Controller
 
         $data = [
             "jurisdiction" => "AUS",
-            "environment" => "sandbox", // dynamic
+            "environment" => "live", // dynamic
             "mode" => "fastcheck",
             "visa_check_schema" => "australia",
             "australia" => [
@@ -43,16 +44,28 @@ class VisaController extends Controller
             ]
         ];
 
+        // $response['expired_at'] = date('d-m-Y', strtotime('+1 year'));
+
         $response = $this->vsure->createVisaCheck($data);
 
-        return response()->json($response);
+        return response()->json([
+            'success' => true,
+            'code' => 200,
+            'data' => $response
+        ]);    
+        
     }
 
     // ✅ Get Visa Result
     public function result($id)
     {
         $response = $this->vsure->getVisaResult($id);
+        
+        return response()->json([
+            'success' => true,
+            'code' => 200,
+            'data' => $response
+        ]);    
 
-        return response()->json($response);
     }
 }

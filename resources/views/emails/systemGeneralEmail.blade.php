@@ -266,26 +266,17 @@
 
         <div class="content">
 
-            <h2>✨ Your Invoice is Ready</h2>
-
             <p>
                 {{ $description }}
             </p>
 
-            <div class="invoice-box">
-                <p class="invoice-label">📄 Invoice File</p>
-                <p class="invoice-name">
-                    {{ $filename }}
-                </p>
-            </div>
-
             <a href="{{ $download_url }}" class="btn">
-                📥 Download Invoice
+                Download Invoice
             </a>
 
             <div class="notice">
                 <p style="margin:0;">
-                    🔒 If the button above does not work, copy and paste the following link into your browser:
+                    If the button above does not work, copy and paste the following link into your browser:
                 </p>
                 <p style="word-break:break-all;font-size:12px; margin-top:8px;">
                     {{ $download_url }}
@@ -293,15 +284,15 @@
             </div>
 
             <div class="support">
-                <p style="font-weight:600; color:#0F2B3D;">💬 Need Assistance?</p>
+                <p style="font-weight:600; color:#0F2B3D;">Need Assistance?</p>
                 <p>
                     If you have any questions regarding this invoice, please contact our support team.
                 </p>
                 <p>
-                    📧 <a href="mailto:support@staffoo.com.au">support@staffoo.com.au</a>
+                    <a>admin@staffoo.com.au</a>
                 </p>
                 <p>
-                    🌐 <a href="https://staffoo.com.au">https://staffoo.com.au</a>
+                     <a href="https://staffoo.com.au">https://staffoo.com.au</a>
                 </p>
             </div>
 

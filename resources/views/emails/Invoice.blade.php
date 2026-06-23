@@ -44,14 +44,14 @@
     @if(!$isAdmin)
       <p style="color:#6B7280; font-size:12px; margin-top:16px;">
         If you have any questions about this invoice, please contact us at
-        <a href="mailto:billing@staffoo.com.au" style="color:#1A2E4A;">billing@staffoo.com.au</a>.
+        <a style="color:#1A2E4A;">admin@staffoo.com.au</a>.
       </p>
     @endif
   </div>
 
   <div class="footer">
     &copy; {{ date('Y') }} STAFFOO &nbsp;|&nbsp; ABN: 48 613 317 838<br>
-    billing@staffoo.com.au
+    admin@staffoo.com.au
   </div>
 
 </div>

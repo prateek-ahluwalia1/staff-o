@@ -23,7 +23,7 @@
             box-shadow: 0 1px 3px rgba(0,0,0,0.08);
         }
         .header {
-            background-color: #1a237e;
+            background-color: #0a7c6e;
             color: #ffffff;
             padding: 24px;
             text-align: center;
@@ -42,7 +42,7 @@
         }
         .job-details {
             background-color: #f9f9fb;
-            border-left: 4px solid #1a237e;
+            border-left: 4px solid #0a7c6e;
             padding: 16px;
             border-radius: 4px;
             margin: 16px 0;
@@ -61,11 +61,11 @@
         }
         .job-details td.value {
             font-weight: bold;
-            color: #1a237e;
+            color: #0a7c6e;
         }
         .cta-button {
             display: inline-block;
-            background-color: #1a237e;
+            background-color: #0a7c6e;
             color: #ffffff !important;
             text-decoration: none;
             padding: 12px 28px;
@@ -89,7 +89,7 @@
                 <h1>{{ $title }}</h1>
             </div>
             <div class="body">
-                <p>Hello,</p>
+
                 <p>New Job Available - Check Your App Now.</p>
 
                 <div class="job-details">
@@ -118,10 +118,6 @@
                 </div>
 
                 <p>Please open the Staffoo app to view full details and accept this job.</p>
-
-                <p style="text-align:center; margin-top: 24px;">
-                    <a href="{{ config('app.url') }}" class="cta-button">Open App</a>
-                </p>
             </div>
         </div>
         <div class="footer">

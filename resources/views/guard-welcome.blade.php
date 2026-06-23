@@ -188,13 +188,13 @@
                             <!-- Success Icon -->
                             <div style="margin-bottom: 20px;">
                                 <div class="success-badge">
-                                    <span style="color: #ffffff; font-weight: 700; font-size: 14px;">✓ VERIFIED</span>
+                                    <span style="color: #ffffff; font-weight: 700; font-size: 14px;">VERIFIED</span>
                                 </div>
                             </div>
                             
                             <!-- Greeting Message -->
                             <h2 style="color: #1a2b3c; font-weight: 700; font-size: 28px; margin: 0 0 10px 0; letter-spacing: -0.3px;">
-                                Welcome aboard, {{ $guard->name }}!
+                                Welcome aboard, {{ ucwords($guard->name) }}!
                             </h2>
                             
                             <div class="divider"></div>
@@ -228,7 +228,7 @@
                                                 Awaiting Document Verification
                                             </p>
                                             <p style="font-size: 15px; color: #5a6e7c; line-height: 1.5; margin: 0;">
-                                                You will be able to log in to your dashboard after you verified and approved by our admin team.
+                                                You will be able to log in to your dashboard.
                                             </p>
                                         </td>
                                     </tr>
@@ -266,7 +266,7 @@
                                         
                                         <!-- Login Button (disabled state visual but still functional after approval) -->
                                         <div style="text-align: center; margin-top: 10px;">
-                                            <a href="https://staffoo.com.au/#/sign-in" target="_blank" class="btn-login">
+                                            <a href="https://staffoo.com.au/login" target="_blank" class="btn-login">
                                                 Go to Login →
                                             </a>
                                             <p style="font-size: 13px; color: #95a8b8; margin-top: 16px; margin-bottom: 0;">
@@ -301,7 +301,7 @@
                     <tr>
                         <td align="center" style="padding: 20px 20px 10px 20px;">
                             <p style="font-size: 12px; color: #8c9aa8; line-height: 1.5; margin: 0;">
-                                &copy; 2025 STAFFOO. All rights reserved.<br>
+                                &copy; @ {{ date('Y') }} STAFFOO. All rights reserved.<br>
                                 Empowering smarter workforce management.
                             </p>
                             <p style="font-size: 11px; color: #9eacb8; margin-top: 12px;">

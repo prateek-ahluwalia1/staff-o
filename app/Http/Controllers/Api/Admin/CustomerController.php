@@ -86,10 +86,6 @@ class CustomerController extends Controller
             // Optional: Set active status
             'is_active' => 'nullable|boolean',
             
-            // Optional: Upload documents with customer creation
-            'documents' => 'nullable|array',
-            'documents.*.document_type' => 'required_with:documents|string',
-            'documents.*.document_file' => 'required_with:documents|file|mimes:pdf,jpg,jpeg,png|max:5120', // 5MB max
         ]);
 
         if ($validator->fails()) {
@@ -126,16 +122,9 @@ class CustomerController extends Controller
             'company_name' => $data['company_name'] ?? null,
         ]);
 
-        // Create document entries from categories
-        $this->createDocumentEntries($user);
-
-        // Handle document uploads if provided
-        if ($request->hasFile('documents')) {
-            $this->uploadDocuments($request, $user);
-        }
 
         // Load relationships
-        $user->load('customer', 'documents');
+        $user->load('customer');
 
         return response()->json([
             'success' => true,
@@ -242,7 +231,7 @@ class CustomerController extends Controller
         }
 
         // Load relationships
-        $user->load('customer', 'documents');
+        $user->load('customer');
 
         return response()->json([
             'success' => true,
@@ -353,25 +342,6 @@ class CustomerController extends Controller
         return response($content)
             ->header('Content-Type', 'text/csv')
             ->header('Content-Disposition', 'attachment; filename="' . $filename . '"');
-    }
-
-    /**
-     * Create document entries from categories
-     */
-    private function createDocumentEntries($user)
-    {
-        $document_categories = DocumentCategory::where('document_category', 'customer_document')->first();
-        
-        if ($document_categories && $document_categories->document_type) {
-            foreach (json_decode($document_categories->document_type) as $key => $value) {  
-                Document::create([
-                    'user_id' => $user->id,
-                    'document_category' => $document_categories->document_category ?? 'other',
-                    'document_type' => $key,
-                    'document_name' => $value,
-                ]);
-            }
-        }
     }
 
     /**

@@ -1354,7 +1354,7 @@ private function calculateProfileCompletion(User $user): int
             'claim_threshold'    => 'nullable|in:yes,no',
             'help_debt'          => 'nullable|in:yes,no',
             'signature'          => 'nullable|string|max:150',
-            'date'               => 'nullable|date',
+            'date'               => 'nullable|string',
         ]);
 
         $record = TfnDeclaration::updateOrCreate(
@@ -1386,7 +1386,7 @@ private function calculateProfileCompletion(User $user): int
             'fund_usi'        => 'nullable|string|max:50',
             'member_account'  => 'nullable|string|max:50',
             'signature'       => 'nullable|string|max:150',
-            'date'            => 'nullable|date',
+            'date'            => 'nullable|string',
             'super_confirmation' => 'nullable',
         ]);
 

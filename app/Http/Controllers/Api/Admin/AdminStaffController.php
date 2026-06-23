@@ -125,6 +125,8 @@ class AdminStaffController extends Controller
             'profile_image' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
             'staff_document_type' => 'nullable|string|max:100',
             'security_license_no' => 'nullable|string|max:100',
+            'date_of_birth' => 'nullable|string',
+            'origin_country' => 'nullable|string',
         ]);
 
         DB::beginTransaction();
@@ -161,7 +163,9 @@ class AdminStaffController extends Controller
             'gender' => $validated['gender'] ?? null,
             'phone' => $validated['phone'],
             'staff_document_type' => $validated['staff_document_type'] ?? null,
-            'security_license_no' => $validated['security_license_no'] ?? null
+            'security_license_no' => $validated['security_license_no'] ?? null,
+            'date_of_birth' => $validated['date_of_birth'] ?? null,
+            'origin_country' => $validated['origin_country'] ?? null,
         ]);
         
         $old_data = Staff::where('user_id', $user->id)->first();
@@ -314,14 +318,19 @@ class AdminStaffController extends Controller
         ], 200);
 
     } catch (\Illuminate\Validation\ValidationException $e) {
+        $errorMessages = collect($e->errors())
+            ->flatMap(function ($messages) {
+                return $messages;
+            })
+            ->implode(' ');
+        
         return response()->json([
             'success' => false,
-            'message' => 'Validation failed.',
+            'message' => $errorMessages ?: 'Validation failed.',
             'code' => 422,
-            'errors' => $e->errors()
+            'errors' => $e->errors() // Keep detailed errors if needed
         ], 422);
-
-    } catch (\Illuminate\Database\QueryException $e) {
+    }catch (\Illuminate\Database\QueryException $e) {
         DB::rollBack();
         \Log::error('Database error in createStaff: ' . $e->getMessage(), [
             'trace' => $e->getTraceAsString(),
@@ -437,7 +446,7 @@ class AdminStaffController extends Controller
 
         }
 
-        if ($request->has('date_of_birth')) {
+        if ($request->has('origin_country')) {
             $staff->origin_country = $request->origin_country;
 
         }

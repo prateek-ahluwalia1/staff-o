@@ -55,7 +55,7 @@ class AuthController extends Controller
         $user->staffo_id = 'STAFO' . $user->id;
         $user->save();
 
-        // $this->sendOTP($user->phone, $otp);
+        $this->sendOTP($user->phone, $otp);
         $this->EmailVerify($request->email);
 
         if($data['user_type'] == 'customer'){
@@ -142,7 +142,7 @@ class AuthController extends Controller
         ], 201);
     }
 
-     public function sendOTP(?string $phone, int $otp): bool
+     public function sendOTP($phone, $otp)
     {
         if (empty($phone)) {
             Log::error('OTP Error: Phone is null');
@@ -150,8 +150,11 @@ class AuthController extends Controller
         }
 
         $phone = $this->formatPhone($phone);
+        $message = "{$otp} is your Staffoo OTP. Enter the code on Staffoo to verify your phone number.";
 
-        return $this->yeastar->sendSmsOtp($phone, (string) $otp);
+        $sendSmS = send_sms($phone, $message);
+
+        return $sendSmS;
     }
 
     // ─── Resend OTP ────────────────────────────────────────────────────
@@ -179,10 +182,10 @@ class AuthController extends Controller
         $sent = $this->sendOTP($user->phone, $otp);
 
         if (!$sent) {
-            return response()->json(['message' => 'Failed to send OTP, try again'], 500);
+            return response()->json(['success' => false, 'message' => 'Failed to send OTP, try again'], 500);
         }
 
-        return response()->json(['message' => 'OTP resent successfully']);
+        return response()->json(['success' => true, 'message' => 'OTP resent successfully']);
     }
 
     // ─── Verify Phone ──────────────────────────────────────────────────
@@ -197,11 +200,11 @@ class AuthController extends Controller
         $user = User::where('phone', $request->phone)->first();
 
         if (!$user) {
-            return response()->json(['message' => 'User not found'], 404);
+            return response()->json(['success' => false, 'message' => 'User not found'], 404);
         }
 
         if ($user->phone_verified) {
-            return response()->json(['message' => 'Phone already verified'], 200);
+            return response()->json(['success' => false, 'message' => 'Phone already verified'], 200);
         }
 
         // Check OTP expiry first
@@ -213,7 +216,7 @@ class AuthController extends Controller
 
         // Then check OTP value
         if ($user->phone_otp != $request->otp) {
-            return response()->json(['message' => 'Invalid OTP'], 400);
+            return response()->json(['success' => false, 'message' => 'Invalid OTP'], 400);
         }
 
         $user->update([
@@ -222,7 +225,7 @@ class AuthController extends Controller
             // 'phone_otp_expires_at' => null,
         ]);
 
-        return response()->json(['message' => 'Phone verified successfully']);
+        return response()->json(['success' => true, 'code' => 200, 'message' => 'Phone verified successfully']);
     }
 
     // ─── Format Phone ──────────────────────────────────────────────────
@@ -253,42 +256,26 @@ class AuthController extends Controller
             $otp = Str::random(6);
             $guard->email_otp = $otp;
             $guard->save();
-            $this->isEmailVarifay($guard->email, $otp);
+            $this->isEmailVarifay($guard->email, $guard->user_type, $otp);
         }
     }
 
     
-    function isEmailVarifay($email,$token){
+    function isEmailVarifay($email, $userType, $token){
         $data = [
             'token' => $token,
             'email' => $email,
             'title' => "Staff Verify Email",
+            'userType' => $userType
         ];
         
         Mail::send('emails.isEmailVerify', $data, function($token)use($data){
-            $token->from('no-reply@staffoo.com.au', 'Staffoo')
+            $token->from('no-reply@staffoo.com.au', 'STAFFOO')
             ->to($data['email']);
             $token->subject("Staff Verify Email");
         });
     }
 
-    //    public function EmailVerification($email,$token)
-    // { 
-    //     $guard = User::where('email', $email)->first();
-
-    //     if($guard){
-    //         if($guard->email_otp == $token){
-    //             $guard->is_email_approved = 1;
-    //             $guard->email_otp = null;
-    //             $guard->save();
-    //             return view('guard-welcome', ['guard' => $guard]);
-    //         }else{
-    //             return response()->json(['message' => "Your Otp Expired!" ,  'code' => 404, 'success' => false]);
-    //         }
-    //     }else{
-    //         return response()->json(['message' => "Staff Not Found!" ,  'code' => 404, 'success' => false]);
-    //     }
-    // }
     public function EmailVerification($email, $token)
     { 
         $user = User::where('email', $email)->first();
@@ -307,16 +294,13 @@ class AuthController extends Controller
                 return view('guard-welcome', ['guard' => $user]);
 
             } else {
-                return response()->json([
-                    'message' => "Your OTP Expired!",
-                    'success' => false
-                ], 404);
+                return redirect()->away('https://staffoo.com.au/login')
+                ->with('error', 'Your OTP has expired! Please request a new verification email.')
+                ->with('email', $email);
             }
         } else {
-            return response()->json([
-                'message' => "User Not Found!",
-                'success' => false
-            ], 404);
+               return redirect()->away('https://staffoo.com.au/login')
+               ->with('error', 'User not found! Please contact support.');
         }
     }
     // public function registerContractor(Request $request)

@@ -30,7 +30,8 @@
                             <tr>
                                 <td style="padding: 0 32px 12px 32px; text-align: center;">
                                     <h1 style="color:#0F2B3D; font-weight:600; font-size:28px; margin:0 0 8px 0; letter-spacing:-0.3px;">Verify your email address</h1>
-                                    <p style="color:#5A6872; font-size:16px; line-height:1.5; margin:0;">You're just one step away from unlocking the full power of STAFFOO.</p>
+                                    <p style="color:#5A6872; font-size:16px; line-height:1.5; margin:0;">You're almost there! Verify your email to unlock all STAFFOO features.</p>
+                                                                                                         
                                 </td>
                             </tr>
 
@@ -61,9 +62,9 @@
                             <tr>
                                 <td style="padding: 24px 32px 12px 32px; text-align: center;">
                                     <a href="https://apis.staffoo.com.au/api/email-verification/{{$email}}/{{$token}}"
-                                       target="_blank"
-                                       style="background: linear-gradient(105deg, #00A37E 0%, #018F6E 100%); color:#ffffff; padding:14px 32px; border-radius:60px; text-decoration:none; font-weight:600; font-size:16px; display:inline-block; box-shadow:0 6px 14px rgba(0,163,126,0.25); transition: all 0.2s ease; mso-padding-alt:0; text-align:center;">
-                                        ✓ Verify my account
+                                    target="_blank"
+                                    style="background-color: #00A37E; color: #ffffff; padding: 14px 32px; border-radius: 60px; text-decoration: none; font-weight: 600; font-size: 16px; display: inline-block; text-align: center; font-family: Arial, sans-serif;">
+                                        Verify Email
                                     </a>
                                 </td>
                             </tr>
@@ -73,13 +74,14 @@
                                 <td style="padding: 16px 32px 12px 32px;">
                                     <table style="background:#F2F9F6; border-radius:20px; width:100%; border-collapse:collapse;" cellpadding="0" cellspacing="0">
                                         <tr>
+                                           @if($userType == "customer")
                                             <td style="padding: 20px 24px;">
                                                 <p style="font-size:15px; font-weight:600; color:#006B51; margin:0 0 8px 0; display:flex; align-items:center; gap:8px;">
                                                     Ready to elevate your team?
                                                 </p>
                                                 <p style="font-size:14px; color:#2D4A5E; line-height:1.5; margin:0 0 10px 0;">
-                                                    Thanks for registering with <strong>STAFFOO</strong>
-                                                    Once you verify your Email, you can:
+                                                    Thanks for signing up with <strong>STAFFOO</strong>
+                                                    Once your email is verified, you'll be able to:
                                                 </p>
                                                 <ul style="margin:6px 0 0 20px; padding-left:0; color:#2C5A6E; font-size:14px; line-height:1.6;">
                                                     <li>Create & assign shifts instantly</li>
@@ -87,6 +89,7 @@
                                                     <li>Access real-time analytics & payroll insights</li>
                                                 </ul>
                                             </td>
+                                            @endif
                                         </tr>
                                     </table>
                                 </td>
@@ -95,11 +98,8 @@
                             <!-- Extra security note + support -->
                             <tr>
                                 <td style="padding: 8px 32px 20px 32px; text-align: center;">
-                                    <p style="font-size:13px; color:#6A7F8F; margin:0 0 8px 0;">
-                                        Didn't request this? You can safely ignore this Email.
-                                    </p>
                                     <p style="font-size:13px; color:#6A7F8F; margin:0;">
-                                        Need help? <a href="https://staffoo.com.au/contact-us" style="color:#00A37E; text-decoration:none; font-weight:500;">Contact support</a> or visit our <a href="https://staffoo.com.au/" style="color:#00A37E; text-decoration:none;">Help Center</a>
+                                        Need help? <a href="https://staffoo.com.au/contact-us" style="color:#00A37E; text-decoration:none; font-weight:500;">Contact support</a> or visit our <a href="https://staffoo.com.au/contact-us" style="color:#00A37E; text-decoration:none;">Help Center</a>
                                     </p>
                                 </td>
                             </tr>
@@ -112,7 +112,7 @@
                                             <td style="text-align:center;">
                                                 <p style="font-weight:600; margin:0 0 12px 0; color:#1B4F6E; font-size:15px;">STAFFOO — Smarter workforce, better results</p>
                                                 <p style="font-size:12px; color:#8DA1AE; margin:0 0 10px 0;">
-                                                    © 2025 STAFFOO All rights reserved.
+                                                    © {{ date('Y') }} STAFFOO All rights reserved.
                                                 </p>
                                                 <div style="margin-top: 12px;">
                                                     <a href="https://staffoo.com.au/about-us" style="color:#00A37E; text-decoration:none; font-size:12px; margin:0 8px;">About</a> 

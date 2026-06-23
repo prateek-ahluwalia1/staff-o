@@ -1,368 +1,282 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import Header from "../../components/newHome/Header";
 import Footer from "../../components/newHome/Footer";
-import teamsimg from "../../assets/images/teams.png";
+import StatsCounter from "../../components/solution'scomp/Statecounter";
+import BusinessProtection from "../../components/solution'scomp/bissnussprotecttion";
+import Testimonials from "../../components/solution'scomp/testimonials";
+import WhyChooseStaffoo from "../../components/solution'scomp/WhyChooseStaffoo";
+import HowItWorks from "../../components/solution'scomp/HowItWorks";
+import BusinessProtectionLeft from "../../components/solution'scomp/BusinessProtectionLeft";
+import RelatedSolutions from "../../components/solution'scomp/RelatedSolutions";
+import FAQ from "../../components/solution'scomp/FAQ";
+import ReadyToSecure from "../../components/solution'scomp/ReadyToSecure";
 
-function ForSecurityCompanies() {
-    const cards = [
-        {
-            icon: "fa-users",
-            title: "Hire Verified Guards",
-            desc: "Access trained and background-verified security professionals instantly.",
-        },
-        {
-            icon: "fa-briefcase",
-            title: "Get More Clients",
-            desc: "Connect with businesses actively searching for security services.",
-        },
-        {
-            icon: "fa-calendar-check-o",
-            title: "Manage Assignments",
-            desc: "Easily assign shifts, manage staff, and track performance.",
-        },
-        {
-            icon: "fa-money",
-            title: "Increase Revenue",
-            desc: "Expand your business with consistent job opportunities.",
-        },
-        {
-            icon: "fa-globe",
-            title: "Nationwide Reach",
-            desc: "Operate across multiple cities and expand your service area.",
-        },
-        {
-            icon: "fa-clock-o",
-            title: "Faster Hiring",
-            desc: "Reduce hiring time from days to minutes with instant matching.",
-        },
-        {
-            icon: "fa-shield",
-            title: "Trusted Platform",
-            desc: "Work with a verified ecosystem of clients and professionals.",
-        },
-        {
-            icon: "fa-line-chart",
-            title: "Business Growth Tools",
-            desc: "Use smart tools to scale your security operations efficiently.",
-        },
-    ];
+export default function ForSecurityCompanies() {
+    const [isPrimaryHovered, setIsPrimaryHovered] = useState(false);
+    const [isSecondaryHovered, setIsSecondaryHovered] = useState(false);
 
-    const benefits = [
-        {
-            icon: "fa-handshake-o",
-            title: "Direct Client Access",
-            desc: "Connect directly with businesses needing security services.",
-        },
-        {
-            icon: "fa-bolt",
-            title: "Fast Job Allocation",
-            desc: "Get assigned jobs instantly without long waiting cycles.",
-        },
-        {
-            icon: "fa-bar-chart",
-            title: "Business Scaling",
-            desc: "Grow from small agency to large security provider.",
-        },
-        {
-            icon: "fa-cogs",
-            title: "Operational Control",
-            desc: "Manage staff, shifts, and operations from one platform.",
-        },
-    ];
+    // Responsive State Hook to detect mobile screens dynamically
+    const [isMobile, setIsMobile] = useState(false);
 
-    const process = [
-        {
-            title: "Register Company",
-            desc: "Sign up and verify your security business on Staffoo.",
+    useEffect(() => {
+        const handleResize = () => {
+            setIsMobile(window.innerWidth <= 991);
+        };
+
+        // Set initial layout scale
+        handleResize();
+
+        window.addEventListener("resize", handleResize);
+        return () => window.removeEventListener("resize", handleResize);
+    }, []);
+
+    const styles = {
+        page: {
+            minHeight: "100vh",
+            background: "linear-gradient(to top right, #0a5a51 0%, #0a2a24 30%, #0d1a18 60%, #111313 100%)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            fontFamily: "'Poppins', 'Inter', 'Segoe UI', sans-serif",
+            padding: isMobile ? "120px 20px 60px" : "80px 40px", // Increased top padding for mobile to account for fixed headers
+            boxSizing: "border-box",
         },
-        {
-            title: "Build Profile",
-            desc: "Showcase your services, staff strength, and expertise.",
+        container: {
+            maxWidth: "1140px",
+            width: "100%",
+            display: "flex",
+            flexDirection: isMobile ? "column" : "row", // Stack elements vertically on mobile
+            alignItems: isMobile ? "stretch" : "center",
+            justifyContent: "space-between",
+            gap: isMobile ? "40px" : "80px",
         },
-        {
-            title: "Get Matched",
-            desc: "We connect you with clients based on your capabilities.",
+        left: {
+            flex: "1",
+            maxWidth: isMobile ? "100%" : "660px",
+            textAlign: isMobile ? "center" : "left", // Center content on mobile for clean symmetry
         },
-        {
-            title: "Start Operations",
-            desc: "Accept jobs and deploy your security teams instantly.",
+        breadcrumb: {
+            fontSize: "13px",
+            color: "#ffffff",
+            marginBottom: "24px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: isMobile ? "center" : "flex-start",
+            gap: "6px",
         },
-    ];
+        breadcrumbHighlight: {
+            color: "#00c9a7",
+            fontWeight: "600",
+        },
+        breadcrumbSep: {
+            color: "#ffffff",
+            opacity: 0.7,
+            margin: "0 2px",
+        },
+        heading: {
+            fontSize: isMobile ? "24px" : "34px", // Highly legible scaled typography
+            fontWeight: "700",
+            color: "#ffffff",
+            lineHeight: isMobile ? "1.2" : "1.25",
+            margin: "0 0 20px 0",
+            letterSpacing: "-0.01em",
+        },
+        headingAccent: {
+            color: "#00c9a7",
+        },
+        description: {
+            fontSize: isMobile ? "12px" : "13px",
+            color: "#ffffff",
+            lineHeight: "1.65",
+            marginBottom: "32px",
+            maxWidth: isMobile ? "100%" : "520px",
+            opacity: 0.9,
+        },
+        buttonGroup: {
+            display: "flex",
+            gap: "14px",
+            flexDirection: isMobile ? "column" : "row", // Stack CTA buttons on mobile viewports
+            justifyContent: isMobile ? "center" : "flex-start",
+        },
+        btnPrimary: {
+            padding: "14px 32px",
+            background: isPrimaryHovered ? "#00b395" : "#00c9a7",
+            border: isPrimaryHovered ? "1.5px solid #00b395" : "1.5px solid #00c9a7",
+            color: "#ffffff",
+            borderRadius: "6px",
+            fontSize: "15px",
+            fontWeight: "600",
+            cursor: "pointer",
+            transition: "all 0.2s ease-in-out",
+            letterSpacing: "0.01em",
+            width: isMobile ? "100%" : "auto",
+        },
+        btnSecondary: {
+            padding: "14px 32px",
+            background: isSecondaryHovered ? "rgba(255, 255, 255, 0.08)" : "transparent",
+            border: isSecondaryHovered ? "1.5px solid #00c9a7" : "1.5px solid #ffffff",
+            color: isSecondaryHovered ? "#00c9a7" : "#ffffff",
+            borderRadius: "6px",
+            fontSize: "15px",
+            fontWeight: "600",
+            cursor: "pointer",
+            transition: "all 0.2s ease-in-out",
+            letterSpacing: "0.01em",
+            width: isMobile ? "100%" : "auto",
+        },
+        right: {
+            flexShrink: 0,
+            width: "100%",
+            maxWidth: isMobile ? "100%" : "380px", // Soft limit container width instead of forcing fixed pixels
+            display: isMobile ? "flex" : "block",
+            justifyContent: "center",
+        },
+        card: {
+            background: "#181818",
+            border: "1px solid #1c3530",
+            borderRadius: "24px",
+            padding: isMobile ? "28px 20px" : "36px 28px 28px",
+            boxShadow: "0px 10px 40px rgba(0, 201, 167, 0.03)",
+            width: "100%",
+        },
+        cardLabel: {
+            fontSize: "12px",
+            fontWeight: "5w00",
+            letterSpacing: "0.08em",
+            color: "#00c9a7",
+            textTransform: "uppercase",
+            marginBottom: "24px",
+            textAlign: isMobile ? "center" : "left",
+        },
+        statsGrid: {
+            display: "grid",
+            gridTemplateColumns: window.innerWidth <= 480 ? "1fr" : "1fr 1fr", // Single column layouts on extra small mobile windows
+            gap: "14px",
+            marginBottom: "14px",
+        },
+        statBox: {
+            background: "transparent",
+            border: "1px solid #223531",
+            borderRadius: "12px",
+            padding: "20px 16px",
+            textAlign: "center",
+        },
+        statValue: {
+            fontSize: "26px",
+            fontWeight: "700",
+            color: "#00c9a7",
+            marginBottom: "6px",
+        },
+        statLabel: {
+            fontSize: "13px",
+            color: "#00c9a7",
+            lineHeight: "1.4",
+            fontWeight: "500",
+        },
+        tagsGrid: {
+            display: "grid",
+            gridTemplateColumns: window.innerWidth <= 480 ? "1fr" : "1fr 1fr",
+            gap: "10px",
+        },
+        tag: {
+            background: "transparent",
+            border: "1px solid #223531",
+            borderRadius: "10px",
+            padding: "12px 14px",
+            fontSize: "13px",
+            color: "#00c9a7",
+            fontWeight: "500",
+            textAlign: "center",
+        },
+    };
 
     return (
         <>
             <Header />
 
-            <div style={{ background: "#0b0c0e", color: "#f4f2ed" }}>
+            <div style={styles.page}>
+                <div style={styles.container}>
+                    {/* Left Content */}
+                    <div style={styles.left}>
+                        {/* Breadcrumb */}
+                        <div style={styles.breadcrumb}>
+                            <span>Home</span>
+                            <span style={styles.breadcrumbSep}>&gt;</span>
+                            <span>Solutions</span>
+                            <span style={styles.breadcrumbSep}>&gt;</span>
+                            <span style={styles.breadcrumbHighlight}>Event Security</span>
+                        </div>
 
-                {/* HERO */}
-                <section style={{ padding: "110px 20px", textAlign: "center" }}>
-                    <div style={{ maxWidth: "900px", margin: "0 auto" }}>
-
-                        <span style={badgeStyle}>
-                            <i className="fa fa-building" style={{ marginRight: "8px" }}></i>
-                            For Security Companies
-                        </span>
-
-                        <h1 style={h1Style}>
-                            Grow, Manage & Scale Your Security Business
+                        {/* Heading */}
+                        <h1 style={styles.heading}>
+                            Professional <span style={styles.headingAccent}>Event Security</span> staffing built for scale
                         </h1>
 
-                        <p style={subTextStyle}>
-                            Join Staffoo platform to get more clients, manage your workforce,
-                            and expand your security operations across multiple industries.
+                        {/* Description */}
+                        <p style={styles.description}>
+                            From small private functions to major public events, Staffoo sources,
+                            verifies, and deploys licensed security personnel — fast, compliant,
+                            and covered.
                         </p>
 
-                    </div>
-                </section>
-
-                {/* OVERVIEW */}
-                <section style={sectionStyle}>
-                    <div style={containerStyle}>
-
-                        <div style={cardStyle}>
-                            <div style={splitStyle}>
-
-                                <div style={{ flex: 1.2 }}>
-                                    <h2 style={h2Style}>One Platform for Security Companies</h2>
-
-                                    <p style={textStyle}>
-                                        Security companies often struggle with client acquisition,
-                                        staff management, and operational scaling. Staffoo solves
-                                        this by providing a unified platform.
-                                    </p>
-
-                                    <p style={textStyle}>
-                                        You get direct access to verified clients, job requests,
-                                        and workforce tools — all in one system.
-                                    </p>
-
-                                    <p style={textStyle}>
-                                        No more manual marketing or waiting for contracts.
-                                        We bring opportunities directly to you.
-                                    </p>
-                                </div>
-
-                                <div style={{ flex: 1 }}>
-                                    <img src={teamsimg} alt="Security Companies" style={imageStyle} />
-                                </div>
-
-                            </div>
-                        </div>
-
-                        {/* 8 CARDS SECTION */}
-                        <div style={cardStyle}>
-                            <h2 style={h2Style}>Why Security Companies Choose Staffoo</h2>
-
-                            <div style={gridStyle}>
-                                {cards.map((item, i) => (
-                                    <div key={i} style={cardSmall}>
-                                        <i className={`fa ${item.icon}`} style={iconStyle}></i>
-                                        <h3 style={h3Style}>{item.title}</h3>
-                                        <p style={textMuted}>{item.desc}</p>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-
-                        {/* BENEFITS */}
-                        <div style={cardStyle}>
-                            <h2 style={h2Style}>Business Benefits</h2>
-
-                            <div style={gridStyle}>
-                                {benefits.map((item, i) => (
-                                    <div key={i} style={cardSmall}>
-                                        <i className={`fa ${item.icon}`} style={iconStyle}></i>
-                                        <h3 style={h3Style}>{item.title}</h3>
-                                        <p style={textMuted}>{item.desc}</p>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-
-                        {/* PROCESS */}
-                        <div style={cardStyle}>
-                            <h2 style={h2Style}>How It Works</h2>
-
-                            <div style={gridStyle}>
-                                {process.map((step, i) => (
-                                    <div key={i} style={cardSmall}>
-                                        <div style={stepCircle}>{i + 1}</div>
-                                        <h3 style={h3Style}>{step.title}</h3>
-                                        <p style={textMuted}>{step.desc}</p>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-
-                        {/* LONG CONTENT SECTION (IMPORTANT FOR LENGTH) */}
-                        <div style={cardStyle}>
-                            <h2 style={h2Style}>Scale Your Security Business Easily</h2>
-
-                            <p style={textStyle}>
-                                The security industry is highly competitive, and companies need
-                                consistent client flow to grow. Staffoo provides that consistent
-                                pipeline by connecting you directly with businesses that require
-                                security services.
-                            </p>
-
-                            <p style={textStyle}>
-                                Instead of spending time on marketing, bidding, and manual
-                                outreach, you can focus on delivering quality security services
-                                while we handle client acquisition.
-                            </p>
-
-                            <p style={textStyle}>
-                                Our platform is designed to support both small security firms
-                                and large enterprises looking to scale operations across cities.
-                            </p>
-
-                            <p style={textStyle}>
-                                Whether you provide event security, corporate guards, retail
-                                security, or industrial protection — Staffoo helps you grow
-                                faster and smarter.
-                            </p>
-                        </div>
-
-                        {/* CTA */}
-                        <div style={{ ...cardStyle, textAlign: "center" }}>
-                            <h2 style={h2Style}>Start Growing Your Security Company</h2>
-
-                            <p style={textStyle}>
-                                Join Staffoo today and get access to real clients and real security jobs.
-                            </p>
-
-                            <button style={buttonStyle}>
-                                Join as Security Company
+                        {/* Buttons */}
+                        <div style={styles.buttonGroup}>
+                            <button
+                                style={styles.btnPrimary}
+                                onMouseEnter={() => setIsPrimaryHovered(true)}
+                                onMouseLeave={() => setIsPrimaryHovered(false)}
+                            >
+                                Request security staff
+                            </button>
+                            <button
+                                style={styles.btnSecondary}
+                                onMouseEnter={() => setIsSecondaryHovered(true)}
+                                onMouseLeave={() => setIsSecondaryHovered(false)}
+                            >
+                                See how it works
                             </button>
                         </div>
-
                     </div>
-                </section>
 
+                    {/* Right Card */}
+                    <div style={styles.right}>
+                        <div style={styles.card}>
+                            <div style={styles.cardLabel}>Solution at a Glance</div>
+
+                            {/* Stats */}
+                            <div style={styles.statsGrid}>
+                                <div style={styles.statBox}>
+                                    <div style={styles.statValue}>24 hrs</div>
+                                    <div style={styles.statLabel}>Avg. deployment time</div>
+                                </div>
+                                <div style={styles.statBox}>
+                                    <div style={styles.statValue}>100%</div>
+                                    <div style={styles.statLabel}>Licensed &amp; verified</div>
+                                </div>
+                            </div>
+
+                            {/* Tags */}
+                            <div style={styles.tagsGrid}>
+                                <div style={styles.tag}>Crowd controller</div>
+                                <div style={styles.tag}>RSA-trained</div>
+                                <div style={styles.tag}>GPS tracking</div>
+                                <div style={styles.tag}>Payroll managed</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
+            <StatsCounter />
+            <BusinessProtection />
+            <Testimonials />
+            <WhyChooseStaffoo />
+            <HowItWorks />
+            <BusinessProtectionLeft />
+            <RelatedSolutions />
+            <FAQ />
+            <ReadyToSecure />
 
             <Footer />
         </>
     );
 }
-
-export default ForSecurityCompanies;
-
-/* ================= STYLES ================= */
-
-const containerStyle = {
-    maxWidth: "1200px",
-    margin: "0 auto",
-    padding: "0 20px",
-};
-
-const sectionStyle = {
-    padding: "20px 0 80px",
-};
-
-const badgeStyle = {
-    display: "inline-block",
-    padding: "6px 14px",
-    border: "1px solid #0A7C6E",
-    color: "#0A7C6E",
-    borderRadius: "20px",
-    fontSize: "0.8rem",
-    marginBottom: "20px",
-};
-
-const h1Style = {
-    fontSize: "3rem",
-    fontWeight: "800",
-    marginBottom: "20px",
-};
-
-const h2Style = {
-    fontSize: "2rem",
-    marginBottom: "20px",
-};
-
-const h3Style = {
-    fontSize: "1.1rem",
-    margin: "10px 0",
-};
-
-const subTextStyle = {
-    color: "#9ca3af",
-    maxWidth: "700px",
-    margin: "0 auto",
-    lineHeight: "1.6",
-};
-
-const textStyle = {
-    color: "#cbd5e1",
-    lineHeight: "1.6",
-};
-
-const textMuted = {
-    color: "#9ca3af",
-    fontSize: "0.9rem",
-};
-
-const cardStyle = {
-    background: "#12191d",
-    border: "1px solid #1f2933",
-    borderRadius: "10px",
-    padding: "30px",
-    marginBottom: "25px",
-    marginTop: "25px",
-};
-
-const cardSmall = {
-    background: "#0d1216",
-    border: "1px solid #1f2933",
-    borderRadius: "8px",
-    padding: "20px",
-};
-
-const gridStyle = {
-    display: "grid",
-    gridTemplateColumns: "repeat(2, 1fr)",
-    gap: "20px",
-    marginTop: "25px",
-};
-
-const splitStyle = {
-    display: "flex",
-    gap: "40px",
-    alignItems: "center",
-    flexWrap: "wrap",
-};
-
-const imageStyle = {
-    width: "100%",
-    borderRadius: "10px",
-};
-
-const iconStyle = {
-    color: "#0A7C6E",
-    fontSize: "1.5rem",
-};
-
-const stepCircle = {
-    width: "40px",
-    height: "40px",
-    borderRadius: "50%",
-    background: "#0A7C6E",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    fontWeight: "700",
-    marginBottom: "10px",
-};
-
-const buttonStyle = {
-    marginTop: "20px",
-    background: "#0A7C6E",
-    color: "white",
-    border: "none",
-    padding: "14px 28px",
-    borderRadius: "6px",
-    cursor: "pointer",
-    fontWeight: "600",
-};

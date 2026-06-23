@@ -1,319 +1,282 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import Header from "../../components/newHome/Header";
 import Footer from "../../components/newHome/Footer";
-import teamsimg from "../../assets/images/teams.png";
+import StatsCounter from "../../components/solution'scomp/Statecounter";
+import BusinessProtection from "../../components/solution'scomp/bissnussprotecttion";
+import Testimonials from "../../components/solution'scomp/testimonials";
+import WhyChooseStaffoo from "../../components/solution'scomp/WhyChooseStaffoo";
+import HowItWorks from "../../components/solution'scomp/HowItWorks";
+import BusinessProtectionLeft from "../../components/solution'scomp/BusinessProtectionLeft";
+import RelatedSolutions from "../../components/solution'scomp/RelatedSolutions";
+import FAQ from "../../components/solution'scomp/FAQ";
+import ReadyToSecure from "../../components/solution'scomp/ReadyToSecure";
 
-function GovernmentSecurity() {
-    const features = [
-        {
-            icon: "fa-university",
-            title: "Public Facility Security",
-            desc: "Protection for government buildings, offices, and administrative centers.",
-        },
-        {
-            icon: "fa-id-card",
-            title: "Verified Personnel Access",
-            desc: "Strict identity verification and controlled entry systems.",
-        },
-        {
-            icon: "fa-shield",
-            title: "High-Security Protocols",
-            desc: "Compliance with government-grade safety and security standards.",
-        },
-        {
-            icon: "fa-video",
-            title: "Surveillance Systems",
-            desc: "Continuous CCTV monitoring and incident recording.",
-        },
-        {
-            icon: "fa-users",
-            title: "Crowd & Public Management",
-            desc: "Controlled handling of public gatherings and sensitive areas.",
-        },
-        {
-            icon: "fa-exclamation-triangle",
-            title: "Emergency Response",
-            desc: "Rapid action protocols for security threats and incidents.",
-        },
-    ];
+export default function GovernmentSecurity() {
+    const [isPrimaryHovered, setIsPrimaryHovered] = useState(false);
+    const [isSecondaryHovered, setIsSecondaryHovered] = useState(false);
 
-    const sectors = [
-        {
-            icon: "fa-building",
-            title: "Government Offices",
-            desc: "Secure administrative departments and ministries.",
-        },
-        {
-            icon: "fa-landmark",
-            title: "Public Institutions",
-            desc: "Protection for civic and public service buildings.",
-        },
-        {
-            icon: "fa-gavel",
-            title: "Judicial Facilities",
-            desc: "High-level security for courts and legal institutions.",
-        },
-    ];
+    // Responsive State Hook to detect mobile screens dynamically
+    const [isMobile, setIsMobile] = useState(false);
 
-    const process = [
-        {
-            title: "Risk Evaluation",
-            desc: "We assess threats and security requirements for the site.",
+    useEffect(() => {
+        const handleResize = () => {
+            setIsMobile(window.innerWidth <= 991);
+        };
+
+        // Set initial layout scale
+        handleResize();
+
+        window.addEventListener("resize", handleResize);
+        return () => window.removeEventListener("resize", handleResize);
+    }, []);
+
+    const styles = {
+        page: {
+            minHeight: "100vh",
+            background: "linear-gradient(to top right, #0a5a51 0%, #0a2a24 30%, #0d1a18 60%, #111313 100%)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            fontFamily: "'Poppins', 'Inter', 'Segoe UI', sans-serif",
+            padding: isMobile ? "120px 20px 60px" : "80px 40px", // Increased top padding for mobile to account for fixed headers
+            boxSizing: "border-box",
         },
-        {
-            title: "Security Planning",
-            desc: "Custom protocols designed for government compliance.",
+        container: {
+            maxWidth: "1140px",
+            width: "100%",
+            display: "flex",
+            flexDirection: isMobile ? "column" : "row", // Stack elements vertically on mobile
+            alignItems: isMobile ? "stretch" : "center",
+            justifyContent: "space-between",
+            gap: isMobile ? "40px" : "80px",
         },
-        {
-            title: "Deploy Trained Officers",
-            desc: "Highly vetted and trained security personnel assigned.",
+        left: {
+            flex: "1",
+            maxWidth: isMobile ? "100%" : "660px",
+            textAlign: isMobile ? "center" : "left", // Center content on mobile for clean symmetry
         },
-        {
-            title: "Continuous Monitoring",
-            desc: "Ongoing supervision and incident management support.",
+        breadcrumb: {
+            fontSize: "13px",
+            color: "#ffffff",
+            marginBottom: "24px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: isMobile ? "center" : "flex-start",
+            gap: "6px",
         },
-    ];
+        breadcrumbHighlight: {
+            color: "#00c9a7",
+            fontWeight: "600",
+        },
+        breadcrumbSep: {
+            color: "#ffffff",
+            opacity: 0.7,
+            margin: "0 2px",
+        },
+        heading: {
+            fontSize: isMobile ? "24px" : "34px", // Highly legible scaled typography
+            fontWeight: "700",
+            color: "#ffffff",
+            lineHeight: isMobile ? "1.2" : "1.25",
+            margin: "0 0 20px 0",
+            letterSpacing: "-0.01em",
+        },
+        headingAccent: {
+            color: "#00c9a7",
+        },
+        description: {
+            fontSize: isMobile ? "12px" : "13px",
+            color: "#ffffff",
+            lineHeight: "1.65",
+            marginBottom: "32px",
+            maxWidth: isMobile ? "100%" : "520px",
+            opacity: 0.9,
+        },
+        buttonGroup: {
+            display: "flex",
+            gap: "14px",
+            flexDirection: isMobile ? "column" : "row", // Stack CTA buttons on mobile viewports
+            justifyContent: isMobile ? "center" : "flex-start",
+        },
+        btnPrimary: {
+            padding: "14px 32px",
+            background: isPrimaryHovered ? "#00b395" : "#00c9a7",
+            border: isPrimaryHovered ? "1.5px solid #00b395" : "1.5px solid #00c9a7",
+            color: "#ffffff",
+            borderRadius: "6px",
+            fontSize: "15px",
+            fontWeight: "600",
+            cursor: "pointer",
+            transition: "all 0.2s ease-in-out",
+            letterSpacing: "0.01em",
+            width: isMobile ? "100%" : "auto",
+        },
+        btnSecondary: {
+            padding: "14px 32px",
+            background: isSecondaryHovered ? "rgba(255, 255, 255, 0.08)" : "transparent",
+            border: isSecondaryHovered ? "1.5px solid #00c9a7" : "1.5px solid #ffffff",
+            color: isSecondaryHovered ? "#00c9a7" : "#ffffff",
+            borderRadius: "6px",
+            fontSize: "15px",
+            fontWeight: "600",
+            cursor: "pointer",
+            transition: "all 0.2s ease-in-out",
+            letterSpacing: "0.01em",
+            width: isMobile ? "100%" : "auto",
+        },
+        right: {
+            flexShrink: 0,
+            width: "100%",
+            maxWidth: isMobile ? "100%" : "380px", // Soft limit container width instead of forcing fixed pixels
+            display: isMobile ? "flex" : "block",
+            justifyContent: "center",
+        },
+        card: {
+            background: "#181818",
+            border: "1px solid #1c3530",
+            borderRadius: "24px",
+            padding: isMobile ? "28px 20px" : "36px 28px 28px",
+            boxShadow: "0px 10px 40px rgba(0, 201, 167, 0.03)",
+            width: "100%",
+        },
+        cardLabel: {
+            fontSize: "12px",
+            fontWeight: "5w00",
+            letterSpacing: "0.08em",
+            color: "#00c9a7",
+            textTransform: "uppercase",
+            marginBottom: "24px",
+            textAlign: isMobile ? "center" : "left",
+        },
+        statsGrid: {
+            display: "grid",
+            gridTemplateColumns: window.innerWidth <= 480 ? "1fr" : "1fr 1fr", // Single column layouts on extra small mobile windows
+            gap: "14px",
+            marginBottom: "14px",
+        },
+        statBox: {
+            background: "transparent",
+            border: "1px solid #223531",
+            borderRadius: "12px",
+            padding: "20px 16px",
+            textAlign: "center",
+        },
+        statValue: {
+            fontSize: "26px",
+            fontWeight: "700",
+            color: "#00c9a7",
+            marginBottom: "6px",
+        },
+        statLabel: {
+            fontSize: "13px",
+            color: "#00c9a7",
+            lineHeight: "1.4",
+            fontWeight: "500",
+        },
+        tagsGrid: {
+            display: "grid",
+            gridTemplateColumns: window.innerWidth <= 480 ? "1fr" : "1fr 1fr",
+            gap: "10px",
+        },
+        tag: {
+            background: "transparent",
+            border: "1px solid #223531",
+            borderRadius: "10px",
+            padding: "12px 14px",
+            fontSize: "13px",
+            color: "#00c9a7",
+            fontWeight: "500",
+            textAlign: "center",
+        },
+    };
 
     return (
         <>
             <Header />
 
-            <div style={{ background: "#0b0c0e", color: "#f4f2ed" }}>
+            <div style={styles.page}>
+                <div style={styles.container}>
+                    {/* Left Content */}
+                    <div style={styles.left}>
+                        {/* Breadcrumb */}
+                        <div style={styles.breadcrumb}>
+                            <span>Home</span>
+                            <span style={styles.breadcrumbSep}>&gt;</span>
+                            <span>Solutions</span>
+                            <span style={styles.breadcrumbSep}>&gt;</span>
+                            <span style={styles.breadcrumbHighlight}>Event Security</span>
+                        </div>
 
-                {/* HERO */}
-                <section style={{ padding: "100px 20px", textAlign: "center" }}>
-                    <div style={{ maxWidth: "900px", margin: "0 auto" }}>
-
-                        <span style={badgeStyle}>
-                            <i className="fa fa-university" style={{ marginRight: "8px" }}></i>
-                            Government Security Services
-                        </span>
-
-                        <h1 style={h1Style}>
-                            Trusted Security Solutions for Government & Public Sector
+                        {/* Heading */}
+                        <h1 style={styles.heading}>
+                            Professional <span style={styles.headingAccent}>Event Security</span> staffing built for scale
                         </h1>
 
-                        <p style={subTextStyle}>
-                            Protect public infrastructure, government facilities, and
-                            sensitive operations with highly trained security professionals.
+                        {/* Description */}
+                        <p style={styles.description}>
+                            From small private functions to major public events, Staffoo sources,
+                            verifies, and deploys licensed security personnel — fast, compliant,
+                            and covered.
                         </p>
 
-                    </div>
-                </section>
-
-                {/* OVERVIEW */}
-                <section style={sectionStyle}>
-                    <div style={containerStyle}>
-
-                        <div style={cardStyle}>
-                            <div style={splitStyle}>
-
-                                <div style={{ flex: 1.2 }}>
-                                    <h2 style={h2Style}>Public Sector Protection</h2>
-
-                                    <p style={textStyle}>
-                                        Government institutions require strict security protocols,
-                                        disciplined execution, and highly trusted personnel.
-                                    </p>
-
-                                    <p style={textStyle}>
-                                        We provide trained security staff capable of handling
-                                        sensitive environments with professionalism and compliance.
-                                    </p>
-                                </div>
-
-                                <div style={{ flex: 1 }}>
-                                    <img
-                                        src={teamsimg}
-                                        alt="Government Security"
-                                        style={imageStyle}
-                                    />
-                                </div>
-
-                            </div>
-                        </div>
-
-                        {/* FEATURES */}
-                        <div style={gridStyle}>
-                            {features.map((item, i) => (
-                                <div key={i} style={cardSmall}>
-                                    <i className={`fa ${item.icon}`} style={iconStyle}></i>
-                                    <h3 style={h3Style}>{item.title}</h3>
-                                    <p style={textMuted}>{item.desc}</p>
-                                </div>
-                            ))}
-                        </div>
-
-                        {/* SECTORS */}
-                        <div style={cardStyle}>
-                            <h2 style={h2Style}>Sectors We Protect</h2>
-
-                            <div style={gridStyle}>
-                                {sectors.map((item, i) => (
-                                    <div key={i} style={cardSmall}>
-                                        <i className={`fa ${item.icon}`} style={iconStyle}></i>
-                                        <h3 style={h3Style}>{item.title}</h3>
-                                        <p style={textMuted}>{item.desc}</p>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-
-                        {/* PROCESS */}
-                        <div style={cardStyle}>
-                            <h2 style={h2Style}>Security Deployment Process</h2>
-
-                            <div style={gridStyle}>
-                                {process.map((step, i) => (
-                                    <div key={i} style={cardSmall}>
-                                        <div style={stepCircle}>{i + 1}</div>
-                                        <h3 style={h3Style}>{step.title}</h3>
-                                        <p style={textMuted}>{step.desc}</p>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-
-                        {/* CTA */}
-                        <div style={{ ...cardStyle, textAlign: "center" }}>
-                            <h2 style={h2Style}>Strengthen Public Security Today</h2>
-
-                            <p style={textStyle}>
-                                Deploy reliable and vetted security professionals for
-                                government and public sector protection.
-                            </p>
-
-                            <button style={buttonStyle}>
-                                Request Government Security
+                        {/* Buttons */}
+                        <div style={styles.buttonGroup}>
+                            <button
+                                style={styles.btnPrimary}
+                                onMouseEnter={() => setIsPrimaryHovered(true)}
+                                onMouseLeave={() => setIsPrimaryHovered(false)}
+                            >
+                                Request security staff
+                            </button>
+                            <button
+                                style={styles.btnSecondary}
+                                onMouseEnter={() => setIsSecondaryHovered(true)}
+                                onMouseLeave={() => setIsSecondaryHovered(false)}
+                            >
+                                See how it works
                             </button>
                         </div>
-
                     </div>
-                </section>
 
+                    {/* Right Card */}
+                    <div style={styles.right}>
+                        <div style={styles.card}>
+                            <div style={styles.cardLabel}>Solution at a Glance</div>
+
+                            {/* Stats */}
+                            <div style={styles.statsGrid}>
+                                <div style={styles.statBox}>
+                                    <div style={styles.statValue}>24 hrs</div>
+                                    <div style={styles.statLabel}>Avg. deployment time</div>
+                                </div>
+                                <div style={styles.statBox}>
+                                    <div style={styles.statValue}>100%</div>
+                                    <div style={styles.statLabel}>Licensed &amp; verified</div>
+                                </div>
+                            </div>
+
+                            {/* Tags */}
+                            <div style={styles.tagsGrid}>
+                                <div style={styles.tag}>Crowd controller</div>
+                                <div style={styles.tag}>RSA-trained</div>
+                                <div style={styles.tag}>GPS tracking</div>
+                                <div style={styles.tag}>Payroll managed</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
+            <StatsCounter />
+            <BusinessProtection />
+            <Testimonials />
+            <WhyChooseStaffoo />
+            <HowItWorks />
+            <BusinessProtectionLeft />
+            <RelatedSolutions />
+            <FAQ />
+            <ReadyToSecure />
 
             <Footer />
         </>
     );
 }
-
-export default GovernmentSecurity;
-
-/* ================= STYLES ================= */
-
-const containerStyle = {
-    maxWidth: "1200px",
-    margin: "0 auto",
-    padding: "0 20px",
-};
-
-const sectionStyle = {
-    padding: "20px 0 80px",
-};
-
-const badgeStyle = {
-    display: "inline-block",
-    padding: "6px 14px",
-    border: "1px solid #0A7C6E",
-    color: "#0A7C6E",
-    borderRadius: "20px",
-    fontSize: "0.8rem",
-    marginBottom: "20px",
-};
-
-const h1Style = {
-    fontSize: "3rem",
-    fontWeight: "800",
-    marginBottom: "20px",
-};
-
-const h2Style = {
-    fontSize: "2rem",
-    marginBottom: "20px",
-};
-
-const h3Style = {
-    fontSize: "1.1rem",
-    margin: "10px 0",
-};
-
-const subTextStyle = {
-    color: "#9ca3af",
-    maxWidth: "700px",
-    margin: "0 auto",
-    lineHeight: "1.6",
-};
-
-const textStyle = {
-    color: "#cbd5e1",
-    lineHeight: "1.6",
-};
-
-const textMuted = {
-    color: "#9ca3af",
-    fontSize: "0.9rem",
-};
-
-const cardStyle = {
-    marginTop: "20px",
-    background: "#12191d",
-    border: "1px solid #1f2933",
-    borderRadius: "10px",
-    padding: "30px",
-    marginBottom: "25px",
-};
-
-const cardSmall = {
-    background: "#12191d",
-    border: "1px solid #1f2933",
-    borderRadius: "10px",
-    padding: "20px",
-};
-
-const gridStyle = {
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))",
-    gap: "20px",
-    marginTop: "25px",
-};
-
-const splitStyle = {
-    display: "flex",
-    gap: "40px",
-    alignItems: "center",
-    flexWrap: "wrap",
-};
-
-const imageStyle = {
-    width: "100%",
-    borderRadius: "10px",
-};
-
-const iconStyle = {
-    color: "#0A7C6E",
-    fontSize: "1.5rem",
-};
-
-const stepCircle = {
-    width: "40px",
-    height: "40px",
-    borderRadius: "50%",
-    background: "#0A7C6E",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    fontWeight: "700",
-    marginBottom: "10px",
-};
-
-const buttonStyle = {
-    marginTop: "20px",
-    background: "#0A7C6E",
-    color: "white",
-    border: "none",
-    padding: "14px 28px",
-    borderRadius: "6px",
-    cursor: "pointer",
-    fontWeight: "600",
-};

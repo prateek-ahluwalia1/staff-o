@@ -286,6 +286,12 @@ export default function RosterPage() {
   const handleRefresh = () => fetchCustomerSites();
 
   const openModalAction = (site, shift, dateStr, modalType, dateKey = null) => {
+    // Prevent opening the time edit modal if a guard is assigned
+    if (modalType === "time" && shift?.assigned_to) {
+      toast.warning("Cannot edit time while a guard is assigned to this shift.");
+      return;
+    }
+
     setSelectedUserId(shift?.assigned_to || "");
     if (modalType === "time" && shift) {
       setTimeEditError("");
@@ -508,7 +514,8 @@ export default function RosterPage() {
                                 <button title="Details" onClick={() => openModalAction(site, shift, day.dateLabel, "details")}>
                                   <i className="fa fa-info"></i>
                                 </button>
-                                {userRole !== "staff" && (
+                                {/* Only show Time Edit if NO guard is assigned */}
+                                {userRole !== "staff" && !shift.assigned_to && (
                                   <button title="Time Edit" onClick={() => openModalAction(site, shift, day.dateLabel, "time")}>
                                     <i className="fa fa-edit fas fa-edit"></i>
                                   </button>

@@ -881,15 +881,99 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
                     isSearchable={true}
                     classNamePrefix="react-select"
                     styles={{
-                      control: (base) => ({ ...base, minHeight: "40px", borderRadius: "0.5rem", boxShadow: "none" }),
-                      valueContainer: (base) => ({ ...base, paddingTop: 2, paddingBottom: 2 }),
-                      input: (base) => ({ ...base, margin: 0, padding: 0 }),
-                      indicatorsContainer: (base) => ({ ...base, height: "40px" }),
-                      option: (base, state) => ({
+                      // 1. The main input box
+                      control: (base, state) => ({
                         ...base,
-                        fontWeight: state.data.isNew ? "bold" : "normal",
-                        color: state.data.isNew ? "#0A7C6E" : base.color,
-                        background: state.isSelected ? "#0A7C6E" : state.isFocused ? "#e9ecef" : "white"
+                        minHeight: "46px", // Taller for better clickability
+                        borderRadius: "0.5rem",
+                        backgroundColor: "white",
+                        // Custom focus ring matching your primary brand color
+                        border: state.isFocused ? "2px solid #0A7C6E" : "1px solid #dee2e6",
+                        boxShadow: state.isFocused ? "0 0 0 4px rgba(10, 124, 110, 0.1)" : "none",
+                        transition: "all 0.2s ease",
+                        cursor: "pointer",
+                        "&:hover": {
+                          border: state.isFocused ? "2px solid #0A7C6E" : "1px solid #adb5bd"
+                        }
+                      }),
+
+                      // 2. The dropdown menu container
+                      menu: (base) => ({
+                        ...base,
+                        borderRadius: "0.6rem", // Slightly rounder than the input
+                        boxShadow: "0 10px 40px -10px rgba(0,0,0,0.15)", // Premium floating shadow
+                        border: "1px solid #f1f3f5",
+                        marginTop: "6px", // Adds breathing room below the input
+                        padding: "4px", // Inner padding so items don't touch the borders
+                        zIndex: 9999
+                      }),
+
+                      // 3. The scrollable list area
+                      menuList: (base) => ({
+                        ...base,
+                        padding: "0" // Reset padding to rely on the menu wrapper
+                      }),
+
+                      // 4. The individual dropdown items
+                      option: (base, state) => {
+                        const isNewOption = state.data.isNew;
+
+                        const textColor = state.isSelected
+                          ? "white"
+                          : isNewOption
+                            ? "#0A7C6E"
+                            : "#333333";
+
+                        const bgColor = state.isSelected
+                          ? "#0A7C6E"
+                          : state.isFocused
+                            ? (isNewOption ? "#e0f2f0" : "#f8f9fa") // Soft teal for new, soft gray for standard
+                            : "transparent";
+
+                        return {
+                          ...base,
+                          fontWeight: isNewOption ? "600" : (state.isSelected ? "500" : "400"),
+                          color: textColor,
+                          background: bgColor,
+                          cursor: "pointer",
+                          borderRadius: "0.4rem", // Creates "pill" shapes on hover instead of full-width blocks
+                          margin: "2px 0", // Tiny gap between options
+                          padding: "10px 14px", // Spacious internal padding
+                          transition: "all 0.15s ease",
+                          "&:active": {
+                            background: isNewOption ? "#08665a" : "#0A7C6E",
+                            color: "white"
+                          }
+                        };
+                      },
+
+                      // 5. Selected text inside the input
+                      singleValue: (base) => ({
+                        ...base,
+                        fontWeight: "500",
+                        color: "#212529"
+                      }),
+
+                      // 6. Placeholder text
+                      placeholder: (base) => ({
+                        ...base,
+                        color: "#6c757d",
+                        fontSize: "0.95rem"
+                      }),
+
+                      // 7. Remove the vertical line for a cleaner, minimalist look
+                      indicatorSeparator: () => ({
+                        display: "none"
+                      }),
+
+                      // 8. Style the dropdown arrow
+                      dropdownIndicator: (base, state) => ({
+                        ...base,
+                        color: state.isFocused ? "#0A7C6E" : "#adb5bd",
+                        transition: "all 0.2s ease",
+                        "&:hover": {
+                          color: "#0A7C6E"
+                        }
                       })
                     }}
                   />

@@ -628,6 +628,10 @@ const ManageUsers = () => {
       toast.error("Please enter the date of birth in DD/MM/YYYY format.");
       return;
     }
+    if (activeTab === "staff" && !formData.user_id) {
+      toast.error("Please select a Resource Partner.");
+      return;
+    }
 
     let url = "";
     const method = editingUser ? "PUT" : "POST";
@@ -1203,6 +1207,7 @@ const ManageUsers = () => {
                             className="form-control pe-5"
                             name="password"
                             value={formData.password}
+                            minLength={8}
                             onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
                             required={!editingUser}
                           />

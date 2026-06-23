@@ -997,6 +997,7 @@ const ManageStaff = () => {
                           type={showPassword ? "text" : "password"}
                           className="form-control pe-5"
                           value={formData.password}
+                          minLength={8}
                           onChange={(e) =>
                             setFormData((prev) => ({
                               ...prev,

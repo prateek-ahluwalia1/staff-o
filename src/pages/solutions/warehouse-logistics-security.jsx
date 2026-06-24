@@ -204,19 +204,19 @@ export default function WarehouseLogisticsSecurity() {
                             <span style={styles.breadcrumbSep}>&gt;</span>
                             <span>Solutions</span>
                             <span style={styles.breadcrumbSep}>&gt;</span>
-                            <span style={styles.breadcrumbHighlight}>Event Security</span>
+                            <span style={styles.breadcrumbHighlight}>Warehouse & Logistics Security</span>
                         </div>
 
                         {/* Heading */}
                         <h1 style={styles.heading}>
-                            Professional <span style={styles.headingAccent}>Event Security</span> staffing built for scale
+                            Professional <span style={styles.headingAccent}>Warehouse & Logistics Security</span> staffing for protection & control
                         </h1>
 
                         {/* Description */}
                         <p style={styles.description}>
-                            From small private functions to major public events, Staffoo sources,
-                            verifies, and deploys licensed security personnel — fast, compliant,
-                            and covered.
+                            From distribution centres to large-scale warehouses, Staffoo provides
+                            trained security personnel to safeguard inventory, control access,
+                            monitor shipments, and ensure smooth logistics operations.
                         </p>
 
                         {/* Buttons */}
@@ -251,16 +251,16 @@ export default function WarehouseLogisticsSecurity() {
                                 </div>
                                 <div style={styles.statBox}>
                                     <div style={styles.statValue}>100%</div>
-                                    <div style={styles.statLabel}>Licensed &amp; verified</div>
+                                    <div style={styles.statLabel}>Trained & verified</div>
                                 </div>
                             </div>
 
                             {/* Tags */}
                             <div style={styles.tagsGrid}>
-                                <div style={styles.tag}>Crowd controller</div>
-                                <div style={styles.tag}>RSA-trained</div>
-                                <div style={styles.tag}>GPS tracking</div>
-                                <div style={styles.tag}>Payroll managed</div>
+                                <div style={styles.tag}>Access control</div>
+                                <div style={styles.tag}>Inventory protection</div>
+                                <div style={styles.tag}>Perimeter patrol</div>
+                                <div style={styles.tag}>Shipment monitoring</div>
                             </div>
                         </div>
                     </div>

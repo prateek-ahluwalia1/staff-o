@@ -204,19 +204,19 @@ export default function RetailSecurity() {
                             <span style={styles.breadcrumbSep}>&gt;</span>
                             <span>Solutions</span>
                             <span style={styles.breadcrumbSep}>&gt;</span>
-                            <span style={styles.breadcrumbHighlight}>Event Security</span>
+                            <span style={styles.breadcrumbHighlight}>Retail Security</span>
                         </div>
 
                         {/* Heading */}
                         <h1 style={styles.heading}>
-                            Professional <span style={styles.headingAccent}>Event Security</span> staffing built for scale
+                            Professional <span style={styles.headingAccent}>Retail Security</span> staffing built for safety
                         </h1>
 
                         {/* Description */}
                         <p style={styles.description}>
-                            From small private functions to major public events, Staffoo sources,
-                            verifies, and deploys licensed security personnel — fast, compliant,
-                            and covered.
+                            From single retail stores to large shopping centres, Staffoo provides
+                            trained and vetted retail security personnel — preventing theft,
+                            managing incidents, and ensuring a safe shopping environment.
                         </p>
 
                         {/* Buttons */}
@@ -247,20 +247,20 @@ export default function RetailSecurity() {
                             <div style={styles.statsGrid}>
                                 <div style={styles.statBox}>
                                     <div style={styles.statValue}>24 hrs</div>
-                                    <div style={styles.statLabel}>Avg. deployment time</div>
+                                    <div style={styles.statLabel}>Avg. response time</div>
                                 </div>
                                 <div style={styles.statBox}>
                                     <div style={styles.statValue}>100%</div>
-                                    <div style={styles.statLabel}>Licensed &amp; verified</div>
+                                    <div style={styles.statLabel}>Trained & verified</div>
                                 </div>
                             </div>
 
                             {/* Tags */}
                             <div style={styles.tagsGrid}>
-                                <div style={styles.tag}>Crowd controller</div>
-                                <div style={styles.tag}>RSA-trained</div>
-                                <div style={styles.tag}>GPS tracking</div>
-                                <div style={styles.tag}>Payroll managed</div>
+                                <div style={styles.tag}>Loss prevention</div>
+                                <div style={styles.tag}>Customer assistance</div>
+                                <div style={styles.tag}>CCTV monitoring</div>
+                                <div style={styles.tag}>Incident reporting</div>
                             </div>
                         </div>
                     </div>

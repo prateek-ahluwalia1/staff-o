@@ -4,7 +4,6 @@ import useSubmit from "../hooks/useSubmit";
 import "../assets/css/induction.css";
 import { useSelector } from "react-redux";
 import Loader from "../components/Loader";
-import { Link } from 'react-router-dom';
 import Select from "react-select";
 import { apiURL } from "../utils/exports";
 import { toast } from "react-toastify";
@@ -351,14 +350,14 @@ export default function Induction() {
                                                     </td>
                                                     <td>
                                                         {isCompleted && (
-                                                            <Link className="btn btn-sm bg-success bg-opacity-10 text-success border border-success"
+                                                            <a className="btn btn-sm bg-success bg-opacity-10 text-success border border-success"
                                                                 href={record?.certificate_path}
                                                                 target="_blank"
                                                                 rel="noopener noreferrer"
                                                                 title="Download certificate"
                                                             >
                                                                 <i className="fa fa-download"></i>
-                                                            </Link>
+                                                            </a>
                                                         )}
                                                         {isOpen && (
                                                             <button

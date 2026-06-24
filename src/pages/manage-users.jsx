@@ -105,6 +105,8 @@ const ManageUsers = () => {
     isAuth: true,
     BaseURL: "https://apis.thescouts.com.au/",
   });
+  // Phone OTP hook (uses same API base)
+  const { submit: phoneSubmit, loading: phoneLoading } = useSubmit({ isAuth: true });
 
   const [users, setUsers] = useState([]);
   const [totalPages, setTotalPages] = useState(1);
@@ -115,6 +117,14 @@ const ManageUsers = () => {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
+
+  // Phone OTP modal states
+  const [showPhoneModal, setShowPhoneModal] = useState(false);
+  const [phoneStep, setPhoneStep] = useState("input");
+  const [newPhoneInput, setNewPhoneInput] = useState("");
+  const [phoneOtp, setPhoneOtp] = useState("");
+  const [phoneChangeError, setPhoneChangeError] = useState(null);
+  const [phoneChangeSuccess, setPhoneChangeSuccess] = useState(false);
 
   // Password & Advanced Document States
   const [showPassword, setShowPassword] = useState(false);
@@ -704,6 +714,70 @@ const ManageUsers = () => {
     }
   };
 
+  // ----- PHONE OTP HANDLERS -----
+  const handleClosePhoneModal = () => {
+    setShowPhoneModal(false);
+    setPhoneStep("input");
+    setNewPhoneInput("");
+    setPhoneOtp("");
+    setPhoneChangeError(null);
+    setPhoneChangeSuccess(false);
+  };
+
+  const handleOpenPhoneModal = () => {
+    setNewPhoneInput(formData.phone || "");
+    setPhoneStep("input");
+    setPhoneChangeError(null);
+    setPhoneChangeSuccess(false);
+    setShowPhoneModal(true);
+  };
+
+  const handleRequestPhoneOtp = async (e) => {
+    e.preventDefault();
+    if (!editingUser?.id) {
+      setPhoneChangeError("Please save the user profile first before verifying phone.");
+      return;
+    }
+    setPhoneChangeError(null);
+    const res = await phoneSubmit(
+      `api/auth/resend-otp`,
+      { phone: newPhoneInput, id: editingUser.id },
+      { method: "POST" }
+    );
+    if (!res) return;
+    if (res.success) {
+      setPhoneStep("otp");
+    } else {
+      setPhoneChangeError(res.errors || res.message || "Failed to send OTP");
+    }
+  };
+
+  const handleVerifyPhoneOtp = async (e) => {
+    e.preventDefault();
+    if (!editingUser?.id) {
+      setPhoneChangeError("Unable to verify OTP. Missing user id.");
+      return;
+    }
+    setPhoneChangeError(null);
+    const res = await phoneSubmit(
+      `api/auth/verify-phone`,
+      { phone: newPhoneInput, otp: phoneOtp, id: editingUser.id },
+      { method: "POST" }
+    );
+    if (!res) return;
+    if (res.success) {
+      toast.success("Phone verified successfully!");
+      setFormData((prev) => ({ ...prev, phone: newPhoneInput }));
+      refetch();
+      setTimeout(() => {
+        handleClosePhoneModal();
+      }, 1500);
+    } else {
+      setPhoneChangeError(res.errors || res.message || "Invalid OTP. Please try again.");
+    }
+  };
+  // ----- END PHONE OTP HANDLERS -----
+
   if (loading && users.length === 0) return <Loader />;
 
   return (
@@ -1065,9 +1139,7 @@ const ManageUsers = () => {
                 <p className="text-muted small mb-0">
                   Role:{" "}
                   <span className="text-dark fw-bold">
-                    <span className="text-dark fw-bold">
-                      {roleLabels[activeTab] || activeTab.replace("_", " ")}
-                    </span>
+                    {roleLabels[activeTab] || activeTab.replace("_", " ")}
                   </span>
                 </p>
                 {activeTab === "staff" && (
@@ -1185,7 +1257,7 @@ const ManageUsers = () => {
                       activeTab === "sub_contractor" ? "contractor" :
                         "customer"
                   }
-                  onChangePhone={() => { }}
+                  onChangePhone={handleOpenPhoneModal}  // ✅ wired up
                   isPhoneVerified={false}
                   footer={
                     <button
@@ -1489,6 +1561,113 @@ const ManageUsers = () => {
               >
                 Cancel
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* PHONE OTP VERIFICATION MODAL */}
+      {showPhoneModal && (
+        <div className="confirm-modal-backdrop" onClick={handleClosePhoneModal}>
+          <div className="confirm-modal-card" onClick={(e) => e.stopPropagation()}>
+            <div className="confirm-modal-header px-4 py-3 d-flex align-items-center gap-3">
+              <span className="confirm-modal-icon">
+                <i className="fa-solid fa-mobile-screen-button"></i>
+              </span>
+              <div>
+                <h5 className="mb-0 fw-bold">Phone Verification</h5>
+                <div className="small text-muted">
+                  {phoneStep === "input"
+                    ? "Send OTP to verify phone number."
+                    : `Enter the OTP sent to ${newPhoneInput}`}
+                </div>
+              </div>
+            </div>
+            <div className="p-4">
+              {phoneChangeError && <div className="alert alert-danger py-2">{phoneChangeError}</div>}
+              {phoneChangeSuccess && <div className="alert alert-success py-2">Phone updated successfully!</div>}
+              {phoneStep === "input" ? (
+                <form onSubmit={handleRequestPhoneOtp}>
+                  <div className="mb-3">
+                    <label className="form-label fw-bold">Phone Number <span className="text-danger">*</span></label>
+                    <input
+                      type="tel"
+                      className="form-control"
+                      placeholder="+61 400 000 000"
+                      value={newPhoneInput}
+                      onChange={(e) => setNewPhoneInput(e.target.value)}
+                      required
+                      maxLength="15"
+                      pattern="^(?:\+?61|0)[2-478](?:[\s]*\d){8}$"
+                      title="Valid Australian mobile number"
+                    />
+                  </div>
+                  <div className="d-flex gap-2">
+                    <button
+                      type="button"
+                      className="btn btn-light rounded-pill px-4 fw-bold border"
+                      onClick={handleClosePhoneModal}
+                      disabled={phoneLoading}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      className="btn btn-dark rounded-pill px-4 fw-bold"
+                      disabled={phoneLoading}
+                    >
+                      {phoneLoading ? "Sending..." : "Send OTP"}
+                    </button>
+                  </div>
+                </form>
+              ) : (
+                <form onSubmit={handleVerifyPhoneOtp}>
+                  <div className="mb-3">
+                    <label className="form-label fw-bold">OTP Code <span className="text-danger">*</span></label>
+                    <input
+                      type="text"
+                      className="form-control text-center fw-bold"
+                      placeholder="Enter OTP"
+                      value={phoneOtp}
+                      onChange={(e) => setPhoneOtp(e.target.value.replace(/\D/g, ""))}
+                      maxLength={8}
+                      required
+                      autoFocus
+                    />
+                    <div className="mt-2 text-end">
+                      <button
+                        type="button"
+                        className="btn btn-link btn-sm p-0 text-muted"
+                        onClick={() => {
+                          setPhoneStep("input");
+                          setPhoneOtp("");
+                          setPhoneChangeError(null);
+                        }}
+                        disabled={phoneLoading}
+                      >
+                        Change number / Resend OTP
+                      </button>
+                    </div>
+                  </div>
+                  <div className="d-flex gap-2">
+                    <button
+                      type="button"
+                      className="btn btn-light rounded-pill px-4 fw-bold border"
+                      onClick={handleClosePhoneModal}
+                      disabled={phoneLoading}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      className="btn btn-dark rounded-pill px-4 fw-bold"
+                      disabled={phoneLoading || phoneChangeSuccess}
+                    >
+                      {phoneLoading ? "Verifying..." : "Verify & Update"}
+                    </button>
+                  </div>
+                </form>
+              )}
             </div>
           </div>
         </div>

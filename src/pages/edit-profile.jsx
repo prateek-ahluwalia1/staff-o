@@ -58,6 +58,12 @@ const DOC_TYPES = [
   { value: "Citizen Ship", label: "Citizen Ship Certificate" },
   { value: "Medicare", label: "Medicare Certificate" },
   { value: "Birth Certificate", label: "Birth Certificate" },
+  { value: "Security Master License", label: "Security Master License" },
+  { value: "Public Liability", label: "Public Liability" },
+  { value: "Workcover", label: "Workcover" },
+  { value: "Security Industry Membership certificate", label: "Security Industry Membership certificate" },
+  { value: "Labour Hire", label: "Labour Hire" },
+  { value: "ASIC Report", label: "ASIC Report" },
 ];
 
 // ========== DATE HELPERS (DD/MM/YYYY everywhere) ==========
@@ -158,7 +164,7 @@ export default function EditProfile() {
     no: false,
     exp: false,
     document_no: "",
-    document_expiry: "",   // DD/MM/YYYY
+    document_expiry: "",
     file: null,
     file_path: "",
     file_url: "",
@@ -167,9 +173,9 @@ export default function EditProfile() {
   });
 
   const isPhoneVerified = Boolean(
-    userdata?.data?.contractor?.is_phone_verified ??
-    userdata?.contractor?.is_phone_verified ??
-    profileData?.data?.contractor?.is_phone_verified
+    userdata?.data?.phone_verified ??
+    userdata?.phone_verified ??
+    profileData?.data?.phone_verified
   );
 
   const getMissingFields = (d) => {
@@ -364,10 +370,7 @@ export default function EditProfile() {
         });
         if (res?.success) {
           toast.success("Avatar updated successfully!");
-          const refetchRes = await refetch();
-          if (refetchRes?.data) {
-            dispatch(setUser({ userdata: refetchRes.data }));
-          }
+          refetch();
         } else {
           toast.error(res?.message || "Failed to save avatar");
           setProfilePhoto(null);
@@ -402,7 +405,6 @@ export default function EditProfile() {
       }
 
       const payload = new FormData();
-
       Object.keys(formData).forEach((key) => {
         if (key === "profile_image") return;
         if (key === "bank_details") {
@@ -417,14 +419,16 @@ export default function EditProfile() {
       });
       if (res === undefined) return;
       toast.success("Profile updated successfully!");
-      if (res.data) dispatch(setUser({ userdata: res.data }));
-      const refetchRes = await refetch();
-      if (refetchRes?.success && refetchRes?.data) {
-        dispatch(setUser({ userdata: refetchRes.data }));
-      }
+      refetch();
     },
-    [formData, submit, userId, dispatch, refetch]
+    [formData, submit, userId, refetch]
   );
+
+  useEffect(() => {
+    if (profileData?.success) {
+      dispatch(setUser({ userdata: profileData }));
+    }
+  }, [profileData, dispatch]);
 
   const handleClosePhoneModal = () => {
     setShowPhoneModal(false);
@@ -443,8 +447,8 @@ export default function EditProfile() {
     }
     setPhoneChangeError(null);
     const res = await phoneSubmit(
-      `api/user-update/${userId}`,
-      { phone: newPhoneInput },
+      `api/auth/resend-otp`,
+      { phone: newPhoneInput, id: userId },
       { method: "POST" }
     );
     if (!res) return;
@@ -463,18 +467,22 @@ export default function EditProfile() {
     }
     setPhoneChangeError(null);
     const res = await phoneSubmit(
-      `api/user-update/${userId}`,
-      { phone: newPhoneInput, phone_otp: phoneOtp },
+      `api/auth/verify-phone`,
+      { phone: newPhoneInput, otp: phoneOtp, id: userId },
       { method: "POST" }
     );
     if (!res) return;
     if (res.success) {
       toast.success("Phone updated successfully!");
       setFormData((prev) => ({ ...prev, phone: newPhoneInput }));
-      if (res.data) dispatch(setUser({ userdata: res.data }));
-      const refetchRes = await refetch();
-      if (refetchRes?.data) {
-        dispatch(setUser({ userdata: refetchRes.data }));
+
+      if (res.data) {
+        dispatch(setUser({ userdata: res.data }));
+      } else {
+        const refetchRes = await refetch();
+        if (refetchRes?.data) {
+          dispatch(setUser({ userdata: refetchRes.data }));
+        }
       }
 
       setTimeout(() => {
@@ -486,6 +494,7 @@ export default function EditProfile() {
       );
     }
   };
+
 
   const handleCardNumberChange = (e) => {
     let value = e.target.value.replace(/\D/g, "");
@@ -775,9 +784,7 @@ export default function EditProfile() {
     if (res.success) {
       toast.success("Document saved successfully!");
       setShowDocModal(false);
-
-      // ✅ Hard refresh to reload user data and unlock sidebar
-      window.location.reload();
+      refetch();
     } else {
       toast.error(res.message || "Failed to save document");
     }
@@ -929,12 +936,7 @@ export default function EditProfile() {
         <StaffOnboardingForms
           submit={submit}
           userId={userId}
-          onProfileUpdate={async () => {
-            const refetchRes = await refetch();
-            if (refetchRes && (refetchRes.data || refetchRes.success)) {
-              dispatch(setUser({ userdata: refetchRes.data || refetchRes }));
-            }
-          }}
+          onProfileUpdate={() => refetch()}
         />
       )}
 
@@ -1183,7 +1185,9 @@ export default function EditProfile() {
       <Modal open={showPhoneModal} onClose={handleClosePhoneModal}>
         <div className="p-3">
           <h5 className="mb-1">{isPhoneVerified ? "Change Phone Number" : "Verify or Change Phone Number"}</h5>
-          <p className="text-muted small mb-4">
+          <p className="text-muted small mb-4"
+            style={{ textTransform: "none" }}
+          >
             {phoneStep === "input"
               ? isPhoneVerified
                 ? "Enter your new phone number to receive an OTP."

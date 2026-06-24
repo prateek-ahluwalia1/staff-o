@@ -473,9 +473,11 @@ export default function ContactUs() {
                     </span>
                     <div className="stf-info-text">
                       <h5>Email</h5>
-                      <Link to="mailto:admin@staffoo.com.au">
+                      <a href="mailto:admin@staffoo.com.au"
+                      style={{textTransform: "none"}}
+                      >
                         admin@staffoo.com.au
-                      </Link>
+                      </a>
                     </div>
                   </li>
                   <li>

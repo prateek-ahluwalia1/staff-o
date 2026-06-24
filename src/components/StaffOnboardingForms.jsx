@@ -763,7 +763,9 @@ const EmployeeOnboardingForm = ({
             </div>
 
             <SectionTitle>100-Point ID Check</SectionTitle>
-            <div className="bg-light p-3 border rounded mb-4">
+            <div className="bg-light p-3 border rounded mb-4"
+                style={{ textTransform: "none" }}
+            >
                 {[
                     { label: "Birth Certificate, Passport, or Citizenship Certificate", points: 70, name: "chk_primary" },
                     { label: "Driver Licence or Government Issued Photo ID", points: 40, name: "chk_driver" },

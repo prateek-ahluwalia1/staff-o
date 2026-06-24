@@ -69,10 +69,9 @@ const DOC_TYPES = [
 // ========== DATE HELPERS (DD/MM/YYYY everywhere) ==========
 const isoToDisplay = (val) => {
   if (!val) return "";
-  if (/^\d{2}\/\d{2}\/\d{4}$/.test(val)) return val; // already DD/MM/YYYY
+  if (/^\d{2}\/\d{2}\/\d{4}$/.test(val)) return val;
   const match = val.match(/^(\d{4})-(\d{2})-(\d{2})$/);
   if (match) {
-    // eslint-disable-next-line
     const [_, y, m, d] = match;
     return `${d}/${m}/${y}`;
   }
@@ -120,7 +119,6 @@ export default function EditProfile() {
   } = useFetch(endpoint, { isAuth: true });
 
   const { submit, loading: submitLoading } = useSubmit({ isAuth: true });
-  // eslint-disable-next-line
   const { submit: submitSecurityLicense } = useSubmit({
     isAuth: true,
     BaseURL: "https://apis.thescouts.com.au/",
@@ -265,6 +263,13 @@ export default function EditProfile() {
     }
   }, [profileData]);
 
+  // ✅ Sync Redux whenever profileData changes (after any refetch)
+  useEffect(() => {
+    if (profileData?.success) {
+      dispatch(setUser({ userdata: profileData }));
+    }
+  }, [profileData, dispatch]);
+
   useEffect(() => {
     if (activeTab !== "personal" || fetchLoading) return;
     let autocomplete;
@@ -356,7 +361,6 @@ export default function EditProfile() {
     });
   }, [profileData?.data?.documents, formData.state]);
 
-
   const handleAvatarUpload = useCallback(
     async (file) => {
       try {
@@ -370,7 +374,7 @@ export default function EditProfile() {
         });
         if (res?.success) {
           toast.success("Avatar updated successfully!");
-          refetch();
+          refetch(); // will trigger the useEffect to update Redux
         } else {
           toast.error(res?.message || "Failed to save avatar");
           setProfilePhoto(null);
@@ -405,6 +409,7 @@ export default function EditProfile() {
       }
 
       const payload = new FormData();
+
       Object.keys(formData).forEach((key) => {
         if (key === "profile_image") return;
         if (key === "bank_details") {
@@ -419,16 +424,10 @@ export default function EditProfile() {
       });
       if (res === undefined) return;
       toast.success("Profile updated successfully!");
-      refetch();
+      refetch(); // will trigger the useEffect to update Redux
     },
     [formData, submit, userId, refetch]
   );
-
-  useEffect(() => {
-    if (profileData?.success) {
-      dispatch(setUser({ userdata: profileData }));
-    }
-  }, [profileData, dispatch]);
 
   const handleClosePhoneModal = () => {
     setShowPhoneModal(false);
@@ -475,16 +474,7 @@ export default function EditProfile() {
     if (res.success) {
       toast.success("Phone updated successfully!");
       setFormData((prev) => ({ ...prev, phone: newPhoneInput }));
-
-      if (res.data) {
-        dispatch(setUser({ userdata: res.data }));
-      } else {
-        const refetchRes = await refetch();
-        if (refetchRes?.data) {
-          dispatch(setUser({ userdata: refetchRes.data }));
-        }
-      }
-
+      refetch(); // sync Redux
       setTimeout(() => {
         handleClosePhoneModal();
       }, 1500);
@@ -494,7 +484,6 @@ export default function EditProfile() {
       );
     }
   };
-
 
   const handleCardNumberChange = (e) => {
     let value = e.target.value.replace(/\D/g, "");
@@ -541,11 +530,7 @@ export default function EditProfile() {
     setFormData((prev) => ({ ...prev, bank_details: updatedCards }));
     setIsAddingCard(false);
     setCardForm(INITIAL_CARD_STATE);
-    if (res.data) dispatch(setUser({ userdata: res.data }));
-    const refetchRes = await refetch();
-    if (refetchRes?.data) {
-      dispatch(setUser({ userdata: refetchRes.data }));
-    }
+    refetch(); // Redux & formData will be updated via useEffect
     toast.success("Card added successfully!");
   };
 
@@ -574,12 +559,7 @@ export default function EditProfile() {
     if (res === undefined) return;
 
     setFormData((prev) => ({ ...prev, bank_details: updatedCards }));
-    if (res.data) dispatch(setUser({ userdata: res.data }));
-    const refetchRes = await refetch();
-    if (refetchRes?.data) {
-      dispatch(setUser({ userdata: refetchRes.data }));
-    }
-
+    refetch(); // Redux sync
     toast.success("Card removed successfully!");
     setShowCardDeleteModal(false);
     setCardToDeleteIndex(null);
@@ -613,11 +593,10 @@ export default function EditProfile() {
         );
 
         if (res?.success && res?.expiry) {
-          // expiry is "15/09/2026" (after JSON parse, slashes are fine)
-          const expiryStr = res.expiry.replace(/\\\//g, "/"); // safety clean
+          const expiryStr = res.expiry.replace(/\\\//g, "/");
           setDocForm((prev) => ({
             ...prev,
-            document_expiry: expiryStr,   // already DD/MM/YYYY
+            document_expiry: expiryStr,
             is_verified: true,
           }));
           toast.success("Security License verified. Expiry date locked.");
@@ -677,7 +656,7 @@ export default function EditProfile() {
       try {
         const res = await submit("api/admin/visa-check", payload, { method: "POST" });
         if (res?.success && res?.data?.expired_at) {
-          const displayExpiry = normalizeToDisplay(res.data.expired_at); // converts DD-MM-YYYY -> DD/MM/YYYY
+          const displayExpiry = normalizeToDisplay(res.data.expired_at);
           setDocForm((prev) => ({
             ...prev,
             document_expiry: displayExpiry,
@@ -694,7 +673,6 @@ export default function EditProfile() {
       }
       return;
     }
-
   };
 
   const handleDocNumberChange = (e) => {
@@ -784,6 +762,8 @@ export default function EditProfile() {
     if (res.success) {
       toast.success("Document saved successfully!");
       setShowDocModal(false);
+
+      // ✅ Refetch profile – useEffect will push fresh data to Redux & update documents list
       refetch();
     } else {
       toast.error(res.message || "Failed to save document");
@@ -936,12 +916,13 @@ export default function EditProfile() {
         <StaffOnboardingForms
           submit={submit}
           userId={userId}
-          onProfileUpdate={() => refetch()}
+          onProfileUpdate={() => refetch()} // sync Redux after onboarding form save
         />
       )}
 
       {activeTab === "cards" && userType === "customer" && (
         <div className="card-section p-4 bg-white rounded shadow-sm border">
+          {/* Card UI unchanged */}
           {!isAddingCard ? (
             <>
               <div className="d-flex justify-content-between align-items-center mb-4">
@@ -961,9 +942,7 @@ export default function EditProfile() {
                     <path d="M2 10a1 1 0 0 1 1-1h1a1 1 0 0 1 1 1v1a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1v-1z" />
                   </svg>
                   <h5>No cards saved yet</h5>
-                  <p className="small"
-                    style={{ textTransform: "none" }}
-                  >Add a payment method to easily checkout.</p>
+                  <p className="small" style={{ textTransform: "none" }}>Add a payment method to easily checkout.</p>
                 </div>
               ) : (
                 <div className="row">
@@ -1004,6 +983,7 @@ export default function EditProfile() {
             </>
           ) : (
             <div className="row align-items-center">
+              {/* Add card form unchanged */}
               <div className="col-md-5 mb-4 mb-md-0 d-flex justify-content-center">
                 <div className="card-preview position-relative text-white p-4 rounded-4 shadow-lg" style={{ background: "linear-gradient(135deg, #1e3c72 0%, #2a5298 100%)", width: "100%", maxWidth: "360px", height: "220px", boxShadow: "0 10px 20px rgba(0,0,0,0.15)" }}>
                   <div className="d-flex justify-content-between align-items-center mb-4">
@@ -1037,9 +1017,7 @@ export default function EditProfile() {
                     <h4 className="mb-0">Secure Payment Information</h4>
                   </div>
                 </div>
-                <p className="text-muted small mb-4"
-                  style={{ textTransform: "none" }}
-                >Your payment details are encrypted and securely stored.</p>
+                <p className="text-muted small mb-4" style={{ textTransform: "none" }}>Your payment details are encrypted and securely stored.</p>
 
                 <form onSubmit={handleSaveNewCard}>
                   <div className="mb-3">
@@ -1136,6 +1114,7 @@ export default function EditProfile() {
 
       {userType !== "admin" && (
         <div className="mt-5 p-4 bg-light border border-danger rounded" style={{ borderWidth: "2px" }}>
+          {/* Delete profile section unchanged */}
           <div className="d-flex align-items-center mb-3">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="#dc3545" className="bi bi-exclamation-triangle me-2" viewBox="0 0 16 16">
               <path d="M7.938 2.016A.13.13 0 0 1 8.002 2a.13.13 0 0 1 .063.016.146.146 0 0 1 .054.057l6.857 11.667c.036.06.035.124.002.183a.163.163 0 0 1-.054.057.107.107 0 0 1-.066.01H.146a.107.107 0 0 1-.066-.01.163.163 0 0 1-.054-.057.106.106 0 0 1 .002-.183L7.884 2.073a.147.147 0 0 1 .054-.057zm1.044-.45a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566z" />
@@ -1143,9 +1122,7 @@ export default function EditProfile() {
             </svg>
             <h5 className="mb-0 text-danger fw-bold">Danger Zone</h5>
           </div>
-          <p className="text-muted mb-3"
-            style={{ textTransform: "none" }}
-          >Deleting your profile is permanent and cannot be undone. All your data will be permanently deleted.</p>
+          <p className="text-muted mb-3" style={{ textTransform: "none" }}>Deleting your profile is permanent and cannot be undone. All your data will be permanently deleted.</p>
           <button className="btn btn-danger" onClick={() => { setShowDeleteModal(true); setDeleteConfirmText(""); }} disabled={deleteLoading}>
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-trash me-2" viewBox="0 0 16 16">
               <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0z" />
@@ -1158,6 +1135,7 @@ export default function EditProfile() {
 
       {/* Card Delete Confirm Modal */}
       <Modal open={showCardDeleteModal} onClose={() => { setShowCardDeleteModal(false); setCardToDeleteIndex(null); }}>
+        {/* unchanged */}
         <div className="p-4 text-center">
           <div className="mb-3 text-danger">
             <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="currentColor" className="bi bi-x-circle" viewBox="0 0 16 16">
@@ -1185,9 +1163,7 @@ export default function EditProfile() {
       <Modal open={showPhoneModal} onClose={handleClosePhoneModal}>
         <div className="p-3">
           <h5 className="mb-1">{isPhoneVerified ? "Change Phone Number" : "Verify or Change Phone Number"}</h5>
-          <p className="text-muted small mb-4"
-            style={{ textTransform: "none" }}
-          >
+          <p className="text-muted small mb-4" style={{ textTransform: "none" }}>
             {phoneStep === "input"
               ? isPhoneVerified
                 ? "Enter your new phone number to receive an OTP."
@@ -1386,7 +1362,6 @@ export default function EditProfile() {
                 placeholder="DD/MM/YYYY"
                 value={docForm.document_expiry}
                 onChange={(e) => {
-                  // This handler is irrelevant when disabled, but kept for consistency
                   let value = e.target.value.replace(/\D/g, "");
                   if (value.length > 8) value = value.substring(0, 8);
                   if (value.length > 2 && value.length <= 4) {
@@ -1500,14 +1475,10 @@ export default function EditProfile() {
             </svg>
             Permanently Delete Profile?
           </h5>
-          <div className="alert alert-danger py-2 mt-3"
-            style={{ textTransform: "none" }}
-          >
+          <div className="alert alert-danger py-2 mt-3" style={{ textTransform: "none" }}>
             <strong>Warning:</strong> This action is permanent and cannot be undone. All your data will be deleted.
           </div>
-          <p className="text-muted small mb-4"
-            style={{ textTransform: "none" }}
-          >
+          <p className="text-muted small mb-4" style={{ textTransform: "none" }}>
             Please type <strong>DELETE</strong> to confirm you want to permanently delete your profile.
           </p>
           <input type="text" className="form-control mb-3 fw-bold text-center" placeholder="Type DELETE to confirm" value={deleteConfirmText} onChange={(e) => setDeleteConfirmText(e.target.value.toUpperCase())} autoFocus />

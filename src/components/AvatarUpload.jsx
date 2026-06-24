@@ -163,7 +163,7 @@ export default function AvatarUpload({
               <i className="fa-solid fa-arrow-up-from-bracket" aria-hidden="true"></i>
               {uploadProgress || loading ? "Uploading..." : "Update Photo"}
             </label>
-            <span style={{ fontSize: "11px", color: "#6c757d" }}>
+            <span style={{ fontSize: "11px", color: "#6c757d", textTransform: "none" }}>
               Max file size: {MAX_FILE_SIZE_MB}MB
             </span>
           </div>

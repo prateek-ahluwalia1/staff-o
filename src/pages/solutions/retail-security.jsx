@@ -1,388 +1,282 @@
-
-import React from "react";
+import React, { useState, useEffect } from "react";
 import Header from "../../components/newHome/Header";
 import Footer from "../../components/newHome/Footer";
-import teamsimg from "../../assets/images/teams.png";
+import StatsCounter from "../../components/solution'scomp/Statecounter";
+import BusinessProtection from "../../components/solution'scomp/bissnussprotecttion";
+import Testimonials from "../../components/solution'scomp/testimonials";
+import WhyChooseStaffoo from "../../components/solution'scomp/WhyChooseStaffoo";
+import HowItWorks from "../../components/solution'scomp/HowItWorks";
+import BusinessProtectionLeft from "../../components/solution'scomp/BusinessProtectionLeft";
+import RelatedSolutions from "../../components/solution'scomp/RelatedSolutions";
+import FAQ from "../../components/solution'scomp/FAQ";
+import ReadyToSecure from "../../components/solution'scomp/ReadyToSecure";
 
 export default function RetailSecurity() {
-    const features = [
-        {
-            icon: "fa-map-marker",
-            title: "GPS Guard Tracking",
-            desc: "Live tracking and geo-fenced check-ins ensure guards are always on-site and visible."
-        },
-        {
-            icon: "fa-clock-o",
-            title: "Smart Scheduling",
-            desc: "Automated shift allocation and availability matching for seamless operations."
-        },
-        {
-            icon: "fa-id-card",
-            title: "Licence Verification",
-            desc: "Automatic compliance checks keep every security professional deployment-ready."
-        },
-        {
-            icon: "fa-bar-chart",
-            title: "Attendance Analytics",
-            desc: "Detailed reports for audits, attendance, and workforce performance."
-        },
-        {
-            icon: "fa-file-text-o",
-            title: "Payroll Management",
-            desc: "Automated payslips and invoicing reduce administration overhead."
-        },
-        {
-            icon: "fa-handshake-o",
-            title: "Digital Agreements",
-            desc: "Clear acceptance of shifts and responsibilities for both clients and guards."
-        }
-    ];
+    const [isPrimaryHovered, setIsPrimaryHovered] = useState(false);
+    const [isSecondaryHovered, setIsSecondaryHovered] = useState(false);
 
-    const audiences = [
-        {
-            icon: "fa-building",
-            title: "Retail Security Providers",
-            desc: "Scale staffing requirements without increasing operational overhead."
-        },
-        {
-            icon: "fa-user",
-            title: "Independent Guards",
-            desc: "Access reliable shifts and receive timely payments every time."
-        },
-        {
-            icon: "fa-calendar",
-            title: "Venue Managers",
-            desc: "Book qualified professionals quickly with full visibility."
-        }
-    ];
+    // Responsive State Hook to detect mobile screens dynamically
+    const [isMobile, setIsMobile] = useState(false);
 
-    const process = [
-        {
-            title: "Submit Your Brief",
-            desc: "Provide dates, locations and staffing requirements."
-        },
-        {
-            title: "Match & Verify",
-            desc: "We verify licences and assign suitable professionals."
-        },
-        {
-            title: "Deploy Staff",
-            desc: "Guards confirm and arrive prepared for duty."
-        },
-        {
-            title: "Track & Manage",
-            desc: "Monitor activity while payroll and invoicing are handled automatically."
-        }
-    ];
+    useEffect(() => {
+        const handleResize = () => {
+            setIsMobile(window.innerWidth <= 991);
+        };
 
-    const related = [
-        "Corporate Security",
-        "Event Security",
-        "Warehouse & Logistics Security"
-    ];
+        // Set initial layout scale
+        handleResize();
+
+        window.addEventListener("resize", handleResize);
+        return () => window.removeEventListener("resize", handleResize);
+    }, []);
+
+    const styles = {
+        page: {
+            minHeight: "100vh",
+            background: "linear-gradient(to top right, #0a5a51 0%, #0a2a24 30%, #0d1a18 60%, #111313 100%)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            fontFamily: "'Poppins', 'Inter', 'Segoe UI', sans-serif",
+            padding: isMobile ? "120px 20px 60px" : "80px 40px", // Increased top padding for mobile to account for fixed headers
+            boxSizing: "border-box",
+        },
+        container: {
+            maxWidth: "1140px",
+            width: "100%",
+            display: "flex",
+            flexDirection: isMobile ? "column" : "row", // Stack elements vertically on mobile
+            alignItems: isMobile ? "stretch" : "center",
+            justifyContent: "space-between",
+            gap: isMobile ? "40px" : "80px",
+        },
+        left: {
+            flex: "1",
+            maxWidth: isMobile ? "100%" : "660px",
+            textAlign: isMobile ? "center" : "left", // Center content on mobile for clean symmetry
+        },
+        breadcrumb: {
+            fontSize: "13px",
+            color: "#ffffff",
+            marginBottom: "24px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: isMobile ? "center" : "flex-start",
+            gap: "6px",
+        },
+        breadcrumbHighlight: {
+            color: "#00c9a7",
+            fontWeight: "600",
+        },
+        breadcrumbSep: {
+            color: "#ffffff",
+            opacity: 0.7,
+            margin: "0 2px",
+        },
+        heading: {
+            fontSize: isMobile ? "24px" : "34px", // Highly legible scaled typography
+            fontWeight: "700",
+            color: "#ffffff",
+            lineHeight: isMobile ? "1.2" : "1.25",
+            margin: "0 0 20px 0",
+            letterSpacing: "-0.01em",
+        },
+        headingAccent: {
+            color: "#00c9a7",
+        },
+        description: {
+            fontSize: isMobile ? "12px" : "13px",
+            color: "#ffffff",
+            lineHeight: "1.65",
+            marginBottom: "32px",
+            maxWidth: isMobile ? "100%" : "520px",
+            opacity: 0.9,
+        },
+        buttonGroup: {
+            display: "flex",
+            gap: "14px",
+            flexDirection: isMobile ? "column" : "row", // Stack CTA buttons on mobile viewports
+            justifyContent: isMobile ? "center" : "flex-start",
+        },
+        btnPrimary: {
+            padding: "14px 32px",
+            background: isPrimaryHovered ? "#00b395" : "#00c9a7",
+            border: isPrimaryHovered ? "1.5px solid #00b395" : "1.5px solid #00c9a7",
+            color: "#ffffff",
+            borderRadius: "6px",
+            fontSize: "15px",
+            fontWeight: "600",
+            cursor: "pointer",
+            transition: "all 0.2s ease-in-out",
+            letterSpacing: "0.01em",
+            width: isMobile ? "100%" : "auto",
+        },
+        btnSecondary: {
+            padding: "14px 32px",
+            background: isSecondaryHovered ? "rgba(255, 255, 255, 0.08)" : "transparent",
+            border: isSecondaryHovered ? "1.5px solid #00c9a7" : "1.5px solid #ffffff",
+            color: isSecondaryHovered ? "#00c9a7" : "#ffffff",
+            borderRadius: "6px",
+            fontSize: "15px",
+            fontWeight: "600",
+            cursor: "pointer",
+            transition: "all 0.2s ease-in-out",
+            letterSpacing: "0.01em",
+            width: isMobile ? "100%" : "auto",
+        },
+        right: {
+            flexShrink: 0,
+            width: "100%",
+            maxWidth: isMobile ? "100%" : "380px", // Soft limit container width instead of forcing fixed pixels
+            display: isMobile ? "flex" : "block",
+            justifyContent: "center",
+        },
+        card: {
+            background: "#181818",
+            border: "1px solid #1c3530",
+            borderRadius: "24px",
+            padding: isMobile ? "28px 20px" : "36px 28px 28px",
+            boxShadow: "0px 10px 40px rgba(0, 201, 167, 0.03)",
+            width: "100%",
+        },
+        cardLabel: {
+            fontSize: "12px",
+            fontWeight: "5w00",
+            letterSpacing: "0.08em",
+            color: "#00c9a7",
+            textTransform: "uppercase",
+            marginBottom: "24px",
+            textAlign: isMobile ? "center" : "left",
+        },
+        statsGrid: {
+            display: "grid",
+            gridTemplateColumns: window.innerWidth <= 480 ? "1fr" : "1fr 1fr", // Single column layouts on extra small mobile windows
+            gap: "14px",
+            marginBottom: "14px",
+        },
+        statBox: {
+            background: "transparent",
+            border: "1px solid #223531",
+            borderRadius: "12px",
+            padding: "20px 16px",
+            textAlign: "center",
+        },
+        statValue: {
+            fontSize: "26px",
+            fontWeight: "700",
+            color: "#00c9a7",
+            marginBottom: "6px",
+        },
+        statLabel: {
+            fontSize: "13px",
+            color: "#00c9a7",
+            lineHeight: "1.4",
+            fontWeight: "500",
+        },
+        tagsGrid: {
+            display: "grid",
+            gridTemplateColumns: window.innerWidth <= 480 ? "1fr" : "1fr 1fr",
+            gap: "10px",
+        },
+        tag: {
+            background: "transparent",
+            border: "1px solid #223531",
+            borderRadius: "10px",
+            padding: "12px 14px",
+            fontSize: "13px",
+            color: "#00c9a7",
+            fontWeight: "500",
+            textAlign: "center",
+        },
+    };
 
     return (
         <>
             <Header />
 
-            <style>{`
-        .stf-page-wrapper{
-          background:#0d1216;
-          color:#fff;
-          min-height:100vh;
-          padding-bottom:80px;
-        }
-
-        .stf-container{
-          max-width:1200px;
-          margin:auto;
-          padding:0 24px;
-        }
-
-        .stf-hero{
-          text-align:center;
-          padding:120px 0 60px;
-        }
-
-        .stf-badge{
-          color:#0A7C6E;
-          background:rgba(10,124,110,.1);
-          padding:8px 16px;
-          border-radius:20px;
-          display:inline-flex;
-          gap:10px;
-          font-size:.8rem;
-          font-weight:700;
-          margin-bottom:24px;
-        }
-
-        .stf-hero h1{
-          font-size:3.5rem;
-          font-weight:800;
-          margin-bottom:24px;
-        }
-
-        .stf-hero p{
-          color:#9ca3af;
-          max-width:700px;
-          margin:auto;
-          line-height:1.7;
-        }
-
-        .stf-card{
-          background:#12191d;
-          border:1px solid #1f2933;
-          border-radius:8px;
-          padding:48px;
-          margin-bottom:32px;
-        }
-
-        .stf-card h2{
-          font-size:2.2rem;
-          margin-bottom:24px;
-        }
-
-        .stf-card p{
-          color:#9ca3af;
-          line-height:1.7;
-        }
-
-        .stf-split{
-          display:flex;
-          gap:48px;
-          align-items:center;
-        }
-
-        .stf-split-text{
-          flex:1.2;
-        }
-
-        .stf-split-img{
-          flex:1;
-        }
-
-        .stf-split-img img{
-          width:100%;
-          border-radius:8px;
-        }
-
-        .stf-grid-3{
-          display:grid;
-          grid-template-columns:repeat(3,1fr);
-          gap:24px;
-          margin-bottom:32px;
-        }
-
-        .stf-highlight-card{
-          background:#12191d;
-          border:1px solid #1f2933;
-          border-radius:8px;
-          padding:32px;
-          transition:.2s;
-        }
-
-        .stf-highlight-card:hover{
-          border-color:#0A7C6E;
-          transform:translateY(-5px);
-        }
-
-        .stf-highlight-header{
-          display:flex;
-          gap:16px;
-          align-items:center;
-          margin-bottom:16px;
-        }
-
-        .stf-highlight-icon{
-          color:#0A7C6E;
-          font-size:1.5rem;
-        }
-
-        .stf-highlight-card h3{
-          margin:0;
-        }
-
-        .stf-highlight-card p{
-          color:#9ca3af;
-          line-height:1.6;
-        }
-
-        .process-number{
-          width:40px;
-          height:40px;
-          background:#0A7C6E;
-          border-radius:50%;
-          display:flex;
-          align-items:center;
-          justify-content:center;
-          margin-bottom:16px;
-          font-weight:700;
-        }
-
-        .cta-card{
-          text-align:center;
-        }
-
-        .cta-btn{
-          background:#0A7C6E;
-          border:none;
-          color:white;
-          padding:14px 28px;
-          border-radius:6px;
-          margin-top:20px;
-          cursor:pointer;
-        }
-
-        @media(max-width:992px){
-          .stf-split{
-            flex-direction:column;
-          }
-
-          .stf-grid-3{
-            grid-template-columns:repeat(2,1fr);
-          }
-        }
-
-        @media(max-width:768px){
-          .stf-grid-3{
-            grid-template-columns:1fr;
-          }
-
-          .stf-card{
-            padding:32px 24px;
-          }
-
-          .stf-hero h1{
-            font-size:2.5rem;
-          }
-        }
-      `}</style>
-
-            <div className="stf-page-wrapper">
-
-                {/* Hero */}
-                <section className="stf-hero">
-                    <div className="stf-container">
-                        <span className="stf-badge">
-                            <i className="fa fa-shield"></i>
-                            Retail Security
-                        </span>
-
-                        <h1>Professional Retail Security Staffing</h1>
-
-                        <p>
-                            Reliable and verified retail security personnel for stores,
-                            shopping centres and commercial environments.
-                        </p>
-                    </div>
-                </section>
-
-                <div className="stf-container">
-
-                    {/* Overview */}
-                    <div className="stf-card">
-                        <div className="stf-split">
-                            <div className="stf-split-text">
-                                <h2>Everything You Need To Protect Your Business</h2>
-
-                                <p>
-                                    Staffoo manages the complete staffing cycle, from licence
-                                    verification and scheduling to deployment and payroll.
-                                </p>
-
-                                <p>
-                                    Focus on your customers while our experienced professionals
-                                    maintain safety and compliance.
-                                </p>
-                            </div>
-
-                            <div className="stf-split-img">
-                                <img src={teamsimg} alt="Retail Security" />
-                            </div>
+            <div style={styles.page}>
+                <div style={styles.container}>
+                    {/* Left Content */}
+                    <div style={styles.left}>
+                        {/* Breadcrumb */}
+                        <div style={styles.breadcrumb}>
+                            <span>Home</span>
+                            <span style={styles.breadcrumbSep}>&gt;</span>
+                            <span>Solutions</span>
+                            <span style={styles.breadcrumbSep}>&gt;</span>
+                            <span style={styles.breadcrumbHighlight}>Event Security</span>
                         </div>
-                    </div>
 
-                    {/* Features */}
-                    <div className="stf-grid-3">
-                        {features.map((item, index) => (
-                            <div className="stf-highlight-card" key={index}>
-                                <div className="stf-highlight-header">
-                                    <i className={`fa ${item.icon} stf-highlight-icon`}></i>
-                                    <h3>{item.title}</h3>
-                                </div>
-                                <p>{item.desc}</p>
-                            </div>
-                        ))}
-                    </div>
+                        {/* Heading */}
+                        <h1 style={styles.heading}>
+                            Professional <span style={styles.headingAccent}>Event Security</span> staffing built for scale
+                        </h1>
 
-                    {/* Who It's For */}
-                    <div className="stf-card">
-                        <h2>Who It's For</h2>
-
-                        <div className="stf-grid-3">
-                            {audiences.map((item, index) => (
-                                <div className="stf-highlight-card" key={index}>
-                                    <div className="stf-highlight-header">
-                                        <i className={`fa ${item.icon} stf-highlight-icon`}></i>
-                                        <h3>{item.title}</h3>
-                                    </div>
-
-                                    <p>{item.desc}</p>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* Process */}
-                    <div className="stf-card">
-                        <h2>How It Works</h2>
-
-                        <div className="stf-grid-3">
-                            {process.map((step, index) => (
-                                <div className="stf-highlight-card" key={index}>
-                                    <div className="process-number">{index + 1}</div>
-
-                                    <h3>{step.title}</h3>
-
-                                    <p>{step.desc}</p>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* Related Solutions */}
-                    <div className="stf-card">
-                        <h2>Related Solutions</h2>
-
-                        <div className="stf-grid-3">
-                            {related.map((item, index) => (
-                                <div className="stf-highlight-card" key={index}>
-                                    <h3>{item}</h3>
-                                    <p>Explore this security solution.</p>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* CTA */}
-                    <div className="stf-card cta-card">
-                        <h2>Ready To Secure Your Business?</h2>
-
-                        <p>
-                            Speak with our specialists and receive a tailored security
-                            solution for your organisation.
+                        {/* Description */}
+                        <p style={styles.description}>
+                            From small private functions to major public events, Staffoo sources,
+                            verifies, and deploys licensed security personnel — fast, compliant,
+                            and covered.
                         </p>
 
-                        <button className="cta-btn">
-                            Request Security Staff
-                        </button>
+                        {/* Buttons */}
+                        <div style={styles.buttonGroup}>
+                            <button
+                                style={styles.btnPrimary}
+                                onMouseEnter={() => setIsPrimaryHovered(true)}
+                                onMouseLeave={() => setIsPrimaryHovered(false)}
+                            >
+                                Request security staff
+                            </button>
+                            <button
+                                style={styles.btnSecondary}
+                                onMouseEnter={() => setIsSecondaryHovered(true)}
+                                onMouseLeave={() => setIsSecondaryHovered(false)}
+                            >
+                                See how it works
+                            </button>
+                        </div>
                     </div>
 
+                    {/* Right Card */}
+                    <div style={styles.right}>
+                        <div style={styles.card}>
+                            <div style={styles.cardLabel}>Solution at a Glance</div>
+
+                            {/* Stats */}
+                            <div style={styles.statsGrid}>
+                                <div style={styles.statBox}>
+                                    <div style={styles.statValue}>24 hrs</div>
+                                    <div style={styles.statLabel}>Avg. deployment time</div>
+                                </div>
+                                <div style={styles.statBox}>
+                                    <div style={styles.statValue}>100%</div>
+                                    <div style={styles.statLabel}>Licensed &amp; verified</div>
+                                </div>
+                            </div>
+
+                            {/* Tags */}
+                            <div style={styles.tagsGrid}>
+                                <div style={styles.tag}>Crowd controller</div>
+                                <div style={styles.tag}>RSA-trained</div>
+                                <div style={styles.tag}>GPS tracking</div>
+                                <div style={styles.tag}>Payroll managed</div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
+            <StatsCounter />
+            <BusinessProtection />
+            <Testimonials />
+            <WhyChooseStaffoo />
+            <HowItWorks />
+            <BusinessProtectionLeft />
+            <RelatedSolutions />
+            <FAQ />
+            <ReadyToSecure />
 
             <Footer />
         </>
     );
 }
-

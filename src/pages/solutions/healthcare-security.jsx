@@ -1,381 +1,282 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import Header from "../../components/newHome/Header";
 import Footer from "../../components/newHome/Footer";
-import teamsimg from "../../assets/images/teams.png";
+import StatsCounter from "../../components/solution'scomp/Statecounter";
+import BusinessProtection from "../../components/solution'scomp/bissnussprotecttion";
+import Testimonials from "../../components/solution'scomp/testimonials";
+import WhyChooseStaffoo from "../../components/solution'scomp/WhyChooseStaffoo";
+import HowItWorks from "../../components/solution'scomp/HowItWorks";
+import BusinessProtectionLeft from "../../components/solution'scomp/BusinessProtectionLeft";
+import RelatedSolutions from "../../components/solution'scomp/RelatedSolutions";
+import FAQ from "../../components/solution'scomp/FAQ";
+import ReadyToSecure from "../../components/solution'scomp/ReadyToSecure";
 
-function HealthcareSecurity() {
-    const features = [
-        {
-            icon: "fa-hospital-o",
-            title: "Hospital Entry Security",
-            desc: "Controlled access to emergency rooms, wards, and restricted medical zones.",
-        },
-        {
-            icon: "fa-user-md",
-            title: "Patient Safety Support",
-            desc: "Maintain safe environments for patients, staff, and visitors.",
-        },
-        {
-            icon: "fa-clock-o",
-            title: "24/7 Emergency Coverage",
-            desc: "Round-the-clock protection for hospitals and healthcare facilities.",
-        },
-        {
-            icon: "fa-id-card",
-            title: "Visitor Management",
-            desc: "Verify and track hospital visitors to ensure controlled access.",
-        },
-        {
-            icon: "fa-shield",
-            title: "Incident Prevention",
-            desc: "Prevent conflicts, unauthorized access, and safety breaches.",
-        },
-        {
-            icon: "fa-ambulance",
-            title: "Emergency Coordination",
-            desc: "Assist in emergency response and ambulance coordination support.",
-        },
-    ];
+export default function HealthcareSecurity() {
+    const [isPrimaryHovered, setIsPrimaryHovered] = useState(false);
+    const [isSecondaryHovered, setIsSecondaryHovered] = useState(false);
 
-    const environments = [
-        {
-            icon: "fa-hospital-o",
-            title: "Hospitals",
-            desc: "Large multi-department healthcare facilities.",
-        },
-        {
-            icon: "fa-medkit",
-            title: "Clinics",
-            desc: "Private and public outpatient healthcare centers.",
-        },
-        {
-            icon: "fa-building",
-            title: "Medical Centers",
-            desc: "Diagnostic and specialized treatment facilities.",
-        },
-    ];
+    // Responsive State Hook to detect mobile screens dynamically
+    const [isMobile, setIsMobile] = useState(false);
 
-    const process = [
-        {
-            title: "Facility Assessment",
-            desc: "We evaluate hospital layout, risks, and security requirements.",
-        },
-        {
-            title: "Custom Healthcare Plan",
-            desc: "Security strategy tailored for medical environments.",
-        },
-        {
-            title: "Deploy Trained Guards",
-            desc: "Verified professionals trained in healthcare protocols.",
-        },
-        {
-            title: "Continuous Monitoring",
-            desc: "Ongoing supervision for patient and staff safety.",
-        },
-    ];
+    useEffect(() => {
+        const handleResize = () => {
+            setIsMobile(window.innerWidth <= 991);
+        };
 
-    const why = [
-        {
-            icon: "fa-heartbeat",
-            title: "Patient-Centered Security",
-            desc: "We prioritize safety without disturbing medical care.",
+        // Set initial layout scale
+        handleResize();
+
+        window.addEventListener("resize", handleResize);
+        return () => window.removeEventListener("resize", handleResize);
+    }, []);
+
+    const styles = {
+        page: {
+            minHeight: "100vh",
+            background: "linear-gradient(to top right, #0a5a51 0%, #0a2a24 30%, #0d1a18 60%, #111313 100%)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            fontFamily: "'Poppins', 'Inter', 'Segoe UI', sans-serif",
+            padding: isMobile ? "120px 20px 60px" : "80px 40px", // Increased top padding for mobile to account for fixed headers
+            boxSizing: "border-box",
         },
-        {
-            icon: "fa-ban",
-            title: "Conflict Prevention",
-            desc: "Reduce aggressive incidents and unauthorized access.",
+        container: {
+            maxWidth: "1140px",
+            width: "100%",
+            display: "flex",
+            flexDirection: isMobile ? "column" : "row", // Stack elements vertically on mobile
+            alignItems: isMobile ? "stretch" : "center",
+            justifyContent: "space-between",
+            gap: isMobile ? "40px" : "80px",
         },
-        {
-            icon: "fa-user-shield",
-            title: "Trained Professionals",
-            desc: "Security staff trained for sensitive healthcare environments.",
+        left: {
+            flex: "1",
+            maxWidth: isMobile ? "100%" : "660px",
+            textAlign: isMobile ? "center" : "left", // Center content on mobile for clean symmetry
         },
-        {
-            icon: "fa-life-ring",
-            title: "Emergency Ready",
-            desc: "Fast response during medical emergencies and crises.",
+        breadcrumb: {
+            fontSize: "13px",
+            color: "#ffffff",
+            marginBottom: "24px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: isMobile ? "center" : "flex-start",
+            gap: "6px",
         },
-    ];
+        breadcrumbHighlight: {
+            color: "#00c9a7",
+            fontWeight: "600",
+        },
+        breadcrumbSep: {
+            color: "#ffffff",
+            opacity: 0.7,
+            margin: "0 2px",
+        },
+        heading: {
+            fontSize: isMobile ? "24px" : "34px", // Highly legible scaled typography
+            fontWeight: "700",
+            color: "#ffffff",
+            lineHeight: isMobile ? "1.2" : "1.25",
+            margin: "0 0 20px 0",
+            letterSpacing: "-0.01em",
+        },
+        headingAccent: {
+            color: "#00c9a7",
+        },
+        description: {
+            fontSize: isMobile ? "12px" : "13px",
+            color: "#ffffff",
+            lineHeight: "1.65",
+            marginBottom: "32px",
+            maxWidth: isMobile ? "100%" : "520px",
+            opacity: 0.9,
+        },
+        buttonGroup: {
+            display: "flex",
+            gap: "14px",
+            flexDirection: isMobile ? "column" : "row", // Stack CTA buttons on mobile viewports
+            justifyContent: isMobile ? "center" : "flex-start",
+        },
+        btnPrimary: {
+            padding: "14px 32px",
+            background: isPrimaryHovered ? "#00b395" : "#00c9a7",
+            border: isPrimaryHovered ? "1.5px solid #00b395" : "1.5px solid #00c9a7",
+            color: "#ffffff",
+            borderRadius: "6px",
+            fontSize: "15px",
+            fontWeight: "600",
+            cursor: "pointer",
+            transition: "all 0.2s ease-in-out",
+            letterSpacing: "0.01em",
+            width: isMobile ? "100%" : "auto",
+        },
+        btnSecondary: {
+            padding: "14px 32px",
+            background: isSecondaryHovered ? "rgba(255, 255, 255, 0.08)" : "transparent",
+            border: isSecondaryHovered ? "1.5px solid #00c9a7" : "1.5px solid #ffffff",
+            color: isSecondaryHovered ? "#00c9a7" : "#ffffff",
+            borderRadius: "6px",
+            fontSize: "15px",
+            fontWeight: "600",
+            cursor: "pointer",
+            transition: "all 0.2s ease-in-out",
+            letterSpacing: "0.01em",
+            width: isMobile ? "100%" : "auto",
+        },
+        right: {
+            flexShrink: 0,
+            width: "100%",
+            maxWidth: isMobile ? "100%" : "380px", // Soft limit container width instead of forcing fixed pixels
+            display: isMobile ? "flex" : "block",
+            justifyContent: "center",
+        },
+        card: {
+            background: "#181818",
+            border: "1px solid #1c3530",
+            borderRadius: "24px",
+            padding: isMobile ? "28px 20px" : "36px 28px 28px",
+            boxShadow: "0px 10px 40px rgba(0, 201, 167, 0.03)",
+            width: "100%",
+        },
+        cardLabel: {
+            fontSize: "12px",
+            fontWeight: "5w00",
+            letterSpacing: "0.08em",
+            color: "#00c9a7",
+            textTransform: "uppercase",
+            marginBottom: "24px",
+            textAlign: isMobile ? "center" : "left",
+        },
+        statsGrid: {
+            display: "grid",
+            gridTemplateColumns: window.innerWidth <= 480 ? "1fr" : "1fr 1fr", // Single column layouts on extra small mobile windows
+            gap: "14px",
+            marginBottom: "14px",
+        },
+        statBox: {
+            background: "transparent",
+            border: "1px solid #223531",
+            borderRadius: "12px",
+            padding: "20px 16px",
+            textAlign: "center",
+        },
+        statValue: {
+            fontSize: "26px",
+            fontWeight: "700",
+            color: "#00c9a7",
+            marginBottom: "6px",
+        },
+        statLabel: {
+            fontSize: "13px",
+            color: "#00c9a7",
+            lineHeight: "1.4",
+            fontWeight: "500",
+        },
+        tagsGrid: {
+            display: "grid",
+            gridTemplateColumns: window.innerWidth <= 480 ? "1fr" : "1fr 1fr",
+            gap: "10px",
+        },
+        tag: {
+            background: "transparent",
+            border: "1px solid #223531",
+            borderRadius: "10px",
+            padding: "12px 14px",
+            fontSize: "13px",
+            color: "#00c9a7",
+            fontWeight: "500",
+            textAlign: "center",
+        },
+    };
 
     return (
         <>
             <Header />
 
-            <div style={{ background: "#0b0c0e", color: "#f4f2ed" }}>
+            <div style={styles.page}>
+                <div style={styles.container}>
+                    {/* Left Content */}
+                    <div style={styles.left}>
+                        {/* Breadcrumb */}
+                        <div style={styles.breadcrumb}>
+                            <span>Home</span>
+                            <span style={styles.breadcrumbSep}>&gt;</span>
+                            <span>Solutions</span>
+                            <span style={styles.breadcrumbSep}>&gt;</span>
+                            <span style={styles.breadcrumbHighlight}>Event Security</span>
+                        </div>
 
-                {/* HERO */}
-                <section style={{ padding: "110px 20px", textAlign: "center" }}>
-                    <div style={{ maxWidth: "900px", margin: "0 auto" }}>
-
-                        <span style={badgeStyle}>
-                            <i className="fa fa-hospital-o" style={{ marginRight: "8px" }}></i>
-                            Healthcare Security Services
-                        </span>
-
-                        <h1 style={h1Style}>
-                            Trusted Security for Hospitals & Healthcare Facilities
+                        {/* Heading */}
+                        <h1 style={styles.heading}>
+                            Professional <span style={styles.headingAccent}>Event Security</span> staffing built for scale
                         </h1>
 
-                        <p style={subTextStyle}>
-                            Ensuring safety for patients, medical staff, and visitors through
-                            professional, trained, and sensitive healthcare security solutions.
+                        {/* Description */}
+                        <p style={styles.description}>
+                            From small private functions to major public events, Staffoo sources,
+                            verifies, and deploys licensed security personnel — fast, compliant,
+                            and covered.
                         </p>
 
-                    </div>
-                </section>
-
-                {/* OVERVIEW */}
-                <section style={sectionStyle}>
-                    <div style={containerStyle}>
-
-                        <div style={cardStyle}>
-                            <div style={splitStyle}>
-
-                                <div style={{ flex: 1.2 }}>
-                                    <h2 style={h2Style}>Safe & Controlled Healthcare Environment</h2>
-
-                                    <p style={textStyle}>
-                                        Healthcare facilities require specialized security that
-                                        balances protection with compassion. Our guards are trained
-                                        to operate respectfully in sensitive medical environments.
-                                    </p>
-
-                                    <p style={textStyle}>
-                                        From emergency rooms to patient wards, we ensure smooth
-                                        operations without disrupting healthcare services.
-                                    </p>
-                                </div>
-
-                                <div style={{ flex: 1 }}>
-                                    <img
-                                        src={teamsimg}
-                                        alt="Healthcare Security"
-                                        style={imageStyle}
-                                    />
-                                </div>
-
-                            </div>
-                        </div>
-
-                        {/* FEATURES */}
-                        <div style={gridStyle}>
-                            {features.map((item, i) => (
-                                <div key={i} style={cardSmall}>
-                                    <i className={`fa ${item.icon}`} style={iconStyle}></i>
-                                    <h3 style={h3Style}>{item.title}</h3>
-                                    <p style={textMuted}>{item.desc}</p>
-                                </div>
-                            ))}
-                        </div>
-
-                        {/* WHY HEALTHCARE SECURITY */}
-                        <div style={cardStyle}>
-                            <h2 style={h2Style}>Why Healthcare Security Matters</h2>
-
-                            <div style={gridStyle}>
-                                {why.map((item, i) => (
-                                    <div key={i} style={cardSmall}>
-                                        <i className={`fa ${item.icon}`} style={iconStyle}></i>
-                                        <h3 style={h3Style}>{item.title}</h3>
-                                        <p style={textMuted}>{item.desc}</p>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-
-                        {/* ENVIRONMENTS */}
-                        <div style={cardStyle}>
-                            <h2 style={h2Style}>Healthcare Environments We Protect</h2>
-
-                            <div style={gridStyle}>
-                                {environments.map((item, i) => (
-                                    <div key={i} style={cardSmall}>
-                                        <i className={`fa ${item.icon}`} style={iconStyle}></i>
-                                        <h3 style={h3Style}>{item.title}</h3>
-                                        <p style={textMuted}>{item.desc}</p>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-
-                        {/* PROCESS */}
-                        <div style={cardStyle}>
-                            <h2 style={h2Style}>Our Healthcare Security Process</h2>
-
-                            <div style={gridStyle}>
-                                {process.map((step, i) => (
-                                    <div key={i} style={cardSmall}>
-                                        <div style={stepCircle}>{i + 1}</div>
-                                        <h3 style={h3Style}>{step.title}</h3>
-                                        <p style={textMuted}>{step.desc}</p>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-
-                        {/* EXTENDED SECTION (IMPORTANT FOR LENGTH) */}
-                        <div style={cardStyle}>
-                            <h2 style={h2Style}>Supporting Safe Medical Operations</h2>
-
-                            <p style={textStyle}>
-                                Healthcare security is not just about protection — it is about
-                                maintaining a calm and controlled environment where medical
-                                professionals can focus on saving lives.
-                            </p>
-
-                            <p style={textStyle}>
-                                Our security staff are trained to handle sensitive situations
-                                such as emergency admissions, aggressive visitors, patient
-                                conflicts, and high-stress environments.
-                            </p>
-
-                            <p style={textStyle}>
-                                We work closely with hospital administration to ensure full
-                                compliance with safety protocols while maintaining dignity and
-                                respect for all individuals inside the facility.
-                            </p>
-                        </div>
-
-                        {/* CTA */}
-                        <div style={{ ...cardStyle, textAlign: "center" }}>
-                            <h2 style={h2Style}>Secure Your Healthcare Facility</h2>
-
-                            <p style={textStyle}>
-                                Deploy trained healthcare security professionals for hospitals,
-                                clinics, and medical centers.
-                            </p>
-
-                            <button style={buttonStyle}>
-                                Request Healthcare Security
+                        {/* Buttons */}
+                        <div style={styles.buttonGroup}>
+                            <button
+                                style={styles.btnPrimary}
+                                onMouseEnter={() => setIsPrimaryHovered(true)}
+                                onMouseLeave={() => setIsPrimaryHovered(false)}
+                            >
+                                Request security staff
+                            </button>
+                            <button
+                                style={styles.btnSecondary}
+                                onMouseEnter={() => setIsSecondaryHovered(true)}
+                                onMouseLeave={() => setIsSecondaryHovered(false)}
+                            >
+                                See how it works
                             </button>
                         </div>
-
                     </div>
-                </section>
 
+                    {/* Right Card */}
+                    <div style={styles.right}>
+                        <div style={styles.card}>
+                            <div style={styles.cardLabel}>Solution at a Glance</div>
+
+                            {/* Stats */}
+                            <div style={styles.statsGrid}>
+                                <div style={styles.statBox}>
+                                    <div style={styles.statValue}>24 hrs</div>
+                                    <div style={styles.statLabel}>Avg. deployment time</div>
+                                </div>
+                                <div style={styles.statBox}>
+                                    <div style={styles.statValue}>100%</div>
+                                    <div style={styles.statLabel}>Licensed &amp; verified</div>
+                                </div>
+                            </div>
+
+                            {/* Tags */}
+                            <div style={styles.tagsGrid}>
+                                <div style={styles.tag}>Crowd controller</div>
+                                <div style={styles.tag}>RSA-trained</div>
+                                <div style={styles.tag}>GPS tracking</div>
+                                <div style={styles.tag}>Payroll managed</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
+            <StatsCounter />
+            <BusinessProtection />
+            <Testimonials />
+            <WhyChooseStaffoo />
+            <HowItWorks />
+            <BusinessProtectionLeft />
+            <RelatedSolutions />
+            <FAQ />
+            <ReadyToSecure />
 
             <Footer />
         </>
     );
 }
-
-export default HealthcareSecurity;
-
-/* ================= STYLES ================= */
-
-const containerStyle = {
-    maxWidth: "1200px",
-    margin: "0 auto",
-    padding: "0 20px",
-};
-
-const sectionStyle = {
-    padding: "20px 0 80px",
-};
-
-const badgeStyle = {
-    display: "inline-block",
-    padding: "6px 14px",
-    border: "1px solid #0A7C6E",
-    color: "#0A7C6E",
-    borderRadius: "20px",
-    fontSize: "0.8rem",
-    marginBottom: "20px",
-};
-
-const h1Style = {
-    fontSize: "3rem",
-    fontWeight: "800",
-    marginBottom: "20px",
-};
-
-const h2Style = {
-    fontSize: "2rem",
-    marginBottom: "20px",
-};
-
-const h3Style = {
-    fontSize: "1.1rem",
-    margin: "10px 0",
-};
-
-const subTextStyle = {
-    color: "#9ca3af",
-    maxWidth: "700px",
-    margin: "0 auto",
-    lineHeight: "1.6",
-};
-
-const textStyle = {
-    color: "#cbd5e1",
-    lineHeight: "1.6",
-};
-
-const textMuted = {
-    color: "#9ca3af",
-    fontSize: "0.9rem",
-};
-
-const cardStyle = {
-    background: "#12191d",
-    border: "1px solid #1f2933",
-    borderRadius: "10px",
-    padding: "30px",
-    marginBottom: "25px",
-    marginTop: "25px",
-};
-
-const cardSmall = {
-    background: "#12191d",
-    border: "1px solid #1f2933",
-    borderRadius: "10px",
-    padding: "20px",
-};
-
-const gridStyle = {
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))",
-    gap: "20px",
-    marginTop: "25px",
-};
-
-const splitStyle = {
-    display: "flex",
-    gap: "40px",
-    alignItems: "center",
-    flexWrap: "wrap",
-};
-
-const imageStyle = {
-    width: "100%",
-    borderRadius: "10px",
-};
-
-const iconStyle = {
-    color: "#0A7C6E",
-    fontSize: "1.5rem",
-};
-
-const stepCircle = {
-    width: "40px",
-    height: "40px",
-    borderRadius: "50%",
-    background: "#0A7C6E",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    fontWeight: "700",
-    marginBottom: "10px",
-};
-
-const buttonStyle = {
-    marginTop: "20px",
-    background: "#0A7C6E",
-    color: "white",
-    border: "none",
-    padding: "14px 28px",
-    borderRadius: "6px",
-    cursor: "pointer",
-    fontWeight: "600",
-};

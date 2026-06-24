@@ -959,7 +959,9 @@ export default function EditProfile() {
                     <path d="M2 10a1 1 0 0 1 1-1h1a1 1 0 0 1 1 1v1a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1v-1z" />
                   </svg>
                   <h5>No cards saved yet</h5>
-                  <p className="small">Add a payment method to easily checkout.</p>
+                  <p className="small"
+                    style={{ textTransform: "none" }}
+                  >Add a payment method to easily checkout.</p>
                 </div>
               ) : (
                 <div className="row">
@@ -1033,7 +1035,9 @@ export default function EditProfile() {
                     <h4 className="mb-0">Secure Payment Information</h4>
                   </div>
                 </div>
-                <p className="text-muted small mb-4">Your payment details are encrypted and securely stored.</p>
+                <p className="text-muted small mb-4"
+                  style={{ textTransform: "none" }}
+                >Your payment details are encrypted and securely stored.</p>
 
                 <form onSubmit={handleSaveNewCard}>
                   <div className="mb-3">
@@ -1137,7 +1141,9 @@ export default function EditProfile() {
             </svg>
             <h5 className="mb-0 text-danger fw-bold">Danger Zone</h5>
           </div>
-          <p className="text-muted mb-3">Deleting your profile is permanent and cannot be undone. All your data will be permanently deleted.</p>
+          <p className="text-muted mb-3"
+            style={{ textTransform: "none" }}
+          >Deleting your profile is permanent and cannot be undone. All your data will be permanently deleted.</p>
           <button className="btn btn-danger" onClick={() => { setShowDeleteModal(true); setDeleteConfirmText(""); }} disabled={deleteLoading}>
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-trash me-2" viewBox="0 0 16 16">
               <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0z" />
@@ -1490,10 +1496,14 @@ export default function EditProfile() {
             </svg>
             Permanently Delete Profile?
           </h5>
-          <div className="alert alert-danger py-2 mt-3">
+          <div className="alert alert-danger py-2 mt-3"
+            style={{ textTransform: "none" }}
+          >
             <strong>Warning:</strong> This action is permanent and cannot be undone. All your data will be deleted.
           </div>
-          <p className="text-muted small mb-4">
+          <p className="text-muted small mb-4"
+            style={{ textTransform: "none" }}
+          >
             Please type <strong>DELETE</strong> to confirm you want to permanently delete your profile.
           </p>
           <input type="text" className="form-control mb-3 fw-bold text-center" placeholder="Type DELETE to confirm" value={deleteConfirmText} onChange={(e) => setDeleteConfirmText(e.target.value.toUpperCase())} autoFocus />

@@ -56,7 +56,7 @@ export default function ProfileForm({
       <div className="settings-card shadow-sm border-0 rounded-3">
         <div className="settings-card-header border-bottom mb-4 pb-3">
           <div>
-            <p className="text-uppercase text-primary small fw-bold mb-1 tracking-wide">
+            <p className="text-primary small fw-bold mb-1 tracking-wide">
               Profile
             </p>
             <h3 className="fw-bold mb-2">Personal Information</h3>
@@ -124,7 +124,9 @@ export default function ProfileForm({
               />
             </div>
             {isEdit && (
-              <div className="form-text text-muted small mt-1">
+              <div className="form-text text-muted small mt-1"
+                style={{ textTransform: "none" }}
+              >
                 Email address cannot be changed after creation.
               </div>
             )}

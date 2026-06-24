@@ -168,7 +168,7 @@ const AddressAutocomplete = ({ value, name, onChange, placeholder, required }) =
 
 /* ---------- Section Title ---------- */
 const SectionTitle = ({ children, className = "" }) => (
-    <h6 className={`border-bottom pb-2 mb-3 text-uppercase text-muted fw-bold small ${className}`.trim()}>
+    <h6 className={`border-bottom pb-2 mb-3 text-muted fw-bold small ${className}`.trim()}>
         {children}
     </h6>
 );

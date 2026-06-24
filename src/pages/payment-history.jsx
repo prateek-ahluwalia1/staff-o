@@ -278,7 +278,9 @@ export default function PaymentHistory() {
           ) : transactions.length === 0 ? (
             <div className="text-center py-5 bg-light rounded border border-dashed">
               <i className="fa-solid fa-receipt text-muted fs-1 mb-3 opacity-50"></i>
-              <h6 className="text-muted mb-0">No transactions found</h6>
+              <h6 className="text-muted mb-0"
+              style={{textTransform: "none"}}
+              >No transactions found</h6>
             </div>
           ) : (
             <>

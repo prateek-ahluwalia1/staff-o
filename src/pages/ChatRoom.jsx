@@ -474,7 +474,9 @@ const ChatRoom = () => {
             {loadingConv ? (
               <div className="p-3 text-center text-muted small">Loading…</div>
             ) : filteredConvs.length === 0 ? (
-              <div className="p-4 text-center text-muted small">
+              <div className="p-4 text-center text-muted small"
+                style={{ textTransform: "none" }}
+              >
                 No conversations yet. Press <strong>+</strong> to start one.
               </div>
             ) : (
@@ -708,7 +710,7 @@ const ChatRoom = () => {
               </h6>
               <p
                 className="text-muted small text-center mb-0"
-                style={{ maxWidth: 260 }}
+                style={{ maxWidth: 260, textTransform: "none" }}
               >
                 Pick a conversation from the left, or press <strong>+</strong> to
                 start a new one.

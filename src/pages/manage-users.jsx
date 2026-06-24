@@ -1017,7 +1017,9 @@ const ManageUsers = () => {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={activeTab === "staff" ? 4 : 4} className="text-center py-5 text-muted">
+                  <td colSpan={activeTab === "staff" ? 4 : 4} className="text-center py-5 text-muted"
+                    style={{ textTransform: "-moz-initialnone" }}
+                  >
                     No records found for this category.
                   </td>
                 </tr>
@@ -1229,7 +1231,9 @@ const ManageUsers = () => {
                   <div className="d-flex justify-content-between align-items-center mb-4">
                     <div>
                       <h6 className="section-divider mt-0 border-0 mb-1">Documents</h6>
-                      <p className="text-muted mb-0 small">Upload and manage staff documents.</p>
+                      <p className="text-muted mb-0 small"
+                        style={{ textTransform: "none" }}
+                      >Upload and manage staff documents.</p>
                     </div>
                   </div>
                   <DocumentTable

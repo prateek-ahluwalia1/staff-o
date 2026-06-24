@@ -109,7 +109,7 @@ export default function CustomerDashboard() {
                   <i className="fa-solid fa-phone"></i> {phone}
                 </div>
                 <div className="profile-contact"
-                style={{textTransform : "none"}}
+                  style={{ textTransform: "none" }}
                 >
                   <i className="fa-solid fa-envelope"></i> {email}
                 </div>
@@ -202,7 +202,7 @@ export default function CustomerDashboard() {
                       </span>
                     </td>
                     <td>
-                      <Link                        href={`/job-details/${job.id}`}
+                      <Link href={`/job-details/${job.id}`}
                         className="btn btn-sm"
                         style={{
                           backgroundColor: "#f0f4ff",
@@ -232,7 +232,9 @@ export default function CustomerDashboard() {
                 ))
               ) : (
                 <tr>
-                  <td colSpan="6" className="text-center py-4 text-muted">
+                  <td colSpan="6" className="text-center py-4 text-muted"
+                    style={{ textTransform: "none" }}
+                  >
                     No recent jobs found.
                   </td>
                 </tr>

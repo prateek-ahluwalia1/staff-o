@@ -408,7 +408,7 @@ export default function RosterPage() {
         <div className="vr-actions">
           <div className="vr-search">
             <i className="fa fa-search"></i>
-            <input type="text" placeholder="Search Sites or Clients..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
+            <input type="text" placeholder="Search sites or clients..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
           </div>
           <div className="vr-toggles">
             <button className={weeksToView === 1 ? 'active' : ''} onClick={() => setWeeksToView(1)}>1W</button>
@@ -460,7 +460,7 @@ export default function RosterPage() {
       {/* --- MATRIX BODY --- */}
       <div className="vr-matrix-body">
         {filteredSites.length === 0 ? (
-          <div className="vr-no-data" style={{ padding: "40px", textAlign: "center", color: "#64748b" }}>
+          <div className="vr-no-data" style={{ padding: "40px", textAlign: "center", color: "#64748b", textTransform: "none" }}>
             No schedules match your search.
           </div>
         ) : (

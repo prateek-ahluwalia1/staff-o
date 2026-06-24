@@ -516,14 +516,14 @@ export default function Induction() {
                     <div className="w-100" style={{ maxWidth: '1000px' }}>
                         <div className="mb-4 bg-white p-3 p-md-4 rounded shadow-sm border border-light">
                             <div className="mb-4">
-                                <label className="form-label fw-bold text-dark small text-uppercase">Main Induction Title</label>
+                                <label className="form-label fw-bold text-dark small">Main Induction Title</label>
                                 <input type="text" className="form-control form-control-lg clean-input fw-bold text-dark" placeholder="e.g., STAFFOO Code of Conduct"
                                     value={formTitle} onChange={(e) => setFormTitle(e.target.value)} />
                             </div>
 
                             <div className="row">
                                 <div className="col-12 col-md-8 col-lg-7">
-                                    <label className="form-label fw-bold small text-muted text-uppercase">Subheadings</label>
+                                    <label className="form-label fw-bold small text-muted">Subheadings</label>
                                     {formSubtitles.map((sub, index) => (
                                         <div className="d-flex mb-2" key={index}>
                                             <input type="text" className="form-control clean-input me-2" placeholder="Enter subheading..."
@@ -622,7 +622,7 @@ export default function Induction() {
                                         {['a', 'b', 'c', 'd'].map(opt => (
                                             <div className="col-12 col-md-6" key={opt}>
                                                 <div className="d-flex align-items-center bg-light border rounded pe-2 overflow-hidden">
-                                                    <span className="text-muted fw-bold px-3 py-2 border-end text-uppercase bg-white">{opt}</span>
+                                                    <span className="text-muted fw-bold px-3 py-2 border-end bg-white">{opt}</span>
                                                     <input type="text" className="form-control border-0 shadow-none bg-transparent ps-3" placeholder={`Option ${opt.toUpperCase()}`} value={q[`option${opt}`]}
                                                         onChange={(e) => handleQuestionChange(qIndex, `option${opt}`, e.target.value)} />
                                                 </div>

@@ -411,7 +411,9 @@ export default function VisaManagement() {
                             <tbody>
                                 {visaChecksList.length === 0 && (
                                     <tr>
-                                        <td colSpan="5" className="text-center text-muted py-5">
+                                        <td colSpan="5" className="text-center text-muted py-5"
+                                            style={{ textTransform: "none" }}
+                                        >
                                             <div className="mb-2 fs-3 text-light">
                                                 <i className="fa-solid fa-folder-open"></i>
                                             </div>

@@ -775,7 +775,9 @@ const ManageStaff = () => {
           <h2 className="fw-bold text-dark mb-1" style={{ letterSpacing: "-0.02em" }}>
             Staff Management
           </h2>
-          <p className="text-muted mb-0">
+          <p className="text-muted mb-0"
+            style={{ textTransform: "none" }}
+          >
             Manage permissions and details for your team members.
           </p>
         </div>
@@ -1028,7 +1030,9 @@ const ManageStaff = () => {
                       <h6 className="section-divider mt-0 border-0 mb-1">
                         Documents
                       </h6>
-                      <p className="text-muted mb-0 small">
+                      <p className="text-muted mb-0 small"
+                        style={{ textTransform: "none" }}
+                      >
                         Upload and manage staff documents.
                       </p>
                     </div>

@@ -713,7 +713,9 @@ export default function TimeSheet() {
 
               {!timesheetLoading && timesheetData.length === 0 && (
                 <tr>
-                  <td colSpan="8" className="text-center text-muted py-5">
+                  <td colSpan="8" className="text-center text-muted py-5"
+                    style={{ textTransform: "none" }}
+                  >
                     No timesheet records found.
                   </td>
                 </tr>

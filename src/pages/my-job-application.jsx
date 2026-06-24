@@ -214,7 +214,9 @@ export default function MyJobApplications() {
         {/* --- CARDS GRID --- */}
         <div className="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-4 application-grid">
           {filteredApplications.length === 0 ? (
-            <div className="col-12 text-center py-5 text-muted bg-light rounded shadow-sm w-100">
+            <div className="col-12 text-center py-5 text-muted bg-light rounded shadow-sm w-100"
+              style={{ textTransform: "none" }}
+            >
               <i className="fa-solid fa-magnifying-glass-minus mb-3 d-block" style={{ fontSize: '2rem' }}></i>
               {applications.length > 0 ? "No shifts match your search." : "No shifts found for this period."}
             </div>

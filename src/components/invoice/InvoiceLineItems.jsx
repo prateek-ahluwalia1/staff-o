@@ -26,7 +26,9 @@ const InvoiceLineItems = ({ lineItems }) => {
           <tbody>
             {lineItems.length === 0 ? (
               <tr>
-                <td colSpan="4" className="text-center text-muted py-5">
+                <td colSpan="4" className="text-center text-muted py-5"
+
+                  style={{ textTransform: "none" }}>
                   <i className="fa-solid fa-inbox fa-2x mb-3 d-block opacity-50"></i>
                   Search to load invoice items.
                 </td>

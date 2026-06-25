@@ -875,6 +875,7 @@ export default function EditProfile() {
       {activeTab === "personal" && (
         <ProfileForm
           formData={formData}
+          showPhoneOtp={true}
           onChange={(e) => {
             const { id, name, value } = e.target;
             const fieldId = id || name;

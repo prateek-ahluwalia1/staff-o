@@ -44,7 +44,9 @@ export default function ReviewStep({ form, rate, setField, handleConfirm, setSte
     <div className="bg-white rounded-4 p-4 border" style={{ boxShadow: "0 4px 20px rgba(0,0,0,0.03)" }}>
       <div className="mb-4 pb-3 border-bottom">
         <h4 className="fw-bold mb-1 text-dark">Review & Confirm <span className="text-danger">*</span></h4>
-        <p className="text-muted small mb-0">Please review your job details before submitting.</p>
+        <p className="text-muted small mb-0"
+          style={{ textTransform: "none" }}
+        >Please review your job details before submitting.</p>
       </div>
 
       <div className="row g-3 mb-4">
@@ -120,7 +122,9 @@ export default function ReviewStep({ form, rate, setField, handleConfirm, setSte
                 <span className={`fw-bold fs-6 ${isFull ? "text-white" : "text-dark"}`}>Pay in Full</span>
                 <span className={`badge shadow-sm ${isFull ? "bg-white text-success" : "bg-success text-white"}`}>Save 5%</span>
               </div>
-              <div className={`small mb-3 ${isFull ? "text-white opacity-75" : "text-muted"}`}>Pay the total amount now and receive an instant 5% discount on your booking.</div>
+              <div className={`small mb-3 ${isFull ? "text-white opacity-75" : "text-muted"}`}
+                style={{ textTransform: "none" }}
+              >Pay the total amount now and receive an instant 5% discount on your booking.</div>
               <div className={`mt-auto pt-2 border-top ${isFull ? "border-white border-opacity-25" : "border-light"}`}>
                 <div className={`fw-bold fs-5 ${isFull ? "text-white" : "text-dark"}`}>{fmt(fullTotal)} <span className={`fs-6 fw-normal ${isFull ? "text-white opacity-75" : "text-muted"}`}>total</span></div>
               </div>
@@ -132,7 +136,9 @@ export default function ReviewStep({ form, rate, setField, handleConfirm, setSte
               <div className="d-flex justify-content-between align-items-start mb-2">
                 <span className={`fw-bold fs-6 ${isSplit ? "text-white" : "text-dark"}`}>Split Payment (50/50)</span>
               </div>
-              <div className={`small mb-3 ${isSplit ? "text-white opacity-75" : "text-muted"}`}>Pay 50% upfront to secure guards. The remaining 50% is charged upon shift completion.</div>
+              <div className={`small mb-3 ${isSplit ? "text-white opacity-75" : "text-muted"}`}
+                style={{ textTransform: "none" }}
+              >Pay 50% upfront to secure guards. The remaining 50% is charged upon shift completion.</div>
               <div className={`mt-auto pt-2 border-top ${isSplit ? "border-white border-opacity-25" : "border-light"}`}>
                 <div className={`fw-bold fs-5 ${isSplit ? "text-white" : "text-dark"}`}>{fmt(splitUpfront)} <span className={`fs-6 fw-normal ${isSplit ? "text-white opacity-75" : "text-muted"}`}>upfront</span></div>
               </div>
@@ -147,7 +153,7 @@ export default function ReviewStep({ form, rate, setField, handleConfirm, setSte
             <input id="terms" className="form-check-input mt-0" type="checkbox" style={{ width: "1.2rem", height: "1.2rem", cursor: "pointer" }} checked={form.termsAccepted} onChange={(e) => setField("termsAccepted", e.target.checked)} disabled={isSubmitting} />
             <label htmlFor="terms" className="form-check-label small fw-medium user-select-none" style={{ cursor: "pointer" }}>I agree to the <NavLink to="/terms-of-use" className="text-primary text-decoration-none fw-bold">Terms & Conditions</NavLink></label>
           </div>
-          <div className="small text-muted ps-4" style={{ fontSize: "0.8rem", textTransform: "none" }}>*Note: A 10% incidental authorisation hold may be applied by Stripe to cover potential Unplanned overtime. The hold will be released after completion of the shift.</div>
+          <div className="small text-muted ps-4" style={{ fontSize: "0.8rem", textTransform: "none" }}>*Note: A 10% incidental authorisation hold may be applied by stripe to cover potential unplanned overtime. The hold will be released after completion of the shift.</div>
         </div>
       )}
 

@@ -182,7 +182,9 @@ export default function ProfileForm({
                     </button>
                   </div>
                   {!isPhoneVerified && formData.phone && (
-                    <div className="form-text text-danger mt-2 small fw-medium">
+                    <div className="form-text text-danger mt-2 small fw-medium"
+                      style={{ textTransform: "none" }}
+                    >
                       <i className="fa-solid fa-circle-info me-1"></i>
                       Verification is required to enable full functionality.
                     </div>

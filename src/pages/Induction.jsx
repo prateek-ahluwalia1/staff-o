@@ -525,7 +525,7 @@ export default function Induction() {
                         <div className="mb-4 bg-white p-3 p-md-4 rounded shadow-sm border border-light">
                             <div className="mb-4">
                                 <label className="form-label fw-bold text-dark small">Main Induction Title</label>
-                                <input type="text" className="form-control form-control-lg clean-input fw-bold text-dark" placeholder="e.g., STAFFOO Code of Conduct"
+                                <input type="text" className="form-control form-control-lg clean-input fw-bold text-dark" placeholder="Staffoo code of conduct"
                                     value={formTitle} onChange={(e) => setFormTitle(e.target.value)} />
                             </div>
                             <div className="row">

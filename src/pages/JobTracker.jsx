@@ -440,7 +440,9 @@ const JobTracker = () => {
       <div className="dashboard-page-header">
         <div>
           <h1>Job Tracker</h1>
-          <p>
+          <p
+            style={{ textTransform: "none" }}
+          >
             Review shifts, filter records, and export a clean tracker summary.
           </p>
         </div>

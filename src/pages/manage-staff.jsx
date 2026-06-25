@@ -859,7 +859,9 @@ const ManageStaff = () => {
                 ))
               ) : (
                 <tr>
-                  <td colSpan="4" className="text-center py-5 text-muted">
+                  <td colSpan="4" className="text-center py-5 text-muted"
+                    style={{ textTransform: "none" }}
+                  >
                     No staff records found.
                   </td>
                 </tr>

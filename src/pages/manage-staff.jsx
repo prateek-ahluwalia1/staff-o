@@ -602,6 +602,7 @@ const ManageStaff = () => {
   return (
     <div className="container mt-4 pb-5">
       <style>{`
+        /* ---------- Base / Desktop Styles ---------- */
         .dashboard-page-header h1 {
           font-weight: 800;
           letter-spacing: -0.02em;
@@ -612,14 +613,21 @@ const ManageStaff = () => {
           border-radius: 12px;
           border: 1px solid #e2e8f0;
           background: #ffffff;
-          overflow: hidden;
+          overflow-x: auto;
+          -webkit-overflow-scrolling: touch;
         }
 
         .jobtracker-main-table {
           table-layout: fixed;
           width: 100%;
+          min-width: 650px;            /* ensures scroll on mobile */
           border-collapse: collapse;
           margin: 0;
+        }
+        @media (min-width: 992px) {
+          .jobtracker-main-table {
+            min-width: 0;
+          }
         }
 
         .premium-thead th {
@@ -767,6 +775,89 @@ const ManageStaff = () => {
           from { opacity: 0; transform: scale(0.98); }
           to { opacity: 1; transform: scale(1); }
         }
+
+        /* ---------- Responsive ---------- */
+        @media (max-width: 991.98px) {
+          .premium-thead th,
+          .jobtracker-data-row td {
+            padding: 0.75rem 1rem !important;
+            font-size: 0.8rem;
+          }
+          .jobtracker-main-table {
+            min-width: 600px;
+          }
+        }
+
+        @media (max-width: 767.98px) {
+          /* Header stacks */
+          .d-flex.justify-content-between.align-items-end.mb-4 {
+            flex-direction: column;
+            align-items: flex-start !important;
+          }
+          .d-flex.justify-content-between.align-items-end.mb-4 .btn {
+            width: 100%;
+            margin-top: 1rem;
+          }
+          /* Pagination stacking */
+          .card-footer .d-flex {
+            flex-direction: column;
+            align-items: flex-start !important;
+            gap: 0.5rem;
+          }
+          /* Modal fullscreen */
+          .modal-inner-content {
+            width: 100%;
+            height: 100vh;
+            border-radius: 0;
+          }
+          .full-screen-modal .px-5 {
+            padding-left: 1rem !important;
+            padding-right: 1rem !important;
+          }
+          .full-screen-modal .py-4 {
+            padding-top: 1rem !important;
+            padding-bottom: 1rem !important;
+          }
+          .modal-tabs-container {
+            width: 100%;
+            justify-content: center;
+          }
+          .modal-tabs-container .btn {
+            flex: 1 0 auto;
+            font-size: 0.8rem;
+            padding: 0.4rem 0.8rem;
+          }
+          .confirm-modal-card {
+            max-width: 100%;
+          }
+          /* Action buttons in table */
+          .btn-group .btn {
+            width: 36px;
+            height: 36px;
+            padding: 0;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+          }
+        }
+
+        @media (max-width: 575.98px) {
+          .dashboard-page-header h1 {
+            font-size: 1.5rem;
+          }
+          .jobtracker-main-table {
+            min-width: 500px;
+          }
+          .premium-thead th,
+          .jobtracker-data-row td {
+            padding: 0.6rem 0.8rem !important;
+            font-size: 0.75rem;
+          }
+          .card-footer .btn {
+            font-size: 0.8rem;
+            padding: 0.4rem 1rem;
+          }
+        }
       `}</style>
 
       {/* Header */}
@@ -783,6 +874,7 @@ const ManageStaff = () => {
         </div>
         <button
           className="btn btn-dark rounded-pill px-4 py-2 shadow-sm fw-bold"
+          style={{ minHeight: "44px" }}
           onClick={() => openModal()}
         >
           <i className="fa-solid fa-plus me-2"></i> Add Staff
@@ -870,7 +962,7 @@ const ManageStaff = () => {
           </table>
         </div>
 
-        <div className="card-footer bg-white border-top py-3 px-4 d-flex justify-content-between align-items-center">
+        <div className="card-footer bg-white border-top py-3 px-4 d-flex justify-content-between align-items-center flex-wrap">
           <div className="text-muted small">
             Showing Page <strong>{page}</strong> of <strong>{totalPages}</strong>
             <span className="mx-2">•</span>
@@ -881,6 +973,7 @@ const ManageStaff = () => {
               className="btn btn-sm btn-outline-secondary rounded-pill px-3"
               onClick={() => handlePageChange(page - 1)}
               disabled={page === 1}
+              style={{ minHeight: "44px" }}
             >
               <i className="fa-solid fa-chevron-left me-1"></i> Prev
             </button>
@@ -888,6 +981,7 @@ const ManageStaff = () => {
               className="btn btn-sm btn-outline-secondary rounded-pill px-3"
               onClick={() => handlePageChange(page + 1)}
               disabled={page === totalPages || totalPages === 0}
+              style={{ minHeight: "44px" }}
             >
               Next <i className="fa-solid fa-chevron-right ms-1"></i>
             </button>
@@ -922,6 +1016,7 @@ const ManageStaff = () => {
                     : "btn-outline-primary"
                     }`}
                   onClick={() => setActiveModalTab("personal")}
+                  style={{ minHeight: "44px" }}
                 >
                   Personal Information
                 </button>
@@ -931,6 +1026,7 @@ const ManageStaff = () => {
                       type="button"
                       className={`btn ${activeModalTab === "documents" ? "btn-primary-custom text-white" : "btn-outline-primary"}`}
                       onClick={() => setActiveModalTab("documents")}
+                      style={{ minHeight: "44px" }}
                     >
                       Documents
                     </button>
@@ -938,6 +1034,7 @@ const ManageStaff = () => {
                       type="button"
                       className={`btn ${activeModalTab === "onboarding" ? "btn-primary-custom text-white" : "btn-outline-primary"}`}
                       onClick={() => setActiveModalTab("onboarding")}
+                      style={{ minHeight: "44px" }}
                     >
                       Verification Forms
                     </button>
@@ -978,6 +1075,7 @@ const ManageStaff = () => {
                       form="profile-form"
                       className="btn btn-dark rounded-pill px-5 fw-bold shadow-sm"
                       disabled={submitLoading}
+                      style={{ minHeight: "44px" }}
                     >
                       {submitLoading
                         ? "Saving..."
@@ -1009,6 +1107,7 @@ const ManageStaff = () => {
                             }))
                           }
                           required={!editingUser}
+                          style={{ minHeight: "44px" }}
                         />
                         <button
                           type="button"
@@ -1085,6 +1184,7 @@ const ManageStaff = () => {
                               onChange={handleDocFormChange}
                               required
                               disabled={!!selectedDoc}
+                              style={{ minHeight: "44px" }}
                             >
                               <option value="">Select Type</option>
                               {DOC_TYPES.map((type) => (
@@ -1110,12 +1210,14 @@ const ManageStaff = () => {
                                   value={docForm.document_no}
                                   onChange={handleDocNumberChange}
                                   required
+                                  style={{ minHeight: "44px" }}
                                 />
                                 <button
                                   type="button"
                                   className="btn btn-dark fw-bold px-4 border-0"
                                   onClick={handleVerifyDocumentNumber}
                                   disabled={verifyingDoc || !docForm.document_no}
+                                  style={{ minHeight: "44px" }}
                                 >
                                   {verifyingDoc ? (
                                     <>
@@ -1135,6 +1237,7 @@ const ManageStaff = () => {
                                 value={docForm.document_no}
                                 onChange={handleDocNumberChange}
                                 required
+                                style={{ minHeight: "44px" }}
                               />
                             )}
                           </div>
@@ -1160,7 +1263,7 @@ const ManageStaff = () => {
                                     }
                                   }
                                 }}
-                                style={{ cursor: "pointer", zIndex: 10 }}
+                                style={{ cursor: "pointer", zIndex: 10, minHeight: "44px" }}
                                 disabled={
                                   docForm.document_name === "Security License" ||
                                   docForm.document_name === "Visa"
@@ -1251,6 +1354,7 @@ const ManageStaff = () => {
                                       docForm.document_name === "Visa"
                                       ? "#e9ecef"
                                       : "white",
+                                  minHeight: "44px"
                                 }}
                               />
                             </div>
@@ -1322,6 +1426,7 @@ const ManageStaff = () => {
                               onChange={handleDocFormChange}
                               name="file"
                               accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.gif,.webp"
+                              style={{ minHeight: "44px" }}
                             />
                           </div>
 
@@ -1331,6 +1436,7 @@ const ManageStaff = () => {
                               className="btn btn-light rounded-pill px-5 fw-bold text-muted border"
                               onClick={closeDocumentModal}
                               disabled={uploadLoading || submitLoading}
+                              style={{ minHeight: "44px" }}
                             >
                               Cancel
                             </button>
@@ -1343,6 +1449,7 @@ const ManageStaff = () => {
                                 !docForm.document_expiry ||
                                 !docForm.file_url
                               }
+                              style={{ minHeight: "44px" }}
                             >
                               {submitLoading ? "Saving..." : "Upload Document"}
                             </button>
@@ -1360,6 +1467,7 @@ const ManageStaff = () => {
                 type="button"
                 className="btn btn-light rounded-pill px-5 fw-bold text-muted border"
                 onClick={closeModal}
+                style={{ minHeight: "44px" }}
               >
                 Cancel
               </button>
@@ -1399,6 +1507,7 @@ const ManageStaff = () => {
                 className="btn btn-outline-secondary rounded-pill px-4 fw-bold"
                 onClick={closeDeleteModal}
                 disabled={deleteLoading}
+                style={{ minHeight: "44px" }}
               >
                 Cancel
               </button>
@@ -1407,6 +1516,7 @@ const ManageStaff = () => {
                 className="btn btn-danger rounded-pill px-4 fw-bold shadow-sm"
                 onClick={confirmDelete}
                 disabled={deleteLoading}
+                style={{ minHeight: "44px" }}
               >
                 {deleteLoading ? "Deleting..." : "Yes, Delete"}
               </button>

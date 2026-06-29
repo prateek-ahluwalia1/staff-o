@@ -1129,17 +1129,17 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
                 )}
 
                 {step === 3 && !isAdmin && <ReviewStep form={form} rate={breakdown} setStep={setStep} setField={setField} handleConfirm={handleConfirm} isSubmitting={isSubmitting} baseAmount={breakdown?.chargeTotalIncGst || 0} isAdmin={isAdmin} />}    <div className="d-flex justify-content-between mt-5 pt-4 border-top">
-                  <button type="button" className="btn btn-outline-secondary rounded-pill px-4 fw-bold" onClick={back} disabled={isSubmitting}>← Back</button>
+                  <button type="button" className="btn btn-outline-secondary rounded-pill px-4 fw-bold" onClick={back} disabled={isSubmitting}>Back</button>
 
                   {step < STEP_TITLES.length - 1 ? (
-                    <button type="button" className="btn btn-primary-custom btn-lg rounded-pill px-5 fw-bold shadow-sm" onClick={next} disabled={isSubmitting}>Next Step</button>
+                    <button type="button" className="btn btn-primary-custom btn-lg rounded-pill px-5 fw-bold shadow-sm" onClick={next} disabled={isSubmitting}>Next</button>
                   ) : (
                     isAdmin ? (
                       <button type="button" className="btn btn-dark btn-lg rounded-pill px-5 fw-bold shadow-sm" onClick={handleConfirm} disabled={isSubmitting}>
                         {isSubmitting ? (
                           <><span className="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>Processing...</>
                         ) : (
-                          <><i className="fa-solid fa-paper-plane me-2"></i>Post Job Now</>
+                          <><i className="fa-solid fa-paper-plane me-2"></i>Post Job</>
                         )}
                       </button>
                     ) : (

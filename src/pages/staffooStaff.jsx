@@ -129,7 +129,6 @@ const StaffooStaff = () => {
         return editingUser.documents || editingUser.staff?.documents || [];
     }, [editingUser]);
 
-    // ---- ProfileForm change handler (id-based) ----
     const handleProfileFormChange = useCallback((e) => {
         const { id, value } = e.target;
         setFormData((prev) => ({
@@ -193,7 +192,6 @@ const StaffooStaff = () => {
         setEditingUser(null);
     };
 
-    // ----- Document helpers (identical to ManageUsers) -----
     const openDocumentModal = (doc) => {
         setSelectedDoc(doc);
         if (doc) {
@@ -419,7 +417,6 @@ const StaffooStaff = () => {
         if (res.success) {
             toast.success("Document saved successfully!");
 
-            // Update editing user immediately
             const savedDoc = res.data?.document || res.data || {};
             setEditingUser((prev) => {
                 const currentDocs = prev?.documents || [];
@@ -456,7 +453,6 @@ const StaffooStaff = () => {
         }
     };
 
-    // Google Maps Autocomplete (targets #address, the id used by ProfileForm)
     const autocompleteRef = useRef(null);
     const autocompleteListenerRef = useRef(null);
 
@@ -609,10 +605,10 @@ const StaffooStaff = () => {
           overflow: hidden;
         }
         .jobtracker-main-table {
-          table-layout: fixed;
           width: 100%;
           border-collapse: collapse;
           margin: 0;
+          min-width: 700px; /* Forces scrolling on small screens */
         }
         .premium-thead th {
           background-color: #0A7C6E !important;
@@ -670,11 +666,13 @@ const StaffooStaff = () => {
           background: #f3f4f6;
           padding: 4px;
           border-radius: 12px;
-          display: inline-flex;
+          display: flex; /* Changed to flex for full width wrapping */
           flex-wrap: wrap;
           gap: 4px;
+          width: 100%;
         }
         .modal-tabs-container .btn {
+          flex-grow: 1; /* Stretch on mobile */
           border-radius: 8px;
           border: none;
           font-weight: 600;
@@ -682,6 +680,7 @@ const StaffooStaff = () => {
           color: #6b7280;
           padding: 0.5rem 1rem;
           transition: all 0.2s;
+          white-space: nowrap;
         }
         .modal-tabs-container .btn-primary-custom {
           background: #ffffff;
@@ -726,6 +725,7 @@ const StaffooStaff = () => {
           justify-content: center;
           background: #e0f2fe;
           color: #0284c7;
+          flex-shrink: 0;
         }
         .confirm-modal-icon.icon-doc {
           background: #e0f2fe;
@@ -738,26 +738,60 @@ const StaffooStaff = () => {
           border: 1px solid #e5e7eb;
           margin-top: 4px;
         }
+
+        /* --- MOBILE OPTIMIZATIONS --- */
+        @media (max-width: 768px) {
+          .modal-inner-content {
+            width: 100%;
+            height: 100%;
+            border-radius: 0;
+            max-width: none;
+          }
+          .confirm-modal-backdrop {
+            padding: 0;
+          }
+          .confirm-modal-card {
+            border-radius: 0;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            margin: 0;
+          }
+          .confirm-modal-card > form {
+            flex: 1;
+            max-height: none !important;
+          }
+          .premium-thead th, .jobtracker-data-row td {
+            padding: 0.75rem 1rem !important;
+          }
+        }
         @keyframes modalFadeIn {
           from { opacity: 0; transform: scale(0.98); }
           to { opacity: 1; transform: scale(1); }
         }
+
+        @media (min-width: 768px) {
+  .w-md-auto {
+    width: auto !important;
+  }
+}
       `}</style>
 
             {/* Header */}
-            <div className="d-flex justify-content-between align-items-end mb-4">
+            {/* Header */}
+            <div className="d-flex flex-column flex-md-row justify-content-md-between align-items-start align-items-md-center gap-3 mb-4">
                 <div>
                     <h2 className="fw-bold text-dark mb-1" style={{ letterSpacing: "-0.02em" }}>
                         Staff Management
                     </h2>
-                    <p className="text-muted mb-0"
-                        style={{ textTransform: "none" }}
-                    >
+                    <p className="text-muted mb-0" style={{ textTransform: "none" }}>
                         Manage permissions and details for your team members.
                     </p>
                 </div>
+
+                {/* Replaced width classes with flexbox alignment */}
                 <button
-                    className="btn btn-dark rounded-pill px-4 py-2 shadow-sm fw-bold"
+                    className="btn btn-dark rounded-pill px-4 shadow-sm fw-bold align-self-stretch align-self-md-auto"
                     onClick={() => openModal()}
                 >
                     <i className="fa-solid fa-plus me-2"></i> Add Staff
@@ -778,23 +812,14 @@ const StaffooStaff = () => {
             <div className="card border-0 shadow-sm rounded-4 overflow-hidden mb-4 jobtracker-table-shell">
                 <div className="table-responsive">
                     <table
-                        className={`table table-hover align-middle mb-0 jobtracker-main-table ${loading ? "opacity-50" : ""
-                            }`}
+                        className={`table table-hover align-middle mb-0 jobtracker-main-table ${loading ? "opacity-50" : ""}`}
                     >
                         <thead className="premium-thead">
                             <tr>
-                                <th className="text-start" style={{ width: "35%" }}>
-                                    NAME & EMAIL
-                                </th>
-                                <th className="text-start" style={{ width: "25%" }}>
-                                    PHONE
-                                </th>
-                                <th className="text-start" style={{ width: "25%" }}>
-                                    LOCATION
-                                </th>
-                                <th className="text-center" style={{ width: "15%" }}>
-                                    ACTIONS
-                                </th>
+                                <th className="text-start" style={{ width: "35%" }}>NAME & EMAIL</th>
+                                <th className="text-start" style={{ width: "25%" }}>PHONE</th>
+                                <th className="text-start" style={{ width: "25%" }}>LOCATION</th>
+                                <th className="text-center" style={{ width: "15%" }}>ACTIONS</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -834,9 +859,7 @@ const StaffooStaff = () => {
                                 ))
                             ) : (
                                 <tr>
-                                    <td colSpan="4" className="text-center py-5 text-muted"
-                                        style={{ textTransform: "none" }}
-                                    >
+                                    <td colSpan="4" className="text-center py-5 text-muted" style={{ textTransform: "none" }}>
                                         No staff records found.
                                     </td>
                                 </tr>
@@ -845,22 +868,23 @@ const StaffooStaff = () => {
                     </table>
                 </div>
 
-                <div className="card-footer bg-white border-top py-3 px-4 d-flex justify-content-between align-items-center">
-                    <div className="text-muted small">
+                <div className="card-footer bg-white border-top py-3 px-3 px-md-4 d-flex flex-column flex-md-row justify-content-between align-items-center gap-3">
+                    <div className="text-muted small text-center text-md-start">
                         Showing Page <strong>{page}</strong> of <strong>{totalPages}</strong>
-                        <span className="mx-2">•</span>
+                        <span className="mx-2 d-none d-md-inline">•</span>
+                        <br className="d-block d-md-none" />
                         Total <strong>{totalItems}</strong> records
                     </div>
-                    <div className="d-flex gap-2">
+                    <div className="d-flex gap-2 w-100 w-md-auto justify-content-center">
                         <button
-                            className="btn btn-sm btn-outline-secondary rounded-pill px-3"
+                            className="btn btn-sm btn-outline-secondary rounded-pill px-3 flex-grow-1 flex-md-grow-0"
                             onClick={() => handlePageChange(page - 1)}
                             disabled={page === 1}
                         >
                             <i className="fa-solid fa-chevron-left me-1"></i> Prev
                         </button>
                         <button
-                            className="btn btn-sm btn-outline-secondary rounded-pill px-3"
+                            className="btn btn-sm btn-outline-secondary rounded-pill px-3 flex-grow-1 flex-md-grow-0"
                             onClick={() => handlePageChange(page + 1)}
                             disabled={page === totalPages || totalPages === 0}
                         >
@@ -870,19 +894,19 @@ const StaffooStaff = () => {
                 </div>
             </div>
 
-            {/* Full screen modal */}
+            {/* Full screen modal (Add/Edit) */}
             {isModalOpen && (
                 <div className="full-screen-modal">
                     <div className="modal-inner-content">
-                        <div className="px-5 py-4 border-bottom bg-white d-flex justify-content-between align-items-center">
-                            <h4 className="fw-bold mb-0">
+                        <div className="px-3 px-md-5 py-3 py-md-4 border-bottom bg-white d-flex justify-content-between align-items-center">
+                            <h4 className="fw-bold mb-0 fs-5 fs-md-4">
                                 {editingUser ? "Update Staff Profile" : "Add New Staff"}
                             </h4>
                             <button className="btn-close shadow-none" onClick={closeModal}></button>
                         </div>
 
                         <div
-                            className="flex-grow-1 overflow-auto px-5 py-4"
+                            className="flex-grow-1 overflow-auto px-3 px-md-5 py-3 py-md-4"
                             onScroll={() => {
                                 if (document.activeElement?.id === "address") {
                                     document.activeElement.blur();
@@ -892,10 +916,7 @@ const StaffooStaff = () => {
                             <div className="modal-tabs-container mb-4">
                                 <button
                                     type="button"
-                                    className={`btn ${activeModalTab === "personal"
-                                        ? "btn-primary-custom text-white"
-                                        : "btn-outline-primary"
-                                        }`}
+                                    className={`btn ${activeModalTab === "personal" ? "btn-primary-custom text-white" : "btn-outline-primary"}`}
                                     onClick={() => setActiveModalTab("personal")}
                                 >
                                     Personal Information
@@ -951,18 +972,14 @@ const StaffooStaff = () => {
                                         <button
                                             type="submit"
                                             form="profile-form"
-                                            className="btn btn-dark rounded-pill px-5 fw-bold shadow-sm"
+                                            className="btn btn-dark rounded-pill px-5 fw-bold shadow-sm w-100 w-md-auto"
                                             disabled={submitLoading}
                                         >
-                                            {submitLoading
-                                                ? "Saving..."
-                                                : editingUser
-                                                    ? "Update Profile"
-                                                    : "Create Staff"}
+                                            {submitLoading ? "Saving..." : editingUser ? "Update Profile" : "Create Staff"}
                                         </button>
                                     }
                                     extraFields={
-                                        <div className="col-md-6">
+                                        <div className="col-12 col-md-6 mt-3 mt-md-0">
                                             <label className="form-label">
                                                 Password{" "}
                                                 {editingUser && (
@@ -991,10 +1008,7 @@ const StaffooStaff = () => {
                                                     onClick={() => setShowPassword(!showPassword)}
                                                     tabIndex="-1"
                                                 >
-                                                    <i
-                                                        className={`fa-solid ${showPassword ? "fa-eye-slash" : "fa-eye"
-                                                            }`}
-                                                    ></i>
+                                                    <i className={`fa-solid ${showPassword ? "fa-eye-slash" : "fa-eye"}`}></i>
                                                 </button>
                                             </div>
                                         </div>
@@ -1004,51 +1018,34 @@ const StaffooStaff = () => {
                                 <div>
                                     <div className="d-flex justify-content-between align-items-center mb-4">
                                         <div>
-                                            <h6 className="section-divider mt-0 border-0 mb-1">
-                                                Documents
-                                            </h6>
-                                            <p className="text-muted mb-0 small"
-                                                style={{ textTransform: "none" }}
-                                            >
+                                            <h6 className="section-divider mt-0 border-0 mb-1">Documents</h6>
+                                            <p className="text-muted mb-0 small" style={{ textTransform: "none" }}>
                                                 Upload and manage staff documents.
                                             </p>
                                         </div>
                                     </div>
-                                    <DocumentTable
-                                        documents={staffDocuments}
-                                        userType="staff"
-                                        onAddFile={openDocumentModal}
-                                    />
+                                    <DocumentTable documents={staffDocuments} userType="staff" onAddFile={openDocumentModal} />
 
                                     {showDocModal && (
-                                        <div
-                                            className="confirm-modal-backdrop"
-                                            onClick={closeDocumentModal}
-                                        >
-                                            <div
-                                                className="confirm-modal-card"
-                                                onClick={(e) => e.stopPropagation()}
-                                            >
-                                                <div className="confirm-modal-header px-4 py-3 d-flex align-items-center gap-3">
+                                        <div className="confirm-modal-backdrop" onClick={closeDocumentModal}>
+                                            <div className="confirm-modal-card" onClick={(e) => e.stopPropagation()}>
+                                                <div className="confirm-modal-header px-3 px-md-4 py-3 d-flex align-items-center gap-3">
                                                     <span className="confirm-modal-icon icon-doc">
                                                         <i className="fa-solid fa-file-arrow-up"></i>
                                                     </span>
                                                     <div>
-                                                        <h5 className="mb-0 fw-bold">
+                                                        <h5 className="mb-0 fw-bold fs-6 fs-md-5">
                                                             {selectedDoc ? "Update Document" : "Add Document"}
                                                         </h5>
-                                                        <div className="small text-muted">
-                                                            Upload a staff verification file.
-                                                        </div>
+                                                        <div className="small text-muted">Upload a staff verification file.</div>
                                                     </div>
                                                 </div>
 
                                                 <form
                                                     onSubmit={handleDocSubmit}
-                                                    className="p-4"
+                                                    className="p-3 p-md-4"
                                                     style={{ maxHeight: "70vh", overflowY: "auto" }}
                                                 >
-                                                    {/* Document Type */}
                                                     <div className="mb-3">
                                                         <label className="form-label fw-bold text-dark">
                                                             Document Type <span className="text-danger">*</span>
@@ -1070,13 +1067,11 @@ const StaffooStaff = () => {
                                                         </select>
                                                     </div>
 
-                                                    {/* Document Number + Verify */}
                                                     <div className="mb-3">
                                                         <label className="form-label fw-bold text-dark">
                                                             Document Number <span className="text-danger">*</span>
                                                         </label>
-                                                        {(docForm.document_name === "Security License" ||
-                                                            docForm.document_name === "Visa") ? (
+                                                        {(docForm.document_name === "Security License" || docForm.document_name === "Visa") ? (
                                                             <div className="input-group">
                                                                 <input
                                                                     type="text"
@@ -1088,14 +1083,14 @@ const StaffooStaff = () => {
                                                                 />
                                                                 <button
                                                                     type="button"
-                                                                    className="btn btn-dark fw-bold px-4 border-0"
+                                                                    className="btn btn-dark fw-bold px-3 px-md-4 border-0"
                                                                     onClick={handleVerifyDocumentNumber}
                                                                     disabled={verifyingDoc || !docForm.document_no}
                                                                 >
                                                                     {verifyingDoc ? (
                                                                         <>
                                                                             <span className="spinner-border spinner-border-sm me-1" />
-                                                                            Verifying...
+                                                                            <span className="d-none d-md-inline">Verifying...</span>
                                                                         </>
                                                                     ) : (
                                                                         "Verify"
@@ -1114,7 +1109,6 @@ const StaffooStaff = () => {
                                                         )}
                                                     </div>
 
-                                                    {/* Expiry Date */}
                                                     <div className="mb-3">
                                                         <label className="form-label fw-bold text-dark">
                                                             Expiry Date <span className="text-danger">*</span>
@@ -1125,21 +1119,13 @@ const StaffooStaff = () => {
                                                                 className="input-group-text bg-light text-muted border-0"
                                                                 onClick={(e) => {
                                                                     e.preventDefault();
-                                                                    const picker =
-                                                                        document.getElementById("doc_expiry_picker");
+                                                                    const picker = document.getElementById("doc_expiry_picker");
                                                                     if (picker) {
-                                                                        try {
-                                                                            picker.showPicker();
-                                                                        } catch (err) {
-                                                                            picker.focus();
-                                                                        }
+                                                                        try { picker.showPicker(); } catch (err) { picker.focus(); }
                                                                     }
                                                                 }}
                                                                 style={{ cursor: "pointer", zIndex: 10 }}
-                                                                disabled={
-                                                                    docForm.document_name === "Security License" ||
-                                                                    docForm.document_name === "Visa"
-                                                                }
+                                                                disabled={docForm.document_name === "Security License" || docForm.document_name === "Visa"}
                                                                 title="Open Calendar"
                                                             >
                                                                 <i className="fa-solid fa-calendar-days text-dark"></i>
@@ -1149,19 +1135,11 @@ const StaffooStaff = () => {
                                                                 type="date"
                                                                 id="doc_expiry_picker"
                                                                 className="position-absolute"
-                                                                style={{
-                                                                    opacity: 0,
-                                                                    width: 0,
-                                                                    height: 0,
-                                                                    pointerEvents: "none",
-                                                                    bottom: 0,
-                                                                    left: 40,
-                                                                }}
+                                                                style={{ opacity: 0, width: 0, height: 0, pointerEvents: "none", bottom: 0, left: 40 }}
                                                                 value={
                                                                     docForm.document_expiry
                                                                         ? (() => {
-                                                                            const parts =
-                                                                                docForm.document_expiry.split("/");
+                                                                            const parts = docForm.document_expiry.split("/");
                                                                             if (parts.length === 3) {
                                                                                 const [d, m, y] = parts;
                                                                                 return `${y}-${m}-${d}`;
@@ -1180,10 +1158,7 @@ const StaffooStaff = () => {
                                                                         }));
                                                                     }
                                                                 }}
-                                                                disabled={
-                                                                    docForm.document_name === "Security License" ||
-                                                                    docForm.document_name === "Visa"
-                                                                }
+                                                                disabled={docForm.document_name === "Security License" || docForm.document_name === "Visa"}
                                                             />
 
                                                             <input
@@ -1194,100 +1169,56 @@ const StaffooStaff = () => {
                                                                 value={docForm.document_expiry}
                                                                 onChange={(e) => {
                                                                     let value = e.target.value.replace(/\D/g, "");
-                                                                    if (value.length > 8)
-                                                                        value = value.substring(0, 8);
+                                                                    if (value.length > 8) value = value.substring(0, 8);
                                                                     if (value.length > 2 && value.length <= 4) {
-                                                                        value = value.replace(
-                                                                            /^(\d{2})(\d+)/,
-                                                                            "$1/$2"
-                                                                        );
+                                                                        value = value.replace(/^(\d{2})(\d+)/, "$1/$2");
                                                                     } else if (value.length > 4) {
-                                                                        value = value.replace(
-                                                                            /^(\d{2})(\d{2})(\d+)/,
-                                                                            "$1/$2/$3"
-                                                                        );
+                                                                        value = value.replace(/^(\d{2})(\d{2})(\d+)/, "$1/$2/$3");
                                                                     }
-                                                                    setDocForm((prev) => ({
-                                                                        ...prev,
-                                                                        document_expiry: value,
-                                                                    }));
+                                                                    setDocForm((prev) => ({ ...prev, document_expiry: value }));
                                                                 }}
                                                                 required
                                                                 maxLength={10}
                                                                 pattern="^(0[1-9]|[12][0-9]|3[01])/(0[1-9]|1[012])/\d{4}$"
-                                                                disabled={
-                                                                    docForm.document_name === "Security License" ||
-                                                                    docForm.document_name === "Visa"
-                                                                }
-                                                                style={{
-                                                                    backgroundColor:
-                                                                        docForm.document_name ===
-                                                                            "Security License" ||
-                                                                            docForm.document_name === "Visa"
-                                                                            ? "#e9ecef"
-                                                                            : "white",
-                                                                }}
+                                                                disabled={docForm.document_name === "Security License" || docForm.document_name === "Visa"}
+                                                                style={{ backgroundColor: docForm.document_name === "Security License" || docForm.document_name === "Visa" ? "#e9ecef" : "white" }}
                                                             />
                                                         </div>
                                                     </div>
 
-                                                    {/* File Upload */}
                                                     <div className="mb-4">
                                                         <label className="form-label fw-bold text-dark">
                                                             Document/Image <span className="text-danger">*</span>
                                                         </label>
                                                         <div
                                                             className="position-relative border border-2 border-dashed rounded-4 p-4 text-center bg-light"
-                                                            style={{
-                                                                minHeight: "200px",
-                                                                display: "flex",
-                                                                alignItems: "center",
-                                                                justifyContent: "center",
-                                                            }}
+                                                            style={{ minHeight: "200px", display: "flex", alignItems: "center", justifyContent: "center" }}
                                                         >
                                                             {docForm.file_url ? (
                                                                 <>
-                                                                    {docForm.file_url.match(
-                                                                        /\.(jpg|jpeg|png|gif|webp)$/i
-                                                                    ) ? (
+                                                                    {docForm.file_url.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
                                                                         <img
-                                                                            src={
-                                                                                docForm.file_url.startsWith("http")
-                                                                                    ? docForm.file_url
-                                                                                    : `${apiURL}staff_documents/${docForm.file_url}`
-                                                                            }
+                                                                            src={docForm.file_url.startsWith("http") ? docForm.file_url : `${apiURL}staff_documents/${docForm.file_url}`}
                                                                             alt="Preview"
-                                                                            style={{
-                                                                                width: "100%",
-                                                                                maxHeight: "200px",
-                                                                                objectFit: "contain",
-                                                                                borderRadius: "8px",
-                                                                                opacity: uploadLoading ? 0.3 : 1,
-                                                                            }}
+                                                                            style={{ width: "100%", maxHeight: "200px", objectFit: "contain", borderRadius: "8px", opacity: uploadLoading ? 0.3 : 1 }}
                                                                         />
                                                                     ) : (
                                                                         <div className="text-center">
                                                                             <i className="fa-solid fa-file-pdf fa-3x text-muted mb-3"></i>
-                                                                            <p className="fw-bold text-secondary mb-0">
-                                                                                Document Selected
-                                                                            </p>
+                                                                            <p className="fw-bold text-secondary mb-0">Document Selected</p>
                                                                         </div>
                                                                     )}
                                                                     {uploadLoading && (
                                                                         <div className="position-absolute top-50 start-50 translate-middle">
                                                                             <div className="spinner-border text-primary" />
-                                                                            <p className="small mt-1 fw-bold text-dark">
-                                                                                Uploading...
-                                                                            </p>
+                                                                            <p className="small mt-1 fw-bold text-dark">Uploading...</p>
                                                                         </div>
                                                                     )}
                                                                 </>
                                                             ) : (
                                                                 <div className="text-center">
                                                                     <i className="fa-solid fa-cloud-arrow-up fa-3x text-muted mb-3"></i>
-                                                                    <p className="text-muted fw-medium mb-0">
-                                                                        Click to upload document/image
-                                                                    </p>
+                                                                    <p className="text-muted fw-medium mb-0">Click to upload document/image</p>
                                                                 </div>
                                                             )}
                                                         </div>
@@ -1300,10 +1231,10 @@ const StaffooStaff = () => {
                                                         />
                                                     </div>
 
-                                                    <div className="mt-2 pt-3 border-top d-flex justify-content-end gap-2">
+                                                    <div className="mt-auto pt-3 border-top d-flex flex-column flex-md-row justify-content-end gap-2">
                                                         <button
                                                             type="button"
-                                                            className="btn btn-light rounded-pill px-5 fw-bold text-muted border"
+                                                            className="btn btn-light rounded-pill px-5 fw-bold text-muted border w-100 w-md-auto"
                                                             onClick={closeDocumentModal}
                                                             disabled={uploadLoading || submitLoading}
                                                         >
@@ -1311,13 +1242,8 @@ const StaffooStaff = () => {
                                                         </button>
                                                         <button
                                                             type="submit"
-                                                            className="btn btn-dark rounded-pill px-5 fw-bold shadow-sm"
-                                                            disabled={
-                                                                uploadLoading ||
-                                                                submitLoading ||
-                                                                !docForm.document_expiry ||
-                                                                !docForm.file_url
-                                                            }
+                                                            className="btn btn-dark rounded-pill px-5 fw-bold shadow-sm w-100 w-md-auto"
+                                                            disabled={uploadLoading || submitLoading || !docForm.document_expiry || !docForm.file_url}
                                                         >
                                                             {submitLoading ? "Saving..." : "Upload Document"}
                                                         </button>
@@ -1329,22 +1255,18 @@ const StaffooStaff = () => {
                                 </div>
                             ) : (
                                 <div>
-                                    <StaffOnboardingForms
-                                        submit={submit}
-                                        userId={editingUser?.id}
-                                        contractorId={1}
-                                    />
+                                    <StaffOnboardingForms submit={submit} userId={editingUser?.id} contractorId={1} />
                                 </div>
                             )}
                         </div>
 
-                        <div className="px-5 py-4 border-top bg-light d-flex gap-3 justify-content-end">
+                        <div className="px-3 px-md-5 py-3 py-md-4 border-top bg-light d-flex gap-3 justify-content-end">
                             <button
                                 type="button"
-                                className="btn btn-light rounded-pill px-5 fw-bold text-muted border"
+                                className="btn btn-light rounded-pill px-5 fw-bold text-muted border w-100 w-md-auto"
                                 onClick={closeModal}
                             >
-                                Cancel
+                                Close
                             </button>
                         </div>
                     </div>
@@ -1354,32 +1276,25 @@ const StaffooStaff = () => {
             {/* Delete Modal */}
             {isDeleteModalOpen && (
                 <div className="confirm-modal-backdrop" onClick={closeDeleteModal}>
-                    <div
-                        className="confirm-modal-card"
-                        onClick={(e) => e.stopPropagation()}
-                    >
-                        <div className="confirm-modal-header px-4 py-3 d-flex align-items-center gap-3">
+                    <div className="confirm-modal-card" onClick={(e) => e.stopPropagation()}>
+                        <div className="confirm-modal-header px-3 px-md-4 py-3 d-flex align-items-center gap-3">
                             <span className="confirm-modal-icon">
                                 <i className="fa-solid fa-triangle-exclamation"></i>
                             </span>
                             <div>
-                                <h5 className="mb-0 fw-bold text-danger">Confirm Deletion</h5>
-                                <div className="small text-muted">
-                                    This action cannot be undone.
-                                </div>
+                                <h5 className="mb-0 fw-bold text-danger fs-6 fs-md-5">Confirm Deletion</h5>
+                                <div className="small text-muted">This action cannot be undone.</div>
                             </div>
                         </div>
-                        <div className="px-4 py-4">
+                        <div className="px-3 px-md-4 py-4">
                             <p className="mb-0 text-dark">
-                                Delete{" "}
-                                <strong>{deleteTarget?.name || "this staff member"}</strong>{" "}
-                                from your team records?
+                                Delete <strong>{deleteTarget?.name || "this staff member"}</strong> from your team records?
                             </p>
                         </div>
-                        <div className="px-4 py-3 border-top d-flex justify-content-end gap-2 bg-light">
+                        <div className="px-3 px-md-4 py-3 border-top d-flex flex-column flex-md-row justify-content-end gap-2 bg-light mt-auto">
                             <button
                                 type="button"
-                                className="btn btn-outline-secondary rounded-pill px-4 fw-bold"
+                                className="btn btn-outline-secondary rounded-pill px-4 fw-bold w-100 w-md-auto order-2 order-md-1"
                                 onClick={closeDeleteModal}
                                 disabled={deleteLoading}
                             >
@@ -1387,7 +1302,7 @@ const StaffooStaff = () => {
                             </button>
                             <button
                                 type="button"
-                                className="btn btn-danger rounded-pill px-4 fw-bold shadow-sm"
+                                className="btn btn-danger rounded-pill px-4 fw-bold shadow-sm w-100 w-md-auto order-1 order-md-2"
                                 onClick={confirmDelete}
                                 disabled={deleteLoading}
                             >

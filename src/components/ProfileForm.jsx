@@ -205,7 +205,9 @@ export default function ProfileForm({
 
               {/* Warning text only for OTP mode */}
               {showPhoneOtp && !isPhoneVerified && formData.phone && (
-                <div className="form-text text-danger mt-2 small fw-medium">
+                <div className="form-text text-danger mt-2 small fw-medium"
+                  style={{ textTransform: "none" }}
+                >
                   <i className="fa-solid fa-circle-info me-1"></i>
                   Verification is required to enable full functionality.
                 </div>

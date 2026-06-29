@@ -829,16 +829,6 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
               <button type="button" className="btn btn-outline-secondary rounded-pill px-4 fw-bold" onClick={back} disabled={isSubmitting}>
                 Cancel
               </button>
-
-              {!isAdmin && (
-                <button type="button" className="btn btn-primary-custom btn-lg rounded-pill px-5 fw-bold shadow-sm" onClick={handleConfirm} disabled={isSubmitting}>
-                  {isSubmitting ? (
-                    <><span className="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>Processing...</>
-                  ) : (
-                    <><i className="fa-solid fa-paper-plane me-2"></i>Review & Pay</>
-                  )}
-                </button>
-              )}
               {isAdmin && (
                 <button type="button" className="btn btn-dark btn-lg rounded-pill px-5 fw-bold shadow-sm" onClick={handleConfirm} disabled={isSubmitting}>
                   {isSubmitting ? (
@@ -1134,20 +1124,12 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
                   {step < STEP_TITLES.length - 1 ? (
                     <button type="button" className="btn btn-primary-custom btn-lg rounded-pill px-5 fw-bold shadow-sm" onClick={next} disabled={isSubmitting}>Next</button>
                   ) : (
-                    isAdmin ? (
+                    isAdmin && (
                       <button type="button" className="btn btn-dark btn-lg rounded-pill px-5 fw-bold shadow-sm" onClick={handleConfirm} disabled={isSubmitting}>
                         {isSubmitting ? (
                           <><span className="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>Processing...</>
                         ) : (
                           <><i className="fa-solid fa-paper-plane me-2"></i>Post Job</>
-                        )}
-                      </button>
-                    ) : (
-                      <button type="button" className="btn btn-success btn-lg rounded-pill px-5 fw-bold shadow-sm" onClick={handleConfirm} disabled={isSubmitting}>
-                        {isSubmitting ? (
-                          <><span className="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>Processing...</>
-                        ) : (
-                          <><i className="fa-solid fa-paper-plane me-2"></i>Review & Pay</>
                         )}
                       </button>
                     )

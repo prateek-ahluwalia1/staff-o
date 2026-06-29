@@ -403,7 +403,7 @@ export default function Login() {
 
                 <div className="auth-divider">
                   <hr />
-                  <span>Or</span>
+                  <span>OR</span>
                   <hr />
                 </div>
 

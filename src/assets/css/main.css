@@ -15407,4 +15407,8 @@ Large Mobile Screen
     .dashboard-container {
         padding: 0;
     }
+
+    .dashboard-main {
+        padding: 5px !important;
+    }
 }

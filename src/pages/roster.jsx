@@ -408,7 +408,7 @@ export default function RosterPage() {
         <div className="vr-actions">
           <div className="vr-search">
             <i className="fa fa-search"></i>
-            <input type="text" placeholder="Search sites or clients..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
+            <input type="text" placeholder="Search sites..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
           </div>
           <div className="vr-toggles">
             <button className={weeksToView === 1 ? 'active' : ''} onClick={() => setWeeksToView(1)}>1W</button>
@@ -436,124 +436,128 @@ export default function RosterPage() {
         </div>
       )}
 
-      {/* --- MATRIX HEADER --- */}
-      <div className="vr-matrix-header">
-        <div className="vr-col-site">SITES & SUMMARY</div>
-        {weekDays.map((day) => (
-          <div
-            key={day.key}
-            className={`vr-col-day ${day.isToday ? 'is-today' : ''} ${day.isHoliday ? 'is-holiday-header' : ''}`}
-            title={day.holidayName || ''}
-          >
-            <div className="day-name">{day.short}</div>
-            <div className="day-number">{day.num}</div>
-            {day.isHoliday && (
-              <div className="vr-holiday-indicator text-warning" title={day.holidayName}>
-                <i className="fa-solid fa-star"></i>
-                <span style={{ color: '#b45309' }}>{day.holidayName || 'Public Holiday'}</span>
-              </div>
-            )}
-          </div>
-        ))}
-      </div>
-
-      {/* --- MATRIX BODY --- */}
-      <div className="vr-matrix-body">
-        {filteredSites.length === 0 ? (
-          <div className="vr-no-data" style={{ padding: "40px", textAlign: "center", color: "#64748b", textTransform: "none" }}>
-            No schedules match your search.
-          </div>
-        ) : (
-          filteredSites.map((site) => (
-            <div key={site.id} className="vr-matrix-row">
-              <div className="vr-col-site vr-site-info">
-                <div className="vr-site-name" style={{ lineHeight: 1.2 }}>{site.displayName}</div>
-
-                <div style={{ fontSize: "11px", color: "#64748b", margin: "4px 0", fontWeight: "600" }}>
-                  <i className="fa-regular fa-building" style={{ marginRight: '4px' }}></i>
-                  {site.clientName}
+      {/* --- RESPONSIVE SCROLL WRAPPER FOR MOBILE --- */}
+      <div className="vr-matrix-scroll-container">
+        
+        {/* --- MATRIX HEADER --- */}
+        <div className="vr-matrix-header">
+          <div className="vr-col-site">SITES & SUMMARY</div>
+          {weekDays.map((day) => (
+            <div
+              key={day.key}
+              className={`vr-col-day ${day.isToday ? 'is-today' : ''} ${day.isHoliday ? 'is-holiday-header' : ''}`}
+              title={day.holidayName || ''}
+            >
+              <div className="day-name">{day.short}</div>
+              <div className="day-number">{day.num}</div>
+              {day.isHoliday && (
+                <div className="vr-holiday-indicator text-warning" title={day.holidayName}>
+                  <i className="fa-solid fa-star"></i>
+                  <span style={{ color: '#b45309' }}>{day.holidayName || 'Public Holiday'}</span>
                 </div>
-
-                <div>
-                  <span className="vr-site-hours">
-                    <i className="fa fa-clock-o fas fa-clock" style={{ marginRight: '4px' }}></i>
-                    {site.hoursDisplay} Total
-                  </span>
-                </div>
-              </div>
-
-              {weekDays.map((day) => {
-                const dayShifts = site.jobRoster.filter((s) => isSameDay(s.startDate, day.dateObj));
-                return (
-                  <div
-                    key={day.key}
-                    className={`vr-col-day vr-day-cell ${day.isToday ? 'is-today' : ''} ${day.isHoliday ? 'is-holiday-cell' : ''}`}
-                  >
-                    {dayShifts.length === 0 ? (
-                      <div className="vr-empty-add-btn" onClick={() => openModalAction(site, null, day.dateLabel, "add_shift", day.key)}>
-                        <i className="fa fa-plus"></i>
-                      </div>
-                    ) : (
-                      <>
-                        {dayShifts.map((shift) => {
-                          const status = shift.job_status ? shift.job_status.replace('_', '-') : 'pending';
-                          const hasNote = Boolean(extractOperationNoteText(shift));
-                          return (
-                            <div key={shift.id} className={`vr-shift-card bg-${status}`}>
-                              {hasNote && <div className="vr-note-dot"></div>}
-                              <div className="vr-shift-time">
-                                {format(shift.startDate, "HH:mm")} - {format(shift.endDate, "HH:mm")}
-                              </div>
-                              <div className="vr-shift-guard">
-                                {shift?.guards?.name || "Unassigned"}
-                              </div>
-                              <div className="vr-shift-actions">
-                                <button title="Activity" onClick={() => openModalAction(site, shift, day.dateLabel, "activity")}>
-                                  <i className="fa fa-list"></i>
-                                </button>
-                                <button title="Details" onClick={() => openModalAction(site, shift, day.dateLabel, "details")}>
-                                  <i className="fa fa-info"></i>
-                                </button>
-                                {/* Only show Time Edit if NO guard is assigned */}
-                                {userRole !== "staff" && !shift.assigned_to && (
-                                  <button title="Time Edit" onClick={() => openModalAction(site, shift, day.dateLabel, "time")}>
-                                    <i className="fa fa-edit fas fa-edit"></i>
-                                  </button>
-                                )}
-                                {/* Check based strictly on lack of assigned staff */}
-                                {(userRole === "contractor" || userRole === "admin") && !shift.assigned_to && (
-                                  <button title="Assign" onClick={() => openModalAction(site, shift, day.dateLabel, "admin_assign")}>
-                                    <i className="fa fa-user-plus"></i>
-                                  </button>
-                                )}
-                              </div>
-                            </div>
-                          );
-                        })}
-                        <div className="vr-small-add-btn" onClick={() => openModalAction(site, null, day.dateLabel, "add_shift", day.key)}>
-                          <i className="fa fa-plus"></i> Add
-                        </div>
-                      </>
-                    )}
-                  </div>
-                );
-              })}
+              )}
             </div>
-          ))
-        )}
-      </div>
-
-      {/* --- MATRIX FOOTER --- */}
-      <div className="vr-matrix-footer">
-        <div className="vr-col-site vr-total-label">
-          GRAND TOTAL <span>{columnTotals.grandTotal.toFixed(1)}h</span>
+          ))}
         </div>
-        {columnTotals.totals.map((total, i) => (
-          <div key={i} className={`vr-col-day vr-total-val ${weekDays[i].isHoliday ? 'is-holiday-cell' : ''}`}>
-            {total.toFixed(1)}h
+
+        {/* --- MATRIX BODY --- */}
+        <div className="vr-matrix-body">
+          {filteredSites.length === 0 ? (
+            <div className="vr-no-data" style={{ padding: "40px", textAlign: "center", color: "#64748b", textTransform: "none" }}>
+              No schedules match your search.
+            </div>
+          ) : (
+            filteredSites.map((site) => (
+              <div key={site.id} className="vr-matrix-row">
+                <div className="vr-col-site vr-site-info">
+                  <div className="vr-site-name" style={{ lineHeight: 1.2 }}>{site.displayName}</div>
+
+                  <div style={{ fontSize: "11px", color: "#64748b", margin: "4px 0", fontWeight: "600" }}>
+                    <i className="fa-regular fa-building" style={{ marginRight: '4px' }}></i>
+                    {site.clientName}
+                  </div>
+
+                  <div>
+                    <span className="vr-site-hours">
+                      <i className="fa fa-clock-o fas fa-clock" style={{ marginRight: '4px' }}></i>
+                      {site.hoursDisplay} Total
+                    </span>
+                  </div>
+                </div>
+
+                {weekDays.map((day) => {
+                  const dayShifts = site.jobRoster.filter((s) => isSameDay(s.startDate, day.dateObj));
+                  return (
+                    <div
+                      key={day.key}
+                      className={`vr-col-day vr-day-cell ${day.isToday ? 'is-today' : ''} ${day.isHoliday ? 'is-holiday-cell' : ''}`}
+                    >
+                      {dayShifts.length === 0 ? (
+                        <div className="vr-empty-add-btn" onClick={() => openModalAction(site, null, day.dateLabel, "add_shift", day.key)}>
+                          <i className="fa fa-plus"></i>
+                        </div>
+                      ) : (
+                        <>
+                          {dayShifts.map((shift) => {
+                            const status = shift.job_status ? shift.job_status.replace('_', '-') : 'pending';
+                            const hasNote = Boolean(extractOperationNoteText(shift));
+                            return (
+                              <div key={shift.id} className={`vr-shift-card bg-${status}`}>
+                                {hasNote && <div className="vr-note-dot"></div>}
+                                <div className="vr-shift-time">
+                                  {format(shift.startDate, "HH:mm")} - {format(shift.endDate, "HH:mm")}
+                                </div>
+                                <div className="vr-shift-guard">
+                                  {shift?.guards?.name || "Unassigned"}
+                                </div>
+                                <div className="vr-shift-actions">
+                                  <button title="Activity" onClick={() => openModalAction(site, shift, day.dateLabel, "activity")}>
+                                    <i className="fa fa-list"></i>
+                                  </button>
+                                  <button title="Details" onClick={() => openModalAction(site, shift, day.dateLabel, "details")}>
+                                    <i className="fa fa-info"></i>
+                                  </button>
+                                  {/* Only show Time Edit if NO guard is assigned */}
+                                  {userRole !== "staff" && !shift.assigned_to && (
+                                    <button title="Time Edit" onClick={() => openModalAction(site, shift, day.dateLabel, "time")}>
+                                      <i className="fa fa-edit fas fa-edit"></i>
+                                    </button>
+                                  )}
+                                  {/* Check based strictly on lack of assigned staff */}
+                                  {(userRole === "contractor" || userRole === "admin") && !shift.assigned_to && (
+                                    <button title="Assign" onClick={() => openModalAction(site, shift, day.dateLabel, "admin_assign")}>
+                                      <i className="fa fa-user-plus"></i>
+                                    </button>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          })}
+                          <div className="vr-small-add-btn" onClick={() => openModalAction(site, null, day.dateLabel, "add_shift", day.key)}>
+                            <i className="fa fa-plus"></i> Add
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            ))
+          )}
+        </div>
+
+        {/* --- MATRIX FOOTER --- */}
+        <div className="vr-matrix-footer">
+          <div className="vr-col-site vr-total-label">
+            GRAND TOTAL <span>{columnTotals.grandTotal.toFixed(1)}h</span>
           </div>
-        ))}
-      </div>
+          {columnTotals.totals.map((total, i) => (
+            <div key={i} className={`vr-col-day vr-total-val ${weekDays[i].isHoliday ? 'is-holiday-cell' : ''}`}>
+              {total.toFixed(1)}h
+            </div>
+          ))}
+        </div>
+      </div> {/* End .vr-matrix-scroll-container */}
 
       {/* Existing Modals */}
       {modal?.type === "activity" && <ActivityDashboardModal modal={modal} closeModal={closeModal} userRole={userRole} />}

@@ -110,7 +110,7 @@ const DateFilterInput = ({ value, onChange, placeholder }) => {
         type="button"
         className="input-group-text bg-white border-end-0"
         onClick={openPicker}
-        style={{ cursor: "pointer" }}
+        style={{ cursor: "pointer", minHeight: "44px" }}
         title="Open calendar"
       >
         <i className="fa-regular fa-calendar text-muted"></i>
@@ -132,6 +132,7 @@ const DateFilterInput = ({ value, onChange, placeholder }) => {
         maxLength={10}
         pattern="^(0[1-9]|[12][0-9]|3[01])/(0[1-9]|1[012])/\d{4}$"
         title="Enter a date in DD/MM/YYYY format"
+        style={{ minHeight: "44px" }}
       />
     </div>
   );
@@ -394,7 +395,7 @@ const getSelectPlaceholder = (baseLabel, selectedCount, allCount) => {
 const selectStyles = {
   control: (base) => ({
     ...base,
-    minHeight: "38px",
+    minHeight: "44px",
     borderColor: "#ced4da",
     boxShadow: "none",
     minWidth: "0",
@@ -610,9 +611,9 @@ export default function TimeSheet() {
       <div className="dashboard-page-header">
         <div>
           <h1>Time Sheet</h1>
-          <p
-            style={{ textTransform: "none" }}
-          >Filter, review, and drill into shift breakdowns.</p>
+          <p style={{ textTransform: "none" }}>
+            Filter, review, and drill into shift breakdowns.
+          </p>
         </div>
       </div>
 
@@ -666,7 +667,7 @@ export default function TimeSheet() {
               />
             </div>
 
-            <div className="col-12 col-sm-12 col-lg-2 d-flex gap-2">
+            <div className="col-12 col-sm-12 col-lg-2 d-flex gap-2 flex-wrap flex-sm-nowrap">
               <button
                 className="btn btn-sm btn-primary-custom timesheet-action-btn w-100 px-2"
                 onClick={fetchTimesheets}
@@ -686,7 +687,7 @@ export default function TimeSheet() {
         </div>
       </div>
 
-      {/* ── Table (unchanged) ── */}
+      {/* ── Table (responsive wrapper added) ── */}
       <div className="card border-0 shadow-sm">
         <div className="timesheet-table-shell">
           <table className="table table-sm table-hover align-middle mb-0 timesheet-main-table">
@@ -713,7 +714,9 @@ export default function TimeSheet() {
 
               {!timesheetLoading && timesheetData.length === 0 && (
                 <tr>
-                  <td colSpan="8" className="text-center text-muted py-5"
+                  <td
+                    colSpan="8"
+                    className="text-center text-muted py-5"
                     style={{ textTransform: "none" }}
                   >
                     No timesheet records found.
@@ -757,7 +760,7 @@ export default function TimeSheet() {
                               >
                                 Detailed Shift Breakdown: {row.staffName}
                               </h6>
-                              <div className="table-responsive">
+                              <div className="table-responsive timesheet-breakdown-wrapper">
                                 <table className="table table-sm table-bordered align-middle mb-0 timesheet-breakdown-table">
                                   <thead className="text-dark">
                                     <tr>
@@ -872,16 +875,42 @@ export default function TimeSheet() {
 
       <style>
         {`
+          /* Filter grid */
           .timesheet-filter-grid .css-b62m3t-container {
             width: 100%;
           }
+
+          /* Main table wrapper – allow horizontal swipe on mobile */
           .timesheet-table-shell {
-            overflow: hidden;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            border-radius: 0.25rem;
           }
+
+          /* Main table */
           .timesheet-main-table {
-            table-layout: fixed;
+            table-layout: auto;        /* Let columns size naturally on small screens */
             width: 100%;
+            min-width: 600px;          /* Ensure minimal width before scroll kicks in */
+            margin-bottom: 0;
           }
+
+          /* Column widths on larger screens to avoid extremely wide tables */
+          @media (min-width: 992px) {
+            .timesheet-main-table {
+              table-layout: fixed;
+              min-width: 0;
+            }
+            .timesheet-main-table th:nth-child(1) { width: 12%; }
+            .timesheet-main-table th:nth-child(2) { width: 18%; }
+            .timesheet-main-table th:nth-child(3) { width: 11%; }
+            .timesheet-main-table th:nth-child(4) { width: 10%; }
+            .timesheet-main-table th:nth-child(5) { width: 10%; }
+            .timesheet-main-table th:nth-child(6) { width: 10%; }
+            .timesheet-main-table th:nth-child(7) { width: 12%; }
+            .timesheet-main-table th:nth-child(8) { width: 7%; }
+          }
+
           .timesheet-main-table > thead > tr > th,
           .timesheet-main-table > tbody > tr > td {
             padding: 0.5rem 0.4rem;
@@ -891,6 +920,7 @@ export default function TimeSheet() {
             word-break: break-word;
             vertical-align: middle;
           }
+
           .timesheet-main-table > thead > tr > th {
             background-color: #e6f2f0;
             white-space: normal;
@@ -928,9 +958,12 @@ export default function TimeSheet() {
           .timesheet-main-table > tbody > tr.timesheet-detail-row > td {
             border-bottom: 2px solid #b8d0cc;
           }
-          .timesheet-main-table .table-bordered > :not(caption) > * > * {
-            border-color: #dce8e6;
+
+          /* Breakdown table wrapper */
+          .timesheet-breakdown-wrapper {
+            -webkit-overflow-scrolling: touch;
           }
+
           .timesheet-breakdown-table th,
           .timesheet-breakdown-table td {
             font-size: 0.78rem;
@@ -953,9 +986,14 @@ export default function TimeSheet() {
           .timesheet-breakdown-table tbody tr:nth-child(even) td {
             background-color: #f8fcfb;
           }
+
+          /* Action buttons */
           .timesheet-action-btn {
-            min-height: 38px;
+            min-height: 44px;
+            white-space: nowrap;
           }
+
+          /* Hide less important columns progressively on smaller screens */
           @media (max-width: 1200px) {
             .timesheet-main-table th:nth-child(5),
             .timesheet-main-table th:nth-child(6),
@@ -966,6 +1004,7 @@ export default function TimeSheet() {
               display: none;
             }
           }
+
           @media (max-width: 768px) {
             .timesheet-main-table th,
             .timesheet-main-table td {
@@ -975,6 +1014,29 @@ export default function TimeSheet() {
             .timesheet-main-table th:nth-child(4),
             .timesheet-main-table td:nth-child(4) {
               display: none;
+            }
+            .timesheet-main-table {
+              table-layout: auto;    /* allow columns to resize */
+              min-width: 400px;      /* scroll on very small screens if needed */
+            }
+          }
+
+          /* Extra small phones */
+          @media (max-width: 480px) {
+            .timesheet-main-table {
+              min-width: 380px;
+              font-size: 0.72rem;
+            }
+            .timesheet-main-table th,
+            .timesheet-main-table td {
+              padding: 0.4rem 0.2rem;
+            }
+            .timesheet-filter-grid .row > [class*="col-"] {
+              padding-right: 0.25rem;
+              padding-left: 0.25rem;
+            }
+            .dashboard-page-header h1 {
+              font-size: 1.4rem;
             }
           }
         `}

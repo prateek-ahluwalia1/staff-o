@@ -2,6 +2,7 @@ import React, { memo, useState, useCallback, useMemo, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { NavLink, useNavigate } from "react-router-dom";
 import { logOut } from "../store/slices/authSlice";
+import { toggleSidebar } from "../store/slices/sidebarSlice"; // <-- Added Sidebar Action
 import {
   setNotifications,
   setUnreadCount,
@@ -55,7 +56,6 @@ const Header = memo(function Header({ withSidebar = false }) {
     },
   );
 
-  // FIXED: Properly extract the array from the paginated API response
   useEffect(() => {
     if (notificationsData?.success && notificationsData?.data?.data) {
       dispatch(setNotifications(notificationsData.data.data));
@@ -64,16 +64,14 @@ const Header = memo(function Header({ withSidebar = false }) {
     }
   }, [dispatch, notificationsData]);
 
-  // FIXED: Properly extract the count from the API response
   useEffect(() => {
     if (unreadData?.success !== undefined) {
       dispatch(setUnreadCount(unreadData.count));
     } else if (unreadData !== null && unreadData !== undefined) {
-      dispatch(setUnreadCount(unreadData)); // Fallback
+      dispatch(setUnreadCount(unreadData));
     }
   }, [dispatch, unreadData]);
 
-  // Track desktop/mobile view
   useEffect(() => {
     const handleResize = () => {
       setIsDesktop(window.innerWidth >= 1200);
@@ -207,17 +205,34 @@ const Header = memo(function Header({ withSidebar = false }) {
 
       <nav className="navbar navbar-expand-lg navbar-light main-navbar">
         <div className="container">
-          {/* Logo */}
-          {!(isDesktop && sidebarExpanded) && (
-            <NavLink
-              to="/"
-              className="navbar-brand logo d-flex align-items-center"
-            >
-              <img src={staffologo} alt="Staffo" style={{ height: "50px" }} />
-            </NavLink>
-          )}
 
-          {/* Mobile toggle */}
+          {/* --- NEW LOGO & SIDEBAR TOGGLE WRAPPER --- */}
+          <div className="d-flex align-items-center gap-2">
+            {/* Sidebar toggle button (only shows on mobile/tablet) */}
+            {!isDesktop && withSidebar && (
+              <button
+                className="btn p-1 border-0"
+                onClick={() => dispatch(toggleSidebar())}
+                style={{ fontSize: "20px", color: "#0f172a", background: "transparent" }}
+                aria-label="Toggle sidebar"
+              >
+                <i className="fa-solid fa-bars"></i>
+              </button>
+            )}
+
+            {/* Logo */}
+            {!(isDesktop && sidebarExpanded) && (
+              <NavLink
+                to="/"
+                className="navbar-brand logo d-flex align-items-center m-0"
+              >
+                <img src={staffologo} alt="Staffo" style={{ height: "50px" }} />
+              </NavLink>
+            )}
+          </div>
+          {/* ----------------------------------------- */}
+
+          {/* Top navigation mobile toggle */}
           <button
             className="navbar-toggler mobile-menu-toggle"
             type="button"
@@ -315,11 +330,6 @@ const Header = memo(function Header({ withSidebar = false }) {
                   <li>
                     <NavLink className="dropdown-item" to="/edit-profile">
                       My Profile
-                    </NavLink>
-                  </li>
-                  <li>
-                    <NavLink className="dropdown-item" to="/edit-profile">
-                      Edit Profile
                     </NavLink>
                   </li>
                   <li>

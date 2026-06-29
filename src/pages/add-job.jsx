@@ -1101,8 +1101,10 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
               </div>
             )}
 
-            <div className="card shadow-sm list-card rounded-4 border-0">
-              <div className="card-body p-4">
+            <div className="card shadow-sm list-card rounded-4 border-0"
+              style={{ padding: "5px" }}
+            >
+              <div className="card-body">
                 {step === 0 && (
                   <div id="location-step-wrapper" className="pt-2">
                     <LocationStep form={form} setField={setField} resolvingLocation={resolvingLocation} setResolvingLocation={setResolvingLocation} locationError={locationError} setLocationError={setLocationError} />

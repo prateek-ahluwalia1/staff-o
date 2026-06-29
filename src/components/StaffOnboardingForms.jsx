@@ -589,7 +589,7 @@ const SuperannuationForm = ({ values, loading, onChange, onSubmit, dataModified,
             />
             <label className="form-check-label text-muted small fw-medium" htmlFor="super_confirm"
                 style={{ textTransform: "none" }}>
-                I confirm that the superannuation fund details provided are correct.
+                I confirm that the superannuation fund details provided are correct. I understand my super contributions will be paid into the fund I have selected above.
             </label>
         </div>
 

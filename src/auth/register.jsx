@@ -228,7 +228,9 @@ export default function Register() {
             <div className="col-lg-6">
               <div className="auth-card">
                 <h5 className="fw-bold mb-1">Create an account</h5>
-                <p className="text-muted small mb-3">It only takes a few seconds.</p>
+                <p className="text-muted small mb-3"
+                  style={{ textTransform: "none" }}
+                >It only takes a few seconds.</p>
 
                 <form onSubmit={handleSubmit} noValidate>
                   <div className="row g-2 mb-3">

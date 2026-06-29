@@ -2343,6 +2343,12 @@ footer {
     grid-template-columns: 1fr;
   }
 
+  .auth-page {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
   .hero-right {
     display: none;
   }

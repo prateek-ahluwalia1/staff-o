@@ -279,7 +279,9 @@ export default function Login() {
             <div className="col-lg-6">
               <div className="auth-card">
                 <h5 className="fw-bold mb-1">Log in to your account</h5>
-                <p className="text-muted small mb-4">
+                <p className="text-muted small mb-4"
+                  style={{ textTransform: "none" }}
+                >
                   Enter your credentials to continue.
                 </p>
 

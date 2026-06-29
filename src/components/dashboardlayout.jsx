@@ -10,7 +10,8 @@ const DashboardLayout = memo(function DashboardLayout() {
     <>
       <Header withSidebar />
       <section className="dashboard-section">
-        <div style={{ minHeight: "100vh", padding: "10px 50px" }}>
+        {/* Removed inline padding, added a specific class */}
+        <div className="dashboard-container" style={{ minHeight: "100vh" }}>
           <div className="dashboard-layout">
             <Sidebar />
 

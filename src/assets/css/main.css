@@ -15396,3 +15396,15 @@ Large Mobile Screen
     padding-top: 12px;
     margin-top: 12px;
 }
+
+/* Default padding for larger screens */
+.dashboard-container {
+    padding: 10px 50px;
+}
+
+/* Zero padding for mobile screens */
+@media (max-width: 768px) {
+    .dashboard-container {
+        padding: 0;
+    }
+}

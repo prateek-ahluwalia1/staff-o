@@ -915,6 +915,86 @@
     transform: translateX(4px);
 }
 
+/* ── Embedded Accordion (Add Shift Modal) ── */
+.embedded-accordion-section {
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    background: #fff;
+    overflow: hidden;
+    margin-bottom: 16px;
+}
+
+.embedded-accordion-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    padding: 16px 20px;
+    background: #f8fafc;
+    border: none;
+    cursor: pointer;
+    transition: background 0.2s;
+    text-align: left;
+}
+
+.embedded-accordion-header:hover {
+    background: #eef2f6;
+}
+
+/* Active / open state */
+.embedded-accordion-header.open {
+    background: #e6f2f0;
+    border-bottom: 1px solid #d1e0dd;
+}
+
+.embedded-accordion-arrow {
+    font-size: 14px;
+    color: #64748b;
+    transition: transform 0.2s;
+}
+
+.embedded-accordion-header.open .embedded-accordion-arrow {
+    color: #0A7C6E;
+}
+
+.embedded-accordion-body {
+    padding: 20px;
+    background: #fff;
+    animation: accordionFade 0.2s ease;
+}
+
+@keyframes accordionFade {
+    from {
+        opacity: 0;
+        transform: translateY(-6px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Overview summary card inside accordion */
+.embedded-summary-card {
+    background: #f9fafb;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 20px;
+}
+
+.embedded-summary-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #f1f5f9;
+    padding: 10px 0;
+}
+
+.embedded-summary-row:last-child {
+    border-bottom: none;
+}
+
 @media screen and (max-width: 768px) {
     .staffoo-page-container {
         padding: 15px;

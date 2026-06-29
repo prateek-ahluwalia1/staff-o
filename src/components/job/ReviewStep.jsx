@@ -41,53 +41,66 @@ export default function ReviewStep({ form, rate, setField, handleConfirm, setSte
   const isSplit = form.paymentOption === "split";
 
   return (
-    <div className="bg-white rounded-4 p-4 border" style={{ boxShadow: "0 4px 20px rgba(0,0,0,0.03)" }}>
-      <div className="mb-4 pb-3 border-bottom">
-        <h4 className="fw-bold mb-1 text-dark">Review & Confirm <span className="text-danger">*</span></h4>
-        <p className="text-muted small mb-0"
-          style={{ textTransform: "none" }}
-        >Please review your job details before submitting.</p>
+    <div className="bg-white rounded-3 rounded-md-4 p-3 p-md-4 border" style={{ boxShadow: "0 4px 20px rgba(0,0,0,0.03)" }}>
+
+      {/* HEADER */}
+      <div className="mb-3 mb-md-4 pb-2 pb-md-3 border-bottom">
+        <h4 className="fw-bold mb-1 text-dark fs-5 fs-md-4">Review & Confirm <span className="text-danger">*</span></h4>
+        <p className="text-muted small mb-0" style={{ textTransform: "none" }}>
+          Please review your job details before submitting.
+        </p>
       </div>
 
-      <div className="row g-3 mb-4">
-        <div className="col-md-6">
-          <div className="d-flex align-items-start gap-3 p-3 bg-light rounded-3 border h-100">
-            <div className="bg-white p-2 rounded shadow-sm text-primary"><i className="fa-solid fa-briefcase fs-5"></i></div>
-            <div>
-              <span className="d-block small fw-bold text-muted text-uppercase tracking-wide mb-1">Job Details</span>
-              <div className="fw-bold text-dark fs-6">{form.title || "Untitled Job"}</div>
-              <div className="text-muted small">{jobTypeLabel}</div>
+      {/* JOB DETAILS & LOCATION */}
+      <div className="row g-2 g-md-3 mb-4">
+        <div className="col-12 col-md-6">
+          <div className="d-flex align-items-start gap-2 gap-md-3 p-2 p-md-3 bg-light rounded-3 border h-100">
+            <div className="bg-white p-2 rounded shadow-sm text-primary flex-shrink-0 mt-1 mt-md-0">
+              <i className="fa-solid fa-briefcase fs-6 fs-md-5"></i>
+            </div>
+            <div style={{ minWidth: 0 }}>
+              <span className="d-block text-muted text-uppercase tracking-wide mb-1 fw-bold" style={{ fontSize: "0.65rem" }}>Job Details</span>
+              <div className="fw-bold text-dark fs-6 text-break" style={{ lineHeight: "1.3" }}>{form.title || "Untitled Job"}</div>
+              <div className="text-muted small text-break mt-1">{jobTypeLabel}</div>
             </div>
           </div>
         </div>
-        <div className="col-md-6">
-          <div className="d-flex align-items-start gap-3 p-3 bg-light rounded-3 border h-100">
-            <div className="bg-white p-2 rounded shadow-sm text-danger"><i className="fa-solid fa-location-dot fs-5 px-1"></i></div>
-            <div>
-              <span className="d-block small fw-bold text-muted text-uppercase tracking-wide mb-1">Location</span>
-              <div className="text-dark small fw-medium" style={{ lineHeight: "1.4" }}>{form.location || "No location provided"}</div>
+        <div className="col-12 col-md-6">
+          <div className="d-flex align-items-start gap-2 gap-md-3 p-2 p-md-3 bg-light rounded-3 border h-100">
+            <div className="bg-white p-2 rounded shadow-sm text-danger flex-shrink-0 mt-1 mt-md-0">
+              <i className="fa-solid fa-location-dot fs-6 fs-md-5 px-1"></i>
+            </div>
+            <div style={{ minWidth: 0 }}>
+              <span className="d-block text-muted text-uppercase tracking-wide mb-1 fw-bold" style={{ fontSize: "0.65rem" }}>Location</span>
+              <div className="text-dark small fw-medium text-break" style={{ lineHeight: "1.4" }}>{form.location || "No location provided"}</div>
             </div>
           </div>
         </div>
       </div>
 
+      {/* SCHEDULE SUMMARY */}
       <div className="mb-4">
-        <div className="d-flex align-items-center gap-2 mb-3"><i className="fa-regular fa-calendar-check text-success fs-5"></i><h6 className="fw-bold mb-0">Schedule Summary</h6></div>
+        <div className="d-flex align-items-center gap-2 mb-2 mb-md-3">
+          <i className="fa-regular fa-calendar-check text-success fs-6 fs-md-5"></i>
+          <h6 className="fw-bold mb-0">Schedule Summary</h6>
+        </div>
+
         <div className="border rounded-3 bg-light overflow-auto custom-scrollbar" style={{ maxHeight: "250px" }}>
           {form.scheduleDays?.length > 0 ? (
-            <div className="p-2">
+            <div className="p-2 p-md-3">
               {form.scheduleDays.map((day, idx) => (
-                <div key={idx} className="d-flex flex-column flex-md-row justify-content-between align-items-md-center p-3 mb-2 bg-white rounded border shadow-sm gap-2">
-                  <span className="fw-bold text-dark" style={{ minWidth: "160px" }}>{formatDisplayDate(day.date)}</span>
-                  <div className="d-flex flex-wrap gap-2 justify-content-md-end">
+                <div key={idx} className="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center p-2 p-md-3 mb-2 bg-white rounded border shadow-sm gap-2">
+                  <span className="fw-bold text-dark small mb-1 mb-md-0">{formatDisplayDate(day.date)}</span>
+
+                  <div className="d-flex flex-wrap gap-2 justify-content-start justify-content-md-end w-100 w-md-auto">
                     {day.shifts.map((shift, sIdx) => {
                       const crossesMidnight = shift.startTime && shift.endTime && shift.endTime <= shift.startTime;
 
                       return (
-                        <span key={sIdx} className="badge bg-light text-dark border border-secondary-subtle px-3 py-2 fw-medium rounded-pill shadow-sm">
+                        <span key={sIdx} className="badge bg-light text-dark border border-secondary-subtle px-2 px-md-3 py-1 py-md-2 fw-medium rounded-pill shadow-sm d-inline-flex align-items-center" style={{ fontSize: "0.75rem" }}>
                           <i className="fa-regular fa-clock me-1 text-muted"></i>
                           {shift.startTime}
-                          <i className="fa-solid fa-arrow-right mx-1 text-muted" style={{ fontSize: "0.7em" }}></i>
+                          <i className="fa-solid fa-arrow-right mx-1 text-muted" style={{ fontSize: "0.6em" }}></i>
                           {shift.endTime}
                           {crossesMidnight && (
                             <sup className="text-danger ms-1 fw-bold" title="Ends on the following day">(+1d)</sup>
@@ -102,65 +115,81 @@ export default function ReviewStep({ form, rate, setField, handleConfirm, setSte
                 </div>
               ))}
             </div>
-          ) : (<div className="p-4 text-center text-muted small">No schedule selected.</div>)}
+          ) : (<div className="p-3 p-md-4 text-center text-muted small">No schedule selected.</div>)}
         </div>
       </div>
 
-      <div className="mb-4">{rate && <RateBreakdown rate={rate} jobTypeLabel={jobTypeLabel} paymentOption={form.paymentOption} />}</div>
+      {/* RATE BREAKDOWN */}
+      <div className="mb-4">
+        {rate && <RateBreakdown rate={rate} jobTypeLabel={jobTypeLabel} paymentOption={form.paymentOption} />}
+      </div>
 
+      {/* PAYMENT OPTIONS */}
       <div className="mb-4 pt-3 border-top">
         <div className="d-flex align-items-center gap-2 mb-3">
-          <i className="fa-solid fa-credit-card text-primary fs-5"></i>
+          <i className="fa-solid fa-credit-card text-primary fs-6 fs-md-5"></i>
           <h6 className="fw-bold mb-0">{isAdmin ? "Client Invoice Terms" : "Payment Options"}</h6>
         </div>
 
-        <div className="row g-3">
-          <div className="col-md-6">
-            <label className={`w-100 h-100 p-3 rounded-3 border transition-all ${isFull ? "border-primary bg-primary text-white shadow-sm" : "bg-white border-light-subtle hover-bg-gray"}`} style={{ cursor: "pointer" }}>
+        <div className="row g-2 g-md-3">
+          <div className="col-12 col-md-6">
+            <label className={`w-100 h-100 p-2 p-md-3 rounded-3 border transition-all ${isFull ? "border-primary bg-primary text-white shadow-sm" : "bg-white border-light-subtle hover-bg-gray"}`} style={{ cursor: "pointer" }}>
               <input type="radio" className="d-none" name="payOpt" checked={isFull} onChange={() => setField("paymentOption", "full")} disabled={isSubmitting} />
-              <div className="d-flex justify-content-between align-items-start mb-2">
+              <div className="d-flex justify-content-between align-items-center mb-2">
                 <span className={`fw-bold fs-6 ${isFull ? "text-white" : "text-dark"}`}>Pay in Full</span>
-                <span className={`badge shadow-sm ${isFull ? "bg-white text-success" : "bg-success text-white"}`}>Save 5%</span>
+                <span className={`badge shadow-sm ${isFull ? "bg-white text-success" : "bg-success text-white"}`} style={{ fontSize: "0.65rem" }}>Save 5%</span>
               </div>
-              <div className={`small mb-3 ${isFull ? "text-white opacity-75" : "text-muted"}`}
-                style={{ textTransform: "none" }}
-              >Pay the total amount now and receive an instant 5% discount on your booking.</div>
+              <div className={`small mb-3 ${isFull ? "text-white opacity-75" : "text-muted"}`} style={{ textTransform: "none", fontSize: "0.8rem", lineHeight: "1.4" }}>
+                Pay the total amount now and receive an instant 5% discount on your booking.
+              </div>
               <div className={`mt-auto pt-2 border-top ${isFull ? "border-white border-opacity-25" : "border-light"}`}>
-                <div className={`fw-bold fs-5 ${isFull ? "text-white" : "text-dark"}`}>{fmt(fullTotal)} <span className={`fs-6 fw-normal ${isFull ? "text-white opacity-75" : "text-muted"}`}>total</span></div>
+                <div className={`fw-bold fs-5 ${isFull ? "text-white" : "text-dark"}`}>
+                  {fmt(fullTotal)} <span className={`fw-normal ${isFull ? "text-white opacity-75" : "text-muted"}`} style={{ fontSize: "0.75rem" }}>total</span>
+                </div>
               </div>
             </label>
           </div>
-          <div className="col-md-6">
-            <label className={`w-100 h-100 p-3 rounded-3 border transition-all ${isSplit ? "border-primary bg-primary text-white shadow-sm" : "bg-white border-light-subtle hover-bg-gray"}`} style={{ cursor: "pointer" }}>
+          <div className="col-12 col-md-6">
+            <label className={`w-100 h-100 p-2 p-md-3 rounded-3 border transition-all ${isSplit ? "border-primary bg-primary text-white shadow-sm" : "bg-white border-light-subtle hover-bg-gray"}`} style={{ cursor: "pointer" }}>
               <input type="radio" className="d-none" name="payOpt" checked={isSplit} onChange={() => setField("paymentOption", "split")} disabled={isSubmitting} />
-              <div className="d-flex justify-content-between align-items-start mb-2">
+              <div className="d-flex justify-content-between align-items-center mb-2">
                 <span className={`fw-bold fs-6 ${isSplit ? "text-white" : "text-dark"}`}>Split Payment (50/50)</span>
               </div>
-              <div className={`small mb-3 ${isSplit ? "text-white opacity-75" : "text-muted"}`}
-                style={{ textTransform: "none" }}
-              >Pay 50% upfront to secure guards. The remaining 50% is charged upon shift completion.</div>
+              <div className={`small mb-3 ${isSplit ? "text-white opacity-75" : "text-muted"}`} style={{ textTransform: "none", fontSize: "0.8rem", lineHeight: "1.4" }}>
+                Pay 50% upfront to secure guards. The remaining 50% is charged upon shift completion.
+              </div>
               <div className={`mt-auto pt-2 border-top ${isSplit ? "border-white border-opacity-25" : "border-light"}`}>
-                <div className={`fw-bold fs-5 ${isSplit ? "text-white" : "text-dark"}`}>{fmt(splitUpfront)} <span className={`fs-6 fw-normal ${isSplit ? "text-white opacity-75" : "text-muted"}`}>upfront</span></div>
+                <div className={`fw-bold fs-5 ${isSplit ? "text-white" : "text-dark"}`}>
+                  {fmt(splitUpfront)} <span className={`fw-normal ${isSplit ? "text-white opacity-75" : "text-muted"}`} style={{ fontSize: "0.75rem" }}>upfront</span>
+                </div>
               </div>
             </label>
           </div>
         </div>
       </div>
 
+      {/* TERMS & CONDITIONS */}
       {!isAdmin && (
-        <div className="rounded-3 p-3 mb-4" style={{ backgroundColor: "#f8f9fa", border: "1px solid #e9ecef" }}>
-          <div className="d-flex align-items-center gap-2 mb-2">
-            <input id="terms" className="form-check-input mt-0" type="checkbox" style={{ width: "1.2rem", height: "1.2rem", cursor: "pointer" }} checked={form.termsAccepted} onChange={(e) => setField("termsAccepted", e.target.checked)} disabled={isSubmitting} />
-            <label htmlFor="terms" className="form-check-label small fw-medium user-select-none" style={{ cursor: "pointer" }}>I agree to the <NavLink to="/terms-of-use" className="text-primary text-decoration-none fw-bold">Terms & Conditions</NavLink></label>
+        <div className="rounded-3 p-2 p-md-3 mb-4" style={{ backgroundColor: "#f8f9fa", border: "1px solid #e9ecef" }}>
+          <div className="d-flex align-items-start gap-2 mb-1">
+            <input id="terms" className="form-check-input mt-1 flex-shrink-0" type="checkbox" style={{ width: "1.1rem", height: "1.1rem", cursor: "pointer" }} checked={form.termsAccepted} onChange={(e) => setField("termsAccepted", e.target.checked)} disabled={isSubmitting} />
+            <label htmlFor="terms" className="form-check-label fw-medium user-select-none text-break" style={{ cursor: "pointer", fontSize: "0.85rem", lineHeight: "1.4" }}>
+              I agree to the <NavLink to="/terms-of-use" target="_blank" rel="noopener noreferrer" className="text-primary text-decoration-none fw-bold">Terms & Conditions</NavLink>
+            </label>
           </div>
-          <div className="small text-muted ps-4" style={{ fontSize: "0.8rem", textTransform: "none" }}>*Note: A 10% incidental authorisation hold may be applied by stripe to cover potential unplanned overtime. The hold will be released after completion of the shift.</div>
+          <div className="text-muted ps-4" style={{ fontSize: "0.7rem", textTransform: "none", lineHeight: "1.3" }}>
+            *Note: A 10% incidental authorisation hold may be applied by Stripe to cover potential unplanned overtime. The hold will be released after completion of the shift.
+          </div>
         </div>
       )}
 
-      <div className="d-flex flex-column flex-md-row justify-content-end gap-3 mt-4 pt-3 border-top">
-        <button type="button" className="btn btn-light border fw-semibold px-4 py-2 order-2 order-md-1" onClick={() => setStep(0)} disabled={isSubmitting}><i className="fa-solid fa-pen-to-square me-2 text-muted"></i> Edit Details</button>
+      {/* ACTIONS */}
+      <div className="d-flex flex-column flex-md-row justify-content-end gap-2 gap-md-3 mt-4 pt-3 border-top">
+        <button type="button" className="btn btn-light border fw-semibold px-4 py-2 order-2 order-md-1 w-100 w-md-auto" onClick={() => setStep(0)} disabled={isSubmitting}>
+          <i className="fa-solid fa-pen-to-square me-2 text-muted"></i> Edit Details
+        </button>
 
-        <button className={`btn fw-bold px-5 py-2 shadow-sm order-1 order-md-2 d-flex align-items-center justify-content-center gap-2 ${isAdmin ? "btn-dark" : "btn-success"}`} onClick={handleConfirm} disabled={(!isAdmin && !form.termsAccepted) || isSubmitting}>
+        <button className={`btn fw-bold px-4 px-md-5 py-2 shadow-sm order-1 order-md-2 w-100 w-md-auto d-flex align-items-center justify-content-center gap-2 ${isAdmin ? "btn-dark" : "btn-success"}`} onClick={handleConfirm} disabled={(!isAdmin && !form.termsAccepted) || isSubmitting}>
           {isSubmitting ? (
             <><span className="spinner-border spinner-border-sm" aria-hidden="true"></span><span role="status">Processing...</span></>
           ) : isAdmin ? (
@@ -170,6 +199,7 @@ export default function ReviewStep({ form, rate, setField, handleConfirm, setSte
           )}
         </button>
       </div>
+
     </div>
   );
 }

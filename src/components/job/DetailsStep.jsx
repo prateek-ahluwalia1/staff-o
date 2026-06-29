@@ -83,8 +83,8 @@ export default function DetailsStep({ form, setField, handleFile, attachmentPrev
       style={{ cursor: "pointer", minHeight: "50px" }}
       onClick={() => onToggle(!isYes)}
     >
-      <div className="d-flex align-items-center gap-2 text-dark" style={{ fontSize: "0.85rem", fontWeight: "600" }}>
-        {icon && <i className={`${icon} ${isYes ? "text-success" : "text-muted opacity-75"} fs-6 transition-all`}></i>}
+      <div className="d-flex align-items-center gap-2 text-dark flex-grow-1 pe-2" style={{ fontSize: "0.85rem", fontWeight: "600", lineHeight: "1.2" }}>
+        {icon && <i className={`${icon} ${isYes ? "text-success" : "text-muted opacity-75"} fs-6 transition-all flex-shrink-0`}></i>}
         <span>{label}</span>
       </div>
       <div className="bg-light border rounded-pill d-flex p-1 flex-shrink-0 shadow-sm" style={{ width: "90px" }} onClick={(e) => e.stopPropagation()}>
@@ -113,15 +113,15 @@ export default function DetailsStep({ form, setField, handleFile, attachmentPrev
       {/* HEADER */}
       <div className="mb-4 pb-2 border-bottom">
         <h4 className="mb-1 text-dark fw-bold">Job Details</h4>
-        <p className="text-muted small mb-0"
-          style={{ textTransform: "none" }}
-        >Define the core requirements, describe the job, and provide any necessary attachments.</p>
+        <p className="text-muted small mb-0" style={{ textTransform: "none" }}>
+          Define the core requirements, describe the job, and provide any necessary attachments.
+        </p>
       </div>
 
       {/* ROW 1: JOB TYPE & REQUIREMENTS */}
-      <div className="row g-4 mb-4">
+      <div className="row g-3 g-md-4 mb-4">
         {/* Job Type */}
-        <div className="col-md-3 d-flex flex-column">
+        <div className="col-12 col-md-4 col-lg-4 d-flex flex-column">
           <label className="form-label small fw-bold text-dark mb-2">
             Job Type <span className="text-danger">*</span>
           </label>
@@ -164,8 +164,8 @@ export default function DetailsStep({ form, setField, handleFile, attachmentPrev
         </div>
 
         {/* Working with Children */}
-        <div className="col-md-5 d-flex flex-column">
-          {/* Added fw-bold to the aligner to perfectly match the pixel height of the real label */}
+        <div className="col-12 col-md-4 col-lg-4 d-flex flex-column">
+          {/* Aligner hides on mobile, keeps desktop layout balanced */}
           <label className="form-label small fw-bold mb-2 d-none d-md-block opacity-0 user-select-none">Aligner</label>
           <CardToggle
             icon="fa-solid fa-child-reaching"
@@ -176,7 +176,8 @@ export default function DetailsStep({ form, setField, handleFile, attachmentPrev
         </div>
 
         {/* White Card */}
-        <div className="col-md-4 d-flex flex-column">
+        <div className="col-12 col-md-4 col-lg-4 d-flex flex-column">
+          {/* Aligner hides on mobile, keeps desktop layout balanced */}
           <label className="form-label small fw-bold mb-2 d-none d-md-block opacity-0 user-select-none">Aligner</label>
           <CardToggle
             icon="fa-regular fa-id-card"
@@ -188,14 +189,16 @@ export default function DetailsStep({ form, setField, handleFile, attachmentPrev
       </div>
 
       {/* ROW 2: ATTACHMENTS & DESCRIPTION */}
-      <div className="row g-4 mb-2">
+      <div className="row g-3 g-md-4 mb-2">
         {/* Attachments */}
-        <div className="col-md-5 d-flex flex-column">
-          <label className="form-label small fw-bold text-dark mb-2">Attachments <span className="text-muted fw-normal">(Optional context)</span></label>
+        <div className="col-12 col-md-5 d-flex flex-column">
+          <label className="form-label small fw-bold text-dark mb-2">
+            Attachments <span className="text-muted fw-normal">(Optional context)</span>
+          </label>
           <input id="attachments-input" type="file" accept="image/*,.pdf,.doc,.docx" multiple onChange={handleFileInputChange} style={{ display: "none" }} />
           <label
             htmlFor="attachments-input"
-            className="d-flex flex-column flex-grow-1 align-items-center justify-content-center p-3 rounded-4 w-100 transition-all m-0"
+            className="d-flex flex-column flex-grow-1 align-items-center justify-content-center p-3 rounded-4 w-100 transition-all m-0 text-center"
             style={{
               cursor: "pointer",
               border: "2px dashed #cbd5e1",
@@ -215,8 +218,8 @@ export default function DetailsStep({ form, setField, handleFile, attachmentPrev
         </div>
 
         {/* Job Description */}
-        <div className="col-md-7 d-flex flex-column">
-          <div className="d-flex justify-content-between align-items-end mb-2">
+        <div className="col-12 col-md-7 d-flex flex-column">
+          <div className="d-flex justify-content-between align-items-end mb-2 mt-3 mt-md-0">
             <label className="form-label small fw-bold text-dark mb-0">Job Description & Tasks</label>
             <span className={`small fw-medium ${form.description?.length > MAX_DESCRIPTION_LENGTH * 0.9 ? "text-warning" : "text-muted"}`} style={{ fontSize: "0.75rem" }}>
               {form.description?.length || 0} / {MAX_DESCRIPTION_LENGTH}
@@ -225,7 +228,7 @@ export default function DetailsStep({ form, setField, handleFile, attachmentPrev
           <textarea
             value={form.description}
             onChange={(e) => { if (e.target.value.length <= MAX_DESCRIPTION_LENGTH) setField("description", e.target.value); }}
-            className="form-control shadow-sm flex-grow-1"
+            className="form-control shadow-sm flex-grow-1 w-100"
             placeholder="Briefly describe the responsibilities and any specific tasks..."
             style={{ resize: "none", borderRadius: "0.5rem", minHeight: "120px" }}
           />

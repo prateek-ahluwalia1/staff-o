@@ -278,11 +278,11 @@ export default function Login() {
             {/* FORM */}
             <div className="col-lg-6">
               <div className="auth-card">
-                <h5 className="fw-bold mb-1">Log in to your account</h5>
+                <h5 className="fw-bold mb-1">Sign in</h5>
                 <p className="text-muted small mb-4"
                   style={{ textTransform: "none" }}
                 >
-                  Enter your credentials to continue.
+                  Please enter your email and password.
                 </p>
 
                 <form onSubmit={handleSubmit} noValidate>

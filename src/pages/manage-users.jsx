@@ -783,6 +783,7 @@ const ManageUsers = () => {
   return (
     <div className="dashboard-main dashboard-tools-page">
       <style>{`
+        /* ---------- Base / Desktop Styles ---------- */
         .dashboard-page-header h1 {
           font-weight: 800;
           letter-spacing: -0.02em;
@@ -792,13 +793,21 @@ const ManageUsers = () => {
           border-radius: 12px;
           border: 1px solid #e2e8f0;
           background: #ffffff;
-          overflow: hidden;
+          overflow-x: auto;                       /* enable horizontal scroll on mobile */
+          -webkit-overflow-scrolling: touch;
         }
         .jobtracker-main-table {
           table-layout: fixed;
           width: 100%;
+          min-width: 650px;                      /* ensures scrolling before columns break */
           border-collapse: collapse;
           margin: 0;
+        }
+        @media (min-width: 992px) {
+          .jobtracker-main-table {
+            table-layout: fixed;
+            min-width: 0;
+          }
         }
         .premium-thead th {
           background-color: #0A7C6E !important;
@@ -942,6 +951,92 @@ const ManageUsers = () => {
           from { opacity: 0; transform: scale(0.98); }
           to { opacity: 1; transform: scale(1); }
         }
+
+        /* ---------- Responsive ---------- */
+        @media (max-width: 991.98px) {
+          .premium-thead th,
+          .jobtracker-data-row td {
+            padding: 0.75rem 1rem !important;
+            font-size: 0.8rem;
+          }
+          .jobtracker-main-table {
+            min-width: 600px;
+          }
+        }
+
+        @media (max-width: 767.98px) {
+          .jobtracker-tabs {
+            flex-wrap: wrap;
+            justify-content: center;
+          }
+          .jobtracker-tabs .nav-item {
+            margin-bottom: 0.5rem;
+          }
+          .card-body .btn-dark {
+            width: 100%;
+            margin-top: 0.5rem;
+          }
+          .modal-inner-content {
+            width: 100%;
+            height: 100vh;
+            border-radius: 0;
+          }
+          .modal-tabs-container {
+            width: 100%;
+            justify-content: center;
+          }
+          .modal-tabs-container .btn {
+            flex: 1 0 auto;
+            font-size: 0.8rem;
+            padding: 0.4rem 0.8rem;
+          }
+          .full-screen-modal .px-5 {
+            padding-left: 1rem !important;
+            padding-right: 1rem !important;
+          }
+          .full-screen-modal .py-4 {
+            padding-top: 1rem !important;
+            padding-bottom: 1rem !important;
+          }
+          .confirm-modal-card {
+            max-width: 100%;
+          }
+          /* Pagination */
+          .card-footer .d-flex {
+            flex-direction: column;
+            align-items: flex-start !important;
+          }
+          .card-footer .d-flex .text-muted {
+            margin-bottom: 0.5rem;
+            font-size: 0.8rem;
+          }
+          .card-footer .btn {
+            font-size: 0.8rem;
+            padding: 0.4rem 1rem;
+          }
+        }
+
+        @media (max-width: 575.98px) {
+          .dashboard-page-header h1 {
+            font-size: 1.5rem;
+          }
+          .jobtracker-main-table {
+            min-width: 500px;
+          }
+          .premium-thead th,
+          .jobtracker-data-row td {
+            padding: 0.6rem 0.8rem !important;
+            font-size: 0.75rem;
+          }
+          .btn-group .btn {
+            width: 36px;
+            height: 36px;
+            padding: 0;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+          }
+        }
       `}</style>
 
       <div className="dashboard-page-header">
@@ -976,6 +1071,7 @@ const ManageUsers = () => {
           <button
             className="btn btn-dark jobtracker-action-btn fw-bold px-4 rounded-pill"
             onClick={() => openModal()}
+            style={{ minHeight: "44px" }}
           >
             <i className="fa-solid fa-plus me-1"></i> Add{" "}
             {activeTab === "sub_contractor"
@@ -1102,7 +1198,7 @@ const ManageUsers = () => {
           </table>
         </div>
 
-        <div className="card-footer bg-white border-top py-3 px-4 d-flex justify-content-between align-items-center">
+        <div className="card-footer bg-white border-top py-3 px-4 d-flex justify-content-between align-items-center flex-wrap">
           <div className="text-muted small">
             Showing Page <strong>{page}</strong> of <strong>{totalPages}</strong>
             <span className="mx-2">•</span>
@@ -1113,6 +1209,7 @@ const ManageUsers = () => {
               className="btn btn-sm btn-outline-secondary rounded-pill px-3"
               onClick={() => handlePageChange(page - 1)}
               disabled={page === 1}
+              style={{ minHeight: "44px" }}
             >
               <i className="fa-solid fa-chevron-left me-1"></i> Prev
             </button>
@@ -1120,6 +1217,7 @@ const ManageUsers = () => {
               className="btn btn-sm btn-outline-secondary rounded-pill px-3"
               onClick={() => handlePageChange(page + 1)}
               disabled={page === totalPages || totalPages === 0}
+              style={{ minHeight: "44px" }}
             >
               Next <i className="fa-solid fa-chevron-right ms-1"></i>
             </button>
@@ -1185,7 +1283,8 @@ const ManageUsers = () => {
                           boxShadow: 'none',
                           '&:hover': {
                             borderColor: '#c0c6cc'
-                          }
+                          },
+                          minHeight: '44px'
                         }),
                         menu: (base) => ({
                           ...base,
@@ -1257,7 +1356,7 @@ const ManageUsers = () => {
                       activeTab === "sub_contractor" ? "contractor" :
                         "customer"
                   }
-                  onChangePhone={handleOpenPhoneModal}  // ✅ wired up
+                  onChangePhone={handleOpenPhoneModal}
                   isPhoneVerified={false}
                   footer={
                     <button
@@ -1265,6 +1364,7 @@ const ManageUsers = () => {
                       form="profile-form"
                       className="btn btn-dark rounded-pill px-5 fw-bold shadow-sm"
                       disabled={submitLoading}
+                      style={{ minHeight: "44px" }}
                     >
                       {submitLoading ? "Saving..." : editingUser ? "Update Profile" : "Create User"}
                     </button>
@@ -1284,6 +1384,7 @@ const ManageUsers = () => {
                             minLength={8}
                             onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
                             required={!editingUser}
+                            style={{ minHeight: "44px" }}
                           />
                           <button
                             type="button"
@@ -1341,6 +1442,7 @@ const ManageUsers = () => {
                               onChange={handleDocFormChange}
                               required
                               disabled={!!selectedDoc}
+                              style={{ minHeight: "44px" }}
                             >
                               <option value="">Select Type</option>
                               {DOC_TYPES.map((doc) => (
@@ -1365,12 +1467,14 @@ const ManageUsers = () => {
                                   value={docForm.document_no}
                                   onChange={handleDocNumberChange}
                                   required
+                                  style={{ minHeight: "44px" }}
                                 />
                                 <button
                                   type="button"
                                   className="btn btn-dark fw-bold px-4 border-0"
                                   onClick={handleVerifyDocumentNumber}
                                   disabled={verifyingDoc || !docForm.document_no}
+                                  style={{ minHeight: "44px" }}
                                 >
                                   {verifyingDoc ? (
                                     <>
@@ -1390,6 +1494,7 @@ const ManageUsers = () => {
                                 value={docForm.document_no}
                                 onChange={handleDocNumberChange}
                                 required
+                                style={{ minHeight: "44px" }}
                               />
                             )}
                           </div>
@@ -1410,7 +1515,7 @@ const ManageUsers = () => {
                                     try { hiddenPicker.showPicker(); } catch (err) { hiddenPicker.focus(); }
                                   }
                                 }}
-                                style={{ cursor: "pointer", zIndex: 10 }}
+                                style={{ cursor: "pointer", zIndex: 10, minHeight: "44px" }}
                                 disabled={docForm.document_name === "Security License" || docForm.document_name === "Visa"}
                                 title="Open Calendar"
                               >
@@ -1475,6 +1580,7 @@ const ManageUsers = () => {
                                     docForm.document_name === "Security License" || docForm.document_name === "Visa"
                                       ? "#e9ecef"
                                       : "white",
+                                  minHeight: "44px"
                                 }}
                               />
                             </div>
@@ -1523,6 +1629,7 @@ const ManageUsers = () => {
                               onChange={handleDocFormChange}
                               name="file"
                               accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.gif,.webp"
+                              style={{ minHeight: "44px" }}
                             />
                           </div>
 
@@ -1532,6 +1639,7 @@ const ManageUsers = () => {
                               className="btn btn-light rounded-pill px-5 fw-bold text-muted border"
                               onClick={closeDocumentModal}
                               disabled={uploadLoading || submitLoading}
+                              style={{ minHeight: "44px" }}
                             >
                               Cancel
                             </button>
@@ -1539,6 +1647,7 @@ const ManageUsers = () => {
                               type="submit"
                               className="btn btn-dark rounded-pill px-5 fw-bold shadow-sm"
                               disabled={uploadLoading || submitLoading || !docForm.document_expiry || !docForm.file_url}
+                              style={{ minHeight: "44px" }}
                             >
                               {submitLoading ? "Saving..." : "Upload Document"}
                             </button>
@@ -1558,6 +1667,7 @@ const ManageUsers = () => {
                 type="button"
                 className="btn btn-light rounded-pill px-5 fw-bold text-muted border"
                 onClick={closeModal}
+                style={{ minHeight: "44px" }}
               >
                 Cancel
               </button>
@@ -1600,6 +1710,7 @@ const ManageUsers = () => {
                       maxLength="15"
                       pattern="^(?:\+?61|0)[2-478](?:[\s]*\d){8}$"
                       title="Valid Australian mobile number"
+                      style={{ minHeight: "44px" }}
                     />
                   </div>
                   <div className="d-flex gap-2">
@@ -1608,6 +1719,7 @@ const ManageUsers = () => {
                       className="btn btn-light rounded-pill px-4 fw-bold border"
                       onClick={handleClosePhoneModal}
                       disabled={phoneLoading}
+                      style={{ minHeight: "44px" }}
                     >
                       Cancel
                     </button>
@@ -1615,6 +1727,7 @@ const ManageUsers = () => {
                       type="submit"
                       className="btn btn-dark rounded-pill px-4 fw-bold"
                       disabled={phoneLoading}
+                      style={{ minHeight: "44px" }}
                     >
                       {phoneLoading ? "Sending..." : "Send OTP"}
                     </button>
@@ -1633,6 +1746,7 @@ const ManageUsers = () => {
                       maxLength={8}
                       required
                       autoFocus
+                      style={{ minHeight: "44px" }}
                     />
                     <div className="mt-2 text-end">
                       <button
@@ -1655,6 +1769,7 @@ const ManageUsers = () => {
                       className="btn btn-light rounded-pill px-4 fw-bold border"
                       onClick={handleClosePhoneModal}
                       disabled={phoneLoading}
+                      style={{ minHeight: "44px" }}
                     >
                       Cancel
                     </button>
@@ -1662,6 +1777,7 @@ const ManageUsers = () => {
                       type="submit"
                       className="btn btn-dark rounded-pill px-4 fw-bold"
                       disabled={phoneLoading || phoneChangeSuccess}
+                      style={{ minHeight: "44px" }}
                     >
                       {phoneLoading ? "Verifying..." : "Verify & Update"}
                     </button>
@@ -1703,6 +1819,7 @@ const ManageUsers = () => {
                 className="btn btn-outline-secondary rounded-pill px-4 fw-bold"
                 onClick={closeDeleteModal}
                 disabled={deleteLoading}
+                style={{ minHeight: "44px" }}
               >
                 Cancel
               </button>
@@ -1711,6 +1828,7 @@ const ManageUsers = () => {
                 className="btn btn-danger rounded-pill px-4 fw-bold shadow-sm"
                 onClick={confirmDelete}
                 disabled={deleteLoading}
+                style={{ minHeight: "44px" }}
               >
                 {deleteLoading ? "Deleting..." : "Yes, Delete"}
               </button>

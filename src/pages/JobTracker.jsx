@@ -235,7 +235,7 @@ const getSelectPlaceholder = (baseLabel, selectedCount, allCount) => {
 const selectStyles = {
   control: (base) => ({
     ...base,
-    minHeight: "38px",
+    minHeight: "44px", // Touch friendly
     borderColor: "#ced4da",
     boxShadow: "none",
     minWidth: "0",
@@ -274,11 +274,11 @@ const DateFilterInput = ({ value, onChange, placeholder }) => {
       val = val.replace(/^(\d{2})(\d{2})(\d+)/, "$1/$2/$3");
     setDisplayValue(val);
     const iso = toISODate(val);
-    onChange(iso || val); // send YYYY-MM-DD or partial to parent
+    onChange(iso || val);
   };
 
   const handlePickerChange = (e) => {
-    const isoDate = e.target.value; // YYYY-MM-DD
+    const isoDate = e.target.value;
     onChange(isoDate);
   };
 
@@ -299,7 +299,7 @@ const DateFilterInput = ({ value, onChange, placeholder }) => {
         type="button"
         className="input-group-text bg-white border-end-0"
         onClick={openPicker}
-        style={{ cursor: "pointer" }}
+        style={{ cursor: "pointer", minHeight: "44px" }}
         title="Open calendar"
       >
         <i className="fa-regular fa-calendar text-muted"></i>
@@ -321,6 +321,7 @@ const DateFilterInput = ({ value, onChange, placeholder }) => {
         maxLength={10}
         pattern="^(0[1-9]|[12][0-9]|3[01])/(0[1-9]|1[012])/\d{4}$"
         title="Enter a date in DD/MM/YYYY format"
+        style={{ minHeight: "44px" }}
       />
     </div>
   );
@@ -440,9 +441,7 @@ const JobTracker = () => {
       <div className="dashboard-page-header">
         <div>
           <h1>Job Tracker</h1>
-          <p
-            style={{ textTransform: "none" }}
-          >
+          <p style={{ textTransform: "none" }}>
             Review shifts, filter records, and export a clean tracker summary.
           </p>
         </div>
@@ -451,7 +450,7 @@ const JobTracker = () => {
       <div className="card border-0 shadow-sm mb-4">
         <div className="card-body">
           <div className="row g-2 align-items-end jobtracker-filter-row">
-            <div className="col-12 col-lg-4">
+            <div className="col-12 col-md-6 col-lg-4">
               <Select
                 isMulti
                 options={customerOptions}
@@ -483,22 +482,21 @@ const JobTracker = () => {
                 isLoading={customerLoading}
               />
             </div>
-            {/* ─── Hybrid date inputs ─── */}
-            <div className="col-6 col-lg-2">
+            <div className="col-6 col-md-6 col-lg-2">
               <DateFilterInput
                 value={startDate}
                 onChange={setStartDate}
                 placeholder="Start date"
               />
             </div>
-            <div className="col-6 col-lg-2">
+            <div className="col-6 col-md-6 col-lg-2">
               <DateFilterInput
                 value={endDate}
                 onChange={setEndDate}
                 placeholder="End date"
               />
             </div>
-            <div className="col-6 col-lg-2 d-grid">
+            <div className="col-6 col-md-6 col-lg-2 d-grid">
               <button
                 className="btn btn-sm btn-primary-custom jobtracker-action-btn"
                 onClick={fetchReport}
@@ -507,7 +505,7 @@ const JobTracker = () => {
                 <i className="fa-solid fa-search me-1"></i> Search
               </button>
             </div>
-            <div className="col-6 col-lg-2 d-grid">
+            <div className="col-6 col-md-6 col-lg-2 d-grid">
               <button
                 className="btn btn-sm btn-outline-primary jobtracker-action-btn"
                 onClick={handleExport}
@@ -520,9 +518,9 @@ const JobTracker = () => {
         </div>
       </div>
 
-      {/* ─── Table (unchanged) ─── */}
+      {/* ─── Responsive table wrapper ─── */}
       <div className="card border-0 shadow-sm">
-        <div className="table-responsive jobtracker-table-shell">
+        <div className="jobtracker-table-shell">
           <table className="table table-hover align-middle mb-0 jobtracker-main-table">
             <thead
               className="table-primary text-dark"
@@ -554,7 +552,9 @@ const JobTracker = () => {
 
               {!loading && rows.length === 0 && (
                 <tr>
-                  <td colSpan="12" className="text-center text-muted py-5"
+                  <td
+                    colSpan="12"
+                    className="text-center text-muted py-5"
                     style={{ textTransform: "none" }}
                   >
                     No job tracker records found.
@@ -590,13 +590,49 @@ const JobTracker = () => {
 
       <style>
         {`
-          .jobtracker-action-btn {
-            min-height: 38px;
+          /* Filter row spacing */
+          .jobtracker-filter-row > div {
+            margin-bottom: 0.5rem;
           }
 
+          /* Action buttons – touch friendly */
+          .jobtracker-action-btn {
+            min-height: 44px;
+            white-space: nowrap;
+          }
+
+          /* Table wrapper – enables horizontal swipe on mobile */
+          .jobtracker-table-shell {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            border-radius: 0.25rem;
+          }
+
+          /* Main table – auto layout on small, fixed on large */
           .jobtracker-main-table {
-            table-layout: fixed;
+            table-layout: auto;
             width: 100%;
+            min-width: 650px;       /* ensures scroll when viewport is narrower */
+            margin-bottom: 0;
+          }
+
+          @media (min-width: 992px) {
+            .jobtracker-main-table {
+              table-layout: fixed;
+              min-width: 0;
+            }
+            .jobtracker-main-table th:nth-child(1) { width: 7%; }
+            .jobtracker-main-table th:nth-child(2) { width: 14%; }
+            .jobtracker-main-table th:nth-child(3) { width: 10%; }
+            .jobtracker-main-table th:nth-child(4) { width: 10%; }
+            .jobtracker-main-table th:nth-child(5) { width: 10%; }
+            .jobtracker-main-table th:nth-child(6) { width: 9%; }
+            .jobtracker-main-table th:nth-child(7) { width: 9%; }
+            .jobtracker-main-table th:nth-child(8) { width: 8%; }
+            .jobtracker-main-table th:nth-child(9) { width: 8%; }
+            .jobtracker-main-table th:nth-child(10) { width: 7%; }
+            .jobtracker-main-table th:nth-child(11) { width: 7%; }
+            .jobtracker-main-table th:nth-child(12) { width: 9%; }
           }
 
           .jobtracker-main-table > thead > tr > th,
@@ -636,12 +672,7 @@ const JobTracker = () => {
             background: #eef5ff;
           }
 
-          @media (max-width: 992px) {
-            .jobtracker-filter-row > div {
-              flex: 0 0 auto;
-            }
-          }
-
+          /* Mobile & tablet adjustments */
           @media (max-width: 768px) {
             .jobtracker-main-table > thead > tr > th,
             .jobtracker-main-table > tbody > tr > td {
@@ -649,6 +680,7 @@ const JobTracker = () => {
               font-size: 0.74rem;
             }
 
+            /* Hide less critical columns to avoid excessive scrolling */
             .jobtracker-main-table > thead > tr > th:nth-child(6),
             .jobtracker-main-table > thead > tr > th:nth-child(7),
             .jobtracker-main-table > thead > tr > th:nth-child(8),
@@ -662,6 +694,37 @@ const JobTracker = () => {
             .jobtracker-main-table > tbody > tr.jobtracker-data-row > td:nth-child(10),
             .jobtracker-main-table > tbody > tr.jobtracker-data-row > td:nth-child(11) {
               display: none;
+            }
+
+            .jobtracker-main-table {
+              min-width: 400px;
+            }
+
+            /* Make buttons full width on very small phones */
+            .jobtracker-filter-row .d-grid {
+              width: 100%;
+            }
+          }
+
+          @media (max-width: 480px) {
+            .jobtracker-main-table {
+              min-width: 380px;
+              font-size: 0.72rem;
+            }
+
+            .jobtracker-main-table > thead > tr > th,
+            .jobtracker-main-table > tbody > tr > td {
+              padding: 0.4rem 0.2rem;
+            }
+
+            .dashboard-page-header h1 {
+              font-size: 1.4rem;
+            }
+
+            /* Stack date inputs and buttons at full width */
+            .jobtracker-filter-row .col-6 {
+              width: 100%;
+              flex: 0 0 auto;
             }
           }
         `}

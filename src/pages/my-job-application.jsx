@@ -152,6 +152,72 @@ export default function MyJobApplications() {
             transform: translateY(-5px);
             box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1) !important;
           }
+
+          /* Mobile-first overrides */
+          @media (max-width: 767.98px) {
+            .application-grid .card-title {
+              font-size: 1rem !important;
+            }
+            .dashboard-page-header h1 {
+              font-size: 1.5rem;
+            }
+            .shift-card-hover .btn-primary-custom {
+              font-size: 12px;
+              padding: 0.4rem 1rem;
+            }
+            /* Make search + date filter stack nicely */
+            .header-filters-row {
+              flex-wrap: wrap;
+            }
+            .header-filters-row > * {
+              margin-top: 10px;
+            }
+            .modal-content {
+              width: 100% !important;
+              max-width: 100% !important;
+              height: 100vh;
+              max-height: 100vh;
+              border-radius: 0 !important;
+            }
+            .modal-body {
+              padding: 16px !important;
+            }
+            .modal-header {
+              padding: 16px 20px !important;
+            }
+            .modal-header h3 {
+              font-size: 18px;
+            }
+            /* InfoRow text sizes */
+            .modal-body .d-flex span {
+              font-size: 13px !important;
+            }
+          }
+
+          @media (max-width: 575.98px) {
+            .shift-card-hover .card-body {
+              padding: 1rem !important;
+            }
+            .shift-card-hover .badge {
+              font-size: 11px;
+              padding: 0.3rem 0.8rem;
+            }
+            .shift-card-hover .fw-bold {
+              font-size: 13px;
+            }
+            .header-date-group {
+              flex-direction: column;
+              align-items: stretch !important;
+            }
+            .header-date-group input {
+              width: 100%;
+              margin-bottom: 8px;
+            }
+            .header-date-group button {
+              width: 100%;
+              margin-top: 5px;
+            }
+          }
         `}
       </style>
 
@@ -162,7 +228,7 @@ export default function MyJobApplications() {
             <p style={{ textTransform: 'none' }}>Viewing shifts for the selected date range.</p>
           </div>
 
-          <div className="d-flex flex-column flex-md-row gap-3 mt-3 mt-xl-0 align-items-md-center">
+          <div className="d-flex flex-column flex-md-row gap-3 mt-3 mt-xl-0 align-items-md-center header-filters-row">
             <div className="d-flex align-items-center bg-white p-1 px-2 rounded shadow-sm border" style={{ minWidth: '250px' }}>
               <i className="fa-solid fa-magnifying-glass text-muted me-2 ms-1"></i>
               <input
@@ -182,7 +248,7 @@ export default function MyJobApplications() {
               )}
             </div>
 
-            <div className="d-flex gap-2 align-items-end bg-white p-2 rounded shadow-sm border">
+            <div className="d-flex gap-2 align-items-end bg-white p-2 rounded shadow-sm border header-date-group">
               <div className="d-flex flex-column">
                 <input
                   type="date"
@@ -352,7 +418,6 @@ export default function MyJobApplications() {
                       Client Details
                     </h5>
                     <div className="d-flex flex-column gap-1">
-                      {/* Optional chaining ensures it doesn't break if customer is null */}
                       <InfoRow icon="fa-user" label="Name" value={selectedApp.rawShift.customer?.name || "Unknown"} />
                       <InfoRow icon="fa-envelope" label="Email" value={selectedApp.rawShift.customer?.email || "N/A"} transform={false} />
                       <InfoRow icon="fa-phone" label="Phone" value={selectedApp.rawShift.customer?.phone || "N/A"} />

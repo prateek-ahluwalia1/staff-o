@@ -378,7 +378,7 @@ export default function Register() {
                     onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
                   >
                     {loading && <i className="fa-solid fa-spinner fa-spin"></i>}
-                    {loading ? "Creating..." : "Create Account"}
+                    {loading ? "Signing up..." : "Sign up"}
                   </button>
                 </form>
 

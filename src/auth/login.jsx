@@ -152,7 +152,7 @@ export default function Login() {
 
           dispatch(setUser({ userdata: latestProfile }));
 
-          toast.success("Google login successful!");
+          toast.success("Google sign in successful!");
 
           if (latestProfile?.user_type === "customer") {
             navigate("/add-job");
@@ -253,7 +253,7 @@ export default function Login() {
               <p className="auth-description"
                 style={{ textTransform: "none" }}
               >
-                Log in to manage your profile, assignments, and verified
+                Sign in to manage your profile, assignments, and verified
                 opportunities from one secure platform.
               </p>
 
@@ -397,7 +397,7 @@ export default function Login() {
                     {loading && (
                       <i className="fa-solid fa-spinner fa-spin"></i>
                     )}
-                    {loading ? "Logging in..." : "Log In"}
+                    {loading ? "Signing in..." : "Sign In"}
                   </button>
                 </form>
 
@@ -616,7 +616,7 @@ export default function Login() {
                     {loading && (
                       <i className="fa-solid fa-spinner fa-spin"></i>
                     )}
-                    {loading ? "Creating..." : "Create Account & Login"}
+                    {loading ? "Creating..." : "Sign up"}
                   </button>
                 </div>
               </div>

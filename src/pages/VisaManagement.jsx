@@ -31,11 +31,29 @@ const safeJsonParse = (value) => {
 
 const unwrapVisaResponse = (payload) => {
     if (!payload) return null;
+
+    // 1. Check the exact structure from your API: payload.data.json.data
+    if (payload?.data?.json?.data) {
+        return payload.data.json.data;
+    }
+
+    // 2. Fallback to parsing payload.data.body if json object is missing
+    if (payload?.data?.body) {
+        const parsedBody = safeJsonParse(payload.data.body);
+        if (parsedBody?.data) return parsedBody.data;
+    }
+
+    // 3. Fallbacks for other variations (keeps your original safety checks)
+    if (payload?.json?.data?.data) return payload.json.data.data;
     if (payload?.json?.data) return payload.json.data;
+
     const parsedBody = safeJsonParse(payload?.body);
+    if (parsedBody?.data?.data) return parsedBody.data.data;
     if (parsedBody?.data) return parsedBody.data;
+
     if (payload?.data?.data) return payload.data.data;
     if (payload?.data && typeof payload.data === "object") return payload.data;
+
     return payload;
 };
 
@@ -208,36 +226,6 @@ export default function VisaManagement() {
         }));
     };
 
-    const handleVisaCheck = async (e) => {
-        if (e) e.preventDefault();
-
-        const payload = {
-            passport: formData.passport.trim(),
-            country: formData.country.trim().toUpperCase(),
-            family_name: formData.family_name.trim(),
-            given_name: formData.given_name.trim(),
-            dob: toISODate(formData.dob),
-        };
-
-        if (!payload.passport || !payload.country || !payload.family_name || !payload.given_name || !payload.dob) {
-            toast.error("Please fill all applicant details to proceed.");
-            return;
-        }
-
-        const res = await submitVisaCheck("api/admin/visa-check", payload, { method: "POST" });
-        if (res.success) {
-            toast.success(`Your Visa will expire on ${res?.data?.expired_at}`)
-        }
-        const data = unwrapVisaResponse(res);
-
-        if (data?.id) {
-            setVisaChecksList((prev) => [data, ...prev]);
-            setSelectedCheckDetail(null);
-            toast.success("Request submitted successfully. You can check the status below.");
-            setFormData(initialForm);
-        }
-    };
-
     const handleFetchResult = useCallback(
         async (id) => {
             if (!id) return;
@@ -246,7 +234,6 @@ export default function VisaManagement() {
             const res = await submitVisaResult(`api/admin/visa-result/${id}`, null, { method: "GET" });
             const data = unwrapVisaResponse(res);
 
-            // New response: { expired_at: "DD-MM-YYYY" }
             if (data?.expired_at) {
                 setVisaChecksList((prev) =>
                     prev.map((item) =>
@@ -281,6 +268,39 @@ export default function VisaManagement() {
         },
         [submitVisaResult],
     );
+
+    // ---------- HANDLE VISA CHECK (auto-fetches result) ----------
+    const handleVisaCheck = async (e) => {
+        if (e) e.preventDefault();
+
+        const payload = {
+            passport: formData.passport.trim(),
+            country: formData.country.trim().toUpperCase(),
+            family_name: formData.family_name.trim(),
+            given_name: formData.given_name.trim(),
+            dob: toISODate(formData.dob),
+        };
+
+        if (!payload.passport || !payload.country || !payload.family_name || !payload.given_name || !payload.dob) {
+            toast.error("Please fill all applicant details to proceed.");
+            return;
+        }
+
+        const res = await submitVisaCheck("api/admin/visa-check", payload, { method: "POST" });
+        const data = unwrapVisaResponse(res);
+
+        if (data?.id) {
+            // Add new check to the list
+            setVisaChecksList((prev) => [data, ...prev]);
+            setSelectedCheckDetail(null);
+            setFormData(initialForm);
+
+            // Automatically fetch the result for this check
+            await handleFetchResult(data.id);
+        } else {
+            toast.error("Failed to submit visa check. Please try again.");
+        }
+    };
 
     const doc = selectedCheckDetail?.document || {};
     const visa = selectedCheckDetail?.visa?.australia || {};

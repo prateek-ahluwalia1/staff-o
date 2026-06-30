@@ -7,27 +7,34 @@ import {
   toggleSidebar,
   setSidebarExpanded,
 } from "../store/slices/sidebarSlice";
+import { markNotificationRead, markAllRead } from "../store/slices/notificationSlice";
 import useSubmit from "../hooks/useSubmit";
 import staffologo from "../assets/images/staffo.png";
+import { getProfileImageUrlFromUserdata } from "../utils/profileImage";
 
 const Sidebar = memo(function Sidebar() {
-  const { userdata } = useSelector((state) => state.auth);
+  const { userdata, token } = useSelector((state) => state.auth);
   const { isExpanded } = useSelector((state) => state.sidebar);
+
+  // Notification State
+  const items = useSelector((state) => state.notifications?.items) || [];
+  const unreadCount = useSelector((state) => state.notifications?.unreadCount) || 0;
+
   const location = useLocation();
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { submit } = useSubmit({ isAuth: true });
 
-  // Track window width for inline responsive styling
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
+  const [showNotifications, setShowNotifications] = useState(false);
   const isMobile = windowWidth <= 1199;
 
   const userType = userdata?.data?.user_type || userdata?.user_type;
   const userId = userdata?.data?.id || userdata?.id;
+  const displayName = userdata?.data?.name || userdata?.name || "User";
   const type = (userType || "").toString().toLowerCase();
   const isProfileActive = !!(userdata?.data?.is_active || userdata?.is_active);
 
-  // Handle Resize for both Redux state and local Window Width
   useEffect(() => {
     const handleResize = () => {
       setWindowWidth(window.innerWidth);
@@ -35,7 +42,6 @@ const Sidebar = memo(function Sidebar() {
         dispatch(setSidebarExpanded(false));
       }
     };
-
     window.addEventListener("resize", handleResize);
     handleResize();
     return () => window.removeEventListener("resize", handleResize);
@@ -59,23 +65,51 @@ const Sidebar = memo(function Sidebar() {
     dispatch(toggleSidebar());
   }, [dispatch]);
 
-  const handleKeyboard = useCallback((e) => {
-    if ((e.ctrlKey || e.metaKey) && e.key === "b") {
-      e.preventDefault();
-      dispatch(toggleSidebar());
-    }
-  }, [dispatch]);
-
-  useEffect(() => {
-    window.addEventListener("keydown", handleKeyboard);
-    return () => window.removeEventListener("keydown", handleKeyboard);
-  }, [handleKeyboard]);
-
   const handleNavClick = useCallback(() => {
     if (window.innerWidth <= 1199) {
       dispatch(setSidebarExpanded(false));
+      setShowNotifications(false); // Reset dropdown
     }
   }, [dispatch]);
+
+  // --- Avatar Logic ---
+  const getInitials = (name) => name ? name.split(" ").map((w) => w[0]).join("").toUpperCase().slice(0, 2) : "U";
+
+  const getAvatarColor = (name) => {
+    const colors = ["#0A7C6E"];
+    let hash = 0;
+    if (name) { for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash); }
+    return colors[Math.abs(hash) % colors.length];
+  };
+
+  const renderUserAvatar = () => {
+    const imageUrl = getProfileImageUrlFromUserdata(userdata);
+    if (imageUrl) return <img src={imageUrl} alt="Profile" style={{ width: "100%", height: "100%", borderRadius: "50%", objectFit: "cover" }} onError={(e) => { e.target.style.display = "none"; }} />;
+    return (
+      <div style={{ width: "100%", height: "100%", borderRadius: "50%", backgroundColor: getAvatarColor(displayName), display: "flex", alignItems: "center", justifyContent: "center", color: "white", fontWeight: "bold", fontSize: "1rem" }}>
+        {getInitials(displayName)}
+      </div>
+    );
+  };
+
+  // --- Notification Handlers ---
+  const getNotificationTitle = (notif) => notif?.title || notif?.data?.title || "Notification";
+  const getNotificationMessage = (notif) => notif?.message || notif?.data?.message || "";
+
+  const markSingleNotificationRead = async (notif) => {
+    if (!notif?.id || notif.read_at) return;
+    dispatch(markNotificationRead(notif.id));
+    await submit(`api/notifications/read/${notif.id}`, {}, { method: "POST" });
+  };
+
+  const toggleNotifications = async () => {
+    const nextState = !showNotifications;
+    setShowNotifications(nextState);
+    if (nextState && userId) {
+      dispatch(markAllRead());
+      await submit(`api/notifications/mark-all-read/${userId}`, {}, { method: "POST" });
+    }
+  };
 
   // --- Navigation Configurations ---
   const customerNav = [
@@ -116,20 +150,15 @@ const Sidebar = memo(function Sidebar() {
     { to: "/edit-profile", icon: "fa-solid fa-gear", label: "Settings" },
   ];
 
-  const navConfig = { customer: customerNav, staff: staffNav, admin: adminNav, contractor: contractorNav };
-  const navItems = navConfig[type] || contractorNav;
+  const navItems = { customer: customerNav, staff: staffNav, admin: adminNav, contractor: contractorNav }[type] || contractorNav;
 
   useEffect(() => {
     if (isProfileActive) return;
-    const protectedRoutes = navItems
-      .filter((item) => item.to !== "/edit-profile")
-      .map((item) => item.to);
+    const protectedRoutes = navItems.filter((item) => item.to !== "/edit-profile").map((item) => item.to);
     if (protectedRoutes.includes(location.pathname)) {
       navigate("/edit-profile", { replace: true });
     }
   }, [location.pathname, isProfileActive, navItems, navigate]);
-
-  // --- Inline Styles ---
 
   const styles = {
     overlay: {
@@ -137,14 +166,6 @@ const Sidebar = memo(function Sidebar() {
       backdropFilter: "blur(2px)", zIndex: 998, transition: "all 0.3s ease",
       opacity: (isMobile && isExpanded) ? 1 : 0,
       visibility: (isMobile && isExpanded) ? "visible" : "hidden",
-    },
-    mobileBtn: {
-      display: isMobile ? "flex" : "none",
-      position: "fixed", top: "16px", left: "16px", zIndex: 997,
-      backgroundColor: "#ffffff", border: "1px solid rgba(148, 163, 184, 0.2)",
-      boxShadow: "0 4px 6px rgba(15, 23, 42, 0.05)", color: "#0f172a",
-      width: "44px", height: "44px", borderRadius: "10px",
-      cursor: "pointer", alignItems: "center", justifyContent: "center", fontSize: "20px"
     },
     sidebar: {
       background: "linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)",
@@ -159,27 +180,8 @@ const Sidebar = memo(function Sidebar() {
       overflowY: "auto", overflowX: "hidden", zIndex: 1000,
       transform: isMobile ? (isExpanded ? "translateX(0)" : "translateX(-100%)") : "translateX(0)",
     },
-    sidebarToggle: {
-      display: "flex", width: "100%", marginBottom: "12px",
-      justifyContent: (isExpanded || isMobile) ? "space-between" : "center",
-    },
-    toggleBtn: {
-      background: "rgba(37, 99, 235, 0.05)", border: "1px solid rgba(37, 99, 235, 0.1)",
-      fontSize: "14px", color: "#475569", cursor: "pointer", padding: "6px",
-      display: "flex", alignItems: "center", justifyContent: "center",
-      width: "32px", height: "32px", borderRadius: "10px", transition: "all 0.25s ease"
-    },
-    header: {
-      marginBottom: "24px", width: "100%", minHeight: "32px", display: "flex", flexDirection: "column",
-      opacity: (isExpanded || isMobile) ? 1 : 0, transition: "opacity 0.35s ease",
-      display: (isExpanded || isMobile) ? "block" : "none"
-    },
-    statusToggle: {
-      display: "flex", alignItems: "center", justifyContent: "space-between", gap: "10px",
-      padding: "12px 15px", borderRadius: "10px", marginBottom: "18px",
-      background: isProfileActive ? "rgba(34, 197, 94, 0.08)" : "rgba(239, 68, 68, 0.08)",
-      border: isProfileActive ? "1px solid rgba(34, 197, 94, 0.25)" : "1px solid rgba(239, 68, 68, 0.25)",
-      color: isProfileActive ? "rgb(22, 163, 74)" : "rgb(220, 38, 38)"
+    mobileActionsWrapper: {
+      width: "100%", paddingBottom: "16px", marginBottom: "16px", borderBottom: "1px solid #e2e8f0"
     },
     navUl: {
       listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: "8px", width: "100%"
@@ -188,103 +190,118 @@ const Sidebar = memo(function Sidebar() {
       display: "flex", alignItems: "center", gap: "12px", padding: "12px 14px",
       borderRadius: "12px", fontWeight: 500, textDecoration: "none",
       justifyContent: (isExpanded || isMobile) ? "flex-start" : "center",
-      position: "relative",
       color: disabled ? "#64748b" : (isActive ? "#0A7C6E" : "#64748b"),
       background: isActive ? "linear-gradient(135deg, rgba(37, 99, 235, 0.12), rgba(37, 99, 235, 0.08))" : "transparent",
-      boxShadow: isActive ? "inset 0 0 0 1px rgba(37, 99, 235, 0.15)" : "none",
-      opacity: disabled ? 0.45 : 1, cursor: disabled ? "not-allowed" : "pointer",
-      pointerEvents: disabled ? "auto" : "auto"
+      opacity: disabled ? 0.45 : 1, cursor: disabled ? "not-allowed" : "pointer"
     }),
-    iconStyle: { fontSize: "20px", minWidth: "24px", display: "flex", alignItems: "center", justifyContent: "center" },
-    labelStyle: { whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }
   };
 
   return (
     <>
-      {/* Mobile Backdrop Overlay */}
-      <div
-        style={styles.overlay}
-        onClick={handleToggle}
-        aria-hidden="true"
-      ></div>
+      <div style={styles.overlay} onClick={handleToggle} aria-hidden="true"></div>
 
       <aside style={styles.sidebar}>
-        <div style={styles.sidebarToggle}>
-          {(isExpanded || isMobile) && (
-            <img src={staffologo} alt="Staffo" style={{ height: "40px" }} />
-          )}
+
+        {/* Mobile Sidebar Header */}
+        <div style={{ display: "flex", width: "100%", marginBottom: "20px", justifyContent: "space-between", alignItems: "center" }}>
+          {(isExpanded || isMobile) && <img src={staffologo} alt="Staffo" style={{ height: "40px" }} />}
           <button
-            style={styles.toggleBtn}
             onClick={handleToggle}
-            aria-label={isExpanded ? "Collapse sidebar" : "Expand sidebar"}
-            title={isExpanded ? "Collapse (Ctrl+B)" : "Expand (Ctrl+B)"}
+            style={{ background: "rgba(37, 99, 235, 0.05)", border: "1px solid rgba(37, 99, 235, 0.1)", color: "#475569", width: "32px", height: "32px", borderRadius: "10px", display: "flex", alignItems: "center", justifyContent: "center" }}
           >
             <i className={`fa-solid ${isMobile ? "fa-xmark" : (isExpanded ? "fa-chevron-left" : "fa-chevron-right")}`}></i>
           </button>
         </div>
 
-        <div style={styles.header}>
-          {(isExpanded || isMobile) && userType !== "admin" && (
-            <div style={styles.statusToggle}>
-              <div>
-                <span style={{ fontSize: "12px", fontWeight: "600" }}>
-                  {isProfileActive ? "Profile Complete" : "Profile Incomplete"}
-                </span>
-              </div>
-              <label className="status-switch" aria-label="Toggle open to work" style={{ position: "relative", width: "54px", height: "28px", display: "inline-block" }}>
-                <input type="checkbox" checked={isProfileActive} readOnly style={{ opacity: 0, width: 0, height: 0 }} />
-                <span style={{
-                  position: "absolute", inset: 0, borderRadius: "999px",
-                  background: isProfileActive ? "linear-gradient(135deg, #22c55e, #16a34a)" : "rgba(148, 163, 184, 0.5)"
-                }}>
-                  <span style={{
-                    position: "absolute", height: "22px", width: "22px", left: "4px", top: "3px",
-                    background: "#ffffff", borderRadius: "50%", boxShadow: "0 6px 14px rgba(15, 23, 42, 0.2)",
-                    transform: isProfileActive ? "translateX(24px)" : "none", transition: "transform 0.2s ease"
-                  }}></span>
-                </span>
-              </label>
-            </div>
-          )}
-          <hr style={{ margin: "10px 0" }} />
-        </div>
+        {/* MOBILE ONLY: Profile & Notifications Block */}
+        {isMobile && isExpanded && token && (
+          <div style={styles.mobileActionsWrapper}>
 
+            {/* User Info */}
+            <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "16px" }}>
+              <div style={{ width: "45px", height: "45px", borderRadius: "50%", overflow: "hidden", border: "2px solid #0A7C6E" }}>
+                {renderUserAvatar()}
+              </div>
+              <div>
+                <div style={{ fontWeight: "600", fontSize: "16px", color: "#0f172a" }}>{displayName}</div>
+                <Link to="/edit-profile" onClick={handleNavClick} style={{ fontSize: "12px", color: "#64748b", textDecoration: "none" }}>View Profile</Link>
+              </div>
+            </div>
+
+            {/* Notifications Toggle */}
+            <div
+              onClick={toggleNotifications}
+              style={{ display: "flex", alignItems: "center", gap: "12px", padding: "10px 12px", backgroundColor: "#f1f5f9", borderRadius: "8px", cursor: "pointer", marginBottom: showNotifications ? "8px" : "0" }}
+            >
+              <div style={{ position: "relative" }}>
+                <i className="fa-solid fa-bell" style={{ fontSize: "16px", color: "#475569" }}></i>
+                {unreadCount > 0 && (
+                  <span style={{ position: 'absolute', top: '-6px', right: '-8px', backgroundColor: '#dc3545', color: 'white', borderRadius: '50%', width: '16px', height: '16px', fontSize: '9px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold' }}>
+                    {unreadCount}
+                  </span>
+                )}
+              </div>
+              <span style={{ fontSize: "14px", fontWeight: "600", color: "#334155" }}>Notifications</span>
+              <i className={`fa-solid fa-chevron-${showNotifications ? 'up' : 'down'}`} style={{ marginLeft: "auto", fontSize: "12px", color: "#94a3b8" }}></i>
+            </div>
+
+            {/* Expanded Mobile Notifications */}
+            {showNotifications && (
+              <div style={{ backgroundColor: "#fff", border: "1px solid #e2e8f0", borderRadius: "8px", overflow: "hidden" }}>
+                <ul style={{ listStyle: "none", padding: 0, margin: 0, overflowY: "auto", maxHeight: "180px" }}>
+                  {items.length > 0 ? (
+                    items.map((notif, index) => (
+                      <li key={notif.id || index} onClick={() => markSingleNotificationRead(notif)} style={{ padding: "10px 12px", borderBottom: "1px solid #f1f5f9", cursor: "pointer" }}>
+                        <div style={{ fontSize: "13px", fontWeight: "bold", color: "#0f172a" }}>{getNotificationTitle(notif)}</div>
+                        <div style={{ fontSize: "12px", color: "#64748b", marginTop: "4px" }}>{getNotificationMessage(notif)}</div>
+                      </li>
+                    ))
+                  ) : (
+                    <li style={{ padding: "12px", textAlign: "center", color: "#64748b", fontSize: "12px" }}>No new notifications</li>
+                  )}
+                </ul>
+                <div style={{ padding: "8px", textAlign: "center", backgroundColor: "#f8fafc", borderTop: "1px solid #e2e8f0" }}>
+                  <Link to="/notifications" onClick={handleNavClick} style={{ fontSize: "12px", color: "#0A7C6E", textDecoration: "none", fontWeight: "600" }}>View All Notifications</Link>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Dashboard Navigation Links */}
         <ul style={styles.navUl}>
           {navItems.map((item) => {
             const disabled = !isProfileActive && item.label !== "Edit Profile";
             return (
-              <li key={item.label} title={(!isExpanded && !isMobile) ? item.label : ""}>
+              <li key={item.label}>
                 {disabled ? (
-                  <Link href="/" onClick={(e) => e.preventDefault()} style={styles.getLinkStyle(false, true)} aria-disabled="true" title="Complete your profile to access this">
-                    <i className={item.icon} style={styles.iconStyle}></i>
-                    {(isExpanded || isMobile) && <span style={styles.labelStyle}>{item.label}</span>}
-                    {(isExpanded || isMobile) && (
-                      <span title="Locked" style={{ position: "absolute", right: "10px", top: "6px", fontSize: "0.7em", opacity: 0.5 }}>
-                        <i className="fa-solid fa-lock"></i>
-                      </span>
-                    )}
-                  </Link>
+                  <div style={styles.getLinkStyle(false, true)} title="Complete your profile to access this">
+                    <i className={item.icon} style={{ fontSize: "20px", minWidth: "24px", textAlign: "center" }}></i>
+                    {(isExpanded || isMobile) && <span>{item.label} <i className="fa-solid fa-lock" style={{ fontSize: "10px", marginLeft: "6px" }}></i></span>}
+                  </div>
                 ) : (
-                  <NavLink
-                    to={item.to}
-                    onClick={handleNavClick}
-                    style={({ isActive }) => styles.getLinkStyle(isActive, false)}
-                  >
-                    <i className={item.icon} style={styles.iconStyle}></i>
-                    {(isExpanded || isMobile) && <span style={styles.labelStyle}>{item.label}</span>}
+                  <NavLink to={item.to} onClick={handleNavClick} style={({ isActive }) => styles.getLinkStyle(isActive, false)}>
+                    <i className={item.icon} style={{ fontSize: "20px", minWidth: "24px", textAlign: "center" }}></i>
+                    {(isExpanded || isMobile) && <span>{item.label}</span>}
                   </NavLink>
                 )}
               </li>
             );
           })}
-
-          <li title={(!isExpanded && !isMobile) ? "Logout" : ""}>
-            <Link to="/" onClick={handleLogout} style={styles.getLinkStyle(false, false)}>
-              <i className="fa-solid fa-right-from-bracket" style={styles.iconStyle}></i>
-              {(isExpanded || isMobile) && <span style={styles.labelStyle}>Logout</span>}
-            </Link>
-          </li>
         </ul>
+
+        {/* Action Buttons: Settings & Logout (Bottom of Sidebar) */}
+        <div style={{ marginTop: "auto", width: "100%", paddingTop: "16px", borderTop: "1px solid rgba(148, 163, 184, 0.2)" }}>
+          <ul style={styles.navUl}>
+            <li>
+              <Link to="/" onClick={handleLogout} style={styles.getLinkStyle(false, false)}>
+                <i className="fa-solid fa-right-from-bracket text-danger" style={{ fontSize: "20px", minWidth: "24px", textAlign: "center" }}></i>
+                {(isExpanded || isMobile) && <span className="text-danger fw-bold">Logout</span>}
+              </Link>
+            </li>
+          </ul>
+        </div>
+
       </aside>
     </>
   );

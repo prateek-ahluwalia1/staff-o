@@ -1098,27 +1098,27 @@ const ManageUsers = () => {
             <thead className="premium-thead">
               <tr>
                 <th style={{ width: activeTab === "staff" ? "30%" : "30%", textAlign: "left", paddingLeft: "1.5rem" }}>
-                  NAME & EMAIL
+                  Name & Email
                 </th>
                 {activeTab === "sub_contractor" ? (
                   <th style={{ width: "25%", textAlign: "left" }}>
-                    BUSINESS & PHONE
+                    Business & Phone
                   </th>
                 ) : (
                   <th style={{ width: "25%", textAlign: "left" }}>
-                    PHONE
+                    Phone
                   </th>
                 )}
                 {activeTab === "staff" && (
                   <th style={{ width: "25%", textAlign: "left" }}>
-                    RESOURCE PARTNER
+                    Resource Partner
                   </th>
                 )}
                 <th style={{ width: activeTab === "staff" ? "25%" : "25%", textAlign: "left" }}>
-                  LOCATION
+                  Location
                 </th>
                 <th style={{ width: "20%", textAlign: "center" }}>
-                  ACTIONS
+                  Actions
                 </th>
               </tr>
             </thead>

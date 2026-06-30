@@ -816,10 +816,10 @@ const StaffooStaff = () => {
                     >
                         <thead className="premium-thead">
                             <tr>
-                                <th className="text-start" style={{ width: "35%" }}>NAME & EMAIL</th>
-                                <th className="text-start" style={{ width: "25%" }}>PHONE</th>
-                                <th className="text-start" style={{ width: "25%" }}>LOCATION</th>
-                                <th className="text-center" style={{ width: "15%" }}>ACTIONS</th>
+                                <th className="text-start" style={{ width: "35%" }}>Name & Email</th>
+                                <th className="text-start" style={{ width: "25%" }}>Phone</th>
+                                <th className="text-start" style={{ width: "25%" }}>Location</th>
+                                <th className="text-center" style={{ width: "15%" }}>Actions</th>
                             </tr>
                         </thead>
                         <tbody>

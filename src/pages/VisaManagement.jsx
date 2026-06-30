@@ -371,7 +371,7 @@ export default function VisaManagement() {
                                 <label className="form-label text-dark fw-semibold mb-1">Passport Number</label>
                                 <input
                                     type="text"
-                                    className="form-control text-uppercase"
+                                    className="form-control "
                                     name="passport"
                                     value={formData.passport}
                                     onChange={handleInputChange}
@@ -454,7 +454,7 @@ export default function VisaManagement() {
                                                 <div className="fw-bold text-dark text-capitalize">
                                                     {`${item.document?.given_name || ""} ${item.document?.family_name || ""}`.toLowerCase()}
                                                 </div>
-                                                <div className="small text-muted text-uppercase mt-1">
+                                                <div className="small text-muted  mt-1">
                                                     <i className="fa-solid fa-passport me-1"></i>
                                                     {item.document?.identifier} ({item.document?.country})
                                                 </div>
@@ -541,7 +541,7 @@ export default function VisaManagement() {
 
                         <div className="row g-5">
                             <div className="col-12 col-lg-6">
-                                <h6 className="text-uppercase text-muted fw-bold letter-spacing-1 mb-3 border-bottom pb-2">
+                                <h6 className=" text-muted fw-bold letter-spacing-1 mb-3 border-bottom pb-2">
                                     Applicant Details
                                 </h6>
                                 <div className="row g-3">
@@ -558,7 +558,7 @@ export default function VisaManagement() {
 
                             {isCompleted && (
                                 <div className="col-12 col-lg-6">
-                                    <h6 className="text-uppercase text-muted fw-bold letter-spacing-1 mb-3 border-bottom pb-2">
+                                    <h6 className=" text-muted fw-bold letter-spacing-1 mb-3 border-bottom pb-2">
                                         Visa Information
                                     </h6>
                                     <div className="row g-3">

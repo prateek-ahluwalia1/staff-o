@@ -901,16 +901,16 @@ const ManageStaff = () => {
             <thead className="premium-thead">
               <tr>
                 <th className="text-start" style={{ width: "35%" }}>
-                  NAME & EMAIL
+                  Name & Email
                 </th>
                 <th className="text-start" style={{ width: "25%" }}>
-                  PHONE
+                  Phone
                 </th>
                 <th className="text-start" style={{ width: "25%" }}>
-                  LOCATION
+                  Location
                 </th>
                 <th className="text-center" style={{ width: "15%" }}>
-                  ACTIONS
+                  Actions
                 </th>
               </tr>
             </thead>

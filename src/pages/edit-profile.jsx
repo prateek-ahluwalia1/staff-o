@@ -966,7 +966,7 @@ export default function EditProfile() {
                           <span className="fst-italic" style={{ opacity: 0.8, fontSize: "1.2rem", marginRight: "30px" }}>VISA</span>
                         </div>
                         <h5 className="mb-4" style={{ letterSpacing: "2px", fontFamily: "monospace", textShadow: "1px 1px 2px rgba(0,0,0,0.5)" }}>{card.card_number || "**** **** **** ****"}</h5>
-                        <div className="d-flex justify-content-between text-uppercase" style={{ fontSize: "0.85rem", opacity: 0.9 }}>
+                        <div className="d-flex justify-content-between " style={{ fontSize: "0.85rem", opacity: 0.9 }}>
                           <div>
                             <div style={{ fontSize: "0.6rem", opacity: 0.7 }}>Card Holder</div>
                             <div style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "150px" }}>{card.card_holder_name || "YOUR NAME"}</div>
@@ -997,7 +997,7 @@ export default function EditProfile() {
                     <span className="fst-italic" style={{ opacity: 0.8, fontSize: "1.2rem" }}>VISA</span>
                   </div>
                   <h4 className="mb-4" style={{ letterSpacing: "2px", fontFamily: "monospace", textShadow: "1px 1px 2px rgba(0,0,0,0.5)" }}>{cardForm.card_number || "**** **** **** ****"}</h4>
-                  <div className="d-flex justify-content-between text-uppercase" style={{ fontSize: "0.85rem", opacity: 0.9 }}>
+                  <div className="d-flex justify-content-between " style={{ fontSize: "0.85rem", opacity: 0.9 }}>
                     <div>
                       <div style={{ fontSize: "0.6rem", opacity: 0.7 }}>Card Holder</div>
                       <div style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "180px" }}>{cardForm.card_holder_name || "YOUR NAME"}</div>

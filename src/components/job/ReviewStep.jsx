@@ -59,7 +59,7 @@ export default function ReviewStep({ form, rate, setField, handleConfirm, setSte
               <i className="fa-solid fa-briefcase fs-6 fs-md-5"></i>
             </div>
             <div style={{ minWidth: 0 }}>
-              <span className="d-block text-muted text-uppercase tracking-wide mb-1 fw-bold" style={{ fontSize: "0.65rem" }}>Job Details</span>
+              <span className="d-block text-muted  tracking-wide mb-1 fw-bold" style={{ fontSize: "0.65rem" }}>Job Details</span>
               <div className="fw-bold text-dark fs-6 text-break" style={{ lineHeight: "1.3" }}>{form.title || "Untitled Job"}</div>
               <div className="text-muted small text-break mt-1">{jobTypeLabel}</div>
             </div>
@@ -71,7 +71,7 @@ export default function ReviewStep({ form, rate, setField, handleConfirm, setSte
               <i className="fa-solid fa-location-dot fs-6 fs-md-5 px-1"></i>
             </div>
             <div style={{ minWidth: 0 }}>
-              <span className="d-block text-muted text-uppercase tracking-wide mb-1 fw-bold" style={{ fontSize: "0.65rem" }}>Location</span>
+              <span className="d-block text-muted  tracking-wide mb-1 fw-bold" style={{ fontSize: "0.65rem" }}>Location</span>
               <div className="text-dark small fw-medium text-break" style={{ lineHeight: "1.4" }}>{form.location || "No location provided"}</div>
             </div>
           </div>

@@ -264,13 +264,13 @@ export default function ScheduleStep({ form, setField, scheduleError = "" }) {
           )}
         </div>
 
-        <div className="position-relative col-12 col-md-8 col-lg-6 px-0" style={{ zIndex: 1050 }}>
+        <div className="position-relative col-12 col-md-8 col-lg-6 px-0">
           {form.scheduleMode === "single" && (
             <DatePicker
               selected={selectedDateObjects[0] || null}
               onChange={handleSingleDateSelect}
               dateFormat="dd/MM/yyyy"
-              placeholderText="Choose a Date"
+              placeholderText="Choose a date"
               minDate={new Date()}
               className="form-control form-control-lg shadow-sm w-100 pe-5"
               isClearable
@@ -285,7 +285,7 @@ export default function ScheduleStep({ form, setField, scheduleError = "" }) {
               onChange={handleRangeSelect}
               highlightDates={selectedDateObjects}
               dateFormat="dd/MM/yyyy"
-              placeholderText="Start Date - End Date"
+              placeholderText="Start date - End date"
               minDate={new Date()}
               isClearable
               className="form-control shadow-sm w-100 custom-date-range"
@@ -299,7 +299,7 @@ export default function ScheduleStep({ form, setField, scheduleError = "" }) {
               highlightDates={selectedDateObjects}
               shouldCloseOnSelect={false}
               dateFormat="dd/MM/yyyy"
-              placeholderText="Select Dates"
+              placeholderText="Select dates"
               minDate={new Date()}
               className="form-control form-control-lg shadow-sm w-100 pe-5"
               isClearable
@@ -318,7 +318,7 @@ export default function ScheduleStep({ form, setField, scheduleError = "" }) {
           className="rounded-3 p-2 px-3 mb-4 d-flex flex-column flex-lg-row align-items-lg-center justify-content-between gap-3"
           style={{ backgroundColor: "#f0f7ff", border: "1px solid #cce3ff" }}
         >
-          <label className="fw-bold text-primary mb-0 small text-uppercase tracking-wide text-nowrap">
+          <label className="fw-bold text-primary mb-0 small tracking-wide text-nowrap">
             <i className="fa-solid fa-bolt me-2"></i> Fast Fill
           </label>
           <div className="d-flex flex-column flex-md-row flex-wrap align-items-md-center gap-3 gap-md-4">
@@ -331,7 +331,9 @@ export default function ScheduleStep({ form, setField, scheduleError = "" }) {
               <CompactTime value={bulkEnd} onChange={(val) => handleBulkChange("end", val)} containerClass="w-auto" />
             </div>
             <div className="d-flex align-items-center gap-2">
-              <span className="small text-muted fw-semibold text-nowrap">Number of Staff:</span>
+              <span className="small text-muted fw-semibold text-nowrap"
+                style={{ textTransform: "none" }}
+              >Number of staff:</span>
 
               {/* CLEANED UP: Border moved to parent container, removed from children */}
               <div className="input-group input-group-sm flex-nowrap bg-white rounded shadow-sm border border-secondary-subtle" style={{ width: "95px" }}>
@@ -420,7 +422,7 @@ export default function ScheduleStep({ form, setField, scheduleError = "" }) {
                   </div>
                   <div className="d-flex align-items-center justify-content-between gap-3 w-100 w-md-auto ms-md-auto mt-1 mt-md-0 pt-3 pt-md-0">
                     <div className="d-flex align-items-center gap-2 w-100 w-sm-auto flex-grow-1 flex-sm-grow-0">
-                      <span className="small text-muted fw-medium text-nowrap" style={{ minWidth: "95px" }}>Number of Staff:</span>
+                      <span className="small text-muted fw-medium text-nowrap" style={{ minWidth: "95px", textTransform: "none" }}>Number of staff:</span>
 
                       {/* CLEANED UP: Border moved to parent container, removed from children */}
                       <div className="input-group input-group-sm flex-nowrap bg-white rounded shadow-sm border border-secondary-subtle" style={{ minWidth: "95px", maxWidth: "95px" }}>

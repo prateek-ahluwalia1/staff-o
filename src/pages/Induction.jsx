@@ -90,6 +90,7 @@ export default function Induction() {
     const customSelectStyles = {
         control: (provided, state) => ({
             ...provided,
+            textTransform: "none",
             borderColor: state.isFocused ? '#0A7C6E' : '#d1d5db',
             boxShadow: state.isFocused ? '0 0 0 1px #0A7C6E' : 'none',
             '&:hover': { borderColor: '#0A7C6E' },
@@ -497,7 +498,9 @@ export default function Induction() {
                         </div>
                     </div>
                     <h5 className="text-center fw-bold mb-3">Delete Induction?</h5>
-                    <p className="text-center text-muted mb-4">
+                    <p className="text-center text-muted mb-4"
+                        style={{ textTransform: "none" }}
+                    >
                         Are you sure you want to delete this induction? This action cannot be undone and all associated data will be permanently removed.
                     </p>
                     <div className="d-flex flex-wrap gap-3 justify-content-center">

@@ -211,7 +211,9 @@ export default function DetailsStep({ form, setField, handleFile, attachmentPrev
             <div className="bg-white p-2 rounded-circle shadow-sm mb-2" style={{ color: "#0A7C6E" }}>
               <i className="fa-solid fa-cloud-arrow-up fs-5"></i>
             </div>
-            <strong className="text-dark mb-1 small">Click to upload files</strong>
+            <strong className="text-dark mb-1 small"
+              style={{ textTransform: "none" }}
+            >Click to upload files</strong>
             <span className="text-muted" style={{ fontSize: "0.7rem" }}>PNG, JPG, PDF — Max 10MB</span>
           </label>
           {fileErrors && <div className="text-danger small mt-2 fw-medium"><i className="fa-solid fa-triangle-exclamation me-1"></i> {fileErrors}</div>}

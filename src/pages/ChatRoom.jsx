@@ -645,7 +645,9 @@ const ChatRoom = () => {
                         style={{ color: "#0A7C6E" }}
                       ></i>
                     </div>
-                    <p className="text-muted small mb-0">
+                    <p className="text-muted small mb-0"
+                      style={{ textTransform: "none" }}
+                    >
                       No messages yet. Say hello! 👋
                     </p>
                   </div>

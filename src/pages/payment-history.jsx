@@ -202,6 +202,7 @@ export default function PaymentHistory() {
   const customSelectStyles = {
     control: (provided, state) => ({
       ...provided,
+      textTransform: "none",
       borderColor: state.isFocused ? '#0A7C6E' : '#d1d5db',
       boxShadow: state.isFocused ? '0 0 0 1px #0A7C6E' : 'none',
       '&:hover': {
@@ -240,7 +241,7 @@ export default function PaymentHistory() {
           <div className="row mb-4 bg-light p-3 rounded-3 border">
             <div className="col-md-6 col-lg-4">
               <label className="form-label fw-bold text-primary mb-2">
-                <i className="fa-solid fa-users me-2"></i>Select Customer to View
+                <i className="fa-solid fa-users me-2"></i>Select Customer
               </label>
               <Select
                 options={customerOptions}
@@ -248,7 +249,7 @@ export default function PaymentHistory() {
                   customerOptions.find((o) => o.value === selectedCustomerId) || null
                 }
                 onChange={handleCustomerChange}
-                placeholder="Choose a Customer"
+                placeholder="Choose a customer"
                 isClearable
                 styles={customSelectStyles}
                 className="react-select-container"
@@ -279,7 +280,7 @@ export default function PaymentHistory() {
             <div className="text-center py-5 bg-light rounded border border-dashed">
               <i className="fa-solid fa-receipt text-muted fs-1 mb-3 opacity-50"></i>
               <h6 className="text-muted mb-0"
-              style={{textTransform: "none"}}
+                style={{ textTransform: "none" }}
               >No transactions found</h6>
             </div>
           ) : (

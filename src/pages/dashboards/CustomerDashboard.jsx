@@ -173,7 +173,6 @@ export default function CustomerDashboard() {
                 <th>Period</th>
                 <th>Cost</th>
                 <th>Status</th>
-                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -200,33 +199,6 @@ export default function CustomerDashboard() {
                       >
                         {job.status}
                       </span>
-                    </td>
-                    <td>
-                      <Link href={`/job-details/${job.id}`}
-                        className="btn btn-sm"
-                        style={{
-                          backgroundColor: "#f0f4ff",
-                          color: "#0f766e",
-                          border: "1px solid #0f766e",
-                          borderRadius: "6px",
-                          padding: "6px 16px",
-                          textDecoration: "none",
-                          fontWeight: "500",
-                          fontSize: "0.85rem",
-                          display: "inline-block",
-                          transition: "all 0.2s ease"
-                        }}
-                        onMouseOver={(e) => {
-                          e.target.style.backgroundColor = "#0f766e";
-                          e.target.style.color = "#ffffff";
-                        }}
-                        onMouseOut={(e) => {
-                          e.target.style.backgroundColor = "#f0f4ff";
-                          e.target.style.color = "#0f766e";
-                        }}
-                      >
-                        Manage
-                      </Link>
                     </td>
                   </tr>
                 ))

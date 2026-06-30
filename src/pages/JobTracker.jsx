@@ -475,7 +475,7 @@ const JobTracker = () => {
                   )
                 }
                 placeholder={getSelectPlaceholder(
-                  "Select Customers",
+                  "Select Clients",
                   selectedCustomerValues.length,
                   customerList.length,
                 )}
@@ -585,7 +585,7 @@ const JobTracker = () => {
       </div>
 
       {customerLoading && (
-        <div className="mt-3 text-muted small">Loading customer filters...</div>
+        <div className="mt-3 text-muted small">Loading client filters...</div>
       )}
 
       <style>

@@ -241,7 +241,7 @@ export default function PaymentHistory() {
           <div className="row mb-4 bg-light p-3 rounded-3 border">
             <div className="col-md-6 col-lg-4">
               <label className="form-label fw-bold text-primary mb-2">
-                <i className="fa-solid fa-users me-2"></i>Select Customer
+                <i className="fa-solid fa-users me-2"></i>Select Client
               </label>
               <Select
                 options={customerOptions}
@@ -266,7 +266,7 @@ export default function PaymentHistory() {
             <div className="text-center py-5 bg-light rounded border border-dashed">
               <i className="fa-solid fa-hand-pointer text-primary fs-1 mb-3 opacity-50"></i>
               <h6 className="text-muted mb-0" style={{ textTransform: "none" }}>
-                Please select a customer from the dropdown to view transactions.
+                Please select a client from the dropdown to view transactions.
               </h6>
             </div>
           ) : loading ? (

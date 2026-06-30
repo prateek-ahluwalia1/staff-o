@@ -645,7 +645,7 @@ export default function TimeSheet() {
                   )
                 }
                 placeholder={getSelectPlaceholder(
-                  "Select Customers",
+                  "Select clients",
                   selectedCustomerValues.length,
                   customersList.length
                 )}

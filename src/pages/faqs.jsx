@@ -31,7 +31,7 @@ const faqItems = [
   {
     question: "What is expected of staff while on duty?",
     answer:
-      "Staff must be reliable, arrive on time, wear high-visibility or required attire, remain sober, and protect all customer site information. Compliance with local WHS laws is mandatory.",
+      "Staff must be reliable, arrive on time, wear high-visibility or required attire, remain sober, and protect all client site information. Compliance with local WHS laws is mandatory.",
   },
 ];
 

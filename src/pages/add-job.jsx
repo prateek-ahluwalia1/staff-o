@@ -221,7 +221,7 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
         {renderEmbeddedSection(
           "overview",
           "Overview",
-          "Confirm the pre-filled site, customer and date before adding shift details.",
+          "Confirm the pre-filled site, client and date before adding shift details.",
           renderEmbeddedSummary()
         )}
 

@@ -63,7 +63,7 @@ const InvoiceForm = ({ from, to, onFromChange, onToChange }) => {
       <div className="col-12 col-md-6">
         <h3 className="invoice-block-title mb-3 border-bottom pb-2">Invoice To</h3>
         <div className="invoice-form-grid">
-          {inputField("Customer Name", "name", "text", "Customer Name", to.name, handleToChange, true)}
+          {inputField("Client Name", "name", "text", "Client Name", to.name, handleToChange, true)}
           {inputField("Email", "email", "email", "Email", to.email, handleToChange, true)}
 
           {/* Customer Phone, ACN, and Description are NOT disabled */}

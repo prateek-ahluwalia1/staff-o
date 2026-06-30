@@ -164,7 +164,7 @@ const Invoice = () => {
 
   const handleSearch = async () => {
     if (!selectedCustomerId) {
-      toast.error("Please select a customer first.");
+      toast.error("Please select a client first.");
       return;
     }
     if (!startDate || !endDate) {

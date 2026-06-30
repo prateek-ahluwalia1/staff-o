@@ -11,7 +11,7 @@ const sections = [
   {
     title: "2.2 Cancellation and Refund Policy",
     content:
-      "Standard cancellation more than 24 hours before shift start is eligible for full release of held funds. Under the 1-hour rule, if a customer cancels within one hour of the scheduled start time, a minimum charge of four hours will be deducted from held funds to compensate assigned personnel.",
+      "Standard cancellation more than 24 hours before shift start is eligible for full release of held funds. Under the 1-hour rule, if a client cancels within one hour of the scheduled start time, a minimum charge of four hours will be deducted from held funds to compensate assigned personnel.",
   },
   {
     title: "Part 3: Workforce Compliance (Staff and Resource Partners)",
@@ -26,7 +26,7 @@ const sections = [
   {
     title: "Part 4: Code of Conduct",
     content:
-      "Reliability: Arrive at least 10 minutes prior to shift start. Repeat lateness or no-shows may result in removal from the platform. Professionalism: Required attire, including high-visibility clothing where specified, must be worn on duty. GPS Integrity: Location services must remain enabled during shifts; spoofing or blocking GPS may result in immediate assignment termination. Sobriety: Zero tolerance applies to alcohol and illegal substances. Confidentiality: Customer site data, access codes, and sensitive site information must be protected at all times.",
+      "Reliability: Arrive at least 10 minutes prior to shift start. Repeat lateness or no-shows may result in removal from the platform. Professionalism: Required attire, including high-visibility clothing where specified, must be worn on duty. GPS Integrity: Location services must remain enabled during shifts; spoofing or blocking GPS may result in immediate assignment termination. Sobriety: Zero tolerance applies to alcohol and illegal substances. Confidentiality: Client site data, access codes, and sensitive site information must be protected at all times.",
   },
   {
     title: "Part 5: Contact Information",
@@ -151,7 +151,7 @@ export default function TermsOfUse() {
             </span>
             <h1>Terms Of Use</h1>
             <p>
-              Staffoo Terms of Service and customer obligations, including
+              Staffoo Terms of Service and client obligations, including
               payment, workforce compliance, and code of conduct requirements.
             </p>
           </div>

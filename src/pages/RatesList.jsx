@@ -287,7 +287,7 @@ const RatesList = ({ forcedType } = {}) => {
                         {r.title || r.name}
                       </div>
                       <small className="text-muted">
-                        {isCharge ? "Customer charge" : "Staff pay"}
+                        {isCharge ? "Client charge" : "Staff pay"}
                       </small>
                     </td>
                     <td className="fw-bold text-success">

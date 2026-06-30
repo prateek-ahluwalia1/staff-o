@@ -64,7 +64,7 @@ function PatrolDetail({ patrol, onBack, meta }) {
       {/* Header Info */}
       <div className="row border-bottom pb-3 mb-3">
         <div className="col-md-6 mb-2">
-          <strong>Customer:</strong> {meta?.customer || "N/A"}
+          <strong>Client:</strong> {meta?.customer || "N/A"}
         </div>
         <div className="col-md-6 mb-2">
           <strong>Staff:</strong> {meta?.staff || "N/A"}

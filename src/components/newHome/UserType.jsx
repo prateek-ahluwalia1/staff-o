@@ -42,8 +42,12 @@ function UserType() {
               </svg>
             </div>
             <h3>Hire Trusted Security Professionals</h3>
-            <p>Post jobs, set your coverage radius, and fill vacancies with verified staff. Secure payments via Stripe with full roster control.</p>
-            <ul className="up-perks">
+            <p
+              style={{ textTransform: "none" }}
+            >Post jobs, set your coverage radius, and fill vacancies with verified staff. Secure payments via Stripe with full roster control.</p>
+            <ul className="up-perks"
+              style={{ textTransform: "none" }}
+            >
               <li><span className="up-check up-check-client">✓</span> Post a job in under 60 seconds</li>
               <li><span className="up-check up-check-client">✓</span> Set custom radius — suburb to state-wide</li>
               <li><span className="up-check up-check-client">✓</span> Access only verified, licensed staff</li>
@@ -68,8 +72,11 @@ function UserType() {
               </svg>
             </div>
             <h3>Find Security Jobs That Match Your Skills</h3>
-            <p>Create your verified profile, upload all licences and compliance documents, and get matched to security shifts near you.</p>
-            <ul className="up-perks">
+            <p
+              style={{ textTransform: "none" }}
+            >Create your verified profile, upload all licences and compliance documents, and get matched to security shifts near you.</p>
+            <ul className="up-perks"
+              style={{ textTransform: "none" }}>
               <li><span className="up-check up-check-staff">✓</span> Upload Security Master Licence & docs</li>
               <li><span className="up-check up-check-staff">✓</span> Browse and accept shifts near you</li>
               <li><span className="up-check up-check-staff">✓</span> Track earnings and assignment history</li>
@@ -96,15 +103,19 @@ function UserType() {
               </svg>
             </div>
             <h3>Assign and Manage Jobs Efficiently</h3>
-            <p>Have your own security team? Accept client jobs and assign them to your verified staff — manage rosters, compliance, and payments from one dashboard.</p>
-            <ul className="up-perks">
+            <p
+              style={{ textTransform: "none" }}
+            >Have your own security team? Accept client jobs and assign them to your verified staff — manage rosters, compliance, and payments from one dashboard.</p>
+            <ul className="up-perks"
+              style={{ textTransform: "none" }}
+            >
               <li><span className="up-check up-check-partner">✓</span> Accept jobs on behalf of your staff</li>
               <li><span className="up-check up-check-partner">✓</span> Assign verified staff to client sites</li>
               <li><span className="up-check up-check-partner">✓</span> Monitor job progress in real-time</li>
               <li><span className="up-check up-check-partner">✓</span> Streamline workforce and payroll</li>
               <li><span className="up-check up-check-partner">✓</span> Minimise admin, maximise efficiency</li>
             </ul>
-            <button onClick={() => handleNavigation('contractor')} className="up-btn up-btn-partner">Register as a Resource Partner</button>
+            <button onClick={() => handleNavigation('contractor')} className="up-btn up-btn-partner">Sign Up as a Resource Partner</button>
           </div>
         </div>
       </section>

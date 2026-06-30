@@ -13,8 +13,10 @@ function AppSection() {
         <div className="app-left">
           <span className="label">Step Forward Now</span>
           <h2 id="app-section-title">Staffoo<br />App</h2>
-          <p>
-            Connecting Security Staff with Trusted Jobs Across Australia.
+          <p
+            style={{ textTransform: "none" }}
+          >
+            Connecting security staff with trusted jobs aross Australia.
             Free to download. Three powerful user modes designed for professionals.
           </p>
 
@@ -28,7 +30,7 @@ function AppSection() {
             >
               <i className="fab fa-apple store-btn-icon" aria-hidden="true"></i>
               <div className="store-btn-text">
-                <span className="store-sub">Download on the</span>
+                <span className="store-sub">Download from</span>
                 <span className="store-name">App Store</span>
               </div>
             </a>

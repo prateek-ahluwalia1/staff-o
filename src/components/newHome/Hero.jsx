@@ -23,7 +23,9 @@ function Hero() {
             Trusted<br />
             <span className="hero-line"><em>Security</em> <span className="hero-plain">Workforce</span></span>
           </h1>
-          <p className="hero-desc">Whether you're hiring security staff, looking for verified shifts, or managing assignments across Australia — Staffoo makes it fast, compliant, and reliable.</p>
+          <p className="hero-desc"
+            style={{ textTransform: "none" }}
+          >Whether you're hiring security staff, looking for verified shifts, or managing assignments across Australia — Staffoo makes it fast, compliant, and reliable.</p>
           <div className="hero-ctas">
             <Link to={targetRoute} className="btn-primary">Find Security Jobs</Link>
             <Link to={targetRoute} className="btn-secondary">Post a Job</Link>

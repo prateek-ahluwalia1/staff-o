@@ -17,7 +17,9 @@ function Footer() {
                 style={{ height: "45px", width: "auto", display: "block" }}
               />
             </div>
-            <p>Australia's leading platform for security jobs and staffing. Connecting verified security professionals across every state and territory with trusted employers.</p>
+            <p
+              style={{ textTransform: "none" }}
+            >Australia's leading platform for security jobs and staffing. Connecting verified security professionals across every state and territory with trusted employers.</p>
             <div className="pay-row">
               <span className="pay-chip">Stripe</span>
               <span className="pay-chip">VISA</span>

@@ -71,7 +71,7 @@ const Reports = () => {
         <div className="col-12 col-md-6 col-lg-3">
           <Card
             title="Pay Sheet"
-            description="View and manage staff pay information."
+            description="View and manage staff pay sheet information."
             accent="linear-gradient(135deg,#1d4ed8,#0ea5e9)"
             image={paysheetimg}
             type="paysheet"

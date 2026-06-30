@@ -755,7 +755,7 @@ const ChatRoom = () => {
               <div className="chatroom-empty-icon">
                 <i
                   className="fa-regular fa-comments"
-                  style={{ fontSize: 38, color: "#0A7C6E" }}
+                  style={{ fontSize: 38, color: "#fff" }}
                 ></i>
               </div>
               <h6

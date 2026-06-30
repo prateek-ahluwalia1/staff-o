@@ -227,7 +227,7 @@ export default function PaymentHistory() {
 
   return (
     <div className="dashboard-main">
-      <div className="dashboard-page-header">
+      <div className="dashboard-page-header mb-4">
         <div>
           <h1>{displayTitle}</h1>
           <p style={{ textTransform: "none" }}>

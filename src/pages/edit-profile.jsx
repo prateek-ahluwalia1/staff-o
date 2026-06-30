@@ -812,7 +812,7 @@ export default function EditProfile() {
 
   return (
     <div className="dashboard-main">
-      <div className="settings-header">
+      <div className="settings-header" style={{ marginBottom: "1rem" }}>
         <AvatarUpload
           profilePhoto={profilePhoto}
           name={formData.name}

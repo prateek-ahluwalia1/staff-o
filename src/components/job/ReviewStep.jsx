@@ -156,7 +156,7 @@ export default function ReviewStep({ form, rate, setField, handleConfirm, setSte
                 <span className={`fw-bold fs-6 ${isSplit ? "text-white" : "text-dark"}`}>Split Payment (50/50)</span>
               </div>
               <div className={`small mb-3 ${isSplit ? "text-white opacity-75" : "text-muted"}`} style={{ textTransform: "none", fontSize: "0.8rem", lineHeight: "1.4" }}>
-                Pay 50% upfront to secure guards. The remaining 50% is charged upon shift completion.
+                Pay 50% upfront to secure staff. The remaining 50% is charged upon shift completion.
               </div>
               <div className={`mt-auto pt-2 border-top ${isSplit ? "border-white border-opacity-25" : "border-light"}`}>
                 <div className={`fw-bold fs-5 ${isSplit ? "text-white" : "text-dark"}`}>

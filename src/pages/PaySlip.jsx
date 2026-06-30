@@ -470,7 +470,7 @@ const PaySlip = () => {
       <div className="card border-0 shadow-sm mb-4">
         <div className="card-body">
           <div className="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
-            <h6 className="fw-bold m-0">Staff Guard Filters</h6>
+            <h6 className="fw-bold m-0">Staff Filters</h6>
             <span className="text-muted small"
               style={{ textTransform: "none" }}
             >
@@ -612,7 +612,7 @@ const PaySlip = () => {
                   <td colSpan="4" className="text-center text-muted py-5"
                     style={{ textTransform: "none" }}
                   >
-                    No guard payslip data loaded yet.
+                    No staff payslip data loaded yet.
                   </td>
                 </tr>
               )}

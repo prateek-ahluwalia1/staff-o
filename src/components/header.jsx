@@ -416,8 +416,21 @@ const Header = memo(function Header({ withSidebar = false }) {
                       <i className="fa fa-bell"></i>
                       {unreadCount > 0 && (
                         <span
-                          className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
-                          style={{ fontSize: "10px" }}
+                          style={{
+                            position: 'absolute',
+                            top: '0',
+                            right: '0',
+                            backgroundColor: '#dc3545',
+                            color: 'white',
+                            borderRadius: '50%',
+                            width: '20px',
+                            height: '20px',
+                            fontSize: '10px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontWeight: 'bold',
+                          }}
                         >
                           {unreadCount}
                         </span>

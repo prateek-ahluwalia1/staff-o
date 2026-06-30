@@ -144,7 +144,6 @@ export default function AviationSecurity() {
             fontWeight: "5w00",
             letterSpacing: "0.08em",
             color: "#00c9a7",
-            textTransform: "uppercase",
             marginBottom: "24px",
             textAlign: isMobile ? "center" : "left",
         },

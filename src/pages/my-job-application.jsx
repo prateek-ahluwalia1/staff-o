@@ -5,17 +5,22 @@ import useSubmit from "../hooks/useSubmit";
 import Loader from "../components/Loader";
 
 // Enhanced Helper component for modal rows
-const InfoRow = ({ label, value, icon, transform = true }) => (
-  <div className="d-flex justify-content-between align-items-center py-2 border-bottom" style={{ borderColor: "#f8f9fa" }}>
-    <span className="text-muted d-flex align-items-center" style={{ fontSize: "14px", fontWeight: 500 }}>
-      {icon && <i className={`fa-solid ${icon} me-2`} style={{ width: '18px', textAlign: 'center', color: '#0A7C6E', opacity: 0.8 }}></i>}
-      {label}
-    </span>
-    <span className="text-dark fw-semibold text-end" style={{ fontSize: "14px", maxWidth: "60%" }}>
-      {transform ? value || "N/A" : <span style={{ textTransform: "none" }}>{value || "N/A"}</span>}
-    </span>
-  </div>
-);
+const InfoRow = ({ label, value, icon, transform = true }) => {
+  const displayValue = transform && value && typeof value === 'string'
+    ? value.charAt(0).toUpperCase() + value.slice(1)
+    : value;
+  return (
+    <div className="d-flex justify-content-between align-items-center py-2 border-bottom" style={{ borderColor: "#f8f9fa" }}>
+      <span className="text-muted d-flex align-items-center" style={{ fontSize: "14px", fontWeight: 500 }}>
+        {icon && <i className={`fa-solid ${icon} me-2`} style={{ width: '18px', textAlign: 'center', color: '#0A7C6E', opacity: 0.8 }}></i>}
+        {label}
+      </span>
+      <span className="text-dark fw-semibold text-end" style={{ fontSize: "14px", maxWidth: "60%" }}>
+        {transform ? displayValue || "N/A" : <span style={{ textTransform: "none" }}>{value || "N/A"}</span>}
+      </span>
+    </div>
+  );
+};
 
 export default function MyJobApplications() {
   const { userdata } = useSelector((state) => state.auth);
@@ -295,7 +300,7 @@ export default function MyJobApplications() {
                     <div className="d-flex justify-content-between align-items-start mb-3">
                       <span
                         className={`badge rounded-pill px-3 py-2 fw-medium ${app.statusClass === 'offer' ? 'bg-success bg-opacity-10 text-success border border-success border-opacity-25' : 'bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25'}`}
-                        style={{ fontSize: '12px' }}
+                        style={{ fontSize: '12px', textTransform: "capitalize" }}
                       >
                         <i className={`fa-solid ${app.statusClass === 'offer' ? 'fa-circle-check' : 'fa-hourglass-half'} me-1`}></i>
                         {app.status}

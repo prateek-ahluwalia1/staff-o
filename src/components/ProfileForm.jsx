@@ -136,7 +136,7 @@ export default function ProfileForm({
             <div>
               <div className="d-flex justify-content-between align-items-end mb-2">
                 <label htmlFor="phone" className="form-label fw-semibold mb-0">
-                  Phone <span className="text-danger">*</span>
+                  Phone
                 </label>
 
                 {/* Verification badge – only when showPhoneOtp is enabled */}

@@ -565,6 +565,7 @@ export default function EditProfile() {
     setCardToDeleteIndex(null);
   };
 
+  // ========== VERIFY DOCUMENT NUMBER (Security License + Visa) ==========
   const handleVerifyDocumentNumber = async () => {
     if (!userId) {
       toast.error("Missing user id.");
@@ -579,6 +580,7 @@ export default function EditProfile() {
       return;
     }
 
+    // ---- Security License Verification ----
     if (docForm.document_name === "Security License") {
       setVerifyingDoc(true);
       try {
@@ -612,8 +614,20 @@ export default function EditProfile() {
       }
       return;
     }
-    // VISA verification
+
+    // ---- Visa Verification (uses uploaded passport) ----
     if (docForm.document_name === "Visa") {
+      // Look for the user's passport document
+      const allDocs = profileData?.data?.documents || [];
+      const passportDoc = allDocs.find(
+        (doc) => doc.document_type === "passport" && doc.document_no
+      );
+
+      if (!passportDoc) {
+        toast.error("First add your passport first");
+        return;
+      }
+
       const user = userdata?.data || userdata;
       const staff = user?.staff || {};
       const fullName = (user?.name || "").trim();
@@ -634,7 +648,7 @@ export default function EditProfile() {
         toast.error("Invalid date of birth format. Please re‑save your profile.");
         return;
       }
-      const dobISO = `${dobParts[2]}-${dobParts[1]}-${dobParts[0]}`; // YYYY-MM-DD
+      const dobISO = `${dobParts[2]}-${dobParts[1]}-${dobParts[0]}`;
 
       const originCountry = user?.origin_country || user?.staff?.origin_country;
       if (!originCountry) {
@@ -642,7 +656,9 @@ export default function EditProfile() {
         return;
       }
       const countryCode = originCountry.toUpperCase().slice(0, 3);
-      const passportNumber = docForm.document_no.toUpperCase();
+
+      // Use passport document number for verification
+      const passportNumber = passportDoc.document_no.toUpperCase();
 
       const payload = {
         passport: passportNumber,
@@ -675,14 +691,21 @@ export default function EditProfile() {
     }
   };
 
+  // ========== DOC NUMBER CHANGE (does not reset verified expiry for Visa) ==========
   const handleDocNumberChange = (e) => {
     const value = e.target.value.replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
-    setDocForm((prev) => ({
-      ...prev,
-      document_no: value,
-      is_verified: false,
-      document_expiry: "",
-    }));
+    setDocForm((prev) => {
+      // For Visa, we don't want to clear the verified status when editing the grant number
+      if (prev.document_name === "Visa") {
+        return { ...prev, document_no: value };
+      }
+      return {
+        ...prev,
+        document_no: value,
+        is_verified: false,
+        document_expiry: "",
+      };
+    });
   };
 
   const handleDocFormChange = async (e) => {
@@ -762,8 +785,6 @@ export default function EditProfile() {
     if (res.success) {
       toast.success("Document saved successfully!");
       setShowDocModal(false);
-
-      // ✅ Refetch profile – useEffect will push fresh data to Redux & update documents list
       refetch();
     } else {
       toast.error(res.message || "Failed to save document");
@@ -917,7 +938,7 @@ export default function EditProfile() {
         <StaffOnboardingForms
           submit={submit}
           userId={userId}
-          onProfileUpdate={() => refetch()} // sync Redux after onboarding form save
+          onProfileUpdate={() => refetch()}
         />
       )}
 
@@ -1204,7 +1225,7 @@ export default function EditProfile() {
         </div>
       </Modal>
 
-      {/* Document Modal – full DD/MM/YYYY handling */}
+      {/* ========== DOCUMENT MODAL (with Visa-specific UI) ========== */}
       <Modal
         open={showDocModal}
         onClose={() => {
@@ -1240,39 +1261,60 @@ export default function EditProfile() {
             </select>
           </div>
 
-          {/* Document Number */}
-          <div className="mb-3">
-            <label className="form-label fw-semibold">
-              Document Number <span className="text-danger">*</span>
-            </label>
-            {(docForm.document_name === "Security License" ||
-              docForm.document_name === "Visa") ? (
-              <div className="input-group">
-                <input
-                  type="text"
-                  className="form-control"
-                  placeholder="e.g. ABC123456"
-                  value={docForm.document_no}
-                  onChange={handleDocNumberChange}
-                  required
-                />
-                <button
-                  type="button"
-                  className="btn btn-outline-primary"
-                  onClick={handleVerifyDocumentNumber}
-                  disabled={verifyingDoc || !docForm.document_no}
-                >
-                  {verifyingDoc ? (
-                    <>
-                      <span className="spinner-border spinner-border-sm me-1" />
-                      Verifying...
-                    </>
-                  ) : (
-                    "Verify"
-                  )}
-                </button>
-              </div>
-            ) : (
+          {/* ========== Document Number – with conditional UI for Visa ========== */}
+          {docForm.document_name === "Visa" ? (
+            <>
+              {/* Show passport info for verification if available */}
+              {(() => {
+                const allDocs = profileData?.data?.documents || [];
+                const passportDoc = allDocs.find(
+                  (doc) => doc.document_type === "passport" && doc.document_no
+                );
+                return passportDoc ? (
+                  <>
+                    <label className="form-label fw-semibold mt-2">
+                      Passport Number for Verification
+                    </label>
+                    <div className="input-group mb-2">
+                      <input
+                        type="text"
+                        className="form-control"
+                        value={passportDoc.document_no}
+                        readOnly
+                        disabled
+                      />
+                      <button
+                        type="button"
+                        className="btn btn-outline-primary"
+                        onClick={handleVerifyDocumentNumber}
+                        disabled={verifyingDoc}
+                      >
+                        {verifyingDoc ? (
+                          <>
+                            <span className="spinner-border spinner-border-sm me-1" />
+                            Verifying...
+                          </>
+                        ) : (
+                          "Verify Visa"
+                        )}
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <div
+                    className="alert alert-warning py-2"
+                    role="alert"
+                    style={{ textTransform: "none" }}
+                  >
+                    <i className="fa fa-exclamation-triangle me-2" />
+                    Please add your passport document first before verifying your visa.
+                  </div>
+                );
+              })()}
+
+              <label className="form-label fw-semibold mt-2">
+                Visa Grant Number <span className="text-danger">*</span>
+              </label>
               <input
                 type="text"
                 className="form-control"
@@ -1281,8 +1323,43 @@ export default function EditProfile() {
                 onChange={handleDocNumberChange}
                 required
               />
-            )}
-          </div>
+            </>
+          ) : docForm.document_name === "Security License" ? (
+            <div className="input-group">
+              <input
+                type="text"
+                className="form-control"
+                placeholder="e.g. ABC123456"
+                value={docForm.document_no}
+                onChange={handleDocNumberChange}
+                required
+              />
+              <button
+                type="button"
+                className="btn btn-outline-primary"
+                onClick={handleVerifyDocumentNumber}
+                disabled={verifyingDoc || !docForm.document_no}
+              >
+                {verifyingDoc ? (
+                  <>
+                    <span className="spinner-border spinner-border-sm me-1" />
+                    Verifying...
+                  </>
+                ) : (
+                  "Verify"
+                )}
+              </button>
+            </div>
+          ) : (
+            <input
+              type="text"
+              className="form-control"
+              placeholder="e.g. ABC123456"
+              value={docForm.document_no}
+              onChange={handleDocNumberChange}
+              required
+            />
+          )}
 
           {/* Expiry Date – permanently disabled for Security License & Visa */}
           <div className="mb-3">

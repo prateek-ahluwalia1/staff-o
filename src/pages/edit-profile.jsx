@@ -855,7 +855,7 @@ export default function EditProfile() {
         />
       </div>
 
-      <div style={{ display: "flex", gap: 16, marginBottom: 20 }}>
+      <div style={{ display: "flex", gap: 16, marginBottom: 20, flexWrap: "wrap" }}>
         {userType !== "admin" && (
           <button
             className={`btn ${activeTab === "personal" ? "btn-primary-custom" : "btn-outline-primary"}`}

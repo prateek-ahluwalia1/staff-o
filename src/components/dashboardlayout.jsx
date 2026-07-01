@@ -42,7 +42,7 @@ const DashboardLayout = memo(function DashboardLayout() {
           {/* Main Content Area */}
           <div style={mainContentStyle}>
             {/* Added 24px padding here to match your original CSS padding requirement */}
-            <div style={{ padding: "15px", overflowX: "hidden" }}>
+            <div style={{ padding: isDesktop ? "20px" : "5px", overflowX: "hidden" }}>
               <Outlet />
             </div>
           </div>

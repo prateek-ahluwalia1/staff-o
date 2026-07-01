@@ -232,7 +232,7 @@ const TfnDeclarationForm = ({ values, loading, onChange, onSubmit, dataModified,
                 onClick={() => onDownloadPDF("tfn")}
                 title="Download saved TFN Declaration PDF"
             >
-                <i className="fa-solid fa-download me-1"></i> Download PDF
+                <i className="fa-solid fa-download me-1"></i>  PDF
             </button>
         </div>
         <div className="mb-3">
@@ -438,7 +438,7 @@ const SuperannuationForm = ({ values, loading, onChange, onSubmit, dataModified,
                 onClick={() => onDownloadPDF("super_form")}
                 title="Download saved Superannuation PDF"
             >
-                <i className="fa-solid fa-download me-1"></i> Download PDF
+                <i className="fa-solid fa-download me-1"></i>  PDF
             </button>
         </div>
         <div className="row g-3 mb-4">
@@ -644,7 +644,7 @@ const EmployeeOnboardingForm = ({
                     onClick={() => onDownloadPDF("onboarding")}
                     title="Download saved Onboarding PDF"
                 >
-                    <i className="fa-solid fa-download me-1"></i> Download PDF
+                    <i className="fa-solid fa-download me-1"></i> PDF
                 </button>
             </div>
             <div className="row g-3 mb-4">
@@ -1334,12 +1334,14 @@ const StaffOnboardingForms = ({ submit, userId, onProfileUpdate }) => {
                 </div>
             )}
 
-            <div className="d-flex gap-2 mb-4 bg-light p-1 rounded-pill border">
+            <div className="d-flex flex-column flex-sm-row gap-2 mb-4 bg-light p-2 rounded-4 border">
                 {TAB_LABELS.map((tab, idx) => (
                     <button
                         key={idx}
                         type="button"
-                        className={`btn btn-sm rounded-pill flex-grow-1 fw-bold ${subTab === idx ? "btn-primary-custom shadow-sm" : "btn-light border-0 bg-transparent"
+                        className={`btn rounded-pill flex-fill fw-bold ${subTab === idx
+                                ? "btn-primary-custom shadow-sm"
+                                : "btn-light border-0 bg-transparent"
                             }`}
                         onClick={() => setSubTab(idx)}
                         disabled={formDataLoading}

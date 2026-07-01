@@ -101,11 +101,12 @@ const ManageUsers = () => {
   const contractorsList = contractorsResponse?.data?.data || [];
   const { submit, loading: submitLoading } = useSubmit({ isAuth: true });
   const { submit: uploadFile, loading: uploadLoading } = useSubmit({ isAuth: true });
+  // Security License verification hook
   const { submit: submitSecurityLicense } = useSubmit({
     isAuth: true,
     BaseURL: "https://apis.thescouts.com.au/",
   });
-  // Phone OTP hook (uses same API base)
+  // Phone OTP hook
   const { submit: phoneSubmit, loading: phoneLoading } = useSubmit({ isAuth: true });
 
   const [users, setUsers] = useState([]);
@@ -126,7 +127,7 @@ const ManageUsers = () => {
   const [phoneChangeError, setPhoneChangeError] = useState(null);
   const [phoneChangeSuccess, setPhoneChangeSuccess] = useState(false);
 
-  // Password & Advanced Document States
+  // Password & Document States
   const [showPassword, setShowPassword] = useState(false);
   const [showDocModal, setShowDocModal] = useState(false);
   const [selectedDoc, setSelectedDoc] = useState(null);
@@ -144,7 +145,7 @@ const ManageUsers = () => {
     is_verified: false,
   });
 
-  // defaultFormState now includes abn & acn as empty strings
+  // defaultFormState includes abn & acn
   const defaultFormState = useMemo(() => ({
     name: "",
     email: "",
@@ -272,7 +273,7 @@ const ManageUsers = () => {
     }
   }, [apiResponse, location.state, location.pathname, navigate, openModal]);
 
-  // Google Maps Autocomplete (attached to #address, the id used by ProfileForm)
+  // Google Maps Autocomplete
   const autocompleteRef = useRef(null);
   const autocompleteListenerRef = useRef(null);
 
@@ -343,7 +344,7 @@ const ManageUsers = () => {
     };
   }, [isModalOpen, activeModalTab]);
 
-  // ----- DOCUMENT LOGIC (same as before) -----
+  // ----- DOCUMENT LOGIC (with Security License & Visa verification) -----
   const openDocumentModal = (doc) => {
     setSelectedDoc(doc);
     if (doc) {
@@ -394,6 +395,7 @@ const ManageUsers = () => {
   const handleDocFormChange = async (e) => {
     const { name, value, type, checked, files } = e.target;
 
+    // For Security License and Visa, expiry is set automatically, so we skip manual changes
     if (
       name === "document_expiry" &&
       (docForm.document_name === "Security License" || docForm.document_name === "Visa")
@@ -442,6 +444,7 @@ const ManageUsers = () => {
       return;
     }
 
+    // Security License verification
     if (docForm.document_name === "Security License") {
       setVerifyingDoc(true);
       try {
@@ -475,6 +478,7 @@ const ManageUsers = () => {
       return;
     }
 
+    // Visa verification
     if (docForm.document_name === "Visa") {
       const user = editingUser;
       const staff = user?.staff || {};
@@ -580,9 +584,7 @@ const ManageUsers = () => {
     if (res.success) {
       toast.success("Document saved successfully!");
 
-      // ----- UPDATE EDITING USER IMMEDIATELY -----
       const savedDoc = res.data?.document || res.data || {};
-
       setEditingUser((prev) => {
         const currentDocs = prev?.documents || [];
         if (selectedDoc) {
@@ -613,7 +615,6 @@ const ManageUsers = () => {
           };
         }
       });
-      // -------------------------------------------
 
       closeDocumentModal();
       refetch();
@@ -621,7 +622,7 @@ const ManageUsers = () => {
       toast.error(res.message || "Failed to save document");
     }
   };
-  // ----- DOCUMENT LOGIC END -----
+  // ----- END DOCUMENT LOGIC -----
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -793,13 +794,13 @@ const ManageUsers = () => {
           border-radius: 12px;
           border: 1px solid #e2e8f0;
           background: #ffffff;
-          overflow-x: auto;                       /* enable horizontal scroll on mobile */
+          overflow-x: auto;
           -webkit-overflow-scrolling: touch;
         }
         .jobtracker-main-table {
           table-layout: fixed;
           width: 100%;
-          min-width: 650px;                      /* ensures scrolling before columns break */
+          min-width: 650px;
           border-collapse: collapse;
           margin: 0;
         }
@@ -959,7 +960,7 @@ const ManageUsers = () => {
             font-size: 0.8rem;
           }
           .jobtracker-main-table {
-            min-width: 600px;
+            min-width: 600px;           /* increased for staff columns */
           }
         }
 
@@ -1000,18 +1001,10 @@ const ManageUsers = () => {
           .confirm-modal-card {
             max-width: 100%;
           }
-          /* Pagination */
-          .card-footer .d-flex {
-            flex-direction: column;
-            align-items: flex-start !important;
-          }
-          .card-footer .d-flex .text-muted {
-            margin-bottom: 0.5rem;
-            font-size: 0.8rem;
-          }
-          .card-footer .btn {
-            font-size: 0.8rem;
-            padding: 0.4rem 1rem;
+          /* Allow table cells to wrap so columns don't merge */
+          .jobtracker-data-row td {
+            word-break: break-word;
+            white-space: normal;
           }
         }
 
@@ -1096,29 +1089,25 @@ const ManageUsers = () => {
           <table className={`table table-hover align-middle mb-0 jobtracker-main-table ${loading ? "opacity-50" : ""}`}>
             <thead className="premium-thead">
               <tr>
-                <th style={{ width: activeTab === "staff" ? "30%" : "30%", textAlign: "left", paddingLeft: "1.5rem" }}>
-                  Name & Email
-                </th>
-                {activeTab === "sub_contractor" ? (
-                  <th style={{ width: "25%", textAlign: "left" }}>
-                    Business & Phone
-                  </th>
+                {activeTab === "staff" ? (
+                  <>
+                    <th style={{ width: "25%", textAlign: "left", paddingLeft: "1.5rem" }}>Name & Email</th>
+                    <th style={{ width: "30%", textAlign: "left" }}>Resource Partner</th>
+                    <th style={{ width: "25%", textAlign: "left" }}>Location</th>
+                    <th style={{ width: "20%", textAlign: "center" }}>Actions</th>
+                  </>
                 ) : (
-                  <th style={{ width: "25%", textAlign: "left" }}>
-                    Phone
-                  </th>
+                  <>
+                    <th style={{ width: "30%", textAlign: "left", paddingLeft: "1.5rem" }}>Name & Email</th>
+                    {activeTab === "sub_contractor" ? (
+                      <th style={{ width: "25%", textAlign: "left" }}>Business & Phone</th>
+                    ) : (
+                      <th style={{ width: "25%", textAlign: "left" }}>Phone</th>
+                    )}
+                    <th style={{ width: "25%", textAlign: "left" }}>Location</th>
+                    <th style={{ width: "20%", textAlign: "center" }}>Actions</th>
+                  </>
                 )}
-                {activeTab === "staff" && (
-                  <th style={{ width: "25%", textAlign: "left" }}>
-                    Resource Partner
-                  </th>
-                )}
-                <th style={{ width: activeTab === "staff" ? "25%" : "25%", textAlign: "left" }}>
-                  Location
-                </th>
-                <th style={{ width: "20%", textAlign: "center" }}>
-                  Actions
-                </th>
               </tr>
             </thead>
             <tbody>
@@ -1140,14 +1129,7 @@ const ManageUsers = () => {
                           {user.phone || getNestedData(user).phone || "N/A"}
                         </div>
                       </td>
-                    ) : (
-                      <td style={{ textAlign: "left" }}>
-                        <div className="text-muted small">
-                          {user.phone || getNestedData(user).phone || "N/A"}
-                        </div>
-                      </td>
-                    )}
-                    {activeTab === "staff" && (
+                    ) : activeTab === "staff" ? (
                       <td style={{ textAlign: "left" }}>
                         {(() => {
                           const contractorId = user.user_id || user.staff?.user_id;
@@ -1158,6 +1140,12 @@ const ManageUsers = () => {
                             </div>
                           );
                         })()}
+                      </td>
+                    ) : (
+                      <td style={{ textAlign: "left" }}>
+                        <div className="text-muted small">
+                          {user.phone || getNestedData(user).phone || "N/A"}
+                        </div>
                       </td>
                     )}
                     <td style={{ textAlign: "left" }}>
@@ -1186,8 +1174,8 @@ const ManageUsers = () => {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={activeTab === "staff" ? 4 : 4} className="text-center py-5 text-muted"
-                    style={{ textTransform: "-moz-initialnone" }}
+                  <td colSpan={4} className="text-center py-5 text-muted"
+                    style={{ textTransform: "none" }}
                   >
                     No records found for this category.
                   </td>
@@ -1197,7 +1185,8 @@ const ManageUsers = () => {
           </table>
         </div>
 
-        <div className="card-footer bg-white border-top py-3 px-4 d-flex justify-content-between align-items-center flex-wrap">
+        {/* Pagination Footer – Prev/Next always side-by-side */}
+        <div className="card-footer bg-white border-top py-3 px-4 d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-2">
           <div className="text-muted small">
             Showing Page <strong>{page}</strong> of <strong>{totalPages}</strong>
             <span className="mx-2">•</span>
@@ -1224,7 +1213,7 @@ const ManageUsers = () => {
         </div>
       </div>
 
-      {/* FULL SCREEN MODAL */}
+      {/* FULL SCREEN MODAL (with verification logic intact) */}
       {isModalOpen && (
         <div className="full-screen-modal">
           <div className="modal-inner-content">
@@ -1314,15 +1303,13 @@ const ManageUsers = () => {
                   Personal Information
                 </button>
                 {activeTab === "staff" && editingUser && (
-                  <>
-                    <button
-                      type="button"
-                      className={`btn ${activeModalTab === "documents" ? "btn-primary-custom text-white" : "btn-outline-primary"}`}
-                      onClick={() => setActiveModalTab("documents")}
-                    >
-                      Documents
-                    </button>
-                  </>
+                  <button
+                    type="button"
+                    className={`btn ${activeModalTab === "documents" ? "btn-primary-custom text-white" : "btn-outline-primary"}`}
+                    onClick={() => setActiveModalTab("documents")}
+                  >
+                    Documents
+                  </button>
                 )}
               </div>
 
@@ -1452,7 +1439,7 @@ const ManageUsers = () => {
                             </select>
                           </div>
 
-                          {/* Document Number + Verify */}
+                          {/* Document Number + Verify (restored) */}
                           <div className="mb-3">
                             <label className="form-label fw-bold text-dark">
                               Document Number <span className="text-danger">*</span>
@@ -1656,9 +1643,7 @@ const ManageUsers = () => {
                     </div>
                   )}
                 </div>
-              ) : (
-                null
-              )}
+              ) : null}
             </div>
 
             <div className="px-5 py-4 border-top bg-light d-flex gap-3 justify-content-end">

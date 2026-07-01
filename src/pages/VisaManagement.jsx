@@ -399,7 +399,7 @@ export default function VisaManagement() {
                                     disabled={checkingVisa}
                                 >
                                     <span style={{ opacity: checkingVisa ? 0 : 1 }}>
-                                        Submit Request
+                                        Verify Visa
                                     </span>
                                     {checkingVisa && (
                                         <div className="loader-center-scale">
@@ -416,7 +416,7 @@ export default function VisaManagement() {
             {/* Results Table */}
             <div className="card border-0 shadow-sm mb-4">
                 <div className="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
-                    <h6 className="mb-0 fw-bold">Recent Applicants</h6>
+                    <h6 className="mb-0 fw-bold">Recent Visa Checks</h6>
                 </div>
                 <div className="card-body p-0">
                     <div className="table-responsive">

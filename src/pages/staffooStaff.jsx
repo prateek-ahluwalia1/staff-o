@@ -129,6 +129,14 @@ const StaffooStaff = () => {
         return editingUser.documents || editingUser.staff?.documents || [];
     }, [editingUser]);
 
+    // 📌 Get passport document for visa verification (used in modal and verification)
+    const passportDoc = useMemo(() => {
+        if (!staffDocuments) return null;
+        return staffDocuments.find(
+            (doc) => doc.document_type === "passport" && doc.document_no
+        ) || null;
+    }, [staffDocuments]);
+
     const handleProfileFormChange = useCallback((e) => {
         const { id, value } = e.target;
         setFormData((prev) => ({
@@ -229,14 +237,20 @@ const StaffooStaff = () => {
         setSelectedDoc(null);
     };
 
+    // 🆕 Updated handleDocNumberChange – for Visa, don't clear expiry
     const handleDocNumberChange = (e) => {
         const value = e.target.value.replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
-        setDocForm((prev) => ({
-            ...prev,
-            document_no: value,
-            is_verified: false,
-            document_expiry: "",
-        }));
+        setDocForm((prev) => {
+            if (prev.document_name === "Visa") {
+                return { ...prev, document_no: value };
+            }
+            return {
+                ...prev,
+                document_no: value,
+                is_verified: false,
+                document_expiry: "",
+            };
+        });
     };
 
     const handleDocFormChange = async (e) => {
@@ -276,13 +290,10 @@ const StaffooStaff = () => {
         }
     };
 
+    // 🆕 Updated handleVerifyDocumentNumber – Visa uses passport, not the visa input
     const handleVerifyDocumentNumber = async () => {
         if (!editingUser?.id) {
             toast.error("Please save the profile first before verifying documents.");
-            return;
-        }
-        if (!docForm.document_no || docForm.document_no.trim() === "") {
-            toast.error("Please enter a document number first.");
             return;
         }
         if (!docForm.document_name) {
@@ -290,7 +301,12 @@ const StaffooStaff = () => {
             return;
         }
 
+        // ---- Security License Verification ----
         if (docForm.document_name === "Security License") {
+            if (!docForm.document_no || docForm.document_no.trim() === "") {
+                toast.error("Please enter a document number first.");
+                return;
+            }
             setVerifyingDoc(true);
             try {
                 const res = await submitSecurityLicense(
@@ -323,7 +339,14 @@ const StaffooStaff = () => {
             return;
         }
 
+        // ---- Visa Verification (uses uploaded passport) ----
         if (docForm.document_name === "Visa") {
+            // Check for passport document in staff's documents
+            if (!passportDoc) {
+                toast.error("First add the passport document first");
+                return;
+            }
+
             const user = editingUser;
             const staff = user?.staff || {};
             const fullName = (user?.name || "").trim();
@@ -353,7 +376,9 @@ const StaffooStaff = () => {
                 return;
             }
             const countryCode = originCountry.toUpperCase().slice(0, 3);
-            const passportNumber = docForm.document_no.toUpperCase();
+
+            // Use passport number, NOT the visa input field
+            const passportNumber = passportDoc.document_no.toUpperCase();
 
             const payload = {
                 passport: passportNumber,
@@ -401,7 +426,7 @@ const StaffooStaff = () => {
             user_id: editingUser.id,
             no: docForm.no,
             exp: docForm.exp,
-            document_no: docForm.document_no,
+            document_no: docForm.document_no, // this will be the visa grant number for Visa
             document_expiry: docForm.document_expiry,
             file: docForm.file_path,
             document_name: docForm.document_name,
@@ -608,7 +633,7 @@ const StaffooStaff = () => {
           width: 100%;
           border-collapse: collapse;
           margin: 0;
-          min-width: 700px; /* Forces scrolling on small screens */
+          min-width: 700px;
         }
         .premium-thead th {
           background-color: #0A7C6E !important;
@@ -665,13 +690,13 @@ const StaffooStaff = () => {
           background: #f3f4f6;
           padding: 4px;
           border-radius: 12px;
-          display: flex; /* Changed to flex for full width wrapping */
+          display: flex;
           flex-wrap: wrap;
           gap: 4px;
           width: 100%;
         }
         .modal-tabs-container .btn {
-          flex-grow: 1; /* Stretch on mobile */
+          flex-grow: 1;
           border-radius: 8px;
           border: none;
           font-weight: 600;
@@ -738,7 +763,6 @@ const StaffooStaff = () => {
           margin-top: 4px;
         }
 
-        /* --- MOBILE OPTIMIZATIONS --- */
         @media (max-width: 768px) {
           .modal-inner-content {
             width: 100%;
@@ -770,13 +794,12 @@ const StaffooStaff = () => {
         }
 
         @media (min-width: 768px) {
-  .w-md-auto {
-    width: auto !important;
-  }
-}
+          .w-md-auto {
+            width: auto !important;
+          }
+        }
       `}</style>
 
-            {/* Header */}
             {/* Header */}
             <div className="d-flex flex-column flex-md-row justify-content-md-between align-items-start align-items-md-center gap-3 mb-4">
                 <div>
@@ -787,8 +810,6 @@ const StaffooStaff = () => {
                         Manage permissions and details for your team members.
                     </p>
                 </div>
-
-                {/* Replaced width classes with flexbox alignment */}
                 <button
                     className="btn btn-dark rounded-pill px-4 shadow-sm fw-bold align-self-stretch align-self-md-auto"
                     onClick={() => openModal()}
@@ -1066,37 +1087,54 @@ const StaffooStaff = () => {
                                                         </select>
                                                     </div>
 
-                                                    <div className="mb-3">
-                                                        <label className="form-label fw-bold text-dark">
-                                                            Document Number <span className="text-danger">*</span>
-                                                        </label>
-                                                        {(docForm.document_name === "Security License" || docForm.document_name === "Visa") ? (
-                                                            <div className="input-group">
-                                                                <input
-                                                                    type="text"
-                                                                    className="form-control bg-light border-0"
-                                                                    placeholder="e.g. ABC123456"
-                                                                    value={docForm.document_no}
-                                                                    onChange={handleDocNumberChange}
-                                                                    required
-                                                                />
-                                                                <button
-                                                                    type="button"
-                                                                    className="btn btn-dark fw-bold px-3 px-md-4 border-0"
-                                                                    onClick={handleVerifyDocumentNumber}
-                                                                    disabled={verifyingDoc || !docForm.document_no}
+                                                    {/* ========== Document Number – with Visa-specific UI ========== */}
+                                                    {docForm.document_name === "Visa" ? (
+                                                        <>
+                                                            {/* Show passport info for verification if available */}
+                                                            {passportDoc ? (
+                                                                <>
+                                                                    <label className="form-label fw-bold text-dark">
+                                                                        Passport Number for Verification
+                                                                    </label>
+                                                                    <div className="input-group mb-3">
+                                                                        <input
+                                                                            type="text"
+                                                                            className="form-control bg-light border-0"
+                                                                            value={passportDoc.document_no}
+                                                                            readOnly
+                                                                            disabled
+                                                                        />
+                                                                        <button
+                                                                            type="button"
+                                                                            className="btn btn-dark fw-bold px-3 px-md-4 border-0"
+                                                                            onClick={handleVerifyDocumentNumber}
+                                                                            disabled={verifyingDoc}
+                                                                        >
+                                                                            {verifyingDoc ? (
+                                                                                <>
+                                                                                    <span className="spinner-border spinner-border-sm me-1" />
+                                                                                    <span className="d-none d-md-inline">Verifying...</span>
+                                                                                </>
+                                                                            ) : (
+                                                                                "Verify Visa"
+                                                                            )}
+                                                                        </button>
+                                                                    </div>
+                                                                </>
+                                                            ) : (
+                                                                <div
+                                                                    className="alert alert-warning py-2"
+                                                                    role="alert"
+                                                                    style={{ textTransform: "none" }}
                                                                 >
-                                                                    {verifyingDoc ? (
-                                                                        <>
-                                                                            <span className="spinner-border spinner-border-sm me-1" />
-                                                                            <span className="d-none d-md-inline">Verifying...</span>
-                                                                        </>
-                                                                    ) : (
-                                                                        "Verify"
-                                                                    )}
-                                                                </button>
-                                                            </div>
-                                                        ) : (
+                                                                    <i className="fa fa-exclamation-triangle me-2" />
+                                                                    Please add the passport document first before verifying the visa.
+                                                                </div>
+                                                            )}
+
+                                                            <label className="form-label fw-bold text-dark">
+                                                                Visa Grant Number <span className="text-danger">*</span>
+                                                            </label>
                                                             <input
                                                                 type="text"
                                                                 className="form-control bg-light border-0"
@@ -1105,8 +1143,48 @@ const StaffooStaff = () => {
                                                                 onChange={handleDocNumberChange}
                                                                 required
                                                             />
-                                                        )}
-                                                    </div>
+                                                        </>
+                                                    ) : docForm.document_name === "Security License" ? (
+                                                        <div className="input-group mb-3">
+                                                            <input
+                                                                type="text"
+                                                                className="form-control bg-light border-0"
+                                                                placeholder="e.g. ABC123456"
+                                                                value={docForm.document_no}
+                                                                onChange={handleDocNumberChange}
+                                                                required
+                                                            />
+                                                            <button
+                                                                type="button"
+                                                                className="btn btn-dark fw-bold px-3 px-md-4 border-0"
+                                                                onClick={handleVerifyDocumentNumber}
+                                                                disabled={verifyingDoc || !docForm.document_no}
+                                                            >
+                                                                {verifyingDoc ? (
+                                                                    <>
+                                                                        <span className="spinner-border spinner-border-sm me-1" />
+                                                                        <span className="d-none d-md-inline">Verifying...</span>
+                                                                    </>
+                                                                ) : (
+                                                                    "Verify"
+                                                                )}
+                                                            </button>
+                                                        </div>
+                                                    ) : (
+                                                        <div className="mb-3">
+                                                            <label className="form-label fw-bold text-dark">
+                                                                Document Number <span className="text-danger">*</span>
+                                                            </label>
+                                                            <input
+                                                                type="text"
+                                                                className="form-control bg-light border-0"
+                                                                placeholder="e.g. ABC123456"
+                                                                value={docForm.document_no}
+                                                                onChange={handleDocNumberChange}
+                                                                required
+                                                            />
+                                                        </div>
+                                                    )}
 
                                                     <div className="mb-3">
                                                         <label className="form-label fw-bold text-dark">

@@ -19,7 +19,6 @@ const DashboardLayout = memo(function DashboardLayout() {
 
   const isDesktop = windowWidth >= 1200;
 
-  // Dynamic inline styles for shifting layout
   const mainContentStyle = {
     flexGrow: 1,
     minHeight: "100vh",
@@ -43,7 +42,7 @@ const DashboardLayout = memo(function DashboardLayout() {
           {/* Main Content Area */}
           <div style={mainContentStyle}>
             {/* Added 24px padding here to match your original CSS padding requirement */}
-            <div style={{ padding: "24px", overflowX: "hidden" }}>
+            <div style={{ padding: "15px", overflowX: "hidden" }}>
               <Outlet />
             </div>
           </div>

@@ -1029,14 +1029,6 @@ const ManageStaff = () => {
                     >
                       Documents
                     </button>
-                    <button
-                      type="button"
-                      className={`btn ${activeModalTab === "onboarding" ? "btn-primary-custom text-white" : "btn-outline-primary"}`}
-                      onClick={() => setActiveModalTab("onboarding")}
-                      style={{ minHeight: "44px" }}
-                    >
-                      Verification Forms
-                    </button>
                   </>
                 )}
               </div>

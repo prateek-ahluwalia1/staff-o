@@ -883,7 +883,7 @@ export default function EditProfile() {
             Documents
           </button>
         )}
-        {userType === "staff" && (
+        {(userType === "staff" && userdata?.data?.user_id === 1) && (
           <button
             className={`btn ${activeTab === "onboarding" ? "btn-primary-custom" : "btn-outline-primary"}`}
             onClick={() => setActiveTab("onboarding")}

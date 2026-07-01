@@ -814,7 +814,6 @@ const ManageUsers = () => {
           color: #ffffff !important;
           font-weight: 600;
           letter-spacing: 0.05em;
-          text-transform: uppercase;
           font-size: 0.75rem;
           padding: 1.2rem 1.5rem !important;
           border: none !important;

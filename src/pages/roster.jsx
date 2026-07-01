@@ -438,10 +438,10 @@ export default function RosterPage() {
 
       {/* --- RESPONSIVE SCROLL WRAPPER FOR MOBILE --- */}
       <div className="vr-matrix-scroll-container">
-        
+
         {/* --- MATRIX HEADER --- */}
         <div className="vr-matrix-header">
-          <div className="vr-col-site">SITES & SUMMARY</div>
+          <div className="vr-col-site">Sites & Summary</div>
           {weekDays.map((day) => (
             <div
               key={day.key}
@@ -549,7 +549,7 @@ export default function RosterPage() {
         {/* --- MATRIX FOOTER --- */}
         <div className="vr-matrix-footer">
           <div className="vr-col-site vr-total-label">
-            GRAND TOTAL <span>{columnTotals.grandTotal.toFixed(1)}h</span>
+            Grand Total <span>{columnTotals.grandTotal.toFixed(1)}h</span>
           </div>
           {columnTotals.totals.map((total, i) => (
             <div key={i} className={`vr-col-day vr-total-val ${weekDays[i].isHoliday ? 'is-holiday-cell' : ''}`}>

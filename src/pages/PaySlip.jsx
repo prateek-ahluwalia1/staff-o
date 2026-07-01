@@ -323,7 +323,7 @@ const PaySlip = () => {
   }) => {
     if (!validateDateRange(startDate, endDate)) return null;
     if (!guardIds.length) {
-      toast.error("Select at least one staff guard.");
+      toast.error("Select at least one staff member.");
       return null;
     }
 
@@ -343,7 +343,7 @@ const PaySlip = () => {
 
     if (isRequestSuccessful(res)) {
       if (showSuccessToast) {
-        toast.success(res.message || "Guard payslips fetched successfully.");
+        toast.success(res.message || "Staff payslips fetched successfully.");
       }
     } else {
       toast.info(res.message || "No payslip data returned.");
@@ -402,7 +402,7 @@ const PaySlip = () => {
   const handleAutoUpdatePayslips = async () => {
     if (!validateDateRange(filterStartDate, filterEndDate)) return;
     if (!selectedGuardIds.length) {
-      toast.error("Select staff guards to auto-update.");
+      toast.error("Select staff members to auto-update.");
       return;
     }
 
@@ -418,7 +418,7 @@ const PaySlip = () => {
 
     if (!res) return;
     if (isRequestSuccessful(res)) {
-      toast.success("Payslips auto-updated for selected staff guards.");
+      toast.success("Payslips auto-updated for selected staff members.");
       return;
     }
 
@@ -479,7 +479,7 @@ const PaySlip = () => {
           </div>
 
           {staffLoading ? (
-            <Loader compact message="Loading staff guards..." />
+            <Loader compact message="Loading staff members..." />
           ) : (
             <>
               <div className="row g-2 align-items-end mb-3 payslip-filter-row">
@@ -574,7 +574,7 @@ const PaySlip = () => {
                     background: "#0A7C6E",
                     borderRight: "1px solid #fff",
                   }}
-                >Guard</th>
+                >Staff</th>
                 <th
                   className="text-white"
                   style={{
@@ -619,11 +619,11 @@ const PaySlip = () => {
 
               {!actionLoading &&
                 guardPayslipRows.map((row, idx) => (
-                  <tr key={row.id || `${row.guard_id || "guard"}-${idx}`}>
+                  <tr key={row.id || `${row.guard_id || "staff"}-${idx}`}>
                     <td>
                       {row.guard_name ||
                         row.name ||
-                        `Guard #${row.guard_id || "-"}`}
+                        `Staff #${row.guard_id || "-"}`}
                     </td>
                     <td>{formatDisplayDate(row.start_date)}</td>
                     <td>{formatDisplayDate(row.end_date)}</td>

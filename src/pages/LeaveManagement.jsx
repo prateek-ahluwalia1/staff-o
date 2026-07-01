@@ -371,16 +371,16 @@ const LeaveManagement = () => {
             <thead>
               <tr className="text-muted small">
                 <th className="ps-4">STAFF</th>
-                <th>ROLE</th>
-                <th>REASON</th>
-                <th>START</th>
-                <th>END</th>
-                <th>DAYS</th>
-                <th>REQUESTED</th>
-                <th>NOTES</th>
-                <th>STATUS</th>
+                <th>Role</th>
+                <th>Reason</th>
+                <th>Start</th>
+                <th>End</th>
+                <th>Days</th>
+                <th>Requested</th>
+                <th>Notes</th>
+                <th>Status</th>
                 {canManageLeaveActions && (
-                  <th className="pe-4 text-center">ACTION</th>
+                  <th className="pe-4 text-center">Action</th>
                 )}
               </tr>
             </thead>

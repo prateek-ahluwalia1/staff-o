@@ -23,7 +23,7 @@ export default function Register() {
   const validRoles = ["customer", "staff", "contractor"];
 
   const [userType, setUserType] = useState(
-    validRoles.includes(incomingRole) ? incomingRole : "contractor"
+    validRoles.includes(incomingRole) ? incomingRole : ""
   );
 
   const [showPassword, setShowPassword] = useState(false);
@@ -524,9 +524,14 @@ export default function Register() {
               <button
                 type="button"
                 className="btn py-2 fw-semibold w-50 text-white d-flex justify-content-center align-items-center gap-2"
-                style={{ borderRadius: "8px", backgroundColor: "#0A7C6E" }}
+                style={{
+                  borderRadius: "8px",
+                  backgroundColor: "#0A7C6E",
+                  opacity: (!userType || loading) ? 0.6 : 1,
+                  cursor: (!userType || loading) ? "not-allowed" : "pointer"
+                }}
                 onClick={executeRegistration}
-                disabled={loading}
+                disabled={loading || !userType}
               >
                 {loading && <i className="fa-solid fa-spinner fa-spin"></i>}
                 {loading ? "Processing..." : "Continue"}

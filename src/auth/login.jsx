@@ -29,7 +29,7 @@ export default function Login() {
   // Google Login State
   const [showRoleModal, setShowRoleModal] = useState(false);
   const [pendingGoogleToken, setPendingGoogleToken] = useState(null);
-  const [selectedRole, setSelectedRole] = useState("contractor");
+  const [selectedRole, setSelectedRole] = useState("");
 
   // Forgot Password State
   const [showForgotModal, setShowForgotModal] = useState(false);
@@ -569,9 +569,14 @@ export default function Login() {
               <button
                 type="button"
                 className="btn py-2 fw-semibold w-50 text-white d-flex justify-content-center align-items-center gap-2"
-                style={{ borderRadius: "8px", backgroundColor: "#0A7C6E" }}
+                style={{
+                  borderRadius: "8px",
+                  backgroundColor: "#0A7C6E",
+                  opacity: (!selectedRole || loading) ? 0.6 : 1,
+                  cursor: (!selectedRole || loading) ? "not-allowed" : "pointer"
+                }}
                 onClick={handleRoleSelectionSubmit}
-                disabled={loading}
+                disabled={loading || !selectedRole}
               >
                 {loading && <i className="fa-solid fa-spinner fa-spin"></i>}
                 {loading ? "Creating..." : "Sign up"}

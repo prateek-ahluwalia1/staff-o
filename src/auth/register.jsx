@@ -218,6 +218,9 @@ export default function Register() {
       }
 
       toast.success("Account created successfully!");
+      if (typeof window !== 'undefined' && window.fbq) {
+        window.fbq('track', 'CompleteRegistration');
+      }
       setShowVerifyModal(true);
 
     } else if (pendingAuthAction === "google") {

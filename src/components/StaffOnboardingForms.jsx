@@ -5,7 +5,7 @@ import { apiURL } from "../utils/exports";
 import useSubmit from "../hooks/useSubmit";
 
 /* ---------- Helpers ---------- */
-const TAB_LABELS = ["Onboarding", "TFN Declaration", "Superannuation"];
+const TAB_LABELS = ["Employee Onboarding", "TFN Declaration", "Superannuation"];
 
 const todayDDMMYYYY = () => {
     const d = new Date();
@@ -114,8 +114,8 @@ const DateInput = ({ name, value, onChange, required, disabled, placeholder, max
     );
 };
 
-/* ---------- Address Autocomplete ---------- */
-const AddressAutocomplete = ({ value, name, onChange, placeholder, required }) => {
+/* ---------- Address Autocomplete (with maxLength prop) ---------- */
+const AddressAutocomplete = ({ value, name, onChange, placeholder, required, maxLength = 500 }) => {
     const inputRef = useRef(null);
     useEffect(() => {
         let autocomplete;
@@ -157,7 +157,7 @@ const AddressAutocomplete = ({ value, name, onChange, placeholder, required }) =
             className="form-control"
             name={name}
             placeholder={placeholder}
-            maxLength="500"
+            maxLength={maxLength}
             value={value}
             onChange={onChange}
             required={required}
@@ -326,6 +326,7 @@ const TfnDeclarationForm = ({ values, loading, onChange, onSubmit, dataModified,
                 onChange={onChange}
                 placeholder="Street address, suburb, state, postcode"
                 required={true}
+                maxLength={80}
             />
         </div>
 
@@ -409,7 +410,7 @@ const TfnDeclarationForm = ({ values, loading, onChange, onSubmit, dataModified,
                     className="form-control"
                     name="sig1"
                     placeholder="Type your full name"
-                    maxLength="100"
+                    maxLength="50"
                     value={values.sig1}
                     onChange={onChange}
                     required
@@ -451,7 +452,7 @@ const SuperannuationForm = ({ values, loading, onChange, onSubmit, dataModified,
                     className="form-control"
                     name="s_name"
                     placeholder="John Doe"
-                    maxLength="100"
+                    maxLength="50"
                     value={values.s_name}
                     onChange={onChange}
                     required
@@ -517,7 +518,7 @@ const SuperannuationForm = ({ values, loading, onChange, onSubmit, dataModified,
                         className="form-control"
                         name="s_fundname"
                         placeholder="e.g. AustralianSuper"
-                        maxLength="100"
+                        maxLength="35"
                         value={values.s_fundname}
                         onChange={onChange}
                         required={values.fund_choice === "own"}
@@ -562,7 +563,7 @@ const SuperannuationForm = ({ values, loading, onChange, onSubmit, dataModified,
                         className="form-control"
                         name="s_member"
                         placeholder="Member no."
-                        maxLength="50"
+                        maxLength="30"
                         value={values.s_member}
                         onChange={onChange}
                         required={values.fund_choice === "own"}
@@ -604,7 +605,7 @@ const SuperannuationForm = ({ values, loading, onChange, onSubmit, dataModified,
                     className="form-control"
                     name="sig2"
                     placeholder="Type your full name"
-                    maxLength="100"
+                    maxLength="50"
                     value={values.sig2}
                     onChange={onChange}
                     required
@@ -652,7 +653,7 @@ const EmployeeOnboardingForm = ({
                     <label className="form-label small fw-bold text-muted">
                         Full Name (as per ID) <span className="text-danger">*</span>
                     </label>
-                    <input type="text" className="form-control" name="o_name" maxLength="100"
+                    <input type="text" className="form-control" name="o_name" maxLength="50"
                         value={values.o_name} onChange={onChange} required />
                 </div>
                 <div className="col-md-6">
@@ -666,7 +667,7 @@ const EmployeeOnboardingForm = ({
                         Residential Address <span className="text-danger">*</span>
                     </label>
                     <AddressAutocomplete name="o_addr" value={values.o_addr} onChange={onChange}
-                        placeholder="Street address, suburb, state, postcode" required={true} />
+                        placeholder="Street address, suburb, state, postcode" required={true} maxLength={80} />
                 </div>
                 <div className="col-md-6">
                     <label className="form-label small fw-bold text-muted">
@@ -698,7 +699,7 @@ const EmployeeOnboardingForm = ({
                         Country of Issue <span className="text-danger">*</span>
                     </label>
                     <input type="text" className="form-control" name="o_pcountry" placeholder="Australia"
-                        maxLength="50" value={values.o_pcountry} onChange={onChange} required />
+                        maxLength="30" value={values.o_pcountry} onChange={onChange} required />
                 </div>
                 <div className="col-md-4">
                     <label className="form-label small fw-bold text-muted">
@@ -756,7 +757,7 @@ const EmployeeOnboardingForm = ({
                             Visa Type <span className="text-danger">*</span>
                         </label>
                         <input type="text" className="form-control" name="o_visa_type"
-                            placeholder="Specify your visa type" maxLength="100" value={values.o_visa_type}
+                            placeholder="Specify your visa type" maxLength="30" value={values.o_visa_type}
                             onChange={onChange} required />
                     </div>
                 )}
@@ -788,7 +789,7 @@ const EmployeeOnboardingForm = ({
                 <div className="col-md-4">
                     <label className="form-label small fw-bold text-muted">Bank Name <span className="text-danger">*</span></label>
                     <input type="text" className="form-control" name="o_bank" placeholder="XYZ Bank"
-                        maxLength="100" value={values.o_bank} onChange={onChange} required />
+                        maxLength="35" value={values.o_bank} onChange={onChange} required />
                 </div>
                 <div className="col-md-4">
                     <label className="form-label small fw-bold text-muted">BSB Number <span className="text-danger">*</span></label>
@@ -807,7 +808,7 @@ const EmployeeOnboardingForm = ({
                 </div>
                 <div className="col-md-6">
                     <label className="form-label small fw-bold text-muted">Super Fund Name <span className="text-danger">*</span></label>
-                    <input type="text" className="form-control" name="o_superfund" maxLength="100"
+                    <input type="text" className="form-control" name="o_superfund" maxLength="35"
                         value={values.o_superfund} onChange={onChange} required />
                 </div>
                 <div className="col-md-6">
@@ -817,7 +818,7 @@ const EmployeeOnboardingForm = ({
                 </div>
                 <div className="col-md-6">
                     <label className="form-label small fw-bold text-muted">Member Number <span className="text-danger">*</span></label>
-                    <input type="text" className="form-control" name="o_member" maxLength="50"
+                    <input type="text" className="form-control" name="o_member" maxLength="30"
                         value={values.o_member} onChange={onChange} required />
                 </div>
             </div>
@@ -830,7 +831,7 @@ const EmployeeOnboardingForm = ({
                     </label>
                     <div className="input-group">
                         <input type="text" className="form-control" name="o_seclic" placeholder="VIC 123456"
-                            maxLength="50" value={values.o_seclic} onChange={onChange} required />
+                            maxLength="30" value={values.o_seclic} onChange={onChange} required />
                         <button type="button" className="btn btn-outline-primary"
                             onClick={onVerifySecurityLicense}
                             disabled={verifyingSecurityLicense || !values.o_seclic}>
@@ -875,7 +876,7 @@ const EmployeeOnboardingForm = ({
                 <div className="col-md-6 mt-4">
                     <label className="form-label small fw-bold text-muted">First Aid Certificate No.</label>
                     <input type="text" className="form-control" name="o_fa" placeholder="FA-001234"
-                        maxLength="50" value={values.o_fa} onChange={onChange} />
+                        maxLength="30" value={values.o_fa} onChange={onChange} />
                     <div className="mt-3">
                         <label className="form-label small fw-bold text-muted">Upload First Aid Document</label>
                         <div className="d-flex align-items-center gap-3 flex-wrap">
@@ -903,7 +904,7 @@ const EmployeeOnboardingForm = ({
                         Employee Signature (Type Name) <span className="text-danger">*</span>
                     </label>
                     <input type="text" className="form-control" name="sig3" placeholder="Type your full name"
-                        maxLength="100" value={values.sig3} onChange={onChange} required />
+                        maxLength="50" value={values.sig3} onChange={onChange} required />
                 </div>
                 <div className="col-md-6">
                     <label className="form-label small fw-bold text-muted">
@@ -918,7 +919,7 @@ const EmployeeOnboardingForm = ({
     );
 };
 
-/* ---------- Normalizers (with date slash cleaning) ---------- */
+/* ---------- Normalizers (unchanged) ---------- */
 const normalizeTfnData = (apiData) => ({
     tfn: apiData?.tfn ?? "",
     title: apiData?.title ?? "",
@@ -1340,8 +1341,8 @@ const StaffOnboardingForms = ({ submit, userId, onProfileUpdate }) => {
                         key={idx}
                         type="button"
                         className={`btn rounded-pill flex-fill fw-bold ${subTab === idx
-                                ? "btn-primary-custom shadow-sm"
-                                : "btn-light border-0 bg-transparent"
+                            ? "btn-primary-custom shadow-sm"
+                            : "btn-light border-0 bg-transparent"
                             }`}
                         onClick={() => setSubTab(idx)}
                         disabled={formDataLoading}

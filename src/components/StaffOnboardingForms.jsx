@@ -5,7 +5,7 @@ import { apiURL } from "../utils/exports";
 import useSubmit from "../hooks/useSubmit";
 
 /* ---------- Helpers ---------- */
-const TAB_LABELS = ["Employee Onboarding", "TFN Declaration", "Superannuation"];
+const TAB_LABELS = ["Employee Onboarding Form", "TFN Declaration", "Superannuation Standard Choice Form"];
 
 const todayDDMMYYYY = () => {
     const d = new Date();
@@ -1340,6 +1340,7 @@ const StaffOnboardingForms = ({ submit, userId, onProfileUpdate }) => {
                     <button
                         key={idx}
                         type="button"
+                        style={{ fontSize: "0.9rem" }}
                         className={`btn rounded-pill flex-fill fw-bold ${subTab === idx
                             ? "btn-primary-custom shadow-sm"
                             : "btn-light border-0 bg-transparent"

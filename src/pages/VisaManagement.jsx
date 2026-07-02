@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useState } from "react";
 import { toast } from "react-toastify";
 import useSubmit from "../hooks/useSubmit";
 import Loader from "../components/Loader";
@@ -31,29 +31,18 @@ const safeJsonParse = (value) => {
 
 const unwrapVisaResponse = (payload) => {
     if (!payload) return null;
-
-    // 1. Check the exact structure from your API: payload.data.json.data
-    if (payload?.data?.json?.data) {
-        return payload.data.json.data;
-    }
-
-    // 2. Fallback to parsing payload.data.body if json object is missing
+    if (payload?.data?.json?.data) return payload.data.json.data;
     if (payload?.data?.body) {
         const parsedBody = safeJsonParse(payload.data.body);
         if (parsedBody?.data) return parsedBody.data;
     }
-
-    // 3. Fallbacks for other variations (keeps your original safety checks)
     if (payload?.json?.data?.data) return payload.json.data.data;
     if (payload?.json?.data) return payload.json.data;
-
     const parsedBody = safeJsonParse(payload?.body);
     if (parsedBody?.data?.data) return parsedBody.data.data;
     if (parsedBody?.data) return parsedBody.data;
-
     if (payload?.data?.data) return payload.data.data;
     if (payload?.data && typeof payload.data === "object") return payload.data;
-
     return payload;
 };
 
@@ -207,12 +196,10 @@ const DetailField = ({ label, value, colSize = "col-12 col-sm-6" }) => (
 // --- Main Component ---
 export default function VisaManagement() {
     const { submit: submitVisaCheck, loading: checkingVisa } = useSubmit({ isAuth: true });
-    const { submit: submitVisaResult } = useSubmit({ isAuth: true });
 
     const [formData, setFormData] = useState(initialForm);
     const [visaChecksList, setVisaChecksList] = useState([]);
     const [selectedCheckDetail, setSelectedCheckDetail] = useState(null);
-    const [activeLoadingId, setActiveLoadingId] = useState(null);
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
@@ -226,50 +213,6 @@ export default function VisaManagement() {
         }));
     };
 
-    const handleFetchResult = useCallback(
-        async (id) => {
-            if (!id) return;
-            setActiveLoadingId(id);
-
-            const res = await submitVisaResult(`api/admin/visa-result/${id}`, null, { method: "GET" });
-            const data = unwrapVisaResponse(res);
-
-            if (data?.expired_at) {
-                setVisaChecksList((prev) =>
-                    prev.map((item) =>
-                        item.id === id
-                            ? { ...item, status: "completed", expired_at: data.expired_at }
-                            : item
-                    )
-                );
-                setSelectedCheckDetail((prev) =>
-                    prev?.id === id
-                        ? { ...prev, status: "completed", expired_at: data.expired_at }
-                        : prev
-                );
-                toast.success("Verification complete. Visa expiry date retrieved.");
-            }
-            // Old response format (fallback)
-            else if (data?.id) {
-                setVisaChecksList((prev) =>
-                    prev.map((item) => (item.id === id ? data : item))
-                );
-                setSelectedCheckDetail(data);
-                if (data.status === "completed") {
-                    toast.success("Verification complete. Report is ready to view.");
-                } else {
-                    toast.info("Still processing. Please check again in a moment.");
-                }
-            } else {
-                toast.error("Could not retrieve the latest status.");
-            }
-
-            setActiveLoadingId(null);
-        },
-        [submitVisaResult],
-    );
-
-    // ---------- HANDLE VISA CHECK (auto-fetches result) ----------
     const handleVisaCheck = async (e) => {
         if (e) e.preventDefault();
 
@@ -290,13 +233,16 @@ export default function VisaManagement() {
         const data = unwrapVisaResponse(res);
 
         if (data?.id) {
-            // Add new check to the list
             setVisaChecksList((prev) => [data, ...prev]);
-            setSelectedCheckDetail(null);
             setFormData(initialForm);
 
-            // Automatically fetch the result for this check
-            await handleFetchResult(data.id);
+            if (data.status === "completed") {
+                setSelectedCheckDetail(data);
+                toast.success("Verification complete. Report is ready to view.");
+            } else {
+                setSelectedCheckDetail(null);
+                toast.info("Verification submitted. Please check back shortly.");
+            }
         } else {
             toast.error("Failed to submit visa check. Please try again.");
         }
@@ -309,16 +255,14 @@ export default function VisaManagement() {
         ? selectedCheckDetail.attachments[0]
         : null;
     const isCompleted = selectedCheckDetail?.status === "completed";
-    const isSuccess = result.code === "SUCCESS" || !!selectedCheckDetail?.expired_at;
+    const isSuccess = result.code === "SUCCESS" || !!selectedCheckDetail?.expired_at || !!visa.expiry_date;
 
     return (
         <div className="dashboard-main dashboard-tools-page">
             <div className="dashboard-page-header mb-4">
                 <div>
                     <h1 className="h3 fw-bold text-dark">Visa Verification</h1>
-                    <p className="text-muted"
-                        style={{ textTransform: "none" }}
-                    >
+                    <p className="text-muted" style={{ textTransform: "none" }}>
                         Submit passport details to verify applicant work rights and visa status.
                     </p>
                 </div>
@@ -371,7 +315,7 @@ export default function VisaManagement() {
                                 <label className="form-label text-dark fw-semibold mb-1">Passport Number</label>
                                 <input
                                     type="text"
-                                    className="form-control "
+                                    className="form-control"
                                     name="passport"
                                     value={formData.passport}
                                     onChange={handleInputChange}
@@ -413,7 +357,7 @@ export default function VisaManagement() {
                 </div>
             </div>
 
-            {/* Results Table */}
+            {/* Results Table – Action column removed, row click enabled */}
             <div className="card border-0 shadow-sm mb-4">
                 <div className="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
                     <h6 className="mb-0 fw-bold">Recent Visa Checks</h6>
@@ -427,15 +371,13 @@ export default function VisaManagement() {
                                     <th>Date of Birth</th>
                                     <th>Status</th>
                                     <th>Requested On</th>
-                                    <th className="text-end pe-4">Action</th>
+                                    {/* Action column removed */}
                                 </tr>
                             </thead>
                             <tbody>
                                 {visaChecksList.length === 0 && (
                                     <tr>
-                                        <td colSpan="5" className="text-center text-muted py-5"
-                                            style={{ textTransform: "none" }}
-                                        >
+                                        <td colSpan="4" className="text-center text-muted py-5" style={{ textTransform: "none" }}>
                                             <div className="mb-2 fs-3 text-light">
                                                 <i className="fa-solid fa-folder-open"></i>
                                             </div>
@@ -444,17 +386,20 @@ export default function VisaManagement() {
                                     </tr>
                                 )}
                                 {visaChecksList.map((item) => {
-                                    const itemIsCompleted = item.status === "completed";
-                                    const isLoadingThisRow = activeLoadingId === item.id;
                                     const isSelected = selectedCheckDetail?.id === item.id;
 
                                     return (
-                                        <tr key={item.id} className={isSelected ? "table-active" : ""}>
+                                        <tr
+                                            key={item.id}
+                                            className={isSelected ? "table-active" : ""}
+                                            onClick={() => setSelectedCheckDetail(item)}
+                                            style={{ cursor: "pointer" }}
+                                        >
                                             <td>
                                                 <div className="fw-bold text-dark text-capitalize">
                                                     {`${item.document?.given_name || ""} ${item.document?.family_name || ""}`.toLowerCase()}
                                                 </div>
-                                                <div className="small text-muted  mt-1">
+                                                <div className="small text-muted mt-1">
                                                     <i className="fa-solid fa-passport me-1"></i>
                                                     {item.document?.identifier} ({item.document?.country})
                                                 </div>
@@ -462,23 +407,6 @@ export default function VisaManagement() {
                                             <td>{formatShortDate(item.document?.date_of_birth)}</td>
                                             <td><StatusBadge status={item.status} /></td>
                                             <td>{formatShortDate(item.requested_at)}</td>
-                                            <td className="text-end pe-4">
-                                                <button
-                                                    className={`btn btn-sm rounded-pill px-3 fw-semibold position-relative ${itemIsCompleted ? "btn-outline-primary-custom" : "btn-primary-custom"
-                                                        }`}
-                                                    onClick={() => handleFetchResult(item.id)}
-                                                    disabled={isLoadingThisRow}
-                                                >
-                                                    <span style={{ opacity: isLoadingThisRow ? 0 : 1 }}>
-                                                        {itemIsCompleted ? "View Report" : "Check Status"}
-                                                    </span>
-                                                    {isLoadingThisRow && (
-                                                        <div className="loader-center-scale">
-                                                            <Loader compact />
-                                                        </div>
-                                                    )}
-                                                </button>
-                                            </td>
                                         </tr>
                                     );
                                 })}
@@ -488,7 +416,7 @@ export default function VisaManagement() {
                 </div>
             </div>
 
-            {/* Detailed Report View */}
+            {/* Detailed Report View (unchanged) */}
             {selectedCheckDetail && (
                 <div className="card border-0 shadow-sm mt-4">
                     <div className="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
@@ -502,8 +430,7 @@ export default function VisaManagement() {
                     <div className="card-body p-4">
                         {isCompleted ? (
                             <div
-                                className={`border-start border-4 ${isSuccess ? "border-success bg-success" : "border-warning bg-warning"
-                                    } bg-opacity-10 p-3 mb-4 rounded-end d-flex align-items-center`}
+                                className={`border-start border-4 ${isSuccess ? "border-success bg-success" : "border-warning bg-warning"} bg-opacity-10 p-3 mb-4 rounded-end d-flex align-items-center`}
                             >
                                 <div className={`fs-3 me-3 ${isSuccess ? "text-success" : "text-warning"}`}>
                                     {isSuccess ? (
@@ -514,14 +441,16 @@ export default function VisaManagement() {
                                 </div>
                                 <div>
                                     <h6 className={`fw-bold mb-1 ${isSuccess ? "text-success" : "text-warning"}`}>
-                                        {selectedCheckDetail?.expired_at
+                                        {selectedCheckDetail?.expired_at || visa.expiry_date
                                             ? "Visa Verified – Expiry Date Available"
                                             : result.message || "Verification Completed"}
                                     </h6>
                                     <p className="mb-0 small text-dark opacity-75">
                                         {selectedCheckDetail?.expired_at
                                             ? `Visa expires on ${formatShortDate(selectedCheckDetail.expired_at)}`
-                                            : visa.entitlement_description || "Please review the detailed visa conditions below."}
+                                            : visa.expiry_date
+                                                ? `Visa expires on ${formatShortDate(visa.expiry_date)}`
+                                                : visa.entitlement_description || "Please review the detailed visa conditions below."}
                                     </p>
                                 </div>
                             </div>
@@ -533,7 +462,7 @@ export default function VisaManagement() {
                                 <div>
                                     <h6 className="fw-bold mb-1 text-secondary">Verification in Progress</h6>
                                     <p className="mb-0 small text-dark opacity-75">
-                                        This request is being processed. Click "Check Status" above to refresh.
+                                        This request is being processed. Please check back later.
                                     </p>
                                 </div>
                             </div>
@@ -541,7 +470,7 @@ export default function VisaManagement() {
 
                         <div className="row g-5">
                             <div className="col-12 col-lg-6">
-                                <h6 className=" text-muted fw-bold letter-spacing-1 mb-3 border-bottom pb-2">
+                                <h6 className="text-muted fw-bold letter-spacing-1 mb-3 border-bottom pb-2">
                                     Applicant Details
                                 </h6>
                                 <div className="row g-3">
@@ -558,27 +487,46 @@ export default function VisaManagement() {
 
                             {isCompleted && (
                                 <div className="col-12 col-lg-6">
-                                    <h6 className=" text-muted fw-bold letter-spacing-1 mb-3 border-bottom pb-2">
+                                    <h6 className="text-muted fw-bold letter-spacing-1 mb-3 border-bottom pb-2">
                                         Visa Information
                                     </h6>
                                     <div className="row g-3">
-                                        {selectedCheckDetail?.expired_at ? (
+                                        <DetailField
+                                            label="Visa Type / Class"
+                                            value={visa.type_name ? `${visa.type_name} (${visa.class || ""})` : visa.class}
+                                            colSize="col-12"
+                                        />
+                                        {visa.expiry_date && (
                                             <DetailField
-                                                label="Visa Expiry Date"
-                                                value={formatShortDate(selectedCheckDetail.expired_at)}
+                                                label="Expiry Date"
+                                                value={formatShortDate(visa.expiry_date)}
+                                            />
+                                        )}
+                                        <DetailField label="Work Entitlement" value={visa.work_entitlement} />
+                                        <DetailField label="Location" value={visa.location} />
+                                        {visa.grant_date && (
+                                            <DetailField label="Grant Date" value={formatShortDate(visa.grant_date)} />
+                                        )}
+                                        <DetailField label="Applicant" value={visa.applicant} />
+                                        {visa.study_entitlement && (
+                                            <DetailField label="Study Entitlement" value={visa.study_entitlement} />
+                                        )}
+                                        {visa.conditions && visa.conditions.length > 0 && (
+                                            <DetailField
+                                                label="Conditions"
+                                                value={visa.conditions.join(", ")}
                                                 colSize="col-12"
                                             />
-                                        ) : (
-                                            <>
-                                                <DetailField label="Visa Type / Class" value={visa.type_name || visa.class} colSize="col-12" />
-                                                <DetailField label="Work Entitlement" value={visa.work_entitlement} />
-                                                <DetailField label="Location" value={visa.location} />
-                                            </>
                                         )}
-                                        <div className="col-12 col-sm-6">
-                                            <label className="form-label text-muted fw-semibold mb-1 small">Official Document</label>
-                                            <div className="min-h-form-field d-flex align-items-center">
-                                                {attachment?.download_url ? (
+                                        <DetailField
+                                            label="Entitlement Description"
+                                            value={visa.entitlement_description}
+                                            colSize="col-12"
+                                        />
+                                        {/* {attachment?.download_url && (
+                                            <div className="col-12">
+                                                <label className="form-label text-muted fw-semibold mb-1 small">Official Document</label>
+                                                <div className="min-h-form-field d-flex align-items-center">
                                                     <Link
                                                         to={attachment.download_url}
                                                         target="_blank"
@@ -587,11 +535,9 @@ export default function VisaManagement() {
                                                     >
                                                         <i className="fa-solid fa-file-pdf me-1"></i> Download PDF
                                                     </Link>
-                                                ) : (
-                                                    <span className="text-muted fst-italic">Not provided</span>
-                                                )}
+                                                </div>
                                             </div>
-                                        </div>
+                                        )} */}
                                     </div>
                                 </div>
                             )}
@@ -616,14 +562,13 @@ export default function VisaManagement() {
                 
                 .user-friendly-table { border-collapse: separate; border-spacing: 0; }
                 .user-friendly-table th { font-size: 0.85rem; letter-spacing: 0.03em; font-weight: 600; padding: 1rem; border-bottom: 2px solid #e2e8f0; }
-                .user-friendly-table tbody tr { transition: background-color 0.2s ease; }
+                .user-friendly-table tbody tr { transition: background-color 0.2s ease; cursor: pointer; }
                 .user-friendly-table td { vertical-align: middle; padding: 1.25rem 1rem; border-bottom: 1px solid #f1f5f9; }
                 .user-friendly-table tbody tr:last-child td { border-bottom: none; }
                 
                 input.form-control { border-radius: 0.5rem; border-color: #cbd5e1; padding: 0.6rem 1rem; }
                 input.form-control:focus { border-color: #0A7C6E; box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1); }
 
-                /* react-select overrides */
                 .react-select-container .react-select__control {
                     border-radius: 0.5rem;
                     border-color: #cbd5e1;

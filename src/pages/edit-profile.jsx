@@ -683,9 +683,9 @@ export default function EditProfile() {
 
       setVerifyingDoc(true);
       try {
-        const res = await submit("api/admin/visa-check", payload, { method: "POST" });
-        if (res?.success && res?.data?.expired_at) {
-          const displayExpiry = normalizeToDisplay(res.data.expired_at);
+        const res = await submit("api/admin/visa-expiry-check", payload, { method: "POST" });
+        if (res?.success && res?.expiry) {
+          const displayExpiry = normalizeToDisplay(res.expiry);
           setDocForm((prev) => ({
             ...prev,
             document_expiry: displayExpiry,

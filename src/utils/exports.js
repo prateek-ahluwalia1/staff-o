@@ -1,4 +1,4 @@
-// export const apiURL = "https://apis.staffoo.com.au/";
+export const apiURL = "https://apis.staffoo.com.au/";
 export const apiURL = "https://staging.apis.staffoo.com.au/";
 export const STRIPE_PUBLISHABLE_KEY =
   "pk_test_51TBYBwDb535HMVUZHtQiPJGDYYZex0gIGvFWtuKR9FRage5WxqqzkLDvKBUpq4MfPkWhgDDM7z3WZrURpwWFBkbo005rxvV6q9";

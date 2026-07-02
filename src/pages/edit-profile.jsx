@@ -140,6 +140,7 @@ export default function EditProfile() {
 
   const [isAddingCard, setIsAddingCard] = useState(false);
   const [cardForm, setCardForm] = useState(INITIAL_CARD_STATE);
+  const [editingCardIndex, setEditingCardIndex] = useState(null);
 
   const [showCardDeleteModal, setShowCardDeleteModal] = useState(false);
   const [cardToDeleteIndex, setCardToDeleteIndex] = useState(null);
@@ -503,21 +504,25 @@ export default function EditProfile() {
 
     const currentYear = new Date().getFullYear();
     const currentMonth = new Date().getMonth() + 1;
-
     const expMonth = parseInt(cardForm.expiry_month, 10);
     const expYear = parseInt(cardForm.expiry_year, 10);
-
     if (expYear < currentYear || expYear > currentYear + 20) {
       toast.error("Please enter a valid future year (e.g., 2026).");
       return;
     }
-
     if (expYear === currentYear && expMonth < currentMonth) {
       toast.error("The expiry date must be in the future.");
       return;
     }
 
-    const updatedCards = [...formData.bank_details, cardForm];
+    let updatedCards;
+    if (editingCardIndex !== null) {
+      updatedCards = formData.bank_details.map((card, i) =>
+        i === editingCardIndex ? cardForm : card
+      );
+    } else {
+      updatedCards = [...formData.bank_details, cardForm];
+    }
 
     const payload = new FormData();
     payload.append("bank_details", JSON.stringify(updatedCards));
@@ -530,8 +535,9 @@ export default function EditProfile() {
     setFormData((prev) => ({ ...prev, bank_details: updatedCards }));
     setIsAddingCard(false);
     setCardForm(INITIAL_CARD_STATE);
-    refetch(); // Redux & formData will be updated via useEffect
-    toast.success("Card added successfully!");
+    setEditingCardIndex(null);  // reset editing index
+    refetch();
+    toast.success(editingCardIndex !== null ? "Card updated!" : "Card added successfully!");
   };
 
   const handleRemoveCardClick = (index) => {
@@ -563,6 +569,13 @@ export default function EditProfile() {
     toast.success("Card removed successfully!");
     setShowCardDeleteModal(false);
     setCardToDeleteIndex(null);
+  };
+
+  const handleEditCard = (index) => {
+    const card = formData.bank_details[index];
+    setCardForm({ ...card });
+    setEditingCardIndex(index);
+    setIsAddingCard(true);
   };
 
   // ========== VERIFY DOCUMENT NUMBER (Security License + Visa) ==========
@@ -971,10 +984,20 @@ export default function EditProfile() {
                   {formData.bank_details.map((card, index) => (
                     <div key={index} className="col-md-6 col-lg-4 mb-4">
                       <div className="card-preview position-relative text-white p-4 rounded-4 shadow-sm h-100" style={{ background: "linear-gradient(135deg, #1e3c72 0%, #2a5298 100%)", boxShadow: "0 10px 20px rgba(0,0,0,0.15)" }}>
-                        <button className="btn btn-sm btn-danger position-absolute" style={{ top: "12px", right: "12px", opacity: 0.9, padding: "4px 8px" }} onClick={() => handleRemoveCardClick(index)} disabled={submitLoading} title="Remove Card">
+                        <button className="btn btn-sm btn-danger position-absolute" style={{ top: "5px", right: "12px", opacity: 0.9, padding: "4px 8px" }} onClick={() => handleRemoveCardClick(index)} disabled={submitLoading} title="Remove Card">
                           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
                             <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0z" />
                             <path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4zM2.5 3h11V2h-11z" />
+                          </svg>
+                        </button>
+                        <button
+                          className="btn btn-sm btn-light position-absolute"
+                          style={{ top: "5px", right: "50px", opacity: 0.9, padding: "4px 8px" }}
+                          onClick={() => handleEditCard(index)}
+                          title="Edit Card"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168l10-10zM11.207 2.5 13.5 4.793 14.793 3.5 12.5 1.207 11.207 2.5zm1.586 2.793L10.5 3 4 9.5 3.1 12.9l3.4-1.1 6.293-6.293z" />
                           </svg>
                         </button>
                         <div className="d-flex justify-content-between align-items-center mb-4 mt-2">
@@ -1070,7 +1093,18 @@ export default function EditProfile() {
                     </div>
                   </div>
                   <div className="d-flex gap-2">
-                    <button type="button" className="btn btn-outline-secondary w-50 py-2 fw-bold" onClick={() => { setIsAddingCard(false); setCardForm(INITIAL_CARD_STATE); }} disabled={submitLoading}>Cancel</button>
+                    <button
+                      type="button"
+                      className="btn btn-outline-secondary w-50 py-2 fw-bold"
+                      onClick={() => {
+                        setIsAddingCard(false);
+                        setEditingCardIndex(null);
+                        setCardForm(INITIAL_CARD_STATE);
+                      }}
+                      disabled={submitLoading}
+                    >
+                      Cancel
+                    </button>
                     <button type="submit" className="btn btn-primary-custom w-50 py-2 fw-bold shadow-sm" disabled={submitLoading}>{submitLoading ? "Saving..." : "Save Card"}</button>
                   </div>
                 </form>

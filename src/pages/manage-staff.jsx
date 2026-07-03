@@ -1165,7 +1165,7 @@ const ManageStaff = () => {
                           {/* Document Type */}
                           <div className="mb-3">
                             <label className="form-label fw-bold text-dark">
-                              Document Type <span className="text-danger">*</span>
+                              Document Type
                             </label>
                             <select
                               className="form-control bg-light border-0"

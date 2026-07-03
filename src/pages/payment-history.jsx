@@ -5,10 +5,8 @@ import Select from "react-select";
 import useFetch from "../hooks/useFetch";
 import useSubmit from "../hooks/useSubmit";
 import Loader from "../components/Loader";
-import Modal from "../components/Modal";
 import { apiURL } from "../utils/exports";
 import { toast } from "react-toastify";
-import HistoryModal from "../components/HistoryModal";
 
 const formatDate = (dateString) => {
   if (!dateString) return "-";
@@ -53,16 +51,12 @@ export default function PaymentHistory() {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
-  // --- Share Modal States ---
+  // --- Share Modal & History States ---
   const [showShareModal, setShowShareModal] = useState(false);
   const [selectedTx, setSelectedTx] = useState(null);
   const [shareEmails, setShareEmails] = useState([]);
   const [currentEmailInput, setCurrentEmailInput] = useState("");
-
-  // --- History Modal States ---
-  const [showHistoryModal, setShowHistoryModal] = useState(false);
-  const [historyTx, setHistoryTx] = useState(null);
-  const [historyTxId, setHistoryTxId] = useState(null); // Used to trigger useFetch
+  const [historyTxId, setHistoryTxId] = useState(null); // Triggers history fetch when share opens
 
   // --- Custom Hooks ---
   const { data: customersResponse } = useFetch(
@@ -130,23 +124,31 @@ export default function PaymentHistory() {
 
   const handleShareClick = (tx) => {
     setSelectedTx(tx);
-    let defaultEmail = "";
-    if (isAdmin && selectedCustomerDetails) {
-      defaultEmail = selectedCustomerDetails.email;
-    } else if (!isAdmin) {
-      defaultEmail = userdata?.email || userdata?.data?.email || "";
-    }
-
-    setShareEmails(defaultEmail ? [defaultEmail] : []);
+    setHistoryTxId(tx.id); // Trigger history fetch
+    setShareEmails([]); // No pre-selected emails, user inputs all manually
     setCurrentEmailInput("");
     setShowShareModal(true);
   };
 
+  const handleCloseShareModal = () => {
+    setShowShareModal(false);
+    setShareEmails([]);
+    setCurrentEmailInput("");
+    setSelectedTx(null);
+    setHistoryTxId(null);
+  };
+
   const handleAddEmail = () => {
     const trimmedEmail = currentEmailInput.trim();
-    if (trimmedEmail && !shareEmails.includes(trimmedEmail)) {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if (trimmedEmail && emailRegex.test(trimmedEmail) && !shareEmails.includes(trimmedEmail)) {
       setShareEmails([...shareEmails, trimmedEmail]);
       setCurrentEmailInput("");
+    } else if (trimmedEmail && !emailRegex.test(trimmedEmail)) {
+      toast.warning("Please enter a valid email address.");
+    } else if (shareEmails.includes(trimmedEmail)) {
+      toast.info("Email is already added.");
     }
   };
 
@@ -158,8 +160,15 @@ export default function PaymentHistory() {
     e.preventDefault();
 
     let finalEmails = [...shareEmails];
-    if (currentEmailInput.trim() && !shareEmails.includes(currentEmailInput.trim())) {
-      finalEmails.push(currentEmailInput.trim());
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if (currentEmailInput.trim()) {
+      if (emailRegex.test(currentEmailInput.trim()) && !shareEmails.includes(currentEmailInput.trim())) {
+        finalEmails.push(currentEmailInput.trim());
+      } else if (!emailRegex.test(currentEmailInput.trim())) {
+        toast.error("The email in the input field is invalid. Please fix or remove it.");
+        return;
+      }
     }
 
     if (finalEmails.length === 0) {
@@ -168,7 +177,7 @@ export default function PaymentHistory() {
     }
 
     const payload = {
-      emails: finalEmails, // Check if your backend expects 'emails' or 'email' for the array key
+      emails: finalEmails,
       transaction_id: selectedTx.id,
       invoice_filename: selectedTx.invoice_filename
     };
@@ -179,23 +188,8 @@ export default function PaymentHistory() {
 
     if (res?.success) {
       toast.success("Document shared successfully!");
-      setShowShareModal(false);
-      setShareEmails([]);
-      setCurrentEmailInput("");
-      setSelectedTx(null);
+      handleCloseShareModal();
     }
-  };
-
-  const handleHistoryClick = (tx) => {
-    setHistoryTx(tx);
-    setHistoryTxId(tx.id); // Triggers the useFetch hook
-    setShowHistoryModal(true);
-  };
-
-  const handleCloseHistoryModal = () => {
-    setShowHistoryModal(false);
-    setHistoryTx(null);
-    setHistoryTxId(null); // Resets the useFetch hook
   };
 
   // --- Styles ---
@@ -334,7 +328,7 @@ export default function PaymentHistory() {
                                 type="button"
                                 className="btn btn-sm btn-outline-secondary"
                                 onClick={() => handleShareClick(tx)}
-                                title="Share Document"
+                                title="Share Invoice"
                                 style={{ padding: "4px 10px" }}
                               >
                                 <i className="fa fa-share-nodes me-1"></i> Share
@@ -343,16 +337,6 @@ export default function PaymentHistory() {
                           ) : (
                             <span className="text-muted small align-self-center">No Document</span>
                           )}
-
-                          <button
-                            type="button"
-                            className="btn btn-sm btn-outline-info"
-                            onClick={() => handleHistoryClick(tx)}
-                            title="View History"
-                            style={{ padding: "4px 10px" }}
-                          >
-                            <i className="fa-solid fa-clock-rotate-left me-1"></i> History
-                          </button>
                         </div>
                       </td>
                     </tr>
@@ -407,99 +391,198 @@ export default function PaymentHistory() {
         </div>
       </div>
 
-      {/* Share Document Modal */}
-      <Modal open={showShareModal} onClose={() => setShowShareModal(false)}>
-        <form onSubmit={handleShareSubmit} className="p-4">
-          <h5 className="mb-3 fw-bold">Share Document</h5>
-          <p className="text-muted small mb-4" style={{ textTransform: "none" }}>
-            Enter the email addresses you would like to send
-            <strong> {selectedTx?.invoice_filename}</strong> to.
-          </p>
-
-          <div className="mb-4">
-            <label className="form-label fw-semibold">
-              Email Addresses <span className="text-danger">*</span>
-            </label>
-
-            <div className="d-flex gap-2">
-              <input
-                type="email"
-                className="form-control"
-                placeholder="e.g. user@example.com"
-                value={currentEmailInput}
-                onChange={(e) => setCurrentEmailInput(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    e.preventDefault();
-                    handleAddEmail();
-                  }
-                }}
-              />
-              <button
-                type="button"
-                className="btn btn-secondary px-3"
-                onClick={handleAddEmail}
-                disabled={!currentEmailInput.trim()}
-                title="Add Email"
-              >
-                <i className="fa-solid fa-plus"></i>
-              </button>
-            </div>
-
-            {shareEmails.length > 0 && (
-              <div className="d-flex flex-wrap gap-2 mt-3">
-                {shareEmails.map((email, index) => (
-                  <span
-                    key={index}
-                    className="badge bg-light text-dark border d-flex align-items-center gap-2 py-2 px-3"
-                    style={{ fontSize: "0.85rem", textTransform: "none" }}
-                  >
-                    {email}
-                    <i
-                      className="fa-solid fa-xmark text-danger"
-                      style={{ cursor: "pointer", fontSize: "1rem" }}
-                      onClick={() => handleRemoveEmail(email)}
-                      title="Remove Email"
-                    ></i>
-                  </span>
-                ))}
-              </div>
-            )}
-          </div>
-
-          <div className="d-flex gap-2 mt-4">
+      {/* Enlarged & Styled Inline Share Document Modal */}
+      {showShareModal && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            width: "100vw",
+            height: "100vh",
+            background: "rgba(0,0,0,0.6)",
+            backdropFilter: "blur(4px)",
+            zIndex: 1050,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "1rem",
+          }}
+        >
+          <div
+            className="shadow-lg"
+            style={{
+              background: "#fff",
+              borderRadius: "12px",
+              width: "100%",
+              maxWidth: "650px", // Increased width here
+              maxHeight: "90vh",
+              overflowY: "auto", // Allows scrolling inside the modal if needed
+              position: "relative",
+            }}
+          >
+            {/* Close Button */}
             <button
-              type="button"
-              className="btn btn-outline-secondary w-50 fw-semibold"
-              onClick={() => {
-                setShowShareModal(false);
-                setCurrentEmailInput("");
+              onClick={handleCloseShareModal}
+              className="text-muted hover-dark"
+              style={{
+                position: "absolute",
+                top: "16px",
+                right: "20px",
+                background: "none",
+                border: "none",
+                fontSize: "28px",
+                cursor: "pointer",
+                zIndex: 1,
+                lineHeight: "1",
               }}
-              disabled={shareLoading}
+              aria-label="Close modal"
             >
-              Cancel
+              &times;
             </button>
-            <button
-              type="submit"
-              className="btn btn-primary-custom w-50 fw-semibold"
-              disabled={shareLoading || (shareEmails.length === 0 && !currentEmailInput.trim())}
-            >
-              {shareLoading ? "Sending..." : "Send Document"}
-            </button>
-          </div>
-        </form>
-      </Modal>
 
-      <HistoryModal
-        open={showHistoryModal}
-        key={historyTxId}
-        onClose={handleCloseHistoryModal}
-        historyLoading={historyLoading}
-        historyError={historyError}
-        historyTx={historyTx}
-        invoiceHistory={invoiceHistory}
-        formatDate={formatDate}
-      />
+            <form onSubmit={handleShareSubmit} className="p-4 p-md-5">
+              {/* Modal Header */}
+              <div className="d-flex align-items-center mb-4 pe-4">
+                <div
+                  className="bg-primary bg-opacity-10 text-primary rounded-circle d-flex align-items-center justify-content-center me-3"
+                  style={{ width: "56px", height: "56px", flexShrink: 0 }}
+                >
+                  <i className="fa-regular fa-paper-plane fs-4 text-white"></i>
+                </div>
+                <div>
+                  <h4 className="mb-1 fw-bold">Share Invoice</h4>
+                  <p className="text-muted small mb-0" style={{ textTransform: "none", lineHeight: "1.4" }}>
+                    Send <strong className="text-dark">{selectedTx?.invoice_filename}</strong> securely to the provided email addresses.
+                  </p>
+                </div>
+              </div>
+
+              {/* Input Section */}
+              <div className="mb-4">
+                <label className="form-label fw-bold text-dark mb-2">
+                  Recipient Emails <span className="text-danger">*</span>
+                </label>
+
+                <div className="input-group mb-3 shadow-sm rounded">
+                  <span className="input-group-text bg-white border-end-0 text-muted ps-3">
+                    <i className="fa-regular fa-envelope"></i>
+                  </span>
+                  <input
+                    type="email"
+                    className="form-control border-start-0 ps-2"
+                    placeholder="name@example.com"
+                    value={currentEmailInput}
+                    onChange={(e) => setCurrentEmailInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        handleAddEmail();
+                      }
+                    }}
+                    style={{ boxShadow: "none" }}
+                  />
+                  <button
+                    type="button"
+                    className="btn btn-primary px-4 fw-semibold"
+                    onClick={handleAddEmail}
+                    disabled={!currentEmailInput.trim()}
+                    title="Add Email"
+                    style={{ zIndex: 0 }}
+                  >
+                    <i className="fa-solid fa-plus me-1"></i> Add
+                  </button>
+                </div>
+
+                {/* Selected Emails Chips */}
+                {shareEmails.length > 0 && (
+                  <div className="d-flex flex-wrap gap-2 mt-3 p-3 bg-light rounded border border-dashed">
+                    {shareEmails.map((email, index) => (
+                      <span
+                        key={index}
+                        className="badge bg-white text-dark border d-flex align-items-center gap-2 py-2 px-3 rounded-pill shadow-sm"
+                        style={{ fontSize: "0.85rem", textTransform: "none" }}
+                      >
+                        {email}
+                        <i
+                          className="fa-solid fa-circle-xmark text-danger"
+                          style={{ cursor: "pointer", fontSize: "1.1rem" }}
+                          onClick={() => handleRemoveEmail(email)}
+                          title="Remove Email"
+                        ></i>
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* History Section */}
+              <div className="mt-4 pt-4 border-top">
+                <div className="d-flex align-items-center mb-3">
+                  <i className="fa-solid fa-clock-rotate-left text-muted me-2"></i>
+                  <h6 className="fw-bold mb-0 text-dark">Previously Sent To</h6>
+                </div>
+
+                <div className="bg-light rounded p-3">
+                  {historyLoading ? (
+                    <div className="text-center py-3"><Loader /></div>
+                  ) : historyError ? (
+                    <p className="text-danger small mb-0"><i className="fa-solid fa-circle-exclamation me-1"></i> Unable to load history.</p>
+                  ) : invoiceHistory.length === 0 ? (
+                    <p className="text-muted small mb-0" style={{ textTransform: "none" }}>
+                      This document hasn't been shared with anyone yet.
+                    </p>
+                  ) : (
+                    <ul className="list-group list-group-flush bg-transparent" style={{ maxHeight: "180px", overflowY: "auto" }}>
+                      {invoiceHistory.map((item, index) => (
+                        <li key={index} className="list-group-item bg-transparent px-2 py-2 d-flex justify-content-between align-items-center border-bottom-0 border-top-0 mb-1 rounded" style={{ backgroundColor: "#fff" }}>
+                          <div className="d-flex align-items-center gap-3">
+                            <div className="bg-secondary bg-opacity-10 rounded-circle d-flex justify-content-center align-items-center" style={{ width: "35px", height: "35px" }}>
+                              <i className="fa-regular fa-user text-secondary"></i>
+                            </div>
+                            <div>
+                              <span className="fw-semibold text-dark d-block" style={{ fontSize: "0.9rem" }}>{item.email}</span>
+                              <span className="text-muted" style={{ fontSize: "0.75rem" }}>
+                                {formatDate(item.created_at)}
+                              </span>
+                            </div>
+                          </div>
+                          <span className="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 rounded-pill px-3 py-1" style={{ fontSize: "0.75rem", fontWeight: "600" }}>
+                            <i className="fa-solid fa-check me-1"></i> Sent
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              </div>
+
+              {/* Modal Actions */}
+              <div className="d-flex justify-content-end gap-3 mt-5">
+                <button
+                  type="button"
+                  className="btn btn-light fw-semibold px-4 border"
+                  onClick={handleCloseShareModal}
+                  disabled={shareLoading}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="btn btn-primary-custom fw-semibold px-4"
+                  disabled={shareLoading || (shareEmails.length === 0 && !currentEmailInput.trim())}
+                >
+                  {shareLoading ? (
+                    <><i className="fa-solid fa-spinner fa-spin me-2"></i>Sending...</>
+                  ) : (
+                    <><i className="fa-solid fa-paper-plane me-2"></i>Send Document</>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
     </div>
   );

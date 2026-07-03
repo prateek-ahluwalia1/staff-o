@@ -1276,7 +1276,7 @@ export default function EditProfile() {
           {/* Document Type */}
           <div className="mb-3">
             <label className="form-label fw-semibold">
-              Document Type <span className="text-danger">*</span>
+              Document Type
             </label>
             <select
               className="form-control"

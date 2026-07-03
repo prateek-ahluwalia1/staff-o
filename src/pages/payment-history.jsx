@@ -575,7 +575,7 @@ export default function PaymentHistory() {
                   {shareLoading ? (
                     <><i className="fa-solid fa-spinner fa-spin me-2"></i>Sending...</>
                   ) : (
-                    <><i className="fa-solid fa-paper-plane me-2"></i>Send Document</>
+                    <><i className="fa-solid fa-paper-plane me-2"></i>Send Invoice</>
                   )}
                 </button>
               </div>

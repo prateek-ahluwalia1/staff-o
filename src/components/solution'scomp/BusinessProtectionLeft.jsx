@@ -62,7 +62,6 @@ export default function BusinessProtectionLeft() {
         },
         subheading: {
             fontSize: "13px",
-            // fontWeight: "700",
             color: "#00c9a7", // Accent bright teal
             textTransform: "capitalize",
             letterSpacing: "0.02em",
@@ -112,8 +111,7 @@ export default function BusinessProtectionLeft() {
                 <div style={styles.leftContent}>
                     <div style={styles.imageWrapper}>
                         <img
-                            // src="images/security.png" // Temporary placeholder image matching security room theme
-                            src={securityImage} // Swap with your actual project asset path when ready
+                            src={securityImage}
                             alt="Security Monitoring Control Room"
                             style={styles.img}
                         />
@@ -122,38 +120,27 @@ export default function BusinessProtectionLeft() {
 
                 {/* Right Side: Text Details Block */}
                 <div style={styles.rightContent}>
-                    <div style={styles.subheading}>How Staffoo Solves It</div>
+                    <div style={styles.subheading}>Our Speciality</div>
                     <h2 style={styles.heading}>
-                        Everything You Need To Protect Your Business
+                        Built For Security Operations - Not Just Hiring
                     </h2>
 
                     <p style={styles.bodyText}>
-                        Staffoo replaces the phone-call-and-spreadsheet approach with a managed
-                        staffing platform built specifically for events. Submit a single brief covering your
-                        dates, venue and headcount, and our system matches you with licensed guards
-                        and supervisors who are already verified, insured and rated from past
-                        deployments — not just available.
-                    </p>
-
-                    <p style={styles.bodyText}>
-                        From there, Staffoo manages the parts that usually fall through the cracks:
-                        licence and induction checks before shift one, real-time check-in tracking on the
-                        day, and a single consolidated payroll invoice afterward instead of a stack of
-                        individual contractor payments.
+                        Staffoo takes things to the next level, unlike most employment apps. We ensure that security employees are able to report any incidents and hazards in real-time, within the app. It means you will always have a record of what happened during the event. You will have a digital record for reference if issues arise later, such as an insurance claim, complaint, or safety inquiry. No assumptions. No loss of data.
                     </p>
 
                     <ul style={styles.listContainer}>
                         <li style={styles.listItem}>
                             <span style={styles.bulletPoint}>•</span>
-                            Licence-verified guards and supervisors, every time
+                            Report incidents and hazards in real-time during live events
                         </li>
                         <li style={styles.listItem}>
                             <span style={styles.bulletPoint}>•</span>
-                            Real-time shift tracking and on-site reporting
+                            Review timestamped reports for insurance or compliance purposes
                         </li>
                         <li style={styles.listItem}>
                             <span style={styles.bulletPoint}>•</span>
-                            Transparent, all-inclusive payroll — no surprise invoices
+                            Made specially for the Australian security industry for complete security solutions
                         </li>
                     </ul>
                 </div>

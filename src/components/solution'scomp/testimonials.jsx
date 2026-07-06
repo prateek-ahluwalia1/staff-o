@@ -4,43 +4,43 @@ import React, { useState, useEffect, useRef } from "react";
 const testimonialsData = [
     {
         id: 1,
-        name: "David P.",
-        role: "Property Manager, Melbourne",
+        name: "Lucas Brown",
+        role: "Event Organiser, Sydney",
         avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=200&auto=format&fit=crop",
         rating: 5,
-        text: "The response time of their patrols is swift and reliable, especially at night. There have been fewer issues regarding security ever since they took control of our site. Good communication skills by the team, too."
+        text: "I posted a job on Staffoo just the night before our corporate event. I hired 3 compliance-ready guards within two hours. Honestly, I didn't expect it to be this quick."
     },
     {
         id: 2,
-        name: "David P.",
-        role: "Property Manager, Melbourne",
+        name: "Amelia Smith",
+        role: "Security Company Owner, Melbourne",
         avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=200&auto=format&fit=crop",
         rating: 5,
-        text: "The response time of their patrols is swift and reliable, especially at night. There have been fewer issues regarding security ever since they took control of our site. Good communication skills by the team, too."
+        text: "We use Staffoo to assign shifts to our subcontractors. The GPS tracking feature builds trust, especially for individual workers. It's a solid platform."
     },
     {
         id: 3,
-        name: "David P.",
-        role: "Property Manager, Melbourne",
+        name: "Mia Wilson",
+        role: "Venue Manager, Brisbane",
         avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=200&auto=format&fit=crop",
         rating: 5,
-        text: "The response time of their patrols is swift and reliable, especially at night. There have been fewer issues regarding security ever since they took control of our site. Good communication skills by the team, too."
-    },
-    {
-        id: 3,
-        name: "David P.",
-        role: "Property Manager, Melbourne",
-        avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=200&auto=format&fit=crop",
-        rating: 5,
-        text: "The response time of their patrols is swift and reliable, especially at night. There have been fewer issues regarding security ever since they took control of our site. Good communication skills by the team, too."
+        text: "Staffoo made our licence checking process so much easier. I used to search manually before, but now every guard's document is visible. Big time saver."
     },
     {
         id: 4,
-        name: "Sarah M.",
-        role: "Operations Director, Sydney",
-        avatar: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=200&auto=format&fit=crop",
+        name: "Ethan White",
+        role: "Freelance Security Guard, Perth",
+        avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=200&auto=format&fit=crop",
         rating: 5,
-        text: "Excellent scalability and compliance monitoring. We needed 30 guards deployed on short notice for a corporate conference, and the team executed flawlessly from induction to final sign-off."
+        text: "I was trying to find a platform like Staffoo. It is best suited for me as a security guard. Now I can do event work between my contracts."
+    },
+    {
+        id: 5,
+        name: "Noah",
+        role: "Concert Promoter, Gold Coast",
+        avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=200&auto=format&fit=crop",
+        rating: 5,
+        text: "Had a last-minute cancellation from a security service I usually hire. Thankfully I was recommended to find services on Staffoo and was lucky enough to get a replacement the same day. I will recommend using Staffoo for security purposes."
     }
 ];
 
@@ -89,7 +89,7 @@ export default function Testimonials() {
         wrapper: {
             width: "100%",
             background: "#0b1111",
-            padding: isMobile ? "60px 20px" : "50px 40px",
+            padding: isMobile ? "60px 20px" : "30px 40px",
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
@@ -230,7 +230,7 @@ export default function Testimonials() {
         }
       `}</style>
 
-            <h2 style={styles.heading}>What Our Clients Say</h2>
+            <h2 style={styles.heading}>About Our Clients</h2>
 
             <div style={styles.carouselContainer}>
                 {/* Left Arrow */}

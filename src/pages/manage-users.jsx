@@ -169,10 +169,18 @@ const ManageUsers = () => {
 
   const [formData, setFormData] = useState(defaultFormState);
 
-  const staffDocuments = useMemo(() => {
+  // ---------- dynamic documents for staff and sub_contractor ----------
+  const documents = useMemo(() => {
     if (!editingUser) return [];
-    return editingUser.documents || editingUser.staff?.documents || [];
-  }, [editingUser]);
+    if (editingUser.documents && editingUser.documents.length > 0) return editingUser.documents;
+    if (activeTab === "staff") {
+      return editingUser.staff?.documents || [];
+    }
+    if (activeTab === "sub_contractor") {
+      return editingUser.contractor?.documents || [];
+    }
+    return [];
+  }, [editingUser, activeTab]);
 
   // ---- ProfileForm change handler ----
   const handleProfileFormChange = useCallback((e) => {
@@ -395,7 +403,6 @@ const ManageUsers = () => {
   const handleDocFormChange = async (e) => {
     const { name, value, type, checked, files } = e.target;
 
-    // For Security License and Visa, expiry is set automatically, so we skip manual changes
     if (
       name === "document_expiry" &&
       (docForm.document_name === "Security License" || docForm.document_name === "Visa")
@@ -481,7 +488,7 @@ const ManageUsers = () => {
     // Visa verification
     if (docForm.document_name === "Visa") {
       const user = editingUser;
-      const staff = user?.staff || {};
+      const nested = activeTab === "staff" ? (user?.staff || {}) : (user?.contractor || {});
       const fullName = (user?.name || "").trim();
       let givenName = fullName;
       let familyName = fullName;
@@ -491,7 +498,7 @@ const ManageUsers = () => {
         familyName = nameParts[nameParts.length - 1];
       }
 
-      const rawDob = staff?.date_of_birth || user?.date_of_birth || formData.date_of_birth || "";
+      const rawDob = nested?.date_of_birth || user?.date_of_birth || formData.date_of_birth || "";
       if (!rawDob) {
         toast.error("Date of birth is missing. Please update personal information first.");
         return;
@@ -503,7 +510,7 @@ const ManageUsers = () => {
       }
       const dobISO = `${dobParts[2]}-${dobParts[1]}-${dobParts[0]}`;
 
-      const originCountry = staff?.origin_country || user?.origin_country || formData.origin_country || "";
+      const originCountry = nested?.origin_country || user?.origin_country || formData.origin_country || "";
       if (!originCountry) {
         toast.error("Please save your country of origin in your profile before verifying your visa.");
         return;
@@ -959,7 +966,7 @@ const ManageUsers = () => {
             font-size: 0.8rem;
           }
           .jobtracker-main-table {
-            min-width: 600px;           /* increased for staff columns */
+            min-width: 600px;
           }
         }
 
@@ -1000,7 +1007,6 @@ const ManageUsers = () => {
           .confirm-modal-card {
             max-width: 100%;
           }
-          /* Allow table cells to wrap so columns don't merge */
           .jobtracker-data-row td {
             word-break: break-word;
             white-space: normal;
@@ -1184,7 +1190,7 @@ const ManageUsers = () => {
           </table>
         </div>
 
-        {/* Pagination Footer – Prev/Next always side-by-side */}
+        {/* Pagination Footer */}
         <div className="card-footer bg-white border-top py-3 px-4 d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-2">
           <div className="text-muted small">
             Showing Page <strong>{page}</strong> of <strong>{totalPages}</strong>
@@ -1212,7 +1218,7 @@ const ManageUsers = () => {
         </div>
       </div>
 
-      {/* FULL SCREEN MODAL (with verification logic intact) */}
+      {/* FULL SCREEN MODAL */}
       {isModalOpen && (
         <div className="full-screen-modal">
           <div className="modal-inner-content">
@@ -1301,7 +1307,8 @@ const ManageUsers = () => {
                 >
                   Personal Information
                 </button>
-                {activeTab === "staff" && editingUser && (
+                {/* Show Documents tab for both Staff and Resource Partners */}
+                {(activeTab === "staff" || activeTab === "sub_contractor") && editingUser && (
                   <button
                     type="button"
                     className={`btn ${activeModalTab === "documents" ? "btn-primary-custom text-white" : "btn-outline-primary"}`}
@@ -1391,12 +1398,13 @@ const ManageUsers = () => {
                       <h6 className="section-divider mt-0 border-0 mb-1">Documents</h6>
                       <p className="text-muted mb-0 small"
                         style={{ textTransform: "none" }}
-                      >Upload and manage staff documents.</p>
+                      >Upload and manage documents.</p>
                     </div>
                   </div>
+                  {/* pass activeTab as userType – staff or sub_contractor */}
                   <DocumentTable
-                    documents={staffDocuments}
-                    userType="staff"
+                    documents={documents}
+                    userType={activeTab}
                     onAddFile={openDocumentModal}
                   />
                   {showDocModal && (
@@ -1411,7 +1419,7 @@ const ManageUsers = () => {
                           </span>
                           <div>
                             <h5 className="mb-0 fw-bold">{selectedDoc ? "Update Document" : "Add Document"}</h5>
-                            <div className="small text-muted">Upload a staff verification file.</div>
+                            <div className="small text-muted">Upload a verification file.</div>
                           </div>
                         </div>
                         <form onSubmit={handleDocSubmit} className="p-4" style={{ maxHeight: "70vh", overflowY: "auto" }}>
@@ -1438,7 +1446,7 @@ const ManageUsers = () => {
                             </select>
                           </div>
 
-                          {/* Document Number + Verify (restored) */}
+                          {/* Document Number + Verify */}
                           <div className="mb-3">
                             <label className="form-label fw-bold text-dark">
                               Document Number <span className="text-danger">*</span>

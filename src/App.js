@@ -1,4 +1,4 @@
-import React, { lazy, useEffect } from "react";
+import React, { lazy, useEffect, useRef, useState, useCallback } from "react";
 import {
     BrowserRouter as Router,
     Routes,
@@ -7,14 +7,17 @@ import {
     useLocation,
 } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
+import OneSignal from "react-onesignal";
 import { setUser } from "./store/slices/authSlice";
 import { toast } from "react-toastify";
 import { apiURL } from "./utils/exports";
 
 import ProtectedRoute from "./components/ProtectedRoute";
+import NotificationAssignModal from "./components/NotificationAssignModal";
 import NotificationToast from "./components/NotificationToast";
 import { useEcho } from "./hooks/useEcho";
 import { logOut } from "./store/slices/authSlice";
+import useSubmit from "./hooks/useSubmit";
 import RetailSecurity from "./pages/solutions/retail-security";
 import Careers from "./pages/career";
 import WarehouseLogisticsSecurity from "./pages/solutions/warehouse-logistics-security";
@@ -73,18 +76,179 @@ const PublicHolidays = lazy(() => import("./pages/PublicHolidays"));
 const PaySheet = lazy(() => import("./pages/PaySheet"));
 const StafooStaff = lazy(() => import("./pages/staffooStaff"));
 
+const ONESIGNAL_APP_ID = "79041c59-5506-4e56-9de4-8a6619f85e1d";
+
 function AppContent() {
     const dispatch = useDispatch();
     const navigate = useNavigate();
     const location = useLocation();
     const { token, userdata } = useSelector((state) => state.auth);
-    const isInitialMount = React.useRef(true);
+    const isInitialMount = useRef(true);
+    const oneSignalReadyRef = useRef(false);
+    const userId = userdata?.id ?? userdata?.data?.id;
+    const userRole = userdata?.data?.user_type || userdata?.user_type;
+    const { submit: submitStaffFetch } = useSubmit({ isAuth: true });
+    const { submit: assignJobSubmit } = useSubmit({ isAuth: true });
+    const [assignModalOpen, setAssignModalOpen] = useState(false);
+    const [assignModalJob, setAssignModalJob] = useState(null);
+    const [assignStaffList, setAssignStaffList] = useState([]);
+    const [assignStaffLoading, setAssignStaffLoading] = useState(false);
+    const [selectedAssignStaffId, setSelectedAssignStaffId] = useState(null);
+    const [assigningJob, setAssigningJob] = useState(false);
 
     useEcho();
 
     useEffect(() => {
         window.scrollTo({ top: 0, left: 0, behavior: "auto" });
     }, [location.pathname]);
+
+    useEffect(() => {
+        if (typeof window === "undefined") return;
+
+        const setupOneSignal = async () => {
+            try {
+                if (!oneSignalReadyRef.current) {
+                    await OneSignal.init({
+                        appId: ONESIGNAL_APP_ID,
+                        serviceWorkerPath: 'OneSignalSDKWorker.js',
+                        safari_web_id: "web.onesignal.auto.2bc028a8-3e83-466a-979b-b4e85ca9934f",
+                        allowLocalhostAsSecureOrigin: true,
+                        notifyButton: { enable: true },
+                    });
+                    oneSignalReadyRef.current = true;
+                }
+
+                if (token && userId) {
+                    await OneSignal.login(String(userId));
+                    if (typeof Notification !== "undefined" && Notification.permission === "default") {
+                        await OneSignal.Notifications.requestPermission();
+                    }
+                } else {
+                    await OneSignal.logout();
+                }
+            } catch (error) {
+                console.error("OneSignal setup failed:", error);
+            }
+        };
+
+        setupOneSignal();
+    }, [token, userId]);
+
+    const playNotificationSound = useCallback(() => {
+        if (typeof window === "undefined") return;
+        try {
+            const audio = new Audio("/sounds/notification.wav");
+            audio.volume = 0.6;
+            audio.play().catch(() => { });
+        } catch (error) {
+            console.warn("Notification sound failed:", error);
+        }
+    }, []);
+
+    const openAssignModal = useCallback(async (notification) => {
+        const additionalData = notification?.additionalData ?? notification?.data ?? {};
+        const rawRoster = additionalData?.roster?.roster ?? additionalData?.roster ?? {};
+        const jobPayload = {
+            id: rawRoster?.id || notification?.id,
+            title: rawRoster?.title || notification?.title || "New job request",
+            siteName: rawRoster?.site_name || rawRoster?.site?.site_name || additionalData?.site_name || "Site",
+            address: rawRoster?.site_address || rawRoster?.address || rawRoster?.site?.address || additionalData?.address || "Address not available",
+            date: rawRoster?.start ? new Date(rawRoster.start).toLocaleDateString("en-AU") : additionalData?.date || "TBD",
+            startTime: rawRoster?.start ? new Date(rawRoster.start).toLocaleTimeString("en-AU", { hour: "2-digit", minute: "2-digit", hour12: false }) : additionalData?.start_time || "—",
+            endTime: rawRoster?.end ? new Date(rawRoster.end).toLocaleTimeString("en-AU", { hour: "2-digit", minute: "2-digit", hour12: false }) : additionalData?.end_time || "—",
+            raw: rawRoster,
+        };
+
+        playNotificationSound();
+        setAssignModalJob(jobPayload);
+        setSelectedAssignStaffId(null);
+        setAssignModalOpen(true);
+
+        if (userRole !== "contractor" && userRole !== "resource_partner") {
+            return;
+        }
+
+        setAssignStaffLoading(true);
+        try {
+            const staffRes = await submitStaffFetch(`api/get-contractor-active-staff/${userId}`, {}, { method: "POST" });
+            const list = Array.isArray(staffRes?.data?.guards) ? staffRes.data.guards : Array.isArray(staffRes?.guards) ? staffRes.guards : [];
+            setAssignStaffList(list);
+        } catch (error) {
+            console.error("Failed to load staff list for assignment modal:", error);
+            setAssignStaffList([]);
+        } finally {
+            setAssignStaffLoading(false);
+        }
+    }, [playNotificationSound, submitStaffFetch, userId, userRole]);
+
+    const handleAssignJob = useCallback(async () => {
+        if (!assignModalJob || !selectedAssignStaffId) {
+            toast.error("Please select a staff member first.");
+            return;
+        }
+
+        setAssigningJob(true);
+        try {
+            const payload = {
+                roster_id: assignModalJob?.id,
+                staff_id: selectedAssignStaffId,
+                admin_id: userId,
+            };
+            const response = await assignJobSubmit(`api/asap-jobs/accept/${selectedAssignStaffId}`, payload, { method: "POST" });
+            if (response?.success || response?.data?.success) {
+                toast.success("Job assigned successfully.");
+            } else {
+                toast.error(response?.message || response?.error || "Unable to assign the job right now.");
+            }
+        } catch (error) {
+            toast.error(error?.message || "Unable to assign the job right now.");
+        } finally {
+            setAssigningJob(false);
+            setAssignModalOpen(false);
+            setAssignModalJob(null);
+            setSelectedAssignStaffId(null);
+        }
+    }, [assignJobSubmit, assignModalJob, selectedAssignStaffId, userId]);
+
+    useEffect(() => {
+        if (typeof window === "undefined") return;
+
+        const handleNotificationClick = (event) => {
+            const notification = event?.notification;
+            const additionalData = notification?.additionalData ?? notification?.data ?? {};
+            const page = additionalData?.page || additionalData?.route || additionalData?.url;
+
+            if (!page) {
+                openAssignModal(notification);
+                return;
+            }
+
+            const normalizedPage = String(page).replace(/^\/+/, "");
+            navigate(`/${normalizedPage}`);
+        };
+
+        const handleForegroundNotification = (event) => {
+            const notification = event?.notification;
+            if (!notification) return;
+
+            openAssignModal(notification);
+            event?.preventDefault?.();
+        };
+
+        OneSignal.Notifications.addEventListener("click", handleNotificationClick);
+        OneSignal.Notifications.addEventListener(
+            "foregroundWillDisplay",
+            handleForegroundNotification,
+        );
+
+        return () => {
+            OneSignal.Notifications.removeEventListener("click", handleNotificationClick);
+            OneSignal.Notifications.removeEventListener(
+                "foregroundWillDisplay",
+                handleForegroundNotification,
+            );
+        };
+    }, [navigate, userId, userRole, openAssignModal]);
 
     useEffect(() => {
         if (!isInitialMount.current) return;
@@ -150,6 +314,21 @@ function AppContent() {
     return (
         <>
             <NotificationToast />
+            <NotificationAssignModal
+                open={assignModalOpen}
+                job={assignModalJob}
+                staffList={assignStaffList}
+                loadingStaff={assignStaffLoading}
+                selectedStaffId={selectedAssignStaffId}
+                onSelectStaff={setSelectedAssignStaffId}
+                onAssign={handleAssignJob}
+                onClose={() => {
+                    setAssignModalOpen(false);
+                    setAssignModalJob(null);
+                    setSelectedAssignStaffId(null);
+                }}
+                assigning={assigningJob}
+            />
             <Routes>
                 {/* ===== PUBLIC ROUTES ===== */}
                 <Route

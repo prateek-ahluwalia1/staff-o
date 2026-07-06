@@ -240,9 +240,9 @@ export default function ProfileForm({
                   }}
                   required
                   minLength={3}
-                  maxLength={20}
-                  pattern="^[A-Za-z0-9\s]{3,20}$"
-                  title="Company Name must be 3-20 characters"
+                  maxLength={100}
+                  pattern="^[A-Za-z0-9\s]{3,100}$"
+                  title="Company Name must be 3-100 characters"
                 />
               </div>
 

@@ -210,7 +210,7 @@ export default function WarehouseLogisticsSecurity() {
                     name="keywords"
                     content="warehouse security, logistics security, security guards, Australia, 24-hour security, licensed guards, Staffoo"
                 />
-                <link rel="canonical" href="https://staffoo.com.au/warehouse-security" />
+                <link rel="canonical" href="https://staffoo.com.au/solutions/warehouse-security" />
 
                 {/* Open Graph Tags */}
                 <meta property="og:title" content="Warehouse Logistics Security Across Australia | Staffoo" />

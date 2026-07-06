@@ -10,6 +10,7 @@ import BusinessProtectionLeft from "../../components/solution'scomp/BusinessProt
 import RelatedSolutions from "../../components/solution'scomp/RelatedSolutions";
 import FAQ from "../../components/solution'scomp/FAQ";
 import ReadyToSecure from "../../components/solution'scomp/ReadyToSecure";
+import { Helmet } from "react-helmet";
 
 export default function EventSecurityHero() {
   const [isPrimaryHovered, setIsPrimaryHovered] = useState(false);
@@ -191,6 +192,17 @@ export default function EventSecurityHero() {
 
   return (
     <>
+      <Helmet>
+        <title>
+          Professional Event Security Services in Australia | Staffoo
+        </title>
+
+        <meta
+          name="description"
+          content="Staffoo connects event organisers with security staff. 24-hours service with compliant professionals and quick response for a secure event in Australia."
+        />
+      </Helmet>
+
       <Header />
 
       <div style={styles.page}>
@@ -201,21 +213,21 @@ export default function EventSecurityHero() {
             <div style={styles.breadcrumb}>
               <span>Home</span>
               <span style={styles.breadcrumbSep}>&gt;</span>
-              <span>Solutions</span>
+              <span>Event Security</span>
               <span style={styles.breadcrumbSep}>&gt;</span>
-              <span style={styles.breadcrumbHighlight}>Event Security</span>
+              <span style={styles.breadcrumbHighlight}>Find Licensed Staff</span>
             </div>
 
             {/* Heading */}
             <h1 style={styles.heading}>
-              Professional <span style={styles.headingAccent}>Event Security</span> staffing built for scale
+              Find <span style={styles.headingAccent}>Licensed Event Security Staff</span> Today
             </h1>
 
             {/* Description */}
             <p style={styles.description}>
-              From small private functions to major public events, Staffoo sources,
-              verifies, and deploys licensed security personnel — fast, compliant,
-              and covered.
+              Get event security staff fast. Just post a job in minutes and connect
+              with compliant, licensed security professionals for your event anywhere
+              across Australia.
             </p>
 
             {/* Buttons */}
@@ -225,14 +237,15 @@ export default function EventSecurityHero() {
                 onMouseEnter={() => setIsPrimaryHovered(true)}
                 onMouseLeave={() => setIsPrimaryHovered(false)}
               >
-                Request security staff
+                Post Your Job
               </button>
+
               <button
                 style={styles.btnSecondary}
                 onMouseEnter={() => setIsSecondaryHovered(true)}
                 onMouseLeave={() => setIsSecondaryHovered(false)}
               >
-                See how it works
+                Find Security Staff
               </button>
             </div>
           </div>
@@ -240,31 +253,37 @@ export default function EventSecurityHero() {
           {/* Right Card */}
           <div style={styles.right}>
             <div style={styles.card}>
-              <div style={styles.cardLabel}>Solution at a Glance</div>
+              <div style={styles.cardLabel}>Why Choose Staffoo</div>
 
               {/* Stats */}
               <div style={styles.statsGrid}>
                 <div style={styles.statBox}>
-                  <div style={styles.statValue}>24 hrs</div>
-                  <div style={styles.statLabel}>Avg. deployment time</div>
+                  <div style={styles.statValue}>Fast</div>
+                  <div style={styles.statLabel}>
+                    Post jobs in minutes and fill shifts quickly
+                  </div>
                 </div>
+
                 <div style={styles.statBox}>
                   <div style={styles.statValue}>100%</div>
-                  <div style={styles.statLabel}>Licensed &amp; verified</div>
+                  <div style={styles.statLabel}>
+                    Verified licences &amp; certifications
+                  </div>
                 </div>
               </div>
 
               {/* Tags */}
               <div style={styles.tagsGrid}>
-                <div style={styles.tag}>Crowd controller</div>
-                <div style={styles.tag}>RSA-trained</div>
-                <div style={styles.tag}>GPS tracking</div>
-                <div style={styles.tag}>Payroll managed</div>
+                <div style={styles.tag}>Licensed Professionals</div>
+                <div style={styles.tag}>Verified Certifications</div>
+                <div style={styles.tag}>Quick Response</div>
+                <div style={styles.tag}>Australia Wide</div>
               </div>
             </div>
           </div>
         </div>
       </div>
+      
       <StatsCounter />
       <BusinessProtection />
       <Testimonials />

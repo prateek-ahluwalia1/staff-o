@@ -10,6 +10,13 @@ import BusinessProtectionLeft from "../../components/solution'scomp/BusinessProt
 import RelatedSolutions from "../../components/solution'scomp/RelatedSolutions";
 import FAQ from "../../components/solution'scomp/FAQ";
 import ReadyToSecure from "../../components/solution'scomp/ReadyToSecure";
+import { Helmet } from "react-helmet";
+import LogisticWWA from "../../components/solution'scomp/Logistic'comp/LogisticWWA";
+import LogisticWCU from "../../components/solution'scomp/Logistic'comp/LogisticWCU";
+import LogisticHIW from "../../components/solution'scomp/Logistic'comp/LogisticHIW";
+import LogisticSpecility from "../../components/solution'scomp/Logistic'comp/LogisticSpecility";
+import LogisticSolutions from "../../components/solution'scomp/Logistic'comp/LogisticSolutions";
+import LogisticFaqs from "../../components/solution'scomp/Logistic'comp/LogisticFaqs";
 
 export default function WarehouseLogisticsSecurity() {
     const [isPrimaryHovered, setIsPrimaryHovered] = useState(false);
@@ -124,6 +131,7 @@ export default function WarehouseLogisticsSecurity() {
             letterSpacing: "0.01em",
             width: isMobile ? "100%" : "auto",
         },
+
         right: {
             flexShrink: 0,
             width: "100%",
@@ -144,7 +152,7 @@ export default function WarehouseLogisticsSecurity() {
             fontWeight: "5w00",
             letterSpacing: "0.08em",
             color: "#00c9a7",
-            textTransform: "uppercase",
+            // textTransform: "uppercase",
             marginBottom: "24px",
             textAlign: isMobile ? "center" : "left",
         },
@@ -192,7 +200,39 @@ export default function WarehouseLogisticsSecurity() {
 
     return (
         <>
+            <Helmet>
+                <title>Warehouse Logistics Security Across Australia | Staffoo</title>
+                <meta
+                    name="description"
+                    content="Find warehouse security guards with Staffoo in Australia. 24-hour security, with timely reporting by trained and licensed guards, for your security needs."
+                />
+                <meta
+                    name="keywords"
+                    content="warehouse security, logistics security, security guards, Australia, 24-hour security, licensed guards, Staffoo"
+                />
+                <link rel="canonical" href="https://staffoo.com.au/warehouse-security" />
+
+                {/* Open Graph Tags */}
+                <meta property="og:title" content="Warehouse Logistics Security Across Australia | Staffoo" />
+                <meta
+                    property="og:description"
+                    content="Find warehouse security guards with Staffoo in Australia. 24-hour security, with timely reporting by trained and licensed guards, for your security needs."
+                />
+                <meta property="og:type" content="website" />
+                <meta property="og:url" content="https://staffoo.com.au/warehouse-security" />
+
+                {/* Twitter Card Tags */}
+                <meta name="twitter:card" content="summary_large_image" />
+                <meta name="twitter:title" content="Warehouse Logistics Security Across Australia | Staffoo" />
+                <meta
+                    name="twitter:description"
+                    content="Find warehouse security guards with Staffoo in Australia. 24-hour security, with timely reporting by trained and licensed guards, for your security needs."
+                />
+            </Helmet>
+
             <Header />
+
+
 
             <div style={styles.page}>
                 <div style={styles.container}>
@@ -204,32 +244,41 @@ export default function WarehouseLogisticsSecurity() {
                             <span style={styles.breadcrumbSep}>&gt;</span>
                             <span>Solutions</span>
                             <span style={styles.breadcrumbSep}>&gt;</span>
-                            <span style={styles.breadcrumbHighlight}>Event Security</span>
+                            <span style={styles.breadcrumbHighlight}>Warehouse Security</span>
                         </div>
 
-                        {/* Heading */}
                         <h1 style={styles.heading}>
-                            Professional <span style={styles.headingAccent}>Event Security</span> staffing built for scale
+                            Smart
+                            <span style={styles.headingAccent}> Warehouse Security </span>Solutions That Scale With Demand
                         </h1>
 
                         {/* Description */}
                         <p style={styles.description}>
-                            From small private functions to major public events, Staffoo sources,
-                            verifies, and deploys licensed security personnel — fast, compliant,
-                            and covered.
-                        </p>
+                            Post your job, review professionally licensed security guard profiles, and fill your shifts quickly with Staffoo. Designed for high-volume logistics operations that cannot afford delays.                        </p>
 
                         {/* Buttons */}
                         <div style={styles.buttonGroup}>
                             <button
-                                style={styles.btnPrimary}
+                                style={{
+                                    ...styles.btnPrimary,
+                                    ...(isPrimaryHovered && {
+                                        transform: "scale(1.05)",
+                                        boxShadow: "0 4px 20px rgba(0, 201, 167, 0.4)",
+                                    }),
+                                }}
                                 onMouseEnter={() => setIsPrimaryHovered(true)}
                                 onMouseLeave={() => setIsPrimaryHovered(false)}
                             >
                                 Request security staff
                             </button>
                             <button
-                                style={styles.btnSecondary}
+                                style={{
+                                    ...styles.btnSecondary,
+                                    ...(isSecondaryHovered && {
+                                        background: "rgba(255, 255, 255, 0.05)",
+                                        borderColor: "#00c9a7",
+                                    }),
+                                }}
                                 onMouseEnter={() => setIsSecondaryHovered(true)}
                                 onMouseLeave={() => setIsSecondaryHovered(false)}
                             >
@@ -239,42 +288,61 @@ export default function WarehouseLogisticsSecurity() {
                     </div>
 
                     {/* Right Card */}
+                    {/* Right Card */}
                     <div style={styles.right}>
                         <div style={styles.card}>
-                            <div style={styles.cardLabel}>Solution at a Glance</div>
+                            <div style={styles.cardLabel}>Why Staffoo</div>
 
-                            {/* Stats */}
+                            {/* Stats Grid */}
                             <div style={styles.statsGrid}>
                                 <div style={styles.statBox}>
-                                    <div style={styles.statValue}>24 hrs</div>
-                                    <div style={styles.statLabel}>Avg. deployment time</div>
+                                    <div style={styles.statValue}>500+ </div>
+                                    <div style={styles.statLabel}>Monthly <br /> deploys</div>
                                 </div>
+
                                 <div style={styles.statBox}>
                                     <div style={styles.statValue}>100%</div>
-                                    <div style={styles.statLabel}>Licensed &amp; verified</div>
+                                    <div style={styles.statLabel}>Licensed & Verified</div>
                                 </div>
                             </div>
 
                             {/* Tags */}
                             <div style={styles.tagsGrid}>
-                                <div style={styles.tag}>Crowd controller</div>
-                                <div style={styles.tag}>RSA-trained</div>
-                                <div style={styles.tag}>GPS tracking</div>
-                                <div style={styles.tag}>Payroll managed</div>
+                                <div style={styles.tag}>GPS <br /> Tracking</div>
+                                <div style={styles.tag}>Payroll Management</div>
+                                <div style={styles.tag}>Instant Deployment</div>
+                                <div style={styles.tag}>Complince Covered</div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
+
+
             <StatsCounter />
-            <BusinessProtection />
+
+
+            <LogisticWWA />
+
+
             <Testimonials />
-            <WhyChooseStaffoo />
-            <HowItWorks />
-            <BusinessProtectionLeft />
-            <RelatedSolutions />
-            <FAQ />
-            <ReadyToSecure />
+
+
+            <LogisticWCU />
+
+            <LogisticHIW />
+
+            <LogisticSpecility />
+
+            <LogisticSolutions />
+
+            <LogisticFaqs />
+
+            <ReadyToSecure
+                heading="Want Strategic Security Coverage?"
+                description="Protect your site, loading dock, and high-risk areas with licensed security guards in Australia. Match the experienced professionals with your warehouse business needs."
+                buttonText="Request Security Staff"
+            />
 
             <Footer />
         </>

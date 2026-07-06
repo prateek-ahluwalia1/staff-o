@@ -192,14 +192,51 @@ export default function EventSecurityHero() {
 
   return (
     <>
+
       <Helmet>
         <title>
-          Professional Event Security Services in Australia | Staffoo
+          Best Retail Security Services in Australia | Staffoo
         </title>
 
         <meta
           name="description"
-          content="Staffoo connects event organisers with security staff. 24-hours service with compliant professionals and quick response for a secure event in Australia."
+          content="Book professional retail security guards for your shops and outlets with Staffoo. Post your request, check the profile, and book a security guard in Australia."
+        />
+
+        <meta
+          name="keywords"
+          content="retail security, retail security guards, shop security, retail security services, outlet security, Australia, Staffoo"
+        />
+
+        <link
+          rel="canonical"
+          href="https://staffoo.com.au/solutions/retail-security"
+        />
+
+        {/* Open Graph Tags */}
+        <meta
+          property="og:title"
+          content="Best Retail Security Services in Australia | Staffoo"
+        />
+        <meta
+          property="og:description"
+          content="Book professional retail security guards for your shops and outlets with Staffoo. Post your request, check the profile, and book a security guard in Australia."
+        />
+        <meta property="og:type" content="website" />
+        <meta
+          property="og:url"
+          content="https://staffoo.com.au/solutions/retail-security"
+        />
+
+        {/* Twitter Card Tags */}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta
+          name="twitter:title"
+          content="Best Retail Security Services in Australia | Staffoo"
+        />
+        <meta
+          name="twitter:description"
+          content="Book professional retail security guards for your shops and outlets with Staffoo. Post your request, check the profile, and book a security guard in Australia."
         />
       </Helmet>
 
@@ -213,14 +250,14 @@ export default function EventSecurityHero() {
             <div style={styles.breadcrumb}>
               <span>Home</span>
               <span style={styles.breadcrumbSep}>&gt;</span>
-              <span>Event Security</span>
+              <span>Solutions</span>
               <span style={styles.breadcrumbSep}>&gt;</span>
-              <span style={styles.breadcrumbHighlight}>Find Licensed Staff</span>
+              <span style={styles.breadcrumbHighlight}>Event Security</span>
             </div>
 
             {/* Heading */}
             <h1 style={styles.heading}>
-              Find <span style={styles.headingAccent}>Licensed Event Security Staff</span> Today
+              Find Licensed  <span style={styles.headingAccent}>Event Security</span> Staff Today
             </h1>
 
             {/* Description */}
@@ -253,37 +290,35 @@ export default function EventSecurityHero() {
           {/* Right Card */}
           <div style={styles.right}>
             <div style={styles.card}>
-              <div style={styles.cardLabel}>Why Choose Staffoo</div>
+              <div style={styles.cardLabel}>Why Staffoo</div>
 
-              {/* Stats */}
+              {/* Stats Grid */}
               <div style={styles.statsGrid}>
                 <div style={styles.statBox}>
-                  <div style={styles.statValue}>Fast</div>
-                  <div style={styles.statLabel}>
-                    Post jobs in minutes and fill shifts quickly
-                  </div>
+                  <div style={styles.statValue}>500+ </div>
+                  <div style={styles.statLabel}>Monthly <br /> deploys</div>
                 </div>
 
                 <div style={styles.statBox}>
                   <div style={styles.statValue}>100%</div>
-                  <div style={styles.statLabel}>
-                    Verified licences &amp; certifications
-                  </div>
+                  <div style={styles.statLabel}>Licensed & Verified</div>
                 </div>
               </div>
 
               {/* Tags */}
               <div style={styles.tagsGrid}>
-                <div style={styles.tag}>Licensed Professionals</div>
-                <div style={styles.tag}>Verified Certifications</div>
-                <div style={styles.tag}>Quick Response</div>
-                <div style={styles.tag}>Australia Wide</div>
+                <div style={styles.tag}>GPS <br /> Tracking</div>
+                <div style={styles.tag}>Payroll Management</div>
+                <div style={styles.tag}>Instant Deployment</div>
+                <div style={styles.tag}>Complince Covered</div>
               </div>
             </div>
           </div>
+
+
         </div>
       </div>
-      
+
       <StatsCounter />
       <BusinessProtection />
       <Testimonials />
@@ -292,7 +327,14 @@ export default function EventSecurityHero() {
       <BusinessProtectionLeft />
       <RelatedSolutions />
       <FAQ />
-      <ReadyToSecure />
+
+
+      <ReadyToSecure
+        heading="Need Trusted Security Staff?"
+        description="Staffoo helps you connect with licensed security professionals for festivals, corporate events, concerts, or private events across Australia."
+        buttonText="Request Security Staff"
+      />
+
 
       <Footer />
     </>

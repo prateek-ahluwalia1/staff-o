@@ -60,8 +60,8 @@
                             
                             <!-- Call To Action Button (modern, rounded, gradient style) -->
                             <tr>
-                                <td style="padding: 24px 32px 12px 32px; text-align: center;">
-                                    <a href="https://apis.staffoo.com.au/api/email-verification/{{$email}}/{{$token}}"
+                               <td style="padding: 24px 32px 12px 32px; text-align: center;">
+                                    <a href="{{ config('app.url') . '/api/email-verification/' . $email . '/' . $token }}"
                                     target="_blank"
                                     style="background-color: #00A37E; color: #ffffff; padding: 14px 32px; border-radius: 60px; text-decoration: none; font-weight: 600; font-size: 16px; display: inline-block; text-align: center; font-family: Arial, sans-serif;">
                                         Verify Email

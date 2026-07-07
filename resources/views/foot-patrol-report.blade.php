@@ -396,11 +396,5 @@ function getSignatureUrl($sig) {
 
 @endforeach
 
-{{-- FOOTER --}}
-<div class="page-footer">
-  Thank you for choosing Staffoo.<br>
-  For billing enquiries contact admin@staffoo.com.au | ABN: 48 613 317 838
-</div>
-
 </body>
 </html>

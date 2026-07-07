@@ -55,7 +55,9 @@ class AuthController extends Controller
         $user->staffo_id = 'STAFO' . $user->id;
         $user->save();
 
+        if(!empty($user->phone)){
         $this->sendOTP($user->phone, $otp);
+        }
         $this->EmailVerify($request->email);
 
         if($data['user_type'] == 'customer'){
@@ -161,15 +163,13 @@ class AuthController extends Controller
 
     public function resendOtp(Request $request)
     {
-        $request->validate(['phone' => 'required|string']);
-
-        $user = User::where('phone', $request->phone)->first();
+        $user = User::where('id', $request->id)->first();
 
         if (!$user) {
             return response()->json(['message' => 'User not found'], 404);
         }
 
-        if ($user->phone_verified) {
+        if ($user->phone_verified == 1) {
             return response()->json(['message' => 'Phone already verified'], 400);
         }
 
@@ -179,7 +179,7 @@ class AuthController extends Controller
             'phone_otp'            => $otp,
         ]);
 
-        $sent = $this->sendOTP($user->phone, $otp);
+        $sent = $this->sendOTP($request->phone, $otp);
 
         if (!$sent) {
             return response()->json(['success' => false, 'message' => 'Failed to send OTP, try again'], 500);
@@ -197,13 +197,13 @@ class AuthController extends Controller
             'otp'   => 'required|string',
         ]);
 
-        $user = User::where('phone', $request->phone)->first();
+        $user = User::where('id', $request->id)->first();
 
         if (!$user) {
             return response()->json(['success' => false, 'message' => 'User not found'], 404);
         }
 
-        if ($user->phone_verified) {
+        if ($user->phone_verified == 1) {
             return response()->json(['success' => false, 'message' => 'Phone already verified'], 200);
         }
 
@@ -222,7 +222,7 @@ class AuthController extends Controller
         $user->update([
             'phone_verified'       => 1,
             'phone_otp'            => null,
-            // 'phone_otp_expires_at' => null,
+            'phone'                => $request->phone,
         ]);
 
         return response()->json(['success' => true, 'code' => 200, 'message' => 'Phone verified successfully']);

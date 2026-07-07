@@ -135,7 +135,7 @@ private function calculateProfileCompletion(User $user): int
 
     // Document scoring
     $documents = $user->documents ?? collect();
-    $totalDocuments = $documents->count();
+    $totalDocuments = $user->documents->count();
     $filledDocuments = 0;
     $documentScore = 0;
 
@@ -216,6 +216,22 @@ private function calculateProfileCompletion(User $user): int
                 $user->is_active = $newStatus;
                 $user->save();
 
+               if ($totalDocuments > 0) {
+                $filledDocuments = $documents->filter(function ($doc) {
+                    if (empty($doc->document_no)) {
+                        return false;
+                    }
+
+                    if (!empty($doc->document_expiry)) {
+                        $expiryDate = \Carbon\Carbon::parse($doc->document_expiry);
+                        return $expiryDate->isFuture();
+                    }
+
+                    return false; 
+                })->count();
+
+                $documentScore = ($filledDocuments / $totalDocuments) * $documentWeight;
+            }
                 if ($newStatus === 1 && $oldStatus != 1) {
                     $notificationData = [
                         'notification_token' => $user->notification_token,
@@ -231,13 +247,22 @@ private function calculateProfileCompletion(User $user): int
             }
         }
     } else {
-        if ($totalDocuments > 0) {
-            $filledDocuments = $documents->filter(function ($doc) {
-                return !empty($doc->document_no);
-            })->count();
+           if ($totalDocuments > 0) {
+                $filledDocuments = $documents->filter(function ($doc) {
+                    if (empty($doc->document_no)) {
+                        return false;
+                    }
 
-            $documentScore = ($filledDocuments / $totalDocuments) * $documentWeight;
-        }
+                    if (!empty($doc->document_expiry)) {
+                        $expiryDate = \Carbon\Carbon::parse($doc->document_expiry);
+                        return $expiryDate->isFuture();
+                    }
+
+                    return false; 
+                })->count();
+
+                $documentScore = ($filledDocuments / $totalDocuments) * $documentWeight;
+            }
 
         if ($user->user_type === 'contractor' && in_array(strtolower($user->state), ['victoria', 'queensland'])) {
             $labourHireDoc = $documents->firstWhere('document_type', 'labour_hire');

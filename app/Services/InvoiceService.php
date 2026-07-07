@@ -163,7 +163,7 @@ class InvoiceService
         $html .= "<div class='footer'>";
         $html .= "<span class='badge'>Payment held via Stripe, and the hold will be released after completion of the shift.</span><br><br>";
         $html .= "Thank you for choosing STAFFOO.<br>";
-        $html .= "For billing enquiries contact <strong>billing@staffoo.com.au</strong>";
+        $html .= "For billing enquiries contact <strong>admin@staffoo.com.au</strong>";
         $html .= " &nbsp;|&nbsp; ABN: 48 613 317 838";
         $html .= "</div></body></html>";
 

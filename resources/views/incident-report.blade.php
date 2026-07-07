@@ -588,8 +588,7 @@ function photoUrl(string $imgPath): string {
 ══════════════════════════════════════════════════════ --}}
 <div class="page-footer">
   <div style="text-align: center;">
-    <div style="margin-bottom: 5px;">Thank you for choosing Staffoo.</div>
-    <div>For billing enquiries contact admin@staffoo.com.au | ABN: 48 613 317 838</div>
+    
   </div>
 </div>
 

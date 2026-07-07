@@ -19,6 +19,10 @@ class Transaction extends Model
         'total_amount',
         'currency',
         'status',
-        'response'
+        'response',
+        'payment_option',
+        'balance_status',
+        'balance_payment_intent_id',
+        'balance_charged_at',
     ];
 }

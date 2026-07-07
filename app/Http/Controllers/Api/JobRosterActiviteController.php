@@ -574,7 +574,7 @@ class JobRosterActiviteController extends Controller
             mkdir($path, 0755, true);
         }
     
-        $file_name = time() . '_master_shift_report.pdf';
+        $file_name = time() . '_end_shift_report.pdf';
         file_put_contents($path . '/' . $file_name, $output);
     
         // ── Save to transient_files ──

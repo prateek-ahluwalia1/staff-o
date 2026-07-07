@@ -18,7 +18,7 @@ class ContractorController extends Controller
      */
     public function index(Request $request)
     {
-        $query = User::where('user_type', 'contractor')
+        $query = User::where('user_type', 'contractor')->whereNotIn('id', [1])
             ->with('contractor');
 
         // Search functionality
@@ -135,6 +135,8 @@ class ContractorController extends Controller
             'company_name' => $data['company_name'],
             'registration_number' => $data['registration_number'] ?? null,
             'phone' => $data['phone'] ?? null,
+            'abn' => $request->abn ?? null,
+            'acn' => $request->acn ?? null,
         ]);
 
         // Create document entries from categories

@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>STAFFOO - Master Shift Report</title>
+<title>STAFFOO - End Shift Report</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -406,7 +406,8 @@ $logoBase64 = base64_encode($imageData);
 function getSignatureUrl($sig) {
     if (empty($sig)) return '';
     if (filter_var($sig, FILTER_VALIDATE_URL)) return $sig;
-    return 'https://apis.staffoo.com.au/' . ltrim($sig, '/');
+    return config('app.url') . '/' . ltrim($sig, '/');
+
 }
 
 // Ensure array helper
@@ -435,7 +436,7 @@ function toFlat($val): array {
     <img src="data:image/png;base64,{{ $logoBase64 }}" alt="Image">
   </div>
   <div class="title-cell">
-    <div class="report-label">Master Shift Report</div>
+    <div class="report-label">End Shift Report</div>
   </div>
 </div>
 <div class="accent-bar"></div>
@@ -507,7 +508,7 @@ function toFlat($val): array {
               $photo   = is_array($photo) ? $photo : (array)$photo;
               $imgPath = trim(safeStr($photo['imgPath']   ?? null, ''));
               $imgTs   = safeStr($photo['timestamp']      ?? null, '');
-              $imgUrl = !empty($imgPath) ? 'https://apis.staffoo.com.au/footpatrol/' . $imgPath : '';
+              $imgUrl = !empty($imgPath) ? config('app.url') . '/footpatrol/' . $imgPath : '';
               $ch = curl_init();
               curl_setopt($ch, CURLOPT_URL, $imgUrl);
               curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
@@ -538,7 +539,7 @@ function toFlat($val): array {
       <div class="sig-wrap">
         @if(!empty($sig))
           @php
-            $footsigimgUrl  = !empty($sig) ? 'https://apis.staffoo.com.au/footpatrol/' . $sig : '';
+            $footsigimgUrl  = !empty($sig) ? config('app.url') . '/footpatrol/' . $sig : '';
             $ch = curl_init();
             curl_setopt($ch, CURLOPT_URL, $footsigimgUrl);
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
@@ -664,7 +665,7 @@ function toFlat($val): array {
                $photo   = is_array($photo) ? $photo : (array)$photo;
               $imgPath = trim(safeStr($photo['imgPath']   ?? null, ''));
               $imgTs   = safeStr($photo['timestamp']      ?? null, '');
-              $imgUrl = !empty($imgPath) ? 'https://apis.staffoo.com.au/incident/' . $imgPath : '';
+              $imgUrl = !empty($imgPath) ? config('app.url') . '/incident/' . $imgPath : '';
               $ch = curl_init();
               curl_setopt($ch, CURLOPT_URL, $imgUrl);
               curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
@@ -695,7 +696,7 @@ function toFlat($val): array {
       <div class="sig-wrap">
         @if(!empty($sig))
           @php
-            $incsigimgUrl  = !empty($sig) ? 'https://apis.staffoo.com.au/incident/' . $sig : '';;
+            $incsigimgUrl  = !empty($sig) ? config('app.url') . '/incident/' . $sig : '';;
             $ch = curl_init();
             curl_setopt($ch, CURLOPT_URL, $incsigimgUrl);
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
@@ -717,12 +718,6 @@ function toFlat($val): array {
   </div>
   @endforeach
 @endif
-
-{{-- FOOTER --}}
-<div class="page-footer">
-  Thank you for choosing Staffoo.<br>
-  For billing enquiries contact admin@staffoo.com.au | ABN: 48 613 317 838
-</div>
 
 </body>
 </html>

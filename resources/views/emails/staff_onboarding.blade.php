@@ -198,7 +198,7 @@
                     <tr>
                         <td style="background: #F7FBFD; padding: 20px 32px 28px 32px; text-align: center; border-top: 1px solid #E2EDF2;">
                             <img src="https://apis.staffoo.com.au/uploads/staffologo.png" alt="STAFFOO" width="100" height="auto" style="display: inline-block; width: 100px; opacity: 0.7; margin-bottom: 12px;">
-                            <p style="font-size: 12px; color: #8EA3B2; margin: 8px 0 0 0;">© 2025 STAFFOO</p>
+                            <p style="font-size: 12px; color: #8EA3B2; margin: 8px 0 0 0;">© {{ date('Y') }} STAFFOO</p>
                             <p style="font-size: 11px; color: #9EB2C0; margin: 8px 0 0 0;">
                                 <a href="https://staffoo.com.au/privacy-policy" style="color: #6F8F9F; text-decoration: none;">Privacy</a> &nbsp;|&nbsp; 
                                 <a href="https://staffoo.com.au/contact-us" style="color: #6F8F9F; text-decoration: none;">Support Center</a>

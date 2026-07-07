@@ -1,4 +1,6 @@
 import React from "react";
+import Select from "react-select";
+import { parseRequiredDocuments } from "../utils/documents";
 
 const getDisplayName = (staff) => {
     if (!staff) return "Staff";
@@ -22,6 +24,106 @@ export default function NotificationAssignModal({
     assigning = false,
 }) {
     if (!open) return null;
+
+    // Fallback chain: raw roster from full API shape, or fields flattened directly onto job/notification payload
+    const documentListRaw =
+        job?.raw?.document_list ??
+        job?.document_list ??
+        job?.raw?.roster?.document_list ??
+        null;
+
+    const isDocumentFlag =
+        job?.raw?.is_document ??
+        job?.is_document ??
+        job?.raw?.roster?.is_document ??
+        1;
+
+    const requiredDocs = parseRequiredDocuments(documentListRaw, isDocumentFlag);
+
+    const staffOptions = staffList.map((staff) => ({
+        value: staff.id,
+        label: getDisplayName(staff),
+        email: staff.email,
+    }));
+
+    const selectedStaffOption =
+        staffOptions.find((opt) => String(opt.value) === String(selectedStaffId)) || null;
+
+    const staffSelectStyles = {
+        control: (base, state) => ({
+            ...base,
+            minHeight: "48px",
+            borderRadius: "12px",
+            background: "rgba(255,255,255,0.05)",
+            borderColor: state.isFocused ? "#2dd4bf" : "rgba(255,255,255,0.08)",
+            boxShadow: state.isFocused ? "0 0 0 1px #2dd4bf" : "none",
+            "&:hover": {
+                borderColor: "#2dd4bf",
+            },
+        }),
+        singleValue: (base) => ({
+            ...base,
+            color: "#f8fafc",
+        }),
+        input: (base) => ({
+            ...base,
+            color: "#f8fafc",
+        }),
+        placeholder: (base) => ({
+            ...base,
+            color: "#94a3b8",
+        }),
+        menu: (base) => ({
+            ...base,
+            background: "#0f172a",
+            border: "1px solid rgba(255,255,255,0.08)",
+            borderRadius: "12px",
+            overflow: "hidden",
+            zIndex: 3100,
+        }),
+        menuPortal: (base) => ({
+            ...base,
+            zIndex: 3100,
+        }),
+        option: (base, state) => ({
+            ...base,
+            background: state.isSelected
+                ? "rgba(45, 212, 191, 0.18)"
+                : state.isFocused
+                    ? "rgba(255,255,255,0.06)"
+                    : "transparent",
+            color: state.isSelected ? "#2dd4bf" : "#f8fafc",
+            cursor: "pointer",
+            padding: "12px 14px",
+        }),
+        indicatorSeparator: (base) => ({
+            ...base,
+            background: "rgba(255,255,255,0.08)",
+        }),
+        dropdownIndicator: (base, state) => ({
+            ...base,
+            color: state.isFocused ? "#2dd4bf" : "#94a3b8",
+            "&:hover": { color: "#2dd4bf" },
+        }),
+        clearIndicator: (base) => ({
+            ...base,
+            color: "#94a3b8",
+            "&:hover": { color: "#f87171" },
+        }),
+        noOptionsMessage: (base) => ({
+            ...base,
+            color: "#94a3b8",
+        }),
+    };
+
+    const formatOptionLabel = (opt) => (
+        <div>
+            <div style={{ fontWeight: 700 }}>{opt.label}</div>
+            {opt.email ? (
+                <div style={{ fontSize: "12px", color: "#94a3b8", marginTop: "2px" }}>{opt.email}</div>
+            ) : null}
+        </div>
+    );
 
     return (
         <div
@@ -56,7 +158,7 @@ export default function NotificationAssignModal({
                 <div style={{ padding: "24px 24px 18px" }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "12px" }}>
                         <div>
-                            <div style={{ fontSize: "13px", letterSpacing: "0.24em", textTransform: "uppercase", color: "#2dd4bf", fontWeight: 700 }}>
+                            <div style={{ fontSize: "13px", letterSpacing: "0.24em", color: "#2dd4bf", fontWeight: 700 }}>
                                 New job request
                             </div>
                             <h3 id="notification-assign-title" style={{ margin: "6px 0 0", fontSize: "22px", fontWeight: 700 }}>
@@ -84,17 +186,43 @@ export default function NotificationAssignModal({
 
                     <div style={{ marginTop: "18px", display: "grid", gap: "10px" }}>
                         <div style={{ background: "rgba(255,255,255,0.05)", borderRadius: "14px", padding: "14px 14px" }}>
-                            <div style={{ color: "#94a3b8", fontSize: "12px", textTransform: "uppercase", letterSpacing: "0.2em" }}>Site</div>
+                            <div style={{ color: "#94a3b8", fontSize: "12px", letterSpacing: "0.2em" }}>Site</div>
                             <div style={{ marginTop: "4px", fontWeight: 700, fontSize: "15px" }}>{job?.siteName || job?.site?.site_name || "Site"}</div>
                         </div>
                         <div style={{ background: "rgba(255,255,255,0.05)", borderRadius: "14px", padding: "14px 14px" }}>
-                            <div style={{ color: "#94a3b8", fontSize: "12px", textTransform: "uppercase", letterSpacing: "0.2em" }}>When</div>
+                            <div style={{ color: "#94a3b8", fontSize: "12px", letterSpacing: "0.2em" }}>When</div>
                             <div style={{ marginTop: "4px", fontWeight: 600, fontSize: "14px" }}>{job?.date || "TBD"} · {job?.startTime || "—"} - {job?.endTime || "—"}</div>
                         </div>
                         <div style={{ background: "rgba(255,255,255,0.05)", borderRadius: "14px", padding: "14px 14px" }}>
-                            <div style={{ color: "#94a3b8", fontSize: "12px", textTransform: "uppercase", letterSpacing: "0.2em" }}>Location</div>
+                            <div style={{ color: "#94a3b8", fontSize: "12px", letterSpacing: "0.2em" }}>Location</div>
                             <div style={{ marginTop: "4px", fontWeight: 600, fontSize: "14px" }}>{job?.address || "Address not available"}</div>
                         </div>
+
+                        {requiredDocs.length > 0 && (
+                            <div style={{ background: "rgba(255,255,255,0.05)", borderRadius: "14px", padding: "14px 14px" }}>
+                                <div style={{ color: "#94a3b8", fontSize: "12px", letterSpacing: "0.2em" }}>
+                                    Required Documents
+                                </div>
+                                <div style={{ marginTop: "8px", display: "flex", flexWrap: "wrap", gap: "6px" }}>
+                                    {requiredDocs.map((doc) => (
+                                        <span
+                                            key={doc.code}
+                                            style={{
+                                                padding: "4px 10px",
+                                                borderRadius: "999px",
+                                                background: "rgba(45, 212, 191, 0.14)",
+                                                border: "1px solid rgba(45, 212, 191, 0.35)",
+                                                color: "#2dd4bf",
+                                                fontSize: "12px",
+                                                fontWeight: 700,
+                                            }}
+                                        >
+                                            {doc.label}
+                                        </span>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
                     </div>
 
                     <div style={{ marginTop: "22px" }}>
@@ -108,38 +236,18 @@ export default function NotificationAssignModal({
                                 No staff members available to assign right now.
                             </div>
                         ) : (
-                            <div style={{ display: "grid", gap: "10px", maxHeight: "240px", overflowY: "auto" }}>
-                                {staffList.map((staff) => {
-                                    const isSelected = String(staff.id) === String(selectedStaffId);
-                                    return (
-                                        <button
-                                            key={staff.id}
-                                            type="button"
-                                            onClick={() => onSelectStaff(staff.id)}
-                                            style={{
-                                                display: "flex",
-                                                justifyContent: "space-between",
-                                                alignItems: "center",
-                                                padding: "12px 14px",
-                                                borderRadius: "12px",
-                                                border: isSelected ? "1px solid #2dd4bf" : "1px solid rgba(255,255,255,0.08)",
-                                                background: isSelected ? "rgba(45, 212, 191, 0.14)" : "rgba(255,255,255,0.05)",
-                                                color: "#f8fafc",
-                                                cursor: "pointer",
-                                                textAlign: "left",
-                                            }}
-                                        >
-                                            <span>
-                                                <div style={{ fontWeight: 700 }}>{getDisplayName(staff)}</div>
-                                                {staff.email ? <div style={{ fontSize: "12px", color: "#94a3b8", marginTop: "2px" }}>{staff.email}</div> : null}
-                                            </span>
-                                            <span style={{ color: isSelected ? "#2dd4bf" : "#94a3b8", fontSize: "13px", fontWeight: 700 }}>
-                                                {isSelected ? "Selected" : "Select"}
-                                            </span>
-                                        </button>
-                                    );
-                                })}
-                            </div>
+                            <Select
+                                options={staffOptions}
+                                value={selectedStaffOption}
+                                onChange={(opt) => onSelectStaff(opt?.value ?? null)}
+                                formatOptionLabel={formatOptionLabel}
+                                placeholder="Search or select a staff member..."
+                                isClearable
+                                isSearchable
+                                styles={staffSelectStyles}
+                                menuPortalTarget={typeof document !== "undefined" ? document.body : null}
+                                classNamePrefix="staff-select"
+                            />
                         )}
                     </div>
                 </div>

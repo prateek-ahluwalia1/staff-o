@@ -43,16 +43,17 @@ const DOC_TYPES = [
   { value: "Driver License Front", label: "Driver License (Front)" },
   { value: "Driver License Back", label: "Driver License (Back)" },
   { value: "Security License", label: "Security License" },
-  { value: "Working with Children", label: "Working with Children Check (WWCC)" },
+  { value: "Working with Children Check", label: "Working with Children Check (WWCC)" },
   { value: "Employment Application Form", label: "Employment Application Form" },
   { value: "TFN Declaration", label: "TFN Declaration" },
   { value: "Superannuation Form", label: "Superannuation Form" },
-  { value: "First Aid", label: "First Aid Certificate" },
+  { value: "First Aid Certificate", label: "First Aid Certificate" },
   { value: "CPR", label: "CPR Certificate" },
   { value: "Vaccination Certificate", label: "Vaccination Certificate" },
   { value: "Citizen Ship", label: "Citizen Ship Certificate" },
   { value: "Medicare", label: "Medicare Certificate" },
   { value: "Birth Certificate", label: "Birth Certificate" },
+  { value: "White Card", label: "White Card" },
 ];
 
 const ManageStaff = () => {
@@ -898,16 +899,19 @@ const ManageStaff = () => {
           >
             <thead className="premium-thead">
               <tr>
-                <th className="text-start" style={{ width: "35%" }}>
+                <th className="text-start" style={{ width: "30%" }}>
                   Name & Email
                 </th>
-                <th className="text-start" style={{ width: "25%" }}>
+                <th className="text-start" style={{ width: "20%" }}>
                   Phone
                 </th>
-                <th className="text-start" style={{ width: "25%" }}>
+                <th className="text-start" style={{ width: "20%" }}>
                   Location
                 </th>
-                <th className="text-center" style={{ width: "15%" }}>
+                <th className="text-start" style={{ width: "15%" }}>
+                  Status
+                </th>
+                <th className="text-start" style={{ width: "15%" }}>
                   Actions
                 </th>
               </tr>
@@ -929,7 +933,10 @@ const ManageStaff = () => {
                       {user.city || "—"}{" "}
                       <span className="text-muted small">({user.country || "N/A"})</span>
                     </td>
-                    <td className="text-center">
+                    <td className="text-start">
+                      <div className="text-dark small">{user?.is_active ? "Active" : "Inactive"}</div>
+                    </td>
+                    <td className="text-start">
                       <div className="btn-group">
                         <button
                           className="btn btn-light btn-sm rounded-circle me-2 border"

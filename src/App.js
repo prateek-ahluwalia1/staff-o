@@ -96,6 +96,36 @@ function AppContent() {
     const [selectedAssignStaffId, setSelectedAssignStaffId] = useState(null);
     const [assigningJob, setAssigningJob] = useState(false);
 
+    const PENDING_NOTIFICATION_KEY = "pendingJobNotification";
+    const PENDING_NOTIFICATION_TTL_MS = 5 * 60 * 1000; // ignore anything older than 5 min
+
+    const persistPendingNotification = (notification) => {
+        try {
+            localStorage.setItem(
+                PENDING_NOTIFICATION_KEY,
+                JSON.stringify({ notification, savedAt: Date.now() })
+            );
+        } catch (e) {
+            console.warn("Failed to persist pending notification:", e);
+        }
+    };
+
+    const consumePendingNotification = () => {
+        try {
+            const raw = localStorage.getItem(PENDING_NOTIFICATION_KEY);
+            if (!raw) return null;
+            localStorage.removeItem(PENDING_NOTIFICATION_KEY);
+            const parsed = JSON.parse(raw);
+            if (!parsed?.savedAt || Date.now() - parsed.savedAt > PENDING_NOTIFICATION_TTL_MS) {
+                return null;
+            }
+            return parsed.notification;
+        } catch (e) {
+            console.warn("Failed to read pending notification:", e);
+            return null;
+        }
+    };
+
     const syncNotificationToken = useCallback(
         async (notificationToken) => {
             if (!token || !userId || !notificationToken) return;
@@ -174,6 +204,8 @@ function AppContent() {
                         safari_web_id: "web.onesignal.auto.2bc028a8-3e83-466a-979b-b4e85ca9934f",
                         allowLocalhostAsSecureOrigin: true,
                         notifyButton: { enable: true },
+                        notificationClickHandlerMatch: "origin",
+                        notificationClickHandlerAction: "focus",
                     });
 
                     OneSignal.User.PushSubscription.addEventListener(
@@ -285,10 +317,7 @@ function AppContent() {
 
     useEffect(() => {
         if (typeof window === "undefined") return;
-
         const handleNotificationClick = (event) => {
-            // Normalize event shape: some handlers pass the notification directly,
-            // others wrap it as { notification }
             const notification = event?.notification ?? event;
             if (!notification) {
                 console.warn("Notification click received no notification object", event);
@@ -296,10 +325,24 @@ function AppContent() {
             }
 
             const additionalData = notification?.additionalData ?? notification?.data ?? {};
+
+            // Explicit type wins — job assignment notifications always open the modal
+            if (additionalData?.type === "job_assign") {
+                if (userId) {
+                    openAssignModal(notification);
+                } else {
+                    persistPendingNotification(notification);
+                }
+                return;
+            }
             const page = additionalData?.page || additionalData?.route || additionalData?.url;
 
-            if (!page) {
-                openAssignModal(notification);
+            if (!page || page === "asap-job-list") {
+                if (userId) {
+                    openAssignModal(notification);
+                } else {
+                    persistPendingNotification(notification);
+                }
                 return;
             }
 
@@ -311,8 +354,11 @@ function AppContent() {
             const notification = event?.notification ?? event;
             if (!notification) return;
 
-            openAssignModal(notification);
-            // Allow the OneSignal wrapper to continue default foreground handling
+            if (userId) {
+                openAssignModal(notification);
+            } else {
+                persistPendingNotification(notification);
+            }
             event?.preventDefault?.();
         };
 
@@ -334,6 +380,16 @@ function AppContent() {
             );
         };
     }, [navigate, userId, userRole, openAssignModal]);
+
+    useEffect(() => {
+        if (!userId) return;
+
+        const pending = consumePendingNotification();
+        if (pending) {
+            openAssignModal(pending);
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [userId]);
 
     useEffect(() => {
         if (!isInitialMount.current) return;

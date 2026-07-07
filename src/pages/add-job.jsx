@@ -757,8 +757,6 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
           toast.success("Job posted successfully via Admin!");
           navigate("/my-job-applications");
           if (isEmbedded && onClose) onClose();
-        } else {
-          toast.error(postRes?.message || "Job posting failed.");
         }
         setPostingJob(false);
       }

@@ -96,6 +96,41 @@ function AppContent() {
     const [selectedAssignStaffId, setSelectedAssignStaffId] = useState(null);
     const [assigningJob, setAssigningJob] = useState(false);
 
+    const syncNotificationToken = useCallback(
+        async (notificationToken) => {
+            if (!token || !userId || !notificationToken) return;
+
+            try {
+                await fetch(`${apiURL}api/store-notification-token`, {
+                    method: "POST",
+                    headers: {
+                        Accept: "application/json",
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${token}`,
+                    },
+                    body: JSON.stringify({
+                        notification_token: notificationToken,
+                        id: userId,
+                    }),
+                });
+            } catch (error) {
+                console.error("Failed to sync OneSignal token:", error);
+            }
+        },
+        [token, userId],
+    );
+
+    const handlePushSubscriptionChange = useCallback(
+        async () => {
+            const playerId =
+                OneSignal.User?.PushSubscription?.token || OneSignal.User?.onesignalId;
+            if (playerId) {
+                await syncNotificationToken(playerId);
+            }
+        },
+        [syncNotificationToken],
+    );
+
     useEcho();
 
     useEffect(() => {
@@ -115,6 +150,12 @@ function AppContent() {
                         allowLocalhostAsSecureOrigin: true,
                         notifyButton: { enable: true },
                     });
+
+                    OneSignal.User.PushSubscription.addEventListener(
+                        "change",
+                        handlePushSubscriptionChange,
+                    );
+
                     oneSignalReadyRef.current = true;
                 }
 
@@ -122,6 +163,12 @@ function AppContent() {
                     await OneSignal.login(String(userId));
                     if (typeof Notification !== "undefined" && Notification.permission === "default") {
                         await OneSignal.Notifications.requestPermission();
+                    }
+
+                    const playerId =
+                        OneSignal.User?.PushSubscription?.token || OneSignal.User?.onesignalId;
+                    if (playerId) {
+                        await syncNotificationToken(playerId);
                     }
                 } else {
                     await OneSignal.logout();
@@ -132,7 +179,7 @@ function AppContent() {
         };
 
         setupOneSignal();
-    }, [token, userId]);
+    }, [token, userId, handlePushSubscriptionChange]);
 
     const playNotificationSound = useCallback(() => {
         if (typeof window === "undefined") return;
@@ -246,6 +293,10 @@ function AppContent() {
             OneSignal.Notifications.removeEventListener(
                 "foregroundWillDisplay",
                 handleForegroundNotification,
+            );
+            OneSignal.User.PushSubscription.removeEventListener(
+                "change",
+                handlePushSubscriptionChange,
             );
         };
     }, [navigate, userId, userRole, openAssignModal]);

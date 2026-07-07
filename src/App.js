@@ -287,7 +287,14 @@ function AppContent() {
         if (typeof window === "undefined") return;
 
         const handleNotificationClick = (event) => {
-            const notification = event?.notification;
+            // Normalize event shape: some handlers pass the notification directly,
+            // others wrap it as { notification }
+            const notification = event?.notification ?? event;
+            if (!notification) {
+                console.warn("Notification click received no notification object", event);
+                return;
+            }
+
             const additionalData = notification?.additionalData ?? notification?.data ?? {};
             const page = additionalData?.page || additionalData?.route || additionalData?.url;
 
@@ -301,10 +308,11 @@ function AppContent() {
         };
 
         const handleForegroundNotification = (event) => {
-            const notification = event?.notification;
+            const notification = event?.notification ?? event;
             if (!notification) return;
 
             openAssignModal(notification);
+            // Allow the OneSignal wrapper to continue default foreground handling
             event?.preventDefault?.();
         };
 

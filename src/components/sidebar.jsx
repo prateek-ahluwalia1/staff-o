@@ -124,6 +124,7 @@ const Sidebar = memo(function Sidebar() {
   const contractorNav = [
     { to: "/dashboard", icon: "fa-solid fa-table-columns", label: "Dashboard" },
     { to: "/roster", icon: "fa-solid fa-calendar-days", label: "Roster" },
+    { to: "/cover-jobs", icon: "fa-solid fa-briefcase", label: "Cover Jobs" },
     { to: "/manage-staff", icon: "fa-solid fa-users-gear", label: "Staff Management" },
     { to: "/chat", icon: "fa-solid fa-comments", label: "Communications" },
     { to: "/edit-profile", icon: "fa-solid fa-user-pen", label: "Edit Profile" },

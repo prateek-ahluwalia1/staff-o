@@ -75,6 +75,7 @@ const Induction = lazy(() => import("./pages/Induction"));
 const PublicHolidays = lazy(() => import("./pages/PublicHolidays"));
 const PaySheet = lazy(() => import("./pages/PaySheet"));
 const StafooStaff = lazy(() => import("./pages/staffooStaff"));
+const CoverJobs = lazy(() => import("./pages/CoverJobs"));
 
 const ONESIGNAL_APP_ID = "79041c59-5506-4e56-9de4-8a6619f85e1d";
 
@@ -780,6 +781,14 @@ function AppContent() {
                         element={
                             <ProtectedRoute allowedRoles={["admin", "contractor"]}>
                                 <ManageStaff />
+                            </ProtectedRoute>
+                        }
+                    />
+                    <Route
+                        path="/cover-jobs"
+                        element={
+                            <ProtectedRoute allowedRoles={["contractor"]}>
+                                <CoverJobs />
                             </ProtectedRoute>
                         }
                     />

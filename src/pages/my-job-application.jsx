@@ -329,7 +329,7 @@ export default function MyJobApplications() {
                       <div className="d-flex justify-content-between align-items-center pt-3 border-top" style={{ borderColor: "#f8f9fa" }}>
                         <div className="d-flex flex-column">
                           <span className="text-muted mb-1" style={{ fontSize: "10px", letterSpacing: "0.5px", fontWeight: 700 }}>
-                            Assignment
+                            Assigned To
                           </span>
                           <span className="fw-bold text-dark" style={{ fontSize: "13px" }}>
                             <i className="fa-regular fa-user me-1 text-primary opacity-75"></i> {app.appliedVia}

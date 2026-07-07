@@ -48,10 +48,11 @@ const DOC_TYPES = [
     { value: "Superannuation Form", label: "Superannuation Form" },
     { value: "First Aid", label: "First Aid Certificate" },
     { value: "CPR", label: "CPR Certificate" },
-    { value: "Vaccination Certificate", label: "Vaccination Certificate" },
+    { value: "Vaccination", label: "Vaccination Certificate" },
     { value: "Citizen Ship", label: "Citizen Ship Certificate" },
     { value: "Medicare", label: "Medicare Certificate" },
     { value: "Birth Certificate", label: "Birth Certificate" },
+    { value: "Application Form", label: "Application Form" },
 ];
 
 const StaffooStaff = () => {

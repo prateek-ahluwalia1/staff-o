@@ -31,6 +31,7 @@ const DOC_TYPES = [
   { value: "Visa", label: "Visa" },
   { value: "Driver License Front", label: "Driver License (Front)" },
   { value: "Driver License Back", label: "Driver License (Back)" },
+  { value: "Security Master License", label: "Security Master License" },
   { value: "Security License", label: "Security License" },
   { value: "Working with Children Check", label: "Working with Children Check (WWCC)" },
   { value: "Employment Application Form", label: "Employment Application Form" },
@@ -43,6 +44,11 @@ const DOC_TYPES = [
   { value: "Medicare", label: "Medicare Certificate" },
   { value: "Birth Certificate", label: "Birth Certificate" },
   { value: "White Card", label: "White Card" },
+  { value: "Public Liability", label: "Public Liability" },
+  { value: "Workcover", label: "Workcover" },
+  { value: "Labour Hire", label: "Labour Hire" },
+  { value: "ASIC Report", label: "ASIC Report" },
+  { value: "Security Industry Membership certificate", label: "Security Industry Membership certificate" },
 ];
 
 // ========== DATE HELPERS ==========

@@ -188,7 +188,7 @@ const generateTFNDeclarationPDF = (formData) => {
   doc.text(String(tfnDate), mg + 12, y);
 
   doc.setFontSize(10); doc.setFont("helvetica", "normal"); doc.setTextColor(...T.muted);
-  doc.text("Staffoo is a brand of Capital Services Pty Ltd. ABN: 48 613 317 838, Truganina, VIC 3029.", pw / 2, ph - 8, { align: "center" });
+  // doc.text("Staffoo is a brand of Capital Services Pty Ltd. ABN: 48 613 317 838, Truganina, VIC 3029.", pw / 2, ph - 8, { align: "center" });
 
   return doc;
 };
@@ -290,7 +290,7 @@ const generateSuperannuationPDF = (formData) => {
 
   doc.setFillColor(...T.navy); doc.rect(0, ph - 14, pw, 14, "F");
   doc.setFont("helvetica", "normal"); doc.setFontSize(10); doc.setTextColor(...T.white);
-  doc.text("Staffoo is a brand of Capital Services Pty Ltd.", pw / 2, ph - 5, { align: "center" });
+  // doc.text("Staffoo is a brand of Capital Services Pty Ltd.", pw / 2, ph - 5, { align: "center" });
 
   return doc;
 };
@@ -507,7 +507,7 @@ const generateEmployeeOnboardingPDF = (formData) => {
   y += 13;
 
   doc.setFontSize(10); doc.setFont("helvetica", "normal"); doc.setTextColor(...T.muted);
-  doc.text("Staffoo is a brand of Capital Services Pty Ltd. ABN: 48 613 317 838, Truganina, VIC 3029.", pw / 2, ph - 7, { align: "center" });
+  // doc.text("Staffoo is a brand of Capital Services Pty Ltd. ABN: 48 613 317 838, Truganina, VIC 3029.", pw / 2, ph - 7, { align: "center" });
 
   return doc;
 };

@@ -120,15 +120,40 @@ function AppContent() {
         [token, userId],
     );
 
+    const getPlayerIdAsync = useCallback(async () => {
+        try {
+            // Prefer an explicit PushSubscription id when available
+            const subId = OneSignal.User?.PushSubscription?.id || OneSignal.User?.pushSubscription?.id;
+            if (subId) return subId;
+
+            if (OneSignal?.User?.pushSubscription?.getIdAsync) {
+                const id = await OneSignal.User.pushSubscription.getIdAsync();
+                // Some browsers (Safari) may return a web endpoint URL — avoid sending raw URLs to API
+                if (id && typeof id === "string") {
+                    const isUrl = id.startsWith("http://") || id.startsWith("https://");
+                    if (!isUrl) return id;
+                }
+            }
+        } catch (e) {
+            console.warn("OneSignal getIdAsync failed:", e);
+        }
+
+        // Fallbacks: prefer token (may be endpoint) but try onesignalId
+        const token = OneSignal.User?.PushSubscription?.token || OneSignal.User?.pushSubscription?.token;
+        if (token && typeof token === "string") {
+            const isUrl = token.startsWith("http://") || token.startsWith("https://");
+            if (!isUrl) return token;
+        }
+
+        return OneSignal.User?.onesignalId || null;
+    }, []);
+
     const handlePushSubscriptionChange = useCallback(
         async () => {
-            const playerId =
-                OneSignal.User?.PushSubscription?.token || OneSignal.User?.onesignalId;
-            if (playerId) {
-                await syncNotificationToken(playerId);
-            }
+            const playerId = await getPlayerIdAsync();
+            if (playerId) await syncNotificationToken(playerId);
         },
-        [syncNotificationToken],
+        [syncNotificationToken, getPlayerIdAsync],
     );
 
     useEcho();
@@ -165,10 +190,11 @@ function AppContent() {
                         await OneSignal.Notifications.requestPermission();
                     }
 
-                    const playerId =
-                        OneSignal.User?.PushSubscription?.token || OneSignal.User?.onesignalId;
-                    if (playerId) {
-                        await syncNotificationToken(playerId);
+                    try {
+                        const playerId = await getPlayerIdAsync();
+                        if (playerId) await syncNotificationToken(playerId);
+                    } catch (e) {
+                        console.warn("Failed to get OneSignal player id after login:", e);
                     }
                 } else {
                     await OneSignal.logout();

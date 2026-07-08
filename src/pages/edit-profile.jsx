@@ -1076,7 +1076,7 @@ export default function EditProfile() {
                 <form onSubmit={handleSaveNewCard}>
                   <div className="mb-3">
                     <label className="form-label text-muted small fw-bold">Name on Card <span className="text-danger">*</span></label>
-                    <input type="text" className="form-control" placeholder="e.g. John Doe" value={cardForm.card_holder_name} maxLength="30" onChange={(e) => { const val = e.target.value.replace(/[^a-zA-Z\s]/g, "").slice(0, 30); setCardForm((p) => ({ ...p, card_holder_name: val.toUpperCase() })); }} required />
+                    <input type="text" className="form-control" placeholder="e.g. John Doe" value={cardForm.card_holder_name} onChange={(e) => { const val = e.target.value.replace(/[^a-zA-Z\s]/g, "").slice(0, 30); setCardForm((p) => ({ ...p, card_holder_name: val.toUpperCase() })); }} required />
                   </div>
                   <div className="mb-3">
                     <label className="form-label text-muted small fw-bold">Card Number <span className="text-danger">*</span></label>

@@ -93,10 +93,6 @@ export default function ProfileForm({
                 });
               }}
               required
-              minLength={3}
-              maxLength={20}
-              pattern="^[A-Za-z\s]{3,20}$"
-              title="Full Name must contain only letters and be 3-20 characters"
             />
           </div>
 
@@ -236,10 +232,6 @@ export default function ProfileForm({
                     });
                   }}
                   required
-                  minLength={3}
-                  maxLength={100}
-                  pattern="^[A-Za-z0-9\s]{3,100}$"
-                  title="Company Name must be 3-100 characters"
                 />
               </div>
 
@@ -386,10 +378,6 @@ export default function ProfileForm({
                   value={formData.security_license_no || ""}
                   onChange={onChange}
                   required
-                  minLength={5}
-                  maxLength={20}
-                  pattern="^[A-Za-z0-9\-]+$"
-                  title="License number can contain letters, numbers, and hyphens (5‑20 characters)"
                 />
               </div>
               <div>

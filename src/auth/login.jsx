@@ -292,7 +292,6 @@ export default function Login() {
                         placeholder="name@example.com"
                         value={formData.email}
                         onChange={handleChange}
-                        maxLength={100}
                         style={{ border: "1px solid #0A7C6E" }}
                       />
                       {errors.email && (

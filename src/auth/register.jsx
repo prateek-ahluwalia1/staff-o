@@ -310,7 +310,6 @@ export default function Register() {
                         placeholder="Your Name"
                         value={formData.name}
                         onChange={handleChange}
-                        maxLength={50}
                         style={{ border: "1px solid #0A7C6E" }}
                       />
                       {errors.name && <div className="invalid-feedback" style={{ fontSize: '12px' }}>{errors.name}</div>}
@@ -344,7 +343,6 @@ export default function Register() {
                         placeholder="name@example.com"
                         value={formData.email}
                         onChange={handleChange}
-                        maxLength={100}
                         style={{ border: "1px solid #0A7C6E" }}
                       />
                       {errors.email && <div className="invalid-feedback" style={{ fontSize: '12px' }}>{errors.email}</div>}

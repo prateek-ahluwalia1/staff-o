@@ -233,13 +233,13 @@ function Header() {
                 <NavLink to="/solutions/event-security" onClick={handleLinkClick}>Event Security</NavLink>
                 <NavLink to="/solutions/retail-security" onClick={handleLinkClick}>Retail Security</NavLink>
                 <NavLink to="/solutions/warehouse-logistics-security" onClick={handleLinkClick}>Warehouse Logistics Security</NavLink>
-                <NavLink to="/solutions/corporate-security" onClick={handleLinkClick}>Corporate Security</NavLink>
+                {/* <NavLink to="/solutions/corporate-security" onClick={handleLinkClick}>Corporate Security</NavLink>
                 <NavLink to="/solutions/government-security" onClick={handleLinkClick}>Government Security</NavLink>
                 <NavLink to="/solutions/healthcare-security" onClick={handleLinkClick}>Healthcare Security</NavLink>
                 <NavLink to="/solutions/transport-security" onClick={handleLinkClick}>Transport Security</NavLink>
-                <NavLink to="/solutions/aviation-security" onClick={handleLinkClick}>Aviation Security</NavLink>
+                <NavLink to="/solutions/aviation-security" onClick={handleLinkClick}>Aviation Security</NavLink> */}
               </div>
-              <div className="dropdown-column">
+              {/* <div className="dropdown-column">
                 <div className="dropdown-title">Use Cases</div>
                 <NavLink to="/solutions/for-security-companies" onClick={handleLinkClick}>For Security Companies</NavLink>
                 <NavLink to="/solutions/for-security-guards" onClick={handleLinkClick}>For Security Guards</NavLink>
@@ -248,13 +248,13 @@ function Header() {
                 <NavLink to="/solutions/for-event-security-providers" onClick={handleLinkClick}>For Event Security Providers</NavLink>
                 <NavLink to="/solutions/for-corporate-security-teams" onClick={handleLinkClick}>For Corporate Security Teams</NavLink>
                 <NavLink to="/solutions/for-labour-hire-agencies" onClick={handleLinkClick}>For Labour Hire Agencies</NavLink>
-              </div>
+              </div> */}
             </div>
           </div>
 
           <div className={`nav-item-dropdown ${openDropdown === 'features' ? 'mobile-expanded' : ''}`}>
             <span onClick={() => { if (window.innerWidth < 992) setOpenDropdown(openDropdown === 'features' ? null : 'features') }} style={{ color: '#ccc', cursor: 'pointer', fontFamily: "'Barlow Condensed', sans-serif", fontSize: '14px', fontWeight: 600, letterSpacing: '0.1em' }}>Features <i className="fa fa-chevron-down" style={{ color: '#0A7C6E', fontSize: '11px', marginLeft: '3px' }}></i></span>
-            <div className="dropdown-content">
+            {/* <div className="dropdown-content">
               <NavLink to="/features/gps-guard-tracking" onClick={handleLinkClick}>GPS Guard Tracking</NavLink>
               <NavLink to="/features/time-rooster" onClick={handleLinkClick}>Time Rooster</NavLink>
               <NavLink to="/features/security-staff-recruitment" onClick={handleLinkClick}>Security Staff Recruitment</NavLink>
@@ -264,7 +264,7 @@ function Header() {
               <NavLink to="/features/payslip-pay-sheet" onClick={handleLinkClick}>Payslip, Pay Sheet</NavLink>
               <NavLink to="/features/job-handshake" onClick={handleLinkClick}>Job Handshake</NavLink>
               <NavLink to="/features/workforce-dashboard" onClick={handleLinkClick}>Workforce Dashboard</NavLink>
-            </div>
+            </div> */}
           </div>
 
           <NavLink to="/pricing" onClick={handleLinkClick} style={{ color: '#ccc', textDecoration: 'none', fontFamily: "'Barlow Condensed', sans-serif", fontSize: '14px', fontWeight: 600, letterSpacing: '0.1em' }}>Pricing</NavLink>
@@ -273,8 +273,8 @@ function Header() {
             <span onClick={() => { if (window.innerWidth < 992) setOpenDropdown(openDropdown === 'resources' ? null : 'resources') }} style={{ color: '#ccc', cursor: 'pointer', fontFamily: "'Barlow Condensed', sans-serif", fontSize: '14px', fontWeight: 600, letterSpacing: '0.1em' }}>Resources <i className="fa fa-chevron-down" style={{ color: '#0A7C6E', fontSize: '11px', marginLeft: '3px' }}></i></span>
             <div className="dropdown-content">
               <NavLink to="/resources/blogs" onClick={handleLinkClick}>Blogs</NavLink>
-              <NavLink to="/resources/pr-news" onClick={handleLinkClick}>PR/News</NavLink>
-              <NavLink to="/resources/case-studies" onClick={handleLinkClick}>Case Studies</NavLink>
+              {/* <NavLink to="/resources/pr-news" onClick={handleLinkClick}>PR/News</NavLink>
+              <NavLink to="/resources/case-studies" onClick={handleLinkClick}>Case Studies</NavLink> */}
             </div>
           </div>
 

@@ -154,7 +154,6 @@ export default function ProfileForm({
               </div>
 
               {showPhoneOtp ? (
-                // OTP-enabled UI (for self‑service profile editing)
                 <div className="input-group shadow-sm rounded">
                   <span className={`input-group-text bg-white border-end-0 ${isPhoneVerified ? 'text-success border-success' : (!isPhoneVerified && formData.phone ? 'text-danger border-danger' : 'text-muted')}`}>
                     <i className="fa-solid fa-phone"></i>
@@ -183,7 +182,6 @@ export default function ProfileForm({
                   </button>
                 </div>
               ) : (
-                // Simple input (like registration) – used in admin manage‑user pages
                 <div className="input-group shadow-sm rounded">
                   <span className="input-group-text bg-white text-muted border-end-0">
                     <i className="fa-solid fa-phone"></i>
@@ -195,7 +193,6 @@ export default function ProfileForm({
                     placeholder="+61 400 000 000"
                     value={formData.phone || ""}
                     onChange={onChange}
-                    required
                     maxLength="15"
                     pattern="^(?:\+?61|0)[2-478](?:[\s\-]*\d){8}$"
                     title="Please enter a valid Australian phone number (e.g., 0400 000 000 or +61 400 000 000)"

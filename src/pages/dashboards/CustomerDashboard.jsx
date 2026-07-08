@@ -168,7 +168,6 @@ export default function CustomerDashboard() {
           <table className="table align-middle">
             <thead>
               <tr>
-                <th>Role Required</th>
                 <th>Staff Assigned</th>
                 <th>Period</th>
                 <th>Cost</th>
@@ -179,7 +178,6 @@ export default function CustomerDashboard() {
               {recentJobs.length > 0 ? (
                 recentJobs.map((job) => (
                   <tr key={job.id}>
-                    <td className="fw-500">{job.role}</td>
                     <td>{job.staff}</td>
                     <td className="text-muted small">
                       {job.startDate} to {job.endDate}

@@ -87,13 +87,13 @@ const CoverJobs = () => {
         }
     }, [removedJobIds, selectedJob]);
 
-    // Date helpers
+    // Date helpers – now in 24-hour format
     const formatDateTime = (dateString) => {
         if (!dateString) return "N/A";
         const date = new Date(dateString);
         return date.toLocaleString('en-GB', {
             day: '2-digit', month: '2-digit', year: 'numeric',
-            hour: '2-digit', minute: '2-digit', hour12: true
+            hour: '2-digit', minute: '2-digit', hour12: false   // ✅ 24-hour time
         });
     };
 
@@ -238,7 +238,7 @@ const CoverJobs = () => {
                                                 {job.site_address}
                                             </p>
 
-                                            {/* Timings and Action */}
+                                            {/* Timings and Action – now 24-hour */}
                                             <div className="mt-auto">
                                                 <div className="d-flex align-items-center mb-4 p-3 rounded-3" style={{ backgroundColor: "#f8fafc", border: "1px solid #f1f5f9" }}>
                                                     <div className="rounded-circle d-flex align-items-center justify-content-center me-3" style={{ width: "32px", height: "32px", backgroundColor: "#e0f2fe", color: "#0ea5e9" }}>
@@ -327,7 +327,7 @@ const CoverJobs = () => {
 
                         <div className="modal-body" style={{ padding: "24px", overflowY: "auto", flex: 1 }}>
                             <div className="row g-4">
-                                {/* Site & Shift Details (unchanged) */}
+                                {/* Site & Shift Details – now using the 24-hour formatDateTime */}
                                 <div className="col-md-6">
                                     <div className="p-4 bg-white rounded-4 h-100 shadow-sm border border-light">
                                         <h5 className="mb-4 d-flex align-items-center pb-3 border-bottom" style={{ fontSize: "16px", fontWeight: "700", color: "#1e293b" }}>

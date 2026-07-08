@@ -355,7 +355,6 @@ const CoverJobs = () => {
                                             <InfoRow icon="fa-circle-info" label="Status" value={selectedJob.job_status} />
                                             <InfoRow icon="fa-play" label="Start Time" value={formatDateTime(selectedJob.start_time)} transform={false} />
                                             <InfoRow icon="fa-stop" label="End Time" value={formatDateTime(selectedJob.end_time)} transform={false} />
-                                            <InfoRow icon="fa-calendar-plus" label="Published" value={selectedJob.publish_status ? 'Yes' : 'No'} />
                                         </div>
                                     </div>
                                 </div>

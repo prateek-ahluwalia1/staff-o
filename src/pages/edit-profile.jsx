@@ -64,6 +64,8 @@ const DOC_TYPES = [
   { value: "Security Industry Membership certificate", label: "Security Industry Membership certificate" },
   { value: "Labour Hire", label: "Labour Hire" },
   { value: "ASIC Report", label: "ASIC Report" },
+  { value: "White Card", label: "White Card" },
+  { value: "Working with Children Check", label: "Working with Children Check" },
 ];
 
 // ========== DATE HELPERS (DD/MM/YYYY everywhere) ==========
@@ -595,6 +597,12 @@ export default function EditProfile() {
 
     // ---- Security License Verification ----
     if (docForm.document_name === "Security License") {
+      const staffState = (formData?.state || profileData?.data?.state || userdata?.data?.state || userdata?.state || "").trim();
+      if (!staffState) {
+        toast.error("Please add your location first.");
+        return;
+      }
+
       setVerifyingDoc(true);
       try {
         const res = await submitSecurityLicense(
@@ -603,6 +611,7 @@ export default function EditProfile() {
             user_id: userId,
             document_type: docForm.document_name,
             license_number: docForm.document_no,
+            state: staffState,
           },
           { method: "POST" }
         );
@@ -1385,14 +1394,19 @@ export default function EditProfile() {
               </button>
             </div>
           ) : (
-            <input
-              type="text"
-              className="form-control"
-              placeholder="e.g. ABC123456"
-              value={docForm.document_no}
-              onChange={handleDocNumberChange}
-              required
-            />
+            <div className="mb-3">
+              <label className="form-label fw-semibold">
+                Expiry Date <span className="text-danger">*</span>
+              </label>
+              <input
+                type="text"
+                className="form-control"
+                placeholder="e.g. ABC123456"
+                value={docForm.document_no}
+                onChange={handleDocNumberChange}
+                required
+              />
+            </div>
           )}
 
           {/* Expiry Date – permanently disabled for Security License & Visa */}

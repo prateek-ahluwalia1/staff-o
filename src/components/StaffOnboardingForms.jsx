@@ -993,6 +993,7 @@ const StaffOnboardingForms = ({ submit, userId, onProfileUpdate }) => {
     const [formDataLoading, setFormDataLoading] = useState(true);
 
     const [verifyingSecurityLicense, setVerifyingSecurityLicense] = useState(false);
+    const [staffState, setStaffState] = useState("");
 
     const { submit: submitSecurityLicense } = useSubmit({
         isAuth: true,
@@ -1062,6 +1063,7 @@ const StaffOnboardingForms = ({ submit, userId, onProfileUpdate }) => {
                     const prefilledOnboard = mapStaffInfoToOnboardForm(staffRes.data);
                     setOnboardForm(prefilledOnboard);
                     setOriginalOnboardForm(prefilledOnboard);
+                    setStaffState(String(staffRes.data?.state || "").trim());
                 }
             } catch (err) {
                 console.warn("Could not fetch staff info for pre‑fill:", err);
@@ -1108,11 +1110,15 @@ const StaffOnboardingForms = ({ submit, userId, onProfileUpdate }) => {
             toast.error("Please enter a Security Licence number first.");
             return;
         }
+        if (!staffState) {
+            toast.error("Please add your location first.");
+            return;
+        }
         setVerifyingSecurityLicense(true);
         try {
             const res = await submitSecurityLicense(
                 "api/documents-online-verification-staffoo",
-                { user_id: userId, document_type: "Security License", license_number: onboardForm.o_seclic },
+                { user_id: userId, document_type: "Security License", license_number: onboardForm.o_seclic, state: staffState },
                 { method: "POST" }
             );
             if (res?.success && res?.expiry) {

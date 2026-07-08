@@ -308,6 +308,13 @@ const StaffooStaff = () => {
                 toast.error("Please enter a document number first.");
                 return;
             }
+
+            const staffState = (editingUser?.state || editingUser?.staff?.state || formData?.state || "").trim();
+            if (!staffState) {
+                toast.error("Please add your location first.");
+                return;
+            }
+
             setVerifyingDoc(true);
             try {
                 const res = await submitSecurityLicense(
@@ -316,6 +323,7 @@ const StaffooStaff = () => {
                         user_id: editingUser.id,
                         document_type: "Security License",
                         license_number: docForm.document_no,
+                        state: staffState,
                     },
                     { method: "POST" }
                 );

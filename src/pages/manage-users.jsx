@@ -459,6 +459,12 @@ const ManageUsers = () => {
 
     // Security License verification
     if (docForm.document_name === "Security License") {
+      const staffState = (editingUser?.state || editingUser?.staff?.state || formData?.state || "").trim();
+      if (!staffState) {
+        toast.error("Please add your location first.");
+        return;
+      }
+
       setVerifyingDoc(true);
       try {
         const res = await submitSecurityLicense(
@@ -467,6 +473,7 @@ const ManageUsers = () => {
             user_id: editingUser.id,
             document_type: "Security License",
             license_number: docForm.document_no,
+            state: staffState,
           },
           { method: "POST" }
         );

@@ -1,16 +1,16 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import { toast } from 'react-toastify';
-import Select from 'react-select';
 import useFetch from '../hooks/useFetch';
 import useSubmit from '../hooks/useSubmit';
 import Loader from '../components/Loader';
 
-// Helper component for modal rows (unchanged)
+// Helper to display modal rows (unchanged)
 const InfoRow = ({ label, value, icon, transform = true }) => {
-    const displayValue = transform && value && typeof value === 'string'
-        ? value.charAt(0).toUpperCase() + value.slice(1)
-        : value;
+    const displayValue =
+        transform && value && typeof value === 'string'
+            ? value.charAt(0).toUpperCase() + value.slice(1)
+            : value;
     return (
         <div className="d-flex justify-content-between align-items-center py-2 border-bottom" style={{ borderColor: "#f8f9fa" }}>
             <span className="text-muted d-flex align-items-center" style={{ fontSize: "14px", fontWeight: 500 }}>
@@ -25,75 +25,51 @@ const InfoRow = ({ label, value, icon, transform = true }) => {
 };
 
 const CoverJobs = () => {
-    // Auth data (user id & role) from Redux
     const { userdata } = useSelector((state) => state.auth);
     const userId = userdata?.data?.id || userdata?.id;
     const userRole = userdata?.data?.user_type || userdata?.user_type;
 
-    // Determine contractor ID for fetching staff (same logic as RosterPage)
     const staffContractorId = userRole === 'admin' ? 1 : userId;
 
-    // Pagination & selected job
     const [currentPage, setCurrentPage] = useState(1);
     const [selectedJob, setSelectedJob] = useState(null);
-
-    // States for job actions
     const [loadingIds, setLoadingIds] = useState([]);
     const [removedJobIds, setRemovedJobIds] = useState([]);
-    const [selectedStaffId, setSelectedStaffId] = useState('');  // For assignment modal
 
     // Fetch available jobs
     const { data, loading, error } = useFetch(
-        `api/jobs/available?page=${currentPage}`,
+        `api/jobs/available/${staffContractorId}?page=${currentPage}`,
         { isAuth: true }
     );
 
-    // Fetch staff list (GET endpoint, as name suggests)
-    const {
-        data: staffData,
-        loading: staffLoading,
-    } = useFetch(`api/get-contractor-active-staff/${staffContractorId}`, {
-        isAuth: true,
-        immediate: !!staffContractorId,
-    });
-
-    // Hooks for POST requests
     const { submit } = useSubmit({ isAuth: true });
 
-    // Process staff list for React-Select
-    const staffOptions = useMemo(() => {
-        const guards = staffData?.guards || [];
-        return guards.map((g) => ({
-            value: g.id,
-            label: g.name,
-        }));
-    }, [staffData]);
-
-    // Jobs with removed ones filtered out
     const jobs = data?.data?.jobs?.data || [];
     const visibleJobs = useMemo(
-        () => jobs.filter(job => !removedJobIds.includes(job.id)),
+        () => jobs.filter((job) => !removedJobIds.includes(job.id)),
         [jobs, removedJobIds]
     );
 
     const paginationLinks = data?.data?.jobs?.links || [];
     const totalJobs = data?.data?.jobs?.total || 0;
 
-    // Auto‑close modal if job inside it was removed
+    // Auto‑close modal if the job inside was removed
     useEffect(() => {
         if (selectedJob && removedJobIds.includes(selectedJob.id)) {
             setSelectedJob(null);
-            setSelectedStaffId('');
         }
     }, [removedJobIds, selectedJob]);
 
-    // Date helpers – now in 24-hour format
     const formatDateTime = (dateString) => {
         if (!dateString) return "N/A";
         const date = new Date(dateString);
         return date.toLocaleString('en-GB', {
-            day: '2-digit', month: '2-digit', year: 'numeric',
-            hour: '2-digit', minute: '2-digit', hour12: false   // ✅ 24-hour time
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false,
         });
     };
 
@@ -103,50 +79,32 @@ const CoverJobs = () => {
         if (pageMatch) setCurrentPage(Number(pageMatch[1]));
     };
 
-    const openModal = (job) => {
-        setSelectedJob(job);
-        setSelectedStaffId('');   // reset staff selection each time modal opens
-    };
-    const closeModal = () => {
-        setSelectedJob(null);
-        setSelectedStaffId('');
-    };
+    const openModal = (job) => setSelectedJob(job);
+    const closeModal = () => setSelectedJob(null);
 
-    // ---------- Accept Job (with staff assignment) ----------
+    // ---------- Accept Job (called from modal) ----------
     const handleAcceptJob = async (jobId) => {
-        if (!selectedStaffId) {
-            toast.error("Please select a staff member first.");
-            return;
-        }
-
-        setLoadingIds(prev => [...prev, jobId]);
+        setLoadingIds((prev) => [...prev, jobId]);
         try {
-            const payload = {
-                roster_id: jobId,
-                admin_id: userId,
-            };
             const result = await submit(
-                `api/asap-jobs/accept/${selectedStaffId}`,
-                payload,
+                `api/asap-jobs/accept/${jobId}`,
+                { admin_id: userId },   // optional, adjust as needed
                 { method: 'POST' }
             );
 
-            // useSubmit returns the JSON data on success, or an error object on failure
             if (result && !result.error) {
-                setRemovedJobIds(prev => [...prev, jobId]);
-                toast.success('Job accepted and assigned successfully!');
+                setRemovedJobIds((prev) => [...prev, jobId]);
+                toast.success('Job accepted successfully!');
                 closeModal();
             }
-            // Error toast already handled by useSubmit (unless silent option is used)
         } catch (err) {
             console.error('Accept job failed:', err);
         } finally {
-            setLoadingIds(prev => prev.filter(id => id !== jobId));
+            setLoadingIds((prev) => prev.filter((id) => id !== jobId));
         }
     };
 
-
-    if (loading || staffLoading) return <Loader />;
+    if (loading) return <Loader />;
     if (error) return <div className="alert alert-danger mx-3 mt-3">Error: {error.message}</div>;
 
     return (
@@ -178,7 +136,7 @@ const CoverJobs = () => {
                     }
                     @media (max-width: 767.98px) {
                         .dashboard-page-header h1 { font-size: 1.5rem; }
-                        .job-card-hover .btn-primary-custom { font-size: 12px; padding: 0.4rem 1rem; }
+                        .job-card-hover .btn { font-size: 12px; padding: 0.35rem 0.75rem; }
                         .modal-content {
                             width: 100% !important; max-width: 100% !important;
                             height: 100vh; max-height: 100vh; border-radius: 0 !important;
@@ -215,8 +173,8 @@ const CoverJobs = () => {
                                             <div className="d-flex justify-content-between align-items-start mb-3">
                                                 <span
                                                     className={`badge rounded-pill px-3 py-2 fw-medium ${job.job_status === 'pending'
-                                                        ? 'bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25'
-                                                        : 'bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25'
+                                                            ? 'bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25'
+                                                            : 'bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25'
                                                         }`}
                                                     style={{ fontSize: '12px', textTransform: "capitalize" }}
                                                 >
@@ -238,7 +196,7 @@ const CoverJobs = () => {
                                                 {job.site_address}
                                             </p>
 
-                                            {/* Timings and Action – now 24-hour */}
+                                            {/* Timings and Action */}
                                             <div className="mt-auto">
                                                 <div className="d-flex align-items-center mb-4 p-3 rounded-3" style={{ backgroundColor: "#f8fafc", border: "1px solid #f1f5f9" }}>
                                                     <div className="rounded-circle d-flex align-items-center justify-content-center me-3" style={{ width: "32px", height: "32px", backgroundColor: "#e0f2fe", color: "#0ea5e9" }}>
@@ -261,15 +219,14 @@ const CoverJobs = () => {
                                                     </div>
                                                     <div className="d-flex gap-2">
                                                         <button
-                                                            type="button"
-                                                            className="btn rounded-pill px-3 fw-semibold d-flex align-items-center justify-content-center"
+                                                            className="btn rounded-pill fw-semibold d-flex align-items-center justify-content-center"
                                                             style={{
                                                                 backgroundColor: '#0A7C6E',
                                                                 color: 'white',
                                                                 border: 'none',
                                                                 height: "36px",
                                                                 fontSize: "12px",
-                                                                minWidth: "100px"
+                                                                minWidth: "100px",
                                                             }}
                                                             onClick={() => openModal(job)}
                                                             disabled={isProcessing}
@@ -312,13 +269,13 @@ const CoverJobs = () => {
                 )}
             </div>
 
-            {/* --- MODAL (with staff selection) --- */}
+            {/* --- DETAILS MODAL (view + accept) --- */}
             {selectedJob && (
                 <div className="modal-overlay" onClick={closeModal} style={{ zIndex: 9999, backgroundColor: "rgba(0,0,0,0.6)", position: "fixed", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", padding: "20px" }}>
                     <div className="modal-content shadow-lg border-0" onClick={(e) => e.stopPropagation()} style={{ width: "100%", maxWidth: "750px", maxHeight: "90vh", background: "#f8fafc", borderRadius: "16px", display: "flex", flexDirection: "column", overflow: "hidden" }}>
                         <div className="modal-header d-flex justify-content-between align-items-center" style={{ background: "#0A7C6E", color: "#fff", padding: "20px 24px" }}>
                             <h3 style={{ margin: 0, fontSize: "20px", fontWeight: "700" }}>
-                                <i className="fa-solid fa-clipboard-check me-2 opacity-75"></i> Assign Staff to Job
+                                <i className="fa-solid fa-clipboard-check me-2 opacity-75"></i> Job Details
                             </h3>
                             <button onClick={closeModal} className="btn btn-sm" style={{ background: "rgba(255,255,255,0.2)", border: "none", color: "#fff", borderRadius: "50%", width: "32px", height: "32px" }}>
                                 <i className="fa-solid fa-xmark"></i>
@@ -327,7 +284,7 @@ const CoverJobs = () => {
 
                         <div className="modal-body" style={{ padding: "24px", overflowY: "auto", flex: 1 }}>
                             <div className="row g-4">
-                                {/* Site & Shift Details – now using the 24-hour formatDateTime */}
+                                {/* Location Info */}
                                 <div className="col-md-6">
                                     <div className="p-4 bg-white rounded-4 h-100 shadow-sm border border-light">
                                         <h5 className="mb-4 d-flex align-items-center pb-3 border-bottom" style={{ fontSize: "16px", fontWeight: "700", color: "#1e293b" }}>
@@ -343,6 +300,8 @@ const CoverJobs = () => {
                                         </div>
                                     </div>
                                 </div>
+
+                                {/* Shift Info */}
                                 <div className="col-md-6">
                                     <div className="p-4 bg-white rounded-4 h-100 shadow-sm border border-light">
                                         <h5 className="mb-4 d-flex align-items-center pb-3 border-bottom" style={{ fontSize: "16px", fontWeight: "700", color: "#1e293b" }}>
@@ -359,25 +318,6 @@ const CoverJobs = () => {
                                     </div>
                                 </div>
                             </div>
-
-                            {/* Staff Selection Dropdown */}
-                            <div className="mt-4 bg-white rounded-4 p-4 shadow-sm border border-light">
-                                <label className="fw-bold mb-2 d-block">Select Staff Member</label>
-                                <Select
-                                    options={staffOptions}
-                                    value={staffOptions.find((opt) => opt.value === selectedStaffId) || null}
-                                    onChange={(selectedOption) =>
-                                        setSelectedStaffId(selectedOption ? selectedOption.value : '')
-                                    }
-                                    placeholder="Search or select a guard..."
-                                    isClearable
-                                    isSearchable
-                                    menuPortalTarget={document.body}
-                                    styles={{ menuPortal: (base) => ({ ...base, zIndex: 9999 }) }}
-                                    className="react-select-container"
-                                    classNamePrefix="react-select"
-                                />
-                            </div>
                         </div>
 
                         <div className="modal-footer" style={{ background: "#fff", padding: "16px 24px", borderTop: "1px solid #e2e8f0", display: 'flex', justifyContent: 'space-between' }}>
@@ -392,7 +332,7 @@ const CoverJobs = () => {
                                     ) : (
                                         <i className="fa-solid fa-check me-2"></i>
                                     )}
-                                    Confirm Assignment
+                                    Confirm Accept
                                 </button>
                                 <button onClick={closeModal} className="btn btn-outline-secondary rounded-pill px-4 fw-semibold shadow-sm">
                                     Close

@@ -13,7 +13,7 @@ import { toast } from "react-toastify";
 import { apiURL } from "./utils/exports";
 
 import ProtectedRoute from "./components/ProtectedRoute";
-import NotificationAssignModal from "./components/NotificationAssignModal";
+import NotificationAcceptModal from "./components/NotificationAcceptModal";
 import NotificationToast from "./components/NotificationToast";
 import { useEcho } from "./hooks/useEcho";
 import { logOut } from "./store/slices/authSlice";
@@ -89,13 +89,10 @@ function AppContent() {
     const userId = userdata?.id ?? userdata?.data?.id;
     const userRole = userdata?.data?.user_type || userdata?.user_type;
     const { submit: submitStaffFetch } = useSubmit({ isAuth: true });
-    const { submit: assignJobSubmit } = useSubmit({ isAuth: true });
-    const [assignModalOpen, setAssignModalOpen] = useState(false);
-    const [assignModalJob, setAssignModalJob] = useState(null);
-    const [assignStaffList, setAssignStaffList] = useState([]);
-    const [assignStaffLoading, setAssignStaffLoading] = useState(false);
-    const [selectedAssignStaffId, setSelectedAssignStaffId] = useState(null);
-    const [assigningJob, setAssigningJob] = useState(false);
+    const { submit: submitAccept } = useSubmit({ isAuth: true });
+    const [acceptModalOpen, setAcceptModalOpen] = useState(false);
+    const [acceptModalJob, setAcceptModalJob] = useState(null);
+    const [acceptingJob, setAcceptingJob] = useState(false);
 
     const PENDING_NOTIFICATION_KEY = "pendingJobNotification";
     const PENDING_NOTIFICATION_TTL_MS = 5 * 60 * 1000; // ignore anything older than 5 min
@@ -251,73 +248,55 @@ function AppContent() {
         }
     }, []);
 
-    const openAssignModal = useCallback(async (notification) => {
+    const openAcceptModal = useCallback((notification) => {
         const additionalData = notification?.additionalData ?? notification?.data ?? {};
         const rawRoster = additionalData?.roster?.roster ?? additionalData?.roster ?? {};
+        const jobId = rawRoster?.id;
+        if (!jobId) {
+            toast.error("Job already accepted on app.");
+            return;
+        }
+
         const jobPayload = {
-            id: rawRoster?.id || notification?.id,
-            title: rawRoster?.title || notification?.title || "New job request",
+            id: jobId,
             siteName: rawRoster?.site_name || rawRoster?.site?.site_name || additionalData?.site_name || "Site",
             address: rawRoster?.site_address || rawRoster?.address || rawRoster?.site?.address || additionalData?.address || "Address not available",
-            date: rawRoster?.start ? new Date(rawRoster.start).toLocaleDateString("en-AU") : additionalData?.date || "TBD",
-            startTime: rawRoster?.start ? new Date(rawRoster.start).toLocaleTimeString("en-AU", { hour: "2-digit", minute: "2-digit", hour12: false }) : additionalData?.start_time || "—",
-            endTime: rawRoster?.end ? new Date(rawRoster.end).toLocaleTimeString("en-AU", { hour: "2-digit", minute: "2-digit", hour12: false }) : additionalData?.end_time || "—",
-            raw: rawRoster,
+            date: rawRoster?.start
+                ? new Date(rawRoster.start).toLocaleDateString("en-AU")
+                : additionalData?.date || "TBD",
+            startTime: rawRoster?.start
+                ? new Date(rawRoster.start).toLocaleTimeString("en-AU", { hour: "2-digit", minute: "2-digit", hour12: false })
+                : additionalData?.start_time || "—",
+            endTime: rawRoster?.end
+                ? new Date(rawRoster.end).toLocaleTimeString("en-AU", { hour: "2-digit", minute: "2-digit", hour12: false })
+                : additionalData?.end_time || "—",
         };
 
         playNotificationSound();
-        setAssignModalJob(jobPayload);
-        setSelectedAssignStaffId(null);
-        setAssignModalOpen(true);
-
-        if (userRole !== "contractor" && userRole !== "resource_partner") {
-            return;
-        }
-
-        setAssignStaffLoading(true);
+        setAcceptModalJob(jobPayload);
+        setAcceptModalOpen(true);
+    }, [playNotificationSound]);
+    const handleAcceptJob = useCallback(async (jobId) => {
+        setAcceptingJob(true);
         try {
-            const staffRes = await submitStaffFetch(`api/get-contractor-active-staff/${userId}`, {}, { method: "POST" });
-            const list = Array.isArray(staffRes?.data?.guards) ? staffRes.data.guards : Array.isArray(staffRes?.guards) ? staffRes.guards : [];
-            setAssignStaffList(list);
-        } catch (error) {
-            console.error("Failed to load staff list for assignment modal:", error);
-            setAssignStaffList([]);
-        } finally {
-            setAssignStaffLoading(false);
-        }
-    }, [playNotificationSound, submitStaffFetch, userId, userRole]);
+            const payload = { admin_id: userId };
+            const result = await submitAccept(`api/asap-jobs/accept/${jobId}`, payload, { method: "POST" });
 
-    const handleAssignJob = useCallback(async () => {
-        if (!assignModalJob || !selectedAssignStaffId) {
-            toast.error("Please select a staff member first.");
-            return;
-        }
-
-        setAssigningJob(true);
-        try {
-            const payload = {
-                roster_id: assignModalJob?.id,
-                staff_id: selectedAssignStaffId,
-                admin_id: userId,
-            };
-            const response = await assignJobSubmit(`api/asap-jobs/accept/${selectedAssignStaffId}`, payload, { method: "POST" });
-            if (response?.success || response?.data?.success) {
-                toast.success("Job assigned successfully.");
-            } else {
-                toast.error(response?.message || response?.error || "Unable to assign the job right now.");
+            if (result && !result.error) {
+                toast.success("Job accepted successfully!");
+                setAcceptModalOpen(false);
+                setAcceptModalJob(null);
             }
-        } catch (error) {
-            toast.error(error?.message || "Unable to assign the job right now.");
+        } catch (err) {
+            console.error("Accept job failed:", err);
         } finally {
-            setAssigningJob(false);
-            setAssignModalOpen(false);
-            setAssignModalJob(null);
-            setSelectedAssignStaffId(null);
+            setAcceptingJob(false);
         }
-    }, [assignJobSubmit, assignModalJob, selectedAssignStaffId, userId]);
+    }, [submitAccept, userId]);
 
     useEffect(() => {
         if (typeof window === "undefined") return;
+
         const handleNotificationClick = (event) => {
             const notification = event?.notification ?? event;
             if (!notification) {
@@ -327,20 +306,21 @@ function AppContent() {
 
             const additionalData = notification?.additionalData ?? notification?.data ?? {};
 
-            // Explicit type wins — job assignment notifications always open the modal
+            // Explicit type "job_assign" – always open accept modal
             if (additionalData?.type === "job_assign") {
                 if (userId) {
-                    openAssignModal(notification);
+                    openAcceptModal(notification);
                 } else {
                     persistPendingNotification(notification);
                 }
                 return;
             }
+
             const page = additionalData?.page || additionalData?.route || additionalData?.url;
 
             if (!page || page === "asap-job-list") {
                 if (userId) {
-                    openAssignModal(notification);
+                    openAcceptModal(notification);
                 } else {
                     persistPendingNotification(notification);
                 }
@@ -356,7 +336,7 @@ function AppContent() {
             if (!notification) return;
 
             if (userId) {
-                openAssignModal(notification);
+                openAcceptModal(notification);
             } else {
                 persistPendingNotification(notification);
             }
@@ -380,14 +360,13 @@ function AppContent() {
                 handlePushSubscriptionChange,
             );
         };
-    }, [navigate, userId, userRole, openAssignModal]);
-
+    }, [navigate, userId, userRole, openAcceptModal]);
     useEffect(() => {
         if (!userId) return;
 
         const pending = consumePendingNotification();
         if (pending) {
-            openAssignModal(pending);
+            openAcceptModal(pending);
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [userId]);
@@ -456,20 +435,15 @@ function AppContent() {
     return (
         <>
             <NotificationToast />
-            <NotificationAssignModal
-                open={assignModalOpen}
-                job={assignModalJob}
-                staffList={assignStaffList}
-                loadingStaff={assignStaffLoading}
-                selectedStaffId={selectedAssignStaffId}
-                onSelectStaff={setSelectedAssignStaffId}
-                onAssign={handleAssignJob}
+            <NotificationAcceptModal
+                open={acceptModalOpen}
+                job={acceptModalJob}
+                onAccept={handleAcceptJob}
                 onClose={() => {
-                    setAssignModalOpen(false);
-                    setAssignModalJob(null);
-                    setSelectedAssignStaffId(null);
+                    setAcceptModalOpen(false);
+                    setAcceptModalJob(null);
                 }}
-                assigning={assigningJob}
+                accepting={acceptingJob}
             />
             <Routes>
                 {/* ===== PUBLIC ROUTES ===== */}

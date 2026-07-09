@@ -320,7 +320,6 @@ const StaffooStaff = () => {
                 const res = await submitSecurityLicense(
                     "api/documents-online-verification-staffoo",
                     {
-                        user_id: editingUser.id,
                         document_type: "Security License",
                         license_number: docForm.document_no,
                         state: staffState,

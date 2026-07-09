@@ -608,7 +608,6 @@ export default function EditProfile() {
         const res = await submitSecurityLicense(
           "api/documents-online-verification-staffoo",
           {
-            user_id: userId,
             document_type: docForm.document_name,
             license_number: docForm.document_no,
             state: staffState,

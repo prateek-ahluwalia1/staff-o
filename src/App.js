@@ -62,8 +62,6 @@ const AboutUs = lazy(() => import("./pages/about-us"));
 const TermsOfUse = lazy(() => import("./pages/terms-of-use"));
 const PrivacyPolicy = lazy(() => import("./pages/privacy-policy"));
 const NotFound = lazy(() => import("./pages/NotFound"));
-// const DynamicPage = lazy(() => import("./pages/DynamicPage"));
-// const EventSecurity = lazy(() => import("./pages/solutions/event-security"));
 const Reports = lazy(() => import("./pages/Reports"));
 const TimeSheet = lazy(() => import("./pages/TimeSheet"));
 const JobTracker = lazy(() => import("./pages/JobTracker"));
@@ -88,14 +86,14 @@ function AppContent() {
     const oneSignalReadyRef = useRef(false);
     const userId = userdata?.id ?? userdata?.data?.id;
     const userRole = userdata?.data?.user_type || userdata?.user_type;
-    const { submit: submitStaffFetch } = useSubmit({ isAuth: true });
     const { submit: submitAccept } = useSubmit({ isAuth: true });
+
     const [acceptModalOpen, setAcceptModalOpen] = useState(false);
     const [acceptModalJob, setAcceptModalJob] = useState(null);
     const [acceptingJob, setAcceptingJob] = useState(false);
 
     const PENDING_NOTIFICATION_KEY = "pendingJobNotification";
-    const PENDING_NOTIFICATION_TTL_MS = 5 * 60 * 1000; // ignore anything older than 5 min
+    const PENDING_NOTIFICATION_TTL_MS = 5 * 60 * 1000;
 
     const persistPendingNotification = (notification) => {
         try {
@@ -127,7 +125,6 @@ function AppContent() {
     const syncNotificationToken = useCallback(
         async (notificationToken) => {
             if (!token || !userId || !notificationToken) return;
-
             try {
                 await fetch(`${apiURL}api/store-notification-token`, {
                     method: "POST",
@@ -145,18 +142,15 @@ function AppContent() {
                 console.error("Failed to sync OneSignal token:", error);
             }
         },
-        [token, userId],
+        [token, userId]
     );
 
     const getPlayerIdAsync = useCallback(async () => {
         try {
-            // Prefer an explicit PushSubscription id when available
             const subId = OneSignal.User?.PushSubscription?.id || OneSignal.User?.pushSubscription?.id;
             if (subId) return subId;
-
             if (OneSignal?.User?.pushSubscription?.getIdAsync) {
                 const id = await OneSignal.User.pushSubscription.getIdAsync();
-                // Some browsers (Safari) may return a web endpoint URL — avoid sending raw URLs to API
                 if (id && typeof id === "string") {
                     const isUrl = id.startsWith("http://") || id.startsWith("https://");
                     if (!isUrl) return id;
@@ -165,24 +159,19 @@ function AppContent() {
         } catch (e) {
             console.warn("OneSignal getIdAsync failed:", e);
         }
-
-        // Fallbacks: prefer token (may be endpoint) but try onesignalId
         const token = OneSignal.User?.PushSubscription?.token || OneSignal.User?.pushSubscription?.token;
         if (token && typeof token === "string") {
             const isUrl = token.startsWith("http://") || token.startsWith("https://");
             if (!isUrl) return token;
         }
-
         return OneSignal.User?.onesignalId || null;
     }, []);
 
-    const handlePushSubscriptionChange = useCallback(
-        async () => {
-            const playerId = await getPlayerIdAsync();
-            if (playerId) await syncNotificationToken(playerId);
-        },
-        [syncNotificationToken, getPlayerIdAsync],
-    );
+    const handlePushSubscriptionChange = useCallback(async () => {
+        if (!token || userRole !== "contractor") return;
+        const playerId = await getPlayerIdAsync();
+        if (playerId) await syncNotificationToken(playerId);
+    }, [syncNotificationToken, getPlayerIdAsync]);
 
     useEcho();
 
@@ -198,7 +187,7 @@ function AppContent() {
                 if (!oneSignalReadyRef.current) {
                     await OneSignal.init({
                         appId: ONESIGNAL_APP_ID,
-                        serviceWorkerPath: 'OneSignalSDKWorker.js',
+                        serviceWorkerPath: "OneSignalSDKWorker.js",
                         safari_web_id: "web.onesignal.auto.2bc028a8-3e83-466a-979b-b4e85ca9934f",
                         allowLocalhostAsSecureOrigin: true,
                         notifyButton: { enable: true },
@@ -208,7 +197,7 @@ function AppContent() {
 
                     OneSignal.User.PushSubscription.addEventListener(
                         "change",
-                        handlePushSubscriptionChange,
+                        handlePushSubscriptionChange
                     );
 
                     oneSignalReadyRef.current = true;
@@ -248,51 +237,109 @@ function AppContent() {
         }
     }, []);
 
-    const openAcceptModal = useCallback((notification) => {
-        const additionalData = notification?.additionalData ?? notification?.data ?? {};
-        const rawRoster = additionalData?.roster?.roster ?? additionalData?.roster ?? {};
-        const jobId = rawRoster?.id;
-        if (!jobId) {
-            toast.error("Job already accepted on app.");
-            return;
-        }
-
-        const jobPayload = {
-            id: jobId,
-            siteName: rawRoster?.site_name || rawRoster?.site?.site_name || additionalData?.site_name || "Site",
-            address: rawRoster?.site_address || rawRoster?.address || rawRoster?.site?.address || additionalData?.address || "Address not available",
-            date: rawRoster?.start
-                ? new Date(rawRoster.start).toLocaleDateString("en-AU")
-                : additionalData?.date || "TBD",
-            startTime: rawRoster?.start
-                ? new Date(rawRoster.start).toLocaleTimeString("en-AU", { hour: "2-digit", minute: "2-digit", hour12: false })
-                : additionalData?.start_time || "—",
-            endTime: rawRoster?.end
-                ? new Date(rawRoster.end).toLocaleTimeString("en-AU", { hour: "2-digit", minute: "2-digit", hour12: false })
-                : additionalData?.end_time || "—",
-        };
-
-        playNotificationSound();
-        setAcceptModalJob(jobPayload);
-        setAcceptModalOpen(true);
-    }, [playNotificationSound]);
-    const handleAcceptJob = useCallback(async (jobId) => {
-        setAcceptingJob(true);
-        try {
-            const payload = { admin_id: userId };
-            const result = await submitAccept(`api/asap-jobs/accept/${jobId}`, payload, { method: "POST" });
-
-            if (result && !result.error) {
-                toast.success("Job accepted successfully!");
-                setAcceptModalOpen(false);
-                setAcceptModalJob(null);
+    const openAcceptModal = useCallback(
+        (notification) => {
+            // Only contractor / resource_partner
+            if (!userId || (userRole !== "contractor" && userRole !== "resource_partner")) {
+                return;
             }
-        } catch (err) {
-            console.error("Accept job failed:", err);
-        } finally {
-            setAcceptingJob(false);
-        }
-    }, [submitAccept, userId]);
+
+            const additionalData = notification?.additionalData ?? notification?.data ?? {};
+            const outerRoster = additionalData?.roster ?? {};
+            const innerRoster = outerRoster?.roster ?? {};
+            const jobId = innerRoster?.id;
+
+            if (!jobId) {
+                toast.error("Job already accepted on app.");
+                return;
+            }
+
+            const startRaw = innerRoster?.start;
+            const endRaw = innerRoster?.end;
+
+            // Parse document list
+            let documents = [];
+            try {
+                if (innerRoster?.document_list) {
+                    const parsed = JSON.parse(innerRoster.document_list);
+                    if (Array.isArray(parsed)) {
+                        documents = parsed.map(doc =>
+                            doc
+                                .replace(/_/g, ' ')
+                                .replace(/\b\w/g, (l) => l.toUpperCase())
+                        );
+                    }
+                }
+            } catch (e) {
+                // ignore malformed document_list
+            }
+
+            const jobPayload = {
+                id: jobId,
+                siteName:
+                    innerRoster?.site?.site_name ||
+                    innerRoster?.site_name ||
+                    additionalData?.site_name ||
+                    "Site",
+                address:
+                    innerRoster?.site?.address ||
+                    innerRoster?.site_address ||
+                    additionalData?.address ||
+                    "Address not available",
+                jobType: innerRoster?.job_type || "N/A",
+                shiftCount: outerRoster?.job_count ?? "N/A",
+                hours: innerRoster?.hours ?? "N/A",
+                jobAmount: innerRoster?.job_amount ?? "N/A",
+                date: startRaw
+                    ? new Date(startRaw).toLocaleDateString("en-AU")
+                    : "TBD",
+                startTime: startRaw
+                    ? new Date(startRaw).toLocaleTimeString("en-GB", {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                        hour12: false,
+                    })
+                    : "—",
+                endTime: endRaw
+                    ? new Date(endRaw).toLocaleTimeString("en-GB", {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                        hour12: false,
+                    })
+                    : "—",
+                documents,
+            };
+
+            playNotificationSound();
+            setAcceptModalJob(jobPayload);
+            setAcceptModalOpen(true);
+        },
+        [userId, userRole, playNotificationSound]
+    );
+
+    const handleAcceptJob = useCallback(
+        async (jobId) => {
+            setAcceptingJob(true);
+            try {
+                const payload = { admin_id: userId };
+                const result = await submitAccept(
+                    `api/asap-jobs/accept/${jobId}`,
+                    payload,
+                    { method: "POST" }
+                );
+                if (result && !result.error) {
+                    toast.success("Job accepted successfully!");
+                    setAcceptModalOpen(false);
+                    setAcceptModalJob(null);
+                }
+            } catch (err) {
+                console.error("Accept job failed:", err);
+            } finally {
+                setAcceptingJob(false);
+            }
+        },
+        [submitAccept, userId]
+    );
 
     useEffect(() => {
         if (typeof window === "undefined") return;
@@ -306,22 +353,21 @@ function AppContent() {
 
             const additionalData = notification?.additionalData ?? notification?.data ?? {};
 
-            // Explicit type "job_assign" – always open accept modal
+            // Only handle job_assign type (or missing page) for our modal
             if (additionalData?.type === "job_assign") {
-                if (userId) {
+                if (userId && userRole === "contractor") {
                     openAcceptModal(notification);
-                } else {
+                } else if (!userId) {
                     persistPendingNotification(notification);
                 }
                 return;
             }
 
             const page = additionalData?.page || additionalData?.route || additionalData?.url;
-
             if (!page || page === "asap-job-list") {
-                if (userId) {
+                if (userId && userRole === "contractor") {
                     openAcceptModal(notification);
-                } else {
+                } else if (!userId) {
                     persistPendingNotification(notification);
                 }
                 return;
@@ -335,42 +381,36 @@ function AppContent() {
             const notification = event?.notification ?? event;
             if (!notification) return;
 
-            if (userId) {
+            // Only allow accept modal for allowed roles
+            if (userId && userRole === "contractor") {
                 openAcceptModal(notification);
-            } else {
+            } else if (!userId) {
                 persistPendingNotification(notification);
             }
             event?.preventDefault?.();
         };
 
         OneSignal.Notifications.addEventListener("click", handleNotificationClick);
-        OneSignal.Notifications.addEventListener(
-            "foregroundWillDisplay",
-            handleForegroundNotification,
-        );
+        OneSignal.Notifications.addEventListener("foregroundWillDisplay", handleForegroundNotification);
 
         return () => {
             OneSignal.Notifications.removeEventListener("click", handleNotificationClick);
-            OneSignal.Notifications.removeEventListener(
-                "foregroundWillDisplay",
-                handleForegroundNotification,
-            );
-            OneSignal.User.PushSubscription.removeEventListener(
-                "change",
-                handlePushSubscriptionChange,
-            );
+            OneSignal.Notifications.removeEventListener("foregroundWillDisplay", handleForegroundNotification);
+            OneSignal.User.PushSubscription.removeEventListener("change", handlePushSubscriptionChange);
         };
     }, [navigate, userId, userRole, openAcceptModal]);
+
+    // ------------------ Consume pending notification after login ------------------
     useEffect(() => {
-        if (!userId) return;
+        if (!userId || userRole !== "contractor") return;
 
         const pending = consumePendingNotification();
         if (pending) {
             openAcceptModal(pending);
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [userId]);
+    }, [userId, userRole, openAcceptModal]);
 
+    // ------------------ Session verification on mount ------------------
     useEffect(() => {
         if (!isInitialMount.current) return;
         isInitialMount.current = false;
@@ -383,8 +423,8 @@ function AppContent() {
                 return;
             }
 
-            const userId = userdata?.data?.id || userdata?.id;
-            if (!userId) {
+            const uid = userdata?.data?.id || userdata?.id;
+            if (!uid) {
                 dispatch(logOut());
                 toast.error("Invalid user session. Please log in again.");
                 navigate("/login", { replace: true });
@@ -392,7 +432,7 @@ function AppContent() {
             }
 
             try {
-                const profileRes = await fetch(`${apiURL}api/user-edit/${userId}`, {
+                const profileRes = await fetch(`${apiURL}api/user-edit/${uid}`, {
                     method: "GET",
                     headers: {
                         Accept: "application/json",
@@ -415,9 +455,8 @@ function AppContent() {
                 const profileJson = await profileRes.json();
                 dispatch(
                     setUser({
-                        userdata:
-                            profileJson?.data || profileJson?.data?.user || profileJson,
-                    }),
+                        userdata: profileJson?.data || profileJson?.data?.user || profileJson,
+                    })
                 );
             } catch (error) {
                 console.error("Session verification failed:", error);
@@ -428,9 +467,7 @@ function AppContent() {
         };
 
         verifySession();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
-
+    }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
     return (
         <>
@@ -446,410 +483,80 @@ function AppContent() {
                 accepting={acceptingJob}
             />
             <Routes>
-                {/* ===== PUBLIC ROUTES ===== */}
-                <Route
-                    path="/"
-                    element={
-                        <ProtectedRoute public>
-                            <Home />
-                        </ProtectedRoute>
-                    }
-                />
-                <Route
-                    path="/public-profile"
-                    element={
-                        <ProtectedRoute public>
-                            <PublicProfilePreview />
-                        </ProtectedRoute>
-                    }
-                />
+                {/* PUBLIC ROUTES */}
+                <Route path="/" element={<ProtectedRoute public><Home /></ProtectedRoute>} />
+                <Route path="/public-profile" element={<ProtectedRoute public><PublicProfilePreview /></ProtectedRoute>} />
+                <Route path="/faqs" element={<ProtectedRoute public><Faqs /></ProtectedRoute>} />
 
-                <Route
-                    path="/faqs"
-                    element={
-                        <ProtectedRoute public>
-                            <Faqs />
-                        </ProtectedRoute>
-                    }
-                />
+                {/* Solutions */}
+                <Route path="/solutions/event-security" element={<ProtectedRoute public><EventSecurityHero /></ProtectedRoute>} />
+                <Route path="/solutions/retail-security" element={<ProtectedRoute public><RetailSecurity /></ProtectedRoute>} />
+                <Route path="/solutions/warehouse-logistics-security" element={<ProtectedRoute public><WarehouseLogisticsSecurity /></ProtectedRoute>} />
+                <Route path="/solutions/corporate-security" element={<ProtectedRoute public><CorporateSecurity /></ProtectedRoute>} />
+                <Route path="/solutions/government-security" element={<ProtectedRoute public><GovernmentSecurity /></ProtectedRoute>} />
+                <Route path="/solutions/healthcare-security" element={<ProtectedRoute public><HealthcareSecurity /></ProtectedRoute>} />
+                <Route path="/solutions/transport-security" element={<ProtectedRoute public><TransportSecurity /></ProtectedRoute>} />
+                <Route path="/solutions/aviation-security" element={<ProtectedRoute public><AviationSecurity /></ProtectedRoute>} />
+                <Route path="/solutions/for-security-companies" element={<ProtectedRoute public><ForSecurityCompanies /></ProtectedRoute>} />
+                <Route path="/solutions/for-security-guards" element={<ProtectedRoute public><ForSecurityGuards /></ProtectedRoute>} />
+                <Route path="/solutions/security-subcontractors" element={<ProtectedRoute public><SecuritySubcontractors /></ProtectedRoute>} />
+                <Route path="/solutions/hire-security-staff" element={<ProtectedRoute public><HireSecurityStaff /></ProtectedRoute>} />
+                <Route path="/solutions/for-event-security-providers" element={<ProtectedRoute public><EventSecurityProviders /></ProtectedRoute>} />
+                <Route path="/solutions/for-corporate-security-teams" element={<ProtectedRoute public><CorporateSecurityTeams /></ProtectedRoute>} />
+                <Route path="/solutions/for-labour-hire-agencies" element={<ProtectedRoute public><LabourHireAgencies /></ProtectedRoute>} />
 
+                {/* Features */}
+                <Route path="/features/gps-guard-tracking" element={<ProtectedRoute public><GPSGuardTracking /></ProtectedRoute>} />
 
-                {/* solutions screen */}
-                <>
-                    <Route
-                        path="/solutions/event-security"
-                        element={
-                            <ProtectedRoute public>
-                                <EventSecurityHero />
-                            </ProtectedRoute>
-                        }
-                    />
+                {/* Catch‑all for resources/features/pricing */}
+                <Route path="/resources/:slug" element={<ProtectedRoute public><EventSecurityHero /></ProtectedRoute>} />
+                <Route path="/features/:slug" element={<ProtectedRoute public><EventSecurityHero /></ProtectedRoute>} />
+                <Route path="/pricing" element={<ProtectedRoute public><EventSecurityHero /></ProtectedRoute>} />
 
-                    <Route
-                        path="/solutions/retail-security"
-                        element={
-                            <ProtectedRoute public>
-                                <RetailSecurity />
-                            </ProtectedRoute>
-                        }
-                    />
+                {/* Company */}
+                <Route path="/terms-of-use" element={<ProtectedRoute public><TermsOfUse /></ProtectedRoute>} />
+                <Route path="/privacy-policy" element={<ProtectedRoute public><PrivacyPolicy /></ProtectedRoute>} />
+                <Route path="/about-us" element={<ProtectedRoute public><AboutUs /></ProtectedRoute>} />
+                <Route path="/contact-us" element={<ProtectedRoute public><ContactUs /></ProtectedRoute>} />
+                <Route path="/careers" element={<ProtectedRoute public><Careers /></ProtectedRoute>} />
 
-                    <Route
-                        path="/solutions/warehouse-logistics-security"
-                        element={
-                            <ProtectedRoute public>
-                                <WarehouseLogisticsSecurity />
-                            </ProtectedRoute>
-                        }
-                    />
+                {/* Auth */}
+                <Route path="/login" element={<ProtectedRoute guestOnly><Login /></ProtectedRoute>} />
+                <Route path="/register" element={<ProtectedRoute guestOnly><Register /></ProtectedRoute>} />
 
-                    <Route
-                        path="/solutions/corporate-security"
-                        element={
-                            <ProtectedRoute public>
-                                <CorporateSecurity />
-                            </ProtectedRoute>
-                        }
-                    />
-
-                    <Route
-                        path="/solutions/government-security"
-                        element={
-                            <ProtectedRoute public>
-                                <GovernmentSecurity />
-                            </ProtectedRoute>
-                        }
-                    />
-
-                    <Route
-                        path="/solutions/healthcare-security"
-                        element={
-                            <ProtectedRoute public>
-                                <HealthcareSecurity />
-                            </ProtectedRoute>
-                        }
-                    />
-
-                    <Route
-                        path="/solutions/transport-security"
-                        element={
-                            <ProtectedRoute public>
-                                <TransportSecurity />
-                            </ProtectedRoute>
-                        }
-                    />
-
-                    <Route
-                        path="/solutions/aviation-security"
-                        element={
-                            <ProtectedRoute public>
-                                <AviationSecurity />
-                            </ProtectedRoute>
-                        }
-                    />
-
-                    <Route
-                        path="/solutions/for-security-companies"
-                        element={
-                            <ProtectedRoute public>
-                                <ForSecurityCompanies />
-                            </ProtectedRoute>
-                        }
-                    />
-
-                    <Route
-                        path="/solutions/for-security-guards"
-                        element={
-                            <ProtectedRoute public>
-                                <ForSecurityGuards />
-                            </ProtectedRoute>
-                        }
-                    />
-
-                    <Route
-                        path="/solutions/security-subcontractors"
-                        element={
-                            <ProtectedRoute public>
-                                <SecuritySubcontractors />
-                            </ProtectedRoute>
-                        }
-                    />
-                    <Route
-                        path="/solutions/hire-security-staff"
-                        element={
-                            <ProtectedRoute public>
-                                <HireSecurityStaff />
-                            </ProtectedRoute>
-                        }
-                    />
-
-                    <Route
-                        path="/solutions/for-event-security-providers"
-                        element={
-                            <ProtectedRoute public>
-                                <EventSecurityProviders />
-                            </ProtectedRoute>
-                        }
-                    />
-                    <Route
-                        path="/solutions/for-corporate-security-teams"
-                        element={
-                            <ProtectedRoute public>
-                                <CorporateSecurityTeams />
-                            </ProtectedRoute>
-                        }
-                    />
-                    <Route
-                        path="/solutions/for-labour-hire-agencies"
-                        element={
-                            <ProtectedRoute public>
-                                <LabourHireAgencies />
-                            </ProtectedRoute>
-                        }
-                    />
-
-
-                </>
-
-
-                {/* Features screens routs */}
-                <>
-                    <Route
-                        path="/features/gps-guard-tracking"
-                        element={
-                            <ProtectedRoute public>
-                                <GPSGuardTracking />
-                            </ProtectedRoute>
-                        }
-                    />
-
-
-
-
-                </>
-
-
-                <Route
-                    path="/resources/:slug"
-                    element={
-                        <ProtectedRoute public>
-                            < EventSecurityHero />
-                        </ProtectedRoute>
-                    }
-                />
-                <Route
-                    path="/features/:slug"
-                    element={
-                        <ProtectedRoute public>
-                            < EventSecurityHero />
-                        </ProtectedRoute>
-                    }
-                />
-
-                <Route
-                    path="/pricing"
-                    element={
-                        <ProtectedRoute public>
-                            < EventSecurityHero />
-                        </ProtectedRoute>
-                    }
-                />
-
-                {/* company rounts */}
-                <>
-                    <Route
-                        path="/terms-of-use"
-                        element={
-                            <ProtectedRoute public>
-                                <TermsOfUse />
-                            </ProtectedRoute>
-                        }
-                    />
-                    <Route
-                        path="/privacy-policy"
-                        element={
-                            <ProtectedRoute public>
-                                <PrivacyPolicy />
-                            </ProtectedRoute>
-                        }
-                    />
-
-
-                    <Route
-                        path="about-us"
-                        element={
-                            <ProtectedRoute public>
-                                <AboutUs />
-                            </ProtectedRoute>
-                        }
-                    />
-                    <Route
-                        path="/contact-us"
-                        element={
-                            <ProtectedRoute public>
-                                <ContactUs />
-                            </ProtectedRoute>
-                        }
-                    />
-
-                    <Route
-                        path="/careers"
-                        element={
-                            <ProtectedRoute public>
-                                <Careers />
-                            </ProtectedRoute>
-                        }
-                    />
-                </>
-
-
-                {/* ===== AUTHENTICATION ROUTES ===== */}
-                <Route
-                    path="/login"
-                    element={
-                        <ProtectedRoute guestOnly>
-                            <Login />
-                        </ProtectedRoute>
-                    }
-                />
-                <Route
-                    path="/register"
-                    element={
-                        <ProtectedRoute guestOnly>
-                            <Register />
-                        </ProtectedRoute>
-                    }
-                />
-
-                {/* ===== PROTECTED ROUTES ===== */}
-                <Route
-                    element={
-                        <ProtectedRoute>
-                            <DashboardLayout />
-                        </ProtectedRoute>
-                    }
-                >
+                {/* Protected Layout */}
+                <Route element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
                     <Route path="/dashboard" element={<Dashboard />} />
                     <Route path="/edit-profile" element={<EditProfile />} />
                     <Route path="/add-job" element={<AddJob />} />
                     <Route path="/my-job-applications" element={<MyJobApplications />} />
                     <Route path="/job-alerts" element={<JobAlerts />} />
-                    <Route
-                        path="/roster"
-                        element={
-                            <ProtectedRoute allowedRoles={["admin", "contractor"]}>
-                                <RosterPage />
-                            </ProtectedRoute>
-                        }
-                    />
-                    <Route
-                        path="/manage-users"
-                        element={
-                            <ProtectedRoute allowedRoles={["admin"]}>
-                                <ManageUsers />
-                            </ProtectedRoute>
-                        }
-                    />
-                    <Route
-                        path="/manage-staff"
-                        element={
-                            <ProtectedRoute allowedRoles={["admin", "contractor"]}>
-                                <ManageStaff />
-                            </ProtectedRoute>
-                        }
-                    />
-                    <Route
-                        path="/cover-jobs"
-                        element={
-                            <ProtectedRoute allowedRoles={["contractor"]}>
-                                <CoverJobs />
-                            </ProtectedRoute>
-                        }
-                    />
+                    <Route path="/roster" element={<ProtectedRoute allowedRoles={["admin", "contractor"]}><RosterPage /></ProtectedRoute>} />
+                    <Route path="/manage-users" element={<ProtectedRoute allowedRoles={["admin"]}><ManageUsers /></ProtectedRoute>} />
+                    <Route path="/manage-staff" element={<ProtectedRoute allowedRoles={["admin", "contractor"]}><ManageStaff /></ProtectedRoute>} />
+                    <Route path="/cover-jobs" element={<ProtectedRoute allowedRoles={["contractor"]}><CoverJobs /></ProtectedRoute>} />
                     <Route path="/payment-history" element={<PaymentHistory />} />
                     <Route path="/pay-charge-rate" element={<PayChargeRate />} />
                     <Route path="/rates/charge" element={<RatesList />} />
                     <Route path="/rates/pay" element={<RatesList />} />
-                    <Route
-                        path="/wfm-tools"
-                        element={
-                            <ProtectedRoute allowedRoles={["admin", "contractor"]}>
-                                <WFMTools />
-                            </ProtectedRoute>
-                        }
-                    />
-                    <Route
-                        path="/leave"
-                        element={
-                            <ProtectedRoute allowedRoles={["admin", "contractor"]}>
-                                <LeaveManagement />
-                            </ProtectedRoute>
-                        }
-                    />
-                    <Route
-                        path="/holidays"
-                        element={
-                            <ProtectedRoute allowedRoles={["admin"]}>
-                                <PublicHolidays />
-                            </ProtectedRoute>
-                        }
-                    />
-                    <Route
-                        path="/staff-management"
-                        element={
-                            <ProtectedRoute allowedRoles={["admin"]}>
-                                <StafooStaff />
-                            </ProtectedRoute>
-                        }
-                    />
-                    <Route
-                        path="/reports"
-                        element={
-                            <ProtectedRoute allowedRoles={["admin"]}>
-                                <Reports />
-                            </ProtectedRoute>
-                        }
-                    />
-                    <Route
-                        path="/pay-slip"
-                        element={
-                            <ProtectedRoute allowedRoles={["admin"]}>
-                                <PaySlip />
-                            </ProtectedRoute>
-                        }
-                    />
+                    <Route path="/wfm-tools" element={<ProtectedRoute allowedRoles={["admin", "contractor"]}><WFMTools /></ProtectedRoute>} />
+                    <Route path="/leave" element={<ProtectedRoute allowedRoles={["admin", "contractor"]}><LeaveManagement /></ProtectedRoute>} />
+                    <Route path="/holidays" element={<ProtectedRoute allowedRoles={["admin"]}><PublicHolidays /></ProtectedRoute>} />
+                    <Route path="/staff-management" element={<ProtectedRoute allowedRoles={["admin"]}><StafooStaff /></ProtectedRoute>} />
+                    <Route path="/reports" element={<ProtectedRoute allowedRoles={["admin"]}><Reports /></ProtectedRoute>} />
+                    <Route path="/pay-slip" element={<ProtectedRoute allowedRoles={["admin"]}><PaySlip /></ProtectedRoute>} />
                     <Route path="/timesheet" element={<TimeSheet />} />
                     <Route path="/job-tracker" element={<JobTracker />} />
                     <Route path="/pay-sheet" element={<PaySheet />} />
-                    <Route
-                        path="/visa-management"
-                        element={
-                            <ProtectedRoute allowedRoles={["admin"]}>
-                                <VisaManagement />
-                            </ProtectedRoute>
-                        }
-                    />
-                    <Route
-                        path="/induction"
-                        element={
-                            <ProtectedRoute allowedRoles={["admin"]}>
-                                <Induction />
-                            </ProtectedRoute>
-                        }
-                    />
+                    <Route path="/visa-management" element={<ProtectedRoute allowedRoles={["admin"]}><VisaManagement /></ProtectedRoute>} />
+                    <Route path="/induction" element={<ProtectedRoute allowedRoles={["admin"]}><Induction /></ProtectedRoute>} />
                     <Route path="/accounts/invoice" element={<Invoice />} />
                     <Route path="/chat" element={<ChatPage />} />
                     <Route path="/chat/:category" element={<ChatRoom />} />
                     <Route path="/notifications" element={<AllNotifications />} />
                 </Route>
 
-                {/* ===== CATCH-ALL ===== */}
-                {/* <Route path="*" element={
-                    <NotFound />
-                } /> */}
-                <Route path="*" element={
-                    <NotFound />
-                } />
+                <Route path="*" element={<NotFound />} />
             </Routes>
         </>
     );
@@ -863,4 +570,4 @@ export default function App() {
             </div>
         </Router>
     );
-};
+}

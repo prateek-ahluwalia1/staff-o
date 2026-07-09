@@ -486,7 +486,6 @@ const ManageUsers = () => {
           toast.success("Security License verified. Expiry date locked.");
         } else {
           setDocForm(prev => ({ ...prev, is_verified: false }));
-          toast.error(res?.message || "Security License verification failed.");
         }
       } catch (err) {
         console.error(err);

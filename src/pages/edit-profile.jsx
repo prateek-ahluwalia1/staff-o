@@ -1394,7 +1394,7 @@ export default function EditProfile() {
           ) : (
             <div className="mb-3">
               <label className="form-label fw-semibold">
-                Expiry Date <span className="text-danger">*</span>
+                Document Number <span className="text-danger">*</span>
               </label>
               <input
                 type="text"

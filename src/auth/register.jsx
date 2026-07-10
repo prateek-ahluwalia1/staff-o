@@ -369,7 +369,9 @@ export default function Register() {
                           onClick={() => setShowPassword(!showPassword)}
                           tabIndex="-1"
                         >
-                          <i className={`fa-solid ${showPassword ? 'fa-eye-slash' : 'fa-eye'}`}></i>
+                          <i
+                            style={{ color: "#0A7C6E" }}
+                            className={`fa-solid ${showPassword ? "fa-eye-slash" : "fa-eye"}`}></i>
                         </button>
                       </div>
                       {errors.password && (

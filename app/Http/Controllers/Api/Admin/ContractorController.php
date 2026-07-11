@@ -19,7 +19,7 @@ class ContractorController extends Controller
     public function index(Request $request)
     {
         $query = User::where('user_type', 'contractor')->whereNotIn('id', [1])
-            ->with('contractor');
+            ->with('contractor','documents');
 
         // Search functionality
         if ($request->has('search')) {
@@ -239,6 +239,9 @@ class ContractorController extends Controller
                 'company_name' => $data['company_name'] ?? $user->contractor->company_name,
                 'registration_number' => $data['registration_number'] ?? $user->contractor->registration_number,
                 'phone' => $data['phone'] ?? $user->contractor->phone,
+                'abn' => $request->abn ?? $user->contractor->abn,
+                'acn' => $request->acn ?? $user->contractor->acn,
+
             ]);
         }
 

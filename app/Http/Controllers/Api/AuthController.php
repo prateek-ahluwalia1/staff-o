@@ -707,6 +707,10 @@ class AuthController extends Controller
             'gender'        => null,
             'phone'         => null,
         ]);
+        
+        if ($user->user_type === 'staff') {
+            Mail::to($user->email)->send(new StaffOnboardingMail());
+        }
 
         return response()->json([
             'success' => true,

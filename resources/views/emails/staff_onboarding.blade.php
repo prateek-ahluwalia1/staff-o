@@ -114,59 +114,88 @@
                             <!-- WELCOME MESSAGE -->
                             <h2 style="color: #0F2F3F; font-weight: 700; font-size: 26px; margin: 0 0 8px 0; letter-spacing: -0.3px;">Welcome to Staffoo 🎉</h2>
                             <p style="color: #4A5B6B; font-size: 16px; line-height: 1.5; margin: 0 0 24px 0;">
-                                Welcome to the team. To ensure your employment with <strong style="color: #1A5A6E;">Capital Services Pty Ltd</strong> is compliant and your payroll is set up accurately, please follow these steps carefully.
+                                Welcome to the team. To ensure your employment with <strong style="color: #1A5A6E;">Capital Services Pty Ltd</strong> to complete your onboarding and set up your payroll correctly, please complete the steps below before you start work. These steps help Staffoo verify your identity, check your licence and compliance documents, and make sure your tax, super and payroll details are set up correctly.
                             </p>
                             
-                            <!-- STEP 1 CARD -->
+                            
+                            <!-- STEP 1: Tax & Super (myGov) -->
                             <div style="background: #F8FCFD; border-radius: 20px; margin-bottom: 24px; border: 1px solid #E2EDF2; overflow: hidden;">
                                 <div style="background: #EFF8FC; padding: 16px 24px; border-bottom: 1px solid #DFEAF0;">
                                     <span style="display: inline-block; background: #1A5A6E; color: white; width: 28px; height: 28px; text-align: center; line-height: 28px; border-radius: 14px; font-weight: 700; font-size: 14px; margin-right: 12px;">1</span>
                                     <span style="font-weight: 700; font-size: 18px; color: #0F2F3F;">Tax & Super (myGov)</span>
                                 </div>
                                 <div style="padding: 20px 24px;">
-                                    <ul style="margin: 0; padding-left: 20px; color: #2A4B60; font-size: 15px; line-height: 1.6;">
-                                        <li style="margin-bottom: 10px;">Login to <strong>myGov</strong> → <strong>ATO</strong></li>
-                                        <li style="margin-bottom: 10px;">Go to <strong>Employment</strong> → <strong>New Employment</strong></li>
-                                        <li style="margin-bottom: 10px;"><strong>Employer:</strong> Capital Services Pty Ltd</li>
-                                        <li><strong>ABN:</strong> 48 613 317 838</li>
+                                    <p style="margin-top:0; color: #2A4B60; font-size: 15px; line-height:1.5;">Staffoo uses the ATO online commencement process through MyGov. This is the safest and most secure way to submit your tax and super details.</p>
+                                    <ul style="margin: 12px 0 0 0; padding-left: 20px; color: #2A4B60; font-size: 15px; line-height: 1.6;">
+                                        <li style="margin-bottom: 10px;">Log in to your <strong>MyGov</strong> account at <a href="https://my.gov.au" style="color:#1A5A6E; text-decoration:underline;">my.gov.au</a></li>
+                                        <li style="margin-bottom: 10px;">Select <strong>Australian Taxation Office</strong> from your linked services</li>
+                                        <li style="margin-bottom: 10px;">Go to <strong>Employment</strong> → <strong>New employment</strong></li>
+                                        <li style="margin-bottom: 10px;">Enter the employer details below when requested:<br>
+                                            <strong>Employer Name:</strong> Capital Services Pty Ltd<br>
+                                            <strong>ABN:</strong> 48 613 317 838
+                                        </li>
+                                        <li>Complete and submit your <strong>Tax File Number Declaration</strong> and <strong>Superannuation Standard Choice</strong> details.</li>
                                     </ul>
                                     <div style="background: #E9F3F7; border-radius: 12px; padding: 12px 16px; margin-top: 16px;">
                                         <span style="font-size: 13px; color: #1A5A6E;">💡 Tip:</span>
-                                        <span style="font-size: 13px; color: #2A4B60;"> Make sure your TFN is declared and super fund details are up to date.</span>
+                                        <span style="font-size: 13px; color: #2A4B60;"> If you cannot access the online ATO form, please contact Staffoo Admin so we can guide you through the next step.</span>
                                     </div>
                                 </div>
                             </div>
                             
-                            <!-- STEP 2 CARD -->
+                            <!-- STEP 2: Staffoo Form Requirements -->
                             <div style="background: #F8FCFD; border-radius: 20px; margin-bottom: 24px; border: 1px solid #E2EDF2; overflow: hidden;">
                                 <div style="background: #EFF8FC; padding: 16px 24px; border-bottom: 1px solid #DFEAF0;">
                                     <span style="display: inline-block; background: #1A5A6E; color: white; width: 28px; height: 28px; text-align: center; line-height: 28px; border-radius: 14px; font-weight: 700; font-size: 14px; margin-right: 12px;">2</span>
-                                    <span style="font-weight: 700; font-size: 18px; color: #0F2F3F;">Staffoo Form Requirements</span>
+                                    <span style="font-weight: 700; font-size: 18px; color: #0F2F3F;">Staffoo Onboarding & ID Verification</span>
                                 </div>
                                 <div style="padding: 20px 24px;">
-                                    <ul style="margin: 0 0 16px 0; padding-left: 20px; color: #2A4B60; font-size: 15px; line-height: 1.6;">
-                                        <li style="margin-bottom: 10px;"><strong>100-point ID</strong> verification (Passport, Birth Cert, etc.)</li>
-                                        <li style="margin-bottom: 10px;"><strong>Security License</strong> + <strong>First Aid Certificate</strong> (if applicable)</li>
+                                    <p style="margin-top:0; color: #2A4B60; font-size: 15px; line-height:1.5;">You must complete the Staffoo Employee Onboarding and ID Verification Form and provide clear copies of all required documents.</p>
+                                    <ul style="margin: 12px 0 16px 0; padding-left: 20px; color: #2A4B60; font-size: 15px; line-height: 1.6;">
+                                        <li style="margin-bottom: 10px;"><strong>100-point ID check:</strong> At least one primary ID (Passport, Birth Cert) and required secondary documents (Driver Licence, Medicare).</li>
+                                        <li style="margin-bottom: 10px;"><strong>Passport details</strong> – required for identity verification and work rights checks.</li>
+                                        <li style="margin-bottom: 10px;"><strong>Security Licence</strong> – current Victorian Private Security Licence (or state-appropriate).</li>
+                                        <li style="margin-bottom: 10px;"><strong>First Aid Certificate</strong> – current certificate if required for your role or site.</li>
+                                        <li>Other compliance documents may be requested depending on site, client, state, or role.</li>
                                     </ul>
                                     <div style="background-color: #FFF7E5; border-left: 4px solid #F5A623; border-radius: 12px; padding: 12px 16px;">
-                                        <span style="font-size: 13px; font-weight: 600; color: #C46D0D;">📎 Need help?</span>
-                                        <span style="font-size: 13px; color: #6B5A2E;"> Submit documents via Staffoo mobile app → Profile → Documents.</span>
+                                        <span style="font-size: 13px; font-weight: 600; color: #C46D0D;">📎 Important:</span>
+                                        <span style="font-size: 13px; color: #6B5A2E;"> All documents must be clear, complete, current, and readable. Blurry, expired, or incomplete documents may delay your onboarding.</span>
                                     </div>
                                 </div>
                             </div>
                             
-                            <!-- STEP 3 CARD -->
-                            <div style="background: #F8FCFD; border-radius: 20px; margin-bottom: 28px; border: 1px solid #E2EDF2; overflow: hidden;">
+                            <!-- STEP 3: App Usage & Compliance -->
+                            <div style="background: #F8FCFD; border-radius: 20px; margin-bottom: 24px; border: 1px solid #E2EDF2; overflow: hidden;">
                                 <div style="background: #EFF8FC; padding: 16px 24px; border-bottom: 1px solid #DFEAF0;">
                                     <span style="display: inline-block; background: #1A5A6E; color: white; width: 28px; height: 28px; text-align: center; line-height: 28px; border-radius: 14px; font-weight: 700; font-size: 14px; margin-right: 12px;">3</span>
-                                    <span style="font-weight: 700; font-size: 18px; color: #0F2F3F;">App Usage & Compliance</span>
+                                    <span style="font-weight: 700; font-size: 18px; color: #0F2F3F;">App Setup & Compliance Acknowledgement</span>
                                 </div>
                                 <div style="padding: 20px 24px;">
-                                    <ul style="margin: 0 0 20px 0; padding-left: 20px; color: #2A4B60; font-size: 15px; line-height: 1.6;">
-                                        <li style="margin-bottom: 12px;">Use <strong>QR handshake</strong> to clock in/out for every shift</li>
-                                        <li style="margin-bottom: 12px;"><strong>Student visa holders:</strong> Strict <strong>24h/week</strong> work limit (check your visa conditions)</li>
-                                        <li style="margin-bottom: 12px;"><strong>Award rates</strong> apply – all hours logged automatically comply with Fair Work</li>
+                                    <p style="margin-top:0; color: #2A4B60; font-size: 15px; line-height:1.5;">Once your documents are reviewed and approved, Staffoo will activate your profile on the Staffoo App. By using the Staffoo App, you acknowledge and agree to the following:</p>
+                                    <ul style="margin: 12px 0 0 0; padding-left: 20px; color: #2A4B60; font-size: 15px; line-height: 1.6;">
+                                        <li style="margin-bottom: 10px;"><strong>Digital attendance record:</strong> You must use the Staffoo App to clock in and clock out for every shift (NFC, QR, GPS, or other approved method). This is the primary attendance record for payroll and compliance.</li>
+                                        <li style="margin-bottom: 10px;"><strong>Accurate shift records:</strong> You must only clock in/out for actual hours worked. False or misleading records may lead to payroll adjustment, disciplinary action, or removal from shifts.</li>
+                                        <li style="margin-bottom: 10px;"><strong>Visa and work rights compliance:</strong> If you hold a visa with work restrictions, you must follow your visa conditions at all times. You remain responsible for not exceeding your legal work limits.</li>
+                                        <li style="margin-bottom: 10px;"><strong>Pay and award conditions:</strong> Your pay will be processed in line with your employment type, role, and applicable industrial instrument (including the Security Services Industry Award MA000016 where applicable). Casual employees may receive casual loading and penalty rates.</li>
+                                        <li><strong>Licence and document expiry:</strong> You must keep your security licence, First Aid Certificate, visa, and other documents current. If any required document expires, Staffoo may not be able to offer you shifts until updated documents are provided.</li>
                                     </ul>
+                                </div>
+                            </div>
+
+                            <!-- STEP 4: Submit Documents -->
+                            <div style="background: #F8FCFD; border-radius: 20px; margin-bottom: 28px; border: 1px solid #E2EDF2; overflow: hidden;">
+                                <div style="background: #EFF8FC; padding: 16px 24px; border-bottom: 1px solid #DFEAF0;">
+                                    <span style="display: inline-block; background: #1A5A6E; color: white; width: 28px; height: 28px; text-align: center; line-height: 28px; border-radius: 14px; font-weight: 700; font-size: 14px; margin-right: 12px;">4</span>
+                                    <span style="font-weight: 700; font-size: 18px; color: #0F2F3F;">Submit Your Completed Documents</span>
+                                </div>
+                                <div style="padding: 20px 24px;">
+                                    <p style="margin-top:0; color: #2A4B60; font-size: 15px; line-height:1.5;">Please return your completed Staffoo onboarding form and all required ID and compliance documents to:</p>
+                                    <p style="background:#E9F3F7; padding:12px 16px; border-radius:12px; font-weight:600; color:#1A5A6E; font-size:16px; text-align:center; margin:12px 0 0 0;">Admin@staffoo.com.au</p>
+                                    <div style="background-color: #E9F3F7; border-radius: 12px; padding: 12px 16px; margin-top: 16px;">
+                                        <span style="font-size: 13px; color: #1A5A6E;">⏳ Note:</span>
+                                        <span style="font-size: 13px; color: #2A4B60;"> Your onboarding cannot be finalised until all required documents are received and approved.</span>
+                                    </div>
                                 </div>
                             </div>
                             

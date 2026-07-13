@@ -98,6 +98,10 @@ export default function Register() {
       newErrors.name = "Full name must be at least 2 characters.";
     }
 
+    if (!formData.phone.trim()) {
+      newErrors.phone = "Phone number is required.";
+    }
+
     if (formData.phone.trim()) {
       const pureDigits = formData.phone.replace(/[\s-]/g, '');
       if (!/^\+?\d{10,15}$/.test(pureDigits)) {
@@ -317,7 +321,7 @@ export default function Register() {
 
                     <div className="col-md-6">
                       <label className="form-label small fw-medium mb-1">
-                        Phone Number <span className="text-muted fw-normal ms-1" style={{ fontSize: '0.85em' }}>(Optional)</span>
+                        Phone Number <span className="text-danger">*</span>
                       </label>
                       <input
                         type="tel"
@@ -327,6 +331,7 @@ export default function Register() {
                         value={formData.phone}
                         onChange={handleChange}
                         maxLength={20}
+                        required
                         style={{ border: "1px solid #0A7C6E" }}
                       />
                       {errors.phone && <div className="invalid-feedback" style={{ fontSize: '12px' }}>{errors.phone}</div>}

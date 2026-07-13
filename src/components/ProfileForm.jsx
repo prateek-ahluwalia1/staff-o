@@ -190,6 +190,7 @@ export default function ProfileForm({
                     value={formData.phone || ""}
                     onChange={onChange}
                     maxLength="15"
+                    required
                     pattern="^(?:\+?61|0)[2-478](?:[\s\-]*\d){8}$"
                     title="Please enter a valid Australian phone number (e.g., 0400 000 000 or +61 400 000 000)"
                   />

@@ -429,7 +429,10 @@ export default function ProfileForm({
                     value={selectedCountry}
                     onChange={(selectedOption) => {
                       onChange({
-                        target: { id: "origin_country", value: selectedOption ? selectedOption.value : "" },
+                        target: {
+                          id: "origin_country",
+                          value: selectedOption ? selectedOption.value : "",
+                        },
                       });
                     }}
                     placeholder="Search country..."
@@ -441,11 +444,76 @@ export default function ProfileForm({
                         minHeight: "42px",
                         backgroundColor: "#f8f9fa",
                         borderColor: state.isFocused ? "#0A7C6E" : "#dee2e6",
-                        boxShadow: state.isFocused ? "0 0 0 0.25rem rgba(10, 124, 110, 0.25)" : "none",
+                        boxShadow: state.isFocused
+                          ? "0 0 0 0.25rem rgba(10, 124, 110, 0.25)"
+                          : "none",
                         borderRadius: "0.375rem",
-                        "&:hover": { borderColor: "#0A7C6E" },
+                        "&:hover": {
+                          borderColor: "#0A7C6E",
+                        },
                       }),
-                      valueContainer: (base) => ({ ...base, padding: "0 12px" }),
+
+                      valueContainer: (base) => ({
+                        ...base,
+                        padding: "0 12px",
+                      }),
+
+                      placeholder: (base) => ({
+                        ...base,
+                        color: "#6c757d",
+                      }),
+
+                      singleValue: (base) => ({
+                        ...base,
+                        color: "#212529",
+                      }),
+
+                      input: (base) => ({
+                        ...base,
+                        color: "#212529",
+                      }),
+
+                      menu: (base) => ({
+                        ...base,
+                        borderRadius: "8px",
+                        overflow: "hidden",
+                      }),
+
+                      option: (base, state) => ({
+                        ...base,
+                        backgroundColor: state.isSelected
+                          ? "#0A7C6E"
+                          : state.isFocused
+                            ? "rgba(10, 124, 110, 0.12)"
+                            : "#fff",
+                        color: state.isSelected ? "#fff" : "#212529",
+                        cursor: "pointer",
+                        ":active": {
+                          backgroundColor: "#0A7C6E",
+                          color: "#fff",
+                        },
+                      }),
+
+                      dropdownIndicator: (base, state) => ({
+                        ...base,
+                        color: state.isFocused ? "#0A7C6E" : "#6c757d",
+                        "&:hover": {
+                          color: "#0A7C6E",
+                        },
+                      }),
+
+                      clearIndicator: (base) => ({
+                        ...base,
+                        color: "#6c757d",
+                        "&:hover": {
+                          color: "#0A7C6E",
+                        },
+                      }),
+
+                      indicatorSeparator: (base) => ({
+                        ...base,
+                        backgroundColor: "#dee2e6",
+                      }),
                     }}
                   />
                 </div>

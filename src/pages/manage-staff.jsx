@@ -1415,9 +1415,8 @@ const ManageStaff = () => {
                                 </>
                               ) : (
                                 <div className="text-center">
-                                  <i className="fa-solid fa-cloud-arrow-up fa-3x text-muted mb-3"></i>
                                   <p className="text-muted fw-medium mb-0">
-                                    Click to upload document/image
+                                    Choose file to view preview
                                   </p>
                                 </div>
                               )}

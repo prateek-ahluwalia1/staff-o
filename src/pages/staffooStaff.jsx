@@ -842,10 +842,11 @@ const StaffooStaff = () => {
                     >
                         <thead className="premium-thead">
                             <tr>
-                                <th className="text-start" style={{ width: "35%" }}>Name & Email</th>
-                                <th className="text-start" style={{ width: "25%" }}>Phone</th>
-                                <th className="text-start" style={{ width: "25%" }}>Location</th>
-                                <th className="text-center" style={{ width: "15%" }}>Actions</th>
+                                <th className="text-start" style={{ width: "30%" }}>Name & Email</th>
+                                <th className="text-start" style={{ width: "20%" }}>Phone</th>
+                                <th className="text-start" style={{ width: "30%" }}>Location</th>
+                                <th lassName="text-start" style={{ width: "10%" }}>Created At</th>
+                                <th className="text-center" style={{ width: "10%" }}>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -864,6 +865,17 @@ const StaffooStaff = () => {
                                         <td className="text-start">
                                             {user.city || "—"}{" "}
                                             <span className="text-muted small">({user.country || "N/A"})</span>
+                                        </td>
+                                        <td className="text-start">
+                                            <div className="text-dark small">
+                                                {user.created_at
+                                                    ? new Date(user.created_at).toLocaleDateString("en-AU", {
+                                                        day: "2-digit",
+                                                        month: "2-digit",
+                                                        year: "numeric",
+                                                    })
+                                                    : "N/A"}
+                                            </div>
                                         </td>
                                         <td className="text-center">
                                             <div className="btn-group">
@@ -1300,8 +1312,7 @@ const StaffooStaff = () => {
                                                                 </>
                                                             ) : (
                                                                 <div className="text-center">
-                                                                    <i className="fa-solid fa-cloud-arrow-up fa-3x text-muted mb-3"></i>
-                                                                    <p className="text-muted fw-medium mb-0">Click to upload document/image</p>
+                                                                    <p className="text-muted fw-medium mb-0">Upload document to view preview</p>
                                                                 </div>
                                                             )}
                                                         </div>

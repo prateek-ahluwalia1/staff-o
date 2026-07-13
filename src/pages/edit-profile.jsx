@@ -1172,53 +1172,57 @@ export default function EditProfile() {
           }}
         />
       )}
+      <>
 
-      {userType !== "admin" && (
-        <div className="mt-5 p-4 bg-light border border-danger rounded" style={{ borderWidth: "2px" }}>
-          {/* Delete profile section unchanged */}
-          <div className="d-flex align-items-center mb-3">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="#dc3545" className="bi bi-exclamation-triangle me-2" viewBox="0 0 16 16">
-              <path d="M7.938 2.016A.13.13 0 0 1 8.002 2a.13.13 0 0 1 .063.016.146.146 0 0 1 .054.057l6.857 11.667c.036.06.035.124.002.183a.163.163 0 0 1-.054.057.107.107 0 0 1-.066.01H.146a.107.107 0 0 1-.066-.01.163.163 0 0 1-.054-.057.106.106 0 0 1 .002-.183L7.884 2.073a.147.147 0 0 1 .054-.057zm1.044-.45a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566z" />
-              <path d="M7.002 12a1 1 0 1 1 2 0 1 1 0 0 1-2 0zM7.1 5.995a.905.905 0 1 1 1.8 0l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995z" />
-            </svg>
-            <h5 className="mb-0 text-danger fw-bold">Danger Zone</h5>
-          </div>
-          <p className="text-muted mb-3" style={{ textTransform: "none" }}>Deleting your profile is permanent and cannot be undone. All your data will be permanently deleted.</p>
-          <button className="btn btn-danger" onClick={() => { setShowDeleteModal(true); setDeleteConfirmText(""); }} disabled={deleteLoading}>
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-trash me-2" viewBox="0 0 16 16">
-              <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0z" />
-              <path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4zM2.5 3h11V2h-11z" />
-            </svg>
-            Delete Profile
-          </button>
-        </div>
-      )}
+        {userType !== "admin" && (
+          <>
+          </>
+          // <div className="mt-5 p-4 bg-light border border-danger rounded" style={{ borderWidth: "2px" }}>
+          //   {/* Delete profile section unchanged */}
+          //   <div className="d-flex align-items-center mb-3">
+          //     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="#dc3545" className="bi bi-exclamation-triangle me-2" viewBox="0 0 16 16">
+          //       <path d="M7.938 2.016A.13.13 0 0 1 8.002 2a.13.13 0 0 1 .063.016.146.146 0 0 1 .054.057l6.857 11.667c.036.06.035.124.002.183a.163.163 0 0 1-.054.057.107.107 0 0 1-.066.01H.146a.107.107 0 0 1-.066-.01.163.163 0 0 1-.054-.057.106.106 0 0 1 .002-.183L7.884 2.073a.147.147 0 0 1 .054-.057zm1.044-.45a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566z" />
+          //       <path d="M7.002 12a1 1 0 1 1 2 0 1 1 0 0 1-2 0zM7.1 5.995a.905.905 0 1 1 1.8 0l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995z" />
+          //     </svg>
+          //     <h5 className="mb-0 text-danger fw-bold">Danger Zone</h5>
+          //   </div>
+          //   <p className="text-muted mb-3" style={{ textTransform: "none" }}>Deleting your profile is permanent and cannot be undone. All your data will be permanently deleted.</p>
+          //   <button className="btn btn-danger" onClick={() => { setShowDeleteModal(true); setDeleteConfirmText(""); }} disabled={deleteLoading}>
+          //     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-trash me-2" viewBox="0 0 16 16">
+          //       <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0z" />
+          //       <path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4zM2.5 3h11V2h-11z" />
+          //     </svg>
+          //     Delete Profile
+          //   </button>
+          // </div>
+        )}
 
-      {/* Card Delete Confirm Modal */}
-      <Modal open={showCardDeleteModal} onClose={() => { setShowCardDeleteModal(false); setCardToDeleteIndex(null); }}>
-        {/* unchanged */}
-        <div className="p-4 text-center">
-          <div className="mb-3 text-danger">
-            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="currentColor" className="bi bi-x-circle" viewBox="0 0 16 16">
-              <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z" />
-              <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z" />
-            </svg>
+        {/* Card Delete Confirm Modal */}
+        <Modal open={showCardDeleteModal} onClose={() => { setShowCardDeleteModal(false); setCardToDeleteIndex(null); }}>
+          {/* unchanged */}
+          <div className="p-4 text-center">
+            <div className="mb-3 text-danger">
+              <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="currentColor" className="bi bi-x-circle" viewBox="0 0 16 16">
+                <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z" />
+                <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z" />
+              </svg>
+            </div>
+            <h4 className="mb-3 fw-bold">Remove Card?</h4>
+            <p className="text-muted mb-4">
+              Are you sure you want to remove this card ending in{" "}
+              <strong>
+                {cardToDeleteIndex !== null && formData.bank_details[cardToDeleteIndex]
+                  ? formData.bank_details[cardToDeleteIndex].card_number.slice(-4)
+                  : ""}
+              </strong>? This action cannot be undone.
+            </p>
+            <div className="d-flex gap-3 justify-content-center">
+              <button type="button" className="btn btn-outline-secondary px-4 py-2 fw-bold" onClick={() => { setShowCardDeleteModal(false); setCardToDeleteIndex(null); }} disabled={submitLoading}>Cancel</button>
+              <button type="button" className="btn btn-danger px-4 py-2 fw-bold shadow-sm" onClick={confirmRemoveCard} disabled={submitLoading}>{submitLoading ? "Removing..." : "Yes, Remove It"}</button>
+            </div>
           </div>
-          <h4 className="mb-3 fw-bold">Remove Card?</h4>
-          <p className="text-muted mb-4">
-            Are you sure you want to remove this card ending in{" "}
-            <strong>
-              {cardToDeleteIndex !== null && formData.bank_details[cardToDeleteIndex]
-                ? formData.bank_details[cardToDeleteIndex].card_number.slice(-4)
-                : ""}
-            </strong>? This action cannot be undone.
-          </p>
-          <div className="d-flex gap-3 justify-content-center">
-            <button type="button" className="btn btn-outline-secondary px-4 py-2 fw-bold" onClick={() => { setShowCardDeleteModal(false); setCardToDeleteIndex(null); }} disabled={submitLoading}>Cancel</button>
-            <button type="button" className="btn btn-danger px-4 py-2 fw-bold shadow-sm" onClick={confirmRemoveCard} disabled={submitLoading}>{submitLoading ? "Removing..." : "Yes, Remove It"}</button>
-          </div>
-        </div>
-      </Modal>
+        </Modal>
+      </>
 
       {/* Phone Change / Verify Modal */}
       <Modal open={showPhoneModal} onClose={handleClosePhoneModal}>
@@ -1551,7 +1555,7 @@ export default function EditProfile() {
                   <svg width="48" height="48" fill="#ccc" className="bi bi-cloud-upload mb-3" viewBox="0 0 16 16">
                     <path fillRule="evenodd" d="M4.406 1.342a.5.5 0 0 1 .98 0l.745 2.985h3.138a.5.5 0 0 1 .369.883l-2.54 1.874 1.009 3.26a.5.5 0 0 1-.759.544L8 8.71l-2.609 1.905a.5.5 0 1 1-.758-.544l1.009-3.26-2.54-1.874a.5.5 0 0 1 .369-.883h3.138l.745-2.985z" />
                   </svg>
-                  <p className="text-muted">Click to upload document/image</p>
+                  <p className="text-muted">Upload document to view preview</p>
                 </div>
               )}
             </div>

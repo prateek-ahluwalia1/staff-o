@@ -167,7 +167,7 @@ export default function ProfileForm({
                     <button
                       type="button"
                       className={`btn fw-medium px-4 py-2 ${!formData.phone
-                        ? "btn-primary"
+                        ? "btn-danger"
                         : isPhoneVerified
                           ? "btn-outline-success border-light-subtle"
                           : "btn-danger"

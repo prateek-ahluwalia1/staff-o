@@ -1623,8 +1623,7 @@ const ManageUsers = () => {
                                 </>
                               ) : (
                                 <div className="text-center">
-                                  <i className="fa-solid fa-cloud-arrow-up fa-3x text-muted mb-3"></i>
-                                  <p className="text-muted fw-medium mb-0">Click to upload document/image</p>
+                                  <p className="text-muted fw-medium mb-0">Upload document to view preview</p>
                                 </div>
                               )}
                             </div>

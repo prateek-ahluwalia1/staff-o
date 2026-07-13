@@ -844,7 +844,7 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
               <div>
                 <h1 className="h4 fw-bold text-dark mb-1">Create Job</h1>
                 <p className="text-muted mb-0" style={{ textTransform: "none" }}>
-                  Follow the steps to add a new job
+                  Follow the steps to post a new job
                 </p>
                 {!isEmbedded && <StepProgress step={step} titles={STEP_TITLES} />}
               </div>

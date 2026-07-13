@@ -1127,6 +1127,10 @@ const normalizeOnboardData = (apiData) => ({
 /* ---------- Main Component ---------- */
 const StaffOnboardingForms = ({ submit, userId, onProfileUpdate }) => {
     const dispatch = useDispatch();
+    const currentUserId = useSelector(
+        (state) => state.auth.userdata?.data?.id || state.auth.userdata?.id
+    );
+
 
     // ---- User‑profile refetch to update Redux after saves ----
     const userEditEndpoint = useMemo(
@@ -1139,11 +1143,10 @@ const StaffOnboardingForms = ({ submit, userId, onProfileUpdate }) => {
     );
 
     useEffect(() => {
-        if (profileData?.success) {
+        if (profileData?.success && profileData?.data?.id === currentUserId) {
             dispatch(setUser({ userdata: profileData }));
         }
-    }, [profileData, dispatch]);
-    // ---------------------------------------------------------
+    }, [profileData, currentUserId, dispatch]);
 
     const [subTab, setSubTab] = useState(0);
     const [loading, setLoading] = useState(false);
@@ -1429,8 +1432,9 @@ const StaffOnboardingForms = ({ submit, userId, onProfileUpdate }) => {
                 const uploadPayload = { user_id: userId, type: pdfType, folder: "onboarding_forms" };
                 await PDFGenerator.downloadAndUploadPDF(doc, fileName, "api/upload-staff-file", uploadPayload, submit);
 
-                // 3) Update Redux with fresh user data (NO parent refetch)
-                await refetchUserProfile();
+                if (profileData?.success && profileData?.data?.id === currentUserId) {
+                    await refetchUserProfile();
+                }
             } catch (pdfError) {
                 console.error("PDF generation/upload error:", pdfError);
             }

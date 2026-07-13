@@ -578,7 +578,7 @@ export default function Register() {
               <h3 className="fw-bold text-dark mb-2">Verify your email</h3>
               <p className="text-muted small mb-0" style={{ textTransform: "none" }}>
                 We've sent a verification link to <strong className="text-dark" style={{ textTransform: "none" }}>{formData.email}</strong>.
-                Please check your inbox to activate your account.
+                Please check your inbox and click the link to activate your account.
               </p>
             </div>
 

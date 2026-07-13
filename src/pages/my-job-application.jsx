@@ -645,11 +645,6 @@ export default function MyJobApplications() {
                         value={selectedApp.rawShift.hours}
                       />
                       <InfoRow
-                        icon="fa-file-invoice-dollar"
-                        label="Payable"
-                        value={selectedApp.rawShift.shift_payable}
-                      />
-                      <InfoRow
                         icon="fa-calendar-plus"
                         label="Created At"
                         value={selectedApp.createdAt}

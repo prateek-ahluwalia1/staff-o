@@ -1,9 +1,12 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { toast } from "react-toastify";
 import Select from "react-select";
 import PDFGenerator from "../utils/PDFGenerator";
 import { apiURL, COUNTRIES } from "../utils/exports";
 import useSubmit from "../hooks/useSubmit";
+import useFetch from "../hooks/useFetch";
+import { useSelector, useDispatch } from "react-redux";
+import { setUser } from "../store/slices/authSlice";
 
 /* ---------- Meta ---------- */
 const TAB_META = [
@@ -31,7 +34,6 @@ const isoToDisplay = (val) => {
     if (/^\d{2}\/\d{2}\/\d{4}$/.test(cleaned)) return cleaned;
     const match = cleaned.match(/^(\d{4})-(\d{2})-(\d{2})$/);
     if (match) {
-        // eslint-disable-next-line
         const [_, y, m, d] = match;
         return `${d}/${m}/${y}`;
     }
@@ -43,14 +45,13 @@ const displayToISO = (val) => {
     const cleaned = cleanDateString(val);
     const match = cleaned.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
     if (match) {
-        // eslint-disable-next-line
         const [_, d, m, y] = match;
         return `${y}-${m}-${d}`;
     }
     return cleaned;
 };
 
-/* ---------- Shared react-select styling (matches ProfileForm) ---------- */
+/* ---------- Shared react-select styling ---------- */
 const selectStyles = {
     control: (base, state) => ({
         ...base,
@@ -193,7 +194,7 @@ const AddressAutocomplete = ({ value, name, onChange, placeholder, required, max
     );
 };
 
-/* ---------- Country Select (mirrors ProfileForm's Country of Origin field) ---------- */
+/* ---------- Country Select ---------- */
 const CountrySelect = ({ inputId, name, value, onChange, placeholder }) => {
     const countryOptions = COUNTRIES.map((c) => ({ value: c.name, label: c.name }));
     const selected =
@@ -214,7 +215,7 @@ const CountrySelect = ({ inputId, name, value, onChange, placeholder }) => {
     );
 };
 
-/* ---------- Pill Radio Group (mirrors ProfileForm's Gender selector) ---------- */
+/* ---------- Pill Radio Group ---------- */
 const PillRadioGroup = ({ name, value, onChange, options, required }) => (
     <div className="d-flex flex-wrap gap-2">
         {options.map((opt) => {
@@ -253,7 +254,7 @@ const SectionHeader = ({ icon, children }) => (
     </div>
 );
 
-/* ---------- Card Header (title + optional PDF download) ---------- */
+/* ---------- Card Header ---------- */
 const FormCardHeader = ({ title, description, onDownloadPDF, downloadKey }) => (
     <div className="card-header bg-transparent border-bottom px-4 px-md-5 py-4 d-flex justify-content-between align-items-start flex-wrap gap-3">
         <div>
@@ -273,7 +274,7 @@ const FormCardHeader = ({ title, description, onDownloadPDF, downloadKey }) => (
     </div>
 );
 
-/* ---------- Card Footer (save button, mirrors ProfileForm) ---------- */
+/* ---------- Card Footer ---------- */
 const FormCardFooter = ({ loading, saveLabel, disabled }) => (
     <div className="card-footer bg-white px-4 px-md-5 py-4 border-top d-flex justify-content-end">
         <button
@@ -1125,6 +1126,25 @@ const normalizeOnboardData = (apiData) => ({
 
 /* ---------- Main Component ---------- */
 const StaffOnboardingForms = ({ submit, userId, onProfileUpdate }) => {
+    const dispatch = useDispatch();
+
+    // ---- User‑profile refetch to update Redux after saves ----
+    const userEditEndpoint = useMemo(
+        () => (userId ? `api/user-edit/${userId}` : null),
+        [userId]
+    );
+    const { data: profileData, refetch: refetchUserProfile } = useFetch(
+        userEditEndpoint,
+        { isAuth: true }
+    );
+
+    useEffect(() => {
+        if (profileData?.success) {
+            dispatch(setUser({ userdata: profileData }));
+        }
+    }, [profileData, dispatch]);
+    // ---------------------------------------------------------
+
     const [subTab, setSubTab] = useState(0);
     const [loading, setLoading] = useState(false);
     const [dataModified, setDataModified] = useState(false);
@@ -1210,8 +1230,6 @@ const StaffOnboardingForms = ({ submit, userId, onProfileUpdate }) => {
                     silentErrorToast: true,
                 });
                 if (staffRes?.success && staffRes?.data) {
-                    // Prefill all three forms from the staff profile. Any previously
-                    // saved form data (fetched below) will take precedence over this.
                     const prefilledOnboard = mapStaffInfoToOnboardForm(staffRes.data);
                     const prefilledTfn = mapStaffInfoToTfnForm(staffRes.data);
                     const prefilledSuper = mapStaffInfoToSuperForm(staffRes.data);
@@ -1394,18 +1412,25 @@ const StaffOnboardingForms = ({ submit, userId, onProfileUpdate }) => {
 
         if (saveSucceeded) {
             toast.success("Form saved successfully!");
+
+            // 1) Refresh individual form data
             if (tabIndex === 0) await fetchFormData("onboarding");
             else if (tabIndex === 1) await fetchFormData("tfn");
             else if (tabIndex === 2) await fetchFormData("superannuation");
             setDataModified(false);
-            if (typeof onProfileUpdate === "function") await onProfileUpdate();
+
+            // 2) Generate & upload PDF
             try {
                 let doc;
                 if (tabIndex === 0) doc = PDFGenerator.generateEmployeeOnboardingPDF(pdfFormData);
                 else if (tabIndex === 1) doc = PDFGenerator.generateTFNDeclarationPDF(pdfFormData);
                 else if (tabIndex === 2) doc = PDFGenerator.generateSuperannuationPDF(pdfFormData);
+
                 const uploadPayload = { user_id: userId, type: pdfType, folder: "onboarding_forms" };
                 await PDFGenerator.downloadAndUploadPDF(doc, fileName, "api/upload-staff-file", uploadPayload, submit);
+
+                // 3) Update Redux with fresh user data (NO parent refetch)
+                await refetchUserProfile();
             } catch (pdfError) {
                 console.error("PDF generation/upload error:", pdfError);
             }

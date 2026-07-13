@@ -195,7 +195,7 @@ export default function EditProfile() {
       missing.push("Company Name");
     return missing;
   };
-  const missingFields = getMissingFields(profileData?.data);
+  const missingFields = getMissingFields(userdata?.data);
 
   useEffect(() => {
     if (!profileData?.data) return;
@@ -868,9 +868,7 @@ export default function EditProfile() {
           name={formData.name}
           email={formData.email}
           city={formData.address}
-          profileCompletion={
-            profileData?.data?.profile_completion_percentage || 0
-          }
+          profileCompletion={userdata?.data?.profile_completion_percentage || 0}
           missingItems={missingFields}
         />
       </div>
@@ -959,7 +957,6 @@ export default function EditProfile() {
         <StaffOnboardingForms
           submit={submit}
           userId={userId}
-          onProfileUpdate={() => refetch()}
         />
       )}
 

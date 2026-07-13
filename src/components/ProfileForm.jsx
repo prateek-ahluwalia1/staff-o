@@ -113,6 +113,7 @@ export default function ProfileForm({
                 value={formData.email || ""}
                 onChange={onChange}
                 readOnly={isEdit}
+                disabled={isEdit}
                 required
                 style={{
                   background: isEdit ? "#f8f9fa" : "#ffffff",

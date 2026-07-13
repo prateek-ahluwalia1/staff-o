@@ -951,6 +951,7 @@ export default function EditProfile() {
             setPhoneChangeSuccess(false);
             setShowPhoneModal(true);
           }}
+          isEdit={true}
         />
       )}
 

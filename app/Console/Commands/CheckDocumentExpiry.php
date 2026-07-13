@@ -164,7 +164,7 @@ class CheckDocumentExpiry extends Command
                     ];
                 }
                 $groupedDocuments[$userId]['documents'][] = [
-                    'document_name' => $item['document']->document_name ?? $item['document']->name,
+                    'document_name' => $item['document']->document_name,
                     'expiry_date' => Carbon::parse($item['document']->document_expiry)->format('d-m-Y'),
                     'days_remaining' => $item['days_remaining']
                 ];
@@ -211,7 +211,7 @@ class CheckDocumentExpiry extends Command
                 'sent_at' => Carbon::now()
             ];
 
-            $this->line("   ✅ Notification saved for {$user->name} - Document: {$document->name}");
+            $this->line("   ✅ Notification saved for {$user->name} - Document: {$document->document_name}");
 
             // Send notification to USER via Pusher
             $this->sendUserPusherNotification($user, $document, $daysRemaining);
@@ -241,7 +241,7 @@ class CheckDocumentExpiry extends Command
             // For APP push notification
             $notificationData = [
                 'notification_token' => $user->notification_token,
-                'message'            => "Your document '{$document->name}' will expire in {$daysRemaining} days. Please renew it before.",
+                'message'            => "Your document '{$document->document_name}' will expire in {$daysRemaining} days. Please renew it before.",
                 'title'              => 'Document Expire',
                 'page'               => 'document-expire',
             ];
@@ -252,12 +252,12 @@ class CheckDocumentExpiry extends Command
 
             // For PORTAL notification using DynamicUserNotification
             $userId = $user->id;
-            $message = "Your document '{$document->name}' will expire in {$daysRemaining} days. Please renew it before.";
+            $message = "Your document '{$document->document_name}' will expire in {$daysRemaining} days. Please renew it before.";
             $title = "Document Expire";
             $type = 'document_expiry';
             $data = [
                 'document_id' => $document->id,
-                'document_name' => $document->name,
+                'document_name' => $document->document_name,
                 'expiry_date' => $document->document_expiry,
                 'days_remaining' => $daysRemaining
             ];
@@ -292,7 +292,7 @@ class CheckDocumentExpiry extends Command
                 return;
             }
 
-            $message = "Staff user '{$user->name}' has a document '{$document->name}' expiring in {$daysRemaining} days.";
+            $message = "Staff user '{$user->name}' has a document '{$document->document_name}' expiring in {$daysRemaining} days.";
             $title = "Document Expiry Alert";
             $type = 'admin_document_expiry';
             $data = [

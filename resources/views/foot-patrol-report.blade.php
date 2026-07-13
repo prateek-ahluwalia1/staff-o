@@ -396,5 +396,10 @@ function getSignatureUrl($sig) {
 
 @endforeach
 
+{{-- FOOTER --}}
+<div class="page-footer">
+  
+</div>
+
 </body>
 </html>

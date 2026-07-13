@@ -21,7 +21,7 @@ class Staff extends Model
         'date_of_birth',
         'is_policy_accepted',
         'current_coordinates',
-        'origin_country'
+        'origin_country',
     ];
 
     /* ======================

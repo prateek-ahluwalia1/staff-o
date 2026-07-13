@@ -13,10 +13,18 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule): void
     {
-        // $schedule->command('notifications:asap-job')->everyMinute();
         $schedule->command('app:check-missing-inductions')->dailyAt('10:00');
-        // $schedule->command('app:sync-public-holidays')->twiceYearly(1, 1);
-        // $schedule->job(new SendJobNotificationJob)->everyMinute();
+        $schedule->command('documents:check-expiry')->dailyAt('11:00');
+        $schedule->command('app:send-job-notifications')
+        ->everyMinute()
+        ->withoutOverlapping(60) // Prevent overlapping for 60 seconds
+        ->runInBackground()
+        ->onOneServer();
+         // $schedule->command('app:sync-public-holidays')->twiceYearly(1, 1);
+     // $schedule->command('notifications:asap-job')->everyMinute();
+
+
+
 
     }
 

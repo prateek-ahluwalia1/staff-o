@@ -55,9 +55,32 @@ class AuthController extends Controller
         $user->staffo_id = 'STAFO' . $user->id;
         $user->save();
 
-        if(!empty($user->phone)){
-        $this->sendOTP($user->phone, $otp);
-        }
+        //  if (!empty($user->phone)) {
+        //     try {
+    
+        //         $response = $this->sendOTP($user->phone, $otp);
+    
+        //         if (!$response) {
+        //             Log::warning("SMS failed for guard #{$user->id}", [
+        //                 'phone' => $user->phone,
+        //             ]);
+        //         } else {
+        //             Log::info("OTP SMS sent successfully", [
+        //                 'guard_id' => $user->id,
+        //                 'phone'    => $user->phone,
+        //                 'response' => $response,
+        //             ]);
+        //         }
+    
+        //     } catch (\Throwable $e) {
+        //         Log::error("SMS exception for guard #{$user->id}", [
+        //             'guard_id' => $user->id,
+        //             'phone'    => $user->phone,
+        //             'error'    => $e->getMessage(),
+        //         ]);
+        //     }
+        // }
+        
         $this->EmailVerify($request->email);
 
         if($data['user_type'] == 'customer'){
@@ -161,7 +184,7 @@ class AuthController extends Controller
 
     // ─── Resend OTP ────────────────────────────────────────────────────
 
-    public function resendOtp(Request $request)
+ public function resendOtp(Request $request)
     {
         $user = User::where('id', $request->id)->first();
 

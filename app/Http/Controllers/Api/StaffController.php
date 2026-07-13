@@ -27,83 +27,6 @@ use Carbon\Carbon;
 class StaffController extends Controller
 {
     
-//     private function calculateProfileCompletion(User $user)
-// {
-//     $baseWeight = 50;
-//     $documentWeight = 50;
-
-//     // Base fields for all users
-//     $baseFields = ['name', 'email', 'user_type'];
-    
-//     // Additional fields for staff users
-//     $staffFields = ['tfn_form', 'super_form', 'onboarding_form'];
-    
-//     // Merge fields based on user type
-//     $allBaseFields = $baseFields;
-//     if ($user->user_type === 'staff') {
-//         $allBaseFields = array_merge($baseFields, $staffFields);
-//     }
-    
-//     $filledBase = 0;
-//     foreach ($allBaseFields as $field) {
-//         if ($field === 'tfn_form' || $field === 'super_form' || $field === 'onboarding_form') {
-//             // Check staff relationship fields
-//             if ($user->staff && !empty($user->staff->{$field})) {
-//                 $filledBase++;
-//             }
-//         } else {
-//             if (!empty($user->{$field})) {
-//                 $filledBase++;
-//             }
-//         }
-//     }
-    
-//     // Calculate base score with proper weighting
-//     $baseScore = ($filledBase / count($allBaseFields)) * $baseWeight;
-
-//     // Get documents
-//     $documents = $user->documents ?? collect();
-    
-//     // Filter out labour_hire documents for contractors in Victoria or Queensland
-//     $isContractorInVicOrQld = ($user->user_type === 'contractor' && 
-//                                 in_array(strtolower($user->state), ['victoria', 'queensland']));
-    
-//     if ($isContractorInVicOrQld) {
-//         // Exclude labour_hire documents from calculation
-//         $filteredDocuments = $documents->filter(function ($doc) {
-//             return $doc->document_type !== 'labour_hire';
-//         });
-//     } else {
-//         $filteredDocuments = $documents;
-//     }
-    
-//     $totalDocuments = $filteredDocuments->count();
-//     $filledDocuments = 0;
-    
-//     if ($totalDocuments > 0) {
-//         $filledDocuments = $filteredDocuments->filter(function ($doc) {
-//             return !empty($doc->document_no);
-//         })->count();
-//     }
-
-//     $documentScore = 0;
-//     if ($totalDocuments > 0) {
-//         $documentScore = ($filledDocuments / $totalDocuments) * $documentWeight;
-//     }
-
-//     // Calculate final percentage
-//     if ($user->user_type == 'contractor') {
-//         $percentage = (int) round($baseScore + $documentScore);
-//     } elseif ($user->user_type == 'staff') {
-//         // Staff have no document score, base score is out of 100
-//         $percentage = (int) round($baseScore + $documentScore);
-//     } else {
-//         // Other user types (customer, etc.)
-//         $percentage = (int) round($baseScore + 50);
-//     }
-
-//     return min($percentage, 100);
-// }
 private function calculateProfileCompletion(User $user): int
 {
     $baseWeight = 50;
@@ -135,7 +58,7 @@ private function calculateProfileCompletion(User $user): int
 
     // Document scoring
     $documents = $user->documents ?? collect();
-    $totalDocuments = $user->documents->count();
+    $totalDocuments = $documents->count();
     $filledDocuments = 0;
     $documentScore = 0;
 
@@ -215,23 +138,27 @@ private function calculateProfileCompletion(User $user): int
             if ($user->is_active !== $newStatus) {
                 $user->is_active = $newStatus;
                 $user->save();
-
-               if ($totalDocuments > 0) {
+                
+            if ($totalDocuments > 0) {
                 $filledDocuments = $documents->filter(function ($doc) {
+                    // 1. Ensure the document number is not empty
                     if (empty($doc->document_no)) {
                         return false;
                     }
-
+            
+                    // 2. Check if the expiry date exists and is in the future
                     if (!empty($doc->document_expiry)) {
                         $expiryDate = \Carbon\Carbon::parse($doc->document_expiry);
                         return $expiryDate->isFuture();
                     }
-
+            
+                    // Return false if there is no expiry date but your logic requires one
                     return false; 
                 })->count();
-
+            
                 $documentScore = ($filledDocuments / $totalDocuments) * $documentWeight;
             }
+
                 if ($newStatus === 1 && $oldStatus != 1) {
                     $notificationData = [
                         'notification_token' => $user->notification_token,
@@ -885,7 +812,7 @@ private function calculateProfileCompletion(User $user): int
 
         return response()->json(['success' => true, 'code' => 200, 'data' => $user]);
     }
-
+    
     public function getStaffInfo($id)
     {
         $user = User::findOrFail($id);

@@ -10,7 +10,7 @@ use Carbon\Carbon;
 
 class DashboardController extends Controller
 {
-    public function index(Request $request)
+    public function index(Request $request): JsonResponse
     {
         // ── Get authenticated user via Sanctum Bearer token ────────────────
         $user = $request->user();

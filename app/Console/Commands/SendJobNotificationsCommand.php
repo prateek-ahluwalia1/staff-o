@@ -12,7 +12,11 @@ class SendJobNotificationsCommand extends Command
 
     public function handle()
     {
-        // Dispatch your job cleanly here
+        $this->info('Dispatching job notification job...');
+        
+        // Dispatch the job
         SendJobNotificationJob::dispatch();
+        
+        $this->info('Job dispatched successfully.');
     }
 }

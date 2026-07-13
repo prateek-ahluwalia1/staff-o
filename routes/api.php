@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\RolesPermissionController;
 use App\Http\Controllers\Api\ChargeRateController;
-use App\Http\Controllers\API\ContactUsController;
+use App\Http\Controllers\Api\ContactUsController;
 use App\Http\Controllers\Api\JobRosterActiviteController;
 use App\Http\Controllers\Api\JobRosterController;
 use App\Http\Controllers\Api\NotificationController;
@@ -41,6 +41,10 @@ use App\Http\Controllers\IvrController2;
 Route::post('/auth/google/callback', [AuthController::class, 'handleGoogleCallback']);
 Route::get('/email-verification/{email}/{token}', [AuthController::class, 'EmailVerification'])->name('guard.email.verification');
 Route::post('/register/user', [AuthController::class, 'register']);
+
+Route::any('password-reset', [AuthController::class, 'reset'])->name('password.update');
+Route::any('password-reset-email', [AuthController::class, 'reset_pass_mail']);
+Route::any('password-save', [AuthController::class, 'showPasswordResetForm'])->name('password.reset.form');
 // Route::post('/register/contractor', [AuthController::class, 'registerContractor']);
 // Route::post('/register/staff', [AuthController::class, 'registerStaff']);
 
@@ -64,6 +68,8 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::any('/logout/{id}', [AuthController::class, 'logout']);
     Route::any('store-notification-token', [AuthController::class, 'storeNotificationToken'])->name('store.notification.token');
+    Route::post('/auth/resend-otp',  [AuthController::class, 'resendOtp']);
+    Route::post('/auth/verify-phone',[AuthController::class, 'verifyPhone']);
     
     //roles and permission
     Route::any('/store-permission',  [RolesPermissionController::class, 'store']);
@@ -71,6 +77,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::any('/get-all-permission', [RolesPermissionController::class, 'show']);
     Route::any('/update-permission', [RolesPermissionController::class, 'update']);
     Route::any('/delete-permission', [RolesPermissionController::class, 'delete']);
+
       
      //chargeRate routes
      Route::any('charge_rate/store',  [ChargeRateController::class, 'store'])->name('charge_rate.store');
@@ -93,17 +100,36 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/users/online', [StaffController::class, 'getOnlineUsers']);
     Route::get('/users/{id}', [StaffController::class, 'show']);
     Route::post('/users/online-status', [StaffController::class, 'updateOnlineStatus']);
+    Route::any('documents-online-verification', [StaffController::class, 'documentsOnlineVerification']);
+    Route::any('accept-policy/{id}', [StaffController::class, 'updatePolicyAccepted']);
+    Route::any('update-coordinates/{userId}', [StaffController::class, 'updateCurrentCoordinates']);
+    
+    
+    //Staff Forms
+    Route::post('/tfn-declaration', [StaffController::class, 'tfnDeclarationStore']);
+    Route::post('/superannuation', [StaffController::class, 'superannuationStore']);
+    Route::post('/onboarding', [StaffController::class, 'onboardingStore']);
 
       // Calls
-    Route::prefix('calls')->group(function () {
-        Route::post('/initiate', [CallController::class, 'initiateCall']);
-        Route::post('/accept/{callId}', [CallController::class, 'acceptCall']);
-        Route::post('/reject/{callId}', [CallController::class, 'rejectCall']);
-        Route::post('/end/{callId}', [CallController::class, 'endCall']);
-        Route::get('/history', [CallController::class, 'callHistory']);
-        Route::get('/{callId}', [CallController::class, 'getCallDetails']);
-        Route::post('/add-participant/{callId}',    [CallController::class, 'addParticipant']);
-        Route::post('/remove-participant/{callId}', [CallController::class, 'removeParticipant']);
+    // Route::prefix('calls')->group(function () {
+    //     Route::post('/initiate', [CallController::class, 'initiateCall']);
+    //     Route::post('/accept/{callId}', [CallController::class, 'acceptCall']);
+    //     Route::post('/reject/{callId}', [CallController::class, 'rejectCall']);
+    //     Route::post('/end/{callId}', [CallController::class, 'endCall']);
+    //     Route::get('/history', [CallController::class, 'callHistory']);
+    //     Route::get('/{callId}', [CallController::class, 'getCallDetails']);
+    //     Route::post('/add-participant/{callId}',    [CallController::class, 'addParticipant']);
+    //     Route::post('/remove-participant/{callId}', [CallController::class, 'removeParticipant']);
+    // });
+    Route::prefix('call')->group(function () {
+        Route::post('dial',             [CallController::class, 'dial']);
+        Route::get('active',            [CallController::class, 'activeCalls']);
+        Route::post('hangup',           [CallController::class, 'hangup']);
+        Route::post('transfer',         [CallController::class, 'transfer']);
+        Route::post('hold',             [CallController::class, 'hold']);
+        Route::post('unhold',           [CallController::class, 'unhold']);
+        Route::get('records',           [CallController::class, 'records']);
+        Route::get('extension/{ext}',   [CallController::class, 'extensionStatus']);
     });
     
     // Messages
@@ -134,8 +160,13 @@ Route::middleware('auth:sanctum')->group(function () {
     //customer and contractor update
     Route::any('customers/{id}/update', [StaffController::class, 'customerUpdate'])->name('customer.update');
     Route::any('user-edit/{id}', [StaffController::class, 'editUser'])->name('user.edit');
+    Route::any('get-staff-info/{id}', [StaffController::class, 'getStaffInfo'])->name('get.staff.info');
     Route::any('user-delete/{id}', [StaffController::class, 'deleteUser'])->name('user.delete');
     Route::any('upload-file', [StaffController::class, 'uploadFile'])->name('upload.file');
+    Route::any('upload-staff-file', [StaffController::class, 'uploadStaffFile']);
+    Route::any('/form-data', [StaffController::class, 'getFormData']);
+    
+    Route::get('/dashboard', [DashboardController::class, 'index']);
 
     Route::any('job-post', [JobRosterController::class, 'jobData'])->name('job.post');
     Route::any('/confirm_task/{id}', [JobRosterController::class, 'confirm_task']);
@@ -149,10 +180,13 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::any('upload-payslips', [JobRosterController::class, 'uploadPayslips']);
     Route::get('/roster/qr-code/{roster_id}', [JobRosterController::class, 'generateQR']);
     Route::post('/roster/handover/scan', [JobRosterController::class, 'scanHandover']);
+    Route::any('share-invoice',  [JobRosterController::class, 'sendPdfInvoice']);
 
     Route::any('/asap-jobs/accept/{id}', [JobRosterController::class, 'accept_asap_job'])->name('accept.asap.job');
     Route::any('/signin/{id}', [JobRosterController::class, 'jobSignin'])->name('job.signin');
     Route::any('/signout/{id}', [JobRosterController::class, 'jobSignout'])->name('job.signout');
+    Route::get('/jobs/available/{id}', [JobRosterController::class, 'getAvailableJobs']);
+
 
     Route::any('/jobDetails/{id}', [JobRosterController::class, 'jobSpecificDetail'])->name('job.detail');
     Route::any('/guard/jobs/{type}/{duration}', [JobRosterController::class, 'getGuardJobs'])->name('guard.job.detail');
@@ -162,11 +196,15 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::any('/get-staff/{id}', [JobRosterController::class, 'getStaff'])->name('get.staff');
     Route::any('fetch-customer-sites', [JobRosterController::class, 'fetchCustomerSites'])->name('fetch.customer.sites');
     Route::any('get-contractor-staff/{id}', [JobRosterController::class, 'getContractorStaff'])->name('get.contractor');
+    Route::any('get-contractor-active-staff/{id}', [JobRosterController::class, 'getContractorActiveStaff'])->name('get.contractor.active.staff');
     Route::any('update-roster-time', [JobRosterController::class, 'updateRosterTime'])->name('update.roster.time');
     Route::any('job-status-manual-approved', [JobRosterController::class, 'jobStatusManualApproved'])->name('job.status.manual.approved');
     Route::any('generateJobTrackerReport', [ReportController::class, 'generateJobTrackerReport']);
+    Route::any('/paysheet', [ReportController::class, 'getPaysheet']);
+    Route::any('/paysheet/export', [ReportController::class, 'getPaysheet']);
 
     // JobRosterActivity
+    Route::get('/guard/all-reports', [JobRosterActiviteController::class, 'getAllGuardReports']);
     Route::any('get-jobSignIn-jobSignOut', [JobRosterActiviteController::class, 'JobSignInSignOut'])->name('job.signIn.signout');
     Route::any('guard-break-details', [JobRosterActiviteController::class, 'guardBreakDetails'])->name('guard.break.details');
     Route::any('guard-incident-report', [JobRosterActiviteController::class, 'guardIncidentReport'])->name('guard.incident.report');
@@ -176,6 +214,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::any('store-operation-notes', [JobRosterActiviteController::class, 'storeOperationNotes'])->name('store.operation.notes');
     Route::any('get-operation-notes', [JobRosterActiviteController::class, 'getOperationNotes'])->name('get.operation.notes');
     Route::any('get-job-tasks', [JobRosterActiviteController::class, 'getJobTasks'])->name('get.job.tasks');
+    Route::any('generate-incident-report', [JobRosterActiviteController::class, 'generateIncidentReport'])->name('guard.incident.report');
+    Route::any('generate-foot-report', [JobRosterActiviteController::class, 'generateFootPatrolReport'])->name('guard.incident.report');
+    Route::any('generate-shift-report', [JobRosterActiviteController::class, 'generateMasterShiftReport'])->name('guard.incident.report');
+
 
     //ContactUs
     Route::get('contact-us/', [ContactUsController::class, 'index']);
@@ -224,8 +266,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('assign-questionnaire', [QuestionnaireController::class, 'assignQuestionnair']);
     Route::get('questionnaire-delete/{id}', [QuestionnaireController::class, 'delete']);
     Route::get('questionnaire-list', [QuestionnaireController::class, 'list']);
+    Route::any('induction-history/{id}', [QuestionnaireController::class, 'getInductionhistory']);
+
     # MOBILE APIS
     Route::get('get-questionnaire/{guard_id}', [QuestionnaireController::class, 'getQNA']);
+    Route::post('submit-guard-questionnaire', [QuestionnaireController::class, 'submitQNA']);
+    Route::post('update-induction-read-status', [QuestionnaireController::class, 'updateReadStatus']);
 
 
     Route::prefix('admin')->group(function () {
@@ -254,11 +300,20 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::any('customers-detail/{id}', [CustomerController::class, 'customerDetail']);
 
         Route::any('send-invoice',  [JobRosterController::class, 'sendInvoice']);
+        Route::get('invoice/history/{transaction_id}', [JobRosterController::class, 'getEmailHistoryByTransaction']);
         
         Route::get('/', [GeneralController::class, 'getAdmins']);
+        
+        //public holiday
+        Route::any('add-public-holiday', [GeneralController::class, 'addPH']);
+        Route::any('update-public-holiday', [GeneralController::class, 'updatePH']);
+        Route::any('delete-public-holiday', [GeneralController::class, 'deletePH']);
+        Route::any('get-public-holiday', [GeneralController::class, 'getPH']);
 
         Route::post('/visa-check', [VisaController::class, 'create']);
+        Route::post('/visa-check-copy', [VisaController::class, 'createCopy']);
         Route::get('/visa-result/{id}', [VisaController::class, 'result']);
+        Route::post('/visa-expiry-check', [VisaController::class, 'visaExpiryCheck']);
     });
 
     Route::prefix('payment')->group(function () {
@@ -312,5 +367,4 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::post('/agora/token', [AgoraController::class, 'generateToken']);
     Route::post('/agora/channel', [AgoraController::class, 'createChannel']);
-
-    Route::get('/dashboard', [DashboardController::class, 'index']);
+    

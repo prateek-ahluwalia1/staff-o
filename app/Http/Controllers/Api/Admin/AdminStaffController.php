@@ -116,7 +116,7 @@ class AdminStaffController extends Controller
             'password' => 'required|string|min:8',
             'user_id' => 'required|exists:users,id',
             'phone' => 'required|string|max:20',
-            // 'gender' => 'nullable|string|in:male,female,other',
+            'gender' => 'nullable|string|in:male,female,other',
             'address' => 'nullable|string|max:500',
             'city' => 'nullable|string|max:100',
             'state' => 'nullable|string|max:100',
@@ -318,7 +318,7 @@ class AdminStaffController extends Controller
         ], 200);
 
     } catch (\Illuminate\Validation\ValidationException $e) {
-        $errorMessages = collect($e->errors())
+         $errorMessages = collect($e->errors())
             ->flatMap(function ($messages) {
                 return $messages;
             })
@@ -330,7 +330,8 @@ class AdminStaffController extends Controller
             'code' => 422,
             'errors' => $e->errors() // Keep detailed errors if needed
         ], 422);
-    }catch (\Illuminate\Database\QueryException $e) {
+
+    } catch (\Illuminate\Database\QueryException $e) {
         DB::rollBack();
         \Log::error('Database error in createStaff: ' . $e->getMessage(), [
             'trace' => $e->getTraceAsString(),
@@ -450,6 +451,7 @@ class AdminStaffController extends Controller
             $staff->origin_country = $request->origin_country;
 
         }
+        
 
         $staff->save();
 

@@ -1,4 +1,5 @@
 <?php
+// app/Http/Controllers/API/ContactUsController.php
 
 namespace App\Http\Controllers\Api;
 
@@ -70,7 +71,7 @@ class ContactUsController extends Controller
     {
         try {
             // Send notification to admin(s)
-            $adminEmails = [''];
+            $adminEmails = ["admin@staffoo.com.au"];
             
             if (!empty($adminEmails)) {
                 foreach ($adminEmails as $email) {

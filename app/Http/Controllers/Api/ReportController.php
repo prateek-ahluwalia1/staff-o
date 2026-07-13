@@ -15,6 +15,7 @@ use App\Models\Payrate;
 
 class ReportController extends Controller
 {
+
     function generateJobTrackerReport(Request $request)
     {
         if($request->type == 'preview'){

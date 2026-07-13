@@ -46,7 +46,7 @@ class QuestionnaireController extends Controller
         }
     }
 
-    public function assignQuestionnair(Request $request){
+public function assignQuestionnair(Request $request){
         foreach ($request->staff_ids as $key => $guard) {
             if(DB::table('guard_questionnaire_details')->where(['guard_id' => $guard,'questionnaire_id' => $request->questionnaire_id,])->first()){
                 # ALREADY ASSIGNED
@@ -77,7 +77,6 @@ class QuestionnaireController extends Controller
 
         return response()->json(['success' => true, 'message' => 'Questionnaire Assign to selected guards']);
     }
-
     public function delete($id){
         $questionnaire = Questionnaire::find($id);
         if($questionnaire){
@@ -158,7 +157,7 @@ class QuestionnaireController extends Controller
         
     }
 
-    public function submitQNA(Request $request){
+  public function submitQNA(Request $request){
     
      $guardQNADetails = GuardQuestionnaireDetails::find($request->questionnaire_id);
      $guardQNADetails->marks = $request->marks;
@@ -421,7 +420,6 @@ class QuestionnaireController extends Controller
          'success' => true,
      ]);
  }
-
   function updateReadStatus(Request $request)
     {
         // Using Query Builder to check if record exists in induction_history
@@ -446,21 +444,21 @@ class QuestionnaireController extends Controller
     public function getInductionhistory($id)
     {
             $InductionHistory = InductionHistory::select(
-                'induction_history.guard_id',
-                'users.name',
-                'induction_history.state',
-                DB::raw('DATE_FORMAT(guard_questionnaire_details.updated_at, "%Y-%m-%d %H:%i") as date'),
-                'induction_history.read_status',
-                'guard_questionnaire_details.certificate_path'
-            )
-            ->join('users', 'induction_history.guard_id', '=', 'users.id')
-            ->leftJoin('guard_questionnaire_details', function ($join) use ($id) {
-                $join->on('guard_questionnaire_details.guard_id', '=', 'induction_history.guard_id')
-                    ->where('guard_questionnaire_details.questionnaire_id', '=', $id);
-            })
-            ->where('induction_history.induction_id', $id)
-            ->where('users.is_active', 1)
-            ->get();
+        'induction_history.guard_id',
+        'users.name',
+        'induction_history.state',
+        DB::raw('DATE_FORMAT(guard_questionnaire_details.updated_at, "%Y-%m-%d %H:%i") as date'),
+        'induction_history.read_status',
+        'guard_questionnaire_details.certificate_path'
+    )
+    ->join('users', 'induction_history.guard_id', '=', 'users.id')
+    ->leftJoin('guard_questionnaire_details', function ($join) use ($id) {
+        $join->on('guard_questionnaire_details.guard_id', '=', 'induction_history.guard_id')
+             ->where('guard_questionnaire_details.questionnaire_id', '=', $id);
+    })
+    ->where('induction_history.induction_id', $id)
+    ->where('users.is_active', 1)
+    ->get();
 
             if ($InductionHistory->isNotEmpty()) {
 

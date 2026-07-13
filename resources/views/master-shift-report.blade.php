@@ -406,8 +406,7 @@ $logoBase64 = base64_encode($imageData);
 function getSignatureUrl($sig) {
     if (empty($sig)) return '';
     if (filter_var($sig, FILTER_VALIDATE_URL)) return $sig;
-    return config('app.url') . '/' . ltrim($sig, '/');
-
+    return 'https://apis.staffoo.com.au/' . ltrim($sig, '/');
 }
 
 // Ensure array helper
@@ -508,7 +507,7 @@ function toFlat($val): array {
               $photo   = is_array($photo) ? $photo : (array)$photo;
               $imgPath = trim(safeStr($photo['imgPath']   ?? null, ''));
               $imgTs   = safeStr($photo['timestamp']      ?? null, '');
-              $imgUrl = !empty($imgPath) ? config('app.url') . '/footpatrol/' . $imgPath : '';
+              $imgUrl = !empty($imgPath) ? 'https://apis.staffoo.com.au/footpatrol/' . $imgPath : '';
               $ch = curl_init();
               curl_setopt($ch, CURLOPT_URL, $imgUrl);
               curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
@@ -539,7 +538,7 @@ function toFlat($val): array {
       <div class="sig-wrap">
         @if(!empty($sig))
           @php
-            $footsigimgUrl  = !empty($sig) ? config('app.url') . '/footpatrol/' . $sig : '';
+            $footsigimgUrl  = !empty($sig) ? 'https://apis.staffoo.com.au/footpatrol/' . $sig : '';
             $ch = curl_init();
             curl_setopt($ch, CURLOPT_URL, $footsigimgUrl);
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
@@ -665,7 +664,7 @@ function toFlat($val): array {
                $photo   = is_array($photo) ? $photo : (array)$photo;
               $imgPath = trim(safeStr($photo['imgPath']   ?? null, ''));
               $imgTs   = safeStr($photo['timestamp']      ?? null, '');
-              $imgUrl = !empty($imgPath) ? config('app.url') . '/incident/' . $imgPath : '';
+              $imgUrl = !empty($imgPath) ? 'https://apis.staffoo.com.au/incident/' . $imgPath : '';
               $ch = curl_init();
               curl_setopt($ch, CURLOPT_URL, $imgUrl);
               curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
@@ -696,7 +695,7 @@ function toFlat($val): array {
       <div class="sig-wrap">
         @if(!empty($sig))
           @php
-            $incsigimgUrl  = !empty($sig) ? config('app.url') . '/incident/' . $sig : '';;
+            $incsigimgUrl  = !empty($sig) ? 'https://apis.staffoo.com.au/incident/' . $sig : '';;
             $ch = curl_init();
             curl_setopt($ch, CURLOPT_URL, $incsigimgUrl);
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
@@ -718,6 +717,11 @@ function toFlat($val): array {
   </div>
   @endforeach
 @endif
+
+{{-- FOOTER --}}
+<div class="page-footer">
+    
+</div>
 
 </body>
 </html>

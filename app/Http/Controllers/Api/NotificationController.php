@@ -4,10 +4,10 @@ namespace App\Http\Controllers\Api;
 
 use App\Events\DynamicUserNotification;
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\DB;
 use App\Models\Notification;
 use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 
 class NotificationController extends Controller
 {
@@ -79,7 +79,7 @@ class NotificationController extends Controller
      /**
      * Get user notifications
      */
-    public function getUserNotifications($userId)
+     public function getUserNotifications($userId)
     {
         $guard = DB::table('users')->where('id', $userId)->select('state', 'name', 'user_type')->first();
         if($guard->user_type == 'admin'){

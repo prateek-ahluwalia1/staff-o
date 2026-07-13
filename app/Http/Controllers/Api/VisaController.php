@@ -18,43 +18,6 @@ class VisaController extends Controller
         $this->vsure = $vsure;
     }
 
-    // public function create(Request $request)
-    // {
-    //     $request->validate([
-    //         'passport' => 'required',
-    //         'country' => 'required',
-    //         'family_name' => 'required',
-    //         'given_name' => 'required',
-    //         'dob' => 'required|date'
-    //     ]);
-
-    //     $data = [
-    //         "jurisdiction" => "AUS",
-    //         "environment" => "live", // dynamic
-    //         "mode" => "fastcheck",
-    //         "visa_check_schema" => "australia",
-    //         "australia" => [
-    //             "visa_check_type" => "work"
-    //         ],
-    //         "document" => [
-    //             "type" => "passport",
-    //             "identifier" => $request->passport,
-    //             "country" => strtoupper($request->country),
-    //             "family_name" => strtoupper($request->family_name),
-    //             "given_name" => strtoupper($request->given_name),
-    //             "date_of_birth" => $request->dob
-    //         ]
-    //     ];
-
-    //     $response = $this->vsure->createVisaCheck($data);
-
-    //     return response()->json([
-    //         'success' => true,
-    //         'code' => 200,
-    //         'data' => $response
-    //     ]);    
-        
-    // }
     public function create(Request $request)
     {
         $request->validate([
@@ -146,7 +109,7 @@ class VisaController extends Controller
 
         $savedData = $this->saveVisaDetails($response, $request);
 
-        $expiry_date = $response['data']['json']['data']['visa']['australia']['expiry_date'] ?? null;
+        $expiry_date = $response['json']['data']['visa']['australia']['expiry_date'] ?? null;
 
         return response()->json([
             'success' => true,

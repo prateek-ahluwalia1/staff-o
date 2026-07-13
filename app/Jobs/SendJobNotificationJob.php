@@ -3,8 +3,6 @@
 namespace App\Jobs;
 
 use App\Mail\UnassignedJobsAlert;
-use App\Mail\JobAcceptedGuardMail;
-use App\Mail\JobAcceptedClientMail;
 use App\Models\JobRoster;
 use App\Models\User;
 use App\Models\Site;
@@ -16,229 +14,400 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Cache;
 
 class SendJobNotificationJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    /**
-     * =========================================================================
-     * ESCALATION STAGES (runs every minute via scheduler)
-     * =========================================================================
-     *
-     * Stage 1 →  0 min : Notify guards within 15 km (App + SMS + Email)
-     * Stage 2 →  5 min : ADD guards within 25 km   (15 km still active)
-     * Stage 3 → 10 min : ADD guards within 35 km   (15+25 km still active)
-     * Stage 4 → 15 min : ADD guards within 45 km + Resource Partners + City-Wide
-     * Rebroadcast → 20, 35, 50, 65 min : City-Wide every 15 min
-     * Escalation  → 80 min : Admin escalation (email + SMS + portal + highlight)
-     *
-     * KEY RULES:
-     * - Earlier radius stages remain active while new ones are added
-     * - Each stage waits 5 minutes before expanding
-     * - If job is accepted at ANY point → assign, lock, confirm guard + client
-     * =========================================================================
-     */
+    public $uniqueFor = 60;
+
     public function handle()
     {
+        $lockKey = 'send_job_notifications_lock';
+        $lock = Cache::lock($lockKey, 55);
 
-        $jobs = JobRoster::with(['site'])
-                    ->whereNull('assigned_to')
-                    ->where('start', '>=', now())
-                    ->get();
-
-        if ($jobs->isEmpty()) {
+        if (!$lock->get()) {
+            Log::info('Another instance is already processing, skipping.');
             return;
         }
 
-        foreach ($jobs as $job) {
-            $this->processJob($job);
+        try {
+            $this->processUnassignedJobs();
+        } finally {
+            $lock->release();
         }
     }
 
-    // =========================================================================
-    // CORE ESCALATION LOGIC
-    // =========================================================================
-
-    private function processJob(JobRoster $job)
+    private function processUnassignedJobs()
     {
-        $minutesSincePost = (int) now()->diffInMinutes($job->created_at);
-        $siteCoords = Site::where('id', $job->site_id)->value('coordinates');
+        $unassignedJobs = JobRoster::with(['site'])
+            ->whereNull('assigned_to')
+            ->where('start', '>=', now())
+            ->get();
 
-        Log::info("Job #{$job->id} - Site coordinates retrieved", [
-        'job_id' => $job->id,
-        'site_id' => $job->site_id,
-        'site_coordinates' => $siteCoords,
-        'minutes_since_post' => $minutesSincePost,
-        'job_title' => $job->title ?? null,
-        'job_status' => $job->status ?? null,
-        'job_created_at' => $job->created_at ?? null,
-        'log_time' => now()->toDateTimeString()
+        if ($unassignedJobs->isEmpty()) {
+            Log::info('No unassigned jobs found.');
+            return;
+        }
 
-    ]);
+        // Group by site
+        $jobsBySite = $unassignedJobs->groupBy('site_id');
 
-    if (!$siteCoords) {
-        Log::warning("Job #{$job->id}: No site coordinates – skipped.", [
-            'job_id' => $job->id,
-            'site_id' => $job->site_id,
-            'minutes_since_post' => $minutesSincePost
-        ]);
-        return;
+        foreach ($jobsBySite as $siteId => $jobs) {
+            $this->processSiteJobs($jobs, $siteId);
+        }
     }
 
-        // -----------------------------------------------------------------
-        // STAGE 2 — Minute 5: ADD 25 km guards (15 km already notified)
-        // -----------------------------------------------------------------
-        if ($minutesSincePost === 5) {
-              $admins = User::where('user_type', 'admin')
-                         ->where('is_active', 1)
-                         ->get();
+    private function processSiteJobs($jobs, $siteId)
+    {
+        $lastJob = $jobs->sortByDesc('created_at')->first();
+        $minutesSincePost = now()->diffInMinutes($lastJob->created_at);
+        $siteCoords = Site::where('id', $siteId)->value('coordinates');
 
+        // IMPORTANT: Filter to only get jobs that need processing for the CURRENT stage
+        $jobsToProcess = $this->getJobsNeedingNotificationForStage($jobs, $minutesSincePost);
 
-            $message = "A new security job is available within 25 km.";
-            $title = "Unassign Job Alert";
+        if ($jobsToProcess->isEmpty()) {
+            Log::info("Site #{$siteId} - No new jobs need notification at minute {$minutesSincePost}", [
+                'all_job_ids' => $jobs->pluck('id')->toArray(),
+                'minutes_since_post' => $minutesSincePost
+            ]);
+            return;
+        }
+
+        Log::info("Site #{$siteId} - Processing " . $jobsToProcess->count() . " job(s) that need notification", [
+            'site_id' => $siteId,
+            'total_jobs_in_site' => $jobs->count(),
+            'jobs_to_process' => $jobsToProcess->pluck('id')->toArray(),
+            'all_job_ids' => $jobs->pluck('id')->toArray(),
+            'minutes_since_post' => $minutesSincePost,
+            'log_time' => now()->toDateTimeString(),
+            'process_id' => getmypid()
+        ]);
+
+        if (!$siteCoords) {
+            Log::warning("Site #{$siteId}: No site coordinates – skipped.");
+            return;
+        }
+
+        $jobIds = $jobsToProcess->pluck('id')->toArray();
+        $shiftCount = $jobsToProcess->count();
+        $shouldConsolidate = $shiftCount > 1;
+
+        // STAGE 2 — Minute 5
+        if ($minutesSincePost >= 5 && $minutesSincePost < 6) {
+            $admins = User::where('user_type', 'admin')->where('is_active', 1)->get();
+
+            $message = $shouldConsolidate 
+                ? "{$shiftCount} security jobs are available on the same site within 25 km."
+                : "A new security job is available within 25 km.";
+
+            $title = $shouldConsolidate ? "Multiple Shifts Available" : "New Job Available";
             $type = 'unassign_job';
-            $data = [
-                'message' => $message,
-                'title' => $title,
-                'type' => $type,
-            ];
 
             foreach ($admins as $admin) {
                 broadcast(new DynamicUserNotification(
                     $admin->id, 
                     $message, 
                     $title, 
-                    $data, 
+                    ['message' => $message, 'title' => $title, 'type' => $type, 'job_count' => $shiftCount, 'job_ids' => $jobIds, 'site_id' => $siteId, 'is_consolidated' => $shouldConsolidate], 
                     $type
                 ));
-                
             }
-            // Only notify guards in the 15–25 km ring (15 km already got notified)
-            $guards = $this->getStaffooGuardsByRadius($siteCoords, 25);
-            $this->notifyUsers($guards, $job, "New Job Available", "A new security job is available within 25 km of you.", 25);
-            Log::info("Job #{$job->id} Stage 2: Notified {$guards->count()} guard(s) in 15–25 km ring.");
+
+            // Get eligible guards with their eligible jobs
+            $guardsWithJobs = $this->getEligibleGuardsByRadius($siteCoords, 25, $jobsToProcess);
+            $this->notifyGuardsWithEligibleJobs($guardsWithJobs, $jobsToProcess, $title, $message, 25, $shouldConsolidate);
+            
+            // Mark ONLY the processed jobs as notified
+            $this->markJobsAsNotifiedForStage($jobsToProcess, 'stage_2');
+            Log::info("Site #{$siteId} Stage 2: Notified for " . $jobsToProcess->count() . " job(s).", [
+                'job_ids' => $jobIds
+            ]);
             return;
         }
 
-        // -----------------------------------------------------------------
-        // STAGE 3 — Minute 10: ADD 35 km guards (15+25 km already notified)
-        // -----------------------------------------------------------------
-        if ($minutesSincePost === 10) {
+        // STAGE 3 — Minute 10
+        if ($minutesSincePost >= 10 && $minutesSincePost < 11) {
+            $admins = User::where('user_type', 'admin')->where('is_active', 1)->get();
 
-              $admins = User::where('user_type', 'admin')
-                         ->where('is_active', 1)
-                         ->get();
+            $message = $shouldConsolidate 
+                ? "{$shiftCount} security jobs are available on the same site within 35 km."
+                : "A new security job is available within 35 km.";
 
-
-            $message = "A new security job is available within 35 km.";
-            $title = "Unassign Job Alert";
+            $title = $shouldConsolidate ? "Multiple Shifts Available" : "New Job Available";
             $type = 'unassign_job';
-            $data = [
-                'message' => $message,
-                'title' => $title,
-                'type' => $type,
-            ];
 
             foreach ($admins as $admin) {
                 broadcast(new DynamicUserNotification(
                     $admin->id, 
                     $message, 
                     $title, 
-                    $data, 
+                    ['message' => $message, 'title' => $title, 'type' => $type, 'job_count' => $shiftCount, 'job_ids' => $jobIds, 'site_id' => $siteId, 'is_consolidated' => $shouldConsolidate], 
                     $type
                 ));
-                
             }
-            $guards = $this->getStaffooGuardsByRadius($siteCoords, 35);
-            $this->notifyUsers($guards, $job, "New Job Available", "A new security job is available within 35 km of you.", 35);
-            Log::info("Job #{$job->id} Stage 3: Notified {$guards->count()} guard(s) in 25–35 km ring.");
+
+            $guardsWithJobs = $this->getEligibleGuardsByRadius($siteCoords, 35, $jobsToProcess);
+            $this->notifyGuardsWithEligibleJobs($guardsWithJobs, $jobsToProcess, $title, $message, 35, $shouldConsolidate);
+            
+            $this->markJobsAsNotifiedForStage($jobsToProcess, 'stage_3');
+            Log::info("Site #{$siteId} Stage 3: Notified for " . $jobsToProcess->count() . " job(s).", [
+                'job_ids' => $jobIds
+            ]);
             return;
         }
 
-        // -----------------------------------------------------------------
-        // STAGE 4 — Minute 15: ADD 45 km + Resource Partners + City-Wide
-        // -----------------------------------------------------------------
-        if ($minutesSincePost === 15) {
+        // STAGE 4 — Minute 15
+        if ($minutesSincePost >= 15 && $minutesSincePost < 16) {
+            $admins = User::where('user_type', 'admin')->where('is_active', 1)->get();
 
-              $admins = User::where('user_type', 'admin')
-                         ->where('is_active', 1)
-                         ->get();
+            $message = $shouldConsolidate 
+                ? "{$shiftCount} security jobs are available on the same site within 45 km."
+                : "A new security job is available within 45 km.";
 
-
-            $message = "A new security job is available within 45 km.";
-            $title = "Unassign Job Alert";
+            $title = $shouldConsolidate ? "Multiple Shifts Available" : "New Job Available";
             $type = 'unassign_job';
-            $data = [
-                'message' => $message,
-                'title' => $title,
-                'type' => $type,
-            ];
 
             foreach ($admins as $admin) {
                 broadcast(new DynamicUserNotification(
                     $admin->id, 
                     $message, 
                     $title, 
-                    $data, 
+                    ['message' => $message, 'title' => $title, 'type' => $type, 'job_count' => $shiftCount, 'job_ids' => $jobIds, 'site_id' => $siteId, 'is_consolidated' => $shouldConsolidate], 
                     $type
                 ));
-                
             }
-            // 35–45 km ring guards
-            $guards = $this->getStaffooGuardsByRadius($siteCoords, 45);
-            $this->notifyUsers($guards, $job, "Urgent Job Available", "An urgent security job is available within 45 km of you.", 45);
 
-            // Resource partners (city-wide, no radius)
-            $partners = $this->getResourcePartners();
-            $this->notifyUsers($partners, $job, "Urgent Job Available", "An urgent security job in your city needs filling.", 45);
+            $guardsWithJobs = $this->getEligibleGuardsByRadius($siteCoords, 45, $jobsToProcess);
+            $this->notifyGuardsWithEligibleJobs($guardsWithJobs, $jobsToProcess, $title, $message, 45, $shouldConsolidate);
 
-            // All remaining staffoo guards city-wide not yet notified (beyond 45 km)
-            $cityGuards = $this->getStaffooGuardsBeyondRadius($siteCoords, 45);
-            $this->notifyUsers($cityGuards, $job, "Urgent Job Available", "An urgent security job in your city needs filling.", 45);
+            // Resource partners have no restrictions
+            $partners = $this->getResourcePartners($siteId);
+            $partnerData = [];
+            foreach ($partners as $partner) {
+                $partnerData[] = [
+                    'guard' => $partner,
+                    'eligible_job_ids' => $jobIds // Partners get all jobs
+                ];
+            }
+            $this->notifyGuardsWithEligibleJobs($partnerData, $jobsToProcess, $title, $message, 45, $shouldConsolidate);
 
-            Log::info("Job #{$job->id} Stage 4: City-wide broadcast sent.");
+            $this->markJobsAsNotifiedForStage($jobsToProcess, 'stage_4');
+            Log::info("Site #{$siteId} Stage 4: City-wide broadcast sent for " . $jobsToProcess->count() . " job(s).", [
+                'job_ids' => $jobIds
+            ]);
             return;
         }
 
-        // -----------------------------------------------------------------
-        // AUTO REBROADCAST — Every 15 min after stage 4 (min 30, 45, 60, 75)
-        // City-Wide: Staffoo Guards + Resource Partners
-        // -----------------------------------------------------------------
+        // Auto rebroadcast
         if ($minutesSincePost > 15 && $minutesSincePost <= 75) {
             $minutesSinceStage4 = $minutesSincePost - 15;
-
             if ($minutesSinceStage4 % 15 === 0) {
-                $this->rebroadcastCityWide($job);
-                Log::info("Job #{$job->id}: Auto rebroadcast at minute {$minutesSincePost}.");
+                $stageKey = "rebroadcast_{$minutesSincePost}";
+                
+                // Check if all jobs that need processing have already been notified for this rebroadcast
+                $jobsNotNotified = $this->getJobsNotNotifiedForStage($jobsToProcess, $stageKey);
+                
+                if ($jobsNotNotified->isEmpty()) {
+                    Log::info("Site #{$siteId}: All jobs already notified for rebroadcast at minute {$minutesSincePost}.");
+                    return;
+                }
+
+                $this->rebroadcastCityWide($siteId, $jobsNotNotified);
+                $this->markJobsAsNotifiedForStage($jobsNotNotified, $stageKey);
+                Log::info("Site #{$siteId}: Auto rebroadcast at minute {$minutesSincePost} for " . $jobsNotNotified->count() . " job(s).");
             }
             return;
         }
 
-        // -----------------------------------------------------------------
-        // ADMIN ESCALATION — 60 min elapsed after rebroadcast started (min 80)
-        // -----------------------------------------------------------------
+        // Admin escalation
         if ($minutesSincePost >= 80 && $minutesSincePost <= 82) {
-            $window   = (int) (($minutesSincePost - 80) / 15);
-            $cacheKey = "admin_escalation_job_{$job->id}_w{$window}";
+            $window = (int) (($minutesSincePost - 80) / 15);
+            $cacheKey = "admin_escalation_site_{$siteId}_w{$window}";
 
-            if (!cache()->has($cacheKey)) {
-                cache()->put($cacheKey, true, now()->addMinutes(15));
-                $this->triggerAdminEscalation($job);
+            if (!Cache::has($cacheKey)) {
+                Cache::put($cacheKey, true, now()->addMinutes(15));
+                $this->triggerAdminEscalation($jobsToProcess);
+                Log::info("Site #{$siteId}: Admin escalation triggered for window {$window}.");
             }
         }
     }
 
-    // =========================================================================
-    // USER QUERIES
-    // =========================================================================
+    /**
+     * Get jobs that need notification for the current stage
+     * This filters out jobs that have already been notified for this stage
+     */
+    private function getJobsNeedingNotificationForStage($allJobs, $minutesSincePost)
+    {
+        // Determine which stage we're at
+        $stage = $this->getStageFromMinutes($minutesSincePost);
+        
+        if (!$stage) {
+            // If no specific stage, return all jobs that haven't been notified yet
+            return $this->getJobsWithoutAnyNotifications($allJobs);
+        }
+
+        $jobsNeedingNotification = collect();
+        
+        foreach ($allJobs as $job) {
+            $cacheKey = "job_notification_{$job->id}_{$stage}";
+            
+            // If this job hasn't been notified for this stage, it needs notification
+            if (!Cache::has($cacheKey)) {
+                $jobsNeedingNotification->push($job);
+                Log::info("Job #{$job->id} needs notification for stage: {$stage}");
+            } else {
+                Log::info("Job #{$job->id} already notified for stage: {$stage}, skipping.");
+            }
+        }
+        
+        return $jobsNeedingNotification;
+    }
 
     /**
-     * Staffoo guards within a specific radius.
+     * Get the stage based on minutes since post
      */
-    private function getStaffooGuardsByRadius(string $siteCoords, int $radiusKm)
+    private function getStageFromMinutes($minutesSincePost)
     {
-        return User::where('user_id', 1)
+        if ($minutesSincePost >= 5 && $minutesSincePost < 6) {
+            return 'stage_2';
+        }
+        if ($minutesSincePost >= 10 && $minutesSincePost < 11) {
+            return 'stage_3';
+        }
+        if ($minutesSincePost >= 15 && $minutesSincePost < 16) {
+            return 'stage_4';
+        }
+        if ($minutesSincePost > 15 && $minutesSincePost <= 75) {
+            $minutesSinceStage4 = $minutesSincePost - 15;
+            if ($minutesSinceStage4 % 15 === 0) {
+                return "rebroadcast_{$minutesSincePost}";
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Get jobs that haven't been notified for a specific stage
+     */
+    private function getJobsNotNotifiedForStage($jobs, $stage)
+    {
+        $jobsNotNotified = collect();
+        
+        foreach ($jobs as $job) {
+            $cacheKey = "job_notification_{$job->id}_{$stage}";
+            if (!Cache::has($cacheKey)) {
+                $jobsNotNotified->push($job);
+            }
+        }
+        
+        return $jobsNotNotified;
+    }
+
+    /**
+     * Get jobs that have NO notifications at all (brand new)
+     */
+    private function getJobsWithoutAnyNotifications($jobs)
+    {
+        $jobsWithoutNotifications = collect();
+        $stages = ['stage_2', 'stage_3', 'stage_4'];
+        
+        foreach ($jobs as $job) {
+            $hasAnyNotification = false;
+            foreach ($stages as $stage) {
+                $cacheKey = "job_notification_{$job->id}_{$stage}";
+                if (Cache::has($cacheKey)) {
+                    $hasAnyNotification = true;
+                    break;
+                }
+            }
+            
+            if (!$hasAnyNotification) {
+                $jobsWithoutNotifications->push($job);
+            }
+        }
+        
+        return $jobsWithoutNotifications;
+    }
+
+    /**
+     * Mark specific jobs as notified for a stage
+     */
+    private function markJobsAsNotifiedForStage($jobs, $stage)
+    {
+        foreach ($jobs as $job) {
+            $cacheKey = "job_notification_{$job->id}_{$stage}";
+            Cache::put($cacheKey, true, now()->addHours(2));
+            
+            // Also update database if field exists
+            if (isset($job->notifications_sent)) {
+                $notificationsSent = json_decode($job->notifications_sent ?? '[]', true);
+                if (!in_array($stage, $notificationsSent)) {
+                    $notificationsSent[] = $stage;
+                    $job->notifications_sent = json_encode($notificationsSent);
+                    $job->save();
+                }
+            }
+        }
+        Log::info("Marked " . count($jobs) . " job(s) as notified for stage: {$stage}", [
+            'job_ids' => $jobs->pluck('id')->toArray()
+        ]);
+    }
+
+    // =========================================================================
+    // GUARD ELIGIBILITY CHECKS
+    // =========================================================================
+
+    private function isGuardEligibleForJob($guardId, $job)
+    {
+        $jobDate = date('Y-m-d', strtotime($job->start));
+        $jobDuration = $this->calculateShiftDuration($job->start, $job->end);
+
+        $assignedJobs = JobRoster::where('assigned_to', $guardId)
+            ->whereDate('start', $jobDate)
+            ->where('job_status', '!=', 'cancelled')
+            ->get();
+
+        if ($assignedJobs->count() >= 2) {
+            Log::info("Guard #{$guardId} blocked for job #{$job->id} on {$jobDate}: Already has {$assignedJobs->count()} jobs on this day (max 2)");
+            return false;
+        }
+
+        $totalHoursToday = 0;
+        foreach ($assignedJobs as $assignedJob) {
+            try {
+                $start = \Carbon\Carbon::parse($assignedJob->start);
+                $end = \Carbon\Carbon::parse($assignedJob->end);
+                $totalHoursToday += $start->diffInHours($end);
+            } catch (\Exception $e) {
+                Log::warning("Error calculating hours for job #{$assignedJob->id}: " . $e->getMessage());
+            }
+        }
+
+        if ($totalHoursToday >= 12) {
+            Log::info("Guard #{$guardId} blocked for job #{$job->id} on {$jobDate}: Already worked {$totalHoursToday} hours on this day (max 12)");
+            return false;
+        }
+
+        if (($totalHoursToday + $jobDuration) > 12) {
+            Log::info("Guard #{$guardId} blocked for job #{$job->id} on {$jobDate}: Current hours ({$totalHoursToday}) + this job ({$jobDuration}h) would exceed 12 hours");
+            return false;
+        }
+
+        Log::info("Guard #{$guardId} is eligible for job #{$job->id} on {$jobDate}", [
+            'jobs_that_day' => $assignedJobs->count(),
+            'hours_that_day' => round($totalHoursToday, 1),
+            'job_duration' => $jobDuration
+        ]);
+
+        return true;
+    }
+
+    private function getEligibleGuardsByRadius(string $siteCoords, int $radiusKm, $jobs = null)
+    {
+        $allGuards = User::where('user_id', 1)
             ->where('is_active', 1)
             ->where('user_type', 'staff')
             ->whereNotNull('current_coordinates')
@@ -246,121 +415,276 @@ class SendJobNotificationJob implements ShouldQueue
             ->select('id', 'name', 'email', 'phone', 'coordinates', 'current_coordinates', 'notification_token')
             ->get()
             ->filter(fn($g) => $this->isWithinRadius($siteCoords, $g->current_coordinates, $radiusKm));
+
+        if (!$jobs || $jobs->isEmpty()) {
+            return [];
+        }
+
+        $guardsWithEligibleJobs = [];
+        foreach ($allGuards as $guard) {
+            $eligibleJobIds = [];
+            foreach ($jobs as $job) {
+                if ($this->isGuardEligibleForJob($guard->id, $job)) {
+                    $eligibleJobIds[] = $job->id;
+                }
+            }
+            if (!empty($eligibleJobIds)) {
+                $guardsWithEligibleJobs[] = [
+                    'guard' => $guard,
+                    'eligible_job_ids' => $eligibleJobIds
+                ];
+            }
+        }
+
+        Log::info("Found " . count($guardsWithEligibleJobs) . " eligible guards within {$radiusKm}km radius.");
+        return $guardsWithEligibleJobs;
     }
 
-    /**
-     * Staffoo guards beyond a radius (for city-wide remainder).
-     */
-    private function getStaffooGuardsBeyondRadius(string $siteCoords, int $radiusKm)
+    private function getAllEligibleStaffooGuards($siteId, $jobs = null)
     {
-        return User::where('user_id', 1)
-            ->where('is_active', 1)
-            ->where('user_type', 'staff')
-            ->whereNotNull('current_coordinates')
-            ->whereNotNull('notification_token')
-            ->select('id', 'name', 'email', 'phone', 'coordinates', 'current_coordinates', 'notification_token')
-            ->get()
-            ->filter(fn($g) => $this->getDistance($siteCoords, $g->current_coordinates) > $radiusKm);
-    }
+        $siteState = Site::where('id', $siteId)->value('state');
 
-    /**
-     * All Staffoo guards city-wide.
-     */
-    private function getAllStaffooGuards()
-    {
-        return User::where('user_id', 1)
+        $allGuards = User::where('user_id', 1)
             ->where('is_active', 1)
+            ->where('state', $siteState)
             ->where('user_type', 'staff')
             ->whereNotNull('notification_token')
             ->select('id', 'name', 'email', 'phone', 'notification_token')
             ->get();
-    }
 
-    /**
-     * Resource partners (city-wide, no radius).
-     */
-    private function getResourcePartners()
-    {
-        return User::whereNotIn('id', [1])
-            ->where('user_type', 'contractor')
-            ->where('is_active', 1)
-            ->whereNotNull('notification_token')
-            ->select('id', 'name', 'email', 'phone', 'notification_token')
-            ->get();
+        if (!$jobs || $jobs->isEmpty()) {
+            return [];
+        }
+
+        $guardsWithEligibleJobs = [];
+        foreach ($allGuards as $guard) {
+            $eligibleJobIds = [];
+            foreach ($jobs as $job) {
+                if ($this->isGuardEligibleForJob($guard->id, $job)) {
+                    $eligibleJobIds[] = $job->id;
+                }
+            }
+            if (!empty($eligibleJobIds)) {
+                $guardsWithEligibleJobs[] = [
+                    'guard' => $guard,
+                    'eligible_job_ids' => $eligibleJobIds
+                ];
+            }
+        }
+
+        Log::info("Found " . count($guardsWithEligibleJobs) . " eligible city-wide guards.");
+        return $guardsWithEligibleJobs;
     }
 
     // =========================================================================
     // NOTIFICATION SENDERS
     // =========================================================================
 
-    /**
-     * Notify a collection of users via App + SMS + Email.
-     */
-    private function notifyUsers($users, JobRoster $job, $title, $message, $radius)
+    private function notifyGuardsWithEligibleJobs($guardsWithJobs, $allJobs, $title, $message, $radius, $isConsolidated = false)
     {
-        if ($users->isEmpty()) {
+        if (empty($guardsWithJobs)) {
+            Log::info("No eligible guards to notify.");
             return;
         }
 
-        foreach ($users as $user) {
-            // 1. App push notification
-            $this->sendAppNotification($user, $job, $title, $message, $radius);
+        $notificationCount = 0;
+        foreach ($guardsWithJobs as $guardData) {
+            if (!isset($guardData['guard']) || !isset($guardData['eligible_job_ids'])) {
+                Log::warning("Invalid guard data structure", ['guard_data' => $guardData]);
+                continue;
+            }
 
-            // 2. SMS
-            // $this->sendSms($user, $message, $job);
+            $guard = $guardData['guard'];
+            $eligibleJobIds = $guardData['eligible_job_ids'];
+            
+            if (!is_array($eligibleJobIds)) {
+                Log::warning("eligible_job_ids is not an array for guard #{$guard->id}", [
+                    'eligible_job_ids' => $eligibleJobIds
+                ]);
+                continue;
+            }
 
-            // 3. Email
-            $this->sendEmail($user, $title, $message, $job);
+            $eligibleJobs = $allJobs->filter(function($job) use ($eligibleJobIds) {
+                return in_array($job->id, $eligibleJobIds);
+            });
+            
+            if ($eligibleJobs->isEmpty()) {
+                Log::info("No eligible jobs found for guard #{$guard->id}", [
+                    'eligible_job_ids' => $eligibleJobIds,
+                    'all_job_ids' => $allJobs->pluck('id')->toArray()
+                ]);
+                continue;
+            }
+
+            $this->sendAppNotification($guard, $eligibleJobs, $title, $message, $radius, $isConsolidated);
+
+            if (!empty($guard->phone)) {
+                try {
+                    $sms = send_sms($guard->phone, $message);
+            
+                    Log::info("SMS sent successfully.", [
+                        'guard_id' => $guard->id,
+                        'phone'    => $guard->phone,
+                        'response' => $sms,
+                    ]);
+                } catch (\Throwable $e) {
+                    Log::error("Failed to send SMS.", [
+                        'guard_id' => $guard->id,
+                        'phone'    => $guard->phone,
+                        'error'    => $e->getMessage(),
+                    ]);
+            
+                }
+            }
+            
+            $this->sendEmail($guard, $title, $message, $eligibleJobs, $isConsolidated);
+
+            $notificationCount++;
+            Log::info("Notified guard #{$guard->id} for " . $eligibleJobs->count() . " eligible job(s)", [
+                'eligible_job_ids' => $eligibleJobIds,
+                'job_count' => $eligibleJobs->count()
+            ]);
         }
+
+        Log::info("Total guards notified: {$notificationCount}");
     }
 
-    /**
-     * Rebroadcast city-wide: All Staffoo guards + Resource Partners.
-     */
-    private function rebroadcastCityWide(JobRoster $job): void
+    private function rebroadcastCityWide($siteId, $jobs): void
     {
-        $guards   = $this->getAllStaffooGuards();
-        $partners = $this->getResourcePartners();
+        $jobIds = $jobs->pluck('id')->toArray();
+        
+        $guardsWithJobs = $this->getAllEligibleStaffooGuards($siteId, $jobs);
+        $partners = $this->getResourcePartners($siteId);
+        
+        $partnerData = [];
+        foreach ($partners as $partner) {
+            $partnerData[] = [
+                'guard' => $partner,
+                'eligible_job_ids' => $jobIds
+            ];
+        }
+        
+        $allGuardsWithJobs = array_merge($guardsWithJobs, $partnerData);
 
-        $allUsers = $guards->merge($partners)->unique('id');
+        $shiftCount = $jobs->count();
+        $message = $shiftCount > 1 
+            ? "{$shiftCount} security jobs on the same site are still open and need staff urgently."
+            : "A security job in your city is still open and needs a guard urgently.";
 
-        $this->notifyUsers(
-            $allUsers,
-            $job,
+        $this->notifyGuardsWithEligibleJobs(
+            $allGuardsWithJobs,
+            $jobs,
             'Urgent: Job Still Unfilled',
-            "A security job in your city is still open and needs a guard urgently. Job #{$job->id}",
-            45
+            $message,
+            45,
+            $shiftCount > 1
         );
 
-        Log::info("Job #{$job->id}: Rebroadcast to {$allUsers->count()} city-wide recipient(s).");
+        Log::info("Site #{$siteId}: Rebroadcast completed. Total recipients: " . count($allGuardsWithJobs));
     }
 
     // =========================================================================
-    // ADMIN ESCALATION
+    // USER QUERIES
     // =========================================================================
 
-    private function triggerAdminEscalation(JobRoster $job): void
+    // private function getResourcePartners($siteId)
+    // {
+    //     $siteState = Site::where('id', $siteId)->value('state');
+
+    //     $partners = User::whereNotIn('id', [1])
+    //         ->where('user_type', 'contractor')
+    //         // ->where('state', $siteState)
+    //         ->where('is_active', 1)
+    //         ->whereNotNull('notification_token')
+    //         ->select('id', 'name', 'email', 'phone', 'notification_token')
+    //         ->get();
+
+    //     Log::info("Found " . $partners->count() . " resource partners.");
+    //     return $partners;
+    // }
+    private function getResourcePartners($siteId)
+{
+    $siteState = Site::where('id', $siteId)->value('state');
+
+    $stateMap = [
+        // Australia
+        'Victoria' => ['Victoria', 'VIC', 'vic'],
+        'VIC' => ['Victoria', 'VIC', 'vic'],
+        'vic' => ['Victoria', 'VIC', 'vic'],
+
+        'New South Wales' => ['New South Wales', 'NSW', 'nsw'],
+        'NSW' => ['New South Wales', 'NSW', 'nsw'],
+        'nsw' => ['New South Wales', 'NSW', 'nsw'],
+
+        'Queensland' => ['Queensland', 'QLD', 'qld'],
+        'QLD' => ['Queensland', 'QLD', 'qld'],
+        'qld' => ['Queensland', 'QLD', 'qld'],
+
+        'South Australia' => ['South Australia', 'SA', 'sa'],
+        'SA' => ['South Australia', 'SA', 'sa'],
+        'sa' => ['South Australia', 'SA', 'sa'],
+
+        'Western Australia' => ['Western Australia', 'WA', 'wa'],
+        'WA' => ['Western Australia', 'WA', 'wa'],
+        'wa' => ['Western Australia', 'WA', 'wa'],
+
+        'Tasmania' => ['Tasmania', 'TAS', 'tas'],
+        'TAS' => ['Tasmania', 'TAS', 'tas'],
+        'tas' => ['Tasmania', 'TAS', 'tas'],
+
+        'Australian Capital Territory' => ['Australian Capital Territory', 'ACT', 'act'],
+        'ACT' => ['Australian Capital Territory', 'ACT', 'act'],
+        'act' => ['Australian Capital Territory', 'ACT', 'act'],
+
+        'Northern Territory' => ['Northern Territory', 'NT', 'nt'],
+        'NT' => ['Northern Territory', 'NT', 'nt'],
+        'nt' => ['Northern Territory', 'NT', 'nt'],
+
+        // Pakistan
+        'Punjab' => ['Punjab', 'PUNJAB', 'punjab'],
+        'PUNJAB' => ['Punjab', 'PUNJAB', 'punjab'],
+        'punjab' => ['Punjab', 'PUNJAB', 'punjab'],
+
+    ];
+
+    $states = $stateMap[$siteState] ?? [$siteState];
+
+    $partners = User::whereNotIn('id', [1])
+        ->where('user_type', 'contractor')
+        ->whereIn('state', $states)
+        ->where('is_active', 1)
+        ->whereNotNull('notification_token')
+        ->select('id', 'name', 'email', 'phone', 'notification_token')
+        ->get();
+
+    Log::info("Found {$partners->count()} resource partners.", [
+        'site_state' => $siteState,
+        'matched_states' => $states
+    ]);
+
+    return $partners;
+}
+
+    private function triggerAdminEscalation($jobs): void
     {
-        $adminEmail = 'shahbazkhan062@gmail.com';
-        // $adminPhone = config('app.admin_phone', '');
-        $admin      = User::find(1);
+        $adminEmail = 'admin@staffoo.com.au';
+        $admin = User::find(1);
 
-        // 1. Email alert
-        Mail::to($adminEmail)->queue(new UnassignedJobsAlert(collect([$job])));
+        $jobCollection = $jobs instanceof \Illuminate\Support\Collection ? $jobs : collect([$jobs]);
 
-        Log::warning("Job #{$job->id}: Admin escalation triggered — email, portal, highlighted.");
+        Mail::to($adminEmail)->queue(new UnassignedJobsAlert($jobCollection));
+
+        Log::warning("Admin escalation triggered for " . $jobCollection->count() . " job(s).");
     }
 
     // =========================================================================
     // CHANNEL HELPERS
     // =========================================================================
 
-    /**
-     * App push notification via your existing helper.
-     */
-    private function sendAppNotification(User $user, $job, string $title, string $message, $radius)
+    private function sendAppNotification(User $user, $jobs, string $title, string $message, $radius, $isConsolidated = false)
     {
         if (empty($user->notification_token)) {
+            Log::info("Guard #{$user->id} has no notification token, skipping.");
             return;
         }
 
@@ -369,32 +693,65 @@ class SendJobNotificationJob implements ShouldQueue
             return;
         }
 
-        send_push_notification([
-            'notification_token' => $user->notification_token,
-            'title'              => $title,
-            'message'            => $message,
-            'page'               => 'asap-job-list',
-            'data'               => [
-                'distance' => round($radius, 2),
-                'radius' => $radius,
-                'job_ids' => $job->id,
-                'roster' => $job
-            ]
-        ]);
+        if ($jobs instanceof \Illuminate\Support\Collection) {
+            $jobIds = $jobs->pluck('id')->toArray();
+            $firstJob = $jobs->first();
+        } else {
+            $jobIds = [$jobs->id];
+            $firstJob = $jobs;
+        }
+
+        $notificationData = [
+            'distance' => round($radius, 2),
+            'radius' => $radius,
+            'job_ids' => $jobIds,
+            'roster' => $firstJob,
+            'is_consolidated' => $isConsolidated,
+            'job_count' => count($jobIds),
+        ];
+
+        try {
+            send_push_notification([
+                'notification_token' => $user->notification_token,
+                'title' => $title,
+                'message' => $message,
+                'page' => 'asap-job-list',
+                'data' => $notificationData
+            ]);
+            Log::info("Push notification sent to guard #{$user->id}", [
+                'job_count' => count($jobIds),
+                'job_ids' => $jobIds
+            ]);
+        } catch (\Exception $e) {
+            Log::error("Failed to send push notification to guard #{$user->id}: " . $e->getMessage());
+        }
     }
 
-    /**
-     * Send email notification to a user.
-     */
-    private function sendEmail(User $user, $title, $message, JobRoster $job)
+    private function sendEmail(User $user, $title, $message, $jobs, $isConsolidated = false)
     {
         if (empty($user->email)) {
             return;
         }
 
-        Mail::to($user->email)->queue(new \App\Mail\JobNotificationMail($job, $title, $message));
-        Log::warning("Job #{$job->id}: user email, portal, highlighted.");
+        $job = $jobs instanceof \Illuminate\Support\Collection ? $jobs->first() : $jobs;
 
+        try {
+            Mail::to($user->email)->queue(new \App\Mail\JobNotificationMail($job, $title, $message));
+            Log::info("Email queued for guard #{$user->id}");
+        } catch (\Exception $e) {
+            Log::error("Failed to queue email for guard #{$user->id}: " . $e->getMessage());
+        }
+    }
+
+    private function calculateShiftDuration($start, $end)
+    {
+        try {
+            $startTime = \Carbon\Carbon::parse($start);
+            $endTime = \Carbon\Carbon::parse($end);
+            return round($startTime->diffInHours($endTime), 1);
+        } catch (\Exception $e) {
+            return 0;
+        }
     }
 
     // =========================================================================
@@ -403,7 +760,14 @@ class SendJobNotificationJob implements ShouldQueue
 
     private function isWithinRadius(string $siteCoords, string $guardCoords, int $radiusKm): bool
     {
-        return $this->getDistance($siteCoords, $guardCoords) <= $radiusKm;
+        $distance = $this->getDistance($siteCoords, $guardCoords);
+        $isWithin = $distance <= $radiusKm;
+        
+        if (!$isWithin) {
+            Log::info("Guard coordinates outside radius: distance={$distance}km, radius={$radiusKm}km");
+        }
+        
+        return $isWithin;
     }
 
     private function getDistance(string $coords1, string $coords2): float
@@ -418,9 +782,6 @@ class SendJobNotificationJob implements ShouldQueue
         return $this->haversine($lat1, $lng1, $lat2, $lng2);
     }
 
-    /**
-     * Supports "lat,lng" format: 31.471850950351154,74.37757132966358
-     */
     private function parseCoords(string $coords): array
     {
         $parts = preg_split('/[\s,]+/', trim($coords));
@@ -433,7 +794,7 @@ class SendJobNotificationJob implements ShouldQueue
 
     private function haversine(float $lat1, float $lng1, float $lat2, float $lng2): float
     {
-        $R    = 6371;
+        $R = 6371;
         $dLat = deg2rad($lat2 - $lat1);
         $dLng = deg2rad($lng2 - $lng1);
 

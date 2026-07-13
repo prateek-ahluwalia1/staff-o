@@ -196,7 +196,7 @@ class YeastarService
 
     public function sendSmsOtp(string $toPhone, string $otp): bool
     {
-        $message = "Your STAFFOO phone verification OTP is: {$otp}.";
+        $message = "Your STAFFOO verification OTP is: {$otp}.";
 
         return $this->sendSms($toPhone, $message);
     }

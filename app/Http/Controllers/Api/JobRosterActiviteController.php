@@ -279,8 +279,8 @@ class JobRosterActiviteController extends Controller
 
         return response()->json($response);
     }
-
-    public function generateIncidentReport(Request $request)
+    
+     public function generateIncidentReport(Request $request)
     {
         $request->validate([
             'roster_id' => 'required',

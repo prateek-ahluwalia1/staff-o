@@ -92,6 +92,7 @@ class VsureService
         }
 
         //for testing return token here
+        // return $token;
 
         $response = Http::withToken($token)
         ->withHeaders([

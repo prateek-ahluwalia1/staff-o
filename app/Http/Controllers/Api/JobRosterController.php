@@ -195,41 +195,92 @@ class JobRosterController extends Controller
     
                     $jobId = JobRoster::insertGetId($roster);
                     $createdJobIds[] = $jobId;
-    
                     $createdJob = JobRoster::with('site')->find($jobId);
-    
-                    // if($request->posting_type == 'broadcast')
-                    // {
-                        $this->sendNotificationsWithinRadius(
-                            $site->coordinates,
-                            [$jobId],
-                            $request->user_id,
-                            $createdJob
-                        );   
-                        
-                    // }
                 }
             }
     
+            // if($request->posting_type == 'broadcast')
+            // {
+            //     $this->sendNotificationsWithinRadius(
+            //         $site->coordinates,
+            //         [$jobId],
+            //         $request->user_id,
+            //         $createdJob
+            //     );   
+                
+            // }
+            if ($request->posting_type == 'broadcast' && !empty($createdJobIds)) {
+                // Get the first created job for reference (site, coordinates, etc.)
+                $firstJob = JobRoster::with('site')->find($createdJobIds[0]);
+                
+                // Send a single consolidated notification for ALL shifts on this site
+                $this->sendConsolidatedNotifications(
+                    $request->coordinates,
+                    $createdJobIds, // Pass ALL job IDs
+                    $request->user_id
+                );
+            }
+            
             if (!$isAdminOverride) {
                 Transaction::where('payment_intent_id', $paymentIntentId)
                     ->update(['job_roster_id' => json_encode($createdJobIds)]);
-            }
+
+                      // ════════════════════════════════════════════════════════════
+              //  SPLIT PAYMENT — capture the first half now job is posted
+              // ════════════════════════════════════════════════════════════
+                if ($transaction && $transaction->balance > 0) {
+                    try {
+                        Stripe::setApiKey(config('services.stripe.secret'));
     
-            // ════════════════════════════════════════════════════════════════
-            //  INVOICE  →  GENERATE PDF + SEND EMAIL
-            // ════════════════════════════════════════════════════════════════
-            if (!$isAdminOverride) {
-                $this->sendJobInvoice(
-                    user:             $user,
-                    shifts:           $invoiceShifts,
-                    baseTotal:        $invoiceBaseTotal,
-                    transaction:      $transaction,
-                    invoiceNumber:    'STAFFOO-' . strtoupper(substr($paymentIntentId, -8)),
-                    paymentIntentId:  $paymentIntentId,
-                );
+                        $intent = PaymentIntent::retrieve($paymentIntentId);
+                        if ($intent->status === 'requires_capture') {
+                            $capturedIntent = $intent->capture();
+
+                            $chargeId = $capturedIntent->latest_charge ?? null;
+
+                            Transaction::where('payment_intent_id', $paymentIntentId)
+                             ->update([
+                                'status' => 'partially_captured',
+                                'charge_id' => $chargeId,
+                                'response'  => json_encode($capturedIntent),
+                            ]);
+                        }
+
+                        $this->sendJobInvoice(
+                            user:            $user,
+                            shifts:          $invoiceShifts,
+                            baseTotal:       $invoiceBaseTotal,
+                            transaction:     $transaction,
+                            invoiceNumber:   'STAFFOO-' . strtoupper(substr($paymentIntentId, -8)),
+                            paymentIntentId: $paymentIntentId,
+                        );
+    
+                    } catch (\Exception $e) {
+                        Log::channel('daily')->error('[Split Payment] First-half capture failed', [
+                            'payment_intent_id' => $paymentIntentId,
+                            'error'             => $e->getMessage(),
+                        ]);
+                        return response()->json([
+                            'success'            => false,
+                            'message'            => 'Jobs created successfully but payment failed.',
+                            'total_jobs_created' => count($createdJobIds),
+                            'job_ids'            => $createdJobIds,
+                            'payment_intent_id'  => $paymentIntentId,
+                        ]);
+                        // Don't rethrow — job posting still succeeds even if capture fails;
+                        // you'll want a way to retry/alert on this in admin.
+                    }
+                } else {
+                    $this->sendJobInvoice(
+                        user:             $user,
+                        shifts:           $invoiceShifts,
+                        baseTotal:        $invoiceBaseTotal,
+                        transaction:      $transaction,
+                        invoiceNumber:    'STAFFOO-' . strtoupper(substr($paymentIntentId, -8)),
+                        paymentIntentId:  $paymentIntentId,
+                    );
+                }
             }
-            // ════════════════════════════════════════════════════════════════
     
             return response()->json([
                 'success'            => true,
@@ -378,6 +429,7 @@ private function saveInvoicePdf($pdfBytes, string $invoiceNumber, string $client
      */
     private function sendNotificationsWithinRadius($siteCoordinates, $jobIds, $userId, $roster)
     {
+
         $radiusKm = 15; // 5km radius
         $notifiedUsers = [];
 
@@ -393,7 +445,7 @@ private function saveInvoicePdf($pdfBytes, string $invoiceNumber, string $client
         // ->whereDoesntHave('guardQuestionnaireDetails', function ($query) {
         //     $query->whereNull('certificate_path');
         // })
-            ->select('id', 'name', 'email', 'current_coordinates', 'coordinates', 'notification_token')
+            ->select('id', 'name', 'email', 'phone', 'current_coordinates', 'coordinates', 'notification_token')
         ->get();
         
 
@@ -403,7 +455,7 @@ private function saveInvoicePdf($pdfBytes, string $invoiceNumber, string $client
             ->where('user_type', 'contractor')
             ->whereNotNull('current_coordinates')
             ->whereNotNull('notification_token')
-            ->select('id', 'name', 'current_coordinates', 'coordinates', 'notification_token')
+            ->select('id', 'name', 'current_coordinates', 'phone', 'coordinates', 'notification_token')
             ->get();
         }
 
@@ -437,8 +489,11 @@ private function saveInvoicePdf($pdfBytes, string $invoiceNumber, string $client
                         ];
                     }
                 }
-                
+              
                 $this->sendEmail($staffMember, 'New Job Available', "A new security job is available within 15 km of you. Please check your app.", $roster);
+                if (!empty($staffMember->phone)) {
+                $sendSmS = send_sms($staffMember->phone, "A new security job is available within 15 km of you. Please check your app.");
+                }
             }
         }
 
@@ -446,15 +501,6 @@ private function saveInvoicePdf($pdfBytes, string $invoiceNumber, string $client
         // $this->updateJobRosterWithNotifiedUsers($jobIds, $notifiedUsers, $radiusKm);
 
         return $notifiedUsers;
-    }
-    
-     private function sendEmail(User $user, string $title, string $message, JobRoster $job)
-    {
-        if (empty($user->email)) {
-            return;
-        }
-
-        Mail::to($user->email)->queue(new \App\Mail\JobNotificationMail($job, $title, $message));
     }
 
     /**
@@ -722,6 +768,14 @@ private function saveInvoicePdf($pdfBytes, string $invoiceNumber, string $client
             ->first();
 
             if ($roster != null) {
+                
+            if (!$this->canAcceptJob($id, $roster->start, $roster->end)) {
+
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Staff must complete 8 hours rest before accepting this shift.'
+                ]);
+            }   
 
             $rosterStart = Carbon::parse($roster->start);
 
@@ -850,6 +904,46 @@ private function saveInvoicePdf($pdfBytes, string $invoiceNumber, string $client
         }
     }
 
+    public function canAcceptJob($guardId, $newShiftStart, $newShiftEnd)
+    {
+        $newShiftStart = Carbon::parse($newShiftStart);
+        $newShiftEnd   = Carbon::parse($newShiftEnd);
+    
+        // Previous shift
+        $previousShift = DB::table('job_rosters')
+            ->where('assigned_to', $guardId)
+            ->where('end', '<=', $newShiftStart)
+            ->orderBy('end', 'desc')
+            ->first();
+    
+        if ($previousShift) {
+    
+            $previousEnd = Carbon::parse($previousShift->end);
+    
+            if ($previousEnd->copy()->addHours(8)->gt($newShiftStart)) {
+                return false;
+            }
+        }
+    
+        // Next shift
+        $nextShift = DB::table('job_rosters')
+            ->where('assigned_to', $guardId)
+            ->where('start', '>=', $newShiftEnd)
+            ->orderBy('start', 'asc')
+            ->first();
+    
+        if ($nextShift) {
+    
+            $nextStart = Carbon::parse($nextShift->start);
+    
+            if ($newShiftEnd->copy()->addHours(8)->gt($nextStart)) {
+                return false;
+            }
+        }
+    
+        return true;
+    }
+    
     public function jobSignin(Request $request, $id)
     {
 
@@ -1048,9 +1142,9 @@ private function saveInvoicePdf($pdfBytes, string $invoiceNumber, string $client
         try {
             // $destinationPath =  rtrim('../../uploads/');
             $public_path =  rtrim(app()->basePath('public/'), '');
-            $public_path = str_replace('portal/public', '', $public_path);
-            $public_path = str_replace('apis/public', '', $public_path);
-            $public_path = str_replace('https://apis.staffoo.com.au/', 'apis.247staffingsolutions.com.au/public', $public_path);
+            // $public_path = str_replace('portal/public', '', $public_path);
+            // $public_path = str_replace('apis/public', '', $public_path);
+            // $public_path = str_replace('https://apis.staffoo.com.au/', 'apis.247staffingsolutions.com.au/public', $public_path);
             $destinationPath = $public_path . $folder . '/';
             if (!is_dir($destinationPath)) {
                 @mkdir($destinationPath, 0755, true);
@@ -1473,6 +1567,23 @@ private function saveInvoicePdf($pdfBytes, string $invoiceNumber, string $client
             send_push_notification($notification_data);
         }
 
+         if ($roster->payment_intent_id) {
+        $transaction = Transaction::where('payment_intent_id', $roster->payment_intent_id)->first();
+ 
+        if ($transaction && $transaction->balance > 0 && $transaction->balance_status === 'pending') {
+                $jobIds = json_decode($transaction->job_roster_id, true) ?? [];
+    
+                $allCompleted = !empty($jobIds) && DB::table('job_rosters')
+                    ->whereIn('id', $jobIds)
+                    ->where('job_status', '!=', 'completed')
+                    ->doesntExist();
+    
+                if ($allCompleted) {
+                    $this->chargeRemainingBalance($transaction);
+                }
+            }
+        }
+
         // ─── FINAL RESPONSE ───────────────────────
         return response()->json([
             'success' => true,
@@ -1480,6 +1591,109 @@ private function saveInvoicePdf($pdfBytes, string $invoiceNumber, string $client
         ], 200);
     }
 
+    private function chargeRemainingBalance(\App\Models\Transaction $transaction): void
+    {
+        // Atomic claim — stops two near-simultaneous signouts from double-charging
+        $claimed = DB::table('transactions')
+            ->where('id', $transaction->id)
+            ->where('balance_status', 'pending')
+            ->update(['balance_status' => 'processing']);
+    
+        if (!$claimed) {
+            return; // someone else already claimed it
+        }
+    
+        try {
+            Stripe::setApiKey(config('services.stripe.secret'));
+    
+            $originalIntent = PaymentIntent::retrieve($transaction->payment_intent_id);
+            $balanceInCents = (int) round($transaction->balance * 100);
+    
+            $balanceIntent = PaymentIntent::create([
+                'amount'         => $balanceInCents,
+                'currency'       => 'aud',
+                'customer'       => $originalIntent->customer,
+                'payment_method' => $originalIntent->payment_method,
+                'off_session'    => true,
+                'confirm'        => true,
+                'capture_method' => 'automatic',
+            ]);
+    
+            DB::table('transactions')->where('id', $transaction->id)->update([
+                'balance_payment_intent_id' => $balanceIntent->id,
+                'balance_status'            => $balanceIntent->status === 'succeeded' ? 'charged' : 'failed',
+                'balance_charged_at'        => now(),
+                'status'                    => $balanceIntent->status === 'succeeded' ? 'completed' : 'partially_captured',
+            ]);
+    
+            if ($balanceIntent->status === 'succeeded') {
+                $this->sendBalanceInvoice($transaction->fresh(), $balanceIntent->id);
+            }
+    
+        } catch (\Stripe\Exception\CardException $e) {
+            // Card failed off-session — e.g. expired, insufficient funds, or
+            // bank demands 3DS re-authentication. Flag for manual follow-up.
+            DB::table('transactions')->where('id', $transaction->id)->update(['balance_status' => 'failed']);
+            Log::channel('daily')->error('[Balance Charge] Card declined', [
+                'transaction_id' => $transaction->id,
+                'error'          => $e->getMessage(),
+            ]);
+    
+        } catch (\Exception $e) {
+            DB::table('transactions')->where('id', $transaction->id)->update(['balance_status' => 'failed']);
+            Log::channel('daily')->error('[Balance Charge] Failed', [
+                'transaction_id' => $transaction->id,
+                'error'          => $e->getMessage(),
+            ]);
+        }
+    }
+    
+    private function sendBalanceInvoice(\App\Models\Transaction $transaction, string $balanceIntentId): void
+    {
+        try {
+            $user = User::find($transaction->user_id);
+            if (!$user) return;
+    
+            $invoiceData = [
+                'invoice_number'    => 'STAFFOO-' . strtoupper(substr($balanceIntentId, -8)) . '-FINAL',
+                'date'              => now()->format('d M Y'),
+                'client_name'       => $user->name,
+                'client_email'      => $user->email,
+                'payment_intent_id' => $balanceIntentId,
+                'payment_option'    => 'split-final',
+                'amount_charged'    => $transaction->balance,
+                'grand_total'       => $transaction->total_amount,
+            ];
+    
+            $pdfBytes  = app(\App\Services\InvoiceService::class)->generatePdf($invoiceData);
+            $pdfBase64 = base64_encode($pdfBytes);
+    
+            $this->saveInvoicePdf($pdfBytes, $invoiceData['invoice_number'], $user->name, $balanceIntentId);
+    
+            Mail::to($user->email)->queue(new \App\Mail\InvoiceMail(
+                pdfBase64:     $pdfBase64,
+                invoiceNumber: $invoiceData['invoice_number'],
+                clientName:    $user->name,
+                isAdmin:       false,
+            ));
+    
+            $admin = User::where('user_type', 'admin')->first();
+            if ($admin && $admin->email) {
+                Mail::to($admin->email)->queue(new \App\Mail\InvoiceMail(
+                    pdfBase64:     $pdfBase64,
+                    invoiceNumber: $invoiceData['invoice_number'],
+                    clientName:    $user->name,
+                    isAdmin:       true,
+                ));
+            }
+        } catch (\Exception $e) {
+            Log::channel('daily')->error('[Final Invoice] Failed', [
+                'transaction_id' => $transaction->id,
+                'error'          => $e->getMessage(),
+            ]);
+        }
+    }
+    
     public function getAllJobs()
     {
         $startOfWeek = now()->startOfWeek();
@@ -1568,7 +1782,6 @@ private function saveInvoicePdf($pdfBytes, string $invoiceNumber, string $client
         if ($user->user_type === 'contractor') {
             $notifyUserIds = JobRoster::whereBetween('start', [$start, $end])
                 ->where('roster_id', $roster_id)
-                ->whereNotNull('notified_users')
                 ->pluck('assigned_to')
                 ->unique()
                 ->values()
@@ -2590,15 +2803,19 @@ $baseTotal_arr = [];
             'user_id'           => $user->id,
             'job_roster_id'     => $request->job_id ?? null,
             'payment_intent_id' => $paymentIntent->id,
-
+ 
             'amount'            => $baseTotal,
             'discount'          => $discount,
             'service_fee'       => $serviceFee,
             'total_amount'      => $grandTotal,
-
+ 
             'amount_charged'    => $amountToCharge,
             'balance'           => $balance,
-
+ 
+            // NEW fields
+            'payment_option'    => $request->payment_option,
+            'balance_status'    => $request->payment_option === 'split' ? 'pending' : null,
+ 
             'currency'          => 'AUD',
             'status'            => 'held',
             'response'          => json_encode($paymentIntent),
@@ -3197,36 +3414,145 @@ public function autoUpdatePayslipStatus()
      /**
      * Get available jobs (unassigned and future)
      */
-    public function getAvailableJobs(Request $request)
+    // public function getAvailableJobs(Request $request)
+    // {
+    //     try {
+    //         $perPage = $validated['per_page'] ?? 100;
+    //         $type = $validated['type'] ?? null;
+
+    //         // Build query
+    //         $query = JobRoster::with(['site'])
+    //             ->whereNull('assigned_to')
+    //             ->where('start', '>', now())
+    //             ->orderBy('start', 'asc');
+
+    //         $jobs = $query->paginate($perPage);
+
+    //         // Format response
+    //         $formattedJobs = $jobs->through(function ($roster) {
+    //             return [
+    //                 'id' => $roster->id,
+    //                 'site_name' => $roster->site->site_name ?? null,
+    //                 'site_address' => $roster->site->address ?? null,
+    //                 'site_id' => $roster->site->id ?? null,
+    //                 'state' => $roster->site->state ?? null,
+    //                 'coordinates' => $roster->site->coordinates ?? null,
+    //                 'start_time' => $roster->start,
+    //                 'end_time' => $roster->end,
+    //                 'day_of_week' => $roster->shift_date ? date('l', strtotime($roster->start)) : null,
+    //                 'job_status' => $roster->job_status,
+    //                 'publish_status' => $roster->publish_status,
+    //                 'assigned_to' => $roster->assigned_to,
+    //                 'created_at' => $roster->created_at,
+    //             ];
+    //         });
+
+    //         return response()->json([
+    //             'success' => true,
+    //             'message' => 'Available jobs retrieved successfully.',
+    //             'code' => 200,
+    //             'data' => [
+    //                 'jobs' => $formattedJobs,
+    //                 'pagination' => [
+    //                     'current_page' => $jobs->currentPage(),
+    //                     'last_page' => $jobs->lastPage(),
+    //                     'per_page' => $jobs->perPage(),
+    //                     'total' => $jobs->total(),
+    //                     'next_page_url' => $jobs->nextPageUrl(),
+    //                     'prev_page_url' => $jobs->previousPageUrl(),
+    //                 ],
+    //             ]
+    //         ], 200);
+
+    //     } catch (\Exception $e) {
+    //         return response()->json([
+    //             'success' => false,
+    //             'message' => 'An error occurred while fetching available jobs.',
+    //             'code' => 500,
+    //             'error' => $e->getMessage(),
+    //         ], 500);
+    //     }
+    // }
+    public function getAvailableJobs($id)
     {
         try {
-            $perPage = $validated['per_page'] ?? 15;
-            $type = $validated['type'] ?? null;
 
-            // Build query
+            $perPage = 50;
+            $userId = $id;
+            $user = User::find($userId);
+
+            if (!$user) {
+                return response()->json(['success' => false, 'message' => 'User not found'], 404);
+            }
+
             $query = JobRoster::with(['site'])
                 ->whereNull('assigned_to')
                 ->where('start', '>', now())
                 ->orderBy('start', 'asc');
 
+            // State filter for staff
+              if ($user->user_type === 'staff' && !empty($user->state)) {
+
+                $stateMap = [
+                    // Australia
+                    'Victoria' => ['Victoria', 'VIC', 'vic'],
+                    'New South Wales' => ['New South Wales', 'NSW', 'nsw'],
+                    'Queensland' => ['Queensland', 'QLD', 'qld'],
+                    'South Australia' => ['South Australia', 'SA', 'sa'],
+                    'Western Australia' => ['Western Australia', 'WA', 'wa'],
+                    'Tasmania' => ['Tasmania', 'TAS', 'tas'],
+                    'Australian Capital Territory' => ['Australian Capital Territory', 'ACT', 'act'],
+                    'Northern Territory' => ['Northern Territory', 'NT', 'nt'],
+
+                    // Pakistan
+                    'Punjab' => ['Punjab', 'PUNJAB', 'punjab'],
+                ];
+
+                $states = $stateMap[$user->state] ?? [$user->state];
+
+                $query->whereHas('site', function ($q) use ($states) {
+                    $q->whereIn('state', $states);
+                });
+            }
+
             $jobs = $query->paginate($perPage);
 
-            // Format response
-            $formattedJobs = $jobs->through(function ($roster) {
+            // FILTER LOGIC: Hide today's jobs if user has 2 jobs OR 12 hours today
+            $today = now()->toDateString();
+            $todayAssignedJobs = JobRoster::where('assigned_to', $user->id)
+                ->whereDate('start', $today)
+                ->get();
+
+            $jobsCountToday = $todayAssignedJobs->count();
+            $hoursToday = $this->calculateTotalHours($todayAssignedJobs);
+            $hideTodayJobs = ($jobsCountToday >= 2 || $hoursToday >= 12);
+
+            $filteredJobs = $jobs->getCollection()->filter(function ($job) use ($today, $hideTodayJobs) {
+                // If hideTodayJobs is true AND job is today, hide it
+                if ($hideTodayJobs && date('Y-m-d', strtotime($job->start)) === $today) {
+                    return false;
+                }
+                return true;
+            });
+
+            $jobs->setCollection($filteredJobs);
+
+            // Format and return
+            $formattedJobs = $jobs->through(function ($job) {
                 return [
-                    'id' => $roster->id,
-                    'site_name' => $roster->site->site_name ?? null,
-                    'site_address' => $roster->site->address ?? null,
-                    'site_id' => $roster->site->id ?? null,
-                    'state' => $roster->site->state ?? null,
-                    'coordinates' => $roster->site->coordinates ?? null,
-                    'start_time' => $roster->start,
-                    'end_time' => $roster->end,
-                    'day_of_week' => $roster->shift_date ? date('l', strtotime($roster->start)) : null,
-                    'job_status' => $roster->job_status,
-                    'publish_status' => $roster->publish_status,
-                    'assigned_to' => $roster->assigned_to,
-                    'created_at' => $roster->created_at,
+                    'id' => $job->id,
+                    'site_name' => $job->site->site_name ?? null,
+                    'site_address' => $job->site->address ?? null,
+                    'site_id' => $job->site->id ?? null,
+                    'state' => $job->site->state ?? null,
+                    'coordinates' => $job->site->coordinates ?? null,
+                    'start_time' => $job->start,
+                    'end_time' => $job->end,
+                    'day_of_week' => date('l', strtotime($job->start)),
+                    'job_status' => $job->job_status,
+                    'publish_status' => $job->publish_status,
+                    'assigned_to' => $job->assigned_to,
+                    'created_at' => $job->created_at,
                 ];
             });
 
@@ -3236,6 +3562,14 @@ public function autoUpdatePayslipStatus()
                 'code' => 200,
                 'data' => [
                     'jobs' => $formattedJobs,
+                    'user_status' => [
+                        'jobs_today' => $jobsCountToday,
+                        'hours_today' => round($hoursToday, 1),
+                        'is_blocked_today' => $hideTodayJobs,
+                        'blocked_reason' => $hideTodayJobs 
+                            ? ($jobsCountToday >= 2 ? '2 jobs limit reached' : '12 hours limit reached')
+                            : null,
+                    ],
                     'pagination' => [
                         'current_page' => $jobs->currentPage(),
                         'last_page' => $jobs->lastPage(),
@@ -3250,11 +3584,353 @@ public function autoUpdatePayslipStatus()
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'An error occurred while fetching available jobs.',
+                'message' => 'Error fetching jobs: ' . $e->getMessage(),
                 'code' => 500,
-                'error' => $e->getMessage(),
             ], 500);
         }
     }
 
+    private function calculateTotalHours($jobs)
+    {
+        $total = 0;
+        foreach ($jobs as $job) {
+            try {
+                $total += \Carbon\Carbon::parse($job->start)->diffInHours(\Carbon\Carbon::parse($job->end));
+            } catch (\Exception $e) {
+                // Skip
+            }
+        }
+        return $total;
+    }
+
+      /**
+     * Send consolidated notifications for multiple shifts on the same site
+     */
+    private function sendConsolidatedNotifications($siteCoordinates, $jobIds, $createdBy)
+    {
+        // Get all jobs for this site
+        $jobs = JobRoster::with('site')
+            ->whereIn('id', $jobIds)
+            ->get();
+        
+        if ($jobs->isEmpty()) {
+            Log::warning("No jobs found for consolidation", ['job_ids' => $jobIds]);
+            return;
+        }
+
+        $shiftCount = $jobs->count();
+        $siteName = $jobs->first()->site->site_name ?? 'Unknown Site';
+        
+        Log::info("Sending consolidated notification for {$shiftCount} shifts on site: {$siteName}", [
+            'site_id' => $jobs->first()->site_id,
+            'job_ids' => $jobIds,
+            'shift_count' => $shiftCount
+        ]);
+        
+        // Get all guards within radius
+        $allGuards = $this->getStaffooGuardsByRadius($siteCoordinates, 15);
+        
+        if ($allGuards->isEmpty()) {
+            Log::info("No guards found within radius for site: {$siteName}");
+            return;
+        }
+        
+        // Prepare consolidated message
+        if ($shiftCount > 1) {
+            $title = 'Multiple Jobs Available';
+            $message = "{$shiftCount} security jobs are available at {$siteName}.";
+        } else {
+            $title = 'New Job Available';
+            $message = "A new security job is available at {$siteName} near you.";
+        }
+        
+        $notifiedCount = 0;
+        
+        foreach ($allGuards as $guard) {
+            // 🔥 FIX: Check eligibility for EACH job individually
+            $eligibleJobIds = [];
+            foreach ($jobs as $job) {
+                if ($this->isGuardEligibleForSpecificJob($guard->id, $job)) {
+                    $eligibleJobIds[] = $job->id;
+                }
+            }
+            
+            // If guard is not eligible for ANY job, skip them
+            if (empty($eligibleJobIds)) {
+                Log::info("Guard #{$guard->id} is not eligible for any of the {$shiftCount} jobs", [
+                    'all_job_ids' => $jobs->pluck('id')->toArray()
+                ]);
+                continue;
+            }
+            
+            // Get only the jobs this guard is eligible for
+            $eligibleJobs = $jobs->filter(fn($job) => in_array($job->id, $eligibleJobIds));
+            
+            // Calculate distance for this guard
+            $distance = $this->getDistance($siteCoordinates, $guard->current_coordinates);
+            
+            // 1. App Push Notification with ONLY eligible jobs
+            $this->sendConsolidatedAppNotification(
+                $guard, 
+                $eligibleJobs,  // Send ONLY eligible jobs
+                $title, 
+                $message, 
+                $distance,
+                15
+            );
+            
+            // 2. SMS - Single SMS with eligible shift details
+            if (!empty($guard->phone)) {
+                try {
+                    $smsMessage = $this->buildConsolidatedSmsMessage($eligibleJobs);
+            
+                    $response = send_sms($guard->phone, $smsMessage);
+            
+                    Log::info("SMS sent to guard #{$guard->id}", [
+                        'phone' => $guard->phone,
+                        'response' => $response
+                    ]);
+                } catch (\Throwable $e) {
+                    Log::error("Failed to send SMS to guard #{$guard->id}", [
+                        'phone' => $guard->phone,
+                        'error' => $e->getMessage(),
+                    ]);
+            
+                }
+            }
+            
+            // 3. Email - Single email with eligible shift details
+            if (!empty($guard->email)) {
+                $firstEligibleJob = $eligibleJobs->first();
+                $this->sendEmail($guard, $title, $message, $firstEligibleJob);
+                Log::info("Email to guard #{$guard->id}: {$guard->email}");
+            }
+            
+            $notifiedCount++;
+            Log::info("Notified guard #{$guard->id} for " . $eligibleJobs->count() . " eligible job(s)", [
+                'eligible_job_ids' => $eligibleJobIds
+            ]);
+        }
+        
+        Log::info("Consolidated notification sent to {$notifiedCount} guards for {$shiftCount} shifts");
+    }
+
+    /**
+     * Check if a guard is eligible for a SPECIFIC job
+     * Checks only the specific date of this job
+     */
+    private function isGuardEligibleForSpecificJob($guardId, $job)
+    {
+        $jobDate = date('Y-m-d', strtotime($job->start));
+        $jobDuration = $this->calculateShiftDuration($job->start, $job->end);
+
+        // Get all assigned jobs for this guard on THIS SPECIFIC date
+        $assignedJobs = JobRoster::where('assigned_to', $guardId)
+            ->whereDate('start', $jobDate)
+            ->where('job_status', '!=', 'cancelled')
+            ->get();
+
+        // Check maximum jobs limit for THIS DAY (2 jobs per day)
+        if ($assignedJobs->count() >= 2) {
+            Log::info("Guard #{$guardId} blocked for job #{$job->id} on {$jobDate}: Already has {$assignedJobs->count()} jobs on this day (max 2)");
+            return false;
+        }
+
+        // Check maximum hours limit for THIS DAY (12 hours per day)
+        $totalHoursToday = 0;
+        foreach ($assignedJobs as $assignedJob) {
+            try {
+                $start = \Carbon\Carbon::parse($assignedJob->start);
+                $end = \Carbon\Carbon::parse($assignedJob->end);
+                $totalHoursToday += $start->diffInHours($end);
+            } catch (\Exception $e) {
+                Log::warning("Error calculating hours for job #{$assignedJob->id}: " . $e->getMessage());
+            }
+        }
+
+        // If already worked 12+ hours on this day
+        if ($totalHoursToday >= 12) {
+            Log::info("Guard #{$guardId} blocked for job #{$job->id} on {$jobDate}: Already worked {$totalHoursToday} hours on this day (max 12)");
+            return false;
+        }
+
+        // Check if adding this job would exceed 12 hours on this day
+        if (($totalHoursToday + $jobDuration) > 12) {
+            Log::info("Guard #{$guardId} blocked for job #{$job->id} on {$jobDate}: Current hours ({$totalHoursToday}) + this job ({$jobDuration}h) would exceed 12 hours");
+            return false;
+        }
+
+        Log::info("Guard #{$guardId} is eligible for job #{$job->id} on {$jobDate}", [
+            'jobs_that_day' => $assignedJobs->count(),
+            'hours_that_day' => round($totalHoursToday, 1),
+            'job_duration' => $jobDuration
+        ]);
+
+        return true;
+    }
+
+    /**
+     * Get all Staffoo guards within a specific radius
+     */
+    private function getStaffooGuardsByRadius(string $siteCoords, int $radiusKm)
+    {
+        return User::where('user_id', 1)
+            ->where('is_active', 1)
+            ->where('user_type', 'staff')
+            ->whereNotNull('current_coordinates')
+            ->whereNotNull('notification_token')
+            ->select('id', 'name', 'email', 'phone', 'current_coordinates', 'notification_token')
+            ->get()
+            ->filter(function ($guard) use ($siteCoords, $radiusKm) {
+                return $this->isWithinRadius($siteCoords, $guard->current_coordinates, $radiusKm);
+            });
+        
+    }
+
+    /**
+     * Send consolidated app notification
+     */
+    private function sendConsolidatedAppNotification($guard, $jobs, $title, $message, $distance, $radius)
+    {
+        if (empty($guard->notification_token)) {
+            return;
+        }
+
+        if (!function_exists('send_push_notification')) {
+            Log::error('send_push_notification helper not found.');
+            return;
+        }
+
+        $jobIds = $jobs->pluck('id')->toArray();
+        $shiftCount = $jobs->count();
+        $firstJob = $jobs->first();
+        $site = $firstJob->site;
+
+         $notificationData = [
+            'distance' => round($radius, 2),
+            'radius' => $radius,
+            'job_ids' => $jobIds,
+            'roster' => $firstJob,
+            'job_count' => count($jobIds),
+        ];
+
+        send_push_notification([
+            'notification_token' => $guard->notification_token,
+            'title' => $title,
+            'message' => $message,
+            'page' => 'asap-job-list',
+            'data' => $notificationData
+        ]);
+
+        Log::info("App notification sent to guard #{$guard->id} for {$shiftCount} eligible job(s)");
+    }
+
+    /**
+     * Build consolidated SMS message
+     */
+    private function buildConsolidatedSmsMessage($jobs)
+    {
+        $shiftCount = $jobs->count();
+        $siteName = $jobs->first()->site->site_name ?? 'Unknown Site';
+        $siteAddress = $jobs->first()->site->address ?? '';
+        
+        if ($shiftCount == 1) {
+            $job = $jobs->first();
+            return "Security Job Alert: 1 shift available at {$siteName} ({$siteAddress}). Start: " . date('d-m-Y H:i', strtotime($job->start));
+        }
+        
+        $message = "Security Jobs Alert: {$shiftCount} shifts available at {$siteName} ({$siteAddress})\n";
+        foreach ($jobs as $index => $job) {
+            $startTime = date('d-m-Y H:i', strtotime($job->start));
+            $endTime = date('H:i', strtotime($job->end));
+            $duration = $this->calculateShiftDuration($job->start, $job->end);
+            $message .= "Shift " . ($index + 1) . ": {$startTime} - {$endTime} ({$duration} hrs)\n";
+        }
+        $message .= "Apply now in the app!";
+        
+        return $message;
+    }
+
+    /**
+     * Calculate shift duration in hours
+     */
+    private function calculateShiftDuration($start, $end)
+    {
+        try {
+            $startTime = \Carbon\Carbon::parse($start);
+            $endTime = \Carbon\Carbon::parse($end);
+            return round($startTime->diffInHours($endTime), 1);
+        } catch (\Exception $e) {
+            return 0;
+        }
+    }
+
+    /**
+     * Send email notification
+     */
+    private function sendEmail($user, $title, $message, $job)
+    {
+        if (empty($user->email)) {
+            return;
+        }
+
+        try {
+            Mail::to($user->email)->queue(new \App\Mail\JobNotificationMail($job, $title, $message));
+        } catch (\Exception $e) {
+            Log::error("Failed to send email to guard #{$user->id}: " . $e->getMessage());
+        }
+    }
+
+    /**
+     * Check if coordinates are within radius
+     */
+    private function isWithinRadius(string $siteCoords, string $guardCoords, int $radiusKm): bool
+    {
+        return $this->getDistance($siteCoords, $guardCoords) <= $radiusKm;
+    }
+
+    /**
+     * Calculate distance between two coordinates
+     */
+    private function getDistance(string $coords1, string $coords2): float
+    {
+        [$lat1, $lng1] = $this->parseCoords($coords1);
+        [$lat2, $lng2] = $this->parseCoords($coords2);
+
+        if ($lat1 === null || $lat2 === null) {
+            return PHP_INT_MAX;
+        }
+
+        return $this->haversine($lat1, $lng1, $lat2, $lng2);
+    }
+
+    /**
+     * Parse coordinates from string format
+     */
+    private function parseCoords(string $coords): array
+    {
+        $parts = preg_split('/[\s,]+/', trim($coords));
+
+        return [
+            isset($parts[0]) ? (float) $parts[0] : null,
+            isset($parts[1]) ? (float) $parts[1] : null,
+        ];
+    }
+
+    /**
+     * Haversine formula to calculate distance between two points
+     */
+    private function haversine(float $lat1, float $lng1, float $lat2, float $lng2): float
+    {
+        $R = 6371;
+        $dLat = deg2rad($lat2 - $lat1);
+        $dLng = deg2rad($lng2 - $lng1);
+
+        $a = sin($dLat / 2) ** 2
+            + cos(deg2rad($lat1)) * cos(deg2rad($lat2)) * sin($dLng / 2) ** 2;
+
+        $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
+        
+        return $R * $c;
+    }
 }

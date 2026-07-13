@@ -155,7 +155,7 @@ const Header = memo(function Header({ withSidebar = false }) {
           <div className="header-left">
             {!(isDesktop && sidebarExpanded) && (
               <NavLink to="/" className="navbar-brand logo d-flex align-items-center m-0">
-                <img src={staffologo} alt="Staffo" style={{ height: "45px" }} />
+                <img src={staffologo} alt="Staffo" style={{ height: "45px", marginLeft: isDesktop ? "-35px" : "0" }} />
               </NavLink>
             )}
           </div>

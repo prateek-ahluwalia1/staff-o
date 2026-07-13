@@ -327,7 +327,7 @@ export default function Register() {
                         type="tel"
                         className={`form-control ${errors.phone ? 'is-invalid' : ''}`}
                         name="phone"
-                        placeholder="+1234567890"
+                        placeholder="+61 400 000 000"
                         value={formData.phone}
                         onChange={handleChange}
                         maxLength={20}

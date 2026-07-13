@@ -658,7 +658,7 @@ const EmployeeOnboardingForm = ({
                 </div>
                 <div className="col-md-6">
                     <label className="form-label small fw-bold text-muted">
-                        Date of birth <span className="text-danger">*</span>
+                        Date of Birth <span className="text-danger">*</span>
                     </label>
                     <DateInput name="o_dob" value={values.o_dob} onChange={onChange} required />
                 </div>

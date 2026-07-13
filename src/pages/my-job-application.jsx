@@ -373,8 +373,8 @@ export default function MyJobApplications() {
                     <div className="d-flex justify-content-between align-items-start mb-3">
                       <span
                         className={`badge rounded-pill px-3 py-2 fw-medium ${app.statusClass === "offer"
-                            ? "bg-success bg-opacity-10 text-success border border-success border-opacity-25"
-                            : "bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25"
+                          ? "bg-success bg-opacity-10 text-success border border-success border-opacity-25"
+                          : "bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25"
                           }`}
                         style={{
                           fontSize: "12px",
@@ -383,8 +383,8 @@ export default function MyJobApplications() {
                       >
                         <i
                           className={`fa-solid ${app.statusClass === "offer"
-                              ? "fa-circle-check"
-                              : "fa-hourglass-half"
+                            ? "fa-circle-check"
+                            : "fa-hourglass-half"
                             } me-1`}
                         ></i>
                         {app.status}
@@ -604,11 +604,6 @@ export default function MyJobApplications() {
                         icon="fa-map-pin"
                         label="Address"
                         value={selectedApp.rawSite.address}
-                      />
-                      <InfoRow
-                        icon="fa-location-crosshairs"
-                        label="Radius"
-                        value={`${selectedApp.rawSite.signin_radius}m`}
                       />
                     </div>
                   </div>

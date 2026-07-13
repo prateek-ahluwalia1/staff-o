@@ -157,6 +157,7 @@ export default function ProfileForm({
                       className={`form-control border-light-subtle border-start-0 ps-0 bg-light py-2 ${isPhoneVerified ? "text-success fw-bold" : ""
                         }`}
                       id="phone"
+                      required
                       placeholder="+61 400 000 000"
                       value={formData.phone || ""}
                       readOnly
@@ -187,6 +188,7 @@ export default function ProfileForm({
                       id="phone"
                       placeholder="+61 400 000 000"
                       value={formData.phone || ""}
+                      required
                       onChange={onChange}
                       maxLength="15"
                       required
@@ -288,6 +290,7 @@ export default function ProfileForm({
                     Residential Status <span className="text-danger">*</span>
                   </label>
                   <select
+                    required
                     className="form-select border-light-subtle bg-light focus-ring focus-ring-primary py-2 px-3"
                     id="staff_document_type"
                     value={selectValue}
@@ -427,6 +430,7 @@ export default function ProfileForm({
                     inputId="origin_country"
                     options={countryOptions}
                     value={selectedCountry}
+                    required
                     onChange={(selectedOption) => {
                       onChange({
                         target: {

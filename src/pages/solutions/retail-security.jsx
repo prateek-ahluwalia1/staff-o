@@ -362,6 +362,7 @@ export default function RetailSecurity() {
 
                         {/* Heading */}
                         <h1 style={styles.heading}>
+                            Professional <span style={styles.headingAccent}>Retail Security</span> staffing built for safety
                             Expert <span style={styles.headingAccent}>Retail Security</span> Staff for Growing Businesses
                         </h1>
 

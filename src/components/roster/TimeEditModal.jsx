@@ -166,10 +166,10 @@ export default function TimeEditModal({
                     {shift?.startDate && shift?.endDate ? `${format(shift.startDate, "HH:mm")} – ${format(shift.endDate, "HH:mm")}` : "Not available"}
                   </div>
                 </div>
-                <div>
+                {/* <div>
                   <div style={{ fontSize: "1rem", fontWeight: 600, color: "#6b7280", marginBottom: "6px" }}>Staff Assignment</div>
                   <div style={{ fontSize: "1.1rem", fontWeight: 800, color: "#111827" }}>{shift?.guards?.name || "Unassigned"}</div>
-                </div>
+                </div> */}
               </div>
             </div>
           </div>

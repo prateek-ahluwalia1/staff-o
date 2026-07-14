@@ -121,7 +121,7 @@ const InvoiceSettings = ({
   onNotesChange,
 }) => {
   return (
-    <div className="list-card invoice-side-panel bg-white p-4 rounded shadow-sm sticky-top" style={{ top: "1.5rem" }}>
+    <div className="list-card invoice-side-panel bg-white p-4 rounded shadow-sm sticky-top" style={{ top: "1.5rem", zIndex: 0 }}>
       <h3 className="mb-4 border-bottom pb-2">Invoice Settings</h3>
 
       <div className="mb-3">

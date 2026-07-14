@@ -1,4 +1,6 @@
 import React, { useRef } from "react";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 import { COUNTRIES } from "../utils/exports";
 import Select from "react-select";
 
@@ -15,7 +17,17 @@ export default function ProfileForm({
   isEdit = false,
   showPhoneOtp = false,
 }) {
-  const datePickerRef = useRef(null);
+  // helper to convert DD/MM/YYYY -> Date (or null)
+  const parseDisplayDate = (str) => {
+    if (!str || typeof str !== "string") return null;
+    const parts = str.split("/");
+    if (parts.length === 3) {
+      const [d, m, y] = parts;
+      const date = new Date(+y, +m - 1, +d);
+      return isNaN(date.getTime()) ? null : date;
+    }
+    return null;
+  };
 
   const predefinedStatuses = [
     "student_visa",
@@ -124,7 +136,7 @@ export default function ProfileForm({
               )}
             </div>
 
-            {/* Phone – UPDATED to be editable only when no phone saved */}
+            {/* Phone – unchanged */}
             {userType !== "admin" && (
               <div className="col-md-6">
                 <div className="d-flex justify-content-between align-items-center mb-2">
@@ -163,13 +175,11 @@ export default function ProfileForm({
                       id="phone"
                       placeholder="+61 400 000 000"
                       value={formData.phone || ""}
-                      // 🔽 Editable only when no phone is saved
                       readOnly={!!formData.phone}
                       style={{
                         fontSize: "1rem",
                         cursor: formData.phone ? "default" : "text",
                       }}
-                      // Only require pattern when the user can actually type
                       {...(formData.phone
                         ? {}
                         : {
@@ -178,7 +188,7 @@ export default function ProfileForm({
                           pattern: "^(?:\\+?61|0)[2-478](?:[\\s\\-]*\\d){8}$",
                           title:
                             "Valid Australian phone required (e.g., 0400 000 000 or +61 400 000 000)",
-                          onChange: onChange, // allow typing when empty
+                          onChange: onChange,
                         })}
                     />
                     <button
@@ -196,7 +206,6 @@ export default function ProfileForm({
                     </button>
                   </div>
                 ) : (
-                  // Fallback for non‑OTP contexts – remains as before
                   <div className="input-group shadow-none">
                     <span className="input-group-text bg-light border-light-subtle text-muted px-3 py-2">
                       <i className="fa-solid fa-phone"></i>
@@ -219,7 +228,7 @@ export default function ProfileForm({
               </div>
             )}
 
-            {/* Contractor Specific Fields */}
+            {/* Contractor Specific Fields – unchanged */}
             {userType === "contractor" && (
               <>
                 <div className="col-md-6">
@@ -368,42 +377,40 @@ export default function ProfileForm({
                   />
                 </div>
 
-                {/* Pure Calendar Input for DOB - Click anywhere to open */}
+                {/* ===== DATE OF BIRTH – Now using react-datepicker ===== */}
                 <div className="col-md-6">
                   <label htmlFor="date_of_birth" className="form-label fw-semibold text-dark">
                     Date of Birth <span className="text-danger">*</span>
                   </label>
-                  <input
-                    type="date"
-                    className="form-control border-light-subtle bg-light focus-ring focus-ring-primary text-muted py-2 px-3"
+                  <DatePicker
                     id="date_of_birth"
-                    name="date_of_birth"
-                    value={
-                      formData.date_of_birth
-                        ? (() => {
-                          const parts = formData.date_of_birth.split("/");
-                          if (parts.length === 3) return `${parts[2]}-${parts[1]}-${parts[0]}`;
-                          return formData.date_of_birth;
-                        })()
-                        : ""
-                    }
-                    onClick={(e) => {
-                      if (e.target.showPicker) {
-                        e.target.showPicker();
-                      }
-                    }}
-                    onChange={(e) => {
-                      const isoDate = e.target.value;
-                      if (isoDate) {
-                        const [y, m, d] = isoDate.split("-");
-                        onChange({ target: { id: "date_of_birth", name: "date_of_birth", value: `${d}/${m}/${y}` } });
+                    selected={parseDisplayDate(formData.date_of_birth)}
+                    onChange={(date) => {
+                      if (date) {
+                        const day = String(date.getDate()).padStart(2, "0");
+                        const month = String(date.getMonth() + 1).padStart(2, "0");
+                        const year = date.getFullYear();
+                        onChange({
+                          target: {
+                            id: "date_of_birth",
+                            name: "date_of_birth",
+                            value: `${day}/${month}/${year}`,
+                          },
+                        });
                       } else {
-                        onChange({ target: { id: "date_of_birth", name: "date_of_birth", value: "" } });
+                        onChange({ target: { id: "date_of_birth", value: "" } });
                       }
                     }}
-                    max={new Date().toISOString().split("T")[0]}
+                    dateFormat="dd/MM/yyyy"
+                    placeholderText="DD/MM/YYYY"
+                    className="form-control border-light-subtle bg-light focus-ring focus-ring-primary py-2 px-3"
+                    wrapperClassName="w-100"
+                    showYearDropdown
+                    scrollableYearDropdown
+                    yearDropdownItemNumber={100}
+                    maxDate={new Date()}
                     required
-                    style={{ fontSize: "1rem", cursor: "pointer" }}
+                    autoComplete="off"
                   />
                 </div>
 

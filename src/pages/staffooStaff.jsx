@@ -53,6 +53,18 @@ const DOC_TYPES = [
     { value: "Medicare", label: "Medicare Certificate" },
     { value: "Birth Certificate", label: "Birth Certificate" },
     { value: "Application Form", label: "Application Form" },
+    { value: "Passport", label: "Passport" },
+    { value: "Working With Children Check", label: "Working with Children Check (WWCC)" },
+    { value: "First Aid Certificate", label: "First Aid Certificate" },
+    { value: "CPR Certificate", label: "CPR Certificate" },
+    { value: "Security Master License", label: "Security Master License" },
+    { value: "Public Liability", label: "Public Liability" },
+    { value: "Workcover", label: "Workcover" },
+    { value: "Security Industry Membership certificate", label: "Security Industry Membership certificate" },
+    { value: "Labour Hire", label: "Labour Hire" },
+    { value: "ASIC Report", label: "ASIC Report" },
+    { value: "White Card", label: "White Card" },
+    { value: "Working with Children Check", label: "Working with Children Check" },
 ];
 
 const StaffooStaff = () => {

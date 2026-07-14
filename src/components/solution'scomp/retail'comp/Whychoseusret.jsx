@@ -1,7 +1,7 @@
 // components/WhyChooseStaffoo.jsx
 import React, { useState, useEffect } from "react";
 
-export default function WhyChooseStaffoo() {
+export default function WhyChooseStaffooRetail() {
     const [isMobile, setIsMobile] = useState(false);
 
     useEffect(() => {
@@ -16,23 +16,23 @@ export default function WhyChooseStaffoo() {
     const features = [
         {
             id: 1,
-            title: "Compliant Profiles",
-            description: "Every security worker uploads their licence, ABN, and certifications on the site."
+            title: "Viewable Licensed Profiles",
+            description: "Guards on Staffoo are required to upload their security licence to their profiles. It can be reviewed before hiring."
         },
         {
             id: 2,
-            title: "Fast Job Posting",
-            description: "Post an event security job in just minutes—no need to fill a long form. Qualified candidates may see your job and can apply instantly."
+            title: "Fast Shift Coverage",
+            description: "Retail shift schedules usually change without notice. To fix this, Staffoo sends shift notifications to available guards near your site. It helps you fill the vacant shifts quickly."
         },
         {
             id: 3,
-            title: "Real-time Tracking",
-            description: "Staffoo monitors staff location and status during the work hours of the event. We provide GPS tracking only while the workers are on duty. We ensure to keep privacy and safety balanced."
+            title: "Incident Logging",
+            description: "Guards may log incidents and disputes directly in the app during their shift. Here, retail managers get a clear record of every on-site event."
         },
         {
             id: 4,
-            title: "Secure Payments",
-            description: "All payments on Staffoo are processed through Stripe. We do not deal in cash, ultimately resulting in fast, secure payments. Security guards get paid after a successful completion of their shift."
+            title: "Secure Payment Processing",
+            description: "We process all our payments through Stripe. Payment through the platform is secure for employers, and Retail Security Guards get paid after the end of their shift without the need for invoicing."
         }
     ];
 
@@ -136,10 +136,10 @@ export default function WhyChooseStaffoo() {
             <div style={styles.headerBlock}>
                 <h4 style={styles.subheading}>Why Choose Us</h4>
                 <h2 style={styles.heading}>
-                    Staffoo Is the Smarter Choice for Event Security Hiring
+                    Best Option for Retail Security Hiring
                 </h2>
                 <p style={styles.tagline}>
-                    Are you wasting your time on unscreened and unverified staff? Staffoo gives you a clear view of licensed event security guards with its built-in compliance support tools.
+                    Staffoo aims to promote a smoother security industry. We have designed every feature to make the hiring process for retail security services faster and simpler.
                 </p>
             </div>
 

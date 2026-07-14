@@ -1,7 +1,6 @@
-// components/HowItWorks.jsx
 import React, { useState, useEffect } from "react";
 
-export default function HowItWorks() {
+export default function LogisticHIW() {
     const [isMobile, setIsMobile] = useState(false);
 
     useEffect(() => {
@@ -16,23 +15,23 @@ export default function HowItWorks() {
     const steps = [
         {
             number: 1,
-            title: "Post Job",
-            description: "Describe your event and security needs"
+            title: "List Shift",
+            description: "Post your warehouse hours and type of site."
         },
         {
             number: 2,
-            title: "Review Staff",
-            description: "Browse through profiles, check updated licences and certifications"
+            title: "Review Offers",
+            description: "Choose the guards who are familiar with warehouse layouts."
         },
         {
             number: 3,
-            title: "Confirm Booking",
-            description: "Select your staff and confirm the shift details"
+            title: "Confirm Guard",
+            description: "Book the best-suited guard for your shift."
         },
         {
             number: 4,
-            title: "Track Live",
-            description: "Check the attendance and location during your event"
+            title: "View Patrol Log",
+            description: "Check the reports for coverage after the shift is complete."
         }
     ];
 
@@ -126,7 +125,7 @@ export default function HowItWorks() {
 
     return (
         <div style={styles.wrapper}>
-            <h2 style={styles.heading}>How Staffoo Works for Event Security</h2>
+            <h2 style={styles.heading}>Booking a Warehouse Guard</h2>
 
             <div style={styles.timelineContainer}>
                 {/* Dynamic Timeline connecting track */}

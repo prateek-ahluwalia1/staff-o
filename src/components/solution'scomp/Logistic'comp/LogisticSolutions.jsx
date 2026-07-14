@@ -1,7 +1,7 @@
 // components/RelatedSolutions.jsx
 import React, { useState, useEffect } from "react";
 
-export default function RelatedSolutions() {
+export default function LogisticSolutions() {
     const [viewMode, setViewMode] = useState("desktop"); // desktop, tablet, mobile
 
     useEffect(() => {
@@ -24,33 +24,33 @@ export default function RelatedSolutions() {
     const solutions = [
         {
             id: 1,
-            title: "Corporate Security",
-            description: "Protection of premises, assets, and employees in office hours."
+            title: "Retail Stores",
+            description: "Our Retail Store Guards watch shop floors and fitting rooms"
         },
         {
             id: 2,
-            title: "Construction Security",
-            description: "Providing complete security on building sites."
+            title: "Construction Yards",
+            description: "Construction site specialists stop tool theft during off hours"
         },
         {
             id: 3,
-            title: "Retail Security",
-            description: "Theft prevention and management within retail outlets."
+            title: "Office Buildings",
+            description: "Our building security guards control entry for staff and visiting guests"
         },
         {
             id: 4,
-            title: "Mobile Patrol",
-            description: "Scheduling patrol guards at multiple locations easily."
+            title: "Transport Depots",
+            description: "Transport security watches vehicles and fuel after hours"
         },
         {
             id: 5,
-            title: "Worker Safety",
-            description: "Real-time monitoring of workers through GPS technology."
+            title: "Manufacturing Plants",
+            description: "These guards protect machinery and raw material stock"
         },
         {
             id: 6,
-            title: "Resource Partner Management",
-            description: "Managing resource partners through one platform only."
+            title: "Self Storage Units",
+            description: "Our patrol units and gates are monitored around the clock 24/7"
         }
     ];
 
@@ -129,7 +129,7 @@ export default function RelatedSolutions() {
                 }
             `}</style>
 
-            <h2 style={styles.heading}>Solutions by Staffoo</h2>
+            <h2 style={styles.heading}>Other Sites We Cover</h2>
 
             <div style={styles.grid}>
                 {solutions.map((item) => (

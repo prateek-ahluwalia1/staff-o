@@ -24,33 +24,33 @@ export default function RelatedSolutions() {
     const solutions = [
         {
             id: 1,
-            title: "Corporate Security",
-            description: "Protection of premises, assets, and employees in office hours."
+            title: "Event Security Staffing",
+            description: "Hire guards who have their licences and want to work at festivals and public events."
         },
         {
             id: 2,
-            title: "Construction Security",
-            description: "Providing complete security on building sites."
+            title: "Corporate Site Protection",
+            description: "Provide security for your staff and business assets 24/7."
         },
         {
             id: 3,
-            title: "Retail Security",
-            description: "Theft prevention and management within retail outlets."
+            title: "Construction Site Security",
+            description: "Deter theft and control staff and access on construction sites."
         },
         {
             id: 4,
-            title: "Mobile Patrol",
-            description: "Scheduling patrol guards at multiple locations easily."
+            title: "Mobile Patrol Services",
+            description: "GPS tracks guards and can be assigned to different locations and shifts."
         },
         {
             id: 5,
-            title: "Worker Safety",
-            description: "Real-time monitoring of workers through GPS technology."
+            title: "Crowd Control Hiring",
+            description: "Safely manage large groups of people and control the flow of entry and exit at a venue."
         },
         {
             id: 6,
-            title: "Resource Partner Management",
-            description: "Managing resource partners through one platform only."
+            title: "Hospitality Security Staffing",
+            description: "Find licenced guards for hotels, bars, and entertainment venues."
         }
     ];
 

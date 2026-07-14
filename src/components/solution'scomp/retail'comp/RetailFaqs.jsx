@@ -1,7 +1,7 @@
 // components/FAQ.jsx
 import React, { useState, useEffect } from "react";
 
-export default function FAQ() {
+export default function RetailFaqs() {
     const [isMobile, setIsMobile] = useState(false);
     const [openIndex, setOpenIndex] = useState(0);
 
@@ -19,53 +19,29 @@ export default function FAQ() {
     const faqData = [
         {
             id: 1,
-            question: "How will I hire event security staff through Staffoo?",
-            answer: (
-                <>
-                    <p style={{ margin: "0 0 12px 0", color: "white" }}>
-                        You can hire a security guard easily in the following steps:
-                    </p>
-
-                    <ul
-                        style={{
-                            margin: 0,
-                            paddingLeft: "20px",
-                            lineHeight: "1.8",
-                        }}
-                    >
-                        <li>Create a free employer account</li>
-                        <li>Post your event security job</li>
-                        <li>Review applications from security professionals</li>
-                        <li>Confirm your booking</li>
-                    </ul>
-                </>
-            ),
+            question: "Can I use Staffoo to hire retail security guards in multiple stores?",
+            answer: "Yes. We support multiple-site hiring. You can post separate jobs for all locations and manage the bookings through the same account."
         },
         {
             id: 2,
-            question: "Are all security guards on Staffoo licensed in Australia?",
-            answer:
-                "Yes, every security guard on Staffoo uploads their current verified licence, First Aid certification, and ABN before applying.",
+            question: "Are your security guards licensed to work in my state?",
+            answer: "Our guards upload their state licence to their profiles. You can check the licence to confirm if it suits your location."
         },
         {
             id: 3,
-            question: "Can I find urgent event security staff?",
-            answer:
-                "Yes. Staffoo sends notifications to available workers in your area. Many organisers find their required security guard on the same day.",
+            question: "Can I find a guard on a short-notice shift?",
+            answer: "Yes, Staffoo supports fast shift coverage. When you post a job request, we notify the guards in nearby locations. We make it possible for you to book a guard on the same day."
         },
         {
             id: 4,
-            question:
-                "How does Staffoo help me comply with event security compliance requirements?",
-            answer:
-                "Staffoo helps you comply by providing security staff who have uploaded verified licence documents. We also offer GPS tracking and incident logging to support on-site compliance.",
+            question: "Does Staffoo work for subcontractors or resource partners in managing clients?",
+            answer: "Yes, resource partners and security companies can use Staffoo to assign jobs. The platform is built with a focus on three user types: individual guards, employers, and subcontractors."
         },
         {
             id: 5,
-            question: "How do security staff get paid on Staffoo?",
-            answer:
-                "Payments are securely processed through Stripe. Once a shift is completed, payment is released to the employee. There are no cash payments and no invoices required from either party.",
-        },
+            question: "How is Staffoo compliant for retail security shifts?",
+            answer: "Staffoo includes incident reporting during the shift. Records are saved on the platform and can be reviewed later. GPS tracking becomes active when the guards start their duties, which supports monitoring the work duration."
+        }
     ];
 
     const toggleFAQ = (index) => {
@@ -147,7 +123,7 @@ export default function FAQ() {
                 "max-height 0.3s cubic-bezier(0.25, 1, 0.5, 1), margin-top 0.3s ease",
         },
         answerContainerOpen: {
-            maxHeight: "300px",
+            maxHeight: "200px",
             marginTop: "14px",
         },
         answerText: {

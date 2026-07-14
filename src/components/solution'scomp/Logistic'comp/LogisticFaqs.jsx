@@ -1,7 +1,7 @@
 // components/FAQ.jsx
 import React, { useState, useEffect } from "react";
 
-export default function FAQ() {
+export default function LogisticFaqs() {
     const [isMobile, setIsMobile] = useState(false);
     const [openIndex, setOpenIndex] = useState(0);
 
@@ -19,53 +19,29 @@ export default function FAQ() {
     const faqData = [
         {
             id: 1,
-            question: "How will I hire event security staff through Staffoo?",
-            answer: (
-                <>
-                    <p style={{ margin: "0 0 12px 0", color: "white" }}>
-                        You can hire a security guard easily in the following steps:
-                    </p>
-
-                    <ul
-                        style={{
-                            margin: 0,
-                            paddingLeft: "20px",
-                            lineHeight: "1.8",
-                        }}
-                    >
-                        <li>Create a free employer account</li>
-                        <li>Post your event security job</li>
-                        <li>Review applications from security professionals</li>
-                        <li>Confirm your booking</li>
-                    </ul>
-                </>
-            ),
+            question: "Why are cameras in warehouses not enough? Why do we need security guards?",
+            answer: "Cameras cannot prevent crime because they can only record. Having guards means having someone to inspect trucks, guard checkpoints, and act to prevent and solve theft before the stock simply disappears."
         },
         {
             id: 2,
-            question: "Are all security guards on Staffoo licensed in Australia?",
-            answer:
-                "Yes, every security guard on Staffoo uploads their current verified licence, First Aid certification, and ABN before applying.",
+            question: "What experience should I look for in a warehouse security guard?",
+            answer: "Look for experience in loading docks, forklifts, and night shift experience. A guard with warehouse experience is likely to be more familiar with spotting threats faster than a guard with no warehouse experience and one who only has experience guarding retail or office spaces."
         },
         {
             id: 3,
-            question: "Can I find urgent event security staff?",
-            answer:
-                "Yes. Staffoo sends notifications to available workers in your area. Many organisers find their required security guard on the same day.",
+            question: "Can warehouse guards work through the night?",
+            answer: "Yes, warehouse shifts are overnight, and most warehouse theft also occurs overnight. Staffoo guards are available for booking for night shifts and weekends, and support rotating shifts."
         },
         {
             id: 4,
-            question:
-                "How does Staffoo help me comply with event security compliance requirements?",
-            answer:
-                "Staffoo helps you comply by providing security staff who have uploaded verified licence documents. We also offer GPS tracking and incident logging to support on-site compliance.",
+            question: "How to know a warehouse guard is licensed?",
+            answer: "Each guard profile includes an uploaded and verifiable state security licence, so you can verify who is entering your site."
         },
         {
             id: 5,
-            question: "How do security staff get paid on Staffoo?",
-            answer:
-                "Payments are securely processed through Stripe. Once a shift is completed, payment is released to the employee. There are no cash payments and no invoices required from either party.",
-        },
+            question: "Can I book a warehouse guard for only one shift?",
+            answer: "Yes. You can book only for one shift or as many shifts as you want. We do not stick to long-term contracts only."
+        }
     ];
 
     const toggleFAQ = (index) => {
@@ -162,7 +138,7 @@ export default function FAQ() {
     return (
         <div style={styles.wrapper}>
             <div style={styles.headerBlock}>
-                <h2 style={styles.heading}>Frequently Asked Questions</h2>
+                <h2 style={styles.heading}>FAQs</h2>
             </div>
 
             <div style={styles.faqList}>

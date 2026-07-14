@@ -1,11 +1,11 @@
 // components/BusinessProtection.jsx
 import React, { useState, useEffect } from "react";
-import securityImage from "../../assets/images/security.png";
+import securityImage from "../../../assets/images/security.png";
 
 // Import your image asset here
 // import securityImage from "../../assets/images/security-monitors.png";
 
-export default function BusinessProtection() {
+export default function LogisticWWA() {
     const [isMobile, setIsMobile] = useState(false);
 
     useEffect(() => {
@@ -111,29 +111,25 @@ export default function BusinessProtection() {
                 <div style={styles.leftContent}>
                     <div style={styles.subheading}>Who We Are</div>
                     <h2 style={styles.heading}>
-                        Trusted Event Security Professionals at Your Fingertips
+                        Professional Warehouse Logistics Security in Australia
                     </h2>
 
                     <p style={styles.bodyText}>
-                        Planning a safe event? It takes more than just people in uniforms. You need licensed, compliant, and available professionals to work with. Staffoo connects event organisers with the most qualified security personnel or companies across Australia. If you are planning for a small function or a large public event, you can find the perfect security professionals without delays.
-                    </p>
-
-                    <p style={styles.bodyText}>
-                        Every profile on Staffoo includes verified licences and certifications. We save you time and reduce risk. You can find the perfect fit, as many organisers fill shifts within hours for a safe and compliant event.
+                        Unattended stock creates risk, and warehouses cannot afford it. Staffoo connects warehouse owners with security guards who understand the loading docks, how things operate when no one's around, and how things go missing overnight. Everyone on our app can provide proof of a security licence, and you can verify it at the same time. Decide how many hours you want them to work and provide your site with the security instructions, and you'll receive matches within hours. Incidents are recorded on site, which means nothing gets missed. Staffoo protects your warehouse from the first shipment to the last.
                     </p>
 
                     <ul style={styles.listContainer}>
                         <li style={styles.listItem}>
                             <span style={styles.bulletPoint}>•</span>
-                            Find licenced event security staff fast.
+                            Guards of your choice trained in loading dock risks
                         </li>
                         <li style={styles.listItem}>
                             <span style={styles.bulletPoint}>•</span>
-                            All profiles have updated and verified licences and certifications
+                            Security guards who match your needs
                         </li>
                         <li style={styles.listItem}>
                             <span style={styles.bulletPoint}>•</span>
-                            Post in minutes and fill shifts without any delay
+                            Complete reports recorded directly by on-duty guards
                         </li>
                     </ul>
                 </div>

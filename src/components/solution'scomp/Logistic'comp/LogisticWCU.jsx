@@ -1,7 +1,7 @@
 // components/WhyChooseStaffoo.jsx
 import React, { useState, useEffect } from "react";
 
-export default function WhyChooseStaffoo() {
+export default function LogisticWCU() {
     const [isMobile, setIsMobile] = useState(false);
 
     useEffect(() => {
@@ -16,23 +16,23 @@ export default function WhyChooseStaffoo() {
     const features = [
         {
             id: 1,
-            title: "Compliant Profiles",
-            description: "Every security worker uploads their licence, ABN, and certifications on the site."
+            title: "Dock and Bay Familiarity",
+            description: "Guards looking to work in warehouses are familiar with dock and bay layouts. They are aware of thoroughfare paths for forklifts and are still able to view every point of dock access. It allows for a good balance of accident risk and theft overnight shift coverage."
         },
         {
             id: 2,
-            title: "Fast Job Posting",
-            description: "Post an event security job in just minutes—no need to fill a long form. Qualified candidates may see your job and can apply instantly."
+            title: "Coverage of Overnight Shifts",
+            description: "Warehouse theft occurs most after hours when the roads are empty. Staffoo links you to guards available for overnight and weekend shifts. You are no longer limited to guards who are only willing to cover daytime shifts and are located in the city."
         },
         {
             id: 3,
-            title: "Real-time Tracking",
-            description: "Staffoo monitors staff location and status during the work hours of the event. We provide GPS tracking only while the workers are on duty. We ensure to keep privacy and safety balanced."
+            title: "Remote Site Coverage",
+            description: "Warehouses are often located in industrial areas outside of the city. Staffoo offers a view of the guard's location before booking so you can choose one who is able to cover every shift without extensive travel."
         },
         {
             id: 4,
-            title: "Secure Payments",
-            description: "All payments on Staffoo are processed through Stripe. We do not deal in cash, ultimately resulting in fast, secure payments. Security guards get paid after a successful completion of their shift."
+            title: "Patrol Records",
+            description: "Guards are able to log patrol times and record any unusual activity through the app. After the shift is complete, you receive a time-stamped record. It is helpful to support insurance claims should inventory go missing."
         }
     ];
 
@@ -136,10 +136,10 @@ export default function WhyChooseStaffoo() {
             <div style={styles.headerBlock}>
                 <h4 style={styles.subheading}>Why Choose Us</h4>
                 <h2 style={styles.heading}>
-                    Staffoo Is the Smarter Choice for Event Security Hiring
+                    What Makes Us Special for Warehouse Sites
                 </h2>
                 <p style={styles.tagline}>
-                    Are you wasting your time on unscreened and unverified staff? Staffoo gives you a clear view of licensed event security guards with its built-in compliance support tools.
+                    Warehouses do not function like stores. They operate 24/7, contain large equipment, and are located away from the main roads. Staffoo is built around these needs.
                 </p>
             </div>
 

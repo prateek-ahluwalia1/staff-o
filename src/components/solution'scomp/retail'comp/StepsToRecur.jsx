@@ -1,7 +1,7 @@
 // components/HowItWorks.jsx
 import React, { useState, useEffect } from "react";
 
-export default function HowItWorks() {
+export default function StepsToRecruit() {
     const [isMobile, setIsMobile] = useState(false);
 
     useEffect(() => {
@@ -16,23 +16,23 @@ export default function HowItWorks() {
     const steps = [
         {
             number: 1,
-            title: "Post Job",
-            description: "Describe your event and security needs"
+            title: "Advertise Your Position",
+            description: "Add your location, the type of shifts, and the needed security."
         },
         {
             number: 2,
-            title: "Review Staff",
-            description: "Browse through profiles, check updated licences and certifications"
+            title: "Check Guards' Profiles",
+            description: "Check out the profiles of guards with previous retail security experience."
         },
         {
             number: 3,
-            title: "Confirm Booking",
-            description: "Select your staff and confirm the shift details"
+            title: "Approve Your Hiring",
+            description: "You select the guard and approve the shift booking for your retail security services."
         },
         {
             number: 4,
-            title: "Track Live",
-            description: "Check the attendance and location during your event"
+            title: "Payment Processing",
+            description: "Track the live shifts and process payments through Stripe."
         }
     ];
 
@@ -126,7 +126,7 @@ export default function HowItWorks() {
 
     return (
         <div style={styles.wrapper}>
-            <h2 style={styles.heading}>How Staffoo Works for Event Security</h2>
+            <h2 style={styles.heading}>Steps to Recruit for Store Security Services at Staffoo</h2>
 
             <div style={styles.timelineContainer}>
                 {/* Dynamic Timeline connecting track */}

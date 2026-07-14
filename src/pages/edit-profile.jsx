@@ -869,7 +869,7 @@ export default function EditProfile() {
           name={formData.name}
           email={formData.email}
           city={formData.address}
-          profileCompletion={userdata?.data?.profile_completion_percentage || 0}
+          profileCompletion={userdata?.data?.profile_completion_percentage || userdata?.profile_completion_percentage || 0}
           missingItems={missingFields}
         />
       </div>
@@ -902,7 +902,7 @@ export default function EditProfile() {
             Documents
           </button>
         )}
-        {(userType === "staff" && userdata?.data?.user_id === 1) && (
+        {(userType === "staff" && (userdata?.data?.user_id === 1 || userdata?.id === 1)) && (
           <button
             className={`btn ${activeTab === "onboarding" ? "btn-primary-custom" : "btn-outline-primary"}`}
             onClick={() => setActiveTab("onboarding")}

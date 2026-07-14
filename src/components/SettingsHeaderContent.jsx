@@ -6,7 +6,7 @@ export default function SettingsHeaderContent({
   email,
   city,
   company_name,
-  profileCompletion = 0,
+  profileCompletion = -1,
   isVerified,
 }) {
   const pct = Math.min(100, Math.max(0, Number(profileCompletion) || 0));
@@ -23,6 +23,7 @@ export default function SettingsHeaderContent({
   const strokeDashoffset = circumference - (pct / 100) * circumference;
 
   const getColor = () => {
+    if (pct === 0) return "#6b7280";
     if (pct < 40) return "#dc3545";
     if (pct < 80) return "#f59e0b";
     return "#16a34a";
@@ -78,7 +79,7 @@ export default function SettingsHeaderContent({
         </div>
       </div>
       {
-        (userType !== "admin" && userType !== "customer" && pct < 100) && (
+        (userType !== "admin" && userType !== "customer" && pct > 0 && pct < 100) && (
           <div className="status-circle-wrapper">
             <div style={{ width: 90, height: 90, position: "relative" }}>
               <svg height={radius * 2} width={radius * 2}>

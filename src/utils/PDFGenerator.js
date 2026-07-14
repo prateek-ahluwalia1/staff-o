@@ -27,6 +27,16 @@ const formatDateForDisplay = (dateStr) => {
   return dateStr;
 };
 
+const formatDateToDDMMYYYY = (dateStr) => {
+  if (!dateStr) return "-";
+  // Handle YYYY-MM-DD format
+  if (dateStr.includes("-")) {
+    const [year, month, day] = dateStr.split("-");
+    return `${day}/${month}/${year}`;
+  }
+  return dateStr;
+};
+
 // ─── SHARED HEADER ───────────────────────────────────────────────────────────
 const renderFormHeader = (doc, pageWidth, title, margin = 20) => {
   const barH = 22, barTop = 0;
@@ -775,8 +785,8 @@ const PDFGenerator = {
 
       return [
         index + 1,
-        item.startDate || item.shiftDate || startDate || "-",
-        item.endDate || item.shiftDate || startDate || "-",
+        formatDateToDDMMYYYY(item.startDate || item.shiftDate || startDate || "-"),
+        formatDateToDDMMYYYY(item.endDate || item.shiftDate || startDate || "-"),
         item.guards || 1,
         `${Number(item.hours ?? item.qty ?? 0).toFixed(1)}h`,
         fmt(amount),
@@ -976,23 +986,6 @@ const PDFGenerator = {
       fmt(grandTotal),
       {
         bold: true,
-      }
-    );
-
-    summaryRow(
-      "Amount Charged Now",
-      fmt(grandTotal),
-      {
-        bold: true,
-      }
-    );
-
-    summaryRow(
-      "Balance Remaining",
-      "$0.00",
-      {
-        bold: true,
-        valueColor: T.gold,
       }
     );
     renderModernFooter(doc, pw, ph, true);

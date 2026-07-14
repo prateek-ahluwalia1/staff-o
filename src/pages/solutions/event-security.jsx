@@ -274,7 +274,7 @@ export default function EventSecurityHero() {
                 onMouseEnter={() => setIsPrimaryHovered(true)}
                 onMouseLeave={() => setIsPrimaryHovered(false)}
               >
-                Post Your Job
+                Request Security Staff
               </button>
 
               <button
@@ -282,7 +282,7 @@ export default function EventSecurityHero() {
                 onMouseEnter={() => setIsSecondaryHovered(true)}
                 onMouseLeave={() => setIsSecondaryHovered(false)}
               >
-                Find Security Staff
+                See how it works
               </button>
             </div>
           </div>

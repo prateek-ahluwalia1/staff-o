@@ -899,22 +899,25 @@ const ManageStaff = () => {
       <div className="card border-0 shadow-sm rounded-4 overflow-hidden mb-4 jobtracker-table-shell">
         <div className="table-responsive">
           <table
-            className={`table table-hover align-middle mb-0 jobtracker-main-table ${loading ? "opacity-50" : ""
-              }`}
+            className={`table table-hover align-middle mb-0 jobtracker-main-table ${loading ? "opacity-50" : ""}`}
           >
             <thead className="premium-thead">
               <tr>
-                <th className="text-start" style={{ width: "30%" }}>
+                <th className="text-start" style={{ width: "25%" }}>
                   Name & Email
                 </th>
-                <th className="text-start" style={{ width: "20%" }}>
+                <th className="text-start" style={{ width: "15%" }}>
                   Phone
                 </th>
-                <th className="text-start" style={{ width: "20%" }}>
+                <th className="text-start" style={{ width: "15%" }}>
                   Location
                 </th>
                 <th className="text-start" style={{ width: "15%" }}>
                   Status
+                </th>
+                {/* NEW: Created At column */}
+                <th className="text-start" style={{ width: "15%" }}>
+                  Created At
                 </th>
                 <th className="text-start" style={{ width: "15%" }}>
                   Actions
@@ -941,6 +944,12 @@ const ManageStaff = () => {
                     <td className="text-start">
                       <div className="text-dark small">{user?.is_active ? "Active" : "Inactive"}</div>
                     </td>
+                    {/* NEW: Created At cell */}
+                    <td className="text-start">
+                      <span className="small">
+                        {normalizeToDisplay(user.created_at) || "—"}
+                      </span>
+                    </td>
                     <td className="text-start">
                       <div className="btn-group">
                         <button
@@ -961,7 +970,8 @@ const ManageStaff = () => {
                 ))
               ) : (
                 <tr>
-                  <td colSpan="4" className="text-center py-5 text-muted"
+                  {/* Updated colSpan to 6 because we now have 6 columns */}
+                  <td colSpan="6" className="text-center py-5 text-muted"
                     style={{ textTransform: "none" }}
                   >
                     No staff records found.
@@ -971,7 +981,6 @@ const ManageStaff = () => {
             </tbody>
           </table>
         </div>
-
         <div className="card-footer bg-white border-top py-3 px-4 d-flex justify-content-between align-items-center flex-wrap">
           <div className="text-muted small">
             Showing Page <strong>{page}</strong> of <strong>{totalPages}</strong>

@@ -1107,20 +1107,22 @@ const ManageUsers = () => {
               <tr>
                 {activeTab === "staff" ? (
                   <>
-                    <th style={{ width: "25%", textAlign: "left", paddingLeft: "1.5rem" }}>Name & Email</th>
-                    <th style={{ width: "30%", textAlign: "left" }}>Resource Partner</th>
-                    <th style={{ width: "25%", textAlign: "left" }}>Location</th>
+                    <th style={{ width: "30%", textAlign: "left", paddingLeft: "1.5rem" }}>Name & Email</th>
+                    <th style={{ width: "20%", textAlign: "left" }}>Resource Partner</th>
+                    <th style={{ width: "15%", textAlign: "left" }}>Location</th>
+                    <th style={{ width: "15%", textAlign: "left" }}>Created At</th>
                     <th style={{ width: "20%", textAlign: "center" }}>Actions</th>
                   </>
                 ) : (
                   <>
                     <th style={{ width: "30%", textAlign: "left", paddingLeft: "1.5rem" }}>Name & Email</th>
                     {activeTab === "sub_contractor" ? (
-                      <th style={{ width: "25%", textAlign: "left" }}>Business & Phone</th>
+                      <th style={{ width: "20%", textAlign: "left" }}>Business & Phone</th>
                     ) : (
-                      <th style={{ width: "25%", textAlign: "left" }}>Phone</th>
+                      <th style={{ width: "20%", textAlign: "left" }}>Phone</th>
                     )}
-                    <th style={{ width: "25%", textAlign: "left" }}>Location</th>
+                    <th style={{ width: "15%", textAlign: "left" }}>Location</th>
+                    <th style={{ width: "15%", textAlign: "left" }}>Created At</th>
                     <th style={{ width: "20%", textAlign: "center" }}>Actions</th>
                   </>
                 )}
@@ -1170,6 +1172,12 @@ const ManageUsers = () => {
                         ({user.country || "N/A"})
                       </span>
                     </td>
+                    {/* NEW: Created At column */}
+                    <td style={{ textAlign: "left" }}>
+                      <span className="small">
+                        {normalizeToDisplay(user.created_at) || "—"}
+                      </span>
+                    </td>
                     <td style={{ textAlign: "center" }}>
                       <div className="btn-group">
                         <button
@@ -1190,7 +1198,8 @@ const ManageUsers = () => {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={4} className="text-center py-5 text-muted"
+                  {/* Increase colSpan to 5 because we now have 5 columns */}
+                  <td colSpan={5} className="text-center py-5 text-muted"
                     style={{ textTransform: "none" }}
                   >
                     No records found for this category.

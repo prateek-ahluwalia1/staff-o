@@ -518,60 +518,125 @@ const generateEmployeeOnboardingPDF = (formData) => {
 // ─────────────────────────────────────────────────────────────────────────────
 
 const renderModernHeader = (doc, pageWidth, rightTitle) => {
+  const headerHeight = 26;
+  const margin = 15;
+
+  // ===========================
+  // Navy Header Background
+  // ===========================
   doc.setFillColor(...T.navy);
-  doc.rect(0, 0, pageWidth, 26, "F");
-  doc.setFont("helvetica", "bold"); doc.setTextColor(...T.white);
-  doc.setFontSize(20); doc.text("STAFFOO", 16, 17);
-  doc.setFontSize(18); doc.text(rightTitle.toUpperCase(), pageWidth - 16, 17, { align: "right" });
-  return 40;
+  doc.rect(0, 0, pageWidth, headerHeight, "F");
+
+  // ===========================
+  // STAFFOO Logo
+  // ===========================
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(22);
+  doc.setTextColor(...T.white);
+  doc.text("STAFFOO", margin, 17);
+
+  // ===========================
+  // Right Title (INVOICE)
+  // ===========================
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(18);
+  doc.setTextColor(...T.white);
+  doc.text(
+    rightTitle.toUpperCase(),
+    pageWidth - margin,
+    17,
+    { align: "right" }
+  );
+
+  // ===========================
+  // Start content below header
+  // ===========================
+  return headerHeight + 14;
 };
 
-const drawGoldLine = (doc, y, pw, mg = 15) => {
+const drawGoldLine = (doc, y, pageWidth, margin = 15) => {
   doc.setDrawColor(...T.gold);
-  doc.setLineWidth(1.2);
-  doc.line(mg, y, pw - mg, y);
-  return y + 8;
+  doc.setLineWidth(0.5);
+  doc.line(margin, y, pageWidth - margin, y);
+
+  return y + 6;
 };
-const renderModernFooter = (doc, pw, ph, showStripeBadge = false) => {
-  // Use the real page width to ensure true centring
-  const pageWidth = doc.internal.pageSize.getWidth();  // e.g. 210 for A4
+
+const renderModernFooter = (doc, pageWidth, pageHeight, showStripeBadge = false) => {
   const centerX = pageWidth / 2;
+  let y = pageHeight - 28;
 
-  let fy = ph - 22;
-
+  // ==========================================
+  // Stripe Notice
+  // ==========================================
   if (showStripeBadge) {
-    // Badge dimensions
-    const badgeWidth = 56;
-    const badgeHeight = 6;
-    const badgeX = centerX - badgeWidth / 2;
+    const badgeWidth = 125;
+    const badgeHeight = 8;
+    const badgeX = (pageWidth - badgeWidth) / 2;
 
-    // Draw badge background
-    doc.setDrawColor(...T.greenBorder);
     doc.setFillColor(...T.greenFill);
-    doc.rect(badgeX, fy, badgeWidth, badgeHeight, "FD");
+    doc.setDrawColor(...T.greenBorder);
+    doc.setLineWidth(0.3);
 
-    // Prepare text
-    const text = "✓ Payment Held via Stripe";
-    doc.setFontSize(7);
+    doc.roundedRect(
+      badgeX,
+      y,
+      badgeWidth,
+      badgeHeight,
+      2,
+      2,
+      "FD"
+    );
+
     doc.setFont("helvetica", "bold");
+    doc.setFontSize(7);
     doc.setTextColor(...T.greenText);
 
-    // Measure text width to centre it perfectly
-    const textWidth = doc.getTextWidth(text);
-    const textX = badgeX + (badgeWidth - textWidth) / 4;
-    const textY = fy + badgeHeight / 2 + 0.6; // visual vertical centring (font size 7)
+    doc.text(
+      "Payment held via Stripe, and the hold will be released after completion of the shift.",
+      centerX,
+      y + 5,
+      {
+        align: "center",
+      }
+    );
 
-    doc.text(text, textX, textY);
-
-    fy += 10; // leave space after badge
+    y += 13;
   }
 
-  // Rest of the footer (same centring logic)
-  doc.setFontSize(10);
+  // ==========================================
+  // Thank You
+  // ==========================================
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(9);
+  doc.setTextColor(...T.text);
+
+  doc.text(
+    "Thank you for choosing STAFFOO.",
+    centerX,
+    y,
+    {
+      align: "center",
+    }
+  );
+
+  y += 5;
+
+  // ==========================================
+  // Billing
+  // ==========================================
   doc.setFont("helvetica", "normal");
+  doc.setFontSize(8);
   doc.setTextColor(...T.muted);
-  doc.text("Thank you for choosing Staffoo Facility Services.", centerX, fy, { align: "center" });
-  doc.text("For billing enquiries contact admin@staffoo.com.au | ABN: 48 613 317 838", centerX, fy + 4, { align: "center" });
+
+  doc.text(
+    "For billing enquiries contact admin@staffoo.com.au | ABN: 48 613 317 838",
+    centerX,
+    y,
+    {
+      align: "center",
+    }
+  );
 };
 
 const PDFGenerator = {
@@ -580,78 +645,356 @@ const PDFGenerator = {
   generateEmployeeOnboardingPDF,
 
   generateInvoicePDF: (invoiceData) => {
-    const { invoiceNo, currency = "AUD", startDate, dueDate, to, items, subtotal, gstAmount, lateFeeAmount, grandTotal, includeGst, gstPercent } = invoiceData;
-    const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4", compress: true });
-    const pw = doc.internal.pageSize.getWidth(), ph = doc.internal.pageSize.getHeight(), mg = 15;
+    const {
+      invoiceNo,
+      currency = "AUD",
+      startDate,
+      dueDate,
+      paymentRef,
+      paymentOption = "Full Payment",
+      to,
+      items,
+      subtotal,
+      gstAmount,
+      lateFeeAmount,
+      discountAmount = 0,
+      discountPercent = 0,
+      grandTotal,
+      includeGst,
+      gstPercent,
+    } = invoiceData;
 
-    let y = renderModernHeader(doc, pw, "INVOICE");
+    const doc = new jsPDF({
+      orientation: "portrait",
+      unit: "mm",
+      format: "a4",
+      compress: true,
+    });
 
-    doc.setFont("helvetica", "bold"); doc.setFontSize(10); doc.setTextColor(...T.text);
-    doc.text("Bill To:", mg, y);
-    doc.setFont("helvetica", "normal"); doc.setFontSize(9);
-    doc.text(to.name || "-", mg, y + 6);
-    if (to.email) doc.text(to.email, mg, y + 12);
-    if (to.phone) doc.text(to.phone, mg, y + 18);
-
+    const pw = doc.internal.pageSize.getWidth();
+    const ph = doc.internal.pageSize.getHeight();
+    const mg = 15;
     const rightAlignParams = { align: "right" };
-    const rLabelX = pw - mg - 35, rValX = pw - mg;
-    const addRMeta = (lbl, val, yOff) => {
-      doc.setFont("helvetica", "bold"); doc.text(lbl, rLabelX, y + yOff, rightAlignParams);
-      doc.setFont("helvetica", "normal"); doc.text(String(val), rValX, y + yOff, rightAlignParams);
+
+    let y = renderModernHeader(doc, pw, "Invoice");
+
+    // ==========================
+    // Bill To
+    // ==========================
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(10);
+    doc.setTextColor(...T.text);
+    doc.text("Bill To:", mg, y);
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+
+    let billY = y + 6;
+
+    if (to?.name) {
+      doc.text(to.name, mg, billY);
+      billY += 6;
+    }
+
+    if (to?.email) {
+      doc.text(to.email, mg, billY);
+      billY += 6;
+    }
+
+    if (to?.phone) {
+      doc.text(to.phone, mg, billY);
+    }
+
+    // ==========================
+    // Invoice Information
+    // ==========================
+
+    const labelX = pw - mg - 35;
+    const valueX = pw - mg;
+
+    const metaRow = (label, value, yy) => {
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(9);
+      doc.setTextColor(...T.text);
+
+      doc.text(label, labelX, yy, {
+        align: "right",
+      });
+
+      doc.setFont("helvetica", "normal");
+
+      doc.text(
+        value ? String(value) : "-",
+        valueX,
+        yy,
+        {
+          align: "right",
+        }
+      );
     };
 
-    addRMeta("Invoice #:", `${invoiceNo}`, 0);
-    addRMeta("Date:", startDate, 6);
-    if (dueDate) addRMeta("Due Date:", dueDate, 12);
-    addRMeta("Payment Option:", "Full Payment", 18);
+    metaRow("Invoice #:", invoiceNo, y);
 
-    y = drawGoldLine(doc, y + 26, pw, mg);
+    metaRow("Date:", startDate, y + 6);
+
+    if (dueDate) {
+      metaRow("Due Date:", dueDate, y + 12);
+    }
+
+    metaRow(
+      "Payment Option:",
+      paymentOption,
+      y + 18
+    );
+
+    if (paymentRef) {
+      metaRow(
+        "Payment Ref:",
+        paymentRef,
+        y + 24
+      );
+    }
+
+    y = drawGoldLine(
+      doc,
+      y + (paymentRef ? 32 : 26),
+      pw,
+      mg
+    );
+
 
     doc.setFontSize(11); doc.setFont("helvetica", "bold"); doc.setTextColor(...T.navy);
     doc.text("Shift Details", mg, y + 2); y += 6;
 
-    const fmt = (v) => `$${Number(v || 0).toFixed(2)}`;
-    const td = items.map((i, idx) => {
-      const lt = (Number(i.qty) || 0) * (Number(i.rate) || 0);
-      return [idx + 1, i.description || "-", "", "1", `${(Number(i.qty) || 0).toFixed(1)}h`, fmt(lt)];
+    const fmt = (value) => `$${Number(value || 0).toFixed(2)}`;
+
+    const td = items.map((item, index) => {
+      const amount =
+        item.amount ??
+        ((Number(item.qty || 0) * Number(item.rate || 0)));
+
+      return [
+        index + 1,
+        item.startDate || item.shiftDate || startDate || "-",
+        item.endDate || item.shiftDate || startDate || "-",
+        item.guards || 1,
+        `${Number(item.hours ?? item.qty ?? 0).toFixed(1)}h`,
+        fmt(amount),
+      ];
     });
 
     const ptw = pw - mg * 2;
+
     autoTable(doc, {
-      startY: y, head: [["#", "Details", "", "Guard", "Hrs / Guard", `Amount (${currency})`]], body: td, tableWidth: ptw, theme: "plain",
-      headStyles: { fillColor: T.navy, textColor: T.white, fontStyle: "bold", fontSize: 9, cellPadding: 4, valign: "middle" },
-      bodyStyles: { fontSize: 9, textColor: T.text, cellPadding: { top: 4, bottom: 4, left: 4, right: 4 }, lineColor: T.lineGray, lineWidth: { bottom: 0.1 }, valign: "middle" },
-      margin: { left: mg, right: mg },
-      columnStyles: { 0: { cellWidth: ptw * 0.05, halign: "center" }, 1: { cellWidth: ptw * 0.40, halign: "left" }, 2: { cellWidth: ptw * 0.15, halign: "left" }, 3: { cellWidth: ptw * 0.10, halign: "center" }, 4: { cellWidth: ptw * 0.15, halign: "center" }, 5: { cellWidth: ptw * 0.15, halign: "right" } }
+      startY: y,
+
+      head: [[
+        "#",
+        "Start Date",
+        "End Date",
+        "Guards",
+        "Hours",
+        `Amount (${currency})`
+      ]],
+
+      body: td,
+
+      theme: "plain",
+
+      tableWidth: ptw,
+
+      margin: {
+        left: mg,
+        right: mg,
+      },
+
+      headStyles: {
+        fillColor: T.navy,
+        textColor: T.white,
+        fontStyle: "bold",
+        fontSize: 9,
+        cellPadding: 4,
+        halign: "center",
+        valign: "middle",
+      },
+
+      bodyStyles: {
+        fontSize: 9,
+        textColor: T.text,
+        cellPadding: 4,
+        valign: "middle",
+        lineColor: T.lineGray,
+        lineWidth: {
+          bottom: 0.2,
+        },
+      },
+
+      columnStyles: {
+        0: {
+          cellWidth: ptw * 0.08,
+          halign: "center",
+        },
+
+        1: {
+          cellWidth: ptw * 0.22,
+          halign: "left",
+        },
+
+        2: {
+          cellWidth: ptw * 0.22,
+          halign: "left",
+        },
+
+        3: {
+          cellWidth: ptw * 0.12,
+          halign: "center",
+        },
+
+        4: {
+          cellWidth: ptw * 0.16,
+          halign: "center",
+        },
+
+        5: {
+          cellWidth: ptw * 0.20,
+          halign: "right",
+        },
+      },
     });
 
-    y = autoTable.finalY || doc.lastAutoTable.finalY + 15;
+    y = doc.lastAutoTable.finalY + 10;
+
     y = drawGoldLine(doc, y, pw, mg);
 
-    doc.setFontSize(11); doc.setFont("helvetica", "bold"); doc.setTextColor(...T.navy);
-    doc.text("Payment Breakdown", mg, y + 6);
+    // ==========================================
+    // Payment Breakdown
+    // ==========================================
 
-    let ty = y + 6;
-    const tlx = pw - mg - 30, tvx = pw - mg;
-    const addSum = (lbl, val, bold = false) => {
-      doc.setFontSize(9); doc.setFont("helvetica", bold ? "bold" : "normal"); doc.setTextColor(...T.muted);
-      doc.text(lbl, tlx, ty, rightAlignParams); doc.setTextColor(...T.text); doc.text(val, tvx, ty, rightAlignParams); ty += 6;
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(11);
+    doc.setTextColor(...T.navy);
+    doc.text("Payment Breakdown", mg, y + 5);
+
+    let ty = y + 14;
+
+    const summaryLabelX = pw - mg - 35;
+    const summaryValueX = pw - mg;
+
+    const summaryRow = (
+      label,
+      value,
+      {
+        labelColor = T.muted,
+        valueColor = T.text,
+        bold = false,
+        background = null,
+      } = {}
+    ) => {
+
+      if (background) {
+        doc.setFillColor(...background);
+        doc.rect(mg, ty - 4.5, pw - mg * 2, 8, "F");
+      }
+
+      doc.setFont(
+        "helvetica",
+        bold ? "bold" : "normal"
+      );
+
+      doc.setFontSize(9);
+
+      doc.setTextColor(...labelColor);
+
+      doc.text(
+        label,
+        summaryLabelX,
+        ty,
+        {
+          align: "right",
+        }
+      );
+
+      doc.setTextColor(...valueColor);
+
+      doc.text(
+        value,
+        summaryValueX,
+        ty,
+        {
+          align: "right",
+        }
+      );
+
+      ty += 6;
     };
 
-    addSum("Subtotal", fmt(subtotal));
-    if (includeGst) addSum(`GST / Service Fee (${gstPercent}%)`, fmt(gstAmount));
-    if (lateFeeAmount > 0) addSum("Late Fee", fmt(lateFeeAmount));
+    // -----------------------------
 
-    ty += 2; drawGoldLine(doc, ty, pw, mg); ty += 8;
+    summaryRow(
+      "Subtotal",
+      fmt(subtotal)
+    );
 
-    doc.setFontSize(11); doc.setFont("helvetica", "bold"); doc.setTextColor(...T.text);
-    doc.text("Total Amount", tlx, ty, rightAlignParams); doc.text(fmt(grandTotal), tvx, ty, rightAlignParams); ty += 6;
+    if (includeGst) {
+      summaryRow(
+        `GST (${gstPercent}%)`,
+        fmt(gstAmount)
+      );
+    }
 
-    doc.setFontSize(10); doc.setTextColor(...T.muted);
-    doc.text("Amount Charged Now", tlx, ty, rightAlignParams); doc.setTextColor(...T.text); doc.text(fmt(grandTotal), tvx, ty, rightAlignParams); ty += 6;
+    if (lateFeeAmount > 0) {
+      summaryRow(
+        "Late Fee",
+        fmt(lateFeeAmount)
+      );
+    }
 
-    doc.text("Balance Remaining", tlx, ty, rightAlignParams); doc.setTextColor(...T.gold); doc.text("$0.00", tvx, ty, rightAlignParams);
+    if (discountAmount > 0) {
+      summaryRow(
+        `Discount (${discountPercent}%)`,
+        `- ${fmt(discountAmount)}`,
+        {
+          valueColor: T.gold,
+        }
+      );
+    }
 
+    // Small Divider
+
+    doc.setDrawColor(...T.lineGray);
+    doc.setLineWidth(0.3);
+
+    doc.line(
+      pw - 70,
+      ty - 4,
+      pw - mg,
+      ty - 4
+    );
+
+    summaryRow(
+      "Total Amount",
+      fmt(grandTotal),
+      {
+        bold: true,
+      }
+    );
+
+    summaryRow(
+      "Amount Charged Now",
+      fmt(grandTotal),
+      {
+        bold: true,
+      }
+    );
+
+    summaryRow(
+      "Balance Remaining",
+      "$0.00",
+      {
+        bold: true,
+        valueColor: T.gold,
+      }
+    );
     renderModernFooter(doc, pw, ph, true);
     return doc;
   },

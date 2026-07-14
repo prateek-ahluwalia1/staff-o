@@ -344,7 +344,7 @@ function Header() {
         {!token ? (
           <>
             <NavLink to="/login" className="btn-nav-ghost">
-              Sign In
+              Sign in
             </NavLink>
 
             <NavLink to="/register" className="btn-nav-solid">

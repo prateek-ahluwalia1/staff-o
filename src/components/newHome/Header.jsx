@@ -215,7 +215,8 @@ function Header() {
         flexWrap: 'nowrap',
         gap: '16px',
       }}
-    >      <div className="nav-left">
+    >
+      <div className="nav-left">
         {/* Updated Logo Layout containing your image asset */}
         <NavLink className="logo d-flex align-items-center" to="/" style={{ textDecoration: 'none' }}>
           <img
@@ -233,7 +234,7 @@ function Header() {
                 <NavLink to="/solutions/event-security" onClick={handleLinkClick}>Event Security</NavLink>
                 {/* <NavLink to="/solutions/retail-security" onClick={handleLinkClick}>Retail Security</NavLink>
                 <NavLink to="/solutions/warehouse-logistics-security" onClick={handleLinkClick}>Warehouse Logistics Security</NavLink>
-                {/* <NavLink to="/solutions/corporate-security" onClick={handleLinkClick}>Corporate Security</NavLink>
+                <NavLink to="/solutions/corporate-security" onClick={handleLinkClick}>Corporate Security</NavLink>
                 <NavLink to="/solutions/government-security" onClick={handleLinkClick}>Government Security</NavLink>
                 <NavLink to="/solutions/healthcare-security" onClick={handleLinkClick}>Healthcare Security</NavLink>
                 <NavLink to="/solutions/transport-security" onClick={handleLinkClick}>Transport Security</NavLink>
@@ -252,9 +253,10 @@ function Header() {
             </div>
           </div>
 
+          {/* Fixed: removed nested JSX comments that were causing syntax errors */}
           {/* <div className={`nav-item-dropdown ${openDropdown === 'features' ? 'mobile-expanded' : ''}`}>
             <span onClick={() => { if (window.innerWidth < 992) setOpenDropdown(openDropdown === 'features' ? null : 'features') }} style={{ color: '#ccc', cursor: 'pointer', fontFamily: "'Barlow Condensed', sans-serif", fontSize: '14px', fontWeight: 600, letterSpacing: '0.1em' }}>Features <i className="fa fa-chevron-down" style={{ color: '#0A7C6E', fontSize: '11px', marginLeft: '3px' }}></i></span>
-            {/* <div className="dropdown-content">
+            <div className="dropdown-content">
               <NavLink to="/features/gps-guard-tracking" onClick={handleLinkClick}>GPS Guard Tracking</NavLink>
               <NavLink to="/features/time-rooster" onClick={handleLinkClick}>Time Rooster</NavLink>
               <NavLink to="/features/security-staff-recruitment" onClick={handleLinkClick}>Security Staff Recruitment</NavLink>
@@ -264,8 +266,8 @@ function Header() {
               <NavLink to="/features/payslip-pay-sheet" onClick={handleLinkClick}>Payslip, Pay Sheet</NavLink>
               <NavLink to="/features/job-handshake" onClick={handleLinkClick}>Job Handshake</NavLink>
               <NavLink to="/features/workforce-dashboard" onClick={handleLinkClick}>Workforce Dashboard</NavLink>
-            </div> */}
-          </div>
+            </div>
+          </div> */}
 
           {/* <NavLink to="/pricing" onClick={handleLinkClick} style={{ color: '#ccc', textDecoration: 'none', fontFamily: "'Barlow Condensed', sans-serif", fontSize: '14px', fontWeight: 600, letterSpacing: '0.1em' }}>Pricing</NavLink> */}
 
@@ -276,7 +278,7 @@ function Header() {
               {/* <NavLink to="/resources/pr-news" onClick={handleLinkClick}>PR/News</NavLink>
               <NavLink to="/resources/case-studies" onClick={handleLinkClick}>Case Studies</NavLink> */}
             </div>
-          </div> */}
+          </div>
 
           {/* <div className={`nav-item-dropdown ${openDropdown === 'company' ? 'mobile-expanded' : ''}`}>
             <span onClick={() => { if (window.innerWidth < 992) setOpenDropdown(openDropdown === 'company' ? null : 'company') }} style={{ color: '#ccc', cursor: 'pointer', fontFamily: "'Barlow Condensed', sans-serif", fontSize: '14px', fontWeight: 600, letterSpacing: '0.1em' }}>Company <i className="fa fa-chevron-down" style={{ color: '#0A7C6E', fontSize: '11px', marginLeft: '3px' }}></i></span>
@@ -350,47 +352,47 @@ function Header() {
             </NavLink>
 
             <style>{`
-    .btn-nav-ghost {
-      color: #fff;
-      border: 1px solid #fff;
-      text-align: center;
-      padding: 10px 16px;
-      border-radius: 5px;
-      text-decoration: none;
-      font-weight: bold;
-      transition: all 0.3s ease;
-      display: inline-block;
-      margin-right: 10px;
-    }
+              .btn-nav-ghost {
+                color: #fff;
+                border: 1px solid #fff;
+                text-align: center;
+                padding: 10px 16px;
+                border-radius: 5px;
+                text-decoration: none;
+                font-weight: bold;
+                transition: all 0.3s ease;
+                display: inline-block;
+                margin-right: 10px;
+              }
 
-    .btn-nav-ghost:hover {
-      background: #fff;
-      color: #0A7C6E;
-      transform: translateY(-2px);
-      box-shadow: 0 6px 14px rgba(0,0,0,0.15);
-    }
+              .btn-nav-ghost:hover {
+                background: #fff;
+                color: #0A7C6E;
+                transform: translateY(-2px);
+                box-shadow: 0 6px 14px rgba(0,0,0,0.15);
+              }
 
-    .btn-nav-solid {
-      background: #0A7C6E;
-      color: #fff;
-      border: 1px solid #0A7C6E;
-      text-align: center;
-      padding: 10px 16px;
-      border-radius: 5px;
-      text-decoration: none;
-      font-weight: bold;
-      box-shadow: 0 4px 12px rgba(10,124,110,0.3);
-      transition: all 0.3s ease;
-      display: inline-block;
-    }
+              .btn-nav-solid {
+                background: #0A7C6E;
+                color: #fff;
+                border: 1px solid #0A7C6E;
+                text-align: center;
+                padding: 10px 16px;
+                border-radius: 5px;
+                text-decoration: none;
+                font-weight: bold;
+                box-shadow: 0 4px 12px rgba(10,124,110,0.3);
+                transition: all 0.3s ease;
+                display: inline-block;
+              }
 
-    .btn-nav-solid:hover {
-      background: #08695d;
-      border-color: #08695d;
-      transform: translateY(-2px);
-      box-shadow: 0 8px 18px rgba(10,124,110,0.4);
-    }
-  `}</style>
+              .btn-nav-solid:hover {
+                background: #08695d;
+                border-color: #08695d;
+                transform: translateY(-2px);
+                box-shadow: 0 8px 18px rgba(10,124,110,0.4);
+              }
+            `}</style>
           </>
         ) : (
           <>

@@ -13,7 +13,7 @@ export default function ProfileForm({
   extraFields = null,
   footer = null,
   isEdit = false,
-  showPhoneOtp = false
+  showPhoneOtp = false,
 }) {
   const datePickerRef = useRef(null);
 
@@ -55,7 +55,6 @@ export default function ProfileForm({
         opt.label === formData.origin_country
     ) || null;
 
-
   return (
     <form id="profile-form" onSubmit={onSubmit} className="w-100">
       <div className="card border-0 shadow-sm rounded-4 overflow-hidden bg-white">
@@ -70,7 +69,6 @@ export default function ProfileForm({
         {/* Form Body */}
         <div className="card-body px-4 px-md-5 py-4 py-md-5">
           <div className="row g-4">
-
             {/* Full Name */}
             <div className="col-md-6">
               <label htmlFor="name" className="form-label fw-semibold text-dark">
@@ -126,31 +124,36 @@ export default function ProfileForm({
               )}
             </div>
 
-            {/* Phone */}
+            {/* Phone – UPDATED to be editable only when no phone saved */}
             {userType !== "admin" && (
               <div className="col-md-6">
-                <div
-                  className="d-flex justify-content-between align-items-center mb-2">
+                <div className="d-flex justify-content-between align-items-center mb-2">
                   <label htmlFor="phone" className="form-label fw-semibold text-dark mb-0">
                     Phone Number <span className="text-danger">*</span>
                   </label>
                   {showPhoneOtp && formData.phone && (
                     <span
                       className={`badge rounded-pill px-2 py-1 ${isPhoneVerified
-                        ? "bg-success bg-opacity-10 text-success border border-success"
-                        : "bg-danger bg-opacity-10 text-danger border border-danger"
+                          ? "bg-success bg-opacity-10 text-success border border-success"
+                          : "bg-danger bg-opacity-10 text-danger border border-danger"
                         }`}
                       style={{ fontSize: "0.75rem" }}
-                    >
-                    </span>
+                    />
                   )}
                 </div>
 
                 {showPhoneOtp ? (
-                  <div className="input-group shadow-none"
-                    style={{ border: isPhoneVerified ? "1px solid #198754" : "1px solid #dc3545", borderRadius: "0.375rem" }}
+                  <div
+                    className="input-group shadow-none"
+                    style={{
+                      border: isPhoneVerified ? "1px solid #198754" : "1px solid #dc3545",
+                      borderRadius: "0.375rem",
+                    }}
                   >
-                    <span className={`input-group-text bg-light border-light-subtle px-3 py-2 ${isPhoneVerified ? "text-success" : "text-muted"}`}>
+                    <span
+                      className={`input-group-text bg-light border-light-subtle px-3 py-2 ${isPhoneVerified ? "text-success" : "text-muted"
+                        }`}
+                    >
                       <i className="fa-solid fa-phone"></i>
                     </span>
                     <input
@@ -158,19 +161,33 @@ export default function ProfileForm({
                       className={`form-control border-light-subtle border-start-0 ps-0 bg-light py-2 ${isPhoneVerified ? "text-success fw-bold" : ""
                         }`}
                       id="phone"
-                      required
                       placeholder="+61 400 000 000"
                       value={formData.phone || ""}
-                      readOnly
-                      style={{ fontSize: "1rem", cursor: "default" }}
+                      // 🔽 Editable only when no phone is saved
+                      readOnly={!!formData.phone}
+                      style={{
+                        fontSize: "1rem",
+                        cursor: formData.phone ? "default" : "text",
+                      }}
+                      // Only require pattern when the user can actually type
+                      {...(formData.phone
+                        ? {}
+                        : {
+                          required: true,
+                          maxLength: 15,
+                          pattern: "^(?:\\+?61|0)[2-478](?:[\\s\\-]*\\d){8}$",
+                          title:
+                            "Valid Australian phone required (e.g., 0400 000 000 or +61 400 000 000)",
+                          onChange: onChange, // allow typing when empty
+                        })}
                     />
                     <button
                       type="button"
                       className={`btn fw-medium px-4 py-2 ${!formData.phone
-                        ? "btn-danger"
-                        : isPhoneVerified
-                          ? "btn-outline-success border-light-subtle"
-                          : "btn-danger"
+                          ? "btn-danger"
+                          : isPhoneVerified
+                            ? "btn-outline-success border-light-subtle"
+                            : "btn-danger"
                         }`}
                       onClick={onChangePhone}
                       style={{ zIndex: 0, fontSize: "1rem" }}
@@ -179,6 +196,7 @@ export default function ProfileForm({
                     </button>
                   </div>
                 ) : (
+                  // Fallback for non‑OTP contexts – remains as before
                   <div className="input-group shadow-none">
                     <span className="input-group-text bg-light border-light-subtle text-muted px-3 py-2">
                       <i className="fa-solid fa-phone"></i>
@@ -192,8 +210,7 @@ export default function ProfileForm({
                       required
                       onChange={onChange}
                       maxLength="15"
-                      required
-                      pattern="^(?:\+?61|0)[2-478](?:[\s\-]*\d){8}$"
+                      pattern="^(?:\\+?61|0)[2-478](?:[\\s\\-]*\\d){8}$"
                       title="Valid Australian phone required (e.g., 0400 000 000)"
                       style={{ fontSize: "1rem" }}
                     />

@@ -287,7 +287,7 @@ const RatesList = ({ forcedType } = {}) => {
                         {r.title || r.name}
                       </div>
                       <small className="text-muted">
-                        {isCharge ? "Customer charge" : "Staff pay"}
+                        {isCharge ? "Client charge" : "Staff pay"}
                       </small>
                     </td>
                     <td className="fw-bold text-success">
@@ -489,7 +489,9 @@ const RatesList = ({ forcedType } = {}) => {
                       ? "Edit Rate Details"
                       : addButton}
                 </h4>
-                <p className="text-muted small mb-0 mt-1 ms-5">
+                <p className="text-muted small mb-0 mt-1 ms-5"
+                  style={{ textTransform: "none" }}
+                >
                   Ensure all hourly rates are accurate for Metro and Regional
                   areas.
                 </p>

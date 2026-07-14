@@ -16,23 +16,23 @@ export default function WhyChooseStaffoo() {
     const features = [
         {
             id: 1,
-            title: "Verified compliance, not self-declared",
-            description: "Every guard's security licence, white card and induction status is checked against the issuing register before they're eligible for a shift — not taken on trust at sign-up."
+            title: "Compliant Profiles",
+            description: "Every security worker uploads their licence, ABN, and certifications on the site."
         },
         {
             id: 2,
-            title: "Verified compliance, not self-declared",
-            description: "Every guard's security licence, white card and induction status is checked against the issuing register before they're eligible for a shift — not taken on trust at sign-up."
+            title: "Fast Job Posting",
+            description: "Post an event security job in just minutes—no need to fill a long form. Qualified candidates may see your job and can apply instantly."
         },
         {
             id: 3,
-            title: "Verified compliance, not self-declared",
-            description: "Every guard's security licence, white card and induction status is checked against the issuing register before they're eligible for a shift — not taken on trust at sign-up."
+            title: "Real-time Tracking",
+            description: "Staffoo monitors staff location and status during the work hours of the event. We provide GPS tracking only while the workers are on duty. We ensure to keep privacy and safety balanced."
         },
         {
             id: 4,
-            title: "Verified compliance, not self-declared",
-            description: "Every guard's security licence, white card and induction status is checked against the issuing register before they're eligible for a shift — not taken on trust at sign-up."
+            title: "Secure Payments",
+            description: "All payments on Staffoo are processed through Stripe. We do not deal in cash, ultimately resulting in fast, secure payments. Security guards get paid after a successful completion of their shift."
         }
     ];
 
@@ -40,12 +40,12 @@ export default function WhyChooseStaffoo() {
         wrapper: {
             width: "100%",
             background: "#0b1111", // Deep dark background matching previous sections
-            padding: isMobile ? "60px 20px" : "50px 40px",
+            padding: isMobile ? "60px 20px" : "40px 40px",
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
             boxSizing: "border-box",
-            fontFamily: "'Poppins',",
+            fontFamily: "'Poppins', 'Inter', 'Segoe UI', sans-serif",
         },
         headerBlock: {
             textAlign: "center",
@@ -54,7 +54,6 @@ export default function WhyChooseStaffoo() {
         },
         subheading: {
             fontSize: "12px",
-            // fontWeight: "700",
             color: "#00c9a7", // Accent bright teal
             textTransform: "capitalize",
             letterSpacing: "0.02em",
@@ -67,13 +66,8 @@ export default function WhyChooseStaffoo() {
             lineHeight: "1.1",
             margin: "0 0 16px 0",
             letterSpacing: "-0.01em",
-
             width: "100%",
             maxWidth: "100%",
-
-            // whiteSpace: "nowrap",
-            // overflow: "hidden",
-            // textOverflow: "ellipsis",
         },
         tagline: {
             fontSize: isMobile ? "11px" : "13px",
@@ -140,12 +134,12 @@ export default function WhyChooseStaffoo() {
         <div style={styles.wrapper}>
             {/* Top Header Section */}
             <div style={styles.headerBlock}>
-                <h4 style={styles.subheading}>Why Choose Staffoo</h4>
+                <h4 style={styles.subheading}>Why Choose Us</h4>
                 <h2 style={styles.heading}>
-                    Built for organisers who can't afford a security gap
+                    Staffoo Is the Smarter Choice for Event Security Hiring
                 </h2>
                 <p style={styles.tagline}>
-                    Four things set a managed staffing platform apart from a contact list of contractors.
+                    Are you wasting your time on unscreened and unverified staff? Staffoo gives you a clear view of licensed event security guards with its built-in compliance support tools.
                 </p>
             </div>
 

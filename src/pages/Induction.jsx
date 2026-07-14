@@ -1,10 +1,9 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import useFetch from "../hooks/useFetch";
 import useSubmit from "../hooks/useSubmit";
 import "../assets/css/induction.css";
 import { useSelector } from "react-redux";
 import Loader from "../components/Loader";
-import { Link } from 'react-router-dom';
 import Select from "react-select";
 import { apiURL } from "../utils/exports";
 import { toast } from "react-toastify";
@@ -47,7 +46,6 @@ export default function Induction() {
         label: state.name
     }));
 
-
     const staffList = useMemo(() => {
         return staffResponse?.data?.data || [];
     }, [staffResponse?.data?.data]);
@@ -59,16 +57,19 @@ export default function Induction() {
         }));
 
         return [
-            {
-                value: "all",
-                label: "Select All Staff"
-            },
+            { value: "all", label: "Select All Staff" },
             ...options
         ];
     }, [staffList]);
 
     const inductions = listResponse?.data || listResponse || [];
     const historyRows = getHistoryRows(historyResponse);
+
+    // ---------- Pagination state for history modal ----------
+    const [historyPage, setHistoryPage] = useState(1);
+    const [historyTotalPages, setHistoryTotalPages] = useState(1);
+    const historyPerPage = 10; // can be adjusted
+    // --------------------------------------------------------
 
     const [activeModal, setActiveModal] = useState(null);
     const [selectedInduction, setSelectedInduction] = useState(null);
@@ -81,51 +82,48 @@ export default function Induction() {
     ]);
 
     const [shareState, setShareState] = useState("");
-    const [selectedStaff, setSelectedStaff] = useState([]); // Array of IDs
+    const [selectedStaff, setSelectedStaff] = useState([]);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [deleteInductionId, setDeleteInductionId] = useState(null);
 
-    // Reusing the react-select custom styles
+    // React-select custom styles (unchanged)
     const customSelectStyles = {
         control: (provided, state) => ({
             ...provided,
+            textTransform: "none",
             borderColor: state.isFocused ? '#0A7C6E' : '#d1d5db',
             boxShadow: state.isFocused ? '0 0 0 1px #0A7C6E' : 'none',
-            '&:hover': {
-                borderColor: '#0A7C6E',
-            },
+            '&:hover': { borderColor: '#0A7C6E' },
         }),
         option: (provided, state) => ({
             ...provided,
-            backgroundColor: state.isSelected
-                ? '#0A7C6E'
-                : state.isFocused
-                    ? '#E6F4F2'
-                    : '#fff',
+            backgroundColor: state.isSelected ? '#0A7C6E' : state.isFocused ? '#E6F4F2' : '#fff',
             color: state.isSelected ? '#fff' : '#000',
         }),
-        singleValue: (provided) => ({
-            ...provided,
-            color: '#0A7C6E',
-            fontWeight: 500,
-        }),
+        singleValue: (provided) => ({ ...provided, color: '#0A7C6E', fontWeight: 500 }),
         menuPortal: base => ({ ...base, zIndex: 9999 }),
-        multiValue: (provided) => ({
-            ...provided,
-            backgroundColor: '#E6F4F2',
-        }),
-        multiValueLabel: (provided) => ({
-            ...provided,
-            color: '#0A7C6E',
-        }),
+        multiValue: (provided) => ({ ...provided, backgroundColor: '#E6F4F2' }),
+        multiValueLabel: (provided) => ({ ...provided, color: '#0A7C6E' }),
         multiValueRemove: (provided) => ({
             ...provided,
             color: '#0A7C6E',
-            ':hover': {
-                backgroundColor: '#0A7C6E',
-                color: 'white',
-            },
+            ':hover': { backgroundColor: '#0A7C6E', color: 'white' },
         }),
+    };
+
+    // Extract total pages from API response
+    useEffect(() => {
+        if (historyResponse) {
+            // Try multiple possible locations for pagination data
+            const meta = historyResponse?.data?.meta || historyResponse?.meta || {};
+            const lastPage = meta?.last_page || historyResponse?.data?.last_page || 1;
+            setHistoryTotalPages(Number(lastPage));
+        }
+    }, [historyResponse]);
+
+    // Helper to fetch history for a specific page
+    const fetchHistory = (inductionId, page = 1) => {
+        refetchHistory(`api/induction-history/${inductionId}?page=${page}&per_page=${historyPerPage}`);
     };
 
     const openModal = (type, induction = null) => {
@@ -133,7 +131,8 @@ export default function Induction() {
         setActiveModal(type);
 
         if (type === "history" && induction?.id) {
-            refetchHistory(`api/induction-history/${induction.id}`);
+            setHistoryPage(1); // reset to first page
+            fetchHistory(induction.id, 1);
         }
 
         if (type === 'create') {
@@ -171,11 +170,11 @@ export default function Induction() {
     const closeModal = () => {
         setActiveModal(null);
         setSelectedInduction(null);
-        // Reset share states when closing modals
         setShareState("");
         setSelectedStaff([]);
     };
 
+    // ---- Form handling functions (unchanged) ----
     const addSubtitle = () => setFormSubtitles([...formSubtitles, ""]);
     const removeSubtitle = (index) => {
         const updated = [...formSubtitles];
@@ -202,7 +201,6 @@ export default function Induction() {
     const handleQuestionChange = (index, field, value) => {
         const updated = [...formQuestions];
         const q = updated[index];
-
         if (field === "file") {
             handleQuestionFileUpload(index, value);
         } else {
@@ -279,13 +277,11 @@ export default function Induction() {
             toast.error("Please select both state and at least one staff member");
             return;
         }
-
         const payload = {
             questionnaire_id: selectedInduction.id,
             state: shareState,
             staff_ids: selectedStaff
         };
-
         const res = await submitAssign("api/assign-questionnaire", payload, { method: "POST" });
         if (res && res.success !== false) {
             closeModal();
@@ -294,11 +290,9 @@ export default function Induction() {
 
     const handleQuestionFileUpload = async (qIndex, file) => {
         if (!file) return;
-
         const fd = new FormData();
         fd.append("file", file);
         fd.append("folder", "induction_documents");
-
         const res = await uploadFile("api/upload-file", fd, { method: "POST" });
         if (res?.success) {
             const updated = [...formQuestions];
@@ -311,6 +305,7 @@ export default function Induction() {
         }
     };
 
+    // ------- History modal with pagination -------
     const renderHistoryModal = () => (
         <div className="custom-modal-overlay">
             <div className="custom-modal-content" style={{ maxWidth: '700px', width: '100%' }}>
@@ -324,65 +319,98 @@ export default function Induction() {
                             <Loader />
                         </div>
                     ) : historyRows.length > 0 ? (
-                        <div className="table-responsive">
-                            <table className="table align-middle">
-                                <thead className="table-light text-secondary small">
-                                    <tr><th>GUARD NAME</th><th>DATE</th><th>STATUS</th><th>ACTION</th></tr>
-                                </thead>
-                                <tbody>
-                                    {historyRows.map((record, index) => {
-                                        const name = record?.name || record?.staff_name || record?.user_name || record?.guard_name || "Unknown";
-                                        const date = record?.date || record?.created_at || record?.updated_at || record?.completed_at || "-";
-                                        const isRead = Number(record?.read_status) === 1;
-                                        const hasCertificate = Boolean(record?.certificate_path);
-                                        const isCompleted = isRead && hasCertificate;
-                                        const isOpen = isRead && !hasCertificate;
-                                        const status = isCompleted ? "Completed" : isOpen ? "Open" : "Incomplete";
-                                        const statusClass = isCompleted
-                                            ? "bg-success bg-opacity-10 text-success"
-                                            : isOpen
-                                                ? "bg-warning bg-opacity-10 text-warning"
-                                                : "bg-secondary bg-opacity-10 text-secondary";
+                        <>
+                            <div className="table-responsive">
+                                <table className="table align-middle">
+                                    <thead className="table-light text-secondary small">
+                                        <tr><th>GUARD NAME</th><th>DATE</th><th>STATUS</th><th>ACTION</th></tr>
+                                    </thead>
+                                    <tbody>
+                                        {historyRows.map((record, index) => {
+                                            const name = record?.name || record?.staff_name || record?.user_name || record?.guard_name || "Unknown";
+                                            const date = record?.date || record?.created_at || record?.updated_at || record?.completed_at || "-";
+                                            const isRead = Number(record?.read_status) === 1;
+                                            const hasCertificate = Boolean(record?.certificate_path);
+                                            const isCompleted = isRead && hasCertificate;
+                                            const isOpen = isRead && !hasCertificate;
+                                            const status = isCompleted ? "Completed" : isOpen ? "Open" : "Incomplete";
+                                            const statusClass = isCompleted
+                                                ? "bg-success bg-opacity-10 text-success"
+                                                : isOpen
+                                                    ? "bg-warning bg-opacity-10 text-warning"
+                                                    : "bg-secondary bg-opacity-10 text-secondary";
 
-                                        return (
-                                            <tr key={record?.id || `${name}-${date}-${index}`}>
-                                                <td className="fw-medium text-nowrap">{name}</td>
-                                                <td className="text-muted text-nowrap">{date}</td>
-                                                <td>
-                                                    <span className={`badge rounded-pill fw-normal ${statusClass}`}>
-                                                        {status}
-                                                    </span>
-                                                </td>
-                                                <td>
-                                                    {isCompleted && (
-                                                        <Link className="btn btn-sm bg-success bg-opacity-10 text-success border border-success"
-                                                            href={record?.certificate_path}
-                                                            target="_blank"
-                                                            rel="noopener noreferrer"
-                                                            title="Download certificate"
-                                                        >
-                                                            <i className="fa fa-download"></i>
-                                                        </Link>
-                                                    )}
-                                                    {isOpen && (
-                                                        <button
-                                                            className="btn btn-sm bg-warning bg-opacity-10 text-warning border border-warning"
-                                                            title="Certificate not available yet"
-                                                            disabled
-                                                        >
-                                                            <i className="fa fa-download"></i>
-                                                        </button>
-                                                    )}
-                                                </td>
-                                            </tr>
-                                        );
-                                    })}
-                                </tbody>
-                            </table>
-                        </div>
+                                            return (
+                                                <tr key={record?.id || `${name}-${date}-${index}`}>
+                                                    <td className="fw-medium text-nowrap">{name}</td>
+                                                    <td className="text-muted text-nowrap">{date}</td>
+                                                    <td>
+                                                        <span className={`badge rounded-pill fw-normal ${statusClass}`}>
+                                                            {status}
+                                                        </span>
+                                                    </td>
+                                                    <td>
+                                                        {isCompleted && (
+                                                            <a className="btn btn-sm bg-success bg-opacity-10 text-success border border-success"
+                                                                href={record?.certificate_path}
+                                                                target="_blank"
+                                                                rel="noopener noreferrer"
+                                                                title="Download certificate"
+                                                            >
+                                                                <i className="fa fa-download"></i>
+                                                            </a>
+                                                        )}
+                                                        {isOpen && (
+                                                            <button
+                                                                className="btn btn-sm bg-warning bg-opacity-10 text-warning border border-warning"
+                                                                title="Certificate not available yet"
+                                                                disabled
+                                                            >
+                                                                <i className="fa fa-download"></i>
+                                                            </button>
+                                                        )}
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })}
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            {/* Pagination controls */}
+                            <div className="d-flex justify-content-between align-items-center mt-4 pt-3 border-top">
+                                <span className="text-muted small">
+                                    Page {historyPage} of {historyTotalPages}
+                                </span>
+                                <div className="d-flex gap-2">
+                                    <button
+                                        className="btn btn-sm btn-outline-secondary"
+                                        disabled={historyPage <= 1 || historyLoading}
+                                        onClick={() => {
+                                            const newPage = historyPage - 1;
+                                            setHistoryPage(newPage);
+                                            fetchHistory(selectedInduction.id, newPage);
+                                        }}
+                                    >
+                                        Previous
+                                    </button>
+                                    <button
+                                        className="btn btn-sm btn-outline-secondary"
+                                        disabled={historyPage >= historyTotalPages || historyLoading}
+                                        onClick={() => {
+                                            const newPage = historyPage + 1;
+                                            setHistoryPage(newPage);
+                                            fetchHistory(selectedInduction.id, newPage);
+                                        }}
+                                    >
+                                        Next
+                                    </button>
+                                </div>
+                            </div>
+                        </>
                     ) : (
                         <div className="py-5 text-center text-muted">
-                            No induction history found for this record.
+                            No induction history found for this record{historyPage > 1 ? ' on this page' : ''}.
                         </div>
                     )}
                 </div>
@@ -390,6 +418,7 @@ export default function Induction() {
         </div>
     );
 
+    // Share modal (unchanged)
     const renderShareModal = () => (
         <div className="custom-modal-overlay">
             <div className="custom-modal-content" style={{ maxWidth: '550px', width: '100%' }}>
@@ -398,7 +427,6 @@ export default function Induction() {
                     <button onClick={closeModal} className="btn-close"></button>
                 </div>
                 <div className="p-3 p-md-4">
-
                     <div className="mb-4">
                         <label className="form-label text-muted small fw-bold">Select State *</label>
                         <Select
@@ -412,7 +440,6 @@ export default function Induction() {
                             menuPosition={'fixed'}
                         />
                     </div>
-
                     <div className="mb-4">
                         <label className="form-label text-muted small fw-bold">Select Staff Members *</label>
                         <Select
@@ -426,11 +453,7 @@ export default function Induction() {
                                     setSelectedStaff([]);
                                     return;
                                 }
-
-                                const hasSelectAll = selectedOptions.some(
-                                    option => option.value === "all"
-                                );
-
+                                const hasSelectAll = selectedOptions.some(option => option.value === "all");
                                 if (hasSelectAll) {
                                     setSelectedStaff(staffList.map(staff => staff.id));
                                 } else {
@@ -449,14 +472,8 @@ export default function Induction() {
                             </div>
                         )}
                     </div>
-
                     <div className="text-end d-flex flex-wrap justify-content-end gap-2">
-                        <button
-                            className="btn btn-light px-4 rounded-pill w-sm-100"
-                            onClick={closeModal}
-                        >
-                            Cancel
-                        </button>
+                        <button className="btn btn-light px-4 rounded-pill w-sm-100" onClick={closeModal}>Cancel</button>
                         <button
                             className="btn btn-primary-custom px-4 rounded-pill w-sm-100"
                             onClick={handleAssign}
@@ -470,6 +487,7 @@ export default function Induction() {
         </div>
     );
 
+    // Delete modal (unchanged)
     const renderDeleteModal = () => (
         <div className="custom-modal-overlay">
             <div className="custom-modal-content" style={{ maxWidth: '450px', width: '100%' }}>
@@ -480,22 +498,14 @@ export default function Induction() {
                         </div>
                     </div>
                     <h5 className="text-center fw-bold mb-3">Delete Induction?</h5>
-                    <p className="text-center text-muted mb-4">
+                    <p className="text-center text-muted mb-4"
+                        style={{ textTransform: "none" }}
+                    >
                         Are you sure you want to delete this induction? This action cannot be undone and all associated data will be permanently removed.
                     </p>
                     <div className="d-flex flex-wrap gap-3 justify-content-center">
-                        <button
-                            className="btn btn-light px-4 px-md-5 rounded-pill fw-medium border"
-                            onClick={cancelDelete}
-                            disabled={isDeleting}
-                        >
-                            Cancel
-                        </button>
-                        <button
-                            className="btn btn-danger px-4 px-md-5 rounded-pill fw-medium"
-                            onClick={confirmDelete}
-                            disabled={isDeleting}
-                        >
+                        <button className="btn btn-light px-4 px-md-5 rounded-pill fw-medium border" onClick={cancelDelete} disabled={isDeleting}>Cancel</button>
+                        <button className="btn btn-danger px-4 px-md-5 rounded-pill fw-medium" onClick={confirmDelete} disabled={isDeleting}>
                             {isDeleting ? <span className="spinner-border spinner-border-sm me-2"></span> : null}
                             Delete
                         </button>
@@ -505,6 +515,7 @@ export default function Induction() {
         </div>
     );
 
+    // Create/Edit modal (unchanged)
     const renderCreateModal = () => (
         <div className="custom-modal-overlay p-0">
             <div className="custom-modal-content fullscreen-modal rounded-0" style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
@@ -516,14 +527,13 @@ export default function Induction() {
                     <div className="w-100" style={{ maxWidth: '1000px' }}>
                         <div className="mb-4 bg-white p-3 p-md-4 rounded shadow-sm border border-light">
                             <div className="mb-4">
-                                <label className="form-label fw-bold text-dark small text-uppercase">Main Induction Title</label>
-                                <input type="text" className="form-control form-control-lg clean-input fw-bold text-dark" placeholder="e.g., STAFFOO Code of Conduct"
+                                <label className="form-label fw-bold text-dark small">Main Induction Title</label>
+                                <input type="text" className="form-control form-control-lg clean-input fw-bold text-dark" placeholder="Staffoo code of conduct"
                                     value={formTitle} onChange={(e) => setFormTitle(e.target.value)} />
                             </div>
-
                             <div className="row">
                                 <div className="col-12 col-md-8 col-lg-7">
-                                    <label className="form-label fw-bold small text-muted text-uppercase">Subheadings</label>
+                                    <label className="form-label fw-bold small text-muted">Subheadings</label>
                                     {formSubtitles.map((sub, index) => (
                                         <div className="d-flex mb-2" key={index}>
                                             <input type="text" className="form-control clean-input me-2" placeholder="Enter subheading..."
@@ -622,7 +632,7 @@ export default function Induction() {
                                         {['a', 'b', 'c', 'd'].map(opt => (
                                             <div className="col-12 col-md-6" key={opt}>
                                                 <div className="d-flex align-items-center bg-light border rounded pe-2 overflow-hidden">
-                                                    <span className="text-muted fw-bold px-3 py-2 border-end text-uppercase bg-white">{opt}</span>
+                                                    <span className="text-muted fw-bold px-3 py-2 border-end bg-white">{opt}</span>
                                                     <input type="text" className="form-control border-0 shadow-none bg-transparent ps-3" placeholder={`Option ${opt.toUpperCase()}`} value={q[`option${opt}`]}
                                                         onChange={(e) => handleQuestionChange(qIndex, `option${opt}`, e.target.value)} />
                                                 </div>
@@ -700,7 +710,6 @@ export default function Induction() {
                                     <h5 className="card-title text-dark fw-bold mb-4 lh-base" style={{ wordWrap: 'break-word' }}>
                                         {induction.title || "Untitled Questionnaire"}
                                     </h5>
-
                                     <div className="mt-auto pt-3 border-top d-flex flex-wrap justify-content-between align-items-center gap-2">
                                         <div className="d-flex align-items-center gap-2 text-muted small fw-medium text-truncate" style={{ maxWidth: '45%' }}>
                                             <i className="fa fa-user-circle fs-5"></i>

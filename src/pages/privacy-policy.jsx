@@ -26,7 +26,7 @@ const sections = [
   {
     title: "2.2 Cancellation & Refund Policy",
     content:
-      "Standard Cancellation: Cancellations made more than 24 hours before the shift start time are eligible for a full release of the payment hold. The '1-Hour Rule': In accordance with Australian security industry standards, if a customer cancels a job within one (1) hour of the scheduled start time, a minimum charge of four (4) hours will be deducted from the held funds to compensate the assigned personnel.",
+      "Standard Cancellation: Cancellations made more than 24 hours before the shift start time are eligible for a full release of the payment hold. The '1-Hour Rule': In accordance with Australian security industry standards, if a client cancels a job within one (1) hour of the scheduled start time, a minimum charge of four (4) hours will be deducted from the held funds to compensate the assigned personnel.",
   },
   {
     title: "Part 3: Workforce Compliance - 3.1 National Licensing & Credentials",
@@ -41,7 +41,7 @@ const sections = [
   {
     title: "Part 4: Code of Conduct",
     content:
-      "Reliability: Arrive at least 10 minutes prior to shift start. Repeat lateness or 'no-shows' will result in removal from the platform. Professionalism: High-visibility vests or specified corporate attire must be worn at all times while on duty. GPS Integrity: Personnel must ensure location services are enabled during shifts. Any attempt to spoof or block GPS location will result in immediate termination of the assignment. Sobriety: A zero-tolerance policy applies to alcohol or illegal substances. Confidentiality: Personnel must protect all customer site data, access codes, and internal floor plans.",
+      "Reliability: Arrive at least 10 minutes prior to shift start. Repeat lateness or 'no-shows' will result in removal from the platform. Professionalism: High-visibility vests or specified corporate attire must be worn at all times while on duty. GPS Integrity: Personnel must ensure location services are enabled during shifts. Any attempt to spoof or block GPS location will result in immediate termination of the assignment. Sobriety: A zero-tolerance policy applies to alcohol or illegal substances. Confidentiality: Personnel must protect all client site data, access codes, and internal floor plans.",
   },
 ];
 

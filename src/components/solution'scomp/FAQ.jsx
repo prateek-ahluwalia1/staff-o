@@ -3,44 +3,69 @@ import React, { useState, useEffect } from "react";
 
 export default function FAQ() {
     const [isMobile, setIsMobile] = useState(false);
-    // Track which accordion item is currently open (null means all closed, 0 is open by default)
     const [openIndex, setOpenIndex] = useState(0);
 
     useEffect(() => {
         const handleResize = () => {
             setIsMobile(window.innerWidth <= 768);
         };
+
         handleResize();
         window.addEventListener("resize", handleResize);
+
         return () => window.removeEventListener("resize", handleResize);
     }, []);
 
     const faqData = [
         {
             id: 1,
-            question: "How quickly can Staffoo deploy security guards for an event?",
-            answer: "Most bookings are confirmed within 24 hours of a brief being submitted, depending on guard availability in your region and the licence types required. Larger multi-day events are best booked at least 1–2 weeks ahead to secure the full roster."
+            question: "How will I hire event security staff through Staffoo?",
+            answer: (
+                <>
+                    <p style={{ margin: "0 0 12px 0", color: "white" }}>
+                        You can hire a security guard easily in the following steps:
+                    </p>
+
+                    <ul
+                        style={{
+                            margin: 0,
+                            paddingLeft: "20px",
+                            lineHeight: "1.8",
+                        }}
+                    >
+                        <li>Create a free employer account</li>
+                        <li>Post your event security job</li>
+                        <li>Review applications from security professionals</li>
+                        <li>Confirm your booking</li>
+                    </ul>
+                </>
+            ),
         },
         {
             id: 2,
-            question: "How quickly can Staffoo deploy security guards for an event?",
-            answer: "Most bookings are confirmed within 24 hours of a brief being submitted, depending on guard availability in your region and the licence types required. Larger multi-day events are best booked at least 1–2 weeks ahead to secure the full roster."
+            question: "Are all security guards on Staffoo licensed in Australia?",
+            answer:
+                "Yes, every security guard on Staffoo uploads their current verified licence, First Aid certification, and ABN before applying.",
         },
         {
             id: 3,
-            question: "How quickly can Staffoo deploy security guards for an event?",
-            answer: "Most bookings are confirmed within 24 hours of a brief being submitted, depending on guard availability in your region and the licence types required. Larger multi-day events are best booked at least 1–2 weeks ahead to secure the full roster."
+            question: "Can I find urgent event security staff?",
+            answer:
+                "Yes. Staffoo sends notifications to available workers in your area. Many organisers find their required security guard on the same day.",
         },
         {
             id: 4,
-            question: "How quickly can Staffoo deploy security guards for an event?",
-            answer: "Most bookings are confirmed within 24 hours of a brief being submitted, depending on guard availability in your region and the licence types required. Larger multi-day events are best booked at least 1–2 weeks ahead to secure the full roster."
+            question:
+                "How does Staffoo help me comply with event security compliance requirements?",
+            answer:
+                "Staffoo helps you comply by providing security staff who have uploaded verified licence documents. We also offer GPS tracking and incident logging to support on-site compliance.",
         },
         {
             id: 5,
-            question: "How quickly can Staffoo deploy security guards for an event?",
-            answer: "Most bookings are confirmed within 24 hours of a brief being submitted, depending on guard availability in your region and the licence types required. Larger multi-day events are best booked at least 1–2 weeks ahead to secure the full roster."
-        }
+            question: "How do security staff get paid on Staffoo?",
+            answer:
+                "Payments are securely processed through Stripe. Once a shift is completed, payment is released to the employee. There are no cash payments and no invoices required from either party.",
+        },
     ];
 
     const toggleFAQ = (index) => {
@@ -50,7 +75,7 @@ export default function FAQ() {
     const styles = {
         wrapper: {
             width: "100%",
-            background: "#0b1111", // Matching deep dark theme background
+            background: "#0b1111",
             padding: isMobile ? "40px 20px" : "50px 40px",
             display: "flex",
             flexDirection: "column",
@@ -64,8 +89,7 @@ export default function FAQ() {
         },
         subheading: {
             fontSize: "13px",
-            // fontWeight: "700",
-            color: "#00c9a7", // Accent bright teal
+            color: "#00c9a7",
             textTransform: "capitalize",
             letterSpacing: "0.02em",
             margin: "0 0 16px 0",
@@ -83,10 +107,10 @@ export default function FAQ() {
             width: "100%",
             display: "flex",
             flexDirection: "column",
-            borderTop: "2px solid #1a2424", // Fine border separator above the first item
+            borderTop: "2px solid #1a2424",
         },
         row: {
-            borderBottom: "2px solid #1a2424", // Divider line matching image formatting
+            borderBottom: "2px solid #1a2424",
             padding: isMobile ? "20px 0" : "28px 0",
             display: "flex",
             flexDirection: "column",
@@ -110,7 +134,7 @@ export default function FAQ() {
         toggleIcon: {
             fontSize: isMobile ? "16px" : "20px",
             fontWeight: "400",
-            color: "#00c9a7", // Distinct custom mint-teal icon color
+            color: "#00c9a7",
             width: "24px",
             textAlign: "center",
             display: "inline-block",
@@ -119,10 +143,11 @@ export default function FAQ() {
         answerContainer: {
             maxHeight: "0px",
             overflow: "hidden",
-            transition: "max-height 0.3s cubic-bezier(0.25, 1, 0.5, 1), margin-top 0.3s ease",
+            transition:
+                "max-height 0.3s cubic-bezier(0.25, 1, 0.5, 1), margin-top 0.3s ease",
         },
         answerContainerOpen: {
-            maxHeight: "200px", // Provides healthy headroom allowance for smooth opening expand
+            maxHeight: "300px",
             marginTop: "14px",
         },
         answerText: {
@@ -130,45 +155,42 @@ export default function FAQ() {
             color: "#ffffff",
             opacity: 0.75,
             lineHeight: "1.65",
-            margin: 0,
             maxWidth: "1040px",
-        }
+        },
     };
 
     return (
         <div style={styles.wrapper}>
-            {/* Top Header Block */}
             <div style={styles.headerBlock}>
-                {/* <div style={styles.subheading}>Common Questions</div> */}
-                <h2 style={styles.heading}>Frequently asked questions</h2>
+                <h2 style={styles.heading}>Frequently Asked Questions</h2>
             </div>
 
-            {/* Accordion Container */}
             <div style={styles.faqList}>
                 {faqData.map((item, index) => {
                     const isOpen = openIndex === index;
 
                     return (
                         <div key={item.id} style={styles.row}>
-                            {/* Question Header Area */}
                             <div
                                 style={styles.interactiveHeader}
                                 onClick={() => toggleFAQ(index)}
                             >
                                 <h3 style={styles.questionText}>{item.question}</h3>
+
                                 <span style={styles.toggleIcon}>
-                                    {isOpen ? "X" : "+"}
+                                    {isOpen ? "×" : "+"}
                                 </span>
                             </div>
 
-                            {/* Collapsible Answer Container */}
                             <div
                                 style={{
                                     ...styles.answerContainer,
-                                    ...(isOpen ? styles.answerContainerOpen : {})
+                                    ...(isOpen ? styles.answerContainerOpen : {}),
                                 }}
                             >
-                                <p style={styles.answerText}>{item.answer}</p>
+                                <div style={styles.answerText}>
+                                    {item.answer}
+                                </div>
                             </div>
                         </div>
                     );

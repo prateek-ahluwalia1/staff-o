@@ -22,12 +22,36 @@ export default function RelatedSolutions() {
     }, []);
 
     const solutions = [
-        { id: 1, title: "Submit Your Brief", description: "Scale staffing requirements without increasing operational overhead." },
-        { id: 2, title: "Submit Your Brief", description: "Scale staffing requirements without increasing operational overhead." },
-        { id: 3, title: "Submit Your Brief", description: "Scale staffing requirements without increasing operational overhead." },
-        { id: 4, title: "Corporate Security", description: "Scale staffing requirements without increasing operational overhead." },
-        { id: 5, title: "Submit Your Brief", description: "Scale staffing requirements without increasing operational overhead." },
-        { id: 6, title: "Submit Your Brief", description: "Scale staffing requirements without increasing operational overhead." }
+        {
+            id: 1,
+            title: "Corporate Security",
+            description: "Protection of premises, assets, and employees in office hours."
+        },
+        {
+            id: 2,
+            title: "Construction Security",
+            description: "Providing complete security on building sites."
+        },
+        {
+            id: 3,
+            title: "Retail Security",
+            description: "Theft prevention and management within retail outlets."
+        },
+        {
+            id: 4,
+            title: "Mobile Patrol",
+            description: "Scheduling patrol guards at multiple locations easily."
+        },
+        {
+            id: 5,
+            title: "Worker Safety",
+            description: "Real-time monitoring of workers through GPS technology."
+        },
+        {
+            id: 6,
+            title: "Resource Partner Management",
+            description: "Managing resource partners through one platform only."
+        }
     ];
 
     // Responsive grid layout determinations
@@ -41,7 +65,7 @@ export default function RelatedSolutions() {
         wrapper: {
             width: "100%",
             background: "#0b1111", // Deep dark background matching the theme
-            padding: viewMode === "mobile" ? "60px 20px" : "50px 40px",
+            padding: viewMode === "mobile" ? "60px 20px" : "40px 40px",
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
@@ -105,7 +129,7 @@ export default function RelatedSolutions() {
                 }
             `}</style>
 
-            <h2 style={styles.heading}>Related Solutions</h2>
+            <h2 style={styles.heading}>Solutions by Staffoo</h2>
 
             <div style={styles.grid}>
                 {solutions.map((item) => (

@@ -86,7 +86,7 @@ export default function ContractorDashboard() {
                   <i className="fa-solid fa-phone"></i> {phone}
                 </div>
                 <div className="profile-contact"
-                style={{textTransform: "none"}}
+                  style={{ textTransform: "none" }}
                 >
                   <i className="fa-solid fa-envelope"></i> {email}
                 </div>
@@ -112,7 +112,6 @@ export default function ContractorDashboard() {
             value={dashboardStats.activeJobs}
             bgColor="#fff3e0"
             iconColor="#FFB74D"
-            subtitle="Ongoing assignments"
           />
           <StatsCard
             icon="fa-solid fa-check-double"

@@ -82,7 +82,7 @@ export default function ShiftTasks({ rosterId, guardId }) {
           )}
           {customer && (
             <span>
-              <span style={{ color: "#888" }}>Customer: </span>
+              <span style={{ color: "#888" }}>Client: </span>
               <strong>{customer}</strong>
             </span>
           )}

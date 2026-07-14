@@ -58,15 +58,22 @@ const DOC_TYPES = [
   { value: "Citizen Ship", label: "Citizen Ship Certificate" },
   { value: "Medicare", label: "Medicare Certificate" },
   { value: "Birth Certificate", label: "Birth Certificate" },
+  { value: "Security Master License", label: "Security Master License" },
+  { value: "Public Liability", label: "Public Liability" },
+  { value: "Workcover", label: "Workcover" },
+  { value: "Security Industry Membership certificate", label: "Security Industry Membership certificate" },
+  { value: "Labour Hire", label: "Labour Hire" },
+  { value: "ASIC Report", label: "ASIC Report" },
+  { value: "White Card", label: "White Card" },
+  { value: "Working with Children Check", label: "Working with Children Check" },
 ];
 
 // ========== DATE HELPERS (DD/MM/YYYY everywhere) ==========
 const isoToDisplay = (val) => {
   if (!val) return "";
-  if (/^\d{2}\/\d{2}\/\d{4}$/.test(val)) return val; // already DD/MM/YYYY
+  if (/^\d{2}\/\d{2}\/\d{4}$/.test(val)) return val;
   const match = val.match(/^(\d{4})-(\d{2})-(\d{2})$/);
   if (match) {
-    // eslint-disable-next-line
     const [_, y, m, d] = match;
     return `${d}/${m}/${y}`;
   }
@@ -114,7 +121,6 @@ export default function EditProfile() {
   } = useFetch(endpoint, { isAuth: true });
 
   const { submit, loading: submitLoading } = useSubmit({ isAuth: true });
-  // eslint-disable-next-line
   const { submit: submitSecurityLicense } = useSubmit({
     isAuth: true,
     BaseURL: "https://apis.thescouts.com.au/",
@@ -136,6 +142,7 @@ export default function EditProfile() {
 
   const [isAddingCard, setIsAddingCard] = useState(false);
   const [cardForm, setCardForm] = useState(INITIAL_CARD_STATE);
+  const [editingCardIndex, setEditingCardIndex] = useState(null);
 
   const [showCardDeleteModal, setShowCardDeleteModal] = useState(false);
   const [cardToDeleteIndex, setCardToDeleteIndex] = useState(null);
@@ -158,7 +165,7 @@ export default function EditProfile() {
     no: false,
     exp: false,
     document_no: "",
-    document_expiry: "",   // DD/MM/YYYY
+    document_expiry: "",
     file: null,
     file_path: "",
     file_url: "",
@@ -167,9 +174,9 @@ export default function EditProfile() {
   });
 
   const isPhoneVerified = Boolean(
-    userdata?.data?.contractor?.is_phone_verified ??
-    userdata?.contractor?.is_phone_verified ??
-    profileData?.data?.contractor?.is_phone_verified
+    userdata?.data?.phone_verified ??
+    userdata?.phone_verified ??
+    profileData?.data?.phone_verified
   );
 
   const getMissingFields = (d) => {
@@ -188,7 +195,7 @@ export default function EditProfile() {
       missing.push("Company Name");
     return missing;
   };
-  const missingFields = getMissingFields(profileData?.data);
+  const missingFields = getMissingFields(userdata?.data);
 
   useEffect(() => {
     if (!profileData?.data) return;
@@ -258,6 +265,13 @@ export default function EditProfile() {
       setProfilePhoto(resolveProfileImageUrl(profileImageUrl));
     }
   }, [profileData]);
+
+  // ✅ Sync Redux whenever profileData changes (after any refetch)
+  useEffect(() => {
+    if (profileData?.success) {
+      dispatch(setUser({ userdata: profileData }));
+    }
+  }, [profileData, dispatch]);
 
   useEffect(() => {
     if (activeTab !== "personal" || fetchLoading) return;
@@ -350,7 +364,6 @@ export default function EditProfile() {
     });
   }, [profileData?.data?.documents, formData.state]);
 
-
   const handleAvatarUpload = useCallback(
     async (file) => {
       try {
@@ -364,10 +377,7 @@ export default function EditProfile() {
         });
         if (res?.success) {
           toast.success("Avatar updated successfully!");
-          const refetchRes = await refetch();
-          if (refetchRes?.data) {
-            dispatch(setUser({ userdata: refetchRes.data }));
-          }
+          refetch(); // will trigger the useEffect to update Redux
         } else {
           toast.error(res?.message || "Failed to save avatar");
           setProfilePhoto(null);
@@ -417,13 +427,9 @@ export default function EditProfile() {
       });
       if (res === undefined) return;
       toast.success("Profile updated successfully!");
-      if (res.data) dispatch(setUser({ userdata: res.data }));
-      const refetchRes = await refetch();
-      if (refetchRes?.success && refetchRes?.data) {
-        dispatch(setUser({ userdata: refetchRes.data }));
-      }
+      refetch(); // will trigger the useEffect to update Redux
     },
-    [formData, submit, userId, dispatch, refetch]
+    [formData, submit, userId, refetch]
   );
 
   const handleClosePhoneModal = () => {
@@ -443,8 +449,8 @@ export default function EditProfile() {
     }
     setPhoneChangeError(null);
     const res = await phoneSubmit(
-      `api/user-update/${userId}`,
-      { phone: newPhoneInput },
+      `api/auth/resend-otp`,
+      { phone: newPhoneInput, id: userId },
       { method: "POST" }
     );
     if (!res) return;
@@ -463,20 +469,15 @@ export default function EditProfile() {
     }
     setPhoneChangeError(null);
     const res = await phoneSubmit(
-      `api/user-update/${userId}`,
-      { phone: newPhoneInput, phone_otp: phoneOtp },
+      `api/auth/verify-phone`,
+      { phone: newPhoneInput, otp: phoneOtp, id: userId },
       { method: "POST" }
     );
     if (!res) return;
     if (res.success) {
       toast.success("Phone updated successfully!");
       setFormData((prev) => ({ ...prev, phone: newPhoneInput }));
-      if (res.data) dispatch(setUser({ userdata: res.data }));
-      const refetchRes = await refetch();
-      if (refetchRes?.data) {
-        dispatch(setUser({ userdata: refetchRes.data }));
-      }
-
+      refetch(); // sync Redux
       setTimeout(() => {
         handleClosePhoneModal();
       }, 1500);
@@ -505,21 +506,25 @@ export default function EditProfile() {
 
     const currentYear = new Date().getFullYear();
     const currentMonth = new Date().getMonth() + 1;
-
     const expMonth = parseInt(cardForm.expiry_month, 10);
     const expYear = parseInt(cardForm.expiry_year, 10);
-
     if (expYear < currentYear || expYear > currentYear + 20) {
       toast.error("Please enter a valid future year (e.g., 2026).");
       return;
     }
-
     if (expYear === currentYear && expMonth < currentMonth) {
       toast.error("The expiry date must be in the future.");
       return;
     }
 
-    const updatedCards = [...formData.bank_details, cardForm];
+    let updatedCards;
+    if (editingCardIndex !== null) {
+      updatedCards = formData.bank_details.map((card, i) =>
+        i === editingCardIndex ? cardForm : card
+      );
+    } else {
+      updatedCards = [...formData.bank_details, cardForm];
+    }
 
     const payload = new FormData();
     payload.append("bank_details", JSON.stringify(updatedCards));
@@ -532,12 +537,9 @@ export default function EditProfile() {
     setFormData((prev) => ({ ...prev, bank_details: updatedCards }));
     setIsAddingCard(false);
     setCardForm(INITIAL_CARD_STATE);
-    if (res.data) dispatch(setUser({ userdata: res.data }));
-    const refetchRes = await refetch();
-    if (refetchRes?.data) {
-      dispatch(setUser({ userdata: refetchRes.data }));
-    }
-    toast.success("Card added successfully!");
+    setEditingCardIndex(null);  // reset editing index
+    refetch();
+    toast.success(editingCardIndex !== null ? "Card updated!" : "Card added successfully!");
   };
 
   const handleRemoveCardClick = (index) => {
@@ -565,17 +567,20 @@ export default function EditProfile() {
     if (res === undefined) return;
 
     setFormData((prev) => ({ ...prev, bank_details: updatedCards }));
-    if (res.data) dispatch(setUser({ userdata: res.data }));
-    const refetchRes = await refetch();
-    if (refetchRes?.data) {
-      dispatch(setUser({ userdata: refetchRes.data }));
-    }
-
+    refetch(); // Redux sync
     toast.success("Card removed successfully!");
     setShowCardDeleteModal(false);
     setCardToDeleteIndex(null);
   };
 
+  const handleEditCard = (index) => {
+    const card = formData.bank_details[index];
+    setCardForm({ ...card });
+    setEditingCardIndex(index);
+    setIsAddingCard(true);
+  };
+
+  // ========== VERIFY DOCUMENT NUMBER (Security License + Visa) ==========
   const handleVerifyDocumentNumber = async () => {
     if (!userId) {
       toast.error("Missing user id.");
@@ -590,31 +595,37 @@ export default function EditProfile() {
       return;
     }
 
+    // ---- Security License Verification ----
     if (docForm.document_name === "Security License") {
+      const staffState = (formData?.state || profileData?.data?.state || userdata?.data?.state || userdata?.state || "").trim();
+      if (!staffState) {
+        toast.error("Please add your location first.");
+        return;
+      }
+
       setVerifyingDoc(true);
       try {
         const res = await submitSecurityLicense(
           "api/documents-online-verification-staffoo",
           {
-            user_id: userId,
             document_type: docForm.document_name,
             license_number: docForm.document_no,
+            state: staffState,
           },
           { method: "POST" }
         );
 
         if (res?.success && res?.expiry) {
-          // expiry is "15/09/2026" (after JSON parse, slashes are fine)
-          const expiryStr = res.expiry.replace(/\\\//g, "/"); // safety clean
+          const expiryStr = res.expiry.replace(/\\\//g, "/");
           setDocForm((prev) => ({
             ...prev,
-            document_expiry: expiryStr,   // already DD/MM/YYYY
+            document_expiry: expiryStr,
             is_verified: true,
           }));
           toast.success("Security License verified. Expiry date locked.");
         } else {
           setDocForm((prev) => ({ ...prev, is_verified: false }));
-          toast.error(res?.message || "Security License verification failed.");
+          toast.error(`Security license number is not valid for ${staffState}`)
         }
       } catch (err) {
         console.error(err);
@@ -624,8 +635,20 @@ export default function EditProfile() {
       }
       return;
     }
-    // VISA verification
+
+    // ---- Visa Verification (uses uploaded passport) ----
     if (docForm.document_name === "Visa") {
+      // Look for the user's passport document
+      const allDocs = profileData?.data?.documents || [];
+      const passportDoc = allDocs.find(
+        (doc) => doc.document_type === "passport" && doc.document_no
+      );
+
+      if (!passportDoc) {
+        toast.error("First add your passport first");
+        return;
+      }
+
       const user = userdata?.data || userdata;
       const staff = user?.staff || {};
       const fullName = (user?.name || "").trim();
@@ -646,7 +669,7 @@ export default function EditProfile() {
         toast.error("Invalid date of birth format. Please re‑save your profile.");
         return;
       }
-      const dobISO = `${dobParts[2]}-${dobParts[1]}-${dobParts[0]}`; // YYYY-MM-DD
+      const dobISO = `${dobParts[2]}-${dobParts[1]}-${dobParts[0]}`;
 
       const originCountry = user?.origin_country || user?.staff?.origin_country;
       if (!originCountry) {
@@ -654,7 +677,9 @@ export default function EditProfile() {
         return;
       }
       const countryCode = originCountry.toUpperCase().slice(0, 3);
-      const passportNumber = docForm.document_no.toUpperCase();
+
+      // Use passport document number for verification
+      const passportNumber = passportDoc.document_no.toUpperCase();
 
       const payload = {
         passport: passportNumber,
@@ -666,9 +691,9 @@ export default function EditProfile() {
 
       setVerifyingDoc(true);
       try {
-        const res = await submit("api/admin/visa-check", payload, { method: "POST" });
-        if (res?.success && res?.data?.expired_at) {
-          const displayExpiry = normalizeToDisplay(res.data.expired_at); // converts DD-MM-YYYY -> DD/MM/YYYY
+        const res = await submit("api/admin/visa-expiry-check", payload, { method: "POST" });
+        if (res?.success && res?.expiry) {
+          const displayExpiry = normalizeToDisplay(res.expiry);
           setDocForm((prev) => ({
             ...prev,
             document_expiry: displayExpiry,
@@ -685,17 +710,23 @@ export default function EditProfile() {
       }
       return;
     }
-
   };
 
+  // ========== DOC NUMBER CHANGE (does not reset verified expiry for Visa) ==========
   const handleDocNumberChange = (e) => {
     const value = e.target.value.replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
-    setDocForm((prev) => ({
-      ...prev,
-      document_no: value,
-      is_verified: false,
-      document_expiry: "",
-    }));
+    setDocForm((prev) => {
+      // For Visa, we don't want to clear the verified status when editing the grant number
+      if (prev.document_name === "Visa") {
+        return { ...prev, document_no: value };
+      }
+      return {
+        ...prev,
+        document_no: value,
+        is_verified: false,
+        document_expiry: "",
+      };
+    });
   };
 
   const handleDocFormChange = async (e) => {
@@ -775,9 +806,7 @@ export default function EditProfile() {
     if (res.success) {
       toast.success("Document saved successfully!");
       setShowDocModal(false);
-
-      // ✅ Hard refresh to reload user data and unlock sidebar
-      window.location.reload();
+      refetch();
     } else {
       toast.error(res.message || "Failed to save document");
     }
@@ -825,7 +854,7 @@ export default function EditProfile() {
 
   return (
     <div className="dashboard-main">
-      <div className="settings-header">
+      <div className="settings-header" style={{ marginBottom: "1rem" }}>
         <AvatarUpload
           profilePhoto={profilePhoto}
           name={formData.name}
@@ -840,14 +869,12 @@ export default function EditProfile() {
           name={formData.name}
           email={formData.email}
           city={formData.address}
-          profileCompletion={
-            profileData?.data?.profile_completion_percentage || 0
-          }
+          profileCompletion={userdata?.data?.profile_completion_percentage || 0}
           missingItems={missingFields}
         />
       </div>
 
-      <div style={{ display: "flex", gap: 16, marginBottom: 20 }}>
+      <div style={{ display: "flex", gap: 16, marginBottom: 20, flexWrap: "wrap" }}>
         {userType !== "admin" && (
           <button
             className={`btn ${activeTab === "personal" ? "btn-primary-custom" : "btn-outline-primary"}`}
@@ -875,7 +902,7 @@ export default function EditProfile() {
             Documents
           </button>
         )}
-        {userType === "staff" && (
+        {(userType === "staff" && userdata?.data?.user_id === 1) && (
           <button
             className={`btn ${activeTab === "onboarding" ? "btn-primary-custom" : "btn-outline-primary"}`}
             onClick={() => setActiveTab("onboarding")}
@@ -888,6 +915,7 @@ export default function EditProfile() {
       {activeTab === "personal" && (
         <ProfileForm
           formData={formData}
+          showPhoneOtp={true}
           onChange={(e) => {
             const { id, name, value } = e.target;
             const fieldId = id || name;
@@ -922,6 +950,7 @@ export default function EditProfile() {
             setPhoneChangeSuccess(false);
             setShowPhoneModal(true);
           }}
+          isEdit={true}
         />
       )}
 
@@ -929,17 +958,12 @@ export default function EditProfile() {
         <StaffOnboardingForms
           submit={submit}
           userId={userId}
-          onProfileUpdate={async () => {
-            const refetchRes = await refetch();
-            if (refetchRes && (refetchRes.data || refetchRes.success)) {
-              dispatch(setUser({ userdata: refetchRes.data || refetchRes }));
-            }
-          }}
         />
       )}
 
       {activeTab === "cards" && userType === "customer" && (
         <div className="card-section p-4 bg-white rounded shadow-sm border">
+          {/* Card UI unchanged */}
           {!isAddingCard ? (
             <>
               <div className="d-flex justify-content-between align-items-center mb-4">
@@ -959,17 +983,27 @@ export default function EditProfile() {
                     <path d="M2 10a1 1 0 0 1 1-1h1a1 1 0 0 1 1 1v1a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1v-1z" />
                   </svg>
                   <h5>No cards saved yet</h5>
-                  <p className="small">Add a payment method to easily checkout.</p>
+                  <p className="small" style={{ textTransform: "none" }}>Add a payment method to easily checkout.</p>
                 </div>
               ) : (
                 <div className="row">
                   {formData.bank_details.map((card, index) => (
                     <div key={index} className="col-md-6 col-lg-4 mb-4">
                       <div className="card-preview position-relative text-white p-4 rounded-4 shadow-sm h-100" style={{ background: "linear-gradient(135deg, #1e3c72 0%, #2a5298 100%)", boxShadow: "0 10px 20px rgba(0,0,0,0.15)" }}>
-                        <button className="btn btn-sm btn-danger position-absolute" style={{ top: "12px", right: "12px", opacity: 0.9, padding: "4px 8px" }} onClick={() => handleRemoveCardClick(index)} disabled={submitLoading} title="Remove Card">
+                        <button className="btn btn-sm btn-danger position-absolute" style={{ top: "5px", right: "12px", opacity: 0.9, padding: "4px 8px" }} onClick={() => handleRemoveCardClick(index)} disabled={submitLoading} title="Remove Card">
                           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
                             <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0z" />
                             <path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4zM2.5 3h11V2h-11z" />
+                          </svg>
+                        </button>
+                        <button
+                          className="btn btn-sm btn-light position-absolute"
+                          style={{ top: "5px", right: "50px", opacity: 0.9, padding: "4px 8px" }}
+                          onClick={() => handleEditCard(index)}
+                          title="Edit Card"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168l10-10zM11.207 2.5 13.5 4.793 14.793 3.5 12.5 1.207 11.207 2.5zm1.586 2.793L10.5 3 4 9.5 3.1 12.9l3.4-1.1 6.293-6.293z" />
                           </svg>
                         </button>
                         <div className="d-flex justify-content-between align-items-center mb-4 mt-2">
@@ -982,7 +1016,7 @@ export default function EditProfile() {
                           <span className="fst-italic" style={{ opacity: 0.8, fontSize: "1.2rem", marginRight: "30px" }}>VISA</span>
                         </div>
                         <h5 className="mb-4" style={{ letterSpacing: "2px", fontFamily: "monospace", textShadow: "1px 1px 2px rgba(0,0,0,0.5)" }}>{card.card_number || "**** **** **** ****"}</h5>
-                        <div className="d-flex justify-content-between text-uppercase" style={{ fontSize: "0.85rem", opacity: 0.9 }}>
+                        <div className="d-flex justify-content-between " style={{ fontSize: "0.85rem", opacity: 0.9 }}>
                           <div>
                             <div style={{ fontSize: "0.6rem", opacity: 0.7 }}>Card Holder</div>
                             <div style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "150px" }}>{card.card_holder_name || "YOUR NAME"}</div>
@@ -1000,6 +1034,7 @@ export default function EditProfile() {
             </>
           ) : (
             <div className="row align-items-center">
+              {/* Add card form unchanged */}
               <div className="col-md-5 mb-4 mb-md-0 d-flex justify-content-center">
                 <div className="card-preview position-relative text-white p-4 rounded-4 shadow-lg" style={{ background: "linear-gradient(135deg, #1e3c72 0%, #2a5298 100%)", width: "100%", maxWidth: "360px", height: "220px", boxShadow: "0 10px 20px rgba(0,0,0,0.15)" }}>
                   <div className="d-flex justify-content-between align-items-center mb-4">
@@ -1012,7 +1047,7 @@ export default function EditProfile() {
                     <span className="fst-italic" style={{ opacity: 0.8, fontSize: "1.2rem" }}>VISA</span>
                   </div>
                   <h4 className="mb-4" style={{ letterSpacing: "2px", fontFamily: "monospace", textShadow: "1px 1px 2px rgba(0,0,0,0.5)" }}>{cardForm.card_number || "**** **** **** ****"}</h4>
-                  <div className="d-flex justify-content-between text-uppercase" style={{ fontSize: "0.85rem", opacity: 0.9 }}>
+                  <div className="d-flex justify-content-between " style={{ fontSize: "0.85rem", opacity: 0.9 }}>
                     <div>
                       <div style={{ fontSize: "0.6rem", opacity: 0.7 }}>Card Holder</div>
                       <div style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "180px" }}>{cardForm.card_holder_name || "YOUR NAME"}</div>
@@ -1033,12 +1068,12 @@ export default function EditProfile() {
                     <h4 className="mb-0">Secure Payment Information</h4>
                   </div>
                 </div>
-                <p className="text-muted small mb-4">Your payment details are encrypted and securely stored.</p>
+                <p className="text-muted small mb-4" style={{ textTransform: "none" }}>Your payment details are encrypted and securely stored.</p>
 
                 <form onSubmit={handleSaveNewCard}>
                   <div className="mb-3">
                     <label className="form-label text-muted small fw-bold">Name on Card <span className="text-danger">*</span></label>
-                    <input type="text" className="form-control" placeholder="e.g. John Doe" value={cardForm.card_holder_name} maxLength="30" onChange={(e) => { const val = e.target.value.replace(/[^a-zA-Z\s]/g, "").slice(0, 30); setCardForm((p) => ({ ...p, card_holder_name: val.toUpperCase() })); }} required />
+                    <input type="text" className="form-control" placeholder="e.g. John Doe" value={cardForm.card_holder_name} onChange={(e) => { const val = e.target.value.replace(/[^a-zA-Z\s]/g, "").slice(0, 30); setCardForm((p) => ({ ...p, card_holder_name: val.toUpperCase() })); }} required />
                   </div>
                   <div className="mb-3">
                     <label className="form-label text-muted small fw-bold">Card Number <span className="text-danger">*</span></label>
@@ -1064,7 +1099,18 @@ export default function EditProfile() {
                     </div>
                   </div>
                   <div className="d-flex gap-2">
-                    <button type="button" className="btn btn-outline-secondary w-50 py-2 fw-bold" onClick={() => { setIsAddingCard(false); setCardForm(INITIAL_CARD_STATE); }} disabled={submitLoading}>Cancel</button>
+                    <button
+                      type="button"
+                      className="btn btn-outline-secondary w-50 py-2 fw-bold"
+                      onClick={() => {
+                        setIsAddingCard(false);
+                        setEditingCardIndex(null);
+                        setCardForm(INITIAL_CARD_STATE);
+                      }}
+                      disabled={submitLoading}
+                    >
+                      Cancel
+                    </button>
                     <button type="submit" className="btn btn-primary-custom w-50 py-2 fw-bold shadow-sm" disabled={submitLoading}>{submitLoading ? "Saving..." : "Save Card"}</button>
                   </div>
                 </form>
@@ -1127,57 +1173,63 @@ export default function EditProfile() {
           }}
         />
       )}
+      <>
 
-      {userType !== "admin" && (
-        <div className="mt-5 p-4 bg-light border border-danger rounded" style={{ borderWidth: "2px" }}>
-          <div className="d-flex align-items-center mb-3">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="#dc3545" className="bi bi-exclamation-triangle me-2" viewBox="0 0 16 16">
-              <path d="M7.938 2.016A.13.13 0 0 1 8.002 2a.13.13 0 0 1 .063.016.146.146 0 0 1 .054.057l6.857 11.667c.036.06.035.124.002.183a.163.163 0 0 1-.054.057.107.107 0 0 1-.066.01H.146a.107.107 0 0 1-.066-.01.163.163 0 0 1-.054-.057.106.106 0 0 1 .002-.183L7.884 2.073a.147.147 0 0 1 .054-.057zm1.044-.45a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566z" />
-              <path d="M7.002 12a1 1 0 1 1 2 0 1 1 0 0 1-2 0zM7.1 5.995a.905.905 0 1 1 1.8 0l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995z" />
-            </svg>
-            <h5 className="mb-0 text-danger fw-bold">Danger Zone</h5>
-          </div>
-          <p className="text-muted mb-3">Deleting your profile is permanent and cannot be undone. All your data will be permanently deleted.</p>
-          <button className="btn btn-danger" onClick={() => { setShowDeleteModal(true); setDeleteConfirmText(""); }} disabled={deleteLoading}>
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-trash me-2" viewBox="0 0 16 16">
-              <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0z" />
-              <path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4zM2.5 3h11V2h-11z" />
-            </svg>
-            Delete Profile
-          </button>
-        </div>
-      )}
+        {userType !== "admin" && (
+          <>
+          </>
+          // <div className="mt-5 p-4 bg-light border border-danger rounded" style={{ borderWidth: "2px" }}>
+          //   {/* Delete profile section unchanged */}
+          //   <div className="d-flex align-items-center mb-3">
+          //     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="#dc3545" className="bi bi-exclamation-triangle me-2" viewBox="0 0 16 16">
+          //       <path d="M7.938 2.016A.13.13 0 0 1 8.002 2a.13.13 0 0 1 .063.016.146.146 0 0 1 .054.057l6.857 11.667c.036.06.035.124.002.183a.163.163 0 0 1-.054.057.107.107 0 0 1-.066.01H.146a.107.107 0 0 1-.066-.01.163.163 0 0 1-.054-.057.106.106 0 0 1 .002-.183L7.884 2.073a.147.147 0 0 1 .054-.057zm1.044-.45a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566z" />
+          //       <path d="M7.002 12a1 1 0 1 1 2 0 1 1 0 0 1-2 0zM7.1 5.995a.905.905 0 1 1 1.8 0l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995z" />
+          //     </svg>
+          //     <h5 className="mb-0 text-danger fw-bold">Danger Zone</h5>
+          //   </div>
+          //   <p className="text-muted mb-3" style={{ textTransform: "none" }}>Deleting your profile is permanent and cannot be undone. All your data will be permanently deleted.</p>
+          //   <button className="btn btn-danger" onClick={() => { setShowDeleteModal(true); setDeleteConfirmText(""); }} disabled={deleteLoading}>
+          //     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-trash me-2" viewBox="0 0 16 16">
+          //       <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0z" />
+          //       <path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4zM2.5 3h11V2h-11z" />
+          //     </svg>
+          //     Delete Profile
+          //   </button>
+          // </div>
+        )}
 
-      {/* Card Delete Confirm Modal */}
-      <Modal open={showCardDeleteModal} onClose={() => { setShowCardDeleteModal(false); setCardToDeleteIndex(null); }}>
-        <div className="p-4 text-center">
-          <div className="mb-3 text-danger">
-            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="currentColor" className="bi bi-x-circle" viewBox="0 0 16 16">
-              <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z" />
-              <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z" />
-            </svg>
+        {/* Card Delete Confirm Modal */}
+        <Modal open={showCardDeleteModal} onClose={() => { setShowCardDeleteModal(false); setCardToDeleteIndex(null); }}>
+          {/* unchanged */}
+          <div className="p-4 text-center">
+            <div className="mb-3 text-danger">
+              <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="currentColor" className="bi bi-x-circle" viewBox="0 0 16 16">
+                <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z" />
+                <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z" />
+              </svg>
+            </div>
+            <h4 className="mb-3 fw-bold">Remove Card?</h4>
+            <p className="text-muted mb-4">
+              Are you sure you want to remove this card ending in{" "}
+              <strong>
+                {cardToDeleteIndex !== null && formData.bank_details[cardToDeleteIndex]
+                  ? formData.bank_details[cardToDeleteIndex].card_number.slice(-4)
+                  : ""}
+              </strong>? This action cannot be undone.
+            </p>
+            <div className="d-flex gap-3 justify-content-center">
+              <button type="button" className="btn btn-outline-secondary px-4 py-2 fw-bold" onClick={() => { setShowCardDeleteModal(false); setCardToDeleteIndex(null); }} disabled={submitLoading}>Cancel</button>
+              <button type="button" className="btn btn-danger px-4 py-2 fw-bold shadow-sm" onClick={confirmRemoveCard} disabled={submitLoading}>{submitLoading ? "Removing..." : "Yes, Remove It"}</button>
+            </div>
           </div>
-          <h4 className="mb-3 fw-bold">Remove Card?</h4>
-          <p className="text-muted mb-4">
-            Are you sure you want to remove this card ending in{" "}
-            <strong>
-              {cardToDeleteIndex !== null && formData.bank_details[cardToDeleteIndex]
-                ? formData.bank_details[cardToDeleteIndex].card_number.slice(-4)
-                : ""}
-            </strong>? This action cannot be undone.
-          </p>
-          <div className="d-flex gap-3 justify-content-center">
-            <button type="button" className="btn btn-outline-secondary px-4 py-2 fw-bold" onClick={() => { setShowCardDeleteModal(false); setCardToDeleteIndex(null); }} disabled={submitLoading}>Cancel</button>
-            <button type="button" className="btn btn-danger px-4 py-2 fw-bold shadow-sm" onClick={confirmRemoveCard} disabled={submitLoading}>{submitLoading ? "Removing..." : "Yes, Remove It"}</button>
-          </div>
-        </div>
-      </Modal>
+        </Modal>
+      </>
 
       {/* Phone Change / Verify Modal */}
       <Modal open={showPhoneModal} onClose={handleClosePhoneModal}>
         <div className="p-3">
           <h5 className="mb-1">{isPhoneVerified ? "Change Phone Number" : "Verify or Change Phone Number"}</h5>
-          <p className="text-muted small mb-4">
+          <p className="text-muted small mb-4" style={{ textTransform: "none" }}>
             {phoneStep === "input"
               ? isPhoneVerified
                 ? "Enter your new phone number to receive an OTP."
@@ -1217,7 +1269,7 @@ export default function EditProfile() {
         </div>
       </Modal>
 
-      {/* Document Modal – full DD/MM/YYYY handling */}
+      {/* ========== DOCUMENT MODAL (with Visa-specific UI) ========== */}
       <Modal
         open={showDocModal}
         onClose={() => {
@@ -1234,7 +1286,7 @@ export default function EditProfile() {
           {/* Document Type */}
           <div className="mb-3">
             <label className="form-label fw-semibold">
-              Document Type <span className="text-danger">*</span>
+              Document Type
             </label>
             <select
               className="form-control"
@@ -1253,39 +1305,60 @@ export default function EditProfile() {
             </select>
           </div>
 
-          {/* Document Number */}
-          <div className="mb-3">
-            <label className="form-label fw-semibold">
-              Document Number <span className="text-danger">*</span>
-            </label>
-            {(docForm.document_name === "Security License" ||
-              docForm.document_name === "Visa") ? (
-              <div className="input-group">
-                <input
-                  type="text"
-                  className="form-control"
-                  placeholder="e.g. ABC123456"
-                  value={docForm.document_no}
-                  onChange={handleDocNumberChange}
-                  required
-                />
-                <button
-                  type="button"
-                  className="btn btn-outline-primary"
-                  onClick={handleVerifyDocumentNumber}
-                  disabled={verifyingDoc || !docForm.document_no}
-                >
-                  {verifyingDoc ? (
-                    <>
-                      <span className="spinner-border spinner-border-sm me-1" />
-                      Verifying...
-                    </>
-                  ) : (
-                    "Verify"
-                  )}
-                </button>
-              </div>
-            ) : (
+          {/* ========== Document Number – with conditional UI for Visa ========== */}
+          {docForm.document_name === "Visa" ? (
+            <>
+              {/* Show passport info for verification if available */}
+              {(() => {
+                const allDocs = profileData?.data?.documents || [];
+                const passportDoc = allDocs.find(
+                  (doc) => doc.document_type === "passport" && doc.document_no
+                );
+                return passportDoc ? (
+                  <>
+                    <label className="form-label fw-semibold mt-2">
+                      Passport Number for Verification
+                    </label>
+                    <div className="input-group mb-2">
+                      <input
+                        type="text"
+                        className="form-control"
+                        value={passportDoc.document_no}
+                        readOnly
+                        disabled
+                      />
+                      <button
+                        type="button"
+                        className="btn btn-outline-primary"
+                        onClick={handleVerifyDocumentNumber}
+                        disabled={verifyingDoc}
+                      >
+                        {verifyingDoc ? (
+                          <>
+                            <span className="spinner-border spinner-border-sm me-1" />
+                            Verifying...
+                          </>
+                        ) : (
+                          "Verify Visa"
+                        )}
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <div
+                    className="alert alert-warning py-2"
+                    role="alert"
+                    style={{ textTransform: "none" }}
+                  >
+                    <i className="fa fa-exclamation-triangle me-2" />
+                    Please add your passport document first before verifying your visa.
+                  </div>
+                );
+              })()}
+
+              <label className="form-label fw-semibold mt-2">
+                Visa Grant Number <span className="text-danger">*</span>
+              </label>
               <input
                 type="text"
                 className="form-control"
@@ -1294,8 +1367,48 @@ export default function EditProfile() {
                 onChange={handleDocNumberChange}
                 required
               />
-            )}
-          </div>
+            </>
+          ) : docForm.document_name === "Security License" ? (
+            <div className="input-group">
+              <input
+                type="text"
+                className="form-control"
+                placeholder="e.g. ABC123456"
+                value={docForm.document_no}
+                onChange={handleDocNumberChange}
+                required
+              />
+              <button
+                type="button"
+                className="btn btn-outline-primary"
+                onClick={handleVerifyDocumentNumber}
+                disabled={verifyingDoc || !docForm.document_no}
+              >
+                {verifyingDoc ? (
+                  <>
+                    <span className="spinner-border spinner-border-sm me-1" />
+                    Verifying...
+                  </>
+                ) : (
+                  "Verify"
+                )}
+              </button>
+            </div>
+          ) : (
+            <div className="mb-3">
+              <label className="form-label fw-semibold">
+                Document Number <span className="text-danger">*</span>
+              </label>
+              <input
+                type="text"
+                className="form-control"
+                placeholder="e.g. ABC123456"
+                value={docForm.document_no}
+                onChange={handleDocNumberChange}
+                required
+              />
+            </div>
+          )}
 
           {/* Expiry Date – permanently disabled for Security License & Visa */}
           <div className="mb-3">
@@ -1376,7 +1489,6 @@ export default function EditProfile() {
                 placeholder="DD/MM/YYYY"
                 value={docForm.document_expiry}
                 onChange={(e) => {
-                  // This handler is irrelevant when disabled, but kept for consistency
                   let value = e.target.value.replace(/\D/g, "");
                   if (value.length > 8) value = value.substring(0, 8);
                   if (value.length > 2 && value.length <= 4) {
@@ -1444,7 +1556,7 @@ export default function EditProfile() {
                   <svg width="48" height="48" fill="#ccc" className="bi bi-cloud-upload mb-3" viewBox="0 0 16 16">
                     <path fillRule="evenodd" d="M4.406 1.342a.5.5 0 0 1 .98 0l.745 2.985h3.138a.5.5 0 0 1 .369.883l-2.54 1.874 1.009 3.26a.5.5 0 0 1-.759.544L8 8.71l-2.609 1.905a.5.5 0 1 1-.758-.544l1.009-3.26-2.54-1.874a.5.5 0 0 1 .369-.883h3.138l.745-2.985z" />
                   </svg>
-                  <p className="text-muted">Click to upload document/image</p>
+                  <p className="text-muted">Upload document to view preview</p>
                 </div>
               )}
             </div>
@@ -1490,10 +1602,10 @@ export default function EditProfile() {
             </svg>
             Permanently Delete Profile?
           </h5>
-          <div className="alert alert-danger py-2 mt-3">
+          <div className="alert alert-danger py-2 mt-3" style={{ textTransform: "none" }}>
             <strong>Warning:</strong> This action is permanent and cannot be undone. All your data will be deleted.
           </div>
-          <p className="text-muted small mb-4">
+          <p className="text-muted small mb-4" style={{ textTransform: "none" }}>
             Please type <strong>DELETE</strong> to confirm you want to permanently delete your profile.
           </p>
           <input type="text" className="form-control mb-3 fw-bold text-center" placeholder="Type DELETE to confirm" value={deleteConfirmText} onChange={(e) => setDeleteConfirmText(e.target.value.toUpperCase())} autoFocus />

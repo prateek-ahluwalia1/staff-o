@@ -43,16 +43,17 @@ const DOC_TYPES = [
   { value: "Driver License Front", label: "Driver License (Front)" },
   { value: "Driver License Back", label: "Driver License (Back)" },
   { value: "Security License", label: "Security License" },
-  { value: "Working with Children", label: "Working with Children Check (WWCC)" },
+  { value: "Working with Children Check", label: "Working with Children Check (WWCC)" },
   { value: "Employment Application Form", label: "Employment Application Form" },
   { value: "TFN Declaration", label: "TFN Declaration" },
   { value: "Superannuation Form", label: "Superannuation Form" },
-  { value: "First Aid", label: "First Aid Certificate" },
+  { value: "First Aid Certificate", label: "First Aid Certificate" },
   { value: "CPR", label: "CPR Certificate" },
   { value: "Vaccination Certificate", label: "Vaccination Certificate" },
   { value: "Citizen Ship", label: "Citizen Ship Certificate" },
   { value: "Medicare", label: "Medicare Certificate" },
   { value: "Birth Certificate", label: "Birth Certificate" },
+  { value: "White Card", label: "White Card" },
 ];
 
 const ManageStaff = () => {
@@ -131,6 +132,7 @@ const ManageStaff = () => {
       phone: "",
       gender: "",
       staff_document_type: "",
+      security_license_no: "",
       address: "",
       city: "",
       state: "",
@@ -180,6 +182,7 @@ const ManageStaff = () => {
         phone: staffData.phone || "",
         gender: staffData.gender || "",
         staff_document_type: staffData.staff_document_type || "",
+        security_license_no: staffData.security_license_no || user.security_license_no || "",
         address: user.address || "",
         city: user.city || "",
         state: user.state || "",
@@ -300,14 +303,20 @@ const ManageStaff = () => {
     }
 
     if (docForm.document_name === "Security License") {
+      const staffState = (editingUser?.state || editingUser?.staff?.state || formData?.state || "").trim();
+      if (!staffState) {
+        toast.error("Please add your location first.");
+        return;
+      }
+
       setVerifyingDoc(true);
       try {
         const res = await submitSecurityLicense(
           "api/documents-online-verification-staffoo",
           {
-            user_id: editingUser.id,
             document_type: "Security License",
             license_number: docForm.document_no,
+            state: staffState,
           },
           { method: "POST" }
         );
@@ -321,7 +330,7 @@ const ManageStaff = () => {
           toast.success("Security License verified. Expiry date locked.");
         } else {
           setDocForm((prev) => ({ ...prev, is_verified: false }));
-          toast.error(res?.message || "Security License verification failed.");
+          toast.error(`Security license number is not valid for ${staffState}`)
         }
       } catch (err) {
         console.error(err);
@@ -374,9 +383,9 @@ const ManageStaff = () => {
 
       setVerifyingDoc(true);
       try {
-        const res = await submit("api/admin/visa-check", payload, { method: "POST" });
-        if (res?.success && res?.data?.expired_at) {
-          const displayExpiry = normalizeToDisplay(res.data.expired_at);
+        const res = await submit("api/admin/visa-expiry-check", payload, { method: "POST" });
+        if (res?.success && res?.expiry) {
+          const displayExpiry = normalizeToDisplay(res.expiry);
           setDocForm((prev) => ({
             ...prev,
             document_expiry: displayExpiry,
@@ -385,7 +394,6 @@ const ManageStaff = () => {
           toast.success("Visa verified. Expiry date locked.");
         } else {
           setDocForm((prev) => ({ ...prev, is_verified: false }));
-          toast.error(res?.message || "Visa verification failed.");
         }
       } catch (err) {
         console.error(err);
@@ -600,6 +608,7 @@ const ManageStaff = () => {
   return (
     <div className="container mt-4 pb-5">
       <style>{`
+        /* ---------- Base / Desktop Styles ---------- */
         .dashboard-page-header h1 {
           font-weight: 800;
           letter-spacing: -0.02em;
@@ -610,14 +619,21 @@ const ManageStaff = () => {
           border-radius: 12px;
           border: 1px solid #e2e8f0;
           background: #ffffff;
-          overflow: hidden;
+          overflow-x: auto;
+          -webkit-overflow-scrolling: touch;
         }
 
         .jobtracker-main-table {
           table-layout: fixed;
           width: 100%;
+          min-width: 650px;            /* ensures scroll on mobile */
           border-collapse: collapse;
           margin: 0;
+        }
+        @media (min-width: 992px) {
+          .jobtracker-main-table {
+            min-width: 0;
+          }
         }
 
         .premium-thead th {
@@ -625,7 +641,6 @@ const ManageStaff = () => {
           color: #ffffff !important;
           font-weight: 600;
           letter-spacing: 0.05em;
-          text-transform: uppercase;
           font-size: 0.75rem;
           padding: 1.2rem 1.5rem !important;
           border: none !important;
@@ -765,6 +780,89 @@ const ManageStaff = () => {
           from { opacity: 0; transform: scale(0.98); }
           to { opacity: 1; transform: scale(1); }
         }
+
+        /* ---------- Responsive ---------- */
+        @media (max-width: 991.98px) {
+          .premium-thead th,
+          .jobtracker-data-row td {
+            padding: 0.75rem 1rem !important;
+            font-size: 0.8rem;
+          }
+          .jobtracker-main-table {
+            min-width: 600px;
+          }
+        }
+
+        @media (max-width: 767.98px) {
+          /* Header stacks */
+          .d-flex.justify-content-between.align-items-end.mb-4 {
+            flex-direction: column;
+            align-items: flex-start !important;
+          }
+          .d-flex.justify-content-between.align-items-end.mb-4 .btn {
+            width: 100%;
+            margin-top: 1rem;
+          }
+          /* Pagination stacking */
+          .card-footer .d-flex {
+            flex-direction: column;
+            align-items: flex-start !important;
+            gap: 0.5rem;
+          }
+          /* Modal fullscreen */
+          .modal-inner-content {
+            width: 100%;
+            height: 100vh;
+            border-radius: 0;
+          }
+          .full-screen-modal .px-5 {
+            padding-left: 1rem !important;
+            padding-right: 1rem !important;
+          }
+          .full-screen-modal .py-4 {
+            padding-top: 1rem !important;
+            padding-bottom: 1rem !important;
+          }
+          .modal-tabs-container {
+            width: 100%;
+            justify-content: center;
+          }
+          .modal-tabs-container .btn {
+            flex: 1 0 auto;
+            font-size: 0.8rem;
+            padding: 0.4rem 0.8rem;
+          }
+          .confirm-modal-card {
+            max-width: 100%;
+          }
+          /* Action buttons in table */
+          .btn-group .btn {
+            width: 36px;
+            height: 36px;
+            padding: 0;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+          }
+        }
+
+        @media (max-width: 575.98px) {
+          .dashboard-page-header h1 {
+            font-size: 1.5rem;
+          }
+          .jobtracker-main-table {
+            min-width: 500px;
+          }
+          .premium-thead th,
+          .jobtracker-data-row td {
+            padding: 0.6rem 0.8rem !important;
+            font-size: 0.75rem;
+          }
+          .card-footer .btn {
+            font-size: 0.8rem;
+            padding: 0.4rem 1rem;
+          }
+        }
       `}</style>
 
       {/* Header */}
@@ -773,12 +871,15 @@ const ManageStaff = () => {
           <h2 className="fw-bold text-dark mb-1" style={{ letterSpacing: "-0.02em" }}>
             Staff Management
           </h2>
-          <p className="text-muted mb-0">
+          <p className="text-muted mb-0"
+            style={{ textTransform: "none" }}
+          >
             Manage permissions and details for your team members.
           </p>
         </div>
         <button
           className="btn btn-dark rounded-pill px-4 py-2 shadow-sm fw-bold"
+          style={{ minHeight: "44px" }}
           onClick={() => openModal()}
         >
           <i className="fa-solid fa-plus me-2"></i> Add Staff
@@ -799,22 +900,28 @@ const ManageStaff = () => {
       <div className="card border-0 shadow-sm rounded-4 overflow-hidden mb-4 jobtracker-table-shell">
         <div className="table-responsive">
           <table
-            className={`table table-hover align-middle mb-0 jobtracker-main-table ${loading ? "opacity-50" : ""
-              }`}
+            className={`table table-hover align-middle mb-0 jobtracker-main-table ${loading ? "opacity-50" : ""}`}
           >
             <thead className="premium-thead">
               <tr>
-                <th className="text-start" style={{ width: "35%" }}>
-                  NAME & EMAIL
-                </th>
                 <th className="text-start" style={{ width: "25%" }}>
-                  PHONE
+                  Name & Email
                 </th>
-                <th className="text-start" style={{ width: "25%" }}>
-                  LOCATION
+                <th className="text-start" style={{ width: "15%" }}>
+                  Phone
                 </th>
-                <th className="text-center" style={{ width: "15%" }}>
-                  ACTIONS
+                <th className="text-start" style={{ width: "15%" }}>
+                  Location
+                </th>
+                <th className="text-start" style={{ width: "15%" }}>
+                  Status
+                </th>
+                {/* NEW: Created At column */}
+                <th className="text-start" style={{ width: "15%" }}>
+                  Created At
+                </th>
+                <th className="text-start" style={{ width: "15%" }}>
+                  Actions
                 </th>
               </tr>
             </thead>
@@ -835,7 +942,16 @@ const ManageStaff = () => {
                       {user.city || "—"}{" "}
                       <span className="text-muted small">({user.country || "N/A"})</span>
                     </td>
-                    <td className="text-center">
+                    <td className="text-start">
+                      <div className="text-dark small">{user?.is_active ? "Active" : "Inactive"}</div>
+                    </td>
+                    {/* NEW: Created At cell */}
+                    <td className="text-start">
+                      <span className="small">
+                        {normalizeToDisplay(user.created_at) || "—"}
+                      </span>
+                    </td>
+                    <td className="text-start">
                       <div className="btn-group">
                         <button
                           className="btn btn-light btn-sm rounded-circle me-2 border"
@@ -855,7 +971,10 @@ const ManageStaff = () => {
                 ))
               ) : (
                 <tr>
-                  <td colSpan="4" className="text-center py-5 text-muted">
+                  {/* Updated colSpan to 6 because we now have 6 columns */}
+                  <td colSpan="6" className="text-center py-5 text-muted"
+                    style={{ textTransform: "none" }}
+                  >
                     No staff records found.
                   </td>
                 </tr>
@@ -863,8 +982,7 @@ const ManageStaff = () => {
             </tbody>
           </table>
         </div>
-
-        <div className="card-footer bg-white border-top py-3 px-4 d-flex justify-content-between align-items-center">
+        <div className="card-footer bg-white border-top py-3 px-4 d-flex justify-content-between align-items-center flex-wrap">
           <div className="text-muted small">
             Showing Page <strong>{page}</strong> of <strong>{totalPages}</strong>
             <span className="mx-2">•</span>
@@ -875,6 +993,7 @@ const ManageStaff = () => {
               className="btn btn-sm btn-outline-secondary rounded-pill px-3"
               onClick={() => handlePageChange(page - 1)}
               disabled={page === 1}
+              style={{ minHeight: "44px" }}
             >
               <i className="fa-solid fa-chevron-left me-1"></i> Prev
             </button>
@@ -882,6 +1001,7 @@ const ManageStaff = () => {
               className="btn btn-sm btn-outline-secondary rounded-pill px-3"
               onClick={() => handlePageChange(page + 1)}
               disabled={page === totalPages || totalPages === 0}
+              style={{ minHeight: "44px" }}
             >
               Next <i className="fa-solid fa-chevron-right ms-1"></i>
             </button>
@@ -916,6 +1036,7 @@ const ManageStaff = () => {
                     : "btn-outline-primary"
                     }`}
                   onClick={() => setActiveModalTab("personal")}
+                  style={{ minHeight: "44px" }}
                 >
                   Personal Information
                 </button>
@@ -925,15 +1046,9 @@ const ManageStaff = () => {
                       type="button"
                       className={`btn ${activeModalTab === "documents" ? "btn-primary-custom text-white" : "btn-outline-primary"}`}
                       onClick={() => setActiveModalTab("documents")}
+                      style={{ minHeight: "44px" }}
                     >
                       Documents
-                    </button>
-                    <button
-                      type="button"
-                      className={`btn ${activeModalTab === "onboarding" ? "btn-primary-custom text-white" : "btn-outline-primary"}`}
-                      onClick={() => setActiveModalTab("onboarding")}
-                    >
-                      Verification Forms
                     </button>
                   </>
                 )}
@@ -954,6 +1069,7 @@ const ManageStaff = () => {
                     staff_document_type: formData.staff_document_type,
                     date_of_birth: formData.date_of_birth,
                     origin_country: formData.origin_country,
+                    security_license_no: formData.security_license_no || "",
                     abn: "",
                     acn: "",
                     company_name: "",
@@ -971,6 +1087,7 @@ const ManageStaff = () => {
                       form="profile-form"
                       className="btn btn-dark rounded-pill px-5 fw-bold shadow-sm"
                       disabled={submitLoading}
+                      style={{ minHeight: "44px" }}
                     >
                       {submitLoading
                         ? "Saving..."
@@ -994,6 +1111,7 @@ const ManageStaff = () => {
                           type={showPassword ? "text" : "password"}
                           className="form-control pe-5"
                           value={formData.password}
+                          minLength={8}
                           onChange={(e) =>
                             setFormData((prev) => ({
                               ...prev,
@@ -1001,6 +1119,7 @@ const ManageStaff = () => {
                             }))
                           }
                           required={!editingUser}
+                          style={{ minHeight: "44px" }}
                         />
                         <button
                           type="button"
@@ -1024,7 +1143,9 @@ const ManageStaff = () => {
                       <h6 className="section-divider mt-0 border-0 mb-1">
                         Documents
                       </h6>
-                      <p className="text-muted mb-0 small">
+                      <p className="text-muted mb-0 small"
+                        style={{ textTransform: "none" }}
+                      >
                         Upload and manage staff documents.
                       </p>
                     </div>
@@ -1066,7 +1187,7 @@ const ManageStaff = () => {
                           {/* Document Type */}
                           <div className="mb-3">
                             <label className="form-label fw-bold text-dark">
-                              Document Type <span className="text-danger">*</span>
+                              Document Type
                             </label>
                             <select
                               className="form-control bg-light border-0"
@@ -1075,6 +1196,7 @@ const ManageStaff = () => {
                               onChange={handleDocFormChange}
                               required
                               disabled={!!selectedDoc}
+                              style={{ minHeight: "44px" }}
                             >
                               <option value="">Select Type</option>
                               {DOC_TYPES.map((type) => (
@@ -1100,12 +1222,14 @@ const ManageStaff = () => {
                                   value={docForm.document_no}
                                   onChange={handleDocNumberChange}
                                   required
+                                  style={{ minHeight: "44px" }}
                                 />
                                 <button
                                   type="button"
                                   className="btn btn-dark fw-bold px-4 border-0"
                                   onClick={handleVerifyDocumentNumber}
                                   disabled={verifyingDoc || !docForm.document_no}
+                                  style={{ minHeight: "44px" }}
                                 >
                                   {verifyingDoc ? (
                                     <>
@@ -1125,6 +1249,7 @@ const ManageStaff = () => {
                                 value={docForm.document_no}
                                 onChange={handleDocNumberChange}
                                 required
+                                style={{ minHeight: "44px" }}
                               />
                             )}
                           </div>
@@ -1150,7 +1275,7 @@ const ManageStaff = () => {
                                     }
                                   }
                                 }}
-                                style={{ cursor: "pointer", zIndex: 10 }}
+                                style={{ cursor: "pointer", zIndex: 10, minHeight: "44px" }}
                                 disabled={
                                   docForm.document_name === "Security License" ||
                                   docForm.document_name === "Visa"
@@ -1241,6 +1366,7 @@ const ManageStaff = () => {
                                       docForm.document_name === "Visa"
                                       ? "#e9ecef"
                                       : "white",
+                                  minHeight: "44px"
                                 }}
                               />
                             </div>
@@ -1299,9 +1425,8 @@ const ManageStaff = () => {
                                 </>
                               ) : (
                                 <div className="text-center">
-                                  <i className="fa-solid fa-cloud-arrow-up fa-3x text-muted mb-3"></i>
                                   <p className="text-muted fw-medium mb-0">
-                                    Click to upload document/image
+                                    Choose file to view preview
                                   </p>
                                 </div>
                               )}
@@ -1312,6 +1437,7 @@ const ManageStaff = () => {
                               onChange={handleDocFormChange}
                               name="file"
                               accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.gif,.webp"
+                              style={{ minHeight: "44px" }}
                             />
                           </div>
 
@@ -1321,6 +1447,7 @@ const ManageStaff = () => {
                               className="btn btn-light rounded-pill px-5 fw-bold text-muted border"
                               onClick={closeDocumentModal}
                               disabled={uploadLoading || submitLoading}
+                              style={{ minHeight: "44px" }}
                             >
                               Cancel
                             </button>
@@ -1333,6 +1460,7 @@ const ManageStaff = () => {
                                 !docForm.document_expiry ||
                                 !docForm.file_url
                               }
+                              style={{ minHeight: "44px" }}
                             >
                               {submitLoading ? "Saving..." : "Upload Document"}
                             </button>
@@ -1350,6 +1478,7 @@ const ManageStaff = () => {
                 type="button"
                 className="btn btn-light rounded-pill px-5 fw-bold text-muted border"
                 onClick={closeModal}
+                style={{ minHeight: "44px" }}
               >
                 Cancel
               </button>
@@ -1389,6 +1518,7 @@ const ManageStaff = () => {
                 className="btn btn-outline-secondary rounded-pill px-4 fw-bold"
                 onClick={closeDeleteModal}
                 disabled={deleteLoading}
+                style={{ minHeight: "44px" }}
               >
                 Cancel
               </button>
@@ -1397,6 +1527,7 @@ const ManageStaff = () => {
                 className="btn btn-danger rounded-pill px-4 fw-bold shadow-sm"
                 onClick={confirmDelete}
                 disabled={deleteLoading}
+                style={{ minHeight: "44px" }}
               >
                 {deleteLoading ? "Deleting..." : "Yes, Delete"}
               </button>

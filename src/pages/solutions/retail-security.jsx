@@ -10,6 +10,13 @@ import BusinessProtectionLeft from "../../components/solution'scomp/BusinessProt
 import RelatedSolutions from "../../components/solution'scomp/RelatedSolutions";
 import FAQ from "../../components/solution'scomp/FAQ";
 import ReadyToSecure from "../../components/solution'scomp/ReadyToSecure";
+import securityImage from "../../assets/images/security.png";
+import WhyChooseStaffooRetail from "../../components/solution'scomp/retail'comp/Whychoseusret";
+import StepsToRecruit from "../../components/solution'scomp/retail'comp/StepsToRecur";
+import RetailSpeciality from "../../components/solution'scomp/retail'comp/RetailSpecility";
+import RetailFaqs from "../../components/solution'scomp/retail'comp/RetailFaqs";
+import { Helmet } from "react-helmet";
+
 
 export default function RetailSecurity() {
     const [isPrimaryHovered, setIsPrimaryHovered] = useState(false);
@@ -144,7 +151,7 @@ export default function RetailSecurity() {
             fontWeight: "5w00",
             letterSpacing: "0.08em",
             color: "#00c9a7",
-            textTransform: "uppercase",
+            // textTransform: "uppercase",
             marginBottom: "24px",
             textAlign: isMobile ? "center" : "left",
         },
@@ -188,10 +195,156 @@ export default function RetailSecurity() {
             fontWeight: "500",
             textAlign: "center",
         },
+
+
+
+
+
+
+
+        sectionWrapper: {
+            width: "100%",
+            background: "#0b1111", // Deep dark background matching the hero block
+            padding: isMobile ? "60px 20px" : "30px 40px",
+            display: "flex",
+            justifyContent: "center",
+            boxSizing: "border-box",
+            fontFamily: "'Poppins', 'Inter', 'Segoe UI', sans-serif",
+        },
+        container: {
+            maxWidth: "1140px",
+            width: "100%",
+            display: "flex",
+            flexDirection: isMobile ? "column" : "row",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: isMobile ? "48px" : "80px",
+        },
+        leftContent: {
+            flex: "1",
+            maxWidth: isMobile ? "100%" : "600px",
+        },
+        // tag: {
+        //     display: "inline-block",
+        //     background: "rgba(0, 201, 167, 0.15)",
+        //     border: "1px solid rgba(0, 201, 167, 0.3)",
+        //     borderRadius: "50px",
+        //     padding: "6px 18px",
+        //     fontSize: "11px",
+        //     fontWeight: "600",
+        //     color: "#00c9a7",
+        //     textTransform: "uppercase",
+        //     letterSpacing: "0.08em",
+        //     marginBottom: "20px",
+        // },
+        subheading: {
+            fontSize: "12px",
+            color: "#00c9a7", // Teal highlight accent
+            textTransform: "capitalize",
+            letterSpacing: "0.02em",
+            margin: "0 0 16px 0",
+        },
+        heading: {
+            fontSize: isMobile ? "24px" : "30px",
+            fontWeight: "700",
+            color: "#ffffff",
+            lineHeight: "1.3",
+            margin: "0 0 24px 0",
+            letterSpacing: "-0.01em",
+        },
+        bodyText: {
+            fontSize: "13px",
+            color: "#ffffff",
+            lineHeight: "1.7",
+            opacity: 0.85,
+            margin: "0 0 20px 0",
+        },
+        listContainer: {
+            margin: "28px 0 0 0",
+            padding: "0",
+            listStyleType: "none",
+        },
+        listItem: {
+            fontSize: "14px",
+            color: "#ffffff",
+            lineHeight: "1.6",
+            opacity: 0.9,
+            marginBottom: "12px",
+            display: "flex",
+            alignItems: "flex-start",
+            gap: "10px",
+        },
+        bulletPoint: {
+            color: "#00c9a7",
+            fontWeight: "bold",
+        },
+        rightContent: {
+            flexShrink: 0,
+            width: "100%",
+            maxWidth: isMobile ? "100%" : "405px",
+            display: "flex",
+            justifyContent: "center",
+        },
+        imageWrapper: {
+            width: "100%",
+            borderRadius: "28px",
+            overflow: "hidden",
+            border: "1px solid #00c9a7", // Subtle teal frame border
+            display: "block",
+        },
+        img: {
+            width: "405px",
+            height: "496px",
+            display: "block",
+            objectFit: "cover",
+        },
+
     };
 
     return (
         <>
+            <Helmet>
+                <title>Best Retail Security Services in Australia | Staffoo</title>
+
+                <meta
+                    name="description"
+                    content="Book professional retail security guards for your shops and outlets with Staffoo. Post your request, check the profile, and book a security guard in Australia."
+                />
+
+                <meta
+                    name="keywords"
+                    content="retail security, retail security guards, shop security, outlet security, retail security services, Australia, Staffoo"
+                />
+
+                <link rel="canonical" href="https://staffoo.com.au/solutions/retail-security" />
+
+                {/* Open Graph Tags */}
+                <meta
+                    property="og:title"
+                    content="Best Retail Security Services in Australia | Staffoo"
+                />
+                <meta
+                    property="og:description"
+                    content="Book professional retail security guards for your shops and outlets with Staffoo. Post your request, check the profile, and book a security guard in Australia."
+                />
+                <meta property="og:type" content="website" />
+                <meta
+                    property="og:url"
+                    content="https://staffoo.com.au/solutions/retail-security"
+                />
+
+                {/* Twitter Card Tags */}
+                <meta name="twitter:card" content="summary_large_image" />
+                <meta
+                    name="twitter:title"
+                    content="Best Retail Security Services in Australia | Staffoo"
+                />
+                <meta
+                    name="twitter:description"
+                    content="Book professional retail security guards for your shops and outlets with Staffoo. Post your request, check the profile, and book a security guard in Australia."
+                />
+            </Helmet>
+
             <Header />
 
             <div style={styles.page}>
@@ -210,13 +363,12 @@ export default function RetailSecurity() {
                         {/* Heading */}
                         <h1 style={styles.heading}>
                             Professional <span style={styles.headingAccent}>Retail Security</span> staffing built for safety
+                            Expert <span style={styles.headingAccent}>Retail Security</span> Staff for Growing Businesses
                         </h1>
 
                         {/* Description */}
                         <p style={styles.description}>
-                            From single retail stores to large shopping centres, Staffoo provides
-                            trained and vetted retail security personnel — preventing theft,
-                            managing incidents, and ensuring a safe shopping environment.
+                            Find verified security guards for your retail store in minutes. Post your job description on Staffoo and get skilled guards quick and easy.
                         </p>
 
                         {/* Buttons */}
@@ -241,40 +393,107 @@ export default function RetailSecurity() {
                     {/* Right Card */}
                     <div style={styles.right}>
                         <div style={styles.card}>
-                            <div style={styles.cardLabel}>Solution at a Glance</div>
+                            <div style={styles.cardLabel}>Why Staffoo</div>
 
-                            {/* Stats */}
+                            {/* Stats Grid */}
                             <div style={styles.statsGrid}>
                                 <div style={styles.statBox}>
-                                    <div style={styles.statValue}>24 hrs</div>
-                                    <div style={styles.statLabel}>Avg. response time</div>
+                                    <div style={styles.statValue}>500+ </div>
+                                    <div style={styles.statLabel}>Monthly <br /> deploys</div>
                                 </div>
+
                                 <div style={styles.statBox}>
                                     <div style={styles.statValue}>100%</div>
-                                    <div style={styles.statLabel}>Trained & verified</div>
+                                    <div style={styles.statLabel}>Licensed & Verified</div>
                                 </div>
                             </div>
 
                             {/* Tags */}
                             <div style={styles.tagsGrid}>
-                                <div style={styles.tag}>Loss prevention</div>
-                                <div style={styles.tag}>Customer assistance</div>
-                                <div style={styles.tag}>CCTV monitoring</div>
-                                <div style={styles.tag}>Incident reporting</div>
+                                <div style={styles.tag}>GPS <br /> Tracking</div>
+                                <div style={styles.tag}>Payroll Management</div>
+                                <div style={styles.tag}>Instant Deployment</div>
+                                <div style={styles.tag}>Complince Covered</div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
+
             <StatsCounter />
-            <BusinessProtection />
+            {/* <BusinessProtection /> */}
+
+            <div style={styles.sectionWrapper}>
+                <div style={styles.container}>
+
+                    {/* Left Text Block */}
+                    <div style={styles.leftContent}>
+                        {/* Hero-style Tag */}
+                        {/* <div style={styles.tag}>Retail Security</div> */}
+
+                        <div style={styles.subheading}>Who We Are</div>
+                        <h2 style={styles.heading}>
+                            Best Retail Security Solutions Across Australia
+                        </h2>
+
+                        <p style={styles.bodyText}>
+                            Retail theft and losses are increasing every day in Australia. Shops, shopping malls, and other retail outlets need professional security staff they can trust. Staffoo connects security guards with retail employers and resource partners to meet security needs. Guards on Staffoo upload their licences and certifications to their profiles.
+                        </p>
+
+                        <p style={styles.bodyText}>
+                            You can simply post a job, find the most suitable staff, and manage your retail stores with confidence in Australia. You can hire whether you need a single guard for a small shop or a full team for a large mall. We make your process simple and fast.
+                        </p>
+
+                        <ul style={styles.listContainer}>
+                            <li style={styles.listItem}>
+                                <span style={styles.bulletPoint}>•</span>
+                                Post retail security jobs in minutes.
+                            </li>
+                            <li style={styles.listItem}>
+                                <span style={styles.bulletPoint}>•</span>
+                                Find guards with verified licences for reliable protection
+                            </li>
+                            <li style={styles.listItem}>
+                                <span style={styles.bulletPoint}>•</span>
+                                Hire security guards at the last minute without calls or delays
+                            </li>
+                        </ul>
+                    </div>
+
+                    {/* Right Image Block */}
+                    <div style={styles.rightContent}>
+                        <div style={styles.imageWrapper}>
+                            <img
+                                src={securityImage}
+                                alt="Security Monitoring Control Room"
+                                style={styles.img}
+                            />
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
             <Testimonials />
-            <WhyChooseStaffoo />
-            <HowItWorks />
-            <BusinessProtectionLeft />
+
+
+            <WhyChooseStaffooRetail />
+
+            <StepsToRecruit />
+
+            <RetailSpeciality />
+
             <RelatedSolutions />
-            <FAQ />
-            <ReadyToSecure />
+
+
+            <RetailFaqs />
+
+
+            <ReadyToSecure
+                heading="Ready To Hire Security Staff For Your Business?"
+                description="Find licensed security professionals for retail stores, shopping centres, and commercial outlets across Australia. Post your request and hire with confidence."
+                buttonText="Request Security Staff"
+            />
 
             <Footer />
         </>

@@ -10,6 +10,7 @@ import BusinessProtectionLeft from "../../components/solution'scomp/BusinessProt
 import RelatedSolutions from "../../components/solution'scomp/RelatedSolutions";
 import FAQ from "../../components/solution'scomp/FAQ";
 import ReadyToSecure from "../../components/solution'scomp/ReadyToSecure";
+import { Helmet } from "react-helmet";
 
 export default function EventSecurityHero() {
   const [isPrimaryHovered, setIsPrimaryHovered] = useState(false);
@@ -144,7 +145,6 @@ export default function EventSecurityHero() {
       fontWeight: "5w00",
       letterSpacing: "0.08em",
       color: "#00c9a7",
-      textTransform: "uppercase",
       marginBottom: "24px",
       textAlign: isMobile ? "center" : "left",
     },
@@ -192,6 +192,54 @@ export default function EventSecurityHero() {
 
   return (
     <>
+
+      <Helmet>
+        <title>
+          Best Retail Security Services in Australia | Staffoo
+        </title>
+
+        <meta
+          name="description"
+          content="Book professional retail security guards for your shops and outlets with Staffoo. Post your request, check the profile, and book a security guard in Australia."
+        />
+
+        <meta
+          name="keywords"
+          content="retail security, retail security guards, shop security, retail security services, outlet security, Australia, Staffoo"
+        />
+
+        <link
+          rel="canonical"
+          href="https://staffoo.com.au/solutions/retail-security"
+        />
+
+        {/* Open Graph Tags */}
+        <meta
+          property="og:title"
+          content="Best Retail Security Services in Australia | Staffoo"
+        />
+        <meta
+          property="og:description"
+          content="Book professional retail security guards for your shops and outlets with Staffoo. Post your request, check the profile, and book a security guard in Australia."
+        />
+        <meta property="og:type" content="website" />
+        <meta
+          property="og:url"
+          content="https://staffoo.com.au/solutions/retail-security"
+        />
+
+        {/* Twitter Card Tags */}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta
+          name="twitter:title"
+          content="Best Retail Security Services in Australia | Staffoo"
+        />
+        <meta
+          name="twitter:description"
+          content="Book professional retail security guards for your shops and outlets with Staffoo. Post your request, check the profile, and book a security guard in Australia."
+        />
+      </Helmet>
+
       <Header />
 
       <div style={styles.page}>
@@ -209,14 +257,14 @@ export default function EventSecurityHero() {
 
             {/* Heading */}
             <h1 style={styles.heading}>
-              Professional <span style={styles.headingAccent}>Event Security</span> staffing built for scale
+              Find Licensed  <span style={styles.headingAccent}>Event Security</span> Staff Today
             </h1>
 
             {/* Description */}
             <p style={styles.description}>
-              From small private functions to major public events, Staffoo sources,
-              verifies, and deploys licensed security personnel — fast, compliant,
-              and covered.
+              Get event security staff fast. Just post a job in minutes and connect
+              with compliant, licensed security professionals for your event anywhere
+              across Australia.
             </p>
 
             {/* Buttons */}
@@ -226,14 +274,15 @@ export default function EventSecurityHero() {
                 onMouseEnter={() => setIsPrimaryHovered(true)}
                 onMouseLeave={() => setIsPrimaryHovered(false)}
               >
-                Request security staff
+                Post Your Job
               </button>
+
               <button
                 style={styles.btnSecondary}
                 onMouseEnter={() => setIsSecondaryHovered(true)}
                 onMouseLeave={() => setIsSecondaryHovered(false)}
               >
-                See how it works
+                Find Security Staff
               </button>
             </div>
           </div>
@@ -241,31 +290,35 @@ export default function EventSecurityHero() {
           {/* Right Card */}
           <div style={styles.right}>
             <div style={styles.card}>
-              <div style={styles.cardLabel}>Solution at a Glance</div>
+              <div style={styles.cardLabel}>Why Staffoo</div>
 
-              {/* Stats */}
+              {/* Stats Grid */}
               <div style={styles.statsGrid}>
                 <div style={styles.statBox}>
-                  <div style={styles.statValue}>24 hrs</div>
-                  <div style={styles.statLabel}>Avg. deployment time</div>
+                  <div style={styles.statValue}>500+ </div>
+                  <div style={styles.statLabel}>Monthly <br /> deploys</div>
                 </div>
+
                 <div style={styles.statBox}>
                   <div style={styles.statValue}>100%</div>
-                  <div style={styles.statLabel}>Licensed &amp; verified</div>
+                  <div style={styles.statLabel}>Licensed & Verified</div>
                 </div>
               </div>
 
               {/* Tags */}
               <div style={styles.tagsGrid}>
-                <div style={styles.tag}>Crowd controller</div>
-                <div style={styles.tag}>RSA-trained</div>
-                <div style={styles.tag}>GPS tracking</div>
-                <div style={styles.tag}>Payroll managed</div>
+                <div style={styles.tag}>GPS <br /> Tracking</div>
+                <div style={styles.tag}>Payroll Management</div>
+                <div style={styles.tag}>Instant Deployment</div>
+                <div style={styles.tag}>Complince Covered</div>
               </div>
             </div>
           </div>
+
+
         </div>
       </div>
+
       <StatsCounter />
       <BusinessProtection />
       <Testimonials />
@@ -274,7 +327,14 @@ export default function EventSecurityHero() {
       <BusinessProtectionLeft />
       <RelatedSolutions />
       <FAQ />
-      <ReadyToSecure />
+
+
+      <ReadyToSecure
+        heading="Need Trusted Security Staff?"
+        description="Staffoo helps you connect with licensed security professionals for festivals, corporate events, concerts, or private events across Australia."
+        buttonText="Request Security Staff"
+      />
+
 
       <Footer />
     </>

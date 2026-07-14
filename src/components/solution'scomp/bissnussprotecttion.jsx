@@ -21,7 +21,7 @@ export default function BusinessProtection() {
         sectionWrapper: {
             width: "100%",
             background: "#0b1111", // Deep dark background matching the hero block
-            padding: isMobile ? "60px 20px" : "80px 40px",
+            padding: isMobile ? "60px 20px" : "30px 40px",
             display: "flex",
             justifyContent: "center",
             boxSizing: "border-box",
@@ -42,7 +42,6 @@ export default function BusinessProtection() {
         },
         subheading: {
             fontSize: "12px",
-            // fontWeight: "700",
             color: "#00c9a7", // Teal highlight accent
             textTransform: "capitalize",
             letterSpacing: "0.02em",
@@ -110,38 +109,31 @@ export default function BusinessProtection() {
 
                 {/* Left Text Block */}
                 <div style={styles.leftContent}>
-                    <div style={styles.subheading}>How Staffoo Solves It</div>
+                    <div style={styles.subheading}>Who We Are</div>
                     <h2 style={styles.heading}>
-                        Everything You Need To Protect Your Business
+                        Trusted Event Security Professionals at Your Fingertips
                     </h2>
 
                     <p style={styles.bodyText}>
-                        Staffoo replaces the phone-call-and-spreadsheet approach with a managed
-                        staffing platform built specifically for events. Submit a single brief covering your
-                        dates, venue and headcount, and our system matches you with licensed guards
-                        and supervisors who are already verified, insured and rated from past
-                        deployments — not just available.
+                        Planning a safe event? It takes more than just people in uniforms. You need licensed, compliant, and available professionals to work with. Staffoo connects event organisers with the most qualified security personnel or companies across Australia. If you are planning for a small function or a large public event, you can find the perfect security professionals without delays.
                     </p>
 
                     <p style={styles.bodyText}>
-                        From there, Staffoo manages the parts that usually fall through the cracks:
-                        licence and induction checks before shift one, real-time check-in tracking on the
-                        day, and a single consolidated payroll invoice afterward instead of a stack of
-                        individual contractor payments.
+                        Every profile on Staffoo includes verified licences and certifications. We save you time and reduce risk. You can find the perfect fit, as many organisers fill shifts within hours for a safe and compliant event.
                     </p>
 
                     <ul style={styles.listContainer}>
                         <li style={styles.listItem}>
                             <span style={styles.bulletPoint}>•</span>
-                            License-verified guards and supervisors, every time
+                            Find licenced event security staff fast.
                         </li>
                         <li style={styles.listItem}>
                             <span style={styles.bulletPoint}>•</span>
-                            Real-time shift tracking and on-site reporting
+                            All profiles have updated and verified licences and certifications
                         </li>
                         <li style={styles.listItem}>
                             <span style={styles.bulletPoint}>•</span>
-                            Transparent, all-inclusive payroll — no surprise invoices
+                            Post in minutes and fill shifts without any delay
                         </li>
                     </ul>
                 </div>
@@ -150,8 +142,7 @@ export default function BusinessProtection() {
                 <div style={styles.rightContent}>
                     <div style={styles.imageWrapper}>
                         <img
-                            // src="images/security.png" // Temporary placeholder image matching security room theme
-                            src={securityImage} // Swap with your actual project asset path when ready
+                            src={securityImage}
                             alt="Security Monitoring Control Room"
                             style={styles.img}
                         />

@@ -91,8 +91,12 @@ const ChatRoom = () => {
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [messageToDelete, setMessageToDelete] = useState(null);
+  const [mobileChatActive, setMobileChatActive] = useState(false); // mobile single-panel toggle
   const scrollRef = useRef();
   const pickerRef = useRef();
+
+  // Helper to check if viewport is mobile (< 768px)
+  const isMobileView = () => window.innerWidth < 768;
 
   // 1. Get Conversations API
   const {
@@ -211,11 +215,23 @@ const ChatRoom = () => {
   };
 
   const handleSelectConv = (conv) => {
-    dispatch(setActiveChat(conv));
     const other = otherUser(conv);
+    const isSameConv = activeConversation?.user?.id === other?.id;
+
+    // On mobile, if same conversation is already active, just switch to chat view
+    if (isSameConv && isMobileView()) {
+      setMobileChatActive(true);
+      return;
+    }
+
+    dispatch(setActiveChat(conv));
     if (other?.id) {
       fetchMessages(other.id);
       markMessagesAsRead(other.id);
+    }
+    // On mobile, automatically open the chat panel
+    if (isMobileView()) {
+      setMobileChatActive(true);
     }
   };
 
@@ -232,6 +248,15 @@ const ChatRoom = () => {
     dispatch(setActiveChat(conv));
     fetchMessages(targetUser.id);
     markMessagesAsRead(targetUser.id);
+
+    if (isMobileView()) {
+      setMobileChatActive(true);
+    }
+  };
+
+  const handleBackToList = () => {
+    setMobileChatActive(false);
+    // Keep activeConversation so it's still selected when returning
   };
 
   const onSend = async (e) => {
@@ -343,25 +368,46 @@ const ChatRoom = () => {
           {userType === "admin" && (
             <button
               type="button"
-              className="btn btn-outline-primary"
+              className="btn btn-outline-primary d-none d-md-inline-flex"
               onClick={() => navigate("/chat")}
             >
               <i className="fa-solid fa-arrow-left me-2"></i>
               Back to Categories
             </button>
           )}
+          {/* Mobile back to categories (icon only) */}
+          {userType === "admin" && (
+            <button
+              className="btn btn-sm d-md-none"
+              style={{
+                background: "rgba(13,110,253,0.1)",
+                border: "none",
+                borderRadius: "50%",
+                width: 38,
+                height: 38,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                padding: 0,
+              }}
+              onClick={() => navigate("/chat")}
+              title="Back to Categories"
+            >
+              <i className="fa-solid fa-arrow-left" style={{ color: "#0A7C6E" }}></i>
+            </button>
+          )}
         </div>
       </div>
 
       <div className="chatroom-page">
-        {/* ── LEFT PANEL ── */}
-        <div className="chatroom-sidebar">
+        {/* ── LEFT PANEL (Sidebar) ── */}
+        <div className={`chatroom-sidebar ${mobileChatActive ? 'd-none' : ''} d-md-block`}>
           {/* Header row */}
           <div className="chatroom-sidebar-header">
-            {/* Only Admins see the circular back button */}
+            {/* Only Admins see the circular back button (desktop only, mobile has top button) */}
             {userType === "admin" && (
               <button
-                className="btn btn-sm me-1 flex-shrink-0"
+                className="btn btn-sm me-1 flex-shrink-0 d-none d-md-flex"
                 style={{
                   background: "rgba(255,255,255,0.15)",
                   border: "1px solid rgba(255,255,255,0.25)",
@@ -474,7 +520,9 @@ const ChatRoom = () => {
             {loadingConv ? (
               <div className="p-3 text-center text-muted small">Loading…</div>
             ) : filteredConvs.length === 0 ? (
-              <div className="p-4 text-center text-muted small">
+              <div className="p-4 text-center text-muted small"
+                style={{ textTransform: "none" }}
+              >
                 No conversations yet. Press <strong>+</strong> to start one.
               </div>
             ) : (
@@ -538,12 +586,20 @@ const ChatRoom = () => {
           </div>
         </div>
 
-        {/* ── RIGHT PANEL ── */}
-        <div className="chatroom-main">
+        {/* ── RIGHT PANEL (Chat main) ── */}
+        <div className={`chatroom-main ${!mobileChatActive ? 'd-none' : ''} d-md-block`}>
           {activeConversation ? (
             <>
               {/* Header */}
               <div className="chatroom-main-header">
+                {/* Mobile back button */}
+                <button
+                  className="btn btn-sm me-2 mobile-back-btn"
+                  onClick={handleBackToList}
+                  title="Back to conversations"
+                >
+                  <i className="fa-solid fa-arrow-left"></i>
+                </button>
                 <Avatar
                   src={getProfileImageUrlFromUserdata(otherUser(activeConversation))}
                   name={otherUser(activeConversation)?.name}
@@ -589,7 +645,9 @@ const ChatRoom = () => {
                         style={{ color: "#0A7C6E" }}
                       ></i>
                     </div>
-                    <p className="text-muted small mb-0">
+                    <p className="text-muted small mb-0"
+                      style={{ textTransform: "none" }}
+                    >
                       No messages yet. Say hello! 👋
                     </p>
                   </div>
@@ -697,7 +755,7 @@ const ChatRoom = () => {
               <div className="chatroom-empty-icon">
                 <i
                   className="fa-regular fa-comments"
-                  style={{ fontSize: 38, color: "#0A7C6E" }}
+                  style={{ fontSize: 38, color: "#fff" }}
                 ></i>
               </div>
               <h6
@@ -708,7 +766,7 @@ const ChatRoom = () => {
               </h6>
               <p
                 className="text-muted small text-center mb-0"
-                style={{ maxWidth: 260 }}
+                style={{ maxWidth: 260, textTransform: "none" }}
               >
                 Pick a conversation from the left, or press <strong>+</strong> to
                 start a new one.
@@ -775,6 +833,91 @@ const ChatRoom = () => {
           </div>
         </Modal>
       </div>
+
+      {/* ── Responsive & global overrides ── */}
+      <style>
+        {`
+          .chatroom-messages {
+          flex: 1;
+          height: calc(100% - 130px);
+          }
+          .mobile-back-btn {
+            display: none !important;
+            width: 38px;
+            height: 38px;
+            padding: 0;
+            border-radius: 50%;
+            background: rgba(13,110,253,0.08);
+            border: none;
+            align-items: center;
+            justify-content: center;
+            color: #0A7C6E;
+            font-size: 1rem;
+          }
+          @media (max-width: 767.98px) {
+            .mobile-back-btn {
+              display: flex !important;
+            }
+            /* Make sidebar and main full width on mobile */
+            .chatroom-sidebar {
+              width: 100% !important;
+              border-right: none !important;
+            }
+            .chatroom-main {
+              width: 100% !important;
+            }
+            /* Adjust header spacing for mobile */
+            .chatroom-main-header {
+              padding: 12px 16px;
+            }
+            /* Increase tap targets */
+            .chatroom-conv-item {
+              padding-top: 12px !important;
+              padding-bottom: 12px !important;
+            }
+            .chatroom-plus-btn {
+              width: 40px;
+              height: 40px;
+            }
+            /* Message bubbles – slightly smaller padding */
+            .message-bubble {
+              max-width: 85% !important;
+              padding: 10px 14px !important;
+              font-size: 0.9rem;
+            }
+            /* Date separator */
+            .chat-date-separator {
+              font-size: 0.75rem;
+              margin: 16px 0 10px;
+            }
+            /* Footer input */
+            .chatroom-footer form input {
+              font-size: 0.95rem;
+              height: 44px;
+            }
+            .chatroom-send-btn {
+              width: 44px;
+              height: 44px;
+            }
+            /* Search input */
+            .chatroom-search input {
+              height: 44px;
+              font-size: 0.95rem;
+            }
+          }
+          @media (max-width: 480px) {
+            .dashboard-page-header h1 {
+              font-size: 1.4rem;
+            }
+            .chatroom-user-picker {
+              right: -10px;
+              width: calc(100vw - 40px);
+              max-width: 320px;
+            }
+          }
+            
+        `}
+      </style>
     </div>
   );
 };

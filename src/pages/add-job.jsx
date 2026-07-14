@@ -181,12 +181,16 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
         <label className={`flex-grow-1 p-3 rounded-3 border transition-all ${postingMode === "broadcast" ? "border-primary bg-white shadow-sm" : "border-light-subtle bg-white opacity-75"}`} style={{ cursor: "pointer" }}>
           <input type="radio" name="postMode" className="d-none" checked={postingMode === "broadcast"} onChange={() => setPostingMode("broadcast")} />
           <div className="fw-bold text-dark mb-1"><i className="fa-solid fa-tower-broadcast text-primary me-2"></i>Broadcast Job</div>
-          <div className="small text-muted">Job will be available for all eligible staff to apply.</div>
+          <div className="small text-muted"
+            style={{ textTransform: "none" }}
+          >Job will be available for all eligible staff to apply.</div>
         </label>
         <label className={`flex-grow-1 p-3 rounded-3 border transition-all ${postingMode === "assign" ? "border-primary bg-white shadow-sm" : "border-light-subtle bg-white opacity-75"}`} style={{ cursor: "pointer" }}>
           <input type="radio" name="postMode" className="d-none" checked={postingMode === "assign"} onChange={() => setPostingMode("assign")} />
           <div className="fw-bold text-dark mb-1"><i className="fa-solid fa-user-check text-success me-2"></i>Assign to Staff</div>
-          <div className="small text-muted">Directly assign this job to a specific staff member.</div>
+          <div className="small text-muted"
+            style={{ textTransform: "none" }}
+          >Directly assign this job to a specific staff member.</div>
         </label>
       </div>
 
@@ -217,7 +221,7 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
         {renderEmbeddedSection(
           "overview",
           "Overview",
-          "Confirm the pre-filled site, customer and date before adding shift details.",
+          "Confirm the pre-filled site, client and date before adding shift details.",
           renderEmbeddedSummary()
         )}
 
@@ -389,8 +393,8 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
   }, [customerSites]);
 
   const handleCreateCustomer = async () => {
-    if (!newCustomer.name || !newCustomer.email || !newCustomer.password) {
-      toast.error("Name, Email and Password are required");
+    if (!newCustomer.name || !newCustomer.email || !newCustomer.password || !newCustomer.phone) {
+      toast.error("All fields are required");
       return;
     }
     try {
@@ -753,8 +757,6 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
           toast.success("Job posted successfully via Admin!");
           navigate("/my-job-applications");
           if (isEmbedded && onClose) onClose();
-        } else {
-          toast.error(postRes?.message || "Job posting failed.");
         }
         setPostingJob(false);
       }
@@ -786,11 +788,13 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
         <div className="d-flex justify-content-between align-items-center gap-3 flex-wrap">
           <div>
             <h4 className="mb-1 fw-bold text-dark">Prefilled shift overview</h4>
-            <p className="text-muted small mb-0">Customer, location and date are prefilled for this roster entry. Review and continue to add shift times.</p>
+            <p className="text-muted small mb-0"
+              style={{ textTransform: "none" }}
+            >Client, location and date are prefilled for this roster entry. Review and continue to add shift times.</p>
           </div>
         </div>
         <div className="embedded-summary-row">
-          <span className="text-muted">Customer</span>
+          <span className="text-muted">Client</span>
           <strong>{embeddedClientName}</strong>
         </div>
         <div className="embedded-summary-row">
@@ -823,16 +827,6 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
               <button type="button" className="btn btn-outline-secondary rounded-pill px-4 fw-bold" onClick={back} disabled={isSubmitting}>
                 Cancel
               </button>
-
-              {!isAdmin && (
-                <button type="button" className="btn btn-primary-custom btn-lg rounded-pill px-5 fw-bold shadow-sm" onClick={handleConfirm} disabled={isSubmitting}>
-                  {isSubmitting ? (
-                    <><span className="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>Processing...</>
-                  ) : (
-                    <><i className="fa-solid fa-paper-plane me-2"></i>Review & Pay</>
-                  )}
-                </button>
-              )}
               {isAdmin && (
                 <button type="button" className="btn btn-dark btn-lg rounded-pill px-5 fw-bold shadow-sm" onClick={handleConfirm} disabled={isSubmitting}>
                   {isSubmitting ? (
@@ -850,7 +844,7 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
               <div>
                 <h1 className="h4 fw-bold text-dark mb-1">Create Job</h1>
                 <p className="text-muted mb-0" style={{ textTransform: "none" }}>
-                  Follow the steps to add a new job
+                  Follow the steps to post a new job
                 </p>
                 {!isEmbedded && <StepProgress step={step} titles={STEP_TITLES} />}
               </div>
@@ -875,15 +869,99 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
                     isSearchable={true}
                     classNamePrefix="react-select"
                     styles={{
-                      control: (base) => ({ ...base, minHeight: "40px", borderRadius: "0.5rem", boxShadow: "none" }),
-                      valueContainer: (base) => ({ ...base, paddingTop: 2, paddingBottom: 2 }),
-                      input: (base) => ({ ...base, margin: 0, padding: 0 }),
-                      indicatorsContainer: (base) => ({ ...base, height: "40px" }),
-                      option: (base, state) => ({
+                      // 1. The main input box
+                      control: (base, state) => ({
                         ...base,
-                        fontWeight: state.data.isNew ? "bold" : "normal",
-                        color: state.data.isNew ? "#0A7C6E" : base.color,
-                        background: state.isSelected ? "#0A7C6E" : state.isFocused ? "#e9ecef" : "white"
+                        minHeight: "46px", // Taller for better clickability
+                        borderRadius: "0.5rem",
+                        backgroundColor: "white",
+                        // Custom focus ring matching your primary brand color
+                        border: state.isFocused ? "2px solid #0A7C6E" : "1px solid #dee2e6",
+                        boxShadow: state.isFocused ? "0 0 0 4px rgba(10, 124, 110, 0.1)" : "none",
+                        transition: "all 0.2s ease",
+                        cursor: "pointer",
+                        "&:hover": {
+                          border: state.isFocused ? "2px solid #0A7C6E" : "1px solid #adb5bd"
+                        }
+                      }),
+
+                      // 2. The dropdown menu container
+                      menu: (base) => ({
+                        ...base,
+                        borderRadius: "0.6rem", // Slightly rounder than the input
+                        boxShadow: "0 10px 40px -10px rgba(0,0,0,0.15)", // Premium floating shadow
+                        border: "1px solid #f1f3f5",
+                        marginTop: "6px", // Adds breathing room below the input
+                        padding: "4px", // Inner padding so items don't touch the borders
+                        zIndex: 9999
+                      }),
+
+                      // 3. The scrollable list area
+                      menuList: (base) => ({
+                        ...base,
+                        padding: "0" // Reset padding to rely on the menu wrapper
+                      }),
+
+                      // 4. The individual dropdown items
+                      option: (base, state) => {
+                        const isNewOption = state.data.isNew;
+
+                        const textColor = state.isSelected
+                          ? "white"
+                          : isNewOption
+                            ? "#0A7C6E"
+                            : "#333333";
+
+                        const bgColor = state.isSelected
+                          ? "#0A7C6E"
+                          : state.isFocused
+                            ? (isNewOption ? "#e0f2f0" : "#f8f9fa") // Soft teal for new, soft gray for standard
+                            : "transparent";
+
+                        return {
+                          ...base,
+                          fontWeight: isNewOption ? "600" : (state.isSelected ? "500" : "400"),
+                          color: textColor,
+                          background: bgColor,
+                          cursor: "pointer",
+                          borderRadius: "0.4rem", // Creates "pill" shapes on hover instead of full-width blocks
+                          margin: "2px 0", // Tiny gap between options
+                          padding: "10px 14px", // Spacious internal padding
+                          transition: "all 0.15s ease",
+                          "&:active": {
+                            background: isNewOption ? "#08665a" : "#0A7C6E",
+                            color: "white"
+                          }
+                        };
+                      },
+
+                      // 5. Selected text inside the input
+                      singleValue: (base) => ({
+                        ...base,
+                        fontWeight: "500",
+                        color: "#212529"
+                      }),
+
+                      // 6. Placeholder text
+                      placeholder: (base) => ({
+                        ...base,
+                        color: "#6c757d",
+                        fontSize: "0.95rem"
+                      }),
+
+                      // 7. Remove the vertical line for a cleaner, minimalist look
+                      indicatorSeparator: () => ({
+                        display: "none"
+                      }),
+
+                      // 8. Style the dropdown arrow
+                      dropdownIndicator: (base, state) => ({
+                        ...base,
+                        color: state.isFocused ? "#0A7C6E" : "#adb5bd",
+                        transition: "all 0.2s ease",
+                        "&:hover": {
+                          color: "#0A7C6E"
+                        }
                       })
                     }}
                   />
@@ -966,24 +1044,15 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
                           />
                         </div>
                         <div className="col-md-6">
-                          <label className="form-label small text-muted fw-bold mb-2">Phone</label>
+                          <label className="form-label small text-muted fw-bold mb-2">Phone *</label>
                           <input
                             type="text"
                             className="form-control"
                             placeholder="Phone number"
                             value={newCustomer.phone}
                             maxLength={20}
+                            required
                             onChange={(e) => setNewCustomer({ ...newCustomer, phone: e.target.value })}
-                          />
-                        </div>
-                        <div className="col-md-6">
-                          <label className="form-label small text-muted fw-bold mb-2">Company</label>
-                          <input
-                            type="text"
-                            className="form-control"
-                            placeholder="Company name"
-                            value={newCustomer.company_name}
-                            onChange={(e) => setNewCustomer({ ...newCustomer, company_name: e.target.value })}
                           />
                         </div>
                         <div className="col-md-6">
@@ -1021,8 +1090,10 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
               </div>
             )}
 
-            <div className="card shadow-sm list-card rounded-4 border-0">
-              <div className="card-body p-4">
+            <div className="card shadow-sm list-card rounded-4 border-0"
+              style={{ padding: "5px" }}
+            >
+              <div className="card-body">
                 {step === 0 && (
                   <div id="location-step-wrapper" className="pt-2">
                     <LocationStep form={form} setField={setField} resolvingLocation={resolvingLocation} setResolvingLocation={setResolvingLocation} locationError={locationError} setLocationError={setLocationError} />
@@ -1039,25 +1110,17 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
                 )}
 
                 {step === 3 && !isAdmin && <ReviewStep form={form} rate={breakdown} setStep={setStep} setField={setField} handleConfirm={handleConfirm} isSubmitting={isSubmitting} baseAmount={breakdown?.chargeTotalIncGst || 0} isAdmin={isAdmin} />}    <div className="d-flex justify-content-between mt-5 pt-4 border-top">
-                  <button type="button" className="btn btn-outline-secondary rounded-pill px-4 fw-bold" onClick={back} disabled={isSubmitting}>← Back</button>
+                  <button type="button" className="btn btn-outline-secondary rounded-pill px-4 fw-bold" onClick={back} disabled={isSubmitting}>Back</button>
 
                   {step < STEP_TITLES.length - 1 ? (
-                    <button type="button" className="btn btn-primary-custom btn-lg rounded-pill px-5 fw-bold shadow-sm" onClick={next} disabled={isSubmitting}>Next Step</button>
+                    <button type="button" className="btn btn-primary-custom btn-lg rounded-pill px-5 fw-bold shadow-sm" onClick={next} disabled={isSubmitting}>Next</button>
                   ) : (
-                    isAdmin ? (
+                    isAdmin && (
                       <button type="button" className="btn btn-dark btn-lg rounded-pill px-5 fw-bold shadow-sm" onClick={handleConfirm} disabled={isSubmitting}>
                         {isSubmitting ? (
                           <><span className="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>Processing...</>
                         ) : (
-                          <><i className="fa-solid fa-paper-plane me-2"></i>Post Job Now</>
-                        )}
-                      </button>
-                    ) : (
-                      <button type="button" className="btn btn-success btn-lg rounded-pill px-5 fw-bold shadow-sm" onClick={handleConfirm} disabled={isSubmitting}>
-                        {isSubmitting ? (
-                          <><span className="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>Processing...</>
-                        ) : (
-                          <><i className="fa-solid fa-paper-plane me-2"></i>Review & Pay</>
+                          <><i className="fa-solid fa-paper-plane me-2"></i>Post Job</>
                         )}
                       </button>
                     )
@@ -1077,7 +1140,9 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
         <div className="embedded-job-header">
           <div>
             <h3 className="mb-1 fw-bold text-dark">{isAdmin ? "Add Shift" : "Create Job"}</h3>
-            <p className="text-muted small mb-0">Prefilled location and date. Use the schedule and details steps to set the shift time.</p>
+            <p className="text-muted small mb-0"
+              style={{ textTransform: "none" }}
+            >Prefilled location and date. Use the schedule and details steps to set the shift time.</p>
           </div>
           <button type="button" className="btn-close" onClick={onClose} aria-label="Close">×</button>
         </div>

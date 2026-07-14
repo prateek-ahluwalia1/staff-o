@@ -9408,7 +9408,7 @@ fieldset:disabled .btn {
     text-transform: lowercase !important
 }
 
-.text-uppercase {
+. {
     text-transform: uppercase !important
 }
 

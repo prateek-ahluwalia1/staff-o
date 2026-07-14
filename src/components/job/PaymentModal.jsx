@@ -177,7 +177,9 @@ function CardForm({
 
           {paymentMode === "saved" && (
             <div className="border rounded p-2" style={{ backgroundColor: "#f8f9fa" }}>
-              <div className="text-muted small mb-2 px-1">
+              <div className="text-muted small mb-2 px-1"
+                style={{ textTransform: "none" }}
+              >
                 Select a card to view its details, then enter them below.
               </div>
               {savedCards.map((card, index) => {
@@ -328,7 +330,9 @@ export default function PaymentModal({
         <div className="d-flex justify-content-between align-items-start mb-4 pe-4">
           <div>
             <h5 className="fw-bold mb-1">Complete Payment</h5>
-            <p className="text-muted small mb-0">
+            <p className="text-muted small mb-0"
+              style={{ textTransform: "none" }}
+            >
               Direct payment to the service provider.
             </p>
           </div>

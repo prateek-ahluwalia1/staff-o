@@ -450,7 +450,7 @@ export default function ContactUs() {
             {/* Left Column: Contact Info */}
             <div className="stf-col-info">
               <div className="stf-card">
-                <h2>Get In Touch</h2>
+                <h2>Get in Touch</h2>
                 <p className="stf-card-desc">
                   Reach us by email, phone, or by using this form. For urgent
                   account issues, include your registered email and a short
@@ -473,9 +473,11 @@ export default function ContactUs() {
                     </span>
                     <div className="stf-info-text">
                       <h5>Email</h5>
-                      <Link to="mailto:admin@staffoo.com.au">
+                      <a href="mailto:admin@staffoo.com.au"
+                        style={{ textTransform: "none" }}
+                      >
                         admin@staffoo.com.au
-                      </Link>
+                      </a>
                     </div>
                   </li>
                   <li>
@@ -530,7 +532,7 @@ export default function ContactUs() {
             {/* Right Column: Form */}
             <div className="stf-col-form">
               <div className="stf-card">
-                <h2>Send A Message</h2>
+                <h2>Send a Message</h2>
                 <p className="stf-card-desc">
                   Tell us what you need and we will route your message to the
                   right team.

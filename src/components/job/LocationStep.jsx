@@ -39,7 +39,7 @@ export default function LocationStep({
         if (types.includes("sublocality")) area = component.long_name;
         if (types.includes("locality")) city = component.long_name;
 
-        // 2. Intercept the state and map it to the short form
+        // Intercept the state and map it to the short form
         if (types.includes("administrative_area_level_1")) {
           // If the long name is in our map, use it. Otherwise, fallback to Google's short_name (lowercased)
           state = STATE_MAP[component.long_name] || component.short_name.toLowerCase();
@@ -55,7 +55,7 @@ export default function LocationStep({
       setField("location", options.preferPlaceLabel ? placeLabel : canonicalAddress);
       setField("address", canonicalAddress);
       if (city) setField("city", city);
-      if (state) setField("state", state); // This will now save 'vic', 'nsw', etc.
+      if (state) setField("state", state);
       if (postcode) setField("postcode", postcode);
       if (setLocationError) setLocationError("");
     },
@@ -93,6 +93,9 @@ export default function LocationStep({
     const gmap = new window.google.maps.Map(mapRef.current, {
       center: { lat: initialLatLng[0], lng: initialLatLng[1] },
       zoom: 15,
+      // Disable default UI elements on mobile to save space if desired
+      disableDefaultUI: window.innerWidth < 768,
+      zoomControl: true,
     });
 
     const marker = new window.google.maps.Marker({
@@ -189,12 +192,15 @@ export default function LocationStep({
       <div className="d-flex justify-content-between align-items-center mb-3">
         <div>
           <h5 className="mb-1 fw-bold text-dark">Interactive Map <span className="text-danger fw-bold">*</span></h5>
-          <p className="text-muted small mb-0">Search below, move the pin, or use current location.</p>
+          <p className="text-muted small mb-0" style={{ textTransform: "none" }}>
+            Search below, move the pin, or use current location.
+          </p>
         </div>
       </div>
 
-      <div className="row g-2 mb-3">
-        <div className="col-md-9">
+      {/* Changed g-2 to g-3 for better mobile stacking spacing, added col-12 classes */}
+      <div className="row g-3 mb-3">
+        <div className="col-12 col-md-8 col-lg-9">
           <div className={`input-group shadow-sm rounded-pill overflow-hidden border ${locationError ? "border-danger border-2" : "border-1"}`}>
             <span className="input-group-text bg-white border-0 text-muted ps-4">
               <i className="fa-solid fa-magnifying-glass"></i>
@@ -237,10 +243,10 @@ export default function LocationStep({
           </div>
         </div>
 
-        <div className="col-md-3 d-grid">
+        <div className="col-12 col-md-4 col-lg-3 d-grid">
           <button
             type="button"
-            className="btn btn-primary-custom btn-lg shadow-sm fw-medium d-flex align-items-center justify-content-center gap-2 rounded-pill"
+            className="btn btn-primary-custom btn-lg shadow-sm fw-medium d-flex align-items-center justify-content-center gap-2 rounded-pill w-100"
             onClick={handleUseCurrent}
             disabled={resolvingLocation}
           >
@@ -260,10 +266,17 @@ export default function LocationStep({
         </div>
       )}
 
+      {/* Responsive Map Container */}
       <div
         ref={mapRef}
         className={`rounded-4 border-2 shadow-sm overflow-hidden ${locationError ? "border-danger border-opacity-75" : "border-secondary border-opacity-50"}`}
-        style={{ height: 350, backgroundColor: "#e9ecef" }}
+        style={{
+          width: "100%",
+          height: "50vh",
+          minHeight: "250px",
+          maxHeight: "350px",
+          backgroundColor: "#e9ecef"
+        }}
       />
     </div>
   );

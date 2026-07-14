@@ -112,7 +112,7 @@ export default function JobAlerts() {
         <div id="newAlert" className="settings-card mt-4">
           <div className="settings-card-header">
             <div>
-              <p className="text-uppercase text-muted small fw-semibold mb-1">
+              <p className=" text-muted small fw-semibold mb-1">
                 Create Alert
               </p>
               <h3>Alert Builder</h3>

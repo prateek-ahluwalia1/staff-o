@@ -17,8 +17,8 @@ const ALL_CATEGORIES = [
   },
   {
     key: "customers",
-    label: "Customers",
-    desc: "Handle customer conversations",
+    label: "Clients",
+    desc: "Handle client conversations",
     accent: "linear-gradient(135deg,#0ea5e9,#0284c7)",
     image: chat2img,
   },

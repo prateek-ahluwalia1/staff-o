@@ -1,3 +1,4 @@
+// ========== DocumentTable component (unchanged, placed at bottom) ==========
 import React, { useMemo } from "react";
 import { apiURL } from "../utils/exports";
 
@@ -16,42 +17,26 @@ const DOC_CONFIG = {
   vaccination: { label: "Vaccination Certificate", sort: 12 },
 };
 
-/**
- * Formats a date string into DD/MM/YYYY.
- * Handles both DD/MM/YYYY (pass-through) and YYYY-MM-DD.
- */
 const formatAUSDate = (dateString) => {
   if (!dateString) return "-";
-
-  // Already in DD/MM/YYYY?
   const ddMatch = dateString.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
   if (ddMatch) return dateString;
-
-  // ISO format YYYY-MM-DD
   const isoMatch = dateString.match(/^(\d{4})-(\d{2})-(\d{2})$/);
   if (isoMatch) {
     const [, y, m, d] = isoMatch;
     return `${d}/${m}/${y}`;
   }
-
-  // Fallback
   const date = new Date(dateString);
   if (!isNaN(date.getTime())) {
     const day = String(date.getDate()).padStart(2, "0");
     const month = String(date.getMonth() + 1).padStart(2, "0");
     return `${day}/${month}/${date.getFullYear()}`;
   }
-
   return "-";
 };
 
-/**
- * Determines expiry status based on a date string.
- * Supports DD/MM/YYYY and YYYY-MM-DD.
- */
 const getExpiryStatus = (dateString) => {
   if (!dateString) return "no-expiry";
-
   let expiry;
   const ddMatch = dateString.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
   if (ddMatch) {
@@ -66,9 +51,7 @@ const getExpiryStatus = (dateString) => {
       expiry = new Date(dateString);
     }
   }
-
   if (isNaN(expiry.getTime())) return "no-expiry";
-
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const diffDays = (expiry - today) / (1000 * 60 * 60 * 24);

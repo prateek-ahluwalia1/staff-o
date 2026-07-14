@@ -9727,7 +9727,6 @@ Large Mobile Screen
     flex: 1;
     display: flex;
     flex-direction: column;
-    gap: 28px;
     min-width: 0;
     animation: slideInContent 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -9887,7 +9886,6 @@ Large Mobile Screen
 }
 
 .employer-dashboard .dashboard-main {
-    gap: 28px;
     display: flex;
     flex-direction: column;
 }
@@ -11762,7 +11760,6 @@ Large Mobile Screen
 }
 
 .employer-dashboard .dashboard-main {
-    gap: 28px;
     display: flex;
     flex-direction: column;
 }
@@ -11860,9 +11857,6 @@ Large Mobile Screen
 /************************************************
         ==Dashboard Detail & Forms==
 *************************************************/
-.profile-settings .dashboard-main {
-    gap: 22px;
-}
 
 .settings-header {
     background: #ffffff;
@@ -13810,7 +13804,6 @@ Large Mobile Screen
 .dashboard-main .experience-timeline {
     display: flex;
     flex-direction: column;
-    gap: 30px;
     position: relative;
     padding-left: 0;
 }
@@ -13912,7 +13905,6 @@ Large Mobile Screen
 .dashboard-main .education-timeline {
     display: flex;
     flex-direction: column;
-    gap: 32px;
     position: relative;
     padding-left: 0;
 }
@@ -15395,4 +15387,20 @@ Large Mobile Screen
     border-top: 2px solid #0A7C6E;
     padding-top: 12px;
     margin-top: 12px;
+}
+
+/* Default padding for larger screens */
+.dashboard-container {
+    padding: 10px 50px;
+}
+
+/* Zero padding for mobile screens */
+@media (max-width: 768px) {
+    .dashboard-container {
+        padding: 0;
+    }
+
+    .dashboard-main {
+        padding: 5px !important;
+    }
 }

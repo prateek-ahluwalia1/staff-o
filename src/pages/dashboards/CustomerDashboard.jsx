@@ -109,7 +109,7 @@ export default function CustomerDashboard() {
                   <i className="fa-solid fa-phone"></i> {phone}
                 </div>
                 <div className="profile-contact"
-                style={{textTransform : "none"}}
+                  style={{ textTransform: "none" }}
                 >
                   <i className="fa-solid fa-envelope"></i> {email}
                 </div>
@@ -168,19 +168,16 @@ export default function CustomerDashboard() {
           <table className="table align-middle">
             <thead>
               <tr>
-                <th>Role Required</th>
                 <th>Staff Assigned</th>
                 <th>Period</th>
                 <th>Cost</th>
                 <th>Status</th>
-                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
               {recentJobs.length > 0 ? (
                 recentJobs.map((job) => (
                   <tr key={job.id}>
-                    <td className="fw-500">{job.role}</td>
                     <td>{job.staff}</td>
                     <td className="text-muted small">
                       {job.startDate} to {job.endDate}
@@ -201,38 +198,13 @@ export default function CustomerDashboard() {
                         {job.status}
                       </span>
                     </td>
-                    <td>
-                      <Link                        href={`/job-details/${job.id}`}
-                        className="btn btn-sm"
-                        style={{
-                          backgroundColor: "#f0f4ff",
-                          color: "#0f766e",
-                          border: "1px solid #0f766e",
-                          borderRadius: "6px",
-                          padding: "6px 16px",
-                          textDecoration: "none",
-                          fontWeight: "500",
-                          fontSize: "0.85rem",
-                          display: "inline-block",
-                          transition: "all 0.2s ease"
-                        }}
-                        onMouseOver={(e) => {
-                          e.target.style.backgroundColor = "#0f766e";
-                          e.target.style.color = "#ffffff";
-                        }}
-                        onMouseOut={(e) => {
-                          e.target.style.backgroundColor = "#f0f4ff";
-                          e.target.style.color = "#0f766e";
-                        }}
-                      >
-                        Manage
-                      </Link>
-                    </td>
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td colSpan="6" className="text-center py-4 text-muted">
+                  <td colSpan="6" className="text-center py-4 text-muted"
+                    style={{ textTransform: "none" }}
+                  >
                     No recent jobs found.
                   </td>
                 </tr>

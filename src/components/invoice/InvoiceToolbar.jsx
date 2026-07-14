@@ -136,7 +136,7 @@ const InvoiceToolbar = ({
 
       {/* Customer Dropdown */}
       <div className="flex-grow-1 w-50">
-        <label className="d-block d-lg-none mb-1 small text-muted fw-bold">Select Customer</label>
+        <label className="d-block d-lg-none mb-1 small text-muted fw-bold">Select Client</label>
         <Select
           options={customerOptions}
           value={selectedOption}

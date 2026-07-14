@@ -31,6 +31,7 @@ const DOC_TYPES = [
   { value: "Visa", label: "Visa" },
   { value: "Driver License Front", label: "Driver License (Front)" },
   { value: "Driver License Back", label: "Driver License (Back)" },
+  { value: "Security Master License", label: "Security Master License" },
   { value: "Security License", label: "Security License" },
   { value: "Working with Children Check", label: "Working with Children Check (WWCC)" },
   { value: "Employment Application Form", label: "Employment Application Form" },
@@ -43,6 +44,11 @@ const DOC_TYPES = [
   { value: "Medicare", label: "Medicare Certificate" },
   { value: "Birth Certificate", label: "Birth Certificate" },
   { value: "White Card", label: "White Card" },
+  { value: "Public Liability", label: "Public Liability" },
+  { value: "Workcover", label: "Workcover" },
+  { value: "Labour Hire", label: "Labour Hire" },
+  { value: "ASIC Report", label: "ASIC Report" },
+  { value: "Security Industry Membership certificate", label: "Security Industry Membership certificate" },
 ];
 
 // ========== DATE HELPERS ==========
@@ -101,10 +107,13 @@ const ManageUsers = () => {
   const contractorsList = contractorsResponse?.data?.data || [];
   const { submit, loading: submitLoading } = useSubmit({ isAuth: true });
   const { submit: uploadFile, loading: uploadLoading } = useSubmit({ isAuth: true });
+  // Security License verification hook
   const { submit: submitSecurityLicense } = useSubmit({
     isAuth: true,
     BaseURL: "https://apis.thescouts.com.au/",
   });
+  // Phone OTP hook
+  const { submit: phoneSubmit, loading: phoneLoading } = useSubmit({ isAuth: true });
 
   const [users, setUsers] = useState([]);
   const [totalPages, setTotalPages] = useState(1);
@@ -116,7 +125,15 @@ const ManageUsers = () => {
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
 
-  // Password & Advanced Document States
+  // Phone OTP modal states
+  const [showPhoneModal, setShowPhoneModal] = useState(false);
+  const [phoneStep, setPhoneStep] = useState("input");
+  const [newPhoneInput, setNewPhoneInput] = useState("");
+  const [phoneOtp, setPhoneOtp] = useState("");
+  const [phoneChangeError, setPhoneChangeError] = useState(null);
+  const [phoneChangeSuccess, setPhoneChangeSuccess] = useState(false);
+
+  // Password & Document States
   const [showPassword, setShowPassword] = useState(false);
   const [showDocModal, setShowDocModal] = useState(false);
   const [selectedDoc, setSelectedDoc] = useState(null);
@@ -134,7 +151,7 @@ const ManageUsers = () => {
     is_verified: false,
   });
 
-  // defaultFormState now includes abn & acn as empty strings
+  // defaultFormState includes abn & acn
   const defaultFormState = useMemo(() => ({
     name: "",
     email: "",
@@ -142,6 +159,7 @@ const ManageUsers = () => {
     phone: "",
     gender: "",
     staff_document_type: "",
+    security_license_no: "",
     company_name: "",
     address: "",
     city: "",
@@ -157,10 +175,18 @@ const ManageUsers = () => {
 
   const [formData, setFormData] = useState(defaultFormState);
 
-  const staffDocuments = useMemo(() => {
+  // ---------- dynamic documents for staff and sub_contractor ----------
+  const documents = useMemo(() => {
     if (!editingUser) return [];
-    return editingUser.documents || editingUser.staff?.documents || [];
-  }, [editingUser]);
+    if (editingUser.documents && editingUser.documents.length > 0) return editingUser.documents;
+    if (activeTab === "staff") {
+      return editingUser.staff?.documents || [];
+    }
+    if (activeTab === "sub_contractor") {
+      return editingUser.contractor?.documents || [];
+    }
+    return [];
+  }, [editingUser, activeTab]);
 
   // ---- ProfileForm change handler ----
   const handleProfileFormChange = useCallback((e) => {
@@ -212,6 +238,7 @@ const ManageUsers = () => {
         state: user.state || "",
         country: user.country || "",
         coordinates: user.coordinates || "",
+        security_license_no: extraInfo.security_license_no || "",
         user_id: user.user_id || "",
         date_of_birth: isoToDisplay(user.date_of_birth || extraInfo.date_of_birth || ""),
         origin_country: user.origin_country || extraInfo.origin_country || "",
@@ -260,7 +287,7 @@ const ManageUsers = () => {
     }
   }, [apiResponse, location.state, location.pathname, navigate, openModal]);
 
-  // Google Maps Autocomplete (attached to #address, the id used by ProfileForm)
+  // Google Maps Autocomplete
   const autocompleteRef = useRef(null);
   const autocompleteListenerRef = useRef(null);
 
@@ -331,7 +358,7 @@ const ManageUsers = () => {
     };
   }, [isModalOpen, activeModalTab]);
 
-  // ----- DOCUMENT LOGIC (same as before) -----
+  // ----- DOCUMENT LOGIC (with Security License & Visa verification) -----
   const openDocumentModal = (doc) => {
     setSelectedDoc(doc);
     if (doc) {
@@ -430,15 +457,22 @@ const ManageUsers = () => {
       return;
     }
 
+    // Security License verification
     if (docForm.document_name === "Security License") {
+      const staffState = (editingUser?.state || editingUser?.staff?.state || formData?.state || "").trim();
+      if (!staffState) {
+        toast.error("Please add your location first.");
+        return;
+      }
+
       setVerifyingDoc(true);
       try {
         const res = await submitSecurityLicense(
           "api/documents-online-verification-staffoo",
           {
-            user_id: editingUser.id,
             document_type: "Security License",
             license_number: docForm.document_no,
+            state: staffState,
           },
           { method: "POST" }
         );
@@ -452,7 +486,7 @@ const ManageUsers = () => {
           toast.success("Security License verified. Expiry date locked.");
         } else {
           setDocForm(prev => ({ ...prev, is_verified: false }));
-          toast.error(res?.message || "Security License verification failed.");
+          toast.error(`Security license number is not valid for ${staffState}`)
         }
       } catch (err) {
         console.error(err);
@@ -463,9 +497,10 @@ const ManageUsers = () => {
       return;
     }
 
+    // Visa verification
     if (docForm.document_name === "Visa") {
       const user = editingUser;
-      const staff = user?.staff || {};
+      const nested = activeTab === "staff" ? (user?.staff || {}) : (user?.contractor || {});
       const fullName = (user?.name || "").trim();
       let givenName = fullName;
       let familyName = fullName;
@@ -475,7 +510,7 @@ const ManageUsers = () => {
         familyName = nameParts[nameParts.length - 1];
       }
 
-      const rawDob = staff?.date_of_birth || user?.date_of_birth || formData.date_of_birth || "";
+      const rawDob = nested?.date_of_birth || user?.date_of_birth || formData.date_of_birth || "";
       if (!rawDob) {
         toast.error("Date of birth is missing. Please update personal information first.");
         return;
@@ -487,7 +522,7 @@ const ManageUsers = () => {
       }
       const dobISO = `${dobParts[2]}-${dobParts[1]}-${dobParts[0]}`;
 
-      const originCountry = staff?.origin_country || user?.origin_country || formData.origin_country || "";
+      const originCountry = nested?.origin_country || user?.origin_country || formData.origin_country || "";
       if (!originCountry) {
         toast.error("Please save your country of origin in your profile before verifying your visa.");
         return;
@@ -505,9 +540,9 @@ const ManageUsers = () => {
 
       setVerifyingDoc(true);
       try {
-        const res = await submit("api/admin/visa-check", payload, { method: "POST" });
-        if (res?.success && res?.data?.expired_at) {
-          const displayExpiry = normalizeToDisplay(res.data.expired_at);
+        const res = await submit("api/admin/visa-expiry-check", payload, { method: "POST" });
+        if (res?.success && res?.expiry) {
+          const displayExpiry = normalizeToDisplay(res.expiry);
           setDocForm(prev => ({
             ...prev,
             document_expiry: displayExpiry,
@@ -516,7 +551,6 @@ const ManageUsers = () => {
           toast.success("Visa verified. Expiry date locked.");
         } else {
           setDocForm(prev => ({ ...prev, is_verified: false }));
-          toast.error(res?.message || "Visa verification failed.");
         }
       } catch (err) {
         console.error(err);
@@ -568,9 +602,7 @@ const ManageUsers = () => {
     if (res.success) {
       toast.success("Document saved successfully!");
 
-      // ----- UPDATE EDITING USER IMMEDIATELY -----
       const savedDoc = res.data?.document || res.data || {};
-
       setEditingUser((prev) => {
         const currentDocs = prev?.documents || [];
         if (selectedDoc) {
@@ -601,7 +633,6 @@ const ManageUsers = () => {
           };
         }
       });
-      // -------------------------------------------
 
       closeDocumentModal();
       refetch();
@@ -609,7 +640,7 @@ const ManageUsers = () => {
       toast.error(res.message || "Failed to save document");
     }
   };
-  // ----- DOCUMENT LOGIC END -----
+  // ----- END DOCUMENT LOGIC -----
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -624,6 +655,10 @@ const ManageUsers = () => {
 
     if (formData.date_of_birth && !/^\d{2}\/\d{2}\/\d{4}$/.test(formData.date_of_birth)) {
       toast.error("Please enter the date of birth in DD/MM/YYYY format.");
+      return;
+    }
+    if (activeTab === "staff" && !formData.user_id) {
+      toast.error("Please select a Resource Partner.");
       return;
     }
 
@@ -698,11 +733,76 @@ const ManageUsers = () => {
     }
   };
 
+  // ----- PHONE OTP HANDLERS -----
+  const handleClosePhoneModal = () => {
+    setShowPhoneModal(false);
+    setPhoneStep("input");
+    setNewPhoneInput("");
+    setPhoneOtp("");
+    setPhoneChangeError(null);
+    setPhoneChangeSuccess(false);
+  };
+
+  const handleOpenPhoneModal = () => {
+    setNewPhoneInput(formData.phone || "");
+    setPhoneStep("input");
+    setPhoneChangeError(null);
+    setPhoneChangeSuccess(false);
+    setShowPhoneModal(true);
+  };
+
+  const handleRequestPhoneOtp = async (e) => {
+    e.preventDefault();
+    if (!editingUser?.id) {
+      setPhoneChangeError("Please save the user profile first before verifying phone.");
+      return;
+    }
+    setPhoneChangeError(null);
+    const res = await phoneSubmit(
+      `api/auth/resend-otp`,
+      { phone: newPhoneInput, id: editingUser.id },
+      { method: "POST" }
+    );
+    if (!res) return;
+    if (res.success) {
+      setPhoneStep("otp");
+    } else {
+      setPhoneChangeError(res.errors || res.message || "Failed to send OTP");
+    }
+  };
+
+  const handleVerifyPhoneOtp = async (e) => {
+    e.preventDefault();
+    if (!editingUser?.id) {
+      setPhoneChangeError("Unable to verify OTP. Missing user id.");
+      return;
+    }
+    setPhoneChangeError(null);
+    const res = await phoneSubmit(
+      `api/auth/verify-phone`,
+      { phone: newPhoneInput, otp: phoneOtp, id: editingUser.id },
+      { method: "POST" }
+    );
+    if (!res) return;
+    if (res.success) {
+      toast.success("Phone verified successfully!");
+      setFormData((prev) => ({ ...prev, phone: newPhoneInput }));
+      refetch();
+      setTimeout(() => {
+        handleClosePhoneModal();
+      }, 1500);
+    } else {
+      setPhoneChangeError(res.errors || res.message || "Invalid OTP. Please try again.");
+    }
+  };
+  // ----- END PHONE OTP HANDLERS -----
+
   if (loading && users.length === 0) return <Loader />;
 
   return (
     <div className="dashboard-main dashboard-tools-page">
       <style>{`
+        /* ---------- Base / Desktop Styles ---------- */
         .dashboard-page-header h1 {
           font-weight: 800;
           letter-spacing: -0.02em;
@@ -712,20 +812,27 @@ const ManageUsers = () => {
           border-radius: 12px;
           border: 1px solid #e2e8f0;
           background: #ffffff;
-          overflow: hidden;
+          overflow-x: auto;
+          -webkit-overflow-scrolling: touch;
         }
         .jobtracker-main-table {
           table-layout: fixed;
           width: 100%;
+          min-width: 650px;
           border-collapse: collapse;
           margin: 0;
+        }
+        @media (min-width: 992px) {
+          .jobtracker-main-table {
+            table-layout: fixed;
+            min-width: 0;
+          }
         }
         .premium-thead th {
           background-color: #0A7C6E !important;
           color: #ffffff !important;
           font-weight: 600;
           letter-spacing: 0.05em;
-          text-transform: uppercase;
           font-size: 0.75rem;
           padding: 1.2rem 1.5rem !important;
           border: none !important;
@@ -862,6 +969,83 @@ const ManageUsers = () => {
           from { opacity: 0; transform: scale(0.98); }
           to { opacity: 1; transform: scale(1); }
         }
+
+        /* ---------- Responsive ---------- */
+        @media (max-width: 991.98px) {
+          .premium-thead th,
+          .jobtracker-data-row td {
+            padding: 0.75rem 1rem !important;
+            font-size: 0.8rem;
+          }
+          .jobtracker-main-table {
+            min-width: 600px;
+          }
+        }
+
+        @media (max-width: 767.98px) {
+          .jobtracker-tabs {
+            flex-wrap: wrap;
+            justify-content: center;
+          }
+          .jobtracker-tabs .nav-item {
+            margin-bottom: 0.5rem;
+          }
+          .card-body .btn-dark {
+            width: 100%;
+            margin-top: 0.5rem;
+          }
+          .modal-inner-content {
+            width: 100%;
+            height: 100vh;
+            border-radius: 0;
+          }
+          .modal-tabs-container {
+            width: 100%;
+            justify-content: center;
+          }
+          .modal-tabs-container .btn {
+            flex: 1 0 auto;
+            font-size: 0.8rem;
+            padding: 0.4rem 0.8rem;
+          }
+          .full-screen-modal .px-5 {
+            padding-left: 1rem !important;
+            padding-right: 1rem !important;
+          }
+          .full-screen-modal .py-4 {
+            padding-top: 1rem !important;
+            padding-bottom: 1rem !important;
+          }
+          .confirm-modal-card {
+            max-width: 100%;
+          }
+          .jobtracker-data-row td {
+            word-break: break-word;
+            white-space: normal;
+          }
+        }
+
+        @media (max-width: 575.98px) {
+          .dashboard-page-header h1 {
+            font-size: 1.5rem;
+          }
+          .jobtracker-main-table {
+            min-width: 500px;
+          }
+          .premium-thead th,
+          .jobtracker-data-row td {
+            padding: 0.6rem 0.8rem !important;
+            font-size: 0.75rem;
+          }
+          .btn-group .btn {
+            width: 36px;
+            height: 36px;
+            padding: 0;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+          }
+        }
       `}</style>
 
       <div className="dashboard-page-header">
@@ -896,6 +1080,7 @@ const ManageUsers = () => {
           <button
             className="btn btn-dark jobtracker-action-btn fw-bold px-4 rounded-pill"
             onClick={() => openModal()}
+            style={{ minHeight: "44px" }}
           >
             <i className="fa-solid fa-plus me-1"></i> Add{" "}
             {activeTab === "sub_contractor"
@@ -921,29 +1106,27 @@ const ManageUsers = () => {
           <table className={`table table-hover align-middle mb-0 jobtracker-main-table ${loading ? "opacity-50" : ""}`}>
             <thead className="premium-thead">
               <tr>
-                <th style={{ width: activeTab === "staff" ? "30%" : "30%", textAlign: "left", paddingLeft: "1.5rem" }}>
-                  NAME & EMAIL
-                </th>
-                {activeTab === "sub_contractor" ? (
-                  <th style={{ width: "25%", textAlign: "left" }}>
-                    BUSINESS & PHONE
-                  </th>
+                {activeTab === "staff" ? (
+                  <>
+                    <th style={{ width: "30%", textAlign: "left", paddingLeft: "1.5rem" }}>Name & Email</th>
+                    <th style={{ width: "20%", textAlign: "left" }}>Resource Partner</th>
+                    <th style={{ width: "15%", textAlign: "left" }}>Location</th>
+                    <th style={{ width: "15%", textAlign: "left" }}>Created At</th>
+                    <th style={{ width: "20%", textAlign: "center" }}>Actions</th>
+                  </>
                 ) : (
-                  <th style={{ width: "25%", textAlign: "left" }}>
-                    PHONE
-                  </th>
+                  <>
+                    <th style={{ width: "30%", textAlign: "left", paddingLeft: "1.5rem" }}>Name & Email</th>
+                    {activeTab === "sub_contractor" ? (
+                      <th style={{ width: "20%", textAlign: "left" }}>Business & Phone</th>
+                    ) : (
+                      <th style={{ width: "20%", textAlign: "left" }}>Phone</th>
+                    )}
+                    <th style={{ width: "15%", textAlign: "left" }}>Location</th>
+                    <th style={{ width: "15%", textAlign: "left" }}>Created At</th>
+                    <th style={{ width: "20%", textAlign: "center" }}>Actions</th>
+                  </>
                 )}
-                {activeTab === "staff" && (
-                  <th style={{ width: "25%", textAlign: "left" }}>
-                    RESOURCE PARTNER
-                  </th>
-                )}
-                <th style={{ width: activeTab === "staff" ? "25%" : "25%", textAlign: "left" }}>
-                  LOCATION
-                </th>
-                <th style={{ width: "20%", textAlign: "center" }}>
-                  ACTIONS
-                </th>
               </tr>
             </thead>
             <tbody>
@@ -965,14 +1148,7 @@ const ManageUsers = () => {
                           {user.phone || getNestedData(user).phone || "N/A"}
                         </div>
                       </td>
-                    ) : (
-                      <td style={{ textAlign: "left" }}>
-                        <div className="text-muted small">
-                          {user.phone || getNestedData(user).phone || "N/A"}
-                        </div>
-                      </td>
-                    )}
-                    {activeTab === "staff" && (
+                    ) : activeTab === "staff" ? (
                       <td style={{ textAlign: "left" }}>
                         {(() => {
                           const contractorId = user.user_id || user.staff?.user_id;
@@ -984,11 +1160,23 @@ const ManageUsers = () => {
                           );
                         })()}
                       </td>
+                    ) : (
+                      <td style={{ textAlign: "left" }}>
+                        <div className="text-muted small">
+                          {user.phone || getNestedData(user).phone || "N/A"}
+                        </div>
+                      </td>
                     )}
                     <td style={{ textAlign: "left" }}>
                       {user.city || "—"}{" "}
                       <span className="text-muted small">
                         ({user.country || "N/A"})
+                      </span>
+                    </td>
+                    {/* NEW: Created At column */}
+                    <td style={{ textAlign: "left" }}>
+                      <span className="small">
+                        {normalizeToDisplay(user.created_at) || "—"}
                       </span>
                     </td>
                     <td style={{ textAlign: "center" }}>
@@ -1011,7 +1199,10 @@ const ManageUsers = () => {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={activeTab === "staff" ? 4 : 4} className="text-center py-5 text-muted">
+                  {/* Increase colSpan to 5 because we now have 5 columns */}
+                  <td colSpan={5} className="text-center py-5 text-muted"
+                    style={{ textTransform: "none" }}
+                  >
                     No records found for this category.
                   </td>
                 </tr>
@@ -1020,7 +1211,8 @@ const ManageUsers = () => {
           </table>
         </div>
 
-        <div className="card-footer bg-white border-top py-3 px-4 d-flex justify-content-between align-items-center">
+        {/* Pagination Footer */}
+        <div className="card-footer bg-white border-top py-3 px-4 d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-2">
           <div className="text-muted small">
             Showing Page <strong>{page}</strong> of <strong>{totalPages}</strong>
             <span className="mx-2">•</span>
@@ -1031,6 +1223,7 @@ const ManageUsers = () => {
               className="btn btn-sm btn-outline-secondary rounded-pill px-3"
               onClick={() => handlePageChange(page - 1)}
               disabled={page === 1}
+              style={{ minHeight: "44px" }}
             >
               <i className="fa-solid fa-chevron-left me-1"></i> Prev
             </button>
@@ -1038,6 +1231,7 @@ const ManageUsers = () => {
               className="btn btn-sm btn-outline-secondary rounded-pill px-3"
               onClick={() => handlePageChange(page + 1)}
               disabled={page === totalPages || totalPages === 0}
+              style={{ minHeight: "44px" }}
             >
               Next <i className="fa-solid fa-chevron-right ms-1"></i>
             </button>
@@ -1057,9 +1251,7 @@ const ManageUsers = () => {
                 <p className="text-muted small mb-0">
                   Role:{" "}
                   <span className="text-dark fw-bold">
-                    <span className="text-dark fw-bold">
-                      {roleLabels[activeTab] || activeTab.replace("_", " ")}
-                    </span>
+                    {roleLabels[activeTab] || activeTab.replace("_", " ")}
                   </span>
                 </p>
                 {activeTab === "staff" && (
@@ -1105,7 +1297,8 @@ const ManageUsers = () => {
                           boxShadow: 'none',
                           '&:hover': {
                             borderColor: '#c0c6cc'
-                          }
+                          },
+                          minHeight: '44px'
                         }),
                         menu: (base) => ({
                           ...base,
@@ -1135,16 +1328,15 @@ const ManageUsers = () => {
                 >
                   Personal Information
                 </button>
-                {activeTab === "staff" && editingUser && (
-                  <>
-                    <button
-                      type="button"
-                      className={`btn ${activeModalTab === "documents" ? "btn-primary-custom text-white" : "btn-outline-primary"}`}
-                      onClick={() => setActiveModalTab("documents")}
-                    >
-                      Documents
-                    </button>
-                  </>
+                {/* Show Documents tab for both Staff and Resource Partners */}
+                {(activeTab === "staff" || activeTab === "sub_contractor") && editingUser && (
+                  <button
+                    type="button"
+                    className={`btn ${activeModalTab === "documents" ? "btn-primary-custom text-white" : "btn-outline-primary"}`}
+                    onClick={() => setActiveModalTab("documents")}
+                  >
+                    Documents
+                  </button>
                 )}
               </div>
 
@@ -1166,6 +1358,8 @@ const ManageUsers = () => {
                     origin_country: formData.origin_country,
                     abn: formData.abn || "",
                     acn: formData.acn || "",
+                    security_license_no: formData.security_license_no || "",
+
                   }}
                   onChange={handleProfileFormChange}
                   onSubmit={handleSubmit}
@@ -1176,7 +1370,7 @@ const ManageUsers = () => {
                       activeTab === "sub_contractor" ? "contractor" :
                         "customer"
                   }
-                  onChangePhone={() => { }}
+                  onChangePhone={handleOpenPhoneModal}
                   isPhoneVerified={false}
                   footer={
                     <button
@@ -1184,6 +1378,7 @@ const ManageUsers = () => {
                       form="profile-form"
                       className="btn btn-dark rounded-pill px-5 fw-bold shadow-sm"
                       disabled={submitLoading}
+                      style={{ minHeight: "44px" }}
                     >
                       {submitLoading ? "Saving..." : editingUser ? "Update Profile" : "Create User"}
                     </button>
@@ -1200,8 +1395,10 @@ const ManageUsers = () => {
                             className="form-control pe-5"
                             name="password"
                             value={formData.password}
+                            minLength={8}
                             onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
                             required={!editingUser}
+                            style={{ minHeight: "44px" }}
                           />
                           <button
                             type="button"
@@ -1221,12 +1418,15 @@ const ManageUsers = () => {
                   <div className="d-flex justify-content-between align-items-center mb-4">
                     <div>
                       <h6 className="section-divider mt-0 border-0 mb-1">Documents</h6>
-                      <p className="text-muted mb-0 small">Upload and manage staff documents.</p>
+                      <p className="text-muted mb-0 small"
+                        style={{ textTransform: "none" }}
+                      >Upload and manage documents.</p>
                     </div>
                   </div>
+                  {/* pass activeTab as userType – staff or sub_contractor */}
                   <DocumentTable
-                    documents={staffDocuments}
-                    userType="staff"
+                    documents={documents}
+                    userType={activeTab}
                     onAddFile={openDocumentModal}
                   />
                   {showDocModal && (
@@ -1241,14 +1441,14 @@ const ManageUsers = () => {
                           </span>
                           <div>
                             <h5 className="mb-0 fw-bold">{selectedDoc ? "Update Document" : "Add Document"}</h5>
-                            <div className="small text-muted">Upload a staff verification file.</div>
+                            <div className="small text-muted">Upload a verification file.</div>
                           </div>
                         </div>
                         <form onSubmit={handleDocSubmit} className="p-4" style={{ maxHeight: "70vh", overflowY: "auto" }}>
                           {/* Document Type */}
                           <div className="mb-3">
                             <label className="form-label fw-bold text-dark">
-                              Document Type <span className="text-danger">*</span>
+                              Document Type
                             </label>
                             <select
                               className="form-control bg-light border-0"
@@ -1257,6 +1457,7 @@ const ManageUsers = () => {
                               onChange={handleDocFormChange}
                               required
                               disabled={!!selectedDoc}
+                              style={{ minHeight: "44px" }}
                             >
                               <option value="">Select Type</option>
                               {DOC_TYPES.map((doc) => (
@@ -1281,12 +1482,14 @@ const ManageUsers = () => {
                                   value={docForm.document_no}
                                   onChange={handleDocNumberChange}
                                   required
+                                  style={{ minHeight: "44px" }}
                                 />
                                 <button
                                   type="button"
                                   className="btn btn-dark fw-bold px-4 border-0"
                                   onClick={handleVerifyDocumentNumber}
                                   disabled={verifyingDoc || !docForm.document_no}
+                                  style={{ minHeight: "44px" }}
                                 >
                                   {verifyingDoc ? (
                                     <>
@@ -1306,6 +1509,7 @@ const ManageUsers = () => {
                                 value={docForm.document_no}
                                 onChange={handleDocNumberChange}
                                 required
+                                style={{ minHeight: "44px" }}
                               />
                             )}
                           </div>
@@ -1326,7 +1530,7 @@ const ManageUsers = () => {
                                     try { hiddenPicker.showPicker(); } catch (err) { hiddenPicker.focus(); }
                                   }
                                 }}
-                                style={{ cursor: "pointer", zIndex: 10 }}
+                                style={{ cursor: "pointer", zIndex: 10, minHeight: "44px" }}
                                 disabled={docForm.document_name === "Security License" || docForm.document_name === "Visa"}
                                 title="Open Calendar"
                               >
@@ -1391,6 +1595,7 @@ const ManageUsers = () => {
                                     docForm.document_name === "Security License" || docForm.document_name === "Visa"
                                       ? "#e9ecef"
                                       : "white",
+                                  minHeight: "44px"
                                 }}
                               />
                             </div>
@@ -1428,8 +1633,7 @@ const ManageUsers = () => {
                                 </>
                               ) : (
                                 <div className="text-center">
-                                  <i className="fa-solid fa-cloud-arrow-up fa-3x text-muted mb-3"></i>
-                                  <p className="text-muted fw-medium mb-0">Click to upload document/image</p>
+                                  <p className="text-muted fw-medium mb-0">Upload document to view preview</p>
                                 </div>
                               )}
                             </div>
@@ -1439,6 +1643,7 @@ const ManageUsers = () => {
                               onChange={handleDocFormChange}
                               name="file"
                               accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.gif,.webp"
+                              style={{ minHeight: "44px" }}
                             />
                           </div>
 
@@ -1448,6 +1653,7 @@ const ManageUsers = () => {
                               className="btn btn-light rounded-pill px-5 fw-bold text-muted border"
                               onClick={closeDocumentModal}
                               disabled={uploadLoading || submitLoading}
+                              style={{ minHeight: "44px" }}
                             >
                               Cancel
                             </button>
@@ -1455,6 +1661,7 @@ const ManageUsers = () => {
                               type="submit"
                               className="btn btn-dark rounded-pill px-5 fw-bold shadow-sm"
                               disabled={uploadLoading || submitLoading || !docForm.document_expiry || !docForm.file_url}
+                              style={{ minHeight: "44px" }}
                             >
                               {submitLoading ? "Saving..." : "Upload Document"}
                             </button>
@@ -1464,9 +1671,7 @@ const ManageUsers = () => {
                     </div>
                   )}
                 </div>
-              ) : (
-                null
-              )}
+              ) : null}
             </div>
 
             <div className="px-5 py-4 border-top bg-light d-flex gap-3 justify-content-end">
@@ -1474,9 +1679,123 @@ const ManageUsers = () => {
                 type="button"
                 className="btn btn-light rounded-pill px-5 fw-bold text-muted border"
                 onClick={closeModal}
+                style={{ minHeight: "44px" }}
               >
                 Cancel
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* PHONE OTP VERIFICATION MODAL */}
+      {showPhoneModal && (
+        <div className="confirm-modal-backdrop" onClick={handleClosePhoneModal}>
+          <div className="confirm-modal-card" onClick={(e) => e.stopPropagation()}>
+            <div className="confirm-modal-header px-4 py-3 d-flex align-items-center gap-3">
+              <span className="confirm-modal-icon">
+                <i className="fa-solid fa-mobile-screen-button"></i>
+              </span>
+              <div>
+                <h5 className="mb-0 fw-bold">Phone Verification</h5>
+                <div className="small text-muted">
+                  {phoneStep === "input"
+                    ? "Send OTP to verify phone number."
+                    : `Enter the OTP sent to ${newPhoneInput}`}
+                </div>
+              </div>
+            </div>
+            <div className="p-4">
+              {phoneChangeError && <div className="alert alert-danger py-2">{phoneChangeError}</div>}
+              {phoneChangeSuccess && <div className="alert alert-success py-2">Phone updated successfully!</div>}
+              {phoneStep === "input" ? (
+                <form onSubmit={handleRequestPhoneOtp}>
+                  <div className="mb-3">
+                    <label className="form-label fw-bold">Phone Number <span className="text-danger">*</span></label>
+                    <input
+                      type="tel"
+                      className="form-control"
+                      placeholder="+61 400 000 000"
+                      value={newPhoneInput}
+                      onChange={(e) => setNewPhoneInput(e.target.value)}
+                      required
+                      maxLength="15"
+                      pattern="^(?:\+?61|0)[2-478](?:[\s]*\d){8}$"
+                      title="Valid Australian mobile number"
+                      style={{ minHeight: "44px" }}
+                    />
+                  </div>
+                  <div className="d-flex gap-2">
+                    <button
+                      type="button"
+                      className="btn btn-light rounded-pill px-4 fw-bold border"
+                      onClick={handleClosePhoneModal}
+                      disabled={phoneLoading}
+                      style={{ minHeight: "44px" }}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      className="btn btn-dark rounded-pill px-4 fw-bold"
+                      disabled={phoneLoading}
+                      style={{ minHeight: "44px" }}
+                    >
+                      {phoneLoading ? "Sending..." : "Send OTP"}
+                    </button>
+                  </div>
+                </form>
+              ) : (
+                <form onSubmit={handleVerifyPhoneOtp}>
+                  <div className="mb-3">
+                    <label className="form-label fw-bold">OTP Code <span className="text-danger">*</span></label>
+                    <input
+                      type="text"
+                      className="form-control text-center fw-bold"
+                      placeholder="Enter OTP"
+                      value={phoneOtp}
+                      onChange={(e) => setPhoneOtp(e.target.value.replace(/\D/g, ""))}
+                      maxLength={8}
+                      required
+                      autoFocus
+                      style={{ minHeight: "44px" }}
+                    />
+                    <div className="mt-2 text-end">
+                      <button
+                        type="button"
+                        className="btn btn-link btn-sm p-0 text-muted"
+                        onClick={() => {
+                          setPhoneStep("input");
+                          setPhoneOtp("");
+                          setPhoneChangeError(null);
+                        }}
+                        disabled={phoneLoading}
+                      >
+                        Change number / Resend OTP
+                      </button>
+                    </div>
+                  </div>
+                  <div className="d-flex gap-2">
+                    <button
+                      type="button"
+                      className="btn btn-light rounded-pill px-4 fw-bold border"
+                      onClick={handleClosePhoneModal}
+                      disabled={phoneLoading}
+                      style={{ minHeight: "44px" }}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      className="btn btn-dark rounded-pill px-4 fw-bold"
+                      disabled={phoneLoading || phoneChangeSuccess}
+                      style={{ minHeight: "44px" }}
+                    >
+                      {phoneLoading ? "Verifying..." : "Verify & Update"}
+                    </button>
+                  </div>
+                </form>
+              )}
             </div>
           </div>
         </div>
@@ -1512,6 +1831,7 @@ const ManageUsers = () => {
                 className="btn btn-outline-secondary rounded-pill px-4 fw-bold"
                 onClick={closeDeleteModal}
                 disabled={deleteLoading}
+                style={{ minHeight: "44px" }}
               >
                 Cancel
               </button>
@@ -1520,6 +1840,7 @@ const ManageUsers = () => {
                 className="btn btn-danger rounded-pill px-4 fw-bold shadow-sm"
                 onClick={confirmDelete}
                 disabled={deleteLoading}
+                style={{ minHeight: "44px" }}
               >
                 {deleteLoading ? "Deleting..." : "Yes, Delete"}
               </button>

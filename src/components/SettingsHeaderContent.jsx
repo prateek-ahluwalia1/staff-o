@@ -78,7 +78,7 @@ export default function SettingsHeaderContent({
         </div>
       </div>
       {
-        (userType !== "admin" && userType !== "customer") && (
+        (userType !== "admin" && userType !== "customer" && pct < 100) && (
           <div className="status-circle-wrapper">
             <div style={{ width: 90, height: 90, position: "relative" }}>
               <svg height={radius * 2} width={radius * 2}>

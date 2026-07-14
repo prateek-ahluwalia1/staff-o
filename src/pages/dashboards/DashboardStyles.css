@@ -15,7 +15,8 @@
 .dashboard-cover-media {
   position: relative;
   width: 100%;
-  height: 260px; /* Slightly reduced height for better proportions */
+  height: 260px;
+  /* Slightly reduced height for better proportions */
   background-color: #f1f5f9;
 }
 
@@ -34,7 +35,8 @@
 }
 
 .cover-avatar {
-  margin-top: -65px; /* Pulls the avatar exactly halfway over the line */
+  margin-top: -65px;
+  /* Pulls the avatar exactly halfway over the line */
   margin-right: 2rem;
   position: relative;
   z-index: 2;
@@ -44,11 +46,13 @@
 .avatar-placeholder {
   width: 130px;
   height: 130px;
-  border-radius: 50%; /* Perfect circle */
+  border-radius: 50%;
+  /* Perfect circle */
   border: 5px solid #ffffff;
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
   object-fit: cover;
-  background: #0A7C6E; /* Matches Staffoo branding */
+  background: #0A7C6E;
+  /* Matches Staffoo branding */
 }
 
 .avatar-placeholder {
@@ -62,7 +66,8 @@
 }
 
 .profile-info {
-  padding-top: 1rem; /* Aligns text nicely below the banner line */
+  padding-top: 1rem;
+  /* Aligns text nicely below the banner line */
   flex-grow: 1;
   display: flex;
   justify-content: space-between;
@@ -94,7 +99,8 @@
   align-items: center;
   background: #f8fafc;
   padding: 0.5rem 1rem;
-  border-radius: 30px; /* Pill shape */
+  border-radius: 30px;
+  /* Pill shape */
   color: #475569;
   font-size: 0.9rem;
   font-weight: 500;
@@ -103,7 +109,8 @@
 }
 
 .profile-contact i {
-  color: #0f766e; /* Staffoo teal accent */
+  color: #0f766e;
+  /* Staffoo teal accent */
   margin-right: 0.5rem;
   font-size: 1.1rem;
 }
@@ -152,7 +159,8 @@
 
 .panel-heading a,
 .panel-heading button {
-  color: #0f766e; /* Updated to match branding */
+  color: #0f766e;
+  /* Updated to match branding */
   text-decoration: none;
   font-weight: 500;
   transition: color 0.3s ease;
@@ -203,7 +211,7 @@
 /* Responsive */
 @media (max-width: 768px) {
   .dashboard-cover-media {
-    height: 180px; 
+    height: 180px;
   }
 
   .dashboard-cover-profile {
@@ -238,9 +246,6 @@
     gap: 1rem;
   }
 
-  .dashboard-main {
-    padding: 1rem;
-  }
 }
 
 @media (max-width: 576px) {

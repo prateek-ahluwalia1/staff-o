@@ -16,7 +16,7 @@ const parseLocalDate = (dateStr) => {
   return new Date(year, month - 1, day);
 };
 
-const CompactTime = ({ value, onChange }) => {
+const CompactTime = ({ value, onChange, containerClass = "" }) => {
   const h = value ? value.split(":")[0] : "";
   const m = value ? value.split(":")[1] : "";
 
@@ -43,10 +43,29 @@ const CompactTime = ({ value, onChange }) => {
   };
 
   return (
-    <div className="input-group input-group-sm bg-white rounded flex-nowrap" style={{ width: "110px", boxShadow: "0 1px 3px rgba(0,0,0,0.06)" }}>
-      <input type="text" className="form-control border-secondary-subtle px-1 text-center bg-transparent fw-semibold" placeholder="HH" value={h} onChange={handleHour} onBlur={handleBlur} />
-      <span className="input-group-text bg-transparent border-secondary-subtle border-start-0 border-end-0 px-0 text-muted fw-bold pb-1">:</span>
-      <input type="text" className="form-control border-secondary-subtle px-1 text-center bg-transparent fw-semibold" placeholder="MM" value={m} onChange={handleMin} onBlur={handleBlur} />
+    <div
+      className={`input-group input-group-sm bg-white rounded flex-nowrap border border-secondary-subtle ${containerClass}`}
+      style={{ minWidth: "90px", maxWidth: "110px", boxShadow: "0 1px 3px rgba(0,0,0,0.06)" }}
+    >
+      <input
+        type="text"
+        className="form-control border-0 px-1 text-center bg-transparent fw-semibold w-50"
+        placeholder="HH"
+        value={h}
+        onChange={handleHour}
+        onBlur={handleBlur}
+      />
+      <span className="input-group-text bg-transparent border-0 px-0 text-muted fw-bold pb-1">
+        :
+      </span>
+      <input
+        type="text"
+        className="form-control border-0 px-1 text-center bg-transparent fw-semibold w-50"
+        placeholder="MM"
+        value={m}
+        onChange={handleMin}
+        onBlur={handleBlur}
+      />
     </div>
   );
 };
@@ -59,18 +78,13 @@ export default function ScheduleStep({ form, setField, scheduleError = "" }) {
   const handleModeChange = (mode) => {
     if (form.scheduleMode === mode) return;
 
-    // Check if we are switching between the two multi-select modes
-    const isSwitchingBetweenMultiples =
-      (form.scheduleMode === "multiple" && mode === "custom") ||
-      (form.scheduleMode === "custom" && mode === "multiple");
-
     setField("scheduleMode", mode);
+    setField("scheduleDays", []);
+    setField("dateRange", [null, null]);
 
-    // Only wipe dates if we are switching to or from "Single Day"
-    if (!isSwitchingBetweenMultiples) {
-      setField("scheduleDays", []);
-      setField("dateRange", [null, null]);
-    }
+    setBulkStart("");
+    setBulkEnd("");
+    setBulkGuards(1);
   };
 
   const handleSingleDateSelect = (date) => {
@@ -88,13 +102,11 @@ export default function ScheduleStep({ form, setField, scheduleError = "" }) {
     setField("dateRange", dates);
 
     if (start && end) {
-      // Create a copy of existing days so we merge instead of overwrite
       const newDays = [...form.scheduleDays];
       let current = new Date(start);
 
       while (current <= end) {
         const dStr = formatLocalDate(current);
-        // Only push the date if it hasn't been selected yet
         if (!newDays.find((d) => d.date === dStr)) {
           newDays.push({
             date: dStr,
@@ -107,7 +119,6 @@ export default function ScheduleStep({ form, setField, scheduleError = "" }) {
       newDays.sort((a, b) => parseLocalDate(a.date) - parseLocalDate(b.date));
       setField("scheduleDays", newDays);
     } else if (!start && !end) {
-      // Clear dates when range is cleared
       setField("scheduleDays", []);
       setField("dateRange", [null, null]);
     }
@@ -119,12 +130,10 @@ export default function ScheduleStep({ form, setField, scheduleError = "" }) {
     const existingIndex = form.scheduleDays.findIndex((d) => d.date === dateStr);
 
     if (existingIndex >= 0) {
-      // Remove if already selected
       const newDays = [...form.scheduleDays];
       newDays.splice(existingIndex, 1);
       setField("scheduleDays", newDays);
     } else {
-      // Add if not selected
       const newDays = [
         ...form.scheduleDays,
         {
@@ -160,7 +169,12 @@ export default function ScheduleStep({ form, setField, scheduleError = "" }) {
 
   const addShift = (dayIndex) => {
     const newDays = [...form.scheduleDays];
-    newDays[dayIndex].shifts.push({ id: Date.now().toString(), startTime: "", endTime: "", numGuards: 1 });
+    newDays[dayIndex].shifts.push({
+      id: Date.now().toString(),
+      startTime: "",
+      endTime: "",
+      numGuards: 1,
+    });
     setField("scheduleDays", newDays);
   };
 
@@ -184,7 +198,7 @@ export default function ScheduleStep({ form, setField, scheduleError = "" }) {
   const selectedDateObjects = form.scheduleDays.map(d => parseLocalDate(d.date)).filter(Boolean);
 
   return (
-    <div className="bg-white rounded-4 p-4 border" style={{ boxShadow: "0 4px 20px rgba(0,0,0,0.03)" }}>
+    <div className="bg-white rounded-4 p-3 p-md-4 border" style={{ boxShadow: "0 4px 20px rgba(0,0,0,0.03)" }}>
       {scheduleError && (
         <div className="alert alert-danger py-2 px-3 mb-4 d-flex align-items-center gap-2" role="alert">
           <i className="fa-solid fa-circle-exclamation"></i>
@@ -193,19 +207,21 @@ export default function ScheduleStep({ form, setField, scheduleError = "" }) {
       )}
 
       {/* Primary Mode Toggle */}
-      <div className="d-flex p-1 bg-light rounded-pill border mb-4 mx-auto" style={{ maxWidth: "400px" }}>
+      <div className="d-flex p-1 bg-light rounded-pill border mb-4 mx-auto w-100" style={{ maxWidth: "320px" }}>
         <button
           type="button"
-          className={`btn btn-sm rounded-pill flex-grow-1 fw-semibold transition-all ${form.scheduleMode === "single" ? "btn-primary-custom shadow-sm" : "btn-light text-muted border-0 bg-transparent"}`}
+          className={`btn btn-sm rounded-pill flex-grow-1 fw-semibold transition-all px-2 py-1 small ${form.scheduleMode === "single" ? "btn-primary-custom shadow-sm" : "btn-light text-muted border-0 bg-transparent"
+            }`}
           onClick={() => handleModeChange("single")}
         >
           Single Day
         </button>
         <button
           type="button"
-          className={`btn btn-sm rounded-pill flex-grow-1 fw-semibold transition-all ${form.scheduleMode !== "single" ? "btn-primary-custom shadow-sm" : "btn-light text-muted border-0 bg-transparent"}`}
+          className={`btn btn-sm rounded-pill flex-grow-1 fw-semibold transition-all px-2 py-1 small ${form.scheduleMode !== "single" ? "btn-primary-custom shadow-sm" : "btn-light text-muted border-0 bg-transparent"
+            }`}
           onClick={() => {
-            if (form.scheduleMode === "single") handleModeChange("custom"); // Default to custom when switching to Multi
+            if (form.scheduleMode === "single") handleModeChange("custom");
           }}
         >
           Multiple Days
@@ -221,19 +237,25 @@ export default function ScheduleStep({ form, setField, scheduleError = "" }) {
             {form.scheduleMode === "custom" && <>Click Dates to Select/Deselect <span className="text-danger">*</span></>}
           </label>
 
-          {/* Secondary Multi-Select Toggle */}
+          {/* Secondary Multi‑Select Toggle */}
           {form.scheduleMode !== "single" && (
-            <div className="bg-light p-1 rounded-pill border d-inline-flex shadow-sm">
+            <div className="bg-light p-1 rounded-pill border d-inline-flex shadow-sm w-100 w-md-auto gap-1" style={{ maxWidth: "300px" }}>
               <button
                 type="button"
-                className={`btn btn-sm rounded-pill px-3 transition-all ${form.scheduleMode === "custom" ? "btn-white bg-white text-dark shadow-sm fw-semibold" : "btn-light text-muted border-0 bg-transparent"}`}
+                className={`btn btn-sm rounded-pill px-2 py-1 flex-grow-1 transition-all small ${form.scheduleMode === "custom"
+                  ? "btn-white bg-white text-dark shadow-sm fw-semibold"
+                  : "btn-light text-muted border-0 bg-transparent"
+                  }`}
                 onClick={() => handleModeChange("custom")}
               >
                 Individual Dates
               </button>
               <button
                 type="button"
-                className={`btn btn-sm rounded-pill px-3 transition-all ${form.scheduleMode === "multiple" ? "btn-white bg-white text-dark shadow-sm fw-semibold" : "btn-light text-muted border-0 bg-transparent"}`}
+                className={`btn btn-sm rounded-pill px-2 py-1 flex-grow-1 transition-all small ${form.scheduleMode === "multiple"
+                  ? "btn-white bg-white text-dark shadow-sm fw-semibold"
+                  : "btn-light text-muted border-0 bg-transparent"
+                  }`}
                 onClick={() => handleModeChange("multiple")}
               >
                 Date Range
@@ -242,14 +264,13 @@ export default function ScheduleStep({ form, setField, scheduleError = "" }) {
           )}
         </div>
 
-        {/* FIX: Increased maxWidth to 400px and added pe-5 to all form-controls so text doesn't hide under the clear button */}
-        <div className="position-relative" style={{ width: "100%", maxWidth: "400px", zIndex: 1050 }}>
+        <div className="position-relative col-12 col-md-8 col-lg-6 px-0">
           {form.scheduleMode === "single" && (
             <DatePicker
               selected={selectedDateObjects[0] || null}
               onChange={handleSingleDateSelect}
               dateFormat="dd/MM/yyyy"
-              placeholderText="Choose a Date"
+              placeholderText="Choose a date"
               minDate={new Date()}
               className="form-control form-control-lg shadow-sm w-100 pe-5"
               isClearable
@@ -264,7 +285,7 @@ export default function ScheduleStep({ form, setField, scheduleError = "" }) {
               onChange={handleRangeSelect}
               highlightDates={selectedDateObjects}
               dateFormat="dd/MM/yyyy"
-              placeholderText="Start Date - End Date"
+              placeholderText="Start date - End date"
               minDate={new Date()}
               isClearable
               className="form-control shadow-sm w-100 custom-date-range"
@@ -278,7 +299,7 @@ export default function ScheduleStep({ form, setField, scheduleError = "" }) {
               highlightDates={selectedDateObjects}
               shouldCloseOnSelect={false}
               dateFormat="dd/MM/yyyy"
-              placeholderText="Select Dates"
+              placeholderText="Select dates"
               minDate={new Date()}
               className="form-control form-control-lg shadow-sm w-100 pe-5"
               isClearable
@@ -291,24 +312,53 @@ export default function ScheduleStep({ form, setField, scheduleError = "" }) {
         </div>
       </div>
 
-      {/* BULK APPLY ACTION */}
+      {/* BULK APPLY */}
       {(form.scheduleMode === "multiple" || form.scheduleMode === "custom") && form.scheduleDays.length > 1 && (
-        <div className="rounded-3 p-3 mb-4" style={{ backgroundColor: "#f0f7ff", border: "1px solid #cce3ff" }}>
-          <label className="fw-bold text-primary mb-3 d-block small text-uppercase tracking-wide">
-            <i className="fa-solid fa-bolt me-2"></i> Fast Fill: Applies automatically to all dates
+        <div
+          className="rounded-3 p-2 px-3 mb-4 d-flex flex-column flex-lg-row align-items-lg-center justify-content-between gap-3"
+          style={{ backgroundColor: "#f0f7ff", border: "1px solid #cce3ff" }}
+        >
+          <label className="fw-bold text-primary mb-0 small tracking-wide text-nowrap">
+            <i className="fa-solid fa-bolt me-2"></i> Fast Fill
           </label>
-          <div className="d-flex flex-wrap align-items-center gap-4">
+          <div className="d-flex flex-column flex-md-row flex-wrap align-items-md-center gap-3 gap-md-4">
             <div className="d-flex align-items-center gap-2">
               <span className="small text-muted fw-semibold">Start:</span>
-              <CompactTime value={bulkStart} onChange={(val) => handleBulkChange("start", val)} />
+              <CompactTime value={bulkStart} onChange={(val) => handleBulkChange("start", val)} containerClass="w-auto" />
             </div>
             <div className="d-flex align-items-center gap-2">
               <span className="small text-muted fw-semibold">End:</span>
-              <CompactTime value={bulkEnd} onChange={(val) => handleBulkChange("end", val)} />
+              <CompactTime value={bulkEnd} onChange={(val) => handleBulkChange("end", val)} containerClass="w-auto" />
             </div>
             <div className="d-flex align-items-center gap-2">
-              <span className="small text-muted fw-semibold">Guards:</span>
-              <input type="number" className="form-control form-control-sm text-center fw-semibold border-secondary-subtle" style={{ width: "65px", boxShadow: "0 1px 3px rgba(0,0,0,0.06)" }} min="1" value={bulkGuards} onChange={(e) => handleBulkChange("guards", Number(e.target.value))} />
+              <span className="small text-muted fw-semibold text-nowrap"
+                style={{ textTransform: "none" }}
+              >Number of staff:</span>
+
+              {/* CLEANED UP: Border moved to parent container, removed from children */}
+              <div className="input-group input-group-sm flex-nowrap bg-white rounded shadow-sm border border-secondary-subtle" style={{ width: "95px" }}>
+                <button
+                  type="button"
+                  className="btn btn-sm border-0 bg-transparent px-2 text-muted fw-bold"
+                  onClick={() => handleBulkChange("guards", Math.max(1, bulkGuards - 1))}
+                >
+                  −
+                </button>
+                <input
+                  type="text"
+                  readOnly
+                  className="form-control form-control-sm border-0 text-center px-1 bg-transparent fw-semibold"
+                  value={bulkGuards}
+                />
+                <button
+                  type="button"
+                  className="btn btn-sm border-0 bg-transparent px-2 text-muted fw-bold"
+                  onClick={() => handleBulkChange("guards", bulkGuards + 1)}
+                >
+                  +
+                </button>
+              </div>
+
             </div>
           </div>
         </div>
@@ -318,57 +368,96 @@ export default function ScheduleStep({ form, setField, scheduleError = "" }) {
       <div className="d-flex flex-column gap-4 mt-2">
         {form.scheduleDays.map((day, dayIndex) => (
           <div key={day.date} className="border-bottom pb-3">
-            {/* Day Title Row */}
             <div className="d-flex justify-content-between align-items-center mb-2">
               <span className="fw-bold text-dark fs-6">
-                {parseLocalDate(day.date).toLocaleDateString("en-AU", { weekday: "short", day: "numeric", month: "short" })}
+                {parseLocalDate(day.date).toLocaleDateString("en-AU", {
+                  weekday: "short",
+                  day: "numeric",
+                  month: "short",
+                })}
               </span>
-
-              {/* FIX: Removed the red cross (remove day) button as requested */}
-              <button type="button" className="btn btn-sm text-primary p-0 border-0 fw-semibold small transition-all" style={{ opacity: 0.8 }} onMouseOver={(e) => e.target.style.opacity = 1} onMouseOut={(e) => e.target.style.opacity = 0.8} onClick={() => addShift(dayIndex)}>
+              <button
+                type="button"
+                className="btn btn-sm text-primary p-0 border-0 fw-semibold small transition-all"
+                style={{ opacity: 0.8 }}
+                onMouseOver={(e) => (e.target.style.opacity = 1)}
+                onMouseOut={(e) => (e.target.style.opacity = 0.8)}
+                onClick={() => addShift(dayIndex)}
+              >
                 + Add shift
               </button>
             </div>
-
-            {/* Shift Rows inside the day */}
             <div className="d-flex flex-column gap-2">
               {day.shifts.map((shift, shiftIndex) => (
-                <div key={shift.id} className="d-flex flex-wrap align-items-center gap-3 bg-light rounded-2 px-3 py-2 border border-light">
-                  <div className="d-flex align-items-center gap-2">
-                    <span className="small text-muted fw-medium" style={{ width: "35px" }}>Start:</span>
-                    <CompactTime value={shift.startTime} onChange={(val) => updateShift(dayIndex, shiftIndex, "startTime", val)} />
-                  </div>
-
-                  <div className="d-flex align-items-center gap-2">
-                    <span className="small text-muted fw-medium" style={{ width: "35px" }}>End:</span>
-                    <CompactTime value={shift.endTime} onChange={(val) => updateShift(dayIndex, shiftIndex, "endTime", val)} />
-
-                    {/* Next Day Visual Indicator */}
-                    {(shift.startTime && shift.endTime && shift.endTime <= shift.startTime) && (
-                      <span className="badge bg-danger-subtle text-danger border border-danger-subtle ms-1 px-1" style={{ fontSize: "0.65rem" }} title="Ends on the following day">
-                        +1d
-                      </span>
-                    )}
-                  </div>
-
-                  <div className="d-flex align-items-center gap-2 ms-md-auto">
-                    <span className="small text-muted fw-medium">Guards:</span>
-                    <div className="input-group input-group-sm flex-nowrap shadow-sm" style={{ width: "95px" }}>
-                      <button type="button" className="btn btn-white border-secondary-subtle bg-white px-2 text-muted fw-bold" onClick={() => updateShift(dayIndex, shiftIndex, "numGuards", Math.max(1, shift.numGuards - 1))}>−</button>
-                      <input type="text" readOnly className="form-control border-secondary-subtle text-center px-1 bg-white fw-semibold" value={shift.numGuards} />
-                      <button type="button" className="btn btn-white border-secondary-subtle bg-white px-2 text-muted fw-bold" onClick={() => updateShift(dayIndex, shiftIndex, "numGuards", shift.numGuards + 1)}>+</button>
+                <div
+                  key={shift.id}
+                  className="d-flex flex-column flex-md-row align-items-md-center gap-3 bg-light rounded-2 px-3 py-3 py-md-2 border border-light"
+                >
+                  <div className="d-flex flex-column flex-sm-row align-items-sm-center gap-3 w-100 w-md-auto">
+                    <div className="d-flex align-items-center gap-2 w-100 w-sm-auto flex-grow-1 flex-sm-grow-0">
+                      <span className="small text-muted fw-medium" style={{ minWidth: "45px" }}>Start:</span>
+                      <CompactTime
+                        value={shift.startTime}
+                        onChange={(val) => updateShift(dayIndex, shiftIndex, "startTime", val)}
+                        containerClass="w-100"
+                      />
+                    </div>
+                    <div className="d-flex align-items-center gap-2 w-100 w-sm-auto flex-grow-1 flex-sm-grow-0 position-relative">
+                      <span className="small text-muted fw-medium" style={{ minWidth: "45px" }}>End:</span>
+                      <CompactTime
+                        value={shift.endTime}
+                        onChange={(val) => updateShift(dayIndex, shiftIndex, "endTime", val)}
+                        containerClass="w-100"
+                      />
+                      {shift.startTime && shift.endTime && shift.endTime <= shift.startTime && (
+                        <span
+                          className="badge bg-danger-subtle text-danger border border-danger-subtle ms-1 px-1 position-absolute end-0 me-2"
+                          style={{ fontSize: "0.65rem", transform: "translateY(-120%)" }}
+                          title="Ends on the following day"
+                        >
+                          +1d
+                        </span>
+                      )}
                     </div>
                   </div>
+                  <div className="d-flex align-items-center justify-content-between gap-3 w-100 w-md-auto ms-md-auto mt-1 mt-md-0 pt-3 pt-md-0">
+                    <div className="d-flex align-items-center gap-2 w-100 w-sm-auto flex-grow-1 flex-sm-grow-0">
+                      <span className="small text-muted fw-medium text-nowrap" style={{ minWidth: "95px", textTransform: "none" }}>Number of staff:</span>
 
-                  {/* DELETABLE SINGLE SHIFTS */}
-                  <button
-                    type="button"
-                    className="btn btn-sm text-danger p-1 border-0 ms-2 opacity-75"
-                    onClick={() => removeShift(dayIndex, shiftIndex)}
-                    title="Remove shift"
-                  >
-                    <i className="fa-solid fa-trash-can"></i>
-                  </button>
+                      {/* CLEANED UP: Border moved to parent container, removed from children */}
+                      <div className="input-group input-group-sm flex-nowrap bg-white rounded shadow-sm border border-secondary-subtle" style={{ minWidth: "95px", maxWidth: "95px" }}>
+                        <button
+                          type="button"
+                          className="btn btn-sm border-0 bg-transparent px-2 text-muted fw-bold"
+                          onClick={() => updateShift(dayIndex, shiftIndex, "numGuards", Math.max(1, shift.numGuards - 1))}
+                        >
+                          −
+                        </button>
+                        <input
+                          type="text"
+                          readOnly
+                          className="form-control form-control-sm border-0 text-center px-1 bg-transparent fw-semibold"
+                          value={shift.numGuards}
+                        />
+                        <button
+                          type="button"
+                          className="btn btn-sm border-0 bg-transparent px-2 text-muted fw-bold"
+                          onClick={() => updateShift(dayIndex, shiftIndex, "numGuards", shift.numGuards + 1)}
+                        >
+                          +
+                        </button>
+                      </div>
+
+                    </div>
+                    <button
+                      type="button"
+                      className="btn btn-sm text-danger p-1 border-0 opacity-75"
+                      onClick={() => removeShift(dayIndex, shiftIndex)}
+                      title="Remove shift"
+                    >
+                      <i className="fa-solid fa-trash-can fs-5"></i>
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>

@@ -29,7 +29,7 @@ export default function Login() {
   // Google Login State
   const [showRoleModal, setShowRoleModal] = useState(false);
   const [pendingGoogleToken, setPendingGoogleToken] = useState(null);
-  const [selectedRole, setSelectedRole] = useState("contractor");
+  const [selectedRole, setSelectedRole] = useState("");
 
   // Forgot Password State
   const [showForgotModal, setShowForgotModal] = useState(false);
@@ -152,14 +152,13 @@ export default function Login() {
 
           dispatch(setUser({ userdata: latestProfile }));
 
-          toast.success("Google login successful!");
+          toast.success("Google sign in successful!");
 
           if (latestProfile?.user_type === "customer") {
             navigate("/add-job");
           }
         } else {
           // --- NEW USER (OR LOGIN FAILED): OPEN REGISTRATION MODAL ---
-          // This catches the "User not found" scenario perfectly even if useSubmit returns undefined
           setPendingGoogleToken(googleToken);
           setShowRoleModal(true);
         }
@@ -168,6 +167,7 @@ export default function Login() {
       }
     },
   });
+
   const handleRoleSelectionSubmit = async () => {
     try {
       const res = await submit(
@@ -250,16 +250,12 @@ export default function Login() {
                 <br />
                 <span className="auth-line">Access trusted shifts.</span>
               </h1>
-              <p className="auth-description"
-                style={{ textTransform: "none" }}
-              >
-                Log in to manage your profile, assignments, and verified
+              <p className="auth-description" style={{ textTransform: "none" }}>
+                Sign in to manage your profile, assignments, and verified
                 opportunities from one secure platform.
               </p>
 
-              <div className="auth-checks"
-                style={{ textTransform: "none" }}
-              >
+              <div className="auth-checks" style={{ textTransform: "none" }}>
                 <div className="auth-check">
                   <i className="fa-solid fa-circle-check"></i>
                   <span>Verified shifts and trusted clients</span>
@@ -278,12 +274,12 @@ export default function Login() {
             {/* FORM */}
             <div className="col-lg-6">
               <div className="auth-card">
-                <h5 className="fw-bold mb-1">Log in to your account</h5>
-                <p className="text-muted small mb-4">
-                  Enter your credentials to continue.
+                <h5 className="fw-bold mb-1">Sign in</h5>
+                <p className="text-muted small mb-4" style={{ textTransform: "none" }}>
+                  Please enter your email and password.
                 </p>
 
-                <form onSubmit={handleSubmit} noValidate>
+                <form onSubmit={handleSubmit} noValidate suggestions="off" autoComplete="off">
                   <div className="row g-3 mb-4">
                     <div className="col-12">
                       <label className="form-label small fw-medium mb-1">
@@ -291,22 +287,16 @@ export default function Login() {
                       </label>
                       <input
                         type="email"
-                        className={`form-control py-2 ${errors.email ? "is-invalid" : ""
-                          }`}
+                        autoComplete="off"
+                        className={`form-control py-2 ${errors.email ? "is-invalid" : ""}`}
                         name="email"
                         placeholder="name@example.com"
                         value={formData.email}
                         onChange={handleChange}
-                        maxLength={100}
-                        style={{
-                          border: "1px solid #0A7C6E",
-                        }}
+                        style={{ border: "1px solid #0A7C6E" }}
                       />
                       {errors.email && (
-                        <div
-                          className="invalid-feedback"
-                          style={{ fontSize: "12px" }}
-                        >
+                        <div className="invalid-feedback" style={{ fontSize: "12px" }}>
                           {errors.email}
                         </div>
                       )}
@@ -331,20 +321,16 @@ export default function Login() {
                         </button>
                       </div>
 
-                      {/* Position-relative now ONLY wraps the input and button */}
                       <div className="position-relative">
                         <input
                           type={showPassword ? "text" : "password"}
-                          className={`form-control py-2 pe-5 ${errors.password ? "is-invalid" : ""
-                            }`}
+                          className={`form-control py-2 pe-5 ${errors.password ? "is-invalid" : ""}`}
                           name="password"
                           placeholder="Password"
                           value={formData.password}
                           onChange={handleChange}
                           minLength={8}
-                          style={{
-                            border: "1px solid #0A7C6E",
-                          }}
+                          style={{ border: "1px solid #0A7C6E" }}
                         />
                         <button
                           type="button"
@@ -353,18 +339,13 @@ export default function Login() {
                           tabIndex="-1"
                         >
                           <i
-                            className={`fa-solid ${showPassword ? "fa-eye-slash" : "fa-eye"
-                              }`}
-                          ></i>
+                            style={{ color: "#0A7C6E" }}
+                            className={`fa-solid ${showPassword ? "fa-eye-slash" : "fa-eye"}`}></i>
                         </button>
                       </div>
 
-                      {/* Error message sits outside the relative wrapper */}
                       {errors.password && (
-                        <div
-                          className="invalid-feedback d-block"
-                          style={{ fontSize: "12px", marginTop: "0.25rem" }}
-                        >
+                        <div className="invalid-feedback d-block" style={{ fontSize: "12px", marginTop: "0.25rem" }}>
                           {errors.password}
                         </div>
                       )}
@@ -382,26 +363,18 @@ export default function Login() {
                       transition: "transform 0.1s",
                     }}
                     disabled={loading}
-                    onMouseDown={(e) =>
-                      (e.currentTarget.style.transform = "scale(0.98)")
-                    }
-                    onMouseUp={(e) =>
-                      (e.currentTarget.style.transform = "scale(1)")
-                    }
-                    onMouseLeave={(e) =>
-                      (e.currentTarget.style.transform = "scale(1)")
-                    }
+                    onMouseDown={(e) => (e.currentTarget.style.transform = "scale(0.98)")}
+                    onMouseUp={(e) => (e.currentTarget.style.transform = "scale(1)")}
+                    onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
                   >
-                    {loading && (
-                      <i className="fa-solid fa-spinner fa-spin"></i>
-                    )}
-                    {loading ? "Logging in..." : "Log In"}
+                    {loading && <i className="fa-solid fa-spinner fa-spin"></i>}
+                    {loading ? "Signing in..." : "Sign in"}
                   </button>
                 </form>
 
                 <div className="auth-divider">
                   <hr />
-                  <span>Or</span>
+                  <span>OR</span>
                   <hr />
                 </div>
 
@@ -411,31 +384,15 @@ export default function Login() {
                   disabled={loading}
                   style={{ borderRadius: "6px" }}
                 >
-                  <img
-                    src={googleIcon}
-                    alt="Google"
-                    width={16}
-                  />
-                  <span
-                    className="text-white fw-medium"
-                    style={{ fontSize: "14px" }}
-                  >
+                  <img src={googleIcon} alt="Google" width={16} />
+                  <span className="text-white fw-medium" style={{ fontSize: "14px" }}>
                     Continue with Google
                   </span>
                 </button>
 
-                <p
-                  className="text-center mt-4 mb-0"
-                  style={{ fontSize: "13px", textTransform: "none" }}
-                >
+                <p className="text-center mt-4 mb-0" style={{ fontSize: "13px", textTransform: "none" }}>
                   Don't have an account?{" "}
-                  <NavLink
-                    to="/register"
-                    className="fw-bold text-decoration-none"
-                    style={{
-                      color: "#0A7C6E",
-                    }}
-                  >
+                  <NavLink to="/register" className="fw-bold text-decoration-none" style={{ color: "#0A7C6E" }}>
                     Sign up
                   </NavLink>
                 </p>
@@ -447,181 +404,196 @@ export default function Login() {
 
       {/* --- FORGOT PASSWORD MODAL --- */}
       {showForgotModal && (
-        <>
+        <div
+          className="modal-backdrop-custom"
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            width: "100%",
+            height: "100%",
+            backgroundColor: "rgba(15, 23, 42, 0.7)",
+            backdropFilter: "blur(4px)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 1050,
+          }}
+        >
           <div
-            className="modal-backdrop fade show"
-            style={{ zIndex: 1040, backgroundColor: "rgba(0,0,0,0.5)" }}
-          ></div>
-          <div
-            className="modal fade show d-block"
-            tabIndex="-1"
-            style={{ zIndex: 1050 }}
+            className="modal-content-custom bg-white rounded-4 p-4 p-md-5 shadow-lg mx-3"
+            style={{ maxWidth: "450px", width: "100%", animation: "fadeIn 0.3s ease" }}
           >
-            <div className="modal-dialog modal-dialog-centered">
-              <div className="modal-content rounded-4 border-0 shadow-lg">
-                <div className="modal-header border-0 pb-0">
-                  <h5 className="modal-title fw-bold">Reset Password</h5>
-                  <button
-                    type="button"
-                    className="btn-close"
-                    onClick={() => setShowForgotModal(false)}
-                    disabled={loading}
-                  ></button>
-                </div>
-                <div className="modal-body pt-3 pb-4 px-4">
-                  <p className="text-muted small mb-4"
-                    style={{ textTransform: "none" }}
-                  >
-                    Enter your registered email address and we'll send you a link to reset your password.
-                  </p>
-
-                  <form onSubmit={handleForgotPasswordSubmit} noValidate>
-                    <div className="mb-4">
-                      <label className="form-label small fw-medium mb-1">
-                        Email Address <span className="text-danger">*</span>
-                      </label>
-                      <input
-                        type="email"
-                        className={`form-control py-2 ${forgotError ? "is-invalid" : ""
-                          }`}
-                        placeholder="name@example.com"
-                        value={forgotEmail}
-                        onChange={(e) => {
-                          setForgotEmail(e.target.value);
-                          if (forgotError) setForgotError("");
-                        }}
-                        style={{ border: "1px solid #0A7C6E" }}
-                      />
-                      {forgotError && (
-                        <div
-                          className="invalid-feedback"
-                          style={{ fontSize: "12px" }}
-                        >
-                          {forgotError}
-                        </div>
-                      )}
-                    </div>
-
-                    <button
-                      type="submit"
-                      className="btn w-100 py-2 fw-semibold d-flex justify-content-center align-items-center gap-2"
-                      style={{
-                        background: "#0A7C6E",
-                        border: "none",
-                        borderRadius: "6px",
-                        color: "#fff",
-                      }}
-                      disabled={loading}
-                    >
-                      {loading && <i className="fa-solid fa-spinner fa-spin"></i>}
-                      {loading ? "Sending..." : "Send Reset Link"}
-                    </button>
-                  </form>
-                </div>
+            <div className="text-center mb-4">
+              <div
+                className="d-inline-flex align-items-center justify-content-center rounded-circle mb-3"
+                style={{ width: "80px", height: "80px", backgroundColor: "rgba(10, 124, 110, 0.1)" }}
+              >
+                <i className="fa-solid fa-key" style={{ fontSize: "32px", color: "#0A7C6E" }}></i>
               </div>
+              <h3 className="fw-bold text-dark mb-2">Reset Password</h3>
+              <p className="text-muted small mb-0" style={{ textTransform: "none" }}>
+                Enter your registered email address and we'll send you a link to reset your password.
+              </p>
             </div>
+
+            <form onSubmit={handleForgotPasswordSubmit} noValidate>
+              <div className="mb-4">
+                <label className="form-label small fw-medium mb-1">
+                  Email Address <span className="text-danger">*</span>
+                </label>
+                <input
+                  type="email"
+                  className={`form-control py-2 ${forgotError ? "is-invalid" : ""}`}
+                  placeholder="name@example.com"
+                  value={forgotEmail}
+                  onChange={(e) => {
+                    setForgotEmail(e.target.value);
+                    if (forgotError) setForgotError("");
+                  }}
+                  style={{ border: "1px solid #0A7C6E" }}
+                />
+                {forgotError && (
+                  <div className="invalid-feedback" style={{ fontSize: "12px" }}>
+                    {forgotError}
+                  </div>
+                )}
+              </div>
+
+              <div className="d-flex gap-3">
+                <button
+                  type="button"
+                  className="btn btn-light py-2 fw-semibold w-50"
+                  style={{ borderRadius: "8px", color: "#475569" }}
+                  onClick={() => setShowForgotModal(false)}
+                  disabled={loading}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="btn py-2 fw-semibold w-50 text-white d-flex justify-content-center align-items-center gap-2"
+                  style={{ borderRadius: "8px", backgroundColor: "#0A7C6E" }}
+                  disabled={loading}
+                >
+                  {loading && <i className="fa-solid fa-spinner fa-spin"></i>}
+                  {loading ? "Sending..." : "Send Link"}
+                </button>
+              </div>
+            </form>
           </div>
-        </>
+        </div>
       )}
 
       {/* --- ROLE SELECTION MODAL --- */}
       {showRoleModal && (
-        <>
+        <div
+          className="modal-backdrop-custom"
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            width: "100%",
+            height: "100%",
+            backgroundColor: "rgba(15, 23, 42, 0.7)",
+            backdropFilter: "blur(4px)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 1050,
+          }}
+        >
           <div
-            className="modal-backdrop fade show"
-            style={{ zIndex: 1040, backgroundColor: "rgba(0,0,0,0.5)" }}
-          ></div>
-          <div
-            className="modal fade show d-block"
-            tabIndex="-1"
-            style={{ zIndex: 1050 }}
+            className="modal-content-custom bg-white rounded-4 p-4 p-md-5 shadow-lg mx-3"
+            style={{ maxWidth: "500px", width: "100%", animation: "fadeIn 0.3s ease" }}
           >
-            <div className="modal-dialog modal-dialog-centered">
-              <div className="modal-content rounded-4 border-0 shadow-lg">
-                <div className="modal-header border-0 pb-0">
-                  <h5 className="modal-title fw-bold">Complete your setup</h5>
+            <div className="text-center mb-4">
+              <h3 className="fw-bold text-dark mb-2">Complete your setup</h3>
+              <p className="text-muted small mb-0" style={{ textTransform: "none" }}>
+                It looks like you don't have an account yet. Please select your account type to securely create your profile and continue.
+              </p>
+            </div>
+
+            <div className="d-flex flex-column gap-3 mb-4">
+              {[
+                { key: "customer", label: "Client", desc: "I want to hire security professionals.", icon: "fa-user-tie" },
+                { key: "staff", label: "Staff", desc: "I am looking for security shifts & jobs.", icon: "fa-user-shield" },
+                { key: "contractor", label: "Resource Partner", desc: "I provide resources and contractor services.", icon: "fa-handshake" },
+              ].map((role) => {
+                const isActive = selectedRole === role.key;
+                return (
                   <button
+                    key={role.key}
                     type="button"
-                    className="btn-close"
-                    onClick={() => {
-                      setShowRoleModal(false);
-                      setPendingGoogleToken(null);
-                    }}
-                    disabled={loading}
-                  ></button>
-                </div>
-                <div className="modal-body pt-3 pb-4 px-4">
-                  <p className="text-muted small mb-4"
-                    style={{ textTransform: "none" }}
-                  >
-                    It looks like you don't have an account yet. Please select
-                    your account type to securely create your profile and
-                    continue.
-                  </p>
-
-                  <label className="form-label small fw-medium mb-2">
-                    Account Type <span className="text-danger">*</span>
-                  </label>
-                  <div
-                    className="d-flex gap-2 flex-wrap mb-4"
-                    role="radiogroup"
-                  >
-                    {[
-                      { key: "customer", label: "Client" },
-                      { key: "staff", label: "Staff" },
-                      { key: "contractor", label: "Resource Partner" },
-                    ].map((role) => (
-                      <label
-                        key={role.key}
-                        className={`btn btn-sm rounded-pill px-3 py-2 ${selectedRole === role.key
-                          ? "text-white"
-                          : "btn-light text-muted border"
-                          }`}
-                        style={{
-                          cursor: "pointer",
-                          transition: "all 0.2s",
-                          fontSize: "13px",
-                          backgroundColor:
-                            selectedRole === role.key ? "#0A7C6E" : undefined,
-                          borderColor:
-                            selectedRole === role.key ? "#0A7C6E" : undefined,
-                        }}
-                      >
-                        <input
-                          type="radio"
-                          name="modalUserRole"
-                          className="visually-hidden"
-                          value={role.key}
-                          checked={selectedRole === role.key}
-                          onChange={() => !loading && setSelectedRole(role.key)}
-                        />
-                        {role.label}
-                      </label>
-                    ))}
-                  </div>
-
-                  <button
-                    onClick={handleRoleSelectionSubmit}
-                    className="btn w-100 py-2 fw-semibold d-flex justify-content-center align-items-center gap-2"
+                    className="btn w-100 text-start d-flex align-items-center gap-3 p-3"
+                    onClick={() => setSelectedRole(role.key)}
                     style={{
-                      background: "#0A7C6E",
-                      border: "none",
-                      borderRadius: "6px",
-                      color: "#fff",
+                      border: isActive ? "2px solid #0A7C6E" : "1px solid #e2e8f0",
+                      backgroundColor: isActive ? "rgba(10, 124, 110, 0.05)" : "#fff",
+                      borderRadius: "10px",
+                      transition: "all 0.2s"
                     }}
-                    disabled={loading}
                   >
-                    {loading && (
-                      <i className="fa-solid fa-spinner fa-spin"></i>
-                    )}
-                    {loading ? "Creating..." : "Create Account & Login"}
+                    <div
+                      className="d-flex align-items-center justify-content-center rounded-circle"
+                      style={{
+                        width: "48px", height: "48px",
+                        backgroundColor: isActive ? "#0A7C6E" : "#f1f5f9",
+                        color: isActive ? "#fff" : "#64748b"
+                      }}
+                    >
+                      <i className={`fa-solid ${role.icon} fs-5`}></i>
+                    </div>
+                    <div>
+                      <h6 className="mb-1 fw-bold" style={{ color: isActive ? "#0A7C6E" : "#334155" }}>
+                        {role.label}
+                      </h6>
+                      <p className="mb-0 small text-muted" style={{ textTransform: "none" }}>{role.desc}</p>
+                    </div>
                   </button>
-                </div>
-              </div>
+                );
+              })}
+            </div>
+
+            <div className="d-flex gap-3">
+              <button
+                type="button"
+                className="btn btn-light py-2 fw-semibold w-50"
+                style={{ borderRadius: "8px", color: "#475569" }}
+                onClick={() => {
+                  setShowRoleModal(false);
+                  setPendingGoogleToken(null);
+                }}
+                disabled={loading}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="btn py-2 fw-semibold w-50 text-white d-flex justify-content-center align-items-center gap-2"
+                style={{
+                  borderRadius: "8px",
+                  backgroundColor: "#0A7C6E",
+                  opacity: (!selectedRole || loading) ? 0.6 : 1,
+                  cursor: (!selectedRole || loading) ? "not-allowed" : "pointer"
+                }}
+                onClick={handleRoleSelectionSubmit}
+                disabled={loading || !selectedRole}
+              >
+                {loading && <i className="fa-solid fa-spinner fa-spin"></i>}
+                {loading ? "Creating..." : "Sign up"}
+              </button>
             </div>
           </div>
-        </>
+        </div>
       )}
+
+      <style>{`
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(10px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
     </>
   );
 }

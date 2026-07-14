@@ -175,7 +175,7 @@ export default function AdminDashboard() {
           />
           <StatsCard
             icon="fa-solid fa-building"
-            title="Customers"
+            title="Clients"
             value={adminStats.totalCustomers}
             bgColor="#dcfce7"
             iconColor="#22c55e"

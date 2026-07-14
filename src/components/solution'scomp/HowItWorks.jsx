@@ -16,23 +16,23 @@ export default function HowItWorks() {
     const steps = [
         {
             number: 1,
-            title: "Submit Your Brief",
-            description: "Provide dates, locations and staffing requirements."
+            title: "Post Job",
+            description: "Describe your event and security needs"
         },
         {
             number: 2,
-            title: "Submit Your Brief",
-            description: "Provide dates, locations and staffing requirements."
+            title: "Review Staff",
+            description: "Browse through profiles, check updated licences and certifications"
         },
         {
             number: 3,
-            title: "Submit Your Brief",
-            description: "Provide dates, locations and staffing requirements."
+            title: "Confirm Booking",
+            description: "Select your staff and confirm the shift details"
         },
         {
             number: 4,
-            title: "Submit Your Brief",
-            description: "Provide dates, locations and staffing requirements."
+            title: "Track Live",
+            description: "Check the attendance and location during your event"
         }
     ];
 
@@ -49,7 +49,7 @@ export default function HowItWorks() {
         },
         heading: {
             fontSize: isMobile ? "22px" : "36px",
-            // fontWeight: "700",
+            fontWeight: "700",
             color: "#ffffff",
             margin: isMobile ? "0 0 40px 0" : "0 0 80px 0",
             textAlign: "center",
@@ -126,7 +126,7 @@ export default function HowItWorks() {
 
     return (
         <div style={styles.wrapper}>
-            <h2 style={styles.heading}>How It Works</h2>
+            <h2 style={styles.heading}>How Staffoo Works for Event Security</h2>
 
             <div style={styles.timelineContainer}>
                 {/* Dynamic Timeline connecting track */}

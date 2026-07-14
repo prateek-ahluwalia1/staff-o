@@ -1,12 +1,21 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { toast } from "react-toastify";
+import Select from "react-select";
 import PDFGenerator from "../utils/PDFGenerator";
-import { apiURL } from "../utils/exports";
+import { apiURL, COUNTRIES } from "../utils/exports";
 import useSubmit from "../hooks/useSubmit";
+import useFetch from "../hooks/useFetch";
+import { useSelector, useDispatch } from "react-redux";
+import { setUser } from "../store/slices/authSlice";
+
+/* ---------- Meta ---------- */
+const TAB_META = [
+    { label: "Employee Onboarding Form", icon: "" },
+    { label: "TFN Declaration", icon: "" },
+    { label: "Superannuation Standard Choice Form", icon: "" },
+];
 
 /* ---------- Helpers ---------- */
-const TAB_LABELS = ["Onboarding", "TFN Declaration", "Superannuation"];
-
 const todayDDMMYYYY = () => {
     const d = new Date();
     const day = String(d.getDate()).padStart(2, "0");
@@ -25,7 +34,6 @@ const isoToDisplay = (val) => {
     if (/^\d{2}\/\d{2}\/\d{4}$/.test(cleaned)) return cleaned;
     const match = cleaned.match(/^(\d{4})-(\d{2})-(\d{2})$/);
     if (match) {
-        // eslint-disable-next-line
         const [_, y, m, d] = match;
         return `${d}/${m}/${y}`;
     }
@@ -37,11 +45,24 @@ const displayToISO = (val) => {
     const cleaned = cleanDateString(val);
     const match = cleaned.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
     if (match) {
-        // eslint-disable-next-line
         const [_, d, m, y] = match;
         return `${y}-${m}-${d}`;
     }
     return cleaned;
+};
+
+/* ---------- Shared react-select styling ---------- */
+const selectStyles = {
+    control: (base, state) => ({
+        ...base,
+        minHeight: "42px",
+        backgroundColor: "#f8f9fa",
+        borderColor: state.isFocused ? "#0A7C6E" : "#dee2e6",
+        boxShadow: state.isFocused ? "0 0 0 0.25rem rgba(10, 124, 110, 0.25)" : "none",
+        borderRadius: "0.375rem",
+        "&:hover": { borderColor: "#0A7C6E" },
+    }),
+    valueContainer: (base) => ({ ...base, padding: "0 12px" }),
 };
 
 /* ---------- Reusable Date Input ---------- */
@@ -77,16 +98,16 @@ const DateInput = ({ name, value, onChange, required, disabled, placeholder, max
     };
 
     return (
-        <div className="input-group">
+        <div className="input-group shadow-none">
             <button
                 type="button"
-                className="input-group-text bg-white text-muted border-end-0"
+                className="input-group-text bg-light border-light-subtle text-primary px-3"
                 onClick={openPicker}
                 disabled={disabled}
-                style={{ cursor: "pointer" }}
+                style={{ cursor: disabled ? "not-allowed" : "pointer" }}
                 title="Open calendar"
             >
-                <i className="fa-solid fa-calendar-days text-primary"></i>
+                <i className="fa-solid fa-calendar-days"></i>
             </button>
             <input
                 type="date"
@@ -100,7 +121,7 @@ const DateInput = ({ name, value, onChange, required, disabled, placeholder, max
             />
             <input
                 type="text"
-                className="form-control border-start-0 ps-0"
+                className="form-control border-light-subtle border-start-0 ps-0 bg-light focus-ring focus-ring-primary py-2"
                 placeholder={placeholder || "DD/MM/YYYY"}
                 value={currentValue}
                 onChange={handleTextChange}
@@ -109,13 +130,14 @@ const DateInput = ({ name, value, onChange, required, disabled, placeholder, max
                 maxLength={10}
                 pattern="^(0[1-9]|[12][0-9]|3[01])/(0[1-9]|1[012])/\d{4}$"
                 title="Enter a date in DD/MM/YYYY format"
+                style={{ fontSize: "1rem", cursor: disabled ? "not-allowed" : "text" }}
             />
         </div>
     );
 };
 
 /* ---------- Address Autocomplete ---------- */
-const AddressAutocomplete = ({ value, name, onChange, placeholder, required }) => {
+const AddressAutocomplete = ({ value, name, onChange, placeholder, required, maxLength = 500 }) => {
     const inputRef = useRef(null);
     useEffect(() => {
         let autocomplete;
@@ -151,46 +173,138 @@ const AddressAutocomplete = ({ value, name, onChange, placeholder, required }) =
     }, [name, onChange]);
 
     return (
-        <input
-            ref={inputRef}
-            type="text"
-            className="form-control"
-            name={name}
-            placeholder={placeholder}
-            maxLength="500"
-            value={value}
-            onChange={onChange}
-            required={required}
-            autoComplete="off"
+        <div className="input-group shadow-none">
+            <span className="input-group-text bg-light border-light-subtle text-muted px-3">
+                <i className="fa-solid fa-location-dot"></i>
+            </span>
+            <input
+                ref={inputRef}
+                type="text"
+                className="form-control border-light-subtle border-start-0 ps-0 bg-light focus-ring focus-ring-primary py-2"
+                name={name}
+                placeholder={placeholder}
+                maxLength={maxLength}
+                value={value}
+                onChange={onChange}
+                required={required}
+                autoComplete="off"
+                style={{ fontSize: "1rem" }}
+            />
+        </div>
+    );
+};
+
+/* ---------- Country Select ---------- */
+const CountrySelect = ({ inputId, name, value, onChange, placeholder }) => {
+    const countryOptions = COUNTRIES.map((c) => ({ value: c.name, label: c.name }));
+    const selected =
+        countryOptions.find((opt) => opt.value === value || opt.label === value) ||
+        (value ? { value, label: value } : null);
+
+    return (
+        <Select
+            inputId={inputId}
+            options={countryOptions}
+            value={selected}
+            onChange={(opt) => onChange({ target: { name, value: opt ? opt.value : "" } })}
+            placeholder={placeholder || "Search country..."}
+            isClearable
+            isSearchable
+            styles={selectStyles}
         />
     );
 };
 
-/* ---------- Section Title ---------- */
-const SectionTitle = ({ children, className = "" }) => (
-    <h6 className={`border-bottom pb-2 mb-3 text-uppercase text-muted fw-bold small ${className}`.trim()}>
-        {children}
-    </h6>
+/* ---------- Pill Radio Group ---------- */
+const PillRadioGroup = ({ name, value, onChange, options, required }) => (
+    <div className="d-flex flex-wrap gap-2">
+        {options.map((opt) => {
+            const isSelected = value === opt.value;
+            return (
+                <label
+                    key={opt.value}
+                    className={`btn d-flex align-items-center gap-2 px-4 py-2 border rounded-pill transition-all ${isSelected ? "btn-primary-custom shadow-sm" : "btn-light border-light-subtle text-muted"
+                        }`}
+                    style={{ cursor: "pointer", fontSize: "0.9rem" }}
+                >
+                    <input
+                        type="radio"
+                        className="d-none"
+                        name={name}
+                        value={opt.value}
+                        checked={isSelected}
+                        onChange={onChange}
+                        required={required}
+                    />
+                    {opt.icon && <i className={`fa-solid ${opt.icon}`}></i>}
+                    {opt.label}
+                </label>
+            );
+        })}
+    </div>
 );
 
-/* ---------- Action Bar ---------- */
-const ActionBar = ({ loading, saveLabel, disabled }) => (
-    <div className="d-flex justify-content-end pt-3 border-top mt-4">
+/* ---------- Section Header ---------- */
+const SectionHeader = ({ icon, children }) => (
+    <div className="d-flex align-items-center gap-2 mb-3 pb-2 border-bottom">
+        {icon && <i className={`fa-solid ${icon} text-primary`} style={{ fontSize: "0.9rem" }}></i>}
+        <h6 className="fw-bold text-dark mb-0" style={{ fontSize: "0.95rem" }}>
+            {children}
+        </h6>
+    </div>
+);
+
+/* ---------- Card Header ---------- */
+const FormCardHeader = ({ title, description, onDownloadPDF, downloadKey }) => (
+    <div className="card-header bg-transparent border-bottom px-4 px-md-5 py-4 d-flex justify-content-between align-items-start flex-wrap gap-3">
+        <div>
+            <h3 className="fw-bold mb-1">{title}</h3>
+            {description && <p className="text-muted mb-0">{description}</p>}
+        </div>
+        {onDownloadPDF && (
+            <button
+                type="button"
+                className="btn btn-outline-secondary rounded-pill px-3 py-2"
+                onClick={() => onDownloadPDF(downloadKey)}
+                title={`Download saved ${title} PDF`}
+            >
+                <i className="fa-solid fa-download me-2"></i>Download PDF
+            </button>
+        )}
+    </div>
+);
+
+/* ---------- Card Footer ---------- */
+const FormCardFooter = ({ loading, saveLabel, disabled }) => (
+    <div className="card-footer bg-white px-4 px-md-5 py-4 border-top d-flex justify-content-end">
         <button
             type="submit"
-            className="btn btn-primary-custom fw-bold px-4"
-            style={{ color: disabled ? "#ccc" : "#fff" }}
+            className="btn btn-primary btn-lg px-5 shadow-sm rounded-pill d-flex align-items-center gap-2"
             disabled={loading || disabled}
+            style={{ fontWeight: "600", transition: "all 0.2s ease", fontSize: "1rem" }}
         >
-            {loading ? "Saving..." : saveLabel}
+            {loading ? (
+                <>
+                    <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                    Saving...
+                </>
+            ) : (
+                <>
+                    {saveLabel}
+                </>
+            )}
         </button>
     </div>
 );
 
+const inputCls = "form-control border-light-subtle bg-light focus-ring focus-ring-primary py-2 px-3";
+const selectCls = "form-select border-light-subtle bg-light focus-ring focus-ring-primary py-2 px-3";
+const labelCls = "form-label fw-semibold text-dark";
+
 /* ---------- Map staff info to onboarding prefill ---------- */
 const mapStaffInfoToOnboardForm = (staff) => ({
     o_name: staff.name || "",
-    o_dob: staff.date_of_birth || "",
+    o_dob: staff.date_of_birth ? isoToDisplay(staff.date_of_birth) : "",
     o_addr: staff.address || "",
     o_phone: staff.phone || "",
     o_email: staff.email || "",
@@ -217,409 +331,426 @@ const mapStaffInfoToOnboardForm = (staff) => ({
     o_superfund: "",
     o_superusi: "",
     o_member: "",
-    sig3: "",
+    sig3: staff.name || "",
     date3: todayDDMMYYYY(),
+});
+
+/* ---------- Map staff info to TFN prefill ---------- */
+const mapStaffInfoToTfnForm = (staff) => {
+    const fullName = (staff.name || "").trim();
+    const parts = fullName.split(/\s+/).filter(Boolean);
+    const first_name = parts[0] || "";
+    const surname = parts.length > 1 ? parts.slice(1).join(" ") : "";
+    return {
+        tfn: "",
+        title: "",
+        first_name,
+        surname,
+        prev_name: "",
+        dob: staff.date_of_birth ? isoToDisplay(staff.date_of_birth) : "",
+        address: staff.address || "",
+        basis: "casual",
+        aus_res: "no",
+        threshold: "no",
+        help: "no",
+        sig1: fullName,
+        date1: todayDDMMYYYY(),
+    };
+};
+
+/* ---------- Map staff info to Superannuation prefill ---------- */
+const mapStaffInfoToSuperForm = (staff) => ({
+    s_name: staff.name || "",
+    s_empno: "",
+    fund_choice: "employer",
+    s_fundname: "",
+    s_fundabn: "",
+    s_usi: "",
+    s_member: "",
+    super_confirm: false,
+    sig2: staff.name || "",
+    date2: todayDDMMYYYY(),
 });
 
 /* ---------- TFN Declaration Form ---------- */
 const TfnDeclarationForm = ({ values, loading, onChange, onSubmit, dataModified, onDownloadPDF }) => (
-    <form onSubmit={onSubmit} className="animate__animated animate__fadeIn">
-        <div className="d-flex justify-content-between align-items-center mb-3">
-            <SectionTitle className="mb-0">Tax File Number</SectionTitle>
-            <button
-                type="button"
-                className="btn btn-outline-secondary btn-sm"
-                onClick={() => onDownloadPDF("tfn")}
-                title="Download saved TFN Declaration PDF"
-            >
-                <i className="fa-solid fa-download me-1"></i> Download PDF
-            </button>
-        </div>
-        <div className="mb-3">
-            <label className="form-label small fw-bold text-muted">
-                TFN <span className="text-danger">*</span>
-            </label>
-            <input
-                type="text"
-                className="form-control"
-                name="tfn"
-                placeholder="000 000 000"
-                minLength="8"
-                maxLength="11"
-                value={values.tfn}
-                onChange={onChange}
-                required
-            />
-        </div>
+    <div className="card border-0 shadow-sm rounded-4 overflow-hidden bg-white animate__animated animate__fadeIn">
+        <FormCardHeader
+            title="TFN Declaration"
+            description="Tell us your tax file number details as required by the ATO."
+            onDownloadPDF={onDownloadPDF}
+            downloadKey="tfn"
+        />
+        <form onSubmit={onSubmit}>
+            <div className="card-body px-4 px-md-5 py-4 py-md-5">
+                <SectionHeader icon="fa-hashtag">Tax File Number</SectionHeader>
+                <div className="row g-4 mb-4">
+                    <div className="col-md-6">
+                        <label className={labelCls}>
+                            TFN <span className="text-danger">*</span>
+                        </label>
+                        <input
+                            type="text"
+                            className={inputCls}
+                            name="tfn"
+                            placeholder="000 000 000"
+                            minLength="8"
+                            maxLength="11"
+                            value={values.tfn}
+                            onChange={onChange}
+                            required
+                            style={{ fontSize: "1rem" }}
+                        />
+                    </div>
+                </div>
 
-        <SectionTitle className="mt-4">Personal Details</SectionTitle>
-        <div className="row g-3 mb-3 align-items-center">
-            <div className="col-md-2">
-                <label className="form-label small fw-bold text-muted mb-0">
-                    Title <span className="text-danger">*</span>
-                </label>
-                <select className="form-select" name="title" value={values.title} onChange={onChange} required>
-                    <option value="" disabled>Select</option>
-                    <option value="Mr">Mr</option>
-                    <option value="Ms">Ms</option>
-                    <option value="Mrs">Mrs</option>
-                </select>
-            </div>
-            <div className="col-md-5">
-                <label className="form-label small fw-bold text-muted">
-                    First Name <span className="text-danger">*</span>
-                </label>
-                <input
-                    type="text"
-                    className="form-control"
-                    name="first_name"
-                    placeholder="Jane"
-                    maxLength="50"
-                    value={values.first_name}
-                    onChange={onChange}
-                    required
-                />
-            </div>
-            <div className="col-md-5">
-                <label className="form-label small fw-bold text-muted">
-                    Surname <span className="text-danger">*</span>
-                </label>
-                <input
-                    type="text"
-                    className="form-control"
-                    name="surname"
-                    placeholder="Smith"
-                    maxLength="50"
-                    value={values.surname}
-                    onChange={onChange}
-                    required
-                />
-            </div>
-            <div className="col-md-6">
-                <label className="form-label small fw-bold text-muted">Previous Name (if any)</label>
-                <input
-                    type="text"
-                    className="form-control"
-                    name="prev_name"
-                    placeholder="—"
-                    maxLength="50"
-                    value={values.prev_name}
-                    onChange={onChange}
-                />
-            </div>
-            <div className="col-md-6">
-                <label className="form-label small fw-bold text-muted">
-                    Date of Birth <span className="text-danger">*</span>
-                </label>
-                <DateInput name="dob" value={values.dob} onChange={onChange} required />
-            </div>
-        </div>
+                <SectionHeader icon="fa-user">Personal Details</SectionHeader>
+                <div className="row g-4 mb-4">
+                    <div className="col-md-2">
+                        <label className={labelCls}>
+                            Title <span className="text-danger">*</span>
+                        </label>
+                        <select className={selectCls} name="title" value={values.title} onChange={onChange} required style={{ fontSize: "1rem" }}>
+                            <option value="" disabled>Select</option>
+                            <option value="Mr">Mr</option>
+                            <option value="Ms">Ms</option>
+                            <option value="Mrs">Mrs</option>
+                        </select>
+                    </div>
+                    <div className="col-md-5">
+                        <label className={labelCls}>
+                            First Name <span className="text-danger">*</span>
+                        </label>
+                        <input
+                            type="text"
+                            className={inputCls}
+                            name="first_name"
+                            placeholder="Jane"
+                            maxLength="50"
+                            value={values.first_name}
+                            onChange={onChange}
+                            required
+                            style={{ fontSize: "1rem" }}
+                        />
+                    </div>
+                    <div className="col-md-5">
+                        <label className={labelCls}>
+                            Surname <span className="text-danger">*</span>
+                        </label>
+                        <input
+                            type="text"
+                            className={inputCls}
+                            name="surname"
+                            placeholder="Smith"
+                            maxLength="50"
+                            value={values.surname}
+                            onChange={onChange}
+                            required
+                            style={{ fontSize: "1rem" }}
+                        />
+                    </div>
+                    <div className="col-md-6">
+                        <label className={labelCls}>Previous Name (if any)</label>
+                        <input
+                            type="text"
+                            className={inputCls}
+                            name="prev_name"
+                            placeholder="—"
+                            maxLength="50"
+                            value={values.prev_name}
+                            onChange={onChange}
+                            style={{ fontSize: "1rem" }}
+                        />
+                    </div>
+                    <div className="col-md-6">
+                        <label className={labelCls}>
+                            Date of Birth <span className="text-danger">*</span>
+                        </label>
+                        <DateInput name="dob" value={values.dob} onChange={onChange} required />
+                    </div>
+                </div>
 
-        <SectionTitle className="mt-4">Residential Address</SectionTitle>
-        <div className="mb-3">
-            <label className="form-label small fw-bold text-muted">
-                Full Address <span className="text-danger">*</span>
-            </label>
-            <AddressAutocomplete
-                name="address"
-                value={values.address}
-                onChange={onChange}
-                placeholder="Street address, suburb, state, postcode"
-                required={true}
-            />
-        </div>
+                <SectionHeader icon="fa-location-dot">Residential Address</SectionHeader>
+                <div className="row g-4 mb-4">
+                    <div className="col-md-12">
+                        <label className={labelCls}>
+                            Full Address <span className="text-danger">*</span>
+                        </label>
+                        <AddressAutocomplete
+                            name="address"
+                            value={values.address}
+                            onChange={onChange}
+                            placeholder="Street address, suburb, state, postcode"
+                            required={true}
+                            maxLength={80}
+                        />
+                    </div>
+                </div>
 
-        <SectionTitle className="mt-4">Employment</SectionTitle>
-        <div className="row align-items-center mb-4">
-            <div className="col-md-3">
-                <label className="form-label small fw-bold text-muted mb-0">
-                    Employment Type <span className="text-danger">*</span>
-                </label>
-            </div>
-            <div className="col-md-9">
-                <div className="d-flex flex-wrap gap-3 align-items-center">
-                    {["full-time", "part-time", "casual"].map((opt) => (
-                        <div className="form-check" key={opt}>
-                            <input
-                                className="form-check-input"
-                                type="radio"
-                                name="basis"
-                                value={opt}
-                                checked={values.basis === opt}
-                                onChange={onChange}
-                                required
-                            />
-                            <label className="form-check-label">{opt.charAt(0).toUpperCase() + opt.slice(1)}</label>
+                <SectionHeader icon="fa-briefcase">Employment</SectionHeader>
+                <div className="row g-4 mb-4">
+                    <div className="col-12">
+                        <label className={`${labelCls} d-block`}>
+                            Employment Type <span className="text-danger">*</span>
+                        </label>
+                        <PillRadioGroup
+                            name="basis"
+                            value={values.basis}
+                            onChange={onChange}
+                            required
+                            options={[
+                                { value: "full-time", label: "Full-time" },
+                                { value: "part-time", label: "Part-time" },
+                                { value: "casual", label: "Casual" },
+                            ]}
+                        />
+                    </div>
+                </div>
+
+                <SectionHeader icon="fa-file-circle-check">Declarations</SectionHeader>
+                <div className="row g-4 mb-4">
+                    {[
+                        { label: "Australian resident for tax?", name: "aus_res" },
+                        { label: "Claim tax-free threshold?", name: "threshold" },
+                        { label: "HELP / VSL / FS / SSL debt?", name: "help" },
+                    ].map(({ label, name }) => (
+                        <div className="col-12" key={name}>
+                            <div className="d-flex flex-wrap justify-content-between align-items-center gap-3 p-3 bg-light rounded-3 border">
+                                <label className="fw-semibold text-dark mb-0" style={{ fontSize: "0.9rem" }}>
+                                    {label} <span className="text-danger">*</span>
+                                </label>
+                                <PillRadioGroup
+                                    name={name}
+                                    value={values[name]}
+                                    onChange={onChange}
+                                    required
+                                    options={[
+                                        { value: "yes", label: "Yes" },
+                                        { value: "no", label: "No" },
+                                    ]}
+                                />
+                            </div>
                         </div>
                     ))}
                 </div>
-            </div>
-        </div>
 
-        <SectionTitle className="mt-4">Declarations</SectionTitle>
-        {[
-            { label: "Australian resident for tax?", name: "aus_res" },
-            { label: "Claim tax-free threshold?", name: "threshold" },
-            { label: "HELP / VSL / FS / SSL debt?", name: "help" },
-        ].map(({ label, name }) => (
-            <div className="row align-items-center mb-3" key={name}>
-                <div className="col-md-4">
-                    <label className="form-label small fw-bold text-muted mb-0">
-                        {label} <span className="text-danger">*</span>
-                    </label>
-                </div>
-                <div className="col-md-8">
-                    <div className="d-flex gap-3 align-items-center">
-                        <div className="form-check">
-                            <input
-                                className="form-check-input"
-                                type="radio"
-                                name={name}
-                                value="yes"
-                                checked={values[name] === "yes"}
-                                onChange={onChange}
-                                required
-                            />
-                            <label className="form-check-label">Yes</label>
-                        </div>
-                        <div className="form-check">
-                            <input
-                                className="form-check-input"
-                                type="radio"
-                                name={name}
-                                value="no"
-                                checked={values[name] === "no"}
-                                onChange={onChange}
-                            />
-                            <label className="form-check-label">No</label>
-                        </div>
+                <SectionHeader icon="fa-signature">Signature</SectionHeader>
+                <div className="row g-4">
+                    <div className="col-md-6">
+                        <label className={labelCls}>
+                            Employee Signature (Type Name) <span className="text-danger">*</span>
+                        </label>
+                        <input
+                            type="text"
+                            className={inputCls}
+                            name="sig1"
+                            placeholder="Type your full name"
+                            maxLength="40"
+                            value={values.sig1}
+                            onChange={onChange}
+                            required
+                            style={{ fontSize: "1rem" }}
+                        />
+                    </div>
+                    <div className="col-md-6">
+                        <label className={labelCls}>
+                            Date <span className="text-danger">*</span>
+                        </label>
+                        <DateInput name="date1" value={values.date1} onChange={onChange} required />
                     </div>
                 </div>
             </div>
-        ))}
-
-        <SectionTitle className="mt-4">Signature</SectionTitle>
-        <div className="row g-3 mb-4">
-            <div className="col-md-6">
-                <label className="form-label small fw-bold text-muted">
-                    Employee Signature (Type Name) <span className="text-danger">*</span>
-                </label>
-                <input
-                    type="text"
-                    className="form-control"
-                    name="sig1"
-                    placeholder="Type your full name"
-                    maxLength="100"
-                    value={values.sig1}
-                    onChange={onChange}
-                    required
-                />
-            </div>
-            <div className="col-md-6">
-                <label className="form-label small fw-bold text-muted">
-                    Date <span className="text-danger">*</span>
-                </label>
-                <DateInput name="date1" value={values.date1} onChange={onChange} required />
-            </div>
-        </div>
-
-        <ActionBar loading={loading} saveLabel="Save TFN Declaration" disabled={!dataModified} />
-    </form>
+            <FormCardFooter loading={loading} saveLabel="Save TFN Declaration" disabled={!dataModified} />
+        </form>
+    </div>
 );
 
 /* ---------- Superannuation Form ---------- */
 const SuperannuationForm = ({ values, loading, onChange, onSubmit, dataModified, onDownloadPDF }) => (
-    <form onSubmit={onSubmit} className="animate__animated animate__fadeIn">
-        <div className="d-flex justify-content-between align-items-center mb-3">
-            <SectionTitle className="mb-0">Employee Details</SectionTitle>
-            <button
-                type="button"
-                className="btn btn-outline-secondary btn-sm"
-                onClick={() => onDownloadPDF("super_form")}
-                title="Download saved Superannuation PDF"
-            >
-                <i className="fa-solid fa-download me-1"></i> Download PDF
-            </button>
-        </div>
-        <div className="row g-3 mb-4">
-            <div className="col-md-6">
-                <label className="form-label small fw-bold text-muted">
-                    Full Name <span className="text-danger">*</span>
-                </label>
-                <input
-                    type="text"
-                    className="form-control"
-                    name="s_name"
-                    placeholder="John Doe"
-                    maxLength="100"
-                    value={values.s_name}
-                    onChange={onChange}
-                    required
-                />
-            </div>
-            <div className="col-md-6">
-                <label className="form-label small fw-bold text-muted">Employee Number</label>
-                <input
-                    type="text"
-                    className="form-control"
-                    name="s_empno"
-                    placeholder="Optional"
-                    maxLength="20"
-                    value={values.s_empno}
-                    onChange={onChange}
-                />
-            </div>
-        </div>
+    <div className="card border-0 shadow-sm rounded-4 overflow-hidden bg-white animate__animated animate__fadeIn">
+        <FormCardHeader
+            title="Superannuation Standard Choice Form"
+            description="Let us know which super fund your contributions should be paid into."
+            onDownloadPDF={onDownloadPDF}
+            downloadKey="super_form"
+        />
+        <form onSubmit={onSubmit}>
+            <div className="card-body px-4 px-md-5 py-4 py-md-5">
+                <SectionHeader icon="fa-user">Employee Details</SectionHeader>
+                <div className="row g-4 mb-4">
+                    <div className="col-md-6">
+                        <label className={labelCls}>
+                            Full Name <span className="text-danger">*</span>
+                        </label>
+                        <input
+                            type="text"
+                            className={inputCls}
+                            name="s_name"
+                            placeholder="John Doe"
+                            maxLength="50"
+                            value={values.s_name}
+                            onChange={onChange}
+                            required
+                            style={{ fontSize: "1rem" }}
+                        />
+                    </div>
+                    <div className="col-md-6">
+                        <label className={labelCls}>Employee Number</label>
+                        <input
+                            type="text"
+                            className={inputCls}
+                            name="s_empno"
+                            placeholder="Optional"
+                            maxLength="20"
+                            value={values.s_empno}
+                            onChange={onChange}
+                            style={{ fontSize: "1rem" }}
+                        />
+                    </div>
+                </div>
 
-        <SectionTitle className="mt-4">
-            Fund Choice <span className="text-danger">*</span>
-        </SectionTitle>
-        <div className="row align-items-center mb-4">
-            <div className="col-md-12">
-                <div className="form-check mb-2">
+                <SectionHeader icon="fa-piggy-bank">Fund Choice</SectionHeader>
+                <div className="row g-4 mb-4">
+                    <div className="col-12">
+                        <PillRadioGroup
+                            name="fund_choice"
+                            value={values.fund_choice}
+                            onChange={onChange}
+                            required
+                            options={[
+                                { value: "own", label: "I nominate my own super fund", icon: "fa-hand-pointer" },
+                                { value: "employer", label: "Use the employer's default fund", icon: "fa-building" },
+                            ]}
+                        />
+                    </div>
+                </div>
+
+                {values.fund_choice === "own" ? (
+                    <div className="row g-4 mb-4 p-3 mx-0 bg-light rounded-3 border animate__animated animate__fadeIn">
+                        <div className="col-md-6">
+                            <label className={labelCls}>
+                                Fund Name <span className="text-danger">*</span>
+                            </label>
+                            <input
+                                type="text"
+                                className={inputCls}
+                                name="s_fundname"
+                                placeholder="e.g. AustralianSuper"
+                                maxLength="35"
+                                value={values.s_fundname}
+                                onChange={onChange}
+                                required={values.fund_choice === "own"}
+                                style={{ fontSize: "1rem" }}
+                            />
+                        </div>
+                        <div className="col-md-6">
+                            <label className={labelCls}>
+                                Fund ABN <span className="text-danger">*</span>
+                            </label>
+                            <input
+                                type="text"
+                                className={inputCls}
+                                name="s_fundabn"
+                                placeholder="12 345 678 901"
+                                maxLength="11"
+                                value={values.s_fundabn}
+                                onChange={onChange}
+                                required={values.fund_choice === "own"}
+                                style={{ fontSize: "1rem" }}
+                            />
+                        </div>
+                        <div className="col-md-6">
+                            <label className={labelCls}>
+                                Fund USI <span className="text-danger">*</span>
+                            </label>
+                            <input
+                                type="text"
+                                className={inputCls}
+                                name="s_usi"
+                                placeholder="USI code"
+                                maxLength="20"
+                                value={values.s_usi}
+                                onChange={onChange}
+                                required={values.fund_choice === "own"}
+                                style={{ fontSize: "1rem" }}
+                            />
+                        </div>
+                        <div className="col-md-6">
+                            <label className={labelCls}>
+                                Member Account No. <span className="text-danger">*</span>
+                            </label>
+                            <input
+                                type="text"
+                                className={inputCls}
+                                name="s_member"
+                                placeholder="Member no."
+                                maxLength="30"
+                                value={values.s_member}
+                                onChange={onChange}
+                                required={values.fund_choice === "own"}
+                                style={{ fontSize: "1rem" }}
+                            />
+                        </div>
+                    </div>
+                ) : (
+                    <div className="p-3 bg-light rounded-3 border mb-4 text-muted small" style={{ textTransform: "none" }}>
+                        <b className="text-dark d-block mb-1">
+                            <i className="fa-solid fa-building me-2 text-primary"></i>Capital Services Pty Ltd
+                        </b>
+                        ABN: 48 613 317 838 · 21 Tanglewood Bvd, Truganina VIC 3029
+                    </div>
+                )}
+
+                <SectionHeader icon="fa-file-circle-check">Declaration</SectionHeader>
+                <div className="mb-4 p-3 rounded-3 form-check d-flex align-items-center">
                     <input
                         className="form-check-input"
-                        type="radio"
-                        name="fund_choice"
-                        value="own"
-                        checked={values.fund_choice === "own"}
+                        type="checkbox"
+                        id="super_confirm"
+                        name="super_confirm"
+                        checked={values.super_confirm}
                         onChange={onChange}
                         required
                     />
-                    <label className="form-check-label" style={{ textTransform: "none" }}>
-                        I nominate my own super fund
+                    <label
+                        className="form-check-label text-muted small fw-medium"
+                        htmlFor="super_confirm"
+                        style={{ textTransform: "none", marginLeft: "0.5rem", marginTop: "0.2rem" }}
+                    >
+                        I confirm that the superannuation fund details provided are correct. I understand my super
+                        contributions will be paid into the fund I have selected above.
                     </label>
                 </div>
-                <div className="form-check">
-                    <input
-                        className="form-check-input"
-                        type="radio"
-                        name="fund_choice"
-                        value="employer"
-                        checked={values.fund_choice === "employer"}
-                        onChange={onChange}
-                    />
-                    <label className="form-check-label" style={{ textTransform: "none" }}>
-                        Use the employer's default super fund
-                    </label>
-                </div>
-            </div>
-        </div>
 
-        {values.fund_choice === "own" ? (
-            <div className="row g-3 mb-4 p-3 bg-light rounded border">
-                <div className="col-md-6">
-                    <label className="form-label small fw-bold text-muted">
-                        Fund Name <span className="text-danger">*</span>
-                    </label>
-                    <input
-                        type="text"
-                        className="form-control"
-                        name="s_fundname"
-                        placeholder="e.g. AustralianSuper"
-                        maxLength="100"
-                        value={values.s_fundname}
-                        onChange={onChange}
-                        required={values.fund_choice === "own"}
-                    />
-                </div>
-                <div className="col-md-6">
-                    <label className="form-label small fw-bold text-muted">
-                        Fund ABN <span className="text-danger">*</span>
-                    </label>
-                    <input
-                        type="text"
-                        className="form-control"
-                        name="s_fundabn"
-                        placeholder="12 345 678 901"
-                        maxLength="11"
-                        value={values.s_fundabn}
-                        onChange={onChange}
-                        required={values.fund_choice === "own"}
-                    />
-                </div>
-                <div className="col-md-6">
-                    <label className="form-label small fw-bold text-muted">
-                        Fund USI <span className="text-danger">*</span>
-                    </label>
-                    <input
-                        type="text"
-                        className="form-control"
-                        name="s_usi"
-                        placeholder="USI code"
-                        maxLength="20"
-                        value={values.s_usi}
-                        onChange={onChange}
-                        required={values.fund_choice === "own"}
-                    />
-                </div>
-                <div className="col-md-6">
-                    <label className="form-label small fw-bold text-muted">
-                        Member Account No. <span className="text-danger">*</span>
-                    </label>
-                    <input
-                        type="text"
-                        className="form-control"
-                        name="s_member"
-                        placeholder="Member no."
-                        maxLength="50"
-                        value={values.s_member}
-                        onChange={onChange}
-                        required={values.fund_choice === "own"}
-                    />
+                <SectionHeader icon="fa-signature">Signature</SectionHeader>
+                <div className="row g-4">
+                    <div className="col-md-6">
+                        <label className={labelCls}>
+                            Employee Signature (Type Name) <span className="text-danger">*</span>
+                        </label>
+                        <input
+                            type="text"
+                            className={inputCls}
+                            name="sig2"
+                            placeholder="Type your full name"
+                            maxLength="40"
+                            value={values.sig2}
+                            onChange={onChange}
+                            required
+                            style={{ fontSize: "1rem" }}
+                        />
+                    </div>
+                    <div className="col-md-6">
+                        <label className={labelCls}>
+                            Date <span className="text-danger">*</span>
+                        </label>
+                        <DateInput name="date2" value={values.date2} onChange={onChange} required />
+                    </div>
                 </div>
             </div>
-        ) : (
-            <div className="p-3 bg-light rounded border mb-4 text-muted small">
-                <b className="text-dark">Capital Services Pty Ltd</b><br />
-                ABN: 48 613 317 838 · 21 Tanglewood Bvd, Truganina VIC 3029
-            </div>
-        )}
-
-        <SectionTitle className="mt-4">Declaration</SectionTitle>
-        <div className="mb-4 form-check">
-            <input
-                className="form-check-input"
-                type="checkbox"
-                id="super_confirm"
-                name="super_confirm"
-                checked={values.super_confirm}
-                onChange={onChange}
-                required
-            />
-            <label className="form-check-label text-muted small fw-medium" htmlFor="super_confirm"
-                style={{ textTransform: "none" }}>
-                I confirm that the superannuation fund details provided are correct.
-            </label>
-        </div>
-
-        <SectionTitle className="mt-4">Signature</SectionTitle>
-        <div className="row g-3 mb-4">
-            <div className="col-md-6">
-                <label className="form-label small fw-bold text-muted">
-                    Employee Signature (Type Name) <span className="text-danger">*</span>
-                </label>
-                <input
-                    type="text"
-                    className="form-control"
-                    name="sig2"
-                    placeholder="Type your full name"
-                    maxLength="100"
-                    value={values.sig2}
-                    onChange={onChange}
-                    required
-                />
-            </div>
-            <div className="col-md-6">
-                <label className="form-label small fw-bold text-muted">
-                    Date <span className="text-danger">*</span>
-                </label>
-                <DateInput name="date2" value={values.date2} onChange={onChange} required />
-            </div>
-        </div>
-
-        <ActionBar loading={loading} saveLabel="Save Superannuation" disabled={!dataModified} />
-    </form>
+            <FormCardFooter loading={loading} saveLabel="Save Superannuation" disabled={!dataModified} />
+        </form>
+    </div>
 );
 
 /* ---------- Employee Onboarding Form ---------- */
@@ -634,289 +765,299 @@ const EmployeeOnboardingForm = ({
         return `${apiURL}staff_documents/${pathOrUrl}`;
     };
 
+    const DocLink = ({ path }) =>
+        path ? (
+            <a
+                href={resolveDocUrl(path)}
+                target="_blank"
+                rel="noreferrer"
+                className="text-primary small fw-bold text-decoration-none d-inline-flex align-items-center gap-1"
+            >
+                <i className="fa-solid fa-file-lines"></i> View Attached Document
+            </a>
+        ) : null;
+
     return (
-        <form onSubmit={onSubmit} className="animate__animated animate__fadeIn">
-            <div className="d-flex justify-content-between align-items-center mb-3">
-                <SectionTitle className="mb-0">Personal Contact Details</SectionTitle>
-                <button
-                    type="button"
-                    className="btn btn-outline-secondary btn-sm"
-                    onClick={() => onDownloadPDF("onboarding")}
-                    title="Download saved Onboarding PDF"
-                >
-                    <i className="fa-solid fa-download me-1"></i> Download PDF
-                </button>
-            </div>
-            <div className="row g-3 mb-4">
-                <div className="col-md-12">
-                    <label className="form-label small fw-bold text-muted">
-                        Full Name (as per ID) <span className="text-danger">*</span>
-                    </label>
-                    <input type="text" className="form-control" name="o_name" maxLength="100"
-                        value={values.o_name} onChange={onChange} required />
-                </div>
-                <div className="col-md-6">
-                    <label className="form-label small fw-bold text-muted">
-                        Date of birth <span className="text-danger">*</span>
-                    </label>
-                    <DateInput name="o_dob" value={values.o_dob} onChange={onChange} required />
-                </div>
-                <div className="col-md-6">
-                    <label className="form-label small fw-bold text-muted">
-                        Residential Address <span className="text-danger">*</span>
-                    </label>
-                    <AddressAutocomplete name="o_addr" value={values.o_addr} onChange={onChange}
-                        placeholder="Street address, suburb, state, postcode" required={true} />
-                </div>
-                <div className="col-md-6">
-                    <label className="form-label small fw-bold text-muted">
-                        Mobile Phone <span className="text-danger">*</span>
-                    </label>
-                    <input type="text" className="form-control" name="o_phone" placeholder="04xx xxx xxx"
-                        maxLength="15" value={values.o_phone} onChange={onChange} required />
-                </div>
-                <div className="col-md-6">
-                    <label className="form-label small fw-bold text-muted">
-                        Personal Email <span className="text-danger">*</span>
-                    </label>
-                    <input type="email" className="form-control" name="o_email" placeholder="jane@email.com"
-                        maxLength="100" value={values.o_email} onChange={onChange} required />
-                </div>
-            </div>
-
-            <SectionTitle>Passport & Work Rights</SectionTitle>
-            <div className="row g-3 mb-4">
-                <div className="col-md-4">
-                    <label className="form-label small fw-bold text-muted">
-                        Passport No. <span className="text-danger">*</span>
-                    </label>
-                    <input type="text" className="form-control" name="o_passport" placeholder="PA1234567"
-                        maxLength="20" value={values.o_passport} onChange={onChange} required />
-                </div>
-                <div className="col-md-4">
-                    <label className="form-label small fw-bold text-muted">
-                        Country of Issue <span className="text-danger">*</span>
-                    </label>
-                    <input type="text" className="form-control" name="o_pcountry" placeholder="Australia"
-                        maxLength="50" value={values.o_pcountry} onChange={onChange} required />
-                </div>
-                <div className="col-md-4">
-                    <label className="form-label small fw-bold text-muted">
-                        Passport Expiry <span className="text-danger">*</span>
-                    </label>
-                    <DateInput name="o_pexpiry" value={values.o_pexpiry} onChange={onChange} required />
-                </div>
-
-                <div className="col-md-12">
-                    <label className="form-label small fw-bold text-muted">
-                        Upload Passport Document <span className="text-danger">*</span>
-                    </label>
-                    <div className="d-flex align-items-center gap-3 flex-wrap">
-                        <input type="file" className="form-control" style={{ maxWidth: "300px" }}
-                            accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" onChange={(e) => onDocUpload(e, "passport_doc")} />
-                        {values.passport_doc && (
-                            <a href={resolveDocUrl(values.passport_doc)} target="_blank" rel="noreferrer"
-                                className="text-primary small fw-bold text-decoration-none">
-                                📄 View Attached Document
-                            </a>
-                        )}
+        <div className="card border-0 shadow-sm rounded-4 overflow-hidden bg-white animate__animated animate__fadeIn">
+            <FormCardHeader
+                title="Employee Onboarding Form"
+                description="Complete your personal, identification, and banking details."
+                onDownloadPDF={onDownloadPDF}
+                downloadKey="onboarding"
+            />
+            <form onSubmit={onSubmit}>
+                <div className="card-body px-4 px-md-5 py-4 py-md-5">
+                    <SectionHeader icon="fa-user">Personal Contact Details</SectionHeader>
+                    <div className="row g-4 mb-4">
+                        <div className="col-md-12">
+                            <label className={labelCls}>
+                                Full Name (as per ID) <span className="text-danger">*</span>
+                            </label>
+                            <input type="text" className={inputCls} name="o_name" maxLength="50"
+                                value={values.o_name} onChange={onChange} required style={{ fontSize: "1rem" }} />
+                        </div>
+                        <div className="col-md-6">
+                            <label className={labelCls}>
+                                Date of Birth <span className="text-danger">*</span>
+                            </label>
+                            <DateInput name="o_dob" value={values.o_dob} onChange={onChange} required />
+                        </div>
+                        <div className="col-md-6">
+                            <label className={labelCls}>
+                                Residential Address <span className="text-danger">*</span>
+                            </label>
+                            <AddressAutocomplete name="o_addr" value={values.o_addr} onChange={onChange}
+                                placeholder="Street address, suburb, state, postcode" required={true} maxLength={80} />
+                        </div>
+                        <div className="col-md-6">
+                            <label className={labelCls}>
+                                Mobile Phone <span className="text-danger">*</span>
+                            </label>
+                            <div className="input-group shadow-none">
+                                <span className="input-group-text bg-light border-light-subtle text-muted px-3">
+                                    <i className="fa-solid fa-phone"></i>
+                                </span>
+                                <input type="text" className="form-control border-light-subtle border-start-0 ps-0 bg-light focus-ring focus-ring-primary py-2"
+                                    name="o_phone" placeholder="04xx xxx xxx"
+                                    maxLength="15" value={values.o_phone} onChange={onChange} required style={{ fontSize: "1rem" }} />
+                            </div>
+                        </div>
+                        <div className="col-md-6">
+                            <label className={labelCls}>
+                                Personal Email <span className="text-danger">*</span>
+                            </label>
+                            <div className="input-group shadow-none">
+                                <span className="input-group-text bg-light border-light-subtle text-muted px-3">
+                                    <i className="fa-solid fa-envelope"></i>
+                                </span>
+                                <input type="email" className="form-control border-light-subtle border-start-0 ps-0 bg-light focus-ring focus-ring-primary py-2"
+                                    name="o_email" placeholder="jane@email.com"
+                                    maxLength="100" value={values.o_email} onChange={onChange} required style={{ fontSize: "1rem" }} />
+                            </div>
+                        </div>
                     </div>
-                </div>
 
-                {/* Work Rights */}
-                <div className="col-md-12">
-                    <div className="row align-items-center mt-2">
-                        <div className="col-md-3">
-                            <label className="form-label small fw-bold text-muted mb-0">
+                    <SectionHeader icon="fa-passport">Passport & Work Rights</SectionHeader>
+                    <div className="row g-4 mb-4">
+                        <div className="col-md-4">
+                            <label className={labelCls}>
+                                Passport No. <span className="text-danger">*</span>
+                            </label>
+                            <input type="text" className={inputCls} name="o_passport" placeholder="PA1234567"
+                                maxLength="20" value={values.o_passport} onChange={onChange} required style={{ fontSize: "1rem" }} />
+                        </div>
+                        <div className="col-md-4">
+                            <label className={labelCls}>
+                                Country of Issue <span className="text-danger">*</span>
+                            </label>
+                            <CountrySelect
+                                inputId="o_pcountry"
+                                name="o_pcountry"
+                                value={values.o_pcountry}
+                                onChange={onChange}
+                                placeholder="Search country..."
+                            />
+                        </div>
+                        <div className="col-md-4">
+                            <label className={labelCls}>
+                                Passport Expiry <span className="text-danger">*</span>
+                            </label>
+                            <DateInput name="o_pexpiry" value={values.o_pexpiry} onChange={onChange} required />
+                        </div>
+
+                        <div className="col-md-12">
+                            <label className={labelCls}>
+                                Upload Passport Document <span className="text-danger">*</span>
+                            </label>
+                            <div className="d-flex align-items-center gap-3 flex-wrap p-3 bg-light rounded-3 border">
+                                <input type="file" className="form-control bg-white" style={{ maxWidth: "320px" }}
+                                    accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" onChange={(e) => onDocUpload(e, "passport_doc")} />
+                                <DocLink path={values.passport_doc} />
+                            </div>
+                        </div>
+
+                        <div className="col-md-12">
+                            <label className={`${labelCls} d-block`}>
                                 Work Rights in Australia <span className="text-danger">*</span>
                             </label>
-                        </div>
-                        <div className="col-md-9">
-                            <div className="d-flex flex-row flex-wrap gap-3">
-                                {[
-                                    { value: "citizen", label: "Australian Citizen / Permanent Resident" },
+                            <PillRadioGroup
+                                name="work"
+                                value={values.work}
+                                onChange={onChange}
+                                required
+                                options={[
+                                    { value: "citizen", label: "Australian Citizen / PR" },
                                     { value: "student", label: "Student Visa" },
                                     { value: "temporary", label: "Temporary Visa Holder" },
-                                    { value: "other", label: "Other Visa (please specify)" },
-                                ].map((opt) => (
-                                    <div className="form-check" key={opt.value}>
-                                        <input className="form-check-input" type="radio" name="work" value={opt.value}
-                                            checked={values.work === opt.value} onChange={onChange} required />
-                                        <label className="form-check-label text-nowrap">{opt.label}</label>
+                                    { value: "other", label: "Other Visa" },
+                                ]}
+                            />
+                        </div>
+
+                        {values.work === "other" && (
+                            <div className="col-md-12 animate__animated animate__fadeIn">
+                                <label className={labelCls}>
+                                    Visa Type <span className="text-danger">*</span>
+                                </label>
+                                <input type="text" className={inputCls} name="o_visa_type"
+                                    placeholder="Specify your visa type" maxLength="30" value={values.o_visa_type}
+                                    onChange={onChange} required style={{ fontSize: "1rem" }} />
+                            </div>
+                        )}
+                    </div>
+
+                    <SectionHeader icon="fa-id-card">100-Point ID Check</SectionHeader>
+                    <div className="border rounded-3 overflow-hidden mb-4">
+                        {[
+                            { label: "Birth Certificate, Passport, or Citizenship Certificate", points: 70, name: "chk_primary" },
+                            { label: "Driver Licence or Government Issued Photo ID", points: 40, name: "chk_driver" },
+                            { label: "Security Licence (Mandatory)", points: 40, name: "chk_security" },
+                            { label: "Medicare Card, Utility Bill, or Bank Statement", points: 25, name: "chk_medicare" },
+                        ].map((item, idx, arr) => (
+                            <div
+                                className={`d-flex justify-content-between align-items-center px-3 py-3 ${idx !== arr.length - 1 ? "border-bottom" : ""}`}
+                                style={{ backgroundColor: values[item.name] ? "rgba(10,124,110,0.06)" : "#fff" }}
+                                key={item.name}
+                            >
+                                <div className="form-check mb-0 d-flex align-items-center" style={{ textTransform: "none" }}>
+                                    <input className="form-check-input" type="checkbox" id={item.name} name={item.name}
+                                        checked={values[item.name]} onChange={onChange} />
+                                    <label className="form-check-label small fw-medium"
+                                        style={{ marginLeft: "0.5rem", marginTop: "0.2rem" }}
+                                        htmlFor={item.name}>{item.label}</label>
+                                </div>
+                                <span className="badge rounded-pill bg-white text-muted border">{item.points} pts</span>
+                            </div>
+                        ))}
+                    </div>
+
+                    <SectionHeader icon="fa-building-columns">Banking, Tax & Superannuation</SectionHeader>
+                    <div className="row g-4 mb-4">
+                        <div className="col-md-4">
+                            <label className={labelCls}>Bank Name <span className="text-danger">*</span></label>
+                            <input type="text" className={inputCls} name="o_bank" placeholder="XYZ Bank"
+                                maxLength="35" value={values.o_bank} onChange={onChange} required style={{ fontSize: "1rem" }} />
+                        </div>
+                        <div className="col-md-4">
+                            <label className={labelCls}>BSB Number <span className="text-danger">*</span></label>
+                            <input type="text" className={inputCls} name="o_bsb" placeholder="062-000"
+                                maxLength="7" value={values.o_bsb} onChange={onChange} required style={{ fontSize: "1rem" }} />
+                        </div>
+                        <div className="col-md-4">
+                            <label className={labelCls}>Account Number <span className="text-danger">*</span></label>
+                            <input type="text" className={inputCls} name="o_acct" placeholder="12345678"
+                                maxLength="20" value={values.o_acct} onChange={onChange} required style={{ fontSize: "1rem" }} />
+                        </div>
+                        <div className="col-md-6">
+                            <label className={labelCls}>TFN <span className="text-danger">*</span></label>
+                            <input type="text" className={inputCls} name="o_tfn" minLength="8"
+                                maxLength="11" value={values.o_tfn} onChange={onChange} required style={{ fontSize: "1rem" }} />
+                        </div>
+                        <div className="col-md-6">
+                            <label className={labelCls}>Super Fund Name <span className="text-danger">*</span></label>
+                            <input type="text" className={inputCls} name="o_superfund" maxLength="35"
+                                value={values.o_superfund} onChange={onChange} required style={{ fontSize: "1rem" }} />
+                        </div>
+                        <div className="col-md-6">
+                            <label className={labelCls}>Super USI <span className="text-danger">*</span></label>
+                            <input type="text" className={inputCls} name="o_superusi" maxLength="20"
+                                value={values.o_superusi} onChange={onChange} required style={{ fontSize: "1rem" }} />
+                        </div>
+                        <div className="col-md-6">
+                            <label className={labelCls}>Member Number <span className="text-danger">*</span></label>
+                            <input type="text" className={inputCls} name="o_member" maxLength="30"
+                                value={values.o_member} onChange={onChange} required style={{ fontSize: "1rem" }} />
+                        </div>
+                    </div>
+
+                    <SectionHeader icon="fa-shield-halved">Professional Licensing</SectionHeader>
+                    <div className="row g-4 mb-4">
+                        <div className="col-md-6">
+                            <label className={labelCls}>
+                                Security Licence No. <span className="text-danger">*</span>
+                            </label>
+                            <div className="input-group">
+                                <input type="text" className={inputCls + " rounded-start"} name="o_seclic" placeholder="VIC 123456"
+                                    maxLength="30" value={values.o_seclic} onChange={onChange} required style={{ fontSize: "1rem" }} />
+                                <button type="button" className="btn btn-outline-primary"
+                                    onClick={onVerifySecurityLicense}
+                                    disabled={verifyingSecurityLicense || !values.o_seclic}>
+                                    {verifyingSecurityLicense ? (
+                                        <><span className="spinner-border spinner-border-sm me-1" /> Verifying...</>
+                                    ) : "Verify"}
+                                </button>
+                            </div>
+
+                            <div className="mt-3">
+                                <label className={labelCls}>
+                                    Upload Security Licence Document <span className="text-danger">*</span>
+                                </label>
+                                {!values.o_seclicexp ? (
+                                    <div className="text-muted small bg-light p-3 rounded-3 border">
+                                        <i className="fa-solid fa-circle-info me-1"></i>
+                                        Please verify the security licence first to enable document upload.
                                     </div>
-                                ))}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                {values.work === "other" && (
-                    <div className="col-md-12 mt-2 animate__animated animate__fadeIn">
-                        <label className="form-label small fw-bold text-muted">
-                            Visa Type <span className="text-danger">*</span>
-                        </label>
-                        <input type="text" className="form-control" name="o_visa_type"
-                            placeholder="Specify your visa type" maxLength="100" value={values.o_visa_type}
-                            onChange={onChange} required />
-                    </div>
-                )}
-            </div>
-
-            <SectionTitle>100-Point ID Check</SectionTitle>
-            <div className="bg-light p-3 border rounded mb-4">
-                {[
-                    { label: "Birth Certificate, Passport, or Citizenship Certificate", points: 70, name: "chk_primary" },
-                    { label: "Driver Licence or Government Issued Photo ID", points: 40, name: "chk_driver" },
-                    { label: "Security Licence (Mandatory)", points: 40, name: "chk_security" },
-                    { label: "Medicare Card, Utility Bill, or Bank Statement", points: 25, name: "chk_medicare" },
-                ].map((item) => (
-                    <div className="d-flex justify-content-between align-items-center mb-2" key={item.name}>
-                        <div className="form-check mb-0">
-                            <input className="form-check-input" type="checkbox" id={item.name} name={item.name}
-                                checked={values[item.name]} onChange={onChange} />
-                            <label className="form-check-label small" htmlFor={item.name}>{item.label}</label>
-                        </div>
-                        <span className="text-muted small">{item.points}</span>
-                    </div>
-                ))}
-            </div>
-
-            <SectionTitle>Banking, Tax & Superannuation</SectionTitle>
-            <div className="row g-3 mb-4">
-                <div className="col-md-4">
-                    <label className="form-label small fw-bold text-muted">Bank Name <span className="text-danger">*</span></label>
-                    <input type="text" className="form-control" name="o_bank" placeholder="XYZ Bank"
-                        maxLength="100" value={values.o_bank} onChange={onChange} required />
-                </div>
-                <div className="col-md-4">
-                    <label className="form-label small fw-bold text-muted">BSB Number <span className="text-danger">*</span></label>
-                    <input type="text" className="form-control" name="o_bsb" placeholder="062-000"
-                        maxLength="7" value={values.o_bsb} onChange={onChange} required />
-                </div>
-                <div className="col-md-4">
-                    <label className="form-label small fw-bold text-muted">Account Number <span className="text-danger">*</span></label>
-                    <input type="text" className="form-control" name="o_acct" placeholder="12345678"
-                        maxLength="20" value={values.o_acct} onChange={onChange} required />
-                </div>
-                <div className="col-md-6">
-                    <label className="form-label small fw-bold text-muted">TFN <span className="text-danger">*</span></label>
-                    <input type="text" className="form-control" name="o_tfn" minLength="8"
-                        maxLength="11" value={values.o_tfn} onChange={onChange} required />
-                </div>
-                <div className="col-md-6">
-                    <label className="form-label small fw-bold text-muted">Super Fund Name <span className="text-danger">*</span></label>
-                    <input type="text" className="form-control" name="o_superfund" maxLength="100"
-                        value={values.o_superfund} onChange={onChange} required />
-                </div>
-                <div className="col-md-6">
-                    <label className="form-label small fw-bold text-muted">Super USI <span className="text-danger">*</span></label>
-                    <input type="text" className="form-control" name="o_superusi" maxLength="20"
-                        value={values.o_superusi} onChange={onChange} required />
-                </div>
-                <div className="col-md-6">
-                    <label className="form-label small fw-bold text-muted">Member Number <span className="text-danger">*</span></label>
-                    <input type="text" className="form-control" name="o_member" maxLength="50"
-                        value={values.o_member} onChange={onChange} required />
-                </div>
-            </div>
-
-            <SectionTitle className="mt-4">Professional Licensing</SectionTitle>
-            <div className="row g-3 mb-4">
-                <div className="col-md-6">
-                    <label className="form-label small fw-bold text-muted">
-                        Security Licence No. <span className="text-danger">*</span>
-                    </label>
-                    <div className="input-group">
-                        <input type="text" className="form-control" name="o_seclic" placeholder="VIC 123456"
-                            maxLength="50" value={values.o_seclic} onChange={onChange} required />
-                        <button type="button" className="btn btn-outline-primary"
-                            onClick={onVerifySecurityLicense}
-                            disabled={verifyingSecurityLicense || !values.o_seclic}>
-                            {verifyingSecurityLicense ? (
-                                <><span className="spinner-border spinner-border-sm me-1" /> Verifying...</>
-                            ) : "Verify"}
-                        </button>
-                    </div>
-
-                    <div className="mt-3">
-                        <label className="form-label small fw-bold text-muted">
-                            Upload Security Licence Document <span className="text-danger">*</span>
-                        </label>
-                        {!values.o_seclicexp ? (
-                            <div className="text-muted small bg-light p-2 rounded border">
-                                <i className="fa fa-info-circle me-1"></i>
-                                Please verify the security licence first to enable document upload.
-                            </div>
-                        ) : (
-                            <div className="d-flex align-items-center gap-3 flex-wrap">
-                                <input type="file" className="form-control"
-                                    accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
-                                    onChange={(e) => onDocUpload(e, "security_license_doc")} />
-                                {values.security_license_doc && (
-                                    <a href={resolveDocUrl(values.security_license_doc)} target="_blank" rel="noreferrer"
-                                        className="text-primary small fw-bold text-decoration-none">
-                                        📄 View Attached Document
-                                    </a>
+                                ) : (
+                                    <div className="d-flex align-items-center gap-3 flex-wrap p-3 bg-light rounded-3 border">
+                                        <input type="file" className="form-control bg-white"
+                                            accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                                            onChange={(e) => onDocUpload(e, "security_license_doc")} />
+                                        <DocLink path={values.security_license_doc} />
+                                    </div>
                                 )}
                             </div>
-                        )}
-                    </div>
-                </div>
-                <div className="col-md-6">
-                    <label className="form-label small fw-bold text-muted">
-                        Security Licence Expiry <span className="text-danger">*</span>
-                    </label>
-                    <DateInput name="o_seclicexp" value={values.o_seclicexp} onChange={onChange}
-                        required disabled={true} />
-                </div>
-
-                <div className="col-md-6 mt-4">
-                    <label className="form-label small fw-bold text-muted">First Aid Certificate No.</label>
-                    <input type="text" className="form-control" name="o_fa" placeholder="FA-001234"
-                        maxLength="50" value={values.o_fa} onChange={onChange} />
-                    <div className="mt-3">
-                        <label className="form-label small fw-bold text-muted">Upload First Aid Document</label>
-                        <div className="d-flex align-items-center gap-3 flex-wrap">
-                            <input type="file" className="form-control" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
-                                onChange={(e) => onDocUpload(e, "first_aid_doc")} />
                         </div>
-                        {values.first_aid_doc && (
-                            <a href={resolveDocUrl(values.first_aid_doc)} target="_blank" rel="noreferrer"
-                                className="text-primary small fw-bold text-decoration-none mt-2 d-inline-block">
-                                📄 View Attached Document
-                            </a>
-                        )}
+                        <div className="col-md-6">
+                            <label className={labelCls}>
+                                Security Licence Expiry <span className="text-danger">*</span>
+                            </label>
+                            <DateInput name="o_seclicexp" value={values.o_seclicexp} onChange={onChange}
+                                required disabled={true} />
+                        </div>
+
+                        <div className="col-md-6">
+                            <label className={labelCls}>First Aid Certificate No.</label>
+                            <input type="text" className={inputCls} name="o_fa" placeholder="FA-001234"
+                                maxLength="30" value={values.o_fa} onChange={onChange} style={{ fontSize: "1rem" }} />
+                            <div className="mt-3">
+                                <label className={labelCls}>Upload First Aid Document</label>
+                                <div className="d-flex align-items-center gap-3 flex-wrap p-3 bg-light rounded-3 border">
+                                    <input type="file" className="form-control bg-white" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                                        onChange={(e) => onDocUpload(e, "first_aid_doc")} />
+                                    <DocLink path={values.first_aid_doc} />
+                                </div>
+                            </div>
+                        </div>
+                        <div className="col-md-6">
+                            <label className={labelCls}>First Aid Expiry</label>
+                            <DateInput name="o_faexp" value={values.o_faexp} onChange={onChange} />
+                        </div>
+                    </div>
+
+                    <SectionHeader icon="fa-signature">Declaration & Signature</SectionHeader>
+                    <div className="row g-4">
+                        <div className="col-md-6">
+                            <label className={labelCls}>
+                                Employee Signature (Type Name) <span className="text-danger">*</span>
+                            </label>
+                            <input type="text" className={inputCls} name="sig3" placeholder="Type your full name"
+                                maxLength="40" value={values.sig3} onChange={onChange} required style={{ fontSize: "1rem" }} />
+                        </div>
+                        <div className="col-md-6">
+                            <label className={labelCls}>
+                                Date <span className="text-danger">*</span>
+                            </label>
+                            <DateInput name="date3" value={values.date3} onChange={onChange} required />
+                        </div>
                     </div>
                 </div>
-                <div className="col-md-6 mt-4">
-                    <label className="form-label small fw-bold text-muted">First Aid Expiry</label>
-                    <DateInput name="o_faexp" value={values.o_faexp} onChange={onChange} />
-                </div>
-            </div>
-
-            <SectionTitle className="mt-4">Declaration & Signature</SectionTitle>
-            <div className="row g-3 mb-4">
-                <div className="col-md-6">
-                    <label className="form-label small fw-bold text-muted">
-                        Employee Signature (Type Name) <span className="text-danger">*</span>
-                    </label>
-                    <input type="text" className="form-control" name="sig3" placeholder="Type your full name"
-                        maxLength="100" value={values.sig3} onChange={onChange} required />
-                </div>
-                <div className="col-md-6">
-                    <label className="form-label small fw-bold text-muted">
-                        Date <span className="text-danger">*</span>
-                    </label>
-                    <DateInput name="date3" value={values.date3} onChange={onChange} required />
-                </div>
-            </div>
-
-            <ActionBar loading={loading} saveLabel="Save Onboarding Form" disabled={!dataModified} />
-        </form>
+                <FormCardFooter loading={loading} saveLabel="Save Onboarding Form" disabled={!dataModified} />
+            </form>
+        </div>
     );
 };
 
-/* ---------- Normalizers (with date slash cleaning) ---------- */
+/* ---------- Normalizers ---------- */
 const normalizeTfnData = (apiData) => ({
     tfn: apiData?.tfn ?? "",
     title: apiData?.title ?? "",
@@ -984,12 +1125,35 @@ const normalizeOnboardData = (apiData) => ({
 
 /* ---------- Main Component ---------- */
 const StaffOnboardingForms = ({ submit, userId, onProfileUpdate }) => {
+    const dispatch = useDispatch();
+    const currentUserId = useSelector(
+        (state) => state.auth.userdata?.data?.id || state.auth.userdata?.id
+    );
+
+
+    // ---- User‑profile refetch to update Redux after saves ----
+    const userEditEndpoint = useMemo(
+        () => (userId ? `api/user-edit/${userId}` : null),
+        [userId]
+    );
+    const { data: profileData, refetch: refetchUserProfile } = useFetch(
+        userEditEndpoint,
+        { isAuth: true }
+    );
+
+    useEffect(() => {
+        if (profileData?.success && profileData?.data?.id === currentUserId) {
+            dispatch(setUser({ userdata: profileData }));
+        }
+    }, [profileData, currentUserId, dispatch]);
+
     const [subTab, setSubTab] = useState(0);
     const [loading, setLoading] = useState(false);
     const [dataModified, setDataModified] = useState(false);
     const [formDataLoading, setFormDataLoading] = useState(true);
 
     const [verifyingSecurityLicense, setVerifyingSecurityLicense] = useState(false);
+    const [staffState, setStaffState] = useState("");
 
     const { submit: submitSecurityLicense } = useSubmit({
         isAuth: true,
@@ -1013,14 +1177,26 @@ const StaffOnboardingForms = ({ submit, userId, onProfileUpdate }) => {
             if (formType === "tfn") {
                 if (fetchedData) {
                     const normalized = normalizeTfnData(fetchedData);
-                    setTfnForm(normalized);
-                    setOriginalTfnForm(normalized);
+                    const hasContent =
+                        normalized.tfn.trim() !== "" ||
+                        normalized.first_name.trim() !== "" ||
+                        normalized.surname.trim() !== "";
+                    if (hasContent) {
+                        setTfnForm(normalized);
+                        setOriginalTfnForm(normalized);
+                    }
                 }
             } else if (formType === "superannuation") {
                 if (fetchedData) {
                     const normalized = normalizeSuperData(fetchedData);
-                    setSuperForm(normalized);
-                    setOriginalSuperForm(normalized);
+                    const hasContent =
+                        normalized.s_name.trim() !== "" ||
+                        normalized.s_fundname.trim() !== "" ||
+                        normalized.s_fundabn.trim() !== "";
+                    if (hasContent) {
+                        setSuperForm(normalized);
+                        setOriginalSuperForm(normalized);
+                    }
                 }
             } else if (formType === "onboarding") {
                 if (fetchedData) {
@@ -1057,8 +1233,17 @@ const StaffOnboardingForms = ({ submit, userId, onProfileUpdate }) => {
                 });
                 if (staffRes?.success && staffRes?.data) {
                     const prefilledOnboard = mapStaffInfoToOnboardForm(staffRes.data);
+                    const prefilledTfn = mapStaffInfoToTfnForm(staffRes.data);
+                    const prefilledSuper = mapStaffInfoToSuperForm(staffRes.data);
+
                     setOnboardForm(prefilledOnboard);
                     setOriginalOnboardForm(prefilledOnboard);
+                    setTfnForm(prefilledTfn);
+                    setOriginalTfnForm(prefilledTfn);
+                    setSuperForm(prefilledSuper);
+                    setOriginalSuperForm(prefilledSuper);
+
+                    setStaffState(String(staffRes.data?.state || "").trim());
                 }
             } catch (err) {
                 console.warn("Could not fetch staff info for pre‑fill:", err);
@@ -1105,11 +1290,15 @@ const StaffOnboardingForms = ({ submit, userId, onProfileUpdate }) => {
             toast.error("Please enter a Security Licence number first.");
             return;
         }
+        if (!staffState) {
+            toast.error("Please add your location first.");
+            return;
+        }
         setVerifyingSecurityLicense(true);
         try {
             const res = await submitSecurityLicense(
                 "api/documents-online-verification-staffoo",
-                { user_id: userId, document_type: "Security License", license_number: onboardForm.o_seclic },
+                { document_type: "Security License", license_number: onboardForm.o_seclic, state: staffState },
                 { method: "POST" }
             );
             if (res?.success && res?.expiry) {
@@ -1118,7 +1307,7 @@ const StaffOnboardingForms = ({ submit, userId, onProfileUpdate }) => {
                 setDataModified(JSON.stringify({ ...onboardForm, o_seclicexp: expiryStr }) !== JSON.stringify(originalOnboardForm));
                 toast.success("Security License verified. Expiry date locked.");
             } else {
-                toast.error(res?.message || "Security License verification failed.");
+                toast.error(`Security license number is not valid for ${staffState}`)
             }
         } catch (err) {
             console.error(err);
@@ -1227,18 +1416,26 @@ const StaffOnboardingForms = ({ submit, userId, onProfileUpdate }) => {
 
         if (saveSucceeded) {
             toast.success("Form saved successfully!");
+
+            // 1) Refresh individual form data
             if (tabIndex === 0) await fetchFormData("onboarding");
             else if (tabIndex === 1) await fetchFormData("tfn");
             else if (tabIndex === 2) await fetchFormData("superannuation");
             setDataModified(false);
-            if (typeof onProfileUpdate === "function") await onProfileUpdate();
+
+            // 2) Generate & upload PDF
             try {
                 let doc;
                 if (tabIndex === 0) doc = PDFGenerator.generateEmployeeOnboardingPDF(pdfFormData);
                 else if (tabIndex === 1) doc = PDFGenerator.generateTFNDeclarationPDF(pdfFormData);
                 else if (tabIndex === 2) doc = PDFGenerator.generateSuperannuationPDF(pdfFormData);
+
                 const uploadPayload = { user_id: userId, type: pdfType, folder: "onboarding_forms" };
                 await PDFGenerator.downloadAndUploadPDF(doc, fileName, "api/upload-staff-file", uploadPayload, submit);
+
+                if (profileData?.success && profileData?.data?.id === currentUserId) {
+                    await refetchUserProfile();
+                }
             } catch (pdfError) {
                 console.error("PDF generation/upload error:", pdfError);
             }
@@ -1315,8 +1512,8 @@ const StaffOnboardingForms = ({ submit, userId, onProfileUpdate }) => {
     };
 
     return (
-        <div className="bg-white rounded p-4 border shadow-sm mt-3">
-            <div className="d-flex justify-content-between align-items-center mb-4">
+        <div className="mt-3">
+            <div className="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
                 <div>
                     <h4 className="fw-bold mb-1">Staff Verification Forms</h4>
                     <span className="text-muted small">Capital Services Pty Ltd · ABN: 48 613 317 838</span>
@@ -1324,25 +1521,29 @@ const StaffOnboardingForms = ({ submit, userId, onProfileUpdate }) => {
             </div>
 
             {formDataLoading && (
-                <div className="alert alert-info mb-4">
-                    <div className="spinner-border spinner-border-sm me-2" role="status">
+                <div className="alert alert-info d-flex align-items-center gap-2 mb-4 rounded-3 border-0 shadow-sm">
+                    <div className="spinner-border spinner-border-sm" role="status">
                         <span className="visually-hidden">Loading...</span>
                     </div>
                     Loading form data...
                 </div>
             )}
 
-            <div className="d-flex gap-2 mb-4 bg-light p-1 rounded-pill border">
-                {TAB_LABELS.map((tab, idx) => (
+            <div className="d-flex flex-column flex-sm-row gap-2 mb-4 bg-light p-2 rounded-4 border">
+                {TAB_META.map((tab, idx) => (
                     <button
                         key={idx}
                         type="button"
-                        className={`btn btn-sm rounded-pill flex-grow-1 fw-bold ${subTab === idx ? "btn-primary-custom shadow-sm" : "btn-light border-0 bg-transparent"
+                        style={{ fontSize: "0.9rem" }}
+                        className={`btn rounded-pill flex-fill fw-bold d-flex align-items-center justify-content-center gap-2 ${subTab === idx
+                            ? "btn-primary-custom shadow-sm"
+                            : "btn-light border-0 bg-transparent text-muted"
                             }`}
                         onClick={() => setSubTab(idx)}
                         disabled={formDataLoading}
                     >
-                        {tab}
+                        <i className={`fa-solid ${tab.icon}`}></i>
+                        <span>{tab.label}</span>
                     </button>
                 ))}
             </div>

@@ -5,6 +5,9 @@ import Loader from "../components/Loader";
 import useSubmit from "../hooks/useSubmit";
 import { useSelector } from "react-redux";
 import { toast } from "react-toastify";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
+import Select from "react-select";
 
 const LeaveManagement = () => {
   const { userdata } = useSelector((state) => state.auth);
@@ -81,8 +84,8 @@ const LeaveManagement = () => {
     setSelectedContractorId("");
   };
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
+  const handleSelectChange = (name, selectedOption) => {
+    const value = selectedOption ? selectedOption.value : "";
     if (name === "contractor_id") {
       setSelectedContractorId(value);
       setFormData((prev) => ({
@@ -92,31 +95,29 @@ const LeaveManagement = () => {
       }));
       return;
     }
-
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  // Keep for API submission (sends MM-DD-YYYY)
+  const handleDateChange = (name, date) => {
+    const formattedString = date ? date.toLocaleDateString("en-CA") : "";
+    setFormData((prev) => ({ ...prev, [name]: formattedString }));
+  };
+
   const formatDate = (dateString) => {
     if (!dateString) return "";
     const [year, month, day] = dateString.split("-");
     return `${month}-${day}-${year}`;
   };
 
-  // NEW: Display formatter – always DD/MM/YYYY
   const displayDate = (dateString) => {
     if (!dateString) return "";
-    // Handle ISO date string (YYYY-MM-DD) or timestamp-derived ISO
-    const clean = dateString.split("T")[0]; // remove time part if present
+    const clean = dateString.split("T")[0];
     const parts = clean.split("-");
     if (parts.length === 3) {
       const [year, month, day] = parts;
       return `${day}/${month}/${year}`;
     }
-    return dateString; // fallback if unexpected format
+    return dateString;
   };
 
   const handleSubmitLeaveRequest = async (e) => {
@@ -137,7 +138,11 @@ const LeaveManagement = () => {
       return;
     }
 
-    // Build API payload with MM-DD-YYYY (backend expected)
+    if (!formData.startDate || !formData.endDate) {
+      toast.error("Please select valid start and end dates.");
+      return;
+    }
+
     const formattedDateRange = `${formatDate(formData.startDate)} - ${formatDate(formData.endDate)}`;
 
     const payload = {
@@ -161,12 +166,8 @@ const LeaveManagement = () => {
     }
   };
 
-  // Toggle leave status with same API (approve pending / cancel approved)
   const handleToggleLeave = async (leave) => {
-    const payload = {
-      id: leave.id,
-    };
-
+    const payload = { id: leave.id };
     try {
       setProcessingLeaveId(leave.id);
       const res = await submit("api/approveLeave", payload, {
@@ -223,18 +224,14 @@ const LeaveManagement = () => {
     leave.user_type ||
     "Staff";
 
-  // UPDATED: Uses displayDate for DD/MM/YYYY
   const getLeaveDateRange = (leave) => {
     const start = leave.start_date || leave.startDate || "";
     const end = leave.end_date || leave.endDate || "";
 
     if (start && end) return `${displayDate(start)} - ${displayDate(end)}`;
-    // fallback to legacy 'date' field – if it's already a formatted string, we could try to parse it
     if (leave.date) {
-      // If the legacy date string is "MM-DD-YYYY - MM-DD-YYYY", we can try to convert each part
       const parts = leave.date.split(" - ");
       if (parts.length === 2) {
-        // Convert each MM-DD-YYYY to DD/MM/YYYY
         const convertLegacy = (str) => {
           const [m, d, y] = str.split("-");
           if (m && d && y) return `${d}/${m}/${y}`;
@@ -242,7 +239,6 @@ const LeaveManagement = () => {
         };
         return `${convertLegacy(parts[0])} - ${convertLegacy(parts[1])}`;
       }
-      // If it's a single legacy date, try to convert
       const [m, d, y] = leave.date.split("-");
       if (m && d && y) return `${d}/${m}/${y}`;
     }
@@ -265,8 +261,7 @@ const LeaveManagement = () => {
   const getRequestedDate = (leave) => {
     const timestamp = Number(leave.date_added);
     if (!Number.isNaN(timestamp) && timestamp > 0) {
-      // Convert timestamp to ISO date string, then display as DD/MM/YYYY
-      const iso = new Date(timestamp * 1000).toISOString(); // "2026-06-18T..."
+      const iso = new Date(timestamp * 1000).toISOString();
       return displayDate(iso);
     }
     return "N/A";
@@ -284,12 +279,29 @@ const LeaveManagement = () => {
     const name = getLeaveUserName(leave).toLowerCase();
     const reason = String(leave.reason || "").toLowerCase();
     const term = searchTerm.toLowerCase();
-
     return name.includes(term) || reason.includes(term);
   });
 
   const canShowStaffSelector = isContractor || isAdmin;
   const canManageLeaveActions = isAdmin || isContractor;
+
+  const contractorOptions = contractorsList.map((c) => ({
+    value: String(c.id),
+    label: c.contractor?.company_name
+      ? `${c.name} - ${c.contractor.company_name}`
+      : c.name,
+  }));
+
+  const staffOptions = staffList.map((s) => ({
+    value: String(s.id),
+    label: `${s.name} - ${s.user_id || s.id}`,
+  }));
+
+  const reasonOptions = [
+    { value: "annual", label: "Annual Leave" },
+    { value: "sick", label: "Sick Leave" },
+    { value: "unpaid", label: "Unpaid Leave" },
+  ];
 
   if (!isAdmin) {
     return (
@@ -309,9 +321,9 @@ const LeaveManagement = () => {
       <div className="dashboard-page-header leave-page-header">
         <div>
           <h1>Leave Management</h1>
-          <p
-            style={{ textTransform: "none" }}
-          >Review, approve, and manage staff leave requests.</p>
+          <p style={{ textTransform: "none" }}>
+            Review, approve, and manage staff leave requests.
+          </p>
         </div>
 
         <div className="leave-header-actions d-flex gap-3 align-items-center">
@@ -359,16 +371,16 @@ const LeaveManagement = () => {
             <thead>
               <tr className="text-muted small">
                 <th className="ps-4">STAFF</th>
-                <th>ROLE</th>
-                <th>REASON</th>
-                <th>START</th>
-                <th>END</th>
-                <th>DAYS</th>
-                <th>REQUESTED</th>
-                <th>NOTES</th>
-                <th>STATUS</th>
+                <th>Role</th>
+                <th>Reason</th>
+                <th>Start</th>
+                <th>End</th>
+                <th>Days</th>
+                <th>Requested</th>
+                <th>Notes</th>
+                <th>Status</th>
                 {canManageLeaveActions && (
-                  <th className="pe-4 text-center">ACTION</th>
+                  <th className="pe-4 text-center">Action</th>
                 )}
               </tr>
             </thead>
@@ -410,28 +422,22 @@ const LeaveManagement = () => {
                     {canManageLeaveActions && (
                       <td className="pe-4 text-center">
                         <button
-                          className={`leave-action-btn btn btn-sm fw-bold px-3 rounded-pill shadow-sm ${isPendingLeave(leave) ? "btn-success" : "btn-outline-danger"}`}
+                          className={`leave-action-btn btn fw-bold rounded-circle shadow-sm d-inline-flex justify-content-center align-items-center ${isPendingLeave(leave) ? "btn-success" : "btn-outline-danger"}`}
+                          style={{
+                            width: "32px",
+                            height: "32px",
+                            minWidth: "32px",
+                            maxWidth: "32px",
+                            padding: 0,
+                            lineHeight: 1,
+                          }}
                           onClick={() => handleToggleLeave(leave)}
-                          disabled={
-                            submitLoading || processingLeaveId === leave.id
-                          }
-                          aria-label={
-                            isPendingLeave(leave)
-                              ? "Approve leave"
-                              : "Cancel approval"
-                          }
-                          title={
-                            isPendingLeave(leave)
-                              ? "Approve leave"
-                              : "Cancel approval"
-                          }
+                          disabled={submitLoading || processingLeaveId === leave.id}
+                          aria-label={isPendingLeave(leave) ? "Approve leave" : "Cancel approval"}
+                          title={isPendingLeave(leave) ? "Approve leave" : "Cancel approval"}
                         >
                           {processingLeaveId === leave.id ? (
-                            <span
-                              className="spinner-border spinner-border-sm"
-                              role="status"
-                              aria-hidden="true"
-                            />
+                            <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true" />
                           ) : isPendingLeave(leave) ? (
                             <i className="fa-solid fa-check" aria-hidden="true" />
                           ) : (
@@ -519,26 +525,22 @@ const LeaveManagement = () => {
                 {canManageLeaveActions && (
                   <div className="d-flex justify-content-end mt-3">
                     <button
-                      className={`leave-action-btn btn btn-sm fw-bold px-3 rounded-pill ${isPendingLeave(leave) ? "btn-success" : "btn-outline-danger"}`}
+                      className={`leave-action-btn btn fw-bold rounded-circle shadow-sm d-inline-flex justify-content-center align-items-center ${isPendingLeave(leave) ? "btn-success" : "btn-outline-danger"}`}
+                      style={{
+                        width: "32px",
+                        height: "32px",
+                        minWidth: "32px",
+                        maxWidth: "32px",
+                        padding: 0,
+                        lineHeight: 1,
+                      }}
                       onClick={() => handleToggleLeave(leave)}
                       disabled={submitLoading || processingLeaveId === leave.id}
-                      aria-label={
-                        isPendingLeave(leave)
-                          ? "Approve leave"
-                          : "Cancel approval"
-                      }
-                      title={
-                        isPendingLeave(leave)
-                          ? "Approve leave"
-                          : "Cancel approval"
-                      }
+                      aria-label={isPendingLeave(leave) ? "Approve leave" : "Cancel approval"}
+                      title={isPendingLeave(leave) ? "Approve leave" : "Cancel approval"}
                     >
                       {processingLeaveId === leave.id ? (
-                        <span
-                          className="spinner-border spinner-border-sm"
-                          role="status"
-                          aria-hidden="true"
-                        />
+                        <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true" />
                       ) : isPendingLeave(leave) ? (
                         <i className="fa-solid fa-check" aria-hidden="true" />
                       ) : (
@@ -551,7 +553,8 @@ const LeaveManagement = () => {
             ))}
           </div>
         ) : (
-          <div className="text-center py-5 text-muted"
+          <div
+            className="text-center py-5 text-muted"
             style={{ textTransform: "none" }}
           >
             No {activeLeaveTab} leaves found.
@@ -578,62 +581,51 @@ const LeaveManagement = () => {
         >
           <div
             className="custom-modal-content bg-white p-4 rounded-4 shadow-lg"
-            style={{ width: "100%", maxWidth: "500px" }}
+            style={{ width: "100%", maxWidth: "500px", overflow: "visible" }}
           >
             <h5 className="fw-bold mb-4">New Leave Request</h5>
 
             <form onSubmit={handleSubmitLeaveRequest}>
               {isAdmin && (
                 <div className="mb-3">
-                  <label className="form-label text-muted small fw-bold">
+                  <label className="form-label text-muted small fw-bold mb-1">
                     Select Resource Partner *
                   </label>
-                  <select
-                    className="form-select custom-input"
-                    name="contractor_id"
-                    value={formData.contractor_id}
-                    onChange={handleInputChange}
+                  <Select
+                    options={contractorOptions}
+                    value={contractorOptions.find((opt) => opt.value === String(formData.contractor_id)) || null}
+                    onChange={(option) => handleSelectChange("contractor_id", option)}
+                    placeholder="Choose a Resource Partner"
+                    isClearable
+                    isSearchable
+                    menuPortalTarget={document.body}
+                    styles={{ menuPortal: (base) => ({ ...base, zIndex: 9999 }) }}
                     required
-                  >
-                    <option value="" disabled>
-                      Choose a Resource Partner
-                    </option>
-                    {contractorsList.map((contractor) => (
-                      <option key={contractor.id} value={contractor.id}>
-                        {contractor.name}
-                        {contractor.contractor?.company_name
-                          ? ` - ${contractor.contractor.company_name}`
-                          : ""}
-                      </option>
-                    ))}
-                  </select>
+                  />
                 </div>
               )}
 
               {canShowStaffSelector && (
                 <div className="mb-3">
-                  <label className="form-label text-muted small fw-bold">
+                  <label className="form-label text-muted small fw-bold mb-1">
                     Select Staff *
                   </label>
-                  <select
-                    className="form-select custom-input"
-                    name="guard_id"
-                    value={formData.guard_id}
-                    onChange={handleInputChange}
-                    required
-                    disabled={isAdmin && !selectedContractorId}
-                  >
-                    <option value="" disabled>
-                      {isAdmin && !selectedContractorId
+                  <Select
+                    options={staffOptions}
+                    value={staffOptions.find((opt) => opt.value === String(formData.guard_id)) || null}
+                    onChange={(option) => handleSelectChange("guard_id", option)}
+                    placeholder={
+                      isAdmin && !selectedContractorId
                         ? "Select Resource Partner First"
-                        : "Choose a Staff Member"}
-                    </option>
-                    {staffList.map((staff) => (
-                      <option key={staff.id} value={staff.id}>
-                        {staff.name} - {staff.user_id || staff.id}
-                      </option>
-                    ))}
-                  </select>
+                        : "Choose a Staff Member"
+                    }
+                    isClearable
+                    isSearchable
+                    isDisabled={isAdmin && !selectedContractorId}
+                    menuPortalTarget={document.body}
+                    styles={{ menuPortal: (base) => ({ ...base, zIndex: 9999 }) }}
+                    required
+                  />
                 </div>
               )}
 
@@ -644,49 +636,48 @@ const LeaveManagement = () => {
               )}
 
               <div className="mb-3">
-                <label className="form-label text-muted small fw-bold">
+                <label className="form-label text-muted small fw-bold mb-1">
                   Leave Reason *
                 </label>
-                <select
-                  className="form-select custom-input"
-                  name="reason"
-                  value={formData.reason}
-                  onChange={handleInputChange}
+                <Select
+                  options={reasonOptions}
+                  value={reasonOptions.find((opt) => opt.value === formData.reason) || null}
+                  onChange={(option) => handleSelectChange("reason", option)}
+                  placeholder="Select Reason"
+                  isClearable
+                  menuPortalTarget={document.body}
+                  styles={{ menuPortal: (base) => ({ ...base, zIndex: 9999 }) }}
                   required
-                >
-                  <option value="" disabled>
-                    Select Reason
-                  </option>
-                  <option value="annual">Annual Leave</option>
-                  <option value="sick">Sick Leave</option>
-                  <option value="unpaid">Unpaid Leave</option>
-                </select>
+                />
               </div>
 
               <div className="row g-3 mb-4">
                 <div className="col-6">
-                  <label className="form-label text-muted small fw-bold">
+                  <label className="form-label text-muted small fw-bold mb-1">
                     Start Date *
                   </label>
-                  <input
-                    type="date"
-                    className="form-control custom-input"
-                    name="startDate"
-                    value={formData.startDate}
-                    onChange={handleInputChange}
+                  <DatePicker
+                    selected={formData.startDate ? new Date(formData.startDate) : null}
+                    onChange={(date) => handleDateChange("startDate", date)}
+                    dateFormat="dd/MM/yyyy"
+                    className="form-control custom-input w-100"
+                    wrapperClassName="w-100"
+                    placeholderText="dd/mm/yyyy"
                     required
                   />
                 </div>
                 <div className="col-6">
-                  <label className="form-label text-muted small fw-bold">
+                  <label className="form-label text-muted small fw-bold mb-1">
                     End Date *
                   </label>
-                  <input
-                    type="date"
-                    className="form-control custom-input"
-                    name="endDate"
-                    value={formData.endDate}
-                    onChange={handleInputChange}
+                  <DatePicker
+                    selected={formData.endDate ? new Date(formData.endDate) : null}
+                    onChange={(date) => handleDateChange("endDate", date)}
+                    dateFormat="dd/MM/yyyy"
+                    className="form-control custom-input w-100"
+                    wrapperClassName="w-100"
+                    placeholderText="dd/mm/yyyy"
+                    minDate={formData.startDate ? new Date(formData.startDate) : null}
                     required
                   />
                 </div>

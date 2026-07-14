@@ -545,7 +545,7 @@ const TfnDeclarationForm = ({ values, loading, onChange, onSubmit, dataModified,
                             className={inputCls}
                             name="sig1"
                             placeholder="Type your full name"
-                            maxLength="50"
+                            maxLength="40"
                             value={values.sig1}
                             onChange={onChange}
                             required
@@ -733,7 +733,7 @@ const SuperannuationForm = ({ values, loading, onChange, onSubmit, dataModified,
                             className={inputCls}
                             name="sig2"
                             placeholder="Type your full name"
-                            maxLength="50"
+                            maxLength="40"
                             value={values.sig2}
                             onChange={onChange}
                             required
@@ -1041,7 +1041,7 @@ const EmployeeOnboardingForm = ({
                                 Employee Signature (Type Name) <span className="text-danger">*</span>
                             </label>
                             <input type="text" className={inputCls} name="sig3" placeholder="Type your full name"
-                                maxLength="50" value={values.sig3} onChange={onChange} required style={{ fontSize: "1rem" }} />
+                                maxLength="40" value={values.sig3} onChange={onChange} required style={{ fontSize: "1rem" }} />
                         </div>
                         <div className="col-md-6">
                             <label className={labelCls}>

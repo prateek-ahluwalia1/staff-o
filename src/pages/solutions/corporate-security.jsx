@@ -10,6 +10,7 @@ import BusinessProtectionLeft from "../../components/solution'scomp/BusinessProt
 import RelatedSolutions from "../../components/solution'scomp/RelatedSolutions";
 import FAQ from "../../components/solution'scomp/FAQ";
 import ReadyToSecure from "../../components/solution'scomp/ReadyToSecure";
+import { Helmet } from "react-helmet";
 
 export default function CorporateSecurity() {
     const [isPrimaryHovered, setIsPrimaryHovered] = useState(false);
@@ -191,80 +192,129 @@ export default function CorporateSecurity() {
 
     return (
         <>
+
+            <Helmet>
+                <title>Corporate Security Across Australia | Staffoo</title>
+
+                <meta
+                    name="description"
+                    content="Hire security guards for corporate offices and event security in Australia. Post your job and work with licensed guards with real-time GPS tracking."
+                />
+
+                <meta
+                    name="keywords"
+                    content="retail security, retail security guards, shop security, retail security services, outlet security, Australia, Staffoo"
+                />
+
+                <link
+                    rel="canonical"
+                    href="https://staffoo.com.au/solutions/retail-security"
+                />
+
+                {/* Open Graph Tags */}
+                <meta
+                    property="og:title"
+                    content="Corporate Security Across Australia | Staffoo"
+                />
+                <meta
+                    property="og:description"
+                    content="Hire security guards for corporate offices and event security in Australia. Post your job and work with licensed guards with real-time GPS tracking."
+                />
+                <meta property="og:type" content="website" />
+                <meta
+                    property="og:url"
+                    content="https://staffoo.com.au/solutions/retail-security"
+                />
+
+                {/* Twitter Card Tags */}
+                <meta name="twitter:card" content="summary_large_image" />
+                <meta
+                    name="twitter:title"
+                    content="Corporate Security Across Australia | Staffoo"
+                />
+                <meta
+                    name="twitter:description"
+                    content="Hire security guards for corporate offices and event security in Australia. Post your job and work with licensed guards with real-time GPS tracking."
+                />
+            </Helmet>
+
             <Header />
+<div style={styles.page}>
+  <div style={styles.container}>
+    {/* Left Content */}
+    <div style={styles.left}>
+      {/* Breadcrumb */}
+      <div style={styles.breadcrumb}>
+        <span>Home</span>
+        <span style={styles.breadcrumbSep}>&gt;</span>
+        <span>Solutions</span>
+        <span style={styles.breadcrumbSep}>&gt;</span>
+        <span style={styles.breadcrumbHighlight}>Corporate Security</span>
+      </div>
 
-            <div style={styles.page}>
-                <div style={styles.container}>
-                    {/* Left Content */}
-                    <div style={styles.left}>
-                        {/* Breadcrumb */}
-                        <div style={styles.breadcrumb}>
-                            <span>Home</span>
-                            <span style={styles.breadcrumbSep}>&gt;</span>
-                            <span>Solutions</span>
-                            <span style={styles.breadcrumbSep}>&gt;</span>
-                            <span style={styles.breadcrumbHighlight}>Event Security</span>
-                        </div>
+      {/* Heading */}
+      <h1 style={styles.heading}>
+        Corporate Security, <span style={styles.headingAccent}>Deployed When You Need It</span>
+      </h1>
 
-                        {/* Heading */}
-                        <h1 style={styles.heading}>
-                            Professional <span style={styles.headingAccent}>Event Security</span> staffing built for scale
-                        </h1>
+      {/* Description */}
+      <p style={styles.description}>
+        Connect with trained and licensed security guards ready for corporate office protection. 
+        Post your job and hire fast with Staffoo.
+      </p>
 
-                        {/* Description */}
-                        <p style={styles.description}>
-                            From small private functions to major public events, Staffoo sources,
-                            verifies, and deploys licensed security personnel — fast, compliant,
-                            and covered.
-                        </p>
+      {/* Buttons */}
+      <div style={styles.buttonGroup}>
+        <button
+          style={styles.btnPrimary}
+          onMouseEnter={() => setIsPrimaryHovered(true)}
+          onMouseLeave={() => setIsPrimaryHovered(false)}
+        >
+          Request Security Staff
+        </button>
 
-                        {/* Buttons */}
-                        <div style={styles.buttonGroup}>
-                            <button
-                                style={styles.btnPrimary}
-                                onMouseEnter={() => setIsPrimaryHovered(true)}
-                                onMouseLeave={() => setIsPrimaryHovered(false)}
-                            >
-                                Request security staff
-                            </button>
-                            <button
-                                style={styles.btnSecondary}
-                                onMouseEnter={() => setIsSecondaryHovered(true)}
-                                onMouseLeave={() => setIsSecondaryHovered(false)}
-                            >
-                                See how it works
-                            </button>
-                        </div>
-                    </div>
+        <button
+          style={styles.btnSecondary}
+          onMouseEnter={() => setIsSecondaryHovered(true)}
+          onMouseLeave={() => setIsSecondaryHovered(false)}
+        >
+          See how it works
+        </button>
+      </div>
+    </div>
 
-                    {/* Right Card */}
-                    <div style={styles.right}>
-                        <div style={styles.card}>
-                            <div style={styles.cardLabel}>Solution at a Glance</div>
+    {/* Right Card */}
+    <div style={styles.right}>
+      <div style={styles.card}>
+        <div style={styles.cardLabel}>Why Staffoo</div>
 
-                            {/* Stats */}
-                            <div style={styles.statsGrid}>
-                                <div style={styles.statBox}>
-                                    <div style={styles.statValue}>24 hrs</div>
-                                    <div style={styles.statLabel}>Avg. deployment time</div>
-                                </div>
-                                <div style={styles.statBox}>
-                                    <div style={styles.statValue}>100%</div>
-                                    <div style={styles.statLabel}>Licensed &amp; verified</div>
-                                </div>
-                            </div>
+        {/* Stats Grid */}
+        <div style={styles.statsGrid}>
+          <div style={styles.statBox}>
+            <div style={styles.statValue}>500+ </div>
+            <div style={styles.statLabel}>Monthly <br /> deploys</div>
+          </div>
 
-                            {/* Tags */}
-                            <div style={styles.tagsGrid}>
-                                <div style={styles.tag}>Crowd controller</div>
-                                <div style={styles.tag}>RSA-trained</div>
-                                <div style={styles.tag}>GPS tracking</div>
-                                <div style={styles.tag}>Payroll managed</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+          <div style={styles.statBox}>
+            <div style={styles.statValue}>100%</div>
+            <div style={styles.statLabel}>Licensed & Verified</div>
+          </div>
+        </div>
+
+        {/* Tags */}
+        <div style={styles.tagsGrid}>
+          <div style={styles.tag}>GPS <br /> Tracking</div>
+          <div style={styles.tag}>Payroll Management</div>
+          <div style={styles.tag}>Instant Deployment</div>
+          <div style={styles.tag}>Complince Covered</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
             <StatsCounter />
             <BusinessProtection />
             <Testimonials />

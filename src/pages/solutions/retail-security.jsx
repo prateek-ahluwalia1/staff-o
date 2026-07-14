@@ -378,7 +378,7 @@ export default function RetailSecurity() {
                                 onMouseEnter={() => setIsPrimaryHovered(true)}
                                 onMouseLeave={() => setIsPrimaryHovered(false)}
                             >
-                                Request security staff
+                                Request Security Staff
                             </button>
                             <button
                                 style={styles.btnSecondary}

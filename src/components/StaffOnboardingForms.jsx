@@ -1306,6 +1306,8 @@ const StaffOnboardingForms = ({ submit, userId, onProfileUpdate }) => {
                 setOnboardForm((prev) => ({ ...prev, o_seclicexp: expiryStr }));
                 setDataModified(JSON.stringify({ ...onboardForm, o_seclicexp: expiryStr }) !== JSON.stringify(originalOnboardForm));
                 toast.success("Security License verified. Expiry date locked.");
+            } else {
+                toast.error(`Security license number is not valid for ${staffState}`)
             }
         } catch (err) {
             console.error(err);

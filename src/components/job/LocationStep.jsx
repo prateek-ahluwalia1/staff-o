@@ -55,7 +55,7 @@ export default function LocationStep({
       setField("location", options.preferPlaceLabel ? placeLabel : canonicalAddress);
       setField("address", canonicalAddress);
       if (city) setField("city", city);
-      if (state) setField("state", state); // This will now save 'vic', 'nsw', etc.
+      if (state) setField("state", state);
       if (postcode) setField("postcode", postcode);
       if (setLocationError) setLocationError("");
     },

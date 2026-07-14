@@ -290,7 +290,6 @@ const FormCardFooter = ({ loading, saveLabel, disabled }) => (
                 </>
             ) : (
                 <>
-                    <i className="fa-solid fa-floppy-disk"></i>
                     {saveLabel}
                 </>
             )}

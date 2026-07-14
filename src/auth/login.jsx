@@ -368,7 +368,7 @@ export default function Login() {
                     onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
                   >
                     {loading && <i className="fa-solid fa-spinner fa-spin"></i>}
-                    {loading ? "Signing in..." : "Sign In"}
+                    {loading ? "Signing in..." : "Sign in"}
                   </button>
                 </form>
 

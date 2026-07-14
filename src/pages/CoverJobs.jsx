@@ -87,8 +87,8 @@ const CoverJobs = () => {
         setLoadingIds((prev) => [...prev, jobId]);
         try {
             const result = await submit(
-                `api/asap-jobs/accept/${jobId}`,
-                { admin_id: userId },   // optional, adjust as needed
+                `api/contractor/jobs/accept/${userId}`,
+                { roster_id: jobId },
                 { method: 'POST' }
             );
 
@@ -173,8 +173,8 @@ const CoverJobs = () => {
                                             <div className="d-flex justify-content-between align-items-start mb-3">
                                                 <span
                                                     className={`badge rounded-pill px-3 py-2 fw-medium ${job.job_status === 'pending'
-                                                            ? 'bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25'
-                                                            : 'bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25'
+                                                        ? 'bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25'
+                                                        : 'bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25'
                                                         }`}
                                                     style={{ fontSize: '12px', textTransform: "capitalize" }}
                                                 >

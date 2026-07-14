@@ -321,9 +321,9 @@ function AppContent() {
         async (jobId) => {
             setAcceptingJob(true);
             try {
-                const payload = { admin_id: userId };
+                const payload = { roster_id: jobId };
                 const result = await submitAccept(
-                    `api/asap-jobs/accept/${jobId}`,
+                    `api/contractor/jobs/accept/${userId}`,
                     payload,
                     { method: "POST" }
                 );

@@ -294,7 +294,7 @@ function Header() {
             <div style={{ height: '1px', backgroundColor: 'rgba(255,255,255,0.1)', margin: '16px 0' }}></div>
             {!token ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                <NavLink to="/login" onClick={handleLinkClick} style={{ color: '#fff', border: '1px solid #fff', textAlign: 'center', padding: '10px 16px', borderRadius: '5px', textDecoration: 'none', fontWeight: 'bold' }}>Sign In</NavLink>
+                <NavLink to="/login" onClick={handleLinkClick} style={{ color: '#fff', border: '1px solid #fff', textAlign: 'center', padding: '10px 16px', borderRadius: '5px', textDecoration: 'none', fontWeight: 'bold', textTransform: "none" }}>Sign in</NavLink>
                 <NavLink to="/register" onClick={handleLinkClick} style={{ backgroundColor: '#0A7C6E', color: '#fff', border: '1px solid #0A7C6E', textAlign: 'center', padding: '10px 16px', borderRadius: '4px', textDecoration: 'none', fontWeight: 'bold' }}>Register Free</NavLink>
               </div>
             ) : (

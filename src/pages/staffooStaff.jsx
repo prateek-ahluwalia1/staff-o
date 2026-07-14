@@ -48,10 +48,23 @@ const DOC_TYPES = [
     { value: "Superannuation Form", label: "Superannuation Form" },
     { value: "First Aid", label: "First Aid Certificate" },
     { value: "CPR", label: "CPR Certificate" },
-    { value: "Vaccination Certificate", label: "Vaccination Certificate" },
+    { value: "Vaccination", label: "Vaccination Certificate" },
     { value: "Citizen Ship", label: "Citizen Ship Certificate" },
     { value: "Medicare", label: "Medicare Certificate" },
     { value: "Birth Certificate", label: "Birth Certificate" },
+    { value: "Application Form", label: "Application Form" },
+    { value: "Passport", label: "Passport" },
+    { value: "Working With Children Check", label: "Working with Children Check (WWCC)" },
+    { value: "First Aid Certificate", label: "First Aid Certificate" },
+    { value: "CPR Certificate", label: "CPR Certificate" },
+    { value: "Security Master License", label: "Security Master License" },
+    { value: "Public Liability", label: "Public Liability" },
+    { value: "Workcover", label: "Workcover" },
+    { value: "Security Industry Membership certificate", label: "Security Industry Membership certificate" },
+    { value: "Labour Hire", label: "Labour Hire" },
+    { value: "ASIC Report", label: "ASIC Report" },
+    { value: "White Card", label: "White Card" },
+    { value: "Working with Children Check", label: "Working with Children Check" },
 ];
 
 const StaffooStaff = () => {
@@ -307,14 +320,21 @@ const StaffooStaff = () => {
                 toast.error("Please enter a document number first.");
                 return;
             }
+
+            const staffState = (editingUser?.state || editingUser?.staff?.state || formData?.state || "").trim();
+            if (!staffState) {
+                toast.error("Please add your location first.");
+                return;
+            }
+
             setVerifyingDoc(true);
             try {
                 const res = await submitSecurityLicense(
                     "api/documents-online-verification-staffoo",
                     {
-                        user_id: editingUser.id,
                         document_type: "Security License",
                         license_number: docForm.document_no,
+                        state: staffState,
                     },
                     { method: "POST" }
                 );
@@ -328,7 +348,7 @@ const StaffooStaff = () => {
                     toast.success("Security License verified. Expiry date locked.");
                 } else {
                     setDocForm((prev) => ({ ...prev, is_verified: false }));
-                    toast.error(res?.message || "Security License verification failed.");
+                    toast.error(`Security license number is not valid for ${staffState}`)
                 }
             } catch (err) {
                 console.error(err);
@@ -835,10 +855,11 @@ const StaffooStaff = () => {
                     >
                         <thead className="premium-thead">
                             <tr>
-                                <th className="text-start" style={{ width: "35%" }}>Name & Email</th>
-                                <th className="text-start" style={{ width: "25%" }}>Phone</th>
-                                <th className="text-start" style={{ width: "25%" }}>Location</th>
-                                <th className="text-center" style={{ width: "15%" }}>Actions</th>
+                                <th className="text-start" style={{ width: "30%" }}>Name & Email</th>
+                                <th className="text-start" style={{ width: "20%" }}>Phone</th>
+                                <th className="text-start" style={{ width: "30%" }}>Location</th>
+                                <th lassName="text-start" style={{ width: "10%" }}>Created At</th>
+                                <th className="text-center" style={{ width: "10%" }}>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -857,6 +878,17 @@ const StaffooStaff = () => {
                                         <td className="text-start">
                                             {user.city || "—"}{" "}
                                             <span className="text-muted small">({user.country || "N/A"})</span>
+                                        </td>
+                                        <td className="text-start">
+                                            <div className="text-dark small">
+                                                {user.created_at
+                                                    ? new Date(user.created_at).toLocaleDateString("en-AU", {
+                                                        day: "2-digit",
+                                                        month: "2-digit",
+                                                        year: "numeric",
+                                                    })
+                                                    : "N/A"}
+                                            </div>
                                         </td>
                                         <td className="text-center">
                                             <div className="btn-group">
@@ -1293,8 +1325,7 @@ const StaffooStaff = () => {
                                                                 </>
                                                             ) : (
                                                                 <div className="text-center">
-                                                                    <i className="fa-solid fa-cloud-arrow-up fa-3x text-muted mb-3"></i>
-                                                                    <p className="text-muted fw-medium mb-0">Click to upload document/image</p>
+                                                                    <p className="text-muted fw-medium mb-0">Upload document to view preview</p>
                                                                 </div>
                                                             )}
                                                         </div>

@@ -393,8 +393,8 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
   }, [customerSites]);
 
   const handleCreateCustomer = async () => {
-    if (!newCustomer.name || !newCustomer.email || !newCustomer.password) {
-      toast.error("Name, Email and Password are required");
+    if (!newCustomer.name || !newCustomer.email || !newCustomer.password || !newCustomer.phone) {
+      toast.error("All fields are required");
       return;
     }
     try {
@@ -757,8 +757,6 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
           toast.success("Job posted successfully via Admin!");
           navigate("/my-job-applications");
           if (isEmbedded && onClose) onClose();
-        } else {
-          toast.error(postRes?.message || "Job posting failed.");
         }
         setPostingJob(false);
       }
@@ -846,7 +844,7 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
               <div>
                 <h1 className="h4 fw-bold text-dark mb-1">Create Job</h1>
                 <p className="text-muted mb-0" style={{ textTransform: "none" }}>
-                  Follow the steps to add a new job
+                  Follow the steps to post a new job
                 </p>
                 {!isEmbedded && <StepProgress step={step} titles={STEP_TITLES} />}
               </div>
@@ -1046,24 +1044,15 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
                           />
                         </div>
                         <div className="col-md-6">
-                          <label className="form-label small text-muted fw-bold mb-2">Phone</label>
+                          <label className="form-label small text-muted fw-bold mb-2">Phone *</label>
                           <input
                             type="text"
                             className="form-control"
                             placeholder="Phone number"
                             value={newCustomer.phone}
                             maxLength={20}
+                            required
                             onChange={(e) => setNewCustomer({ ...newCustomer, phone: e.target.value })}
-                          />
-                        </div>
-                        <div className="col-md-6">
-                          <label className="form-label small text-muted fw-bold mb-2">Company</label>
-                          <input
-                            type="text"
-                            className="form-control"
-                            placeholder="Company name"
-                            value={newCustomer.company_name}
-                            onChange={(e) => setNewCustomer({ ...newCustomer, company_name: e.target.value })}
                           />
                         </div>
                         <div className="col-md-6">

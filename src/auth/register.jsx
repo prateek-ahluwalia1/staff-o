@@ -98,6 +98,10 @@ export default function Register() {
       newErrors.name = "Full name must be at least 2 characters.";
     }
 
+    if (!formData.phone.trim()) {
+      newErrors.phone = "Phone number is required.";
+    }
+
     if (formData.phone.trim()) {
       const pureDigits = formData.phone.replace(/[\s-]/g, '');
       if (!/^\+?\d{10,15}$/.test(pureDigits)) {
@@ -292,7 +296,7 @@ export default function Register() {
             {/* FORM */}
             <div className="col-lg-6">
               <div className="auth-card">
-                <h5 className="fw-bold mb-1">Sign Up</h5>
+                <h5 className="fw-bold mb-1">Sign up</h5>
                 <p className="text-muted small mb-3" style={{ textTransform: "none" }}>
                   It only takes a few seconds.
                 </p>
@@ -310,7 +314,6 @@ export default function Register() {
                         placeholder="Your Name"
                         value={formData.name}
                         onChange={handleChange}
-                        maxLength={50}
                         style={{ border: "1px solid #0A7C6E" }}
                       />
                       {errors.name && <div className="invalid-feedback" style={{ fontSize: '12px' }}>{errors.name}</div>}
@@ -318,16 +321,17 @@ export default function Register() {
 
                     <div className="col-md-6">
                       <label className="form-label small fw-medium mb-1">
-                        Phone Number <span className="text-muted fw-normal ms-1" style={{ fontSize: '0.85em' }}>(Optional)</span>
+                        Phone Number <span className="text-danger">*</span>
                       </label>
                       <input
                         type="tel"
                         className={`form-control ${errors.phone ? 'is-invalid' : ''}`}
                         name="phone"
-                        placeholder="+1234567890"
+                        placeholder="+61 400 000 000"
                         value={formData.phone}
                         onChange={handleChange}
                         maxLength={20}
+                        required
                         style={{ border: "1px solid #0A7C6E" }}
                       />
                       {errors.phone && <div className="invalid-feedback" style={{ fontSize: '12px' }}>{errors.phone}</div>}
@@ -344,7 +348,6 @@ export default function Register() {
                         placeholder="name@example.com"
                         value={formData.email}
                         onChange={handleChange}
-                        maxLength={100}
                         style={{ border: "1px solid #0A7C6E" }}
                       />
                       {errors.email && <div className="invalid-feedback" style={{ fontSize: '12px' }}>{errors.email}</div>}
@@ -371,7 +374,9 @@ export default function Register() {
                           onClick={() => setShowPassword(!showPassword)}
                           tabIndex="-1"
                         >
-                          <i className={`fa-solid ${showPassword ? 'fa-eye-slash' : 'fa-eye'}`}></i>
+                          <i
+                            style={{ color: "#0A7C6E" }}
+                            className={`fa-solid ${showPassword ? "fa-eye-slash" : "fa-eye"}`}></i>
                         </button>
                       </div>
                       {errors.password && (
@@ -573,7 +578,7 @@ export default function Register() {
               <h3 className="fw-bold text-dark mb-2">Verify your email</h3>
               <p className="text-muted small mb-0" style={{ textTransform: "none" }}>
                 We've sent a verification link to <strong className="text-dark" style={{ textTransform: "none" }}>{formData.email}</strong>.
-                Please check your inbox to activate your account.
+                Please check your inbox and click the link to activate your account.
               </p>
             </div>
 

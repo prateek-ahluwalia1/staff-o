@@ -33,7 +33,7 @@ const Invoice = () => {
   const customersList = customersResponse?.data?.data || [];
 
   const [invoiceNo, setInvoiceNo] = useState(
-    `STAFFOO-${new Date().getFullYear()}-${String(Date.now()).slice(-5)}`,
+    `ST-${new Date().getFullYear()}-${String(Date.now()).slice(-5)}`,
   );
   const [currency, setCurrency] = useState("AUD");
 
@@ -132,7 +132,7 @@ const Invoice = () => {
   const subtotal = useMemo(
     () =>
       lineItems.reduce((sum, item) => {
-        const qty = Number(item.hours) || 0;
+        const qty = Number(item.qty) || 0;
         const rate = Number(item.rate) || 0;
         return sum + qty * rate;
       }, 0),

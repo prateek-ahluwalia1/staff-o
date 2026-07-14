@@ -31,6 +31,7 @@ const DOC_TYPES = [
   { value: "Visa", label: "Visa" },
   { value: "Driver License Front", label: "Driver License (Front)" },
   { value: "Driver License Back", label: "Driver License (Back)" },
+  { value: "Security Master License", label: "Security Master License" },
   { value: "Security License", label: "Security License" },
   { value: "Working with Children Check", label: "Working with Children Check (WWCC)" },
   { value: "Employment Application Form", label: "Employment Application Form" },
@@ -43,6 +44,11 @@ const DOC_TYPES = [
   { value: "Medicare", label: "Medicare Certificate" },
   { value: "Birth Certificate", label: "Birth Certificate" },
   { value: "White Card", label: "White Card" },
+  { value: "Public Liability", label: "Public Liability" },
+  { value: "Workcover", label: "Workcover" },
+  { value: "Labour Hire", label: "Labour Hire" },
+  { value: "ASIC Report", label: "ASIC Report" },
+  { value: "Security Industry Membership certificate", label: "Security Industry Membership certificate" },
 ];
 
 // ========== DATE HELPERS ==========
@@ -169,10 +175,18 @@ const ManageUsers = () => {
 
   const [formData, setFormData] = useState(defaultFormState);
 
-  const staffDocuments = useMemo(() => {
+  // ---------- dynamic documents for staff and sub_contractor ----------
+  const documents = useMemo(() => {
     if (!editingUser) return [];
-    return editingUser.documents || editingUser.staff?.documents || [];
-  }, [editingUser]);
+    if (editingUser.documents && editingUser.documents.length > 0) return editingUser.documents;
+    if (activeTab === "staff") {
+      return editingUser.staff?.documents || [];
+    }
+    if (activeTab === "sub_contractor") {
+      return editingUser.contractor?.documents || [];
+    }
+    return [];
+  }, [editingUser, activeTab]);
 
   // ---- ProfileForm change handler ----
   const handleProfileFormChange = useCallback((e) => {
@@ -395,7 +409,6 @@ const ManageUsers = () => {
   const handleDocFormChange = async (e) => {
     const { name, value, type, checked, files } = e.target;
 
-    // For Security License and Visa, expiry is set automatically, so we skip manual changes
     if (
       name === "document_expiry" &&
       (docForm.document_name === "Security License" || docForm.document_name === "Visa")
@@ -446,14 +459,20 @@ const ManageUsers = () => {
 
     // Security License verification
     if (docForm.document_name === "Security License") {
+      const staffState = (editingUser?.state || editingUser?.staff?.state || formData?.state || "").trim();
+      if (!staffState) {
+        toast.error("Please add your location first.");
+        return;
+      }
+
       setVerifyingDoc(true);
       try {
         const res = await submitSecurityLicense(
           "api/documents-online-verification-staffoo",
           {
-            user_id: editingUser.id,
             document_type: "Security License",
             license_number: docForm.document_no,
+            state: staffState,
           },
           { method: "POST" }
         );
@@ -467,7 +486,7 @@ const ManageUsers = () => {
           toast.success("Security License verified. Expiry date locked.");
         } else {
           setDocForm(prev => ({ ...prev, is_verified: false }));
-          toast.error(res?.message || "Security License verification failed.");
+          toast.error(`Security license number is not valid for ${staffState}`)
         }
       } catch (err) {
         console.error(err);
@@ -481,7 +500,7 @@ const ManageUsers = () => {
     // Visa verification
     if (docForm.document_name === "Visa") {
       const user = editingUser;
-      const staff = user?.staff || {};
+      const nested = activeTab === "staff" ? (user?.staff || {}) : (user?.contractor || {});
       const fullName = (user?.name || "").trim();
       let givenName = fullName;
       let familyName = fullName;
@@ -491,7 +510,7 @@ const ManageUsers = () => {
         familyName = nameParts[nameParts.length - 1];
       }
 
-      const rawDob = staff?.date_of_birth || user?.date_of_birth || formData.date_of_birth || "";
+      const rawDob = nested?.date_of_birth || user?.date_of_birth || formData.date_of_birth || "";
       if (!rawDob) {
         toast.error("Date of birth is missing. Please update personal information first.");
         return;
@@ -503,7 +522,7 @@ const ManageUsers = () => {
       }
       const dobISO = `${dobParts[2]}-${dobParts[1]}-${dobParts[0]}`;
 
-      const originCountry = staff?.origin_country || user?.origin_country || formData.origin_country || "";
+      const originCountry = nested?.origin_country || user?.origin_country || formData.origin_country || "";
       if (!originCountry) {
         toast.error("Please save your country of origin in your profile before verifying your visa.");
         return;
@@ -959,7 +978,7 @@ const ManageUsers = () => {
             font-size: 0.8rem;
           }
           .jobtracker-main-table {
-            min-width: 600px;           /* increased for staff columns */
+            min-width: 600px;
           }
         }
 
@@ -1000,7 +1019,6 @@ const ManageUsers = () => {
           .confirm-modal-card {
             max-width: 100%;
           }
-          /* Allow table cells to wrap so columns don't merge */
           .jobtracker-data-row td {
             word-break: break-word;
             white-space: normal;
@@ -1090,20 +1108,22 @@ const ManageUsers = () => {
               <tr>
                 {activeTab === "staff" ? (
                   <>
-                    <th style={{ width: "25%", textAlign: "left", paddingLeft: "1.5rem" }}>Name & Email</th>
-                    <th style={{ width: "30%", textAlign: "left" }}>Resource Partner</th>
-                    <th style={{ width: "25%", textAlign: "left" }}>Location</th>
+                    <th style={{ width: "30%", textAlign: "left", paddingLeft: "1.5rem" }}>Name & Email</th>
+                    <th style={{ width: "20%", textAlign: "left" }}>Resource Partner</th>
+                    <th style={{ width: "15%", textAlign: "left" }}>Location</th>
+                    <th style={{ width: "15%", textAlign: "left" }}>Created At</th>
                     <th style={{ width: "20%", textAlign: "center" }}>Actions</th>
                   </>
                 ) : (
                   <>
                     <th style={{ width: "30%", textAlign: "left", paddingLeft: "1.5rem" }}>Name & Email</th>
                     {activeTab === "sub_contractor" ? (
-                      <th style={{ width: "25%", textAlign: "left" }}>Business & Phone</th>
+                      <th style={{ width: "20%", textAlign: "left" }}>Business & Phone</th>
                     ) : (
-                      <th style={{ width: "25%", textAlign: "left" }}>Phone</th>
+                      <th style={{ width: "20%", textAlign: "left" }}>Phone</th>
                     )}
-                    <th style={{ width: "25%", textAlign: "left" }}>Location</th>
+                    <th style={{ width: "15%", textAlign: "left" }}>Location</th>
+                    <th style={{ width: "15%", textAlign: "left" }}>Created At</th>
                     <th style={{ width: "20%", textAlign: "center" }}>Actions</th>
                   </>
                 )}
@@ -1153,6 +1173,12 @@ const ManageUsers = () => {
                         ({user.country || "N/A"})
                       </span>
                     </td>
+                    {/* NEW: Created At column */}
+                    <td style={{ textAlign: "left" }}>
+                      <span className="small">
+                        {normalizeToDisplay(user.created_at) || "—"}
+                      </span>
+                    </td>
                     <td style={{ textAlign: "center" }}>
                       <div className="btn-group">
                         <button
@@ -1173,7 +1199,8 @@ const ManageUsers = () => {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={4} className="text-center py-5 text-muted"
+                  {/* Increase colSpan to 5 because we now have 5 columns */}
+                  <td colSpan={5} className="text-center py-5 text-muted"
                     style={{ textTransform: "none" }}
                   >
                     No records found for this category.
@@ -1184,7 +1211,7 @@ const ManageUsers = () => {
           </table>
         </div>
 
-        {/* Pagination Footer – Prev/Next always side-by-side */}
+        {/* Pagination Footer */}
         <div className="card-footer bg-white border-top py-3 px-4 d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-2">
           <div className="text-muted small">
             Showing Page <strong>{page}</strong> of <strong>{totalPages}</strong>
@@ -1212,7 +1239,7 @@ const ManageUsers = () => {
         </div>
       </div>
 
-      {/* FULL SCREEN MODAL (with verification logic intact) */}
+      {/* FULL SCREEN MODAL */}
       {isModalOpen && (
         <div className="full-screen-modal">
           <div className="modal-inner-content">
@@ -1301,7 +1328,8 @@ const ManageUsers = () => {
                 >
                   Personal Information
                 </button>
-                {activeTab === "staff" && editingUser && (
+                {/* Show Documents tab for both Staff and Resource Partners */}
+                {(activeTab === "staff" || activeTab === "sub_contractor") && editingUser && (
                   <button
                     type="button"
                     className={`btn ${activeModalTab === "documents" ? "btn-primary-custom text-white" : "btn-outline-primary"}`}
@@ -1331,6 +1359,7 @@ const ManageUsers = () => {
                     abn: formData.abn || "",
                     acn: formData.acn || "",
                     security_license_no: formData.security_license_no || "",
+
                   }}
                   onChange={handleProfileFormChange}
                   onSubmit={handleSubmit}
@@ -1391,12 +1420,13 @@ const ManageUsers = () => {
                       <h6 className="section-divider mt-0 border-0 mb-1">Documents</h6>
                       <p className="text-muted mb-0 small"
                         style={{ textTransform: "none" }}
-                      >Upload and manage staff documents.</p>
+                      >Upload and manage documents.</p>
                     </div>
                   </div>
+                  {/* pass activeTab as userType – staff or sub_contractor */}
                   <DocumentTable
-                    documents={staffDocuments}
-                    userType="staff"
+                    documents={documents}
+                    userType={activeTab}
                     onAddFile={openDocumentModal}
                   />
                   {showDocModal && (
@@ -1411,7 +1441,7 @@ const ManageUsers = () => {
                           </span>
                           <div>
                             <h5 className="mb-0 fw-bold">{selectedDoc ? "Update Document" : "Add Document"}</h5>
-                            <div className="small text-muted">Upload a staff verification file.</div>
+                            <div className="small text-muted">Upload a verification file.</div>
                           </div>
                         </div>
                         <form onSubmit={handleDocSubmit} className="p-4" style={{ maxHeight: "70vh", overflowY: "auto" }}>
@@ -1438,7 +1468,7 @@ const ManageUsers = () => {
                             </select>
                           </div>
 
-                          {/* Document Number + Verify (restored) */}
+                          {/* Document Number + Verify */}
                           <div className="mb-3">
                             <label className="form-label fw-bold text-dark">
                               Document Number <span className="text-danger">*</span>
@@ -1603,8 +1633,7 @@ const ManageUsers = () => {
                                 </>
                               ) : (
                                 <div className="text-center">
-                                  <i className="fa-solid fa-cloud-arrow-up fa-3x text-muted mb-3"></i>
-                                  <p className="text-muted fw-medium mb-0">Click to upload document/image</p>
+                                  <p className="text-muted fw-medium mb-0">Upload document to view preview</p>
                                 </div>
                               )}
                             </div>

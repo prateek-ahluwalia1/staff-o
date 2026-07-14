@@ -595,6 +595,7 @@ nav a:hover {
   color: #e2e8f0;
 }
 
+
 .auth-card .form-control::placeholder {
   color: rgba(226, 232, 240, 0.6);
 }

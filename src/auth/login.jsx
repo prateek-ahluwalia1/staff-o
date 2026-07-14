@@ -279,7 +279,7 @@ export default function Login() {
                   Please enter your email and password.
                 </p>
 
-                <form onSubmit={handleSubmit} noValidate>
+                <form onSubmit={handleSubmit} noValidate suggestions="off" autoComplete="off">
                   <div className="row g-3 mb-4">
                     <div className="col-12">
                       <label className="form-label small fw-medium mb-1">
@@ -287,12 +287,12 @@ export default function Login() {
                       </label>
                       <input
                         type="email"
+                        autoComplete="off"
                         className={`form-control py-2 ${errors.email ? "is-invalid" : ""}`}
                         name="email"
                         placeholder="name@example.com"
                         value={formData.email}
                         onChange={handleChange}
-                        maxLength={100}
                         style={{ border: "1px solid #0A7C6E" }}
                       />
                       {errors.email && (
@@ -338,7 +338,9 @@ export default function Login() {
                           onClick={() => setShowPassword(!showPassword)}
                           tabIndex="-1"
                         >
-                          <i className={`fa-solid ${showPassword ? "fa-eye-slash" : "fa-eye"}`}></i>
+                          <i
+                            style={{ color: "#0A7C6E" }}
+                            className={`fa-solid ${showPassword ? "fa-eye-slash" : "fa-eye"}`}></i>
                         </button>
                       </div>
 
@@ -366,7 +368,7 @@ export default function Login() {
                     onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
                   >
                     {loading && <i className="fa-solid fa-spinner fa-spin"></i>}
-                    {loading ? "Signing in..." : "Sign In"}
+                    {loading ? "Signing in..." : "Sign in"}
                   </button>
                 </form>
 

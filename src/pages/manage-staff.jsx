@@ -43,16 +43,17 @@ const DOC_TYPES = [
   { value: "Driver License Front", label: "Driver License (Front)" },
   { value: "Driver License Back", label: "Driver License (Back)" },
   { value: "Security License", label: "Security License" },
-  { value: "Working with Children", label: "Working with Children Check (WWCC)" },
+  { value: "Working with Children Check", label: "Working with Children Check (WWCC)" },
   { value: "Employment Application Form", label: "Employment Application Form" },
   { value: "TFN Declaration", label: "TFN Declaration" },
   { value: "Superannuation Form", label: "Superannuation Form" },
-  { value: "First Aid", label: "First Aid Certificate" },
+  { value: "First Aid Certificate", label: "First Aid Certificate" },
   { value: "CPR", label: "CPR Certificate" },
   { value: "Vaccination Certificate", label: "Vaccination Certificate" },
   { value: "Citizen Ship", label: "Citizen Ship Certificate" },
   { value: "Medicare", label: "Medicare Certificate" },
   { value: "Birth Certificate", label: "Birth Certificate" },
+  { value: "White Card", label: "White Card" },
 ];
 
 const ManageStaff = () => {
@@ -302,14 +303,20 @@ const ManageStaff = () => {
     }
 
     if (docForm.document_name === "Security License") {
+      const staffState = (editingUser?.state || editingUser?.staff?.state || formData?.state || "").trim();
+      if (!staffState) {
+        toast.error("Please add your location first.");
+        return;
+      }
+
       setVerifyingDoc(true);
       try {
         const res = await submitSecurityLicense(
           "api/documents-online-verification-staffoo",
           {
-            user_id: editingUser.id,
             document_type: "Security License",
             license_number: docForm.document_no,
+            state: staffState,
           },
           { method: "POST" }
         );
@@ -323,7 +330,7 @@ const ManageStaff = () => {
           toast.success("Security License verified. Expiry date locked.");
         } else {
           setDocForm((prev) => ({ ...prev, is_verified: false }));
-          toast.error(res?.message || "Security License verification failed.");
+          toast.error(`Security license number is not valid for ${staffState}`)
         }
       } catch (err) {
         console.error(err);
@@ -893,21 +900,27 @@ const ManageStaff = () => {
       <div className="card border-0 shadow-sm rounded-4 overflow-hidden mb-4 jobtracker-table-shell">
         <div className="table-responsive">
           <table
-            className={`table table-hover align-middle mb-0 jobtracker-main-table ${loading ? "opacity-50" : ""
-              }`}
+            className={`table table-hover align-middle mb-0 jobtracker-main-table ${loading ? "opacity-50" : ""}`}
           >
             <thead className="premium-thead">
               <tr>
-                <th className="text-start" style={{ width: "35%" }}>
+                <th className="text-start" style={{ width: "25%" }}>
                   Name & Email
                 </th>
-                <th className="text-start" style={{ width: "25%" }}>
+                <th className="text-start" style={{ width: "15%" }}>
                   Phone
                 </th>
-                <th className="text-start" style={{ width: "25%" }}>
+                <th className="text-start" style={{ width: "15%" }}>
                   Location
                 </th>
-                <th className="text-center" style={{ width: "15%" }}>
+                <th className="text-start" style={{ width: "15%" }}>
+                  Status
+                </th>
+                {/* NEW: Created At column */}
+                <th className="text-start" style={{ width: "15%" }}>
+                  Created At
+                </th>
+                <th className="text-start" style={{ width: "15%" }}>
                   Actions
                 </th>
               </tr>
@@ -929,7 +942,16 @@ const ManageStaff = () => {
                       {user.city || "—"}{" "}
                       <span className="text-muted small">({user.country || "N/A"})</span>
                     </td>
-                    <td className="text-center">
+                    <td className="text-start">
+                      <div className="text-dark small">{user?.is_active ? "Active" : "Inactive"}</div>
+                    </td>
+                    {/* NEW: Created At cell */}
+                    <td className="text-start">
+                      <span className="small">
+                        {normalizeToDisplay(user.created_at) || "—"}
+                      </span>
+                    </td>
+                    <td className="text-start">
                       <div className="btn-group">
                         <button
                           className="btn btn-light btn-sm rounded-circle me-2 border"
@@ -949,7 +971,8 @@ const ManageStaff = () => {
                 ))
               ) : (
                 <tr>
-                  <td colSpan="4" className="text-center py-5 text-muted"
+                  {/* Updated colSpan to 6 because we now have 6 columns */}
+                  <td colSpan="6" className="text-center py-5 text-muted"
                     style={{ textTransform: "none" }}
                   >
                     No staff records found.
@@ -959,7 +982,6 @@ const ManageStaff = () => {
             </tbody>
           </table>
         </div>
-
         <div className="card-footer bg-white border-top py-3 px-4 d-flex justify-content-between align-items-center flex-wrap">
           <div className="text-muted small">
             Showing Page <strong>{page}</strong> of <strong>{totalPages}</strong>
@@ -1403,9 +1425,8 @@ const ManageStaff = () => {
                                 </>
                               ) : (
                                 <div className="text-center">
-                                  <i className="fa-solid fa-cloud-arrow-up fa-3x text-muted mb-3"></i>
                                   <p className="text-muted fw-medium mb-0">
-                                    Click to upload document/image
+                                    Choose file to view preview
                                   </p>
                                 </div>
                               )}

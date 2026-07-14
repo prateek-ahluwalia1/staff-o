@@ -36,298 +36,263 @@ export default function ProfileForm({
     nt: "Northern Territory",
   };
 
-
   const showCustomStatus =
     formData.staff_document_type &&
     !predefinedStatuses.includes(formData.staff_document_type);
   const selectValue = showCustomStatus
     ? "other"
     : formData.staff_document_type || "";
-  const countryOptions = COUNTRIES.map(c => ({
+
+  const countryOptions = COUNTRIES.map((c) => ({
     value: c.code,
     label: c.name,
   }));
 
-  const selectedCountry = countryOptions.find(
-    opt => opt.value === formData.origin_country || opt.label === formData.origin_country
-  ) || null;
+  const selectedCountry =
+    countryOptions.find(
+      (opt) =>
+        opt.value === formData.origin_country ||
+        opt.label === formData.origin_country
+    ) || null;
+
 
   return (
-    <form id="profile-form" className="settings-form" onSubmit={onSubmit}>
-      <div className="settings-card shadow-sm border-0 rounded-3">
-        <div className="settings-card-header border-bottom mb-4 pb-3">
-          <div>
-            <p className="text-primary small fw-bold mb-1 tracking-wide">
-              Profile
-            </p>
-            <h3 className="fw-bold mb-2">Personal Information</h3>
-            <p className="text-muted mb-0"
-              style={{ textTransform: 'none' }}
-            >
-              These details power your profile and keep your account information current.
-            </p>
-          </div>
+    <form id="profile-form" onSubmit={onSubmit} className="w-100">
+      <div className="card border-0 shadow-sm rounded-4 overflow-hidden bg-white">
+        {/* Header */}
+        <div className="card-header bg-transparent border-bottom px-4 px-md-5 py-4">
+          <h3 className="fw-bold mb-1">Personal Information</h3>
+          <p className="text-muted mb-0">
+            Keep your profile details current to ensure smooth account operation.
+          </p>
         </div>
 
-        <div className="settings-grid">
-          {/* Full Name */}
-          <div>
-            <label htmlFor="name" className="form-label fw-semibold">
-              Full Name <span className="text-danger">*</span>
-            </label>
-            <input
-              type="text"
-              className="form-control"
-              id="name"
-              placeholder="Full Name"
-              value={formData.name || ""}
-              onChange={(e) => {
-                let value = e.target.value
-                  .replace(/[^a-zA-Z\s]/g, "")
-                  .replace(/\s+/g, " ");
-                onChange({
-                  target: {
-                    id: "name",
-                    value,
-                  },
-                });
-              }}
-              required
-              minLength={3}
-              maxLength={20}
-              pattern="^[A-Za-z\s]{3,20}$"
-              title="Full Name must contain only letters and be 3-20 characters"
-            />
-          </div>
+        {/* Form Body */}
+        <div className="card-body px-4 px-md-5 py-4 py-md-5">
+          <div className="row g-4">
 
-          {/* Email (Conditionally Read-Only) */}
-          <div>
-            <label htmlFor="email" className="form-label fw-semibold">
-              Email Address <span className="text-danger">*</span>
-            </label>
-            <div className="input-group shadow-sm rounded">
-              <span className="input-group-text bg-white text-muted border-end-0">
-                <i className="fa-solid fa-envelope"></i>
-              </span>
+            {/* Full Name */}
+            <div className="col-md-6">
+              <label htmlFor="name" className="form-label fw-semibold text-dark">
+                Full Name <span className="text-danger">*</span>
+              </label>
               <input
-                type="email"
-                className="form-control border-start-0 ps-0"
-                id="email"
-                placeholder="user@example.com"
-                value={formData.email || ""}
-                onChange={onChange}
-                readOnly={isEdit}
-                required
-                style={{
-                  background: isEdit ? "#f8f9fa" : "#ffffff",
-                  cursor: isEdit ? "default" : "text"
+                type="text"
+                className="form-control border-light-subtle shadow-none bg-light focus-ring focus-ring-primary py-2 px-3"
+                id="name"
+                placeholder="John Doe"
+                value={formData.name || ""}
+                onChange={(e) => {
+                  let value = e.target.value
+                    .replace(/[^a-zA-Z\s]/g, "")
+                    .replace(/\s+/g, " ");
+                  onChange({ target: { id: "name", value } });
                 }}
+                required
+                style={{ fontSize: "1rem" }}
               />
             </div>
-            {isEdit && (
-              <div className="form-text text-muted small mt-1"
-                style={{ textTransform: "none" }}
-              >
-                Email address cannot be changed after creation.
+
+            {/* Email */}
+            <div className="col-md-6">
+              <label htmlFor="email" className="form-label fw-semibold text-dark">
+                Email Address <span className="text-danger">*</span>
+              </label>
+              <div className="input-group shadow-none mb-1">
+                <span className="input-group-text bg-light border-light-subtle text-muted px-3 py-2">
+                  <i className="fa-solid fa-envelope"></i>
+                </span>
+                <input
+                  type="email"
+                  className="form-control border-light-subtle bg-light border-start-0 ps-0 focus-ring focus-ring-primary py-2"
+                  id="email"
+                  placeholder="user@example.com"
+                  value={formData.email || ""}
+                  onChange={onChange}
+                  readOnly={isEdit}
+                  disabled={isEdit}
+                  required
+                  style={{
+                    fontSize: "1rem",
+                    cursor: isEdit ? "not-allowed" : "text",
+                    opacity: isEdit ? 0.8 : 1,
+                  }}
+                />
               </div>
-            )}
-          </div>
-          {userType !== "admin" && (
-            <div>
-              <div className="d-flex justify-content-between align-items-end mb-2">
-                <label htmlFor="phone" className="form-label fw-semibold mb-0">
-                  Phone
-                </label>
-
-                {/* Verification badge – only when showPhoneOtp is enabled */}
-                {showPhoneOtp && formData.phone && (
-                  isPhoneVerified ? (
-                    <span className="badge bg-success bg-opacity-10 text-success border border-success rounded-pill px-2 py-1 shadow-sm" style={{ fontSize: "0.75rem" }}>
-                      Verified
-                    </span>
-                  ) : (
-                    <span className="badge bg-danger bg-opacity-10 text-danger border border-danger rounded-pill px-2 py-1 shadow-sm" style={{ fontSize: "0.75rem" }}>
-                      Not Verified
-                    </span>
-                  )
-                )}
-              </div>
-
-              {showPhoneOtp ? (
-                // OTP-enabled UI (for self‑service profile editing)
-                <div className="input-group shadow-sm rounded">
-                  <span className={`input-group-text bg-white border-end-0 ${isPhoneVerified ? 'text-success border-success' : (!isPhoneVerified && formData.phone ? 'text-danger border-danger' : 'text-muted')}`}>
-                    <i className="fa-solid fa-phone"></i>
-                  </span>
-                  <input
-                    type="tel"
-                    className={`form-control border-start-0 ps-0 ${isPhoneVerified ? 'border-success text-success fw-bold' : (!isPhoneVerified && formData.phone ? 'is-invalid border-danger' : '')}`}
-                    id="phone"
-                    placeholder="+61 400 000 000"
-                    value={formData.phone || ""}
-                    readOnly
-                    style={{ background: isPhoneVerified ? "#f2fdf5" : "#f8f9fa", cursor: "default" }}
-                  />
-                  {isPhoneVerified && (
-                    <span className="input-group-text bg-white border-success border-start-0 text-success px-2">
-                      <i className="fa-solid fa-circle-check"></i>
-                    </span>
-                  )}
-                  <button
-                    type="button"
-                    className={`btn fw-medium ${!formData.phone ? "btn-outline-primary" : isPhoneVerified ? "btn-success px-3" : "btn-danger"}`}
-                    onClick={onChangePhone}
-                    style={{ zIndex: 0 }}
-                  >
-                    {!formData.phone ? "Add Phone" : isPhoneVerified ? "Change" : "Verify Now"}
-                  </button>
-                </div>
-              ) : (
-                // Simple input (like registration) – used in admin manage‑user pages
-                <div className="input-group shadow-sm rounded">
-                  <span className="input-group-text bg-white text-muted border-end-0">
-                    <i className="fa-solid fa-phone"></i>
-                  </span>
-                  <input
-                    type="tel"
-                    className="form-control border-start-0 ps-0"
-                    id="phone"
-                    placeholder="+61 400 000 000"
-                    value={formData.phone || ""}
-                    onChange={onChange}
-                    required
-                    maxLength="15"
-                    pattern="^(?:\+?61|0)[2-478](?:[\s\-]*\d){8}$"
-                    title="Please enter a valid Australian phone number (e.g., 0400 000 000 or +61 400 000 000)"
-                  />
-                </div>
-              )}
-
-              {/* Warning text only for OTP mode */}
-              {showPhoneOtp && !isPhoneVerified && formData.phone && (
-                <div className="form-text text-danger mt-2 small fw-medium"
-                  style={{ textTransform: "none" }}
-                >
-                  <i className="fa-solid fa-circle-info me-1"></i>
-                  Verification is required to enable full functionality.
+              {isEdit && (
+                <div className="text-muted small mt-1">
+                  <i className="fa-solid fa-lock me-1"></i> Email cannot be changed.
                 </div>
               )}
             </div>
-          )}
-          {/* Contractor Specific Fields */}
-          {userType === "contractor" && (
-            <>
-              <div>
-                <label htmlFor="company_name" className="form-label fw-semibold">
-                  Company Name <span className="text-danger">*</span>
-                </label>
-                <input
-                  type="text"
-                  className="form-control"
-                  id="company_name"
-                  placeholder="e.g. Tech Solutions"
-                  value={formData.company_name || ""}
-                  onChange={(e) => {
-                    let value = e.target.value
-                      .replace(/[^a-zA-Z0-9\s]/g, "")
-                      .replace(/\s+/g, " ");
-                    onChange({
-                      target: {
-                        id: "company_name",
-                        value,
-                      },
-                    });
-                  }}
-                  required
-                  minLength={3}
-                  maxLength={20}
-                  pattern="^[A-Za-z0-9\s]{3,20}$"
-                  title="Company Name must be 3-20 characters"
-                />
-              </div>
 
-              <div>
-                <label htmlFor="abn" className="form-label fw-semibold">
-                  ABN <span className="text-danger">*</span>
-                </label>
-                <input
-                  type="text"
-                  className="form-control"
-                  id="abn"
-                  placeholder="XX-XXX-XXX-XXX"
-                  value={formData.abn || ""}
-                  onChange={(e) => {
-                    let value = e.target.value.replace(/\D/g, "");
-                    value = value.substring(0, 11);
-                    if (value.length > 2 && value.length <= 5) {
-                      value = value.replace(/^(\d{2})(\d+)/, "$1-$2");
-                    } else if (value.length > 5 && value.length <= 8) {
-                      value = value.replace(/^(\d{2})(\d{3})(\d+)/, "$1-$2-$3");
-                    } else if (value.length > 8) {
-                      value = value.replace(
-                        /^(\d{2})(\d{3})(\d{3})(\d+)/,
-                        "$1-$2-$3-$4"
-                      );
-                    }
-                    onChange({
-                      target: {
-                        id: "abn",
-                        value,
-                      },
-                    });
-                  }}
-                  required
-                  maxLength={15}
-                  pattern="^\d{2}-\d{3}-\d{3}-\d{3}$"
-                  title="ABN must be in format 12-345-678-901"
-                />
-              </div>
-              <div>
-                <label htmlFor="acn" className="form-label fw-semibold">
-                  ACN
-                </label>
-                <input
-                  type="text"
-                  className="form-control"
-                  id="acn"
-                  placeholder="XXX-XXX-XXX"
-                  value={formData.acn || ""}
-                  onChange={(e) => {
-                    let value = e.target.value.replace(/\D/g, "");
-                    value = value.substring(0, 9);
-                    if (value.length > 3 && value.length <= 6) {
-                      value = value.replace(/^(\d{3})(\d+)/, "$1-$2");
-                    } else if (value.length > 6) {
-                      value = value.replace(
-                        /^(\d{3})(\d{3})(\d+)/,
-                        "$1-$2-$3"
-                      );
-                    }
-                    onChange({
-                      target: {
-                        id: "acn",
-                        value,
-                      },
-                    });
-                  }}
-                  maxLength={11}
-                  pattern="^\d{3}-\d{3}-\d{3}$"
-                  title="ACN must be in format 123-456-789"
-                />
-              </div>
-            </>
-          )}
+            {/* Phone */}
+            {userType !== "admin" && (
+              <div className="col-md-6">
+                <div
+                  className="d-flex justify-content-between align-items-center mb-2">
+                  <label htmlFor="phone" className="form-label fw-semibold text-dark mb-0">
+                    Phone Number <span className="text-danger">*</span>
+                  </label>
+                  {showPhoneOtp && formData.phone && (
+                    <span
+                      className={`badge rounded-pill px-2 py-1 ${isPhoneVerified
+                        ? "bg-success bg-opacity-10 text-success border border-success"
+                        : "bg-danger bg-opacity-10 text-danger border border-danger"
+                        }`}
+                      style={{ fontSize: "0.75rem" }}
+                    >
+                    </span>
+                  )}
+                </div>
 
-          {/* Staff Residential Status */}
-          {userType === "staff" && (
-            <div className="mt-2" style={{ gridColumn: showCustomStatus ? "1 / -1" : "auto" }}>
-              <div className="row g-3">
-                <div className={showCustomStatus ? "col-md-6" : "col-12"}>
-                  <label htmlFor="staff_document_type" className="form-label fw-semibold">
-                    Residential Status
+                {showPhoneOtp ? (
+                  <div className="input-group shadow-none"
+                    style={{ border: isPhoneVerified ? "1px solid #198754" : "1px solid #dc3545", borderRadius: "0.375rem" }}
+                  >
+                    <span className={`input-group-text bg-light border-light-subtle px-3 py-2 ${isPhoneVerified ? "text-success" : "text-muted"}`}>
+                      <i className="fa-solid fa-phone"></i>
+                    </span>
+                    <input
+                      type="tel"
+                      className={`form-control border-light-subtle border-start-0 ps-0 bg-light py-2 ${isPhoneVerified ? "text-success fw-bold" : ""
+                        }`}
+                      id="phone"
+                      required
+                      placeholder="+61 400 000 000"
+                      value={formData.phone || ""}
+                      readOnly
+                      style={{ fontSize: "1rem", cursor: "default" }}
+                    />
+                    <button
+                      type="button"
+                      className={`btn fw-medium px-4 py-2 ${!formData.phone
+                        ? "btn-danger"
+                        : isPhoneVerified
+                          ? "btn-outline-success border-light-subtle"
+                          : "btn-danger"
+                        }`}
+                      onClick={onChangePhone}
+                      style={{ zIndex: 0, fontSize: "1rem" }}
+                    >
+                      {!formData.phone ? "Add Phone" : isPhoneVerified ? "Change" : "Verify Now"}
+                    </button>
+                  </div>
+                ) : (
+                  <div className="input-group shadow-none">
+                    <span className="input-group-text bg-light border-light-subtle text-muted px-3 py-2">
+                      <i className="fa-solid fa-phone"></i>
+                    </span>
+                    <input
+                      type="tel"
+                      className="form-control border-light-subtle border-start-0 ps-0 bg-light focus-ring focus-ring-primary py-2"
+                      id="phone"
+                      placeholder="+61 400 000 000"
+                      value={formData.phone || ""}
+                      required
+                      onChange={onChange}
+                      maxLength="15"
+                      required
+                      pattern="^(?:\+?61|0)[2-478](?:[\s\-]*\d){8}$"
+                      title="Valid Australian phone required (e.g., 0400 000 000)"
+                      style={{ fontSize: "1rem" }}
+                    />
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Contractor Specific Fields */}
+            {userType === "contractor" && (
+              <>
+                <div className="col-md-6">
+                  <label htmlFor="company_name" className="form-label fw-semibold text-dark">
+                    Company Name <span className="text-danger">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    className="form-control border-light-subtle bg-light focus-ring focus-ring-primary py-2 px-3"
+                    id="company_name"
+                    placeholder="Tech Solutions Pty Ltd"
+                    value={formData.company_name || ""}
+                    onChange={(e) => {
+                      let value = e.target.value
+                        .replace(/[^a-zA-Z0-9\s]/g, "")
+                        .replace(/\s+/g, " ");
+                      onChange({ target: { id: "company_name", value } });
+                    }}
+                    required
+                    style={{ fontSize: "1rem" }}
+                  />
+                </div>
+
+                <div className="col-md-6">
+                  <label htmlFor="abn" className="form-label fw-semibold text-dark">
+                    ABN <span className="text-danger">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    className="form-control border-light-subtle bg-light focus-ring focus-ring-primary py-2 px-3"
+                    id="abn"
+                    placeholder="12-345-678-901"
+                    value={formData.abn || ""}
+                    onChange={(e) => {
+                      let value = e.target.value.replace(/\D/g, "");
+                      value = value.substring(0, 11);
+                      if (value.length > 2 && value.length <= 5) {
+                        value = value.replace(/^(\d{2})(\d+)/, "$1-$2");
+                      } else if (value.length > 5 && value.length <= 8) {
+                        value = value.replace(/^(\d{2})(\d{3})(\d+)/, "$1-$2-$3");
+                      } else if (value.length > 8) {
+                        value = value.replace(/^(\d{2})(\d{3})(\d{3})(\d+)/, "$1-$2-$3-$4");
+                      }
+                      onChange({ target: { id: "abn", value } });
+                    }}
+                    required
+                    maxLength={15}
+                    pattern="^\d{2}-\d{3}-\d{3}-\d{3}$"
+                    style={{ fontSize: "1rem" }}
+                  />
+                </div>
+
+                <div className="col-md-6">
+                  <label htmlFor="acn" className="form-label fw-semibold text-dark">
+                    ACN
+                  </label>
+                  <input
+                    type="text"
+                    className="form-control border-light-subtle bg-light focus-ring focus-ring-primary py-2 px-3"
+                    id="acn"
+                    placeholder="123-456-789"
+                    value={formData.acn || ""}
+                    onChange={(e) => {
+                      let value = e.target.value.replace(/\D/g, "");
+                      value = value.substring(0, 9);
+                      if (value.length > 3 && value.length <= 6) {
+                        value = value.replace(/^(\d{3})(\d+)/, "$1-$2");
+                      } else if (value.length > 6) {
+                        value = value.replace(/^(\d{3})(\d{3})(\d+)/, "$1-$2-$3");
+                      }
+                      onChange({ target: { id: "acn", value } });
+                    }}
+                    maxLength={11}
+                    pattern="^\d{3}-\d{3}-\d{3}$"
+                    style={{ fontSize: "1rem" }}
+                  />
+                </div>
+              </>
+            )}
+
+            {/* Staff Specific Fields */}
+            {userType === "staff" && (
+              <>
+                <div className="col-md-6">
+                  <label htmlFor="staff_document_type" className="form-label fw-semibold text-dark">
+                    Residential Status <span className="text-danger">*</span>
                   </label>
                   <select
-                    className="form-select shadow-sm"
+                    required
+                    className="form-select border-light-subtle bg-light focus-ring focus-ring-primary py-2 px-3"
                     id="staff_document_type"
                     value={selectValue}
                     onChange={(e) => {
@@ -337,8 +302,9 @@ export default function ProfileForm({
                         onChange(e);
                       }
                     }}
+                    style={{ fontSize: "1rem" }}
                   >
-                    <option value="">Select Residential Status</option>
+                    <option value="" disabled>Select Status</option>
                     <option value="student_visa">Student Visa</option>
                     <option value="bridging_visa">Bridging Visa</option>
                     <option value="citizen">Citizen</option>
@@ -349,322 +315,309 @@ export default function ProfileForm({
                 </div>
 
                 {showCustomStatus && (
-                  <div className="col-md-6" style={{ animation: "fadeIn 0.3s ease-in-out" }}>
-                    <label htmlFor="custom_staff_document" className="form-label fw-semibold text-muted">
-                      Please Specify <span className="text-danger">*</span>
+                  <div className="col-md-6">
+                    <label htmlFor="custom_staff_document" className="form-label fw-semibold text-dark">
+                      Specify Status <span className="text-danger">*</span>
                     </label>
                     <input
                       type="text"
-                      className="form-control shadow-sm border-primary"
+                      className="form-control border-primary shadow-sm focus-ring focus-ring-primary py-2 px-3"
                       id="custom_staff_document"
                       placeholder="Enter your residential status"
                       value={formData.staff_document_type === "Other (Please specify)" ? "" : formData.staff_document_type}
                       onChange={(e) => {
-                        onChange({
-                          target: { id: "staff_document_type", value: e.target.value }
-                        });
+                        onChange({ target: { id: "staff_document_type", value: e.target.value } });
                       }}
                       required
                       autoFocus
+                      style={{ fontSize: "1rem" }}
                     />
                   </div>
                 )}
-              </div>
-            </div>
-          )}
 
-          {/* Staff Specific Fields (Gender) */}
-          {userType === "staff" && (
-            <>
-              {/* Security License Number – staff only */}
-              <div>
-                <label htmlFor="security_license_no" className="form-label fw-semibold">
-                  Security License Number <span className="text-danger">*</span>
-                </label>
-                <input
-                  type="text"
-                  className="form-control"
-                  id="security_license_no"
-                  placeholder="e.g. 12345678-01"
-                  value={formData.security_license_no || ""}
-                  onChange={onChange}
-                  required
-                  minLength={5}
-                  maxLength={20}
-                  pattern="^[A-Za-z0-9\-]+$"
-                  title="License number can contain letters, numbers, and hyphens (5‑20 characters)"
-                />
-              </div>
-              <div>
-                <label htmlFor="date_of_birth" className="form-label fw-semibold">
-                  Date of Birth <span className="text-danger">*</span>
-                </label>
-                <div className="input-group shadow-sm rounded position-relative">
-                  {/* Calendar trigger button */}
-                  <button
-                    type="button"
-                    className="input-group-text bg-white text-muted border-end-0"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      if (datePickerRef.current) {
-                        try {
-                          datePickerRef.current.showPicker();
-                        } catch (err) {
-                          datePickerRef.current.focus();
-                        }
-                      }
-                    }}
-                    style={{ cursor: "pointer", zIndex: 10 }}
-                    title="Open Calendar"
-                  >
-                    <i className="fa-solid fa-calendar-days text-primary"></i>
-                  </button>
+                <div className="col-md-6">
+                  <label htmlFor="security_license_no" className="form-label fw-semibold text-dark">
+                    Security License No. <span className="text-danger">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    className="form-control border-light-subtle bg-light focus-ring focus-ring-primary py-2 px-3"
+                    id="security_license_no"
+                    placeholder="12345678-01"
+                    value={formData.security_license_no || ""}
+                    onChange={onChange}
+                    required
+                    style={{ fontSize: "1rem" }}
+                  />
+                </div>
 
-                  {/* Hidden native date input – expects YYYY-MM-DD */}
+                {/* Pure Calendar Input for DOB - Click anywhere to open */}
+                <div className="col-md-6">
+                  <label htmlFor="date_of_birth" className="form-label fw-semibold text-dark">
+                    Date of Birth <span className="text-danger">*</span>
+                  </label>
                   <input
                     type="date"
-                    ref={datePickerRef}
-                    className="position-absolute"
-                    style={{
-                      opacity: 0,
-                      width: 0,
-                      height: 0,
-                      pointerEvents: "none",
-                      bottom: 0,
-                      left: 40,
-                    }}
+                    className="form-control border-light-subtle bg-light focus-ring focus-ring-primary text-muted py-2 px-3"
+                    id="date_of_birth"
+                    name="date_of_birth"
                     value={
                       formData.date_of_birth
                         ? (() => {
-                          // Convert DD/MM/YYYY -> YYYY-MM-DD for the picker
                           const parts = formData.date_of_birth.split("/");
-                          if (parts.length === 3) {
-                            const [d, m, y] = parts;
-                            return `${y}-${m}-${d}`;
-                          }
-                          return "";
+                          if (parts.length === 3) return `${parts[2]}-${parts[1]}-${parts[0]}`;
+                          return formData.date_of_birth;
                         })()
                         : ""
                     }
+                    onClick={(e) => {
+                      if (e.target.showPicker) {
+                        e.target.showPicker();
+                      }
+                    }}
                     onChange={(e) => {
-                      const isoDate = e.target.value; // YYYY-MM-DD
+                      const isoDate = e.target.value;
                       if (isoDate) {
                         const [y, m, d] = isoDate.split("-");
-                        // Store as DD/MM/YYYY
-                        onChange({
-                          target: {
-                            id: "date_of_birth",
-                            name: "date_of_birth",
-                            value: `${d}/${m}/${y}`,
-                          },
-                        });
+                        onChange({ target: { id: "date_of_birth", name: "date_of_birth", value: `${d}/${m}/${y}` } });
+                      } else {
+                        onChange({ target: { id: "date_of_birth", name: "date_of_birth", value: "" } });
                       }
                     }}
                     max={new Date().toISOString().split("T")[0]}
+                    required
+                    style={{ fontSize: "1rem", cursor: "pointer" }}
                   />
+                </div>
 
-                  {/* Visible text input – shows and accepts DD/MM/YYYY */}
-                  <input
-                    type="text"
-                    className="form-control border-start-0 ps-0"
-                    id="date_of_birth"
-                    name="date_of_birth"
-                    placeholder="DD/MM/YYYY"
-                    value={formData.date_of_birth || ""}
-                    onChange={(e) => {
-                      let value = e.target.value.replace(/\D/g, "");
-                      if (value.length > 8) value = value.substring(0, 8);
-                      if (value.length > 2 && value.length <= 4) {
-                        value = value.replace(/^(\d{2})(\d+)/, "$1/$2");
-                      } else if (value.length > 4) {
-                        value = value.replace(
-                          /^(\d{2})(\d{2})(\d+)/,
-                          "$1/$2/$3"
-                        );
-                      }
-                      // Store directly as DD/MM/YYYY (may be partial)
+                <div className="col-6">
+                  <label className="form-label fw-semibold text-dark d-block">Gender</label>
+                  <div className="d-flex flex-wrap gap-3">
+                    {[
+                      { id: "male", label: "Male", icon: "fa-mars" },
+                      { id: "female", label: "Female", icon: "fa-venus" },
+                      { id: "other", label: "Prefer not to say", icon: "fa-user-shield" },
+                    ].map((option) => {
+                      const isSelected = formData.gender === option.id;
+                      return (
+                        <label
+                          key={option.id}
+                          className={`btn d-flex align-items-center gap-2 px-4 py-2 border rounded-pill transition-all ${isSelected ? "btn-primary-custom shadow-sm" : "btn-light border-light-subtle text-muted"
+                            }`}
+                          style={{ cursor: "pointer", fontSize: "0.95rem" }}
+                        >
+                          <input
+                            type="radio"
+                            className="d-none"
+                            name="gender"
+                            value={option.id}
+                            checked={isSelected}
+                            onChange={(e) => {
+                              onChange({ target: { id: "gender", value: e.target.value } });
+                            }}
+                          />
+                          <i className={`fa-solid ${option.icon}`}></i>
+                          {option.label}
+                        </label>
+                      );
+                    })}
+                  </div>
+                </div>
+                <div className="col-md-6">
+                  <label htmlFor="origin_country" className="form-label fw-semibold text-dark">
+                    Country of Origin <span className="text-danger">*</span>
+                  </label>
+                  <Select
+                    inputId="origin_country"
+                    options={countryOptions}
+                    value={selectedCountry}
+                    required
+                    onChange={(selectedOption) => {
                       onChange({
                         target: {
-                          id: "date_of_birth",
-                          name: "date_of_birth",
-                          value,
+                          id: "origin_country",
+                          value: selectedOption ? selectedOption.value : "",
                         },
                       });
                     }}
-                    required
-                    maxLength={10}
-                    pattern="^(0[1-9]|[12][0-9]|3[01])/(0[1-9]|1[012])/\d{4}$"
-                    title="Please enter a valid date in DD/MM/YYYY format"
+                    placeholder="Search country..."
+                    isClearable
+                    isSearchable
+                    styles={{
+                      control: (base, state) => ({
+                        ...base,
+                        minHeight: "42px",
+                        backgroundColor: "#f8f9fa",
+                        borderColor: state.isFocused ? "#0A7C6E" : "#dee2e6",
+                        boxShadow: state.isFocused
+                          ? "0 0 0 0.25rem rgba(10, 124, 110, 0.25)"
+                          : "none",
+                        borderRadius: "0.375rem",
+                        "&:hover": {
+                          borderColor: "#0A7C6E",
+                        },
+                      }),
+
+                      valueContainer: (base) => ({
+                        ...base,
+                        padding: "0 12px",
+                      }),
+
+                      placeholder: (base) => ({
+                        ...base,
+                        color: "#6c757d",
+                      }),
+
+                      singleValue: (base) => ({
+                        ...base,
+                        color: "#212529",
+                      }),
+
+                      input: (base) => ({
+                        ...base,
+                        color: "#212529",
+                      }),
+
+                      menu: (base) => ({
+                        ...base,
+                        borderRadius: "8px",
+                        overflow: "hidden",
+                      }),
+
+                      option: (base, state) => ({
+                        ...base,
+                        backgroundColor: state.isSelected
+                          ? "#0A7C6E"
+                          : state.isFocused
+                            ? "rgba(10, 124, 110, 0.12)"
+                            : "#fff",
+                        color: state.isSelected ? "#fff" : "#212529",
+                        cursor: "pointer",
+                        ":active": {
+                          backgroundColor: "#0A7C6E",
+                          color: "#fff",
+                        },
+                      }),
+
+                      dropdownIndicator: (base, state) => ({
+                        ...base,
+                        color: state.isFocused ? "#0A7C6E" : "#6c757d",
+                        "&:hover": {
+                          color: "#0A7C6E",
+                        },
+                      }),
+
+                      clearIndicator: (base) => ({
+                        ...base,
+                        color: "#6c757d",
+                        "&:hover": {
+                          color: "#0A7C6E",
+                        },
+                      }),
+
+                      indicatorSeparator: (base) => ({
+                        ...base,
+                        backgroundColor: "#dee2e6",
+                      }),
+                    }}
                   />
                 </div>
-              </div>
-              <div className="mt-2">
-                <label className="form-label fw-semibold mb-3">Gender</label>
-                <div className="d-flex flex-column gap-2 ms-1">
-                  {[
-                    { id: "male", label: "Male" },
-                    { id: "female", label: "Female" },
-                    { id: "other", label: "Prefer not to say" }
-                  ].map((option) => {
-                    const isSelected = formData.gender === option.id;
-                    return (
-                      <div key={option.id} className="form-check">
-                        <input
-                          className="form-check-input"
-                          type="radio"
-                          id={`gender_${option.id}`}
-                          name="gender"
-                          value={option.id}
-                          checked={isSelected}
-                          onChange={(e) => {
-                            onChange({
-                              target: { id: "gender", value: e.target.value },
-                            });
-                          }}
-                          style={{ cursor: "pointer" }}
-                        />
-                        <label
-                          className="form-check-label text-dark"
-                          htmlFor={`gender_${option.id}`}
-                          style={{ cursor: "pointer", fontSize: "1.05rem" }}
-                        >
-                          {option.label}
-                        </label>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
+              </>
+            )}
 
-              <div className="mt-2">
-                <label htmlFor="origin_country" className="form-label fw-semibold">
-                  Country of Origin <span className="text-danger">*</span>
-                </label>
-                <Select
-                  inputId="origin_country"
-                  options={countryOptions}
-                  value={selectedCountry}
-                  onChange={(selectedOption) => {
-                    onChange({
-                      target: {
-                        id: "origin_country",
-                        value: selectedOption ? selectedOption.value : "",
-                      },
-                    });
-                  }}
-                  placeholder="select your country of origin"
-                  isClearable
-                  isSearchable
-                  styles={{
-                    control: (base) => ({
-                      ...base,
-                      minHeight: "38px",
-                      borderColor: "#ced4da",
-                      boxShadow: "none",
-                      "&:hover": {
-                        borderColor: "#0A7C6E",
-                      },
-                    }),
-                  }}
+            {/* Address Full Width */}
+            <div className="col-12 mt-4 pt-2 border-top">
+              <label htmlFor="address" className="form-label fw-semibold text-dark">
+                Residential Address <span className="text-danger">*</span>
+              </label>
+              <div className="input-group shadow-none">
+                <span className="input-group-text bg-light border-light-subtle text-muted px-3 py-2">
+                  <i className="fa-solid fa-location-dot"></i>
+                </span>
+                <input
+                  type="text"
+                  className="form-control border-light-subtle border-start-0 ps-0 bg-light focus-ring focus-ring-primary py-2"
+                  id="address"
+                  placeholder="Start typing your address to auto-fill..."
+                  value={formData.address || ""}
+                  onChange={onChange}
+                  required
+                  maxLength={155}
+                  autoComplete="off"
+                  style={{ fontSize: "1rem" }}
                 />
-                <div className="form-text"
-                  style={{ textTransform: "none" }}
-                >
-                  Your passport or nationality country – used for visa checks.
-                </div>
               </div>
-            </>
-          )}
-          <div style={{ gridColumn: "1 / -1", marginTop: "1rem" }}>
-            <label htmlFor="address" className="form-label fw-semibold">
-              Address <span className="text-danger">*</span>
-            </label>
-            <div className="input-group shadow-sm rounded">
-              <span className="input-group-text bg-white text-muted border-end-0">
-                <i className="fa-solid fa-location-dot"></i>
-              </span>
+            </div>
+
+            {/* Auto-filled Location Details grouped compactly */}
+            <div className="col-md-4">
+              <label htmlFor="city" className="form-label fw-semibold text-muted small">City</label>
               <input
                 type="text"
-                className="form-control border-start-0 ps-0"
-                id="address"
-                placeholder="Start typing your address to auto-fill..."
-                value={formData.address || ""}
-                onChange={onChange}
-                required
-                maxLength={155}
-                title="Address cannot exceed 155 characters"
-                autoComplete="off"
+                className="form-control bg-secondary bg-opacity-10 text-muted border-0 py-2 px-3"
+                id="city"
+                placeholder="Auto-filled"
+                value={formData.city || ""}
+                readOnly
+                style={{ fontSize: "1rem" }}
               />
             </div>
-            <div className="d-flex justify-content-between form-text mt-1 text-muted small"
-              style={{ textTransform: "none" }}
-            >
-              <span>Selecting an address will automatically fill your city, state, and country.</span>
-              <span>Max 155 characters.</span>
+
+            <div className="col-md-4">
+              <label htmlFor="state" className="form-label fw-semibold text-muted small">State / Province</label>
+              <input
+                type="text"
+                className="form-control bg-secondary bg-opacity-10 text-muted border-0 py-2 px-3"
+                id="state"
+                placeholder="Auto-filled"
+                value={AU_STATE_MAP[formData.state?.toLowerCase()] || formData.state || ""}
+                readOnly
+                style={{ textTransform: "capitalize", fontSize: "1rem" }}
+              />
+            </div>
+
+            <div className="col-md-4">
+              <label htmlFor="country" className="form-label fw-semibold text-muted small">Country</label>
+              <input
+                type="text"
+                className="form-control bg-secondary bg-opacity-10 text-muted border-0 py-2 px-3"
+                id="country"
+                placeholder="Auto-filled"
+                value={formData.country || ""}
+                readOnly
+                style={{ fontSize: "1rem" }}
+              />
             </div>
           </div>
 
-          <div>
-            <label htmlFor="city" className="form-label fw-semibold">City</label>
-            <input
-              type="text"
-              className="form-control"
-              id="city"
-              placeholder="Auto-filled city"
-              value={formData.city || ""}
-              readOnly
-              style={{ background: "#f1f3f5", cursor: "not-allowed" }}
-            />
-          </div>
-          <div>
-            <label htmlFor="state" className="form-label fw-semibold">State / Province</label>
-            <input
-              type="text"
-              className="form-control"
-              id="state"
-              placeholder="Auto-filled state"
-              value={
-                AU_STATE_MAP[formData.state?.toLowerCase()] || formData.state || ""
-              }
-              readOnly
-              style={{
-                background: "#f1f3f5",
-                cursor: "not-allowed",
-                textTransform: "capitalize",
-              }}
-            />
-          </div>
-          <div>
-            <label htmlFor="country" className="form-label fw-semibold">Country</label>
-            <input
-              type="text"
-              className="form-control"
-              id="country"
-              placeholder="Auto-filled country"
-              value={formData.country || ""}
-              readOnly
-              style={{ background: "#f1f3f5", cursor: "not-allowed" }}
-            />
-          </div>
+          {/* Render Any Extra Fields Passed via Props */}
+          {extraFields && <div className="row mt-4 pt-3">{extraFields}</div>}
         </div>
 
-        {extraFields && (
-          <div className="row mt-4">
-            {extraFields}
-          </div>
-        )}
-
-        {footer ? (
-          <div className="settings-card-footer mt-4 pt-4 border-top d-flex justify-content-end">
-            {footer}
-          </div>
-        ) : (
-          <div className="settings-card-footer mt-4 pt-4 border-top d-flex justify-content-end">
-            <button type="submit" className="btn btn-primary-custom px-5 py-2 fw-bold shadow-sm" disabled={loading}>
-              {loading ? (<> <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Saving... </>) : ("Save Changes")}
+        {/* Footer actions */}
+        <div className="card-footer bg-white px-4 px-md-5 py-4 border-top d-flex justify-content-end">
+          {footer ? (
+            footer
+          ) : (
+            <button
+              type="submit"
+              className="btn btn-primary btn-lg px-5 shadow-sm rounded-pill d-flex align-items-center gap-2"
+              disabled={loading}
+              style={{ fontWeight: "600", transition: "all 0.2s ease" }}
+            >
+              {loading ? (
+                <>
+                  <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                  Saving...
+                </>
+              ) : (
+                <>
+                  Save Changes
+                </>
+              )}
             </button>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </form>
   );

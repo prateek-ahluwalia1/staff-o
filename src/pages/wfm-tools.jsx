@@ -18,7 +18,7 @@ const WFMTools = () => {
         <p className="dashboard-tools-subtitle"
           style={{ textTransform: "none" }}
         >
-          Leave tools are managed here. Calls now start directly from chat.
+          Leave tools and registered staff are managed here.
         </p>
       </div>
 

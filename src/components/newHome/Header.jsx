@@ -271,14 +271,14 @@ function Header() {
 
           <NavLink to="/pricing" onClick={handleLinkClick} style={{ color: '#ccc', textDecoration: 'none', fontFamily: "'Barlow Condensed', sans-serif", fontSize: '14px', fontWeight: 600, letterSpacing: '0.1em' }}>Pricing</NavLink>
 
-          <div className={`nav-item-dropdown ${openDropdown === 'resources' ? 'mobile-expanded' : ''}`}>
+          {/* <div className={`nav-item-dropdown ${openDropdown === 'resources' ? 'mobile-expanded' : ''}`}>
             <span onClick={() => { if (window.innerWidth < 992) setOpenDropdown(openDropdown === 'resources' ? null : 'resources') }} style={{ color: '#ccc', cursor: 'pointer', fontFamily: "'Barlow Condensed', sans-serif", fontSize: '14px', fontWeight: 600, letterSpacing: '0.1em' }}>Resources <i className="fa fa-chevron-down" style={{ color: '#0A7C6E', fontSize: '11px', marginLeft: '3px' }}></i></span>
             <div className="dropdown-content">
               <NavLink to="/resources/blogs" onClick={handleLinkClick}>Blogs</NavLink>
-              {/* <NavLink to="/resources/pr-news" onClick={handleLinkClick}>PR/News</NavLink>
-              <NavLink to="/resources/case-studies" onClick={handleLinkClick}>Case Studies</NavLink> */}
+              <NavLink to="/resources/pr-news" onClick={handleLinkClick}>PR/News</NavLink>
+              <NavLink to="/resources/case-studies" onClick={handleLinkClick}>Case Studies</NavLink>
             </div>
-          </div>
+          </div> */}
 
           <div className={`nav-item-dropdown ${openDropdown === 'company' ? 'mobile-expanded' : ''}`}>
             <span onClick={() => { if (window.innerWidth < 992) setOpenDropdown(openDropdown === 'company' ? null : 'company') }} style={{ color: '#ccc', cursor: 'pointer', fontFamily: "'Barlow Condensed', sans-serif", fontSize: '14px', fontWeight: 600, letterSpacing: '0.1em' }}>Company <i className="fa fa-chevron-down" style={{ color: '#0A7C6E', fontSize: '11px', marginLeft: '3px' }}></i></span>

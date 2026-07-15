@@ -9,7 +9,15 @@ import {
   resolveProfileImageUrl,
 } from "../../utils/profileImage";
 import "./DashboardStyles.css";
-import dashboardBanner from "../../assets/images/dashboard-banner.png";
+
+const getInitials = (name = "") =>
+  name
+    .split(" ")
+    .filter(Boolean)
+    .map((n) => n[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2) || "?";
 
 export default function StaffDashboard() {
   const { userdata } = useSelector((state) => state.auth);
@@ -30,7 +38,6 @@ export default function StaffDashboard() {
 
   const [chartData, setChartData] = useState([]);
 
-  // Update stats and lists dynamically from the exact API payload keys
   useEffect(() => {
     if (!fetchResponse?.data) return;
 
@@ -40,10 +47,9 @@ export default function StaffDashboard() {
       totalJobs: dashData.total_assigned_jobs || 0,
       completedJobs: dashData.completed_jobs || 0,
       pendingJobs: dashData.pending_jobs || 0,
-      // Format to 2 decimal places (e.g., 207.9 -> 207.90)
       earnedThisMonth: Number(dashData.earned_this_month || 0).toLocaleString(undefined, {
         minimumFractionDigits: 2,
-        maximumFractionDigits: 2
+        maximumFractionDigits: 2,
       }),
     });
 
@@ -53,7 +59,6 @@ export default function StaffDashboard() {
       completed_jobs: month.completed_shifts || 0,
     }));
     setChartData(mappedChartData);
-
   }, [fetchResponse]);
 
   const imageUrl = resolveProfileImageUrl(profileImage);
@@ -62,41 +67,37 @@ export default function StaffDashboard() {
 
   return (
     <div className="dashboard-main staff-dashboard">
-      {/* V3 Premium Profile Card */}
+      {/* Console header */}
       <div className="dashboard-cover-card">
-        <div className="dashboard-cover-media">
-          <img src={dashboardBanner} alt="Dashboard" />
-        </div>
         <div className="dashboard-cover-profile">
-          <div className="cover-avatar">
-            {imageUrl ? (
-              <img src={imageUrl} alt="Profile" />
-            ) : (
-              <div className="avatar-placeholder">
-                {username
-                  .split(" ")
-                  .map((n) => n[0])
-                  .join("")
-                  .toUpperCase()
-                  .slice(0, 2)}
-              </div>
-            )}
-          </div>
-
           <div className="profile-info">
-            <div className="profile-text">
-              <h3>{username}</h3>
-              <p className="profile-role">{address}</p>
-
-              {/* Flex container to hold contact pills nicely */}
-              <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
-                <div className="profile-contact"
-                style = {{textTransform: "none"}}
-                >
-                  <i className="fa-solid fa-envelope"></i> {email}
+            <div style={{ display: "flex", alignItems: "center", gap: "1.1rem" }}>
+              <div className="cover-avatar">
+                {imageUrl ? (
+                  <img src={imageUrl} alt="Profile" />
+                ) : (
+                  <div className="avatar-placeholder">{getInitials(username)}</div>
+                )}
+              </div>
+              <div className="profile-text">
+                <span className="dash-live">
+                  <span className="dash-live-dot" />
+                  Live
+                </span>
+                <h3>{username}</h3>
+                <p className="profile-role">{address}</p>
+                <div style={{ display: "flex", gap: "0.6rem", flexWrap: "wrap" }}>
+                  <div className="profile-contact" style={{ textTransform: "none" }}>
+                    <i className="fa-solid fa-envelope"></i> {email}
+                  </div>
                 </div>
               </div>
             </div>
+          </div>
+
+          <div className="headline-metric">
+            <span className="hm-label">Earned This Month</span>
+            <div className="hm-value mono">${dashboardStats.earnedThisMonth}</div>
           </div>
         </div>
       </div>
@@ -108,29 +109,29 @@ export default function StaffDashboard() {
             icon="fa-solid fa-briefcase"
             title="Total Assigned Jobs"
             value={dashboardStats.totalJobs}
-            bgColor="#e3f2fd"
-            iconColor="#45B7D1"
+            bgColor="#eef1f5"
+            iconColor="#334155"
           />
           <StatsCard
             icon="fa-solid fa-check-circle"
             title="Completed Jobs"
             value={dashboardStats.completedJobs}
-            bgColor="#e8f5e9"
-            iconColor="#4ECDC4"
+            bgColor="#e2f6ee"
+            iconColor="#047857"
           />
           <StatsCard
             icon="fa-solid fa-clock"
             title="Pending Jobs"
             value={dashboardStats.pendingJobs}
-            bgColor="#fff3e0"
-            iconColor="#FFB74D"
+            bgColor="#fdf1de"
+            iconColor="#b45309"
           />
           <StatsCard
             icon="fa-solid fa-dollar-sign"
             title="Earned This Month"
             value={`$${dashboardStats.earnedThisMonth}`}
-            bgColor="#fce4ec"
-            iconColor="#FF6B6B"
+            bgColor="#e5f4f2"
+            iconColor="#0f766e"
           />
         </div>
       </section>

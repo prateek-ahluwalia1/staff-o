@@ -12,7 +12,6 @@ import {
   resolveProfileImageUrl,
 } from "../../utils/profileImage";
 import "./DashboardStyles.css";
-import dashboardBanner from "../../assets/images/dashboard-banner.png";
 import { NavLink } from "react-router-dom";
 
 // Helper function to safely format numbers to exactly 2 decimal places with commas
@@ -24,6 +23,16 @@ const formatCurrency = (value) => {
     maximumFractionDigits: 2,
   });
 };
+
+// Turns "Capital Security" into "CS" for the table's partner chip
+const getInitials = (name = "") =>
+  name
+    .split(" ")
+    .filter(Boolean)
+    .map((n) => n[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2) || "?";
 
 export default function AdminDashboard() {
   const { userdata } = useSelector((state) => state.auth);
@@ -59,7 +68,6 @@ export default function AdminDashboard() {
       totalCustomers: dashData.customer_count || 0,
       totalJobs: dashData.total_jobs || 0,
       completedJobs: dashData.completed_jobs_count || 0,
-      // Apply the rounding formatter to revenue fields
       totalRevenue: formatCurrency(dashData.total_revenue),
       thisMonthRevenue: formatCurrency(dashData.this_month_revenue),
     });
@@ -70,9 +78,7 @@ export default function AdminDashboard() {
         name: c.name,
         staff: c.staff_count || 0,
         jobs: c.total_jobs || 0,
-        // Apply the rounding formatter to individual contractor revenue
         revenue: formatCurrency(c.revenue),
-        // Keep raw revenue for sorting purposes
         rawRevenue: Number(c.revenue) || 0,
       }))
       .sort((a, b) => b.rawRevenue - a.rawRevenue);
@@ -86,38 +92,35 @@ export default function AdminDashboard() {
 
   return (
     <div className="dashboard-main admin-dashboard">
-      {/* V3 Premium Profile Card */}
+      {/* Console header */}
       <div className="dashboard-cover-card">
-        <div className="dashboard-cover-media">
-          <img src={dashboardBanner} alt="Dashboard" />
-        </div>
         <div className="dashboard-cover-profile">
-          <div className="cover-avatar">
-            {imageUrl ? (
-              <img src={imageUrl} alt="Profile" />
-            ) : (
-              <div className="avatar-placeholder">
-                {username
-                  .split(" ")
-                  .map((n) => n[0])
-                  .join("")
-                  .toUpperCase()
-                  .slice(0, 2)}
-              </div>
-            )}
-          </div>
-
           <div className="profile-info">
-            <div className="profile-text">
-              <h3>Admin Panel - {username}</h3>
-              <p className="profile-role">Platform Management & Analytics</p>
-              <div className="profile-contact"
-                style={{ textTransform: "none" }}
-              >
-                <i className="fa-solid fa-envelope"></i> {email}
+            <div style={{ display: "flex", alignItems: "center", gap: "1.1rem" }}>
+              <div className="cover-avatar">
+                {imageUrl ? (
+                  <img src={imageUrl} alt="Profile" />
+                ) : (
+                  <div className="avatar-placeholder">{getInitials(username)}</div>
+                )}
+              </div>
+              <div className="profile-text">
+                <span className="dash-live">
+                  <span className="dash-live-dot" />
+                  Live
+                </span>
+                <h3>Admin Panel — {username}</h3>
+                <p className="profile-role">Platform Management &amp; Analytics</p>
+                <div className="profile-contact" style={{ textTransform: "none" }}>
+                  <i className="fa-solid fa-envelope"></i> {email}
+                </div>
               </div>
             </div>
-            {/* You can add a button here later like <button className="btn btn-outline-primary">Edit Profile</button> if needed */}
+          </div>
+
+          <div className="headline-metric">
+            <span className="hm-label">Total Revenue</span>
+            <div className="hm-value mono">${adminStats.totalRevenue}</div>
           </div>
         </div>
       </div>
@@ -129,29 +132,29 @@ export default function AdminDashboard() {
             icon="fa-solid fa-users"
             title="Total Users"
             value={adminStats.totalUsers}
-            bgColor="#e3f2fd"
-            iconColor="#45B7D1"
+            bgColor="#e5f4f2"
+            iconColor="#0f766e"
           />
           <StatsCard
             icon="fa-solid fa-briefcase"
             title="Total Jobs"
             value={adminStats.totalJobs}
-            bgColor="#e8f5e9"
-            iconColor="#4ECDC4"
+            bgColor="#e5f4f2"
+            iconColor="#14b8a6"
           />
           <StatsCard
             icon="fa-solid fa-dollar-sign"
             title="Total Revenue"
             value={`$${adminStats.totalRevenue}`}
-            bgColor="#fff3e0"
-            iconColor="#FFB74D"
+            bgColor="#fdf1de"
+            iconColor="#b45309"
           />
           <StatsCard
             icon="fa-solid fa-chart-line"
             title="This Month Revenue"
             value={`$${adminStats.thisMonthRevenue}`}
-            bgColor="#fce4ec"
-            iconColor="#FF6B6B"
+            bgColor="#e2f6ee"
+            iconColor="#047857"
           />
         </div>
       </section>
@@ -163,29 +166,29 @@ export default function AdminDashboard() {
             icon="fa-solid fa-user-tie"
             title="Staff Members"
             value={adminStats.totalStaff}
-            bgColor="#e0e7ff"
-            iconColor="#6366f1"
+            bgColor="#eef1f5"
+            iconColor="#334155"
           />
           <StatsCard
             icon="fa-solid fa-handshake"
             title="Resource Partners"
             value={adminStats.totalContractors}
-            bgColor="#fce7f3"
-            iconColor="#ec4899"
+            bgColor="#e5f4f2"
+            iconColor="#0f766e"
           />
           <StatsCard
             icon="fa-solid fa-building"
             title="Clients"
             value={adminStats.totalCustomers}
-            bgColor="#dcfce7"
-            iconColor="#22c55e"
+            bgColor="#eef1f5"
+            iconColor="#334155"
           />
           <StatsCard
             icon="fa-solid fa-circle-check"
             title="Completed Jobs"
             value={adminStats.completedJobs}
-            bgColor="#fef08a"
-            iconColor="#eab308"
+            bgColor="#e2f6ee"
+            iconColor="#047857"
           />
         </div>
       </section>
@@ -198,7 +201,7 @@ export default function AdminDashboard() {
               data={{
                 staff: adminStats.totalStaff,
                 contractors: adminStats.totalContractors,
-                customers: adminStats.totalCustomers
+                customers: adminStats.totalCustomers,
               }}
             />
           </div>
@@ -219,11 +222,7 @@ export default function AdminDashboard() {
       <section className="dashboard-panel">
         <div className="panel-heading">
           <h3>Top Performing Resource Partners</h3>
-          <Link
-            to="/manage-users"
-            state={{ targetTab: 'sub_contractor' }}
-            className="view-all-link"
-          >
+          <Link to="/manage-users" state={{ targetTab: "sub_contractor" }} className="view-all-link">
             View All Resource Partners
           </Link>
         </div>
@@ -231,7 +230,7 @@ export default function AdminDashboard() {
           <table className="table align-middle">
             <thead>
               <tr>
-                <th>Resource Partner Name</th>
+                <th>Resource Partner</th>
                 <th>Assigned Staff</th>
                 <th>Jobs Completed</th>
                 <th>Total Revenue</th>
@@ -242,35 +241,20 @@ export default function AdminDashboard() {
               {topContractors.length > 0 ? (
                 topContractors.map((contractor) => (
                   <tr key={contractor.id}>
-                    <td className="fw-500">{contractor.name}</td>
+                    <td>
+                      <div className="partner-cell">
+                        <div className="partner-chip">{getInitials(contractor.name)}</div>
+                        <span className="fw-500">{contractor.name}</span>
+                      </div>
+                    </td>
                     <td>{contractor.staff}</td>
                     <td>{contractor.jobs}</td>
-                    <td className="fw-500 text-success">${contractor.revenue}</td>
+                    <td className="revenue-cell">${contractor.revenue}</td>
                     <td>
                       <NavLink
-                        to='/manage-users'
-                        state={{ targetTab: 'sub_contractor', editUserId: contractor.id }}
-                        className="btn btn-sm"
-                        style={{
-                          backgroundColor: "#f0f4ff",
-                          color: "#0f766e",
-                          border: "1px solid #0f766e",
-                          borderRadius: "6px",
-                          padding: "6px 16px",
-                          textDecoration: "none",
-                          fontWeight: "500",
-                          fontSize: "0.85rem",
-                          display: "inline-block",
-                          transition: "all 0.2s ease"
-                        }}
-                        onMouseOver={(e) => {
-                          e.target.style.backgroundColor = "#0f766e";
-                          e.target.style.color = "#ffffff";
-                        }}
-                        onMouseOut={(e) => {
-                          e.target.style.backgroundColor = "#f0f4ff";
-                          e.target.style.color = "#0f766e";
-                        }}
+                        to="/manage-users"
+                        state={{ targetTab: "sub_contractor", editUserId: contractor.id }}
+                        className="manage-btn"
                       >
                         Manage
                       </NavLink>

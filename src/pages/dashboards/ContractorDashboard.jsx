@@ -9,7 +9,15 @@ import {
   resolveProfileImageUrl,
 } from "../../utils/profileImage";
 import "./DashboardStyles.css";
-import dashboardBanner from "../../assets/images/dashboard-banner.png";
+
+const getInitials = (name = "") =>
+  name
+    .split(" ")
+    .filter(Boolean)
+    .map((n) => n[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2) || "?";
 
 export default function ContractorDashboard() {
   const { userdata } = useSelector((state) => state.auth);
@@ -45,7 +53,6 @@ export default function ContractorDashboard() {
       completedJobs: dashData.completed_jobs || 0,
       pendingLeaveRequests: dashData.pending_leave_requests || 0,
     });
-
   }, [fetchResponse]);
 
   const imageUrl = resolveProfileImageUrl(profileImage);
@@ -54,44 +61,40 @@ export default function ContractorDashboard() {
 
   return (
     <div className="dashboard-main contractor-dashboard">
-      {/* V3 Premium Profile Card */}
+      {/* Console header */}
       <div className="dashboard-cover-card">
-        <div className="dashboard-cover-media">
-          <img src={dashboardBanner} alt="Dashboard" />
-        </div>
         <div className="dashboard-cover-profile">
-          <div className="cover-avatar">
-            {imageUrl ? (
-              <img src={imageUrl} alt="Profile" />
-            ) : (
-              <div className="avatar-placeholder">
-                {username
-                  .split(" ")
-                  .map((n) => n[0])
-                  .join("")
-                  .toUpperCase()
-                  .slice(0, 2)}
-              </div>
-            )}
-          </div>
-
           <div className="profile-info">
-            <div className="profile-text">
-              <h3>{username}</h3>
-              <p className="profile-role">{companyName}</p>
-
-              {/* Flex container to hold multiple contact pills nicely */}
-              <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
-                <div className="profile-contact">
-                  <i className="fa-solid fa-phone"></i> {phone}
-                </div>
-                <div className="profile-contact"
-                  style={{ textTransform: "none" }}
-                >
-                  <i className="fa-solid fa-envelope"></i> {email}
+            <div style={{ display: "flex", alignItems: "center", gap: "1.1rem" }}>
+              <div className="cover-avatar">
+                {imageUrl ? (
+                  <img src={imageUrl} alt="Profile" />
+                ) : (
+                  <div className="avatar-placeholder">{getInitials(username)}</div>
+                )}
+              </div>
+              <div className="profile-text">
+                <span className="dash-live">
+                  <span className="dash-live-dot" />
+                  Live
+                </span>
+                <h3>{username}</h3>
+                <p className="profile-role">{companyName}</p>
+                <div style={{ display: "flex", gap: "0.6rem", flexWrap: "wrap" }}>
+                  <div className="profile-contact">
+                    <i className="fa-solid fa-phone"></i> {phone}
+                  </div>
+                  <div className="profile-contact" style={{ textTransform: "none" }}>
+                    <i className="fa-solid fa-envelope"></i> {email}
+                  </div>
                 </div>
               </div>
             </div>
+          </div>
+
+          <div className="headline-metric">
+            <span className="hm-label">Active Jobs</span>
+            <div className="hm-value mono">{dashboardStats.activeJobs}</div>
           </div>
         </div>
       </div>
@@ -103,22 +106,29 @@ export default function ContractorDashboard() {
             icon="fa-solid fa-users"
             title="Total Assigned Staff"
             value={dashboardStats.totalStaff}
-            bgColor="#e3f2fd"
-            iconColor="#45B7D1"
+            bgColor="#eef1f5"
+            iconColor="#334155"
           />
           <StatsCard
             icon="fa-solid fa-briefcase"
             title="Active Jobs"
             value={dashboardStats.activeJobs}
-            bgColor="#fff3e0"
-            iconColor="#FFB74D"
+            bgColor="#e5f4f2"
+            iconColor="#0f766e"
           />
           <StatsCard
             icon="fa-solid fa-check-double"
             title="Completed Jobs"
             value={dashboardStats.completedJobs}
-            bgColor="#e8f5e9"
-            iconColor="#4ECDC4"
+            bgColor="#e2f6ee"
+            iconColor="#047857"
+          />
+          <StatsCard
+            icon="fa-solid fa-calendar-xmark"
+            title="Pending Leave Requests"
+            value={dashboardStats.pendingLeaveRequests}
+            bgColor="#fdf1de"
+            iconColor="#b45309"
           />
         </div>
       </section>

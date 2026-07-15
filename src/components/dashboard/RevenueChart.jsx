@@ -7,10 +7,8 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
-//import { Link } from "react-router-dom";
 
 export default function RevenueChart({ data = [] }) {
-  // Format API "YYYY-MM" to "MMM YY" (e.g., "2026-03" -> "Mar 26")
   const formatMonth = (monthStr) => {
     if (!monthStr) return "";
     const [year, month] = monthStr.split("-");
@@ -28,30 +26,43 @@ export default function RevenueChart({ data = [] }) {
       <h4>Revenue Trend</h4>
       {formattedData.length > 0 ? (
         <ResponsiveContainer width="100%" height={300}>
-          <AreaChart data={formattedData}>
+          <AreaChart data={formattedData} margin={{ left: -12 }}>
             <defs>
               <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#4ECDC4" stopOpacity={0.8} />
-                <stop offset="95%" stopColor="#4ECDC4" stopOpacity={0} />
+                <stop offset="5%" stopColor="#0f766e" stopOpacity={0.28} />
+                <stop offset="95%" stopColor="#0f766e" stopOpacity={0} />
               </linearGradient>
             </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.1)" vertical={false} />
-            <XAxis dataKey="displayMonth" tick={{ fill: "#666" }} tickMargin={10} />
-            <YAxis tick={{ fill: "#666" }} tickMargin={10} tickFormatter={(value) => `$${value}`} />
+            <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
+            <XAxis
+              dataKey="displayMonth"
+              tick={{ fill: "#64748b", fontSize: 12, fontFamily: "Inter, sans-serif" }}
+              tickMargin={10}
+              axisLine={{ stroke: "#e2e8f0" }}
+              tickLine={false}
+            />
+            <YAxis
+              tick={{ fill: "#64748b", fontSize: 12, fontFamily: "'IBM Plex Mono', monospace" }}
+              tickMargin={10}
+              axisLine={false}
+              tickLine={false}
+              tickFormatter={(value) => `$${value}`}
+            />
             <Tooltip
               contentStyle={{
                 backgroundColor: "#fff",
-                border: "none",
-                borderRadius: "8px",
+                border: "1px solid #e2e8f0",
+                borderRadius: "10px",
                 boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
+                fontFamily: "Inter, sans-serif",
               }}
               formatter={(value) => [`$${value.toLocaleString()}`, "Revenue"]}
             />
             <Area
               type="monotone"
               dataKey="revenue"
-              stroke="#4ECDC4"
-              strokeWidth={3}
+              stroke="#0f766e"
+              strokeWidth={2.5}
               fillOpacity={1}
               fill="url(#colorRevenue)"
             />

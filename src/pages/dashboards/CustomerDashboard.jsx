@@ -4,13 +4,44 @@ import StatsCard from "../../components/dashboard/StatsCard";
 import JobTrendChart from "../../components/dashboard/JobTrendChart";
 import useFetch from "../../hooks/useFetch";
 import Loader from "../../components/Loader";
-import { Link } from 'react-router-dom'
+import { Link } from "react-router-dom";
 import {
   getProfileImageFromUserdata,
   resolveProfileImageUrl,
 } from "../../utils/profileImage";
 import "./DashboardStyles.css";
-import dashboardBanner from "../../assets/images/dashboard-banner.png";
+
+const getInitials = (name = "") =>
+  name
+    .split(" ")
+    .filter(Boolean)
+    .map((n) => n[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2) || "?";
+
+// Maps whatever status string the API sends to one of our three badge tones
+const statusTone = (status = "") => {
+  const s = status.toLowerCase();
+  if (s === "completed") return "is-completed";
+  if (s === "confirmed" || s === "active") return "is-active";
+  return "is-pending";
+};
+
+// Helper function to format dates to DD/MM/YYYY
+const formatDate = (dateString) => {
+  if (!dateString || dateString === "N/A") return "N/A";
+
+  const date = new Date(dateString);
+  // Check if the date is valid
+  if (isNaN(date.getTime())) return dateString;
+
+  const day = String(date.getDate()).padStart(2, "0");
+  const month = String(date.getMonth() + 1).padStart(2, "0"); // Months are 0-indexed
+  const year = date.getFullYear();
+
+  return `${day}/${month}/${year}`;
+};
 
 export default function CustomerDashboard() {
   const { userdata } = useSelector((state) => state.auth);
@@ -34,13 +65,11 @@ export default function CustomerDashboard() {
 
   const [recentJobs, setRecentJobs] = useState([]);
 
-  // Update stats and lists dynamically from API data
   useEffect(() => {
     if (!fetchResponse?.data) return;
 
     const dashData = fetchResponse.data;
 
-    // Active jobs: Total jobs minus completed jobs
     const calculatedActiveJobs = Math.max(
       (dashData.total_jobs || 0) - (dashData.completed_jobs || 0),
       0
@@ -52,18 +81,17 @@ export default function CustomerDashboard() {
       staffAssigned: dashData.staff_assigned || 0,
       spentThisMonth: Number(dashData.total_spend || 0).toLocaleString(undefined, {
         minimumFractionDigits: 2,
-        maximumFractionDigits: 2
+        maximumFractionDigits: 2,
       }),
       invoicesPending: dashData.invoices_pending || 0,
     });
 
-    // Mapping jobs based strictly on the `this_week_jobs` payload
     const mappedJobs = (dashData.this_week_jobs || []).map((j) => ({
       id: j.id,
-      role: "Assigned Role", // Fallback as 'role' isn't in your exact payload
+      role: "Assigned Role",
       staff: j.assigned_staff_name || "Unassigned",
-      startDate: j.start || "N/A",
-      endDate: j.end || "N/A",
+      startDate: formatDate(j.start), // Formatted here
+      endDate: formatDate(j.end),     // Formatted here
       cost: Number(j.job_amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2 }),
       status: j.job_status || "Active",
     }));
@@ -77,44 +105,40 @@ export default function CustomerDashboard() {
 
   return (
     <div className="dashboard-main customer-dashboard">
-      {/* V3 Premium Profile Card */}
+      {/* Console header */}
       <div className="dashboard-cover-card">
-        <div className="dashboard-cover-media">
-          <img src={dashboardBanner} alt="Dashboard" />
-        </div>
         <div className="dashboard-cover-profile">
-          <div className="cover-avatar">
-            {imageUrl ? (
-              <img src={imageUrl} alt="Profile" />
-            ) : (
-              <div className="avatar-placeholder">
-                {username
-                  .split(" ")
-                  .map((n) => n[0])
-                  .join("")
-                  .toUpperCase()
-                  .slice(0, 2)}
-              </div>
-            )}
-          </div>
-
           <div className="profile-info">
-            <div className="profile-text">
-              <h3>{username}</h3>
-              <p className="profile-role">{address}</p>
-
-              {/* Flex container to hold multiple contact pills nicely */}
-              <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
-                <div className="profile-contact">
-                  <i className="fa-solid fa-phone"></i> {phone}
-                </div>
-                <div className="profile-contact"
-                  style={{ textTransform: "none" }}
-                >
-                  <i className="fa-solid fa-envelope"></i> {email}
+            <div style={{ display: "flex", alignItems: "center", gap: "1.1rem" }}>
+              <div className="cover-avatar">
+                {imageUrl ? (
+                  <img src={imageUrl} alt="Profile" />
+                ) : (
+                  <div className="avatar-placeholder">{getInitials(username)}</div>
+                )}
+              </div>
+              <div className="profile-text">
+                <span className="dash-live">
+                  <span className="dash-live-dot" />
+                  Live
+                </span>
+                <h3>{username}</h3>
+                <p className="profile-role">{address}</p>
+                <div style={{ display: "flex", gap: "0.6rem", flexWrap: "wrap" }}>
+                  <div className="profile-contact">
+                    <i className="fa-solid fa-phone"></i> {phone}
+                  </div>
+                  <div className="profile-contact" style={{ textTransform: "none" }}>
+                    <i className="fa-solid fa-envelope"></i> {email}
+                  </div>
                 </div>
               </div>
             </div>
+          </div>
+
+          <div className="headline-metric">
+            <span className="hm-label">Total Spend</span>
+            <div className="hm-value mono">${dashboardStats.spentThisMonth}</div>
           </div>
         </div>
       </div>
@@ -126,29 +150,29 @@ export default function CustomerDashboard() {
             icon="fa-solid fa-briefcase"
             title="Active Jobs"
             value={dashboardStats.activeJobs}
-            bgColor="#e3f2fd"
-            iconColor="#45B7D1"
+            bgColor="#e5f4f2"
+            iconColor="#0f766e"
           />
           <StatsCard
             icon="fa-solid fa-check-circle"
             title="Completed Jobs"
             value={dashboardStats.completedJobs}
-            bgColor="#e8f5e9"
-            iconColor="#4ECDC4"
+            bgColor="#e2f6ee"
+            iconColor="#047857"
           />
           <StatsCard
             icon="fa-solid fa-users"
             title="Staff Assigned"
             value={dashboardStats.staffAssigned}
-            bgColor="#fff3e0"
-            iconColor="#FFB74D"
+            bgColor="#eef1f5"
+            iconColor="#334155"
           />
           <StatsCard
-            icon="fa-solid fa-dollar-sign"
-            title="Total Spend"
-            value={`$${dashboardStats.spentThisMonth}`}
-            bgColor="#fce4ec"
-            iconColor="#FF6B6B"
+            icon="fa-solid fa-file-invoice-dollar"
+            title="Invoices Pending"
+            value={dashboardStats.invoicesPending}
+            bgColor="#fdf1de"
+            iconColor="#b45309"
           />
         </div>
       </section>
@@ -178,23 +202,13 @@ export default function CustomerDashboard() {
               {recentJobs.length > 0 ? (
                 recentJobs.map((job) => (
                   <tr key={job.id}>
-                    <td>{job.staff}</td>
+                    <td className="fw-500">{job.staff}</td>
                     <td className="text-muted small">
                       {job.startDate} to {job.endDate}
                     </td>
-                    <td className="fw-500 text-success">
-                      ${job.cost}
-                    </td>
+                    <td className="revenue-cell">${job.cost}</td>
                     <td>
-                      <span
-                        className={`badge ${job.status === "confirmed" || job.status === "Active"
-                          ? "bg-success"
-                          : job.status === "completed" || job.status === "Completed"
-                            ? "bg-info"
-                            : "bg-warning"
-                          }`}
-                        style={{ padding: "6px 10px", borderRadius: "6px", textTransform: "capitalize" }}
-                      >
+                      <span className={`status-badge ${statusTone(job.status)}`}>
                         {job.status}
                       </span>
                     </td>
@@ -202,9 +216,7 @@ export default function CustomerDashboard() {
                 ))
               ) : (
                 <tr>
-                  <td colSpan="6" className="text-center py-4 text-muted"
-                    style={{ textTransform: "none" }}
-                  >
+                  <td colSpan="4" className="text-center py-4 text-muted" style={{ textTransform: "none" }}>
                     No recent jobs found.
                   </td>
                 </tr>

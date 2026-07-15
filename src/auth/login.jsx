@@ -386,7 +386,7 @@ export default function Login() {
                 >
                   <img src={googleIcon} alt="Google" width={16} />
                   <span className="text-white fw-medium" style={{ fontSize: "14px" }}>
-                    Continue with Google
+                    Google
                   </span>
                 </button>
 

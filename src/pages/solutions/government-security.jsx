@@ -2,14 +2,15 @@ import React, { useState, useEffect } from "react";
 import Header from "../../components/newHome/Header";
 import Footer from "../../components/newHome/Footer";
 import StatsCounter from "../../components/solution'scomp/Statecounter";
-import BusinessProtection from "../../components/solution'scomp/bissnussprotecttion";
 import Testimonials from "../../components/solution'scomp/testimonials";
-import WhyChooseStaffoo from "../../components/solution'scomp/WhyChooseStaffoo";
-import HowItWorks from "../../components/solution'scomp/HowItWorks";
-import BusinessProtectionLeft from "../../components/solution'scomp/BusinessProtectionLeft";
-import RelatedSolutions from "../../components/solution'scomp/RelatedSolutions";
-import FAQ from "../../components/solution'scomp/FAQ";
 import ReadyToSecure from "../../components/solution'scomp/ReadyToSecure";
+import { Helmet } from "react-helmet";
+import GovtSecurity from "../../components/solution'scomp/govt/GovtSecurity";
+import GovtWCU from "../../components/solution'scomp/govt/GovtWCU";
+import HowItWork from "../../components/solution'scomp/common'comp/HowItWork";
+import GovtSpecility from "../../components/solution'scomp/govt/GovtSpecility";
+import GovtFAQ from "../../components/solution'scomp/govt/GovtFAQ";
+import Solutions from "../../components/solution'scomp/common'comp/Solutions";
 
 export default function GovernmentSecurity() {
     const [isPrimaryHovered, setIsPrimaryHovered] = useState(false);
@@ -82,6 +83,8 @@ export default function GovernmentSecurity() {
             letterSpacing: "-0.01em",
         },
         headingAccent: {
+            fontWeight: "700",
+            fontSize: isMobile ? "24px" : "34px", // Highly legible scaled typography
             color: "#00c9a7",
         },
         description: {
@@ -192,6 +195,52 @@ export default function GovernmentSecurity() {
 
     return (
         <>
+
+            <Helmet>
+                <title>Government Security Across Australia | Staffoo</title>
+
+                <meta
+                    name="description"
+                    content="Work with professional and trained security staff in Australia. Post a job and get the best government security staff hiring opportunities with Staffoo."
+                />
+
+                <meta
+                    name="keywords"
+                    content="government security, government security guards, public sector security, government security services, Australia, Staffoo"
+                />
+
+                <link
+                    rel="canonical"
+                    href="https://staffoo.com.au/solutions/government-security"
+                />
+
+                {/* Open Graph Tags */}
+                <meta
+                    property="og:title"
+                    content="Government Security Across Australia | Staffoo"
+                />
+                <meta
+                    property="og:description"
+                    content="Work with professional and trained security staff in Australia. Post a job and get the best government security staff hiring opportunities with Staffoo."
+                />
+                <meta property="og:type" content="website" />
+                <meta
+                    property="og:url"
+                    content="https://staffoo.com.au/solutions/government-security"
+                />
+
+                {/* Twitter Card Tags */}
+                <meta name="twitter:card" content="summary_large_image" />
+                <meta
+                    name="twitter:title"
+                    content="Government Security Across Australia | Staffoo"
+                />
+                <meta
+                    name="twitter:description"
+                    content="Work with professional and trained security staff in Australia. Post a job and get the best government security staff hiring opportunities with Staffoo."
+                />
+            </Helmet>
+
             <Header />
 
             <div style={styles.page}>
@@ -204,19 +253,17 @@ export default function GovernmentSecurity() {
                             <span style={styles.breadcrumbSep}>&gt;</span>
                             <span>Solutions</span>
                             <span style={styles.breadcrumbSep}>&gt;</span>
-                            <span style={styles.breadcrumbHighlight}>Event Security</span>
+                            <span style={styles.breadcrumbHighlight}>Government Security</span>
                         </div>
 
                         {/* Heading */}
-                        <h1 style={styles.heading}>
-                            Professional <span style={styles.headingAccent}>Event Security</span> staffing built for scale
+                        <h1 style={styles.headingAccent}>
+                            <span style={styles.heading}>Hire</span> Government Security <span style={styles.heading}>Staff Without Delays</span>
                         </h1>
 
                         {/* Description */}
                         <p style={styles.description}>
-                            From small private functions to major public events, Staffoo sources,
-                            verifies, and deploys licensed security personnel — fast, compliant,
-                            and covered.
+                            Post your public sector security role in minutes and connect with licensed guards ready for councils, courts, and official buildings across Australia.
                         </p>
 
                         {/* Buttons */}
@@ -226,8 +273,9 @@ export default function GovernmentSecurity() {
                                 onMouseEnter={() => setIsPrimaryHovered(true)}
                                 onMouseLeave={() => setIsPrimaryHovered(false)}
                             >
-                                Request security staff
+                                Request Security Staff
                             </button>
+
                             <button
                                 style={styles.btnSecondary}
                                 onMouseEnter={() => setIsSecondaryHovered(true)}
@@ -241,40 +289,123 @@ export default function GovernmentSecurity() {
                     {/* Right Card */}
                     <div style={styles.right}>
                         <div style={styles.card}>
-                            <div style={styles.cardLabel}>Solution at a Glance</div>
+                            <div style={styles.cardLabel}>Why Staffoo</div>
 
-                            {/* Stats */}
+                            {/* Stats Grid */}
                             <div style={styles.statsGrid}>
                                 <div style={styles.statBox}>
-                                    <div style={styles.statValue}>24 hrs</div>
-                                    <div style={styles.statLabel}>Avg. deployment time</div>
+                                    <div style={styles.statValue}>500+ </div>
+                                    <div style={styles.statLabel}>Monthly <br /> deploys</div>
                                 </div>
+
                                 <div style={styles.statBox}>
                                     <div style={styles.statValue}>100%</div>
-                                    <div style={styles.statLabel}>Licensed &amp; verified</div>
+                                    <div style={styles.statLabel}>Licensed & Verified</div>
                                 </div>
                             </div>
 
                             {/* Tags */}
                             <div style={styles.tagsGrid}>
-                                <div style={styles.tag}>Crowd controller</div>
-                                <div style={styles.tag}>RSA-trained</div>
-                                <div style={styles.tag}>GPS tracking</div>
-                                <div style={styles.tag}>Payroll managed</div>
+                                <div style={styles.tag}>GPS <br /> Tracking</div>
+                                <div style={styles.tag}>Payroll Management</div>
+                                <div style={styles.tag}>Instant Deployment</div>
+                                <div style={styles.tag}>Complince Covered</div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
+
             <StatsCounter />
-            <BusinessProtection />
+
+
+            <GovtSecurity />
+
+
+
             <Testimonials />
-            <WhyChooseStaffoo />
-            <HowItWorks />
-            <BusinessProtectionLeft />
-            <RelatedSolutions />
-            <FAQ />
-            <ReadyToSecure />
+
+
+            <GovtWCU />
+
+            <HowItWork
+                heading="How Hiring Government Security Works"
+                steps={[
+                    {
+                        number: 1,
+                        title: "Post Job Details",
+                        description: "Add site, shift, and requirement details"
+                    },
+                    {
+                        number: 2,
+                        title: "View Guard Profile",
+                        description: "Check licences and experience on the spot"
+                    },
+                    {
+                        number: 3,
+                        title: "Confirm Right Guard",
+                        description: "Select and confirm booking faster"
+                    },
+                    {
+                        number: 4,
+                        title: "Track Work Live",
+                        description: "Monitor activity and reports during shift"
+                    }
+                ]}
+            />
+
+
+
+
+            <GovtSpecility />
+
+            <Solutions
+                heading="Explore Other Security Staffing Solutions"
+                solutions={[
+                    {
+                        id: 1,
+                        title: "Corporate Security Guards",
+                        description: "Security for office buildings and staff entry"
+                    },
+                    {
+                        id: 2,
+                        title: "Retail Security Services",
+                        description: "Security for busy retail store environments"
+                    },
+                    {
+                        id: 3,
+                        title: "Event Security Guards",
+                        description: "Short-term guards for public and private events"
+                    },
+                    {
+                        id: 4,
+                        title: "Construction Site Security",
+                        description: "Night guards for equipment and material safety"
+                    },
+                    {
+                        id: 5,
+                        title: "Healthcare Security Services",
+                        description: "Support staff safety in hospitals and clinics"
+                    },
+                    {
+                        id: 6,
+                        title: "Education Campus Security",
+                        description: "Guards for schools and campus grounds"
+                    }
+                ]}
+            />
+
+
+
+
+            <GovtFAQ />
+
+
+            <ReadyToSecure
+                heading="Fill Your Government Security Role Today"
+                description="Hire trained and verified security staff faster, maintain compliance, and keep your public building running smoothly with full visibility and control."
+                buttonText="Request Security Staff"
+            />
 
             <Footer />
         </>

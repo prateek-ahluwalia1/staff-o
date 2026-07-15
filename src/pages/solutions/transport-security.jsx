@@ -2,14 +2,15 @@ import React, { useState, useEffect } from "react";
 import Header from "../../components/newHome/Header";
 import Footer from "../../components/newHome/Footer";
 import StatsCounter from "../../components/solution'scomp/Statecounter";
-import BusinessProtection from "../../components/solution'scomp/bissnussprotecttion";
 import Testimonials from "../../components/solution'scomp/testimonials";
-import WhyChooseStaffoo from "../../components/solution'scomp/WhyChooseStaffoo";
-import HowItWorks from "../../components/solution'scomp/HowItWorks";
-import BusinessProtectionLeft from "../../components/solution'scomp/BusinessProtectionLeft";
-import RelatedSolutions from "../../components/solution'scomp/RelatedSolutions";
-import FAQ from "../../components/solution'scomp/FAQ";
 import ReadyToSecure from "../../components/solution'scomp/ReadyToSecure";
+import { Helmet } from "react-helmet";
+import TransportWWA from "../../components/solution'scomp/transport/TransportWWA";
+import TransportWCU from "../../components/solution'scomp/transport/TransportWCU";
+import HowItWork from "../../components/solution'scomp/common'comp/HowItWork";
+import TransportSpecility from "../../components/solution'scomp/transport/TransportSpecility";
+import Solutions from "../../components/solution'scomp/common'comp/Solutions";
+import TransportFAQ from "../../components/solution'scomp/transport/TransportFAQ";
 
 export default function TransportSecurity() {
     const [isPrimaryHovered, setIsPrimaryHovered] = useState(false);
@@ -82,6 +83,8 @@ export default function TransportSecurity() {
             letterSpacing: "-0.01em",
         },
         headingAccent: {
+            fontSize: isMobile ? "24px" : "34px", // Highly legible scaled typography
+            fontWeight: "700",
             color: "#00c9a7",
         },
         description: {
@@ -192,6 +195,52 @@ export default function TransportSecurity() {
 
     return (
         <>
+
+            <Helmet>
+                <title>Transport Security Services Across Australia | Staffoo</title>
+
+                <meta
+                    name="description"
+                    content="Find transport security guards across Australia. Review profiles, manage shifts, and track activity built for roads, rail, ports, and logistics sites."
+                />
+
+                <meta
+                    name="keywords"
+                    content="transport security, transport security guards, logistics security, port security, rail security, road transport security, Australia, Staffoo"
+                />
+
+                <link
+                    rel="canonical"
+                    href="https://staffoo.com.au/solutions/transport-security"
+                />
+
+                {/* Open Graph Tags */}
+                <meta
+                    property="og:title"
+                    content="Transport Security Services Across Australia | Staffoo"
+                />
+                <meta
+                    property="og:description"
+                    content="Find transport security guards across Australia. Review profiles, manage shifts, and track activity built for roads, rail, ports, and logistics sites."
+                />
+                <meta property="og:type" content="website" />
+                <meta
+                    property="og:url"
+                    content="https://staffoo.com.au/solutions/transport-security"
+                />
+
+                {/* Twitter Card Tags */}
+                <meta name="twitter:card" content="summary_large_image" />
+                <meta
+                    name="twitter:title"
+                    content="Transport Security Services Across Australia | Staffoo"
+                />
+                <meta
+                    name="twitter:description"
+                    content="Find transport security guards across Australia. Review profiles, manage shifts, and track activity built for roads, rail, ports, and logistics sites."
+                />
+            </Helmet>
+
             <Header />
 
             <div style={styles.page}>
@@ -204,19 +253,17 @@ export default function TransportSecurity() {
                             <span style={styles.breadcrumbSep}>&gt;</span>
                             <span>Solutions</span>
                             <span style={styles.breadcrumbSep}>&gt;</span>
-                            <span style={styles.breadcrumbHighlight}>Event Security</span>
+                            <span style={styles.breadcrumbHighlight}>Transport Security</span>
                         </div>
 
                         {/* Heading */}
-                        <h1 style={styles.heading}>
-                            Professional <span style={styles.headingAccent}>Event Security</span> staffing built for scale
+                        <h1 style={styles.headingAccent}>
+                            <span style={styles.heading}>Hire </span>Transport Security <span style={styles.heading}> Guards For Roads, Rail, And Ports</span>
                         </h1>
 
                         {/* Description */}
                         <p style={styles.description}>
-                            From small private functions to major public events, Staffoo sources,
-                            verifies, and deploys licensed security personnel — fast, compliant,
-                            and covered.
+                            Post your transport security needs in minutes and connect with licensed guards prepared for roads, rail stations, ports, and logistics operations across Australia.
                         </p>
 
                         {/* Buttons */}
@@ -226,8 +273,9 @@ export default function TransportSecurity() {
                                 onMouseEnter={() => setIsPrimaryHovered(true)}
                                 onMouseLeave={() => setIsPrimaryHovered(false)}
                             >
-                                Request security staff
+                                Request Security Staff
                             </button>
+
                             <button
                                 style={styles.btnSecondary}
                                 onMouseEnter={() => setIsSecondaryHovered(true)}
@@ -241,41 +289,115 @@ export default function TransportSecurity() {
                     {/* Right Card */}
                     <div style={styles.right}>
                         <div style={styles.card}>
-                            <div style={styles.cardLabel}>Solution at a Glance</div>
+                            <div style={styles.cardLabel}>Why Staffoo</div>
 
-                            {/* Stats */}
+                            {/* Stats Grid */}
                             <div style={styles.statsGrid}>
                                 <div style={styles.statBox}>
-                                    <div style={styles.statValue}>24 hrs</div>
-                                    <div style={styles.statLabel}>Avg. deployment time</div>
+                                    <div style={styles.statValue}>500+ </div>
+                                    <div style={styles.statLabel}>Monthly <br /> deploys</div>
                                 </div>
+
                                 <div style={styles.statBox}>
                                     <div style={styles.statValue}>100%</div>
-                                    <div style={styles.statLabel}>Licensed &amp; verified</div>
+                                    <div style={styles.statLabel}>Licensed & Verified</div>
                                 </div>
                             </div>
 
                             {/* Tags */}
                             <div style={styles.tagsGrid}>
-                                <div style={styles.tag}>Crowd controller</div>
-                                <div style={styles.tag}>RSA-trained</div>
-                                <div style={styles.tag}>GPS tracking</div>
-                                <div style={styles.tag}>Payroll managed</div>
+                                <div style={styles.tag}>GPS <br /> Tracking</div>
+                                <div style={styles.tag}>Payroll Management</div>
+                                <div style={styles.tag}>Instant Deployment</div>
+                                <div style={styles.tag}>Complince Covered</div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-            <StatsCounter />
-            <BusinessProtection />
-            <Testimonials />
-            <WhyChooseStaffoo />
-            <HowItWorks />
-            <BusinessProtectionLeft />
-            <RelatedSolutions />
-            <FAQ />
-            <ReadyToSecure />
 
+            <StatsCounter />
+
+
+            <TransportWWA />
+
+            <Testimonials />
+
+            <TransportWCU />
+
+            <HowItWork
+                heading="How Transport Security Staffing Works"
+                steps={[
+                    {
+                        number: 1,
+                        title: "Create Job Request",
+                        description: "Add site details and shift needs"
+                    },
+                    {
+                        number: 2,
+                        title: "Review Guard Options",
+                        description: "Check profiles and availability"
+                    },
+                    {
+                        number: 3,
+                        title: "Confirm Staff Selection",
+                        description: "Choose and assign your guard"
+                    },
+                    {
+                        number: 4,
+                        title: "Monitor Shift Activity",
+                        description: "Track updates and ongoing site activity"
+                    }
+                ]}
+            />
+
+
+            <TransportSpecility />
+
+
+            <Solutions
+                heading="Explore Other Security Staffing Solutions"
+                solutions={[
+                    {
+                        id: 1,
+                        title: "Corporate Office Security",
+                        description: "Security support for transport offices and control rooms with daily operations"
+                    },
+                    {
+                        id: 2,
+                        title: "Retail Store Security",
+                        description: "Guards for shops inside transport hubs with high customer movement"
+                    },
+                    {
+                        id: 3,
+                        title: "Event Security Staffing",
+                        description: "Security for crowded transport events and stations"
+                    },
+                    {
+                        id: 4,
+                        title: "Construction Site Security",
+                        description: "Protection for transport infrastructure and projects"
+                    },
+                    {
+                        id: 5,
+                        title: "Government Building Security",
+                        description: "Security for government transport authority offices"
+                    },
+                    {
+                        id: 6,
+                        title: "Education Campus Security",
+                        description: "Guards for training centres and institutions"
+                    }
+                ]}
+            />
+
+            <TransportFAQ />
+
+            <ReadyToSecure
+                heading="Secure Your Transport Operations With Better Control"
+                description="Hire trained transport security staff, maintain coverage across all locations, and manage operations with clear system visibility and structured oversight."
+                buttonText="Request Security Staff"
+            />
             <Footer />
         </>
     );

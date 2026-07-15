@@ -2,13 +2,7 @@ import React, { useState, useEffect } from "react";
 import Header from "../../components/newHome/Header";
 import Footer from "../../components/newHome/Footer";
 import StatsCounter from "../../components/solution'scomp/Statecounter";
-import BusinessProtection from "../../components/solution'scomp/bissnussprotecttion";
 import Testimonials from "../../components/solution'scomp/testimonials";
-import WhyChooseStaffoo from "../../components/solution'scomp/WhyChooseStaffoo";
-import HowItWorks from "../../components/solution'scomp/HowItWorks";
-import BusinessProtectionLeft from "../../components/solution'scomp/BusinessProtectionLeft";
-import RelatedSolutions from "../../components/solution'scomp/RelatedSolutions";
-import FAQ from "../../components/solution'scomp/FAQ";
 import ReadyToSecure from "../../components/solution'scomp/ReadyToSecure";
 import securityImage from "../../assets/images/security.png";
 import WhyChooseStaffooRetail from "../../components/solution'scomp/retail'comp/Whychoseusret";
@@ -16,6 +10,7 @@ import StepsToRecruit from "../../components/solution'scomp/retail'comp/StepsToR
 import RetailSpeciality from "../../components/solution'scomp/retail'comp/RetailSpecility";
 import RetailFaqs from "../../components/solution'scomp/retail'comp/RetailFaqs";
 import { Helmet } from "react-helmet";
+import RelatedSolutions from "../../components/solution'scomp/RelatedSolutions";
 
 
 export default function RetailSecurity() {
@@ -211,15 +206,15 @@ export default function RetailSecurity() {
             boxSizing: "border-box",
             fontFamily: "'Poppins', 'Inter', 'Segoe UI', sans-serif",
         },
-        container: {
-            maxWidth: "1140px",
-            width: "100%",
-            display: "flex",
-            flexDirection: isMobile ? "column" : "row",
-            alignItems: "center",
-            justifyContent: "space-between",
-            gap: isMobile ? "48px" : "80px",
-        },
+        // container: {
+        //     maxWidth: "1140px",
+        //     width: "100%",
+        //     display: "flex",
+        //     flexDirection: isMobile ? "column" : "row",
+        //     alignItems: "center",
+        //     justifyContent: "space-between",
+        //     gap: isMobile ? "48px" : "80px",
+        // },
         leftContent: {
             flex: "1",
             maxWidth: isMobile ? "100%" : "600px",
@@ -244,14 +239,14 @@ export default function RetailSecurity() {
             letterSpacing: "0.02em",
             margin: "0 0 16px 0",
         },
-        heading: {
-            fontSize: isMobile ? "24px" : "30px",
-            fontWeight: "700",
-            color: "#ffffff",
-            lineHeight: "1.3",
-            margin: "0 0 24px 0",
-            letterSpacing: "-0.01em",
-        },
+        // heading: {
+        //     fontSize: isMobile ? "24px" : "30px",
+        //     fontWeight: "700",
+        //     color: "#ffffff",
+        //     lineHeight: "1.3",
+        //     margin: "0 0 24px 0",
+        //     letterSpacing: "-0.01em",
+        // },
         bodyText: {
             fontSize: "13px",
             color: "#ffffff",

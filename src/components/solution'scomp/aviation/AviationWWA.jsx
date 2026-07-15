@@ -1,0 +1,155 @@
+// components/BusinessProtection.jsx
+import React, { useState, useEffect } from "react";
+import securityImage from "../../../assets/images/security.png";
+
+// Import your image asset here
+// import securityImage from "../../assets/images/security-monitors.png";
+
+export default function AviationWWA() {
+    const [isMobile, setIsMobile] = useState(false);
+
+    useEffect(() => {
+        const handleResize = () => {
+            setIsMobile(window.innerWidth <= 991);
+        };
+        handleResize();
+        window.addEventListener("resize", handleResize);
+        return () => window.removeEventListener("resize", handleResize);
+    }, []);
+
+    const styles = {
+        sectionWrapper: {
+            width: "100%",
+            background: "#0b1111", // Deep dark background matching the hero block
+            padding: isMobile ? "60px 20px" : "30px 40px",
+            display: "flex",
+            justifyContent: "center",
+            boxSizing: "border-box",
+            fontFamily: "'Poppins', 'Inter', 'Segoe UI', sans-serif",
+        },
+        container: {
+            maxWidth: "1140px",
+            width: "100%",
+            display: "flex",
+            flexDirection: isMobile ? "column" : "row",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: isMobile ? "48px" : "80px",
+        },
+        leftContent: {
+            flex: "1",
+            maxWidth: isMobile ? "100%" : "600px",
+        },
+        subheading: {
+            fontSize: "12px",
+            color: "#00c9a7", // Teal highlight accent
+            textTransform: "capitalize",
+            letterSpacing: "0.02em",
+            margin: "0 0 16px 0",
+        },
+        heading: {
+            fontSize: isMobile ? "24px" : "30px",
+            fontWeight: "700",
+            color: "#ffffff",
+            lineHeight: "1.3",
+            margin: "0 0 24px 0",
+            letterSpacing: "-0.01em",
+        },
+        bodyText: {
+            fontSize: "13px",
+            color: "#ffffff",
+            lineHeight: "1.7",
+            opacity: 0.85,
+            margin: "0 0 20px 0",
+        },
+        listContainer: {
+            margin: "28px 0 0 0",
+            padding: "0",
+            listStyleType: "none",
+        },
+        listItem: {
+            fontSize: "14px",
+            color: "#ffffff",
+            lineHeight: "1.6",
+            opacity: 0.9,
+            marginBottom: "12px",
+            display: "flex",
+            alignItems: "flex-start",
+            gap: "10px",
+        },
+        bulletPoint: {
+            color: "#00c9a7",
+            fontWeight: "bold",
+        },
+        rightContent: {
+            flexShrink: 0,
+            width: "100%",
+            maxWidth: isMobile ? "100%" : "405px",
+            display: "flex",
+            justifyContent: "center",
+        },
+        imageWrapper: {
+            width: "100%",
+            borderRadius: "28px",
+            overflow: "hidden",
+            border: "1px solid #00c9a7", // Subtle teal frame border
+            display: "block",
+        },
+        img: {
+            width: "405px",
+            height: "496px",
+            display: "block",
+            objectFit: "cover",
+        },
+    };
+
+    return (
+        <div style={styles.sectionWrapper}>
+            <div style={styles.container}>
+
+                {/* Left Text Block */}
+                <div style={styles.leftContent}>
+                    <div style={styles.subheading}>Who We Are</div>
+                    <h2 style={styles.heading}>
+                        Aviation Security Services For High-Control Environments
+                    </h2>
+
+                    <p style={styles.bodyText}>
+                        Airports operate under strict rules and constant movement. Passengers arrive and depart 24 hours a day, and the staff works across multiple areas. Each area requires controlled access and structured monitoring. Staffoo helps you with aviation security guards trained for such environments. Every guard holds verified licences and has experience.
+                    </p>
+
+                    <p style={styles.bodyText}>
+                        You can review guards' profiles, shift availability, and past work before selection. Aviation security guards support screening points, monitor restricted areas, and respond to incidents when required on site. The platform keeps all shift updates, logs, and activity records in one place. Your team maintains visibility and control across all airport locations. This supports aviation security services across terminals, cargo areas, and airside zones.
+                    </p>
+
+                    <ul style={styles.listContainer}>
+                        <li style={styles.listItem}>
+                            <span style={styles.bulletPoint}>•</span>
+                            Guards prepared for controlled aviation environments
+                        </li>
+                        <li style={styles.listItem}>
+                            <span style={styles.bulletPoint}>•</span>
+                            Profiles include verified licences and relevant experience
+                        </li>
+                        <li style={styles.listItem}>
+                            <span style={styles.bulletPoint}>•</span>
+                            System tracks shifts, logs, and site-level operational activity
+                        </li>
+                    </ul>
+                </div>
+
+                {/* Right Image Block */}
+                <div style={styles.rightContent}>
+                    <div style={styles.imageWrapper}>
+                        <img
+                            src={securityImage}
+                            alt="Aviation Security Monitoring at Airport"
+                            style={styles.img}
+                        />
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    );
+}

@@ -2,15 +2,17 @@ import React, { useState, useEffect } from "react";
 import Header from "../../components/newHome/Header";
 import Footer from "../../components/newHome/Footer";
 import StatsCounter from "../../components/solution'scomp/Statecounter";
-import BusinessProtection from "../../components/solution'scomp/bissnussprotecttion";
 import Testimonials from "../../components/solution'scomp/testimonials";
-import WhyChooseStaffoo from "../../components/solution'scomp/WhyChooseStaffoo";
-import HowItWorks from "../../components/solution'scomp/HowItWorks";
-import BusinessProtectionLeft from "../../components/solution'scomp/BusinessProtectionLeft";
-import RelatedSolutions from "../../components/solution'scomp/RelatedSolutions";
-import FAQ from "../../components/solution'scomp/FAQ";
-import ReadyToSecure from "../../components/solution'scomp/ReadyToSecure";
+// import ReadyToSecure from "../../components/solution'scomp/ReadyToSecure";
 import { Helmet } from "react-helmet";
+import CorporateWWA from "../../components/solution'scomp/corporate/CorporateWWA";
+import CorporateWCU from "../../components/solution'scomp/corporate/CorporateWCU";
+import HowItWork from "../../components/solution'scomp/common'comp/HowItWork";
+import CorporateSpecility from "../../components/solution'scomp/corporate/CorporateSpecility";
+import Solutions from "../../components/solution'scomp/common'comp/Solutions";
+import ReadyToSecure from "../../components/solution'scomp/ReadyToSecure";
+import CorporateFAQ from "../../components/solution'scomp/corporate/CorporateFAQ";
+
 
 export default function CorporateSecurity() {
     const [isPrimaryHovered, setIsPrimaryHovered] = useState(false);
@@ -83,6 +85,8 @@ export default function CorporateSecurity() {
             letterSpacing: "-0.01em",
         },
         headingAccent: {
+            fontSize: isMobile ? "24px" : "34px", // Highly legible scaled typography
+            fontWeight: "700",
             color: "#00c9a7",
         },
         description: {
@@ -239,91 +243,166 @@ export default function CorporateSecurity() {
             </Helmet>
 
             <Header />
-<div style={styles.page}>
-  <div style={styles.container}>
-    {/* Left Content */}
-    <div style={styles.left}>
-      {/* Breadcrumb */}
-      <div style={styles.breadcrumb}>
-        <span>Home</span>
-        <span style={styles.breadcrumbSep}>&gt;</span>
-        <span>Solutions</span>
-        <span style={styles.breadcrumbSep}>&gt;</span>
-        <span style={styles.breadcrumbHighlight}>Corporate Security</span>
-      </div>
 
-      {/* Heading */}
-      <h1 style={styles.heading}>
-        Corporate Security, <span style={styles.headingAccent}>Deployed When You Need It</span>
-      </h1>
+            <div style={styles.page}>
+                <div style={styles.container}>
+                    {/* Left Content */}
+                    <div style={styles.left}>
+                        {/* Breadcrumb */}
+                        <div style={styles.breadcrumb}>
+                            <span>Home</span>
+                            <span style={styles.breadcrumbSep}>&gt;</span>
+                            <span>Solutions</span>
+                            <span style={styles.breadcrumbSep}>&gt;</span>
+                            <span style={styles.breadcrumbHighlight}>Corporate Security</span>
+                        </div>
 
-      {/* Description */}
-      <p style={styles.description}>
-        Connect with trained and licensed security guards ready for corporate office protection. 
-        Post your job and hire fast with Staffoo.
-      </p>
+                        {/* Heading */}
+                        <h1 style={styles.headingAccent}>
+                            Corporate Security, <span style={styles.heading}>Deployed When You Need It</span>
+                        </h1>
 
-      {/* Buttons */}
-      <div style={styles.buttonGroup}>
-        <button
-          style={styles.btnPrimary}
-          onMouseEnter={() => setIsPrimaryHovered(true)}
-          onMouseLeave={() => setIsPrimaryHovered(false)}
-        >
-          Request Security Staff
-        </button>
+                        {/* Description */}
+                        <p style={styles.description}>
+                            Connect with trained and licensed security guards ready for corporate office protection.
+                            Post your job and hire fast with Staffoo.
+                        </p>
 
-        <button
-          style={styles.btnSecondary}
-          onMouseEnter={() => setIsSecondaryHovered(true)}
-          onMouseLeave={() => setIsSecondaryHovered(false)}
-        >
-          See how it works
-        </button>
-      </div>
-    </div>
+                        {/* Buttons */}
+                        <div style={styles.buttonGroup}>
+                            <button
+                                style={styles.btnPrimary}
+                                onMouseEnter={() => setIsPrimaryHovered(true)}
+                                onMouseLeave={() => setIsPrimaryHovered(false)}
+                            >
+                                Request Security Staff
+                            </button>
 
-    {/* Right Card */}
-    <div style={styles.right}>
-      <div style={styles.card}>
-        <div style={styles.cardLabel}>Why Staffoo</div>
+                            <button
+                                style={styles.btnSecondary}
+                                onMouseEnter={() => setIsSecondaryHovered(true)}
+                                onMouseLeave={() => setIsSecondaryHovered(false)}
+                            >
+                                See how it works
+                            </button>
+                        </div>
+                    </div>
 
-        {/* Stats Grid */}
-        <div style={styles.statsGrid}>
-          <div style={styles.statBox}>
-            <div style={styles.statValue}>500+ </div>
-            <div style={styles.statLabel}>Monthly <br /> deploys</div>
-          </div>
+                    {/* Right Card */}
+                    <div style={styles.right}>
+                        <div style={styles.card}>
+                            <div style={styles.cardLabel}>Why Staffoo</div>
 
-          <div style={styles.statBox}>
-            <div style={styles.statValue}>100%</div>
-            <div style={styles.statLabel}>Licensed & Verified</div>
-          </div>
-        </div>
+                            {/* Stats Grid */}
+                            <div style={styles.statsGrid}>
+                                <div style={styles.statBox}>
+                                    <div style={styles.statValue}>500+ </div>
+                                    <div style={styles.statLabel}>Monthly <br /> deploys</div>
+                                </div>
 
-        {/* Tags */}
-        <div style={styles.tagsGrid}>
-          <div style={styles.tag}>GPS <br /> Tracking</div>
-          <div style={styles.tag}>Payroll Management</div>
-          <div style={styles.tag}>Instant Deployment</div>
-          <div style={styles.tag}>Complince Covered</div>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
+                                <div style={styles.statBox}>
+                                    <div style={styles.statValue}>100%</div>
+                                    <div style={styles.statLabel}>Licensed & Verified</div>
+                                </div>
+                            </div>
 
-
+                            {/* Tags */}
+                            <div style={styles.tagsGrid}>
+                                <div style={styles.tag}>GPS <br /> Tracking</div>
+                                <div style={styles.tag}>Payroll Management</div>
+                                <div style={styles.tag}>Instant Deployment</div>
+                                <div style={styles.tag}>Complince Covered</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
             <StatsCounter />
-            <BusinessProtection />
+
+
+            <CorporateWWA />
+
+
             <Testimonials />
-            <WhyChooseStaffoo />
-            <HowItWorks />
-            <BusinessProtectionLeft />
-            <RelatedSolutions />
-            <FAQ />
-            <ReadyToSecure />
+
+            <CorporateWCU />
+
+            <HowItWork
+                heading="How Staffoo Works For Your Business"
+                steps={[
+                    {
+                        number: 1,
+                        title: "List Your Shift",
+                        description: "List your requirements in minutes."
+                    },
+                    {
+                        number: 2,
+                        title: "View Guard Profile",
+                        description: "View their licenses, skills, and experience."
+                    },
+                    {
+                        number: 3,
+                        title: "Select Your Guard",
+                        description: "Select the one that best suits you."
+                    },
+                    {
+                        number: 4,
+                        title: "Track & Get Paid",
+                        description: "Track shifts and get paid using Stripe."
+                    }
+                ]}
+            />
+
+
+
+            <CorporateSpecility />
+
+
+            <Solutions
+                heading="Explore More Security Solutions From Staffoo"
+                solutions={[
+                    {
+                        id: 1,
+                        title: "Retail Security",
+                        description: "Protect stores with trained, licensed retail guards."
+                    },
+                    {
+                        id: 2,
+                        title: "Event Security",
+                        description: "Keep events safe with professional crowd control."
+                    },
+                    {
+                        id: 3,
+                        title: "Construction Security",
+                        description: "Provides 24-hour security to reduce theft and control access."
+                    },
+                    {
+                        id: 4,
+                        title: "Mobile Patrols",
+                        description: "Regular patrols keep your property fully protected."
+                    },
+                    {
+                        id: 5,
+                        title: "Concierge Security",
+                        description: "Friendly and professional staff for busy front desks."
+                    },
+                    {
+                        id: 6,
+                        title: "Static Guarding",
+                        description: "Guards stationed on-site for constant, trustworthy protection."
+                    }
+                ]}
+            />
+
+            <CorporateFAQ />
+
+            <ReadyToSecure
+                heading="Looking For Security To Match Your Corporate Standards?"
+                description="Our licensed corporate security guards bring professionalism to your business. Work with specialists who understand the unique demands of the modern corporate World."
+                buttonText="Request Security Staff"
+            />
+
 
             <Footer />
         </>

@@ -2,14 +2,15 @@ import React, { useState, useEffect } from "react";
 import Header from "../../components/newHome/Header";
 import Footer from "../../components/newHome/Footer";
 import StatsCounter from "../../components/solution'scomp/Statecounter";
-import BusinessProtection from "../../components/solution'scomp/bissnussprotecttion";
 import Testimonials from "../../components/solution'scomp/testimonials";
-import WhyChooseStaffoo from "../../components/solution'scomp/WhyChooseStaffoo";
-import HowItWorks from "../../components/solution'scomp/HowItWorks";
-import BusinessProtectionLeft from "../../components/solution'scomp/BusinessProtectionLeft";
-import RelatedSolutions from "../../components/solution'scomp/RelatedSolutions";
-import FAQ from "../../components/solution'scomp/FAQ";
 import ReadyToSecure from "../../components/solution'scomp/ReadyToSecure";
+import { Helmet } from "react-helmet";
+import AviationWWA from "../../components/solution'scomp/aviation/AviationWWA";
+import AviationWCU from "../../components/solution'scomp/aviation/AviationWCU";
+import HowItWork from "../../components/solution'scomp/common'comp/HowItWork";
+import AviationSpecility from "../../components/solution'scomp/aviation/AviationSpecility";
+import Solutions from "../../components/solution'scomp/common'comp/Solutions";
+import AviationFAQ from "../../components/solution'scomp/aviation/AviationFAQ";
 
 export default function AviationSecurity() {
     const [isPrimaryHovered, setIsPrimaryHovered] = useState(false);
@@ -82,6 +83,8 @@ export default function AviationSecurity() {
             letterSpacing: "-0.01em",
         },
         headingAccent: {
+            fontSize: isMobile ? "24px" : "34px", // Highly legible scaled typography
+            fontWeight: "700",
             color: "#00c9a7",
         },
         description: {
@@ -191,6 +194,52 @@ export default function AviationSecurity() {
 
     return (
         <>
+
+            <Helmet>
+                <title>Aviation Security Services Across Australia | Staffoo</title>
+
+                <meta
+                    name="description"
+                    content="Find aviation security guards across Australia. Review profiles, manage shifts, and monitor activity in one system built for airports, terminals, and airside operations."
+                />
+
+                <meta
+                    name="keywords"
+                    content="aviation security, aviation security guards, airport security, terminal security, airside security, aviation security services, Australia, Staffoo"
+                />
+
+                <link
+                    rel="canonical"
+                    href="https://staffoo.com.au/solutions/aviation-security"
+                />
+
+                {/* Open Graph Tags */}
+                <meta
+                    property="og:title"
+                    content="Aviation Security Services Across Australia | Staffoo"
+                />
+                <meta
+                    property="og:description"
+                    content="Find aviation security guards across Australia. Review profiles, manage shifts, and monitor activity in one system built for airports, terminals, and airside operations."
+                />
+                <meta property="og:type" content="website" />
+                <meta
+                    property="og:url"
+                    content="https://staffoo.com.au/solutions/aviation-security"
+                />
+
+                {/* Twitter Card Tags */}
+                <meta name="twitter:card" content="summary_large_image" />
+                <meta
+                    name="twitter:title"
+                    content="Aviation Security Services Across Australia | Staffoo"
+                />
+                <meta
+                    name="twitter:description"
+                    content="Find aviation security guards across Australia. Review profiles, manage shifts, and monitor activity in one system built for airports, terminals, and airside operations."
+                />
+            </Helmet>
+
             <Header />
 
             <div style={styles.page}>
@@ -203,19 +252,17 @@ export default function AviationSecurity() {
                             <span style={styles.breadcrumbSep}>&gt;</span>
                             <span>Solutions</span>
                             <span style={styles.breadcrumbSep}>&gt;</span>
-                            <span style={styles.breadcrumbHighlight}>Event Security</span>
+                            <span style={styles.breadcrumbHighlight}>Aviation Security</span>
                         </div>
 
                         {/* Heading */}
-                        <h1 style={styles.heading}>
-                            Professional <span style={styles.headingAccent}>Event Security</span> staffing built for scale
+                        <h1 style={styles.headingAccent}>
+                            <span style={styles.heading}>Hire</span> Aviation Security <span style={styles.heading}>Guards For Airports And Terminals</span>
                         </h1>
 
                         {/* Description */}
                         <p style={styles.description}>
-                            From small private functions to major public events, Staffoo sources,
-                            verifies, and deploys licensed security personnel — fast, compliant,
-                            and covered.
+                            Post your aviation security needs in minutes and connect with licensed guards prepared for airports, terminals, and airside operations across Australia.
                         </p>
 
                         {/* Buttons */}
@@ -225,8 +272,9 @@ export default function AviationSecurity() {
                                 onMouseEnter={() => setIsPrimaryHovered(true)}
                                 onMouseLeave={() => setIsPrimaryHovered(false)}
                             >
-                                Request security staff
+                                Request Security Staff
                             </button>
+
                             <button
                                 style={styles.btnSecondary}
                                 onMouseEnter={() => setIsSecondaryHovered(true)}
@@ -240,41 +288,116 @@ export default function AviationSecurity() {
                     {/* Right Card */}
                     <div style={styles.right}>
                         <div style={styles.card}>
-                            <div style={styles.cardLabel}>Solution at a Glance</div>
+                            <div style={styles.cardLabel}>Why Staffoo</div>
 
-                            {/* Stats */}
+                            {/* Stats Grid */}
                             <div style={styles.statsGrid}>
                                 <div style={styles.statBox}>
-                                    <div style={styles.statValue}>24 hrs</div>
-                                    <div style={styles.statLabel}>Avg. deployment time</div>
+                                    <div style={styles.statValue}>500+ </div>
+                                    <div style={styles.statLabel}>Monthly <br /> deploys</div>
                                 </div>
+
                                 <div style={styles.statBox}>
                                     <div style={styles.statValue}>100%</div>
-                                    <div style={styles.statLabel}>Licensed &amp; verified</div>
+                                    <div style={styles.statLabel}>Licensed & Verified</div>
                                 </div>
                             </div>
 
                             {/* Tags */}
                             <div style={styles.tagsGrid}>
-                                <div style={styles.tag}>Crowd controller</div>
-                                <div style={styles.tag}>RSA-trained</div>
-                                <div style={styles.tag}>GPS tracking</div>
-                                <div style={styles.tag}>Payroll managed</div>
+                                <div style={styles.tag}>GPS <br /> Tracking</div>
+                                <div style={styles.tag}>Payroll Management</div>
+                                <div style={styles.tag}>Instant Deployment</div>
+                                <div style={styles.tag}>Complince Covered</div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-            <StatsCounter />
-            <BusinessProtection />
-            <Testimonials />
-            <WhyChooseStaffoo />
-            <HowItWorks />
-            <BusinessProtectionLeft />
-            <RelatedSolutions />
-            <FAQ />
-            <ReadyToSecure />
 
+
+            <StatsCounter />
+
+            <AviationWWA />
+
+            <Testimonials />
+
+            <AviationWCU />
+
+            <HowItWork
+                heading="How Aviation Security Staffing Works"
+                steps={[
+                    {
+                        number: 1,
+                        title: "Create Job Request",
+                        description: "Add location details and shift needs"
+                    },
+                    {
+                        number: 2,
+                        title: "Review Guard Options",
+                        description: "Check profiles and availability"
+                    },
+                    {
+                        number: 3,
+                        title: "Confirm Staff Selection",
+                        description: "Choose and assign your guard"
+                    },
+                    {
+                        number: 4,
+                        title: "Monitor Shift Activity",
+                        description: "Track updates and ongoing site activity"
+                    }
+                ]}
+            />
+
+
+            <AviationSpecility />
+
+
+            <Solutions
+                heading="Explore Other Security Staffing Solutions"
+                solutions={[
+                    {
+                        id: 1,
+                        title: "Corporate Office Security",
+                        description: "Security support for airline offices and admin teams"
+                    },
+                    {
+                        id: 2,
+                        title: "Retail Store Security",
+                        description: "Guards for shops inside airport terminals"
+                    },
+                    {
+                        id: 3,
+                        title: "Event Security Staffing",
+                        description: "Security for airport events and passenger gatherings"
+                    },
+                    {
+                        id: 4,
+                        title: "Construction Site Security",
+                        description: "Protection for airport expansion and development projects"
+                    },
+                    {
+                        id: 5,
+                        title: "Government Building Security",
+                        description: "Security for aviation authority offices"
+                    },
+                    {
+                        id: 6,
+                        title: "Education Campus Security",
+                        description: "Guards for aviation training centres"
+                    }
+                ]}
+            />
+
+            <AviationFAQ />
+
+
+            <ReadyToSecure
+                heading="Secure Your Aviation Operations With Full Control"
+                description="Hire trained aviation security staff, maintain controlled access, and manage operations with clear system visibility and structured oversight."
+                buttonText="Request Security Staff"
+            />
             <Footer />
         </>
     );

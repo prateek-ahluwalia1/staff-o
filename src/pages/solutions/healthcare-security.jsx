@@ -2,14 +2,15 @@ import React, { useState, useEffect } from "react";
 import Header from "../../components/newHome/Header";
 import Footer from "../../components/newHome/Footer";
 import StatsCounter from "../../components/solution'scomp/Statecounter";
-import BusinessProtection from "../../components/solution'scomp/bissnussprotecttion";
 import Testimonials from "../../components/solution'scomp/testimonials";
-import WhyChooseStaffoo from "../../components/solution'scomp/WhyChooseStaffoo";
-import HowItWorks from "../../components/solution'scomp/HowItWorks";
-import BusinessProtectionLeft from "../../components/solution'scomp/BusinessProtectionLeft";
-import RelatedSolutions from "../../components/solution'scomp/RelatedSolutions";
-import FAQ from "../../components/solution'scomp/FAQ";
 import ReadyToSecure from "../../components/solution'scomp/ReadyToSecure";
+import { Helmet } from "react-helmet";
+import HealthWWA from "../../components/solution'scomp/health/HealthWWA";
+import HealthWCU from "../../components/solution'scomp/health/HealthWCU";
+import HowItWork from "../../components/solution'scomp/common'comp/HowItWork";
+import HealthSpecility from "../../components/solution'scomp/health/HealthSpecility";
+import Solutions from "../../components/solution'scomp/common'comp/Solutions";
+import HealthFAQ from "../../components/solution'scomp/health/HealthFAQ";
 
 export default function HealthcareSecurity() {
     const [isPrimaryHovered, setIsPrimaryHovered] = useState(false);
@@ -82,6 +83,8 @@ export default function HealthcareSecurity() {
             letterSpacing: "-0.01em",
         },
         headingAccent: {
+            fontSize: isMobile ? "24px" : "34px", // Highly legible scaled typography
+            fontWeight: "700",
             color: "#00c9a7",
         },
         description: {
@@ -192,6 +195,52 @@ export default function HealthcareSecurity() {
 
     return (
         <>
+
+            <Helmet>
+                <title>Healthcare Security Across Australia | Staffoo</title>
+
+                <meta
+                    name="description"
+                    content="Find healthcare security guards across Australia. View profiles, manage shifts, and handle reports in a single system built for hospitals and care facilities."
+                />
+
+                <meta
+                    name="keywords"
+                    content="healthcare security, healthcare security guards, hospital security, medical facility security, care facility security, Australia, Staffoo"
+                />
+
+                <link
+                    rel="canonical"
+                    href="https://staffoo.com.au/solutions/healthcare-security"
+                />
+
+                {/* Open Graph Tags */}
+                <meta
+                    property="og:title"
+                    content="Healthcare Security Across Australia | Staffoo"
+                />
+                <meta
+                    property="og:description"
+                    content="Find healthcare security guards across Australia. View profiles, manage shifts, and handle reports in a single system built for hospitals and care facilities."
+                />
+                <meta property="og:type" content="website" />
+                <meta
+                    property="og:url"
+                    content="https://staffoo.com.au/solutions/healthcare-security"
+                />
+
+                {/* Twitter Card Tags */}
+                <meta name="twitter:card" content="summary_large_image" />
+                <meta
+                    name="twitter:title"
+                    content="Healthcare Security Across Australia | Staffoo"
+                />
+                <meta
+                    name="twitter:description"
+                    content="Find healthcare security guards across Australia. View profiles, manage shifts, and handle reports in a single system built for hospitals and care facilities."
+                />
+            </Helmet>
+
             <Header />
 
             <div style={styles.page}>
@@ -204,19 +253,17 @@ export default function HealthcareSecurity() {
                             <span style={styles.breadcrumbSep}>&gt;</span>
                             <span>Solutions</span>
                             <span style={styles.breadcrumbSep}>&gt;</span>
-                            <span style={styles.breadcrumbHighlight}>Event Security</span>
+                            <span style={styles.breadcrumbHighlight}>Healthcare Security</span>
                         </div>
 
                         {/* Heading */}
-                        <h1 style={styles.heading}>
-                            Professional <span style={styles.headingAccent}>Event Security</span> staffing built for scale
+                        <h1 style={styles.headingAccent}>
+                            <span style={styles.heading}>Get</span> Healthcare Security <span style={styles.heading}>Staff Ready for High-Risk Shifts</span>
                         </h1>
 
                         {/* Description */}
                         <p style={styles.description}>
-                            From small private functions to major public events, Staffoo sources,
-                            verifies, and deploys licensed security personnel — fast, compliant,
-                            and covered.
+                            Post your healthcare security needs in minutes and connect with licensed guards prepared for hospitals, emergency units, and care facilities across Australia.
                         </p>
 
                         {/* Buttons */}
@@ -226,8 +273,9 @@ export default function HealthcareSecurity() {
                                 onMouseEnter={() => setIsPrimaryHovered(true)}
                                 onMouseLeave={() => setIsPrimaryHovered(false)}
                             >
-                                Request security staff
+                                Request Security Staff
                             </button>
+
                             <button
                                 style={styles.btnSecondary}
                                 onMouseEnter={() => setIsSecondaryHovered(true)}
@@ -241,40 +289,117 @@ export default function HealthcareSecurity() {
                     {/* Right Card */}
                     <div style={styles.right}>
                         <div style={styles.card}>
-                            <div style={styles.cardLabel}>Solution at a Glance</div>
+                            <div style={styles.cardLabel}>Why Staffoo</div>
 
-                            {/* Stats */}
+                            {/* Stats Grid */}
                             <div style={styles.statsGrid}>
                                 <div style={styles.statBox}>
-                                    <div style={styles.statValue}>24 hrs</div>
-                                    <div style={styles.statLabel}>Avg. deployment time</div>
+                                    <div style={styles.statValue}>500+ </div>
+                                    <div style={styles.statLabel}>Monthly <br /> deploys</div>
                                 </div>
+
                                 <div style={styles.statBox}>
                                     <div style={styles.statValue}>100%</div>
-                                    <div style={styles.statLabel}>Licensed &amp; verified</div>
+                                    <div style={styles.statLabel}>Licensed & Verified</div>
                                 </div>
                             </div>
 
                             {/* Tags */}
                             <div style={styles.tagsGrid}>
-                                <div style={styles.tag}>Crowd controller</div>
-                                <div style={styles.tag}>RSA-trained</div>
-                                <div style={styles.tag}>GPS tracking</div>
-                                <div style={styles.tag}>Payroll managed</div>
+                                <div style={styles.tag}>GPS <br /> Tracking</div>
+                                <div style={styles.tag}>Payroll Management</div>
+                                <div style={styles.tag}>Instant Deployment</div>
+                                <div style={styles.tag}>Complince Covered</div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
+
+
             <StatsCounter />
-            <BusinessProtection />
+
+
+            <HealthWWA />
+
             <Testimonials />
-            <WhyChooseStaffoo />
-            <HowItWorks />
-            <BusinessProtectionLeft />
-            <RelatedSolutions />
-            <FAQ />
-            <ReadyToSecure />
+
+
+            <HealthWCU />
+
+            <HowItWork
+                heading="How Healthcare Security Staffing Works"
+                steps={[
+                    {
+                        number: 1,
+                        title: "Create Job Request",
+                        description: "Add site details and shift needs"
+                    },
+                    {
+                        number: 2,
+                        title: "Review Guard Options",
+                        description: "Check experience and availability"
+                    },
+                    {
+                        number: 3,
+                        title: "Confirm Staff Selection",
+                        description: "Choose and lock your guard"
+                    },
+                    {
+                        number: 4,
+                        title: "Monitor Shift Activity",
+                        description: "View updates and incident reports"
+                    }
+                ]}
+            />
+
+            <HealthSpecility />
+
+
+            <Solutions
+                heading="Explore Other Security Staffing Solutions"
+                solutions={[
+                    {
+                        id: 1,
+                        title: "Corporate Office Security",
+                        description: "Security for daily office operations"
+                    },
+                    {
+                        id: 2,
+                        title: "Retail Store Security",
+                        description: "Staff for high-traffic retail locations"
+                    },
+                    {
+                        id: 3,
+                        title: "Event Security Staffing",
+                        description: "Guards for short-term event coverage"
+                    },
+                    {
+                        id: 4,
+                        title: "Construction Site Security",
+                        description: "Protection for equipment and materials"
+                    },
+                    {
+                        id: 5,
+                        title: "Government Building Security",
+                        description: "Security for public offices and councils"
+                    },
+                    {
+                        id: 6,
+                        title: "Education Campus Security",
+                        description: "Guards for schools and institutions"
+                    }
+                ]}
+            />
+
+            <HealthFAQ />
+
+
+            <ReadyToSecure
+                heading="Secure Your Healthcare Facility Without Delays"
+                description="Hire trained security staff, maintain control in high-pressure environments, and keep operations stable with full visibility and structured support."
+                buttonText="Request Security Staff"
+            />
 
             <Footer />
         </>

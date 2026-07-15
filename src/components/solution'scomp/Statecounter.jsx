@@ -1,6 +1,6 @@
 // components/StatsCounter.jsx
 import React, { useState, useEffect } from "react";
-import { motion, useMotionValue, useTransform, animate } from "framer-motion";
+import { useMotionValue, useTransform, animate } from "framer-motion";
 
 // Reusable sub-component to handle the counting animation from 0
 function AnimatedNumber({ value, suffix = "" }) {

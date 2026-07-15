@@ -1,12 +1,18 @@
 // components/Testimonials.jsx
 import React, { useState, useEffect, useRef } from "react";
+import ClientA from "../../assets/clients/a.png"; // path apne file location ke hisaab se adjust karein
+import ClientB from "../../assets/clients/b.png"; // path apne file location ke hisaab se adjust karein
+import ClientC from "../../assets/clients/c.png"; // path apne file location ke hisaab se adjust karein
+import ClientD from "../../assets/clients/d.png"; // path apne file location ke hisaab se adjust karein
+import ClientE from "../../assets/clients/e.png"; // path apne file location ke hisaab se adjust karein
+
 
 const testimonialsData = [
     {
         id: 1,
         name: "Lucas Brown",
         role: "Event Organiser, Sydney",
-        avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=200&auto=format&fit=crop",
+        avatar: ClientA,
         rating: 5,
         text: "I posted a job on Staffoo just the night before our corporate event. I hired 3 compliance-ready guards within two hours. Honestly, I didn't expect it to be this quick."
     },
@@ -14,7 +20,7 @@ const testimonialsData = [
         id: 2,
         name: "Amelia Smith",
         role: "Security Company Owner, Melbourne",
-        avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=200&auto=format&fit=crop",
+        avatar: ClientB,
         rating: 5,
         text: "We use Staffoo to assign shifts to our subcontractors. The GPS tracking feature builds trust, especially for individual workers. It's a solid platform."
     },
@@ -22,7 +28,7 @@ const testimonialsData = [
         id: 3,
         name: "Mia Wilson",
         role: "Venue Manager, Brisbane",
-        avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=200&auto=format&fit=crop",
+        avatar: ClientC,
         rating: 5,
         text: "Staffoo made our licence checking process so much easier. I used to search manually before, but now every guard's document is visible. Big time saver."
     },
@@ -30,7 +36,7 @@ const testimonialsData = [
         id: 4,
         name: "Ethan White",
         role: "Freelance Security Guard, Perth",
-        avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=200&auto=format&fit=crop",
+        avatar: ClientD,
         rating: 5,
         text: "I was trying to find a platform like Staffoo. It is best suited for me as a security guard. Now I can do event work between my contracts."
     },
@@ -38,7 +44,7 @@ const testimonialsData = [
         id: 5,
         name: "Noah",
         role: "Concert Promoter, Gold Coast",
-        avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=200&auto=format&fit=crop",
+        avatar: ClientE,
         rating: 5,
         text: "Had a last-minute cancellation from a security service I usually hire. Thankfully I was recommended to find services on Staffoo and was lucky enough to get a replacement the same day. I will recommend using Staffoo for security purposes."
     }

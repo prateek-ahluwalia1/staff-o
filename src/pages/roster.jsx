@@ -36,6 +36,28 @@ const states_array = [
   { label: 'ACT', value: 'act' }
 ];
 
+// react-select theming to match the app's teal/navy system (presentational only)
+const selectStyles = {
+  menuPortal: (base) => ({ ...base, zIndex: 9999 }),
+  control: (base, state) => ({
+    ...base,
+    borderRadius: 10,
+    borderColor: state.isFocused ? "#0A7C6E" : "#e2e8f0",
+    boxShadow: state.isFocused ? "0 0 0 3px rgba(10,124,110,0.12)" : "none",
+    minHeight: 42,
+    fontSize: 14,
+    "&:hover": { borderColor: "#0A7C6E" },
+  }),
+  option: (base, state) => ({
+    ...base,
+    backgroundColor: state.isSelected ? "#0A7C6E" : state.isFocused ? "#f0fdf9" : "#fff",
+    color: state.isSelected ? "#fff" : "#1e293b",
+    fontSize: 14,
+  }),
+  singleValue: (base) => ({ ...base, color: "#1e293b", fontWeight: 600 }),
+  placeholder: (base) => ({ ...base, color: "#94a3b8" }),
+};
+
 // --- Holiday Parsing Helpers ---
 const parseHolidayDate = (value) => {
   if (!value) return null;
@@ -370,6 +392,7 @@ export default function RosterPage() {
     return (
       <div className="staffoo-page-container">
         <div className="staffoo-header-card">
+          <span className="staffoo-eyebrow"><span className="dot"></span> Roster Console</span>
           <h2>Regional Roster Operations</h2>
           <p style={{ textTransform: "none" }}>Select a region below to manage sites, rosters, and shift assignments.</p>
         </div>
@@ -453,9 +476,9 @@ export default function RosterPage() {
               <div className="day-name">{day.short}</div>
               <div className="day-number">{day.num}</div>
               {day.isHoliday && (
-                <div className="vr-holiday-indicator text-warning" title={day.holidayName}>
+                <div className="vr-holiday-indicator" title={day.holidayName}>
                   <i className="fa-solid fa-star"></i>
-                  <span style={{ color: '#b45309' }}>{day.holidayName || 'Public Holiday'}</span>
+                  <span>{day.holidayName || 'Public Holiday'}</span>
                 </div>
               )}
             </div>
@@ -592,7 +615,7 @@ export default function RosterPage() {
                   isClearable
                   isSearchable
                   menuPortalTarget={document.body}
-                  styles={{ menuPortal: (base) => ({ ...base, zIndex: 9999 }) }}
+                  styles={selectStyles}
                   className="react-select-container"
                   classNamePrefix="react-select"
                 />
@@ -624,23 +647,6 @@ export default function RosterPage() {
           </div>
         </div>
       )}
-
-      {/* Inline styles for quick Holiday UI highlighting */}
-      <style>{`
-        .is-holiday-header {
-          background-color: #fff8e1 !important;
-          color: #b45309 !important;
-          border-bottom: 2px solid #f59e0b !important;
-        }
-        .is-holiday-cell {
-          background-color: #fffbeb !important;
-        }
-        .vr-holiday-indicator {
-          font-size: 0.65rem;
-          margin-top: 2px;
-          opacity: 0.8;
-        }
-      `}</style>
     </div>
   );
 }

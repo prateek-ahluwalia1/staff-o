@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useSelector } from 'react-redux';
+import Select from 'react-select';
 import { toast } from 'react-toastify';
 import useFetch from '../hooks/useFetch';
 import useSubmit from '../hooks/useSubmit';
@@ -339,17 +340,32 @@ const CoverJobs = () => {
                             {userRole === 'contractor' && (
                                 <div className="w-100">
                                     <label className="form-label fw-semibold" style={{ fontSize: '13px', color: '#334155' }}>Assign to active staff (optional)</label>
-                                    <select
-                                        className="form-select"
-                                        value={selectedStaffId}
-                                        onChange={(e) => setSelectedStaffId(e.target.value)}
-                                        disabled={staffLoading}
-                                    >
-                                        <option value="">Accept directly for myself</option>
-                                        {contractorStaffOptions.map((staff) => (
-                                            <option key={staff.value} value={staff.value}>{staff.label}</option>
-                                        ))}
-                                    </select>
+                                    <Select
+                                        options={[
+                                            { value: '', label: 'Accept directly for myself' },
+                                            ...contractorStaffOptions,
+                                        ]}
+                                        value={
+                                            contractorStaffOptions.find((option) => option.value === selectedStaffId)
+                                                ? contractorStaffOptions.find((option) => option.value === selectedStaffId)
+                                                : { value: '', label: 'Accept directly for myself' }
+                                        }
+                                        onChange={(option) => setSelectedStaffId(option?.value || '')}
+                                        isLoading={staffLoading}
+                                        isClearable={false}
+                                        classNamePrefix="react-select"
+                                        placeholder="Select staff"
+                                        styles={{
+                                            control: (base) => ({
+                                                ...base,
+                                                borderRadius: 10,
+                                                borderColor: '#cbd5e1',
+                                                boxShadow: 'none',
+                                                minHeight: 44,
+                                            }),
+                                            menu: (base) => ({ ...base, zIndex: 99999 }),
+                                        }}
+                                    />
                                     <div className="text-muted mt-2" style={{ fontSize: '12px' }}>Leave this empty to accept the job directly.</div>
                                 </div>
                             )}

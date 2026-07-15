@@ -1,4 +1,5 @@
 import React from "react";
+import Select from "react-select";
 
 const InfoRow = ({ label, value, icon }) => (
     <div
@@ -311,25 +312,32 @@ export default function NotificationAcceptModal({
                                 <label style={{ display: "block", fontSize: 13, fontWeight: 700, color: "#334155", marginBottom: 6 }}>
                                     Assign to active staff (optional)
                                 </label>
-                                <select
-                                    value={selectedStaffId}
-                                    onChange={(e) => onStaffChange?.(e.target.value)}
-                                    disabled={staffLoading}
-                                    style={{
-                                        width: "100%",
-                                        padding: "10px 12px",
-                                        borderRadius: 10,
-                                        border: "1px solid #cbd5e1",
-                                        background: "#fff",
+                                <Select
+                                    options={[
+                                        { value: "", label: "Accept directly for myself" },
+                                        ...staffOptions,
+                                    ]}
+                                    value={
+                                        staffOptions.find((option) => option.value === selectedStaffId)
+                                            ? staffOptions.find((option) => option.value === selectedStaffId)
+                                            : { value: "", label: "Accept directly for myself" }
+                                    }
+                                    onChange={(option) => onStaffChange?.(option?.value || "")}
+                                    isLoading={staffLoading}
+                                    isClearable={false}
+                                    classNamePrefix="react-select"
+                                    placeholder="Select staff"
+                                    styles={{
+                                        control: (base) => ({
+                                            ...base,
+                                            borderRadius: 10,
+                                            borderColor: "#cbd5e1",
+                                            boxShadow: "none",
+                                            minHeight: 44,
+                                        }),
+                                        menu: (base) => ({ ...base, zIndex: 99999 }),
                                     }}
-                                >
-                                    <option value="">Accept directly for myself</option>
-                                    {staffOptions.map((staff) => (
-                                        <option key={staff.value} value={staff.value}>
-                                            {staff.label}
-                                        </option>
-                                    ))}
-                                </select>
+                                />
                                 <div style={{ fontSize: 12, color: "#64748b", marginTop: 6 }}>
                                     Leave this empty to accept the job directly.
                                 </div>

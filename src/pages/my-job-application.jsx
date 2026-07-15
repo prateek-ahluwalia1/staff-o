@@ -106,7 +106,7 @@ export default function MyJobApplications() {
         roster_id: "1",
       };
 
-      submit("api/fetch-customer-sites", payload, { method: "POST" });
+      submit("api/job-details", payload, { method: "POST" });
     } catch (error) {
       console.error("Date formatting error:", error);
     }

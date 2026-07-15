@@ -28,20 +28,17 @@ const statusTone = (status = "") => {
   return "is-pending";
 };
 
-// Helper function to format dates to DD/MM/YYYY
+// Helper to format any date-like string to dd/mm/yyyy
 const formatDate = (dateString) => {
-  if (!dateString || dateString === "N/A") return "N/A";
-
+  if (!dateString) return "N/A";
   const date = new Date(dateString);
-  // Check if the date is valid
-  if (isNaN(date.getTime())) return dateString;
-
+  if (isNaN(date.getTime())) return "N/A"; // invalid date guard
   const day = String(date.getDate()).padStart(2, "0");
-  const month = String(date.getMonth() + 1).padStart(2, "0"); // Months are 0-indexed
+  const month = String(date.getMonth() + 1).padStart(2, "0"); // months are 0‑indexed
   const year = date.getFullYear();
-
   return `${day}/${month}/${year}`;
 };
+
 
 export default function CustomerDashboard() {
   const { userdata } = useSelector((state) => state.auth);
@@ -90,8 +87,8 @@ export default function CustomerDashboard() {
       id: j.id,
       role: "Assigned Role",
       staff: j.assigned_staff_name || "Unassigned",
-      startDate: formatDate(j.start), // Formatted here
-      endDate: formatDate(j.end),     // Formatted here
+      startDate: formatDate(j.start),
+      endDate: formatDate(j.end),
       cost: Number(j.job_amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2 }),
       status: j.job_status || "Active",
     }));
@@ -150,29 +147,25 @@ export default function CustomerDashboard() {
             icon="fa-solid fa-briefcase"
             title="Active Jobs"
             value={dashboardStats.activeJobs}
-            bgColor="#e5f4f2"
-            iconColor="#0f766e"
+            accent="#0f766e"
           />
           <StatsCard
             icon="fa-solid fa-check-circle"
             title="Completed Jobs"
             value={dashboardStats.completedJobs}
-            bgColor="#e2f6ee"
-            iconColor="#047857"
+            accent="#047857"
           />
           <StatsCard
             icon="fa-solid fa-users"
             title="Staff Assigned"
             value={dashboardStats.staffAssigned}
-            bgColor="#eef1f5"
-            iconColor="#334155"
+            accent="#334155"
           />
           <StatsCard
             icon="fa-solid fa-file-invoice-dollar"
             title="Invoices Pending"
             value={dashboardStats.invoicesPending}
-            bgColor="#fdf1de"
-            iconColor="#b45309"
+            accent="#b45309"
           />
         </div>
       </section>

@@ -109,29 +109,25 @@ export default function StaffDashboard() {
             icon="fa-solid fa-briefcase"
             title="Total Assigned Jobs"
             value={dashboardStats.totalJobs}
-            bgColor="#eef1f5"
-            iconColor="#334155"
+            accent="#334155"
           />
           <StatsCard
             icon="fa-solid fa-check-circle"
             title="Completed Jobs"
             value={dashboardStats.completedJobs}
-            bgColor="#e2f6ee"
-            iconColor="#047857"
+            accent="#047857"
           />
           <StatsCard
             icon="fa-solid fa-clock"
             title="Pending Jobs"
             value={dashboardStats.pendingJobs}
-            bgColor="#fdf1de"
-            iconColor="#b45309"
+            accent="#b45309"
           />
           <StatsCard
             icon="fa-solid fa-dollar-sign"
             title="Earned This Month"
             value={`$${dashboardStats.earnedThisMonth}`}
-            bgColor="#e5f4f2"
-            iconColor="#0f766e"
+            accent="#0f766e"
           />
         </div>
       </section>

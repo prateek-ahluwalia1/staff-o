@@ -132,29 +132,25 @@ export default function AdminDashboard() {
             icon="fa-solid fa-users"
             title="Total Users"
             value={adminStats.totalUsers}
-            bgColor="#e5f4f2"
-            iconColor="#0f766e"
+            accent="#0f766e"
           />
           <StatsCard
             icon="fa-solid fa-briefcase"
             title="Total Jobs"
             value={adminStats.totalJobs}
-            bgColor="#e5f4f2"
-            iconColor="#14b8a6"
+            accent="#1e3a5f"
           />
           <StatsCard
             icon="fa-solid fa-dollar-sign"
             title="Total Revenue"
             value={`$${adminStats.totalRevenue}`}
-            bgColor="#fdf1de"
-            iconColor="#b45309"
+            accent="#b45309"
           />
           <StatsCard
             icon="fa-solid fa-chart-line"
             title="This Month Revenue"
             value={`$${adminStats.thisMonthRevenue}`}
-            bgColor="#e2f6ee"
-            iconColor="#047857"
+            accent="#047857"
           />
         </div>
       </section>
@@ -166,29 +162,25 @@ export default function AdminDashboard() {
             icon="fa-solid fa-user-tie"
             title="Staff Members"
             value={adminStats.totalStaff}
-            bgColor="#eef1f5"
-            iconColor="#334155"
+            accent="#334155"
           />
           <StatsCard
             icon="fa-solid fa-handshake"
             title="Resource Partners"
             value={adminStats.totalContractors}
-            bgColor="#e5f4f2"
-            iconColor="#0f766e"
+            accent="#14b8a6"
           />
           <StatsCard
             icon="fa-solid fa-building"
             title="Clients"
             value={adminStats.totalCustomers}
-            bgColor="#eef1f5"
-            iconColor="#334155"
+            accent="#1e3a5f"
           />
           <StatsCard
             icon="fa-solid fa-circle-check"
             title="Completed Jobs"
             value={adminStats.completedJobs}
-            bgColor="#e2f6ee"
-            iconColor="#047857"
+            accent="#047857"
           />
         </div>
       </section>

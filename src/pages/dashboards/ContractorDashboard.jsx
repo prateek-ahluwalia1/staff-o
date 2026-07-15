@@ -106,29 +106,25 @@ export default function ContractorDashboard() {
             icon="fa-solid fa-users"
             title="Total Assigned Staff"
             value={dashboardStats.totalStaff}
-            bgColor="#eef1f5"
-            iconColor="#334155"
+            accent="#334155"
           />
           <StatsCard
             icon="fa-solid fa-briefcase"
             title="Active Jobs"
             value={dashboardStats.activeJobs}
-            bgColor="#e5f4f2"
-            iconColor="#0f766e"
+            accent="#0f766e"
           />
           <StatsCard
             icon="fa-solid fa-check-double"
             title="Completed Jobs"
             value={dashboardStats.completedJobs}
-            bgColor="#e2f6ee"
-            iconColor="#047857"
+            accent="#047857"
           />
           <StatsCard
             icon="fa-solid fa-calendar-xmark"
             title="Pending Leave Requests"
             value={dashboardStats.pendingLeaveRequests}
-            bgColor="#fdf1de"
-            iconColor="#b45309"
+            accent="#b45309"
           />
         </div>
       </section>

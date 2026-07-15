@@ -239,12 +239,32 @@
    ========================================================================== */
 .dashboard-panel,
 .chart-container {
+  position: relative;
   background: var(--surface);
   padding: 1.5rem;
   border-radius: var(--radius-lg);
   border: 1px solid var(--line);
   box-shadow: var(--shadow-card);
   margin-bottom: 1.5rem;
+  overflow: hidden;
+}
+
+.dashboard-panel::before,
+.chart-container::before {
+  content: "";
+  position: absolute;
+  top: -60px;
+  right: -60px;
+  width: 160px;
+  height: 160px;
+  border-radius: 50%;
+  background: repeating-radial-gradient(circle, transparent 0, transparent 13px, rgba(15, 118, 110, 0.05) 14px, transparent 15px);
+  pointer-events: none;
+}
+
+.dashboard-panel>*,
+.chart-container>* {
+  position: relative;
 }
 
 .chart-container h4 {

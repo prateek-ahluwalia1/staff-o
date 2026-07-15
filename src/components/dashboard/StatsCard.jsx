@@ -5,17 +5,16 @@ export default function StatsCard({
   title,
   value,
   subtitle,
-  bgColor = "#f0f4ff",
-  iconColor = "#4ECDC4",
+  accent = "#0f766e",
   onClick,
 }) {
   return (
     <div
       className="stats-card"
-      style={{ backgroundColor: bgColor, cursor: onClick ? "pointer" : "default" }}
+      style={{ "--card-accent": accent, cursor: onClick ? "pointer" : "default" }}
       onClick={onClick}
     >
-      <div className="stats-icon" style={{ color: iconColor }}>
+      <div className="stats-icon">
         <i className={icon}></i>
       </div>
       <div className="stats-content">

@@ -251,7 +251,7 @@ class JobRosterController extends Controller
                             shifts:          $invoiceShifts,
                             baseTotal:       $invoiceBaseTotal,
                             transaction:     $transaction,
-                            invoiceNumber:   'STAFFOO-' . strtoupper(substr($paymentIntentId, -8)),
+                            invoiceNumber:   'ST-' . strtoupper(substr($paymentIntentId, -8)),
                             paymentIntentId: $paymentIntentId,
                         );
     
@@ -276,7 +276,7 @@ class JobRosterController extends Controller
                         shifts:           $invoiceShifts,
                         baseTotal:        $invoiceBaseTotal,
                         transaction:      $transaction,
-                        invoiceNumber:    'STAFFOO-' . strtoupper(substr($paymentIntentId, -8)),
+                        invoiceNumber:    'ST-' . strtoupper(substr($paymentIntentId, -8)),
                         paymentIntentId:  $paymentIntentId,
                     );
                 }
@@ -1655,7 +1655,7 @@ private function saveInvoicePdf($pdfBytes, string $invoiceNumber, string $client
             if (!$user) return;
     
             $invoiceData = [
-                'invoice_number'    => 'STAFFOO-' . strtoupper(substr($balanceIntentId, -8)) . '-FINAL',
+                'invoice_number'    => 'ST-' . strtoupper(substr($balanceIntentId, -8)) . '-FINAL',
                 'date'              => now()->format('d M Y'),
                 'client_name'       => $user->name,
                 'client_email'      => $user->email,
@@ -1827,7 +1827,8 @@ private function saveInvoicePdf($pdfBytes, string $invoiceNumber, string $client
             }
 
             if ($user->user_type === 'contractor') {
-                $q->whereIn('assigned_to', $contractorUserIds);
+                $q->whereIn('assigned_to', $contractorUserIds)
+                      ->orWhere('accepted_by', $user->id);
             }
         });
 
@@ -1850,7 +1851,9 @@ private function saveInvoicePdf($pdfBytes, string $invoiceNumber, string $client
                 }
 
                 if ($user->user_type === 'contractor') {
-                    $q->whereIn('assigned_to', $contractorUserIds);
+                    $q->whereIn('assigned_to', $contractorUserIds)
+                    ->orWhere('accepted_by', $user->id);
+
                 }
             }])
             ->get();
@@ -1879,8 +1882,10 @@ private function saveInvoicePdf($pdfBytes, string $invoiceNumber, string $client
             ->when($user->user_type === 'customer', function ($q) use ($user) {
                 $q->where('created_by', $user->id);
             })
-            ->when($user->user_type === 'contractor', function ($q) use ($contractorUserIds) {
-                $q->whereIn('assigned_to', $contractorUserIds);
+            ->when($user->user_type === 'contractor', function ($q) use ($contractorUserIds, $user) {
+                $q->whereIn('assigned_to', $contractorUserIds)
+                    ->orWhere('accepted_by', $user->id);
+
             });
 
             if (!empty($states)) {
@@ -1914,8 +1919,9 @@ private function saveInvoicePdf($pdfBytes, string $invoiceNumber, string $client
                 ->when($user->user_type === 'customer', function ($q) use ($user) {
                     $q->where('created_by', $user->id);
                 })
-                ->when($user->user_type === 'contractor', function ($q) use ($contractorUserIds) {
-                    $q->whereIn('assigned_to', $contractorUserIds);
+                ->when($user->user_type === 'contractor', function ($q) use ($contractorUserIds, $user) {
+                    $q->whereIn('assigned_to', $contractorUserIds)
+                    ->orWhere('accepted_by', $user->id);
                 });
             
             // Apply state filter to hours base query
@@ -3487,6 +3493,7 @@ public function autoUpdatePayslipStatus()
 
             $query = JobRoster::with(['site'])
                 ->whereNull('assigned_to')
+                ->whereNull('accepted_by')
                 ->where('start', '>', now())
                 ->orderBy('start', 'asc');
 
@@ -3932,5 +3939,51 @@ public function autoUpdatePayslipStatus()
         $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
         
         return $R * $c;
+    }
+
+     public function contractor_accept_job(Request $request, $id)
+    {
+        $a = null;
+        $b = '';
+        $roster = DB::table('job_rosters')
+            ->join('sites', 'sites.id', '=', 'job_rosters.site_id')
+            ->where('job_rosters.id', '=', $request->input('roster_id'))->where(
+                function ($query) use ($a, $b) {
+                    return $query->where('job_rosters.assigned_to', '=', $a)
+                        ->orWhere('job_rosters.assigned_to', '=', $b)
+                        ->orWhere('job_rosters.accepted_by', '=', $a)
+                        ->orWhere('job_rosters.accepted_by', '=', $b);
+
+                }
+            )
+            ->select('job_rosters.*', 'sites.id as jobId', 'sites.address', 'sites.coordinates')
+            ->first();
+
+        if ($roster != null) {
+
+            $user = \App\Models\User::with('contractor')->find($id);
+
+            if (!$user || !$user->contractor) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Contractor data not found.'
+                ], 200);
+            }
+
+            DB::table('job_rosters')
+                ->where('id', '=', $request->input('roster_id'))
+                ->update(['accepted_by' => $id]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Job accept successfully.',
+            ], 200);
+            
+        } else {
+            return response()->json([
+                'success' => false,
+                'message' => 'Job already accepted!'
+            ], 200);
+        }
     }
 }

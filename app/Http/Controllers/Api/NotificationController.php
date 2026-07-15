@@ -81,20 +81,21 @@ class NotificationController extends Controller
      */
      public function getUserNotifications($userId)
     {
-        $guard = DB::table('users')->where('id', $userId)->select('state', 'name', 'user_type')->first();
-        if($guard->user_type == 'admin'){
-            $notifications = Notification::orderBy('created_at', 'desc')
-            ->paginate(20);
-        }else{
-        $notifications = Notification::where('id', $userId)
+        $notifications = Notification::where('guard_id', $userId)
             ->orderBy('created_at', 'desc')
             ->paginate(20);    
-        }
-
+      if(!empty($notifications)){
         return response()->json([
             'success' => true,
             'data' => $notifications
         ]);
+      }else{
+        return response()->json([
+            'success' => true,
+            'data' => $notifications
+        ]);
+      }
+        
     }
 
     /**
@@ -102,7 +103,7 @@ class NotificationController extends Controller
      */
     public function getUnreadCount($userId)
     {
-        $count = Notification::where('receiver_id', $userId)
+        $count = Notification::where('guard_id', $userId)
             ->whereNull('read_at')
             ->count();
 
@@ -132,10 +133,18 @@ class NotificationController extends Controller
      */
     public function markAllAsRead($userId)
     {
-        Notification::where('receiver_id', $userId)
-            ->whereNull('read_at')
-            ->update(['read_at' => now()]);
-
+        $user = User::find($userId);
+        
+        if (!$user) {
+            return response()->json(['success' => false, 'message' => 'User not found'], 404);
+        }
+        
+        $query = Notification::whereNull('read_at');
+        
+            $query->where('guard_id', $userId)
+                ->update(['read_at' => now()]);
+        
+        
         return response()->json(['success' => true]);
     }
 }

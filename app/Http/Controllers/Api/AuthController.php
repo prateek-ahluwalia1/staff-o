@@ -167,7 +167,7 @@ class AuthController extends Controller
         ], 201);
     }
 
-     public function sendOTP($phone, $otp)
+    public function sendOTP($phone, $otp)
     {
         if (empty($phone)) {
             Log::error('OTP Error: Phone is null');
@@ -284,18 +284,28 @@ class AuthController extends Controller
     }
 
     
-    function isEmailVarifay($email, $userType, $token){
+     function isEmailVarifay($email, $userType, $token){
+
+        if($userType == 'staff'){
+           $title = "Staff Verify Email";
+        }elseif($userType == 'contractor'){
+          $title = "Resource Partner Verify Email";
+        }elseif($userType == 'customer'){
+          $title = "Client";
+        }else{
+          $title = "User";
+        }
         $data = [
             'token' => $token,
             'email' => $email,
-            'title' => "Staff Verify Email",
+            'title' => $title,
             'userType' => $userType
         ];
         
         Mail::send('emails.isEmailVerify', $data, function($token)use($data){
             $token->from('no-reply@staffoo.com.au', 'STAFFOO')
             ->to($data['email']);
-            $token->subject("Staff Verify Email");
+            $token->subject($data['title']);
         });
     }
 

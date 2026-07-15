@@ -183,6 +183,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::any('share-invoice',  [JobRosterController::class, 'sendPdfInvoice']);
 
     Route::any('/asap-jobs/accept/{id}', [JobRosterController::class, 'accept_asap_job'])->name('accept.asap.job');
+    Route::any('/contractor/jobs/accept/{id}', [JobRosterController::class, 'contractor_accept_job']);
     Route::any('/signin/{id}', [JobRosterController::class, 'jobSignin'])->name('job.signin');
     Route::any('/signout/{id}', [JobRosterController::class, 'jobSignout'])->name('job.signout');
     Route::get('/jobs/available/{id}', [JobRosterController::class, 'getAvailableJobs']);

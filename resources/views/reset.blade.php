@@ -12,9 +12,7 @@
     <h1>You have requested to reset your password</h1>
     <br>
     <p>
-        We cannot simply send you your old password. A unique link
-        to reset your password has been generated for you. To reset your password,
-        click the following button and follow the instructions.
+        We received a request to reset your password. Click the button below to create a new password for your account.
     </p>
     <a href="{{ route('password.reset.form', ['token' => $token]) }}" style="background-color: #4CAF50; /* Green */
                                             border: none;

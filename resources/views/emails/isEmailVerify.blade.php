@@ -60,8 +60,8 @@
                             
                             <!-- Call To Action Button (modern, rounded, gradient style) -->
                             <tr>
-                                <td style="padding: 24px 32px 12px 32px; text-align: center;">
-                                    <a href="https://apis.staffoo.com.au/api/email-verification/{{$email}}/{{$token}}"
+                               <td style="padding: 24px 32px 12px 32px; text-align: center;">
+                                    <a href="{{ config('app.url') . '/api/email-verification/' . $email . '/' . $token }}"
                                     target="_blank"
                                     style="background-color: #00A37E; color: #ffffff; padding: 14px 32px; border-radius: 60px; text-decoration: none; font-weight: 600; font-size: 16px; display: inline-block; text-align: center; font-family: Arial, sans-serif;">
                                         Verify Email
@@ -84,9 +84,9 @@
                                                     Once your email is verified, you'll be able to:
                                                 </p>
                                                 <ul style="margin:6px 0 0 20px; padding-left:0; color:#2C5A6E; font-size:14px; line-height:1.6;">
-                                                    <li>Create & assign shifts instantly</li>
-                                                    <li>Track attendance and performance metrics</li>
-                                                    <li>Access real-time analytics & payroll insights</li>
+                                                    <li>Create and assign shifts instantly.</li>
+                                                    <li>Track attendance and performance metrics<./li>
+                                                    <li>Access real-time analytics and payroll insights.</li>
                                                 </ul>
                                             </td>
                                             @endif
@@ -123,7 +123,7 @@
                                                 </div>
                                                 <!-- tiny app badge hint (optional) -->
                                                 <p style="font-size:11px; color:#A8BBC9; margin-top:18px; margin-bottom:0;">
-                                                     Manage shifts, track time & grow with STAFFOO
+                                                     Manage shifts, track time and grow with STAFFOO
                                                 </p>
                                             </td>
                                         </tr>
@@ -136,7 +136,7 @@
                     <table style="max-width:600px; width:100%; margin-top:16px;" cellpadding="0" cellspacing="0">
                         <tr>
                             <td style="text-align:center; font-size:11px; color:#92A6B3; padding:10px 10px 0px;">
-                                <p>This is an automated message — please do not reply directly to this email.</p>
+                                <p>This is an automated email. Please do not reply to this message.</p>
                             </td>
                         </tr>
                     </table>

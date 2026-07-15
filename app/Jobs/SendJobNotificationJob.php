@@ -43,6 +43,7 @@ class SendJobNotificationJob implements ShouldQueue
     {
         $unassignedJobs = JobRoster::with(['site'])
             ->whereNull('assigned_to')
+            ->whereNull('accepted_by')
             ->where('start', '>=', now())
             ->get();
 

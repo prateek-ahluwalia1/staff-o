@@ -251,8 +251,9 @@ class CheckDocumentExpiry extends Command
             }
 
             // For PORTAL notification using DynamicUserNotification
+            $dayText = $daysRemaining == 1 ? 'day' : 'days';
             $userId = $user->id;
-            $message = "Your document '{$document->document_name}' will expire in {$daysRemaining} days. Please renew it before.";
+            $message = "Your document '{$document->document_name}' will expire in {$daysRemaining} {$dayText}. Please renew it before.";
             $title = "Document Expire";
             $type = 'document_expiry';
             $data = [
@@ -291,8 +292,8 @@ class CheckDocumentExpiry extends Command
                 $this->warn("   ⚠️ No active admin users found to send notification.");
                 return;
             }
-
-            $message = "Staff user '{$user->name}' has a document '{$document->document_name}' expiring in {$daysRemaining} days.";
+            $dayText = $daysRemaining == 1 ? 'day' : 'days';
+            $message = "Staff member '{$user->name}' has a document '{$document->document_name}' expiring in {$daysRemaining} {$dayText}.";
             $title = "Document Expiry Alert";
             $type = 'admin_document_expiry';
             $data = [
@@ -316,6 +317,7 @@ class CheckDocumentExpiry extends Command
                 ));
                 
                 $this->line("   📢 Pusher notification sent to admin: {$admin->name} (ID: {$admin->id})");
+                $this->saveNotification(null, $admin->id, $title, $message, $type, $data);
             }
 
         } catch (\Exception $e) {

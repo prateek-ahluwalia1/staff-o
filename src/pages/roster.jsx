@@ -392,7 +392,7 @@ export default function RosterPage() {
     return (
       <div className="staffoo-page-container">
         <div className="staffoo-header-card">
-          <span className="staffoo-eyebrow"><span className="dot"></span> Roster Console</span>
+          <span className="staffoo-eyebrow"><span className="dot"></span> Roster</span>
           <h2>Regional Roster Operations</h2>
           <p style={{ textTransform: "none" }}>Select a region below to manage sites, rosters, and shift assignments.</p>
         </div>

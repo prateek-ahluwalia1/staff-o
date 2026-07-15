@@ -44,8 +44,8 @@ const CompactTime = ({ value, onChange, containerClass = "" }) => {
 
   return (
     <div
-      className={`input-group input-group-sm bg-white rounded flex-nowrap border border-secondary-subtle ${containerClass}`}
-      style={{ minWidth: "90px", maxWidth: "110px", boxShadow: "0 1px 3px rgba(0,0,0,0.06)" }}
+      className={`input-group input-group-sm bg-white rounded jw-compact-time flex-nowrap ${containerClass}`}
+      style={{ minWidth: "90px", maxWidth: "110px" }}
     >
       <input
         type="text"
@@ -198,34 +198,52 @@ export default function ScheduleStep({ form, setField, scheduleError = "" }) {
   const selectedDateObjects = form.scheduleDays.map(d => parseLocalDate(d.date)).filter(Boolean);
 
   return (
-    <div className="bg-white rounded-4 p-3 p-md-4 border" style={{ boxShadow: "0 4px 20px rgba(0,0,0,0.03)" }}>
+    <div className="jw-card p-3 p-md-4">
+      <style>{`
+        .jw-compact-time { border: 1px solid var(--jw-line, #e2e8f0) !important; box-shadow: 0 1px 3px rgba(15,23,42,0.05); transition: border-color .15s; }
+        .jw-compact-time:focus-within { border-color: var(--jw-teal, #0A7C6E) !important; box-shadow: 0 0 0 3px rgba(10,124,110,0.1) !important; }
+        .jw-fastfill-banner {
+          background: linear-gradient(120deg, #0a1930, #0e2340 60%, #10345a);
+          border-radius: 16px; padding: 16px 20px; position: relative; overflow: hidden; isolation: isolate;
+        }
+        .jw-fastfill-banner::after { content:""; position:absolute; top:-40px; right:-40px; width:160px; height:160px; border-radius:50%;
+          background: radial-gradient(circle, rgba(10,124,110,0.5), transparent 70%); z-index:-1; }
+        .jw-fastfill-icon { width:36px; height:36px; border-radius:10px; background: rgba(255,255,255,0.12); color:#6ee7d8;
+          display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+        .jw-fastfill-banner label { color: #fff !important; }
+        .jw-fastfill-banner .small { color: rgba(255,255,255,0.7) !important; }
+        .jw-stepper { border: 1px solid var(--jw-line, #e2e8f0) !important; box-shadow: 0 1px 3px rgba(15,23,42,0.05); }
+        .jw-add-shift-btn { color: var(--jw-teal, #0A7C6E) !important; }
+        .jw-add-shift-btn:hover { opacity: 1 !important; }
+      `}</style>
+
       {scheduleError && (
-        <div className="alert alert-danger py-2 px-3 mb-4 d-flex align-items-center gap-2" role="alert">
+        <div className="jw-alert-error mb-4">
           <i className="fa-solid fa-circle-exclamation"></i>
           {scheduleError}
         </div>
       )}
 
       {/* Primary Mode Toggle */}
-      <div className="d-flex p-1 bg-light rounded-pill border mb-4 mx-auto w-100" style={{ maxWidth: "320px" }}>
-        <button
-          type="button"
-          className={`btn btn-sm rounded-pill flex-grow-1 fw-semibold transition-all px-2 py-1 small ${form.scheduleMode === "single" ? "btn-primary-custom shadow-sm" : "btn-light text-muted border-0 bg-transparent"
-            }`}
-          onClick={() => handleModeChange("single")}
-        >
-          Single Day
-        </button>
-        <button
-          type="button"
-          className={`btn btn-sm rounded-pill flex-grow-1 fw-semibold transition-all px-2 py-1 small ${form.scheduleMode !== "single" ? "btn-primary-custom shadow-sm" : "btn-light text-muted border-0 bg-transparent"
-            }`}
-          onClick={() => {
-            if (form.scheduleMode === "single") handleModeChange("custom");
-          }}
-        >
-          Multiple Days
-        </button>
+      <div className="d-flex justify-content-center mb-4">
+        <div className="jw-segmented">
+          <button
+            type="button"
+            className={form.scheduleMode === "single" ? "active" : ""}
+            onClick={() => handleModeChange("single")}
+          >
+            <i className="fa-regular fa-calendar-day"></i> Single Day
+          </button>
+          <button
+            type="button"
+            className={form.scheduleMode !== "single" ? "active" : ""}
+            onClick={() => {
+              if (form.scheduleMode === "single") handleModeChange("custom");
+            }}
+          >
+            <i className="fa-regular fa-calendar-week"></i> Multiple Days
+          </button>
+        </div>
       </div>
 
       {/* Date Picker Area */}
@@ -239,23 +257,17 @@ export default function ScheduleStep({ form, setField, scheduleError = "" }) {
 
           {/* Secondary Multi‑Select Toggle */}
           {form.scheduleMode !== "single" && (
-            <div className="bg-light p-1 rounded-pill border d-inline-flex shadow-sm w-100 w-md-auto gap-1" style={{ maxWidth: "300px" }}>
+            <div className="jw-segmented jw-segmented-sm w-100 w-md-auto">
               <button
                 type="button"
-                className={`btn btn-sm rounded-pill px-2 py-1 flex-grow-1 transition-all small ${form.scheduleMode === "custom"
-                  ? "btn-white bg-white text-dark shadow-sm fw-semibold"
-                  : "btn-light text-muted border-0 bg-transparent"
-                  }`}
+                className={form.scheduleMode === "custom" ? "active" : ""}
                 onClick={() => handleModeChange("custom")}
               >
                 Individual Dates
               </button>
               <button
                 type="button"
-                className={`btn btn-sm rounded-pill px-2 py-1 flex-grow-1 transition-all small ${form.scheduleMode === "multiple"
-                  ? "btn-white bg-white text-dark shadow-sm fw-semibold"
-                  : "btn-light text-muted border-0 bg-transparent"
-                  }`}
+                className={form.scheduleMode === "multiple" ? "active" : ""}
                 onClick={() => handleModeChange("multiple")}
               >
                 Date Range
@@ -314,29 +326,25 @@ export default function ScheduleStep({ form, setField, scheduleError = "" }) {
 
       {/* BULK APPLY */}
       {(form.scheduleMode === "multiple" || form.scheduleMode === "custom") && form.scheduleDays.length > 1 && (
-        <div
-          className="rounded-3 p-2 px-3 mb-4 d-flex flex-column flex-lg-row align-items-lg-center justify-content-between gap-3"
-          style={{ backgroundColor: "#f0f7ff", border: "1px solid #cce3ff" }}
-        >
-          <label className="fw-bold text-primary mb-0 small tracking-wide text-nowrap">
-            <i className="fa-solid fa-bolt me-2"></i> Fast Fill
+        <div className="jw-fastfill-banner mb-4 d-flex flex-column flex-lg-row align-items-lg-center justify-content-between gap-3">
+          <label className="fw-bold mb-0 small tracking-wide text-nowrap d-flex align-items-center gap-2">
+            <span className="jw-fastfill-icon"><i className="fa-solid fa-bolt"></i></span> Fast Fill
           </label>
           <div className="d-flex flex-column flex-md-row flex-wrap align-items-md-center gap-3 gap-md-4">
             <div className="d-flex align-items-center gap-2">
-              <span className="small text-muted fw-semibold">Start:</span>
+              <span className="small fw-semibold">Start:</span>
               <CompactTime value={bulkStart} onChange={(val) => handleBulkChange("start", val)} containerClass="w-auto" />
             </div>
             <div className="d-flex align-items-center gap-2">
-              <span className="small text-muted fw-semibold">End:</span>
+              <span className="small fw-semibold">End:</span>
               <CompactTime value={bulkEnd} onChange={(val) => handleBulkChange("end", val)} containerClass="w-auto" />
             </div>
             <div className="d-flex align-items-center gap-2">
-              <span className="small text-muted fw-semibold text-nowrap"
+              <span className="small fw-semibold text-nowrap"
                 style={{ textTransform: "none" }}
               >Number of staff:</span>
 
-              {/* CLEANED UP: Border moved to parent container, removed from children */}
-              <div className="input-group input-group-sm flex-nowrap bg-white rounded shadow-sm border border-secondary-subtle" style={{ width: "95px" }}>
+              <div className="input-group input-group-sm flex-nowrap bg-white rounded jw-stepper" style={{ width: "95px" }}>
                 <button
                   type="button"
                   className="btn btn-sm border-0 bg-transparent px-2 text-muted fw-bold"
@@ -364,105 +372,108 @@ export default function ScheduleStep({ form, setField, scheduleError = "" }) {
         </div>
       )}
 
-      {/* Compact Data Grid */}
-      <div className="d-flex flex-column gap-4 mt-2">
-        {form.scheduleDays.map((day, dayIndex) => (
-          <div key={day.date} className="border-bottom pb-3">
-            <div className="d-flex justify-content-between align-items-center mb-2">
-              <span className="fw-bold text-dark fs-6">
-                {parseLocalDate(day.date).toLocaleDateString("en-AU", {
-                  weekday: "short",
-                  day: "numeric",
-                  month: "short",
-                })}
-              </span>
-              <button
-                type="button"
-                className="btn btn-sm text-primary p-0 border-0 fw-semibold small transition-all"
-                style={{ opacity: 0.8 }}
-                onMouseOver={(e) => (e.target.style.opacity = 1)}
-                onMouseOut={(e) => (e.target.style.opacity = 0.8)}
-                onClick={() => addShift(dayIndex)}
-              >
-                + Add shift
-              </button>
-            </div>
-            <div className="d-flex flex-column gap-2">
-              {day.shifts.map((shift, shiftIndex) => (
-                <div
-                  key={shift.id}
-                  className="d-flex flex-column flex-md-row align-items-md-center gap-3 bg-light rounded-2 px-3 py-3 py-md-2 border border-light"
-                >
-                  <div className="d-flex flex-column flex-sm-row align-items-sm-center gap-3 w-100 w-md-auto">
-                    <div className="d-flex align-items-center gap-2 w-100 w-sm-auto flex-grow-1 flex-sm-grow-0">
-                      <span className="small text-muted fw-medium" style={{ minWidth: "45px" }}>Start:</span>
-                      <CompactTime
-                        value={shift.startTime}
-                        onChange={(val) => updateShift(dayIndex, shiftIndex, "startTime", val)}
-                        containerClass="w-100"
-                      />
-                    </div>
-                    <div className="d-flex align-items-center gap-2 w-100 w-sm-auto flex-grow-1 flex-sm-grow-0 position-relative">
-                      <span className="small text-muted fw-medium" style={{ minWidth: "45px" }}>End:</span>
-                      <CompactTime
-                        value={shift.endTime}
-                        onChange={(val) => updateShift(dayIndex, shiftIndex, "endTime", val)}
-                        containerClass="w-100"
-                      />
-                      {shift.startTime && shift.endTime && shift.endTime <= shift.startTime && (
-                        <span
-                          className="badge bg-danger-subtle text-danger border border-danger-subtle ms-1 px-1 position-absolute end-0 me-2"
-                          style={{ fontSize: "0.65rem", transform: "translateY(-120%)" }}
-                          title="Ends on the following day"
-                        >
-                          +1d
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                  <div className="d-flex align-items-center justify-content-between gap-3 w-100 w-md-auto ms-md-auto mt-1 mt-md-0 pt-3 pt-md-0">
-                    <div className="d-flex align-items-center gap-2 w-100 w-sm-auto flex-grow-1 flex-sm-grow-0">
-                      <span className="small text-muted fw-medium text-nowrap" style={{ minWidth: "95px", textTransform: "none" }}>Number of staff:</span>
+      {/* Compact Data Grid — calendar-tile day cards */}
+      <div className="d-flex flex-column gap-3 mt-2">
+        {form.scheduleDays.map((day, dayIndex) => {
+          const dObj = parseLocalDate(day.date);
+          return (
+            <div key={day.date} className="jw-day-card-v2">
+              <div className="jw-date-badge">
+                <div className="jw-db-mon">{dObj.toLocaleDateString("en-AU", { month: "short" })}</div>
+                <div className="jw-db-day">{dObj.getDate()}</div>
+              </div>
+              <div className="flex-grow-1" style={{ minWidth: 0 }}>
+                <div className="d-flex justify-content-between align-items-center mb-2">
+                  <span className="fw-bold text-dark fs-6">
+                    {dObj.toLocaleDateString("en-AU", { weekday: "long" })}
+                  </span>
+                  <button
+                    type="button"
+                    className="btn btn-sm p-0 border-0 fw-semibold small transition-all jw-add-shift-btn"
+                    style={{ opacity: 0.85 }}
+                    onClick={() => addShift(dayIndex)}
+                  >
+                    + Add shift
+                  </button>
+                </div>
+                <div className="d-flex flex-column gap-2">
+                  {day.shifts.map((shift, shiftIndex) => (
+                    <div
+                      key={shift.id}
+                      className="d-flex flex-column flex-md-row align-items-md-center gap-3 bg-white rounded-3 px-3 py-3 py-md-2 border"
+                      style={{ borderColor: "var(--jw-line-soft, #f1f5f9)" }}
+                    >
+                      <div className="d-flex flex-column flex-sm-row align-items-sm-center gap-3 w-100 w-md-auto">
+                        <div className="d-flex align-items-center gap-2 w-100 w-sm-auto flex-grow-1 flex-sm-grow-0">
+                          <span className="small text-muted fw-medium" style={{ minWidth: "45px" }}>Start:</span>
+                          <CompactTime
+                            value={shift.startTime}
+                            onChange={(val) => updateShift(dayIndex, shiftIndex, "startTime", val)}
+                            containerClass="w-100"
+                          />
+                        </div>
+                        <div className="d-flex align-items-center gap-2 w-100 w-sm-auto flex-grow-1 flex-sm-grow-0 position-relative">
+                          <span className="small text-muted fw-medium" style={{ minWidth: "45px" }}>End:</span>
+                          <CompactTime
+                            value={shift.endTime}
+                            onChange={(val) => updateShift(dayIndex, shiftIndex, "endTime", val)}
+                            containerClass="w-100"
+                          />
+                          {shift.startTime && shift.endTime && shift.endTime <= shift.startTime && (
+                            <span
+                              className="badge bg-danger-subtle text-danger border border-danger-subtle ms-1 px-1 position-absolute end-0 me-2"
+                              style={{ fontSize: "0.65rem", transform: "translateY(-120%)" }}
+                              title="Ends on the following day"
+                            >
+                              +1d
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <div className="d-flex align-items-center justify-content-between gap-3 w-100 w-md-auto ms-md-auto mt-1 mt-md-0 pt-3 pt-md-0">
+                        <div className="d-flex align-items-center gap-2 w-100 w-sm-auto flex-grow-1 flex-sm-grow-0">
+                          <span className="small text-muted fw-medium text-nowrap" style={{ minWidth: "95px", textTransform: "none" }}>Number of staff:</span>
 
-                      {/* CLEANED UP: Border moved to parent container, removed from children */}
-                      <div className="input-group input-group-sm flex-nowrap bg-white rounded shadow-sm border border-secondary-subtle" style={{ minWidth: "95px", maxWidth: "95px" }}>
+                          <div className="input-group input-group-sm flex-nowrap bg-white rounded jw-stepper" style={{ minWidth: "95px", maxWidth: "95px" }}>
+                            <button
+                              type="button"
+                              className="btn btn-sm border-0 bg-transparent px-2 text-muted fw-bold"
+                              onClick={() => updateShift(dayIndex, shiftIndex, "numGuards", Math.max(1, shift.numGuards - 1))}
+                            >
+                              −
+                            </button>
+                            <input
+                              type="text"
+                              readOnly
+                              className="form-control form-control-sm border-0 text-center px-1 bg-transparent fw-semibold"
+                              value={shift.numGuards}
+                            />
+                            <button
+                              type="button"
+                              className="btn btn-sm border-0 bg-transparent px-2 text-muted fw-bold"
+                              onClick={() => updateShift(dayIndex, shiftIndex, "numGuards", shift.numGuards + 1)}
+                            >
+                              +
+                            </button>
+                          </div>
+
+                        </div>
                         <button
                           type="button"
-                          className="btn btn-sm border-0 bg-transparent px-2 text-muted fw-bold"
-                          onClick={() => updateShift(dayIndex, shiftIndex, "numGuards", Math.max(1, shift.numGuards - 1))}
+                          className="btn btn-sm text-danger p-1 border-0 opacity-75"
+                          onClick={() => removeShift(dayIndex, shiftIndex)}
+                          title="Remove shift"
                         >
-                          −
-                        </button>
-                        <input
-                          type="text"
-                          readOnly
-                          className="form-control form-control-sm border-0 text-center px-1 bg-transparent fw-semibold"
-                          value={shift.numGuards}
-                        />
-                        <button
-                          type="button"
-                          className="btn btn-sm border-0 bg-transparent px-2 text-muted fw-bold"
-                          onClick={() => updateShift(dayIndex, shiftIndex, "numGuards", shift.numGuards + 1)}
-                        >
-                          +
+                          <i className="fa-solid fa-trash-can fs-5"></i>
                         </button>
                       </div>
-
                     </div>
-                    <button
-                      type="button"
-                      className="btn btn-sm text-danger p-1 border-0 opacity-75"
-                      onClick={() => removeShift(dayIndex, shiftIndex)}
-                      title="Remove shift"
-                    >
-                      <i className="fa-solid fa-trash-can fs-5"></i>
-                    </button>
-                  </div>
+                  ))}
                 </div>
-              ))}
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

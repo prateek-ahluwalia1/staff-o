@@ -77,109 +77,90 @@ export default function DetailsStep({ form, setField, handleFile, attachmentPrev
     else e.target.value = "";
   };
 
-  const CardToggle = ({ label, isYes, onToggle, icon }) => (
+  // Real toggle switch — replaces the old Yes/No button-pair pattern
+  const SwitchRow = ({ label, isYes, onToggle, icon }) => (
     <div
-      className={`d-flex align-items-center justify-content-between px-3 py-2 border rounded-3 transition-all bg-white shadow-sm hover-bg-light ${isYes ? "border-success border-opacity-50" : "border-light-subtle"}`}
-      style={{ cursor: "pointer", minHeight: "50px" }}
+      className={`jw-switch-row ${isYes ? "on" : ""}`}
       onClick={() => onToggle(!isYes)}
     >
-      <div className="d-flex align-items-center gap-2 text-dark flex-grow-1 pe-2" style={{ fontSize: "0.85rem", fontWeight: "600", lineHeight: "1.2" }}>
-        {icon && <i className={`${icon} ${isYes ? "text-success" : "text-muted opacity-75"} fs-6 transition-all flex-shrink-0`}></i>}
+      <div className="jw-switch-row-label">
+        {icon && <i className={icon}></i>}
         <span>{label}</span>
       </div>
-      <div className="bg-light border rounded-pill d-flex p-1 flex-shrink-0 shadow-sm" style={{ width: "90px" }} onClick={(e) => e.stopPropagation()}>
-        <button
-          type="button"
-          className={`btn btn-sm rounded-pill w-50 p-0 border-0 fw-bold transition-all ${isYes ? "bg-success text-white shadow-sm" : "text-muted bg-transparent"}`}
-          onClick={() => onToggle(true)}
-          style={{ fontSize: "0.75rem", height: "26px" }}
-        >
-          Yes
-        </button>
-        <button
-          type="button"
-          className={`btn btn-sm rounded-pill w-50 p-0 border-0 fw-bold transition-all ${!isYes ? "bg-secondary text-white shadow-sm" : "text-muted bg-transparent"}`}
-          onClick={() => onToggle(false)}
-          style={{ fontSize: "0.75rem", height: "26px" }}
-        >
-          No
-        </button>
-      </div>
+      <button type="button" className={`jw-switch ${isYes ? "on" : ""}`} aria-pressed={isYes}>
+        <span className="jw-thumb"></span>
+      </button>
     </div>
   );
 
   return (
     <div className="mb-2">
       {/* HEADER */}
-      <div className="mb-4 pb-2 border-bottom">
-        <h4 className="mb-1 text-dark fw-bold">Job Details</h4>
-        <p className="text-muted small mb-0" style={{ textTransform: "none" }}>
-          Define the core requirements, describe the job, and provide any necessary attachments.
-        </p>
+      <div className="jw-section-head">
+        <div className="jw-section-head-left">
+          <span className="jw-icon-badge"><i className="fa-solid fa-list-check"></i></span>
+          <div>
+            <h4>Job Details</h4>
+            <p>Define the core requirements, describe the job, and provide any necessary attachments.</p>
+          </div>
+        </div>
       </div>
 
-      {/* ROW 1: JOB TYPE & REQUIREMENTS */}
-      <div className="d-flex flex-wrap gap-3 mb-4">
-        {/* Job Type */}
-        <div style={{ minWidth: "250px", flex: "1 1 0" }}>
-          <label className="form-label small fw-bold text-dark mb-2">
-            Job Type <span className="text-danger">*</span>
-          </label>
-          <Select
-            options={JOB_TYPE_OPTIONS}
-            value={selectedJobTypeOption}
-            onChange={handleJobTypeChange}
-            isClearable
-            placeholder="Select a job type..."
-            classNamePrefix="react-select"
-            styles={{
-              control: (base, state) => ({
-                ...base,
-                minHeight: "50px",
-                borderRadius: "0.5rem",
-                boxShadow: state.isFocused ? "0 0 0 1px #0A7C6E" : "none",
-                borderColor: validationErrors.jobType ? "#dc3545" : (state.isFocused ? "#0A7C6E" : "#dee2e6"),
-                "&:hover": {
-                  borderColor: state.isFocused ? "#0A7C6E" : "#dee2e6"
-                }
-              }),
-              option: (base, state) => ({
-                ...base,
-                backgroundColor: state.isSelected ? "#0A7C6E" : state.isFocused ? "#e6f2f0" : "white",
-                color: state.isSelected ? "white" : "#333",
-                "&:active": { backgroundColor: "#0A7C6E" }
-              })
-            }}
+      {/* ROW 1: JOB TYPE CARD */}
+      <div className="jw-card p-3 p-md-4 mb-3">
+        <label className="form-label small fw-bold text-dark mb-2">
+          Job Type <span className="text-danger">*</span>
+        </label>
+        <Select
+          options={JOB_TYPE_OPTIONS}
+          value={selectedJobTypeOption}
+          onChange={handleJobTypeChange}
+          isClearable
+          placeholder="Select a job type..."
+          classNamePrefix="react-select"
+          styles={{
+            control: (base, state) => ({
+              ...base,
+              minHeight: "50px",
+              borderRadius: "0.6rem",
+              boxShadow: state.isFocused ? "0 0 0 3px rgba(10,124,110,0.12)" : "none",
+              borderColor: validationErrors.jobType ? "#dc3545" : (state.isFocused ? "#0A7C6E" : "#dee2e6"),
+              "&:hover": {
+                borderColor: state.isFocused ? "#0A7C6E" : "#dee2e6"
+              }
+            }),
+            option: (base, state) => ({
+              ...base,
+              backgroundColor: state.isSelected ? "#0A7C6E" : state.isFocused ? "#e6f2f0" : "white",
+              color: state.isSelected ? "white" : "#333",
+              "&:active": { backgroundColor: "#0A7C6E" }
+            })
+          }}
+        />
+        {form.jobType === "others" && (
+          <input
+            type="text"
+            value={form.customJobType || ""}
+            onChange={(e) => handleCustomJobTypeChange(e.target.value)}
+            className="form-control mt-2 shadow-sm"
+            placeholder="Enter custom type..."
+            required
           />
-          {form.jobType === "others" && (
-            <input
-              type="text"
-              value={form.customJobType || ""}
-              onChange={(e) => handleCustomJobTypeChange(e.target.value)}
-              className="form-control mt-2 shadow-sm"
-              placeholder="Enter custom type..."
-              required
-            />
-          )}
-        </div>
+        )}
+      </div>
 
-        {/* Working with Children */}
-        <div style={{ minWidth: "250px", flex: "1 1 0" }}>
-          {/* Aligner hides on mobile, keeps desktop layout balanced */}
-          <label className="form-label small fw-bold mb-2 d-none d-md-block opacity-0 user-select-none">Aligner</label>
-          <CardToggle
+      {/* ROW 2: REQUIREMENT SWITCHES */}
+      <div className="row g-3 mb-3">
+        <div className="col-12 col-md-6">
+          <SwitchRow
             icon="fa-solid fa-child-reaching"
             label="Working with Children Check Required?"
             isYes={Array.isArray(form.document_types) && form.document_types.includes('working_with_children')}
             onToggle={(val) => toggleDocument('working_with_children', val)}
           />
         </div>
-
-        {/* White Card */}
-        <div cstyle={{ minWidth: "250px", flex: "1 1 0" }}>
-          {/* Aligner hides on mobile, keeps desktop layout balanced */}
-          <label className="form-label small fw-bold mb-2 d-none d-md-block opacity-0 user-select-none">Aligner</label>
-          <CardToggle
+        <div className="col-12 col-md-6">
+          <SwitchRow
             icon="fa-regular fa-id-card"
             label="White Card Required?"
             isYes={Array.isArray(form.document_types) && form.document_types.includes('white_card')}
@@ -188,7 +169,7 @@ export default function DetailsStep({ form, setField, handleFile, attachmentPrev
         </div>
       </div>
 
-      {/* ROW 2: ATTACHMENTS & DESCRIPTION */}
+      {/* ROW 3: ATTACHMENTS & DESCRIPTION */}
       <div className="row g-3 g-md-4 mb-2">
         {/* Attachments */}
         <div className="col-12 col-md-5 d-flex flex-column">
@@ -198,23 +179,21 @@ export default function DetailsStep({ form, setField, handleFile, attachmentPrev
           <input id="attachments-input" type="file" accept="image/*,.pdf,.doc,.docx" multiple onChange={handleFileInputChange} style={{ display: "none" }} />
           <label
             htmlFor="attachments-input"
-            className="d-flex flex-column flex-grow-1 align-items-center justify-content-center p-3 rounded-4 w-100 transition-all m-0 text-center"
-            style={{
-              cursor: "pointer",
-              border: "2px dashed #cbd5e1",
-              backgroundColor: "#f8fafc",
-              minHeight: "120px"
-            }}
-            onMouseOver={(e) => { e.currentTarget.style.borderColor = "#0A7C6E"; e.currentTarget.style.backgroundColor = "#f1f8f5"; }}
-            onMouseOut={(e) => { e.currentTarget.style.borderColor = "#cbd5e1"; e.currentTarget.style.backgroundColor = "#f8fafc"; }}
+            className="d-flex flex-column flex-grow-1 align-items-center justify-content-center p-4 w-100 jw-dropzone m-0"
+            style={{ minHeight: "160px" }}
           >
-            <div className="bg-white p-2 rounded-circle shadow-sm mb-2" style={{ color: "#0A7C6E" }}>
-              <i className="fa-solid fa-cloud-arrow-up fs-5"></i>
+            <div className="jw-dropzone-icon">
+              <i className="fa-solid fa-cloud-arrow-up"></i>
             </div>
-            <strong className="text-dark mb-1 small"
-              style={{ textTransform: "none" }}
+            <strong className="text-dark mb-1"
+              style={{ textTransform: "none", fontSize: "0.9rem" }}
             >Click to upload files</strong>
-            <span className="text-muted" style={{ fontSize: "0.7rem" }}>PNG, JPG, PDF — Max 10MB</span>
+            <span className="text-muted" style={{ fontSize: "0.75rem" }}>PNG, JPG, PDF — Max 10MB</span>
+            {attachmentPreviews?.length > 0 && (
+              <span className="jw-chip mt-3">
+                <i className="fa-solid fa-paperclip"></i> {attachmentPreviews.length} file{attachmentPreviews.length > 1 ? "s" : ""} attached
+              </span>
+            )}
           </label>
           {fileErrors && <div className="text-danger small mt-2 fw-medium"><i className="fa-solid fa-triangle-exclamation me-1"></i> {fileErrors}</div>}
         </div>
@@ -232,14 +211,14 @@ export default function DetailsStep({ form, setField, handleFile, attachmentPrev
             onChange={(e) => { if (e.target.value.length <= MAX_DESCRIPTION_LENGTH) setField("description", e.target.value); }}
             className="form-control shadow-sm flex-grow-1 w-100"
             placeholder="Briefly describe the responsibilities and any specific tasks..."
-            style={{ resize: "none", borderRadius: "0.5rem", minHeight: "120px" }}
+            style={{ resize: "none", borderRadius: "0.75rem", minHeight: "160px" }}
           />
         </div>
       </div>
 
       {/* Uploaded Files Preview (Renders underneath the row if files are added) */}
       {attachmentPreviews?.length > 0 && (
-        <div className="mt-4 p-3 bg-light rounded-3 border">
+        <div className="mt-4 p-3 jw-tint-panel">
           <div className="d-flex justify-content-between mb-2">
             <span className="small fw-bold text-dark">Uploaded Files ({attachmentPreviews.length})</span>
           </div>

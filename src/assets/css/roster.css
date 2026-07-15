@@ -915,6 +915,22 @@
     color: #ffffff;
 }
 
+.embedded-job-header p {
+    color: rgba(255, 255, 255, 0.62) !important;
+}
+
+.embedded-job-header .btn-close {
+    filter: invert(1) grayscale(100%) brightness(200%);
+    opacity: 0.8;
+    color: #ffffff;
+    font-size: 18px;
+    line-height: 1;
+}
+
+.embedded-job-header .btn-close:hover {
+    opacity: 1;
+}
+
 .embedded-job-body {
     padding: 26px 30px;
     overflow: auto;

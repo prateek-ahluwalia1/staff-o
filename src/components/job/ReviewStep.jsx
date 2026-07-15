@@ -12,6 +12,12 @@ const formatDisplayDate = (dateStr) => {
   return dateStr;
 };
 
+const parseLocalDate = (dateStr) => {
+  if (!dateStr) return null;
+  const [year, month, day] = dateStr.split("-").map(Number);
+  return new Date(year, month - 1, day);
+};
+
 function fmt(v) {
   try {
     return new Intl.NumberFormat("en-AU", {
@@ -40,83 +46,108 @@ export default function ReviewStep({ form, rate, setField, handleConfirm, setSte
   const isFull = form.paymentOption === "full";
   const isSplit = form.paymentOption === "split";
 
+  const totalGuardSlots = (form.scheduleDays || []).reduce(
+    (sum, day) => sum + day.shifts.reduce((s, sh) => s + Number(sh.numGuards || 0), 0), 0
+  );
+
   return (
-    <div className="bg-white rounded-3 rounded-md-4 p-3 p-md-4 border" style={{ boxShadow: "0 4px 20px rgba(0,0,0,0.03)" }}>
+    <div className="jw-card p-3 p-md-4">
+      <style>{`
+        .jw-terms-box { background: var(--jw-teal-tint, #f0fdf9); border: 1px solid var(--jw-teal-border, #d1fae5); border-radius: 14px; }
+        .jw-schedule-chip { flex: 0 0 auto; display: flex; gap: 10px; background: #fff; border: 1px solid var(--jw-line-soft, #f1f5f9); border-radius: 14px; padding: 10px 14px; min-width: 190px; box-shadow: 0 2px 6px rgba(15,23,42,0.03); }
+      `}</style>
 
       {/* HEADER */}
-      <div className="mb-3 mb-md-4 pb-2 pb-md-3 border-bottom">
-        <h4 className="fw-bold mb-1 text-dark fs-5 fs-md-4">Review & Confirm <span className="text-danger">*</span></h4>
-        <p className="text-muted small mb-0" style={{ textTransform: "none" }}>
-          Please review your job details before submitting.
-        </p>
+      <div className="jw-section-head">
+        <div className="jw-section-head-left">
+          <span className="jw-icon-badge"><i className="fa-solid fa-clipboard-check"></i></span>
+          <div>
+            <h4 className="fs-5 fs-md-4">Review &amp; Confirm <span className="text-danger">*</span></h4>
+            <p>Please review your job details before submitting.</p>
+          </div>
+        </div>
       </div>
 
-      {/* JOB DETAILS & LOCATION */}
+      {/* STAT TILE ROW */}
       <div className="row g-2 g-md-3 mb-4">
-        <div className="col-12 col-md-6">
-          <div className="d-flex align-items-start gap-2 gap-md-3 p-2 p-md-3 bg-light rounded-3 border h-100">
-            <div className="bg-white p-2 rounded shadow-sm text-primary flex-shrink-0 mt-1 mt-md-0">
-              <i className="fa-solid fa-briefcase fs-6 fs-md-5"></i>
-            </div>
+        <div className="col-6 col-md-3">
+          <div className="jw-stat-tile h-100">
+            <span className="jw-stat-ic" style={{ background: "#f0fdf9", color: "#0A7C6E" }}><i className="fa-solid fa-briefcase"></i></span>
             <div style={{ minWidth: 0 }}>
-              <span className="d-block text-muted  tracking-wide mb-1 fw-bold" style={{ fontSize: "0.65rem" }}>Job Details</span>
-              <div className="fw-bold text-dark fs-6 text-break" style={{ lineHeight: "1.3" }}>{form.title || "Untitled Job"}</div>
-              <div className="text-muted small text-break mt-1">{jobTypeLabel}</div>
+              <span className="jw-stat-label">Job Type</span>
+              <span className="jw-stat-value text-truncate d-block">{jobTypeLabel}</span>
             </div>
           </div>
         </div>
-        <div className="col-12 col-md-6">
-          <div className="d-flex align-items-start gap-2 gap-md-3 p-2 p-md-3 bg-light rounded-3 border h-100">
-            <div className="bg-white p-2 rounded shadow-sm text-danger flex-shrink-0 mt-1 mt-md-0">
-              <i className="fa-solid fa-location-dot fs-6 fs-md-5 px-1"></i>
-            </div>
+        <div className="col-6 col-md-3">
+          <div className="jw-stat-tile h-100">
+            <span className="jw-stat-ic" style={{ background: "#fef2f2", color: "#dc2626" }}><i className="fa-solid fa-location-dot"></i></span>
             <div style={{ minWidth: 0 }}>
-              <span className="d-block text-muted  tracking-wide mb-1 fw-bold" style={{ fontSize: "0.65rem" }}>Location</span>
-              <div className="text-dark small fw-medium text-break" style={{ lineHeight: "1.4" }}>{form.location || "No location provided"}</div>
+              <span className="jw-stat-label">Location</span>
+              <span className="jw-stat-value text-truncate d-block">{form.location || "Not set"}</span>
+            </div>
+          </div>
+        </div>
+        <div className="col-6 col-md-3">
+          <div className="jw-stat-tile h-100">
+            <span className="jw-stat-ic" style={{ background: "#f0f9ff", color: "#0ea5e9" }}><i className="fa-regular fa-calendar-check"></i></span>
+            <div style={{ minWidth: 0 }}>
+              <span className="jw-stat-label">Days Scheduled</span>
+              <span className="jw-stat-value text-truncate d-block">{form.scheduleDays?.length || 0}</span>
+            </div>
+          </div>
+        </div>
+        <div className="col-6 col-md-3">
+          <div className="jw-stat-tile h-100">
+            <span className="jw-stat-ic" style={{ background: "#f3e8ff", color: "#7c3aed" }}><i className="fa-solid fa-user-shield"></i></span>
+            <div style={{ minWidth: 0 }}>
+              <span className="jw-stat-label">Guard Slots</span>
+              <span className="jw-stat-value text-truncate d-block">{totalGuardSlots}</span>
             </div>
           </div>
         </div>
       </div>
 
-      {/* SCHEDULE SUMMARY */}
+      {/* SCHEDULE SUMMARY — calendar-badge chip strip */}
       <div className="mb-4">
         <div className="d-flex align-items-center gap-2 mb-2 mb-md-3">
           <i className="fa-regular fa-calendar-check text-success fs-6 fs-md-5"></i>
           <h6 className="fw-bold mb-0">Schedule Summary</h6>
         </div>
 
-        <div className="border rounded-3 bg-light overflow-auto custom-scrollbar" style={{ maxHeight: "250px" }}>
-          {form.scheduleDays?.length > 0 ? (
-            <div className="p-2 p-md-3">
-              {form.scheduleDays.map((day, idx) => (
-                <div key={idx} className="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center p-2 p-md-3 mb-2 bg-white rounded border shadow-sm gap-2">
-                  <span className="fw-bold text-dark small mb-1 mb-md-0">{formatDisplayDate(day.date)}</span>
-
-                  <div className="d-flex flex-wrap gap-2 justify-content-start justify-content-md-end w-100 w-md-auto">
-                    {day.shifts.map((shift, sIdx) => {
-                      const crossesMidnight = shift.startTime && shift.endTime && shift.endTime <= shift.startTime;
-
-                      return (
-                        <span key={sIdx} className="badge bg-light text-dark border border-secondary-subtle px-2 px-md-3 py-1 py-md-2 fw-medium rounded-pill shadow-sm d-inline-flex align-items-center" style={{ fontSize: "0.75rem" }}>
-                          <i className="fa-regular fa-clock me-1 text-muted"></i>
-                          {shift.startTime}
-                          <i className="fa-solid fa-arrow-right mx-1 text-muted" style={{ fontSize: "0.6em" }}></i>
-                          {shift.endTime}
-                          {crossesMidnight && (
-                            <sup className="text-danger ms-1 fw-bold" title="Ends on the following day">(+1d)</sup>
-                          )}
-                          <span className="ms-2 ps-2 border-start border-secondary-subtle text-primary">
-                            <i className="fa-solid fa-user-shield me-1"></i> {shift.numGuards}
+        {form.scheduleDays?.length > 0 ? (
+          <div className="jw-timeline-scroll">
+            {form.scheduleDays.map((day, idx) => {
+              const dObj = parseLocalDate(day.date);
+              return (
+                <div key={idx} className="jw-schedule-chip">
+                  <div className="jw-date-badge" style={{ width: 42 }}>
+                    <div className="jw-db-mon">{dObj.toLocaleDateString("en-AU", { month: "short" })}</div>
+                    <div className="jw-db-day" style={{ fontSize: 15, padding: "4px 0 5px" }}>{dObj.getDate()}</div>
+                  </div>
+                  <div style={{ minWidth: 0 }}>
+                    <div className="fw-bold text-dark small text-truncate">{formatDisplayDate(day.date)}</div>
+                    <div className="d-flex flex-column gap-1 mt-1">
+                      {day.shifts.map((shift, sIdx) => {
+                        const crossesMidnight = shift.startTime && shift.endTime && shift.endTime <= shift.startTime;
+                        return (
+                          <span key={sIdx} className="text-muted" style={{ fontSize: "0.72rem" }}>
+                            <i className="fa-regular fa-clock me-1"></i>
+                            {shift.startTime}–{shift.endTime}
+                            {crossesMidnight && <sup className="text-danger ms-1 fw-bold">+1d</sup>}
+                            <span className="ms-1 text-primary"><i className="fa-solid fa-user-shield mx-1" style={{ fontSize: "0.65em" }}></i>{shift.numGuards}</span>
                           </span>
-                        </span>
-                      );
-                    })}
+                        );
+                      })}
+                    </div>
                   </div>
                 </div>
-              ))}
-            </div>
-          ) : (<div className="p-3 p-md-4 text-center text-muted small">No schedule selected.</div>)}
-        </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="jw-empty">No schedule selected.</div>
+        )}
       </div>
 
       {/* RATE BREAKDOWN */}
@@ -124,53 +155,59 @@ export default function ReviewStep({ form, rate, setField, handleConfirm, setSte
         {rate && <RateBreakdown rate={rate} jobTypeLabel={jobTypeLabel} paymentOption={form.paymentOption} />}
       </div>
 
-      {/* PAYMENT OPTIONS */}
+      {/* PAYMENT OPTIONS — pricing cards */}
       <div className="mb-4 pt-3 border-top">
         <div className="d-flex align-items-center gap-2 mb-3">
           <i className="fa-solid fa-credit-card text-primary fs-6 fs-md-5"></i>
           <h6 className="fw-bold mb-0">{isAdmin ? "Client Invoice Terms" : "Payment Options"}</h6>
         </div>
 
-        <div className="row g-2 g-md-3">
+        <div className="row g-3">
           <div className="col-12 col-md-6">
-            <label className={`w-100 h-100 p-2 p-md-3 rounded-3 border transition-all ${isFull ? "border-primary bg-primary text-white shadow-sm" : "bg-white border-light-subtle hover-bg-gray"}`} style={{ cursor: "pointer" }}>
-              <input type="radio" className="d-none" name="payOpt" checked={isFull} onChange={() => setField("paymentOption", "full")} disabled={isSubmitting} />
-              <div className="d-flex justify-content-between align-items-center mb-2">
-                <span className={`fw-bold fs-6 ${isFull ? "text-white" : "text-dark"}`}>Pay in Full</span>
-                <span className={`badge shadow-sm ${isFull ? "bg-white text-success" : "bg-success text-white"}`} style={{ fontSize: "0.65rem" }}>Save 5%</span>
+            <div
+              className={`jw-pricing-card ${isFull ? "selected" : ""}`}
+              onClick={() => setField("paymentOption", "full")}
+            >
+              <span className="jw-pricing-check"><i className="fa-solid fa-check"></i></span>
+              <div className="d-flex align-items-center gap-2 mb-2">
+                <span className="fw-bold fs-6 text-dark">Pay in Full</span>
+                <span className="badge bg-success text-white shadow-sm" style={{ fontSize: "0.65rem" }}>Save 5%</span>
               </div>
-              <div className={`small mb-3 ${isFull ? "text-white opacity-75" : "text-muted"}`} style={{ textTransform: "none", fontSize: "0.8rem", lineHeight: "1.4" }}>
+              <div className="small text-muted mb-3" style={{ textTransform: "none", fontSize: "0.8rem", lineHeight: "1.4" }}>
                 Pay the total amount now and receive an instant 5% discount on your booking.
               </div>
-              <div className={`mt-auto pt-2 border-top ${isFull ? "border-white border-opacity-25" : "border-light"}`}>
-                <div className={`fw-bold fs-5 ${isFull ? "text-white" : "text-dark"}`}>
-                  {fmt(fullTotal)} <span className={`fw-normal ${isFull ? "text-white opacity-75" : "text-muted"}`} style={{ fontSize: "0.75rem" }}>total</span>
+              <div className="pt-2 border-top">
+                <div className="fw-bold fs-5 text-dark">
+                  {fmt(fullTotal)} <span className="fw-normal text-muted" style={{ fontSize: "0.75rem" }}>total</span>
                 </div>
               </div>
-            </label>
+            </div>
           </div>
           <div className="col-12 col-md-6">
-            <label className={`w-100 h-100 p-2 p-md-3 rounded-3 border transition-all ${isSplit ? "border-primary bg-primary text-white shadow-sm" : "bg-white border-light-subtle hover-bg-gray"}`} style={{ cursor: "pointer" }}>
-              <input type="radio" className="d-none" name="payOpt" checked={isSplit} onChange={() => setField("paymentOption", "split")} disabled={isSubmitting} />
-              <div className="d-flex justify-content-between align-items-center mb-2">
-                <span className={`fw-bold fs-6 ${isSplit ? "text-white" : "text-dark"}`}>Split Payment (50/50)</span>
+            <div
+              className={`jw-pricing-card ${isSplit ? "selected" : ""}`}
+              onClick={() => setField("paymentOption", "split")}
+            >
+              <span className="jw-pricing-check"><i className="fa-solid fa-check"></i></span>
+              <div className="mb-2">
+                <span className="fw-bold fs-6 text-dark">Split Payment (50/50)</span>
               </div>
-              <div className={`small mb-3 ${isSplit ? "text-white opacity-75" : "text-muted"}`} style={{ textTransform: "none", fontSize: "0.8rem", lineHeight: "1.4" }}>
+              <div className="small text-muted mb-3" style={{ textTransform: "none", fontSize: "0.8rem", lineHeight: "1.4" }}>
                 Pay 50% upfront to secure staff. The remaining 50% is charged upon shift completion.
               </div>
-              <div className={`mt-auto pt-2 border-top ${isSplit ? "border-white border-opacity-25" : "border-light"}`}>
-                <div className={`fw-bold fs-5 ${isSplit ? "text-white" : "text-dark"}`}>
-                  {fmt(splitUpfront)} <span className={`fw-normal ${isSplit ? "text-white opacity-75" : "text-muted"}`} style={{ fontSize: "0.75rem" }}>upfront</span>
+              <div className="pt-2 border-top">
+                <div className="fw-bold fs-5 text-dark">
+                  {fmt(splitUpfront)} <span className="fw-normal text-muted" style={{ fontSize: "0.75rem" }}>upfront</span>
                 </div>
               </div>
-            </label>
+            </div>
           </div>
         </div>
       </div>
 
       {/* TERMS & CONDITIONS */}
       {!isAdmin && (
-        <div className="rounded-3 p-2 p-md-3 mb-4" style={{ backgroundColor: "#f8f9fa", border: "1px solid #e9ecef" }}>
+        <div className="jw-terms-box p-2 p-md-3 mb-4">
           <div className="d-flex align-items-start gap-2 mb-1">
             <input id="terms" className="form-check-input mt-1 flex-shrink-0" type="checkbox" style={{ width: "1.1rem", height: "1.1rem", cursor: "pointer" }} checked={form.termsAccepted} onChange={(e) => setField("termsAccepted", e.target.checked)} disabled={isSubmitting} />
             <label htmlFor="terms" className="form-check-label fw-medium user-select-none text-break" style={{ cursor: "pointer", fontSize: "0.85rem", lineHeight: "1.4" }}>
@@ -180,6 +217,17 @@ export default function ReviewStep({ form, rate, setField, handleConfirm, setSte
           <div className="text-muted ps-4" style={{ fontSize: "0.7rem", textTransform: "none", lineHeight: "1.3" }}>
             *Note: A 10% incidental authorisation hold may be applied by Stripe to cover potential unplanned overtime. The hold will be released after completion of the shift.
           </div>
+        </div>
+      )}
+
+      {/* TOTAL DUE RIBBON */}
+      {!isAdmin && (
+        <div className="jw-total-ribbon mb-4">
+          <div>
+            <div className="jw-tr-label">{isFull ? "Total due today (5% off applied)" : "Due today (50% upfront)"}</div>
+            <div className="jw-tr-value">{fmt(activeAmount)}</div>
+          </div>
+          <i className="fa-brands fa-stripe fs-1 opacity-75"></i>
         </div>
       )}
 

@@ -13,6 +13,7 @@ import DetailsStep from "../components/job/DetailsStep";
 import ReviewStep from "../components/job/ReviewStep";
 import PaymentModal from "../components/job/PaymentModal";
 import AdminClientProfile from "../components/job/AdminClientProfile";
+import "../assets/css/job-wizard-theme.css";
 
 
 const calculateJobLevel = (title) => {
@@ -31,6 +32,62 @@ const calculateJobLevel = (title) => {
   // Default to Level 1
   return 1;
 };
+
+// Scoped styles for the wizard shell (hero header + floating client card).
+// Uses the same navy/teal design tokens as the rest of the app; !important
+// guards against any conflicting global utility classes.
+const AddJobHeroStyles = () => (
+  <style>{`
+    :root {
+      --navy-950: #0a1930;
+      --navy-900: #0e2340;
+      --teal: #0A7C6E;
+      --teal-dark: #075e53;
+      --teal-tint: #f0fdf9;
+      --teal-border: #d1fae5;
+      --ink: #0f172a;
+      --slate: #1e293b;
+      --muted: #64748b;
+      --faint: #94a3b8;
+      --line: #e2e8f0;
+      --line-soft: #f1f5f9;
+    }
+
+    .aj-hero {
+      position: relative;
+      background: linear-gradient(135deg, var(--navy-950) 0%, var(--navy-900) 65%, #0f2f52 100%) !important;
+      border-radius: 22px !important;
+      padding: 30px 32px !important;
+      overflow: hidden;
+      isolation: isolate;
+      box-shadow: none !important;
+      border: none !important;
+    }
+    .aj-hero::after {
+      content: "";
+      position: absolute; top: -60px; right: -60px; width: 260px; height: 260px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(10,124,110,0.45) 0%, rgba(10,124,110,0) 70%);
+      z-index: 0;
+    }
+    .aj-eyebrow {
+      display: inline-flex; align-items: center; gap: 8px; font-size: 11px; font-weight: 700;
+      letter-spacing: 0.6px; text-transform: uppercase; color: #6ee7d8; margin-bottom: 8px; position: relative; z-index: 1;
+    }
+    .aj-eyebrow .dot { width: 7px; height: 7px; border-radius: 50%; background: #34d399; box-shadow: 0 0 0 4px rgba(52,211,153,0.18); }
+    .aj-hero h1 { color: #fff !important; font-size: 24px !important; font-weight: 800 !important; letter-spacing: -0.3px; margin: 0 0 4px !important; position: relative; z-index: 1; }
+    .aj-hero p { color: rgba(255,255,255,0.62) !important; font-size: 13.5px !important; margin: 0 !important; position: relative; z-index: 1; }
+    .aj-hero .aj-steps { position: relative; z-index: 1; }
+
+    .aj-client-card {
+      background: #fff !important;
+      border: 1px solid var(--line-soft) !important;
+      border-radius: 16px !important;
+      box-shadow: 0 4px 16px rgba(15,23,42,0.06) !important;
+      padding: 18px 20px !important;
+    }
+    .aj-client-card h6 { color: var(--ink) !important; }
+  `}</style>
+);
 
 export default function AddJob({ modalMode, onClose, initialSite, initialDate }) {
   const navigate = useNavigate();
@@ -829,7 +886,7 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
 
   const renderContent = () => (
     <>
-      <form onSubmit={(e) => e.preventDefault()}>
+      <form onSubmit={(e) => e.preventDefault()} className="job-wizard">
         {isEmbedded ? (
           <>
             {renderEmbeddedAccordion()}
@@ -850,134 +907,132 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
           </>
         ) : (
           <>
-            <div className="dashboard-page-header mb-4 bg-white p-4 rounded-4 shadow-sm border border-light d-flex flex-wrap justify-content-between align-items-center gap-3">
-              <div>
-                <h1 className="h4 fw-bold text-dark mb-1">Create Job</h1>
-                <p className="text-muted mb-0" style={{ textTransform: "none" }}>
-                  Follow the steps to post a new job
-                </p>
-                {!isEmbedded && <StepProgress step={step} titles={STEP_TITLES} />}
-              </div>
-
-              {isAdmin && (
-                <div className="bg-light border rounded-3 p-3" style={{ minWidth: "320px", maxWidth: "420px", width: "100%" }}>
-                  <h6 className="fw-bold text-dark mb-2 d-flex align-items-center gap-2">
-                    <i className="fa-solid fa-user-check text-primary"></i>
-                    Select Client
-                  </h6>
-                  <Select
-                    options={clientOptions}
-                    ref={clientSelectRef}
-                    value={clientOptions.find((opt) => opt.value === form.user_id) || clientOptions[0]}
-                    onChange={(selected) => {
-                      const val = selected ? selected.value : "";
-                      setField("user_id", val);
-                      setSelectedSiteId("");
-                    }}
-                    placeholder={loadingCustomers ? "Loading clients..." : "Search clients..."}
-                    isDisabled={loadingCustomers}
-                    isSearchable={true}
-                    classNamePrefix="react-select"
-                    styles={{
-                      // 1. The main input box
-                      control: (base, state) => ({
-                        ...base,
-                        minHeight: "46px", // Taller for better clickability
-                        borderRadius: "0.5rem",
-                        backgroundColor: "white",
-                        // Custom focus ring matching your primary brand color
-                        border: state.isFocused ? "2px solid #0A7C6E" : "1px solid #dee2e6",
-                        boxShadow: state.isFocused ? "0 0 0 4px rgba(10, 124, 110, 0.1)" : "none",
-                        transition: "all 0.2s ease",
-                        cursor: "pointer",
-                        "&:hover": {
-                          border: state.isFocused ? "2px solid #0A7C6E" : "1px solid #adb5bd"
-                        }
-                      }),
-
-                      // 2. The dropdown menu container
-                      menu: (base) => ({
-                        ...base,
-                        borderRadius: "0.6rem", // Slightly rounder than the input
-                        boxShadow: "0 10px 40px -10px rgba(0,0,0,0.15)", // Premium floating shadow
-                        border: "1px solid #f1f3f5",
-                        marginTop: "6px", // Adds breathing room below the input
-                        padding: "4px", // Inner padding so items don't touch the borders
-                        zIndex: 9999
-                      }),
-
-                      // 3. The scrollable list area
-                      menuList: (base) => ({
-                        ...base,
-                        padding: "0" // Reset padding to rely on the menu wrapper
-                      }),
-
-                      // 4. The individual dropdown items
-                      option: (base, state) => {
-                        const isNewOption = state.data.isNew;
-
-                        const textColor = state.isSelected
-                          ? "white"
-                          : isNewOption
-                            ? "#0A7C6E"
-                            : "#333333";
-
-                        const bgColor = state.isSelected
-                          ? "#0A7C6E"
-                          : state.isFocused
-                            ? (isNewOption ? "#e0f2f0" : "#f8f9fa") // Soft teal for new, soft gray for standard
-                            : "transparent";
-
-                        return {
-                          ...base,
-                          fontWeight: isNewOption ? "600" : (state.isSelected ? "500" : "400"),
-                          color: textColor,
-                          background: bgColor,
-                          cursor: "pointer",
-                          borderRadius: "0.4rem", // Creates "pill" shapes on hover instead of full-width blocks
-                          margin: "2px 0", // Tiny gap between options
-                          padding: "10px 14px", // Spacious internal padding
-                          transition: "all 0.15s ease",
-                          "&:active": {
-                            background: isNewOption ? "#08665a" : "#0A7C6E",
-                            color: "white"
-                          }
-                        };
-                      },
-
-                      // 5. Selected text inside the input
-                      singleValue: (base) => ({
-                        ...base,
-                        fontWeight: "500",
-                        color: "#212529"
-                      }),
-
-                      // 6. Placeholder text
-                      placeholder: (base) => ({
-                        ...base,
-                        color: "#6c757d",
-                        fontSize: "0.95rem"
-                      }),
-
-                      // 7. Remove the vertical line for a cleaner, minimalist look
-                      indicatorSeparator: () => ({
-                        display: "none"
-                      }),
-
-                      // 8. Style the dropdown arrow
-                      dropdownIndicator: (base, state) => ({
-                        ...base,
-                        color: state.isFocused ? "#0A7C6E" : "#adb5bd",
-                        transition: "all 0.2s ease",
-                        "&:hover": {
-                          color: "#0A7C6E"
-                        }
-                      })
-                    }}
-                  />
-                </div>
-              )}
+            <AddJobHeroStyles />
+            <div className="aj-hero mb-4">
+              <span className="aj-eyebrow"><span className="dot"></span> New Posting</span>
+              <h1>Create Job</h1>
+              <p>Follow the steps below to post a new job</p>
+              {!isEmbedded && <StepProgress step={step} titles={STEP_TITLES} />}
             </div>
+
+            {isAdmin && (
+              <div className="aj-client-card mb-4">
+                <h6 className="fw-bold text-dark mb-2 d-flex align-items-center gap-2">
+                  <i className="fa-solid fa-user-check text-primary"></i>
+                  Select Client
+                </h6>
+                <Select
+                  options={clientOptions}
+                  ref={clientSelectRef}
+                  value={clientOptions.find((opt) => opt.value === form.user_id) || clientOptions[0]}
+                  onChange={(selected) => {
+                    const val = selected ? selected.value : "";
+                    setField("user_id", val);
+                    setSelectedSiteId("");
+                  }}
+                  placeholder={loadingCustomers ? "Loading clients..." : "Search clients..."}
+                  isDisabled={loadingCustomers}
+                  isSearchable={true}
+                  classNamePrefix="react-select"
+                  styles={{
+                    // 1. The main input box
+                    control: (base, state) => ({
+                      ...base,
+                      minHeight: "46px", // Taller for better clickability
+                      borderRadius: "0.5rem",
+                      backgroundColor: "white",
+                      // Custom focus ring matching your primary brand color
+                      border: state.isFocused ? "2px solid #0A7C6E" : "1px solid #dee2e6",
+                      boxShadow: state.isFocused ? "0 0 0 4px rgba(10, 124, 110, 0.1)" : "none",
+                      transition: "all 0.2s ease",
+                      cursor: "pointer",
+                      "&:hover": {
+                        border: state.isFocused ? "2px solid #0A7C6E" : "1px solid #adb5bd"
+                      }
+                    }),
+
+                    // 2. The dropdown menu container
+                    menu: (base) => ({
+                      ...base,
+                      borderRadius: "0.6rem", // Slightly rounder than the input
+                      boxShadow: "0 10px 40px -10px rgba(0,0,0,0.15)", // Premium floating shadow
+                      border: "1px solid #f1f3f5",
+                      marginTop: "6px", // Adds breathing room below the input
+                      padding: "4px", // Inner padding so items don't touch the borders
+                      zIndex: 9999
+                    }),
+
+                    // 3. The scrollable list area
+                    menuList: (base) => ({
+                      ...base,
+                      padding: "0" // Reset padding to rely on the menu wrapper
+                    }),
+
+                    // 4. The individual dropdown items
+                    option: (base, state) => {
+                      const isNewOption = state.data.isNew;
+
+                      const textColor = state.isSelected
+                        ? "white"
+                        : isNewOption
+                          ? "#0A7C6E"
+                          : "#333333";
+
+                      const bgColor = state.isSelected
+                        ? "#0A7C6E"
+                        : state.isFocused
+                          ? (isNewOption ? "#e0f2f0" : "#f8f9fa") // Soft teal for new, soft gray for standard
+                          : "transparent";
+
+                      return {
+                        ...base,
+                        fontWeight: isNewOption ? "600" : (state.isSelected ? "500" : "400"),
+                        color: textColor,
+                        background: bgColor,
+                        cursor: "pointer",
+                        borderRadius: "0.4rem", // Creates "pill" shapes on hover instead of full-width blocks
+                        margin: "2px 0", // Tiny gap between options
+                        padding: "10px 14px", // Spacious internal padding
+                        transition: "all 0.15s ease",
+                        "&:active": {
+                          background: isNewOption ? "#08665a" : "#0A7C6E",
+                          color: "white"
+                        }
+                      };
+                    },
+
+                    // 5. Selected text inside the input
+                    singleValue: (base) => ({
+                      ...base,
+                      fontWeight: "500",
+                      color: "#212529"
+                    }),
+
+                    // 6. Placeholder text
+                    placeholder: (base) => ({
+                      ...base,
+                      color: "#6c757d",
+                      fontSize: "0.95rem"
+                    }),
+
+                    // 7. Remove the vertical line for a cleaner, minimalist look
+                    indicatorSeparator: () => ({
+                      display: "none"
+                    }),
+
+                    // 8. Style the dropdown arrow
+                    dropdownIndicator: (base, state) => ({
+                      ...base,
+                      color: state.isFocused ? "#0A7C6E" : "#adb5bd",
+                      transition: "all 0.2s ease",
+                      "&:hover": {
+                        color: "#0A7C6E"
+                      }
+                    })
+                  }}
+                />
+              </div>
+            )}
 
             {isAdmin && step === 0 && form.user_id && form.user_id !== "new" && (
               <div className="mb-3">
@@ -1146,7 +1201,7 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
 
   if (isEmbedded) {
     return (
-      <div className="embedded-job-modal">
+      <div className="embedded-job-modal job-wizard">
         <div className="embedded-job-header">
           <div>
             <h3 className="mb-1 fw-bold text-dark">{isAdmin ? "Add Shift" : "Create Job"}</h3>
@@ -1165,9 +1220,9 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
   }
 
   return (
-    <>
+    <div className="job-wizard">
       {renderContent()}
       <PaymentModal open={paymentModalOpen} onClose={() => !postingJob && setPaymentModalOpen(false)} amountAud={pendingDraft?.amountAud || 0} jobTitle={form.title} onHoldPayment={handleHoldPayment} onSuccess={handlePaymentSuccess} savedCards={savedCards} />
-    </>
+    </div>
   );
 }

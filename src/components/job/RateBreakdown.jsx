@@ -31,9 +31,20 @@ export default function RateBreakdown({ rate, jobTypeLabel = "Security Guard", p
 
   return (
     <div className="border rounded-4 bg-white overflow-hidden shadow-sm" style={{ borderColor: "#e9ecef" }}>
-      <div className="bg-light border-bottom px-4 py-3 d-flex align-items-center justify-content-between">
-        <h6 className="fw-bold mb-0 text-dark"><i className="fa-solid fa-file-invoice-dollar text-primary me-2"></i> Quotation Breakdown</h6>
-        <span className="badge bg-primary bg-opacity-10 text-white border border-primary-subtle rounded-pill px-3 py-2 fw-bold shadow-sm">{totalHours.toFixed(2)} Total Billable Hours</span>
+      <style>{`
+        .jw-rate-head {
+          background: linear-gradient(120deg, #0a1930, #0e2340 60%, #10345a) !important;
+          border-bottom: none !important; position: relative; overflow: hidden; isolation: isolate;
+        }
+        .jw-rate-head::after { content:""; position:absolute; top:-30px; right:-30px; width:120px; height:120px; border-radius:50%;
+          background: radial-gradient(circle, rgba(10,124,110,0.5), transparent 70%); z-index:-1; }
+        .jw-rate-head h6 { color: #fff !important; position: relative; z-index: 1; }
+        .jw-rate-head i { color: #6ee7d8 !important; }
+        .jw-hours-chip { background: rgba(255,255,255,0.14) !important; color: #fff !important; border: 1px solid rgba(255,255,255,0.25) !important; position: relative; z-index: 1; }
+      `}</style>
+      <div className="jw-rate-head px-4 py-3 d-flex align-items-center justify-content-between flex-wrap gap-2">
+        <h6 className="fw-bold mb-0"><i className="fa-solid fa-file-invoice-dollar me-2"></i> Quotation Breakdown</h6>
+        <span className="badge jw-hours-chip rounded-pill px-3 py-2 fw-bold">{totalHours.toFixed(2)} Total Billable Hours</span>
       </div>
 
       <div className="table-responsive">
@@ -90,8 +101,8 @@ export default function RateBreakdown({ rate, jobTypeLabel = "Security Guard", p
             {paymentOption === "full" && (
               <tr>
                 <td colSpan="2" className="border-0"></td>
-                <td colSpan="2" className="py-3 border-0">Pay In Full Discount (5%)</td>
-                <td className="text-end pe-4 py-3 border-0">-{fmt(discountAmount)}</td>
+                <td colSpan="2" className="py-3 border-0" style={{ color: "#0A7C6E" }}>Pay In Full Discount (5%)</td>
+                <td className="text-end pe-4 py-3 border-0" style={{ color: "#0A7C6E" }}>-{fmt(discountAmount)}</td>
               </tr>
             )}
             {paymentOption === "split" && (
@@ -110,8 +121,8 @@ export default function RateBreakdown({ rate, jobTypeLabel = "Security Guard", p
             </tr>
             <tr>
               <td colSpan="2" className="border-0"></td>
-              <td colSpan="2" className="py-3 border-0 fw-bold" style={{ fontSize: "1.15rem", color: "#000" }}>Amount Payable</td>
-              <td className="text-end pe-4 py-3 border-0 fw-bold" style={{ fontSize: "1.15rem", color: "#000" }}>{fmt(amountDueToday)}</td>
+              <td colSpan="2" className="py-3 border-0 fw-bold" style={{ fontSize: "1.15rem", color: "#0A7C6E" }}>Amount Payable</td>
+              <td className="text-end pe-4 py-3 border-0 fw-bold" style={{ fontSize: "1.15rem", color: "#0A7C6E" }}>{fmt(amountDueToday)}</td>
             </tr>
           </tfoot>
         </table>

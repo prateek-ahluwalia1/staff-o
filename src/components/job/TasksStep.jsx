@@ -21,7 +21,7 @@ function setTimePart(current, type, newVal) {
 
 function TimeSelect({ value, onChange, label }) {
   const inputStyle = {
-    height: "44px",
+    height: "42px",
     borderRadius: "10px",
     border: "1px solid #e5e7eb",
     fontSize: "14px",
@@ -31,13 +31,13 @@ function TimeSelect({ value, onChange, label }) {
     <div style={{ flex: 1 }}>
       <label
         className="form-label mb-1"
-        style={{ fontSize: 13, fontWeight: 600 }}
+        style={{ fontSize: 11.5, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.4px", color: "#94a3b8" }}
       >
         {label}
       </label>
       <div className="d-flex gap-2 align-items-center">
         <select
-          className="form-select"
+          className="form-select jw-time-select"
           style={inputStyle}
           value={getPart(value, "hour")}
           onChange={(e) => onChange(setTimePart(value, "hour", e.target.value))}
@@ -51,7 +51,7 @@ function TimeSelect({ value, onChange, label }) {
         </select>
         <span style={{ fontWeight: 700, color: "#aaa" }}>:</span>
         <select
-          className="form-select"
+          className="form-select jw-time-select"
           style={inputStyle}
           value={getPart(value, "minute")}
           onChange={(e) =>
@@ -91,40 +91,44 @@ export default function TasksStep({ form, setField }) {
     setField("tasks", updated);
   }
 
-  const cardStyle = {
-    background: "#ffffff",
-    borderRadius: "16px",
-    border: "1px solid #e5e7eb",
-    padding: "20px",
-    marginBottom: "16px",
-    boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
-  };
-
   return (
     <div className="mb-4">
-      <h5 className="mb-1">Tasks <span className="text-muted small">(Optional)</span></h5>
-      <p className="text-muted small mb-4">
-        Add one or more tasks for this job. Each task has a start time, end
-        time, and description.
-      </p>
+      <style>{`
+        .jw-time-select:focus { border-color: #0A7C6E !important; box-shadow: 0 0 0 3px rgba(10,124,110,0.12) !important; }
+        .jw-task-card { background: #fff; border: 1px solid var(--jw-line-soft, #f1f5f9); border-radius: 16px; padding: 18px; margin-bottom: 14px; box-shadow: 0 2px 8px rgba(15,23,42,0.04); }
+        .jw-task-num { width: 28px; height: 28px; border-radius: 9px; background: var(--jw-teal-tint, #f0fdf9); color: var(--jw-teal, #0A7C6E); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 12.5px; flex-shrink: 0; }
+        .jw-task-delete { color: #dc2626 !important; border-radius: 8px !important; }
+        .jw-task-delete:hover { background: #fef2f2 !important; }
+        .jw-add-task-btn {
+          background: var(--jw-navy-950, #0a1930) !important; border: none !important; border-radius: 999px !important;
+          padding: 11px 30px !important; font-size: 14px !important; font-weight: 700 !important;
+          color: #fff !important; box-shadow: 0 6px 14px -4px rgba(10,25,48,0.4); transition: all .15s;
+        }
+        .jw-add-task-btn:hover { background: var(--jw-navy-900, #0e2340) !important; transform: translateY(-1px); }
+      `}</style>
+
+      <div className="jw-section-head">
+        <div className="jw-section-head-left">
+          <span className="jw-icon-badge"><i className="fa-solid fa-list-ol"></i></span>
+          <div>
+            <h5>Tasks <span className="text-muted small fw-normal">(Optional)</span></h5>
+            <p>Add one or more tasks for this job. Each task has a start time, end time, and description.</p>
+          </div>
+        </div>
+      </div>
 
       {tasks.length === 0 && (
-        <div
-          className="text-center text-muted py-4"
-          style={{
-            border: "2px dashed #e5e7eb",
-            borderRadius: "12px",
-            marginBottom: "16px",
-          }}
-        >
+        <div className="jw-empty mb-3">
+          <i className="fa-regular fa-clipboard fs-4 d-block mb-2"></i>
           No tasks added yet. Click &ldquo;+ Add new task&rdquo; below.
         </div>
       )}
 
       {tasks.map((task, index) => (
-        <div key={index} style={cardStyle}>
+        <div key={index} className="jw-task-card">
           {/* Times row */}
           <div className="d-flex gap-3 align-items-start flex-wrap mb-3">
+            <span className="jw-task-num mt-4">{index + 1}</span>
             <TimeSelect
               label="Start Time"
               value={task.task_start}
@@ -136,17 +140,16 @@ export default function TasksStep({ form, setField }) {
               onChange={(val) => updateTask(index, "task_end", val)}
             />
             {/* Delete button */}
-            <div className="ms-auto" style={{ paddingTop: "26px" }}>
+            <div className="ms-auto" style={{ paddingTop: "20px" }}>
               <button
                 type="button"
-                className="btn btn-sm"
+                className="btn btn-sm jw-task-delete"
                 style={{
                   background: "transparent",
                   border: "none",
-                  color: "#c0392b",
-                  fontSize: "18px",
+                  fontSize: "16px",
                   lineHeight: 1,
-                  padding: "4px 8px",
+                  padding: "6px 10px",
                   cursor: "pointer",
                 }}
                 onClick={() => removeTask(index)}
@@ -161,7 +164,7 @@ export default function TasksStep({ form, setField }) {
           <div>
             <label
               className="form-label mb-1"
-              style={{ fontSize: 13, fontWeight: 600 }}
+              style={{ fontSize: 11.5, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.4px", color: "#94a3b8" }}
             >
               Task
             </label>
@@ -186,19 +189,9 @@ export default function TasksStep({ form, setField }) {
         <button
           type="button"
           onClick={addTask}
-          style={{
-            background: "#fff",
-            border: "1px solid #d1d5db",
-            borderRadius: "999px",
-            padding: "10px 28px",
-            fontSize: "14px",
-            fontWeight: 600,
-            color: "#2196f3",
-            cursor: "pointer",
-            boxShadow: "0 1px 4px rgba(0,0,0,0.07)",
-          }}
+          className="jw-add-task-btn"
         >
-          + Add new task
+          <i className="fa-solid fa-plus me-2"></i>Add new task
         </button>
       </div>
     </div>

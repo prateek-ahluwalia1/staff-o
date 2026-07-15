@@ -16,7 +16,7 @@ const CARD_ELEMENT_OPTIONS = {
       fontFamily:
         "'Inter', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif",
       "::placeholder": { color: "#a0aec0" },
-      iconColor: "#6366f1",
+      iconColor: "#0A7C6E",
     },
     invalid: {
       color: "#e53e3e",
@@ -126,14 +126,9 @@ function CardForm({
 
   return (
     <form onSubmit={handleSubmit} noValidate>
-      <div
-        className="d-flex justify-content-between align-items-center rounded mb-4 p-3"
-        style={{ background: "#0A7C6E" }}
-      >
-        <span className="text-white small">{jobTitle || "Job posting"}</span>
-        <span className="fw-bold fs-5" style={{ color: "#FFF" }}>
-          {fmt(amountAud)}
-        </span>
+      <div className="jw-pm-amount-banner mb-4">
+        <span className="small">{jobTitle || "Job posting"}</span>
+        <span className="fw-bold fs-4">{fmt(amountAud)}</span>
       </div>
 
       {savedCards.length > 0 && (
@@ -144,13 +139,10 @@ function CardForm({
           >
             Payment Method
           </label>
-          <div className="d-flex gap-2 mb-3">
+          <div className="jw-pm-toggle mb-3">
             <button
               type="button"
-              className={`btn btn-sm ${paymentMode === "saved"
-                ? "btn-primary-custom"
-                : "btn-outline-primary"
-                }`}
+              className={paymentMode === "saved" ? "active" : ""}
               onClick={() => {
                 setPaymentMode("saved");
                 setCardError("");
@@ -161,10 +153,7 @@ function CardForm({
             </button>
             <button
               type="button"
-              className={`btn btn-sm ${paymentMode === "new"
-                ? "btn-primary-custom"
-                : "btn-outline-primary"
-                }`}
+              className={paymentMode === "new" ? "active" : ""}
               onClick={() => {
                 setPaymentMode("new");
                 setCardError("");
@@ -176,8 +165,8 @@ function CardForm({
           </div>
 
           {paymentMode === "saved" && (
-            <div className="border rounded p-2" style={{ backgroundColor: "#f8f9fa" }}>
-              <div className="text-muted small mb-2 px-1"
+            <div className="d-flex flex-column gap-2">
+              <div className="text-muted small mb-1"
                 style={{ textTransform: "none" }}
               >
                 Select a card to view its details, then enter them below.
@@ -187,30 +176,20 @@ function CardForm({
                 const isSelected = selectedSavedIndex === index;
 
                 return (
-                  <label
+                  <div
                     key={index}
-                    className="d-flex align-items-start gap-3 p-3 border rounded mb-2"
-                    style={{
-                      cursor: "pointer",
-                      background: isSelected ? "#fff" : "transparent",
-                      borderColor: isSelected ? "#0A7C6E" : "#dee2e6",
-                      boxShadow: isSelected ? "0 2px 4px rgba(0,0,0,0.05)" : "none"
-                    }}
+                    className={`jw-pm-card-tile ${isSelected ? "selected" : ""}`}
+                    onClick={() => !processing && setSelectedSavedIndex(index)}
                   >
-                    <input
-                      type="radio"
-                      className="mt-1"
-                      checked={isSelected}
-                      onChange={() => setSelectedSavedIndex(index)}
-                      disabled={processing}
-                    />
+                    <span className="jw-pm-card-check"><i className="fa-solid fa-check"></i></span>
+                    <div className="jw-pm-card-ic"><i className="fa-regular fa-credit-card"></i></div>
                     <div className="flex-grow-1">
                       <div className="fw-bold text-dark">
                         {card?.card_holder_name || "Card Holder"}
                       </div>
                       <div
                         className="font-monospace mt-1"
-                        style={{ fontSize: "15px", letterSpacing: "1px", color: "#1a202c" }}
+                        style={{ fontSize: "14px", letterSpacing: "1px", color: "#1a202c" }}
                       >
                         {rawNumber || "No card number available"}
                       </div>
@@ -220,7 +199,7 @@ function CardForm({
                         {card?.cvv && <span>CVV: {card.cvv}</span>}
                       </div>
                     </div>
-                  </label>
+                  </div>
                 );
               })}
             </div>
@@ -241,14 +220,14 @@ function CardForm({
         <div className="mb-2">
           <input
             type="text"
-            className="form-control"
+            className="form-control jw-pm-input"
             value={cardHolderName}
             onChange={(e) => setCardHolderName(e.target.value)}
             placeholder="Card Holder Name"
             disabled={processing}
           />
         </div>
-        <div className="border rounded px-3 py-2 bg-white mb-2">
+        <div className="jw-pm-card-element mb-2">
           <CardElement
             options={CARD_ELEMENT_OPTIONS}
             onChange={(e) => {
@@ -283,7 +262,7 @@ function CardForm({
       <div className="d-flex gap-2 mt-2">
         <button
           type="submit"
-          className="btn btn-success fw-semibold flex-grow-1"
+          className="btn fw-semibold flex-grow-1 jw-pm-pay-btn"
           disabled={processing || !canSubmit}
         >
           {processing ? "Processing..." : `Pay ${fmt(amountAud)}`}
@@ -319,8 +298,39 @@ export default function PaymentModal({
 
   return (
     <div style={overlayStyle} role="dialog" aria-modal="true">
+      <style>{`
+        .jw-pm-amount-banner {
+          display: flex; justify-content: space-between; align-items: center; border-radius: 14px; padding: 16px 18px;
+          background: linear-gradient(135deg, #0A7C6E, #075e53); color: #fff;
+          box-shadow: 0 8px 20px -8px rgba(10,124,110,0.5);
+        }
+        .jw-pm-toggle { display: inline-flex; gap: 8px; }
+        .jw-pm-toggle button {
+          border: 1px solid #d1d5db; background: #fff; color: #475569; border-radius: 999px;
+          padding: 6px 16px; font-size: 12.5px; font-weight: 700; transition: all 0.15s;
+        }
+        .jw-pm-toggle button.active { background: #0A7C6E; border-color: #0A7C6E; color: #fff; box-shadow: 0 3px 8px rgba(10,124,110,0.35); }
+        .jw-pm-card-tile {
+          position: relative; display: flex; align-items: center; gap: 12px;
+          border: 1.5px solid #e2e8f0; border-radius: 14px; padding: 14px 16px; cursor: pointer;
+          background: #fff; transition: all 0.15s;
+        }
+        .jw-pm-card-tile.selected { border-color: #0A7C6E; background: #f0fdf9; box-shadow: 0 6px 16px -8px rgba(10,124,110,0.3); }
+        .jw-pm-card-check { position: absolute; top: 10px; right: 10px; width: 20px; height: 20px; border-radius: 50%;
+          background: #e2e8f0; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 10px; transition: all 0.15s; }
+        .jw-pm-card-tile.selected .jw-pm-card-check { background: #0A7C6E; }
+        .jw-pm-card-ic { width: 36px; height: 36px; border-radius: 10px; background: #f0fdf9; color: #0A7C6E;
+          display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .jw-pm-input:focus, .jw-pm-card-element:focus-within {
+          border-color: #0A7C6E !important; box-shadow: 0 0 0 3px rgba(10,124,110,0.12) !important;
+        }
+        .jw-pm-card-element { border: 1px solid #dee2e6; border-radius: 10px; padding: 10px 14px; background: #fff; transition: all 0.15s; }
+        .jw-pm-pay-btn { background: #0A7C6E; border-color: #0A7C6E; color: #fff; border-radius: 10px; }
+        .jw-pm-pay-btn:hover:not(:disabled) { background: #075e53; border-color: #075e53; color: #fff; }
+        .jw-pm-pay-btn:disabled { opacity: 0.6; }
+      `}</style>
       <div
-        className="bg-white rounded-3 shadow-lg p-4"
+        className="bg-white rounded-4 shadow-lg p-4"
         style={{ width: "100%", maxWidth: 460, position: "relative" }}
       >
         <button onClick={onClose} style={closeButtonStyle}>
@@ -339,7 +349,7 @@ export default function PaymentModal({
 
           <div
             className="d-flex align-items-center gap-1 px-2 py-1 rounded"
-            style={{ backgroundColor: "#f8f9fa", border: "1px solid #e9ecef" }}
+            style={{ backgroundColor: "#f0fdf9", border: "1px solid #d1fae5" }}
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -347,7 +357,7 @@ export default function PaymentModal({
               height="10"
               viewBox="0 0 24 24"
               fill="none"
-              stroke="#6c757d"
+              stroke="#0A7C6E"
               strokeWidth="2.5"
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -356,7 +366,7 @@ export default function PaymentModal({
               <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
             </svg>
             <span
-              style={{ fontSize: "10px", color: "#6c757d", fontWeight: 500 }}
+              style={{ fontSize: "10px", color: "#075e53", fontWeight: 600 }}
             >
               Secured by{" "}
               <span
@@ -392,7 +402,8 @@ export default function PaymentModal({
 const overlayStyle = {
   position: "fixed",
   inset: 0,
-  background: "rgba(0,0,0,0.55)",
+  background: "rgba(10, 20, 35, 0.62)",
+  backdropFilter: "blur(3px)",
   zIndex: 1050,
   display: "flex",
   alignItems: "center",

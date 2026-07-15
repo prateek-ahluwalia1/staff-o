@@ -187,21 +187,63 @@ export default function LocationStep({
     );
   };
 
+  const isConfirmed = Boolean(form?.coordinates) && !locationError;
+
   return (
     <div className="mb-2">
-      <div className="d-flex justify-content-between align-items-center mb-3">
-        <div>
-          <h5 className="mb-1 fw-bold text-dark">Interactive Map <span className="text-danger fw-bold">*</span></h5>
-          <p className="text-muted small mb-0" style={{ textTransform: "none" }}>
-            Search below, move the pin, or use current location.
-          </p>
+      <style>{`
+        .jw-loc-search {
+          border-radius: 999px !important;
+          border: 1.5px solid var(--jw-line, #e2e8f0) !important;
+          overflow: hidden;
+          transition: border-color 0.15s, box-shadow 0.15s;
+        }
+        .jw-loc-search:focus-within {
+          border-color: var(--jw-teal, #0A7C6E) !important;
+          box-shadow: 0 0 0 4px rgba(10,124,110,0.1) !important;
+        }
+        .jw-loc-search.has-error { border-color: #dc2626 !important; }
+        .jw-gps-btn {
+          background: var(--jw-navy-950, #0a1930) !important;
+          border-color: var(--jw-navy-950, #0a1930) !important;
+          box-shadow: 0 6px 14px -4px rgba(10,25,48,0.4);
+        }
+        .jw-gps-btn:hover { background: var(--jw-navy-900, #0e2340) !important; }
+        .jw-map-wrap { position: relative; border-radius: 20px; overflow: hidden; border: 1px solid var(--jw-line, #e2e8f0); }
+        .jw-map-wrap.has-error { border-color: #dc2626 !important; }
+        .jw-map-overlay {
+          position: absolute; left: 14px; right: 14px; bottom: 14px; z-index: 2;
+          background: rgba(10, 25, 48, 0.88); backdrop-filter: blur(6px);
+          border-radius: 14px; padding: 12px 16px; color: #fff;
+          display: flex; align-items: center; gap: 10px;
+          box-shadow: 0 10px 24px -8px rgba(0,0,0,0.4);
+        }
+        .jw-map-overlay .pin { color: #34d399; font-size: 16px; flex-shrink: 0; }
+        .jw-map-overlay .addr { font-size: 12.5px; font-weight: 600; line-height: 1.3; }
+        .jw-map-overlay .hint { position: absolute; top: 14px; left: 14px; right: 14px; z-index: 2;
+          background: rgba(255,255,255,0.92); border-radius: 12px; padding: 8px 14px; font-size: 12px; font-weight: 600;
+          color: var(--jw-muted, #64748b); box-shadow: 0 4px 12px rgba(15,23,42,0.1); text-align: center; }
+      `}</style>
+
+      <div className="jw-section-head">
+        <div className="jw-section-head-left">
+          <span className="jw-icon-badge"><i className="fa-solid fa-map-location-dot"></i></span>
+          <div>
+            <h5>Interactive Map <span className="text-danger fw-bold">*</span></h5>
+            <p>Search below, move the pin, or use current location.</p>
+          </div>
         </div>
+        {isConfirmed && (
+          <span className="jw-chip flex-shrink-0">
+            <i className="fa-solid fa-circle-check"></i> Location set
+          </span>
+        )}
       </div>
 
       {/* Changed g-2 to g-3 for better mobile stacking spacing, added col-12 classes */}
       <div className="row g-3 mb-3">
         <div className="col-12 col-md-8 col-lg-9">
-          <div className={`input-group shadow-sm rounded-pill overflow-hidden border ${locationError ? "border-danger border-2" : "border-1"}`}>
+          <div className={`input-group shadow-sm jw-loc-search ${locationError ? "has-error" : ""}`}>
             <span className="input-group-text bg-white border-0 text-muted ps-4">
               <i className="fa-solid fa-magnifying-glass"></i>
             </span>
@@ -246,7 +288,7 @@ export default function LocationStep({
         <div className="col-12 col-md-4 col-lg-3 d-grid">
           <button
             type="button"
-            className="btn btn-primary-custom btn-lg shadow-sm fw-medium d-flex align-items-center justify-content-center gap-2 rounded-pill w-100"
+            className="btn btn-lg shadow-sm fw-medium d-flex align-items-center justify-content-center gap-2 rounded-pill w-100 jw-gps-btn text-white"
             onClick={handleUseCurrent}
             disabled={resolvingLocation}
           >
@@ -260,24 +302,36 @@ export default function LocationStep({
       </div>
 
       {locationError && (
-        <div className="alert alert-danger py-2 mb-3 small d-flex align-items-center gap-2 shadow-sm border-0 rounded-3">
+        <div className="jw-alert-error mb-3">
           <i className="fa-solid fa-triangle-exclamation" />
           {locationError}
         </div>
       )}
 
       {/* Responsive Map Container */}
-      <div
-        ref={mapRef}
-        className={`rounded-4 border-2 shadow-sm overflow-hidden ${locationError ? "border-danger border-opacity-75" : "border-secondary border-opacity-50"}`}
-        style={{
-          width: "100%",
-          height: "50vh",
-          minHeight: "250px",
-          maxHeight: "350px",
-          backgroundColor: "#e9ecef"
-        }}
-      />
+      <div className={`jw-map-wrap shadow-sm ${locationError ? "has-error" : ""}`}>
+        {!form?.coordinates && (
+          <div className="jw-map-overlay hint">
+            <i className="fa-solid fa-hand-pointer me-1"></i> Drag the pin or search above to set the exact location
+          </div>
+        )}
+        <div
+          ref={mapRef}
+          style={{
+            width: "100%",
+            height: "50vh",
+            minHeight: "250px",
+            maxHeight: "350px",
+            backgroundColor: "#e9ecef"
+          }}
+        />
+        {form?.address && (
+          <div className="jw-map-overlay">
+            <i className="fa-solid fa-location-dot pin"></i>
+            <span className="addr">{form.address}</span>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

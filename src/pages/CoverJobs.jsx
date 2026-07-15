@@ -89,7 +89,27 @@ const CoverJobs = () => {
 
     const openModal = (job) => {
         setSelectedStaffId("");
-        setSelectedJob(job);
+        // Parse document list from API response
+        let documents = [];
+        try {
+            if (job.document_list) {
+                const parsed = JSON.parse(job.document_list);
+                if (Array.isArray(parsed)) {
+                    documents = parsed.map(doc =>
+                        doc
+                            .replace(/_/g, ' ')
+                            .replace(/\b\w/g, (l) => l.toUpperCase())
+                    );
+                }
+            }
+        } catch (e) {
+            // ignore malformed document_list
+        }
+        const jobPayload = {
+            ...job,
+            documents,
+        };
+        setSelectedJob(jobPayload);
     };
     const closeModal = () => {
         setSelectedStaffId("");
@@ -290,7 +310,7 @@ const CoverJobs = () => {
 
             {selectedJob && (
                 <div className="modal-overlay" onClick={closeModal} style={{ zIndex: 9999, backgroundColor: 'rgba(0,0,0,0.6)', position: 'fixed', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
-                    <div className="modal-content shadow-lg border-0" onClick={(e) => e.stopPropagation()} style={{ width: '100%', maxWidth: '750px', maxHeight: '90vh', background: '#f8fafc', borderRadius: '16px', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+                    <div className="modal-content shadow-lg border-0" onClick={(e) => e.stopPropagation()} style={{ width: '100%', maxWidth: '750px', maxHeight: '90vh', background: '#f8fafc', borderRadius: '16px', display: 'flex', flexDirection: 'column', overflow: 'visible', position: 'relative', zIndex: 1 }}>
                         <div className="modal-header d-flex justify-content-between align-items-center" style={{ background: '#0A7C6E', color: '#fff', padding: '20px 24px' }}>
                             <h3 style={{ margin: 0, fontSize: '20px', fontWeight: '700' }}>
                                 <i className="fa-solid fa-clipboard-check me-2 opacity-75"></i> Job Details
@@ -300,7 +320,7 @@ const CoverJobs = () => {
                             </button>
                         </div>
 
-                        <div className="modal-body" style={{ padding: '24px', overflowY: 'auto', flex: 1 }}>
+                        <div className="modal-body" style={{ padding: '24px', overflowY: 'auto', flex: 1, position: 'relative', zIndex: 1 }}>
                             <div className="row g-4">
                                 <div className="col-md-6">
                                     <div className="p-4 bg-white rounded-4 h-100 shadow-sm border border-light">
@@ -334,6 +354,36 @@ const CoverJobs = () => {
                                     </div>
                                 </div>
                             </div>
+
+                            {selectedJob.documents && selectedJob.documents.length > 0 && (
+                                <div className="row g-4 mt-4">
+                                    <div className="col-12">
+                                        <div className="p-4 bg-white rounded-4 shadow-sm border border-light">
+                                            <h5 className="mb-4 d-flex align-items-center pb-3 border-bottom" style={{ fontSize: '16px', fontWeight: '700', color: '#1e293b' }}>
+                                                <i className="fa-solid fa-file-lines me-2" style={{ color: '#0A7C6E' }}></i>
+                                                Required Documents
+                                            </h5>
+                                            <div className="d-flex flex-wrap gap-2">
+                                                {selectedJob.documents.map((doc) => (
+                                                    <span
+                                                        key={doc}
+                                                        className="badge rounded-pill px-3 py-2"
+                                                        style={{
+                                                            backgroundColor: 'rgba(10, 124, 110, 0.1)',
+                                                            color: '#0A7C6E',
+                                                            border: '1px solid rgba(10, 124, 110, 0.3)',
+                                                            fontSize: '12px',
+                                                            fontWeight: 700,
+                                                        }}
+                                                    >
+                                                        {doc}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
                         </div>
 
                         <div className="modal-footer" style={{ background: '#fff', padding: '16px 24px', borderTop: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -341,6 +391,7 @@ const CoverJobs = () => {
                                 <div className="w-100">
                                     <label className="form-label fw-semibold" style={{ fontSize: '13px', color: '#334155' }}>Assign to active staff (optional)</label>
                                     <Select
+                                        className="react-select-container"
                                         options={[
                                             { value: '', label: 'Accept directly for myself' },
                                             ...contractorStaffOptions,
@@ -355,6 +406,8 @@ const CoverJobs = () => {
                                         isClearable={false}
                                         classNamePrefix="react-select"
                                         placeholder="Select staff"
+                                        menuPortalTarget={document.body}
+                                        menuPosition="absolute"
                                         styles={{
                                             control: (base) => ({
                                                 ...base,
@@ -363,7 +416,14 @@ const CoverJobs = () => {
                                                 boxShadow: 'none',
                                                 minHeight: 44,
                                             }),
-                                            menu: (base) => ({ ...base, zIndex: 99999 }),
+                                            menuPortal: (base) => ({
+                                                ...base,
+                                                zIndex: 99999,
+                                            }),
+                                            menu: (base) => ({
+                                                ...base,
+                                                position: 'absolute',
+                                            }),
                                         }}
                                     />
                                     <div className="text-muted mt-2" style={{ fontSize: '12px' }}>Leave this empty to accept the job directly.</div>

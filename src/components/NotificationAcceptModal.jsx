@@ -79,8 +79,10 @@ export default function NotificationAcceptModal({
                     border-radius: 16px;
                     display: flex;
                     flex-direction: column;
-                    overflow: hidden;
+                    overflow: visible;
                     box-shadow: 0 24px 70px rgba(0,0,0,0.35);
+                    position: relative;
+                    z-index: 1;
                 }
                 .modal-header-green {
                     background: #0A7C6E;
@@ -137,6 +139,13 @@ export default function NotificationAcceptModal({
                 .btn-success-light:disabled {
                     background: rgba(10, 124, 110, 0.45);
                     cursor: not-allowed;
+                }
+                .react-select-container {
+                    position: relative;
+                    z-index: 99999;
+                }
+                .react-select__menu {
+                    z-index: 99999 !important;
                 }
             `}</style>
 
@@ -313,6 +322,7 @@ export default function NotificationAcceptModal({
                                     Assign to active staff (optional)
                                 </label>
                                 <Select
+                                    className="react-select-container"
                                     options={[
                                         { value: "", label: "Accept directly for myself" },
                                         ...staffOptions,
@@ -327,15 +337,24 @@ export default function NotificationAcceptModal({
                                     isClearable={false}
                                     classNamePrefix="react-select"
                                     placeholder="Select staff"
+                                    menuPortalTarget={document.body}
+                                    menuPosition="absolute"
                                     styles={{
                                         control: (base) => ({
                                             ...base,
                                             borderRadius: 10,
-                                            borderColor: "#cbd5e1",
-                                            boxShadow: "none",
+                                            borderColor: '#cbd5e1',
+                                            boxShadow: 'none',
                                             minHeight: 44,
                                         }),
-                                        menu: (base) => ({ ...base, zIndex: 99999 }),
+                                        menuPortal: (base) => ({
+                                            ...base,
+                                            zIndex: 99999,
+                                        }),
+                                        menu: (base) => ({
+                                            ...base,
+                                            position: 'absolute',
+                                        }),
                                     }}
                                 />
                                 <div style={{ fontSize: 12, color: "#64748b", marginTop: 6 }}>

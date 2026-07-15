@@ -106,11 +106,9 @@ const CoverJobs = () => {
         setLoadingIds((prev) => [...prev, jobId]);
         try {
             const payload = selectedStaffId
-                ? { roster_id: jobId, admin_id: userId }
+                ? { roster_id: jobId, guard_id: Number(selectedStaffId) }
                 : { roster_id: jobId };
-            const endpoint = selectedStaffId
-                ? `api/asap-jobs/accept/${selectedStaffId}`
-                : getAcceptEndpoint();
+            const endpoint = getAcceptEndpoint();
             const result = await submit(
                 endpoint,
                 payload,

@@ -409,13 +409,11 @@ function AppContent() {
             setAcceptingJob(true);
             try {
                 const payload = chosenStaffId
-                    ? { roster_id: jobId, admin_id: userId }
+                    ? { roster_id: jobId, guard_id: Number(chosenStaffId) }
                     : { roster_id: jobId };
-                const acceptEndpoint = chosenStaffId
-                    ? `api/asap-jobs/accept/${chosenStaffId}`
-                    : canHandleStaffCoverJobs && userRole === "staff"
-                        ? `api/asap-jobs/accept/${userId}`
-                        : `api/contractor/jobs/accept/${userId}`;
+                const acceptEndpoint = canHandleStaffCoverJobs && userRole === "staff"
+                    ? `api/asap-jobs/accept/${userId}`
+                    : `api/contractor/jobs/accept/${userId}`;
                 const result = await submitAccept(
                     acceptEndpoint,
                     payload,

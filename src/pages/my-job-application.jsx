@@ -6,38 +6,20 @@ import "react-datepicker/dist/react-datepicker.css";
 import useSubmit from "../hooks/useSubmit";
 import Loader from "../components/Loader";
 
-// Enhanced Helper component for modal rows
+// ---------- Helper Components ----------
+
 const InfoRow = ({ label, value, icon, transform = true }) => {
   const displayValue =
     transform && value && typeof value === "string"
       ? value.charAt(0).toUpperCase() + value.slice(1)
       : value;
   return (
-    <div
-      className="d-flex justify-content-between align-items-center py-2 border-bottom"
-      style={{ borderColor: "#f8f9fa" }}
-    >
-      <span
-        className="text-muted d-flex align-items-center"
-        style={{ fontSize: "14px", fontWeight: 500 }}
-      >
-        {icon && (
-          <i
-            className={`fa-solid ${icon} me-2`}
-            style={{
-              width: "18px",
-              textAlign: "center",
-              color: "#0A7C6E",
-              opacity: 0.8,
-            }}
-          ></i>
-        )}
+    <div className="info-row">
+      <span className="info-row-label">
+        {icon && <i className={`fa-solid ${icon} info-row-icon`}></i>}
         {label}
       </span>
-      <span
-        className="text-dark fw-semibold text-end"
-        style={{ fontSize: "14px", maxWidth: "60%" }}
-      >
+      <span className="info-row-value">
         {transform ? (
           displayValue || "N/A"
         ) : (
@@ -48,7 +30,6 @@ const InfoRow = ({ label, value, icon, transform = true }) => {
   );
 };
 
-// Turns a name into 1-2 letter initials for the assignee avatar
 const getInitials = (name) => {
   if (!name || name === "Unassigned") return "?";
   return name
@@ -59,10 +40,11 @@ const getInitials = (name) => {
     .join("");
 };
 
-// A single labelled date field used inside the date-range filter
 const DateField = ({ label, selected, onChange, placeholder, maxDate, minDate }) => (
   <div className="date-field">
-    <span className="date-field-label">{label}</span>
+    <span className="date-field-label">
+      <i className="fa-regular fa-calendar"></i> {label}
+    </span>
     <DatePicker
       selected={selected}
       onChange={onChange}
@@ -76,121 +58,163 @@ const DateField = ({ label, selected, onChange, placeholder, maxDate, minDate })
   </div>
 );
 
+// ---------- Main Component ----------
+
 export default function MyJobApplications() {
   const { userdata } = useSelector((state) => state.auth);
   const userId = userdata?.data?.id || userdata?.id;
   const userType = userdata?.data?.user_type || userdata?.user_type;
   const { submit, loading, data: submitData } = useSubmit({ isAuth: true });
 
-  // --- Filters State ---
-  // Store dates as JavaScript Date objects
+  // Filters state
   const [startDate, setStartDate] = useState(() => startOfMonth(new Date()));
   const [endDate, setEndDate] = useState(() => endOfMonth(new Date()));
   const [searchQuery, setSearchQuery] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pagination, setPagination] = useState({
+    currentPage: 1,
+    perPage: 15,
+    total: 0,
+    lastPage: 1,
+  });
 
   // Modal state
   const [selectedApp, setSelectedApp] = useState(null);
 
-  // 1. Fetch data based on date filters
-  const fetchCustomerSites = useCallback(() => {
-    if (!userId || !startDate || !endDate) return;
-
-    try {
+  // Fetch data with page support
+  const fetchCustomerSites = useCallback(
+    (page = 1) => {
+      if (!userId || !startDate || !endDate) return;
       const formattedStart = format(startDate, "MM-dd-yyyy");
       const formattedEnd = format(endDate, "MM-dd-yyyy");
-
       const payload = {
         user_id: [userId],
         start: formattedStart,
         end: formattedEnd,
         roster_id: "1",
+        page: page,
       };
-
       submit("api/job-details", payload, { method: "POST" });
-    } catch (error) {
-      console.error("Date formatting error:", error);
-    }
-  }, [userId, startDate, endDate, submit]);
+    },
+    [userId, startDate, endDate, submit]
+  );
 
+  // Initial fetch on mount
   useEffect(() => {
     if (userId) {
-      fetchCustomerSites();
+      setCurrentPage(1);
+      fetchCustomerSites(1);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId]);
 
-  // 2. Format raw data into a flat array
-  const applications = useMemo(() => {
-    if (!submitData?.data) return [];
-    const flattenedShifts = [];
-
-    submitData.data.forEach((site) => {
-      const roster = site.job_roster || [];
-      roster.forEach((shift) => {
-        let statusClass = "review";
-        let pillIcon = "fa-clock";
-        const currentStatus = shift.job_status
-          ? shift.job_status.toLowerCase()
-          : "pending";
-
-        if (currentStatus === "confirmed" || currentStatus === "completed") {
-          statusClass = "offer";
-          pillIcon = "fa-calendar-check";
-        } else if (currentStatus === "pending") {
-          statusClass = "review";
-          pillIcon = "fa-envelope-open-text";
-        }
-
-        let formattedTime = `${shift.start} - ${shift.end}`;
-        try {
-          const sDate = parse(shift.start, "yyyy-MM-dd HH:mm", new Date());
-          const eDate = parse(shift.end, "yyyy-MM-dd HH:mm", new Date());
-          formattedTime = `${format(sDate, "dd/MM/yyyy HH:mm")} to ${format(
-            eDate,
-            "HH:mm"
-          )}`;
-        } catch (e) { }
-
-        // Parse Created At
-        let formattedCreatedAt = shift.created_at;
-        if (shift.created_at) {
-          try {
-            const cDate = new Date(shift.created_at);
-            formattedCreatedAt = format(cDate, "dd/MM/yyyy HH:mm");
-          } catch (e) {
-            console.error("Created At parsing error:", e);
-          }
-        }
-
-        flattenedShifts.push({
-          rawSite: site,
-          rawShift: shift,
-          id: shift.id,
-          status:
-            currentStatus.charAt(0).toUpperCase() + currentStatus.slice(1),
-          statusClass,
-          title: site.site_name || "Unknown Site",
-          location: site.address || "Location TBA",
-          role: site.site_description || "Site Security",
-          company: site.state || "",
-          applied: `Total Hours: ${shift.hours || 0}`,
-          appliedVia: shift.guards?.name
-            ? `${shift.guards.name}`
-            : "Unassigned",
-          pillIcon,
-          pillText: formattedTime,
-          createdAt: formattedCreatedAt,
-        });
+  // Extract pagination from response
+  useEffect(() => {
+    if (submitData?.pagination) {
+      setPagination({
+        currentPage: submitData.pagination.current_page,
+        perPage: submitData.pagination.per_page,
+        total: submitData.pagination.total,
+        lastPage: submitData.pagination.last_page,
       });
-    });
-    return flattenedShifts;
+    }
   }, [submitData]);
 
-  // 3. Filter the mapped applications by text search
+  // Format raw shift data into a flat array (NEW STRUCTURE: each item is a shift)
+  const applications = useMemo(() => {
+    if (!submitData?.data) return [];
+    return submitData.data.map((shift) => {
+      let statusClass = "review";
+      let pillIcon = "fa-clock";
+      const currentStatus = shift.job_status
+        ? shift.job_status.toLowerCase()
+        : "pending";
+
+      if (currentStatus === "confirmed" || currentStatus === "completed") {
+        statusClass = "offer";
+        pillIcon = "fa-calendar-check";
+      } else if (currentStatus === "pending") {
+        statusClass = "review";
+        pillIcon = "fa-envelope-open-text";
+      }
+
+      // Format start/end times for display
+      let formattedTime = `${shift.start} - ${shift.end}`;
+      let formattedDate = "";
+      let timeWindow = "";
+      let startDisplay = shift.start || "N/A";
+      let endDisplay = shift.end || "N/A";
+      try {
+        const sDate = parse(shift.start, "yyyy-MM-dd HH:mm", new Date());
+        const eDate = parse(shift.end, "yyyy-MM-dd HH:mm", new Date());
+        if (!isNaN(sDate) && !isNaN(eDate)) {
+          formattedDate = format(sDate, "dd MMM yyyy");
+          timeWindow = `${format(sDate, "HH:mm")} – ${format(eDate, "HH:mm")}`;
+          formattedTime = `${format(sDate, "dd/MM/yyyy HH:mm")} to ${format(eDate, "HH:mm")}`;
+          startDisplay = format(sDate, "dd MMM yyyy, HH:mm");
+          endDisplay = format(eDate, "dd MMM yyyy, HH:mm");
+        }
+      } catch (e) { }
+
+      // Format created date
+      let formattedCreatedAt = shift.created_at || "";
+      if (shift.created_at) {
+        try {
+          const cDate = new Date(shift.created_at);
+          if (!isNaN(cDate)) {
+            formattedCreatedAt = format(cDate, "dd/MM/yyyy HH:mm");
+          }
+        } catch (e) { }
+      }
+
+      // Parse required documents
+      let documents = [];
+      if (shift.document_list) {
+        try {
+          const parsed = JSON.parse(shift.document_list);
+          if (Array.isArray(parsed)) {
+            documents = parsed;
+          }
+        } catch (e) { }
+      }
+
+      // Determine if a contractor has accepted the shift
+      const isAcceptedByContractor = !!shift.accepted_by;
+      const contractorName = shift.contractor?.name || null;
+
+      // Assignee name
+      const appliedVia = shift.guards?.name || "Unassigned";
+
+      return {
+        rawShift: shift,
+        id: shift.id,
+        status: currentStatus.charAt(0).toUpperCase() + currentStatus.slice(1),
+        statusClass,
+        title: shift.site?.site_name || "Unknown Site",
+        location: shift.site?.address || "Location TBA",
+        role: shift.job_type || "Security Guard",
+        company: shift.site?.state || "",
+        applied: `Total Hours: ${shift.hours || 0}`,
+        hours: shift.hours || 0,
+        appliedVia,
+        pillIcon,
+        pillText: formattedTime,
+        formattedDate,
+        timeWindow,
+        startDisplay,
+        endDisplay,
+        createdAt: formattedCreatedAt,
+        isAcceptedByContractor,
+        contractorName,
+        documents,
+      };
+    });
+  }, [submitData]);
+
+  // Client-side text search
   const filteredApplications = useMemo(() => {
     if (!searchQuery.trim()) return applications;
     const lowerQuery = searchQuery.toLowerCase();
-
     return applications.filter(
       (app) =>
         app.title.toLowerCase().includes(lowerQuery) ||
@@ -206,477 +230,622 @@ export default function MyJobApplications() {
     return `${format(startDate, "dd MMM")} – ${format(endDate, "dd MMM yyyy")}`;
   }, [startDate, endDate]);
 
+  // Pagination handlers
+  const handlePageChange = (page) => {
+    if (page < 1 || page > pagination.lastPage) return;
+    setCurrentPage(page);
+    fetchCustomerSites(page);
+  };
+
+  const handleSearch = () => {
+    setCurrentPage(1);
+    fetchCustomerSites(1);
+  };
+
   if (loading) return <Loader />;
 
   return (
     <>
       <style>
         {`
-          .shift-card-hover {
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-          }
-          .shift-card-hover:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1) !important;
+          :root {
+            --navy-950: #0a1930;
+            --navy-900: #0e2340;
+            --teal: #0A7C6E;
+            --teal-dark: #075e53;
+            --teal-tint: #f0fdf9;
+            --teal-border: #d1fae5;
+            --amber: #d97706;
+            --amber-tint: #fffbeb;
+            --success: #16a34a;
+            --purple: #7c3aed;
+            --sky: #0ea5e9;
+            --ink: #0f172a;
+            --slate: #1e293b;
+            --muted: #64748b;
+            --faint: #94a3b8;
+            --line: #e2e8f0;
+            --line-soft: #f1f5f9;
+            --surface: #ffffff;
+            --canvas: #f6f8fa;
           }
 
-          /* ---------- Search box ---------- */
+          .jobs-page { background: var(--canvas); }
+
+          /* ---------- Hero header ---------- */
+          .jobs-hero {
+            position: relative;
+            background: linear-gradient(135deg, var(--navy-950) 0%, var(--navy-900) 65%, #0f2f52 100%);
+            border-radius: 22px;
+            padding: 34px 36px 46px;
+            overflow: hidden;
+            isolation: isolate;
+          }
+          .jobs-hero::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background-image: radial-gradient(rgba(255,255,255,0.10) 1px, transparent 1px);
+            background-size: 22px 22px;
+            opacity: 0.35;
+            z-index: -1;
+          }
+          .jobs-hero::after {
+            content: "";
+            position: absolute;
+            top: -60px;
+            right: -60px;
+            width: 260px;
+            height: 260px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(10,124,110,0.45) 0%, rgba(10,124,110,0) 70%);
+            z-index: -1;
+          }
+          .jobs-hero-eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.6px;
+            text-transform: uppercase;
+            color: #6ee7d8;
+            margin-bottom: 10px;
+          }
+          .jobs-hero-eyebrow .dot {
+            width: 7px; height: 7px; border-radius: 50%;
+            background: #34d399;
+            box-shadow: 0 0 0 4px rgba(52,211,153,0.18);
+          }
+          .jobs-hero h1 {
+            color: #fff;
+            font-size: 28px;
+            font-weight: 800;
+            letter-spacing: -0.4px;
+            margin: 0 0 6px;
+          }
+          .jobs-hero p {
+            color: rgba(255,255,255,0.62);
+            font-size: 14px;
+            margin: 0;
+            text-transform: none;
+          }
+          .jobs-hero-stats {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-top: 22px;
+          }
+          .jobs-hero-stat {
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.12);
+            backdrop-filter: blur(6px);
+            border-radius: 14px;
+            padding: 12px 18px;
+            min-width: 140px;
+            flex: 1 1 160px;
+          }
+          .jobs-hero-stat-label {
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            color: rgba(255,255,255,0.5);
+            display: block;
+            margin-bottom: 4px;
+          }
+          .jobs-hero-stat-value {
+            font-size: 18px;
+            font-weight: 700;
+            color: #fff;
+            letter-spacing: -0.2px;
+          }
+
+          /* ---------- Filter card (floats over hero bottom edge) ---------- */
+          .filter-card {
+            background: var(--surface);
+            border-radius: 18px;
+            box-shadow: 0 18px 40px -14px rgba(10, 25, 48, 0.28);
+            border: 1px solid var(--line-soft);
+            padding: 16px 18px;
+            margin: -30px 18px 0;
+            position: relative;
+            z-index: 2;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 14px;
+            align-items: center;
+            justify-content: space-between;
+          }
           .search-box {
-            min-width: 250px;
+            min-width: 260px;
+            flex: 1 1 260px;
+            display: flex;
+            align-items: center;
+            background: var(--canvas);
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            padding: 9px 14px;
+            transition: border-color 0.15s, box-shadow 0.15s;
           }
+          .search-box:focus-within {
+            border-color: var(--teal);
+            box-shadow: 0 0 0 3px rgba(10,124,110,0.12);
+            background: #fff;
+          }
+          .search-box i.fa-magnifying-glass { color: var(--faint); font-size: 13px; }
+          .search-box input {
+            font-size: 14px;
+            color: var(--slate);
+          }
+          .search-box input::placeholder { color: var(--faint); }
+          .search-box .fa-xmark { cursor: pointer; color: var(--faint); font-size: 12px; }
+          .search-box .fa-xmark:hover { color: var(--slate); }
 
-          /* ---------- Date range filter ---------- */
           .date-range-filter {
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 14px;
+            background: var(--canvas);
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            padding: 8px 16px;
           }
-          .date-range-fields {
-            display: flex;
-            align-items: flex-end;
-            gap: 10px;
-          }
-          .date-field {
-            display: flex;
-            flex-direction: column;
-            min-width: 110px;
-          }
+          .date-range-fields { display: flex; align-items: flex-end; gap: 14px; }
+          .date-field { display: flex; flex-direction: column; min-width: 108px; }
           .date-field-label {
-            font-size: 10px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            color: #94a3b8;
-            padding-left: 2px;
-            margin-bottom: 2px;
+            font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;
+            color: var(--faint); margin-bottom: 3px; display: flex; align-items: center; gap: 5px;
           }
-          .date-field-input {
-            font-size: 14px !important;
-            padding: 2px 4px !important;
-            background: transparent !important;
-          }
-          .date-field-input:focus {
-            outline: none;
-            box-shadow: none;
-          }
-          .date-range-divider {
-            height: 30px;
-            width: 1px;
-            background: #eee;
-            align-self: flex-end;
-            margin-bottom: 6px;
-          }
+          .date-field-label i { font-size: 10px; color: var(--teal); }
+          .date-field-input { font-size: 13.5px !important; font-weight: 600; padding: 0 !important; background: transparent !important; color: var(--slate); }
+          .date-field-input:focus { outline: none; box-shadow: none; }
+          .date-range-divider { height: 26px; width: 1px; background: var(--line); align-self: flex-end; margin-bottom: 4px; }
+
           .date-search-btn {
-            border-radius: 20px !important;
+            border-radius: 10px !important;
             font-size: 13px !important;
-            padding: 8px 18px !important;
+            font-weight: 600 !important;
+            padding: 10px 20px !important;
             white-space: nowrap;
+            background: var(--teal) !important;
+            border-color: var(--teal) !important;
+            box-shadow: 0 6px 14px -4px rgba(10,124,110,0.45);
+            transition: transform 0.15s, box-shadow 0.15s;
           }
+          .date-search-btn:hover { transform: translateY(-1px); box-shadow: 0 10px 18px -4px rgba(10,124,110,0.5); }
 
-          /* Mobile-first overrides */
-          @media (max-width: 767.98px) {
-            .application-grid .card-title {
-              font-size: 1rem !important;
-            }
-            .dashboard-page-header h1 {
-              font-size: 1.5rem;
-            }
-            .shift-card-hover .btn-primary-custom {
-              font-size: 12px;
-              padding: 0.4rem 1rem;
-            }
-            .header-filters-row {
-              flex-wrap: wrap;
-              width: 100%;
-            }
-            .modal-content {
-              width: 100% !important;
-              max-width: 100% !important;
-              height: 100vh;
-              max-height: 100vh;
-              border-radius: 0 !important;
-            }
-            .modal-body {
-              padding: 16px !important;
-            }
-            .modal-header {
-              padding: 16px 20px !important;
-            }
-            .modal-header h3 {
-              font-size: 18px;
-            }
-            /* InfoRow text sizes */
-            .modal-body .d-flex span {
-              font-size: 13px !important;
-            }
-          }
-
-          @media (max-width: 575.98px) {
-            .shift-card-hover .card-body {
-              padding: 1rem !important;
-            }
-            .shift-card-hover .badge {
-              font-size: 11px;
-              padding: 0.3rem 0.8rem;
-            }
-            .shift-card-hover .fw-bold {
-              font-size: 13px;
-            }
-
-            /* Date range collapses into a clean 2-column grid instead of a
-               tall vertical stack of From / divider / To / button */
-            .search-box {
-              width: 100%;
-            }
-            .date-range-filter {
-              width: 100%;
-              flex-direction: column;
-              align-items: stretch;
-            }
-            .date-range-fields {
-              display: grid;
-              grid-template-columns: 1fr 1fr;
-              gap: 8px 14px;
-              width: 100%;
-            }
-            .date-field {
-              min-width: 0;
-              width: 100%;
-            }
-            .date-range-divider {
-              display: none;
-            }
-            .date-search-btn {
-              width: 100%;
-              margin-top: 10px;
-            }
-          }
-
-          /* DatePicker custom styles */
-          .react-datepicker-wrapper {
-            display: block;
-          }
-
-          /* ---------- Card enhancements ---------- */
-          .shift-card {
-            border-radius: 18px;
-          }
-          .card-accent-bar {
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 4px;
-          }
-          .time-panel {
-            background-color: #f8fafc;
-            border: 1px solid #f1f5f9;
-          }
-          .time-icon {
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background-color: #e0f2fe;
-            color: #0ea5e9;
-            flex-shrink: 0;
-          }
-          .assignee-avatar {
-            width: 34px;
-            height: 34px;
-            min-width: 34px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 12px;
-            font-weight: 700;
-          }
-
-          /* ---------- Modal enhancements ---------- */
-          @keyframes modalOverlayFade {
-            from { opacity: 0; }
-            to { opacity: 1; }
-          }
-          @keyframes modalContentPop {
-            from { opacity: 0; transform: translateY(16px) scale(0.97); }
-            to { opacity: 1; transform: translateY(0) scale(1); }
-          }
-          .modal-overlay-anim {
-            animation: modalOverlayFade 0.18s ease-out;
-          }
-          .modal-content-anim {
-            animation: modalContentPop 0.22s cubic-bezier(0.4, 0, 0.2, 1);
-          }
+          /* ---------- Summary strip ---------- */
           .quick-stat-chip {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            background: #fff;
-            border: 1px solid #e2e8f0;
+            display: flex; align-items: center; gap: 10px;
+            background: var(--surface);
+            border: 1px solid var(--line);
             border-radius: 12px;
             padding: 10px 14px;
-            flex: 1 1 150px;
+            flex: 1 1 170px;
+            transition: box-shadow 0.15s, transform 0.15s;
           }
+          .quick-stat-chip:hover { box-shadow: 0 6px 16px -6px rgba(15,23,42,0.12); transform: translateY(-1px); }
           .quick-stat-chip i {
-            width: 34px;
-            height: 34px;
-            border-radius: 50%;
+            width: 34px; height: 34px; border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            background: rgba(10, 124, 110, 0.08); color: var(--teal); font-size: 14px; flex-shrink: 0;
+          }
+          .quick-stat-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; color: var(--faint); display: block; margin-bottom: 1px; }
+          .quick-stat-value { font-size: 14px; font-weight: 700; color: var(--slate); }
+
+          /* ---------- Shift cards ---------- */
+          .application-grid { margin-top: 4px; }
+          .shift-card {
+            border-radius: 18px;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            background: #fff;
+            border: 1px solid var(--line-soft);
+          }
+          .shift-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 35px -10px rgba(15, 23, 42, 0.14), 0 8px 14px -8px rgba(15,23,42,0.08);
+            border-color: transparent;
+          }
+          .card-accent-bar {
+            position: absolute; top: 0; left: 0; right: 0; height: 4px;
+            border-radius: 18px 18px 0 0;
+          }
+
+          .status-badge {
+            font-size: 11.5px; font-weight: 700; border-radius: 30px; padding: 5px 13px;
+            text-transform: capitalize; display: inline-flex; align-items: center; gap: 6px; letter-spacing: 0.2px;
+          }
+
+          .card-title-text { font-size: 1.05rem; letter-spacing: -0.3px; color: var(--ink); }
+
+          .location-text { font-size: 12.5px; color: var(--muted); display: flex; align-items: flex-start; gap: 6px; line-height: 1.4; }
+          .location-text i { color: var(--teal); margin-top: 2px; font-size: 12px; }
+
+          .contractor-badge {
+            background: rgba(139, 92, 246, 0.08); color: var(--purple); border: 1px solid rgba(139, 92, 246, 0.22);
+            border-radius: 30px; padding: 4px 12px; font-size: 11px; font-weight: 600;
+            display: inline-flex; align-items: center; gap: 5px; letter-spacing: 0.2px;
+          }
+
+          /* ---------- Shift meta row (date / time / hours) ---------- */
+          .shift-meta-row {
+            background: var(--teal-tint);
+            border: 1px solid var(--teal-border);
+            border-radius: 12px;
+            padding: 12px 14px;
             display: flex;
             align-items: center;
-            justify-content: center;
-            background: rgba(10, 124, 110, 0.08);
-            color: #0A7C6E;
-            font-size: 14px;
-            flex-shrink: 0;
+            margin: 14px 0 2px;
           }
-          .quick-stat-label {
-            font-size: 10px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.4px;
-            color: #94a3b8;
-            display: block;
-          }
-          .quick-stat-value {
-            font-size: 14px;
-            font-weight: 700;
-            color: #1e293b;
-          }
-          .detail-card-icon {
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
+          .shift-meta-item {
             display: flex;
-            align-items: center;
-            justify-content: center;
+            flex-direction: column;
+            gap: 2px;
+            flex: 1;
+            min-width: 0;
           }
+          .shift-meta-item + .shift-meta-item {
+            border-left: 1px solid var(--teal-border);
+            padding-left: 12px;
+            margin-left: 12px;
+          }
+          .shift-meta-label {
+            font-size: 9.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px;
+            color: var(--teal-dark); opacity: 0.75; display: flex; align-items: center; gap: 4px;
+          }
+          .shift-meta-label i { font-size: 9.5px; }
+          .shift-meta-value {
+            font-size: 13.5px; font-weight: 700; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+          }
+          .shift-meta-item.hours-meta { flex: 0 0 auto; align-items: flex-end; }
+
+          .assignee-avatar {
+            width: 36px; height: 36px; min-width: 36px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center; font-size: 12.5px; font-weight: 700;
+            border: 2px solid #fff; box-shadow: 0 0 0 1px var(--line);
+          }
+          .assignee-label { font-size: 9.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--faint); }
+          .assignee-name { font-size: 12.5px; color: var(--ink); }
+
+          .details-btn {
+            border-radius: 30px !important; padding: 8px 16px !important; font-size: 12.5px !important; font-weight: 700 !important;
+            height: 36px; background: var(--teal) !important; border-color: var(--teal) !important;
+            box-shadow: 0 4px 10px -2px rgba(10,124,110,0.4);
+            transition: transform 0.15s, box-shadow 0.15s;
+          }
+          .details-btn:hover { transform: translateX(1px); box-shadow: 0 6px 14px -2px rgba(10,124,110,0.45); }
+
+          .card-footer-row { border-top: 1px solid var(--line-soft); }
+
+          /* ---------- Empty state ---------- */
+          .empty-state {
+            border: 1.5px dashed var(--line);
+            background: #fff;
+            border-radius: 18px;
+            padding: 56px 24px;
+          }
+          .empty-state i { font-size: 2rem; color: var(--faint); }
+          .empty-state-title { color: var(--slate); font-weight: 700; font-size: 15px; margin-top: 14px; }
+          .empty-state-sub { color: var(--muted); font-size: 13px; margin-top: 4px; }
+
+          /* ---------- Pagination ---------- */
+          .pagination-container {
+            background: #fff; border-radius: 16px; box-shadow: 0 4px 14px rgba(15,23,42,0.06);
+            border: 1px solid var(--line-soft);
+            padding: 14px 22px; margin-top: 30px;
+          }
+          .page-btn {
+            width: 36px; height: 36px; border-radius: 10px; border: 1px solid var(--line); background: #fff;
+            display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13.5px;
+            color: var(--slate); transition: all 0.15s;
+          }
+          .page-btn:hover { background: var(--line-soft); border-color: #cbd5e1; }
+          .page-btn.active { background: var(--teal); color: #fff; border-color: var(--teal); box-shadow: 0 4px 10px -2px rgba(10,124,110,0.4); }
+          .page-btn:disabled { opacity: 0.45; pointer-events: none; }
+
+          /* ---------- Modal ---------- */
+          .modal-overlay { backdrop-filter: blur(2px); }
+          .modal-content {
+            box-shadow: 0 30px 60px -18px rgba(10,25,48,0.4);
+          }
+          .modal-header-custom {
+            background: linear-gradient(120deg, var(--navy-950), var(--navy-900) 70%, #10345a);
+            position: relative;
+            overflow: hidden;
+          }
+          .modal-header-custom::after {
+            content: ""; position: absolute; top: -40px; right: -40px; width: 160px; height: 160px;
+            border-radius: 50%; background: radial-gradient(circle, rgba(10,124,110,0.5), transparent 70%);
+          }
+          .modal-close-btn {
+            background: rgba(255,255,255,0.14); border: none; color: #fff; border-radius: 50%;
+            width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;
+            transition: background 0.15s; position: relative; z-index: 1;
+          }
+          .modal-close-btn:hover { background: rgba(255,255,255,0.26); }
+
+          .info-panel {
+            background: #fff; border-radius: 16px; border: 1px solid var(--line-soft);
+            box-shadow: 0 2px 10px rgba(15,23,42,0.04);
+            padding: 20px;
+          }
+          .info-panel h5 {
+            font-size: 15px; font-weight: 700; color: var(--slate);
+            display: flex; align-items: center; margin-bottom: 16px; padding-bottom: 12px;
+            border-bottom: 1px solid var(--line-soft);
+          }
+          .info-panel-icon {
+            width: 34px; height: 34px; border-radius: 10px;
+            display: flex; align-items: center; justify-content: center; margin-right: 11px; font-size: 13.5px;
+          }
+          .info-row {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 9px 0; border-bottom: 1px solid var(--line-soft);
+          }
+          .info-row:last-child { border-bottom: none; }
+          .info-row-label { color: var(--muted); font-size: 13px; font-weight: 600; display: flex; align-items: center; }
+          .info-row-icon { width: 16px; text-align: center; color: var(--teal); opacity: 0.85; margin-right: 8px; font-size: 12px; }
+          .info-row-value { color: var(--ink); font-weight: 600; font-size: 13px; text-align: right; max-width: 60%; }
+
+          .doc-pill {
+            display: inline-block; background: rgba(10, 124, 110, 0.08); color: var(--teal);
+            border: 1px solid rgba(10, 124, 110, 0.2); border-radius: 20px; padding: 2px 10px;
+            font-size: 11px; font-weight: 600; margin-right: 4px; margin-bottom: 4px; text-transform: capitalize;
+          }
+
+          .modal-footer-custom { background: #fff; border-top: 1px solid var(--line); }
+
+          /* Responsive */
+          @media (max-width: 767.98px) {
+            .jobs-hero { padding: 26px 20px 40px; border-radius: 18px; }
+            .jobs-hero h1 { font-size: 22px; }
+            .filter-card { margin: -26px 4px 0; padding: 14px; }
+            .shift-time-hero { padding: 14px 12px; }
+            .shift-time-window { font-size: 14px; padding: 5px 16px; }
+            .hours-badge { font-size: 11.5px; padding: 5px 12px; }
+          }
+          @media (max-width: 575.98px) {
+            .filter-card { flex-direction: column; align-items: stretch; }
+            .search-box { width: 100%; }
+            .date-range-filter { width: 100%; }
+            .date-range-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 14px; width: 100%; }
+            .date-field { min-width: 0; width: 100%; }
+            .date-range-divider { display: none; }
+            .date-search-btn { width: 100%; margin-top: 4px; }
+          }
+
+          .react-datepicker-wrapper { display: block; }
         `}
       </style>
 
-      <div className="dashboard-main">
-        <div className="dashboard-page-header d-flex flex-column flex-lg-row justify-content-between align-items-start align-items-lg-center gap-3">
-          <div className="flex-shrink-0">
-            <h1>Job Applications & Shifts</h1>
-            <p style={{ textTransform: "none" }}>
-              Viewing shifts for the selected date range.
-            </p>
-          </div>
+      <div className="dashboard-main jobs-page">
+        {/* Hero header */}
+        <div className="jobs-hero">
+          <span className="jobs-hero-eyebrow">
+            <span className="dot"></span> Live
+          </span>
+          <h1>Job Applications &amp; Shifts</h1>
+          <p>Viewing shifts for the selected date range.</p>
 
-          <div className="d-flex flex-column flex-md-row gap-3 mt-3 mt-lg-0 align-items-stretch align-items-md-center header-filters-row flex-lg-nowrap">
-            <div
-              className="d-flex align-items-center bg-white p-2 px-2 rounded shadow-sm border search-box"
-            >
-              <i className="fa-solid fa-magnifying-glass text-muted me-2 ms-1"></i>
-              <input
-                type="text"
-                className="form-control form-control-sm border-0 shadow-none"
-                placeholder="Search site or address"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                style={{ backgroundColor: "transparent" }}
-              />
-              {searchQuery && (
-                <i
-                  className="fa-solid fa-xmark text-muted ms-2"
-                  style={{ cursor: "pointer" }}
-                  onClick={() => setSearchQuery("")}
-                ></i>
-              )}
+          <div className="jobs-hero-stats">
+            <div className="jobs-hero-stat">
+              <span className="jobs-hero-stat-label">Date Range</span>
+              <span className="jobs-hero-stat-value">{rangeLabel || "—"}</span>
             </div>
-
-            <div className="d-flex align-items-center gap-2 bg-white p-2 rounded-3 shadow-sm border date-range-filter">
-              <div className="date-range-fields">
-                <DateField
-                  selected={startDate}
-                  onChange={(date) => setStartDate(date)}
-                  placeholder="dd/mm/yyyy"
-                  maxDate={endDate}
-                />
-                <div className="date-range-divider"></div>
-                <DateField
-                  selected={endDate}
-                  onChange={(date) => setEndDate(date)}
-                  placeholder="dd/mm/yyyy"
-                  minDate={startDate}
-                />
-              </div>
-              <button
-                onClick={fetchCustomerSites}
-                className="btn btn-primary-custom date-search-btn"
-              >
-                <i className="fa-solid fa-magnifying-glass me-1"></i>
-                Search
-              </button>
+            <div className="jobs-hero-stat">
+              <span className="jobs-hero-stat-label">Total Shifts</span>
+              <span className="jobs-hero-stat-value">{pagination.total}</span>
+            </div>
+            <div className="jobs-hero-stat">
+              <span className="jobs-hero-stat-label">Page</span>
+              <span className="jobs-hero-stat-value">{pagination.currentPage} of {pagination.lastPage}</span>
             </div>
           </div>
         </div>
 
-        {/* Results summary */}
+        {/* Filter card */}
+        <div className="filter-card">
+          <div className="search-box">
+            <i className="fa-solid fa-magnifying-glass me-2"></i>
+            <input
+              type="text"
+              className="form-control form-control-sm border-0 shadow-none"
+              placeholder="Search site or address"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              style={{ backgroundColor: "transparent" }}
+            />
+            {searchQuery && (
+              <i className="fa-solid fa-xmark ms-2" onClick={() => setSearchQuery("")}></i>
+            )}
+          </div>
+
+          <div className="date-range-filter">
+            <div className="date-range-fields">
+              <DateField
+                label="From"
+                selected={startDate}
+                onChange={(date) => setStartDate(date)}
+                placeholder="dd/mm/yyyy"
+                maxDate={endDate}
+              />
+              <div className="date-range-divider"></div>
+              <DateField
+                label="To"
+                selected={endDate}
+                onChange={(date) => setEndDate(date)}
+                placeholder="dd/mm/yyyy"
+                minDate={startDate}
+              />
+            </div>
+            <button onClick={handleSearch} className="btn btn-primary-custom date-search-btn">
+              <i className="fa-solid fa-magnifying-glass me-1"></i>
+              Search
+            </button>
+          </div>
+        </div>
+
+        {/* Summary bar */}
         {applications.length > 0 && (
-          <div
-            className="d-flex align-items-center justify-content-between flex-wrap gap-2 mt-4 mb-2"
-            style={{ fontSize: "13px" }}
-          >
-            <span className="text-muted fw-medium">
-              <i className="fa-regular fa-calendar me-2 text-primary opacity-75"></i>
-              {rangeLabel} · <span className="fw-bold text-dark">{filteredApplications.length}</span>{" "}
-              {filteredApplications.length === 1 ? "shift" : "shifts"}
-              {searchQuery && (
-                <span className="text-muted"> matching "{searchQuery}"</span>
-              )}
-            </span>
+          <div className="d-flex flex-wrap gap-2 mt-4 mb-1">
+            <div className="quick-stat-chip">
+              <i className="fa-regular fa-calendar"></i>
+              <div className="d-flex flex-column">
+                <span className="quick-stat-label">Showing</span>
+                <span className="quick-stat-value">
+                  {pagination.total} {pagination.total === 1 ? "shift" : "shifts"}
+                  {searchQuery && ` · "${searchQuery}"`}
+                </span>
+              </div>
+            </div>
+            <div className="quick-stat-chip">
+              <i className="fa-solid fa-layer-group"></i>
+              <div className="d-flex flex-column">
+                <span className="quick-stat-label">Page</span>
+                <span className="quick-stat-value">{pagination.currentPage} of {pagination.lastPage}</span>
+              </div>
+            </div>
           </div>
         )}
 
-        {/* --- CARDS GRID --- */}
-        <div className="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-4 application-grid mt-1">
+        {/* Cards grid */}
+        <div className="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-4 application-grid mt-2">
           {filteredApplications.length === 0 ? (
-            <div
-              className="col-12 text-center py-5 text-muted bg-light rounded shadow-sm w-100"
-              style={{ textTransform: "none" }}
-            >
-              <i
-                className="fa-solid fa-magnifying-glass-minus mb-3 d-block"
-                style={{ fontSize: "2rem" }}
-              ></i>
-              {applications.length > 0
-                ? "No shifts match your search."
-                : "No shifts found for this period."}
+            <div className="col-12 empty-state text-center w-100">
+              <i className="fa-solid fa-magnifying-glass-minus d-block"></i>
+              <div className="empty-state-title">
+                {applications.length > 0 ? "No shifts match your search" : "No shifts found"}
+              </div>
+              <div className="empty-state-sub" style={{ textTransform: "none" }}>
+                {applications.length > 0
+                  ? "Try a different site name or address."
+                  : "Try adjusting the date range above."}
+              </div>
             </div>
           ) : (
             filteredApplications.map((app, index) => (
               <div className="col" key={app.id || index}>
-                <div className="card h-100 border-0 shadow-sm shift-card-hover shift-card position-relative overflow-hidden">
+                <div className="card h-100 border-0 shadow-sm shift-card position-relative overflow-hidden">
+                  {/* Accent bar – color based on status/contractor */}
                   <div
                     className="card-accent-bar"
                     style={{
-                      background:
-                        app.statusClass === "offer"
+                      background: app.isAcceptedByContractor
+                        ? "linear-gradient(90deg, #7c3aed, #a78bfa)"
+                        : app.statusClass === "offer"
                           ? "linear-gradient(90deg, #16a34a, #22c55e)"
                           : "linear-gradient(90deg, #d97706, #f59e0b)",
                     }}
                   ></div>
+
                   <div className="card-body p-4 pt-4 d-flex flex-column">
+                    {/* Status & created date row */}
                     <div className="d-flex justify-content-between align-items-start mb-3">
                       <span
-                        className={`badge rounded-pill px-3 py-2 fw-medium ${app.statusClass === "offer"
+                        className={`status-badge ${app.statusClass === "offer"
                           ? "bg-success bg-opacity-10 text-success border border-success border-opacity-25"
                           : "bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25"
                           }`}
-                        style={{
-                          fontSize: "12px",
-                          textTransform: "capitalize",
-                        }}
                       >
                         <i
-                          className={`fa-solid ${app.statusClass === "offer"
-                            ? "fa-circle-check"
-                            : "fa-hourglass-half"
-                            } me-1`}
+                          className={`fa-solid ${app.statusClass === "offer" ? "fa-circle-check" : "fa-hourglass-half"
+                            }`}
                         ></i>
                         {app.status}
                       </span>
-                      <div
-                        className="text-muted text-end"
-                        style={{
-                          fontSize: "11px",
-                          fontWeight: 600,
-                          letterSpacing: "0.3px",
-                        }}
-                      >
-                        <i className="fa-regular fa-clock me-1"></i> Created At:{" "}
-                        {app.createdAt}
+                      <div className="text-muted text-end" style={{ fontSize: "11px", fontWeight: 600 }}>
+                        <i className="fa-regular fa-clock me-1"></i> {app.createdAt}
                       </div>
                     </div>
 
-                    <h5
-                      className="card-title fw-bold text-dark mb-2"
-                      style={{
-                        fontSize: "1.15rem",
-                        letterSpacing: "-0.3px",
-                      }}
-                    >
+                    {/* Title & location */}
+                    <h5 className="card-title fw-bold mb-2 card-title-text">
                       {app.title}
                     </h5>
-                    <p
-                      className="card-text text-muted mb-3 d-flex align-items-start"
-                      style={{ fontSize: "13px", lineHeight: "1.4" }}
-                    >
-                      <i
-                        className="fa-solid fa-location-dot mt-1 me-2 text-primary"
-                        style={{ opacity: 0.8 }}
-                      ></i>
-                      {app.location}
-                    </p>
+                    <div className="location-text mb-3">
+                      <i className="fa-solid fa-location-dot flex-shrink-0"></i>
+                      <span>{app.location}</span>
+                    </div>
 
-                    <div className="mt-auto">
-                      <div className="d-flex align-items-center mb-4 p-3 rounded-3 time-panel">
-                        <div className="time-icon me-3">
-                          <i className={`fa-solid ${app.pillIcon}`}></i>
+                    {/* Contractor badge */}
+                    {app.isAcceptedByContractor && (
+                      <div className="mb-1">
+                        <span className="contractor-badge">
+                          <i className="fa-solid fa-building-shield"></i> Resource Partner
+                          {app.contractorName && `: ${app.contractorName}`}
+                        </span>
+                      </div>
+                    )}
+
+                    {/* Date / time / hours meta row */}
+                    <div className="shift-meta-row">
+                      <div className="shift-meta-item">
+                        <span className="shift-meta-label">
+                          <i className="fa-regular fa-calendar-days"></i> Date
+                        </span>
+                        <span className="shift-meta-value">{app.formattedDate || "N/A"}</span>
+                      </div>
+                      <div className="shift-meta-item">
+                        <span className="shift-meta-label">
+                          <i className="fa-regular fa-clock"></i> Time
+                        </span>
+                        <span className="shift-meta-value">{app.timeWindow || app.pillText}</span>
+                      </div>
+                      <div className="shift-meta-item hours-meta">
+                        <span className="shift-meta-label">
+                          <i className="fa-solid fa-hourglass-half"></i> Hours
+                        </span>
+                        <span className="shift-meta-value">{app.hours}{app.hours === 1 ? " hr" : " hrs"}</span>
+                      </div>
+                    </div>
+
+                    {/* Bottom: assignee + details button */}
+                    <div className="mt-auto pt-3 card-footer-row d-flex justify-content-between align-items-center">
+                      <div className="d-flex align-items-center gap-2">
+                        <div
+                          className="assignee-avatar"
+                          style={{
+                            backgroundColor: app.appliedVia === "Unassigned" ? "#e2e8f0" : "rgba(10, 124, 110, 0.12)",
+                            color: app.appliedVia === "Unassigned" ? "#94a3b8" : "#0A7C6E",
+                          }}
+                        >
+                          {getInitials(app.appliedVia)}
                         </div>
                         <div className="d-flex flex-column" style={{ minWidth: 0 }}>
-                          <span
-                            className="fw-semibold text-dark text-truncate"
-                            style={{ fontSize: "13px" }}
-                          >
-                            {app.pillText}
-                          </span>
-                          <span
-                            className="text-muted"
-                            style={{ fontSize: "11px", fontWeight: 500 }}
-                          >
-                            {app.applied}
+                          <span className="assignee-label">Assigned To</span>
+                          <span className="fw-bold text-truncate d-block assignee-name">
+                            {app.appliedVia}
                           </span>
                         </div>
                       </div>
-
-                      <div
-                        className="d-flex justify-content-between align-items-center pt-3 border-top"
-                        style={{ borderColor: "#f8f9fa" }}
+                      <button
+                        type="button"
+                        className="btn btn-primary-custom btn-sm details-btn flex-shrink-0 ms-2"
+                        onClick={() => openModal(app)}
                       >
-                        <div className="d-flex align-items-center gap-2" style={{ minWidth: 0 }}>
-                          <div
-                            className="assignee-avatar"
-                            style={{
-                              backgroundColor:
-                                app.appliedVia === "Unassigned" ? "#e2e8f0" : "rgba(10, 124, 110, 0.12)",
-                              color: app.appliedVia === "Unassigned" ? "#94a3b8" : "#0A7C6E",
-                            }}
-                          >
-                            {getInitials(app.appliedVia)}
-                          </div>
-                          <div className="d-flex flex-column" style={{ minWidth: 0 }}>
-                            <span
-                              className="text-muted"
-                              style={{
-                                fontSize: "10px",
-                                letterSpacing: "0.5px",
-                                fontWeight: 700,
-                                textTransform: "uppercase",
-                              }}
-                            >
-                              Assigned To
-                            </span>
-                            <span
-                              className="fw-bold text-dark text-truncate d-block"
-                              style={{ fontSize: "13px" }}
-                            >
-                              {app.appliedVia}
-                            </span>
-                          </div>
-                        </div>
-                        <button
-                          type="button"
-                          className="btn btn-primary-custom btn-sm rounded-pill px-3 fw-semibold shadow-sm flex-shrink-0 ms-2"
-                          onClick={() => openModal(app)}
-                          style={{ height: "36px", fontSize: "13px" }}
-                        >
-                          Details <i className="fa-solid fa-arrow-right ms-1"></i>
-                        </button>
-                      </div>
+                        Details <i className="fa-solid fa-arrow-right ms-1"></i>
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -684,16 +853,45 @@ export default function MyJobApplications() {
             ))
           )}
         </div>
+
+        {/* Pagination */}
+        {pagination.lastPage > 1 && (
+          <div className="pagination-container d-flex justify-content-center align-items-center gap-2 flex-wrap">
+            <button
+              className="page-btn"
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage === 1}
+            >
+              <i className="fa-solid fa-chevron-left"></i>
+            </button>
+            {Array.from({ length: pagination.lastPage }, (_, i) => i + 1).map((page) => (
+              <button
+                key={page}
+                className={`page-btn ${currentPage === page ? "active" : ""}`}
+                onClick={() => handlePageChange(page)}
+              >
+                {page}
+              </button>
+            ))}
+            <button
+              className="page-btn"
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={currentPage === pagination.lastPage}
+            >
+              <i className="fa-solid fa-chevron-right"></i>
+            </button>
+          </div>
+        )}
       </div>
 
-      {/* --- BEAUTIFIED MODAL --- */}
+      {/* ---------- MODAL ---------- */}
       {selectedApp && (
         <div
           className="modal-overlay modal-overlay-anim"
           onClick={closeModal}
           style={{
             zIndex: 9999,
-            backgroundColor: "rgba(0,0,0,0.6)",
+            backgroundColor: "rgba(10,20,35,0.62)",
             position: "fixed",
             inset: 0,
             display: "flex",
@@ -703,297 +901,135 @@ export default function MyJobApplications() {
           }}
         >
           <div
-            className="modal-content modal-content-anim shadow-lg border-0"
+            className="modal-content modal-content-anim border-0"
             onClick={(e) => e.stopPropagation()}
             style={{
               width: "100%",
               maxWidth: "850px",
               maxHeight: "90vh",
               background: "#f8fafc",
-              borderRadius: "16px",
+              borderRadius: "18px",
               display: "flex",
               flexDirection: "column",
               overflow: "hidden",
             }}
           >
             <div
-              className="modal-header d-flex justify-content-between align-items-center"
-              style={{
-                background: "#0A7C6E",
-                color: "#fff",
-                padding: "20px 24px",
-              }}
+              className="modal-header-custom d-flex justify-content-between align-items-center"
+              style={{ padding: "20px 24px" }}
             >
-              <h3
-                style={{
-                  margin: 0,
-                  fontSize: "20px",
-                  fontWeight: "700",
-                  letterSpacing: "0.5px",
-                }}
-              >
-                <i className="fa-solid fa-clipboard-check me-2 opacity-75"></i>{" "}
-                Shift & Site Details
+              <h3 style={{ margin: 0, fontSize: "19px", fontWeight: "700", letterSpacing: "0.2px", color: "#fff", position: "relative", zIndex: 1 }}>
+                <i className="fa-solid fa-clipboard-check me-2 opacity-75"></i> Shift &amp; Site Details
               </h3>
-              <button
-                onClick={closeModal}
-                className="btn btn-sm"
-                style={{
-                  background: "rgba(255,255,255,0.2)",
-                  border: "none",
-                  color: "#fff",
-                  borderRadius: "50%",
-                  width: "32px",
-                  height: "32px",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
+              <button onClick={closeModal} className="modal-close-btn">
                 <i className="fa-solid fa-xmark"></i>
               </button>
             </div>
 
-            <div
-              className="modal-body"
-              style={{ padding: "24px", overflowY: "auto", flex: 1 }}
-            >
-              {
-                userType === "admin" && (
-                  <div className="d-flex flex-wrap gap-2 mb-4">
-                    {[
-                      { icon: "fa-circle-info", label: "Status", value: selectedApp.status },
-                      {
-                        icon: "fa-hourglass-half",
-                        label: "Total Hours",
-                        value: selectedApp.rawShift.hours ?? "N/A",
-                      },
-                      {
-                        icon: "fa-calendar-plus",
-                        label: "Created",
-                        value: selectedApp.createdAt || "N/A",
-                      },
-                      {
-                        icon: "fa-money-bill",
-                        label: "Job Amount",
-                        value: selectedApp.rawShift.job_amount
-                          ? `$${selectedApp.rawShift.job_amount}`
-                          : "N/A",
-                      },
-                    ].map((stat) => (
-                      <div className="quick-stat-chip" key={stat.label}>
-                        <i className={`fa-solid ${stat.icon}`}></i>
-                        <div className="d-flex flex-column" style={{ minWidth: 0 }}>
-                          <span className="quick-stat-label">{stat.label}</span>
-                          <span className="quick-stat-value text-truncate d-block">{stat.value}</span>
-                        </div>
+            <div className="modal-body" style={{ padding: "24px", overflowY: "auto", flex: 1 }}>
+              {userType === "admin" && (
+                <div className="d-flex flex-wrap gap-2 mb-4">
+                  {[
+                    { icon: "fa-circle-info", label: "Status", value: selectedApp.status },
+                    { icon: "fa-hourglass-half", label: "Total Hours", value: selectedApp.rawShift.hours ?? "N/A" },
+                    { icon: "fa-calendar-plus", label: "Created", value: selectedApp.createdAt || "N/A" },
+                    { icon: "fa-money-bill", label: "Job Amount", value: selectedApp.rawShift.job_amount ? `$${selectedApp.rawShift.job_amount}` : "N/A" },
+                  ].map((stat) => (
+                    <div className="quick-stat-chip" key={stat.label}>
+                      <i className={`fa-solid ${stat.icon}`}></i>
+                      <div className="d-flex flex-column" style={{ minWidth: 0 }}>
+                        <span className="quick-stat-label">{stat.label}</span>
+                        <span className="quick-stat-value text-truncate d-block">{stat.value}</span>
                       </div>
-                    ))}
-                  </div>
-                )
-              }
+                    </div>
+                  ))}
+                </div>
+              )}
 
-              {/* Row 1: Site and Shift Info */}
               <div className="row g-4 mb-4">
-                {/* Site Information Card */}
                 <div className="col-md-6">
-                  <div className="p-4 bg-white rounded-4 h-100 shadow-sm border border-light">
-                    <h5
-                      className="mb-4 d-flex align-items-center pb-3 border-bottom"
-                      style={{
-                        fontSize: "16px",
-                        fontWeight: "700",
-                        color: "#1e293b",
-                      }}
-                    >
-                      <div
-                        className="rounded-circle d-flex align-items-center justify-content-center me-3"
-                        style={{
-                          width: "36px",
-                          height: "36px",
-                          background: "#e0f2fe",
-                          color: "#0ea5e9",
-                        }}
-                      >
+                  <div className="info-panel h-100">
+                    <h5>
+                      <span className="info-panel-icon" style={{ background: "#e0f2fe", color: "#0ea5e9" }}>
                         <i className="fa-solid fa-building"></i>
-                      </div>
+                      </span>
                       Site Information
                     </h5>
-                    <div className="d-flex flex-column gap-1">
-                      <InfoRow
-                        icon="fa-signature"
-                        label="Site Name"
-                        value={selectedApp.rawSite.site_name}
-                      />
-                      <InfoRow
-                        icon="fa-map-pin"
-                        label="Address"
-                        value={selectedApp.rawSite.address}
-                      />
-                    </div>
+                    <InfoRow icon="fa-signature" label="Site Name" value={selectedApp.rawShift.site?.site_name} />
+                    <InfoRow icon="fa-map-pin" label="Address" value={selectedApp.rawShift.site?.address} />
                   </div>
                 </div>
-
-                {/* Shift Information Card */}
                 <div className="col-md-6">
-                  <div className="p-4 bg-white rounded-4 h-100 shadow-sm border border-light">
-                    <h5
-                      className="mb-4 d-flex align-items-center pb-3 border-bottom"
-                      style={{
-                        fontSize: "16px",
-                        fontWeight: "700",
-                        color: "#1e293b",
-                      }}
-                    >
-                      <div
-                        className="rounded-circle d-flex align-items-center justify-content-center me-3"
-                        style={{
-                          width: "36px",
-                          height: "36px",
-                          background: "#fef3c7",
-                          color: "#d97706",
-                        }}
-                      >
+                  <div className="info-panel h-100">
+                    <h5>
+                      <span className="info-panel-icon" style={{ background: "#fef3c7", color: "#d97706" }}>
                         <i className="fa-solid fa-clock-rotate-left"></i>
-                      </div>
+                      </span>
                       Shift Information
                     </h5>
-                    <div className="d-flex flex-column gap-1">
-                      <InfoRow
-                        icon="fa-circle-info"
-                        label="Status"
-                        value={selectedApp.rawShift.job_status}
-                      />
-                      <InfoRow
-                        icon="fa-hourglass-half"
-                        label="Total Hours"
-                        value={selectedApp.rawShift.hours}
-                      />
-                      <InfoRow
-                        icon="fa-calendar-plus"
-                        label="Created At"
-                        value={selectedApp.createdAt}
-                      />
-                    </div>
+                    <InfoRow icon="fa-circle-info" label="Status" value={selectedApp.rawShift.job_status} />
+                    <InfoRow icon="fa-arrow-right-to-bracket" label="Start Time" value={selectedApp.startDisplay} transform={false} />
+                    <InfoRow icon="fa-arrow-right-from-bracket" label="End Time" value={selectedApp.endDisplay} transform={false} />
+                    <InfoRow icon="fa-hourglass-half" label="Total Hours" value={selectedApp.rawShift.hours} />
+                    <InfoRow icon="fa-calendar-plus" label="Created At" value={selectedApp.createdAt} />
+                    <InfoRow
+                      icon="fa-file-shield"
+                      label="Required Documents"
+                      value={
+                        selectedApp.documents.length > 0
+                          ? selectedApp.documents.map((doc) => doc.replace(/_/g, " ")).join(", ")
+                          : "None"
+                      }
+                      transform={false}
+                    />
                   </div>
                 </div>
               </div>
-              {
-                userType === "admin" && (
-                  <div className="row g-4">
-                    {/* Customer Details Card */}
-                    <div className="col-md-6">
-                      <div className="p-4 bg-white rounded-4 h-100 shadow-sm border border-light">
-                        <h5
-                          className="mb-4 d-flex align-items-center pb-3 border-bottom"
-                          style={{
-                            fontSize: "16px",
-                            fontWeight: "700",
-                            color: "#1e293b",
-                          }}
-                        >
-                          <div
-                            className="rounded-circle d-flex align-items-center justify-content-center me-3"
-                            style={{
-                              width: "36px",
-                              height: "36px",
-                              background: "#f3e8ff",
-                              color: "#9333ea",
-                            }}
-                          >
-                            <i className="fa-solid fa-user-tie"></i>
-                          </div>
-                          Client Details
-                        </h5>
-                        <div className="d-flex flex-column gap-1">
-                          <InfoRow
-                            icon="fa-user"
-                            label="Name"
-                            value={
-                              selectedApp.rawShift.customer?.name || "Unknown"
-                            }
-                          />
-                          <InfoRow
-                            icon="fa-envelope"
-                            label="Email"
-                            value={selectedApp.rawShift.customer?.email || "N/A"}
-                            transform={false}
-                          />
-                          <InfoRow
-                            icon="fa-phone"
-                            label="Phone"
-                            value={selectedApp.rawShift.customer?.phone || "N/A"}
-                          />
-                        </div>
-                      </div>
-                    </div>
 
-                    {/* Assignment Details Card */}
-                    <div className="col-md-6">
-                      <div className="p-4 bg-white rounded-4 h-100 shadow-sm border border-light">
-                        <h5
-                          className="mb-4 d-flex align-items-center pb-3 border-bottom"
-                          style={{
-                            fontSize: "16px",
-                            fontWeight: "700",
-                            color: "#1e293b",
-                          }}
-                        >
-                          <div
-                            className="rounded-circle d-flex align-items-center justify-content-center me-3"
-                            style={{
-                              width: "36px",
-                              height: "36px",
-                              background: "#dcfce7",
-                              color: "#16a34a",
-                            }}
-                          >
-                            <i className="fa-solid fa-shield-halved"></i>
-                          </div>
-                          Assignment Details
-                        </h5>
-                        <div className="d-flex flex-column gap-1">
-                          <InfoRow
-                            icon="fa-user-shield"
-                            label="Assigned To"
-                            value={selectedApp.appliedVia}
-                          />
-                          <InfoRow
-                            icon="fa-id-badge"
-                            label="Job Type"
-                            value={selectedApp.rawShift.job_type || "N/A"}
-                          />
-                          <InfoRow
-                            icon="fa-money-bill"
-                            label="Job Amount"
-                            value={
-                              selectedApp.rawShift.job_amount
-                                ? `$${selectedApp.rawShift.job_amount}`
-                                : "N/A"
-                            }
-                          />
-                        </div>
-                      </div>
+              {userType === "admin" && (
+                <div className="row g-4">
+                  <div className="col-md-6">
+                    <div className="info-panel h-100">
+                      <h5>
+                        <span className="info-panel-icon" style={{ background: "#f3e8ff", color: "#9333ea" }}>
+                          <i className="fa-solid fa-user-tie"></i>
+                        </span>
+                        Client Details
+                      </h5>
+                      <InfoRow icon="fa-user" label="Name" value={selectedApp.rawShift.customer?.name || "Unknown"} />
+                      <InfoRow icon="fa-envelope" label="Email" value={selectedApp.rawShift.customer?.email || "N/A"} transform={false} />
+                      <InfoRow icon="fa-phone" label="Phone" value={selectedApp.rawShift.customer?.phone || "N/A"} />
                     </div>
                   </div>
-                )}
-
+                  <div className="col-md-6">
+                    <div className="info-panel h-100">
+                      <h5>
+                        <span className="info-panel-icon" style={{ background: "#dcfce7", color: "#16a34a" }}>
+                          <i className="fa-solid fa-shield-halved"></i>
+                        </span>
+                        Assignment Details
+                      </h5>
+                      <InfoRow icon="fa-user-shield" label="Assigned To" value={selectedApp.appliedVia} />
+                      <InfoRow icon="fa-id-badge" label="Job Type" value={selectedApp.rawShift.job_type || "N/A"} />
+                      <InfoRow icon="fa-money-bill" label="Job Amount" value={selectedApp.rawShift.job_amount ? `$${selectedApp.rawShift.job_amount}` : "N/A"} />
+                      {selectedApp.rawShift.contractor && (
+                        <InfoRow
+                          icon="fa-building-user"
+                          label="Resource Partner"
+                          value={selectedApp.rawShift.contractor.name || "N/A"}
+                        />
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             <div
-              className="modal-footer"
-              style={{
-                background: "#fff",
-                padding: "16px 24px",
-                borderTop: "1px solid #e2e8f0",
-                display: "flex",
-                justifyContent: "flex-end",
-              }}
+              className="modal-footer-custom d-flex justify-content-end"
+              style={{ padding: "16px 24px" }}
             >
-              <button
-                onClick={closeModal}
-                className="btn btn-primary-custom px-4 rounded-pill fw-semibold shadow-sm"
-              >
+              <button onClick={closeModal} className="btn btn-primary-custom px-4 rounded-pill fw-semibold shadow-sm">
                 Close Window
               </button>
             </div>

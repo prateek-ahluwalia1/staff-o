@@ -870,6 +870,7 @@ export default function EditProfile() {
           city={formData.address}
           profileCompletion={userdata?.data?.profile_completion_percentage || userdata?.profile_completion_percentage || 0}
           missingItems={missingFields}
+          isActive={userdata?.data?.is_active || userdata?.is_active}
         />
       </div>
 

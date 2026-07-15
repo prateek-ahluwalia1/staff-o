@@ -86,6 +86,7 @@ function AppContent() {
     const oneSignalReadyRef = useRef(false);
     const userId = userdata?.id ?? userdata?.data?.id;
     const userRole = userdata?.data?.user_type || userdata?.user_type;
+    const isStaffCoverJobsVisible = userRole === "staff" && (userdata?.data?.user_id === 1 || userdata?.data?.id === 1 || userdata?.id === 1);
     const { submit: submitAccept } = useSubmit({ isAuth: true });
 
     const [acceptModalOpen, setAcceptModalOpen] = useState(false);
@@ -239,7 +240,7 @@ function AppContent() {
 
     const openAcceptModal = useCallback(
         (notification) => {
-            const allowedRoles = ["contractor", "resource_partner", "staff"];
+            const allowedRoles = ["contractor", "resource_partner", ...(isStaffCoverJobsVisible ? ["staff"] : [])];
             if (!userId || !allowedRoles.includes(userRole)) {
                 return;
             }
@@ -356,7 +357,7 @@ function AppContent() {
 
             const additionalData = notification?.additionalData ?? notification?.data ?? {};
 
-            const allowedRoles = ["contractor", "resource_partner", "staff"];
+            const allowedRoles = ["contractor", "resource_partner", ...(isStaffCoverJobsVisible ? ["staff"] : [])];
 
             // Only handle job_assign type (or missing page) for our modal
             if (additionalData?.type === "job_assign") {
@@ -386,7 +387,7 @@ function AppContent() {
             const notification = event?.notification ?? event;
             if (!notification) return;
 
-            const allowedRoles = ["contractor", "resource_partner", "staff"];
+            const allowedRoles = ["contractor", "resource_partner", ...(isStaffCoverJobsVisible ? ["staff"] : [])];
 
             // Only allow accept modal for allowed roles
             if (userId && allowedRoles.includes(userRole)) {
@@ -409,7 +410,7 @@ function AppContent() {
 
     // ------------------ Consume pending notification after login ------------------
     useEffect(() => {
-        const allowedRoles = ["contractor", "resource_partner", "staff"];
+        const allowedRoles = ["contractor", "resource_partner", ...(isStaffCoverJobsVisible ? ["staff"] : [])];
         if (!userId || !allowedRoles.includes(userRole)) return;
 
         const pending = consumePendingNotification();
@@ -542,7 +543,7 @@ function AppContent() {
                     <Route path="/roster" element={<ProtectedRoute allowedRoles={["admin", "contractor"]}><RosterPage /></ProtectedRoute>} />
                     <Route path="/manage-users" element={<ProtectedRoute allowedRoles={["admin"]}><ManageUsers /></ProtectedRoute>} />
                     <Route path="/manage-staff" element={<ProtectedRoute allowedRoles={["admin", "contractor"]}><ManageStaff /></ProtectedRoute>} />
-                    <Route path="/cover-jobs" element={<ProtectedRoute allowedRoles={["contractor", "staff"]}><CoverJobs /></ProtectedRoute>} />
+                    <Route path="/cover-jobs" element={<ProtectedRoute allowedRoles={['contractor', ...(isStaffCoverJobsVisible ? ['staff'] : [])]}><CoverJobs /></ProtectedRoute>} />
                     <Route path="/payment-history" element={<PaymentHistory />} />
                     <Route path="/pay-charge-rate" element={<PayChargeRate />} />
                     <Route path="/rates/charge" element={<RatesList />} />

@@ -34,6 +34,7 @@ const Sidebar = memo(function Sidebar() {
   const displayName = userdata?.data?.name || userdata?.name || "User";
   const type = (userType || "").toString().toLowerCase();
   const isProfileActive = !!(userdata?.data?.is_active || userdata?.is_active);
+  const isStaffCoverJobsVisible = type === "staff" && (userdata?.data?.user_id === 1 || userdata?.data?.user_id === 1);
 
   useEffect(() => {
     const handleResize = () => {
@@ -132,7 +133,7 @@ const Sidebar = memo(function Sidebar() {
 
   const staffNav = [
     { to: "/dashboard", icon: "fa-solid fa-table-columns", label: "Dashboard" },
-    { to: "/cover-jobs", icon: "fa-solid fa-briefcase", label: "Cover Jobs" },
+    ...(isStaffCoverJobsVisible ? [{ to: "/cover-jobs", icon: "fa-solid fa-briefcase", label: "Cover Jobs" }] : []),
     { to: "/my-job-applications", icon: "fa-solid fa-clipboard-user", label: "My Job Applications" },
     { to: "/chat", icon: "fa-solid fa-comments", label: "Communications" },
     { to: "/edit-profile", icon: "fa-solid fa-user-pen", label: "Edit Profile" },

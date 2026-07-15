@@ -119,9 +119,9 @@ export default function DetailsStep({ form, setField, handleFile, attachmentPrev
       </div>
 
       {/* ROW 1: JOB TYPE & REQUIREMENTS */}
-      <div className="row g-3 g-md-4 mb-4">
+      <div className="d-flex flex-wrap gap-3 mb-4">
         {/* Job Type */}
-        <div className="col-12 col-md-4 col-lg-4 d-flex flex-column">
+        <div style={{ minWidth: "250px", flex: "1 1 0" }}>
           <label className="form-label small fw-bold text-dark mb-2">
             Job Type <span className="text-danger">*</span>
           </label>
@@ -164,7 +164,7 @@ export default function DetailsStep({ form, setField, handleFile, attachmentPrev
         </div>
 
         {/* Working with Children */}
-        <div className="col-12 col-md-4 col-lg-4 d-flex flex-column">
+        <div style={{ minWidth: "250px", flex: "1 1 0" }}>
           {/* Aligner hides on mobile, keeps desktop layout balanced */}
           <label className="form-label small fw-bold mb-2 d-none d-md-block opacity-0 user-select-none">Aligner</label>
           <CardToggle
@@ -176,7 +176,7 @@ export default function DetailsStep({ form, setField, handleFile, attachmentPrev
         </div>
 
         {/* White Card */}
-        <div className="col-12 col-md-4 col-lg-4 d-flex flex-column">
+        <div cstyle={{ minWidth: "250px", flex: "1 1 0" }}>
           {/* Aligner hides on mobile, keeps desktop layout balanced */}
           <label className="form-label small fw-bold mb-2 d-none d-md-block opacity-0 user-select-none">Aligner</label>
           <CardToggle

@@ -132,6 +132,7 @@ const Sidebar = memo(function Sidebar() {
 
   const staffNav = [
     { to: "/dashboard", icon: "fa-solid fa-table-columns", label: "Dashboard" },
+    { to: "/cover-jobs", icon: "fa-solid fa-briefcase", label: "Cover Jobs" },
     { to: "/my-job-applications", icon: "fa-solid fa-clipboard-user", label: "My Job Applications" },
     { to: "/chat", icon: "fa-solid fa-comments", label: "Communications" },
     { to: "/edit-profile", icon: "fa-solid fa-user-pen", label: "Edit Profile" },

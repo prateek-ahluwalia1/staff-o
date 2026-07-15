@@ -239,8 +239,8 @@ function AppContent() {
 
     const openAcceptModal = useCallback(
         (notification) => {
-            // Only contractor / resource_partner
-            if (!userId || (userRole !== "contractor" && userRole !== "resource_partner")) {
+            const allowedRoles = ["contractor", "resource_partner", "staff"];
+            if (!userId || !allowedRoles.includes(userRole)) {
                 return;
             }
 
@@ -322,13 +322,16 @@ function AppContent() {
             setAcceptingJob(true);
             try {
                 const payload = { roster_id: jobId };
+                const acceptEndpoint = userRole === "staff"
+                    ? `api/asap-jobs/accept/${userId}`
+                    : `api/contractor/jobs/accept/${userId}`;
                 const result = await submitAccept(
-                    `api/contractor/jobs/accept/${userId}`,
+                    acceptEndpoint,
                     payload,
                     { method: "POST" }
                 );
                 if (result && !result.error) {
-                    toast.success("Job accepted successfully!");
+                    toast.success(userRole === "staff" ? "Cover job accepted successfully!" : "Job accepted successfully!");
                     setAcceptModalOpen(false);
                     setAcceptModalJob(null);
                 }
@@ -338,7 +341,7 @@ function AppContent() {
                 setAcceptingJob(false);
             }
         },
-        [submitAccept, userId]
+        [submitAccept, userId, userRole]
     );
 
     useEffect(() => {
@@ -353,9 +356,11 @@ function AppContent() {
 
             const additionalData = notification?.additionalData ?? notification?.data ?? {};
 
+            const allowedRoles = ["contractor", "resource_partner", "staff"];
+
             // Only handle job_assign type (or missing page) for our modal
             if (additionalData?.type === "job_assign") {
-                if (userId && userRole === "contractor") {
+                if (userId && allowedRoles.includes(userRole)) {
                     openAcceptModal(notification);
                 } else if (!userId) {
                     persistPendingNotification(notification);
@@ -365,7 +370,7 @@ function AppContent() {
 
             const page = additionalData?.page || additionalData?.route || additionalData?.url;
             if (!page || page === "asap-job-list") {
-                if (userId && userRole === "contractor") {
+                if (userId && allowedRoles.includes(userRole)) {
                     openAcceptModal(notification);
                 } else if (!userId) {
                     persistPendingNotification(notification);
@@ -381,8 +386,10 @@ function AppContent() {
             const notification = event?.notification ?? event;
             if (!notification) return;
 
+            const allowedRoles = ["contractor", "resource_partner", "staff"];
+
             // Only allow accept modal for allowed roles
-            if (userId && userRole === "contractor") {
+            if (userId && allowedRoles.includes(userRole)) {
                 openAcceptModal(notification);
             } else if (!userId) {
                 persistPendingNotification(notification);
@@ -402,7 +409,8 @@ function AppContent() {
 
     // ------------------ Consume pending notification after login ------------------
     useEffect(() => {
-        if (!userId || userRole !== "contractor") return;
+        const allowedRoles = ["contractor", "resource_partner", "staff"];
+        if (!userId || !allowedRoles.includes(userRole)) return;
 
         const pending = consumePendingNotification();
         if (pending) {
@@ -534,7 +542,7 @@ function AppContent() {
                     <Route path="/roster" element={<ProtectedRoute allowedRoles={["admin", "contractor"]}><RosterPage /></ProtectedRoute>} />
                     <Route path="/manage-users" element={<ProtectedRoute allowedRoles={["admin"]}><ManageUsers /></ProtectedRoute>} />
                     <Route path="/manage-staff" element={<ProtectedRoute allowedRoles={["admin", "contractor"]}><ManageStaff /></ProtectedRoute>} />
-                    <Route path="/cover-jobs" element={<ProtectedRoute allowedRoles={["contractor"]}><CoverJobs /></ProtectedRoute>} />
+                    <Route path="/cover-jobs" element={<ProtectedRoute allowedRoles={["contractor", "staff"]}><CoverJobs /></ProtectedRoute>} />
                     <Route path="/payment-history" element={<PaymentHistory />} />
                     <Route path="/pay-charge-rate" element={<PayChargeRate />} />
                     <Route path="/rates/charge" element={<RatesList />} />

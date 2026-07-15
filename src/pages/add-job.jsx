@@ -131,7 +131,7 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
           )}
         </span>
       </button>
-      {embeddedAccordion[section] && <div className="embedded-accordion-body">{children}</div>}
+      {embeddedAccordion[section] && <div className="embedded-accordion-body" style={section === "assignment" ? { overflow: "visible" } : {}}>{children}</div>}
     </div>
   );
 
@@ -195,7 +195,7 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
       </div>
 
       {postingMode === "assign" && (
-        <div className="mt-3 bg-white p-3 rounded-3 border shadow-sm">
+        <div className="mt-3 bg-white p-3 rounded-3 border shadow-sm" style={{ overflow: "visible" }}>
           <label className="form-label small fw-bold text-dark mb-2">Select Staff Member <span className="text-danger">*</span></label>
           <Select
             options={staffOptions}
@@ -203,11 +203,21 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
             onChange={(selected) => setAssignedStaff(selected ? selected.value : "")}
             placeholder={staffLoading ? "Loading staff..." : "Search and select staff..."}
             isDisabled={staffLoading || staffOptions.length === 0}
-            isSearchable={true}
+            isSearchable
             classNamePrefix="react-select"
             noOptionsMessage={() => staffLoading ? "Loading..." : "No active staff found"}
+            menuPlacement="top"                       // always open above the control
             styles={{
-              control: (base) => ({ ...base, minHeight: "45px", borderRadius: "0.5rem" })
+              control: (base) => ({
+                ...base,
+                minHeight: "45px",
+                borderRadius: "0.5rem"
+              }),
+              menu: (base) => ({
+                ...base,
+                zIndex: 9999,                        // still give it a high z‑index
+                marginBottom: "4px"                  // tiny gap when opening upward
+              })
             }}
           />
         </div>

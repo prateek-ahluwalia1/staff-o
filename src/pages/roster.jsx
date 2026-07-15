@@ -336,7 +336,9 @@ export default function RosterPage() {
       }
       if (res === undefined) return;
       fetchCustomerSites();
-      toast.success("Saved successfully!");
+      if (res.success) {
+        toast.success("Saved successfully!");
+      }
       closeModal();
     } catch (error) {
       if (modal.type === "time") setTimeEditError(error.message || "Failed to save.");

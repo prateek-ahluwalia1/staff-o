@@ -44,37 +44,31 @@ const useSubmit = ({ isAuth = false, BaseURL = apiURL } = {}) => {
 
         const res = await fetch(`${BaseURL}${endpoint}`, fetchOptions);
 
+        // 401 handling...
         if (res.status === 401) {
-          // For blob responses, we can't parse JSON, so treat as auth error
           if (responseType === "blob") {
             dispatch(logOut());
             return { success: false, error: "Unauthorized", status: 401 };
           }
-
           const errorJson = await res.json();
-          if (errorJson.message === "Unauthenticated.") {
-            dispatch(logOut());
-          }
+          if (errorJson.message === "Unauthenticated.") dispatch(logOut());
           if (!silentErrorToast) toast.error(errorJson.message || "Unauthorized");
           return { success: false, error: errorJson.message, status: 401, data: errorJson };
         }
 
-        // --- BLOB HANDLING ---
+        // BLOB HANDLING...
         if (responseType === "blob") {
           const contentType = res.headers.get("content-type");
-
           if (contentType && contentType.includes("application/json")) {
             const errorJson = await res.json();
             throw new Error(errorJson.message || errorJson.error || "Server returned JSON instead of PDF");
           }
-
           if (!res.ok) throw new Error("Failed to generate document");
-
           const rawBlob = await res.blob();
           return new Blob([rawBlob], { type: "application/pdf" });
         }
 
-        // --- STANDARD JSON HANDLING ---
+        // STANDARD JSON HANDLING...
         const json = await res.json();
 
         if (!res.ok) {
@@ -90,8 +84,17 @@ const useSubmit = ({ isAuth = false, BaseURL = apiURL } = {}) => {
           return { success: false, error: errorMsg, status: res.status, data: json };
         }
 
+        // 👇 NEW: Check for logical success:false even with HTTP 200
+        if (json && json.success === false) {
+          const errorMsg = json.message || json.error || "Operation failed";
+          if (!silentErrorToast) toast.error(errorMsg);
+          setData(json);   // still expose the full response to the caller
+          return { success: false, error: errorMsg, data: json };
+        }
+
         setData(json);
         return json;
+
       } catch (err) {
         const message = err.message || "Network error";
         if (!silentErrorToast) toast.error(message);

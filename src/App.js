@@ -212,7 +212,7 @@ function AppContent() {
                     trackingState.consecutiveFailures = 0;
 
                     try {
-                        await updateCoordinates(`api/update-coordinates/${staffUserId}`, {
+                        await updateCoordinates(`api/update-coordinates/${userId}`, {
                             method: "POST",
                             body: JSON.stringify({
                                 current_coordinates: `${position.coords.latitude},${position.coords.longitude}`,

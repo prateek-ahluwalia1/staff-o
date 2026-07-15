@@ -18,6 +18,7 @@ import NotificationToast from "./components/NotificationToast";
 import { useEcho } from "./hooks/useEcho";
 import { logOut } from "./store/slices/authSlice";
 import useSubmit from "./hooks/useSubmit";
+import useFetch from "./hooks/useFetch";
 import RetailSecurity from "./pages/solutions/retail-security";
 import Careers from "./pages/career";
 import WarehouseLogisticsSecurity from "./pages/solutions/warehouse-logistics-security";
@@ -84,14 +85,27 @@ function AppContent() {
     const { token, userdata } = useSelector((state) => state.auth);
     const isInitialMount = useRef(true);
     const oneSignalReadyRef = useRef(false);
+    const locationTrackingRef = useRef({ stopped: false, consecutiveFailures: 0, lastAttemptAt: 0 });
     const userId = userdata?.id ?? userdata?.data?.id;
     const userRole = userdata?.data?.user_type || userdata?.user_type;
-    const isStaffCoverJobsVisible = userRole === "staff" && (userdata?.data?.user_id === 1 || userdata?.data?.id === 1 || userdata?.id === 1);
+    const staffUserId = Number(userdata?.data?.user_id ?? userdata?.user_id ?? userId ?? 0);
+    const isStaffTargetUser = userRole === "staff" && staffUserId === 1;
+    const isStaffCoverJobsVisible = isStaffTargetUser;
+    const canHandleStaffCoverJobs = Boolean(userId && isStaffCoverJobsVisible);
     const { submit: submitAccept } = useSubmit({ isAuth: true });
-
+    const { data: staffData, loading: staffLoading } = useFetch(
+        userRole === "contractor" && userId ? `api/get-contractor-active-staff/${userId}` : null,
+        { isAuth: true, immediate: Boolean(userRole === "contractor" && userId) }
+    );
+    const { refetch: updateCoordinates } = useFetch(null, { isAuth: true, immediate: false });
+    const contractorStaffOptions = (staffData?.guards || []).map((staff) => ({
+        value: String(staff.id),
+        label: staff.name || "Unnamed staff",
+    }));
     const [acceptModalOpen, setAcceptModalOpen] = useState(false);
     const [acceptModalJob, setAcceptModalJob] = useState(null);
     const [acceptingJob, setAcceptingJob] = useState(false);
+    const [selectedStaffId, setSelectedStaffId] = useState("");
 
     const PENDING_NOTIFICATION_KEY = "pendingJobNotification";
     const PENDING_NOTIFICATION_TTL_MS = 5 * 60 * 1000;
@@ -177,6 +191,70 @@ function AppContent() {
     useEcho();
 
     useEffect(() => {
+        if (typeof window === "undefined" || !("geolocation" in navigator) || !token || !isStaffTargetUser) return;
+
+        const trackingState = locationTrackingRef.current;
+        trackingState.stopped = false;
+        trackingState.consecutiveFailures = 0;
+
+        const updateLocation = () => {
+            if (trackingState.stopped) return;
+
+            const now = Date.now();
+            if (trackingState.lastAttemptAt && now - trackingState.lastAttemptAt < 4000) {
+                return;
+            }
+            trackingState.lastAttemptAt = now;
+
+            navigator.geolocation.getCurrentPosition(
+                async (position) => {
+                    if (trackingState.stopped) return;
+                    trackingState.consecutiveFailures = 0;
+
+                    try {
+                        await updateCoordinates(`api/update-coordinates/${staffUserId}`, {
+                            method: "POST",
+                            body: JSON.stringify({
+                                current_coordinates: `${position.coords.latitude},${position.coords.longitude}`,
+                            }),
+                        });
+                    } catch (error) {
+                        console.warn("Failed to update staff coordinates:", error);
+                    }
+                },
+                (error) => {
+                    if (trackingState.stopped) return;
+
+                    trackingState.consecutiveFailures += 1;
+
+                    if (error.code === 1) {
+                        trackingState.stopped = true;
+                        console.warn("Location permission denied; stopping coordinate updates.");
+                        return;
+                    }
+
+                    if (trackingState.consecutiveFailures >= 3) {
+                        trackingState.stopped = true;
+                        console.warn("Location updates stopped after repeated failures.");
+                        return;
+                    }
+
+                    console.warn(`Location lookup failed (${trackingState.consecutiveFailures}/3).`);
+                },
+                { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
+            );
+        };
+
+        updateLocation();
+        const intervalId = window.setInterval(updateLocation, 5000);
+
+        return () => {
+            trackingState.stopped = true;
+            window.clearInterval(intervalId);
+        };
+    }, [token, isStaffTargetUser, staffUserId, updateCoordinates]);
+
+    useEffect(() => {
         window.scrollTo({ top: 0, left: 0, behavior: "auto" });
     }, [location.pathname]);
 
@@ -186,15 +264,22 @@ function AppContent() {
         const setupOneSignal = async () => {
             try {
                 if (!oneSignalReadyRef.current) {
-                    await OneSignal.init({
-                        appId: ONESIGNAL_APP_ID,
-                        serviceWorkerPath: "OneSignalSDKWorker.js",
-                        safari_web_id: "web.onesignal.auto.2bc028a8-3e83-466a-979b-b4e85ca9934f",
-                        allowLocalhostAsSecureOrigin: true,
-                        notifyButton: { enable: true },
-                        notificationClickHandlerMatch: "origin",
-                        notificationClickHandlerAction: "focus",
-                    });
+                    try {
+                        await OneSignal.init({
+                            appId: ONESIGNAL_APP_ID,
+                            serviceWorkerPath: "OneSignalSDKWorker.js",
+                            safari_web_id: "web.onesignal.auto.2bc028a8-3e83-466a-979b-b4e85ca9934f",
+                            allowLocalhostAsSecureOrigin: true,
+                            notifyButton: { enable: true },
+                            notificationClickHandlerMatch: "origin",
+                            notificationClickHandlerAction: "focus",
+                        });
+                    } catch (initError) {
+                        const message = initError?.message || String(initError || "");
+                        if (!message.includes("already initialized")) {
+                            throw initError;
+                        }
+                    }
 
                     OneSignal.User.PushSubscription.addEventListener(
                         "change",
@@ -240,7 +325,7 @@ function AppContent() {
 
     const openAcceptModal = useCallback(
         (notification) => {
-            const allowedRoles = ["contractor", "resource_partner", ...(isStaffCoverJobsVisible ? ["staff"] : [])];
+            const allowedRoles = ["contractor", "resource_partner", ...(canHandleStaffCoverJobs ? ["staff"] : [])];
             if (!userId || !allowedRoles.includes(userRole)) {
                 return;
             }
@@ -312,29 +397,41 @@ function AppContent() {
             };
 
             playNotificationSound();
+            setSelectedStaffId("");
             setAcceptModalJob(jobPayload);
             setAcceptModalOpen(true);
         },
-        [userId, userRole, playNotificationSound]
+        [userId, userRole, playNotificationSound, canHandleStaffCoverJobs]
     );
 
     const handleAcceptJob = useCallback(
-        async (jobId) => {
+        async (jobId, chosenStaffId = "") => {
             setAcceptingJob(true);
             try {
-                const payload = { roster_id: jobId };
-                const acceptEndpoint = userRole === "staff"
-                    ? `api/asap-jobs/accept/${userId}`
-                    : `api/contractor/jobs/accept/${userId}`;
+                const payload = chosenStaffId
+                    ? { roster_id: jobId, admin_id: userId }
+                    : { roster_id: jobId };
+                const acceptEndpoint = chosenStaffId
+                    ? `api/asap-jobs/accept/${chosenStaffId}`
+                    : canHandleStaffCoverJobs && userRole === "staff"
+                        ? `api/asap-jobs/accept/${userId}`
+                        : `api/contractor/jobs/accept/${userId}`;
                 const result = await submitAccept(
                     acceptEndpoint,
                     payload,
                     { method: "POST" }
                 );
                 if (result && !result.error) {
-                    toast.success(userRole === "staff" ? "Cover job accepted successfully!" : "Job accepted successfully!");
+                    toast.success(
+                        chosenStaffId
+                            ? "Job assigned successfully!"
+                            : userRole === "staff"
+                                ? "Cover job accepted successfully!"
+                                : "Job accepted successfully!"
+                    );
                     setAcceptModalOpen(false);
                     setAcceptModalJob(null);
+                    setSelectedStaffId("");
                 }
             } catch (err) {
                 console.error("Accept job failed:", err);
@@ -342,7 +439,7 @@ function AppContent() {
                 setAcceptingJob(false);
             }
         },
-        [submitAccept, userId, userRole]
+        [submitAccept, userId, userRole, canHandleStaffCoverJobs]
     );
 
     useEffect(() => {
@@ -357,7 +454,7 @@ function AppContent() {
 
             const additionalData = notification?.additionalData ?? notification?.data ?? {};
 
-            const allowedRoles = ["contractor", "resource_partner", ...(isStaffCoverJobsVisible ? ["staff"] : [])];
+            const allowedRoles = ["contractor", "resource_partner", ...(canHandleStaffCoverJobs ? ["staff"] : [])];
 
             // Only handle job_assign type (or missing page) for our modal
             if (additionalData?.type === "job_assign") {
@@ -387,7 +484,7 @@ function AppContent() {
             const notification = event?.notification ?? event;
             if (!notification) return;
 
-            const allowedRoles = ["contractor", "resource_partner", ...(isStaffCoverJobsVisible ? ["staff"] : [])];
+            const allowedRoles = ["contractor", "resource_partner", ...(canHandleStaffCoverJobs ? ["staff"] : [])];
 
             // Only allow accept modal for allowed roles
             if (userId && allowedRoles.includes(userRole)) {
@@ -406,11 +503,11 @@ function AppContent() {
             OneSignal.Notifications.removeEventListener("foregroundWillDisplay", handleForegroundNotification);
             OneSignal.User.PushSubscription.removeEventListener("change", handlePushSubscriptionChange);
         };
-    }, [navigate, userId, userRole, openAcceptModal]);
+    }, [navigate, userId, userRole, openAcceptModal, canHandleStaffCoverJobs]);
 
     // ------------------ Consume pending notification after login ------------------
     useEffect(() => {
-        const allowedRoles = ["contractor", "resource_partner", ...(isStaffCoverJobsVisible ? ["staff"] : [])];
+        const allowedRoles = ["contractor", "resource_partner", ...(canHandleStaffCoverJobs ? ["staff"] : [])];
         if (!userId || !allowedRoles.includes(userRole)) return;
 
         const pending = consumePendingNotification();
@@ -488,8 +585,14 @@ function AppContent() {
                 onClose={() => {
                     setAcceptModalOpen(false);
                     setAcceptModalJob(null);
+                    setSelectedStaffId("");
                 }}
                 accepting={acceptingJob}
+                showStaffSelector={userRole === "contractor"}
+                staffOptions={contractorStaffOptions}
+                selectedStaffId={selectedStaffId}
+                onStaffChange={setSelectedStaffId}
+                staffLoading={staffLoading}
             />
             <Routes>
                 {/* PUBLIC ROUTES */}

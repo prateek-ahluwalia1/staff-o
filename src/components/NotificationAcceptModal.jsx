@@ -49,6 +49,11 @@ export default function NotificationAcceptModal({
     onAccept,
     onClose,
     accepting = false,
+    showStaffSelector = false,
+    staffOptions = [],
+    selectedStaffId = "",
+    onStaffChange,
+    staffLoading = false,
 }) {
     if (!open || !job) return null;
 
@@ -300,22 +305,53 @@ export default function NotificationAcceptModal({
                     </div>
 
                     {/* Footer */}
-                    <div className="modal-footer-light">
-                        <button
-                            type="button"
-                            className="btn-outline-secondary-light"
-                            onClick={onClose}
-                        >
-                            Close
-                        </button>
-                        <button
-                            type="button"
-                            className="btn-success-light"
-                            onClick={() => onAccept(job.id)}
-                            disabled={accepting}
-                        >
-                            {accepting ? "Accepting…" : "Accept Job"}
-                        </button>
+                    <div className="modal-footer-light" style={{ flexDirection: "column", alignItems: "stretch" }}>
+                        {showStaffSelector && (
+                            <div style={{ marginBottom: 12 }}>
+                                <label style={{ display: "block", fontSize: 13, fontWeight: 700, color: "#334155", marginBottom: 6 }}>
+                                    Assign to active staff (optional)
+                                </label>
+                                <select
+                                    value={selectedStaffId}
+                                    onChange={(e) => onStaffChange?.(e.target.value)}
+                                    disabled={staffLoading}
+                                    style={{
+                                        width: "100%",
+                                        padding: "10px 12px",
+                                        borderRadius: 10,
+                                        border: "1px solid #cbd5e1",
+                                        background: "#fff",
+                                    }}
+                                >
+                                    <option value="">Accept directly for myself</option>
+                                    {staffOptions.map((staff) => (
+                                        <option key={staff.value} value={staff.value}>
+                                            {staff.label}
+                                        </option>
+                                    ))}
+                                </select>
+                                <div style={{ fontSize: 12, color: "#64748b", marginTop: 6 }}>
+                                    Leave this empty to accept the job directly.
+                                </div>
+                            </div>
+                        )}
+                        <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
+                            <button
+                                type="button"
+                                className="btn-outline-secondary-light"
+                                onClick={onClose}
+                            >
+                                Close
+                            </button>
+                            <button
+                                type="button"
+                                className="btn-success-light"
+                                onClick={() => onAccept(job.id, selectedStaffId)}
+                                disabled={accepting}
+                            >
+                                {accepting ? "Processing…" : selectedStaffId ? "Assign Job" : "Accept Job"}
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>

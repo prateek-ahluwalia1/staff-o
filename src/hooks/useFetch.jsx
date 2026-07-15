@@ -3,20 +3,23 @@ import { useSelector, useDispatch } from "react-redux";
 import { apiURL } from "../utils/exports";
 import { logOut } from "../store/slices/authSlice";
 
-const useFetch = (endpoint, { isAuth = false, immediate = true } = {}) => {
+const useFetch = (endpoint, { isAuth = false, immediate = true, method = "GET", body = null } = {}) => {
   const dispatch = useDispatch();
   const token = useSelector((state) => state.auth.token);
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState(null);
-  const [error, setError] = useState(null);   // 👈 add error state
+  const [error, setError] = useState(null);
 
   const fetchData = useCallback(
-    async (overrideEndpoint) => {
+    async (overrideEndpoint, requestOptions = {}) => {
       const url = overrideEndpoint || endpoint;
       if (!url) return;
 
+      const requestMethod = requestOptions.method || method;
+      const requestBody = requestOptions.body ?? body;
+
       setLoading(true);
-      setError(null);       // clear any previous error
+      setError(null);
 
       try {
         const headers = {
@@ -29,15 +32,17 @@ const useFetch = (endpoint, { isAuth = false, immediate = true } = {}) => {
         }
 
         const res = await fetch(`${apiURL}${url}`, {
-          method: "GET",
+          method: requestMethod,
           headers,
           credentials: "include",
+          body: requestBody ? requestBody : undefined,
         });
 
-        const json = await res.json();
+        const contentType = res.headers.get("content-type") || "";
+        const isJsonResponse = contentType.includes("application/json");
+        const json = isJsonResponse ? await res.json() : null;
 
-        // Handle unauthenticated
-        if (res.status === 401 && json.message === "Unauthenticated.") {
+        if (res.status === 401 && json?.message === "Unauthenticated.") {
           dispatch(logOut());
           setData(null);
           setError("Unauthenticated.");
@@ -45,9 +50,8 @@ const useFetch = (endpoint, { isAuth = false, immediate = true } = {}) => {
         }
 
         if (!res.ok) {
-          // 👇 reset data and store the error message
           setData(null);
-          setError(json.message || "Request failed");
+          setError(json?.message || "Request failed");
           return;
         }
 
@@ -60,7 +64,7 @@ const useFetch = (endpoint, { isAuth = false, immediate = true } = {}) => {
         setLoading(false);
       }
     },
-    [endpoint, isAuth, token, dispatch],
+    [endpoint, isAuth, token, dispatch, method, body],
   );
 
   useEffect(() => {

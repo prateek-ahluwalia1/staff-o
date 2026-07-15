@@ -287,6 +287,7 @@ export default function EditProfile() {
         fields: ["address_components", "geometry", "formatted_address"],
         types: ["address"],
         componentRestrictions: { country: "au" },
+        fields: ["name", "address_components", "geometry", "formatted_address"],
       });
 
       addressInput.setAttribute("data-gmaps-initialized", "true");

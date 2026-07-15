@@ -35,6 +35,7 @@ const CoverJobs = () => {
     const [selectedJob, setSelectedJob] = useState(null);
     const [loadingIds, setLoadingIds] = useState([]);
     const [removedJobIds, setRemovedJobIds] = useState([]);
+    const [selectedStaffId, setSelectedStaffId] = useState("");
 
     const { data, loading, error } = useFetch(
         `api/jobs/available/${staffContractorId}?page=${currentPage}`,
@@ -42,8 +43,16 @@ const CoverJobs = () => {
     );
 
     const { submit } = useSubmit({ isAuth: true });
+    const { data: staffData, loading: staffLoading } = useFetch(
+        userRole === 'contractor' && userId ? `api/get-contractor-active-staff/${userId}` : null,
+        { isAuth: true, immediate: Boolean(userRole === 'contractor' && userId) }
+    );
 
     const jobs = data?.data?.jobs?.data || [];
+    const contractorStaffOptions = (staffData?.guards || []).map((staff) => ({
+        value: String(staff.id),
+        label: staff.name || 'Unnamed staff',
+    }));
     const visibleJobs = useMemo(
         () => jobs.filter((job) => !removedJobIds.includes(job.id)),
         [jobs, removedJobIds]
@@ -77,8 +86,14 @@ const CoverJobs = () => {
         if (pageMatch) setCurrentPage(Number(pageMatch[1]));
     };
 
-    const openModal = (job) => setSelectedJob(job);
-    const closeModal = () => setSelectedJob(null);
+    const openModal = (job) => {
+        setSelectedStaffId("");
+        setSelectedJob(job);
+    };
+    const closeModal = () => {
+        setSelectedStaffId("");
+        setSelectedJob(null);
+    };
 
     const getAcceptEndpoint = () => {
         if (userRole === 'staff') {
@@ -90,15 +105,21 @@ const CoverJobs = () => {
     const handleAcceptJob = async (jobId) => {
         setLoadingIds((prev) => [...prev, jobId]);
         try {
+            const payload = selectedStaffId
+                ? { roster_id: jobId, admin_id: userId }
+                : { roster_id: jobId };
+            const endpoint = selectedStaffId
+                ? `api/asap-jobs/accept/${selectedStaffId}`
+                : getAcceptEndpoint();
             const result = await submit(
-                getAcceptEndpoint(),
-                { roster_id: jobId },
+                endpoint,
+                payload,
                 { method: 'POST' }
             );
 
             if (result && !result.error) {
                 setRemovedJobIds((prev) => (prev.includes(jobId) ? prev : [...prev, jobId]));
-                toast.success(userRole === 'staff' ? 'Cover job accepted successfully!' : 'Job accepted successfully!');
+                toast.success(selectedStaffId ? 'Job assigned successfully!' : (userRole === 'staff' ? 'Cover job accepted successfully!' : 'Job accepted successfully!'));
                 closeModal();
             }
         } catch (err) {
@@ -316,7 +337,24 @@ const CoverJobs = () => {
                             </div>
                         </div>
 
-                        <div className="modal-footer" style={{ background: '#fff', padding: '16px 24px', borderTop: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between' }}>
+                        <div className="modal-footer" style={{ background: '#fff', padding: '16px 24px', borderTop: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                            {userRole === 'contractor' && (
+                                <div className="w-100">
+                                    <label className="form-label fw-semibold" style={{ fontSize: '13px', color: '#334155' }}>Assign to active staff (optional)</label>
+                                    <select
+                                        className="form-select"
+                                        value={selectedStaffId}
+                                        onChange={(e) => setSelectedStaffId(e.target.value)}
+                                        disabled={staffLoading}
+                                    >
+                                        <option value="">Accept directly for myself</option>
+                                        {contractorStaffOptions.map((staff) => (
+                                            <option key={staff.value} value={staff.value}>{staff.label}</option>
+                                        ))}
+                                    </select>
+                                    <div className="text-muted mt-2" style={{ fontSize: '12px' }}>Leave this empty to accept the job directly.</div>
+                                </div>
+                            )}
                             <div className="d-flex gap-2 ms-auto">
                                 <button
                                     className="btn btn-success rounded-pill px-4 fw-semibold shadow-sm"
@@ -328,7 +366,7 @@ const CoverJobs = () => {
                                     ) : (
                                         <i className="fa-solid fa-check me-2"></i>
                                     )}
-                                    Confirm Accept
+                                    {selectedStaffId ? 'Confirm Assign' : 'Confirm Accept'}
                                 </button>
                                 <button onClick={closeModal} className="btn btn-outline-secondary rounded-pill px-4 fw-semibold shadow-sm">
                                     Close

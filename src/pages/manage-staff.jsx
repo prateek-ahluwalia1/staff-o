@@ -480,7 +480,7 @@ const ManageStaff = () => {
       if (addressInput.getAttribute("data-gmaps-initialized")) return;
 
       const autocomplete = new window.google.maps.places.Autocomplete(addressInput, {
-        fields: ["address_components", "geometry", "formatted_address"],
+        fields: ["name", "address_components", "geometry", "formatted_address"],
         componentRestrictions: { country: "au" },
       });
 

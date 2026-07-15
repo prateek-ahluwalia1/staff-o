@@ -146,7 +146,7 @@ const AddressAutocomplete = ({ value, name, onChange, placeholder, required, max
             if (!inputRef.current || !window.google?.maps?.places) return;
             if (inputRef.current.getAttribute("data-gmaps-initialized")) return;
             autocomplete = new window.google.maps.places.Autocomplete(inputRef.current, {
-                fields: ["formatted_address", "geometry"],
+                fields: ["name", "address_components", "geometry", "formatted_address"],
                 types: ["address"],
                 componentRestrictions: { country: "au" },
             });

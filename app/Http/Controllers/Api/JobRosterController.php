@@ -167,6 +167,7 @@ class JobRosterController extends Controller
                         'radius'           => $radiusValue,
                         'is_document'      => $request->is_document,
                         'document_list'    => $documentListValue,
+                        'description'      => $request->description,
                         'job_level'        => $request->job_level,
                         'publish_status'   => 1,
                         'roster_id'        => $jobNewRoster->id,
@@ -305,1092 +306,1270 @@ class JobRosterController extends Controller
     $transaction,
     string $invoiceNumber,
     string $paymentIntentId,
-): void {
+    ): void {
 
-    try {
- 
-        // ── STEP 1: resolve payment figures ──────────────────────────
-        $discount      = $transaction ? (float) $transaction->discount       : 0;
-        $serviceFee    = $transaction ? (float) $transaction->service_fee    : round($baseTotal * 0.10, 2);
-        $grandTotal    = $transaction ? (float) $transaction->total_amount   : round(($baseTotal - $discount) + $serviceFee, 2);
-        $amountCharged = $transaction ? (float) $transaction->amount_charged : $grandTotal;
-        $balance       = $transaction ? (float) $transaction->balance        : 0;
-        $paymentOption = ($transaction && $transaction->balance > 0) ? 'split' : 'full';
- 
- 
-        // ── STEP 2: build invoice data array ─────────────────────────
-        $invoiceData = [
-            'invoice_number'    => $invoiceNumber,
-            'date'              => now()->format('d M Y'),
-            'client_name'       => $user->name,
-            'client_email'      => $user->email,
-            'payment_intent_id' => $paymentIntentId,
-            'payment_option'    => $paymentOption,
-            'shifts'            => $shifts,
-            'base_total'        => $baseTotal,
-            'discount'          => $discount,
-            'service_fee'       => $serviceFee,
-            'grand_total'       => $grandTotal,
-            'amount_charged'    => $amountCharged,
-            'balance'           => $balance,
-        ];
- 
-        $pdfBytes  = app(\App\Services\InvoiceService::class)->generatePdf($invoiceData);
-        $pdfBase64 = base64_encode($pdfBytes);
+        try {
+    
+            // ── STEP 1: resolve payment figures ──────────────────────────
+            $discount      = $transaction ? (float) $transaction->discount       : 0;
+            $serviceFee    = $transaction ? (float) $transaction->service_fee    : round($baseTotal * 0.10, 2);
+            $grandTotal    = $transaction ? (float) $transaction->total_amount   : round(($baseTotal - $discount) + $serviceFee, 2);
+            $amountCharged = $transaction ? (float) $transaction->amount_charged : $grandTotal;
+            $balance       = $transaction ? (float) $transaction->balance        : 0;
+            $paymentOption = ($transaction && $transaction->balance > 0) ? 'split' : 'full';
+    
+    
+            // ── STEP 2: build invoice data array ─────────────────────────
+            $invoiceData = [
+                'invoice_number'    => $invoiceNumber,
+                'date'              => now()->format('d M Y'),
+                'client_name'       => $user->name,
+                'client_email'      => $user->email,
+                'payment_intent_id' => $paymentIntentId,
+                'payment_option'    => $paymentOption,
+                'shifts'            => $shifts,
+                'base_total'        => $baseTotal,
+                'discount'          => $discount,
+                'service_fee'       => $serviceFee,
+                'grand_total'       => $grandTotal,
+                'amount_charged'    => $amountCharged,
+                'balance'           => $balance,
+            ];
+    
+            $pdfBytes  = app(\App\Services\InvoiceService::class)->generatePdf($invoiceData);
+            $pdfBase64 = base64_encode($pdfBytes);
 
-        $this->saveInvoicePdf($pdfBytes, $invoiceNumber, $user->name, $paymentIntentId);
- 
-        \Illuminate\Support\Facades\Mail::to($user->email)
-            ->queue(new \App\Mail\InvoiceMail(
-                pdfBase64:     $pdfBase64,
-                invoiceNumber: $invoiceNumber,
-                clientName:    $user->name,
-                isAdmin:       false,
-            ));
- 
-        // ── STEP 5: send to all admins ────────────────────────────────
-        $adminEmails = \App\Models\User::where('user_type', 'admin')->first();
-        
-        if ($adminEmails && $adminEmails->email) {
-             Log::channel('daily')->info('[Invoice] Step 5 – Queueing admin email', [
-                'admin_email' => $adminEmails->email,
-            ]);
-            
-            Mail::to($adminEmails->email)
-                ->queue(new InvoiceMail(
+            $this->saveInvoicePdf($pdfBytes, $invoiceNumber, $user->name, $paymentIntentId);
+    
+            \Illuminate\Support\Facades\Mail::to($user->email)
+                ->queue(new \App\Mail\InvoiceMail(
                     pdfBase64:     $pdfBase64,
                     invoiceNumber: $invoiceNumber,
                     clientName:    $user->name,
-                    isAdmin:       true,
+                    isAdmin:       false,
                 ));
+    
+            // ── STEP 5: send to all admins ────────────────────────────────
+            $adminEmails = \App\Models\User::where('user_type', 'admin')->first();
+            
+            if ($adminEmails && $adminEmails->email) {
+                Log::channel('daily')->info('[Invoice] Step 5 – Queueing admin email', [
+                    'admin_email' => $adminEmails->email,
+                ]);
+                
+                Mail::to($adminEmails->email)
+                    ->queue(new InvoiceMail(
+                        pdfBase64:     $pdfBase64,
+                        invoiceNumber: $invoiceNumber,
+                        clientName:    $user->name,
+                        isAdmin:       true,
+                    ));
+            }
+    
+    
+        } catch (\Exception $e) {
+            Log::channel('daily')->error('[Invoice] ── FAILED ──', [
+                'invoice_number' => $invoiceNumber,
+                'error'          => $e->getMessage(),
+                'file'           => $e->getFile(),
+                'line'           => $e->getLine(),
+                'trace'          => $e->getTraceAsString(),
+            ]);
+    
+            // Do NOT rethrow — invoice failure should not break job creation response
         }
- 
- 
-    } catch (\Exception $e) {
-        Log::channel('daily')->error('[Invoice] ── FAILED ──', [
-            'invoice_number' => $invoiceNumber,
-            'error'          => $e->getMessage(),
-            'file'           => $e->getFile(),
-            'line'           => $e->getLine(),
-            'trace'          => $e->getTraceAsString(),
-        ]);
- 
-        // Do NOT rethrow — invoice failure should not break job creation response
     }
-}
 
-private function saveInvoicePdf($pdfBytes, string $invoiceNumber, string $clientName, string $intentId): void
-{
-    try {
-        // Create directory structure: invoices/year/month/
-        $year = now()->format('Y');
-        $month = now()->format('m');
-        $directory = storage_path('app/public/invoices');
-
-        
-        if (!file_exists($directory)) {
-            mkdir($directory, 0755, true);
-        }
-        
-        // Clean client name for filename (remove special characters)
-        $cleanClientName = preg_replace('/[^A-Za-z0-9]/', '_', $clientName);
-        
-        // Generate filename: invoice_20241225_ABC123_John_Doe.pdf
-        $filename = "Invoice-{$invoiceNumber}.pdf";
-        $filePath = $directory . DIRECTORY_SEPARATOR . $filename;
-
-        DB::table('job_rosters')
-        ->where('payment_intent_id', $intentId)
-        ->update([
-            'invoice_filename' => $filename,
-            'updated_at' => now()
-        ]);
-        
-        // Save the PDF
-        file_put_contents($filePath, $pdfBytes);
-        
-        // Log::channel('daily')->info('[Invoice] PDF saved successfully', [
-        //     'invoice_number' => $invoiceNumber,
-        //     'file_path' => $filePath,
-        //     'size_bytes' => strlen($pdfBytes)
-        // ]);
-        
-    } catch (\Exception $e) {
-        Log::channel('daily')->warning('[Invoice] Failed to save PDF to folder', [
-            'invoice_number' => $invoiceNumber,
-            'error' => $e->getMessage()
-        ]);
-        // Don't throw exception - email should still be sent even if saving fails
-    }
-}
-
-    /**
-     * Send notifications to staff (user_id=1) within 5km radius
-     */
-    private function sendNotificationsWithinRadius($siteCoordinates, $jobIds, $userId, $roster)
+    private function saveInvoicePdf($pdfBytes, string $invoiceNumber, string $clientName, string $intentId): void
     {
+        try {
+            // Create directory structure: invoices/year/month/
+            $year = now()->format('Y');
+            $month = now()->format('m');
+            $directory = storage_path('app/public/invoices');
 
-        $radiusKm = 15; // 5km radius
-        $notifiedUsers = [];
+            
+            if (!file_exists($directory)) {
+                mkdir($directory, 0755, true);
+            }
+            
+            // Clean client name for filename (remove special characters)
+            $cleanClientName = preg_replace('/[^A-Za-z0-9]/', '_', $clientName);
+            
+            // Generate filename: invoice_20241225_ABC123_John_Doe.pdf
+            $filename = "Invoice-{$invoiceNumber}.pdf";
+            $filePath = $directory . DIRECTORY_SEPARATOR . $filename;
 
-          // Get all staff with user_id = 1
-        $staff = User::where('user_id', 1)
-        ->where('is_active', 1)
-        ->where('user_type', 'staff')
-        ->whereNotNull('current_coordinates')
-        ->whereNotNull('notification_token')
-        // ->whereHas('guardQuestionnaireDetails', function ($query) {
-        //     $query->whereNotNull('certificate_path');
-        // })
-        // ->whereDoesntHave('guardQuestionnaireDetails', function ($query) {
-        //     $query->whereNull('certificate_path');
-        // })
-            ->select('id', 'name', 'email', 'phone', 'current_coordinates', 'coordinates', 'notification_token')
-        ->get();
-        
+            DB::table('job_rosters')
+            ->where('payment_intent_id', $intentId)
+            ->update([
+                'invoice_filename' => $filename,
+                'updated_at' => now()
+            ]);
+            
+            // Save the PDF
+            file_put_contents($filePath, $pdfBytes);
+            
+            // Log::channel('daily')->info('[Invoice] PDF saved successfully', [
+            //     'invoice_number' => $invoiceNumber,
+            //     'file_path' => $filePath,
+            //     'size_bytes' => strlen($pdfBytes)
+            // ]);
+            
+        } catch (\Exception $e) {
+            Log::channel('daily')->warning('[Invoice] Failed to save PDF to folder', [
+                'invoice_number' => $invoiceNumber,
+                'error' => $e->getMessage()
+            ]);
+            // Don't throw exception - email should still be sent even if saving fails
+        }
+    }
 
-        if($staff->isEmpty()){
-            $staff = User::where('is_active', 1)
-            // ->whereNotIn('user_id', $userId)
-            ->where('user_type', 'contractor')
+        /**
+         * Send notifications to staff (user_id=1) within 5km radius
+         */
+        private function sendNotificationsWithinRadius($siteCoordinates, $jobIds, $userId, $roster)
+        {
+
+            $radiusKm = 15; // 5km radius
+            $notifiedUsers = [];
+
+            // Get all staff with user_id = 1
+            $staff = User::where('user_id', 1)
+            ->where('is_active', 1)
+            ->where('user_type', 'staff')
             ->whereNotNull('current_coordinates')
             ->whereNotNull('notification_token')
-            ->select('id', 'name', 'current_coordinates', 'phone', 'coordinates', 'notification_token')
+            // ->whereHas('guardQuestionnaireDetails', function ($query) {
+            //     $query->whereNotNull('certificate_path');
+            // })
+            // ->whereDoesntHave('guardQuestionnaireDetails', function ($query) {
+            //     $query->whereNull('certificate_path');
+            // })
+                ->select('id', 'name', 'email', 'phone', 'current_coordinates', 'coordinates', 'notification_token')
             ->get();
-        }
-
-
-        foreach ($staff as $staffMember) {
-            $distance = $this->calculateDistance($siteCoordinates, $staffMember->current_coordinates);
             
-            if ($distance <= $radiusKm) {
 
-                // Send notification if token exists
-                if ($staffMember->notification_token) {
-                    $notificationSent = send_push_notification([
-                        'notification_token' => $staffMember->notification_token,
-                        'message'            => "A new security job is available within 15 km of you. Please check your app.",
-                        'title'              => 'New Job Available',
-                        'page'               => 'asap-job-list',
-                        'data'               => [
-                            'distance' => round($distance, 2),
-                            'radius' => $radiusKm,
-                            'job_ids' => $jobIds,
-                            'roster' => $roster
-                        ]
-                    ]);
-                    
+            if($staff->isEmpty()){
+                $staff = User::where('is_active', 1)
+                // ->whereNotIn('user_id', $userId)
+                ->where('user_type', 'contractor')
+                ->whereNotNull('current_coordinates')
+                ->whereNotNull('notification_token')
+                ->select('id', 'name', 'current_coordinates', 'phone', 'coordinates', 'notification_token')
+                ->get();
+            }
 
-                    if ($notificationSent) {
-                        $notifiedUsers[] = [
-                            'user_id' => $staffMember->id,
-                            'name' => $staffMember->name,
-                            'distance' => round($distance, 2) . ' km'
-                        ];
+
+            foreach ($staff as $staffMember) {
+                $distance = $this->calculateDistance($siteCoordinates, $staffMember->current_coordinates);
+                
+                if ($distance <= $radiusKm) {
+
+                    // Send notification if token exists
+                    if ($staffMember->notification_token) {
+                        $notificationSent = send_push_notification([
+                            'notification_token' => $staffMember->notification_token,
+                            'message'            => "A new security job is available within 15 km of you. Please check your app.",
+                            'title'              => 'New Job Available',
+                            'page'               => 'asap-job-list',
+                            'data'               => [
+                                'distance' => round($distance, 2),
+                                'radius' => $radiusKm,
+                                'job_ids' => $jobIds,
+                                'roster' => $roster
+                            ]
+                        ]);
+                        
+
+                        if ($notificationSent) {
+                            $notifiedUsers[] = [
+                                'user_id' => $staffMember->id,
+                                'name' => $staffMember->name,
+                                'distance' => round($distance, 2) . ' km'
+                            ];
+                        }
+                    }
+                
+                    $this->sendEmail($staffMember, 'New Job Available', "A new security job is available within 15 km of you. Please check your app.", $roster);
+                    if (!empty($staffMember->phone)) {
+                    $sendSmS = send_sms($staffMember->phone, "A new security job is available within 15 km of you. Please check your app.");
                     }
                 }
-              
-                $this->sendEmail($staffMember, 'New Job Available', "A new security job is available within 15 km of you. Please check your app.", $roster);
-                if (!empty($staffMember->phone)) {
-                $sendSmS = send_sms($staffMember->phone, "A new security job is available within 15 km of you. Please check your app.");
+            }
+
+            // Update each job roster with notified users
+            // $this->updateJobRosterWithNotifiedUsers($jobIds, $notifiedUsers, $radiusKm);
+
+            return $notifiedUsers;
+        }
+
+        /**
+         * Calculate distance between two coordinates using Haversine formula
+         */
+        private function calculateDistance($coord1, $coord2)
+        {
+            list($lat1, $lng1) = explode(',', $coord1);
+            list($lat2, $lng2) = explode(',', $coord2);
+
+            $earthRadius = 6371;
+
+            $latDelta = deg2rad($lat2 - $lat1);
+            $lngDelta = deg2rad($lng2 - $lng1);
+
+            $a = sin($latDelta / 2) * sin($latDelta / 2) +
+                cos(deg2rad($lat1)) * cos(deg2rad($lat2)) *
+                sin($lngDelta / 2) * sin($lngDelta / 2);
+
+            $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
+
+            return $earthRadius * $c;
+        }
+
+        /**
+         * Update job roster with notified users
+         */
+        private function updateJobRosterWithNotifiedUsers($jobIds, $notifiedUsers, $radiusKm)
+        {
+            $notificationData = [
+                'user_ids' => array_column($notifiedUsers, 'user_id'),
+            ];
+
+            foreach ($jobIds as $jobId) {
+                $jobRoster = JobRoster::find($jobId);
+
+                if ($jobRoster) {
+                    $existingNotified = json_decode($jobRoster->notified_users ?? '[]', true);
+                    $existingNotified[] = $notificationData;
+
+                    $jobRoster->notified_users = json_encode($existingNotified);
+                    $jobRoster->save();
                 }
             }
         }
 
-        // Update each job roster with notified users
-        // $this->updateJobRosterWithNotifiedUsers($jobIds, $notifiedUsers, $radiusKm);
+        public function getContractorStaff($id)
+        {
+            $guards = User::where('user_id', $id)->with('staff','documents')->where('user_type', 'staff')->get();
 
-        return $notifiedUsers;
-    }
-
-    /**
-     * Calculate distance between two coordinates using Haversine formula
-     */
-    private function calculateDistance($coord1, $coord2)
-    {
-        list($lat1, $lng1) = explode(',', $coord1);
-        list($lat2, $lng2) = explode(',', $coord2);
-
-        $earthRadius = 6371;
-
-        $latDelta = deg2rad($lat2 - $lat1);
-        $lngDelta = deg2rad($lng2 - $lng1);
-
-        $a = sin($latDelta / 2) * sin($latDelta / 2) +
-            cos(deg2rad($lat1)) * cos(deg2rad($lat2)) *
-            sin($lngDelta / 2) * sin($lngDelta / 2);
-
-        $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
-
-        return $earthRadius * $c;
-    }
-
-    /**
-     * Update job roster with notified users
-     */
-    private function updateJobRosterWithNotifiedUsers($jobIds, $notifiedUsers, $radiusKm)
-    {
-        $notificationData = [
-            'user_ids' => array_column($notifiedUsers, 'user_id'),
-        ];
-
-        foreach ($jobIds as $jobId) {
-            $jobRoster = JobRoster::find($jobId);
-
-            if ($jobRoster) {
-                $existingNotified = json_decode($jobRoster->notified_users ?? '[]', true);
-                $existingNotified[] = $notificationData;
-
-                $jobRoster->notified_users = json_encode($existingNotified);
-                $jobRoster->save();
+            if (!$guards) {
+                return response()->json([
+                    'code' => 200,
+                    'success' => false,
+                    'message' => 'Staff Not Found.',
+                    'guards' => null
+                ]);
             }
-        }
-    }
 
-    public function getContractorStaff($id)
-    {
-        $guards = User::where('user_id', $id)->with('staff','documents')->where('user_type', 'staff')->get();
-
-        if (!$guards) {
             return response()->json([
                 'code' => 200,
-                'success' => false,
-                'message' => 'Staff Not Found.',
-                'guards' => null
+                'success' => true,
+                'message' => 'Staff Found.',
+                'guards' => $guards
             ]);
         }
 
-        return response()->json([
-            'code' => 200,
-            'success' => true,
-            'message' => 'Staff Found.',
-            'guards' => $guards
-        ]);
-    }
-
-    public function getContractorActiveStaff($id)
-    {
-        // $guards = User::where('user_id', $id)->with('staff')->where('is_active', 1)->where('user_type', 'staff')->get();
-         $guards = User::where('user_id', $id)
-        ->where('is_active', 1)
-        ->where('user_type', 'staff')
-        ->whereNotNull('coordinates')
-        // ->whereHas('guardQuestionnaireDetails', function ($query) {
-        //     $query->whereNotNull('certificate_path');
-        // })
-        // ->whereDoesntHave('guardQuestionnaireDetails', function ($query) {
-        //     $query->whereNull('certificate_path');
-        // })
-        ->select('id', 'name', 'coordinates', 'notification_token')
-        ->get();
-
-        if (!$guards) {
-            return response()->json([
-                'code' => 200,
-                'success' => false,
-                'message' => 'Staff Not Found.',
-                'guards' => null
-            ]);
-        }
-
-        return response()->json([
-            'code' => 200,
-            'success' => true,
-            'message' => 'Staff Found.',
-            'guards' => $guards
-        ]);
-    }
-
-    function calCulateGuardWeekHours($start, $end)
-    {
-        $datetime1 = new DateTime($start);
-        $datetime2 = new DateTime($end);
-        $interval = $datetime1->diff($datetime2);
-
-        $minutes = $interval->format('%i');
-        $hours = $interval->format('%h');
-
-        $minutesDecimal = $minutes / 60;
-        $totalHours = $hours + $minutesDecimal;
-        $totalHours = number_format($totalHours, 2); // Optional rounding
-        // Use $totalHours as needed
-        return $totalHours;
-    }
-
-    function convert_into_fraction($time)
-    {
-        return date('H', $time) + (date('i', $time) / 60);
-    }
-
-    function calculateHoursMorning($shift_start, $shift_end, $start, $end, $actual_start, $actual_end)
-    {
-        if (($shift_start >= $start && $shift_start < $end) && ($shift_end > $start && $shift_end <= $end)) {
-            $startDateTime = strtotime($actual_start);
-            $endDateTime = strtotime($actual_end);
-            return abs(($endDateTime - $startDateTime) / (60 * 60));
-            // return $hoursDifference = $actual_end->diffInHours($actual_start);
-            // return $shift_end - $shift_start;
-        } elseif (($shift_start >= $start && $shift_start < $end) && ($shift_end > $start && $shift_end > $end)) {
-            $shift_end = $end;
-            return $shift_end - $shift_start;
-        } elseif (($shift_start > $start && $shift_start > $end) && ($shift_end > $start && $shift_end <= $end)) {
-            $shift_start = $start;
-            return $shift_end - $shift_start;
-        } elseif (($shift_start < $start && $shift_start < $end) && ($shift_end > $start && $shift_end <= $end)) {
-            $shift_start = $start;
-            return $shift_end - $shift_start;
-        } elseif ($shift_start >= $end && $shift_end > $start && $shift_end < $end) {
-            // shift start in night in gone into day
-            // echo 'Here';
-            return $shift_end - $start;
-        } elseif ($shift_start < $start && $shift_end > $end) {
-            return $end - $start;
-        } elseif ($shift_start > $start && $shift_end < $end) {
-            // if ($shift_start >= $start && $shift_end <= $end) {
-            //     return 0;
-            // }
-            return $end - $shift_start;
-        } else {
-            return 0;
-        }
-    }
-
-    public function getJobHistory(Request $request)
-    {
-        $request->validate([
-            'customer_id' => 'required|integer',
-        ]);
-
-        $userId = $request->user_id;
-
-        $jobs = DB::table('job_rosters')
-            ->join('sites', 'sites.id', '=', 'job_rosters.site_id')
-            ->join('users', 'users.id', '=', 'sites.user_id')
-            ->leftJoin('users', 'users.id', '=', 'job_rosters.assigned_to')
-            ->where('sites.user_id', $userId)
-            ->select(
-                'job_rosters.*',
-                'sites.site_name',
-                'users.name as user_name',
-                DB::raw("CASE WHEN users.id IS NOT NULL THEN CONCAT(users.name,) ELSE 'N/A' END as guard_name")
-            )
-            ->orderBy('job_rosters.start', 'asc')
+        public function getContractorActiveStaff($id)
+        {
+            // $guards = User::where('user_id', $id)->with('staff')->where('is_active', 1)->where('user_type', 'staff')->get();
+            $guards = User::where('user_id', $id)
+            ->where('is_active', 1)
+            ->where('user_type', 'staff')
+            ->whereNotNull('coordinates')
+            // ->whereHas('guardQuestionnaireDetails', function ($query) {
+            //     $query->whereNotNull('certificate_path');
+            // })
+            // ->whereDoesntHave('guardQuestionnaireDetails', function ($query) {
+            //     $query->whereNull('certificate_path');
+            // })
+            ->select('id', 'name', 'coordinates', 'notification_token')
             ->get();
 
-        if ($jobs->isEmpty()) {
+            if (!$guards) {
+                return response()->json([
+                    'code' => 200,
+                    'success' => false,
+                    'message' => 'Staff Not Found.',
+                    'guards' => null
+                ]);
+            }
+
             return response()->json([
-                'success' => false,
-                'message' => 'No jobs found for this customer',
-                'data'    => []
-            ], 200);
+                'code' => 200,
+                'success' => true,
+                'message' => 'Staff Found.',
+                'guards' => $guards
+            ]);
         }
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Customer job history fetched successfully',
-            'data'    => $jobs
-        ], 200);
-    }
+        function calCulateGuardWeekHours($start, $end)
+        {
+            $datetime1 = new DateTime($start);
+            $datetime2 = new DateTime($end);
+            $interval = $datetime1->diff($datetime2);
 
-    public function jobStatusCountByCustomer(Request $request)
-    {
-        $customerId = $request->customer_id;
+            $minutes = $interval->format('%i');
+            $hours = $interval->format('%h');
 
-        $counts = JobRoster::join('job_new_roster', 'job_rosters.roster_id', '=', 'job_new_roster.id')
-            ->whereJsonContains('job_new_roster.customer_id', [$customerId])
-            ->selectRaw("
-                SUM(CASE WHEN job_rosters.job_status = 'pending' THEN 1 ELSE 0 END) AS pending,
-                SUM(CASE WHEN job_rosters.job_status = 'confirmed' THEN 1 ELSE 0 END) AS confirmed,
-                SUM(CASE WHEN job_rosters.job_status = 'accepted' THEN 1 ELSE 0 END) AS accepted,
-                COUNT(job_rosters.id) AS total
-            ")->first();
-
-        return response()->json([
-            'success'   => true,
-            'customer_id' => $customerId,
-            'data' => [
-                'pending'   => (int) $counts->pending,
-                'confirmed' => (int) $counts->confirmed,
-                'accepted'  => (int) $counts->accepted,
-                'total'     => (int) $counts->total,
-            ]
-        ]);
-    }
-
-    public function uploadFile(Request $request)
-    {
-        $folder = $request->folder ?: 'uploads';
-        $inputKey = $request->hasFile('upload') ? 'upload' : 'file';
-
-        if (!$request->hasFile($inputKey)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'No file provided'
-            ], 400);
+            $minutesDecimal = $minutes / 60;
+            $totalHours = $hours + $minutesDecimal;
+            $totalHours = number_format($totalHours, 2); // Optional rounding
+            // Use $totalHours as needed
+            return $totalHours;
         }
 
-        $files = $request->file($inputKey);
-        $files = is_array($files) ? $files : [$files];
+        function convert_into_fraction($time)
+        {
+            return date('H', $time) + (date('i', $time) / 60);
+        }
 
-        $uploadedFiles = [];
-
-        foreach ($files as $file) {
-            $image = fileUpload($file, '/' . $folder . '/');
-
-            if ($image) {
-                $uploadedFiles[] = [
-                    'path' => $image,
-                    'url'  => asset($folder . '/' . $image),
-                ];
+        function calculateHoursMorning($shift_start, $shift_end, $start, $end, $actual_start, $actual_end)
+        {
+            if (($shift_start >= $start && $shift_start < $end) && ($shift_end > $start && $shift_end <= $end)) {
+                $startDateTime = strtotime($actual_start);
+                $endDateTime = strtotime($actual_end);
+                return abs(($endDateTime - $startDateTime) / (60 * 60));
+                // return $hoursDifference = $actual_end->diffInHours($actual_start);
+                // return $shift_end - $shift_start;
+            } elseif (($shift_start >= $start && $shift_start < $end) && ($shift_end > $start && $shift_end > $end)) {
+                $shift_end = $end;
+                return $shift_end - $shift_start;
+            } elseif (($shift_start > $start && $shift_start > $end) && ($shift_end > $start && $shift_end <= $end)) {
+                $shift_start = $start;
+                return $shift_end - $shift_start;
+            } elseif (($shift_start < $start && $shift_start < $end) && ($shift_end > $start && $shift_end <= $end)) {
+                $shift_start = $start;
+                return $shift_end - $shift_start;
+            } elseif ($shift_start >= $end && $shift_end > $start && $shift_end < $end) {
+                // shift start in night in gone into day
+                // echo 'Here';
+                return $shift_end - $start;
+            } elseif ($shift_start < $start && $shift_end > $end) {
+                return $end - $start;
+            } elseif ($shift_start > $start && $shift_end < $end) {
+                // if ($shift_start >= $start && $shift_end <= $end) {
+                //     return 0;
+                // }
+                return $end - $shift_start;
+            } else {
+                return 0;
             }
         }
 
-        return response()->json([
-            'success' => true,
-            'data'    => count($uploadedFiles) === 1 ? $uploadedFiles[0] : $uploadedFiles
-        ]);
-    }
+        public function getJobHistory(Request $request)
+        {
+            $request->validate([
+                'customer_id' => 'required|integer',
+            ]);
 
-    public function accept_asap_job(Request $request, $id)
-    {
-        $a = null;
-        $b = '';
-        $roster = DB::table('job_rosters')
-            ->join('sites', 'sites.id', '=', 'job_rosters.site_id')
-            ->where('job_rosters.asap', '=', '1')
-            ->where('job_rosters.id', '=', $request->input('roster_id'))->where(
-                function ($query) use ($a, $b) {
-                    return $query->where('job_rosters.assigned_to', '=', $a)
-                        ->orWhere('job_rosters.assigned_to', '=', $b);
-                }
-            )
-            ->select('job_rosters.*', 'sites.id as jobId', 'sites.address', 'sites.coordinates')
-            ->first();
+            $userId = $request->user_id;
 
-            if ($roster != null) {
-                
-            if (!$this->canAcceptJob($id, $roster->start, $roster->end)) {
+            $jobs = DB::table('job_rosters')
+                ->join('sites', 'sites.id', '=', 'job_rosters.site_id')
+                ->join('users', 'users.id', '=', 'sites.user_id')
+                ->leftJoin('users', 'users.id', '=', 'job_rosters.assigned_to')
+                ->where('sites.user_id', $userId)
+                ->select(
+                    'job_rosters.*',
+                    'sites.site_name',
+                    'users.name as user_name',
+                    DB::raw("CASE WHEN users.id IS NOT NULL THEN CONCAT(users.name,) ELSE 'N/A' END as guard_name")
+                )
+                ->orderBy('job_rosters.start', 'asc')
+                ->get();
 
+            if ($jobs->isEmpty()) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Staff must complete 8 hours rest before accepting this shift.'
-                ]);
-            }   
-
-            $rosterStart = Carbon::parse($roster->start);
-
-            $weekStart = $rosterStart->copy()->startOfWeek();
-            $weekEnd   = $rosterStart->copy()->endOfWeek();
-
-            $currentWeekHours = DB::table('job_rosters')
-                ->where('assigned_to', $id)
-                ->whereBetween('start', [$weekStart, $weekEnd])
-                ->sum('hours');
-
-            $currentWeekHours = $currentWeekHours ?? 0;
-
-            $currentJobHours = $roster->hours ?? 0;
-
-            $totalHours = $currentWeekHours + $currentJobHours;
-
-            $user = \App\Models\User::with('staff')->find($id);
-
-            if (!$user || !$user->staff) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Staff data not found.'
+                    'message' => 'No jobs found for this customer',
+                    'data'    => []
                 ], 200);
             }
 
-            $visaType = $user->staff->staff_document_type;
+            return response()->json([
+                'success' => true,
+                'message' => 'Customer job history fetched successfully',
+                'data'    => $jobs
+            ], 200);
+        }
 
-            if ($visaType === 'student_visa') {
-                if ($totalHours > 24) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Weekly limit exceeded (24 hours for student visa).'
-                    ], 200);
-                }
-            } else {
-                if ($totalHours > 38) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Weekly limit exceeded (38 hours allowed).'
-                    ], 200);
+        public function jobStatusCountByCustomer(Request $request)
+        {
+            $customerId = $request->customer_id;
+
+            $counts = JobRoster::join('job_new_roster', 'job_rosters.roster_id', '=', 'job_new_roster.id')
+                ->whereJsonContains('job_new_roster.customer_id', [$customerId])
+                ->selectRaw("
+                    SUM(CASE WHEN job_rosters.job_status = 'pending' THEN 1 ELSE 0 END) AS pending,
+                    SUM(CASE WHEN job_rosters.job_status = 'confirmed' THEN 1 ELSE 0 END) AS confirmed,
+                    SUM(CASE WHEN job_rosters.job_status = 'accepted' THEN 1 ELSE 0 END) AS accepted,
+                    COUNT(job_rosters.id) AS total
+                ")->first();
+
+            return response()->json([
+                'success'   => true,
+                'customer_id' => $customerId,
+                'data' => [
+                    'pending'   => (int) $counts->pending,
+                    'confirmed' => (int) $counts->confirmed,
+                    'accepted'  => (int) $counts->accepted,
+                    'total'     => (int) $counts->total,
+                ]
+            ]);
+        }
+
+        public function uploadFile(Request $request)
+        {
+            $folder = $request->folder ?: 'uploads';
+            $inputKey = $request->hasFile('upload') ? 'upload' : 'file';
+
+            if (!$request->hasFile($inputKey)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No file provided'
+                ], 400);
+            }
+
+            $files = $request->file($inputKey);
+            $files = is_array($files) ? $files : [$files];
+
+            $uploadedFiles = [];
+
+            foreach ($files as $file) {
+                $image = fileUpload($file, '/' . $folder . '/');
+
+                if ($image) {
+                    $uploadedFiles[] = [
+                        'path' => $image,
+                        'url'  => asset($folder . '/' . $image),
+                    ];
                 }
             }
-            $flag = 0;
-            $is_already_assign = DB::table('job_rosters')
-                ->where('assigned_to', $id)
-                ->whereBetween('start', [$roster->start, $roster->end])
-                ->select('job_rosters.*')->first();
-            if ($is_already_assign != null) {
-                $flag = 1;
-            } else {
-                $is_already_assign = DB::table('job_rosters')
-                    ->where('created_by', $id)
-                    ->whereBetween('end', [$roster->start, $roster->end])
-                    ->select('job_rosters.*')->first();
-                if ($is_already_assign != null) {
-                    $flag = 1;
-                }
-            }
-            if ($flag == 0) {
 
-                // if ($roster->is_document == 1) {
-                //     $document_types = $roster->document_list;
+            return response()->json([
+                'success' => true,
+                'data'    => count($uploadedFiles) === 1 ? $uploadedFiles[0] : $uploadedFiles
+            ]);
+        }
 
-                //     $document_category = DocumentCategory::where('document_category', 'job_doc')->first();
+        public function accept_asap_job(Request $request, $id)
+        {
+            $a = null;
+            $b = '';
+            $roster = DB::table('job_rosters')
+                ->join('sites', 'sites.id', '=', 'job_rosters.site_id')
+                ->where('job_rosters.asap', '=', '1')
+                ->where('job_rosters.id', '=', $request->input('roster_id'))->where(
+                    function ($query) use ($a, $b) {
+                        return $query->where('job_rosters.assigned_to', '=', $a)
+                            ->orWhere('job_rosters.assigned_to', '=', $b);
+                    }
+                )
+                ->select('job_rosters.*', 'sites.id as jobId', 'sites.address', 'sites.coordinates')
+                ->first();
 
-                //     if ($document_category && !empty($document_types)) {
-                //         foreach (json_decode($document_category->document_type) as $doc_key => $doc_name) {
-                //             $document_types_array = json_decode($document_types, true) ?? [];
-                //             if (in_array($doc_key, $document_types_array)) {
+                if ($roster != null) {
 
-                //                 $already_exists = Document::where([
-                //                     'user_id'       => $id,
-                //                     'document_type' => $doc_key,
-                //                 ])->first();
+                // $user = User::where('id', $id)->first();
+                // if($user->user_type == "staff"){
+                //     $today = $roster->start;
+                //     $todayAssignedJobs = JobRoster::where('assigned_to', $user->id)
+                //         ->whereDate('start', $today)
+                //         ->get();
 
-                //                 if ($already_exists) {
-                //                     continue;
-                //                 }
-
-                //                 $guard_document                    = new Document();
-                //                 $guard_document->user_id           = $id;
-                //                 $guard_document->document_category = $document_category->document_category;
-                //                 $guard_document->document_type     = $doc_key;
-                //                 $guard_document->document_name     = $doc_name;
-                //                 $guard_document->save();
-                //             }
-                //         }
+                //     $jobsCountToday = $todayAssignedJobs->count();
+                //     $hoursToday = $this->calculateTotalHours($todayAssignedJobs);
+                //     if($jobsCountToday >= 2){
+                //         return response()->json([
+                //             'success' => false,
+                //             'message' => 'Daily limit exceeded (Already have 2 jobs).'
+                //         ], 200);
+                //     }
+                //     elseif($hoursToday > 12){
+                //         return response()->json([
+                //             'success' => false,
+                //             'message' => 'Daily limit exceeded (12 hours).'
+                //         ], 200);
                 //     }
                 // }
 
+                if (!$this->canAcceptJob($id, $roster->start, $roster->end)) {
 
-                DB::table('job_rosters')
-                    ->where('id', '=', $request->input('roster_id'))
-                    ->update(['assigned_to' => $id, 'publish_status' => 1, 'job_status' => 'confirmed']);
-                $guard = DB::table('users')->where('id', $id)->first();
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Staff must complete 8 hours rest before accepting this shift.'
+                    ]);
+                }   
 
-                //push notification
-                $admins = DB::table('users')->where('notification_token', '!=', '')->where('id', '=', $roster->created_by)->select('notification_token')->get();
+                $rosterStart = Carbon::parse($roster->start);
+
+                $weekStart = $rosterStart->copy()->startOfWeek();
+                $weekEnd   = $rosterStart->copy()->endOfWeek();
+
+                $currentWeekHours = DB::table('job_rosters')
+                    ->where('assigned_to', $id)
+                    ->whereBetween('start', [$weekStart, $weekEnd])
+                    ->sum('hours');
+
+                $currentWeekHours = $currentWeekHours ?? 0;
+
+                $currentJobHours = $roster->hours ?? 0;
+
+                $totalHours = $currentWeekHours + $currentJobHours;
+
+                $user = \App\Models\User::with('staff')->find($id);
+
+                if (!$user || !$user->staff) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Staff data not found.'
+                    ], 200);
+                }
+
+                $visaType = $user->staff->staff_document_type;
+
+                if ($visaType === 'student_visa') {
+                    if ($totalHours > 24) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'Weekly limit exceeded (24 hours for student visa).'
+                        ], 200);
+                    }
+                } else {
+                    if ($totalHours > 38) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'Weekly limit exceeded (38 hours allowed).'
+                        ], 200);
+                    }
+                }
+                $flag = 0;
+                $is_already_assign = DB::table('job_rosters')
+                    ->where('assigned_to', $id)
+                    ->whereBetween('start', [$roster->start, $roster->end])
+                    ->select('job_rosters.*')->first();
+                if ($is_already_assign != null) {
+                    $flag = 1;
+                } else {
+                    $is_already_assign = DB::table('job_rosters')
+                        ->where('assigned_to', $id)
+                        ->whereBetween('end', [$roster->start, $roster->end])
+                        ->select('job_rosters.*')->first();
+                    if ($is_already_assign != null) {
+                        $flag = 1;
+                    }
+                }
+                if ($flag == 0) {
+
+                    DB::table('job_rosters')
+                        ->where('id', '=', $request->input('roster_id'))
+                        ->update(['assigned_to' => $id, 'publish_status' => 1, 'job_status' => 'confirmed']);
+                    // Get guard details
+                        $guard = DB::table('users')->where('id', $id)->first();
+
+                        // ============ PUSH NOTIFICATIONS ============
+
+                        // 1. Send notification to Client (created_by)
+                        $client = DB::table('users')
+                            ->where('notification_token', '!=', '')
+                            ->where('id', '=', $roster->created_by)
+                            ->select('notification_token', 'name')
+                            ->first();
+
+                        // Only send if client exists and has notification token
+                        if ($client && !empty($client->notification_token)) {
+                            $notification_data = [
+                                'message' => $guard->name . ' accepted and confirmed the job.',
+                                'title' => 'Job Signin',
+                                'notification_token' => $client->notification_token,
+                                'page' => 'homepage',
+                                'roster_id' => $id
+                            ];
+                            send_push_notification($notification_data);
+                        }
+
+                    return response()->json([
+                        'success' => true,
+                        'message' => 'Job accept successfully.',
+                    ], 200);
+                } else {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'These timings are contradicting with other site timings because this guard is already added in another site.'
+                    ], 200);
+                }
+            } else {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Job already accepted!'
+                ], 200);
+            }
+        }
+
+        public function canAcceptJob($guardId, $newShiftStart, $newShiftEnd)
+        {
+            $newShiftStart = Carbon::parse($newShiftStart);
+            $newShiftEnd   = Carbon::parse($newShiftEnd);
+            
+            // Check previous shift (8 hours rest before new shift)
+            $previousShift = DB::table('job_rosters')
+                ->where('assigned_to', $guardId)
+                ->where('end', '<=', $newShiftStart)
+                ->orderBy('end', 'desc')
+                ->first();
+            
+            if ($previousShift) {
+                $previousEnd = Carbon::parse($previousShift->end);
+                
+                // Calculate hours between previous shift end and new shift start
+                $restHours = $previousEnd->diffInHours($newShiftStart);
+                
+                // If rest hours is less than 8, cannot accept
+                if ($restHours < 8) {
+                    return false;
+                }
+            }
+            
+            // Check next shift (8 hours rest after new shift)
+            $nextShift = DB::table('job_rosters')
+                ->where('assigned_to', $guardId)
+                ->where('start', '>=', $newShiftEnd)
+                ->orderBy('start', 'asc')
+                ->first();
+            
+            if ($nextShift) {
+                $nextStart = Carbon::parse($nextShift->start);
+                
+                // Calculate hours between new shift end and next shift start
+                $restHours = $newShiftEnd->diffInHours($nextStart);
+                
+                // If rest hours is less than 8, cannot accept
+                if ($restHours < 8) {
+                    return false;
+                }
+            }
+            
+            return true;
+        }
+        
+        public function jobSignin(Request $request, $id)
+        {
+
+            // $this->request = $request;
+            // $this->setValidationRules(['time' => 'required', 'selfie' => 'required', 'location' => 'required']);
+            // if ($this->isValidRequest()) {
+            // $this->response = ['success' => false, 'error' => $this->getErrors()];
+            // $this->statusCode = self::STATUS_CODE_200;
+            // return $this->sendResponse();
+            // }
+
+            $job = JobRoster::where('id', $id)->with('site', 'guards')->first();
+            if (!$job || !$job->site) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Job or site not found.',
+                    'code' => 404
+                ], 404);
+            }
+
+            $roster_data = JobRoster::where('id', $id)->first();
+
+            try {
+
+                Stripe::setApiKey(config('services.stripe.secret'));
+
+                // if (!$roster_data || !$roster_data->payment_intent_id) {
+                //     return response()->json([
+                //         'success' => true,
+                //         'message' => 'Job completed (no payment linked)'
+                //     ]);
+                // }
+
+                // ─── CAPTURE ONLY ONCE (FOR ALL JOBS) ───
+                if ($roster_data->payment_captured == 0) {
+
+                    $paymentIntent = PaymentIntent::retrieve($job->payment_intent_id);
+
+                    if ($paymentIntent->status == 'requires_capture') {
+                        $capturedIntent = $paymentIntent->capture();
+
+                        $chargeId = $capturedIntent->latest_charge ?? null;
+
+                        Transaction::where('payment_intent_id', $paymentIntent->id)
+                            ->update([
+                                'status'    => 'captured',
+                                'charge_id' => $chargeId,
+                                'response'  => json_encode($capturedIntent),
+                            ]);
+                    }
+                    
+
+                    // mark ALL related jobs as captured
+                    DB::table('job_rosters')
+                        ->where('payment_intent_id', $job->payment_intent_id)
+                        ->update(['payment_captured' => 1
+                    ]);
+
+                    DB::table('job_rosters')->where('id', $id)->update([
+                    'payment_status' => 'paid'
+                    ]);
+                }
+
+            } catch (\Exception $e) {
+                // log error but don't break job completion
+                Log::error('Stripe Error: ' . $e->getMessage());
+                Transaction::where('payment_intent_id', $job->payment_intent_id)
+                ->update([
+                    'status' => 'failed'
+                ]);
+            }
+
+            $job_start_time = $roster_data->start;
+            $job_start_time = strtotime($job_start_time);
+
+            if ($request->has('signin_time')) {
+                $current_time = $request->input('signin_time');
+                $current_time = strtotime($current_time);
+            } else {
+                $current_time = time();
+            }
+            $diff = round(($job_start_time - $current_time) / 60, 2);
+
+            if ($request->input('location') == null || $request->input('location') == '') {
+
+                return response()->json(['success' => false, 'message' => 'Please send coordinates.', 'code' => 404]);
+            }
+
+            $coordinates = explode(',', $job->guards->current_coordinates);
+
+
+            if ($job->site->coordinates == null ||  $job->site->coordinates == '') {
+                return response()->json(['success' => false, 'message' => 'Location coordinates not set.', 'code' => 404]);
+            }
+
+            $coordinates1 = explode(',', $job->site->coordinates);
+
+            $distance = $this->distance(trim($coordinates[0]), trim($coordinates[1]), trim($coordinates1[0]), trim($coordinates1[1]));
+            if ($job->site->signin_radius > 0) {
+                $signin_radius = $job->site->signin_radius / 1000;
+            } else {
+                $signin_radius = 0.31;
+            }
+            if ($distance > $signin_radius) {
+                return response()->json(['success' => false, 'error' => 'You are ' . number_format($distance, 2) . ' km away from your job!', 'message' => 'You are ' . number_format($distance, 2) . ' km away from your job!', 'code' => 404]);
+            }
+            $is_already_signin = JobRosterActivity::where(['job_roster_id' => $id])->first();
+            if (!empty($is_already_signin)) {
+                return response()->json(['success' => false, 'error' => 'You are already signin in this job!', 'message' => 'You are already signin in this job!', 'code' => 404]);
+            }
+
+            $field = 'selfie';
+            $media = '';
+
+            $media = $this->uploader_base64($request->input($field));
+
+            $update_status = JobRosterActivity::where('job_roster_id', $id)
+                ->where('guard_id', $roster_data->assigned_to)
+                ->where('status', 1)
+                ->first();
+
+            if ($update_status) {
+                JobRosterActivity::where('job_roster_id', $id)
+                    ->where('guard_id', $roster_data->assigned_to)
+                    ->update(['status' => 0]);
+            }
+
+            $dateTime = DateTime::createFromFormat('d-m-Y H:i', $request->input('time'));
+            $usFormat = $dateTime->format('m/d/Y h:i A');
+            $model = JobRosterActivity::insert([
+                'guard_id' => $roster_data->assigned_to,
+                'job_roster_id' => $id,
+                'job_incident_report_id' => null,
+                'signin_time' => $usFormat,
+                'signin_selfie' => $media,
+                'location' => $request->input('location'),
+                'status' => 1,
+                'signin_notes' => $request->filled('notes') ? $request->input('notes') : null,
+                'created_at' => now(),
+                'updated_at' => now()
+            ]);
+
+            DB::table('job_rosters')->where(['id' => $id])->update(['signin_status' => 1]);
+            $guard = DB::table('users')->where('id', $roster_data->assigned_to)->first();
+            $inputTime = DateTime::createFromFormat('d-m-Y H:i', $request->input('time'));
+            $inputTimeFormatted = $inputTime->format('Y-m-d H:i');
+            if ($inputTimeFormatted <= $roster_data->start) {
+                // DB::table('job_rosters')->where(['id' => $id])->update(['in_paysheet' => 1]);
+            }
+
+            if ($model) {
+
+                $roster = DB::table('job_rosters')->where('id', $id)->first();
+
+                $admins = DB::table('users')->where('notification_token', '!=', '')->where('id', $roster->created_by)->select('notification_token')->get();
                 foreach ($admins as $a) {
                     $notification_data = [
-                        'message' => $guard->name . ' accepted and confirmed the job.',
+                        'message' => $guard->name . ' signin in their job.',
                         'title' => 'Job Signin',
                         'notification_token' => $a->notification_token,
                         'page' => 'homepage',
                         'roster_id' =>  $id
                     ];
-
                     send_push_notification($notification_data);
                 }
                 return response()->json([
                     'success' => true,
-                    'message' => 'Job accept successfully.',
-                ], 200);
-            } else {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'These timings are contradicting with other site timings because this guard is already added in another site.'
+                    'message' => 'Clocked-in Successfully!'
                 ], 200);
             }
-        } else {
+
             return response()->json([
-                'success' => false,
-                'message' => 'Job already accepted!'
+                'success' => true,
+                'message' => 'You are not Check-in your job.'
             ], 200);
         }
-    }
 
-    public function canAcceptJob($guardId, $newShiftStart, $newShiftEnd)
-    {
-        $newShiftStart = Carbon::parse($newShiftStart);
-        $newShiftEnd   = Carbon::parse($newShiftEnd);
-    
-        // Previous shift
-        $previousShift = DB::table('job_rosters')
-            ->where('assigned_to', $guardId)
-            ->where('end', '<=', $newShiftStart)
-            ->orderBy('end', 'desc')
-            ->first();
-    
-        if ($previousShift) {
-    
-            $previousEnd = Carbon::parse($previousShift->end);
-    
-            if ($previousEnd->copy()->addHours(8)->gt($newShiftStart)) {
-                return false;
-            }
-        }
-    
-        // Next shift
-        $nextShift = DB::table('job_rosters')
-            ->where('assigned_to', $guardId)
-            ->where('start', '>=', $newShiftEnd)
-            ->orderBy('start', 'asc')
-            ->first();
-    
-        if ($nextShift) {
-    
-            $nextStart = Carbon::parse($nextShift->start);
-    
-            if ($newShiftEnd->copy()->addHours(8)->gt($nextStart)) {
-                return false;
-            }
-        }
-    
-        return true;
-    }
-    
-    public function jobSignin(Request $request, $id)
-    {
+        function distance($lat1, $lon1, $lat2, $lon2)
+        {
+            $lat1 = doubleval($lat1);
+            $lon1 = doubleval($lon1);
+            $lat2 = doubleval($lat2);
+            $lon2 = doubleval($lon2);
 
-        // $this->request = $request;
-        // $this->setValidationRules(['time' => 'required', 'selfie' => 'required', 'location' => 'required']);
-        // if ($this->isValidRequest()) {
-        // $this->response = ['success' => false, 'error' => $this->getErrors()];
-        // $this->statusCode = self::STATUS_CODE_200;
-        // return $this->sendResponse();
-        // }
-
-        $job = JobRoster::where('id', $id)->with('site', 'guards')->first();
-        if (!$job || !$job->site) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Job or site not found.',
-                'code' => 404
-            ], 404);
+            $theta = $lon1 - $lon2;
+            $dist = sin(deg2rad($lat1)) * sin(deg2rad($lat2)) + cos(deg2rad($lat1)) * cos(deg2rad($lat2)) * cos(deg2rad($theta));
+            $dist = acos($dist);
+            $dist = rad2deg($dist);
+            $miles = $dist * 60 * 1.1515;
+            $miles = $miles * 1.609;
+            return $miles;
         }
 
-        $roster_data = JobRoster::where('id', $id)->first();
-
-          try {
-
-            Stripe::setApiKey(config('services.stripe.secret'));
-
-            // if (!$roster_data || !$roster_data->payment_intent_id) {
-            //     return response()->json([
-            //         'success' => true,
-            //         'message' => 'Job completed (no payment linked)'
-            //     ]);
-            // }
-
-            // ─── CAPTURE ONLY ONCE (FOR ALL JOBS) ───
-            if ($roster_data->payment_captured == 0) {
-
-                $paymentIntent = PaymentIntent::retrieve($job->payment_intent_id);
-
-                if ($paymentIntent->status == 'requires_capture') {
-                    $capturedIntent = $paymentIntent->capture();
-
-                    $chargeId = $capturedIntent->latest_charge ?? null;
-
-                    Transaction::where('payment_intent_id', $paymentIntent->id)
-                        ->update([
-                            'status'    => 'captured',
-                            'charge_id' => $chargeId,
-                            'response'  => json_encode($capturedIntent),
-                        ]);
+        private function uploader_base64($file, $folder = 'uploads')
+        {
+            try {
+                // $destinationPath =  rtrim('../../uploads/');
+                $public_path =  rtrim(app()->basePath('public/'), '');
+                // $public_path = str_replace('portal/public', '', $public_path);
+                // $public_path = str_replace('apis/public', '', $public_path);
+                // $public_path = str_replace('https://apis.staffoo.com.au/', 'apis.247staffingsolutions.com.au/public', $public_path);
+                $destinationPath = $public_path . $folder . '/';
+                if (!is_dir($destinationPath)) {
+                    @mkdir($destinationPath, 0755, true);
                 }
-                
 
-                // mark ALL related jobs as captured
-                DB::table('job_rosters')
-                    ->where('payment_intent_id', $job->payment_intent_id)
-                    ->update(['payment_captured' => 1
-                ]);
+                $newName = Str::random(25);
 
-                DB::table('job_rosters')->where('id', $id)->update([
-                 'payment_status' => 'paid'
-                ]);
+                $fileName = $newName . '.jpg';
+
+
+                $file = base64_decode(preg_replace('#^data:image/\w+;base64,#i', '', $file));
+                file_put_contents($destinationPath . $fileName, $file);
+
+                return $fileName;
+            } catch (\Exception $e) {
+                echo $e->getMessage();
+            }
+        }
+
+        public function getGuardJobs(Request $request, $type, $duration)
+        {
+            $week    = ($request->input('week_no') != null) ? $request->input('week_no') : 0;
+            $guardId = $request->input('guard_id');
+
+            $guard = DB::table('users')->where('id', $request->input('guard_id'))->first();
+
+            if($guard->user_type == 'staff'){
+                $model = JobRoster::with('guards', 'rosterActivity', 'site', 'jobRosterTask');
+                if ($week < 0) {
+                    $model->where(['publish_status' => 1, 'assigned_to' => $guardId]);
+                } else {
+                    $model->where(['publish_status' => 1, 'job_status' => $type, 'assigned_to' => $guardId]);
+                }
+            }else{
+                $model = JobRoster::with('guards', 'rosterActivity', 'site');
+                if ($week < 0) {
+                $model->where(['accepted_by' => $guardId]);
+                } else {
+                    $model->where(['accepted_by' => $guardId]);
+                }
             }
 
-        } catch (\Exception $e) {
-            // log error but don't break job completion
-            Log::error('Stripe Error: ' . $e->getMessage());
-            Transaction::where('payment_intent_id', $job->payment_intent_id)
-            ->update([
-                'status' => 'failed'
-            ]);
+
+            switch ($duration) {
+                case 'today':
+                    if ($type == 'confirmed') {
+                        $now   = date('Y-m-d H:i:s');
+                        $start = strtotime($now) - (60 * 60 * 15);
+                        if (date('d', time()) == date('d', $start)) {
+                            $start = date('Y-m-d 00:00:00', time());
+                            $end   = date('Y-m-d 23:59:59', time());
+                            $model->whereBetween('start', [$start, $end]);
+                        } else {
+                            $start = date('Y-m-d 00:00:00', time());
+                            $end   = date('Y-m-d 23:59:59', time());
+                            $model->where(function ($query) use ($start, $end) {
+                                $query->whereBetween('start', [$start, $end])
+                                    ->orWhereBetween('end', [$start, $end]);
+                            });
+                        }
+                    } else {
+                        $model->whereDate('start', Carbon::today());
+                    }
+                    break;
+
+                case 'week':
+                    if ($type == 'completed') {
+                        if ($week == 0) {
+                            $model->whereBetween('start', [
+                                Carbon::now()->startOfWeek(),
+                                Carbon::parse('next monday')->toDateString()
+                            ]);
+                        } else {
+                            $startofweek = strtotime(Carbon::now()->startOfWeek()) + (60 * 60 * 24 * 7 * $week) + 3600;
+                            $endofweek   = strtotime(Carbon::now()->endOfWeek())   + (60 * 60 * 24 * 7 * $week) + 3600;
+                            $model->where('start', '>=', date('Y-m-d 00:00:00', $startofweek));
+                            $model->where('start', '<=', date('Y-m-d 23:59:59', $endofweek));
+                        }
+                    } else {
+                        if ($week == 0) {
+                            $model->whereBetween('start', [
+                                Carbon::now(),
+                                Carbon::parse('next monday')->toDateString()
+                            ]);
+                            $model->whereDate('start', '!=', Carbon::now()->toDateString());
+                        } else {
+                            $startofweek = strtotime(Carbon::now()->startOfWeek()) + (60 * 60 * 24 * 7 * $week) + 3600;
+                            if ($week > 0) {
+                                $endofweek = strtotime(Carbon::now()->endOfWeek()) + (60 * 60 * 24 * 7 * $week);
+                            } else {
+                                $endofweek = strtotime(Carbon::now()->endOfWeek()) + (60 * 60 * 24 * 7 * $week) + 3600;
+                            }
+                            $model->where('start', '>=', date('Y-m-d 00:00:00', $startofweek));
+                            $model->where('start', '<=', date('Y-m-d 23:59:59', $endofweek));
+                            $model->whereDate('start', '!=', Carbon::now()->toDateString());
+                        }
+                    }
+                    break;
+
+                case 'month':
+                default:
+                    $model->whereMonth('start', date('m'));
+                    $model->whereYear('start', date('Y'));
+                    break;
+            }
+
+            $model->orderBy('start', 'asc');
+            $results = $model->paginate(15);
+
+            $data = $results->map(function ($item) {
+                if (!$item) return [];
+
+                $roster = JobRosterActivity::where(['guard_id' => $item->assigned_to, 'job_roster_id' => $item->id])
+                    ->get();
+
+                $signin_status    = 0;
+                $signout_time     = null;
+                $completed_status = 0;
+
+                foreach ($roster as $ros) {
+                    $signin_status = $ros->status;
+                    $signout_time  = $ros->signout_time;
+                    if ($signout_time != null) {
+                        $completed_status = 1;
+                    }
+                }
+
+                if (!empty($item->rosterActivity) && $item->rosterActivity->signin_selfie != null) {
+                    $item->rosterActivity->signin_selfie = 'https://apis.staffo.com.au/uploads/' . $item->rosterActivity->signin_selfie;
+                }
+                if (!empty($item->rosterActivity) && $item->rosterActivity->signout_selfie != null) {
+                    $item->rosterActivity->signout_selfie = 'https://apis.staffo.com.au/uploads/' . $item->rosterActivity->signout_selfie;
+                }
+
+                $signin_timez = !empty($item->rosterActivity) ? strtotime($item->rosterActivity->signin_time) : null;
+
+                return [
+                    'id'                    => $item->id,
+                    'event_id'              => $item->id,
+                    'guard_id'              => $item->assigned_to,
+                    'job_id'                => $item->site_id,
+                    'document_list'         => $item->document_list,
+                    // 'break_status'          => $item->break_status,
+                    'instructions_file'     => $item->instructions_file != '' ? 'https://' . request()->getHttpHost() . '/uploads/' . $item->instructions_file : "",
+                    'job_start_day'         => date('d', strtotime($item->start)),
+                    'job_start_date'        => date('D', strtotime($item->start)),
+                    'job_start_month'       => date('M', strtotime($item->start)),
+                    'job_start_year'        => date('Y', strtotime($item->start)),
+                    'job_end_day'           => date('d', strtotime($item->end)),
+                    'job_end_date'          => date('D', strtotime($item->end)),
+                    'job_end_month'         => date('M', strtotime($item->end)),
+                    'job_end_year'          => date('Y', strtotime($item->end)),
+                    'temp_date'             => $item->start,
+                    'start'                 => date('d-m-Y H:i:s', strtotime($item->start)),
+                    'end'                   => date('d-m-Y H:i:s', strtotime($item->end)),
+                    'publish_status'        => $item->publish_status,
+                    'add_status'            => $item->add_status,
+                    'job_status'            => $item->job_status,
+                    'shift_instructions'    => $item->shift_instructions ?? '',
+                    'signin_status'         => $signin_status,
+                    'completed_status'      => $completed_status,
+                    'site'                   => $item->site,
+                    'guard'                 => $item->guards,
+                    'is_document'           => $item->is_document,
+                    'job_roster_activities' => $item->rosterActivity,
+                    'job_roster_task'       => $item->jobRosterTask,
+                    'signin_time'           => $signin_status == 1 ? date("m-d-Y H:i", $signin_timez) : null,
+                ];
+            });
+
+            $week_start = strtotime(Carbon::now()->startOfWeek());
+            $week_end   = strtotime(Carbon::now()->endOfWeek());
+
+            if ($week != 0) {
+                $week_start = strtotime(Carbon::now()->startOfWeek()) + (60 * 60 * 24 * 7 * $week) + 3600;
+                $week_end   = strtotime(Carbon::now()->endOfWeek())   + (60 * 60 * 24 * 7 * $week) - 3600;
+            }
+
+            $count   = $results->total();
+            $message = $count == 0 ? 'No Record Found.' : 'Data Received';
+
+            return response()->json([
+                'data'       => $data,
+                'message'    => $message,
+                'start_date' => date('Y-m-d H:i:s', $week_start),
+                'end_data'   => date('Y-m-d H:i:s', $week_end),
+                'now'        => Carbon::now()->startOfWeek(),
+                'end'        => Carbon::now()->endOfWeek(),
+                'success'    => true,
+                'code'       => 200,
+                'meta'       => [
+                    'host_url'     => url('/'),
+                    'total'        => $count,
+                    'request_time' => time(),
+                ],
+            ], 200);
         }
 
-        $job_start_time = $roster_data->start;
-        $job_start_time = strtotime($job_start_time);
-
-        if ($request->has('signin_time')) {
-            $current_time = $request->input('signin_time');
-            $current_time = strtotime($current_time);
-        } else {
-            $current_time = time();
-        }
-        $diff = round(($job_start_time - $current_time) / 60, 2);
-
-        if ($request->input('location') == null || $request->input('location') == '') {
-
-            return response()->json(['success' => false, 'message' => 'Please send coordinates.', 'code' => 404]);
+        public function jobSpecificDetail(Request $request, $id)
+        {
+            // $results = $this->jobRosterRepo->jobSpecificDetail(($this->currentUser) ? $this->currentUser->id : [], $id);
+            // return new JobRosterCollection(JobRosterResource::collection($results));
         }
 
-        $coordinates = explode(',', $job->guards->current_coordinates);
+        public function reportIncident(Request $request, $id)
+        {
+            $media = array();
+            if ($request->input('photo')) {
+                $photo = $request->input('photo');
+                if (is_array($photo) && !empty($photo)) {
+                    foreach ($photo as $key => $value) {
+                        $newObject = new \stdClass();
+                        $newObject->imgPath = $this->uploader_base64($value['imgPath'], 'incident');
+                        $newObject->timestamp = $value['timestamp'];
+                        $media[] = $newObject;
+                    }
+                }
+            }
 
+            $signature = '';
+            if ($request->input('signature')) {
+                $signature = $this->uploader_base64($request->input('signature'), 'incident');
+            }
 
-        if ($job->site->coordinates == null ||  $job->site->coordinates == '') {
-            return response()->json(['success' => false, 'message' => 'Location coordinates not set.', 'code' => 404]);
+            // Prepare data with proper JSON encoding for array/object fields
+            $data = array(
+                'job_id' => $id,
+                'guard_id' => $request->input('guard_id'),
+                'roster_id' => $request->input('roster_id'),
+                'incident_date' => $request->input('date'),
+                'incident_time' => $request->input('time'),
+                'site_name' => $request->input('site_name'),
+                'injury_type' => $request->input('injury_type'),
+                'injury_detail' => $request->input('incident_detail'),
+                'people_involved' => $this->encodeJsonField($request->input('people_involved')),
+                'vehicle' => $this->encodeJsonField($request->input('vehicle')),
+                'emergency_services' => $this->encodeJsonField($request->input('emergency_services')),
+                'wittness' => $this->encodeJsonField($request->input('wittness')),
+                'photo' => $this->encodeJsonField($media),
+                'signature' => $signature
+            );
+
+            // Insert the data
+            try {
+                $job_incident_report_id = DB::table('incident_reports')->insertGetId($data);
+
+                // Rest of your code remains the same
+                $guard = DB::table('users')->where('id', $request->input('guard_id'))->first();
+                $job = DB::table('sites')->where('id', $id)->first();
+                $roster = DB::table('job_rosters')->where('id', $request->input('roster_id'))->first();
+                $main_roster = DB::table('job_new_roster')->where('id', $roster->roster_id)->first();
+
+                DB::table('job_roster_activities')
+                    ->where('job_roster_id', $request->input('roster_id'))
+                    ->where('guard_id', $request->input('guard_id'))
+                    ->update(['job_incident_report_id' => $job_incident_report_id]);
+
+                // Push notification
+                $admins = DB::table('users')
+                    ->where('notification_token', '!=', '')
+                    ->where('id', $roster->created_by)
+                    ->select('notification_token')
+                    ->get();
+
+                foreach ($admins as $a) {
+                    $notification_data = [
+                        'message' => $guard->name . ' report new incident.',
+                        'title' => 'Incident Report',
+                        'notification_token' => $a->notification_token,
+                        'page' => 'homepage',
+                        'roster_id' =>  $id
+                    ];
+                    send_push_notification($notification_data);
+                }
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Incident reported successfully!'
+                ], 200);
+            } catch (\Exception $e) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Error creating incident report',
+                    'error' => $e->getMessage(),
+                    'data' => $data // For debugging
+                ], 500);
+            }
         }
 
-        $coordinates1 = explode(',', $job->site->coordinates);
+        /**
+         * Helper function to properly encode fields that might be arrays/objects
+         */
+        private function encodeJsonField($field)
+        {
+            if (is_null($field)) {
+                return json_encode([]);
+            }
 
-        $distance = $this->distance(trim($coordinates[0]), trim($coordinates[1]), trim($coordinates1[0]), trim($coordinates1[1]));
-        if ($job->site->signin_radius > 0) {
-            $signin_radius = $job->site->signin_radius / 1000;
-        } else {
-            $signin_radius = 0.31;
-        }
-        if ($distance > $signin_radius) {
-            return response()->json(['success' => false, 'error' => 'You are ' . number_format($distance, 2) . ' km away from your job!', 'message' => 'You are ' . number_format($distance, 2) . ' km away from your job!', 'code' => 404]);
-        }
-        $is_already_signin = JobRosterActivity::where(['job_roster_id' => $id])->first();
-        if (!empty($is_already_signin)) {
-            return response()->json(['success' => false, 'error' => 'You are already signin in this job!', 'message' => 'You are already signin in this job!', 'code' => 404]);
-        }
+            if (is_array($field) || is_object($field)) {
+                return json_encode($field);
+            }
 
-        $field = 'selfie';
-        $media = '';
+            // If it's already a string, check if it needs cleaning
+            if (is_string($field)) {
+                // Clean up empty array strings
+                $cleaned = str_replace(['[{}]', '{}'], '[]', $field);
+                return $cleaned;
+            }
 
-        $media = $this->uploader_base64($request->input($field));
-
-        $update_status = JobRosterActivity::where('job_roster_id', $id)
-            ->where('guard_id', $roster_data->assigned_to)
-            ->where('status', 1)
-            ->first();
-
-        if ($update_status) {
-            JobRosterActivity::where('job_roster_id', $id)
-                ->where('guard_id', $roster_data->assigned_to)
-                ->update(['status' => 0]);
+            return json_encode([]);
         }
 
-        $dateTime = DateTime::createFromFormat('d-m-Y H:i', $request->input('time'));
-        $usFormat = $dateTime->format('m/d/Y h:i A');
-        $model = JobRosterActivity::insert([
-            'guard_id' => $roster_data->assigned_to,
-            'job_roster_id' => $id,
-            'job_incident_report_id' => null,
-            'signin_time' => $usFormat,
-            'signin_selfie' => $media,
-            'location' => $request->input('location'),
-            'status' => 1,
-            'signin_notes' => $request->filled('notes') ? $request->input('notes') : null,
-            'created_at' => now(),
-            'updated_at' => now()
-        ]);
+        public function addFootPatrolReport(Request $request, $id)
+        {
+            if (!isset($id) || $id == 0) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Site not found'
+                ], 500);
+            }
 
-        DB::table('job_rosters')->where(['id' => $id])->update(['signin_status' => 1]);
-        $guard = DB::table('users')->where('id', $roster_data->assigned_to)->first();
-        $inputTime = DateTime::createFromFormat('d-m-Y H:i', $request->input('time'));
-        $inputTimeFormatted = $inputTime->format('Y-m-d H:i');
-        if ($inputTimeFormatted <= $roster_data->start) {
-            // DB::table('job_rosters')->where(['id' => $id])->update(['in_paysheet' => 1]);
-        }
+            $media = array();
+            if ($request->input('photo')) {
+                $photo = json_decode($request->input('photo'), true);
+                if (is_array($photo) && !empty($photo)) {
+                    foreach ($photo as $key => $value) {
+                        $newObject = new \stdClass();
+                        $newObject->imgPath = $this->uploader_base64($value['imgPath'], 'footpatrol');
+                        $newObject->timestamp = $value['timestamp'];
+                        $media[] = $newObject;
+                    }
+                }
+            }
+            $signature = '';
+            if ($request->input('signature')) {
+                $signature = $this->uploader_base64($request->input('signature'), 'footpatrol');
+            }
+            $data = array(
+                'job_id' => $id,
+                'guard_id' => $request->input('guard_id'),
+                'roster_id' => $request->input('roster_id'),
+                'date' => $request->input('date'),
+                'time' => $request->input('time'),
+                'patrolling_detail' => $request->input('patrolling_detail'),
+                'site_name' => $request->input('site_name'),
+                'photo' => json_encode($media),
+                'signature' => $signature
+            );
+            $job_patrol_report_id = DB::table('foot_patrol_reports')->insertGetId($data);
 
-        if ($model) {
+            $guard = DB::table('users')->where('id', $request->input('guard_id'))->first();
+            $job = DB::table('sites')->where('id', $id)->first();
+            $roster = DB::table('job_rosters')->where('id', $request->input('roster_id'))->first();
+            $main_roster = DB::table('job_new_roster')->where('id', $roster->roster_id)->first();
 
-            $roster = DB::table('job_rosters')->where('id', $id)->first();
+            DB::table('job_roster_activities')->where('job_roster_id', $request->input('roster_id'))->where('guard_id', $request->input('guard_id'))->update(['job_patrol_report_id' => $job_patrol_report_id]);
 
+            //push notification
             $admins = DB::table('users')->where('notification_token', '!=', '')->where('id', $roster->created_by)->select('notification_token')->get();
             foreach ($admins as $a) {
                 $notification_data = [
-                    'message' => $guard->name . ' signin in their job.',
-                    'title' => 'Job Signin',
+                    'message' => $guard->name . ' report new foot patrol.',
+                    'title' => 'Foot Patrol Report',
                     'notification_token' => $a->notification_token,
                     'page' => 'homepage',
                     'roster_id' =>  $id
                 ];
                 send_push_notification($notification_data);
             }
+
             return response()->json([
                 'success' => true,
-                'message' => 'Clocked-in Successfully!'
+                'message' => 'Foot Patrol reported successfully!'
             ], 200);
         }
 
-        return response()->json([
-            'success' => true,
-            'message' => 'You are not Check-in your job.'
-        ], 200);
-    }
+        public function jobSignout(Request $request, $id)
+        {
+            $field = 'selfie';
+            $media = $this->uploader_base64($request->input($field));
 
-    function distance($lat1, $lon1, $lat2, $lon2)
-    {
-        $lat1 = doubleval($lat1);
-        $lon1 = doubleval($lon1);
-        $lat2 = doubleval($lat2);
-        $lon2 = doubleval($lon2);
+            $signout_location = $request->location ?? '';
 
-        $theta = $lon1 - $lon2;
-        $dist = sin(deg2rad($lat1)) * sin(deg2rad($lat2)) + cos(deg2rad($lat1)) * cos(deg2rad($lat2)) * cos(deg2rad($theta));
-        $dist = acos($dist);
-        $dist = rad2deg($dist);
-        $miles = $dist * 60 * 1.1515;
-        $miles = $miles * 1.609;
-        return $miles;
-    }
+            $dateTime = DateTime::createFromFormat('d-m-Y H:i', $request->input('time'));
+            $usFormat = $dateTime->format('m/d/Y h:i A');
 
-    private function uploader_base64($file, $folder = 'uploads')
-    {
-        try {
-            // $destinationPath =  rtrim('../../uploads/');
-            $public_path =  rtrim(app()->basePath('public/'), '');
-            // $public_path = str_replace('portal/public', '', $public_path);
-            // $public_path = str_replace('apis/public', '', $public_path);
-            // $public_path = str_replace('https://apis.staffoo.com.au/', 'apis.247staffingsolutions.com.au/public', $public_path);
-            $destinationPath = $public_path . $folder . '/';
-            if (!is_dir($destinationPath)) {
-                @mkdir($destinationPath, 0755, true);
+            $roster = DB::table('job_rosters')->where('id', $id)->first();
+
+            $model = DB::table('job_roster_activities')->updateOrInsert(
+                [
+                    'guard_id' => $roster->assigned_to,
+                    'job_roster_id' => $id
+                ],
+                [
+                    'signout_time'     => $usFormat,
+                    'signout_selfie'   => $media,
+                    'status'           => 0,
+                    'signout_location' => $signout_location,
+                    'signout_notes'    => $request->input('notes') ?? '',
+                    'updated_at'       => now()
+                ]
+            );
+
+            if (!$model) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Signout failed'
+                ], 400);
             }
 
-            $newName = Str::random(25);
+            DB::table('job_rosters')->where('id', $id)->update([
+                'job_status' => 'completed',
+                'signin_status' => 0
+            ]);
 
-            $fileName = $newName . '.jpg';
+            $guard = DB::table('users')->where('id', $roster->assigned_to)->first();
 
-
-            $file = base64_decode(preg_replace('#^data:image/\w+;base64,#i', '', $file));
-            file_put_contents($destinationPath . $fileName, $file);
-
-            return $fileName;
-        } catch (\Exception $e) {
-            echo $e->getMessage();
-        }
-    }
-
-    public function getGuardJobs(Request $request, $type, $duration)
-    {
-        $week    = ($request->input('week_no') != null) ? $request->input('week_no') : 0;
-        $guardId = $request->input('guard_id');
-
-        $model = JobRoster::with('guards', 'rosterActivity', 'site', 'jobRosterTask');
-
-        if ($week < 0) {
-            $model->where(['publish_status' => 1, 'assigned_to' => $guardId]);
-        } else {
-            $model->where(['publish_status' => 1, 'job_status' => $type, 'assigned_to' => $guardId]);
-        }
-
-        switch ($duration) {
-            case 'today':
-                if ($type == 'confirmed') {
-                    $now   = date('Y-m-d H:i:s');
-                    $start = strtotime($now) - (60 * 60 * 15);
-                    if (date('d', time()) == date('d', $start)) {
-                        $start = date('Y-m-d 00:00:00', time());
-                        $end   = date('Y-m-d 23:59:59', time());
-                        $model->whereBetween('start', [$start, $end]);
-                    } else {
-                        $start = date('Y-m-d 00:00:00', time());
-                        $end   = date('Y-m-d 23:59:59', time());
-                        $model->where(function ($query) use ($start, $end) {
-                            $query->whereBetween('start', [$start, $end])
-                                ->orWhereBetween('end', [$start, $end]);
-                        });
-                    }
-                } else {
-                    $model->whereDate('start', Carbon::today());
-                }
-                break;
-
-            case 'week':
-                if ($type == 'completed') {
-                    if ($week == 0) {
-                        $model->whereBetween('start', [
-                            Carbon::now()->startOfWeek(),
-                            Carbon::parse('next monday')->toDateString()
-                        ]);
-                    } else {
-                        $startofweek = strtotime(Carbon::now()->startOfWeek()) + (60 * 60 * 24 * 7 * $week) + 3600;
-                        $endofweek   = strtotime(Carbon::now()->endOfWeek())   + (60 * 60 * 24 * 7 * $week) + 3600;
-                        $model->where('start', '>=', date('Y-m-d 00:00:00', $startofweek));
-                        $model->where('start', '<=', date('Y-m-d 23:59:59', $endofweek));
-                    }
-                } else {
-                    if ($week == 0) {
-                        $model->whereBetween('start', [
-                            Carbon::now(),
-                            Carbon::parse('next monday')->toDateString()
-                        ]);
-                        $model->whereDate('start', '!=', Carbon::now()->toDateString());
-                    } else {
-                        $startofweek = strtotime(Carbon::now()->startOfWeek()) + (60 * 60 * 24 * 7 * $week) + 3600;
-                        if ($week > 0) {
-                            $endofweek = strtotime(Carbon::now()->endOfWeek()) + (60 * 60 * 24 * 7 * $week);
-                        } else {
-                            $endofweek = strtotime(Carbon::now()->endOfWeek()) + (60 * 60 * 24 * 7 * $week) + 3600;
-                        }
-                        $model->where('start', '>=', date('Y-m-d 00:00:00', $startofweek));
-                        $model->where('start', '<=', date('Y-m-d 23:59:59', $endofweek));
-                        $model->whereDate('start', '!=', Carbon::now()->toDateString());
-                    }
-                }
-                break;
-
-            case 'month':
-            default:
-                $model->whereMonth('start', date('m'));
-                $model->whereYear('start', date('Y'));
-                break;
-        }
-
-        $model->orderBy('start', 'asc');
-        $results = $model->paginate(15);
-
-        $data = $results->map(function ($item) {
-            if (!$item) return [];
-
-            $roster = JobRosterActivity::where(['guard_id' => $item->assigned_to, 'job_roster_id' => $item->id])
-                ->get();
-
-            $signin_status    = 0;
-            $signout_time     = null;
-            $completed_status = 0;
-
-            foreach ($roster as $ros) {
-                $signin_status = $ros->status;
-                $signout_time  = $ros->signout_time;
-                if ($signout_time != null) {
-                    $completed_status = 1;
-                }
-            }
-
-            if (!empty($item->rosterActivity) && $item->rosterActivity->signin_selfie != null) {
-                $item->rosterActivity->signin_selfie = 'https://apis.staffo.com.au/uploads/' . $item->rosterActivity->signin_selfie;
-            }
-            if (!empty($item->rosterActivity) && $item->rosterActivity->signout_selfie != null) {
-                $item->rosterActivity->signout_selfie = 'https://apis.staffo.com.au/uploads/' . $item->rosterActivity->signout_selfie;
-            }
-
-            $signin_timez = !empty($item->rosterActivity) ? strtotime($item->rosterActivity->signin_time) : null;
-
-            return [
-                'id'                    => $item->id,
-                'event_id'              => $item->id,
-                'guard_id'              => $item->assigned_to,
-                'job_id'                => $item->site_id,
-                // 'break_status'          => $item->break_status,
-                'instructions_file'     => $item->instructions_file != '' ? 'https://' . request()->getHttpHost() . '/uploads/' . $item->instructions_file : "",
-                'job_start_day'         => date('d', strtotime($item->start)),
-                'job_start_date'        => date('D', strtotime($item->start)),
-                'job_start_month'       => date('M', strtotime($item->start)),
-                'job_start_year'        => date('Y', strtotime($item->start)),
-                'job_end_day'           => date('d', strtotime($item->end)),
-                'job_end_date'          => date('D', strtotime($item->end)),
-                'job_end_month'         => date('M', strtotime($item->end)),
-                'job_end_year'          => date('Y', strtotime($item->end)),
-                'temp_date'             => $item->start,
-                'start'                 => date('d-m-Y H:i:s', strtotime($item->start)),
-                'end'                   => date('d-m-Y H:i:s', strtotime($item->end)),
-                'publish_status'        => $item->publish_status,
-                'add_status'            => $item->add_status,
-                'job_status'            => $item->job_status,
-                'shift_instructions'    => $item->shift_instructions ?? '',
-                'signin_status'         => $signin_status,
-                'completed_status'      => $completed_status,
-                'site'                   => $item->site,
-                'guard'                 => $item->guards,
-                'is_document'           => $item->is_document,
-                'job_roster_activities' => $item->rosterActivity,
-                'job_roster_task'       => $item->jobRosterTask,
-                'signin_time'           => $signin_status == 1 ? date("m-d-Y H:i", $signin_timez) : null,
-            ];
-        });
-
-        $week_start = strtotime(Carbon::now()->startOfWeek());
-        $week_end   = strtotime(Carbon::now()->endOfWeek());
-
-        if ($week != 0) {
-            $week_start = strtotime(Carbon::now()->startOfWeek()) + (60 * 60 * 24 * 7 * $week) + 3600;
-            $week_end   = strtotime(Carbon::now()->endOfWeek())   + (60 * 60 * 24 * 7 * $week) - 3600;
-        }
-
-        $count   = $results->total();
-        $message = $count == 0 ? 'No Record Found.' : 'Data Received';
-
-        return response()->json([
-            'data'       => $data,
-            'message'    => $message,
-            'start_date' => date('Y-m-d H:i:s', $week_start),
-            'end_data'   => date('Y-m-d H:i:s', $week_end),
-            'now'        => Carbon::now()->startOfWeek(),
-            'end'        => Carbon::now()->endOfWeek(),
-            'success'    => true,
-            'code'       => 200,
-            'meta'       => [
-                'host_url'     => url('/'),
-                'total'        => $count,
-                'request_time' => time(),
-            ],
-        ], 200);
-    }
-
-    public function jobSpecificDetail(Request $request, $id)
-    {
-        // $results = $this->jobRosterRepo->jobSpecificDetail(($this->currentUser) ? $this->currentUser->id : [], $id);
-        // return new JobRosterCollection(JobRosterResource::collection($results));
-    }
-
-    public function reportIncident(Request $request, $id)
-    {
-        $media = array();
-        if ($request->input('photo')) {
-            $photo = $request->input('photo');
-            if (is_array($photo) && !empty($photo)) {
-                foreach ($photo as $key => $value) {
-                    $newObject = new \stdClass();
-                    $newObject->imgPath = $this->uploader_base64($value['imgPath'], 'incident');
-                    $newObject->timestamp = $value['timestamp'];
-                    $media[] = $newObject;
-                }
-            }
-        }
-
-        $signature = '';
-        if ($request->input('signature')) {
-            $signature = $this->uploader_base64($request->input('signature'), 'incident');
-        }
-
-        // Prepare data with proper JSON encoding for array/object fields
-        $data = array(
-            'job_id' => $id,
-            'guard_id' => $request->input('guard_id'),
-            'roster_id' => $request->input('roster_id'),
-            'incident_date' => $request->input('date'),
-            'incident_time' => $request->input('time'),
-            'site_name' => $request->input('site_name'),
-            'injury_type' => $request->input('injury_type'),
-            'injury_detail' => $request->input('incident_detail'),
-            'people_involved' => $this->encodeJsonField($request->input('people_involved')),
-            'vehicle' => $this->encodeJsonField($request->input('vehicle')),
-            'emergency_services' => $this->encodeJsonField($request->input('emergency_services')),
-            'wittness' => $this->encodeJsonField($request->input('wittness')),
-            'photo' => $this->encodeJsonField($media),
-            'signature' => $signature
-        );
-
-        // Insert the data
-        try {
-            $job_incident_report_id = DB::table('incident_reports')->insertGetId($data);
-
-            // Rest of your code remains the same
-            $guard = DB::table('users')->where('id', $request->input('guard_id'))->first();
-            $job = DB::table('sites')->where('id', $id)->first();
-            $roster = DB::table('job_rosters')->where('id', $request->input('roster_id'))->first();
-            $main_roster = DB::table('job_new_roster')->where('id', $roster->roster_id)->first();
-
-            DB::table('job_roster_activities')
-                ->where('job_roster_id', $request->input('roster_id'))
-                ->where('guard_id', $request->input('guard_id'))
-                ->update(['job_incident_report_id' => $job_incident_report_id]);
-
-            // Push notification
             $admins = DB::table('users')
                 ->where('notification_token', '!=', '')
                 ->where('id', $roster->created_by)
@@ -1399,395 +1578,179 @@ private function saveInvoicePdf($pdfBytes, string $invoiceNumber, string $client
 
             foreach ($admins as $a) {
                 $notification_data = [
-                    'message' => $guard->name . ' report new incident.',
-                    'title' => 'Incident Report',
+                    'message' => $guard->name . ' signout in their job.',
+                    'title' => 'Job Signout',
                     'notification_token' => $a->notification_token,
                     'page' => 'homepage',
-                    'roster_id' =>  $id
+                    'roster_id' => $id
                 ];
                 send_push_notification($notification_data);
             }
 
+            if ($roster->payment_intent_id) {
+            $transaction = Transaction::where('payment_intent_id', $roster->payment_intent_id)->first();
+    
+            if ($transaction && $transaction->balance > 0 && $transaction->balance_status === 'pending') {
+                    $jobIds = json_decode($transaction->job_roster_id, true) ?? [];
+        
+                    $allCompleted = !empty($jobIds) && DB::table('job_rosters')
+                        ->whereIn('id', $jobIds)
+                        ->where('job_status', '!=', 'completed')
+                        ->doesntExist();
+        
+                    if ($allCompleted) {
+                        $this->chargeRemainingBalance($transaction);
+                    }
+                }
+            }
+
+            // ─── FINAL RESPONSE ───────────────────────
             return response()->json([
                 'success' => true,
-                'message' => 'Incident reported successfully!'
+                'message' => 'Clocked-out Successfully & Payment processed!'
             ], 200);
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Error creating incident report',
-                'error' => $e->getMessage(),
-                'data' => $data // For debugging
-            ], 500);
-        }
-    }
-
-    /**
-     * Helper function to properly encode fields that might be arrays/objects
-     */
-    private function encodeJsonField($field)
-    {
-        if (is_null($field)) {
-            return json_encode([]);
         }
 
-        if (is_array($field) || is_object($field)) {
-            return json_encode($field);
-        }
-
-        // If it's already a string, check if it needs cleaning
-        if (is_string($field)) {
-            // Clean up empty array strings
-            $cleaned = str_replace(['[{}]', '{}'], '[]', $field);
-            return $cleaned;
-        }
-
-        return json_encode([]);
-    }
-
-    public function addFootPatrolReport(Request $request, $id)
-    {
-        if (!isset($id) || $id == 0) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Site not found'
-            ], 500);
-        }
-
-        $media = array();
-        if ($request->input('photo')) {
-            $photo = json_decode($request->input('photo'), true);
-            if (is_array($photo) && !empty($photo)) {
-                foreach ($photo as $key => $value) {
-                    $newObject = new \stdClass();
-                    $newObject->imgPath = $this->uploader_base64($value['imgPath'], 'footpatrol');
-                    $newObject->timestamp = $value['timestamp'];
-                    $media[] = $newObject;
+        private function chargeRemainingBalance(\App\Models\Transaction $transaction): void
+        {
+            // Atomic claim — stops two near-simultaneous signouts from double-charging
+            $claimed = DB::table('transactions')
+                ->where('id', $transaction->id)
+                ->where('balance_status', 'pending')
+                ->update(['balance_status' => 'processing']);
+        
+            if (!$claimed) {
+                return; // someone else already claimed it
+            }
+        
+            try {
+                Stripe::setApiKey(config('services.stripe.secret'));
+        
+                $originalIntent = PaymentIntent::retrieve($transaction->payment_intent_id);
+                $balanceInCents = (int) round($transaction->balance * 100);
+        
+                $balanceIntent = PaymentIntent::create([
+                    'amount'         => $balanceInCents,
+                    'currency'       => 'aud',
+                    'customer'       => $originalIntent->customer,
+                    'payment_method' => $originalIntent->payment_method,
+                    'off_session'    => true,
+                    'confirm'        => true,
+                    'capture_method' => 'automatic',
+                ]);
+        
+                DB::table('transactions')->where('id', $transaction->id)->update([
+                    'balance_payment_intent_id' => $balanceIntent->id,
+                    'balance_status'            => $balanceIntent->status === 'succeeded' ? 'charged' : 'failed',
+                    'balance_charged_at'        => now(),
+                    'status'                    => $balanceIntent->status === 'succeeded' ? 'completed' : 'partially_captured',
+                ]);
+        
+                if ($balanceIntent->status === 'succeeded') {
+                    $this->sendBalanceInvoice($transaction->fresh(), $balanceIntent->id);
                 }
+        
+            } catch (\Stripe\Exception\CardException $e) {
+                // Card failed off-session — e.g. expired, insufficient funds, or
+                // bank demands 3DS re-authentication. Flag for manual follow-up.
+                DB::table('transactions')->where('id', $transaction->id)->update(['balance_status' => 'failed']);
+                Log::channel('daily')->error('[Balance Charge] Card declined', [
+                    'transaction_id' => $transaction->id,
+                    'error'          => $e->getMessage(),
+                ]);
+        
+            } catch (\Exception $e) {
+                DB::table('transactions')->where('id', $transaction->id)->update(['balance_status' => 'failed']);
+                Log::channel('daily')->error('[Balance Charge] Failed', [
+                    'transaction_id' => $transaction->id,
+                    'error'          => $e->getMessage(),
+                ]);
             }
         }
-        $signature = '';
-        if ($request->input('signature')) {
-            $signature = $this->uploader_base64($request->input('signature'), 'footpatrol');
-        }
-        $data = array(
-            'job_id' => $id,
-            'guard_id' => $request->input('guard_id'),
-            'roster_id' => $request->input('roster_id'),
-            'date' => $request->input('date'),
-            'time' => $request->input('time'),
-            'patrolling_detail' => $request->input('patrolling_detail'),
-            'site_name' => $request->input('site_name'),
-            'photo' => json_encode($media),
-            'signature' => $signature
-        );
-        $job_patrol_report_id = DB::table('foot_patrol_reports')->insertGetId($data);
-
-        $guard = DB::table('users')->where('id', $request->input('guard_id'))->first();
-        $job = DB::table('sites')->where('id', $id)->first();
-        $roster = DB::table('job_rosters')->where('id', $request->input('roster_id'))->first();
-        $main_roster = DB::table('job_new_roster')->where('id', $roster->roster_id)->first();
-
-        DB::table('job_roster_activities')->where('job_roster_id', $request->input('roster_id'))->where('guard_id', $request->input('guard_id'))->update(['job_patrol_report_id' => $job_patrol_report_id]);
-
-        //push notification
-        $admins = DB::table('users')->where('notification_token', '!=', '')->where('id', $roster->created_by)->select('notification_token')->get();
-        foreach ($admins as $a) {
-            $notification_data = [
-                'message' => $guard->name . ' report new foot patrol.',
-                'title' => 'Foot Patrol Report',
-                'notification_token' => $a->notification_token,
-                'page' => 'homepage',
-                'roster_id' =>  $id
-            ];
-            send_push_notification($notification_data);
-        }
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Foot Patrol reported successfully!'
-        ], 200);
-    }
-
-    public function jobSignout(Request $request, $id)
-    {
-        $field = 'selfie';
-        $media = $this->uploader_base64($request->input($field));
-
-        $signout_location = $request->location ?? '';
-
-        $dateTime = DateTime::createFromFormat('d-m-Y H:i', $request->input('time'));
-        $usFormat = $dateTime->format('m/d/Y h:i A');
-
-        $roster = DB::table('job_rosters')->where('id', $id)->first();
-
-        $model = DB::table('job_roster_activities')->updateOrInsert(
-            [
-                'guard_id' => $roster->assigned_to,
-                'job_roster_id' => $id
-            ],
-            [
-                'signout_time'     => $usFormat,
-                'signout_selfie'   => $media,
-                'status'           => 0,
-                'signout_location' => $signout_location,
-                'signout_notes'    => $request->input('notes') ?? '',
-                'updated_at'       => now()
-            ]
-        );
-
-        if (!$model) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Signout failed'
-            ], 400);
-        }
-
-        DB::table('job_rosters')->where('id', $id)->update([
-            'job_status' => 'completed',
-            'signin_status' => 0
-        ]);
-
-        $guard = DB::table('users')->where('id', $roster->assigned_to)->first();
-
-        $admins = DB::table('users')
-            ->where('notification_token', '!=', '')
-            ->where('id', $roster->created_by)
-            ->select('notification_token')
-            ->get();
-
-        foreach ($admins as $a) {
-            $notification_data = [
-                'message' => $guard->name . ' signout in their job.',
-                'title' => 'Job Signout',
-                'notification_token' => $a->notification_token,
-                'page' => 'homepage',
-                'roster_id' => $id
-            ];
-            send_push_notification($notification_data);
-        }
-
-         if ($roster->payment_intent_id) {
-        $transaction = Transaction::where('payment_intent_id', $roster->payment_intent_id)->first();
- 
-        if ($transaction && $transaction->balance > 0 && $transaction->balance_status === 'pending') {
-                $jobIds = json_decode($transaction->job_roster_id, true) ?? [];
-    
-                $allCompleted = !empty($jobIds) && DB::table('job_rosters')
-                    ->whereIn('id', $jobIds)
-                    ->where('job_status', '!=', 'completed')
-                    ->doesntExist();
-    
-                if ($allCompleted) {
-                    $this->chargeRemainingBalance($transaction);
-                }
-            }
-        }
-
-        // ─── FINAL RESPONSE ───────────────────────
-        return response()->json([
-            'success' => true,
-            'message' => 'Clocked-out Successfully & Payment processed!'
-        ], 200);
-    }
-
-    private function chargeRemainingBalance(\App\Models\Transaction $transaction): void
-    {
-        // Atomic claim — stops two near-simultaneous signouts from double-charging
-        $claimed = DB::table('transactions')
-            ->where('id', $transaction->id)
-            ->where('balance_status', 'pending')
-            ->update(['balance_status' => 'processing']);
-    
-        if (!$claimed) {
-            return; // someone else already claimed it
-        }
-    
-        try {
-            Stripe::setApiKey(config('services.stripe.secret'));
-    
-            $originalIntent = PaymentIntent::retrieve($transaction->payment_intent_id);
-            $balanceInCents = (int) round($transaction->balance * 100);
-    
-            $balanceIntent = PaymentIntent::create([
-                'amount'         => $balanceInCents,
-                'currency'       => 'aud',
-                'customer'       => $originalIntent->customer,
-                'payment_method' => $originalIntent->payment_method,
-                'off_session'    => true,
-                'confirm'        => true,
-                'capture_method' => 'automatic',
-            ]);
-    
-            DB::table('transactions')->where('id', $transaction->id)->update([
-                'balance_payment_intent_id' => $balanceIntent->id,
-                'balance_status'            => $balanceIntent->status === 'succeeded' ? 'charged' : 'failed',
-                'balance_charged_at'        => now(),
-                'status'                    => $balanceIntent->status === 'succeeded' ? 'completed' : 'partially_captured',
-            ]);
-    
-            if ($balanceIntent->status === 'succeeded') {
-                $this->sendBalanceInvoice($transaction->fresh(), $balanceIntent->id);
-            }
-    
-        } catch (\Stripe\Exception\CardException $e) {
-            // Card failed off-session — e.g. expired, insufficient funds, or
-            // bank demands 3DS re-authentication. Flag for manual follow-up.
-            DB::table('transactions')->where('id', $transaction->id)->update(['balance_status' => 'failed']);
-            Log::channel('daily')->error('[Balance Charge] Card declined', [
-                'transaction_id' => $transaction->id,
-                'error'          => $e->getMessage(),
-            ]);
-    
-        } catch (\Exception $e) {
-            DB::table('transactions')->where('id', $transaction->id)->update(['balance_status' => 'failed']);
-            Log::channel('daily')->error('[Balance Charge] Failed', [
-                'transaction_id' => $transaction->id,
-                'error'          => $e->getMessage(),
-            ]);
-        }
-    }
-    
-    private function sendBalanceInvoice(\App\Models\Transaction $transaction, string $balanceIntentId): void
-    {
-        try {
-            $user = User::find($transaction->user_id);
-            if (!$user) return;
-    
-            $invoiceData = [
-                'invoice_number'    => 'ST-' . strtoupper(substr($balanceIntentId, -8)) . '-FINAL',
-                'date'              => now()->format('d M Y'),
-                'client_name'       => $user->name,
-                'client_email'      => $user->email,
-                'payment_intent_id' => $balanceIntentId,
-                'payment_option'    => 'split-final',
-                'amount_charged'    => $transaction->balance,
-                'grand_total'       => $transaction->total_amount,
-            ];
-    
-            $pdfBytes  = app(\App\Services\InvoiceService::class)->generatePdf($invoiceData);
-            $pdfBase64 = base64_encode($pdfBytes);
-    
-            $this->saveInvoicePdf($pdfBytes, $invoiceData['invoice_number'], $user->name, $balanceIntentId);
-    
-            Mail::to($user->email)->queue(new \App\Mail\InvoiceMail(
-                pdfBase64:     $pdfBase64,
-                invoiceNumber: $invoiceData['invoice_number'],
-                clientName:    $user->name,
-                isAdmin:       false,
-            ));
-    
-            $admin = User::where('user_type', 'admin')->first();
-            if ($admin && $admin->email) {
-                Mail::to($admin->email)->queue(new \App\Mail\InvoiceMail(
+        
+        private function sendBalanceInvoice(\App\Models\Transaction $transaction, string $balanceIntentId): void
+        {
+            try {
+                $user = User::find($transaction->user_id);
+                if (!$user) return;
+        
+                $invoiceData = [
+                    'invoice_number'    => 'ST-' . strtoupper(substr($balanceIntentId, -8)) . '-FINAL',
+                    'date'              => now()->format('d M Y'),
+                    'client_name'       => $user->name,
+                    'client_email'      => $user->email,
+                    'payment_intent_id' => $balanceIntentId,
+                    'payment_option'    => 'split-final',
+                    'amount_charged'    => $transaction->balance,
+                    'grand_total'       => $transaction->total_amount,
+                ];
+        
+                $pdfBytes  = app(\App\Services\InvoiceService::class)->generatePdf($invoiceData);
+                $pdfBase64 = base64_encode($pdfBytes);
+        
+                $this->saveInvoicePdf($pdfBytes, $invoiceData['invoice_number'], $user->name, $balanceIntentId);
+        
+                Mail::to($user->email)->queue(new \App\Mail\InvoiceMail(
                     pdfBase64:     $pdfBase64,
                     invoiceNumber: $invoiceData['invoice_number'],
                     clientName:    $user->name,
-                    isAdmin:       true,
+                    isAdmin:       false,
                 ));
+        
+                $admin = User::where('user_type', 'admin')->first();
+                if ($admin && $admin->email) {
+                    Mail::to($admin->email)->queue(new \App\Mail\InvoiceMail(
+                        pdfBase64:     $pdfBase64,
+                        invoiceNumber: $invoiceData['invoice_number'],
+                        clientName:    $user->name,
+                        isAdmin:       true,
+                    ));
+                }
+            } catch (\Exception $e) {
+                Log::channel('daily')->error('[Final Invoice] Failed', [
+                    'transaction_id' => $transaction->id,
+                    'error'          => $e->getMessage(),
+                ]);
             }
-        } catch (\Exception $e) {
-            Log::channel('daily')->error('[Final Invoice] Failed', [
-                'transaction_id' => $transaction->id,
-                'error'          => $e->getMessage(),
-            ]);
         }
-    }
-    
-    public function getAllJobs()
-    {
-        $startOfWeek = now()->startOfWeek();
-        $endOfWeek = now()->endOfWeek();
+        
+        public function getAllJobs()
+        {
+            $startOfWeek = now()->startOfWeek();
+            $endOfWeek = now()->endOfWeek();
 
-        $jobs = JobRoster::whereNull('assigned_to')
-            ->whereBetween('start', [$startOfWeek, $endOfWeek])
-            ->where('job_status', 'pending')
-            ->orderBy('created_at', 'desc')
-            ->get();
+            $jobs = JobRoster::whereNull('assigned_to')
+                ->whereBetween('start', [$startOfWeek, $endOfWeek])
+                ->where('job_status', 'pending')
+                ->orderBy('created_at', 'desc')
+                ->get();
 
-        return response()->json([
-            'success' => true,
-            'data' => $jobs,
-            'week_range' => [
-                'start' => $startOfWeek->format('Y-m-d'),
-                'end' => $endOfWeek->format('Y-m-d')
-            ],
-            'total' => $jobs->count(),
-            'message' => 'Current week jobs retrieved successfully'
-        ]);
-    }
-
-    public function getStaff($id)
-    {
-
-        $user = User::findOrFail($id);
-
-        if ($user->user_type === 'customer') {
-        } elseif ($user->user_type === 'contractor') {
-        } elseif ($user->user_type === 'staff') {
-        }
-    }
-
-    public function fetchCustomerSites(Request $request)
-    {
-        if (!$request->has('user_id') || empty($request->user_id)) {
             return response()->json([
-                'success' => false,
-                'data' => null,
-                'code' => 404
+                'success' => true,
+                'data' => $jobs,
+                'week_range' => [
+                    'start' => $startOfWeek->format('Y-m-d'),
+                    'end' => $endOfWeek->format('Y-m-d')
+                ],
+                'total' => $jobs->count(),
+                'message' => 'Current week jobs retrieved successfully'
             ]);
         }
 
-        $user = User::where('id', $request->user_id)->first();
+        public function getStaff($id)
+        {
 
-        if (!$user) {
-            return response()->json([
-                'success' => false,
-                'data' => null,
-                'code' => 404
-            ]);
-        }
+            $user = User::findOrFail($id);
 
-        // Date Range
-        $start = $request->has('start') && $request->start != ''
-            ? dbFormate($request->start) . ' 00:00'
-            : Carbon::now()->startOfWeek()->format('Y-m-d 00:00');
-
-        $end = $request->has('end') && $request->end != ''
-            ? dbFormate($request->end) . ' 23:59'
-            : Carbon::now()->endOfWeek()->format('Y-m-d 23:59');
-
-        $roster_id = $request->roster_id;
-
-        $states = [];
-        if ($request->has('states') && !empty($request->states)) {
-            // If states is a string (comma-separated), convert to array
-            if (is_string($request->states)) {
-                $states = array_map('trim', explode(',', $request->states));
-            } 
-            // If states is already an array
-            else if (is_array($request->states)) {
-                $states = $request->states;
+            if ($user->user_type === 'customer') {
+            } elseif ($user->user_type === 'contractor') {
+            } elseif ($user->user_type === 'staff') {
             }
         }
 
-        /*
-        |--------------------------------------------------------------------------
-        | Extract notify_user IDs (only for contractor)
-        |--------------------------------------------------------------------------
-        */
-
-        $notifyUserIds = [];
-
-        if ($user->user_type === 'contractor') {
-            $notifyUserIds = JobRoster::whereBetween('start', [$start, $end])
-                ->where('roster_id', $roster_id)
-                ->pluck('assigned_to')
-                ->unique()
-                ->values()
-                ->toArray();
-
-            if (empty($notifyUserIds)) {
+        public function fetchCustomerSites(Request $request)
+        {
+            if (!$request->has('user_id') || empty($request->user_id)) {
                 return response()->json([
                     'success' => false,
                     'data' => null,
@@ -1795,53 +1758,86 @@ private function saveInvoicePdf($pdfBytes, string $invoiceNumber, string $client
                 ]);
             }
 
-        }
+            $user = User::where('id', $request->user_id)->first();
 
-        $contractorUserIds = [];
-        $contractorUserIds = User::whereIn('id', $notifyUserIds)
-        ->where('user_id', $user->id)
-        ->pluck('id')
-        ->toArray();
-
-        $siteIds = [];
-        if (!empty($states)) {
-            $siteIds = Site::whereIn('state', $states)->pluck('id')->toArray();
-        }
-        /*
-        |--------------------------------------------------------------------------
-        | Main Query
-        |--------------------------------------------------------------------------
-        */
-        
-        $sites = Site::whereHas('jobRoster', function ($q) use ($start, $end, $roster_id, $user, $contractorUserIds) {
-
-            $q->whereBetween('start', [$start, $end])
-                ->where('roster_id', $roster_id);
-
-            if ($user->user_type === 'staff') {
-                $q->where('assigned_to', $user->id);
+            if (!$user) {
+                return response()->json([
+                    'success' => false,
+                    'data' => null,
+                    'code' => 404
+                ]);
             }
 
-            if ($user->user_type === 'customer') {
-                $q->where('created_by', $user->id);
+            // Date Range
+            $start = $request->has('start') && $request->start != ''
+                ? dbFormate($request->start) . ' 00:00'
+                : Carbon::now()->startOfWeek()->format('Y-m-d 00:00');
+
+            $end = $request->has('end') && $request->end != ''
+                ? dbFormate($request->end) . ' 23:59'
+                : Carbon::now()->endOfWeek()->format('Y-m-d 23:59');
+
+            $roster_id = $request->roster_id;
+
+            $states = [];
+            if ($request->has('states') && !empty($request->states)) {
+                // If states is a string (comma-separated), convert to array
+                if (is_string($request->states)) {
+                    $states = array_map('trim', explode(',', $request->states));
+                } 
+                // If states is already an array
+                else if (is_array($request->states)) {
+                    $states = $request->states;
+                }
             }
+
+            /*
+            |--------------------------------------------------------------------------
+            | Extract notify_user IDs (only for contractor)
+            |--------------------------------------------------------------------------
+            */
+
+            $notifyUserIds = [];
 
             if ($user->user_type === 'contractor') {
-                $q->whereIn('assigned_to', $contractorUserIds)
-                      ->orWhere('accepted_by', $user->id);
-            }
-        });
-
-        if (!empty($states)) {
-        $sites->whereIn('state', $states);
-
-        }
-        $sites = $sites->with(['jobRoster' => function ($q) use ($start, $end, $roster_id, $user, $contractorUserIds) {
-                $q->whereBetween('start', [$start, $end])
+                $notifyUserIds = JobRoster::whereBetween('start', [$start, $end])
                     ->where('roster_id', $roster_id)
-                    ->orderBy('start', 'asc')
-                    ->with('guards','customer');
-                    
+                    ->pluck('assigned_to')
+                    ->unique()
+                    ->values()
+                    ->toArray();
+
+                if (empty($notifyUserIds)) {
+                    return response()->json([
+                        'success' => false,
+                        'data' => null,
+                        'code' => 404
+                    ]);
+                }
+
+            }
+
+            $contractorUserIds = [];
+            $contractorUserIds = User::whereIn('id', $notifyUserIds)
+            ->where('user_id', $user->id)
+            ->pluck('id')
+            ->toArray();
+
+            $siteIds = [];
+            if (!empty($states)) {
+                $siteIds = Site::whereIn('state', $states)->pluck('id')->toArray();
+            }
+            /*
+            |--------------------------------------------------------------------------
+            | Main Query
+            |--------------------------------------------------------------------------
+            */
+            
+            $sites = Site::whereHas('jobRoster', function ($q) use ($start, $end, $roster_id, $user, $contractorUserIds) {
+
+                $q->whereBetween('start', [$start, $end])
+                    ->where('roster_id', $roster_id);
+
                 if ($user->user_type === 'staff') {
                     $q->where('assigned_to', $user->id);
                 }
@@ -1853,66 +1849,53 @@ private function saveInvoicePdf($pdfBytes, string $invoiceNumber, string $client
                 if ($user->user_type === 'contractor') {
                     $q->whereIn('assigned_to', $contractorUserIds)
                     ->orWhere('accepted_by', $user->id);
-
                 }
-            }])
-            ->get();
-
-        if ($sites->isEmpty()) {
-            return response()->json([
-                'success' => false,
-                'data' => null,
-                'code' => 404
-            ]);
-        }
-
-        /*
-        |--------------------------------------------------------------------------
-        | Unpublished Shift Count
-        |--------------------------------------------------------------------------
-        */
-
-        $unpublishCountQuery = JobRoster::whereBetween('start', [$start, $end])
-            ->where('roster_id', $roster_id)
-            ->whereNotNull('assigned_to')
-            ->where('publish_status', 0)
-            ->when($user->user_type === 'staff', function ($q) use ($user) {
-                $q->where('assigned_to', $user->id);
-            })
-            ->when($user->user_type === 'customer', function ($q) use ($user) {
-                $q->where('created_by', $user->id);
-            })
-            ->when($user->user_type === 'contractor', function ($q) use ($contractorUserIds, $user) {
-                $q->whereIn('assigned_to', $contractorUserIds)
-                    ->orWhere('accepted_by', $user->id);
-
             });
 
             if (!empty($states)) {
-                $unpublishCountQuery->whereHas('site', function ($q) use ($states) {
-                    $q->whereIn('state', $states);
-                });
+            $sites->whereIn('state', $states);
+
+            }
+            $sites = $sites->with(['jobRoster' => function ($q) use ($start, $end, $roster_id, $user, $contractorUserIds) {
+                    $q->whereBetween('start', [$start, $end])
+                        ->where('roster_id', $roster_id)
+                        ->orderBy('start', 'asc')
+                        ->with('guards','customer');
+                        
+                    if ($user->user_type === 'staff') {
+                        $q->where('assigned_to', $user->id);
+                    }
+
+                    if ($user->user_type === 'customer') {
+                        $q->where('created_by', $user->id);
+                    }
+
+                    if ($user->user_type === 'contractor') {
+                        $q->whereIn('assigned_to', $contractorUserIds)
+                        ->orWhere('accepted_by', $user->id);
+
+                    }
+                }])
+                ->get();
+
+            if ($sites->isEmpty()) {
+                return response()->json([
+                    'success' => false,
+                    'data' => null,
+                    'code' => 404
+                ]);
             }
 
-            $unpublishCount = $unpublishCountQuery->count();
+            /*
+            |--------------------------------------------------------------------------
+            | Unpublished Shift Count
+            |--------------------------------------------------------------------------
+            */
 
-        /*
-        |--------------------------------------------------------------------------
-        | Daily Hours Calculation
-        |--------------------------------------------------------------------------
-        */
-
-        $data_arry = [];
-        $total_hours = 0;
-
-        $dateRange = getDatesFromRange(
-            dbFormate($request->start),
-            dbFormate($request->end)
-        );
-
-      if ($dateRange) {
-            // Base query for hours
-            $hoursBaseQuery = JobRoster::where('roster_id', $roster_id)
+            $unpublishCountQuery = JobRoster::whereBetween('start', [$start, $end])
+                ->where('roster_id', $roster_id)
+                ->whereNotNull('assigned_to')
+                ->where('publish_status', 0)
                 ->when($user->user_type === 'staff', function ($q) use ($user) {
                     $q->where('assigned_to', $user->id);
                 })
@@ -1921,1129 +1904,1160 @@ private function saveInvoicePdf($pdfBytes, string $invoiceNumber, string $client
                 })
                 ->when($user->user_type === 'contractor', function ($q) use ($contractorUserIds, $user) {
                     $q->whereIn('assigned_to', $contractorUserIds)
-                    ->orWhere('accepted_by', $user->id);
+                        ->orWhere('accepted_by', $user->id);
+
                 });
-            
-            // Apply state filter to hours base query
-            if (!empty($states)) {
-                $hoursBaseQuery->whereHas('site', function ($q) use ($states) {
-                    $q->whereIn('state', $states);
-                });
-            }
-            
-            // Get hours grouped by date
-            $hoursByDate = (clone $hoursBaseQuery)
-                ->whereBetween('start', [$start, $end])
-                ->selectRaw('DATE(start) as date, SUM(hours) as total_hours')
-                ->groupBy('date')
-                ->get()
-                ->keyBy('date');
-            
-            foreach ($dateRange as $date) {
-                $formattedDate = dateFormat($date);
-                $dailyHours = isset($hoursByDate[$date]) ? $hoursByDate[$date]->total_hours : 0;
-                
-                $data_arry[$formattedDate] = round($dailyHours, 2);
-                $total_hours += $dailyHours;
-            }
-        }
 
-        return response()->json([
-            'success' => true,
-            'data' => $sites,
-            'unpublish_shift_count' => $unpublishCount,
-            'days_hours' => $data_arry,
-            'total_hours' => round($total_hours, 2),
-            'code' => 200
-        ]);
-    }
-
-    public function getJobs(Request $request, $type, $duration, $id)
-    {
-        $week = ($request->input('week_no') != null) ? $request->input('week_no') : 0;
-
-        // Define constants if not defined elsewhere
-        $DURATION_TODAY = 'today';
-        $DURATION_WEEK = 'week';
-        $DURATION_MONTH = 'month';
-        $DEFULT_PAGES = 15; // or whatever your default pagination is
-
-        $model = JobRoster::with('guards', 'rosterActivity', 'site')
-            ->where(['publish_status' => 1, 'assigned_to' => $id])
-            ->where(function ($que) use ($type) {
-                if ($type == 'incompleted') {
-                    $que->orWhere('job_status', 'confirmed');
-                    $que->orWhere('job_status', 'pending');
-                } else {
-                    $que->orWhere('job_status', $type);
+                if (!empty($states)) {
+                    $unpublishCountQuery->whereHas('site', function ($q) use ($states) {
+                        $q->whereIn('state', $states);
+                    });
                 }
-            });
 
-        switch ($duration) {
-            case $DURATION_TODAY:
-                $model->whereDate('start', Carbon::today());
-                break;
+                $unpublishCount = $unpublishCountQuery->count();
 
-            case $DURATION_WEEK:
-                if ($week == 0) {
-                    $model->whereBetween('start', [
-                        Carbon::now()->startOfWeek(),
-                        Carbon::parse('next monday')->toDateString()
-                    ]);
-                } else {
-                    $startofweek = Carbon::now()->startOfWeek();
-                    $endofweek = Carbon::parse('next monday')->toDateString();
+            /*
+            |--------------------------------------------------------------------------
+            | Daily Hours Calculation
+            |--------------------------------------------------------------------------
+            */
 
-                    if ($week > 0) {
-                        $startofweek = strtotime("+" . $week . " week", strtotime($startofweek));
-                    } else {
-                        $startofweek = strtotime("-" . $week . " week", strtotime($startofweek));
-                    }
+            $data_arry = [];
+            $total_hours = 0;
 
-                    if ($week > 0) {
-                        $endofweek = strtotime("+" . $week . " week", strtotime($endofweek));
-                    } else {
-                        $endofweek = strtotime("-" . $week . " week", strtotime($endofweek));
-                    }
-
-                    $startofweek = date('Y-m-d H:i', $startofweek);
-                    $endofweek = date('Y-m-d H:i', $endofweek);
-                    $model->whereBetween('start', [$startofweek, $endofweek]);
-                }
-                break;
-
-            case $DURATION_MONTH:
-                $model->whereMonth('start', date('m'));
-                $model->whereYear('start', date('Y'));
-                break;
-        }
-
-        $results = $model->orderBy('start', 'asc')->paginate($DEFULT_PAGES);
-
-        return $results;
-    }
-
-    public function start_task(Request $request, $id)
-    {
-        // $this->setValidationRules(['task_id' => 'required', 'roster_id' => 'required', 'start_time' => 'required', 'location' => 'required']);
-        // if ($this->isValidRequest()) {
-        //     $this->response = ['success' => false, 'error' => $this->getErrors()];
-        //     $this->statusCode = self::STATUS_CODE_200;
-        //     return $this->sendResponse();
-        // }
-        $task = DB::table('job_roster_tasks')->where(['id' => $request->task_id, 'job_roster_id' => $request->roster_id])->first();
-        $guard = User::where('id', $id)->first();
-        // if ($guard->state != '') {
-        //     config(['app.timezone' => $this->timezone[$guard->state]]);
-        //     date_default_timezone_set($this->timezone[$guard->state]);
-        // }
-
-        $current_time = $this->time_into_decimal(date('H:i', time()));
-        $task_time = $this->time_into_decimal(date('H:i', strtotime($task->task_start)));
-        $diff = ($current_time - $task_time) * 60;
-        if ($diff > 30) {
-            return response()->json([
-                'success' => false,
-                'error' => 'You can\'t start a task!',
-                'code' => 200
-            ]);
-        }
-        $active_task = DB::table('job_roster_tasks')->where('start_time', '!=', '')->where('end_time', '=', '')
-            ->where('job_roster_id', '=', $request->input('roster_id'))->first();
-        if (!empty($active_task)) {
-            return response()->json([
-                'success' => false,
-                'error' => 'Please complete you previous task first!',
-                'code' => 200
-            ]);
-        }
-
-        DB::table('job_roster_tasks')
-            ->where(['job_roster_id' => $request->input('roster_id'), 'id' => $request->input('task_id')])
-            ->update([
-                'start_time' => $request->input('start_time'),
-                'start_location' => $request->input('location')
-            ]);
-
-        $guard = User::where('id', $id)->first();
-
-        $notification = array(
-            'guard_id' => $id,
-            'record_id' => $request->input('roster_id'),
-            'message' => $guard->name . ' start its task.',
-            'type' => 'task',
-            'send_time' => time(),
-            'title' => 'Task start'
-        );
-
-        DB::table('roster_complete_activity')->insert([
-            'roster_id' => $request->input('roster_id'),
-            'activity' => $guard->name . ' start its task.',
-            'type' => 'start_task',
-            'record_id' => $request->input('task_id'),
-            'activity_time' => time(),
-            'activity_by' => $id
-        ]);
-
-        $roster = DB::table('job_rosters')->where('id', $request->input('roster_id'))->first();
-        $admins = DB::table('users')->where('notification_token', '!=', '')->where('id', $roster->created_by)->select('notification_token')->get();
-        foreach ($admins as $a) {
-            $notification_data = [
-                'message' => $guard->name . ' start its task.',
-                'title' => 'start_task',
-                'notification_token' => $a->notification_token,
-                'page' => 'homepage',
-                'roster_id' =>  $id
-            ];
-            send_push_notification($notification_data);
-        }
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Task start successfully!',
-            'code' => 200
-        ]);
-    }
-
-    public function end_task(Request $request, $id)
-    {
-
-        $imageArray = $request->input('images');
-
-        // $this->setValidationRules(['task_id' => 'required', 'roster_id' => 'required', 'end_time' => 'required', 'location' => 'required']);
-        // if ($this->isValidRequest()) {
-        //     $this->response = ['success' => false, 'error' => $this->getErrors()];
-        //     $this->statusCode = self::STATUS_CODE_200;
-        //     return $this->sendResponse();
-        // }
-        // DB::table('job_new_roster')->where('roster_id', )->update(['job_status' => 'completed']);
-        DB::table('job_roster_tasks')
-            ->where(['job_roster_id' => $request->input('roster_id'), 'id' => $request->input('task_id')])
-            ->update(['end_time' => $request->input('end_time'), 'status' => 'completed', 'end_location' => $request->input('location'), 'note' => $request->input('task_message'), 'task_end_imgs' => !empty($imageArray) ? json_encode($imageArray) : null]);
-
-        $roster = DB::table('job_rosters')->where('id', $request->roster_id)->first();
-        $main_roster = DB::table('job_new_roster')->where('id', $roster->roster_id)->first();
-        $guard = DB::table('users')->where('id', $id)->first();
-
-        $notification = array(
-            'roster' => !empty($main_roster->id) ? $main_roster->id : null,
-            'guard_id' => $id,
-            'record_id' => $request->input('roster_id'),
-            'message' => $guard->name . ' completed its task.',
-            'type' => 'end_task',
-            'send_time' => time(),
-            'title' => 'Task Completion'
-        );
-        // DB::table('portal_notifications')->insert($notification);
-
-        DB::table('roster_complete_activity')->insert([
-            'roster_id' => $request->input('roster_id'),
-            'activity' => $guard->name . ' completed its task.',
-            'type' => 'end_task',
-            'record_id' => $request->input('task_id'),
-            'activity_time' => time(),
-            'activity_by' => $id
-        ]);
-
-        $admins = DB::table('users')->where('notification_token', '!=', '')->where('id', $roster->created_by)->select('notification_token')->get();
-        foreach ($admins as $a) {
-            $notification_data = [
-                'message' => $guard->name . ' completed its task.',
-                'title' => 'end_task',
-                'notification_token' => $a->notification_token,
-                'page' => 'homepage',
-                'roster_id' =>  $id
-            ];
-            send_push_notification($notification_data);
-        }
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Task completed successfully!',
-            'code' => 200
-        ]);
-    }
-
-    function time_into_decimal($time)
-    {
-        $time = explode(':', $time);
-        if (isset($time[1])) {
-            $time[1] = $time[1] / 60;
-        } else {
-            $time[1] = 0;
-        }
-        return ($time[0] * 1) + $time[1];
-    }
-
-    public function start_break(Request $request, $id)
-    {
-        // $this->setValidationRules(['notes' => 'required', 'roster_id' => 'required']);
-        // if ($this->isValidRequest()) {
-        //     $this->response = ['success' => false, 'error' => $this->getErrors()];
-        //     $this->statusCode = self::STATUS_CODE_200;
-        //     return $this->sendResponse();
-        // }
-        $guard = DB::table('users')->where('id', $id)->first();
-        // if ($guard->state != '') {
-        //     config(['app.timezone' => $this->timezone[$guard->state]]);
-        //     date_default_timezone_set($this->timezone[$guard->state]);
-        // }
-        $job_signin_details = DB::table('job_roster_activities')->where(['guard_id' => $id, 'job_roster_id' => $request->input('roster_id')])->first();
-
-        if ($job_signin_details) {
-            if ($job_signin_details->status == 0) {
-                return response()->json([
-                    'success' => false,
-                    'error' => 'You can\'t take a break!',
-                    'code' => 200
-                ]);
-            } else {
-                $job_start_time = $job_signin_details->signin_time;
-                $job_start_time = explode('GMT', $job_start_time);
-                $job_start_time = strtotime($job_start_time[0]);
-                $current_time = time();
-                $diff = round(($current_time - $job_start_time) / (60 * 60), 2);
-            }
-        } else {
-            return response()->json([
-                'success' => false,
-                'error' => 'You must be signin into you job to start break!',
-                'code' => 200
-            ]);
-        }
-
-        $already_break = DB::table('job_breaks')->where(['guard_id' => $id, 'roster_id' => $request->input('roster_id')])->orderBy('id', 'desc')->first();
-        if ($already_break) {
-            if ($already_break->job_status == 1) {
-                return response()->json([
-                    'success' => false,
-                    'error' => 'You are already on a break!',
-                    'code' => 200
-                ]);
-            } else {
-                $job_start_time = $already_break->end_time;
-                $job_start_time = strtotime($job_start_time);
-                $current_time = time();
-                $diff = round(($job_start_time - $current_time) / (60 * 60), 2);
-                if ($diff < 4) {
-                    return response()->json([
-                        'success' => false,
-                        'error' => 'You can take a break after 4 hours!',
-                        'code' => 200
-                    ]);
-                }
-            }
-        }
-        $data = array(
-            'roster_id' => $request->input('roster_id'),
-            'guard_id' => $id,
-            'start_time' => time(),
-            'notes' => $request->input('notes'),
-            'inform_to' => $request->input('inform'),
-            'job_status' => 1,
-            'break_start_time' => time()
-        );
-        DB::table('job_breaks')->insert($data);
-        DB::table('job_rosters')->where(['id' => $request->input('roster_id'), 'assigned_to' => $id])->update(['break_status' => 1]);
-
-        DB::table('roster_complete_activity')->insert([
-            'roster_id' => $request->input('roster_id'),
-            'activity' => $guard->name . ' start break.',
-            'type' => 'start_break',
-            'record_id' => $request->input('roster_id'),
-            'activity_time' => time(),
-            'activity_by' => $id
-        ]);
-
-        //push notification
-        $admins = DB::table('users')->where('notification_token', '!=', '')->select('notification_token')->get();
-        foreach ($admins as $a) {
-            $notification_data = [
-                'message' => $guard->name . 'start break.',
-                'title' => 'start_break',
-                'notification_token' => $a->notification_token,
-                'page' => 'homepage',
-                'roster_id' =>  $id
-            ];
-            send_push_notification($notification_data);
-        }
-        return response()->json([
-            'success' => true,
-            'message' => 'Break start successfully.',
-            'code' => 200
-        ]);
-    }
-    public function end_break(Request $request, $id)
-    {
-        // $this->setValidationRules(['roster_id' => 'required']);
-        // if ($this->isValidRequest()) {
-        //     $this->response = ['success' => false, 'error' => $this->getErrors()];
-        //     $this->statusCode = self::STATUS_CODE_200;
-        //     return $this->sendResponse();
-        // }
-        $guard = DB::table('users')->where('id', $id)->first();
-        // if ($guard->state != '') {
-        //     config(['app.timezone' => $this->timezone[$guard->state]]);
-        //     date_default_timezone_set($this->timezone[$guard->state]);
-        // }
-
-        DB::table('job_breaks')->where(['roster_id' => $request->input('roster_id'), 'guard_id' => $id, 'job_status' => 1])->update(['job_status' => 0, 'end_time' => time(), 'break_end_time' => time(), 'break_end_notes' => ($request->has('notes') ? $request->notes : '')]);
-
-        DB::table('job_rosters')->where(['id' => $request->input('roster_id'), 'assigned_to' => $id])->update(['break_status' => 0]);
-
-        DB::table('roster_complete_activity')->insert([
-            'roster_id' => $request->input('roster_id'),
-            'activity' => $guard->name . ' end its break.',
-            'type' => 'end_break',
-            'record_id' => $request->input('roster_id'),
-            'activity_time' => time(),
-            'activity_by' => $id
-        ]);
-
-        //push notification
-        // $admins = DB::table('users')->where('notification_token', '!=', '')->select('notification_token')->get();
-        // foreach($admins as $a)
-        // {
-        //     $notification_data = [
-        //         'message' => $guard->name.' end its break.',
-        //         'title' => 'end_break',
-        //         'notification_token' => $a->notification_token,
-        //         'page' => 'homepage',
-        //         'roster_id' =>  $id
-        //     ]; 
-        //     send_push_notification($notification_data);
-        // }
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Break Completed.',
-            'code' => 200
-        ]);
-    }
-
-    public function updateRosterTime(Request $request)
-    {
-        $jobRosterTime = JobRoster::where('id', $request->id)->first();
-        $old_data = $jobRosterTime;
-        $hours = getShiftHours(dbFormateDateTime($request->start), dbFormateDateTime($request->end), $jobRosterTime->site_id, 0);
-        $guardWorkingHours =  calCulateGuardWeekHours(dbFormateDateTime($request->start), dbFormateDateTime($request->end));
-        if ($jobRosterTime) {
-            $jobRosterTime->start = dbFormateDateTime($request->start);
-            $jobRosterTime->end = dbFormateDateTime($request->end);
-            $jobRosterTime->hours = $guardWorkingHours;
-            $jobRosterTime->morning_hours = (!empty($hours['morning']) ? $hours['morning'] : 0.0);
-            $jobRosterTime->night_hours = (!empty($hours['night']) ? $hours['night'] : 0.0);
-            $jobRosterTime->saturday_morning_hours = (!empty($hours['saturday_morning']) ? $hours['saturday_morning'] : 0.0);
-            $jobRosterTime->saturday_night_hours = (!empty($hours['saturday_night']) ? $hours['saturday_night'] : 0.0);
-            $jobRosterTime->sunday_morning_hours = (!empty($hours['sunday_morning']) ? $hours['sunday_morning'] : 0.0);
-            $jobRosterTime->sunday_night_hours = (!empty($hours['sunday_night']) ? $hours['sunday_night'] : 0.0);
-            $jobRosterTime->ph_morning_hours = (!empty($hours['ph_morning']) ? $hours['ph_morning'] : 0.0);
-            $jobRosterTime->ph_night_hours = (!empty($hours['ph_night']) ? $hours['ph_night'] : 0.0);
-            $jobRosterTime->update();
-            // $check = checkGuardShiftTimingUpdate($request->start, $request->end, $jobRosterTime->assigned_to, $jobRosterTime->roster_id);
-            // $jobRosterTime->conf_start = (!empty($check['start']) ? dbFormateDateTime($check['start']) : '');
-            // $jobRosterTime->conf_end = (!empty($check['end']) ? dbFormateDateTime($check['end']) : '');
-            // $jobRosterTime->conflict =  (!empty($check['conf']) ? $check['conf'] : '');
-            $jobRosterTime->update();
-            // $updatedjobRosterTime = $jobRosterTime->getChanges();
-            // jobRosterActions($request->admin_id,'update_shift_time',$jobRosterTime->id, 'job_roster',$old_data, $updatedjobRosterTime);
-
-            $admin_name = getUserName($request->admin_id);
-            $currnet_time = time();
-            // shiftCompleteActivity($jobRosterTime->id, $admin_name. ' Update Time of this Shift', 'update_shift_time', $jobRosterTime->id, $currnet_time, $request->admin_id);
-
-            return response()->json(['message' => "Shift Time Updated",  'code' => 200, 'success' => true]);
-        } else {
-            return response()->json(['message' => "Shift not Found!",  'code' => 404, 'success' => false]);
-        }
-    }
-
-    function getrosterhoursum(Request $request)
-    {
-        if (!empty($request['date'])) {
-            $dateRange  = explode(' - ', $request['date']);
-            $from       = strtotime(str_replace('/', '-', $dateRange[0]));
-            $to         = strtotime(str_replace('/', '-', $dateRange[1])) + 86399;
-        } else {
-            $to   = time();
-            $from = $to - (60 * 60 * 24 * 14);
-        }
-
-        $startDate = date('Y-m-d H:i', $from);
-        $endDate   = date('Y-m-d H:i', $to);
-
-        $query = DB::table('job_rosters AS jr')
-            ->select(
-                'jr.*',
-                'j.id AS site_id',
-                'j.user_id',
-                'j.state',
-                'j.address',
-                'j.site_name',
-                'cust.name AS customer_name',
-                // 'g.phone AS guard_phone',
-                'g.name  AS guard_name',
-                'ja.signin_time',
-                'ja.signout_time',
-                'jr.id         AS id',
-                'jr.assigned_to AS guard_id',
-                'jr.created_by  AS customer_id'
-            )
-            ->join('sites AS j', 'j.id', '=', 'jr.site_id')
-            ->leftJoin('job_roster_activities AS ja', 'ja.job_roster_id', '=', 'jr.id')
-            ->leftJoin('users AS g',    'g.id',    '=', 'jr.assigned_to')
-            ->leftJoin('users AS cust', 'cust.id', '=', 'jr.created_by')
-            ->whereIn('jr.job_status', ['completed', 'pending', 'confirmed'])
-            ->whereBetween('jr.start', [$startDate, $endDate])
-            ->orderBy('g.name', 'ASC')
-            ->orderBy('jr.start');
-
-        if (!empty($request['customer_id'])) {
-            $query->where('j.user_id', $request['customer_id']);
-        }
-
-        $results = $query->get()->toArray();
-        $results = json_decode(json_encode($results), true);
-
-        $chargerate = ChargeRate::where('id', 1)
-            ->where('status', 'active')
-            ->first();
-
-        foreach ($results as $key => $roster) {
-
-            $roster['day_rate']            = 0;
-            $roster['night_rate']          = 0;
-            $roster['public_holiday_rate'] = 0;
-            $roster['saturday_rate']       = 0;
-            $roster['sunday_rate']         = 0;
-            $roster['total_amount']        = 0;
-            $roster['ot']                  = 0;
-
-            if (!empty($chargerate)) {
-
-                $roster['day_rate']            = $chargerate->def_metro_mon_to_fri_day_rate;
-                $roster['night_rate']          = $chargerate->def_metro_mon_to_fri_night_rate;
-                $roster['public_holiday_rate'] = $chargerate->def_metro_pub_holi_day_rate;
-                $roster['saturday_rate']       = $chargerate->def_metro_sat_day_rate;
-                $roster['sunday_rate']         = $chargerate->def_metro_sun_day_rate;
-
-                $roster['total_amount'] =
-                    ($roster['day_rate']            * $roster['morning_hours']) +
-                    ($roster['night_rate']           * $roster['night_hours']) +
-                    ($roster['public_holiday_rate']  * ($roster['ph_morning_hours']       + $roster['ph_night_hours'])) +
-                    ($roster['saturday_rate']        * ($roster['saturday_morning_hours'] + $roster['saturday_night_hours'])) +
-                    ($roster['sunday_rate']          * ($roster['sunday_morning_hours']   + $roster['sunday_night_hours']));
-            }
-
-            $results[$key] = $roster;
-        }
-
-        // ── Normal type: aggregate into hour buckets ─────────────────────────────
-        if ($request->type === 'normal') {
-
-            $total_hours = [
-                0 => ['name' => 'M-F Morning Hours',    'hours' => 0, 'payrate' => 0, 'totalpay' => 0],
-                1 => ['name' => 'M-F Night Hours',       'hours' => 0, 'payrate' => 0, 'totalpay' => 0],
-                2 => ['name' => 'Saturday Hours',        'hours' => 0, 'payrate' => 0, 'totalpay' => 0],
-                3 => ['name' => 'Sunday Hours',          'hours' => 0, 'payrate' => 0, 'totalpay' => 0],
-                4 => ['name' => 'Public Holiday Hours',  'hours' => 0, 'payrate' => 0, 'totalpay' => 0],
-            ];
-
-            foreach ($results as $shift) {
-
-                // Helper closure to reduce repetition
-                $add = function (int $index, float $hours, float $rate) use (&$total_hours, $shift) {
-                    $total_hours[$index]['hours']      += $hours;
-                    $total_hours[$index]['payrate']     = $rate;
-                    $total_hours[$index]['totalpay']    = $total_hours[$index]['hours'] * $rate;
-                    // $total_hours[$index]['site_po_wo']  = $shift['site_po_wo'];
-                    // $total_hours[$index]['po_wo']       = $shift['po_wo'];
-                };
-
-                $add(0, $shift['morning_hours'],                                                $shift['day_rate']);
-                $add(1, $shift['night_hours'],                                                  $shift['night_rate']);
-                $add(2, $shift['saturday_morning_hours'] + $shift['saturday_night_hours'],      $shift['saturday_rate']);
-                $add(3, $shift['sunday_morning_hours']   + $shift['sunday_night_hours'],        $shift['sunday_rate']);
-                $add(4, $shift['ph_morning_hours']       + $shift['ph_night_hours'],            $shift['public_holiday_rate']);
-            }
-
-            // Always return success; let the frontend decide if data is empty
-            return response()->json([
-                'success' => !empty(array_filter($total_hours, fn($b) => $b['hours'] > 0)),
-                'code'    => 200,
-                'data'    => $total_hours,
-            ]);
-        }
-    }
-
-    function getTimesheet(Request $request)
-    {
-        $limit = 10;
-        $offset = 0;
-        if ($request->has('pageIndex') && $request->has('pageSize')) {
-            $offset = $request->pageIndex * $request->pageSize;
-            $limit = $request->pageSize;
-        }
-
-        // Build base query
-        $baseQuery = JobRoster::query();
-
-        if ($request->has('start') && $request->start != '') {
-            $start = dbFormate($request->start);
-        } else {
-            $start = Carbon::now()->startOfWeek()->toDateString();
-        }
-        if ($request->has('end') && $request->end != '') {
-            $end = dbFormate($request->end);
-        } else {
-            $end = Carbon::now()->endOfWeek()->toDateString();
-        }
-
-        // Apply filters
-        if ($request->has('guard_id') && !empty($request->guard_id)) {
-            $baseQuery->whereIn('job_rosters.assigned_to', $request->guard_id);
-        }
-
-        if ($request->has('customer_ids') && !empty($request->customer_ids)) {
-            $sites_id = Site::whereIn('user_id', $request->customer_ids)->pluck('id')->toArray();
-            $baseQuery->whereIn('job_rosters.site_id', $sites_id);
-        }
-
-        if ($request->has('sites_ids') && !empty($request->sites_ids)) {
-            $baseQuery->whereIn('job_rosters.site_id', $request->sites_ids);
-        }
-
-        // Apply date filters
-        $baseQuery->whereDate('job_rosters.start', '>=', $start)
-            ->whereDate('job_rosters.start', '<=', $end)
-            ->whereNotNull('job_rosters.assigned_to');
-
-        // Get total count
-        $totalQuery = clone $baseQuery;
-        $total = $totalQuery->count('job_rosters.id');
-
-        // Get the timesheet data with proper grouping
-        $timesheet = $baseQuery
-            ->leftJoin('users', 'users.id', '=', 'job_rosters.assigned_to')
-            ->select(
-                'job_rosters.id as shift_id',
-                'job_rosters.start',
-                'job_rosters.end',
-                'users.id as user_id',
-                'users.name',
-                'job_rosters.in_paysheet',
-                'job_rosters.morning_hours',
-                'job_rosters.night_hours',
-                'job_rosters.saturday_morning_hours',
-                'job_rosters.saturday_night_hours',
-                'job_rosters.sunday_morning_hours',
-                'job_rosters.sunday_night_hours',
-                'job_rosters.ph_morning_hours',
-                'job_rosters.ph_night_hours',
-                'job_rosters.hours'
-            )
-            ->orderBy('users.name')
-            ->orderBy('job_rosters.start')
-            ->get();
-
-        // Process the results to group by user
-        $mainArr = [];
-        foreach ($timesheet as $shift) {
-            $userId = $shift['user_id'];
-
-            // Get shift hours breakdown
-            $job_hours = getShiftHours(
-                date('m/d/Y H:i', strtotime($shift['start'])),
-                date('m/d/Y H:i', strtotime($shift['end']))
+            $dateRange = getDatesFromRange(
+                dbFormate($request->start),
+                dbFormate($request->end)
             );
 
-            if (!isset($mainArr[$userId])) {
-                $mainArr[$userId] = [
-                    'id' => $shift['user_id'],
-                    'name' => $shift['name'],
-                    'hours' => (float)$shift['hours'],
-                    'morning_hours' => (float)$job_hours['morning'],
-                    'night_hours' => (float)$job_hours['night'],
-                    'saturday_morning_hours' => (float)$job_hours['saturday_morning'],
-                    'saturday_night_hours' => (float)$job_hours['saturday_night'],
-                    'sunday_morning_hours' => (float)$job_hours['sunday_morning'],
-                    'sunday_night_hours' => (float)$job_hours['sunday_night'],
-                    'ph_morning_hours' => (float)$job_hours['ph_morning'],
-                    'ph_night_hours' => (float)$job_hours['ph_night'],
-                    'shift_collection' => [$shift['shift_id']],
-                ];
-            } else {
-                // Update the aggregated values
-                $mainArr[$userId]['hours'] += (float)$shift['hours'];
-                $mainArr[$userId]['morning_hours'] += (float)$job_hours['morning'];
-                $mainArr[$userId]['night_hours'] += (float)$job_hours['night'];
-                $mainArr[$userId]['saturday_morning_hours'] += (float)$job_hours['saturday_morning'];
-                $mainArr[$userId]['saturday_night_hours'] += (float)$job_hours['saturday_night'];
-                $mainArr[$userId]['sunday_morning_hours'] += (float)$job_hours['sunday_morning'];
-                $mainArr[$userId]['sunday_night_hours'] += (float)$job_hours['sunday_night'];
-                $mainArr[$userId]['ph_morning_hours'] += (float)$job_hours['ph_morning'];
-                $mainArr[$userId]['ph_night_hours'] += (float)$job_hours['ph_night'];
-                $mainArr[$userId]['shift_collection'][] = $shift['shift_id'];
+        if ($dateRange) {
+                // Base query for hours
+                $hoursBaseQuery = JobRoster::where('roster_id', $roster_id)
+                    ->when($user->user_type === 'staff', function ($q) use ($user) {
+                        $q->where('assigned_to', $user->id);
+                    })
+                    ->when($user->user_type === 'customer', function ($q) use ($user) {
+                        $q->where('created_by', $user->id);
+                    })
+                    ->when($user->user_type === 'contractor', function ($q) use ($contractorUserIds, $user) {
+                        $q->whereIn('assigned_to', $contractorUserIds)
+                        ->orWhere('accepted_by', $user->id);
+                    });
+                
+                // Apply state filter to hours base query
+                if (!empty($states)) {
+                    $hoursBaseQuery->whereHas('site', function ($q) use ($states) {
+                        $q->whereIn('state', $states);
+                    });
+                }
+                
+                // Get hours grouped by date
+                $hoursByDate = (clone $hoursBaseQuery)
+                    ->whereBetween('start', [$start, $end])
+                    ->selectRaw('DATE(start) as date, SUM(hours) as total_hours')
+                    ->groupBy('date')
+                    ->get()
+                    ->keyBy('date');
+                
+                foreach ($dateRange as $date) {
+                    $formattedDate = dateFormat($date);
+                    $dailyHours = isset($hoursByDate[$date]) ? $hoursByDate[$date]->total_hours : 0;
+                    
+                    $data_arry[$formattedDate] = round($dailyHours, 2);
+                    $total_hours += $dailyHours;
+                }
             }
-        }
 
-        $timesheet = array_values($mainArr);
-
-        // Apply pagination to the processed array
-        $paginatedData = array_slice($timesheet, $offset, $limit);
-        $total = count($timesheet);
-
-        if (count($paginatedData) > 0) {
             return response()->json([
                 'success' => true,
-                'code' => 200,
-                'length' => $total,
-                'pageIndex' => $request->pageIndex ?? 0,
-                'pageSize' => $limit,
-                'message' => 'Timesheet found.',
-                'data' => $paginatedData
+                'data' => $sites,
+                'unpublish_shift_count' => $unpublishCount,
+                'days_hours' => $data_arry,
+                'total_hours' => round($total_hours, 2),
+                'code' => 200
             ]);
-        } else {
+        }
+
+        public function getJobs(Request $request, $type, $duration, $id)
+        {
+            $week = ($request->input('week_no') != null) ? $request->input('week_no') : 0;
+
+            // Define constants if not defined elsewhere
+            $DURATION_TODAY = 'today';
+            $DURATION_WEEK = 'week';
+            $DURATION_MONTH = 'month';
+            $DEFULT_PAGES = 15; // or whatever your default pagination is
+
+            $model = JobRoster::with('guards', 'rosterActivity', 'site')
+                ->where(['publish_status' => 1, 'assigned_to' => $id])
+                ->where(function ($que) use ($type) {
+                    if ($type == 'incompleted') {
+                        $que->orWhere('job_status', 'confirmed');
+                        $que->orWhere('job_status', 'pending');
+                    } else {
+                        $que->orWhere('job_status', $type);
+                    }
+                });
+
+            switch ($duration) {
+                case $DURATION_TODAY:
+                    $model->whereDate('start', Carbon::today());
+                    break;
+
+                case $DURATION_WEEK:
+                    if ($week == 0) {
+                        $model->whereBetween('start', [
+                            Carbon::now()->startOfWeek(),
+                            Carbon::parse('next monday')->toDateString()
+                        ]);
+                    } else {
+                        $startofweek = Carbon::now()->startOfWeek();
+                        $endofweek = Carbon::parse('next monday')->toDateString();
+
+                        if ($week > 0) {
+                            $startofweek = strtotime("+" . $week . " week", strtotime($startofweek));
+                        } else {
+                            $startofweek = strtotime("-" . $week . " week", strtotime($startofweek));
+                        }
+
+                        if ($week > 0) {
+                            $endofweek = strtotime("+" . $week . " week", strtotime($endofweek));
+                        } else {
+                            $endofweek = strtotime("-" . $week . " week", strtotime($endofweek));
+                        }
+
+                        $startofweek = date('Y-m-d H:i', $startofweek);
+                        $endofweek = date('Y-m-d H:i', $endofweek);
+                        $model->whereBetween('start', [$startofweek, $endofweek]);
+                    }
+                    break;
+
+                case $DURATION_MONTH:
+                    $model->whereMonth('start', date('m'));
+                    $model->whereYear('start', date('Y'));
+                    break;
+            }
+
+            $results = $model->orderBy('start', 'asc')->paginate($DEFULT_PAGES);
+
+            return $results;
+        }
+
+        public function start_task(Request $request, $id)
+        {
+            // $this->setValidationRules(['task_id' => 'required', 'roster_id' => 'required', 'start_time' => 'required', 'location' => 'required']);
+            // if ($this->isValidRequest()) {
+            //     $this->response = ['success' => false, 'error' => $this->getErrors()];
+            //     $this->statusCode = self::STATUS_CODE_200;
+            //     return $this->sendResponse();
+            // }
+            $task = DB::table('job_roster_tasks')->where(['id' => $request->task_id, 'job_roster_id' => $request->roster_id])->first();
+            $guard = User::where('id', $id)->first();
+            // if ($guard->state != '') {
+            //     config(['app.timezone' => $this->timezone[$guard->state]]);
+            //     date_default_timezone_set($this->timezone[$guard->state]);
+            // }
+
+            $current_time = $this->time_into_decimal(date('H:i', time()));
+            $task_time = $this->time_into_decimal(date('H:i', strtotime($task->task_start)));
+            $diff = ($current_time - $task_time) * 60;
+            if ($diff > 30) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'You can\'t start a task!',
+                    'code' => 200
+                ]);
+            }
+            $active_task = DB::table('job_roster_tasks')->where('start_time', '!=', '')->where('end_time', '=', '')
+                ->where('job_roster_id', '=', $request->input('roster_id'))->first();
+            if (!empty($active_task)) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'Please complete you previous task first!',
+                    'code' => 200
+                ]);
+            }
+
+            DB::table('job_roster_tasks')
+                ->where(['job_roster_id' => $request->input('roster_id'), 'id' => $request->input('task_id')])
+                ->update([
+                    'start_time' => $request->input('start_time'),
+                    'start_location' => $request->input('location')
+                ]);
+
+            $guard = User::where('id', $id)->first();
+
+            $notification = array(
+                'guard_id' => $id,
+                'record_id' => $request->input('roster_id'),
+                'message' => $guard->name . ' start its task.',
+                'type' => 'task',
+                'send_time' => time(),
+                'title' => 'Task start'
+            );
+
+            DB::table('roster_complete_activity')->insert([
+                'roster_id' => $request->input('roster_id'),
+                'activity' => $guard->name . ' start its task.',
+                'type' => 'start_task',
+                'record_id' => $request->input('task_id'),
+                'activity_time' => time(),
+                'activity_by' => $id
+            ]);
+
+            $roster = DB::table('job_rosters')->where('id', $request->input('roster_id'))->first();
+            $admins = DB::table('users')->where('notification_token', '!=', '')->where('id', $roster->created_by)->select('notification_token')->get();
+            foreach ($admins as $a) {
+                $notification_data = [
+                    'message' => $guard->name . ' start its task.',
+                    'title' => 'start_task',
+                    'notification_token' => $a->notification_token,
+                    'page' => 'homepage',
+                    'roster_id' =>  $id
+                ];
+                send_push_notification($notification_data);
+            }
+
             return response()->json([
-                'success' => false,
-                'code' => 200,
-                'length' => $total,
-                'pageIndex' => $request->pageIndex ?? 0,
-                'pageSize' => $limit,
-                'message' => 'No timesheet found!',
-                'data' => $paginatedData
+                'success' => true,
+                'message' => 'Task start successfully!',
+                'code' => 200
             ]);
         }
-    }
 
-    public function getTimeSheetDetails(Request $request)
-    {
-        $rosters = JobRoster::whereIn('id', $request->shift_collection)
-            ->with(['site', 'guards', 'customer', 'rosterActivity'])->get();
+        public function end_task(Request $request, $id)
+        {
 
-        //$data = TimeSheetDetailsResource::collection($rosters);
-        $data = $rosters;
-        if (count($data) > 0) {
-            return response()->json(['success' => true, 'data' => $data]);
+            $imageArray = $request->input('images');
+
+            // $this->setValidationRules(['task_id' => 'required', 'roster_id' => 'required', 'end_time' => 'required', 'location' => 'required']);
+            // if ($this->isValidRequest()) {
+            //     $this->response = ['success' => false, 'error' => $this->getErrors()];
+            //     $this->statusCode = self::STATUS_CODE_200;
+            //     return $this->sendResponse();
+            // }
+            // DB::table('job_new_roster')->where('roster_id', )->update(['job_status' => 'completed']);
+            DB::table('job_roster_tasks')
+                ->where(['job_roster_id' => $request->input('roster_id'), 'id' => $request->input('task_id')])
+                ->update(['end_time' => $request->input('end_time'), 'status' => 'completed', 'end_location' => $request->input('location'), 'note' => $request->input('task_message'), 'task_end_imgs' => !empty($imageArray) ? json_encode($imageArray) : null]);
+
+            $roster = DB::table('job_rosters')->where('id', $request->roster_id)->first();
+            $main_roster = DB::table('job_new_roster')->where('id', $roster->roster_id)->first();
+            $guard = DB::table('users')->where('id', $id)->first();
+
+            $notification = array(
+                'roster' => !empty($main_roster->id) ? $main_roster->id : null,
+                'guard_id' => $id,
+                'record_id' => $request->input('roster_id'),
+                'message' => $guard->name . ' completed its task.',
+                'type' => 'end_task',
+                'send_time' => time(),
+                'title' => 'Task Completion'
+            );
+            // DB::table('portal_notifications')->insert($notification);
+
+            DB::table('roster_complete_activity')->insert([
+                'roster_id' => $request->input('roster_id'),
+                'activity' => $guard->name . ' completed its task.',
+                'type' => 'end_task',
+                'record_id' => $request->input('task_id'),
+                'activity_time' => time(),
+                'activity_by' => $id
+            ]);
+
+            $admins = DB::table('users')->where('notification_token', '!=', '')->where('id', $roster->created_by)->select('notification_token')->get();
+            foreach ($admins as $a) {
+                $notification_data = [
+                    'message' => $guard->name . ' completed its task.',
+                    'title' => 'end_task',
+                    'notification_token' => $a->notification_token,
+                    'page' => 'homepage',
+                    'roster_id' =>  $id
+                ];
+                send_push_notification($notification_data);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Task completed successfully!',
+                'code' => 200
+            ]);
         }
-        return response()->json(['success' => false, 'data' => $data]);
-    }
 
-    public function jobStatusManualApproved(Request $request)
-    {
-        $jobStatusManualApproved = JobRoster::where('id', $request->roster_id)->first();
-        if ($jobStatusManualApproved) {
-            if ($jobStatusManualApproved->in_paysheet == 0) {
-                $jobStatusManualApproved->in_paysheet = 1;
-                $jobStatusManualApproved->update();
-
-                return response()->json(['success' => true, 'msg' => 'Status Updated Successfully!']);
+        function time_into_decimal($time)
+        {
+            $time = explode(':', $time);
+            if (isset($time[1])) {
+                $time[1] = $time[1] / 60;
             } else {
-                $jobStatusManualApproved->in_paysheet = 0;
-                $jobStatusManualApproved->update();
+                $time[1] = 0;
+            }
+            return ($time[0] * 1) + $time[1];
+        }
+
+        public function start_break(Request $request, $id)
+        {
+            // $this->setValidationRules(['notes' => 'required', 'roster_id' => 'required']);
+            // if ($this->isValidRequest()) {
+            //     $this->response = ['success' => false, 'error' => $this->getErrors()];
+            //     $this->statusCode = self::STATUS_CODE_200;
+            //     return $this->sendResponse();
+            // }
+            $guard = DB::table('users')->where('id', $id)->first();
+            // if ($guard->state != '') {
+            //     config(['app.timezone' => $this->timezone[$guard->state]]);
+            //     date_default_timezone_set($this->timezone[$guard->state]);
+            // }
+            $job_signin_details = DB::table('job_roster_activities')->where(['guard_id' => $id, 'job_roster_id' => $request->input('roster_id')])->first();
+
+            if ($job_signin_details) {
+                if ($job_signin_details->status == 0) {
+                    return response()->json([
+                        'success' => false,
+                        'error' => 'You can\'t take a break!',
+                        'code' => 200
+                    ]);
+                } else {
+                    $job_start_time = $job_signin_details->signin_time;
+                    $job_start_time = explode('GMT', $job_start_time);
+                    $job_start_time = strtotime($job_start_time[0]);
+                    $current_time = time();
+                    $diff = round(($current_time - $job_start_time) / (60 * 60), 2);
+                }
+            } else {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'You must be signin into you job to start break!',
+                    'code' => 200
+                ]);
+            }
+
+            $already_break = DB::table('job_breaks')->where(['guard_id' => $id, 'roster_id' => $request->input('roster_id')])->orderBy('id', 'desc')->first();
+            if ($already_break) {
+                if ($already_break->job_status == 1) {
+                    return response()->json([
+                        'success' => false,
+                        'error' => 'You are already on a break!',
+                        'code' => 200
+                    ]);
+                } else {
+                    $job_start_time = $already_break->end_time;
+                    $job_start_time = strtotime($job_start_time);
+                    $current_time = time();
+                    $diff = round(($job_start_time - $current_time) / (60 * 60), 2);
+                    if ($diff < 4) {
+                        return response()->json([
+                            'success' => false,
+                            'error' => 'You can take a break after 4 hours!',
+                            'code' => 200
+                        ]);
+                    }
+                }
+            }
+            $data = array(
+                'roster_id' => $request->input('roster_id'),
+                'guard_id' => $id,
+                'start_time' => time(),
+                'notes' => $request->input('notes'),
+                'inform_to' => $request->input('inform'),
+                'job_status' => 1,
+                'break_start_time' => time()
+            );
+            DB::table('job_breaks')->insert($data);
+            DB::table('job_rosters')->where(['id' => $request->input('roster_id'), 'assigned_to' => $id])->update(['break_status' => 1]);
+
+            DB::table('roster_complete_activity')->insert([
+                'roster_id' => $request->input('roster_id'),
+                'activity' => $guard->name . ' start break.',
+                'type' => 'start_break',
+                'record_id' => $request->input('roster_id'),
+                'activity_time' => time(),
+                'activity_by' => $id
+            ]);
+
+            //push notification
+            $admins = DB::table('users')->where('notification_token', '!=', '')->select('notification_token')->get();
+            foreach ($admins as $a) {
+                $notification_data = [
+                    'message' => $guard->name . 'start break.',
+                    'title' => 'start_break',
+                    'notification_token' => $a->notification_token,
+                    'page' => 'homepage',
+                    'roster_id' =>  $id
+                ];
+                send_push_notification($notification_data);
+            }
+            return response()->json([
+                'success' => true,
+                'message' => 'Break start successfully.',
+                'code' => 200
+            ]);
+        }
+        public function end_break(Request $request, $id)
+        {
+            // $this->setValidationRules(['roster_id' => 'required']);
+            // if ($this->isValidRequest()) {
+            //     $this->response = ['success' => false, 'error' => $this->getErrors()];
+            //     $this->statusCode = self::STATUS_CODE_200;
+            //     return $this->sendResponse();
+            // }
+            $guard = DB::table('users')->where('id', $id)->first();
+            // if ($guard->state != '') {
+            //     config(['app.timezone' => $this->timezone[$guard->state]]);
+            //     date_default_timezone_set($this->timezone[$guard->state]);
+            // }
+
+            DB::table('job_breaks')->where(['roster_id' => $request->input('roster_id'), 'guard_id' => $id, 'job_status' => 1])->update(['job_status' => 0, 'end_time' => time(), 'break_end_time' => time(), 'break_end_notes' => ($request->has('notes') ? $request->notes : '')]);
+
+            DB::table('job_rosters')->where(['id' => $request->input('roster_id'), 'assigned_to' => $id])->update(['break_status' => 0]);
+
+            DB::table('roster_complete_activity')->insert([
+                'roster_id' => $request->input('roster_id'),
+                'activity' => $guard->name . ' end its break.',
+                'type' => 'end_break',
+                'record_id' => $request->input('roster_id'),
+                'activity_time' => time(),
+                'activity_by' => $id
+            ]);
+
+            //push notification
+            // $admins = DB::table('users')->where('notification_token', '!=', '')->select('notification_token')->get();
+            // foreach($admins as $a)
+            // {
+            //     $notification_data = [
+            //         'message' => $guard->name.' end its break.',
+            //         'title' => 'end_break',
+            //         'notification_token' => $a->notification_token,
+            //         'page' => 'homepage',
+            //         'roster_id' =>  $id
+            //     ]; 
+            //     send_push_notification($notification_data);
+            // }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Break Completed.',
+                'code' => 200
+            ]);
+        }
+
+        public function updateRosterTime(Request $request)
+        {
+            $jobRosterTime = JobRoster::where('id', $request->id)->first();
+            $old_data = $jobRosterTime;
+            $hours = getShiftHours(dbFormateDateTime($request->start), dbFormateDateTime($request->end), $jobRosterTime->site_id, 0);
+            $guardWorkingHours =  calCulateGuardWeekHours(dbFormateDateTime($request->start), dbFormateDateTime($request->end));
+            if ($jobRosterTime) {
+                $jobRosterTime->start = dbFormateDateTime($request->start);
+                $jobRosterTime->end = dbFormateDateTime($request->end);
+                $jobRosterTime->hours = $guardWorkingHours;
+                $jobRosterTime->morning_hours = (!empty($hours['morning']) ? $hours['morning'] : 0.0);
+                $jobRosterTime->night_hours = (!empty($hours['night']) ? $hours['night'] : 0.0);
+                $jobRosterTime->saturday_morning_hours = (!empty($hours['saturday_morning']) ? $hours['saturday_morning'] : 0.0);
+                $jobRosterTime->saturday_night_hours = (!empty($hours['saturday_night']) ? $hours['saturday_night'] : 0.0);
+                $jobRosterTime->sunday_morning_hours = (!empty($hours['sunday_morning']) ? $hours['sunday_morning'] : 0.0);
+                $jobRosterTime->sunday_night_hours = (!empty($hours['sunday_night']) ? $hours['sunday_night'] : 0.0);
+                $jobRosterTime->ph_morning_hours = (!empty($hours['ph_morning']) ? $hours['ph_morning'] : 0.0);
+                $jobRosterTime->ph_night_hours = (!empty($hours['ph_night']) ? $hours['ph_night'] : 0.0);
+                $jobRosterTime->update();
+                // $check = checkGuardShiftTimingUpdate($request->start, $request->end, $jobRosterTime->assigned_to, $jobRosterTime->roster_id);
+                // $jobRosterTime->conf_start = (!empty($check['start']) ? dbFormateDateTime($check['start']) : '');
+                // $jobRosterTime->conf_end = (!empty($check['end']) ? dbFormateDateTime($check['end']) : '');
+                // $jobRosterTime->conflict =  (!empty($check['conf']) ? $check['conf'] : '');
+                $jobRosterTime->update();
+                // $updatedjobRosterTime = $jobRosterTime->getChanges();
+                // jobRosterActions($request->admin_id,'update_shift_time',$jobRosterTime->id, 'job_roster',$old_data, $updatedjobRosterTime);
+
+                $admin_name = getUserName($request->admin_id);
+                $currnet_time = time();
+                // shiftCompleteActivity($jobRosterTime->id, $admin_name. ' Update Time of this Shift', 'update_shift_time', $jobRosterTime->id, $currnet_time, $request->admin_id);
+
+                return response()->json(['message' => "Shift Time Updated",  'code' => 200, 'success' => true]);
+            } else {
+                return response()->json(['message' => "Shift not Found!",  'code' => 404, 'success' => false]);
+            }
+        }
+
+        function getrosterhoursum(Request $request)
+        {
+            if (!empty($request['date'])) {
+                $dateRange  = explode(' - ', $request['date']);
+                $from       = strtotime(str_replace('/', '-', $dateRange[0]));
+                $to         = strtotime(str_replace('/', '-', $dateRange[1])) + 86399;
+            } else {
+                $to   = time();
+                $from = $to - (60 * 60 * 24 * 14);
+            }
+
+            $startDate = date('Y-m-d H:i', $from);
+            $endDate   = date('Y-m-d H:i', $to);
+
+            $query = DB::table('job_rosters AS jr')
+                ->select(
+                    'jr.*',
+                    'j.id AS site_id',
+                    'j.user_id',
+                    'j.state',
+                    'j.address',
+                    'j.site_name',
+                    'cust.name AS customer_name',
+                    // 'g.phone AS guard_phone',
+                    'g.name  AS guard_name',
+                    'ja.signin_time',
+                    'ja.signout_time',
+                    'jr.id         AS id',
+                    'jr.assigned_to AS guard_id',
+                    'jr.created_by  AS customer_id'
+                )
+                ->join('sites AS j', 'j.id', '=', 'jr.site_id')
+                ->leftJoin('job_roster_activities AS ja', 'ja.job_roster_id', '=', 'jr.id')
+                ->leftJoin('users AS g',    'g.id',    '=', 'jr.assigned_to')
+                ->leftJoin('users AS cust', 'cust.id', '=', 'jr.created_by')
+                ->whereIn('jr.job_status', ['completed', 'pending', 'confirmed'])
+                ->whereBetween('jr.start', [$startDate, $endDate])
+                ->orderBy('g.name', 'ASC')
+                ->orderBy('jr.start');
+
+            if (!empty($request['customer_id'])) {
+                $query->where('j.user_id', $request['customer_id']);
+            }
+
+            $results = $query->get()->toArray();
+            $results = json_decode(json_encode($results), true);
+
+            $chargerate = ChargeRate::where('id', 1)
+                ->where('status', 'active')
+                ->first();
+
+            foreach ($results as $key => $roster) {
+
+                $roster['day_rate']            = 0;
+                $roster['night_rate']          = 0;
+                $roster['public_holiday_rate'] = 0;
+                $roster['saturday_rate']       = 0;
+                $roster['sunday_rate']         = 0;
+                $roster['total_amount']        = 0;
+                $roster['ot']                  = 0;
+
+                if (!empty($chargerate)) {
+
+                    $roster['day_rate']            = $chargerate->def_metro_mon_to_fri_day_rate;
+                    $roster['night_rate']          = $chargerate->def_metro_mon_to_fri_night_rate;
+                    $roster['public_holiday_rate'] = $chargerate->def_metro_pub_holi_day_rate;
+                    $roster['saturday_rate']       = $chargerate->def_metro_sat_day_rate;
+                    $roster['sunday_rate']         = $chargerate->def_metro_sun_day_rate;
+
+                    $roster['total_amount'] =
+                        ($roster['day_rate']            * $roster['morning_hours']) +
+                        ($roster['night_rate']           * $roster['night_hours']) +
+                        ($roster['public_holiday_rate']  * ($roster['ph_morning_hours']       + $roster['ph_night_hours'])) +
+                        ($roster['saturday_rate']        * ($roster['saturday_morning_hours'] + $roster['saturday_night_hours'])) +
+                        ($roster['sunday_rate']          * ($roster['sunday_morning_hours']   + $roster['sunday_night_hours']));
+                }
+
+                $results[$key] = $roster;
+            }
+
+            // ── Normal type: aggregate into hour buckets ─────────────────────────────
+            if ($request->type === 'normal') {
+
+                $total_hours = [
+                    0 => ['name' => 'M-F Morning Hours',    'hours' => 0, 'payrate' => 0, 'totalpay' => 0],
+                    1 => ['name' => 'M-F Night Hours',       'hours' => 0, 'payrate' => 0, 'totalpay' => 0],
+                    2 => ['name' => 'Saturday Hours',        'hours' => 0, 'payrate' => 0, 'totalpay' => 0],
+                    3 => ['name' => 'Sunday Hours',          'hours' => 0, 'payrate' => 0, 'totalpay' => 0],
+                    4 => ['name' => 'Public Holiday Hours',  'hours' => 0, 'payrate' => 0, 'totalpay' => 0],
+                ];
+
+                foreach ($results as $shift) {
+
+                    // Helper closure to reduce repetition
+                    $add = function (int $index, float $hours, float $rate) use (&$total_hours, $shift) {
+                        $total_hours[$index]['hours']      += $hours;
+                        $total_hours[$index]['payrate']     = $rate;
+                        $total_hours[$index]['totalpay']    = $total_hours[$index]['hours'] * $rate;
+                        // $total_hours[$index]['site_po_wo']  = $shift['site_po_wo'];
+                        // $total_hours[$index]['po_wo']       = $shift['po_wo'];
+                    };
+
+                    $add(0, $shift['morning_hours'],                                                $shift['day_rate']);
+                    $add(1, $shift['night_hours'],                                                  $shift['night_rate']);
+                    $add(2, $shift['saturday_morning_hours'] + $shift['saturday_night_hours'],      $shift['saturday_rate']);
+                    $add(3, $shift['sunday_morning_hours']   + $shift['sunday_night_hours'],        $shift['sunday_rate']);
+                    $add(4, $shift['ph_morning_hours']       + $shift['ph_night_hours'],            $shift['public_holiday_rate']);
+                }
+
+                // Always return success; let the frontend decide if data is empty
+                return response()->json([
+                    'success' => !empty(array_filter($total_hours, fn($b) => $b['hours'] > 0)),
+                    'code'    => 200,
+                    'data'    => $total_hours,
+                ]);
+            }
+        }
+
+        function getTimesheet(Request $request)
+        {
+            $limit = 10;
+            $offset = 0;
+            if ($request->has('pageIndex') && $request->has('pageSize')) {
+                $offset = $request->pageIndex * $request->pageSize;
+                $limit = $request->pageSize;
+            }
+
+            // Build base query
+            $baseQuery = JobRoster::query();
+
+            if ($request->has('start') && $request->start != '') {
+                $start = dbFormate($request->start);
+            } else {
+                $start = Carbon::now()->startOfWeek()->toDateString();
+            }
+            if ($request->has('end') && $request->end != '') {
+                $end = dbFormate($request->end);
+            } else {
+                $end = Carbon::now()->endOfWeek()->toDateString();
+            }
+
+            // Apply filters
+            if ($request->has('guard_id') && !empty($request->guard_id)) {
+                $baseQuery->whereIn('job_rosters.assigned_to', $request->guard_id);
+            }
+
+            if ($request->has('customer_ids') && !empty($request->customer_ids)) {
+                $sites_id = Site::whereIn('user_id', $request->customer_ids)->pluck('id')->toArray();
+                $baseQuery->whereIn('job_rosters.site_id', $sites_id);
+            }
+
+            if ($request->has('sites_ids') && !empty($request->sites_ids)) {
+                $baseQuery->whereIn('job_rosters.site_id', $request->sites_ids);
+            }
+
+            // Apply date filters
+            $baseQuery->whereDate('job_rosters.start', '>=', $start)
+                ->whereDate('job_rosters.start', '<=', $end)
+                ->whereNotNull('job_rosters.assigned_to');
+
+            // Get total count
+            $totalQuery = clone $baseQuery;
+            $total = $totalQuery->count('job_rosters.id');
+
+            // Get the timesheet data with proper grouping
+            $timesheet = $baseQuery
+                ->leftJoin('users', 'users.id', '=', 'job_rosters.assigned_to')
+                ->select(
+                    'job_rosters.id as shift_id',
+                    'job_rosters.start',
+                    'job_rosters.end',
+                    'users.id as user_id',
+                    'users.name',
+                    'job_rosters.in_paysheet',
+                    'job_rosters.morning_hours',
+                    'job_rosters.night_hours',
+                    'job_rosters.saturday_morning_hours',
+                    'job_rosters.saturday_night_hours',
+                    'job_rosters.sunday_morning_hours',
+                    'job_rosters.sunday_night_hours',
+                    'job_rosters.ph_morning_hours',
+                    'job_rosters.ph_night_hours',
+                    'job_rosters.hours'
+                )
+                ->orderBy('users.name')
+                ->orderBy('job_rosters.start')
+                ->get();
+
+            // Process the results to group by user
+            $mainArr = [];
+            foreach ($timesheet as $shift) {
+                $userId = $shift['user_id'];
+
+                // Get shift hours breakdown
+                $job_hours = getShiftHours(
+                    date('m/d/Y H:i', strtotime($shift['start'])),
+                    date('m/d/Y H:i', strtotime($shift['end']))
+                );
+
+                if (!isset($mainArr[$userId])) {
+                    $mainArr[$userId] = [
+                        'id' => $shift['user_id'],
+                        'name' => $shift['name'],
+                        'hours' => (float)$shift['hours'],
+                        'morning_hours' => (float)$job_hours['morning'],
+                        'night_hours' => (float)$job_hours['night'],
+                        'saturday_morning_hours' => (float)$job_hours['saturday_morning'],
+                        'saturday_night_hours' => (float)$job_hours['saturday_night'],
+                        'sunday_morning_hours' => (float)$job_hours['sunday_morning'],
+                        'sunday_night_hours' => (float)$job_hours['sunday_night'],
+                        'ph_morning_hours' => (float)$job_hours['ph_morning'],
+                        'ph_night_hours' => (float)$job_hours['ph_night'],
+                        'shift_collection' => [$shift['shift_id']],
+                    ];
+                } else {
+                    // Update the aggregated values
+                    $mainArr[$userId]['hours'] += (float)$shift['hours'];
+                    $mainArr[$userId]['morning_hours'] += (float)$job_hours['morning'];
+                    $mainArr[$userId]['night_hours'] += (float)$job_hours['night'];
+                    $mainArr[$userId]['saturday_morning_hours'] += (float)$job_hours['saturday_morning'];
+                    $mainArr[$userId]['saturday_night_hours'] += (float)$job_hours['saturday_night'];
+                    $mainArr[$userId]['sunday_morning_hours'] += (float)$job_hours['sunday_morning'];
+                    $mainArr[$userId]['sunday_night_hours'] += (float)$job_hours['sunday_night'];
+                    $mainArr[$userId]['ph_morning_hours'] += (float)$job_hours['ph_morning'];
+                    $mainArr[$userId]['ph_night_hours'] += (float)$job_hours['ph_night'];
+                    $mainArr[$userId]['shift_collection'][] = $shift['shift_id'];
+                }
+            }
+
+            $timesheet = array_values($mainArr);
+
+            // Apply pagination to the processed array
+            $paginatedData = array_slice($timesheet, $offset, $limit);
+            $total = count($timesheet);
+
+            if (count($paginatedData) > 0) {
+                return response()->json([
+                    'success' => true,
+                    'code' => 200,
+                    'length' => $total,
+                    'pageIndex' => $request->pageIndex ?? 0,
+                    'pageSize' => $limit,
+                    'message' => 'Timesheet found.',
+                    'data' => $paginatedData
+                ]);
+            } else {
+                return response()->json([
+                    'success' => false,
+                    'code' => 200,
+                    'length' => $total,
+                    'pageIndex' => $request->pageIndex ?? 0,
+                    'pageSize' => $limit,
+                    'message' => 'No timesheet found!',
+                    'data' => $paginatedData
+                ]);
+            }
+        }
+
+        public function getTimeSheetDetails(Request $request)
+        {
+            $rosters = JobRoster::whereIn('id', $request->shift_collection)
+                ->with(['site', 'guards', 'customer', 'rosterActivity'])->get();
+
+            //$data = TimeSheetDetailsResource::collection($rosters);
+            $data = $rosters;
+            if (count($data) > 0) {
+                return response()->json(['success' => true, 'data' => $data]);
+            }
+            return response()->json(['success' => false, 'data' => $data]);
+        }
+
+        public function jobStatusManualApproved(Request $request)
+        {
+            $jobStatusManualApproved = JobRoster::where('id', $request->roster_id)->first();
+            if ($jobStatusManualApproved) {
+                if ($jobStatusManualApproved->in_paysheet == 0) {
+                    $jobStatusManualApproved->in_paysheet = 1;
+                    $jobStatusManualApproved->update();
+
+                    return response()->json(['success' => true, 'msg' => 'Status Updated Successfully!']);
+                } else {
+                    $jobStatusManualApproved->in_paysheet = 0;
+                    $jobStatusManualApproved->update();
+                    return response()->json(['success' => true, 'msg' => 'Status Updated Successfully!']);
+                }
+            } else {
                 return response()->json(['success' => true, 'msg' => 'Status Updated Successfully!']);
             }
-        } else {
-            return response()->json(['success' => true, 'msg' => 'Status Updated Successfully!']);
         }
-    }
 
-public function holdPayment(Request $request)
-{
-    $validator = Validator::make($request->all(), [
-        'shifts'                     => 'required|array|min:1',
-        'shifts.*.start'             => 'required|date',
-        'shifts.*.end'               => 'required|date',
-        'shifts.*.numberOfGuards'    => 'required|integer|min:1',
+    public function holdPayment(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'shifts'                     => 'required|array|min:1',
+            'shifts.*.start'             => 'required|date',
+            'shifts.*.end'               => 'required|date',
+            'shifts.*.numberOfGuards'    => 'required|integer|min:1',
 
-        'user_id'           => 'required|integer|exists:users,id',
-        'card_holder_name'  => 'required|string',
-        'payment_method_id' => 'required|string|starts_with:pm_',
+            'user_id'           => 'required|integer|exists:users,id',
+            'card_holder_name'  => 'required|string',
+            'payment_method_id' => 'required|string|starts_with:pm_',
 
-        'payment_option'    => 'required|in:full,split',
-    ]);
+            'payment_option'    => 'required|in:full,split',
+        ]);
 
-    if ($validator->fails()) {
-        return response()->json([
-            'success' => false,
-            'errors'  => $validator->errors(),
-        ], 422);
-    }
-
-    // FIX nested validation
-    $validator->after(function ($validator) use ($request) {
-        foreach ($request->shifts as $i => $shift) {
-            if (strtotime($shift['end']) <= strtotime($shift['start'])) {
-                $validator->errors()->add("shifts.$i.end", "End must be after start");
-            }
-        }
-    });
-
-    try {
-
-        Stripe::setApiKey(config('services.stripe.secret'));
-
-        $chargeRate = ChargeRate::where('level', $request->job_level)->first();
-
-        if (!$chargeRate) {
+        if ($validator->fails()) {
             return response()->json([
                 'success' => false,
-                'message' => 'Charge rate not found'
-            ], 404);
+                'errors'  => $validator->errors(),
+            ], 422);
         }
 
-        // MULTI SHIFT TOTAL
-        $baseTotal = 0;
-$hours_array = [];
-$baseTotal_arr = [];
-        foreach ($request->shifts as $shift) {
+        // FIX nested validation
+        $validator->after(function ($validator) use ($request) {
+            foreach ($request->shifts as $i => $shift) {
+                if (strtotime($shift['end']) <= strtotime($shift['start'])) {
+                    $validator->errors()->add("shifts.$i.end", "End must be after start");
+                }
+            }
+        });
 
-            $start = dbFormateDateTime($shift['start']);
-            $end   = dbFormateDateTime($shift['end']);
+        try {
 
-            $hours = getShiftHours($start, $end, 1, 0);
-            $shiftAmount =
-                ($chargeRate->def_metro_mon_to_fri_day_rate * ($hours['morning'] ?? 0)) +
-                ($chargeRate->def_metro_mon_to_fri_night_rate * ($hours['night'] ?? 0)) +
-                ($chargeRate->def_metro_sat_day_rate * ($hours['saturday_morning'] ?? 0)) +
-                ($chargeRate->def_metro_sat_night_rate * ($hours['saturday_night'] ?? 0)) +
-                ($chargeRate->def_metro_sun_day_rate * ($hours['sunday_morning'] ?? 0)) +
-                ($chargeRate->def_metro_sun_night_rate * ($hours['sunday_night'] ?? 0)) +
-                ($chargeRate->def_metro_pub_holi_day_rate * ($hours['ph_morning'] ?? 0)) +
-                ($chargeRate->def_metro_pub_holi_night_rate * ($hours['ph_night'] ?? 0));
-                
-            $hours_array[] = $hours;
-            $baseTotal_arr[] = $shiftAmount; 
-            $baseTotal += round($shiftAmount * $shift['numberOfGuards'], 2);
-        }
+            Stripe::setApiKey(config('services.stripe.secret'));
 
-        // APPLY DISCOUNT (ONLY FULL)
-        $discount = 0;
+            $chargeRate = ChargeRate::where('level', $request->job_level)->first();
 
-        // if ($request->payment_option === 'full') {
-        //     $discount = round($baseTotal * 0.05, 2);
-        // }
+            if (!$chargeRate) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Charge rate not found'
+                ], 404);
+            }
 
-        // $discountedTotal = round($baseTotal - $discount);
+            // MULTI SHIFT TOTAL
+            $baseTotal = 0;
+            $hours_array = [];
+            $baseTotal_arr = [];
+            foreach ($request->shifts as $shift) {
 
-        // // GST / SERVICE FEE (UNCHANGED LOGIC)
-        // $serviceFee = round($discountedTotal * 0.10, 2);
-        // $grandTotal = round($discountedTotal + $serviceFee, 2);
+                $start = dbFormateDateTime($shift['start']);
+                $end   = dbFormateDateTime($shift['end']);
 
+                $hours = getShiftHours($start, $end, 1, 0);
+                $shiftAmount =
+                    ($chargeRate->def_metro_mon_to_fri_day_rate * ($hours['morning'] ?? 0)) +
+                    ($chargeRate->def_metro_mon_to_fri_night_rate * ($hours['night'] ?? 0)) +
+                    ($chargeRate->def_metro_sat_day_rate * ($hours['saturday_morning'] ?? 0)) +
+                    ($chargeRate->def_metro_sat_night_rate * ($hours['saturday_night'] ?? 0)) +
+                    ($chargeRate->def_metro_sun_day_rate * ($hours['sunday_morning'] ?? 0)) +
+                    ($chargeRate->def_metro_sun_night_rate * ($hours['sunday_night'] ?? 0)) +
+                    ($chargeRate->def_metro_pub_holi_day_rate * ($hours['ph_morning'] ?? 0)) +
+                    ($chargeRate->def_metro_pub_holi_night_rate * ($hours['ph_night'] ?? 0));
+                    
+                $hours_array[] = $hours;
+                $baseTotal_arr[] = $shiftAmount; 
+                $baseTotal += round($shiftAmount * $shift['numberOfGuards'], 2);
+            }
 
-        // GST / SERVICE FEE (UNCHANGED LOGIC)
-        // $serviceFee = round($baseTotal * 0.10, 2);
-         $cleanBaseTotal = (float) str_replace([',', '$'], '', $baseTotal);
-        $feeRaw = $cleanBaseTotal * 0.10;
-        $serviceFee = round($feeRaw, 2);
-        $displayedFee = number_format($serviceFee, 2);
-        $serviceFee  = $displayedFee;
-        $baseFinalTotal = round($baseTotal + $serviceFee, 2);
-        if ($request->payment_option === 'full') {
-            $discount = round($baseFinalTotal * 0.05, 2);
-        }
-        $grandTotal = round($baseFinalTotal - $discount, 2);    
-        
-        // SPLIT LOGIC (AFTER GST)
-        if ($request->payment_option === 'split') {
-            $amountToCharge = round($grandTotal * 0.5, 2);
-            $balance = round($grandTotal - $amountToCharge, 2);
-        } else {
-            $amountToCharge = $grandTotal;
-            $balance = 0;
-        }
-        // return [$baseTotal, $discount. $discountedTotal, $serviceFee, $grandTotal, $amountToCharge, $hours_array,$baseTotal_arr];
+            // APPLY DISCOUNT (ONLY FULL)
+            $discount = 0;
 
-        $amountInCents = (int) round($amountToCharge * 100, 2);
+            $cleanBaseTotal = (float) str_replace([',', '$'], '', $baseTotal);
+            $feeRaw = $cleanBaseTotal * 0.10;
+            $serviceFee = round($feeRaw, 2);        // Keep as float
+            $displayedFee = number_format($serviceFee, 2); // For display only
+            $baseFinalTotal = round($baseTotal + $serviceFee, 2); // Now works correctly
 
-        // ─── USER / CUSTOMER ──────────────────────
-        $user = User::findOrFail($request->user_id);
+            // $cleanBaseTotal = (float) str_replace([',', '$'], '', $baseTotal);
+            // $feeRaw = $cleanBaseTotal * 0.10;
+            // $serviceFee = round($feeRaw, 2);
+            // $displayedFee = number_format($serviceFee, 2);
+            // $serviceFee  = $displayedFee;
+            // $baseFinalTotal = round($baseTotal + $serviceFee, 2);
 
-        if (!$user->stripe_customer_id) {
-            $customer = Customer::create([
-                'name'  => $request->card_holder_name,
-                'email' => $user->email,
-                'metadata' => [
-                    'user_id' => $user->id
+            if ($request->payment_option === 'full') {
+                $discount = round($baseFinalTotal * 0.05, 2);
+            }
+            $grandTotal = round($baseFinalTotal - $discount, 2);    
+            
+            // SPLIT LOGIC (AFTER GST)
+            if ($request->payment_option === 'split') {
+                $amountToCharge = round($grandTotal * 0.5, 2);
+                $balance = round($grandTotal - $amountToCharge, 2);
+            } else {
+                $amountToCharge = $grandTotal;
+                $balance = 0;
+            }
+            // return [$baseTotal, $discount. $discountedTotal, $serviceFee, $grandTotal, $amountToCharge, $hours_array,$baseTotal_arr];
+
+            $amountInCents = (int) round($amountToCharge * 100, 2);
+
+            // ─── USER / CUSTOMER ──────────────────────
+            $user = User::findOrFail($request->user_id);
+
+            if (!$user->stripe_customer_id) {
+                $customer = Customer::create([
+                    'name'  => $request->card_holder_name,
+                    'email' => $user->email,
+                    'metadata' => [
+                        'user_id' => $user->id
+                    ]
+                ]);
+
+                $user->stripe_customer_id = $customer->id;
+                $user->save();
+            }
+
+            $customerId = $user->stripe_customer_id;
+
+            // ─── PAYMENT METHOD SAFE ATTACH ───────────
+            $paymentMethod = PaymentMethod::retrieve($request->payment_method_id);
+
+            if ($paymentMethod->customer && $paymentMethod->customer !== $customerId) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Payment method already attached to another customer'
+                ], 400);
+            }
+
+            if (!$paymentMethod->customer) {
+                $paymentMethod->attach([
+                    'customer' => $customerId
+                ]);
+            }
+
+            // ─── STRIPE INTENT ────────────────────────
+            $paymentIntent = PaymentIntent::create([
+                'amount'         => $amountInCents,
+                'currency'       => 'aud',
+                'customer'       => $customerId,
+                'payment_method' => $request->payment_method_id,
+                'automatic_payment_methods' => [
+                    'enabled' => true,
+                    'allow_redirects' => 'never',
+                ],
+                'confirm'        => true,
+                'capture_method' => 'manual',
+            ]);
+
+            // ─── SAVE TRANSACTION (UNCHANGED STRUCTURE + NEW FIELDS) ───
+            Transaction::create([
+                'user_id'           => $user->id,
+                'job_roster_id'     => $request->job_id ?? null,
+                'payment_intent_id' => $paymentIntent->id,
+    
+                'amount'            => $baseTotal,
+                'discount'          => $discount,
+                'service_fee'       => $displayedFee,
+                'total_amount'      => $grandTotal,
+    
+                'amount_charged'    => $amountToCharge,
+                'balance'           => $balance,
+    
+                // NEW fields
+                'payment_option'    => $request->payment_option,
+                'balance_status'    => $request->payment_option === 'split' ? 'pending' : null,
+    
+                'currency'          => 'AUD',
+                'status'            => 'held',
+                'response'          => json_encode($paymentIntent),
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Payment held successfully',
+
+                'payment' => [
+                    'payment_intent_id' => $paymentIntent->id,
+                    'status'            => $paymentIntent->status,
+                    'amount_cents'      => $amountInCents,
+                    'amount'            => $amountToCharge,
+                    'total_amount'      => $grandTotal,
+                    'service_fee'       => $serviceFee,
+                    'discount'          => $discount,
+                    'balance'           => $balance,
+                    'currency'          => 'AUD',
                 ]
             ]);
 
-            $user->stripe_customer_id = $customer->id;
-            $user->save();
-        }
-
-        $customerId = $user->stripe_customer_id;
-
-        // ─── PAYMENT METHOD SAFE ATTACH ───────────
-        $paymentMethod = PaymentMethod::retrieve($request->payment_method_id);
-
-        if ($paymentMethod->customer && $paymentMethod->customer !== $customerId) {
+        } catch (\Stripe\Exception\CardException $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Payment method already attached to another customer'
-            ], 400);
+                'message' => 'Card declined: ' . $e->getMessage(),
+            ], 402);
+
+        } catch (\Stripe\Exception\ApiErrorException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Stripe error: ' . $e->getMessage(),
+            ], 500);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Server error: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    //Guards Payslips
+    public function uploadPayslips(Request $request)
+    {
+        $fileName = $request->pdf;
+        $fullPath = public_path('payslip/' . $fileName);
+
+        if (!file_exists($fullPath)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'File not found on server.',
+            ], 404);
         }
 
-        if (!$paymentMethod->customer) {
-            $paymentMethod->attach([
-                'customer' => $customerId
-            ]);
+        $parser = new \Smalot\PdfParser\Parser();
+        $pdf    = $parser->parseFile($fullPath);
+        $pages  = $pdf->getPages();
+
+        $payslipFolder = storage_path('app/public/payslips');
+        if (!file_exists($payslipFolder)) {
+            mkdir($payslipFolder, 0777, true);
+        }
+        
+        // Initialize counters
+        $totalGuardsFound = 0;
+        $successfullySent = 0;
+        $failedGuards = [];
+        $processedExternalIds = [];
+        
+        foreach ($pages as $pageNumber => $page) {
+            $text = $page->getText();
+
+            preg_match('/STAFO\d+/i', $text, $matches);
+
+            if (!empty($matches[0])) {
+                $externalId = $matches[0];
+                
+                // $externalId = strtolower($externalId);
+                
+                if (!in_array($externalId, $processedExternalIds)) {
+                    $totalGuardsFound++;
+                    $processedExternalIds[] = $externalId;
+                }
+
+                $guard = DB::table('users')
+                            ->where('staffo_id', $externalId)
+                            ->first();
+
+                if ($guard) {
+                    $guardId = $guard->id;
+
+                    try {
+                        $newPdf = new \setasign\Fpdi\Fpdi();
+                        $newPdf->AddPage();
+                        $newPdf->setSourceFile($fullPath);
+                        $tpl = $newPdf->importPage($pageNumber + 1);
+                        $newPdf->useTemplate($tpl);
+
+                        $newFileName = $externalId . '_' . \Illuminate\Support\Str::random(8) . '.pdf';
+                        $newFilePath = $payslipFolder . '/' . $newFileName;
+
+                        $newPdf->Output($newFilePath, 'F');
+
+                        GuardPayslip::create([
+                            'guard_id'   => $guardId,
+                            'file_url'   => request()->getSchemeAndHttpHost() . '/storage/payslips/' . $newFileName,
+                            'start_date' => $request->start_date ?? null,
+                            'end_date'   => $request->end_date ?? null,
+                            'status' => 1,
+                        ]);
+                        
+                        $admins = DB::table('users')->where('notification_token', '!=', '')->where('id', $guardId)->select('notification_token')->get();
+                        foreach ($admins as $a) {
+                            $notification_data = [
+                                'message' => $guard->name . ' Payslip Uploaded',
+                                'title' => 'Payslip Upload',
+                                'notification_token' => $a->notification_token,
+                                'page' => 'homepage'
+                            ];
+                            send_push_notification($notification_data);
+                        }
+                        $successfullySent++;
+                        
+                    } catch (\Exception $e) {
+                        // Track failed guards
+                        $failedGuards[] = [
+                            'external_id' => $externalId,
+                            'guard_id' => $guardId,
+                            'error' => $e->getMessage()
+                        ];
+                    }
+                } else {
+                    // Track guards not found in system
+                    $failedGuards[] = [
+                        'external_id' => $externalId,
+                        'guard_id' => null,
+                        'error' => 'Guard not found in system'
+                    ];
+                }
+            }
         }
 
-        // ─── STRIPE INTENT ────────────────────────
-        $paymentIntent = PaymentIntent::create([
-            'amount'         => $amountInCents,
-            'currency'       => 'aud',
-            'customer'       => $customerId,
-            'payment_method' => $request->payment_method_id,
-            'automatic_payment_methods' => [
-                'enabled' => true,
-                'allow_redirects' => 'never',
-            ],
-            'confirm'        => true,
-            'capture_method' => 'manual',
-        ]);
-
-        // ─── SAVE TRANSACTION (UNCHANGED STRUCTURE + NEW FIELDS) ───
-        Transaction::create([
-            'user_id'           => $user->id,
-            'job_roster_id'     => $request->job_id ?? null,
-            'payment_intent_id' => $paymentIntent->id,
- 
-            'amount'            => $baseTotal,
-            'discount'          => $discount,
-            'service_fee'       => $serviceFee,
-            'total_amount'      => $grandTotal,
- 
-            'amount_charged'    => $amountToCharge,
-            'balance'           => $balance,
- 
-            // NEW fields
-            'payment_option'    => $request->payment_option,
-            'balance_status'    => $request->payment_option === 'split' ? 'pending' : null,
- 
-            'currency'          => 'AUD',
-            'status'            => 'held',
-            'response'          => json_encode($paymentIntent),
-        ]);
+        if (file_exists($fullPath)) {
+            unlink($fullPath);
+        }
 
         return response()->json([
             'success' => true,
-            'message' => 'Payment held successfully',
-
-            'payment' => [
-                'payment_intent_id' => $paymentIntent->id,
-                'status'            => $paymentIntent->status,
-                'amount_cents'      => $amountInCents,
-                'amount'            => $amountToCharge,
-                'total_amount'      => $grandTotal,
-                'service_fee'       => $serviceFee,
-                'discount'          => $discount,
-                'balance'           => $balance,
-                'currency'          => 'AUD',
+            'message' => 'PDF processed, payslips generated.',
+            'statistics' => [
+                'total_guards_found' => $totalGuardsFound,
+                'successfully_sent' => $successfullySent,
+                'failed' => count($failedGuards),
+                'failed_details' => $failedGuards
             ]
         ]);
-
-    } catch (\Stripe\Exception\CardException $e) {
-        return response()->json([
-            'success' => false,
-            'message' => 'Card declined: ' . $e->getMessage(),
-        ], 402);
-
-    } catch (\Stripe\Exception\ApiErrorException $e) {
-        return response()->json([
-            'success' => false,
-            'message' => 'Stripe error: ' . $e->getMessage(),
-        ], 500);
-
-    } catch (\Exception $e) {
-        return response()->json([
-            'success' => false,
-            'message' => 'Server error: ' . $e->getMessage(),
-        ], 500);
-    }
-}
-
-//Guards Payslips
-public function uploadPayslips(Request $request)
-{
-    $fileName = $request->pdf;
-    $fullPath = public_path('payslip/' . $fileName);
-
-    if (!file_exists($fullPath)) {
-        return response()->json([
-            'success' => false,
-            'message' => 'File not found on server.',
-        ], 404);
     }
 
-    $parser = new \Smalot\PdfParser\Parser();
-    $pdf    = $parser->parseFile($fullPath);
-    $pages  = $pdf->getPages();
+    public function getGuardPayslips(Request $request)
+    {
+        try {
+            $startDate = $request->start_date;
+            $endDate   = $request->end_date;
 
-    $payslipFolder = storage_path('app/public/payslips');
-    if (!file_exists($payslipFolder)) {
-        mkdir($payslipFolder, 0777, true);
-    }
-    
-    // Initialize counters
-    $totalGuardsFound = 0;
-    $successfullySent = 0;
-    $failedGuards = [];
-    $processedExternalIds = [];
-    
-    foreach ($pages as $pageNumber => $page) {
-        $text = $page->getText();
-
-        preg_match('/STAFO\d+/i', $text, $matches);
-
-        if (!empty($matches[0])) {
-            $externalId = $matches[0];
-            
-            // $externalId = strtolower($externalId);
-            
-            if (!in_array($externalId, $processedExternalIds)) {
-                $totalGuardsFound++;
-                $processedExternalIds[] = $externalId;
+            if (empty($startDate) || empty($endDate)) {
+                $startDate = now()->startOfWeek()->format('Y-m-d');
+                $endDate   = now()->endOfWeek()->format('Y-m-d');
             }
 
-            $guard = DB::table('users')
-                        ->where('staffo_id', $externalId)
-                        ->first();
+            $guardIds = $request->guard_id ?? [];
 
-            if ($guard) {
-                $guardId = $guard->id;
+            $query = DB::table('guard_payslips')
+                ->join('users', 'guard_payslips.guard_id', '=', 'users.id')
+                ->where('guard_payslips.status', 1)
+                ->select(
+                    'guard_payslips.*',
+                    'users.name',
+                );
 
-                try {
-                    $newPdf = new \setasign\Fpdi\Fpdi();
-                    $newPdf->AddPage();
-                    $newPdf->setSourceFile($fullPath);
-                    $tpl = $newPdf->importPage($pageNumber + 1);
-                    $newPdf->useTemplate($tpl);
+                $query->where(function ($q) use ($startDate, $endDate) {
+                    $q->where('guard_payslips.start_date', '<=', $endDate)
+                    ->where('guard_payslips.end_date', '>=', $startDate);
+                });
 
-                    $newFileName = $externalId . '_' . \Illuminate\Support\Str::random(8) . '.pdf';
-                    $newFilePath = $payslipFolder . '/' . $newFileName;
-
-                    $newPdf->Output($newFilePath, 'F');
-
-                    GuardPayslip::create([
-                        'guard_id'   => $guardId,
-                        'file_url'   => request()->getSchemeAndHttpHost() . '/storage/payslips/' . $newFileName,
-                        'start_date' => $request->start_date ?? null,
-                        'end_date'   => $request->end_date ?? null,
-                        'status' => 1,
-                    ]);
-                    
-                    $admins = DB::table('users')->where('notification_token', '!=', '')->where('id', $guardId)->select('notification_token')->get();
-                    foreach ($admins as $a) {
-                        $notification_data = [
-                            'message' => $guard->name . ' Payslip Uploaded',
-                            'title' => 'Payslip Upload',
-                            'notification_token' => $a->notification_token,
-                            'page' => 'homepage'
-                        ];
-                        send_push_notification($notification_data);
-                    }
-                    $successfullySent++;
-                    
-                } catch (\Exception $e) {
-                    // Track failed guards
-                    $failedGuards[] = [
-                        'external_id' => $externalId,
-                        'guard_id' => $guardId,
-                        'error' => $e->getMessage()
-                    ];
-                }
-            } else {
-                // Track guards not found in system
-                $failedGuards[] = [
-                    'external_id' => $externalId,
-                    'guard_id' => null,
-                    'error' => 'Guard not found in system'
-                ];
+            if (!empty($guardIds)) {
+                $query->whereIn('guard_payslips.guard_id', (array) $guardIds);
             }
+
+            $payslips = $query->get();
+
+            return response()->json([
+                'status'   => true,
+                'message'  => 'Guard payslips retrieved successfully',
+                'data'     => $payslips,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status'  => false,
+                'message' => 'Error: ' . $e->getMessage(),
+            ], 500);
         }
     }
 
-    if (file_exists($fullPath)) {
-        unlink($fullPath);
-    }
-
-    return response()->json([
-        'success' => true,
-        'message' => 'PDF processed, payslips generated.',
-        'statistics' => [
-            'total_guards_found' => $totalGuardsFound,
-            'successfully_sent' => $successfullySent,
-            'failed' => count($failedGuards),
-            'failed_details' => $failedGuards
-        ]
-    ]);
-}
-
-public function getGuardPayslips(Request $request)
-{
-    try {
-        $startDate = $request->start_date;
-        $endDate   = $request->end_date;
-
-        if (empty($startDate) || empty($endDate)) {
-            $startDate = now()->startOfWeek()->format('Y-m-d');
-            $endDate   = now()->endOfWeek()->format('Y-m-d');
-        }
-
-        $guardIds = $request->guard_id ?? [];
-
-        $query = DB::table('guard_payslips')
-            ->join('users', 'guard_payslips.guard_id', '=', 'users.id')
-            ->where('guard_payslips.status', 1)
-            ->select(
-                'guard_payslips.*',
-                'users.name',
-            );
-
-              $query->where(function ($q) use ($startDate, $endDate) {
-                $q->where('guard_payslips.start_date', '<=', $endDate)
-                ->where('guard_payslips.end_date', '>=', $startDate);
-            });
-
-        if (!empty($guardIds)) {
-            $query->whereIn('guard_payslips.guard_id', (array) $guardIds);
-        }
-
-        $payslips = $query->get();
+    public function autoUpdatePayslipStatus()
+    {
+        $today = \Carbon\Carbon::now()->format('Y-m-d');
+        
+        
+        $updatedCount = DB::table('guard_payslips')
+            ->where('status', 1)
+            ->whereNotNull('end_date')
+            ->whereRaw('DATE(DATE_ADD(end_date, INTERVAL 2 MONTH)) <= ?', [$today])
+            ->update(['status' => 0]);
 
         return response()->json([
-            'status'   => true,
-            'message'  => 'Guard payslips retrieved successfully',
-            'data'     => $payslips,
+            'success' => true,
+            'message' => "Status automatically updated for {$updatedCount} payslips.",
+            'updated_count' => $updatedCount,
+            'check_date' => $today
         ]);
-    } catch (\Exception $e) {
-        return response()->json([
-            'status'  => false,
-            'message' => 'Error: ' . $e->getMessage(),
-        ], 500);
     }
-}
-
-public function autoUpdatePayslipStatus()
-{
-    $today = \Carbon\Carbon::now()->format('Y-m-d');
-    
-    
-    $updatedCount = DB::table('guard_payslips')
-        ->where('status', 1)
-        ->whereNotNull('end_date')
-        ->whereRaw('DATE(DATE_ADD(end_date, INTERVAL 2 MONTH)) <= ?', [$today])
-        ->update(['status' => 0]);
-
-    return response()->json([
-        'success' => true,
-        'message' => "Status automatically updated for {$updatedCount} payslips.",
-        'updated_count' => $updatedCount,
-        'check_date' => $today
-    ]);
-}
 
 
     public function getSpecificGuardPayslips(Request $request)
@@ -3078,7 +3092,7 @@ public function autoUpdatePayslipStatus()
         ], 500);
     }
     }
-    
+        
     function sendInvoice(Request $request)
     {
         // Validate input
@@ -3117,7 +3131,7 @@ public function autoUpdatePayslipStatus()
         
         return response()->json(['success' => true, 'message' => 'Invoice send successfully.']);
     }
-    
+        
     public function sendPdfInvoice(Request $request)
     {
         $request->validate([
@@ -3213,8 +3227,8 @@ public function autoUpdatePayslipStatus()
             ], 500);
         }
     }
-    
-     public function getEmailHistoryByTransaction($transaction_id)
+        
+    public function getEmailHistoryByTransaction($transaction_id)
     {
         try {
             $histories = EmailHistory::where('transaction_id', $transaction_id)
@@ -3304,10 +3318,6 @@ public function autoUpdatePayslipStatus()
         ], 200);
     }
 
-    /**
-     * STEP 2 — Guard 1 generates QR code
-     * GET /api/roster/qr-code/{roster_id}
-     */
     public function generateQR(Request $request, $roster_id)
     {
         $now = Carbon::now();
@@ -3345,13 +3355,8 @@ public function autoUpdatePayslipStatus()
             'qr_base64'      => 'data:image/png;base64,' . $qrImage,
         ]);
     }
-
-    /**
-     * STEP 3 — Guard 2 scans QR
-     * POST /api/roster/handover/scan
-     * Body: { "roster_id": 1, "token": "uuid-here" }
-     */
-      public function scanHandover(Request $request)
+    
+    public function scanHandover(Request $request)
     {
         $request->validate([
             'roster_id' => 'required|integer|exists:job_rosters,id',
@@ -3416,69 +3421,7 @@ public function autoUpdatePayslipStatus()
             ], 500);
         }
     }
-    
-     /**
-     * Get available jobs (unassigned and future)
-     */
-    // public function getAvailableJobs(Request $request)
-    // {
-    //     try {
-    //         $perPage = $validated['per_page'] ?? 100;
-    //         $type = $validated['type'] ?? null;
-
-    //         // Build query
-    //         $query = JobRoster::with(['site'])
-    //             ->whereNull('assigned_to')
-    //             ->where('start', '>', now())
-    //             ->orderBy('start', 'asc');
-
-    //         $jobs = $query->paginate($perPage);
-
-    //         // Format response
-    //         $formattedJobs = $jobs->through(function ($roster) {
-    //             return [
-    //                 'id' => $roster->id,
-    //                 'site_name' => $roster->site->site_name ?? null,
-    //                 'site_address' => $roster->site->address ?? null,
-    //                 'site_id' => $roster->site->id ?? null,
-    //                 'state' => $roster->site->state ?? null,
-    //                 'coordinates' => $roster->site->coordinates ?? null,
-    //                 'start_time' => $roster->start,
-    //                 'end_time' => $roster->end,
-    //                 'day_of_week' => $roster->shift_date ? date('l', strtotime($roster->start)) : null,
-    //                 'job_status' => $roster->job_status,
-    //                 'publish_status' => $roster->publish_status,
-    //                 'assigned_to' => $roster->assigned_to,
-    //                 'created_at' => $roster->created_at,
-    //             ];
-    //         });
-
-    //         return response()->json([
-    //             'success' => true,
-    //             'message' => 'Available jobs retrieved successfully.',
-    //             'code' => 200,
-    //             'data' => [
-    //                 'jobs' => $formattedJobs,
-    //                 'pagination' => [
-    //                     'current_page' => $jobs->currentPage(),
-    //                     'last_page' => $jobs->lastPage(),
-    //                     'per_page' => $jobs->perPage(),
-    //                     'total' => $jobs->total(),
-    //                     'next_page_url' => $jobs->nextPageUrl(),
-    //                     'prev_page_url' => $jobs->previousPageUrl(),
-    //                 ],
-    //             ]
-    //         ], 200);
-
-    //     } catch (\Exception $e) {
-    //         return response()->json([
-    //             'success' => false,
-    //             'message' => 'An error occurred while fetching available jobs.',
-    //             'code' => 500,
-    //             'error' => $e->getMessage(),
-    //         ], 500);
-    //     }
-    // }
+        
     public function getAvailableJobs($id)
     {
         try {
@@ -3495,10 +3438,10 @@ public function autoUpdatePayslipStatus()
                 ->whereNull('assigned_to')
                 ->whereNull('accepted_by')
                 ->where('start', '>', now())
-                ->orderBy('start', 'asc');
+                ->orderBy('created_at', 'desc');
 
             // State filter for staff
-              if ($user->user_type === 'staff' && !empty($user->state)) {
+            if (!empty($user->state)) {
 
                 $stateMap = [
                     // Australia
@@ -3524,26 +3467,28 @@ public function autoUpdatePayslipStatus()
 
             $jobs = $query->paginate($perPage);
 
-            // FILTER LOGIC: Hide today's jobs if user has 2 jobs OR 12 hours today
-            $today = now()->toDateString();
-            $todayAssignedJobs = JobRoster::where('assigned_to', $user->id)
-                ->whereDate('start', $today)
-                ->get();
+            if($user->user_type == "staff"){
+                // FILTER LOGIC: Hide today's jobs if user has 2 jobs OR 12 hours today
+                $today = now()->toDateString();
+                $todayAssignedJobs = JobRoster::where('assigned_to', $user->id)
+                    ->whereDate('start', $today)
+                    ->get();
 
-            $jobsCountToday = $todayAssignedJobs->count();
-            $hoursToday = $this->calculateTotalHours($todayAssignedJobs);
-            $hideTodayJobs = ($jobsCountToday >= 2 || $hoursToday >= 12);
+                $jobsCountToday = $todayAssignedJobs->count();
+                $hoursToday = $this->calculateTotalHours($todayAssignedJobs);
+                $hideTodayJobs = ($jobsCountToday >= 2 || $hoursToday >= 12);
 
-            $filteredJobs = $jobs->getCollection()->filter(function ($job) use ($today, $hideTodayJobs) {
-                // If hideTodayJobs is true AND job is today, hide it
-                if ($hideTodayJobs && date('Y-m-d', strtotime($job->start)) === $today) {
-                    return false;
-                }
-                return true;
-            });
+                $filteredJobs = $jobs->getCollection()->filter(function ($job) use ($today, $hideTodayJobs) {
+                    // If hideTodayJobs is true AND job is today, hide it
+                    if ($hideTodayJobs && date('Y-m-d', strtotime($job->start)) === $today) {
+                        return false;
+                    }
+                    return true;
+                })->values(); // <-- ADDED: reindex so it stays a proper array
 
-            $jobs->setCollection($filteredJobs);
-
+                $jobs->setCollection($filteredJobs);
+            }
+            
             // Format and return
             $formattedJobs = $jobs->through(function ($job) {
                 return [
@@ -3560,31 +3505,17 @@ public function autoUpdatePayslipStatus()
                     'publish_status' => $job->publish_status,
                     'assigned_to' => $job->assigned_to,
                     'created_at' => $job->created_at,
+                    'document_list' => $job->document_list,
+                    'description' => $job->description,
                 ];
-            });
+            })->toArray();
 
             return response()->json([
                 'success' => true,
                 'message' => 'Available jobs retrieved successfully.',
                 'code' => 200,
                 'data' => [
-                    'jobs' => $formattedJobs,
-                    'user_status' => [
-                        'jobs_today' => $jobsCountToday,
-                        'hours_today' => round($hoursToday, 1),
-                        'is_blocked_today' => $hideTodayJobs,
-                        'blocked_reason' => $hideTodayJobs 
-                            ? ($jobsCountToday >= 2 ? '2 jobs limit reached' : '12 hours limit reached')
-                            : null,
-                    ],
-                    'pagination' => [
-                        'current_page' => $jobs->currentPage(),
-                        'last_page' => $jobs->lastPage(),
-                        'per_page' => $jobs->perPage(),
-                        'total' => $jobs->total(),
-                        'next_page_url' => $jobs->nextPageUrl(),
-                        'prev_page_url' => $jobs->previousPageUrl(),
-                    ],
+                    'jobs' => $formattedJobs, 
                 ]
             ], 200);
 
@@ -3610,9 +3541,6 @@ public function autoUpdatePayslipStatus()
         return $total;
     }
 
-      /**
-     * Send consolidated notifications for multiple shifts on the same site
-     */
     private function sendConsolidatedNotifications($siteCoordinates, $jobIds, $createdBy)
     {
         // Get all jobs for this site
@@ -3654,7 +3582,6 @@ public function autoUpdatePayslipStatus()
         $notifiedCount = 0;
         
         foreach ($allGuards as $guard) {
-            // 🔥 FIX: Check eligibility for EACH job individually
             $eligibleJobIds = [];
             foreach ($jobs as $job) {
                 if ($this->isGuardEligibleForSpecificJob($guard->id, $job)) {
@@ -3722,10 +3649,6 @@ public function autoUpdatePayslipStatus()
         Log::info("Consolidated notification sent to {$notifiedCount} guards for {$shiftCount} shifts");
     }
 
-    /**
-     * Check if a guard is eligible for a SPECIFIC job
-     * Checks only the specific date of this job
-     */
     private function isGuardEligibleForSpecificJob($guardId, $job)
     {
         $jobDate = date('Y-m-d', strtotime($job->start));
@@ -3776,9 +3699,6 @@ public function autoUpdatePayslipStatus()
         return true;
     }
 
-    /**
-     * Get all Staffoo guards within a specific radius
-     */
     private function getStaffooGuardsByRadius(string $siteCoords, int $radiusKm)
     {
         return User::where('user_id', 1)
@@ -3794,9 +3714,6 @@ public function autoUpdatePayslipStatus()
         
     }
 
-    /**
-     * Send consolidated app notification
-     */
     private function sendConsolidatedAppNotification($guard, $jobs, $title, $message, $distance, $radius)
     {
         if (empty($guard->notification_token)) {
@@ -3813,7 +3730,7 @@ public function autoUpdatePayslipStatus()
         $firstJob = $jobs->first();
         $site = $firstJob->site;
 
-         $notificationData = [
+            $notificationData = [
             'distance' => round($radius, 2),
             'radius' => $radius,
             'job_ids' => $jobIds,
@@ -3832,9 +3749,6 @@ public function autoUpdatePayslipStatus()
         Log::info("App notification sent to guard #{$guard->id} for {$shiftCount} eligible job(s)");
     }
 
-    /**
-     * Build consolidated SMS message
-     */
     private function buildConsolidatedSmsMessage($jobs)
     {
         $shiftCount = $jobs->count();
@@ -3858,9 +3772,6 @@ public function autoUpdatePayslipStatus()
         return $message;
     }
 
-    /**
-     * Calculate shift duration in hours
-     */
     private function calculateShiftDuration($start, $end)
     {
         try {
@@ -3941,49 +3852,442 @@ public function autoUpdatePayslipStatus()
         return $R * $c;
     }
 
-     public function contractor_accept_job(Request $request, $id)
+    public function contractor_accept_job(Request $request, $id)
     {
         $a = null;
         $b = '';
+        
+        // Get the roster with conditions
         $roster = DB::table('job_rosters')
             ->join('sites', 'sites.id', '=', 'job_rosters.site_id')
-            ->where('job_rosters.id', '=', $request->input('roster_id'))->where(
-                function ($query) use ($a, $b) {
-                    return $query->where('job_rosters.assigned_to', '=', $a)
-                        ->orWhere('job_rosters.assigned_to', '=', $b)
-                        ->orWhere('job_rosters.accepted_by', '=', $a)
-                        ->orWhere('job_rosters.accepted_by', '=', $b);
-
-                }
-            )
+            ->where('job_rosters.id', '=', $request->input('roster_id'))
+            ->where(function ($query) use ($a, $b) {
+                return $query->where('job_rosters.assigned_to', '=', $a)
+                    ->orWhere('job_rosters.assigned_to', '=', $b)
+                    ->orWhere('job_rosters.accepted_by', '=', $a)
+                    ->orWhere('job_rosters.accepted_by', '=', $b);
+            })
             ->select('job_rosters.*', 'sites.id as jobId', 'sites.address', 'sites.coordinates')
             ->first();
 
-        if ($roster != null) {
-
-            $user = \App\Models\User::with('contractor')->find($id);
-
-            if (!$user || !$user->contractor) {
+        if ($roster == null) {
+            $rosterExists = DB::table('job_rosters')
+                ->where('id', '=', $request->input('roster_id'))
+                ->first();
+            
+            if (!$rosterExists) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Contractor data not found.'
+                    'message' => 'Job roster not found with the provided ID.',
+                    'data' => null,
+                ], 200);
+            } else {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Job already accepted or not available!',
+                    'data' => null,
+                ], 200);
+            }
+        }
+
+        try {
+            $contractor = \App\Models\User::with('contractor')->find($id);
+
+            if (!$contractor || !$contractor->contractor) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Contractor data not found.',
+                    'data' => null,
                 ], 200);
             }
 
+            if ($request->has('guard_id') && !empty($request->guard_id)) {
+                
+               if (!$this->canAcceptJob($request->guard_id, $roster->start, $roster->end)) {
+                    // Get previous shift details
+                    $lastShift = DB::table('job_rosters')
+                        ->where('assigned_to', $request->guard_id)
+                        ->where('end', '<=', $roster->start)
+                        ->orderBy('end', 'desc')
+                        ->first();
+                    
+                    // Get next shift details
+                    $nextShift = DB::table('job_rosters')
+                        ->where('assigned_to', $request->guard_id)
+                        ->where('start', '>=', $roster->end)
+                        ->orderBy('start', 'asc')
+                        ->first();
+                    
+                    $previousRestHours = 0;
+                    $nextRestHours = 0;
+                    $restrictionReason = '';
+                    
+                    if ($lastShift) {
+                        $previousRestHours = Carbon::parse($lastShift->end)->diffInHours(Carbon::parse($roster->start));
+                        if ($previousRestHours < 8) {
+                            $restrictionReason = 'Only ' . $previousRestHours . ' hours rest before this shift. Need 8 hours.';
+                        }
+                    }
+                    
+                    if ($nextShift && empty($restrictionReason)) {
+                        $nextRestHours = Carbon::parse($roster->end)->diffInHours(Carbon::parse($nextShift->start));
+                        if ($nextRestHours < 8) {
+                            $restrictionReason = 'Only ' . $nextRestHours . ' hours rest after this shift. Need 8 hours.';
+                        }
+                    }
+                    
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Staff must complete 8 hours rest before or after accepting this shift.',
+                        'data' => null,
+                        'details' => [
+                            'guard_id' => $request->guard_id,
+                            'shift_start' => $roster->start,
+                            'shift_end' => $roster->end,
+                            'previous_shift' => $lastShift ? [
+                                'end' => $lastShift->end,
+                                'rest_hours_available' => $previousRestHours,
+                                'rest_hours_required' => 8,
+                                'rest_hours_shortfall' => max(0, 8 - $previousRestHours)
+                            ] : null,
+                            'next_shift' => $nextShift ? [
+                                'start' => $nextShift->start,
+                                'rest_hours_available' => $nextRestHours,
+                                'rest_hours_required' => 8,
+                                'rest_hours_shortfall' => max(0, 8 - $nextRestHours)
+                            ] : null,
+                            'restriction_reason' => $restrictionReason
+                        ],
+                        'roster_details' => [
+                            'id' => $roster->id,
+                            'site' => $roster->address,
+                            'hours' => $roster->hours,
+                            'asap' => $roster->asap
+                        ]
+                    ], 200);
+                }
+
+                // Calculate weekly hours
+                $rosterStart = Carbon::parse($roster->start);
+                $weekStart = $rosterStart->copy()->startOfWeek();
+                $weekEnd = $rosterStart->copy()->endOfWeek();
+
+                $currentWeekHours = DB::table('job_rosters')
+                    ->where('assigned_to', $request->guard_id)
+                    ->whereBetween('start', [$weekStart, $weekEnd])
+                    ->sum('hours');
+
+                $currentWeekHours = $currentWeekHours ?? 0;
+                $currentJobHours = $roster->hours ?? 0;
+                $totalHours = $currentWeekHours + $currentJobHours;
+
+                // Get user with staff relationship
+                $user = \App\Models\User::with('staff')->find($request->guard_id);
+
+                if (!$user || !$user->staff) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Staff data not found.',
+                        'data' => null,
+                        'details' => [
+                            'guard_id' => $request->guard_id,
+                            'user_exists' => $user ? true : false,
+                            'staff_exists' => $user && $user->staff ? true : false
+                        ]
+                    ], 200);
+                }
+
+                // Check visa type and weekly limits
+                $visaType = $user->staff->staff_document_type;
+                $maxHours = $visaType === 'student_visa' ? 24 : 38;
+
+                if ($totalHours > $maxHours) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => $visaType === 'student_visa' 
+                            ? 'Weekly limit exceeded (24 hours for student visa).' 
+                            : 'Weekly limit exceeded (38 hours allowed).',
+                        'data' => null,
+                        'details' => [
+                            'guard_id' => $request->guard_id,
+                            'visa_type' => $visaType,
+                            'max_weekly_hours' => $maxHours,
+                            'current_week_hours' => $currentWeekHours,
+                            'current_job_hours' => $currentJobHours,
+                            'total_hours' => $totalHours,
+                            'hours_remaining' => $maxHours - $totalHours,
+                            'week_start' => $weekStart->format('Y-m-d'),
+                            'week_end' => $weekEnd->format('Y-m-d')
+                        ],
+                        'roster_details' => [
+                            'id' => $roster->id,
+                            'start' => $roster->start,
+                            'end' => $roster->end,
+                            'hours' => $roster->hours
+                        ]
+                    ], 200);
+                }
+
+                // Check if already assigned to this shift
+                $is_already_assign = DB::table('job_rosters')
+                    ->where('assigned_to', $request->guard_id)
+                    ->whereBetween('start', [$roster->start, $roster->end])
+                    ->first();
+                    
+                if ($is_already_assign != null) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Staff is already assigned to a shift during this time.',
+                        'data' => null,
+                        'details' => [
+                            'guard_id' => $request->guard_id,
+                            'requested_shift' => [
+                                'start' => $roster->start,
+                                'end' => $roster->end
+                            ],
+                            'existing_shift' => [
+                                'id' => $is_already_assign->id,
+                                'start' => $is_already_assign->start,
+                                'end' => $is_already_assign->end
+                            ]
+                        ]
+                    ], 200);
+                }
+            }
+
+            // Get guard details if provided
+            $guardName = 'Guard';
+            if ($request->has('guard_id') && !empty($request->guard_id)) {
+                $guard = \App\Models\User::find($request->guard_id);
+                $guardName = $guard ? $guard->name : 'Guard';
+            }
+
+            // Update the roster
+            $updateData = ['accepted_by' => $id];
+            
+            // Only update assigned_to if guard_id is provided
+            if ($request->has('guard_id') && !empty($request->guard_id)) {
+                $updateData['assigned_to'] = $request->guard_id;
+                $updateData['job_status'] = "confirmed";
+                $updateData['publish_status'] = 1;
+            }
+            
             DB::table('job_rosters')
-                ->where('id', '=', $request->input('roster_id'))
-                ->update(['accepted_by' => $id]);
+                ->where('id', '=', $request->roster_id)
+                ->update($updateData);
+
+            // Get updated roster data
+            $updatedRoster = DB::table('job_rosters')
+                ->join('sites', 'sites.id', '=', 'job_rosters.site_id')
+                ->where('job_rosters.id', '=', $request->roster_id)
+                ->select('job_rosters.*', 'sites.id as jobId', 'sites.address', 'sites.coordinates')
+                ->first();
+
+            // ============ SEND NOTIFICATIONS ============
+            
+            // 1. Send notification to Client (created_by)
+            $client = DB::table('users')
+                ->where('notification_token', '!=', '')
+                ->where('id', '=', $roster->created_by)
+                ->select('notification_token', 'name')
+                ->first();
+            
+            if ($client && !empty($client->notification_token)) {
+                $message = $request->has('guard_id') && !empty($request->guard_id) 
+                    ? $guardName . ' accepted and confirmed the job.'
+                    : 'Job has been accepted by contractor.';
+                    
+                $clientNotificationData = [
+                    'message' => $message,
+                    'title' => 'Job Accepted',
+                    'notification_token' => $client->notification_token,
+                    'page' => 'homepage',
+                    'roster_id' => $request->roster_id
+                ];
+                send_push_notification($clientNotificationData);
+            }
+
+            // 2. Send notification to Contractor (accepted_by)
+            $contractorUser = DB::table('users')
+                ->where('notification_token', '!=', '')
+                ->where('id', '=', $id)
+                ->select('notification_token', 'name')
+                ->first();
+            
+            if ($contractorUser && !empty($contractorUser->notification_token)) {
+                $message = $request->has('guard_id') && !empty($request->guard_id)
+                    ? 'You have successfully accepted the job for ' . $guardName . '.'
+                    : 'You have successfully accepted the job.';
+                    
+                $contractorNotificationData = [
+                    'message' => $message,
+                    'title' => 'Job Accepted Successfully',
+                    'notification_token' => $contractorUser->notification_token,
+                    'page' => 'homepage',
+                    'roster_id' => $request->roster_id
+                ];
+                send_push_notification($contractorNotificationData);
+            }
+
+            // 3. Send notification to Staff/Guard (only if guard_id is provided)
+            if ($request->has('guard_id') && !empty($request->guard_id)) {
+                $guardUser = DB::table('users')
+                    ->where('notification_token', '!=', '')
+                    ->where('id', '=', $request->guard_id)
+                    ->select('notification_token', 'name')
+                    ->first();
+                
+                if ($guardUser && !empty($guardUser->notification_token)) {
+                    $guardNotificationData = [
+                        'message' => 'You have been assigned to a new job by ' . ($contractor->name ?? 'Contractor') . '.',
+                        'title' => 'New Job Assignment',
+                        'notification_token' => $guardUser->notification_token,
+                        'page' => 'homepage',
+                        'roster_id' => $request->roster_id
+                    ];
+                    send_push_notification($guardNotificationData);
+                }
+            }
+
+            // Prepare response data
+            $responseData = [
+                'roster' => $updatedRoster,
+                'update_details' => $updateData,
+            ];
 
             return response()->json([
                 'success' => true,
-                'message' => 'Job accept successfully.',
+                'message' => $request->has('guard_id') && !empty($request->guard_id) 
+                    ? 'Job accepted and assigned to guard successfully.' 
+                    : 'Job accepted successfully.',
+                'data' => $responseData
             ], 200);
             
-        } else {
+        } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Job already accepted!'
-            ], 200);
+                'message' => 'An error occurred while processing the request.',
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ], 500);
         }
+    }
+
+    public function getJobsDetail(Request $request)
+    {
+        // Validate user_id
+        if (!$request->has('user_id') || empty($request->user_id)) {
+            return response()->json([
+                'success' => false,
+                'data' => null,
+                'code' => 404
+            ]);
+        }
+
+        $user = User::where('id', $request->user_id)->first();
+
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'data' => null,
+                'code' => 404
+            ]);
+        }
+
+        // Date Range
+        $start = $request->has('start') && $request->start != ''
+            ? dbFormate($request->start) . ' 00:00'
+            : Carbon::now()->startOfWeek()->format('Y-m-d 00:00');
+
+        $end = $request->has('end') && $request->end != ''
+            ? dbFormate($request->end) . ' 23:59'
+            : Carbon::now()->endOfWeek()->format('Y-m-d 23:59');
+
+        $roster_id = $request->roster_id;
+
+        // Pagination parameters
+        $perPage = $request->has('per_page') && !empty($request->per_page) 
+            ? (int)$request->per_page 
+            : 16; // Default 15 items per page
+        
+        $page = $request->has('page') && !empty($request->page) 
+            ? (int)$request->page 
+            : 1; // Default page 1
+
+        $notifyUserIds = [];
+
+        if ($user->user_type === 'contractor') {
+            $notifyUserIds = JobRoster::whereBetween('start', [$start, $end])
+                ->pluck('assigned_to')
+                ->unique()
+                ->values()
+                ->toArray();
+
+            if (empty($notifyUserIds)) {
+                return response()->json([
+                    'success' => false,
+                    'data' => null,
+                    'code' => 404
+                ]);
+            }
+        }
+
+        $contractorUserIds = [];
+        $contractorUserIds = User::whereIn('id', $notifyUserIds)
+            ->where('user_id', $user->id)
+            ->pluck('id')
+            ->toArray();
+
+        // Build the query
+        $query = JobRoster::whereBetween('start', [$start, $end])
+            ->where('roster_id', $roster_id)
+            ->orderBy('start', 'desc')
+            ->with(['site', 'guards', 'customer', 'contractor', 'rosterActivity'])
+            ->when($user->user_type === 'staff', function ($q) use ($user) {
+                return $q->where('assigned_to', $user->id);
+            })
+            ->when($user->user_type === 'customer', function ($q) use ($user) {
+                return $q->where('created_by', $user->id);
+            })
+            ->when($user->user_type === 'contractor', function ($q) use ($contractorUserIds, $user) {
+                return $q->whereIn('assigned_to', $contractorUserIds)
+                    ->orWhere('accepted_by', $user->id);
+            });
+
+        // Get paginated results
+        $rosters = $query->paginate($perPage, ['*'], 'page', $page);
+
+        // Check if data exists
+        if ($rosters->count() > 0) {
+            return response()->json([
+                'success' => true,
+                'data' => $rosters->items(),
+                'pagination' => [
+                    'current_page' => $rosters->currentPage(),
+                    'per_page' => $rosters->perPage(),
+                    'total' => $rosters->total(),
+                    'last_page' => $rosters->lastPage(),
+                    'next_page_url' => $rosters->nextPageUrl(),
+                    'prev_page_url' => $rosters->previousPageUrl(),
+                    'from' => $rosters->firstItem(),
+                    'to' => $rosters->lastItem(),
+                ]
+            ]);
+        }
+        
+        return response()->json([
+            'success' => false, 
+            'data' => [],
+            'pagination' => [
+                'current_page' => $rosters->currentPage(),
+                'per_page' => $rosters->perPage(),
+                'total' => 0,
+                'last_page' => 0,
+                'next_page_url' => null,
+                'prev_page_url' => null,
+                'from' => null,
+                'to' => null,
+            ]
+        ]);
     }
 }

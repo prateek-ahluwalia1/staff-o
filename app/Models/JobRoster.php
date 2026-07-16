@@ -28,6 +28,10 @@ class JobRoster extends Model
         return $this->belongsTo(User::class, 'created_by', 'id');
     }
 
+    public function contractor() {
+        return $this->belongsTo(User::class, 'accepted_by', 'id');
+    }
+
      public function jobRosterTask()
     {
         return $this->hasMany(JobRosterTask::class, 'job_roster_id', 'id');

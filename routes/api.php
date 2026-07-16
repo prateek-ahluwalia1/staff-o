@@ -188,7 +188,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::any('/signout/{id}', [JobRosterController::class, 'jobSignout'])->name('job.signout');
     Route::get('/jobs/available/{id}', [JobRosterController::class, 'getAvailableJobs']);
 
-
+    Route::any('/job-details', [JobRosterController::class, 'getJobsDetail']);
     Route::any('/jobDetails/{id}', [JobRosterController::class, 'jobSpecificDetail'])->name('job.detail');
     Route::any('/guard/jobs/{type}/{duration}', [JobRosterController::class, 'getGuardJobs'])->name('guard.job.detail');
     Route::any('/guard/other/jobs/{type}/{duration}/{id}', [JobRosterController::class, 'getJobs'])->name('guard.job');
@@ -227,13 +227,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('contact-us/{id}/status', [ContactUsController::class, 'updateStatus']);
     Route::delete('contact-us/{id}', [ContactUsController::class, 'destroy']);
     Route::post('contact-us/test-email', [ContactUsController::class, 'testEmail']);
-
-    //Vonage Calling
-    Route::get('/webhooks/answer', [IvrController2::class, 'answer'])->name('webhooks.answer');
-    Route::post('/webhooks/dtmf', [IvrController2::class, 'dtmf'])->name('webhooks.dtmf');
-    Route::post('/webhooks/event', [IvrController2::class, 'handleEvent'])->name('handleEvent');
-    Route::get('/call-filter', [IvrController2::class, 'callfilter'])->name('callfilter');
-    Route::get('/call-welfare', [IvrController2::class, 'welfareCallFilter'])->name('welfareCallFilter');
 
     Route::any('get-roaster-hour-sum', [JobRosterController::class, 'getrosterhoursum'])->name('get.roster.hours.sum');
 

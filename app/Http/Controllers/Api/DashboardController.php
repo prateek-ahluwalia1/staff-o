@@ -134,7 +134,7 @@ class DashboardController extends Controller
         }
 
         // Contractors with staff, completed shifts & revenue (current month)
-        $contractors      = DB::select("SELECT id, name, email FROM users WHERE user_type = 'contractor'");
+        $contractors = DB::select("SELECT id, name, email FROM users WHERE user_type = 'contractor' AND id NOT IN (1)");
         $contractorResult = [];
 
         if (!empty($contractors)) {

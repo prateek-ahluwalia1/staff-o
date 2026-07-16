@@ -65,14 +65,12 @@ const getPageNumbers = (currentPage, totalPages) => {
   }
 
   const pages = [];
-  // Always show first page
   pages.push(1);
 
   if (currentPage > 3) {
     pages.push("...");
   }
 
-  // Pages around current
   const start = Math.max(2, currentPage - 1);
   const end = Math.min(totalPages - 1, currentPage + 1);
   for (let i = start; i <= end; i++) {
@@ -83,9 +81,7 @@ const getPageNumbers = (currentPage, totalPages) => {
     pages.push("...");
   }
 
-  // Always show last page
   pages.push(totalPages);
-
   return pages;
 };
 
@@ -112,7 +108,6 @@ export default function MyJobApplications() {
   // Modal state
   const [selectedApp, setSelectedApp] = useState(null);
 
-  // Fetch data with page support
   const fetchCustomerSites = useCallback(
     (page = 1) => {
       if (!userId || !startDate || !endDate) return;
@@ -130,16 +125,13 @@ export default function MyJobApplications() {
     [userId, startDate, endDate, submit]
   );
 
-  // Initial fetch on mount
   useEffect(() => {
     if (userId) {
       setCurrentPage(1);
       fetchCustomerSites(1);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId]);
 
-  // Extract pagination from response
   useEffect(() => {
     if (submitData?.pagination) {
       setPagination({
@@ -151,7 +143,6 @@ export default function MyJobApplications() {
     }
   }, [submitData]);
 
-  // Format raw shift data into a flat array
   const applications = useMemo(() => {
     if (!submitData?.data) return [];
     return submitData.data.map((shift) => {
@@ -169,7 +160,6 @@ export default function MyJobApplications() {
         pillIcon = "fa-envelope-open-text";
       }
 
-      // Format start/end times for display
       let formattedTime = `${shift.start} - ${shift.end}`;
       let formattedDate = "";
       let timeWindow = "";
@@ -187,7 +177,6 @@ export default function MyJobApplications() {
         }
       } catch (e) { }
 
-      // Format created date
       let formattedCreatedAt = shift.created_at || "";
       if (shift.created_at) {
         try {
@@ -198,7 +187,6 @@ export default function MyJobApplications() {
         } catch (e) { }
       }
 
-      // Parse required documents
       let documents = [];
       if (shift.document_list) {
         try {
@@ -209,11 +197,8 @@ export default function MyJobApplications() {
         } catch (e) { }
       }
 
-      // Determine if a contractor has accepted the shift
       const isAcceptedByContractor = !!shift.accepted_by;
       const contractorName = shift.contractor?.name || null;
-
-      // Assignee name
       const appliedVia = shift.guards?.name || "Unassigned";
 
       return {
@@ -242,7 +227,6 @@ export default function MyJobApplications() {
     });
   }, [submitData]);
 
-  // Client-side text search
   const filteredApplications = useMemo(() => {
     if (!searchQuery.trim()) return applications;
     const lowerQuery = searchQuery.toLowerCase();
@@ -261,7 +245,6 @@ export default function MyJobApplications() {
     return `${format(startDate, "dd MMM")} – ${format(endDate, "dd MMM yyyy")}`;
   }, [startDate, endDate]);
 
-  // Pagination handlers
   const handlePageChange = (page) => {
     if (page < 1 || page > pagination.lastPage || page === currentPage) return;
     setCurrentPage(page);
@@ -273,7 +256,6 @@ export default function MyJobApplications() {
     fetchCustomerSites(1);
   };
 
-  // Compute page numbers array (with ellipsis)
   const pageNumbers = useMemo(
     () => getPageNumbers(currentPage, pagination.lastPage),
     [currentPage, pagination.lastPage]
@@ -741,7 +723,6 @@ export default function MyJobApplications() {
           </div>
         </div>
 
-
         {/* Cards grid – now 4 columns on XL screens */}
         <div className="row row-cols-1 row-cols-md-2 row-cols-lg-3 row-cols-xl-4 g-4 application-grid mt-2">
           {filteredApplications.length === 0 ? (
@@ -998,6 +979,19 @@ export default function MyJobApplications() {
                   </div>
                 </div>
               </div>
+
+              {/* ---------- DESCRIPTION (NEW) ---------- */}
+              {selectedApp.rawShift.description && (
+                <div className="mt-4 p-4 bg-white rounded-4 shadow-sm border border-light mb-4">
+                  <h5 className="fw-bold d-flex align-items-center mb-3 pb-2 border-bottom" style={{ fontSize: '16px', color: '#1e293b' }}>
+                    <i className="fa-solid fa-align-left me-2" style={{ color: '#0A7C6E' }}></i>
+                    Description
+                  </h5>
+                  <p className="mb-0" style={{ fontSize: '14px', color: '#334155', textTransform: 'none', lineHeight: '1.6' }}>
+                    {selectedApp.rawShift.description}
+                  </p>
+                </div>
+              )}
 
               {userType === "admin" && (
                 <div className="row g-4">

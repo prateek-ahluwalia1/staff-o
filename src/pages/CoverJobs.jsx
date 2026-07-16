@@ -60,21 +60,20 @@ const CoverJobs = () => {
         { isAuth: true, immediate: Boolean(userRole === 'contractor' && userId) }
     );
 
-    const jobs = data?.data?.jobs?.data || [];
+    const jobs = data?.data?.jobs || [];
     const contractorStaffOptions = (staffData?.guards || []).map((staff) => ({
         value: String(staff.id),
         label: staff.name || 'Unnamed staff',
     }));
     const visibleJobs = useMemo(() => jobs.filter((job) => !removedJobIds.includes(job.id)), [jobs, removedJobIds]);
 
-    const totalJobs = data?.data?.jobs?.total || 0;
-    const lastPage = data?.data?.jobs?.last_page || 1;
+    const totalJobs = data?.data?.pagination?.total || 0;
+    const lastPage = data?.data?.pagination?.last_page || 1;
 
     useEffect(() => {
         if (selectedJob && removedJobIds.includes(selectedJob.id)) setSelectedJob(null);
     }, [removedJobIds, selectedJob]);
 
-    // Full date-time for modal
     const formatDateTime = (dateString) => {
         if (!dateString) return 'N/A';
         const date = new Date(dateString);
@@ -84,21 +83,18 @@ const CoverJobs = () => {
         });
     };
 
-    // Time only (HH:mm)
     const formatTime = (dateString) => {
         if (!dateString) return '--:--';
         const date = new Date(dateString);
         return date.toLocaleString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false });
     };
 
-    // Date only (dd MMM yyyy)
     const formatDate = (dateString) => {
         if (!dateString) return 'N/A';
         const date = new Date(dateString);
         return date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
     };
 
-    // Check same day
     const isSameDay = (d1, d2) => {
         if (!d1 || !d2) return false;
         const date1 = new Date(d1);
@@ -110,13 +106,11 @@ const CoverJobs = () => {
         );
     };
 
-    // Calculate hours from start/end
     const calculateHours = (start, end) => {
         if (!start || !end) return null;
         const ms = new Date(end) - new Date(start);
         if (ms <= 0) return null;
         const hrs = ms / (1000 * 60 * 60);
-        // round to one decimal
         return Math.round(hrs * 10) / 10;
     };
 
@@ -357,7 +351,7 @@ const CoverJobs = () => {
                         <span className="dot"></span> Available
                     </span>
                     <h1>Cover Jobs</h1>
-                    <p>{visibleJobs.length} open shift{visibleJobs.length !== 1 ? 's' : ''} waiting for you</p>
+                    <p>{totalJobs} open shift{totalJobs !== 1 ? 's' : ''} waiting for you</p>
                 </div>
 
                 {/* Cards grid – 4 columns on XL */}
@@ -411,7 +405,7 @@ const CoverJobs = () => {
                                                 {job.site_address || job.address || 'Address not available'}
                                             </p>
 
-                                            {/* Date / Time / Hours row – exactly like MyJobApplications */}
+                                            {/* Date / Time / Hours row */}
                                             <div className="shift-meta-row mt-auto mb-3">
                                                 <div className="shift-meta-item">
                                                     <span className="shift-meta-label">
@@ -481,7 +475,7 @@ const CoverJobs = () => {
                 )}
             </div>
 
-            {/* Modal – full datetime shown */}
+            {/* Modal – now shows description as separate section */}
             {selectedJob && (
                 <div
                     className="modal-overlay"
@@ -541,6 +535,19 @@ const CoverJobs = () => {
                                     </div>
                                 </div>
                             </div>
+
+                            {/* Description – separate section */}
+                            {selectedJob.description && (
+                                <div className="mt-4 p-4 bg-white rounded-4 shadow-sm border border-light">
+                                    <h5 className="fw-bold d-flex align-items-center mb-3 pb-2 border-bottom" style={{ fontSize: '16px', color: '#1e293b' }}>
+                                        <i className="fa-solid fa-align-left me-2" style={{ color: '#0A7C6E' }}></i>
+                                        Description
+                                    </h5>
+                                    <p className="mb-0" style={{ fontSize: '14px', color: '#334155', textTransform: 'none', lineHeight: '1.6' }}>
+                                        {selectedJob.description}
+                                    </p>
+                                </div>
+                            )}
 
                             {selectedJob.documents && selectedJob.documents.length > 0 && (
                                 <div className="mt-4 p-4 bg-white rounded-4 shadow-sm border border-light">

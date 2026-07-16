@@ -628,6 +628,11 @@ const ManageStaff = () => {
           --canvas: #f8fafc;
         }
 
+        /* ---------- Fix Google autocomplete dropdown ---------- */
+        .pac-container {
+          z-index: 10000 !important;
+        }
+
         .staff-hero {
           position: relative;
           background: linear-gradient(135deg, var(--navy-950) 0%, var(--navy-900) 65%, #0f2f52 100%);

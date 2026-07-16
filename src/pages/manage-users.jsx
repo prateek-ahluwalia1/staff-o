@@ -860,6 +860,9 @@ const ManageUsers = () => {
           opacity: 0.35;
           z-index: -1;
         }
+          .pac-container {
+  z-index: 10000 !important;
+}
         .manage-users-hero::after {
           content: "";
           position: absolute;

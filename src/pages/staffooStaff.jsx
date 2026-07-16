@@ -660,6 +660,9 @@ const StaffooStaff = () => {
           isolation: isolate;
           margin-bottom: 1.5rem;
         }
+          .pac-container {
+  z-index: 10000 !important;
+}
         .staff-hero::before {
           content: "";
           position: absolute;

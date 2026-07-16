@@ -118,6 +118,8 @@ export default function Login() {
 
     if (latestProfile?.user_type === "customer") {
       navigate("/add-job");
+    } else if (latestProfile?.user_type === "admin") {
+      navigate("/dashboard");
     }
   };
 

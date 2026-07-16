@@ -364,7 +364,7 @@ const CoverJobs = () => {
                 <div className="row row-cols-1 row-cols-md-2 row-cols-xl-4 g-4">
                     {visibleJobs.length === 0 ? (
                         <div className="col-12">
-                            <div className="text-center py-5 bg-white rounded-4 shadow-sm border border-light">
+                            <div className="text-center py-5 bg-white rounded-4 shadow-sm border border-light ">
                                 <i className="fa-solid fa-briefcase mb-3 d-block" style={{ fontSize: '2.5rem', color: '#94a3b8' }}></i>
                                 <h5 className="text-muted">No cover jobs available</h5>
                                 <p className="text-muted small" style={{ textTransform: 'none' }}>Check back later for new shifts.</p>

@@ -200,9 +200,9 @@ const ManageUsers = () => {
   }, []);
 
   const handleTabChange = (role) => {
+    if (role === activeTab) return;
     setActiveTab(role);
     setPage(1);
-    setUsers([]);
   };
 
   const handlePageChange = (newPage) => {
@@ -1025,6 +1025,10 @@ const ManageUsers = () => {
           position: relative;
           overflow: hidden;
         }
+          @keyframes loadingBar {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
         .modal-header-custom::after {
           content: "";
           position: absolute;
@@ -1167,6 +1171,11 @@ const ManageUsers = () => {
                 <button
                   type="button"
                   className={`nav-link ${activeTab === role ? "active" : ""}`}
+                  onKeyDown={(e) => {
+                    if (e.key === " " || e.key === "Spacebar") {
+                      e.preventDefault();
+                    }
+                  }}
                   onClick={() => handleTabChange(role)}
                 >
                   {role === "sub_contractor"
@@ -1200,6 +1209,21 @@ const ManageUsers = () => {
 
       {/* Table card */}
       <div className="content-card table-responsive" style={{ overflowX: "auto" }}>
+        {loading && users.length > 0 && (
+          <div
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              width: "100%",
+              height: "3px",
+              background: "linear-gradient(90deg, transparent, var(--teal), transparent)",
+              zIndex: 10,
+              animation: "loadingBar 1.5s infinite",
+            }}
+          />
+        )}
+
         <table className="table-modern m-0">
           <thead>
             <tr>

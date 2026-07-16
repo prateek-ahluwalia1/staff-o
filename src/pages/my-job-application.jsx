@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useSelector } from "react-redux";
-import { startOfMonth, endOfMonth, format, parse } from "date-fns";
+import { startOfWeek, endOfWeek, format, parse } from "date-fns";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import useSubmit from "../hooks/useSubmit";
@@ -58,6 +58,37 @@ const DateField = ({ label, selected, onChange, placeholder, maxDate, minDate })
   </div>
 );
 
+// ---------- Smart Pagination helper ----------
+const getPageNumbers = (currentPage, totalPages) => {
+  if (totalPages <= 7) {
+    return Array.from({ length: totalPages }, (_, i) => i + 1);
+  }
+
+  const pages = [];
+  // Always show first page
+  pages.push(1);
+
+  if (currentPage > 3) {
+    pages.push("...");
+  }
+
+  // Pages around current
+  const start = Math.max(2, currentPage - 1);
+  const end = Math.min(totalPages - 1, currentPage + 1);
+  for (let i = start; i <= end; i++) {
+    pages.push(i);
+  }
+
+  if (currentPage < totalPages - 2) {
+    pages.push("...");
+  }
+
+  // Always show last page
+  pages.push(totalPages);
+
+  return pages;
+};
+
 // ---------- Main Component ----------
 
 export default function MyJobApplications() {
@@ -66,9 +97,9 @@ export default function MyJobApplications() {
   const userType = userdata?.data?.user_type || userdata?.user_type;
   const { submit, loading, data: submitData } = useSubmit({ isAuth: true });
 
-  // Filters state
-  const [startDate, setStartDate] = useState(() => startOfMonth(new Date()));
-  const [endDate, setEndDate] = useState(() => endOfMonth(new Date()));
+  // Filters state – now defaults to current week (Monday to Sunday)
+  const [startDate, setStartDate] = useState(() => startOfWeek(new Date(), { weekStartsOn: 1 }));
+  const [endDate, setEndDate] = useState(() => endOfWeek(new Date(), { weekStartsOn: 1 }));
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [pagination, setPagination] = useState({
@@ -120,7 +151,7 @@ export default function MyJobApplications() {
     }
   }, [submitData]);
 
-  // Format raw shift data into a flat array (NEW STRUCTURE: each item is a shift)
+  // Format raw shift data into a flat array
   const applications = useMemo(() => {
     if (!submitData?.data) return [];
     return submitData.data.map((shift) => {
@@ -232,7 +263,7 @@ export default function MyJobApplications() {
 
   // Pagination handlers
   const handlePageChange = (page) => {
-    if (page < 1 || page > pagination.lastPage) return;
+    if (page < 1 || page > pagination.lastPage || page === currentPage) return;
     setCurrentPage(page);
     fetchCustomerSites(page);
   };
@@ -241,6 +272,12 @@ export default function MyJobApplications() {
     setCurrentPage(1);
     fetchCustomerSites(1);
   };
+
+  // Compute page numbers array (with ellipsis)
+  const pageNumbers = useMemo(
+    () => getPageNumbers(currentPage, pagination.lastPage),
+    [currentPage, pagination.lastPage]
+  );
 
   if (loading) return <Loader />;
 
@@ -361,7 +398,7 @@ export default function MyJobApplications() {
             letter-spacing: -0.2px;
           }
 
-          /* ---------- Filter card (floats over hero bottom edge) ---------- */
+          /* ---------- Filter card ---------- */
           .filter-card {
             background: var(--surface);
             border-radius: 18px;
@@ -487,7 +524,7 @@ export default function MyJobApplications() {
             display: inline-flex; align-items: center; gap: 5px; letter-spacing: 0.2px;
           }
 
-          /* ---------- Shift meta row (date / time / hours) ---------- */
+          /* ---------- Shift meta row ---------- */
           .shift-meta-row {
             background: var(--teal-tint);
             border: 1px solid var(--teal-border);
@@ -562,6 +599,9 @@ export default function MyJobApplications() {
           .page-btn:hover { background: var(--line-soft); border-color: #cbd5e1; }
           .page-btn.active { background: var(--teal); color: #fff; border-color: var(--teal); box-shadow: 0 4px 10px -2px rgba(10,124,110,0.4); }
           .page-btn:disabled { opacity: 0.45; pointer-events: none; }
+          .page-btn.ellipsis {
+            border: none; background: transparent; cursor: default; pointer-events: none;
+          }
 
           /* ---------- Modal ---------- */
           .modal-overlay { backdrop-filter: blur(2px); }
@@ -620,9 +660,6 @@ export default function MyJobApplications() {
             .jobs-hero { padding: 26px 20px 40px; border-radius: 18px; }
             .jobs-hero h1 { font-size: 22px; }
             .filter-card { margin: -26px 4px 0; padding: 14px; }
-            .shift-time-hero { padding: 14px 12px; }
-            .shift-time-window { font-size: 14px; padding: 5px 16px; }
-            .hours-badge { font-size: 11.5px; padding: 5px 12px; }
           }
           @media (max-width: 575.98px) {
             .filter-card { flex-direction: column; align-items: stretch; }
@@ -728,8 +765,8 @@ export default function MyJobApplications() {
           </div>
         )}
 
-        {/* Cards grid */}
-        <div className="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-4 application-grid mt-2">
+        {/* Cards grid – now 4 columns on XL screens */}
+        <div className="row row-cols-1 row-cols-md-2 row-cols-lg-3 row-cols-xl-4 g-4 application-grid mt-2">
           {filteredApplications.length === 0 ? (
             <div className="col-12 empty-state text-center w-100">
               <i className="fa-solid fa-magnifying-glass-minus d-block"></i>
@@ -746,7 +783,6 @@ export default function MyJobApplications() {
             filteredApplications.map((app, index) => (
               <div className="col" key={app.id || index}>
                 <div className="card h-100 border-0 shadow-sm shift-card position-relative overflow-hidden">
-                  {/* Accent bar – color based on status/contractor */}
                   <div
                     className="card-accent-bar"
                     style={{
@@ -759,7 +795,6 @@ export default function MyJobApplications() {
                   ></div>
 
                   <div className="card-body p-4 pt-4 d-flex flex-column">
-                    {/* Status & created date row */}
                     <div className="d-flex justify-content-between align-items-start mb-3">
                       <span
                         className={`status-badge ${app.statusClass === "offer"
@@ -778,7 +813,6 @@ export default function MyJobApplications() {
                       </div>
                     </div>
 
-                    {/* Title & location */}
                     <h5 className="card-title fw-bold mb-2 card-title-text">
                       {app.title}
                     </h5>
@@ -787,7 +821,6 @@ export default function MyJobApplications() {
                       <span>{app.location}</span>
                     </div>
 
-                    {/* Contractor badge */}
                     {app.isAcceptedByContractor && (
                       <div className="mb-1">
                         <span className="contractor-badge">
@@ -797,7 +830,6 @@ export default function MyJobApplications() {
                       </div>
                     )}
 
-                    {/* Date / time / hours meta row */}
                     <div className="shift-meta-row">
                       <div className="shift-meta-item">
                         <span className="shift-meta-label">
@@ -819,7 +851,6 @@ export default function MyJobApplications() {
                       </div>
                     </div>
 
-                    {/* Bottom: assignee + details button */}
                     <div className="mt-auto pt-3 card-footer-row d-flex justify-content-between align-items-center">
                       <div className="d-flex align-items-center gap-2">
                         <div
@@ -843,7 +874,7 @@ export default function MyJobApplications() {
                         className="btn btn-primary-custom btn-sm details-btn flex-shrink-0 ms-2"
                         onClick={() => openModal(app)}
                       >
-                        Details <i className="fa-solid fa-arrow-right ms-1"></i>
+                        Details
                       </button>
                     </div>
                   </div>
@@ -853,7 +884,7 @@ export default function MyJobApplications() {
           )}
         </div>
 
-        {/* Pagination */}
+        {/* Pagination – smart with ellipsis */}
         {pagination.lastPage > 1 && (
           <div className="pagination-container d-flex justify-content-center align-items-center gap-2 flex-wrap">
             <button
@@ -863,15 +894,21 @@ export default function MyJobApplications() {
             >
               <i className="fa-solid fa-chevron-left"></i>
             </button>
-            {Array.from({ length: pagination.lastPage }, (_, i) => i + 1).map((page) => (
-              <button
-                key={page}
-                className={`page-btn ${currentPage === page ? "active" : ""}`}
-                onClick={() => handlePageChange(page)}
-              >
-                {page}
-              </button>
-            ))}
+            {pageNumbers.map((page, idx) =>
+              page === "..." ? (
+                <span key={`ellipsis-${idx}`} className="page-btn ellipsis">
+                  …
+                </span>
+              ) : (
+                <button
+                  key={page}
+                  className={`page-btn ${currentPage === page ? "active" : ""}`}
+                  onClick={() => handlePageChange(page)}
+                >
+                  {page}
+                </button>
+              )
+            )}
             <button
               className="page-btn"
               onClick={() => handlePageChange(currentPage + 1)}

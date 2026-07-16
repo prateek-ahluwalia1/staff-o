@@ -34,7 +34,7 @@ const Sidebar = memo(function Sidebar() {
   const displayName = userdata?.data?.name || userdata?.name || "User";
   const type = (userType || "").toString().toLowerCase();
   const isProfileActive = !!(userdata?.data?.is_active || userdata?.is_active);
-  const isStaffCoverJobsVisible = type === "staff" && (userdata?.data?.user_id === 1 || userdata?.data?.user_id === 1);
+  const isStaffCoverJobsVisible = type === "staff" && (userdata?.data?.user_id === 1 || userdata?.user_id === 1);
 
   useEffect(() => {
     const handleResize = () => {

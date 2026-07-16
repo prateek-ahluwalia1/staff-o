@@ -245,7 +245,6 @@ export default function Login() {
           <div className="row align-items-center g-4">
             <div className="col-lg-6 d-none d-lg-block auth-hero-copy">
               <div className="auth-eyebrow">
-                <span className="dot"></span>
                 <span className="label">Australia's #1 Security Platform</span>
               </div>
               <h1 className="auth-title">
@@ -260,15 +259,15 @@ export default function Login() {
 
               <div className="auth-checks" style={{ textTransform: "none" }}>
                 <div className="auth-check">
-                  <span className="auth-check-ic"><i className="fa-solid fa-check"></i></span>
+                  <i className="fa-solid fa-circle-check"></i>
                   <span>Verified shifts and trusted clients</span>
                 </div>
                 <div className="auth-check">
-                  <span className="auth-check-ic"><i className="fa-solid fa-check"></i></span>
+                  <i className="fa-solid fa-circle-check"></i>
                   <span>Instant access to live job updates</span>
                 </div>
                 <div className="auth-check">
-                  <span className="auth-check-ic"><i className="fa-solid fa-check"></i></span>
+                  <i className="fa-solid fa-circle-check"></i>
                   <span>Smart tools for your daily workflow</span>
                 </div>
               </div>
@@ -291,11 +290,12 @@ export default function Login() {
                       <input
                         type="email"
                         autoComplete="off"
-                        className={`form-control py-2 auth-input ${errors.email ? "is-invalid" : ""}`}
+                        className={`form-control py-2 ${errors.email ? "is-invalid" : ""}`}
                         name="email"
                         placeholder="name@example.com"
                         value={formData.email}
                         onChange={handleChange}
+                        style={{ border: "1px solid #0A7C6E" }}
                       />
                       {errors.email && (
                         <div className="invalid-feedback" style={{ fontSize: "12px" }}>
@@ -326,12 +326,13 @@ export default function Login() {
                       <div className="position-relative">
                         <input
                           type={showPassword ? "text" : "password"}
-                          className={`form-control py-2 pe-5 auth-input ${errors.password ? "is-invalid" : ""}`}
+                          className={`form-control py-2 pe-5 ${errors.password ? "is-invalid" : ""}`}
                           name="password"
                           placeholder="Password"
                           value={formData.password}
                           onChange={handleChange}
                           minLength={8}
+                          style={{ border: "1px solid #0A7C6E" }}
                         />
                         <button
                           type="button"
@@ -355,8 +356,18 @@ export default function Login() {
 
                   <button
                     type="submit"
-                    className="btn w-100 py-2 fw-semibold d-flex justify-content-center align-items-center gap-2 auth-submit-btn"
+                    className="btn w-100 py-2 fw-semibold d-flex justify-content-center align-items-center gap-2"
+                    style={{
+                      background: "#0A7C6E",
+                      border: "none",
+                      borderRadius: "6px",
+                      color: "#fff",
+                      transition: "transform 0.1s",
+                    }}
                     disabled={loading}
+                    onMouseDown={(e) => (e.currentTarget.style.transform = "scale(0.98)")}
+                    onMouseUp={(e) => (e.currentTarget.style.transform = "scale(1)")}
+                    onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
                   >
                     {loading && <i className="fa-solid fa-spinner fa-spin"></i>}
                     {loading ? "Signing in..." : "Sign in"}
@@ -371,12 +382,13 @@ export default function Login() {
 
                 <button
                   onClick={handleGoogleLogin}
-                  className="btn w-100 py-2 small d-flex align-items-center justify-content-center gap-2 auth-google-btn"
+                  className="btn border auth-google-btn w-100 py-2 small d-flex align-items-center justify-content-center gap-2"
                   disabled={loading}
+                  style={{ borderRadius: "6px" }}
                 >
                   <img src={googleIcon} alt="Google" width={16} />
-                  <span className="fw-medium" style={{ fontSize: "14px" }}>
-                    Continue with Google
+                  <span className="text-white fw-medium" style={{ fontSize: "14px" }}>
+                    Google
                   </span>
                 </button>
 
@@ -402,7 +414,7 @@ export default function Login() {
             left: 0,
             width: "100%",
             height: "100%",
-            backgroundColor: "rgba(10, 20, 35, 0.62)",
+            backgroundColor: "rgba(15, 23, 42, 0.7)",
             backdropFilter: "blur(4px)",
             display: "flex",
             alignItems: "center",
@@ -412,14 +424,14 @@ export default function Login() {
         >
           <div
             className="modal-content-custom bg-white rounded-4 p-4 p-md-5 shadow-lg mx-3"
-            style={{ maxWidth: "450px", width: "100%", animation: "fadeIn 0.3s ease", borderRadius: 20 }}
+            style={{ maxWidth: "450px", width: "100%", animation: "fadeIn 0.3s ease" }}
           >
             <div className="text-center mb-4">
               <div
                 className="d-inline-flex align-items-center justify-content-center rounded-circle mb-3"
-                style={{ width: "72px", height: "72px", backgroundColor: "rgba(10, 124, 110, 0.1)" }}
+                style={{ width: "80px", height: "80px", backgroundColor: "rgba(10, 124, 110, 0.1)" }}
               >
-                <i className="fa-solid fa-key" style={{ fontSize: "28px", color: "#0A7C6E" }}></i>
+                <i className="fa-solid fa-key" style={{ fontSize: "32px", color: "#0A7C6E" }}></i>
               </div>
               <h3 className="fw-bold text-dark mb-2">Reset Password</h3>
               <p className="text-muted small mb-0" style={{ textTransform: "none" }}>
@@ -434,13 +446,14 @@ export default function Login() {
                 </label>
                 <input
                   type="email"
-                  className={`form-control py-2 auth-input ${forgotError ? "is-invalid" : ""}`}
+                  className={`form-control py-2 ${forgotError ? "is-invalid" : ""}`}
                   placeholder="name@example.com"
                   value={forgotEmail}
                   onChange={(e) => {
                     setForgotEmail(e.target.value);
                     if (forgotError) setForgotError("");
                   }}
+                  style={{ border: "1px solid #0A7C6E" }}
                 />
                 {forgotError && (
                   <div className="invalid-feedback" style={{ fontSize: "12px" }}>
@@ -452,7 +465,8 @@ export default function Login() {
               <div className="d-flex gap-3">
                 <button
                   type="button"
-                  className="btn py-2 fw-semibold w-50 auth-btn-ghost"
+                  className="btn btn-light py-2 fw-semibold w-50"
+                  style={{ borderRadius: "8px", color: "#475569" }}
                   onClick={() => setShowForgotModal(false)}
                   disabled={loading}
                 >
@@ -460,7 +474,8 @@ export default function Login() {
                 </button>
                 <button
                   type="submit"
-                  className="btn py-2 fw-semibold w-50 text-white d-flex justify-content-center align-items-center gap-2 auth-submit-btn"
+                  className="btn py-2 fw-semibold w-50 text-white d-flex justify-content-center align-items-center gap-2"
+                  style={{ borderRadius: "8px", backgroundColor: "#0A7C6E" }}
                   disabled={loading}
                 >
                   {loading && <i className="fa-solid fa-spinner fa-spin"></i>}
@@ -482,7 +497,7 @@ export default function Login() {
             left: 0,
             width: "100%",
             height: "100%",
-            backgroundColor: "rgba(10, 20, 35, 0.62)",
+            backgroundColor: "rgba(15, 23, 42, 0.7)",
             backdropFilter: "blur(4px)",
             display: "flex",
             alignItems: "center",
@@ -492,7 +507,7 @@ export default function Login() {
         >
           <div
             className="modal-content-custom bg-white rounded-4 p-4 p-md-5 shadow-lg mx-3"
-            style={{ maxWidth: "500px", width: "100%", animation: "fadeIn 0.3s ease", borderRadius: 20 }}
+            style={{ maxWidth: "500px", width: "100%", animation: "fadeIn 0.3s ease" }}
           >
             <div className="text-center mb-4">
               <h3 className="fw-bold text-dark mb-2">Complete your setup</h3>
@@ -512,10 +527,23 @@ export default function Login() {
                   <button
                     key={role.key}
                     type="button"
-                    className={`btn w-100 text-start d-flex align-items-center gap-3 p-3 auth-role-card ${isActive ? "active" : ""}`}
+                    className="btn w-100 text-start d-flex align-items-center gap-3 p-3"
                     onClick={() => setSelectedRole(role.key)}
+                    style={{
+                      border: isActive ? "2px solid #0A7C6E" : "1px solid #e2e8f0",
+                      backgroundColor: isActive ? "rgba(10, 124, 110, 0.05)" : "#fff",
+                      borderRadius: "10px",
+                      transition: "all 0.2s"
+                    }}
                   >
-                    <div className={`auth-role-ic ${isActive ? "active" : ""}`}>
+                    <div
+                      className="d-flex align-items-center justify-content-center rounded-circle"
+                      style={{
+                        width: "48px", height: "48px",
+                        backgroundColor: isActive ? "#0A7C6E" : "#f1f5f9",
+                        color: isActive ? "#fff" : "#64748b"
+                      }}
+                    >
                       <i className={`fa-solid ${role.icon} fs-5`}></i>
                     </div>
                     <div>
@@ -532,7 +560,8 @@ export default function Login() {
             <div className="d-flex gap-3">
               <button
                 type="button"
-                className="btn py-2 fw-semibold w-50 auth-btn-ghost"
+                className="btn btn-light py-2 fw-semibold w-50"
+                style={{ borderRadius: "8px", color: "#475569" }}
                 onClick={() => {
                   setShowRoleModal(false);
                   setPendingGoogleToken(null);
@@ -543,8 +572,10 @@ export default function Login() {
               </button>
               <button
                 type="button"
-                className="btn py-2 fw-semibold w-50 text-white d-flex justify-content-center align-items-center gap-2 auth-submit-btn"
+                className="btn py-2 fw-semibold w-50 text-white d-flex justify-content-center align-items-center gap-2"
                 style={{
+                  borderRadius: "8px",
+                  backgroundColor: "#0A7C6E",
                   opacity: (!selectedRole || loading) ? 0.6 : 1,
                   cursor: (!selectedRole || loading) ? "not-allowed" : "pointer"
                 }}
@@ -563,123 +594,6 @@ export default function Login() {
         @keyframes fadeIn {
           from { opacity: 0; transform: translateY(10px); }
           to { opacity: 1; transform: translateY(0); }
-        }
-
-        :root {
-          --auth-navy-950: #0a1930;
-          --auth-navy-900: #0e2340;
-          --auth-teal: #0A7C6E;
-          --auth-teal-dark: #075e53;
-          --auth-teal-tint: #f0fdf9;
-          --auth-teal-border: #d1fae5;
-          --auth-ink: #0f172a;
-          --auth-muted: #64748b;
-          --auth-line: #e2e8f0;
-        }
-
-        .auth-page {
-          background-color: #f6f8fa;
-          background-image:
-            radial-gradient(rgba(10, 124, 110, 0.07) 1px, transparent 1px),
-            radial-gradient(circle at 6% 10%, rgba(10, 124, 110, 0.08) 0%, transparent 38%),
-            radial-gradient(circle at 94% 88%, rgba(10, 25, 48, 0.07) 0%, transparent 38%);
-          background-size: 24px 24px, 100% 100%, 100% 100%;
-          background-repeat: repeat, no-repeat, no-repeat;
-          padding: 72px 0;
-          min-height: calc(100vh - 90px);
-          display: flex;
-          align-items: center;
-        }
-
-        .auth-eyebrow {
-          display: inline-flex; align-items: center; gap: 8px;
-          margin-bottom: 18px;
-        }
-        .auth-eyebrow .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--auth-teal); box-shadow: 0 0 0 4px rgba(10,124,110,0.18); }
-        .auth-eyebrow .label {
-          font-size: 11.5px; font-weight: 700; letter-spacing: 0.6px; text-transform: uppercase; color: var(--auth-teal-dark);
-        }
-
-        .auth-title {
-          font-size: 2.5rem; font-weight: 800; color: var(--auth-ink); letter-spacing: -0.5px; line-height: 1.15;
-        }
-        .auth-line { color: var(--auth-teal); }
-
-        .auth-description {
-          margin-top: 18px; font-size: 15.5px; color: var(--auth-muted); line-height: 1.6; max-width: 420px;
-        }
-
-        .auth-checks { margin-top: 30px; display: flex; flex-direction: column; gap: 14px; }
-        .auth-check { display: flex; align-items: center; gap: 12px; font-size: 14.5px; color: var(--auth-ink); font-weight: 500; }
-        .auth-check-ic {
-          width: 26px; height: 26px; border-radius: 50%; background: var(--auth-teal-tint); color: var(--auth-teal);
-          display: flex; align-items: center; justify-content: center; font-size: 11px; flex-shrink: 0;
-          border: 1px solid var(--auth-teal-border);
-        }
-
-        .auth-card {
-          background: #fff; border-radius: 20px; border: 1px solid #eef1f1;
-          box-shadow: 0 20px 50px -16px rgba(15,23,42,0.16);
-          padding: 36px 34px; position: relative; overflow: hidden;
-        }
-        .auth-card::before {
-          content: ""; position: absolute; top: 0; left: 0; right: 0; height: 4px;
-          background: linear-gradient(90deg, var(--auth-teal), var(--auth-navy-900) 60%, var(--auth-navy-950));
-        }
-
-        .auth-input {
-          border: 1.5px solid var(--auth-line) !important;
-          border-radius: 10px !important;
-          transition: border-color 0.15s, box-shadow 0.15s;
-        }
-        .auth-input:focus {
-          border-color: var(--auth-teal) !important;
-          box-shadow: 0 0 0 3px rgba(10,124,110,0.12) !important;
-        }
-        .auth-input.is-invalid { border-color: #dc3545 !important; }
-
-        .auth-submit-btn {
-          background: var(--auth-teal) !important;
-          border: none !important;
-          border-radius: 10px !important;
-          color: #fff !important;
-          box-shadow: 0 8px 18px -6px rgba(10,124,110,0.45);
-          transition: transform 0.12s, background 0.15s, box-shadow 0.15s;
-        }
-        .auth-submit-btn:hover:not(:disabled) { background: var(--auth-teal-dark) !important; box-shadow: 0 10px 22px -6px rgba(10,124,110,0.5); }
-        .auth-submit-btn:active:not(:disabled) { transform: scale(0.98); }
-
-        .auth-btn-ghost {
-          background: #fff !important; border: 1.5px solid var(--auth-line) !important; border-radius: 10px !important;
-          color: #475569 !important; transition: background 0.15s;
-        }
-        .auth-btn-ghost:hover { background: #f8fafc !important; }
-
-        .auth-divider { display: flex; align-items: center; gap: 12px; margin: 22px 0; }
-        .auth-divider hr { flex: 1; margin: 0; border-top: 1px solid var(--auth-line); }
-        .auth-divider span { font-size: 11.5px; font-weight: 700; color: var(--auth-muted); letter-spacing: 0.5px; }
-
-        .auth-google-btn {
-          background: #fff !important; border: 1.5px solid var(--auth-line) !important; border-radius: 10px !important;
-          color: var(--auth-ink) !important; transition: all 0.15s;
-        }
-        .auth-google-btn:hover:not(:disabled) { background: #f8fafc !important; border-color: #cbd5e1 !important; }
-
-        .auth-role-card {
-          border: 1.5px solid var(--auth-line) !important; background: #fff !important; border-radius: 14px !important;
-          transition: all 0.18s;
-        }
-        .auth-role-card:hover { border-color: var(--auth-teal-border) !important; }
-        .auth-role-card.active { border: 2px solid var(--auth-teal) !important; background: var(--auth-teal-tint) !important; }
-        .auth-role-ic {
-          width: 48px; height: 48px; border-radius: 50%; background: #f1f5f9; color: #64748b;
-          display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.18s;
-        }
-        .auth-role-ic.active { background: var(--auth-teal); color: #fff; }
-
-        @media (max-width: 991.98px) {
-          .auth-page { padding: 40px 0; }
-          .auth-card { padding: 28px 22px; }
         }
       `}</style>
     </>

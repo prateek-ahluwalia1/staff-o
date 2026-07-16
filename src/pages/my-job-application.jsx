@@ -680,7 +680,7 @@ export default function MyJobApplications() {
           <span className="jobs-hero-eyebrow">
             <span className="dot"></span> Live
           </span>
-          <h1>Job Applications &amp; Shifts</h1>
+          <h1>Job Applications</h1>
           <p>Viewing shifts for the selected date range.</p>
 
           <div className="jobs-hero-stats">
@@ -741,28 +741,6 @@ export default function MyJobApplications() {
           </div>
         </div>
 
-        {/* Summary bar */}
-        {applications.length > 0 && (
-          <div className="d-flex flex-wrap gap-2 mt-4 mb-1">
-            <div className="quick-stat-chip">
-              <i className="fa-regular fa-calendar"></i>
-              <div className="d-flex flex-column">
-                <span className="quick-stat-label">Showing</span>
-                <span className="quick-stat-value">
-                  {pagination.total} {pagination.total === 1 ? "shift" : "shifts"}
-                  {searchQuery && ` · "${searchQuery}"`}
-                </span>
-              </div>
-            </div>
-            <div className="quick-stat-chip">
-              <i className="fa-solid fa-layer-group"></i>
-              <div className="d-flex flex-column">
-                <span className="quick-stat-label">Page</span>
-                <span className="quick-stat-value">{pagination.currentPage} of {pagination.lastPage}</span>
-              </div>
-            </div>
-          </div>
-        )}
 
         {/* Cards grid – now 4 columns on XL screens */}
         <div className="row row-cols-1 row-cols-md-2 row-cols-lg-3 row-cols-xl-4 g-4 application-grid mt-2">

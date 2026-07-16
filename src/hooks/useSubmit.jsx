@@ -86,7 +86,7 @@ const useSubmit = ({ isAuth = false, BaseURL = apiURL } = {}) => {
 
         // 👇 NEW: Check for logical success:false even with HTTP 200
         if (json && json.success === false) {
-          const errorMsg = json.message || json.error || "Operation failed";
+          const errorMsg = json.message || json.error;
           if (!silentErrorToast) toast.error(errorMsg);
           setData(json);   // still expose the full response to the caller
           return { success: false, error: errorMsg, data: json };

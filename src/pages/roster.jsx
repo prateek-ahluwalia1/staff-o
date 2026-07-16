@@ -171,7 +171,7 @@ export default function RosterPage() {
       end: format(addDays(monday, endDayOffset), "MM-dd-yyyy"),
       roster_id: "1",
     };
-    submit("api/fetch-customer-sites", payload, { method: "POST" });
+    submit("api/fetch-customer-sites", payload, { method: "POST", silentErrorToast: true });
   }, [userId, monday, weeksToView, submit, selectedStates, userRole]);
 
   const fetchHolidays = useCallback(async () => {

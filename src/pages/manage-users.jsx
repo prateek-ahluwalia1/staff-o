@@ -33,7 +33,8 @@ const DOC_TYPES = [
   { value: "Driver License Back", label: "Driver License (Back)" },
   { value: "Security Master License", label: "Security Master License" },
   { value: "Security License", label: "Security License" },
-  { value: "Working with Children Check", label: "Working with Children Check (WWCC)" },
+  { value: "Working with Children Check", label: "Working With Children Check (WWCC)" },
+  { value: "Working With Children Check", label: "Working With Children Check (WWCC)" },
   { value: "Employment Application Form", label: "Employment Application Form" },
   { value: "TFN Declaration", label: "TFN Declaration" },
   { value: "Superannuation Form", label: "Superannuation Form" },
@@ -216,6 +217,26 @@ const ManageUsers = () => {
     if (activeTab === "staff") return user.staff || {};
     return {};
   }, [activeTab]);
+
+  // Helper to determine user status
+  const getUserStatus = useCallback((user) => {
+    if (user.status) return user.status.toLowerCase();
+    if (user.deleted_at) return "inactive";
+    const nested = getNestedData(user);
+    if (nested.status) return nested.status.toLowerCase();
+    return "active";
+  }, [getNestedData]);
+
+  const getStatusBadgeClass = (status) => {
+    const s = String(status).toLowerCase();
+    if (["active", "verified", "approved"].includes(s))
+      return "badge-premium badge-success";
+    if (["inactive", "suspended", "blocked"].includes(s))
+      return "badge-premium badge-danger";
+    if (["pending", "on hold"].includes(s))
+      return "badge-premium badge-warning";
+    return "badge-premium badge-secondary";
+  };
 
   const openModal = useCallback((user = null) => {
     setShowPassword(false);
@@ -799,129 +820,236 @@ const ManageUsers = () => {
   if (loading && users.length === 0) return <Loader />;
 
   return (
-    <div className="dashboard-main dashboard-tools-page">
+    <div className="dashboard-main">
       <style>{`
-        /* ---------- Base / Desktop Styles ---------- */
-        .dashboard-page-header h1 {
+        /* ---------- Premium Design System ---------- */
+        :root {
+          --navy-950: #0a1930;
+          --navy-900: #0e2340;
+          --teal: #0A7C6E;
+          --teal-dark: #075e53;
+          --teal-tint: #f0fdf9;
+          --teal-border: #d1fae5;
+          --amber: #d97706;
+          --success: #16a34a;
+          --danger: #dc2626;
+          --ink: #0f172a;
+          --slate: #1e293b;
+          --muted: #64748b;
+          --line: #e2e8f0;
+          --line-soft: #f1f5f9;
+          --surface: #ffffff;
+          --canvas: #f8fafc;
+        }
+
+        .manage-users-hero {
+          position: relative;
+          background: linear-gradient(135deg, var(--navy-950) 0%, var(--navy-900) 65%, #0f2f52 100%);
+          border-radius: 22px;
+          padding: 34px 36px 46px;
+          overflow: hidden;
+          isolation: isolate;
+          margin-bottom: 1.5rem;
+        }
+        .manage-users-hero::before {
+          content: "";
+          position: absolute;
+          inset: 0;
+          background-image: radial-gradient(rgba(255,255,255,0.10) 1px, transparent 1px);
+          background-size: 22px 22px;
+          opacity: 0.35;
+          z-index: -1;
+        }
+        .manage-users-hero::after {
+          content: "";
+          position: absolute;
+          top: -60px;
+          right: -60px;
+          width: 260px;
+          height: 260px;
+          border-radius: 50%;
+          background: radial-gradient(circle, rgba(10,124,110,0.45) 0%, rgba(10,124,110,0) 70%);
+          z-index: -1;
+        }
+        .manage-users-hero-eyebrow {
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          font-size: 11px;
+          font-weight: 700;
+          letter-spacing: 0.6px;
+          text-transform: uppercase;
+          color: #6ee7d8;
+          margin-bottom: 10px;
+        }
+        .manage-users-hero-eyebrow .dot {
+          width: 7px; height: 7px; border-radius: 50%;
+          background: #34d399;
+          box-shadow: 0 0 0 4px rgba(52,211,153,0.18);
+        }
+        .manage-users-hero h1 {
+          color: #fff;
+          font-size: 28px;
           font-weight: 800;
-          letter-spacing: -0.02em;
-          color: #111827;
+          letter-spacing: -0.4px;
+          margin: 0 0 6px;
         }
-        .jobtracker-table-shell {
-          border-radius: 12px;
-          border: 1px solid #e2e8f0;
-          background: #ffffff;
-          overflow-x: auto;
-          -webkit-overflow-scrolling: touch;
-        }
-        .jobtracker-main-table {
-          table-layout: fixed;
-          width: 100%;
-          min-width: 650px;
-          border-collapse: collapse;
+        .manage-users-hero p {
+          color: rgba(255,255,255,0.62);
+          font-size: 14px;
           margin: 0;
+          text-transform: none;
         }
-        @media (min-width: 992px) {
-          .jobtracker-main-table {
-            table-layout: fixed;
-            min-width: 0;
-          }
+
+        .content-card {
+          background: var(--surface);
+          border-radius: 18px;
+          box-shadow: 0 4px 14px rgba(15,23,42,0.06);
+          border: 1px solid var(--line-soft);
+          overflow: hidden;
+          margin-bottom: 1.5rem;
         }
-        .premium-thead th {
-          background-color: #0A7C6E !important;
-          color: #ffffff !important;
-          font-weight: 600;
-          letter-spacing: 0.05em;
-          font-size: 0.75rem;
-          padding: 1.2rem 1.5rem !important;
-          border: none !important;
-          border-right: 1px solid rgba(255, 255, 255, 0.1) !important;
-          white-space: nowrap;
+
+        .table-modern {
+          width: 100%;
+          border-collapse: separate;
+          border-spacing: 0;
         }
-        .premium-thead th:last-child {
-          border-right: none !important;
+        .table-modern thead th {
+          background: var(--teal);
+          color: #fff;
+          font-size: 11px;
+          font-weight: 700;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+          padding: 14px 16px;
+          border-bottom: none;
+          border-right: 1px solid rgba(255,255,255,0.1);
         }
-        .jobtracker-data-row td {
-          padding: 1.2rem 1.5rem !important;
-          vertical-align: middle;
-          border-bottom: 1px solid #e2e8f0 !important;
-          border-right: 1px solid #f8fafc;
-        }
-        .jobtracker-data-row td:last-child {
+        .table-modern thead th:last-child {
           border-right: none;
         }
-        .jobtracker-data-row:last-child td {
-          border-bottom: none !important;
+        .table-modern tbody tr {
+          transition: background 0.15s;
         }
-        .jobtracker-tabs .nav-link {
-          border-radius: 8px;
-          padding: 0.5rem 1rem;
-          font-size: 0.88rem;
-          font-weight: 600;
-          color: #475569;
-          background: transparent;
-          border: 1px solid transparent;
-          transition: all 0.2s ease-in-out;
+        .table-modern tbody tr:hover {
+          background: rgba(248,250,252,0.6);
         }
-        .jobtracker-tabs .nav-link:hover {
-          background: #f1f5f9;
+        .table-modern tbody td {
+          padding: 16px 16px;
+          vertical-align: middle;
+          border-bottom: 1px solid var(--line-soft);
         }
-        .jobtracker-tabs .nav-link.active {
-          background: #0A7C6E;
-          color: #ffffff;
-          box-shadow: 0 4px 6px -1px rgba(10, 124, 110, 0.2);
+        .table-modern tbody tr:last-child td {
+          border-bottom: none;
         }
-        .full-screen-modal {
-          position: fixed;
-          top: 0;
-          left: 0;
-          width: 100vw;
-          height: 100vh;
-          z-index: 1060;
-          background: rgba(0, 0, 0, 0.4);
-          backdrop-filter: blur(8px);
-          display: flex;
-          justify-content: center;
+
+        .badge-premium {
+          display: inline-flex;
           align-items: center;
-          animation: modalFadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-        .modal-inner-content {
-          width: 95%;
-          max-width: 900px;
-          height: 90vh;
-          background: #ffffff;
+          gap: 5px;
+          padding: 4px 12px;
           border-radius: 20px;
-          box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-          display: flex;
-          flex-direction: column;
+          font-size: 11.5px;
+          font-weight: 700;
+          text-transform: capitalize;
+          border: 1px solid;
+        }
+        .badge-success {
+          background: rgba(22,163,74,0.08);
+          color: #16a34a;
+          border-color: rgba(22,163,74,0.3);
+        }
+        .badge-warning {
+          background: rgba(217,119,6,0.08);
+          color: #d97706;
+          border-color: rgba(217,119,6,0.3);
+        }
+        .badge-danger {
+          background: rgba(220,38,38,0.08);
+          color: #dc2626;
+          border-color: rgba(220,38,38,0.3);
+        }
+        .badge-secondary {
+          background: rgba(100,116,139,0.08);
+          color: #64748b;
+          border-color: rgba(100,116,139,0.3);
+        }
+
+        .btn-outline-premium {
+          background: #fff;
+          border: 1px solid var(--line);
+          color: var(--slate);
+          border-radius: 10px;
+          font-weight: 600;
+          padding: 6px 12px;
+          transition: all 0.15s;
+          display: inline-flex;
+          align-items: center;
+          gap: 5px;
+        }
+        .btn-outline-premium:hover {
+          background: var(--line-soft);
+          border-color: #cbd5e1;
+        }
+
+        .page-btn {
+          width: 36px; height: 36px; border-radius: 10px; border: 1px solid var(--line); background: #fff;
+          display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13.5px;
+          color: var(--slate); transition: all 0.15s; cursor: pointer;
+        }
+        .page-btn:hover { background: var(--line-soft); border-color: #cbd5e1; }
+        .page-btn.active {
+          background: var(--teal); color: #fff; border-color: var(--teal);
+          box-shadow: 0 4px 10px -2px rgba(10,124,110,0.4);
+        }
+        .page-btn:disabled { opacity: 0.45; pointer-events: none; }
+
+        /* Modal styles */
+        .modal-overlay {
+          background: rgba(10,20,35,0.62);
+          backdrop-filter: blur(2px);
+        }
+        .modal-content-custom {
+          border: none;
+          border-radius: 18px;
+          box-shadow: 0 30px 60px -18px rgba(10,25,48,0.4);
+        }
+        .modal-header-custom {
+          background: linear-gradient(120deg, var(--navy-950), var(--navy-900) 70%, #10345a);
+          border-bottom: none;
+          border-radius: 18px 18px 0 0;
+          position: relative;
           overflow: hidden;
         }
-        .modal-tabs-container {
-          background: #f3f4f6;
-          padding: 4px;
-          border-radius: 12px;
-          display: inline-flex;
-          flex-wrap: wrap;
-          gap: 4px;
+        .modal-header-custom::after {
+          content: "";
+          position: absolute;
+          top: -40px;
+          right: -40px;
+          width: 160px;
+          height: 160px;
+          border-radius: 50%;
+          background: radial-gradient(circle, rgba(10,124,110,0.5), transparent 70%);
         }
-        .modal-tabs-container .btn {
-          border-radius: 8px;
+        .modal-close-btn {
+          background: rgba(255,255,255,0.14);
           border: none;
-          font-weight: 600;
-          font-size: 0.85rem;
-          color: #6b7280;
-          padding: 0.5rem 1rem;
-          transition: all 0.2s;
+          color: #fff;
+          border-radius: 50%;
+          width: 32px;
+          height: 32px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transition: background 0.15s;
+          position: relative;
+          z-index: 1;
         }
-        .modal-tabs-container .btn-primary-custom {
-          background: #ffffff;
-          color: #000000;
-          box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        .modal-close-btn:hover {
+          background: rgba(255,255,255,0.26);
         }
-        .modal-tabs-container .btn-outline-primary:hover:not(:disabled) {
-          color: #111827;
-          background: rgba(255,255,255,0.5);
-        }
+
         .confirm-modal-backdrop {
           position: fixed;
           inset: 0;
@@ -957,108 +1085,80 @@ const ManageUsers = () => {
           background: #e0f2fe;
           color: #0284c7;
         }
-        .pac-container {
-          z-index: 2000 !important;
-          border-radius: 12px;
-          box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-          border: 1px solid #e5e7eb;
-          margin-top: 4px;
-        }
         @keyframes modalFadeIn {
           from { opacity: 0; transform: scale(0.98); }
           to { opacity: 1; transform: scale(1); }
         }
 
-        /* ---------- Responsive ---------- */
-        @media (max-width: 991.98px) {
-          .premium-thead th,
-          .jobtracker-data-row td {
-            padding: 0.75rem 1rem !important;
-            font-size: 0.8rem;
-          }
-          .jobtracker-main-table {
-            min-width: 600px;
-          }
+        .empty-state {
+          border: 1.5px dashed var(--line);
+          background: #fff;
+          border-radius: 18px;
+          padding: 56px 24px;
+        }
+        .empty-state i { font-size: 2rem; color: #94a3b8; }
+        .empty-state-title { color: var(--slate); font-weight: 700; font-size: 15px; margin-top: 14px; }
+        .empty-state-sub { color: var(--muted); font-size: 13px; margin-top: 4px; text-transform: none; }
+
+        .tabs-nav .nav-link {
+          border-radius: 8px;
+          padding: 0.5rem 1rem;
+          font-size: 0.88rem;
+          font-weight: 600;
+          color: #475569;
+          background: transparent;
+          border: 1px solid transparent;
+          transition: all 0.2s ease-in-out;
+        }
+        .tabs-nav .nav-link:hover {
+          background: #f1f5f9;
+        }
+        .tabs-nav .nav-link.active {
+          background: var(--teal);
+          color: #ffffff;
+          box-shadow: 0 4px 6px -1px rgba(10, 124, 110, 0.2);
+        }
+
+        .add-btn {
+          background: var(--teal);
+          color: #fff;
+          border: none;
+          border-radius: 30px;
+          padding: 0.6rem 1.5rem;
+          font-weight: 700;
+          font-size: 0.9rem;
+          box-shadow: 0 6px 14px -4px rgba(10,124,110,0.45);
+          transition: transform 0.15s, box-shadow 0.15s;
+        }
+        .add-btn:hover {
+          transform: translateY(-1px);
+          box-shadow: 0 10px 18px -4px rgba(10,124,110,0.5);
         }
 
         @media (max-width: 767.98px) {
-          .jobtracker-tabs {
-            flex-wrap: wrap;
-            justify-content: center;
+          .manage-users-hero {
+            padding: 26px 20px 40px;
+            border-radius: 18px;
           }
-          .jobtracker-tabs .nav-item {
-            margin-bottom: 0.5rem;
-          }
-          .card-body .btn-dark {
-            width: 100%;
-            margin-top: 0.5rem;
-          }
-          .modal-inner-content {
-            width: 100%;
-            height: 100vh;
-            border-radius: 0;
-          }
-          .modal-tabs-container {
-            width: 100%;
-            justify-content: center;
-          }
-          .modal-tabs-container .btn {
-            flex: 1 0 auto;
-            font-size: 0.8rem;
-            padding: 0.4rem 0.8rem;
-          }
-          .full-screen-modal .px-5 {
-            padding-left: 1rem !important;
-            padding-right: 1rem !important;
-          }
-          .full-screen-modal .py-4 {
-            padding-top: 1rem !important;
-            padding-bottom: 1rem !important;
-          }
-          .confirm-modal-card {
-            max-width: 100%;
-          }
-          .jobtracker-data-row td {
-            word-break: break-word;
-            white-space: normal;
-          }
-        }
-
-        @media (max-width: 575.98px) {
-          .dashboard-page-header h1 {
-            font-size: 1.5rem;
-          }
-          .jobtracker-main-table {
-            min-width: 500px;
-          }
-          .premium-thead th,
-          .jobtracker-data-row td {
-            padding: 0.6rem 0.8rem !important;
-            font-size: 0.75rem;
-          }
-          .btn-group .btn {
-            width: 36px;
-            height: 36px;
-            padding: 0;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-          }
+          .manage-users-hero h1 { font-size: 22px; }
         }
       `}</style>
 
-      <div className="dashboard-page-header">
-        <div>
-          <h1>User Management</h1>
-          <p className="text-muted" style={{ textTransform: "none" }}>
-            Manage permissions and details for all account types.
-          </p>
-        </div>
+      {/* Hero header */}
+      <div className="manage-users-hero">
+        <span className="manage-users-hero-eyebrow">
+          <span className="dot"></span> Admin
+        </span>
+        <h1>User Management</h1>
+        <p style={{ textTransform: "none" }}>
+          Manage permissions and details for all account types.
+        </p>
       </div>
 
-      <div className="card border-0 shadow-sm mb-4" style={{ borderRadius: "16px" }}>
-        <div className="card-body py-3 d-flex justify-content-between align-items-center gap-2 flex-wrap">
-          <ul className="nav nav-pills jobtracker-tabs gap-2 flex-wrap mb-0">
+      {/* Tabs and Add button */}
+      <div className="content-card p-3">
+        <div className="d-flex justify-content-between align-items-center gap-3 flex-wrap">
+          <ul className="nav nav-pills tabs-nav gap-2 mb-0">
             {["customer", "sub_contractor", "staff"].map((role) => (
               <li className="nav-item" key={role}>
                 <button
@@ -1075,11 +1175,9 @@ const ManageUsers = () => {
               </li>
             ))}
           </ul>
-
           <button
-            className="btn btn-dark jobtracker-action-btn fw-bold px-4 rounded-pill"
+            className="btn add-btn px-4"
             onClick={() => openModal()}
-            style={{ minHeight: "44px" }}
           >
             <i className="fa-solid fa-plus me-1"></i> Add{" "}
             {activeTab === "sub_contractor"
@@ -1092,54 +1190,44 @@ const ManageUsers = () => {
       </div>
 
       {error && (
-        <div className="alert alert-danger rounded-3 shadow-sm border-0 d-flex align-items-center mb-4">
-          <i className="fa-solid fa-circle-exclamation me-3"></i>
-          <div>
-            <strong>Error:</strong> {error.message}
-          </div>
+        <div className="alert alert-danger border-0 rounded-3 d-flex align-items-center gap-2 py-3 mb-3">
+          <i className="fa-solid fa-circle-exclamation"></i> {error.message}
         </div>
       )}
 
-      <div className="card border-0 shadow-sm" style={{ borderRadius: "16px", overflow: "hidden" }}>
-        <div className="table-responsive jobtracker-table-shell">
-          <table className={`table table-hover align-middle mb-0 jobtracker-main-table ${loading ? "opacity-50" : ""}`}>
-            <thead className="premium-thead">
-              <tr>
-                {activeTab === "staff" ? (
-                  <>
-                    <th style={{ width: "30%", textAlign: "left", paddingLeft: "1.5rem" }}>Name & Email</th>
-                    <th style={{ width: "20%", textAlign: "left" }}>Resource Partner</th>
-                    <th style={{ width: "15%", textAlign: "left" }}>Location</th>
-                    <th style={{ width: "15%", textAlign: "left" }}>Created At</th>
-                    <th style={{ width: "20%", textAlign: "center" }}>Actions</th>
-                  </>
-                ) : (
-                  <>
-                    <th style={{ width: "30%", textAlign: "left", paddingLeft: "1.5rem" }}>Name & Email</th>
-                    {activeTab === "sub_contractor" ? (
-                      <th style={{ width: "20%", textAlign: "left" }}>Business & Phone</th>
-                    ) : (
-                      <th style={{ width: "20%", textAlign: "left" }}>Phone</th>
-                    )}
-                    <th style={{ width: "15%", textAlign: "left" }}>Location</th>
-                    <th style={{ width: "15%", textAlign: "left" }}>Created At</th>
-                    <th style={{ width: "20%", textAlign: "center" }}>Actions</th>
-                  </>
-                )}
-              </tr>
-            </thead>
-            <tbody>
-              {users.length > 0 ? (
-                users.map((user) => (
-                  <tr key={user.id} className="jobtracker-data-row">
-                    <td style={{ textAlign: "left", paddingLeft: "1.5rem" }}>
+      {/* Table card */}
+      <div className="content-card table-responsive" style={{ overflowX: "auto" }}>
+        <table className="table-modern m-0">
+          <thead>
+            <tr>
+              <th style={{ textAlign: "left" }}>Name & Email</th>
+              {activeTab === "sub_contractor" ? (
+                <th style={{ textAlign: "left" }}>Business & Phone</th>
+              ) : activeTab === "staff" ? (
+                <th style={{ textAlign: "left" }}>Resource Partner</th>
+              ) : (
+                <th style={{ textAlign: "left" }}>Phone</th>
+              )}
+              <th style={{ textAlign: "left" }}>Status</th>
+              <th style={{ textAlign: "left" }}>Location</th>
+              <th style={{ textAlign: "left" }}>Created At</th>
+              <th style={{ textAlign: "center" }}>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {users.length > 0 ? (
+              users.map((user) => {
+                const status = getUserStatus(user);
+                return (
+                  <tr key={user.id}>
+                    <td>
                       <div className="fw-bold text-dark">{user.name}</div>
                       <div className="text-muted small" style={{ textTransform: "none" }}>
                         {user.email}
                       </div>
                     </td>
                     {activeTab === "sub_contractor" ? (
-                      <td style={{ textAlign: "left" }}>
+                      <td>
                         <div className="fw-medium text-dark">
                           {getNestedData(user).company_name || "—"}
                         </div>
@@ -1148,7 +1236,7 @@ const ManageUsers = () => {
                         </div>
                       </td>
                     ) : activeTab === "staff" ? (
-                      <td style={{ textAlign: "left" }}>
+                      <td>
                         {(() => {
                           const contractorId = user.user_id || user.staff?.user_id;
                           const contractor = contractorsList.find(c => c.id == contractorId);
@@ -1160,34 +1248,39 @@ const ManageUsers = () => {
                         })()}
                       </td>
                     ) : (
-                      <td style={{ textAlign: "left" }}>
+                      <td>
                         <div className="text-muted small">
                           {user.phone || getNestedData(user).phone || "N/A"}
                         </div>
                       </td>
                     )}
-                    <td style={{ textAlign: "left" }}>
+                    {/* Status badge */}
+                    <td>
+                      <span className={getStatusBadgeClass(status)}>
+                        {status.charAt(0).toUpperCase() + status.slice(1)}
+                      </span>
+                    </td>
+                    <td>
                       {user.city || "—"}{" "}
                       <span className="text-muted small">
                         ({user.country || "N/A"})
                       </span>
                     </td>
-                    {/* NEW: Created At column */}
-                    <td style={{ textAlign: "left" }}>
+                    <td>
                       <span className="small">
                         {normalizeToDisplay(user.created_at) || "—"}
                       </span>
                     </td>
                     <td style={{ textAlign: "center" }}>
-                      <div className="btn-group">
+                      <div className="d-flex gap-2 justify-content-center">
                         <button
-                          className="btn btn-light btn-sm rounded-circle me-2 border"
+                          className="btn btn-outline-premium btn-sm"
                           onClick={() => openModal(user)}
                         >
-                          <i className="fa-solid fa-pen text-dark"></i>
+                          <i className="fa-solid fa-pen-to-square"></i>
                         </button>
                         <button
-                          className="btn btn-light btn-sm rounded-circle border"
+                          className="btn btn-outline-premium btn-sm"
                           onClick={() => openDeleteModal(user)}
                         >
                           <i className="fa-solid fa-trash text-danger"></i>
@@ -1195,69 +1288,67 @@ const ManageUsers = () => {
                       </div>
                     </td>
                   </tr>
-                ))
-              ) : (
-                <tr>
-                  {/* Increase colSpan to 5 because we now have 5 columns */}
-                  <td colSpan={5} className="text-center py-5 text-muted"
-                    style={{ textTransform: "none" }}
-                  >
-                    No records found for this category.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+                );
+              })
+            ) : (
+              <tr>
+                <td colSpan={6} className="text-center py-5 text-muted" style={{ textTransform: "none" }}>
+                  No records found for this category.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
 
-        {/* Pagination Footer */}
-        <div className="card-footer bg-white border-top py-3 px-4 d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-2">
-          <div className="text-muted small">
-            Showing Page <strong>{page}</strong> of <strong>{totalPages}</strong>
-            <span className="mx-2">•</span>
-            Total <strong>{totalItems}</strong> records
-          </div>
-          <div className="d-flex gap-2">
-            <button
-              className="btn btn-sm btn-outline-secondary rounded-pill px-3"
-              onClick={() => handlePageChange(page - 1)}
-              disabled={page === 1}
-              style={{ minHeight: "44px" }}
-            >
-              <i className="fa-solid fa-chevron-left me-1"></i> Prev
-            </button>
-            <button
-              className="btn btn-sm btn-outline-secondary rounded-pill px-3"
-              onClick={() => handlePageChange(page + 1)}
-              disabled={page === totalPages || totalPages === 0}
-              style={{ minHeight: "44px" }}
-            >
-              Next <i className="fa-solid fa-chevron-right ms-1"></i>
-            </button>
-          </div>
+      {/* Pagination */}
+      <div className="d-flex flex-column flex-sm-row justify-content-between align-items-center mt-4 pt-3">
+        <span className="text-muted small mb-2 mb-sm-0">
+          Showing Page <strong>{page}</strong> of <strong>{totalPages}</strong>
+          <span className="mx-2">•</span>
+          Total <strong>{totalItems}</strong> records
+        </span>
+        <div className="d-flex gap-2">
+          <button
+            className="page-btn"
+            onClick={() => handlePageChange(page - 1)}
+            disabled={page === 1}
+          >
+            <i className="fa-solid fa-chevron-left"></i>
+          </button>
+          <button
+            className="page-btn"
+            onClick={() => handlePageChange(page + 1)}
+            disabled={page === totalPages || totalPages === 0}
+          >
+            <i className="fa-solid fa-chevron-right"></i>
+          </button>
         </div>
       </div>
 
-      {/* FULL SCREEN MODAL */}
+      {/* FULL SCREEN MODAL – profile editing */}
       {isModalOpen && (
-        <div className="full-screen-modal">
-          <div className="modal-inner-content">
-            <div className="px-5 py-4 border-bottom bg-white d-flex justify-content-between align-items-start">
+        <div className="full-screen-modal" style={{
+          position: "fixed", top: 0, left: 0, width: "100vw", height: "100vh",
+          zIndex: 1060, background: "rgba(0,0,0,0.4)", backdropFilter: "blur(8px)",
+          display: "flex", justifyContent: "center", alignItems: "center",
+        }}>
+          <div className="modal-inner-content" style={{
+            width: "95%", maxWidth: "900px", height: "90vh", background: "#ffffff",
+            borderRadius: "20px", boxShadow: "0 25px 50px -12px rgba(0,0,0,0.25)",
+            display: "flex", flexDirection: "column", overflow: "hidden",
+          }}>
+            <div className="px-4 py-3 border-bottom bg-white d-flex justify-content-between align-items-start">
               <div className="flex-grow-1 pe-4">
                 <h4 className="fw-bold mb-1">
                   {editingUser ? "Update Profile" : "Create New User"}
                 </h4>
                 <p className="text-muted small mb-0">
-                  Role:{" "}
-                  <span className="text-dark fw-bold">
-                    {roleLabels[activeTab] || activeTab.replace("_", " ")}
-                  </span>
+                  Role: <span className="text-dark fw-bold">{roleLabels[activeTab] || activeTab.replace("_", " ")}</span>
                 </p>
                 {activeTab === "staff" && (
-                  <div className="mt-4 p-3 bg-white rounded-4 border shadow-sm w-100">
-                    <label className="form-label fw-bold mb-2">
-                      Assign to Resource Partner *
-                    </label>
+                  <div className="mt-3 p-3 bg-white rounded-4 border shadow-sm w-100">
+                    <label className="form-label fw-bold mb-2">Assign to Resource Partner *</label>
                     <Select
                       options={contractorsList
                         .filter((contractor) => contractor.id != 1)
@@ -1311,28 +1402,22 @@ const ManageUsers = () => {
               <button className="btn-close shadow-none mt-1" onClick={closeModal}></button>
             </div>
 
-            <div
-              className="flex-grow-1 overflow-auto px-5 py-4"
-              onScroll={() => {
-                if (document.activeElement?.id === "address") {
-                  document.activeElement.blur();
-                }
-              }}
-            >
-              <div className="modal-tabs-container mb-4">
+            <div className="flex-grow-1 overflow-auto px-4 py-4">
+              <div className="modal-tabs-container mb-4" style={{ background: "#f3f4f6", padding: "4px", borderRadius: "12px", display: "inline-flex", flexWrap: "wrap", gap: "4px" }}>
                 <button
                   type="button"
-                  className={`btn ${activeModalTab === "personal" ? "btn-primary-custom text-white" : "btn-outline-primary"}`}
+                  className={`btn ${activeModalTab === "personal" ? "btn-dark" : "btn-light"} border-0`}
                   onClick={() => setActiveModalTab("personal")}
+                  style={{ borderRadius: "8px", fontWeight: 600, fontSize: "0.85rem", padding: "0.5rem 1rem" }}
                 >
                   Personal Information
                 </button>
-                {/* Show Documents tab for both Staff and Resource Partners */}
                 {(activeTab === "staff" || activeTab === "sub_contractor") && editingUser && (
                   <button
                     type="button"
-                    className={`btn ${activeModalTab === "documents" ? "btn-primary-custom text-white" : "btn-outline-primary"}`}
+                    className={`btn ${activeModalTab === "documents" ? "btn-dark" : "btn-light"} border-0`}
                     onClick={() => setActiveModalTab("documents")}
+                    style={{ borderRadius: "8px", fontWeight: 600, fontSize: "0.85rem", padding: "0.5rem 1rem" }}
                   >
                     Documents
                   </button>
@@ -1358,7 +1443,6 @@ const ManageUsers = () => {
                     abn: formData.abn || "",
                     acn: formData.acn || "",
                     security_license_no: formData.security_license_no || "",
-
                   }}
                   onChange={handleProfileFormChange}
                   onSubmit={handleSubmit}
@@ -1416,264 +1500,23 @@ const ManageUsers = () => {
                 <div>
                   <div className="d-flex justify-content-between align-items-center mb-4">
                     <div>
-                      <h6 className="section-divider mt-0 border-0 mb-1">Documents</h6>
-                      <p className="text-muted mb-0 small"
-                        style={{ textTransform: "none" }}
-                      >Upload and manage documents.</p>
+                      <h6 className="fw-bold mb-1">Documents</h6>
+                      <p className="text-muted small mb-0" style={{ textTransform: "none" }}>
+                        Upload and manage documents.
+                      </p>
                     </div>
                   </div>
-                  {/* pass activeTab as userType – staff or sub_contractor */}
                   <DocumentTable
                     documents={documents}
                     userType={activeTab}
                     onAddFile={openDocumentModal}
                   />
-                  {showDocModal && (
-                    <div className="confirm-modal-backdrop" onClick={closeDocumentModal}>
-                      <div
-                        className="confirm-modal-card"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <div className="confirm-modal-header px-4 py-3 d-flex align-items-center gap-3">
-                          <span className="confirm-modal-icon icon-doc">
-                            <i className="fa-solid fa-file-arrow-up"></i>
-                          </span>
-                          <div>
-                            <h5 className="mb-0 fw-bold">{selectedDoc ? "Update Document" : "Add Document"}</h5>
-                            <div className="small text-muted">Upload a verification file.</div>
-                          </div>
-                        </div>
-                        <form onSubmit={handleDocSubmit} className="p-4" style={{ maxHeight: "70vh", overflowY: "auto" }}>
-                          {/* Document Type */}
-                          <div className="mb-3">
-                            <label className="form-label fw-bold text-dark">
-                              Document Type
-                            </label>
-                            <select
-                              className="form-control bg-light border-0"
-                              name="document_name"
-                              value={docForm.document_name}
-                              onChange={handleDocFormChange}
-                              required
-                              disabled={!!selectedDoc}
-                              style={{ minHeight: "44px" }}
-                            >
-                              <option value="">Select Type</option>
-                              {DOC_TYPES.map((doc) => (
-                                <option key={doc.value} value={doc.value}>
-                                  {doc.label}
-                                </option>
-                              ))}
-                            </select>
-                          </div>
-
-                          {/* Document Number + Verify */}
-                          <div className="mb-3">
-                            <label className="form-label fw-bold text-dark">
-                              Document Number <span className="text-danger">*</span>
-                            </label>
-                            {(docForm.document_name === "Security License" || docForm.document_name === "Visa") ? (
-                              <div className="input-group">
-                                <input
-                                  type="text"
-                                  className="form-control bg-light border-0"
-                                  placeholder="e.g. ABC123456"
-                                  value={docForm.document_no}
-                                  onChange={handleDocNumberChange}
-                                  required
-                                  style={{ minHeight: "44px" }}
-                                />
-                                <button
-                                  type="button"
-                                  className="btn btn-dark fw-bold px-4 border-0"
-                                  onClick={handleVerifyDocumentNumber}
-                                  disabled={verifyingDoc || !docForm.document_no}
-                                  style={{ minHeight: "44px" }}
-                                >
-                                  {verifyingDoc ? (
-                                    <>
-                                      <span className="spinner-border spinner-border-sm me-1" />
-                                      Verifying...
-                                    </>
-                                  ) : (
-                                    "Verify"
-                                  )}
-                                </button>
-                              </div>
-                            ) : (
-                              <input
-                                type="text"
-                                className="form-control bg-light border-0"
-                                placeholder="e.g. ABC123456"
-                                value={docForm.document_no}
-                                onChange={handleDocNumberChange}
-                                required
-                                style={{ minHeight: "44px" }}
-                              />
-                            )}
-                          </div>
-
-                          {/* Expiry Date */}
-                          <div className="mb-3">
-                            <label className="form-label fw-bold text-dark">
-                              Expiry Date <span className="text-danger">*</span>
-                            </label>
-                            <div className="input-group position-relative shadow-sm rounded-3 overflow-hidden">
-                              <button
-                                type="button"
-                                className="input-group-text bg-light text-muted border-0"
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  const hiddenPicker = document.getElementById("doc_expiry_picker");
-                                  if (hiddenPicker) {
-                                    try { hiddenPicker.showPicker(); } catch (err) { hiddenPicker.focus(); }
-                                  }
-                                }}
-                                style={{ cursor: "pointer", zIndex: 10, minHeight: "44px" }}
-                                disabled={docForm.document_name === "Security License" || docForm.document_name === "Visa"}
-                                title="Open Calendar"
-                              >
-                                <i className="fa-solid fa-calendar-days text-dark"></i>
-                              </button>
-
-                              <input
-                                type="date"
-                                id="doc_expiry_picker"
-                                className="position-absolute"
-                                style={{ opacity: 0, width: 0, height: 0, pointerEvents: "none", bottom: 0, left: 40 }}
-                                value={
-                                  docForm.document_expiry
-                                    ? (() => {
-                                      const parts = docForm.document_expiry.split("/");
-                                      if (parts.length === 3) {
-                                        const [d, m, y] = parts;
-                                        return `${y}-${m}-${d}`;
-                                      }
-                                      return "";
-                                    })()
-                                    : ""
-                                }
-                                onChange={(e) => {
-                                  const isoDate = e.target.value;
-                                  if (isoDate) {
-                                    const [y, m, d] = isoDate.split("-");
-                                    setDocForm(prev => ({
-                                      ...prev,
-                                      document_expiry: `${d}/${m}/${y}`,
-                                    }));
-                                  }
-                                }}
-                                disabled={docForm.document_name === "Security License" || docForm.document_name === "Visa"}
-                              />
-
-                              <input
-                                type="text"
-                                className="form-control bg-light border-0 ps-0"
-                                name="document_expiry"
-                                placeholder="DD/MM/YYYY"
-                                value={docForm.document_expiry}
-                                onChange={(e) => {
-                                  let value = e.target.value.replace(/\D/g, "");
-                                  if (value.length > 8) value = value.substring(0, 8);
-                                  if (value.length > 2 && value.length <= 4) {
-                                    value = value.replace(/^(\d{2})(\d+)/, "$1/$2");
-                                  } else if (value.length > 4) {
-                                    value = value.replace(/^(\d{2})(\d{2})(\d+)/, "$1/$2/$3");
-                                  }
-                                  setDocForm(prev => ({
-                                    ...prev,
-                                    document_expiry: value,
-                                  }));
-                                }}
-                                required
-                                maxLength={10}
-                                pattern="^(0[1-9]|[12][0-9]|3[01])/(0[1-9]|1[012])/\d{4}$"
-                                disabled={docForm.document_name === "Security License" || docForm.document_name === "Visa"}
-                                style={{
-                                  backgroundColor:
-                                    docForm.document_name === "Security License" || docForm.document_name === "Visa"
-                                      ? "#e9ecef"
-                                      : "white",
-                                  minHeight: "44px"
-                                }}
-                              />
-                            </div>
-                          </div>
-
-                          {/* File Upload */}
-                          <div className="mb-4">
-                            <label className="form-label fw-bold text-dark">
-                              Document/Image <span className="text-danger">*</span>
-                            </label>
-                            <div
-                              className="position-relative border border-2 border-dashed rounded-4 p-4 text-center bg-light"
-                              style={{ minHeight: "200px", display: "flex", alignItems: "center", justifyContent: "center" }}
-                            >
-                              {docForm.file_url ? (
-                                <>
-                                  {docForm.file_url.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
-                                    <img
-                                      src={docForm.file_url.startsWith("http") ? docForm.file_url : `${apiURL}staff_documents/${docForm.file_url}`}
-                                      alt="Preview"
-                                      style={{ width: "100%", maxHeight: "200px", objectFit: "contain", borderRadius: "8px", opacity: uploadLoading ? 0.3 : 1 }}
-                                    />
-                                  ) : (
-                                    <div className="text-center">
-                                      <i className="fa-solid fa-file-pdf fa-3x text-muted mb-3"></i>
-                                      <p className="fw-bold text-secondary mb-0">Document Selected</p>
-                                    </div>
-                                  )}
-                                  {uploadLoading && (
-                                    <div className="position-absolute top-50 start-50 translate-middle">
-                                      <div className="spinner-border text-primary" />
-                                      <p className="small mt-1 fw-bold text-dark">Uploading...</p>
-                                    </div>
-                                  )}
-                                </>
-                              ) : (
-                                <div className="text-center">
-                                  <p className="text-muted fw-medium mb-0">Upload document to view preview</p>
-                                </div>
-                              )}
-                            </div>
-                            <input
-                              type="file"
-                              className="form-control mt-3 bg-light border-0"
-                              onChange={handleDocFormChange}
-                              name="file"
-                              accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.gif,.webp"
-                              style={{ minHeight: "44px" }}
-                            />
-                          </div>
-
-                          <div className="mt-2 pt-3 border-top d-flex justify-content-end gap-2">
-                            <button
-                              type="button"
-                              className="btn btn-light rounded-pill px-5 fw-bold text-muted border"
-                              onClick={closeDocumentModal}
-                              disabled={uploadLoading || submitLoading}
-                              style={{ minHeight: "44px" }}
-                            >
-                              Cancel
-                            </button>
-                            <button
-                              type="submit"
-                              className="btn btn-dark rounded-pill px-5 fw-bold shadow-sm"
-                              disabled={uploadLoading || submitLoading || !docForm.document_expiry || !docForm.file_url}
-                              style={{ minHeight: "44px" }}
-                            >
-                              {submitLoading ? "Saving..." : "Upload Document"}
-                            </button>
-                          </div>
-                        </form>
-                      </div>
-                    </div>
-                  )}
+                  {/* NO inline form here – the modal is now a separate overlay */}
                 </div>
               ) : null}
             </div>
 
-            <div className="px-5 py-4 border-top bg-light d-flex gap-3 justify-content-end">
+            <div className="px-4 py-3 border-top bg-light d-flex justify-content-end gap-2">
               <button
                 type="button"
                 className="btn btn-light rounded-pill px-5 fw-bold text-muted border"
@@ -1683,6 +1526,238 @@ const ManageUsers = () => {
                 Cancel
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* DOCUMENT MODAL – separate, independent overlay */}
+      {showDocModal && (
+        <div className="confirm-modal-backdrop" onClick={closeDocumentModal}>
+          <div className="confirm-modal-card" onClick={(e) => e.stopPropagation()}>
+            <div className="confirm-modal-header px-4 py-3 d-flex align-items-center gap-3">
+              <span className="confirm-modal-icon icon-doc">
+                <i className="fa-solid fa-file-arrow-up"></i>
+              </span>
+              <div>
+                <h5 className="mb-0 fw-bold">{selectedDoc ? "Update Document" : "Add Document"}</h5>
+                <div className="small text-muted">Upload a verification file.</div>
+              </div>
+            </div>
+            <form onSubmit={handleDocSubmit} className="p-4" style={{ maxHeight: "70vh", overflowY: "auto" }}>
+              {/* Document Type */}
+              <div className="mb-3">
+                <label className="form-label fw-bold text-dark">Document Type</label>
+                <select
+                  className="form-control bg-light border-0"
+                  name="document_name"
+                  value={docForm.document_name}
+                  onChange={handleDocFormChange}
+                  required
+                  disabled={!!selectedDoc}
+                  style={{ minHeight: "44px" }}
+                >
+                  <option value="">Select Type</option>
+                  {DOC_TYPES.map((doc) => (
+                    <option key={doc.value} value={doc.value}>
+                      {doc.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              {/* Document Number + Verify */}
+              <div className="mb-3">
+                <label className="form-label fw-bold text-dark">
+                  Document Number <span className="text-danger">*</span>
+                </label>
+                {(docForm.document_name === "Security License" || docForm.document_name === "Visa") ? (
+                  <div className="input-group">
+                    <input
+                      type="text"
+                      className="form-control bg-light border-0"
+                      placeholder="e.g. ABC123456"
+                      value={docForm.document_no}
+                      onChange={handleDocNumberChange}
+                      required
+                      style={{ minHeight: "44px" }}
+                    />
+                    <button
+                      type="button"
+                      className="btn btn-dark fw-bold px-4 border-0"
+                      onClick={handleVerifyDocumentNumber}
+                      disabled={verifyingDoc || !docForm.document_no}
+                      style={{ minHeight: "44px" }}
+                    >
+                      {verifyingDoc ? (
+                        <>
+                          <span className="spinner-border spinner-border-sm me-1" />
+                          Verifying...
+                        </>
+                      ) : (
+                        "Verify"
+                      )}
+                    </button>
+                  </div>
+                ) : (
+                  <input
+                    type="text"
+                    className="form-control bg-light border-0"
+                    placeholder="e.g. ABC123456"
+                    value={docForm.document_no}
+                    onChange={handleDocNumberChange}
+                    required
+                    style={{ minHeight: "44px" }}
+                  />
+                )}
+              </div>
+              {/* Expiry Date */}
+              <div className="mb-3">
+                <label className="form-label fw-bold text-dark">
+                  Expiry Date <span className="text-danger">*</span>
+                </label>
+                <div className="input-group position-relative shadow-sm rounded-3 overflow-hidden">
+                  <button
+                    type="button"
+                    className="input-group-text bg-light text-muted border-0"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      const hiddenPicker = document.getElementById("doc_expiry_picker");
+                      if (hiddenPicker) {
+                        try { hiddenPicker.showPicker(); } catch (err) { hiddenPicker.focus(); }
+                      }
+                    }}
+                    style={{ cursor: "pointer", zIndex: 10, minHeight: "44px" }}
+                    disabled={docForm.document_name === "Security License" || docForm.document_name === "Visa"}
+                    title="Open Calendar"
+                  >
+                    <i className="fa-solid fa-calendar-days text-dark"></i>
+                  </button>
+                  <input
+                    type="date"
+                    id="doc_expiry_picker"
+                    className="position-absolute"
+                    style={{ opacity: 0, width: 0, height: 0, pointerEvents: "none", bottom: 0, left: 40 }}
+                    value={
+                      docForm.document_expiry
+                        ? (() => {
+                          const parts = docForm.document_expiry.split("/");
+                          if (parts.length === 3) {
+                            const [d, m, y] = parts;
+                            return `${y}-${m}-${d}`;
+                          }
+                          return "";
+                        })()
+                        : ""
+                    }
+                    onChange={(e) => {
+                      const isoDate = e.target.value;
+                      if (isoDate) {
+                        const [y, m, d] = isoDate.split("-");
+                        setDocForm(prev => ({
+                          ...prev,
+                          document_expiry: `${d}/${m}/${y}`,
+                        }));
+                      }
+                    }}
+                    disabled={docForm.document_name === "Security License" || docForm.document_name === "Visa"}
+                  />
+                  <input
+                    type="text"
+                    className="form-control bg-light border-0 ps-0"
+                    name="document_expiry"
+                    placeholder="DD/MM/YYYY"
+                    value={docForm.document_expiry}
+                    onChange={(e) => {
+                      let value = e.target.value.replace(/\D/g, "");
+                      if (value.length > 8) value = value.substring(0, 8);
+                      if (value.length > 2 && value.length <= 4) {
+                        value = value.replace(/^(\d{2})(\d+)/, "$1/$2");
+                      } else if (value.length > 4) {
+                        value = value.replace(/^(\d{2})(\d{2})(\d+)/, "$1/$2/$3");
+                      }
+                      setDocForm(prev => ({
+                        ...prev,
+                        document_expiry: value,
+                      }));
+                    }}
+                    required
+                    maxLength={10}
+                    pattern="^(0[1-9]|[12][0-9]|3[01])/(0[1-9]|1[012])/\d{4}$"
+                    disabled={docForm.document_name === "Security License" || docForm.document_name === "Visa"}
+                    style={{
+                      backgroundColor:
+                        docForm.document_name === "Security License" || docForm.document_name === "Visa"
+                          ? "#e9ecef"
+                          : "white",
+                      minHeight: "44px"
+                    }}
+                  />
+                </div>
+              </div>
+              {/* File Upload */}
+              <div className="mb-4">
+                <label className="form-label fw-bold text-dark">
+                  Document/Image <span className="text-danger">*</span>
+                </label>
+                <div
+                  className="position-relative border border-2 border-dashed rounded-4 p-4 text-center bg-light"
+                  style={{ minHeight: "200px", display: "flex", alignItems: "center", justifyContent: "center" }}
+                >
+                  {docForm.file_url ? (
+                    <>
+                      {docForm.file_url.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
+                        <img
+                          src={docForm.file_url.startsWith("http") ? docForm.file_url : `${apiURL}staff_documents/${docForm.file_url}`}
+                          alt="Preview"
+                          style={{ width: "100%", maxHeight: "200px", objectFit: "contain", borderRadius: "8px", opacity: uploadLoading ? 0.3 : 1 }}
+                        />
+                      ) : (
+                        <div className="text-center">
+                          <i className="fa-solid fa-file-pdf fa-3x text-muted mb-3"></i>
+                          <p className="fw-bold text-secondary mb-0">Document Selected</p>
+                        </div>
+                      )}
+                      {uploadLoading && (
+                        <div className="position-absolute top-50 start-50 translate-middle">
+                          <div className="spinner-border text-primary" />
+                          <p className="small mt-1 fw-bold text-dark">Uploading...</p>
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <div className="text-center">
+                      <p className="text-muted fw-medium mb-0">Upload document to view preview</p>
+                    </div>
+                  )}
+                </div>
+                <input
+                  type="file"
+                  className="form-control mt-3 bg-light border-0"
+                  onChange={handleDocFormChange}
+                  name="file"
+                  accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.gif,.webp"
+                  style={{ minHeight: "44px" }}
+                />
+              </div>
+              <div className="mt-2 pt-3 border-top d-flex justify-content-end gap-2">
+                <button
+                  type="button"
+                  className="btn btn-light rounded-pill px-5 fw-bold text-muted border"
+                  onClick={closeDocumentModal}
+                  disabled={uploadLoading || submitLoading}
+                  style={{ minHeight: "44px" }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="btn btn-dark rounded-pill px-5 fw-bold shadow-sm"
+                  disabled={uploadLoading || submitLoading || !docForm.document_expiry || !docForm.file_url}
+                  style={{ minHeight: "44px" }}
+                >
+                  {submitLoading ? "Saving..." : "Upload Document"}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
@@ -1803,10 +1878,7 @@ const ManageUsers = () => {
       {/* DELETE MODAL */}
       {isDeleteModalOpen && (
         <div className="confirm-modal-backdrop" onClick={closeDeleteModal}>
-          <div
-            className="confirm-modal-card"
-            onClick={(e) => e.stopPropagation()}
-          >
+          <div className="confirm-modal-card" onClick={(e) => e.stopPropagation()}>
             <div className="confirm-modal-header px-4 py-3 d-flex align-items-center gap-3">
               <span className="confirm-modal-icon">
                 <i className="fa-solid fa-triangle-exclamation"></i>

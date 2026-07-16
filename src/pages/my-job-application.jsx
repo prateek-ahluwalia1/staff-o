@@ -459,7 +459,6 @@ export default function MyJobApplications() {
           .shift-card {
             border-radius: 18px;
             transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-            background: #fff;
             border: 1px solid var(--line-soft);
           }
           .shift-card:hover {

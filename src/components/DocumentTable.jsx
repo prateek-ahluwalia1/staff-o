@@ -8,7 +8,7 @@ const DOC_CONFIG = {
   driver_license_front: { label: "Driver License (Front)", sort: 3 },
   driver_license_back: { label: "Driver License (Back)", sort: 4 },
   security_license: { label: "Security License", sort: 5 },
-  working_with_children: { label: "Working with Children Check (WWCC)", sort: 6 },
+  working_with_children: { label: "Working With Children Check (WWCC)", sort: 6 },
   employment_application: { label: "Employment Application Form", sort: 7 },
   tfn_declaration: { label: "TFN Declaration", sort: 8 },
   superannuation: { label: "Superannuation Form", sort: 9 },

@@ -189,7 +189,7 @@ const CoverJobs = () => {
                     --canvas: #f8fafc;
                 }
 
-                .cover-jobs-page { background: var(--canvas); min-height: 100vh; }
+                .cover-jobs-page { min-height: 100vh; }
 
                 .cover-hero {
                     position: relative;

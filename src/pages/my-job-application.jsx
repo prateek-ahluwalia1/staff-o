@@ -307,7 +307,6 @@ export default function MyJobApplications() {
             --canvas: #f6f8fa;
           }
 
-          .jobs-page { background: var(--canvas); }
 
           /* ---------- Hero header ---------- */
           .jobs-hero {

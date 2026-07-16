@@ -20,7 +20,6 @@ import useFetch from "../hooks/useFetch";
 import useSubmit from "../hooks/useSubmit";
 import { apiURL } from "../utils/exports";
 import Modal from "../components/Modal";
-import "../assets/css/chat.css";
 import { getProfileImageUrlFromUserdata } from "../utils/profileImage";
 
 const CATEGORY_LABELS = {
@@ -58,7 +57,7 @@ const Avatar = ({ src, name, size = 40 }) => {
       style={{
         width: size,
         height: size,
-        background: "#6c757d",
+        background: "linear-gradient(135deg, #0A7C6E, #075e53)",
         color: "#fff",
         fontWeight: 600,
         fontSize: size * 0.35,
@@ -91,14 +90,12 @@ const ChatRoom = () => {
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [messageToDelete, setMessageToDelete] = useState(null);
-  const [mobileChatActive, setMobileChatActive] = useState(false); // mobile single-panel toggle
+  const [mobileChatActive, setMobileChatActive] = useState(false);
   const scrollRef = useRef();
   const pickerRef = useRef();
 
-  // Helper to check if viewport is mobile (< 768px)
   const isMobileView = () => window.innerWidth < 768;
 
-  // 1. Get Conversations API
   const {
     data: convData,
     loading: loadingConv,
@@ -159,7 +156,6 @@ const ChatRoom = () => {
             headers: { Authorization: `Bearer ${token}` },
           }
         );
-
         const responseData = await res.json();
         const messageList =
           responseData?.messages?.data || responseData?.data || [];
@@ -189,7 +185,6 @@ const ChatRoom = () => {
     }
   };
 
-  // 4. Delete Message API
   const askDeleteMessage = (message) => {
     setMessageToDelete(message);
     setShowDeleteModal(true);
@@ -218,7 +213,6 @@ const ChatRoom = () => {
     const other = otherUser(conv);
     const isSameConv = activeConversation?.user?.id === other?.id;
 
-    // On mobile, if same conversation is already active, just switch to chat view
     if (isSameConv && isMobileView()) {
       setMobileChatActive(true);
       return;
@@ -229,7 +223,6 @@ const ChatRoom = () => {
       fetchMessages(other.id);
       markMessagesAsRead(other.id);
     }
-    // On mobile, automatically open the chat panel
     if (isMobileView()) {
       setMobileChatActive(true);
     }
@@ -256,7 +249,6 @@ const ChatRoom = () => {
 
   const handleBackToList = () => {
     setMobileChatActive(false);
-    // Keep activeConversation so it's still selected when returning
   };
 
   const onSend = async (e) => {
@@ -330,7 +322,6 @@ const ChatRoom = () => {
     return name.toLowerCase().includes(search.toLowerCase());
   });
 
-  // Parse available users with array handling
   const allUsers = useMemo(() => {
     let res = usersData;
     if (!res) return [];
@@ -357,89 +348,301 @@ const ChatRoom = () => {
   const otherUser = (conv) => conv?.user || {};
 
   return (
-    <div className="dashboard-tools-page">
-      <div className="dashboard-page-header">
-        <div>
-          <h1>{CATEGORY_LABELS[category] || "Communications"} Chat</h1>
-          <p style={{ textTransform: 'none' }}>Manage conversations, start calls, and keep communication in one place.</p>
-        </div>
-        <div>
-          {/* Only Admins see the back button to categories */}
-          {userType === "admin" && (
-            <button
-              type="button"
-              className="btn btn-outline-primary d-none d-md-inline-flex"
-              onClick={() => navigate("/chat")}
-            >
-              <i className="fa-solid fa-arrow-left me-2"></i>
-              Back to Categories
-            </button>
-          )}
-          {/* Mobile back to categories (icon only) */}
-          {userType === "admin" && (
-            <button
-              className="btn btn-sm d-md-none"
-              style={{
-                background: "rgba(13,110,253,0.1)",
-                border: "none",
-                borderRadius: "50%",
-                width: 38,
-                height: 38,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                padding: 0,
-              }}
-              onClick={() => navigate("/chat")}
-              title="Back to Categories"
-            >
-              <i className="fa-solid fa-arrow-left" style={{ color: "#0A7C6E" }}></i>
-            </button>
-          )}
-        </div>
+    <div className="dashboard-main chat-room-premium">
+      {/* Premium styles */}
+      <style>{`
+        :root {
+          --navy-950: #0a1930;
+          --navy-900: #0e2340;
+          --teal: #0A7C6E;
+          --teal-dark: #075e53;
+          --teal-tint: #f0fdf9;
+          --teal-border: #d1fae5;
+          --amber: #d97706;
+          --success: #16a34a;
+          --danger: #dc2626;
+          --ink: #0f172a;
+          --slate: #1e293b;
+          --muted: #64748b;
+          --faint: #94a3b8;
+          --line: #e2e8f0;
+          --line-soft: #f1f5f9;
+          --surface: #ffffff;
+          --canvas: #f8fafc;
+        }
+
+        .chat-hero {
+          position: relative;
+          background: linear-gradient(135deg, var(--navy-950) 0%, var(--navy-900) 65%, #0f2f52 100%);
+          border-radius: 22px;
+          padding: 28px 32px 42px;
+          margin-bottom: 2rem;
+          overflow: hidden;
+          isolation: isolate;
+        }
+        .chat-hero::before {
+          content: "";
+          position: absolute;
+          inset: 0;
+          background-image: radial-gradient(rgba(255,255,255,0.10) 1px, transparent 1px);
+          background-size: 22px 22px;
+          opacity: 0.35;
+          z-index: -1;
+        }
+        .chat-hero::after {
+          content: "";
+          position: absolute;
+          top: -60px;
+          right: -60px;
+          width: 260px;
+          height: 260px;
+          border-radius: 50%;
+          background: radial-gradient(circle, rgba(10,124,110,0.45) 0%, rgba(10,124,110,0) 70%);
+          z-index: -1;
+        }
+        .chat-hero-eyebrow {
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          font-size: 11px;
+          font-weight: 700;
+          letter-spacing: 0.6px;
+          text-transform: uppercase;
+          color: #6ee7d8;
+          margin-bottom: 10px;
+        }
+        .chat-hero-eyebrow .dot {
+          width: 7px; height: 7px; border-radius: 50%;
+          background: #34d399;
+          box-shadow: 0 0 0 4px rgba(52,211,153,0.18);
+        }
+        .chat-hero h1 {
+          color: #fff;
+          font-size: 28px;
+          font-weight: 800;
+          letter-spacing: -0.4px;
+          margin: 0 0 6px;
+        }
+        .chat-hero p {
+          color: rgba(255,255,255,0.62);
+          font-size: 14px;
+          margin: 0;
+          text-transform: none;
+        }
+
+        /* Layout */
+        .chatroom-page {
+          display: flex;
+          gap: 16px;
+          height: calc(100vh - 240px);
+          min-height: 500px;
+        }
+
+        .chatroom-sidebar {
+          width: 340px;
+          flex-shrink: 0;
+          background: #fff;
+          border-radius: 18px;
+          box-shadow: 0 4px 14px rgba(15,23,42,0.06);
+          border: 1px solid var(--line-soft);
+          display: flex;
+          flex-direction: column;
+          overflow: hidden;
+        }
+
+        .chatroom-sidebar-header {
+          background: #f9fafb;
+          border-bottom: 1px solid var(--line-soft);
+          padding: 14px 16px;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+        .chatroom-plus-btn {
+          width: 36px; height: 36px;
+          border-radius: 10px !important;
+          background: var(--teal) !important;
+          color: #fff !important;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border: none;
+          box-shadow: 0 4px 10px rgba(10,124,110,0.3);
+        }
+
+        .chatroom-user-picker {
+          position: absolute;
+          top: 100%;
+          right: 0;
+          z-index: 10;
+          width: 280px;
+          background: #fff;
+          border-radius: 12px;
+          box-shadow: 0 12px 28px rgba(0,0,0,0.18);
+          border: 1px solid var(--line);
+          overflow: hidden;
+        }
+
+        .chatroom-conv-list {
+          flex: 1;
+          overflow-y: auto;
+        }
+        .chatroom-conv-item {
+          cursor: pointer;
+          transition: background 0.15s;
+        }
+        .chatroom-conv-item:hover {
+          background: rgba(248,250,252,0.6);
+        }
+        .chatroom-conv-active {
+          background: rgba(10,124,110,0.08);
+          border-left: 3px solid var(--teal);
+        }
+
+        .chatroom-main {
+          flex: 1;
+          background: #fff;
+          border-radius: 18px;
+          box-shadow: 0 4px 14px rgba(15,23,42,0.06);
+          border: 1px solid var(--line-soft);
+          display: flex;
+          flex-direction: column;
+          overflow: hidden;
+        }
+
+        .chatroom-main-header {
+          background: #f9fafb;
+          border-bottom: 1px solid var(--line-soft);
+          padding: 14px 20px;
+          display: flex;
+          align-items: center;
+        }
+
+        .chatroom-messages {
+          flex: 1;
+          padding: 20px;
+          overflow-y: auto;
+          background: #fafbfc;
+        }
+
+        .message-bubble {
+          max-width: 75%;
+          padding: 10px 16px;
+          border-radius: 18px;
+          font-size: 0.9rem;
+          position: relative;
+          word-wrap: break-word;
+        }
+        .message-sent {
+          background: var(--teal);
+          color: #fff;
+          border-bottom-right-radius: 4px;
+          margin-left: auto;
+        }
+        .message-received {
+          background: #fff;
+          border: 1px solid var(--line);
+          border-bottom-left-radius: 4px;
+        }
+        .chat-timestamp {
+          font-size: 0.65rem;
+          margin-top: 4px;
+        }
+        .chat-date-separator {
+          text-align: center;
+          font-size: 0.75rem;
+          font-weight: 600;
+          color: var(--muted);
+          margin: 20px 0 10px;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+        }
+
+        .chatroom-footer {
+          padding: 12px 20px;
+          border-top: 1px solid var(--line-soft);
+          background: #fff;
+        }
+        .chatroom-send-btn {
+          width: 38px; height: 38px;
+          background: var(--teal) !important;
+          border: none;
+          box-shadow: 0 4px 10px rgba(10,124,110,0.3);
+        }
+
+        .chatroom-empty-state {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          color: #64748b;
+        }
+        .chatroom-empty-icon {
+          width: 80px; height: 80px;
+          border-radius: 20px;
+          background: linear-gradient(135deg, var(--navy-950), var(--navy-900));
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          margin-bottom: 20px;
+        }
+
+        @media (max-width: 767.98px) {
+          .chatroom-page {
+            flex-direction: column;
+            height: auto;
+            min-height: calc(100vh - 160px);
+          }
+          .chatroom-sidebar {
+            width: 100%;
+            border-radius: 18px 18px 0 0;
+          }
+          .chatroom-main {
+            border-radius: 0 0 18px 18px;
+          }
+          .mobile-back-btn {
+            display: inline-flex !important;
+            margin-right: 8px;
+          }
+        }
+        .mobile-back-btn {
+          display: none;
+          align-items: center;
+          justify-content: center;
+          width: 36px; height: 36px;
+          border-radius: 50%;
+          background: rgba(10,124,110,0.1);
+          border: none;
+          color: var(--teal);
+        }
+      `}</style>
+
+      {/* Hero Header */}
+      <div className="chat-hero">
+        <span className="chat-hero-eyebrow">
+          <span className="dot"></span> Live Chat
+        </span>
+        <h1>{CATEGORY_LABELS[category] || "Communications"}</h1>
+        <p style={{ textTransform: 'none' }}>Manage conversations, start calls, and keep communication in one place.</p>
       </div>
 
       <div className="chatroom-page">
         {/* ── LEFT PANEL (Sidebar) ── */}
-        <div className={`chatroom-sidebar ${mobileChatActive ? 'd-none' : ''} d-md-block`}>
-          {/* Header row */}
+        <div className={`chatroom-sidebar ${mobileChatActive ? 'd-none' : ''} d-md-flex`}>
+          {/* Sidebar header */}
           <div className="chatroom-sidebar-header">
-            {/* Only Admins see the circular back button (desktop only, mobile has top button) */}
-            {userType === "admin" && (
-              <button
-                className="btn btn-sm me-1 flex-shrink-0 d-none d-md-flex"
-                style={{
-                  background: "rgba(255,255,255,0.15)",
-                  border: "1px solid rgba(255,255,255,0.25)",
-                  color: "#fff",
-                  borderRadius: "50%",
-                  width: 32,
-                  height: 32,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  padding: 0,
-                }}
-                title="Back to Chats"
-                onClick={() => navigate("/chat")}
-              >
-                <i
-                  className="fa-solid fa-arrow-left"
-                  style={{ fontSize: "0.8rem" }}
-                ></i>
-              </button>
-            )}
             <Avatar
               src={getProfileImageUrlFromUserdata(currentUser)}
               name={currentUser?.name || "Me"}
               size={40}
             />
-            <span className="chatroom-sidebar-username fw-semibold ms-2 flex-grow-1 text-truncate">
+            <span className="fw-semibold ms-2 flex-grow-1 text-truncate">
               {currentUser?.name || "Me"}
             </span>
             <div className="position-relative" ref={pickerRef}>
               <button
-                className="btn btn-light btn-sm rounded-circle chatroom-plus-btn"
+                className="chatroom-plus-btn"
                 title={`New ${CATEGORY_LABELS[category] || ""} chat`}
                 onClick={() => {
                   setShowUserPicker((v) => !v);
@@ -461,15 +664,11 @@ const ChatRoom = () => {
                       autoFocus
                     />
                   </div>
-                  <div className="chatroom-user-picker-list">
+                  <div className="chatroom-user-picker-list" style={{ maxHeight: '250px', overflowY: 'auto' }}>
                     {loadingUsers ? (
-                      <div className="p-3 text-center text-muted small">
-                        Loading…
-                      </div>
+                      <div className="p-3 text-center text-muted small">Loading…</div>
                     ) : filteredUsers.length === 0 ? (
-                      <div className="p-3 text-center text-muted small">
-                        No users found
-                      </div>
+                      <div className="p-3 text-center text-muted small">No users found</div>
                     ) : (
                       filteredUsers.map((u) => {
                         const uData = u?.data || u;
@@ -477,6 +676,7 @@ const ChatRoom = () => {
                           <div
                             key={uData.id}
                             className="chatroom-user-picker-item d-flex align-items-center px-3 py-2"
+                            style={{ cursor: 'pointer' }}
                             onClick={() => handleStartConversation(uData)}
                           >
                             <Avatar
@@ -506,10 +706,10 @@ const ChatRoom = () => {
           </div>
 
           {/* Search */}
-          <div className="chatroom-search px-3 py-2">
+          <div className="px-3 py-2">
             <input
-              className="form-control form-control-sm"
-              placeholder="Search"
+              className="form-control form-control-sm bg-light border-0 rounded-3"
+              placeholder="Search conversations"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
@@ -520,9 +720,7 @@ const ChatRoom = () => {
             {loadingConv ? (
               <div className="p-3 text-center text-muted small">Loading…</div>
             ) : filteredConvs.length === 0 ? (
-              <div className="p-4 text-center text-muted small"
-                style={{ textTransform: "none" }}
-              >
+              <div className="p-4 text-center text-muted small" style={{ textTransform: "none" }}>
                 No conversations yet. Press <strong>+</strong> to start one.
               </div>
             ) : (
@@ -547,33 +745,20 @@ const ChatRoom = () => {
                     />
                     <div className="ms-2 flex-grow-1 overflow-hidden">
                       <div className="d-flex justify-content-between align-items-center">
-                        <span
-                          className={`small text-truncate ${hasUnread ? "fw-bold" : "fw-semibold"}`}
-                        >
+                        <span className={`small text-truncate ${hasUnread ? "fw-bold" : "fw-semibold"}`}>
                           {other?.name || "Unknown"}
                         </span>
-                        <span
-                          className="text-muted"
-                          style={{ fontSize: "0.68rem", flexShrink: 0 }}
-                        >
+                        <span className="text-muted" style={{ fontSize: "0.68rem", flexShrink: 0 }}>
                           {formatTime(lastMsgTime)}
                         </span>
                       </div>
                       <div className="d-flex justify-content-between align-items-center mt-1">
-                        <div
-                          className={`text-truncate ${hasUnread ? "text-dark fw-bold" : "text-muted"}`}
-                          style={{ fontSize: "0.75rem" }}
-                        >
-                          {isSentByMe && lastMsgText && (
-                            <span className="me-1">You:</span>
-                          )}
+                        <div className={`text-truncate ${hasUnread ? "text-dark fw-bold" : "text-muted"}`} style={{ fontSize: "0.75rem" }}>
+                          {isSentByMe && lastMsgText && <span className="me-1">You:</span>}
                           {lastMsgText}
                         </div>
                         {hasUnread && (
-                          <span
-                            className="badge bg-danger rounded-pill ms-1"
-                            style={{ fontSize: "0.65rem" }}
-                          >
+                          <span className="badge bg-danger rounded-pill ms-1" style={{ fontSize: "0.65rem" }}>
                             {conv.unread_count}
                           </span>
                         )}
@@ -587,14 +772,13 @@ const ChatRoom = () => {
         </div>
 
         {/* ── RIGHT PANEL (Chat main) ── */}
-        <div className={`chatroom-main ${!mobileChatActive ? 'd-none' : ''} d-md-block`}>
+        <div className={`chatroom-main ${!mobileChatActive ? 'd-none' : ''} d-md-flex`}>
           {activeConversation ? (
             <>
               {/* Header */}
               <div className="chatroom-main-header">
-                {/* Mobile back button */}
                 <button
-                  className="btn btn-sm me-2 mobile-back-btn"
+                  className="mobile-back-btn"
                   onClick={handleBackToList}
                   title="Back to conversations"
                 >
@@ -606,14 +790,7 @@ const ChatRoom = () => {
                   size={40}
                 />
                 <div className="ms-3">
-                  <h6
-                    className="mb-0 fw-bold"
-                    style={{
-                      fontFamily: "Montserrat, sans-serif",
-                      color: "#1a1a2e",
-                      fontSize: "0.97rem",
-                    }}
-                  >
+                  <h6 className="mb-0 fw-bold" style={{ color: "#1a1a2e", fontSize: "0.97rem" }}>
                     {otherUser(activeConversation)?.name || "Conversation"}
                   </h6>
                 </div>
@@ -623,31 +800,18 @@ const ChatRoom = () => {
               <div className="chatroom-messages">
                 {loadingMessages ? (
                   <div className="text-center text-muted py-5">
-                    <i
-                      className="fa fa-spinner fa-spin fa-2x mb-3"
-                      style={{ color: "#0A7C6E" }}
-                    ></i>
+                    <i className="fa fa-spinner fa-spin fa-2x mb-3" style={{ color: "#0A7C6E" }}></i>
                     <p className="small mb-0">Loading messages…</p>
                   </div>
                 ) : messages.length === 0 ? (
                   <div className="text-center py-5">
                     <div
                       className="mx-auto mb-3 d-flex align-items-center justify-content-center"
-                      style={{
-                        width: 64,
-                        height: 64,
-                        borderRadius: "50%",
-                        background: "rgba(38,59,214,0.08)",
-                      }}
+                      style={{ width: 64, height: 64, borderRadius: "50%", background: "rgba(10,124,110,0.08)" }}
                     >
-                      <i
-                        className="fa-regular fa-comment-dots fa-2x"
-                        style={{ color: "#0A7C6E" }}
-                      ></i>
+                      <i className="fa-regular fa-comment-dots fa-2x" style={{ color: "#0A7C6E" }}></i>
                     </div>
-                    <p className="text-muted small mb-0"
-                      style={{ textTransform: "none" }}
-                    >
+                    <p className="text-muted small mb-0" style={{ textTransform: "none" }}>
                       No messages yet. Say hello! 👋
                     </p>
                   </div>
@@ -666,50 +830,27 @@ const ChatRoom = () => {
                           >
                             {!isMe && (
                               <Avatar
-                                src={
-                                  getProfileImageUrlFromUserdata(otherUser(activeConversation))
-                                }
+                                src={getProfileImageUrlFromUserdata(otherUser(activeConversation))}
                                 name={otherUser(activeConversation)?.name}
                                 size={28}
                               />
                             )}
-                            <div
-                              className={`message-bubble ${isMe ? "message-sent" : "message-received"} position-relative`}
-                            >
+                            <div className={`message-bubble ${isMe ? "message-sent" : "message-received"} position-relative`}>
                               {isMe && (
                                 <button
                                   onClick={() => askDeleteMessage(m)}
                                   className="btn btn-sm btn-link text-white p-0 position-absolute"
-                                  style={{
-                                    top: "-10px",
-                                    left: "-20px",
-                                    opacity: 0.6,
-                                  }}
+                                  style={{ top: "-10px", left: "-20px", opacity: 0.6 }}
                                   title="Delete message"
                                 >
-                                  <i
-                                    className="fa-solid fa-trash"
-                                    style={{
-                                      fontSize: "0.75rem",
-                                      color: "#dc3545",
-                                    }}
-                                  ></i>
+                                  <i className="fa-solid fa-trash" style={{ fontSize: "0.75rem", color: "#dc3545" }}></i>
                                 </button>
                               )}
-
                               {m.message}
-                              <div
-                                className={`chat-timestamp text-end ${isMe ? "text-white-50" : "text-muted"}`}
-                              >
+                              <div className={`chat-timestamp text-end ${isMe ? "text-white-50" : "text-muted"}`}>
                                 {formatTime(m.created_at)}
                                 {isMe && m.is_read && (
-                                  <i
-                                    className="fa-solid fa-check-double ms-1"
-                                    style={{
-                                      fontSize: "0.6rem",
-                                      color: "#4dffb5",
-                                    }}
-                                  ></i>
+                                  <i className="fa-solid fa-check-double ms-1" style={{ fontSize: "0.6rem", color: "#4dffb5" }}></i>
                                 )}
                               </div>
                             </div>
@@ -724,10 +865,7 @@ const ChatRoom = () => {
 
               {/* Footer Input */}
               <div className="chatroom-footer">
-                <form
-                  onSubmit={onSend}
-                  className="d-flex align-items-center gap-2"
-                >
+                <form onSubmit={onSend} className="d-flex align-items-center gap-2">
                   <input
                     type="text"
                     className="form-control border-0 bg-light rounded-pill"
@@ -736,7 +874,7 @@ const ChatRoom = () => {
                     onChange={(e) => setText(e.target.value)}
                   />
                   <button
-                    className="btn btn-primary-custom btn-sm rounded-circle chatroom-send-btn"
+                    className="chatroom-send-btn btn rounded-circle"
                     type="submit"
                     disabled={sending || !text.trim()}
                     title="Send"
@@ -753,171 +891,73 @@ const ChatRoom = () => {
           ) : (
             <div className="chatroom-empty-state">
               <div className="chatroom-empty-icon">
-                <i
-                  className="fa-regular fa-comments"
-                  style={{ fontSize: 38, color: "#fff" }}
-                ></i>
+                <i className="fa-regular fa-comments" style={{ fontSize: 38, color: "#fff" }}></i>
               </div>
-              <h6
-                className="fw-bold mb-1"
-                style={{ fontFamily: "Montserrat, sans-serif", color: "#1a1a2e" }}
-              >
+              <h6 className="fw-bold mb-1" style={{ color: "#1a1a2e" }}>
                 No Conversation Selected
               </h6>
-              <p
-                className="text-muted small text-center mb-0"
-                style={{ maxWidth: 260, textTransform: "none" }}
-              >
-                Pick a conversation from the left, or press <strong>+</strong> to
-                start a new one.
+              <p className="text-muted small text-center mb-0" style={{ maxWidth: 260, textTransform: "none" }}>
+                Pick a conversation from the left, or press <strong>+</strong> to start a new one.
               </p>
             </div>
           )}
         </div>
-
-        <Modal
-          open={showDeleteModal}
-          onClose={() => {
-            setShowDeleteModal(false);
-            setMessageToDelete(null);
-          }}
-        >
-          <div className="text-center">
-            <div
-              className="mx-auto mb-3 d-flex align-items-center justify-content-center"
-              style={{
-                width: 56,
-                height: 56,
-                borderRadius: "50%",
-                background: "rgba(220,53,69,0.12)",
-              }}
-            >
-              <i
-                className="fa-solid fa-trash"
-                style={{ color: "#dc3545", fontSize: "1.1rem" }}
-              ></i>
-            </div>
-
-            <h6 className="fw-bold mb-2">Delete this message?</h6>
-            <p className="text-muted small mb-3" style={{ lineHeight: 1.45 }}>
-              This action cannot be undone.
-              {messageToDelete?.message ? (
-                <>
-                  <br />
-                  <span className="d-inline-block mt-2 px-2 py-1 rounded bg-light text-dark">
-                    "{String(messageToDelete.message).slice(0, 80)}"
-                  </span>
-                </>
-              ) : null}
-            </p>
-
-            <div className="d-flex justify-content-center gap-2">
-              <button
-                type="button"
-                className="btn btn-sm btn-outline-secondary px-3"
-                onClick={() => {
-                  setShowDeleteModal(false);
-                  setMessageToDelete(null);
-                }}
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                className="btn btn-sm btn-danger px-3"
-                onClick={handleDeleteMessage}
-              >
-                Yes, delete
-              </button>
-            </div>
-          </div>
-        </Modal>
       </div>
 
-      {/* ── Responsive & global overrides ── */}
-      <style>
-        {`
-          .chatroom-messages {
-          flex: 1;
-          height: calc(100% - 130px);
-          }
-          .mobile-back-btn {
-            display: none !important;
-            width: 38px;
-            height: 38px;
-            padding: 0;
-            border-radius: 50%;
-            background: rgba(13,110,253,0.08);
-            border: none;
-            align-items: center;
-            justify-content: center;
-            color: #0A7C6E;
-            font-size: 1rem;
-          }
-          @media (max-width: 767.98px) {
-            .mobile-back-btn {
-              display: flex !important;
-            }
-            /* Make sidebar and main full width on mobile */
-            .chatroom-sidebar {
-              width: 100% !important;
-              border-right: none !important;
-            }
-            .chatroom-main {
-              width: 100% !important;
-            }
-            /* Adjust header spacing for mobile */
-            .chatroom-main-header {
-              padding: 12px 16px;
-            }
-            /* Increase tap targets */
-            .chatroom-conv-item {
-              padding-top: 12px !important;
-              padding-bottom: 12px !important;
-            }
-            .chatroom-plus-btn {
-              width: 40px;
-              height: 40px;
-            }
-            /* Message bubbles – slightly smaller padding */
-            .message-bubble {
-              max-width: 85% !important;
-              padding: 10px 14px !important;
-              font-size: 0.9rem;
-            }
-            /* Date separator */
-            .chat-date-separator {
-              font-size: 0.75rem;
-              margin: 16px 0 10px;
-            }
-            /* Footer input */
-            .chatroom-footer form input {
-              font-size: 0.95rem;
-              height: 44px;
-            }
-            .chatroom-send-btn {
-              width: 44px;
-              height: 44px;
-            }
-            /* Search input */
-            .chatroom-search input {
-              height: 44px;
-              font-size: 0.95rem;
-            }
-          }
-          @media (max-width: 480px) {
-            .dashboard-page-header h1 {
-              font-size: 1.4rem;
-            }
-            .chatroom-user-picker {
-              right: -10px;
-              width: calc(100vw - 40px);
-              max-width: 320px;
-            }
-          }
-            
-        `}
-      </style>
+      <Modal
+        open={showDeleteModal}
+        onClose={() => {
+          setShowDeleteModal(false);
+          setMessageToDelete(null);
+        }}
+      >
+        <div className="text-center">
+          <div
+            className="mx-auto mb-3 d-flex align-items-center justify-content-center"
+            style={{
+              width: 56,
+              height: 56,
+              borderRadius: "50%",
+              background: "rgba(220,53,69,0.12)",
+            }}
+          >
+            <i className="fa-solid fa-trash" style={{ color: "#dc3545", fontSize: "1.1rem" }}></i>
+          </div>
+
+          <h6 className="fw-bold mb-2">Delete this message?</h6>
+          <p className="text-muted small mb-3" style={{ lineHeight: 1.45 }}>
+            This action cannot be undone.
+            {messageToDelete?.message ? (
+              <>
+                <br />
+                <span className="d-inline-block mt-2 px-2 py-1 rounded bg-light text-dark">
+                  "{String(messageToDelete.message).slice(0, 80)}"
+                </span>
+              </>
+            ) : null}
+          </p>
+
+          <div className="d-flex justify-content-center gap-2">
+            <button
+              type="button"
+              className="btn btn-sm btn-outline-secondary px-3"
+              onClick={() => {
+                setShowDeleteModal(false);
+                setMessageToDelete(null);
+              }}
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              className="btn btn-sm btn-danger px-3"
+              onClick={handleDeleteMessage}
+            >
+              Yes, delete
+            </button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 };

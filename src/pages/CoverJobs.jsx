@@ -60,20 +60,22 @@ const CoverJobs = () => {
         { isAuth: true, immediate: Boolean(userRole === 'contractor' && userId) }
     );
 
-    const jobs = data?.data?.jobs || [];
+    // --- UPDATED DATA EXTRACTION for new response structure ---
+    const jobs = data?.data?.jobs?.data || [];
+    const totalJobs = data?.data?.jobs?.total || 0;
+    const lastPage = data?.data?.jobs?.last_page || 1;
+
     const contractorStaffOptions = (staffData?.guards || []).map((staff) => ({
         value: String(staff.id),
         label: staff.name || 'Unnamed staff',
     }));
     const visibleJobs = useMemo(() => jobs.filter((job) => !removedJobIds.includes(job.id)), [jobs, removedJobIds]);
 
-    const totalJobs = data?.data?.pagination?.total || 0;
-    const lastPage = data?.data?.pagination?.last_page || 1;
-
     useEffect(() => {
         if (selectedJob && removedJobIds.includes(selectedJob.id)) setSelectedJob(null);
     }, [removedJobIds, selectedJob]);
 
+    // Date / time helpers
     const formatDateTime = (dateString) => {
         if (!dateString) return 'N/A';
         const date = new Date(dateString);
@@ -345,7 +347,6 @@ const CoverJobs = () => {
             `}</style>
 
             <div className="dashboard-main cover-jobs-page px-3 px-md-4">
-                {/* Hero header */}
                 <div className="cover-hero">
                     <span className="cover-hero-eyebrow">
                         <span className="dot"></span> Available
@@ -354,7 +355,6 @@ const CoverJobs = () => {
                     <p>{totalJobs} open shift{totalJobs !== 1 ? 's' : ''} waiting for you</p>
                 </div>
 
-                {/* Cards grid – 4 columns on XL */}
                 <div className="row row-cols-1 row-cols-md-2 row-cols-xl-4 g-4">
                     {visibleJobs.length === 0 ? (
                         <div className="col-12">
@@ -405,7 +405,6 @@ const CoverJobs = () => {
                                                 {job.site_address || job.address || 'Address not available'}
                                             </p>
 
-                                            {/* Date / Time / Hours row */}
                                             <div className="shift-meta-row mt-auto mb-3">
                                                 <div className="shift-meta-item">
                                                     <span className="shift-meta-label">
@@ -453,7 +452,6 @@ const CoverJobs = () => {
                     )}
                 </div>
 
-                {/* Pagination */}
                 {lastPage > 1 && (
                     <div className="d-flex justify-content-center align-items-center gap-2 mt-5">
                         <button className="page-btn" onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage === 1}>
@@ -475,7 +473,7 @@ const CoverJobs = () => {
                 )}
             </div>
 
-            {/* Modal – now shows description as separate section */}
+            {/* Modal */}
             {selectedJob && (
                 <div
                     className="modal-overlay"

@@ -62,35 +62,31 @@ export default function AdminClientProfile({
         singleValue: (base) => ({ ...base, color: '#1e293b' }),
     };
 
-    const labelStyle = {
-        fontSize: "10px",
-        fontWeight: 700,
-
-        letterSpacing: "0.06em",
-        color: "#94a3b8",
-        display: "block",
-        marginBottom: 4,
-    };
-
-    const valueStyle = { fontSize: "0.83rem", color: "#1e293b" };
+    const statTiles = [
+        { icon: "fa-solid fa-envelope", label: "Email", value: customerDetails?.email, href: customerDetails?.email ? `mailto:${customerDetails.email}` : null },
+        { icon: "fa-solid fa-phone", label: "Phone", value: customerDetails?.phone || "N/A", href: customerDetails?.phone ? `tel:${customerDetails.phone}` : null },
+        { icon: "fa-solid fa-location-dot", label: "Location", value: `${customerDetails?.city || "N/A"}, ${customerDetails?.state || "N/A"}` },
+        { icon: "fa-regular fa-calendar", label: "Member Since", value: customerDetails?.created_at ? formatDateToDDMMYYYY(customerDetails.created_at) : "N/A" },
+    ];
 
     return (
         <div className="row g-3 mb-4">
+            <style>{`
+                .jw-acp-card { background: #fff; border-radius: 16px; border: 1px solid #e8f0ef; overflow: hidden; box-shadow: 0 1px 4px rgba(10,124,110,0.06); width: 100%; height: 100%; display: flex; flex-direction: column; }
+                .jw-acp-head { display: flex; align-items: center; gap: 10px; padding: 16px 20px; border-bottom: 1px solid #f1f5f4; }
+                .jw-acp-head i { color: ${BRAND}; font-size: 16px; }
+                .jw-acp-head span { font-weight: 700; font-size: 0.95rem; color: #0f172a; }
+                .jw-acp-stat { display: flex; align-items: center; gap: 10px; background: #f6f8fa; border: 1px solid #eef2f2; border-radius: 12px; padding: 10px 12px; }
+                .jw-acp-stat .ic { width: 30px; height: 30px; border-radius: 8px; background: ${BRAND_LIGHT}; color: ${BRAND}; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 12px; }
+            `}</style>
+
             {/* ── LEFT: PROFILE CARD ── */}
             <div className="col-lg-4 d-flex">
-                <div style={{
-                    background: "white",
-                    borderRadius: 14,
-                    border: "1px solid #e8f0ef",
-                    overflow: "hidden",
-                    boxShadow: "0 1px 4px rgba(10,124,110,0.06)",
-                    width: "100%",
-                    height: "100%", // Ensures equal height with the right column
-                    display: "flex",
-                    flexDirection: "column"
-                }}>
-                    {/* Thin brand top bar */}
-                    <div style={{ height: 4, background: `linear-gradient(90deg, ${BRAND}, ${BRAND_DARK})` }} />
+                <div className="jw-acp-card">
+                    <div className="jw-acp-head">
+                        <i className="fa-solid fa-address-card"></i>
+                        <span>Client Profile</span>
+                    </div>
 
                     <div style={{ padding: "20px", flexGrow: 1, display: "flex", flexDirection: "column" }}>
                         {/* AVATAR + NAME + BADGES */}
@@ -164,38 +160,35 @@ export default function AdminClientProfile({
                             </div>
                         </div>
 
-                        {/* CONTACT GRID */}
-                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px 12px", marginTop: "auto", marginBottom: "auto" }}>
-                            {customerDetails?.customer?.company_name && (
-                                <div style={{ gridColumn: "1 / -1" }}>
-                                    <span style={labelStyle}>Company</span>
-                                    <span style={valueStyle}>{customerDetails.customer.company_name}</span>
+                        {customerDetails?.customer?.company_name && (
+                            <div className="jw-acp-stat mb-2">
+                                <span className="ic"><i className="fa-solid fa-building"></i></span>
+                                <div style={{ minWidth: 0 }}>
+                                    <span style={{ fontSize: 9, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.05em", display: "block" }}>Company</span>
+                                    <span className="text-truncate d-block" style={{ fontSize: "0.8rem", color: "#1e293b", fontWeight: 600 }}>{customerDetails.customer.company_name}</span>
                                 </div>
-                            )}
-                            <div>
-                                <span style={labelStyle}>Email</span>
-                                <Link to={`mailto:${customerDetails?.email}`} className="text-truncate d-block" style={{ ...valueStyle, color: BRAND, textDecoration: "none", fontWeight: 500, textTransform: "none" }}>
-                                    {customerDetails?.email}
-                                </Link>
                             </div>
-                            <div>
-                                <span style={labelStyle}>Phone</span>
-                                <Link to={`tel:${customerDetails?.phone}`} style={{ ...valueStyle, color: BRAND, textDecoration: "none", fontWeight: 500 }}>
-                                    {customerDetails?.phone || "N/A"}
-                                </Link>
-                            </div>
-                            <div>
-                                <span style={labelStyle}>Location</span>
-                                <span style={valueStyle}>{customerDetails?.city || "N/A"}, {customerDetails?.state || "N/A"}</span>
-                            </div>
-                            {customerDetails?.created_at && (
-                                <div>
-                                    <span style={labelStyle}>Member Since</span>
-                                    <span style={valueStyle}>
-                                        {formatDateToDDMMYYYY(customerDetails.created_at)}
-                                    </span>
+                        )}
+
+                        {/* CONTACT INFO — icon-tile chips, consistent with the rest of the wizard */}
+                        <div className="row g-2">
+                            {statTiles.map((s) => (
+                                <div className="col-6" key={s.label}>
+                                    <div className="jw-acp-stat h-100">
+                                        <span className="ic"><i className={s.icon}></i></span>
+                                        <div style={{ minWidth: 0 }}>
+                                            <span style={{ fontSize: 9, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.05em", display: "block" }}>{s.label}</span>
+                                            {s.href ? (
+                                                <Link to={s.href} className="text-truncate d-block" style={{ fontSize: "0.78rem", color: BRAND, textDecoration: "none", fontWeight: 600, textTransform: "none" }}>
+                                                    {s.value}
+                                                </Link>
+                                            ) : (
+                                                <span className="text-truncate d-block" style={{ fontSize: "0.78rem", color: "#1e293b", fontWeight: 600 }}>{s.value}</span>
+                                            )}
+                                        </div>
+                                    </div>
                                 </div>
-                            )}
+                            ))}
                         </div>
                     </div>
                 </div>
@@ -203,39 +196,24 @@ export default function AdminClientProfile({
 
             {/* ── RIGHT: SITES SELECTOR ── */}
             <div className="col-lg-8 d-flex">
-                <div style={{
-                    background: "white",
-                    borderRadius: 14,
-                    border: "1px solid #e8f0ef",
-                    overflow: "hidden",
-                    boxShadow: "0 1px 4px rgba(10,124,110,0.06)",
-                    width: "100%",
-                    height: "100%", // Ensures equal height
-                    display: "flex",
-                    flexDirection: "column"
-                }}>
-                    <div style={{ height: 4, background: `linear-gradient(90deg, ${BRAND}, ${BRAND_DARK})` }} />
+                <div className="jw-acp-card">
+                    <div className="jw-acp-head" style={{ justifyContent: "space-between" }}>
+                        <div className="d-flex align-items-center gap-2">
+                            <i className="fa-solid fa-map-location-dot"></i>
+                            <span>Select Response Site</span>
+                        </div>
+                        <span style={{
+                            fontSize: "11px", fontWeight: 600, padding: "3px 10px",
+                            borderRadius: 20, background: BRAND_LIGHT, color: BRAND_DARK
+                        }}>
+                            {siteOptions.filter(s => !s.isManual).length} Sites Available
+                        </span>
+                    </div>
 
                     <div style={{ padding: "20px", flexGrow: 1, display: "flex", flexDirection: "column" }}>
-                        {/* Header */}
-                        <div className="d-flex align-items-center justify-content-between mb-3 pb-3" style={{ borderBottom: "1px solid #f1f5f4" }}>
-                            <div className="d-flex align-items-center gap-2">
-                                <div style={{ width: 30, height: 30, borderRadius: 8, background: BRAND_LIGHT, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                                    <i className="fa-solid fa-map-location-dot" style={{ color: BRAND, fontSize: 13 }}></i>
-                                </div>
-                                <span style={{ fontWeight: 700, fontSize: "0.9rem", color: "#0f172a" }}>Select Response Site</span>
-                            </div>
-                            <span style={{
-                                fontSize: "11px", fontWeight: 600, padding: "3px 10px",
-                                borderRadius: 20, background: BRAND_LIGHT, color: BRAND_DARK
-                            }}>
-                                {siteOptions.filter(s => !s.isManual).length} Sites Available
-                            </span>
-                        </div>
-
                         {/* Dropdown */}
                         <div className="mb-3">
-                            <label style={{ ...labelStyle, marginBottom: 8 }}>Search &amp; Choose Location</label>
+                            <label style={{ fontSize: "10px", fontWeight: 700, letterSpacing: "0.06em", color: "#94a3b8", display: "block", marginBottom: 8 }}>Search &amp; Choose Location</label>
                             <Select
                                 options={siteOptions}
                                 value={currentSelectedOption}

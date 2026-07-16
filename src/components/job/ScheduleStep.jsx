@@ -232,7 +232,7 @@ export default function ScheduleStep({ form, setField, scheduleError = "" }) {
             className={form.scheduleMode === "single" ? "active" : ""}
             onClick={() => handleModeChange("single")}
           >
-            <i className="fa-regular fa-calendar-day"></i> Single Day
+            <i className="fa-solid fa-calendar-day"></i> Single Day
           </button>
           <button
             type="button"
@@ -241,15 +241,15 @@ export default function ScheduleStep({ form, setField, scheduleError = "" }) {
               if (form.scheduleMode === "single") handleModeChange("custom");
             }}
           >
-            <i className="fa-regular fa-calendar-week"></i> Multiple Days
+            <i className="fa-solid fa-calendar-days"></i> Multiple Days
           </button>
         </div>
       </div>
 
       {/* Date Picker Area */}
       <div className="mb-4 pb-4 border-bottom">
-        <div className="d-flex flex-column flex-md-row justify-content-between align-items-md-end mb-3 gap-3">
-          <label className="form-label fw-bold mb-0">
+        <div className="mb-3">
+          <label className="form-label fw-bold mb-2 d-block">
             {form.scheduleMode === "single" && <>Select Job Date <span className="text-danger">*</span></>}
             {form.scheduleMode === "multiple" && <>Select Date Range <span className="text-danger">*</span></>}
             {form.scheduleMode === "custom" && <>Click Dates to Select/Deselect <span className="text-danger">*</span></>}
@@ -257,17 +257,17 @@ export default function ScheduleStep({ form, setField, scheduleError = "" }) {
 
           {/* Secondary Multi‑Select Toggle */}
           {form.scheduleMode !== "single" && (
-            <div className="jw-segmented jw-segmented-sm w-100 w-md-auto">
+            <div className="jw-segmented jw-segmented-sm" style={{ maxWidth: 320 }}>
               <button
                 type="button"
-                className={form.scheduleMode === "custom" ? "active" : ""}
+                className={`flex-fill ${form.scheduleMode === "custom" ? "active" : ""}`}
                 onClick={() => handleModeChange("custom")}
               >
                 Individual Dates
               </button>
               <button
                 type="button"
-                className={form.scheduleMode === "multiple" ? "active" : ""}
+                className={`flex-fill ${form.scheduleMode === "multiple" ? "active" : ""}`}
                 onClick={() => handleModeChange("multiple")}
               >
                 Date Range
@@ -373,108 +373,115 @@ export default function ScheduleStep({ form, setField, scheduleError = "" }) {
       )}
 
       {/* Compact Data Grid — calendar-tile day cards */}
-      <div className="d-flex flex-column gap-3 mt-2">
-        {form.scheduleDays.map((day, dayIndex) => {
-          const dObj = parseLocalDate(day.date);
-          return (
-            <div key={day.date} className="jw-day-card-v2">
-              <div className="jw-date-badge">
-                <div className="jw-db-mon">{dObj.toLocaleDateString("en-AU", { month: "short" })}</div>
-                <div className="jw-db-day">{dObj.getDate()}</div>
-              </div>
-              <div className="flex-grow-1" style={{ minWidth: 0 }}>
-                <div className="d-flex justify-content-between align-items-center mb-2">
-                  <span className="fw-bold text-dark fs-6">
-                    {dObj.toLocaleDateString("en-AU", { weekday: "long" })}
-                  </span>
-                  <button
-                    type="button"
-                    className="btn btn-sm p-0 border-0 fw-semibold small transition-all jw-add-shift-btn"
-                    style={{ opacity: 0.85 }}
-                    onClick={() => addShift(dayIndex)}
-                  >
-                    + Add shift
-                  </button>
+      {form.scheduleDays.length === 0 ? (
+        <div className="jw-empty mt-2">
+          <i className="fa-solid fa-calendar-days fs-3 d-block mb-2"></i>
+          Select a date {form.scheduleMode === "single" ? "" : "or range "}above to add shift times.
+        </div>
+      ) : (
+        <div className="d-flex flex-column gap-3 mt-2">
+          {form.scheduleDays.map((day, dayIndex) => {
+            const dObj = parseLocalDate(day.date);
+            return (
+              <div key={day.date} className="jw-day-card-v2">
+                <div className="jw-date-badge">
+                  <div className="jw-db-mon">{dObj.toLocaleDateString("en-AU", { month: "short" })}</div>
+                  <div className="jw-db-day">{dObj.getDate()}</div>
                 </div>
-                <div className="d-flex flex-column gap-2">
-                  {day.shifts.map((shift, shiftIndex) => (
-                    <div
-                      key={shift.id}
-                      className="d-flex flex-column flex-md-row align-items-md-center gap-3 bg-white rounded-3 px-3 py-3 py-md-2 border"
-                      style={{ borderColor: "var(--jw-line-soft, #f1f5f9)" }}
+                <div className="flex-grow-1" style={{ minWidth: 0 }}>
+                  <div className="d-flex justify-content-between align-items-center mb-2">
+                    <span className="fw-bold text-dark fs-6">
+                      {dObj.toLocaleDateString("en-AU", { weekday: "long" })}
+                    </span>
+                    <button
+                      type="button"
+                      className="btn btn-sm p-0 border-0 fw-semibold small transition-all jw-add-shift-btn"
+                      style={{ opacity: 0.85 }}
+                      onClick={() => addShift(dayIndex)}
                     >
-                      <div className="d-flex flex-column flex-sm-row align-items-sm-center gap-3 w-100 w-md-auto">
-                        <div className="d-flex align-items-center gap-2 w-100 w-sm-auto flex-grow-1 flex-sm-grow-0">
-                          <span className="small text-muted fw-medium" style={{ minWidth: "45px" }}>Start:</span>
-                          <CompactTime
-                            value={shift.startTime}
-                            onChange={(val) => updateShift(dayIndex, shiftIndex, "startTime", val)}
-                            containerClass="w-100"
-                          />
-                        </div>
-                        <div className="d-flex align-items-center gap-2 w-100 w-sm-auto flex-grow-1 flex-sm-grow-0 position-relative">
-                          <span className="small text-muted fw-medium" style={{ minWidth: "45px" }}>End:</span>
-                          <CompactTime
-                            value={shift.endTime}
-                            onChange={(val) => updateShift(dayIndex, shiftIndex, "endTime", val)}
-                            containerClass="w-100"
-                          />
-                          {shift.startTime && shift.endTime && shift.endTime <= shift.startTime && (
-                            <span
-                              className="badge bg-danger-subtle text-danger border border-danger-subtle ms-1 px-1 position-absolute end-0 me-2"
-                              style={{ fontSize: "0.65rem", transform: "translateY(-120%)" }}
-                              title="Ends on the following day"
-                            >
-                              +1d
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                      <div className="d-flex align-items-center justify-content-between gap-3 w-100 w-md-auto ms-md-auto mt-1 mt-md-0 pt-3 pt-md-0">
-                        <div className="d-flex align-items-center gap-2 w-100 w-sm-auto flex-grow-1 flex-sm-grow-0">
-                          <span className="small text-muted fw-medium text-nowrap" style={{ minWidth: "95px", textTransform: "none" }}>Number of staff:</span>
-
-                          <div className="input-group input-group-sm flex-nowrap bg-white rounded jw-stepper" style={{ minWidth: "95px", maxWidth: "95px" }}>
-                            <button
-                              type="button"
-                              className="btn btn-sm border-0 bg-transparent px-2 text-muted fw-bold"
-                              onClick={() => updateShift(dayIndex, shiftIndex, "numGuards", Math.max(1, shift.numGuards - 1))}
-                            >
-                              −
-                            </button>
-                            <input
-                              type="text"
-                              readOnly
-                              className="form-control form-control-sm border-0 text-center px-1 bg-transparent fw-semibold"
-                              value={shift.numGuards}
+                      + Add shift
+                    </button>
+                  </div>
+                  <div className="d-flex flex-column gap-2">
+                    {day.shifts.map((shift, shiftIndex) => (
+                      <div
+                        key={shift.id}
+                        className="d-flex flex-column flex-md-row align-items-md-center gap-3 bg-white rounded-3 px-3 py-3 py-md-2 border"
+                        style={{ borderColor: "var(--jw-line-soft, #f1f5f9)" }}
+                      >
+                        <div className="d-flex flex-column flex-sm-row align-items-sm-center gap-3 w-100 w-md-auto">
+                          <div className="d-flex align-items-center gap-2 w-100 w-sm-auto flex-grow-1 flex-sm-grow-0">
+                            <span className="small text-muted fw-medium" style={{ minWidth: "45px" }}>Start:</span>
+                            <CompactTime
+                              value={shift.startTime}
+                              onChange={(val) => updateShift(dayIndex, shiftIndex, "startTime", val)}
+                              containerClass="w-100"
                             />
-                            <button
-                              type="button"
-                              className="btn btn-sm border-0 bg-transparent px-2 text-muted fw-bold"
-                              onClick={() => updateShift(dayIndex, shiftIndex, "numGuards", shift.numGuards + 1)}
-                            >
-                              +
-                            </button>
                           </div>
-
+                          <div className="d-flex align-items-center gap-2 w-100 w-sm-auto flex-grow-1 flex-sm-grow-0 position-relative">
+                            <span className="small text-muted fw-medium" style={{ minWidth: "45px" }}>End:</span>
+                            <CompactTime
+                              value={shift.endTime}
+                              onChange={(val) => updateShift(dayIndex, shiftIndex, "endTime", val)}
+                              containerClass="w-100"
+                            />
+                            {shift.startTime && shift.endTime && shift.endTime <= shift.startTime && (
+                              <span
+                                className="badge bg-danger-subtle text-danger border border-danger-subtle ms-1 px-1 position-absolute end-0 me-2"
+                                style={{ fontSize: "0.65rem", transform: "translateY(-120%)" }}
+                                title="Ends on the following day"
+                              >
+                                +1d
+                              </span>
+                            )}
+                          </div>
                         </div>
-                        <button
-                          type="button"
-                          className="btn btn-sm text-danger p-1 border-0 opacity-75"
-                          onClick={() => removeShift(dayIndex, shiftIndex)}
-                          title="Remove shift"
-                        >
-                          <i className="fa-solid fa-trash-can fs-5"></i>
-                        </button>
+                        <div className="d-flex align-items-center justify-content-between gap-3 w-100 w-md-auto ms-md-auto mt-1 mt-md-0 pt-3 pt-md-0">
+                          <div className="d-flex align-items-center gap-2 w-100 w-sm-auto flex-grow-1 flex-sm-grow-0">
+                            <span className="small text-muted fw-medium text-nowrap" style={{ minWidth: "95px", textTransform: "none" }}>Number of staff:</span>
+
+                            <div className="input-group input-group-sm flex-nowrap bg-white rounded jw-stepper" style={{ minWidth: "95px", maxWidth: "95px" }}>
+                              <button
+                                type="button"
+                                className="btn btn-sm border-0 bg-transparent px-2 text-muted fw-bold"
+                                onClick={() => updateShift(dayIndex, shiftIndex, "numGuards", Math.max(1, shift.numGuards - 1))}
+                              >
+                                −
+                              </button>
+                              <input
+                                type="text"
+                                readOnly
+                                className="form-control form-control-sm border-0 text-center px-1 bg-transparent fw-semibold"
+                                value={shift.numGuards}
+                              />
+                              <button
+                                type="button"
+                                className="btn btn-sm border-0 bg-transparent px-2 text-muted fw-bold"
+                                onClick={() => updateShift(dayIndex, shiftIndex, "numGuards", shift.numGuards + 1)}
+                              >
+                                +
+                              </button>
+                            </div>
+
+                          </div>
+                          <button
+                            type="button"
+                            className="btn btn-sm text-danger p-1 border-0 opacity-75"
+                            onClick={() => removeShift(dayIndex, shiftIndex)}
+                            title="Remove shift"
+                          >
+                            <i className="fa-solid fa-trash-can fs-5"></i>
+                          </button>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
               </div>
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

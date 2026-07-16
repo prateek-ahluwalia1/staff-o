@@ -1,4 +1,5 @@
 import React from "react";
+import Select from "react-select";
 
 const EMPTY_TASK = () => ({ task: "", task_start: "", task_end: "" });
 
@@ -6,6 +7,8 @@ const hours = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, "0"));
 const minutes = Array.from({ length: 12 }, (_, i) =>
   String(i * 5).padStart(2, "0"),
 );
+const HOUR_OPTIONS = hours.map((h) => ({ value: h, label: h }));
+const MINUTE_OPTIONS = minutes.map((m) => ({ value: m, label: m }));
 
 function getPart(timeStr, part) {
   if (!timeStr) return "";
@@ -19,16 +22,31 @@ function setTimePart(current, type, newVal) {
   return `${h}:${m}`;
 }
 
-function TimeSelect({ value, onChange, label }) {
-  const inputStyle = {
-    height: "42px",
+const timeSelectStyles = {
+  control: (base, state) => ({
+    ...base,
+    minHeight: "42px",
     borderRadius: "10px",
-    border: "1px solid #e5e7eb",
+    borderColor: state.isFocused ? "#0A7C6E" : "#e5e7eb",
+    boxShadow: state.isFocused ? "0 0 0 3px rgba(10,124,110,0.12)" : "none",
     fontSize: "14px",
-    minWidth: 0,
-  };
+    "&:hover": { borderColor: state.isFocused ? "#0A7C6E" : "#e5e7eb" },
+  }),
+  option: (base, state) => ({
+    ...base,
+    backgroundColor: state.isSelected ? "#0A7C6E" : state.isFocused ? "#f0fdf9" : "#fff",
+    color: state.isSelected ? "#fff" : "#1e293b",
+    fontSize: "14px",
+  }),
+  menu: (base) => ({ ...base, zIndex: 20 }),
+  valueContainer: (base) => ({ ...base, justifyContent: "center" }),
+  indicatorSeparator: () => ({ display: "none" }),
+  placeholder: (base) => ({ ...base, color: "#94a3b8" }),
+};
+
+function TimeSelect({ value, onChange, label }) {
   return (
-    <div style={{ flex: 1 }}>
+    <div style={{ flex: 1, minWidth: 130 }}>
       <label
         className="form-label mb-1"
         style={{ fontSize: 11.5, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.4px", color: "#94a3b8" }}
@@ -36,35 +54,29 @@ function TimeSelect({ value, onChange, label }) {
         {label}
       </label>
       <div className="d-flex gap-2 align-items-center">
-        <select
-          className="form-select jw-time-select"
-          style={inputStyle}
-          value={getPart(value, "hour")}
-          onChange={(e) => onChange(setTimePart(value, "hour", e.target.value))}
-        >
-          <option value="">HH</option>
-          {hours.map((h) => (
-            <option key={h} value={h}>
-              {h}
-            </option>
-          ))}
-        </select>
+        <div style={{ flex: 1 }}>
+          <Select
+            options={HOUR_OPTIONS}
+            value={HOUR_OPTIONS.find((o) => o.value === getPart(value, "hour")) || null}
+            onChange={(opt) => onChange(setTimePart(value, "hour", opt ? opt.value : ""))}
+            placeholder="HH"
+            isClearable
+            classNamePrefix="react-select"
+            styles={timeSelectStyles}
+          />
+        </div>
         <span style={{ fontWeight: 700, color: "#aaa" }}>:</span>
-        <select
-          className="form-select jw-time-select"
-          style={inputStyle}
-          value={getPart(value, "minute")}
-          onChange={(e) =>
-            onChange(setTimePart(value, "minute", e.target.value))
-          }
-        >
-          <option value="">MM</option>
-          {minutes.map((m) => (
-            <option key={m} value={m}>
-              {m}
-            </option>
-          ))}
-        </select>
+        <div style={{ flex: 1 }}>
+          <Select
+            options={MINUTE_OPTIONS}
+            value={MINUTE_OPTIONS.find((o) => o.value === getPart(value, "minute")) || null}
+            onChange={(opt) => onChange(setTimePart(value, "minute", opt ? opt.value : ""))}
+            placeholder="MM"
+            isClearable
+            classNamePrefix="react-select"
+            styles={timeSelectStyles}
+          />
+        </div>
       </div>
     </div>
   );
@@ -94,7 +106,6 @@ export default function TasksStep({ form, setField }) {
   return (
     <div className="mb-4">
       <style>{`
-        .jw-time-select:focus { border-color: #0A7C6E !important; box-shadow: 0 0 0 3px rgba(10,124,110,0.12) !important; }
         .jw-task-card { background: #fff; border: 1px solid var(--jw-line-soft, #f1f5f9); border-radius: 16px; padding: 18px; margin-bottom: 14px; box-shadow: 0 2px 8px rgba(15,23,42,0.04); }
         .jw-task-num { width: 28px; height: 28px; border-radius: 9px; background: var(--jw-teal-tint, #f0fdf9); color: var(--jw-teal, #0A7C6E); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 12.5px; flex-shrink: 0; }
         .jw-task-delete { color: #dc2626 !important; border-radius: 8px !important; }

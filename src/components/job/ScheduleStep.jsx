@@ -285,7 +285,6 @@ export default function ScheduleStep({ form, setField, scheduleError = "" }) {
               placeholderText="Choose a date"
               minDate={new Date()}
               className="form-control form-control-lg shadow-sm w-100 pe-5"
-              isClearable
             />
           )}
 
@@ -383,7 +382,11 @@ export default function ScheduleStep({ form, setField, scheduleError = "" }) {
           {form.scheduleDays.map((day, dayIndex) => {
             const dObj = parseLocalDate(day.date);
             return (
-              <div key={day.date} className="jw-day-card-v2">
+              <div
+                key={day.date}
+                className="jw-day-card-v2"
+                style={{ alignItems: 'flex-start', }}
+              >
                 <div className="jw-date-badge">
                   <div className="jw-db-mon">{dObj.toLocaleDateString("en-AU", { month: "short" })}</div>
                   <div className="jw-db-day">{dObj.getDate()}</div>

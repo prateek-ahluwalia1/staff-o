@@ -281,6 +281,19 @@ export default function NotificationAcceptModal({
                             </div>
                         </div>
 
+                        {/* Description (new) */}
+                        {job.description && (
+                            <div className="mt-4 p-4 bg-white rounded-4 shadow-sm border border-light">
+                                <h5 className="fw-bold d-flex align-items-center mb-3 pb-2 border-bottom" style={{ fontSize: '16px', color: '#1e293b' }}>
+                                    <i className="fa-solid fa-align-left me-2" style={{ color: '#0A7C6E' }}></i>
+                                    Description
+                                </h5>
+                                <p className="mb-0" style={{ fontSize: '14px', color: '#334155', textTransform: 'none', lineHeight: '1.6' }}>
+                                    {job.description}
+                                </p>
+                            </div>
+                        )}
+
                         {/* Required Documents */}
                         {job.documents && job.documents.length > 0 && (
                             <div className="row g-4 mt-4">

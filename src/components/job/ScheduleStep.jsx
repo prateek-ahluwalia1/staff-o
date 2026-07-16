@@ -146,6 +146,7 @@ export default function ScheduleStep({ form, setField, scheduleError = "" }) {
     }
   };
 
+  // ----- FIXED Fast Fill: applies to ALL shifts in every day -----
   const handleBulkChange = (type, value) => {
     let newStart = bulkStart;
     let newEnd = bulkEnd;
@@ -157,12 +158,12 @@ export default function ScheduleStep({ form, setField, scheduleError = "" }) {
 
     const updatedDays = form.scheduleDays.map((day) => ({
       ...day,
-      shifts: day.shifts.map((shift, idx) => {
-        if (idx === 0) {
-          return { ...shift, startTime: newStart, endTime: newEnd, numGuards: newGuards };
-        }
-        return shift;
-      }),
+      shifts: day.shifts.map((shift) => ({
+        ...shift,
+        startTime: newStart,
+        endTime: newEnd,
+        numGuards: newGuards,
+      })),
     }));
     setField("scheduleDays", updatedDays);
   };
@@ -255,7 +256,6 @@ export default function ScheduleStep({ form, setField, scheduleError = "" }) {
             {form.scheduleMode === "custom" && <>Click Dates to Select/Deselect <span className="text-danger">*</span></>}
           </label>
 
-          {/* Secondary Multi‑Select Toggle */}
           {form.scheduleMode !== "single" && (
             <div className="jw-segmented jw-segmented-sm" style={{ maxWidth: 320 }}>
               <button
@@ -339,10 +339,7 @@ export default function ScheduleStep({ form, setField, scheduleError = "" }) {
               <CompactTime value={bulkEnd} onChange={(val) => handleBulkChange("end", val)} containerClass="w-auto" />
             </div>
             <div className="d-flex align-items-center gap-2">
-              <span className="small fw-semibold text-nowrap"
-                style={{ textTransform: "none" }}
-              >Number of staff:</span>
-
+              <span className="small fw-semibold text-nowrap" style={{ textTransform: "none" }}>Number of staff:</span>
               <div className="input-group input-group-sm flex-nowrap bg-white rounded jw-stepper" style={{ width: "95px" }}>
                 <button
                   type="button"
@@ -365,13 +362,12 @@ export default function ScheduleStep({ form, setField, scheduleError = "" }) {
                   +
                 </button>
               </div>
-
             </div>
           </div>
         </div>
       )}
 
-      {/* Compact Data Grid — calendar-tile day cards */}
+      {/* Schedule Days */}
       {form.scheduleDays.length === 0 ? (
         <div className="jw-empty mt-2">
           <i className="fa-solid fa-calendar-days fs-3 d-block mb-2"></i>
@@ -385,7 +381,7 @@ export default function ScheduleStep({ form, setField, scheduleError = "" }) {
               <div
                 key={day.date}
                 className="jw-day-card-v2"
-                style={{ alignItems: 'flex-start', }}
+                style={{ alignItems: 'flex-start' }}
               >
                 <div className="jw-date-badge">
                   <div className="jw-db-mon">{dObj.toLocaleDateString("en-AU", { month: "short" })}</div>
@@ -442,7 +438,6 @@ export default function ScheduleStep({ form, setField, scheduleError = "" }) {
                         <div className="d-flex align-items-center justify-content-between gap-3 w-100 w-md-auto ms-md-auto mt-1 mt-md-0 pt-3 pt-md-0">
                           <div className="d-flex align-items-center gap-2 w-100 w-sm-auto flex-grow-1 flex-sm-grow-0">
                             <span className="small text-muted fw-medium text-nowrap" style={{ minWidth: "95px", textTransform: "none" }}>Number of staff:</span>
-
                             <div className="input-group input-group-sm flex-nowrap bg-white rounded jw-stepper" style={{ minWidth: "95px", maxWidth: "95px" }}>
                               <button
                                 type="button"
@@ -465,7 +460,6 @@ export default function ScheduleStep({ form, setField, scheduleError = "" }) {
                                 +
                               </button>
                             </div>
-
                           </div>
                           <button
                             type="button"

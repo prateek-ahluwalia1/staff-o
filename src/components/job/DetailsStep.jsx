@@ -77,7 +77,6 @@ export default function DetailsStep({ form, setField, handleFile, attachmentPrev
     else e.target.value = "";
   };
 
-  // Real toggle switch — replaces the old Yes/No button-pair pattern
   const SwitchRow = ({ label, isYes, onToggle, icon }) => (
     <div
       className={`jw-switch-row ${isYes ? "on" : ""}`}
@@ -106,72 +105,80 @@ export default function DetailsStep({ form, setField, handleFile, attachmentPrev
         </div>
       </div>
 
-      {/* ROW 1: JOB TYPE CARD */}
+      {/* JOB TYPE + REQUIREMENT SWITCHES – one row on desktop, equal widths */}
       <div className="jw-card p-3 p-md-4 mb-3">
-        <label className="form-label small fw-bold text-dark mb-2">
-          Job Type <span className="text-danger">*</span>
-        </label>
-        <Select
-          options={JOB_TYPE_OPTIONS}
-          value={selectedJobTypeOption}
-          onChange={handleJobTypeChange}
-          isClearable
-          placeholder="Select a job type..."
-          classNamePrefix="react-select"
-          styles={{
-            control: (base, state) => ({
-              ...base,
-              minHeight: "50px",
-              borderRadius: "0.6rem",
-              boxShadow: state.isFocused ? "0 0 0 3px rgba(10,124,110,0.12)" : "none",
-              borderColor: validationErrors.jobType ? "#dc3545" : (state.isFocused ? "#0A7C6E" : "#dee2e6"),
-              "&:hover": {
-                borderColor: state.isFocused ? "#0A7C6E" : "#dee2e6"
-              }
-            }),
-            option: (base, state) => ({
-              ...base,
-              backgroundColor: state.isSelected ? "#0A7C6E" : state.isFocused ? "#e6f2f0" : "white",
-              color: state.isSelected ? "white" : "#333",
-              "&:active": { backgroundColor: "#0A7C6E" }
-            })
-          }}
-        />
-        {form.jobType === "others" && (
-          <input
-            type="text"
-            value={form.customJobType || ""}
-            onChange={(e) => handleCustomJobTypeChange(e.target.value)}
-            className="form-control mt-2 shadow-sm"
-            placeholder="Enter custom type..."
-            required
-          />
-        )}
+        <div className="row g-3">
+          {/* Job Type – 1/3 width on md+ */}
+          <div className="col-12 col-md-4">
+            <label className="form-label small fw-bold text-dark mb-2">
+              Job Type <span className="text-danger">*</span>
+            </label>
+            <Select
+              options={JOB_TYPE_OPTIONS}
+              value={selectedJobTypeOption}
+              onChange={handleJobTypeChange}
+              isClearable
+              placeholder="Select a job type..."
+              classNamePrefix="react-select"
+              styles={{
+                control: (base, state) => ({
+                  ...base,
+                  minHeight: "50px",
+                  borderRadius: "0.6rem",
+                  boxShadow: state.isFocused ? "0 0 0 3px rgba(10,124,110,0.12)" : "none",
+                  borderColor: validationErrors.jobType ? "#dc3545" : (state.isFocused ? "#0A7C6E" : "#dee2e6"),
+                  "&:hover": {
+                    borderColor: state.isFocused ? "#0A7C6E" : "#dee2e6"
+                  }
+                }),
+                option: (base, state) => ({
+                  ...base,
+                  backgroundColor: state.isSelected ? "#0A7C6E" : state.isFocused ? "#e6f2f0" : "white",
+                  color: state.isSelected ? "white" : "#333",
+                  "&:active": { backgroundColor: "#0A7C6E" }
+                })
+              }}
+            />
+            {form.jobType === "others" && (
+              <input
+                type="text"
+                value={form.customJobType || ""}
+                onChange={(e) => handleCustomJobTypeChange(e.target.value)}
+                className="form-control mt-2 shadow-sm"
+                placeholder="Enter custom type..."
+                required
+              />
+            )}
+          </div>
+
+          {/* WWCC toggle – 1/3 width */}
+          <div className="col-12 col-md-4 d-flex align-items-end">
+            <div className="w-100">
+              <SwitchRow
+                icon="fa-solid fa-child-reaching"
+                label="Working With Children Check Required?"
+                isYes={Array.isArray(form.document_types) && form.document_types.includes('working_with_children')}
+                onToggle={(val) => toggleDocument('working_with_children', val)}
+              />
+            </div>
+          </div>
+
+          {/* White Card toggle – 1/3 width */}
+          <div className="col-12 col-md-4 d-flex align-items-end">
+            <div className="w-100">
+              <SwitchRow
+                icon="fa-regular fa-id-card"
+                label="White Card Required?"
+                isYes={Array.isArray(form.document_types) && form.document_types.includes('white_card')}
+                onToggle={(val) => toggleDocument('white_card', val)}
+              />
+            </div>
+          </div>
+        </div>
       </div>
 
-      {/* ROW 2: REQUIREMENT SWITCHES */}
-      <div className="row g-3 mb-3">
-        <div className="col-12 col-md-6">
-          <SwitchRow
-            icon="fa-solid fa-child-reaching"
-            label="Working with Children Check Required?"
-            isYes={Array.isArray(form.document_types) && form.document_types.includes('working_with_children')}
-            onToggle={(val) => toggleDocument('working_with_children', val)}
-          />
-        </div>
-        <div className="col-12 col-md-6">
-          <SwitchRow
-            icon="fa-regular fa-id-card"
-            label="White Card Required?"
-            isYes={Array.isArray(form.document_types) && form.document_types.includes('white_card')}
-            onToggle={(val) => toggleDocument('white_card', val)}
-          />
-        </div>
-      </div>
-
-      {/* ROW 3: ATTACHMENTS & DESCRIPTION */}
+      {/* ATTACHMENTS + DESCRIPTION (unchanged) */}
       <div className="row g-3 g-md-4 mb-2">
-        {/* Attachments */}
         <div className="col-12 col-md-5 d-flex flex-column">
           <label className="form-label small fw-bold text-dark mb-2">
             Attachments <span className="text-muted fw-normal">(Optional context)</span>
@@ -185,9 +192,7 @@ export default function DetailsStep({ form, setField, handleFile, attachmentPrev
             <div className="jw-dropzone-icon">
               <i className="fa-solid fa-cloud-arrow-up"></i>
             </div>
-            <strong className="text-dark mb-1"
-              style={{ textTransform: "none", fontSize: "0.9rem" }}
-            >Click to upload files</strong>
+            <strong className="text-dark mb-1" style={{ textTransform: "none", fontSize: "0.9rem" }}>Click to upload files</strong>
             <span className="text-muted" style={{ fontSize: "0.75rem" }}>PNG, JPG, PDF — Max 10MB</span>
             {attachmentPreviews?.length > 0 && (
               <span className="jw-chip mt-3">
@@ -198,7 +203,6 @@ export default function DetailsStep({ form, setField, handleFile, attachmentPrev
           {fileErrors && <div className="text-danger small mt-2 fw-medium"><i className="fa-solid fa-triangle-exclamation me-1"></i> {fileErrors}</div>}
         </div>
 
-        {/* Job Description */}
         <div className="col-12 col-md-7 d-flex flex-column">
           <div className="d-flex justify-content-between align-items-end mb-2 mt-3 mt-md-0">
             <label className="form-label small fw-bold text-dark mb-0">Job Description & Tasks</label>
@@ -216,7 +220,6 @@ export default function DetailsStep({ form, setField, handleFile, attachmentPrev
         </div>
       </div>
 
-      {/* Uploaded Files Preview (Renders underneath the row if files are added) */}
       {attachmentPreviews?.length > 0 && (
         <div className="mt-4 p-3 jw-tint-panel">
           <div className="d-flex justify-content-between mb-2">
@@ -225,7 +228,6 @@ export default function DetailsStep({ form, setField, handleFile, attachmentPrev
           <AttachmentGrid previews={attachmentPreviews} removeAttachment={removeAttachment} />
         </div>
       )}
-
     </div>
   );
 }

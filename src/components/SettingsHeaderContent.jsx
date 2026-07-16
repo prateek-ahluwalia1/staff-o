@@ -23,11 +23,11 @@ export default function SettingsHeaderContent({
   const circumference = normalizedRadius * 2 * Math.PI;
   const strokeDashoffset = circumference - (pct / 100) * circumference;
 
-  const getColor = () => {
+  const getProgressColor = () => {
     if (pct === 0) return "#6b7280";
-    if (pct < 40) return "#dc3545";
-    if (pct < 80) return "#f59e0b";
-    return "#16a34a";
+    if (pct < 40) return "#f87171";
+    if (pct < 80) return "#fbbf24";
+    return "#4ade80";
   };
 
   const verified = !!(
@@ -44,105 +44,194 @@ export default function SettingsHeaderContent({
     isActive === "1"
   );
 
-  const progressColor = getColor();
+  const progressColor = getProgressColor();
 
   return (
-    <div className="settings-header-content" style={{ position: "relative" }}>
-      {/* LEFT SIDE: Text block */}
-      <div className="header-text-info">
-        <h2
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "8px",
-            flexWrap: "wrap",
-          }}
-        >
+    <div className="settings-header-content d-flex align-items-center justify-content-between flex-wrap gap-4">
+      <style>{`
+        .settings-header-content {
+          color: #fff;
+          position: relative;
+          z-index: 1;
+          flex: 1;
+          width: 100%;
+          background: transparent !important; /* no background – inherits dark hero */
+        }
+
+        .settings-hero-title {
+          font-size: 28px;
+          font-weight: 800;
+          letter-spacing: -0.4px;
+          line-height: 1.2;
+          margin: 0 0 6px;
+          display: flex;
+          align-items: center;
+          flex-wrap: wrap;
+          gap: 8px;
+          color: #fff;
+        }
+
+        .settings-hero-subtitle {
+          color: rgba(255, 255, 255, 0.62);
+          font-size: 14px;
+          margin: 0 0 12px;
+          text-transform: none;
+        }
+
+        .settings-hero-meta {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 10px;
+        }
+
+        .settings-hero-meta-item {
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          background: rgba(255, 255, 255, 0.06);
+          border: 1px solid rgba(255, 255, 255, 0.12);
+          backdrop-filter: blur(6px);
+          border-radius: 12px;
+          padding: 6px 14px;
+          font-size: 13px;
+          font-weight: 600;
+          color: rgba(255, 255, 255, 0.9);
+          white-space: nowrap;
+        }
+
+        .settings-hero-meta-item i {
+          font-size: 12px;
+          opacity: 0.8;
+          width: 16px;
+          text-align: center;
+        }
+
+        .status-badge-premium {
+          font-size: 11.5px;
+          font-weight: 700;
+          padding: 3px 12px;
+          border-radius: 30px;
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          border: 1px solid;
+          letter-spacing: 0.2px;
+        }
+
+        .status-badge-premium.active {
+          background: rgba(22, 163, 74, 0.12);
+          color: #bbf7d0;
+          border-color: rgba(34, 197, 94, 0.5);
+        }
+
+        .status-badge-premium.inactive {
+          background: rgba(220, 38, 38, 0.12);
+          color: #fecaca;
+          border-color: rgba(248, 113, 113, 0.5);
+        }
+
+        .verified-icon-premium {
+          color: #6ee7d8;
+          font-size: 0.85em;
+        }
+
+        .progress-card {
+          background: rgba(255, 255, 255, 0.06);
+          border: 1px solid rgba(255, 255, 255, 0.12);
+          backdrop-filter: blur(6px);
+          border-radius: 14px;
+          padding: 10px 16px;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 4px;
+          min-width: 120px;
+        }
+
+        .progress-card-label {
+          font-size: 10px;
+          font-weight: 700;
+          letter-spacing: 0.5px;
+          text-transform: uppercase;
+          color: rgba(255, 255, 255, 0.5);
+        }
+
+        .progress-ring-wrapper {
+          position: relative;
+          width: 90px;
+          height: 90px;
+        }
+
+        .progress-percentage {
+          position: absolute;
+          top: 42%;
+          left: 42%;
+          transform: translate(-50%, -50%);
+          font-weight: 700;
+          font-size: 16px;
+          color: #fff;
+        }
+
+        @media (max-width: 768px) {
+          .settings-hero-title {
+            font-size: 22px;
+          }
+          .settings-hero-meta {
+            gap: 8px;
+          }
+        }
+      `}</style>
+
+      {/* Left text content */}
+      <div className="flex-grow-1">
+        <h1 className="settings-hero-title">
           {name || "Staff Member"}
 
-          {/* Verified badge */}
           {verified && (
-            <i
-              className="fa-solid fa-circle-check text-primary"
-              aria-hidden="true"
-              style={{ fontSize: "0.8em" }}
-              title="Verified Profile"
-            ></i>
+            <i className="fa-solid fa-circle-check verified-icon-premium" title="Verified Profile"></i>
           )}
 
-          {/* Active / Inactive badge */}
           <span
-            style={{
-              fontSize: "0.7rem",
-              fontWeight: 600,
-              padding: "2px 10px",
-              borderRadius: "12px",
-              backgroundColor: isActiveProfile ? "#dcfce7" : "#fee2e2",
-              color: isActiveProfile ? "#166534" : "#991b1b",
-              border: `1px solid ${isActiveProfile ? "#bbf7d0" : "#fecaca"}`,
-              lineHeight: 1.4,
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "4px",
-              whiteSpace: "nowrap",
-            }}
+            className={`status-badge-premium ${isActiveProfile ? "active" : "inactive"}`}
             title={isActiveProfile ? "Profile is active" : "Profile is inactive"}
-            aria-label={isActiveProfile ? "Active" : "Inactive"}
           >
-            {isActiveProfile ? (
-              <>
-                <i
-                  className="fa-solid fa-circle-check"
-                  style={{ fontSize: "0.8em" }}
-                ></i>
-                Active
-              </>
-            ) : (
-              <>
-                <i
-                  className="fa-solid fa-circle-xmark"
-                  style={{ fontSize: "0.8em" }}
-                ></i>
-                Inactive
-              </>
-            )}
+            <i className={`fa-solid ${isActiveProfile ? "fa-circle-check" : "fa-circle-xmark"}`}></i>
+            {isActiveProfile ? "Active" : "Inactive"}
           </span>
-        </h2>
+        </h1>
 
-        <p style={{ textTransform: "none" }}>
-          Keep your information up to date so your profile stays accurate and
-          complete.
+        <p className="settings-hero-subtitle">
+          Keep your information up to date so your profile stays accurate and complete.
         </p>
 
-        <div className="settings-header-meta">
-          <span style={{ textTransform: "none" }}>
-            <i className="fa-solid fa-envelope" aria-hidden="true"></i>
+        <div className="settings-hero-meta">
+          <span className="settings-hero-meta-item">
+            <i className="fa-solid fa-envelope"></i>
             {email || "No email"}
           </span>
 
           {userType !== "contractor" ? (
-            <>
-              <span>
-                <i className="fa-solid fa-location-dot" aria-hidden="true"></i>
-                {limitToFirstFourWords(city) || "No location"}
-              </span>
-            </>
+            <span className="settings-hero-meta-item">
+              <i className="fa-solid fa-location-dot"></i>
+              {limitToFirstFourWords(city) || "No location"}
+            </span>
           ) : (
-            <span>
-              <i className="fa-solid fa-briefcase" aria-hidden="true"></i>
+            <span className="settings-hero-meta-item">
+              <i className="fa-solid fa-briefcase"></i>
               {company_name || "No company name"}
             </span>
           )}
         </div>
       </div>
 
-      {/* Profile completion ring (unchanged) */}
+      {/* Right side: progress ring (only for staff / contractors, when incomplete) */}
       {userType !== "admin" && userType !== "customer" && pct > 0 && pct < 100 && (
-        <div className="status-circle-wrapper">
-          <div style={{ width: 90, height: 90, position: "relative" }}>
+        <div className="progress-card flex-shrink-0">
+          <span className="progress-card-label">Completion</span>
+          <div className="progress-ring-wrapper">
             <svg height={radius * 2} width={radius * 2}>
               <circle
-                stroke="#e5e7eb"
+                stroke="rgba(255,255,255,0.15)"
                 fill="transparent"
                 strokeWidth={stroke}
                 r={normalizedRadius}
@@ -154,10 +243,10 @@ export default function SettingsHeaderContent({
                 fill="transparent"
                 strokeWidth={stroke}
                 strokeLinecap="round"
-                strokeDasharray={circumference + " " + circumference}
+                strokeDasharray={`${circumference} ${circumference}`}
                 style={{
                   strokeDashoffset,
-                  transition: "stroke-dashoffset 0.6s ease",
+                  transition: "stroke-dashoffset 0.8s ease",
                   transform: "rotate(-90deg)",
                   transformOrigin: "50% 50%",
                 }}
@@ -166,19 +255,7 @@ export default function SettingsHeaderContent({
                 cy={radius}
               />
             </svg>
-            <div
-              style={{
-                position: "absolute",
-                top: "42%",
-                left: "42%",
-                transform: "translate(-50%, -50%)",
-                fontWeight: "600",
-                fontSize: 16,
-                color: progressColor,
-              }}
-            >
-              {pct}%
-            </div>
+            <div className="progress-percentage">{pct}%</div>
           </div>
         </div>
       )}

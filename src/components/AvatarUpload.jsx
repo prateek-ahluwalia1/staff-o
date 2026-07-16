@@ -16,9 +16,7 @@ const getInitials = (name) => {
 };
 
 const getAvatarColor = (name) => {
-  const colors = [
-    "#0A7C6E"
-  ];
+  const colors = ["#0A7C6E"];
   let hash = 0;
   if (name) {
     for (let i = 0; i < name.length; i++) {
@@ -40,13 +38,11 @@ export default function AvatarUpload({
 
   const handleFileChange = async (e) => {
     const file = e.target.files?.[0];
-
     if (!file) return;
 
-    // Validate file size before proceeding
     if (file.size > MAX_FILE_SIZE_BYTES) {
       toast.error(`File is too large. Maximum allowed size is ${MAX_FILE_SIZE_MB}MB.`);
-      e.target.value = ""; // Reset the file input so the user can try again
+      e.target.value = "";
       return;
     }
 
@@ -68,11 +64,8 @@ export default function AvatarUpload({
         <img
           src={profilePhoto}
           alt={name || "Staff"}
+          className="avatar-image"
           style={{
-            width: 120,
-            height: 120,
-            objectFit: "cover",
-            borderRadius: "10%",
             opacity: uploadProgress || loading ? 0.6 : 1,
             transition: "opacity 0.3s",
           }}
@@ -80,23 +73,13 @@ export default function AvatarUpload({
       );
     }
 
-    // Show initials badge instead of default photo
     return (
       <div
+        className="avatar-initials"
         style={{
-          width: 120,
-          height: 120,
-          borderRadius: "10%",
           backgroundColor: getAvatarColor(name),
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          fontSize: "2.5rem",
-          fontWeight: "bold",
-          color: "white",
           opacity: uploadProgress || loading ? 0.6 : 1,
           transition: "opacity 0.3s",
-          boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
         }}
       >
         {getInitials(name)}
@@ -105,31 +88,89 @@ export default function AvatarUpload({
   };
 
   return (
-    <div
-      className="avatar-upload"
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        gap: 8,
-        position: "relative",
-      }}
-    >
-      <div style={{ position: "relative" }}>
+    <div className="avatar-upload-wrapper">
+      <style>{`
+        .avatar-upload-wrapper {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 10px;
+          position: relative;
+        }
+        .avatar-container {
+          position: relative;
+          width: 120px;
+          height: 120px;
+          border-radius: 22px;
+          overflow: hidden;
+          border: 3px solid rgba(255, 255, 255, 0.25);
+          box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+          background: rgba(255, 255, 255, 0.08);
+          backdrop-filter: blur(8px);
+        }
+        .avatar-image {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+        }
+        .avatar-initials {
+          width: 100%;
+          height: 100%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 2.5rem;
+          font-weight: 700;
+          color: #fff;
+          letter-spacing: 1px;
+          text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        .upload-btn {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          gap: 6px;
+          padding: 8px 18px;
+          border-radius: 30px;
+          font-size: 13px;
+          font-weight: 600;
+          color: #fff;
+          background: rgba(10, 124, 110, 0.7);
+          border: 1px solid rgba(255, 255, 255, 0.25);
+          backdrop-filter: blur(4px);
+          cursor: pointer;
+          transition: all 0.2s ease;
+          box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+        }
+        .upload-btn:hover:not(:disabled) {
+          background: rgba(10, 124, 110, 0.9);
+          transform: translateY(-1px);
+          box-shadow: 0 6px 14px rgba(0, 0, 0, 0.2);
+        }
+        .upload-btn:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
+          pointer-events: none;
+        }
+        .max-size-text {
+          font-size: 11px;
+          color: rgba(255, 255, 255, 0.65);
+          margin-top: -4px;
+          text-transform: none;
+        }
+        .spinner {
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+        }
+      `}</style>
+
+      <div className="avatar-container">
         {renderAvatar()}
         {(uploadProgress || loading) && (
-          <div
-            style={{
-              position: "absolute",
-              top: "50%",
-              left: "50%",
-              transform: "translate(-50%, -50%)",
-            }}
-          >
-            <div
-              className="spinner-border spinner-border-sm text-primary"
-              role="status"
-            >
+          <div className="spinner">
+            <div className="spinner-border spinner-border-sm text-light" role="status">
               <span className="visually-hidden">Uploading...</span>
             </div>
           </div>
@@ -144,31 +185,22 @@ export default function AvatarUpload({
         style={{ display: "none" }}
         disabled={uploadProgress || loading}
       />
-      {
-        userRole !== "admin" && (
-          <div className="d-flex flex-column align-items-center">
-            <label
-              htmlFor="avatar-file-input"
-              className="upload-label mb-1"
-              style={{
-                cursor: uploadProgress || loading ? "not-allowed" : "pointer",
-                display: "inline-flex",
-                width: "100%",
-                justifyContent: "center",
-                alignItems: "center",
-                gap: 6,
-                opacity: uploadProgress || loading ? 0.6 : 1,
-              }}
-            >
-              <i className="fa-solid fa-arrow-up-from-bracket" aria-hidden="true"></i>
-              {uploadProgress || loading ? "Uploading..." : "Update Photo"}
-            </label>
-            <span style={{ fontSize: "11px", color: "#6c757d", textTransform: "none" }}>
-              Max file size: {MAX_FILE_SIZE_MB}MB
-            </span>
-          </div>
-        )
-      }
+
+      {userRole !== "admin" && (
+        <>
+          <label
+            htmlFor="avatar-file-input"
+            className="upload-btn"
+            style={{ cursor: uploadProgress || loading ? "not-allowed" : "pointer" }}
+          >
+            <i className="fa-solid fa-arrow-up-from-bracket" aria-hidden="true"></i>
+            {uploadProgress || loading ? "Uploading..." : "Update Photo"}
+          </label>
+          <span className="max-size-text">
+            Max {MAX_FILE_SIZE_MB}MB
+          </span>
+        </>
+      )}
     </div>
   );
 }

@@ -256,7 +256,11 @@ const SectionHeader = ({ icon, children }) => (
 
 /* ---------- Card Header ---------- */
 const FormCardHeader = ({ title, description, onDownloadPDF, downloadKey }) => (
-    <div className="card-header bg-transparent border-bottom px-4 px-md-5 py-4 d-flex justify-content-between align-items-start flex-wrap gap-3">
+    <div
+        style={{
+            background: "linear-gradient(120deg, #f8fafc 0%, #ffffff 100%)",
+        }}
+        className="card-header border-bottom px-4 px-md-5 py-4 d-flex justify-content-between align-items-start flex-wrap gap-3">
         <div>
             <h3 className="fw-bold mb-1">{title}</h3>
             {description && <p className="text-muted mb-0">{description}</p>}
@@ -1511,13 +1515,6 @@ const StaffOnboardingForms = ({ submit, userId, onProfileUpdate }) => {
 
     return (
         <div className="mt-3">
-            <div className="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
-                <div>
-                    <h4 className="fw-bold mb-1">Staff Verification Forms</h4>
-                    <span className="text-muted small">Capital Services Pty Ltd · ABN: 48 613 317 838</span>
-                </div>
-            </div>
-
             {formDataLoading && (
                 <div className="alert alert-info d-flex align-items-center gap-2 mb-4 rounded-3 border-0 shadow-sm">
                     <div className="spinner-border spinner-border-sm" role="status">

@@ -17,7 +17,6 @@ export default function ProfileForm({
   isEdit = false,
   showPhoneOtp = false,
 }) {
-  // helper to convert DD/MM/YYYY -> Date (or null)
   const parseDisplayDate = (str) => {
     if (!str || typeof str !== "string") return null;
     const parts = str.split("/");
@@ -70,12 +69,34 @@ export default function ProfileForm({
   return (
     <form id="profile-form" onSubmit={onSubmit} className="w-100">
       <div className="card border-0 shadow-sm rounded-4 overflow-hidden bg-white">
-        {/* Header */}
-        <div className="card-header bg-transparent border-bottom px-4 px-md-5 py-4">
-          <h3 className="fw-bold mb-1">Personal Information</h3>
-          <p className="text-muted mb-0">
-            Keep your profile details current to ensure smooth account operation.
-          </p>
+        {/* Card header – premium gradient */}
+        <div
+          className="card-header border-bottom px-4 px-md-5 py-4"
+          style={{
+            background: "linear-gradient(120deg, #f8fafc 0%, #ffffff 100%)",
+          }}
+        >
+          <div className="d-flex align-items-center gap-3">
+            <div
+              className="d-flex align-items-center justify-content-center rounded-3"
+              style={{
+                width: "40px",
+                height: "40px",
+                background: "rgba(10,124,110,0.1)",
+                color: "#0A7C6E",
+              }}
+            >
+              <i className="fa-solid fa-user-pen fs-5"></i>
+            </div>
+            <div>
+              <h3 className="fw-bold mb-1" style={{ letterSpacing: "-0.02em" }}>
+                Personal Information
+              </h3>
+              <p className="text-muted mb-0 small" style={{ textTransform: "none" }}>
+                Keep your profile details current to ensure smooth account operation.
+              </p>
+            </div>
+          </div>
         </div>
 
         {/* Form Body */}
@@ -83,38 +104,43 @@ export default function ProfileForm({
           <div className="row g-4">
             {/* Full Name */}
             <div className="col-md-6">
-              <label htmlFor="name" className="form-label fw-semibold text-dark">
+              <label htmlFor="name" className="form-label fw-bold text-dark small mb-1">
                 Full Name <span className="text-danger">*</span>
               </label>
-              <input
-                type="text"
-                className="form-control border-light-subtle shadow-none bg-light focus-ring focus-ring-primary py-2 px-3"
-                id="name"
-                placeholder="John Doe"
-                value={formData.name || ""}
-                onChange={(e) => {
-                  let value = e.target.value
-                    .replace(/[^a-zA-Z\s]/g, "")
-                    .replace(/\s+/g, " ");
-                  onChange({ target: { id: "name", value } });
-                }}
-                required
-                style={{ fontSize: "1rem" }}
-              />
+              <div className="input-group">
+                <span className="input-group-text bg-light border-0 text-muted">
+                  <i className="fa-solid fa-user"></i>
+                </span>
+                <input
+                  type="text"
+                  className="form-control border-0 bg-light ps-2 shadow-none"
+                  id="name"
+                  placeholder="John Doe"
+                  value={formData.name || ""}
+                  onChange={(e) => {
+                    let value = e.target.value
+                      .replace(/[^a-zA-Z\s]/g, "")
+                      .replace(/\s+/g, " ");
+                    onChange({ target: { id: "name", value } });
+                  }}
+                  required
+                  style={{ borderRadius: "0 0.375rem 0.375rem 0" }}
+                />
+              </div>
             </div>
 
             {/* Email */}
             <div className="col-md-6">
-              <label htmlFor="email" className="form-label fw-semibold text-dark">
+              <label htmlFor="email" className="form-label fw-bold text-dark small mb-1">
                 Email Address <span className="text-danger">*</span>
               </label>
-              <div className="input-group shadow-none mb-1">
-                <span className="input-group-text bg-light border-light-subtle text-muted px-3 py-2">
+              <div className="input-group">
+                <span className="input-group-text bg-light border-0 text-muted">
                   <i className="fa-solid fa-envelope"></i>
                 </span>
                 <input
                   type="email"
-                  className="form-control border-light-subtle bg-light border-start-0 ps-0 focus-ring focus-ring-primary py-2"
+                  className="form-control border-0 bg-light ps-2 shadow-none"
                   id="email"
                   placeholder="user@example.com"
                   value={formData.email || ""}
@@ -123,7 +149,7 @@ export default function ProfileForm({
                   disabled={isEdit}
                   required
                   style={{
-                    fontSize: "1rem",
+                    borderRadius: "0 0.375rem 0.375rem 0",
                     cursor: isEdit ? "not-allowed" : "text",
                     opacity: isEdit ? 0.8 : 1,
                   }}
@@ -136,50 +162,32 @@ export default function ProfileForm({
               )}
             </div>
 
-            {/* Phone – unchanged */}
+            {/* Phone */}
             {userType !== "admin" && (
               <div className="col-md-6">
-                <div className="d-flex justify-content-between align-items-center mb-2">
-                  <label htmlFor="phone" className="form-label fw-semibold text-dark mb-0">
+                <div className="d-flex justify-content-between align-items-center mb-1">
+                  <label htmlFor="phone" className="form-label fw-bold text-dark small mb-0">
                     Phone Number <span className="text-danger">*</span>
                   </label>
-                  {showPhoneOtp && formData.phone && (
-                    <span
-                      className={`badge rounded-pill px-2 py-1 ${isPhoneVerified
-                          ? "bg-success bg-opacity-10 text-success border border-success"
-                          : "bg-danger bg-opacity-10 text-danger border border-danger"
-                        }`}
-                      style={{ fontSize: "0.75rem" }}
-                    />
-                  )}
                 </div>
 
                 {showPhoneOtp ? (
                   <div
-                    className="input-group shadow-none"
-                    style={{
-                      border: isPhoneVerified ? "1px solid #198754" : "1px solid #dc3545",
-                      borderRadius: "0.375rem",
-                    }}
+                    className="input-group"
+                    style={{ borderRadius: "0.375rem" }}
                   >
-                    <span
-                      className={`input-group-text bg-light border-light-subtle px-3 py-2 ${isPhoneVerified ? "text-success" : "text-muted"
-                        }`}
-                    >
+                    <span className="input-group-text bg-light border-0 text-muted">
                       <i className="fa-solid fa-phone"></i>
                     </span>
                     <input
                       type="tel"
-                      className={`form-control border-light-subtle border-start-0 ps-0 bg-light py-2 ${isPhoneVerified ? "text-success fw-bold" : ""
+                      className={`form-control border-0 bg-light ps-2 shadow-none ${isPhoneVerified ? "text-success fw-bold" : ""
                         }`}
                       id="phone"
                       placeholder="+61 400 000 000"
                       value={formData.phone || ""}
                       readOnly={!!formData.phone}
-                      style={{
-                        fontSize: "1rem",
-                        cursor: formData.phone ? "default" : "text",
-                      }}
+                      style={{ borderRadius: "0" }}
                       {...(formData.phone
                         ? {}
                         : {
@@ -193,26 +201,26 @@ export default function ProfileForm({
                     />
                     <button
                       type="button"
-                      className={`btn fw-medium px-4 py-2 ${!formData.phone
-                          ? "btn-danger"
-                          : isPhoneVerified
-                            ? "btn-outline-success border-light-subtle"
-                            : "btn-danger"
+                      className={`btn fw-semibold px-4 ${!formData.phone
+                        ? "btn-danger"
+                        : isPhoneVerified
+                          ? "btn-outline-success"
+                          : "btn-danger"
                         }`}
                       onClick={onChangePhone}
-                      style={{ zIndex: 0, fontSize: "1rem" }}
+                      style={{ zIndex: 0, borderRadius: "0 0.375rem 0.375rem 0" }}
                     >
                       {!formData.phone ? "Add Phone" : isPhoneVerified ? "Change" : "Verify Now"}
                     </button>
                   </div>
                 ) : (
-                  <div className="input-group shadow-none">
-                    <span className="input-group-text bg-light border-light-subtle text-muted px-3 py-2">
+                  <div className="input-group">
+                    <span className="input-group-text bg-light border-0 text-muted">
                       <i className="fa-solid fa-phone"></i>
                     </span>
                     <input
                       type="tel"
-                      className="form-control border-light-subtle border-start-0 ps-0 bg-light focus-ring focus-ring-primary py-2"
+                      className="form-control border-0 bg-light ps-2 shadow-none"
                       id="phone"
                       placeholder="+61 400 000 000"
                       value={formData.phone || ""}
@@ -221,90 +229,105 @@ export default function ProfileForm({
                       maxLength="15"
                       pattern="^(?:\\+?61|0)[2-478](?:[\\s\\-]*\\d){8}$"
                       title="Valid Australian phone required (e.g., 0400 000 000)"
-                      style={{ fontSize: "1rem" }}
+                      style={{ borderRadius: "0 0.375rem 0.375rem 0" }}
                     />
                   </div>
                 )}
               </div>
             )}
 
-            {/* Contractor Specific Fields – unchanged */}
+            {/* Contractor Specific Fields */}
             {userType === "contractor" && (
               <>
                 <div className="col-md-6">
-                  <label htmlFor="company_name" className="form-label fw-semibold text-dark">
+                  <label htmlFor="company_name" className="form-label fw-bold text-dark small mb-1">
                     Company Name <span className="text-danger">*</span>
                   </label>
-                  <input
-                    type="text"
-                    className="form-control border-light-subtle bg-light focus-ring focus-ring-primary py-2 px-3"
-                    id="company_name"
-                    placeholder="Tech Solutions Pty Ltd"
-                    value={formData.company_name || ""}
-                    onChange={(e) => {
-                      let value = e.target.value
-                        .replace(/[^a-zA-Z0-9\s]/g, "")
-                        .replace(/\s+/g, " ");
-                      onChange({ target: { id: "company_name", value } });
-                    }}
-                    required
-                    style={{ fontSize: "1rem" }}
-                  />
+                  <div className="input-group">
+                    <span className="input-group-text bg-light border-0 text-muted">
+                      <i className="fa-solid fa-building"></i>
+                    </span>
+                    <input
+                      type="text"
+                      className="form-control border-0 bg-light ps-2 shadow-none"
+                      id="company_name"
+                      placeholder="Tech Solutions Pty Ltd"
+                      value={formData.company_name || ""}
+                      onChange={(e) => {
+                        let value = e.target.value
+                          .replace(/[^a-zA-Z0-9\s]/g, "")
+                          .replace(/\s+/g, " ");
+                        onChange({ target: { id: "company_name", value } });
+                      }}
+                      required
+                      style={{ borderRadius: "0 0.375rem 0.375rem 0" }}
+                    />
+                  </div>
                 </div>
 
                 <div className="col-md-6">
-                  <label htmlFor="abn" className="form-label fw-semibold text-dark">
+                  <label htmlFor="abn" className="form-label fw-bold text-dark small mb-1">
                     ABN <span className="text-danger">*</span>
                   </label>
-                  <input
-                    type="text"
-                    className="form-control border-light-subtle bg-light focus-ring focus-ring-primary py-2 px-3"
-                    id="abn"
-                    placeholder="12-345-678-901"
-                    value={formData.abn || ""}
-                    onChange={(e) => {
-                      let value = e.target.value.replace(/\D/g, "");
-                      value = value.substring(0, 11);
-                      if (value.length > 2 && value.length <= 5) {
-                        value = value.replace(/^(\d{2})(\d+)/, "$1-$2");
-                      } else if (value.length > 5 && value.length <= 8) {
-                        value = value.replace(/^(\d{2})(\d{3})(\d+)/, "$1-$2-$3");
-                      } else if (value.length > 8) {
-                        value = value.replace(/^(\d{2})(\d{3})(\d{3})(\d+)/, "$1-$2-$3-$4");
-                      }
-                      onChange({ target: { id: "abn", value } });
-                    }}
-                    required
-                    maxLength={15}
-                    pattern="^\d{2}-\d{3}-\d{3}-\d{3}$"
-                    style={{ fontSize: "1rem" }}
-                  />
+                  <div className="input-group">
+                    <span className="input-group-text bg-light border-0 text-muted">
+                      <i className="fa-solid fa-hashtag"></i>
+                    </span>
+                    <input
+                      type="text"
+                      className="form-control border-0 bg-light ps-2 shadow-none"
+                      id="abn"
+                      placeholder="12-345-678-901"
+                      value={formData.abn || ""}
+                      onChange={(e) => {
+                        let value = e.target.value.replace(/\D/g, "");
+                        value = value.substring(0, 11);
+                        if (value.length > 2 && value.length <= 5) {
+                          value = value.replace(/^(\d{2})(\d+)/, "$1-$2");
+                        } else if (value.length > 5 && value.length <= 8) {
+                          value = value.replace(/^(\d{2})(\d{3})(\d+)/, "$1-$2-$3");
+                        } else if (value.length > 8) {
+                          value = value.replace(/^(\d{2})(\d{3})(\d{3})(\d+)/, "$1-$2-$3-$4");
+                        }
+                        onChange({ target: { id: "abn", value } });
+                      }}
+                      required
+                      maxLength={15}
+                      pattern="^\d{2}-\d{3}-\d{3}-\d{3}$"
+                      style={{ borderRadius: "0 0.375rem 0.375rem 0" }}
+                    />
+                  </div>
                 </div>
 
                 <div className="col-md-6">
-                  <label htmlFor="acn" className="form-label fw-semibold text-dark">
+                  <label htmlFor="acn" className="form-label fw-bold text-dark small mb-1">
                     ACN
                   </label>
-                  <input
-                    type="text"
-                    className="form-control border-light-subtle bg-light focus-ring focus-ring-primary py-2 px-3"
-                    id="acn"
-                    placeholder="123-456-789"
-                    value={formData.acn || ""}
-                    onChange={(e) => {
-                      let value = e.target.value.replace(/\D/g, "");
-                      value = value.substring(0, 9);
-                      if (value.length > 3 && value.length <= 6) {
-                        value = value.replace(/^(\d{3})(\d+)/, "$1-$2");
-                      } else if (value.length > 6) {
-                        value = value.replace(/^(\d{3})(\d{3})(\d+)/, "$1-$2-$3");
-                      }
-                      onChange({ target: { id: "acn", value } });
-                    }}
-                    maxLength={11}
-                    pattern="^\d{3}-\d{3}-\d{3}$"
-                    style={{ fontSize: "1rem" }}
-                  />
+                  <div className="input-group">
+                    <span className="input-group-text bg-light border-0 text-muted">
+                      <i className="fa-solid fa-hashtag"></i>
+                    </span>
+                    <input
+                      type="text"
+                      className="form-control border-0 bg-light ps-2 shadow-none"
+                      id="acn"
+                      placeholder="123-456-789"
+                      value={formData.acn || ""}
+                      onChange={(e) => {
+                        let value = e.target.value.replace(/\D/g, "");
+                        value = value.substring(0, 9);
+                        if (value.length > 3 && value.length <= 6) {
+                          value = value.replace(/^(\d{3})(\d+)/, "$1-$2");
+                        } else if (value.length > 6) {
+                          value = value.replace(/^(\d{3})(\d{3})(\d+)/, "$1-$2-$3");
+                        }
+                        onChange({ target: { id: "acn", value } });
+                      }}
+                      maxLength={11}
+                      pattern="^\d{3}-\d{3}-\d{3}$"
+                      style={{ borderRadius: "0 0.375rem 0.375rem 0" }}
+                    />
+                  </div>
                 </div>
               </>
             )}
@@ -313,12 +336,12 @@ export default function ProfileForm({
             {userType === "staff" && (
               <>
                 <div className="col-md-6">
-                  <label htmlFor="staff_document_type" className="form-label fw-semibold text-dark">
+                  <label htmlFor="staff_document_type" className="form-label fw-bold text-dark small mb-1">
                     Residential Status <span className="text-danger">*</span>
                   </label>
                   <select
                     required
-                    className="form-select border-light-subtle bg-light focus-ring focus-ring-primary py-2 px-3"
+                    className="form-select border-0 bg-light shadow-none"
                     id="staff_document_type"
                     value={selectValue}
                     onChange={(e) => {
@@ -328,7 +351,7 @@ export default function ProfileForm({
                         onChange(e);
                       }
                     }}
-                    style={{ fontSize: "1rem" }}
+                    style={{ borderRadius: "0.375rem" }}
                   >
                     <option value="" disabled>Select Status</option>
                     <option value="student_visa">Student Visa</option>
@@ -342,12 +365,12 @@ export default function ProfileForm({
 
                 {showCustomStatus && (
                   <div className="col-md-6">
-                    <label htmlFor="custom_staff_document" className="form-label fw-semibold text-dark">
+                    <label htmlFor="custom_staff_document" className="form-label fw-bold text-dark small mb-1">
                       Specify Status <span className="text-danger">*</span>
                     </label>
                     <input
                       type="text"
-                      className="form-control border-primary shadow-sm focus-ring focus-ring-primary py-2 px-3"
+                      className="form-control border-primary shadow-sm bg-white"
                       id="custom_staff_document"
                       placeholder="Enter your residential status"
                       value={formData.staff_document_type === "Other (Please specify)" ? "" : formData.staff_document_type}
@@ -356,67 +379,78 @@ export default function ProfileForm({
                       }}
                       required
                       autoFocus
-                      style={{ fontSize: "1rem" }}
                     />
                   </div>
                 )}
 
                 <div className="col-md-6">
-                  <label htmlFor="security_license_no" className="form-label fw-semibold text-dark">
+                  <label htmlFor="security_license_no" className="form-label fw-bold text-dark small mb-1">
                     Security License No. <span className="text-danger">*</span>
                   </label>
-                  <input
-                    type="text"
-                    className="form-control border-light-subtle bg-light focus-ring focus-ring-primary py-2 px-3"
-                    id="security_license_no"
-                    placeholder="12345678-01"
-                    value={formData.security_license_no || ""}
-                    onChange={onChange}
-                    required
-                    style={{ fontSize: "1rem" }}
-                  />
+                  <div className="input-group">
+                    <span className="input-group-text bg-light border-0 text-muted">
+                      <i className="fa-solid fa-id-card"></i>
+                    </span>
+                    <input
+                      type="text"
+                      className="form-control border-0 bg-light ps-2 shadow-none"
+                      id="security_license_no"
+                      placeholder="12345678-01"
+                      value={formData.security_license_no || ""}
+                      onChange={onChange}
+                      required
+                      style={{ borderRadius: "0 0.375rem 0.375rem 0" }}
+                    />
+                  </div>
                 </div>
 
-                {/* ===== DATE OF BIRTH – Now using react-datepicker ===== */}
+                {/* Date of Birth */}
                 <div className="col-md-6">
-                  <label htmlFor="date_of_birth" className="form-label fw-semibold text-dark">
+                  <label htmlFor="date_of_birth" className="form-label fw-bold text-dark small mb-1">
                     Date of Birth <span className="text-danger">*</span>
                   </label>
-                  <DatePicker
-                    id="date_of_birth"
-                    selected={parseDisplayDate(formData.date_of_birth)}
-                    onChange={(date) => {
-                      if (date) {
-                        const day = String(date.getDate()).padStart(2, "0");
-                        const month = String(date.getMonth() + 1).padStart(2, "0");
-                        const year = date.getFullYear();
-                        onChange({
-                          target: {
-                            id: "date_of_birth",
-                            name: "date_of_birth",
-                            value: `${day}/${month}/${year}`,
-                          },
-                        });
-                      } else {
-                        onChange({ target: { id: "date_of_birth", value: "" } });
-                      }
-                    }}
-                    dateFormat="dd/MM/yyyy"
-                    placeholderText="DD/MM/YYYY"
-                    className="form-control border-light-subtle bg-light focus-ring focus-ring-primary py-2 px-3"
-                    wrapperClassName="w-100"
-                    showYearDropdown
-                    scrollableYearDropdown
-                    yearDropdownItemNumber={100}
-                    maxDate={new Date()}
-                    required
-                    autoComplete="off"
-                  />
+                  <div className="input-group">
+                    <span className="input-group-text bg-light border-0 text-muted">
+                      <i className="fa-solid fa-cake-candles"></i>
+                    </span>
+                    <DatePicker
+                      id="date_of_birth"
+                      selected={parseDisplayDate(formData.date_of_birth)}
+                      onChange={(date) => {
+                        if (date) {
+                          const day = String(date.getDate()).padStart(2, "0");
+                          const month = String(date.getMonth() + 1).padStart(2, "0");
+                          const year = date.getFullYear();
+                          onChange({
+                            target: {
+                              id: "date_of_birth",
+                              name: "date_of_birth",
+                              value: `${day}/${month}/${year}`,
+                            },
+                          });
+                        } else {
+                          onChange({ target: { id: "date_of_birth", value: "" } });
+                        }
+                      }}
+                      dateFormat="dd/MM/yyyy"
+                      placeholderText="DD/MM/YYYY"
+                      className="form-control border-0 bg-light ps-2 shadow-none"
+                      wrapperClassName="flex-grow-1"
+                      showYearDropdown
+                      scrollableYearDropdown
+                      yearDropdownItemNumber={100}
+                      maxDate={new Date()}
+                      required
+                      autoComplete="off"
+                      style={{ borderRadius: "0 0.375rem 0.375rem 0" }}
+                    />
+                  </div>
                 </div>
 
-                <div className="col-6">
-                  <label className="form-label fw-semibold text-dark d-block">Gender</label>
-                  <div className="d-flex flex-wrap gap-3">
+                {/* Gender */}
+                <div className="col-md-6">
+                  <label className="form-label fw-bold text-dark small mb-1 d-block">Gender</label>
+                  <div className="d-flex flex-wrap gap-2">
                     {[
                       { id: "male", label: "Male", icon: "fa-mars" },
                       { id: "female", label: "Female", icon: "fa-venus" },
@@ -426,9 +460,11 @@ export default function ProfileForm({
                       return (
                         <label
                           key={option.id}
-                          className={`btn d-flex align-items-center gap-2 px-4 py-2 border rounded-pill transition-all ${isSelected ? "btn-primary-custom shadow-sm" : "btn-light border-light-subtle text-muted"
+                          className={`btn d-flex align-items-center gap-2 px-4 py-2 rounded-pill transition-all ${isSelected
+                            ? "btn-primary-custom text-white shadow-sm"
+                            : "btn-light border text-muted"
                             }`}
-                          style={{ cursor: "pointer", fontSize: "0.95rem" }}
+                          style={{ cursor: "pointer", fontSize: "0.9rem" }}
                         >
                           <input
                             type="radio"
@@ -447,8 +483,10 @@ export default function ProfileForm({
                     })}
                   </div>
                 </div>
+
+                {/* Country of Origin */}
                 <div className="col-md-6">
-                  <label htmlFor="origin_country" className="form-label fw-semibold text-dark">
+                  <label htmlFor="origin_country" className="form-label fw-bold text-dark small mb-1">
                     Country of Origin <span className="text-danger">*</span>
                   </label>
                   <Select
@@ -472,48 +510,34 @@ export default function ProfileForm({
                         ...base,
                         minHeight: "42px",
                         backgroundColor: "#f8f9fa",
-                        borderColor: state.isFocused ? "#0A7C6E" : "#dee2e6",
+                        borderColor: state.isFocused ? "#0A7C6E" : "transparent",
                         boxShadow: state.isFocused
-                          ? "0 0 0 0.25rem rgba(10, 124, 110, 0.25)"
+                          ? "0 0 0 2px rgba(10,124,110,0.25)"
                           : "none",
                         borderRadius: "0.375rem",
                         "&:hover": {
                           borderColor: "#0A7C6E",
                         },
                       }),
-
-                      valueContainer: (base) => ({
-                        ...base,
-                        padding: "0 12px",
-                      }),
-
                       placeholder: (base) => ({
                         ...base,
                         color: "#6c757d",
                       }),
-
                       singleValue: (base) => ({
                         ...base,
                         color: "#212529",
                       }),
-
-                      input: (base) => ({
-                        ...base,
-                        color: "#212529",
-                      }),
-
                       menu: (base) => ({
                         ...base,
                         borderRadius: "8px",
                         overflow: "hidden",
                       }),
-
                       option: (base, state) => ({
                         ...base,
                         backgroundColor: state.isSelected
                           ? "#0A7C6E"
                           : state.isFocused
-                            ? "rgba(10, 124, 110, 0.12)"
+                            ? "rgba(10,124,110,0.12)"
                             : "#fff",
                         color: state.isSelected ? "#fff" : "#212529",
                         cursor: "pointer",
@@ -522,26 +546,15 @@ export default function ProfileForm({
                           color: "#fff",
                         },
                       }),
-
                       dropdownIndicator: (base, state) => ({
                         ...base,
                         color: state.isFocused ? "#0A7C6E" : "#6c757d",
-                        "&:hover": {
-                          color: "#0A7C6E",
-                        },
+                        "&:hover": { color: "#0A7C6E" },
                       }),
-
                       clearIndicator: (base) => ({
                         ...base,
                         color: "#6c757d",
-                        "&:hover": {
-                          color: "#0A7C6E",
-                        },
-                      }),
-
-                      indicatorSeparator: (base) => ({
-                        ...base,
-                        backgroundColor: "#dee2e6",
+                        "&:hover": { color: "#0A7C6E" },
                       }),
                     }}
                   />
@@ -550,17 +563,17 @@ export default function ProfileForm({
             )}
 
             {/* Address Full Width */}
-            <div className="col-12 mt-4 pt-2 border-top">
-              <label htmlFor="address" className="form-label fw-semibold text-dark">
+            <div className="col-12 mt-4 pt-3 border-top">
+              <label htmlFor="address" className="form-label fw-bold text-dark small mb-1">
                 Residential Address <span className="text-danger">*</span>
               </label>
-              <div className="input-group shadow-none">
-                <span className="input-group-text bg-light border-light-subtle text-muted px-3 py-2">
+              <div className="input-group">
+                <span className="input-group-text bg-light border-0 text-muted">
                   <i className="fa-solid fa-location-dot"></i>
                 </span>
                 <input
                   type="text"
-                  className="form-control border-light-subtle border-start-0 ps-0 bg-light focus-ring focus-ring-primary py-2"
+                  className="form-control border-0 bg-light ps-2 shadow-none"
                   id="address"
                   placeholder="Start typing your address to auto-fill..."
                   value={formData.address || ""}
@@ -568,66 +581,63 @@ export default function ProfileForm({
                   required
                   maxLength={155}
                   autoComplete="off"
-                  style={{ fontSize: "1rem" }}
+                  style={{ borderRadius: "0 0.375rem 0.375rem 0" }}
                 />
               </div>
             </div>
 
-            {/* Auto-filled Location Details grouped compactly */}
+            {/* Auto-filled Location Details */}
             <div className="col-md-4">
-              <label htmlFor="city" className="form-label fw-semibold text-muted small">City</label>
+              <label htmlFor="city" className="form-label fw-bold text-muted small mb-1">City</label>
               <input
                 type="text"
-                className="form-control bg-secondary bg-opacity-10 text-muted border-0 py-2 px-3"
+                className="form-control bg-light border-0 text-muted"
                 id="city"
                 placeholder="Auto-filled"
                 value={formData.city || ""}
                 readOnly
-                style={{ fontSize: "1rem" }}
               />
             </div>
 
             <div className="col-md-4">
-              <label htmlFor="state" className="form-label fw-semibold text-muted small">State / Province</label>
+              <label htmlFor="state" className="form-label fw-bold text-muted small mb-1">State / Province</label>
               <input
                 type="text"
-                className="form-control bg-secondary bg-opacity-10 text-muted border-0 py-2 px-3"
+                className="form-control bg-light border-0 text-muted"
                 id="state"
                 placeholder="Auto-filled"
                 value={AU_STATE_MAP[formData.state?.toLowerCase()] || formData.state || ""}
                 readOnly
-                style={{ textTransform: "capitalize", fontSize: "1rem" }}
+                style={{ textTransform: "capitalize" }}
               />
             </div>
 
             <div className="col-md-4">
-              <label htmlFor="country" className="form-label fw-semibold text-muted small">Country</label>
+              <label htmlFor="country" className="form-label fw-bold text-muted small mb-1">Country</label>
               <input
                 type="text"
-                className="form-control bg-secondary bg-opacity-10 text-muted border-0 py-2 px-3"
+                className="form-control bg-light border-0 text-muted"
                 id="country"
                 placeholder="Auto-filled"
                 value={formData.country || ""}
                 readOnly
-                style={{ fontSize: "1rem" }}
               />
             </div>
           </div>
 
-          {/* Render Any Extra Fields Passed via Props */}
           {extraFields && <div className="row mt-4 pt-3">{extraFields}</div>}
         </div>
 
-        {/* Footer actions */}
-        <div className="card-footer bg-white px-4 px-md-5 py-4 border-top d-flex justify-content-end">
+        {/* Footer */}
+        <div className="card-footer bg-light px-4 px-md-5 py-4 border-top d-flex justify-content-end">
           {footer ? (
             footer
           ) : (
             <button
               type="submit"
-              className="btn btn-primary btn-lg px-5 shadow-sm rounded-pill d-flex align-items-center gap-2"
+              className="btn btn-primary-custom px-5 py-2.5 rounded-pill fw-bold shadow-sm d-flex align-items-center gap-2"
               disabled={loading}
-              style={{ fontWeight: "600", transition: "all 0.2s ease" }}
+              style={{ background: "#0A7C6E", borderColor: "#0A7C6E", transition: "all 0.2s ease" }}
             >
               {loading ? (
                 <>
@@ -636,7 +646,7 @@ export default function ProfileForm({
                 </>
               ) : (
                 <>
-                  Save Changes
+                  <i className="fa-solid fa-check me-1"></i> Save Changes
                 </>
               )}
             </button>

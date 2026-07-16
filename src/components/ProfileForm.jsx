@@ -68,7 +68,7 @@ export default function ProfileForm({
 
   return (
     <form id="profile-form" onSubmit={onSubmit} className="w-100">
-      <div className="card border-0 shadow-sm rounded-4 overflow-hidden bg-white">
+      <div className="card border shadow-sm rounded-4 overflow-hidden bg-white">
         {/* Card header – premium gradient */}
         <div
           className="card-header border-bottom px-4 px-md-5 py-4"
@@ -108,12 +108,12 @@ export default function ProfileForm({
                 Full Name <span className="text-danger">*</span>
               </label>
               <div className="input-group">
-                <span className="input-group-text bg-light border-0 text-muted">
+                <span className="input-group-text bg-light border text-muted">
                   <i className="fa-solid fa-user"></i>
                 </span>
                 <input
                   type="text"
-                  className="form-control border-0 bg-light ps-2 shadow-none"
+                  className="form-control border bg-light ps-2 shadow-none"
                   id="name"
                   placeholder="John Doe"
                   value={formData.name || ""}
@@ -135,12 +135,12 @@ export default function ProfileForm({
                 Email Address <span className="text-danger">*</span>
               </label>
               <div className="input-group">
-                <span className="input-group-text bg-light border-0 text-muted">
+                <span className="input-group-text bg-light border text-muted">
                   <i className="fa-solid fa-envelope"></i>
                 </span>
                 <input
                   type="email"
-                  className="form-control border-0 bg-light ps-2 shadow-none"
+                  className="form-control border bg-light ps-2 shadow-none"
                   id="email"
                   placeholder="user@example.com"
                   value={formData.email || ""}
@@ -176,12 +176,12 @@ export default function ProfileForm({
                     className="input-group"
                     style={{ borderRadius: "0.375rem" }}
                   >
-                    <span className="input-group-text bg-light border-0 text-muted">
+                    <span className="input-group-text bg-light border text-muted">
                       <i className="fa-solid fa-phone"></i>
                     </span>
                     <input
                       type="tel"
-                      className={`form-control border-0 bg-light ps-2 shadow-none ${isPhoneVerified ? "text-success fw-bold" : ""
+                      className={`form-control border bg-light ps-2 shadow-none ${isPhoneVerified ? "text-success fw-bold" : ""
                         }`}
                       id="phone"
                       placeholder="+61 400 000 000"
@@ -215,12 +215,12 @@ export default function ProfileForm({
                   </div>
                 ) : (
                   <div className="input-group">
-                    <span className="input-group-text bg-light border-0 text-muted">
+                    <span className="input-group-text bg-light border text-muted">
                       <i className="fa-solid fa-phone"></i>
                     </span>
                     <input
                       type="tel"
-                      className="form-control border-0 bg-light ps-2 shadow-none"
+                      className="form-control border bg-light ps-2 shadow-none"
                       id="phone"
                       placeholder="+61 400 000 000"
                       value={formData.phone || ""}
@@ -244,12 +244,12 @@ export default function ProfileForm({
                     Company Name <span className="text-danger">*</span>
                   </label>
                   <div className="input-group">
-                    <span className="input-group-text bg-light border-0 text-muted">
+                    <span className="input-group-text bg-light border text-muted">
                       <i className="fa-solid fa-building"></i>
                     </span>
                     <input
                       type="text"
-                      className="form-control border-0 bg-light ps-2 shadow-none"
+                      className="form-control border bg-light ps-2 shadow-none"
                       id="company_name"
                       placeholder="Tech Solutions Pty Ltd"
                       value={formData.company_name || ""}
@@ -270,12 +270,12 @@ export default function ProfileForm({
                     ABN <span className="text-danger">*</span>
                   </label>
                   <div className="input-group">
-                    <span className="input-group-text bg-light border-0 text-muted">
+                    <span className="input-group-text bg-light border text-muted">
                       <i className="fa-solid fa-hashtag"></i>
                     </span>
                     <input
                       type="text"
-                      className="form-control border-0 bg-light ps-2 shadow-none"
+                      className="form-control border bg-light ps-2 shadow-none"
                       id="abn"
                       placeholder="12-345-678-901"
                       value={formData.abn || ""}
@@ -304,12 +304,12 @@ export default function ProfileForm({
                     ACN
                   </label>
                   <div className="input-group">
-                    <span className="input-group-text bg-light border-0 text-muted">
+                    <span className="input-group-text bg-light border text-muted">
                       <i className="fa-solid fa-hashtag"></i>
                     </span>
                     <input
                       type="text"
-                      className="form-control border-0 bg-light ps-2 shadow-none"
+                      className="form-control border bg-light ps-2 shadow-none"
                       id="acn"
                       placeholder="123-456-789"
                       value={formData.acn || ""}
@@ -341,7 +341,7 @@ export default function ProfileForm({
                   </label>
                   <select
                     required
-                    className="form-select border-0 bg-light shadow-none"
+                    className="form-select border bg-light shadow-none"
                     id="staff_document_type"
                     value={selectValue}
                     onChange={(e) => {
@@ -388,12 +388,12 @@ export default function ProfileForm({
                     Security License No. <span className="text-danger">*</span>
                   </label>
                   <div className="input-group">
-                    <span className="input-group-text bg-light border-0 text-muted">
+                    <span className="input-group-text bg-light border text-muted">
                       <i className="fa-solid fa-id-card"></i>
                     </span>
                     <input
                       type="text"
-                      className="form-control border-0 bg-light ps-2 shadow-none"
+                      className="form-control border bg-light ps-2 shadow-none"
                       id="security_license_no"
                       placeholder="12345678-01"
                       value={formData.security_license_no || ""}
@@ -410,7 +410,7 @@ export default function ProfileForm({
                     Date of Birth <span className="text-danger">*</span>
                   </label>
                   <div className="input-group">
-                    <span className="input-group-text bg-light border-0 text-muted">
+                    <span className="input-group-text bg-light border text-muted">
                       <i className="fa-solid fa-cake-candles"></i>
                     </span>
                     <DatePicker
@@ -434,7 +434,7 @@ export default function ProfileForm({
                       }}
                       dateFormat="dd/MM/yyyy"
                       placeholderText="DD/MM/YYYY"
-                      className="form-control border-0 bg-light ps-2 shadow-none"
+                      className="form-control border bg-light ps-2 shadow-none"
                       wrapperClassName="flex-grow-1"
                       showYearDropdown
                       scrollableYearDropdown
@@ -568,12 +568,12 @@ export default function ProfileForm({
                 Residential Address <span className="text-danger">*</span>
               </label>
               <div className="input-group">
-                <span className="input-group-text bg-light border-0 text-muted">
+                <span className="input-group-text bg-light border text-muted">
                   <i className="fa-solid fa-location-dot"></i>
                 </span>
                 <input
                   type="text"
-                  className="form-control border-0 bg-light ps-2 shadow-none"
+                  className="form-control border bg-light ps-2 shadow-none"
                   id="address"
                   placeholder="Start typing your address to auto-fill..."
                   value={formData.address || ""}
@@ -591,7 +591,7 @@ export default function ProfileForm({
               <label htmlFor="city" className="form-label fw-bold text-muted small mb-1">City</label>
               <input
                 type="text"
-                className="form-control bg-light border-0 text-muted"
+                className="form-control bg-light border text-muted"
                 id="city"
                 placeholder="Auto-filled"
                 value={formData.city || ""}
@@ -603,7 +603,7 @@ export default function ProfileForm({
               <label htmlFor="state" className="form-label fw-bold text-muted small mb-1">State / Province</label>
               <input
                 type="text"
-                className="form-control bg-light border-0 text-muted"
+                className="form-control bg-light border text-muted"
                 id="state"
                 placeholder="Auto-filled"
                 value={AU_STATE_MAP[formData.state?.toLowerCase()] || formData.state || ""}
@@ -616,7 +616,7 @@ export default function ProfileForm({
               <label htmlFor="country" className="form-label fw-bold text-muted small mb-1">Country</label>
               <input
                 type="text"
-                className="form-control bg-light border-0 text-muted"
+                className="form-control bg-light border text-muted"
                 id="country"
                 placeholder="Auto-filled"
                 value={formData.country || ""}

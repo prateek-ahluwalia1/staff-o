@@ -27,7 +27,7 @@ const API_DATE_FORMAT = "yyyy-MM-dd HH:mm";
 const UPDATE_API_DATE_FORMAT = "MM-dd-yyyy HH:mm";
 
 const states_array = [
-  { label: 'Victoria', value: 'vic' },
+  { label: 'Victoria', value: 'vic', featured: true },
   { label: 'New South Wales', value: 'nsw' },
   { label: 'Queensland', value: 'qld' },
   { label: 'Tasmania', value: 'tas' },
@@ -401,9 +401,12 @@ export default function RosterPage() {
             <button
               key={stateInfo.value}
               type="button"
-              className="staffoo-state-card"
+              className={`staffoo-state-card ${stateInfo.featured ? 'is-featured' : ''}`}
               onClick={() => openStateRosterInNewTab(stateInfo.value)}
             >
+              {stateInfo.featured && (
+                <span className="featured-watermark">{stateInfo.value.toUpperCase()}</span>
+              )}
               <div className="state-card-left">
                 <span className="state-name">{stateInfo.label}</span>
                 <span className="state-code">{stateInfo.value.toUpperCase()}</span>

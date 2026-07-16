@@ -521,7 +521,7 @@ export default function PaymentHistory() {
             </div>
           )}
 
-          <div className="p-4 p-md-5">
+          <div className="py-4">
             <div className="d-flex align-items-center gap-3 mb-4">
               <div
                 className="rounded-3 d-flex align-items-center justify-content-center"

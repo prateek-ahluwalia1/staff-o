@@ -165,15 +165,15 @@ const Sidebar = memo(function Sidebar() {
 
   const styles = {
     overlay: {
-      position: "fixed", inset: 0, backgroundColor: "rgba(15, 23, 42, 0.5)",
+      position: "fixed", inset: 0, backgroundColor: "rgba(10, 20, 35, 0.55)",
       backdropFilter: "blur(2px)", zIndex: 998, transition: "all 0.3s ease",
       opacity: (isMobile && isExpanded) ? 1 : 0,
       visibility: (isMobile && isExpanded) ? "visible" : "hidden",
     },
     sidebar: {
-      background: "linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)",
-      borderRight: "1px solid rgba(148, 163, 184, 0.12)",
-      boxShadow: isMobile ? "4px 0 24px rgba(15, 23, 42, 0.15)" : "4px 0 12px rgba(15, 23, 42, 0.05)",
+      background: "#ffffff",
+      borderRight: "1px solid #eef1f1",
+      boxShadow: isMobile ? "4px 0 24px rgba(15, 23, 42, 0.15)" : "2px 0 10px rgba(15, 23, 42, 0.04)",
       padding: isMobile ? "20px 24px" : (isExpanded ? "20px 24px" : "12px"),
       width: isMobile ? "280px" : (isExpanded ? "280px" : "80px"),
       flexShrink: 0, display: "flex", flexDirection: "column",
@@ -187,15 +187,17 @@ const Sidebar = memo(function Sidebar() {
       width: "100%", paddingBottom: "16px", marginBottom: "16px", borderBottom: "1px solid #e2e8f0"
     },
     navUl: {
-      listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: "8px", width: "100%"
+      listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: "6px", width: "100%"
     },
     getLinkStyle: (isActive, disabled) => ({
-      display: "flex", alignItems: "center", gap: "12px", padding: "12px 14px",
-      borderRadius: "12px", fontWeight: 500, textDecoration: "none",
+      position: "relative",
+      display: "flex", alignItems: "center", gap: "12px", padding: "12px 14px 12px 17px",
+      borderRadius: "12px", fontWeight: isActive ? 700 : 500, textDecoration: "none",
       justifyContent: (isExpanded || isMobile) ? "flex-start" : "center",
-      color: disabled ? "#64748b" : (isActive ? "#0A7C6E" : "#64748b"),
-      background: isActive ? "linear-gradient(135deg, rgba(37, 99, 235, 0.12), rgba(37, 99, 235, 0.08))" : "transparent",
-      opacity: disabled ? 0.45 : 1, cursor: disabled ? "not-allowed" : "pointer"
+      color: disabled ? "#94a3b8" : (isActive ? "#075e53" : "#5c6b7a"),
+      background: isActive ? "linear-gradient(135deg, rgba(10, 124, 110, 0.12), rgba(10, 124, 110, 0.06))" : "transparent",
+      opacity: disabled ? 0.5 : 1, cursor: disabled ? "not-allowed" : "pointer",
+      transition: "all 0.15s",
     }),
   };
 
@@ -203,14 +205,34 @@ const Sidebar = memo(function Sidebar() {
     <>
       <div style={styles.overlay} onClick={handleToggle} aria-hidden="true"></div>
 
-      <aside style={styles.sidebar}>
+      <aside style={styles.sidebar} className="jw-sidebar">
+        <style>{`
+          .jw-sidebar-toggle-btn {
+            background: #f0fdf9; border: 1px solid #d1fae5; color: #0A7C6E;
+            width: 32px; height: 32px; border-radius: 10px;
+            display: flex; align-items: center; justify-content: center; transition: all 0.15s;
+          }
+          .jw-sidebar-toggle-btn:hover { background: #0A7C6E; color: #fff; border-color: #0A7C6E; }
+          .jw-nav-link:hover { background: #f6f8fa !important; }
+          .jw-nav-link.active-bar::before {
+            content: "";
+            position: absolute; left: 0; top: 8px; bottom: 8px; width: 3px;
+            background: #0A7C6E; border-radius: 0 3px 3px 0;
+          }
+          .jw-logout-link:hover { background: #fef2f2 !important; }
+        `}</style>
 
-        {/* Mobile Sidebar Header */}
-        <div style={{ display: "flex", width: "100%", marginBottom: "20px", justifyContent: "space-between", alignItems: "center" }}>
-          {(isExpanded || isMobile) && <img src={staffologo} alt="Staffo" style={{ height: "40px" }} />}
+        <div style={{
+          display: "flex",
+          width: "100%",
+          marginBottom: "20px",
+          justifyContent: (isExpanded && isMobile) ? "space-between" : "flex-end",
+          alignItems: "center"
+        }}>
+          {(isExpanded && isMobile) && <img src={staffologo} alt="Staffo" style={{ height: "40px" }} />}
           <button
             onClick={handleToggle}
-            style={{ background: "rgba(37, 99, 235, 0.05)", border: "1px solid rgba(37, 99, 235, 0.1)", color: "#475569", width: "32px", height: "32px", borderRadius: "10px", display: "flex", alignItems: "center", justifyContent: "center" }}
+            className="jw-sidebar-toggle-btn"
           >
             <i className={`fa-solid ${isMobile ? "fa-xmark" : (isExpanded ? "fa-chevron-left" : "fa-chevron-right")}`}></i>
           </button>
@@ -234,7 +256,7 @@ const Sidebar = memo(function Sidebar() {
             {/* Notifications Toggle */}
             <div
               onClick={toggleNotifications}
-              style={{ display: "flex", alignItems: "center", gap: "12px", padding: "10px 12px", backgroundColor: "#f1f5f9", borderRadius: "8px", cursor: "pointer", marginBottom: showNotifications ? "8px" : "0" }}
+              style={{ display: "flex", alignItems: "center", gap: "12px", padding: "10px 12px", backgroundColor: "#f6f8fa", borderRadius: "10px", cursor: "pointer", marginBottom: showNotifications ? "8px" : "0" }}
             >
               <div style={{ position: "relative" }}>
                 <i className="fa-solid fa-bell" style={{ fontSize: "16px", color: "#475569" }}></i>
@@ -250,7 +272,7 @@ const Sidebar = memo(function Sidebar() {
 
             {/* Expanded Mobile Notifications */}
             {showNotifications && (
-              <div style={{ backgroundColor: "#fff", border: "1px solid #e2e8f0", borderRadius: "8px", overflow: "hidden" }}>
+              <div style={{ backgroundColor: "#fff", border: "1px solid #e2e8f0", borderRadius: "10px", overflow: "hidden" }}>
                 <ul style={{ listStyle: "none", padding: 0, margin: 0, overflowY: "auto", maxHeight: "180px" }}>
                   {items.length > 0 ? (
                     items.map((notif, index) => (
@@ -275,6 +297,7 @@ const Sidebar = memo(function Sidebar() {
         <ul style={styles.navUl}>
           {navItems.map((item) => {
             const disabled = !isProfileActive && item.label !== "Edit Profile";
+            const isActive = location.pathname === item.to;
             return (
               <li key={item.label}>
                 {disabled ? (
@@ -283,7 +306,12 @@ const Sidebar = memo(function Sidebar() {
                     {(isExpanded || isMobile) && <span>{item.label} <i className="fa-solid fa-lock" style={{ fontSize: "10px", marginLeft: "6px" }}></i></span>}
                   </div>
                 ) : (
-                  <NavLink to={item.to} onClick={handleNavClick} style={({ isActive }) => styles.getLinkStyle(isActive, false)}>
+                  <NavLink
+                    to={item.to}
+                    onClick={handleNavClick}
+                    className={isActive ? "jw-nav-link active-bar" : "jw-nav-link"}
+                    style={({ isActive }) => styles.getLinkStyle(isActive, false)}
+                  >
                     <i className={item.icon} style={{ fontSize: "20px", minWidth: "24px", textAlign: "center" }}></i>
                     {(isExpanded || isMobile) && <span>{item.label}</span>}
                   </NavLink>
@@ -294,10 +322,10 @@ const Sidebar = memo(function Sidebar() {
         </ul>
 
         {/* Action Buttons: Settings & Logout (Bottom of Sidebar) */}
-        <div style={{ marginTop: "auto", width: "100%", paddingTop: "16px", borderTop: "1px solid rgba(148, 163, 184, 0.2)" }}>
+        <div style={{ marginTop: "auto", width: "100%", paddingTop: "16px", borderTop: "1px solid #eef1f1" }}>
           <ul style={styles.navUl}>
             <li>
-              <Link to="/" onClick={handleLogout} style={styles.getLinkStyle(false, false)}>
+              <Link to="/" onClick={handleLogout} className="jw-logout-link" style={styles.getLinkStyle(false, false)}>
                 <i className="fa-solid fa-right-from-bracket text-danger" style={{ fontSize: "20px", minWidth: "24px", textAlign: "center" }}></i>
                 {(isExpanded || isMobile) && <span className="text-danger fw-bold">Logout</span>}
               </Link>

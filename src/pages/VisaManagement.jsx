@@ -19,7 +19,7 @@ const countryOptions = COUNTRIES.map((c) => ({
     label: `${c.name} (${c.code})`,
 }));
 
-// --- Utilities & Parsers ---
+// --- Utilities & Parsers (unchanged) ---
 const safeJsonParse = (value) => {
     if (typeof value !== "string") return null;
     try {
@@ -46,7 +46,6 @@ const unwrapVisaResponse = (payload) => {
     return payload;
 };
 
-// --- Date helpers ---
 const toISODate = (val) => {
     if (!val) return "";
     const match = val.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
@@ -81,7 +80,7 @@ const formatShortDate = (value) => {
     return String(value);
 };
 
-// --- Hybrid Date Input for DOB ---
+// --- Hybrid Date Input for DOB (unchanged) ---
 const DateInput = ({ name, value, onChange, required }) => {
     const [displayValue, setDisplayValue] = useState(toDisplayDate(value));
     const pickerRef = React.useRef(null);
@@ -119,15 +118,15 @@ const DateInput = ({ name, value, onChange, required }) => {
     };
 
     return (
-        <div className="input-group">
+        <div className="input-group shadow-sm rounded-3 overflow-hidden">
             <button
                 type="button"
-                className="input-group-text bg-white border-end-0"
+                className="input-group-text bg-light border-0 text-muted"
                 onClick={openPicker}
                 style={{ cursor: "pointer" }}
                 title="Open calendar"
             >
-                <i className="fa-regular fa-calendar text-muted"></i>
+                <i className="fa-solid fa-calendar-days"></i>
             </button>
             <input
                 type="date"
@@ -140,7 +139,7 @@ const DateInput = ({ name, value, onChange, required }) => {
             />
             <input
                 type="text"
-                className="form-control border-start-0"
+                className="form-control bg-light border-0 ps-2 shadow-none"
                 placeholder="DD/MM/YYYY"
                 value={displayValue}
                 onChange={handleTextChange}
@@ -148,47 +147,53 @@ const DateInput = ({ name, value, onChange, required }) => {
                 maxLength={10}
                 pattern="^(0[1-9]|[12][0-9]|3[01])/(0[1-9]|1[012])/\d{4}$"
                 title="Enter a date in DD/MM/YYYY format"
+                style={{ borderRadius: "0 0.375rem 0.375rem 0" }}
             />
         </div>
     );
 };
 
-// --- UI Components ---
+// --- Status Badge (premium) ---
 const StatusBadge = ({ status }) => {
     const s = (status || "").toLowerCase();
     if (s === "completed" || s === "success") {
         return (
-            <span className="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-2 py-1 rounded-pill">
+            <span className="badge-premium badge-success">
                 <i className="fa-solid fa-circle-check me-1"></i> Verified
             </span>
         );
     }
     if (s === "pending" || s === "processing") {
         return (
-            <span className="badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25 px-2 py-1 rounded-pill">
+            <span className="badge-premium badge-warning">
                 <i className="fa-solid fa-clock-rotate-left me-1"></i> Pending
             </span>
         );
     }
     if (s === "failed" || s === "error") {
         return (
-            <span className="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25 px-2 py-1 rounded-pill">
+            <span className="badge-premium badge-danger">
                 <i className="fa-solid fa-circle-xmark me-1"></i> Failed
             </span>
         );
     }
     return (
-        <span className="badge bg-secondary px-2 py-1 rounded-pill">
+        <span className="badge-premium badge-secondary">
             {status?.toUpperCase() || "UNKNOWN"}
         </span>
     );
 };
 
-const DetailField = ({ label, value, colSize = "col-12 col-sm-6" }) => (
+// --- Detail field (premium) ---
+const DetailField = ({ label, value, colSize = "col-12 col-md-6" }) => (
     <div className={colSize}>
-        <label className="form-label text-muted fw-semibold mb-1 small">{label}</label>
-        <div className="bg-light bg-opacity-50 border border-light-subtle rounded px-3 py-2 fw-medium text-dark text-break min-h-form-field d-flex align-items-center">
-            {value || "-"}
+        <div className="mb-2">
+            <label className="form-label text-muted fw-bold mb-1" style={{ fontSize: "0.7rem", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+                {label}
+            </label>
+            <div className="bg-light rounded-3 border-0 p-3 text-dark fw-medium" style={{ fontSize: "0.95rem" }}>
+                {value || "—"}
+            </div>
         </div>
     </div>
 );
@@ -258,31 +263,209 @@ export default function VisaManagement() {
     const isSuccess = result.code === "SUCCESS" || !!selectedCheckDetail?.expired_at || !!visa.expiry_date;
 
     return (
-        <div className="dashboard-main dashboard-tools-page">
-            <div className="dashboard-page-header mb-4">
-                <div>
-                    <h1 className="h3 fw-bold text-dark">Visa Verification</h1>
-                    <p className="text-muted" style={{ textTransform: "none" }}>
-                        Submit passport details to verify applicant work rights and visa status.
-                    </p>
-                </div>
+        <div className="dashboard-main">
+            <style>{`
+                :root {
+                    --navy-950: #0a1930;
+                    --navy-900: #0e2340;
+                    --teal: #0A7C6E;
+                    --teal-dark: #075e53;
+                    --teal-tint: #f0fdf9;
+                    --teal-border: #d1fae5;
+                    --amber: #d97706;
+                    --success: #16a34a;
+                    --danger: #dc2626;
+                    --ink: #0f172a;
+                    --slate: #1e293b;
+                    --muted: #64748b;
+                    --faint: #94a3b8;
+                    --line: #e2e8f0;
+                    --line-soft: #f1f5f9;
+                    --surface: #ffffff;
+                    --canvas: #f8fafc;
+                }
+
+                .visa-hero {
+                    position: relative;
+                    background: linear-gradient(135deg, var(--navy-950) 0%, var(--navy-900) 65%, #0f2f52 100%);
+                    border-radius: 22px;
+                    padding: 34px 36px 46px;
+                    overflow: hidden;
+                    isolation: isolate;
+                    margin-bottom: 2rem;
+                }
+                .visa-hero::before {
+                    content: "";
+                    position: absolute;
+                    inset: 0;
+                    background-image: radial-gradient(rgba(255,255,255,0.10) 1px, transparent 1px);
+                    background-size: 22px 22px;
+                    opacity: 0.35;
+                    z-index: -1;
+                }
+                .visa-hero::after {
+                    content: "";
+                    position: absolute;
+                    top: -60px;
+                    right: -60px;
+                    width: 260px;
+                    height: 260px;
+                    border-radius: 50%;
+                    background: radial-gradient(circle, rgba(10,124,110,0.45) 0%, rgba(10,124,110,0) 70%);
+                    z-index: -1;
+                }
+                .visa-hero-eyebrow {
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 8px;
+                    font-size: 11px;
+                    font-weight: 700;
+                    letter-spacing: 0.6px;
+                    text-transform: uppercase;
+                    color: #6ee7d8;
+                    margin-bottom: 10px;
+                }
+                .visa-hero-eyebrow .dot {
+                    width: 7px; height: 7px; border-radius: 50%;
+                    background: #34d399;
+                    box-shadow: 0 0 0 4px rgba(52,211,153,0.18);
+                }
+                .visa-hero h1 {
+                    color: #fff;
+                    font-size: 28px;
+                    font-weight: 800;
+                    letter-spacing: -0.4px;
+                    margin: 0 0 6px;
+                }
+                .visa-hero p {
+                    color: rgba(255,255,255,0.62);
+                    font-size: 14px;
+                    margin: 0;
+                    text-transform: none;
+                }
+
+                .badge-premium {
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 5px;
+                    padding: 4px 12px;
+                    border-radius: 20px;
+                    font-size: 11.5px;
+                    font-weight: 700;
+                    text-transform: capitalize;
+                    border: 1px solid;
+                }
+                .badge-success {
+                    background: rgba(22,163,74,0.08);
+                    color: #16a34a;
+                    border-color: rgba(22,163,74,0.3);
+                }
+                .badge-warning {
+                    background: rgba(217,119,6,0.08);
+                    color: #d97706;
+                    border-color: rgba(217,119,6,0.3);
+                }
+                .badge-danger {
+                    background: rgba(220,38,38,0.08);
+                    color: #dc2626;
+                    border-color: rgba(220,38,38,0.3);
+                }
+                .badge-secondary {
+                    background: rgba(100,116,139,0.08);
+                    color: #64748b;
+                    border-color: rgba(100,116,139,0.3);
+                }
+
+                .content-card {
+                    background: #fff;
+                    border-radius: 18px;
+                    box-shadow: 0 4px 14px rgba(15,23,42,0.06);
+                    border: 1px solid #f1f5f9;
+                    overflow: visible;
+                    margin-bottom: 1.5rem;
+                }
+                .content-card .card-header {
+                    background: #f9fafb;
+                    border-bottom: 1px solid #e2e8f0;
+                    padding: 1rem 1.5rem;
+                    font-weight: 700;
+                    color: #0f172a;
+                }
+
+                .table-premium {
+                    width: 100%;
+                    border-collapse: separate;
+                    border-spacing: 0;
+                }
+                .table-premium thead th {
+                    background: #f8fafc;
+                    color: #64748b;
+                    font-size: 0.7rem;
+                    font-weight: 700;
+                    text-transform: uppercase;
+                    letter-spacing: 0.05em;
+                    padding: 12px 16px;
+                    border-bottom: 2px solid #e2e8f0;
+                }
+                .table-premium tbody td {
+                    padding: 14px 16px;
+                    border-bottom: 1px solid #f1f5f9;
+                    vertical-align: middle;
+                }
+                .table-premium tbody tr:hover {
+                    background-color: rgba(248,250,252,0.7);
+                }
+                .table-premium tbody tr:last-child td {
+                    border-bottom: none;
+                }
+
+                .btn-primary-premium {
+                    background: var(--teal);
+                    border: none;
+                    color: #fff;
+                    font-weight: 600;
+                    border-radius: 10px;
+                    padding: 0.65rem 1.5rem;
+                    box-shadow: 0 4px 10px -2px rgba(10,124,110,0.4);
+                    transition: all 0.15s;
+                }
+                .btn-primary-premium:hover {
+                    background: var(--teal-dark);
+                    transform: translateY(-1px);
+                    box-shadow: 0 8px 16px -4px rgba(10,124,110,0.5);
+                }
+
+                @media (max-width: 767.98px) {
+                    .visa-hero { padding: 26px 20px 40px; border-radius: 18px; }
+                    .visa-hero h1 { font-size: 22px; }
+                }
+            `}</style>
+
+            {/* Hero Header */}
+            <div className="visa-hero">
+                <span className="visa-hero-eyebrow">
+                    <span className="dot"></span> Verification
+                </span>
+                <h1>Visa Verification</h1>
+                <p style={{ textTransform: "none" }}>
+                    Submit passport details to verify applicant work rights and visa status.
+                </p>
             </div>
 
-            {/* Request Form */}
-            <div className="card border-0 shadow-sm mb-4">
-                <div className="card-header bg-white border-bottom py-3">
-                    <h6 className="mb-0 fw-bold text-primary">
-                        <i className="fa-solid fa-user-plus me-2"></i>New Verification Request
-                    </h6>
+            {/* Request Form Card */}
+            <div className="content-card">
+                <div className="card-header d-flex align-items-center gap-2">
+                    <i className="fa-solid fa-user-plus" style={{ color: "#0A7C6E" }}></i>
+                    <span>New Verification Request</span>
                 </div>
-                <div className="card-body bg-light bg-opacity-50">
+                <div className="card-body bg-light p-4">
                     <form onSubmit={handleVisaCheck}>
                         <div className="row g-3 align-items-end">
                             <div className="col-12 col-md-6 col-xl-2">
-                                <label className="form-label text-dark fw-semibold mb-1">First/Given Name</label>
+                                <label className="form-label fw-bold small text-dark mb-1">First/Given Name</label>
                                 <input
                                     type="text"
-                                    className="form-control"
+                                    className="form-control border-0 bg-white shadow-sm rounded-3 py-2"
                                     name="given_name"
                                     value={formData.given_name}
                                     onChange={handleInputChange}
@@ -291,10 +474,10 @@ export default function VisaManagement() {
                                 />
                             </div>
                             <div className="col-12 col-md-6 col-xl-2">
-                                <label className="form-label text-dark fw-semibold mb-1">Last/Family Name</label>
+                                <label className="form-label fw-bold small text-dark mb-1">Last/Family Name</label>
                                 <input
                                     type="text"
-                                    className="form-control"
+                                    className="form-control border-0 bg-white shadow-sm rounded-3 py-2"
                                     name="family_name"
                                     value={formData.family_name}
                                     onChange={handleInputChange}
@@ -303,7 +486,7 @@ export default function VisaManagement() {
                                 />
                             </div>
                             <div className="col-12 col-md-4 col-xl-2">
-                                <label className="form-label text-dark fw-semibold mb-1">Date of Birth</label>
+                                <label className="form-label fw-bold small text-dark mb-1">Date of Birth</label>
                                 <DateInput
                                     name="dob"
                                     value={formData.dob}
@@ -312,10 +495,10 @@ export default function VisaManagement() {
                                 />
                             </div>
                             <div className="col-12 col-md-4 col-xl-2">
-                                <label className="form-label text-dark fw-semibold mb-1">Passport Number</label>
+                                <label className="form-label fw-bold small text-dark mb-1">Passport Number</label>
                                 <input
                                     type="text"
-                                    className="form-control"
+                                    className="form-control border-0 bg-white shadow-sm rounded-3 py-2"
                                     name="passport"
                                     value={formData.passport}
                                     onChange={handleInputChange}
@@ -324,7 +507,7 @@ export default function VisaManagement() {
                                 />
                             </div>
                             <div className="col-12 col-md-4 col-xl-2">
-                                <label className="form-label text-dark fw-semibold mb-1">Issuing Country</label>
+                                <label className="form-label fw-bold small text-dark mb-1">Issuing Country</label>
                                 <Select
                                     options={countryOptions}
                                     value={countryOptions.find((opt) => opt.value === formData.country) || null}
@@ -332,24 +515,33 @@ export default function VisaManagement() {
                                     placeholder="Select country..."
                                     isClearable
                                     isSearchable
-                                    className="react-select-container"
-                                    classNamePrefix="react-select"
+                                    menuPortalTarget={document.body}          // <-- render menu at body level
+                                    menuPosition="fixed"                      // <-- position it absolutely
+                                    styles={{
+                                        control: (base) => ({
+                                            ...base,
+                                            border: 'none',
+                                            borderRadius: '0.75rem',
+                                            minHeight: '42px',
+                                            boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
+                                            '&:hover': { borderColor: '#0A7C6E' },
+                                        }),
+                                        menuPortal: (base) => ({ ...base, zIndex: 9999 })  // <-- ensure it's on top
+                                    }}
                                 />
                             </div>
                             <div className="col-12 col-xl-2 d-grid mt-4 mt-xl-0">
                                 <button
                                     type="submit"
-                                    className="btn btn-primary-custom fw-bold py-2 shadow-sm position-relative"
+                                    className="btn btn-primary-premium"
                                     disabled={checkingVisa}
                                 >
-                                    <span style={{ opacity: checkingVisa ? 0 : 1 }}>
-                                        Verify Visa
-                                    </span>
-                                    {checkingVisa && (
-                                        <div className="loader-center-scale">
-                                            <Loader compact />
-                                        </div>
+                                    {checkingVisa ? (
+                                        <span className="spinner-border spinner-border-sm me-2" role="status"></span>
+                                    ) : (
+                                        <i className="fa-solid fa-magnifying-glass me-2"></i>
                                     )}
+                                    Verify Visa
                                 </button>
                             </div>
                         </div>
@@ -357,41 +549,40 @@ export default function VisaManagement() {
                 </div>
             </div>
 
-            {/* Results Table – Action column removed, row click enabled */}
-            <div className="card border-0 shadow-sm mb-4">
-                <div className="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
-                    <h6 className="mb-0 fw-bold">Recent Visa Checks</h6>
+            {/* Results Table */}
+            <div className="content-card">
+                <div className="card-header d-flex align-items-center justify-content-between">
+                    <span>Recent Visa Checks</span>
+                    <span className="badge bg-light text-muted border">
+                        {visaChecksList.length} record{visaChecksList.length !== 1 ? 's' : ''}
+                    </span>
                 </div>
                 <div className="card-body p-0">
                     <div className="table-responsive">
-                        <table className="table table-hover align-middle mb-0 user-friendly-table">
-                            <thead className="table-light text-muted">
+                        <table className="table-premium mb-0">
+                            <thead>
                                 <tr>
                                     <th>Applicant</th>
                                     <th>Date of Birth</th>
                                     <th>Status</th>
                                     <th>Requested On</th>
-                                    {/* Action column removed */}
                                 </tr>
                             </thead>
                             <tbody>
                                 {visaChecksList.length === 0 && (
                                     <tr>
                                         <td colSpan="4" className="text-center text-muted py-5" style={{ textTransform: "none" }}>
-                                            <div className="mb-2 fs-3 text-light">
-                                                <i className="fa-solid fa-folder-open"></i>
-                                            </div>
-                                            No checks submitted yet.
+                                            <i className="fa-solid fa-folder-open fa-2x mb-3" style={{ opacity: 0.4 }}></i>
+                                            <p className="mb-0">No checks submitted yet.</p>
                                         </td>
                                     </tr>
                                 )}
                                 {visaChecksList.map((item) => {
                                     const isSelected = selectedCheckDetail?.id === item.id;
-
                                     return (
                                         <tr
                                             key={item.id}
-                                            className={isSelected ? "table-active" : ""}
+                                            className={isSelected ? "bg-teal-tint" : ""}
                                             onClick={() => setSelectedCheckDetail(item)}
                                             style={{ cursor: "pointer" }}
                                         >
@@ -416,14 +607,15 @@ export default function VisaManagement() {
                 </div>
             </div>
 
-            {/* Detailed Report View (unchanged) */}
+            {/* Detailed Report (unchanged logic) */}
             {selectedCheckDetail && (
-                <div className="card border-0 shadow-sm mt-4">
-                    <div className="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
-                        <h6 className="mb-0 fw-bold text-primary">
-                            <i className="fa-regular fa-file-lines me-2"></i>Verification Report
-                        </h6>
-                        <span className="badge bg-light text-dark border font-monospace text-muted">
+                <div className="content-card mt-4">
+                    <div className="card-header d-flex justify-content-between align-items-center">
+                        <div className="d-flex align-items-center gap-2">
+                            <i className="fa-regular fa-file-lines" style={{ color: "#0A7C6E" }}></i>
+                            <span>Verification Report</span>
+                        </div>
+                        <span className="badge bg-light text-dark border font-monospace small">
                             Ref: {selectedCheckDetail.id}
                         </span>
                     </div>
@@ -470,7 +662,7 @@ export default function VisaManagement() {
 
                         <div className="row g-5">
                             <div className="col-12 col-lg-6">
-                                <h6 className="text-muted fw-bold letter-spacing-1 mb-3 border-bottom pb-2">
+                                <h6 className="text-muted fw-bold text-uppercase small mb-3 pb-2 border-bottom">
                                     Applicant Details
                                 </h6>
                                 <div className="row g-3">
@@ -487,7 +679,7 @@ export default function VisaManagement() {
 
                             {isCompleted && (
                                 <div className="col-12 col-lg-6">
-                                    <h6 className="text-muted fw-bold letter-spacing-1 mb-3 border-bottom pb-2">
+                                    <h6 className="text-muted fw-bold text-uppercase small mb-3 pb-2 border-bottom">
                                         Visa Information
                                     </h6>
                                     <div className="row g-3">
@@ -497,10 +689,7 @@ export default function VisaManagement() {
                                             colSize="col-12"
                                         />
                                         {visa.expiry_date && (
-                                            <DetailField
-                                                label="Expiry Date"
-                                                value={formatShortDate(visa.expiry_date)}
-                                            />
+                                            <DetailField label="Expiry Date" value={formatShortDate(visa.expiry_date)} />
                                         )}
                                         <DetailField label="Work Entitlement" value={visa.work_entitlement} />
                                         <DetailField label="Location" value={visa.location} />
@@ -523,21 +712,6 @@ export default function VisaManagement() {
                                             value={visa.entitlement_description}
                                             colSize="col-12"
                                         />
-                                        {/* {attachment?.download_url && (
-                                            <div className="col-12">
-                                                <label className="form-label text-muted fw-semibold mb-1 small">Official Document</label>
-                                                <div className="min-h-form-field d-flex align-items-center">
-                                                    <Link
-                                                        to={attachment.download_url}
-                                                        target="_blank"
-                                                        rel="noreferrer"
-                                                        className="btn btn-outline-primary btn-sm rounded-pill px-3"
-                                                    >
-                                                        <i className="fa-solid fa-file-pdf me-1"></i> Download PDF
-                                                    </Link>
-                                                </div>
-                                            </div>
-                                        )} */}
                                     </div>
                                 </div>
                             )}
@@ -545,43 +719,6 @@ export default function VisaManagement() {
                     </div>
                 </div>
             )}
-
-            <style>{`
-                .letter-spacing-1 { letter-spacing: 0.05em; }
-                .min-h-form-field { min-height: 38px; }
-                
-                .loader-center-scale {
-                  position: absolute;
-                  top: 50%;
-                  left: 50%;
-                  transform: translate(-50%, -50%) scale(0.65);
-                  display: flex;
-                  align-items: center;
-                  justify-content: center;
-                }
-                
-                .user-friendly-table { border-collapse: separate; border-spacing: 0; }
-                .user-friendly-table th { font-size: 0.85rem; letter-spacing: 0.03em; font-weight: 600; padding: 1rem; border-bottom: 2px solid #e2e8f0; }
-                .user-friendly-table tbody tr { transition: background-color 0.2s ease; cursor: pointer; }
-                .user-friendly-table td { vertical-align: middle; padding: 1.25rem 1rem; border-bottom: 1px solid #f1f5f9; }
-                .user-friendly-table tbody tr:last-child td { border-bottom: none; }
-                
-                input.form-control { border-radius: 0.5rem; border-color: #cbd5e1; padding: 0.6rem 1rem; }
-                input.form-control:focus { border-color: #0A7C6E; box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1); }
-
-                .react-select-container .react-select__control {
-                    border-radius: 0.5rem;
-                    border-color: #cbd5e1;
-                    min-height: 38px;
-                }
-                .react-select-container .react-select__control:hover {
-                    border-color: #0A7C6E;
-                }
-                .react-select-container .react-select__control--is-focused {
-                    border-color: #0A7C6E;
-                    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
-                }
-            `}</style>
         </div>
     );
 }

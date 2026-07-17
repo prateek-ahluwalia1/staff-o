@@ -923,21 +923,56 @@ export default function MyJobApplications() {
             <div className="modal-body" style={{ padding: "24px", overflowY: "auto", flex: 1 }}>
               <div className="d-flex flex-wrap gap-2 mb-4">
                 {[
-                  { icon: "fa-circle-info", label: "Status", value: selectedApp.status },
-                  { icon: "fa-hourglass-half", label: "Total Hours", value: selectedApp.rawShift.hours ?? "N/A" },
-                  { icon: "fa-calendar-plus", label: "Created", value: selectedApp.createdAt || "N/A" },
-                  { icon: "fa-money-bill", label: "Job Amount", value: selectedApp.rawShift.job_amount ? `$${selectedApp.rawShift.job_amount}` : "N/A" },
+                  {
+                    icon: "fa-circle-info",
+                    label: "Status",
+                    value: selectedApp.status,
+                  },
+                  {
+                    icon: "fa-hourglass-half",
+                    label: "Total Hours",
+                    value: selectedApp.rawShift.hours ?? "N/A",
+                  },
+                  {
+                    icon: "fa-calendar-plus",
+                    label: "Created",
+                    value: selectedApp.createdAt || "N/A",
+                  },
+                  ...(userType === "admin"
+                    ? [
+                      {
+                        icon: "fa-money-bill",
+                        label: "Job Amount",
+                        value: selectedApp.rawShift.job_amount
+                          ? `$${selectedApp.rawShift.job_amount}`
+                          : "N/A",
+                      },
+                    ]
+                    : []),
                 ].map((stat) => (
                   <div className="quick-stat-chip" key={stat.label}>
                     <i className={`fa-solid ${stat.icon}`}></i>
                     <div className="d-flex flex-column" style={{ minWidth: 0 }}>
                       <span className="quick-stat-label">{stat.label}</span>
-                      <span className="quick-stat-value text-truncate d-block">{stat.value}</span>
+                      <span className="quick-stat-value text-truncate d-block">
+                        {stat.value}
+                      </span>
                     </div>
                   </div>
                 ))}
               </div>
-
+              {/* ---------- DESCRIPTION (NEW) ---------- */}
+              {selectedApp.rawShift.description && (
+                <div className="mt-4 p-4 bg-white rounded-4 shadow-sm border border-light mb-4">
+                  <h5 className="fw-bold d-flex align-items-center mb-3 pb-2 border-bottom" style={{ fontSize: '16px', color: '#1e293b' }}>
+                    <i className="fa-solid fa-align-left me-2" style={{ color: '#0A7C6E' }}></i>
+                    Description
+                  </h5>
+                  <p className="mb-0" style={{ fontSize: '14px', color: '#334155', textTransform: 'none', lineHeight: '1.6' }}>
+                    {selectedApp.rawShift.description}
+                  </p>
+                </div>
+              )}
               <div className="row g-4 mb-4">
                 <div className="col-md-6">
                   <div className="info-panel h-100">
@@ -978,18 +1013,6 @@ export default function MyJobApplications() {
                 </div>
               </div>
 
-              {/* ---------- DESCRIPTION (NEW) ---------- */}
-              {selectedApp.rawShift.description && (
-                <div className="mt-4 p-4 bg-white rounded-4 shadow-sm border border-light mb-4">
-                  <h5 className="fw-bold d-flex align-items-center mb-3 pb-2 border-bottom" style={{ fontSize: '16px', color: '#1e293b' }}>
-                    <i className="fa-solid fa-align-left me-2" style={{ color: '#0A7C6E' }}></i>
-                    Description
-                  </h5>
-                  <p className="mb-0" style={{ fontSize: '14px', color: '#334155', textTransform: 'none', lineHeight: '1.6' }}>
-                    {selectedApp.rawShift.description}
-                  </p>
-                </div>
-              )}
               <div className="row g-4">
                 {userType !== "customer" && (
                   <div className="col-md-6">
@@ -1014,9 +1037,9 @@ export default function MyJobApplications() {
                       </span>
                       Assignment Details
                     </h5>
-                    <InfoRow icon="fa-user-shield" label="Assigned To" value={selectedApp.appliedVia} />
+                    {userType !== "staff" && <InfoRow icon="fa-user-shield" label="Assigned To" value={selectedApp.appliedVia} />}
                     <InfoRow icon="fa-id-badge" label="Job Type" value={selectedApp.rawShift.job_type || "N/A"} />
-                    <InfoRow icon="fa-money-bill" label="Job Amount" value={selectedApp.rawShift.job_amount ? `$${selectedApp.rawShift.job_amount}` : "N/A"} />
+                    {userType === "admin" && <InfoRow icon="fa-money-bill" label="Job Amount" value={selectedApp.rawShift.job_amount ? `$${selectedApp.rawShift.job_amount}` : "N/A"} />}
                     {selectedApp.rawShift.contractor && (
                       <InfoRow
                         icon="fa-building-user"

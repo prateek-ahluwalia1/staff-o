@@ -110,7 +110,7 @@ export default function AdminDashboard() {
                   Live
                 </span>
                 <h3>Admin Panel — {username}</h3>
-                <p className="profile-role">Platform Management &amp; Analytics</p>
+                <p className="profile-role">Platform Management and Analytics</p>
                 <div className="profile-contact" style={{ textTransform: "none" }}>
                   <i className="fa-solid fa-envelope"></i> {email}
                 </div>

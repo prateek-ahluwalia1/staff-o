@@ -1219,7 +1219,7 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
       <div className="embedded-job-modal job-wizard">
         <div className="embedded-job-header">
           <div>
-            <h3 className="mb-1 fw-bold text-dark">{isAdmin ? "Add Shift" : "Create Job"}</h3>
+            <h3 className="mb-1 fw-bold text-white">{isAdmin ? "Add Shift" : "Create Job"}</h3>
             <p className="text-muted small mb-0"
               style={{ textTransform: "none" }}
             >Prefilled location and date. Use the schedule and details steps to set the shift time.</p>

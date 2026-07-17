@@ -27,7 +27,7 @@ const API_DATE_FORMAT = "yyyy-MM-dd HH:mm";
 const UPDATE_API_DATE_FORMAT = "MM-dd-yyyy HH:mm";
 
 const states_array = [
-  { label: 'Victoria', value: 'vic', featured: true },
+  { label: 'Victoria', value: 'vic' },
   { label: 'New South Wales', value: 'nsw' },
   { label: 'Queensland', value: 'qld' },
   { label: 'Tasmania', value: 'tas' },
@@ -36,7 +36,7 @@ const states_array = [
   { label: 'ACT', value: 'act' }
 ];
 
-// react-select theming to match the app's teal/navy system (presentational only)
+// react-select theming
 const selectStyles = {
   menuPortal: (base) => ({ ...base, zIndex: 9999 }),
   control: (base, state) => ({
@@ -58,7 +58,7 @@ const selectStyles = {
   placeholder: (base) => ({ ...base, color: "#94a3b8" }),
 };
 
-// --- Holiday Parsing Helpers ---
+// --- Holiday Parsing Helpers (unchanged) ---
 const parseHolidayDate = (value) => {
   if (!value) return null;
   if (/^\d{8}$/.test(value)) {
@@ -77,7 +77,6 @@ const getDayKey = (date) => {
   const day = String(date.getDate()).padStart(2, '0');
   return `${year}${month}${day}`;
 };
-// -------------------------------
 
 function parseApiDate(dateValue) {
   if (!dateValue) return null;
@@ -124,7 +123,26 @@ export default function RosterPage() {
   const userId = userdata?.data?.id || userdata?.id;
   const userRole = userdata?.data?.user_type || userdata?.user_type;
 
-  // Determine which contractor ID to use for fetching staff
+  // ----- Contractor state mapping -----
+  const contractorStateValue = useMemo(() => {
+    if (userRole !== 'contractor') return null;
+    const stateName = userdata?.data?.state || userdata?.state;
+    if (!stateName) return null;
+    // Normalize: map 'Victoria' -> 'vic', 'New South Wales' -> 'nsw', etc.
+    const stateMap = {
+      'Victoria': 'vic',
+      'New South Wales': 'nsw',
+      'Queensland': 'qld',
+      'Tasmania': 'tas',
+      'Western Australia': 'wa',
+      'South Australia': 'sa',
+      'Australian Capital Territory': 'act',
+      'ACT': 'act',
+      'Northern Territory': 'nt'
+    };
+    return stateMap[stateName] || stateName.toLowerCase();
+  }, [userRole, userdata]);
+
   const staffContractorId = userRole === "admin" ? 1 : userId;
 
   const selectedStates = useMemo(() => {
@@ -134,7 +152,6 @@ export default function RosterPage() {
       .filter(Boolean);
   }, [location.search]);
 
-  // Fetch staff list using the appropriate contractor ID
   const {
     data: staffData,
     loading: staffLoading,
@@ -156,51 +173,55 @@ export default function RosterPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [showLegend, setShowLegend] = useState(true);
 
-  // --- Public Holidays State ---
   const [holidays, setHolidays] = useState([]);
 
   const fetchCustomerSites = useCallback(() => {
     if (!userId) return;
-    if (userRole !== "staff" && selectedStates.length === 0) return;
+    // For contractor, use their own state; for admin/staff, use selected or all
+    const effectiveStates = selectedStates.length > 0
+      ? selectedStates
+      : (userRole === 'contractor' ? [contractorStateValue] : states_array.map(s => s.value));
+
+    if (effectiveStates.length === 0) return;
 
     const endDayOffset = weeksToView === 1 ? 6 : 13;
     const payload = {
       user_id: [userId],
-      states: selectedStates.length > 0 ? selectedStates : states_array.map(s => s.value),
+      states: effectiveStates,
       start: format(monday, "MM-dd-yyyy"),
       end: format(addDays(monday, endDayOffset), "MM-dd-yyyy"),
       roster_id: "1",
     };
     submit("api/fetch-customer-sites", payload, { method: "POST", silentErrorToast: true });
-  }, [userId, monday, weeksToView, submit, selectedStates, userRole]);
+  }, [userId, monday, weeksToView, submit, selectedStates, userRole, contractorStateValue]);
 
   const fetchHolidays = useCallback(async () => {
-    const statesToFetch = selectedStates.length > 0 ? selectedStates : states_array.map(s => s.value);
-    let allHolidays = [];
+    const effectiveStates = selectedStates.length > 0
+      ? selectedStates
+      : (userRole === 'contractor' ? [contractorStateValue] : states_array.map(s => s.value));
 
-    for (const state of statesToFetch) {
+    let allHolidays = [];
+    for (const state of effectiveStates) {
       const res = await submitHolidayList(
         'api/admin/get-public-holiday',
         { state },
         { method: 'POST', silentErrorToast: true }
       );
-
       let stateHolidays = [];
       if (Array.isArray(res?.data?.data)) stateHolidays = res.data.data;
       else if (Array.isArray(res?.data)) stateHolidays = res.data;
       else if (Array.isArray(res?.holidays)) stateHolidays = res.holidays;
-
       allHolidays = [...allHolidays, ...stateHolidays];
     }
     setHolidays(allHolidays);
-  }, [selectedStates, submitHolidayList]);
+  }, [selectedStates, submitHolidayList, userRole, contractorStateValue]);
 
   useEffect(() => {
     fetchCustomerSites();
   }, [fetchCustomerSites]);
 
   useEffect(() => {
-    if (userId && (userRole === "staff" || selectedStates.length > 0)) {
+    if (userId && (userRole === "staff" || selectedStates.length > 0 || userRole === 'contractor')) {
       fetchHolidays();
     }
   }, [fetchHolidays, userId, userRole, selectedStates.length]);
@@ -220,7 +241,6 @@ export default function RosterPage() {
       const d = addDays(monday, i);
       const dKey = getDayKey(d);
       const holiday = holidaysByDayKey[dKey];
-
       return {
         label: format(d, "EEE dd/MM"),
         dateObj: d,
@@ -242,7 +262,6 @@ export default function RosterPage() {
 
   const sites = useMemo(() => {
     if (!submitData?.data) return [];
-
     return submitData.data.map((site) => {
       const roster = (site.job_roster || []).map((shift) => {
         const startDate = parseApiDate(shift.start);
@@ -252,7 +271,6 @@ export default function RosterPage() {
       }).filter(Boolean);
 
       const totalHours = roster.reduce((sum, shift) => sum + Number(shift.hours || 0), 0);
-
       const shiftWithCustomer = site.job_roster?.find(shift => shift?.customer?.name);
       const clientName = shiftWithCustomer?.customer?.name || "Unknown Client";
 
@@ -270,7 +288,6 @@ export default function RosterPage() {
   const filteredSites = useMemo(() => {
     if (!searchQuery.trim()) return sites;
     const lowerQuery = searchQuery.toLowerCase();
-
     return sites.filter((site) =>
       site.displayName.toLowerCase().includes(lowerQuery) ||
       site.clientName.toLowerCase().includes(lowerQuery)
@@ -308,12 +325,14 @@ export default function RosterPage() {
   const handleRefresh = () => fetchCustomerSites();
 
   const openModalAction = (site, shift, dateStr, modalType, dateKey = null) => {
-    // Prevent opening the time edit modal if a guard is assigned
+    // Contractor cannot add shifts
+    if (modalType === "add_shift" && userRole !== "admin") {
+      return;
+    }
     if (modalType === "time" && shift?.assigned_to) {
       toast.warning("Cannot edit time while a guard is assigned to this shift.");
       return;
     }
-
     setSelectedUserId(shift?.assigned_to || "");
     if (modalType === "time" && shift) {
       setTimeEditError("");
@@ -339,11 +358,9 @@ export default function RosterPage() {
         const startDateTime = combineDateAndTime(modal.shift.startDate, editForm.startTime);
         const endDateTime = combineDateAndTime(modal.shift.endDate, editForm.endTime);
         if (!startDateTime || !endDateTime) { setTimeEditError("Invalid times."); return; }
-
         const normalizedEndDateTime = endDateTime <= startDateTime ? addDays(endDateTime, 1) : endDateTime;
         const durationHours = (normalizedEndDateTime.getTime() - startDateTime.getTime()) / (1000 * 60 * 60);
         if (durationHours < 4 || durationHours > 12) { setTimeEditError("Duration must be 4-12 hrs."); return; }
-
         const payload = {
           id: modal.shift.id,
           start: format(startDateTime, UPDATE_API_DATE_FORMAT),
@@ -387,8 +404,11 @@ export default function RosterPage() {
     const targetUrl = `${window.location.origin}${location.pathname}?state=${stateValue}`;
     window.open(targetUrl, "_blank");
   };
+  if (userRole === "admin" && selectedStates.length === 0) {
+    const visibleStates = userRole === 'contractor'
+      ? states_array.filter(s => s.value === contractorStateValue)
+      : states_array;
 
-  if (userRole !== "staff" && selectedStates.length === 0) {
     return (
       <div className="staffoo-page-container">
         <div className="staffoo-header-card">
@@ -397,25 +417,37 @@ export default function RosterPage() {
           <p style={{ textTransform: "none" }}>Select a region below to manage sites, rosters, and shift assignments.</p>
         </div>
         <div className="staffoo-grid-container">
-          {states_array.map((stateInfo) => (
-            <button
-              key={stateInfo.value}
-              type="button"
-              className={`staffoo-state-card ${stateInfo.featured ? 'is-featured' : ''}`}
-              onClick={() => openStateRosterInNewTab(stateInfo.value)}
-            >
-              {stateInfo.featured && (
-                <span className="featured-watermark">{stateInfo.value.toUpperCase()}</span>
-              )}
-              <div className="state-card-left">
-                <span className="state-name">{stateInfo.label}</span>
-                <span className="state-code">{stateInfo.value.toUpperCase()}</span>
-              </div>
-              <div className="state-card-right">
-                <i className="fa-solid fa-arrow-right"></i>
-              </div>
-            </button>
-          ))}
+          {visibleStates.length === 0 ? (
+            <div className="text-center py-5" style={{ gridColumn: '1 / -1' }}>
+              <i className="fa-solid fa-map-pin fa-2x text-muted mb-3"></i>
+              <h5 className="text-muted">No region available</h5>
+              <p className="text-muted small">Your state could not be matched to a roster region.</p>
+            </div>
+          ) : (
+            visibleStates.map((stateInfo) => {
+              const isFeatured = userRole === 'admin' && stateInfo.value === 'vic';
+
+              return (
+                <button
+                  key={stateInfo.value}
+                  type="button"
+                  className={`staffoo-state-card ${isFeatured ? 'is-featured' : ''}`}
+                  onClick={() => openStateRosterInNewTab(stateInfo.value)}
+                >
+                  {isFeatured && (
+                    <span className="featured-watermark">{stateInfo.value.toUpperCase()}</span>
+                  )}
+                  <div className="state-card-left">
+                    <span className="state-name">{stateInfo.label}</span>
+                    <span className="state-code">{stateInfo.value.toUpperCase()}</span>
+                  </div>
+                  <div className="state-card-right">
+                    <i className="fa-solid fa-arrow-right"></i>
+                  </div>
+                </button>
+              );
+            })
+          )}
         </div>
       </div>
     );
@@ -432,7 +464,6 @@ export default function RosterPage() {
           <button onClick={nextWeek} className="vr-icon-btn"><i className="fa fa-chevron-right"></i></button>
           <button onClick={goToThisWeek} className="vr-btn-today">Today</button>
         </div>
-
         <div className="vr-actions">
           <div className="vr-search">
             <i className="fa fa-search"></i>
@@ -464,10 +495,7 @@ export default function RosterPage() {
         </div>
       )}
 
-      {/* --- RESPONSIVE SCROLL WRAPPER FOR MOBILE --- */}
       <div className="vr-matrix-scroll-container">
-
-        {/* --- MATRIX HEADER --- */}
         <div className="vr-matrix-header">
           <div className="vr-col-site">Sites & Summary</div>
           {weekDays.map((day) => (
@@ -488,7 +516,6 @@ export default function RosterPage() {
           ))}
         </div>
 
-        {/* --- MATRIX BODY --- */}
         <div className="vr-matrix-body">
           {filteredSites.length === 0 ? (
             <div className="vr-no-data" style={{ padding: "40px", textAlign: "center", color: "#64748b", textTransform: "none" }}>
@@ -499,12 +526,10 @@ export default function RosterPage() {
               <div key={site.id} className="vr-matrix-row">
                 <div className="vr-col-site vr-site-info">
                   <div className="vr-site-name" style={{ lineHeight: 1.2 }}>{site.displayName}</div>
-
                   <div style={{ fontSize: "11px", color: "#64748b", margin: "4px 0", fontWeight: "600" }}>
                     <i className="fa-regular fa-building" style={{ marginRight: '4px' }}></i>
                     {site.clientName}
                   </div>
-
                   <div>
                     <span className="vr-site-hours">
                       <i className="fa fa-clock-o fas fa-clock" style={{ marginRight: '4px' }}></i>
@@ -521,9 +546,12 @@ export default function RosterPage() {
                       className={`vr-col-day vr-day-cell ${day.isToday ? 'is-today' : ''} ${day.isHoliday ? 'is-holiday-cell' : ''}`}
                     >
                       {dayShifts.length === 0 ? (
-                        <div className="vr-empty-add-btn" onClick={() => openModalAction(site, null, day.dateLabel, "add_shift", day.key)}>
-                          <i className="fa fa-plus"></i>
-                        </div>
+                        // Hide the empty‑cell add button for contractors
+                        userRole !== "contractor" && (
+                          <div className="vr-empty-add-btn" onClick={() => openModalAction(site, null, day.dateLabel, "add_shift", day.key)}>
+                            <i className="fa fa-plus"></i>
+                          </div>
+                        )
                       ) : (
                         <>
                           {dayShifts.map((shift) => {
@@ -545,13 +573,11 @@ export default function RosterPage() {
                                   <button title="Details" onClick={() => openModalAction(site, shift, day.dateLabel, "details")}>
                                     <i className="fa fa-info"></i>
                                   </button>
-                                  {/* Only show Time Edit if NO guard is assigned */}
                                   {userRole !== "staff" && !shift.assigned_to && (
                                     <button title="Time Edit" onClick={() => openModalAction(site, shift, day.dateLabel, "time")}>
                                       <i className="fa fa-edit fas fa-edit"></i>
                                     </button>
                                   )}
-                                  {/* Check based strictly on lack of assigned staff */}
                                   {(userRole === "contractor" || userRole === "admin") && !shift.assigned_to && (
                                     <button title="Assign" onClick={() => openModalAction(site, shift, day.dateLabel, "admin_assign")}>
                                       <i className="fa fa-user-plus"></i>
@@ -561,9 +587,12 @@ export default function RosterPage() {
                               </div>
                             );
                           })}
-                          <div className="vr-small-add-btn" onClick={() => openModalAction(site, null, day.dateLabel, "add_shift", day.key)}>
-                            <i className="fa fa-plus"></i> Add
-                          </div>
+                          {/* Hide the "Add" button for contractors */}
+                          {userRole !== "contractor" && (
+                            <div className="vr-small-add-btn" onClick={() => openModalAction(site, null, day.dateLabel, "add_shift", day.key)}>
+                              <i className="fa fa-plus"></i> Add
+                            </div>
+                          )}
                         </>
                       )}
                     </div>
@@ -574,7 +603,6 @@ export default function RosterPage() {
           )}
         </div>
 
-        {/* --- MATRIX FOOTER --- */}
         <div className="vr-matrix-footer">
           <div className="vr-col-site vr-total-label">
             Grand Total <span>{columnTotals.grandTotal.toFixed(1)}h</span>
@@ -585,14 +613,12 @@ export default function RosterPage() {
             </div>
           ))}
         </div>
-      </div> {/* End .vr-matrix-scroll-container */}
+      </div>
 
-      {/* Existing Modals */}
       {modal?.type === "activity" && <ActivityDashboardModal modal={modal} closeModal={closeModal} userRole={userRole} />}
       {modal?.type === "time" && <TimeEditModal modal={modal} closeModal={closeModal} editForm={editForm} setEditForm={setEditForm} timeEditError={timeEditError} clearTimeEditError={() => setTimeEditError("")} handleSave={handleSave} saveLoading={saveLoading} />}
       {modal?.type === "details" && <DetailsModal modal={modal} closeModal={closeModal} guardShiftsList={guardShiftsList} totalGuardHours={totalGuardHours} />}
 
-      {/* ADMIN ASSIGN MODAL – with React‑Select */}
       {modal?.type === "admin_assign" && (
         <div className="vr-modal-backdrop" onClick={closeModal}>
           <div className="vr-modal-container" onClick={(e) => e.stopPropagation()}>
@@ -638,7 +664,8 @@ export default function RosterPage() {
         </div>
       )}
 
-      {modal?.type === "add_shift" && (
+      {/* add_shift modal only shown if not contractor */}
+      {modal?.type === "add_shift" && userRole !== "contractor" && (
         <div className="embedded-job-backdrop" onClick={closeModal}>
           <div className="embedded-job-shell" onClick={(e) => e.stopPropagation()}>
             <AddJob

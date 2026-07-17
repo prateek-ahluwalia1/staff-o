@@ -44,6 +44,7 @@ const DOC_TYPES = [
   { value: "Driver License Back", label: "Driver License (Back)" },
   { value: "Security License", label: "Security License" },
   { value: "Working with Children Check", label: "Working with Children Check (WWCC)" },
+  { value: "Working With Children Check", label: "Working With Children Check (WWCC)" },
   { value: "Employment Application Form", label: "Employment Application Form" },
   { value: "TFN Declaration", label: "TFN Declaration" },
   { value: "Superannuation Form", label: "Superannuation Form" },

@@ -779,7 +779,7 @@ export default function MyJobApplications() {
                       <span>{app.location}</span>
                     </div>
 
-                    {app.isAcceptedByContractor && (
+                    {app.isAcceptedByContractor && userType === "admin" && (
                       <div className="mb-1">
                         <span className="contractor-badge">
                           <i className="fa-solid fa-building-shield"></i> Resource Partner
@@ -1040,7 +1040,7 @@ export default function MyJobApplications() {
                     {userType !== "staff" && <InfoRow icon="fa-user-shield" label="Assigned To" value={selectedApp.appliedVia} />}
                     <InfoRow icon="fa-id-badge" label="Job Type" value={selectedApp.rawShift.job_type || "N/A"} />
                     {userType === "admin" && <InfoRow icon="fa-money-bill" label="Job Amount" value={selectedApp.rawShift.job_amount ? `$${selectedApp.rawShift.job_amount}` : "N/A"} />}
-                    {selectedApp.rawShift.contractor && (
+                    {selectedApp.rawShift.contractor && userType === "admin" && (
                       <InfoRow
                         icon="fa-building-user"
                         label="Resource Partner"

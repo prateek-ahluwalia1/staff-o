@@ -921,24 +921,22 @@ export default function MyJobApplications() {
             </div>
 
             <div className="modal-body" style={{ padding: "24px", overflowY: "auto", flex: 1 }}>
-              {userType === "admin" && (
-                <div className="d-flex flex-wrap gap-2 mb-4">
-                  {[
-                    { icon: "fa-circle-info", label: "Status", value: selectedApp.status },
-                    { icon: "fa-hourglass-half", label: "Total Hours", value: selectedApp.rawShift.hours ?? "N/A" },
-                    { icon: "fa-calendar-plus", label: "Created", value: selectedApp.createdAt || "N/A" },
-                    { icon: "fa-money-bill", label: "Job Amount", value: selectedApp.rawShift.job_amount ? `$${selectedApp.rawShift.job_amount}` : "N/A" },
-                  ].map((stat) => (
-                    <div className="quick-stat-chip" key={stat.label}>
-                      <i className={`fa-solid ${stat.icon}`}></i>
-                      <div className="d-flex flex-column" style={{ minWidth: 0 }}>
-                        <span className="quick-stat-label">{stat.label}</span>
-                        <span className="quick-stat-value text-truncate d-block">{stat.value}</span>
-                      </div>
+              <div className="d-flex flex-wrap gap-2 mb-4">
+                {[
+                  { icon: "fa-circle-info", label: "Status", value: selectedApp.status },
+                  { icon: "fa-hourglass-half", label: "Total Hours", value: selectedApp.rawShift.hours ?? "N/A" },
+                  { icon: "fa-calendar-plus", label: "Created", value: selectedApp.createdAt || "N/A" },
+                  { icon: "fa-money-bill", label: "Job Amount", value: selectedApp.rawShift.job_amount ? `$${selectedApp.rawShift.job_amount}` : "N/A" },
+                ].map((stat) => (
+                  <div className="quick-stat-chip" key={stat.label}>
+                    <i className={`fa-solid ${stat.icon}`}></i>
+                    <div className="d-flex flex-column" style={{ minWidth: 0 }}>
+                      <span className="quick-stat-label">{stat.label}</span>
+                      <span className="quick-stat-value text-truncate d-block">{stat.value}</span>
                     </div>
-                  ))}
-                </div>
-              )}
+                  </div>
+                ))}
+              </div>
 
               <div className="row g-4 mb-4">
                 <div className="col-md-6">
@@ -992,9 +990,8 @@ export default function MyJobApplications() {
                   </p>
                 </div>
               )}
-
-              {userType === "admin" && (
-                <div className="row g-4">
+              <div className="row g-4">
+                {userType !== "customer" && (
                   <div className="col-md-6">
                     <div className="info-panel h-100">
                       <h5>
@@ -1008,28 +1005,28 @@ export default function MyJobApplications() {
                       <InfoRow icon="fa-phone" label="Phone" value={selectedApp.rawShift.customer?.phone || "N/A"} />
                     </div>
                   </div>
-                  <div className="col-md-6">
-                    <div className="info-panel h-100">
-                      <h5>
-                        <span className="info-panel-icon" style={{ background: "#dcfce7", color: "#16a34a" }}>
-                          <i className="fa-solid fa-shield-halved"></i>
-                        </span>
-                        Assignment Details
-                      </h5>
-                      <InfoRow icon="fa-user-shield" label="Assigned To" value={selectedApp.appliedVia} />
-                      <InfoRow icon="fa-id-badge" label="Job Type" value={selectedApp.rawShift.job_type || "N/A"} />
-                      <InfoRow icon="fa-money-bill" label="Job Amount" value={selectedApp.rawShift.job_amount ? `$${selectedApp.rawShift.job_amount}` : "N/A"} />
-                      {selectedApp.rawShift.contractor && (
-                        <InfoRow
-                          icon="fa-building-user"
-                          label="Resource Partner"
-                          value={selectedApp.rawShift.contractor.name || "N/A"}
-                        />
-                      )}
-                    </div>
+                )}
+                <div className="col-md-6">
+                  <div className="info-panel h-100">
+                    <h5>
+                      <span className="info-panel-icon" style={{ background: "#dcfce7", color: "#16a34a" }}>
+                        <i className="fa-solid fa-shield-halved"></i>
+                      </span>
+                      Assignment Details
+                    </h5>
+                    <InfoRow icon="fa-user-shield" label="Assigned To" value={selectedApp.appliedVia} />
+                    <InfoRow icon="fa-id-badge" label="Job Type" value={selectedApp.rawShift.job_type || "N/A"} />
+                    <InfoRow icon="fa-money-bill" label="Job Amount" value={selectedApp.rawShift.job_amount ? `$${selectedApp.rawShift.job_amount}` : "N/A"} />
+                    {selectedApp.rawShift.contractor && (
+                      <InfoRow
+                        icon="fa-building-user"
+                        label="Resource Partner"
+                        value={selectedApp.rawShift.contractor.name || "N/A"}
+                      />
+                    )}
                   </div>
                 </div>
-              )}
+              </div>
             </div>
 
             <div

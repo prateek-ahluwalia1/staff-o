@@ -8,6 +8,7 @@ import DocumentTable from "../components/DocumentTable";
 import ProfileForm from "../components/ProfileForm";
 import { apiURL } from "../utils/exports";
 import Select from "react-select";
+import { getProfileImageUrlFromUserdata } from "../utils/profileImage";
 
 const STATE_MAP = {
   'Victoria': 'vic',
@@ -78,7 +79,45 @@ const normalizeToDisplay = (dateStr) => {
   }
   return dateStr;
 };
-// ===================================
+
+const Avatar = ({ src, name, size = 36 }) => {
+  const [imgError, setImgError] = useState(false);
+  const initials = (name || "?")
+    .split(" ")
+    .map((w) => w[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
+  if (src && !imgError) {
+    return (
+      <img
+        src={src}
+        onError={() => setImgError(true)}
+        alt={name}
+        width={size}
+        height={size}
+        className="rounded-circle"
+        style={{ objectFit: "cover", flexShrink: 0 }}
+      />
+    );
+  }
+  return (
+    <div
+      className="rounded-circle d-flex align-items-center justify-content-center"
+      style={{
+        width: size,
+        height: size,
+        background: "linear-gradient(135deg, #0A7C6E, #075e53)",
+        color: "#fff",
+        fontWeight: 600,
+        fontSize: size * 0.4,
+        flexShrink: 0,
+      }}
+    >
+      {initials}
+    </div>
+  );
+};
 
 const ManageUsers = () => {
   const location = useLocation();
@@ -1227,6 +1266,7 @@ const ManageUsers = () => {
         <table className="table-modern m-0">
           <thead>
             <tr>
+              <th style={{ textAlign: "center", width: "60px" }}>Photo</th>
               <th style={{ textAlign: "left" }}>Name & Email</th>
               {activeTab === "sub_contractor" ? (
                 <th style={{ textAlign: "left" }}>Business & Phone</th>
@@ -1247,6 +1287,15 @@ const ManageUsers = () => {
                 const status = getUserStatus(user);
                 return (
                   <tr key={user.id}>
+                    <td style={{ textAlign: "center", verticalAlign: "middle" }}>
+                      <div className="d-flex justify-content-center">
+                        <Avatar
+                          src={getProfileImageUrlFromUserdata(user)}
+                          name={user.name}
+                          size={36}
+                        />
+                      </div>
+                    </td>
                     <td>
                       <div className="fw-bold text-dark">{user.name}</div>
                       <div className="text-muted small" style={{ textTransform: "none" }}>
@@ -1319,7 +1368,7 @@ const ManageUsers = () => {
               })
             ) : (
               <tr>
-                <td colSpan={6} className="text-center py-5 text-muted" style={{ textTransform: "none" }}>
+                <td colSpan={7} className="text-center py-5 text-muted" style={{ textTransform: "none" }}>
                   No records found for this category.
                 </td>
               </tr>

@@ -36,6 +36,52 @@ const normalizeToDisplay = (dateStr) => {
 };
 // ===================================
 
+// Helper: get initials from name
+const getInitials = (name) => {
+    if (!name) return "?";
+    return name
+        .split(" ")
+        .filter(Boolean)
+        .map((w) => w[0])
+        .join("")
+        .toUpperCase()
+        .slice(0, 2);
+};
+
+// Simple Avatar component (inline)
+const Avatar = ({ src, name, size = 40 }) => {
+    const [imgError, setImgError] = useState(false);
+    const initials = getInitials(name);
+    if (src && !imgError) {
+        return (
+            <img
+                src={src}
+                onError={() => setImgError(true)}
+                alt={name}
+                width={size}
+                height={size}
+                className="rounded-circle"
+                style={{ objectFit: "cover", flexShrink: 0 }}
+            />
+        );
+    }
+    return (
+        <div
+            className="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+            style={{
+                width: size,
+                height: size,
+                background: "linear-gradient(135deg, #0A7C6E, #075e53)",
+                color: "#fff",
+                fontWeight: 600,
+                fontSize: size * 0.4,
+            }}
+        >
+            {initials}
+        </div>
+    );
+};
+
 const DOC_TYPES = [
     { value: "Passport", label: "Passport" },
     { value: "Visa", label: "Visa" },
@@ -218,6 +264,9 @@ const StaffooStaff = () => {
         setEditingUser(null);
     };
 
+    // ... (rest of the existing methods: openDocumentModal, closeDocumentModal, handleDocNumberChange, etc.)
+    // They are all unchanged and omitted for brevity in the answer – they are the same as in the original file.
+
     const openDocumentModal = (doc) => {
         setSelectedDoc(doc);
         if (doc) {
@@ -272,14 +321,12 @@ const StaffooStaff = () => {
 
     const handleDocFormChange = async (e) => {
         const { name, value, type, checked, files } = e.target;
-
         if (
             name === "document_expiry" &&
             (docForm.document_name === "Security License" || docForm.document_name === "Visa")
         ) {
             return;
         }
-
         if (type === "checkbox") {
             setDocForm((prev) => ({ ...prev, [name]: checked }));
         } else if (type === "file") {
@@ -316,19 +363,16 @@ const StaffooStaff = () => {
             toast.error("Please select a document type.");
             return;
         }
-
         if (docForm.document_name === "Security License") {
             if (!docForm.document_no || docForm.document_no.trim() === "") {
                 toast.error("Please enter a document number first.");
                 return;
             }
-
             const staffState = (editingUser?.state || editingUser?.staff?.state || formData?.state || "").trim();
             if (!staffState) {
                 toast.error("Please add your location first.");
                 return;
             }
-
             setVerifyingDoc(true);
             try {
                 const res = await submitSecurityLicense(
@@ -359,13 +403,11 @@ const StaffooStaff = () => {
             }
             return;
         }
-
         if (docForm.document_name === "Visa") {
             if (!passportDoc) {
                 toast.error("First add the passport document first");
                 return;
             }
-
             const user = editingUser;
             const staff = user?.staff || {};
             const fullName = (user?.name || "").trim();
@@ -376,7 +418,6 @@ const StaffooStaff = () => {
                 givenName = nameParts.slice(0, -1).join(" ");
                 familyName = nameParts[nameParts.length - 1];
             }
-
             const rawDob = staff?.date_of_birth || user?.date_of_birth || formData.date_of_birth || "";
             if (!rawDob) {
                 toast.error("Date of birth is missing. Please update personal information first.");
@@ -388,7 +429,6 @@ const StaffooStaff = () => {
                 return;
             }
             const dobISO = `${dobParts[2]}-${dobParts[1]}-${dobParts[0]}`;
-
             const originCountry = staff?.origin_country || user?.origin_country || formData.origin_country || "";
             if (!originCountry) {
                 toast.error("Please save your country of origin in your profile before verifying your visa.");
@@ -396,7 +436,6 @@ const StaffooStaff = () => {
             }
             const countryCode = originCountry.toUpperCase().slice(0, 3);
             const passportNumber = passportDoc.document_no.toUpperCase();
-
             const payload = {
                 passport: passportNumber,
                 country: countryCode,
@@ -404,7 +443,6 @@ const StaffooStaff = () => {
                 given_name: givenName,
                 dob: dobISO,
             };
-
             setVerifyingDoc(true);
             try {
                 const res = await submit("api/admin/visa-expiry-check", payload, { method: "POST" });
@@ -427,7 +465,6 @@ const StaffooStaff = () => {
             }
             return;
         }
-
         toast.info(`Verification is not supported for ${docForm.document_name}. You can manually set the expiry date.`);
     };
 
@@ -437,7 +474,6 @@ const StaffooStaff = () => {
             toast.error("Please save the profile first before uploading documents.");
             return;
         }
-
         const payload = {
             user_id: editingUser.id,
             no: docForm.no,
@@ -448,16 +484,13 @@ const StaffooStaff = () => {
             document_name: docForm.document_name,
             document_type: docForm.document_name,
         };
-
         if (selectedDoc?.id) {
             payload.id = selectedDoc.id;
         }
-
         const url = selectedDoc ? "api/guard-update-documents" : "api/guard-add-documents";
         const res = await submit(url, payload, { method: "POST" });
         if (res.success) {
             toast.success("Document saved successfully!");
-
             const savedDoc = res.data?.document || res.data || {};
             setEditingUser((prev) => {
                 const currentDocs = prev?.documents || [];
@@ -486,7 +519,6 @@ const StaffooStaff = () => {
                     return { ...prev, documents: [...currentDocs, newDoc] };
                 }
             });
-
             closeDocumentModal();
             refetch();
         } else {
@@ -499,25 +531,20 @@ const StaffooStaff = () => {
 
     useEffect(() => {
         if (!isModalOpen || activeModalTab !== "personal") return;
-
         let checkGoogleMaps;
         const initAutocomplete = () => {
             const addressInput = document.getElementById("address");
             if (!addressInput || !window.google?.maps?.places) return;
             if (addressInput.getAttribute("data-gmaps-initialized")) return;
-
             const autocomplete = new window.google.maps.places.Autocomplete(addressInput, {
                 fields: ["name", "address_components", "geometry", "formatted_address"],
                 componentRestrictions: { country: "au" },
             });
-
             addressInput.setAttribute("data-gmaps-initialized", "true");
             autocompleteRef.current = autocomplete;
-
             autocompleteListenerRef.current = autocomplete.addListener("place_changed", () => {
                 const place = autocomplete.getPlace();
                 if (!place.geometry) return;
-
                 let newCity = "",
                     newState = "",
                     newCountry = "";
@@ -527,7 +554,6 @@ const StaffooStaff = () => {
                         newState = component.short_name.toLowerCase();
                     if (component.types.includes("country")) newCountry = component.long_name;
                 });
-
                 setFormData((prev) => ({
                     ...prev,
                     address: place.formatted_address,
@@ -538,16 +564,13 @@ const StaffooStaff = () => {
                 }));
             });
         };
-
         checkGoogleMaps = setInterval(() => {
             if (window.google?.maps?.places) {
                 clearInterval(checkGoogleMaps);
                 initAutocomplete();
             }
         }, 500);
-
         initAutocomplete();
-
         return () => {
             clearInterval(checkGoogleMaps);
             if (autocompleteListenerRef.current && window.google) {
@@ -562,7 +585,6 @@ const StaffooStaff = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-
         if (formData.phone && formData.phone.trim() !== "") {
             const phoneRegex = /^(?:\+?61|0)[2-478](?:[\s]*\d){8}$/;
             if (!phoneRegex.test(formData.phone)) {
@@ -570,26 +592,21 @@ const StaffooStaff = () => {
                 return;
             }
         }
-
         if (!editingUser && !formData.coordinates) {
             toast.error("Please select an address from Google suggestions to capture coordinates.");
             return;
         }
-
         if (formData.date_of_birth && !/^\d{2}\/\d{2}\/\d{4}$/.test(formData.date_of_birth)) {
             toast.error("Please enter the date of birth in DD/MM/YYYY format.");
             return;
         }
-
         const method = editingUser ? "PUT" : "POST";
         const url = editingUser
             ? `api/admin/update-staff/${editingUser.id}`
             : `api/admin/create-staff`;
-
         const payload = { ...formData };
         if (editingUser && !payload.password) delete payload.password;
         payload.user_id = 1;
-
         try {
             const res = await submit(url, payload, { method });
             if (res.success) {
@@ -903,11 +920,12 @@ const StaffooStaff = () => {
                 </div>
             )}
 
-            {/* Table card */}
+            {/* Table card – updated with photo column */}
             <div className="content-card table-responsive" style={{ overflowX: "auto" }}>
                 <table className="table-modern m-0">
                     <thead>
                         <tr>
+                            <th style={{ textAlign: "center", width: "60px" }}>Photo</th>
                             <th style={{ textAlign: "left" }}>Name & Email</th>
                             <th style={{ textAlign: "left" }}>Phone</th>
                             <th style={{ textAlign: "left" }}>Status</th>
@@ -918,52 +936,77 @@ const StaffooStaff = () => {
                     </thead>
                     <tbody>
                         {staff.length > 0 ? (
-                            staff.map((user) => (
-                                <tr key={user.id}>
-                                    <td>
-                                        <div className="fw-bold text-dark">{user.name}</div>
-                                        <div className="text-muted small" style={{ textTransform: "none" }}>
-                                            {user.email}
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <div className="text-dark small">{user.staff?.phone || "N/A"}</div>
-                                    </td>
-                                    <td>
-                                        <span className={getStatusBadgeClass(user?.is_active)}>
-                                            {user?.is_active ? "Active" : "Inactive"}
-                                        </span>
-                                    </td>
-                                    <td>
-                                        {user.city || "—"}{" "}
-                                        <span className="text-muted small">({user.country || "N/A"})</span>
-                                    </td>
-                                    <td>
-                                        <span className="small">
-                                            {normalizeToDisplay(user.created_at) || "—"}
-                                        </span>
-                                    </td>
-                                    <td style={{ textAlign: "center" }}>
-                                        <div className="d-flex gap-2 justify-content-center">
-                                            <button
-                                                className="btn btn-outline-premium btn-sm"
-                                                onClick={() => openModal(user)}
-                                            >
-                                                <i className="fa-solid fa-pen-to-square"></i>
-                                            </button>
-                                            <button
-                                                className="btn btn-outline-premium btn-sm"
-                                                onClick={() => openDeleteModal(user)}
-                                            >
-                                                <i className="fa-solid fa-trash text-danger"></i>
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            ))
+                            staff.map((user) => {
+                                // Determine profile image URL
+                                const profileImage = user?.staff?.profile_image || null;
+                                const imageUrl = profileImage
+                                    ? profileImage.startsWith("http")
+                                        ? profileImage
+                                        : `${apiURL}storage/${profileImage}`
+                                    : null;
+
+                                return (
+                                    <tr key={user.id}>
+                                        <td style={{ textAlign: "center", verticalAlign: "middle" }}>
+                                            <div className="d-flex justify-content-center">
+                                                <Avatar
+                                                    src={imageUrl}
+                                                    name={user.name}
+                                                    size={40}
+                                                />
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div className="fw-bold text-dark">{user.name}</div>
+                                            <div className="text-muted small" style={{ textTransform: "none" }}>
+                                                {user.email}
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div className="text-dark small">{user.staff?.phone || "N/A"}</div>
+                                        </td>
+                                        <td>
+                                            <span className={getStatusBadgeClass(user?.is_active)}>
+                                                {user?.is_active ? "Active" : "Inactive"}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            {user.city || "—"}{" "}
+                                            <span className="text-muted small">({user.country || "N/A"})</span>
+                                        </td>
+                                        <td>
+                                            <span className="small">
+                                                {user.created_at
+                                                    ? new Date(user.created_at).toLocaleDateString("en-AU", {
+                                                        day: "2-digit",
+                                                        month: "2-digit",
+                                                        year: "numeric",
+                                                    })
+                                                    : "—"}
+                                            </span>
+                                        </td>
+                                        <td style={{ textAlign: "center" }}>
+                                            <div className="d-flex gap-2 justify-content-center">
+                                                <button
+                                                    className="btn btn-outline-premium btn-sm"
+                                                    onClick={() => openModal(user)}
+                                                >
+                                                    <i className="fa-solid fa-pen-to-square"></i>
+                                                </button>
+                                                <button
+                                                    className="btn btn-outline-premium btn-sm"
+                                                    onClick={() => openDeleteModal(user)}
+                                                >
+                                                    <i className="fa-solid fa-trash text-danger"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                );
+                            })
                         ) : (
                             <tr>
-                                <td colSpan={6} className="text-center py-5 text-muted" style={{ textTransform: "none" }}>
+                                <td colSpan={7} className="text-center py-5 text-muted" style={{ textTransform: "none" }}>
                                     No staff records found.
                                 </td>
                             </tr>
@@ -997,7 +1040,7 @@ const StaffooStaff = () => {
                 </div>
             </div>
 
-            {/* Full screen modal (unchanged functionality) */}
+            {/* Full screen modal (unchanged) */}
             {isModalOpen && (
                 <div className="full-screen-modal" style={{
                     position: "fixed", top: 0, left: 0, width: "100vw", height: "100vh",

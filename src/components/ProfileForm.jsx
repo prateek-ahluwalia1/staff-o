@@ -505,7 +505,7 @@ export default function ProfileForm({
                 {!hideFields.includes("origin_country") && (
                   <div className="col-md-6">
                     <label htmlFor="origin_country" className="form-label fw-bold text-dark small mb-1">
-                      Country of Origin <span className="text-danger">*</span>
+                      Country of Birth <span className="text-danger">*</span>
                     </label>
                     <Select
                       inputId="origin_country"

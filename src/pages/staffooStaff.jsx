@@ -432,7 +432,7 @@ const StaffooStaff = () => {
             const dobISO = `${dobParts[2]}-${dobParts[1]}-${dobParts[0]}`;
             const originCountry = staff?.origin_country || user?.origin_country || formData.origin_country || "";
             if (!originCountry) {
-                toast.error("Please save your country of origin in your profile before verifying your visa.");
+                toast.error("Please save your country of birth in your profile before verifying your visa.");
                 return;
             }
             const countryCode = originCountry.toUpperCase().slice(0, 3);

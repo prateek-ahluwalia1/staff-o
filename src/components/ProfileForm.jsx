@@ -16,6 +16,8 @@ export default function ProfileForm({
   footer = null,
   isEdit = false,
   showPhoneOtp = false,
+  hideFields = [],            // Array of field IDs to hide
+  profileImageUrl = null,     // NEW: URL of the profile image to display
 }) {
   const parseDisplayDate = (str) => {
     if (!str || typeof str !== "string") return null;
@@ -69,7 +71,7 @@ export default function ProfileForm({
   return (
     <form id="profile-form" onSubmit={onSubmit} className="w-100">
       <div className="card border shadow-sm rounded-4 overflow-hidden bg-white">
-        {/* Card header – premium gradient */}
+        {/* Card header – now shows profile image if available */}
         <div
           className="card-header border-bottom px-4 px-md-5 py-4"
           style={{
@@ -77,16 +79,26 @@ export default function ProfileForm({
           }}
         >
           <div className="d-flex align-items-center gap-3">
+            {/* Avatar container – image or icon */}
             <div
               className="d-flex align-items-center justify-content-center rounded-3"
               style={{
-                width: "40px",
-                height: "40px",
-                background: "rgba(10,124,110,0.1)",
+                width: "60px",
+                height: "60px",
+                background: profileImageUrl ? "transparent" : "rgba(10,124,110,0.1)",
                 color: "#0A7C6E",
+                overflow: "hidden",
               }}
             >
-              <i className="fa-solid fa-user-pen fs-5"></i>
+              {profileImageUrl ? (
+                <img
+                  src={profileImageUrl}
+                  alt="Profile"
+                  style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                />
+              ) : (
+                <i className="fa-solid fa-user-pen fs-5"></i>
+              )}
             </div>
             <div>
               <h3 className="fw-bold mb-1" style={{ letterSpacing: "-0.02em" }}>
@@ -99,7 +111,7 @@ export default function ProfileForm({
           </div>
         </div>
 
-        {/* Form Body */}
+        {/* Form Body – unchanged from the version with hideFields support */}
         <div className="card-body px-4 px-md-5 py-4 py-md-5">
           <div className="row g-4">
             {/* Full Name */}
@@ -236,7 +248,7 @@ export default function ProfileForm({
               </div>
             )}
 
-            {/* Contractor Specific Fields */}
+            {/* Contractor Specific Fields – unchanged */}
             {userType === "contractor" && (
               <>
                 <div className="col-md-6">
@@ -332,38 +344,41 @@ export default function ProfileForm({
               </>
             )}
 
-            {/* Staff Specific Fields */}
+            {/* Staff Specific Fields – conditionally hidden */}
             {userType === "staff" && (
               <>
-                <div className="col-md-6">
-                  <label htmlFor="staff_document_type" className="form-label fw-bold text-dark small mb-1">
-                    Residential Status <span className="text-danger">*</span>
-                  </label>
-                  <select
-                    required
-                    className="form-select border bg-light shadow-none"
-                    id="staff_document_type"
-                    value={selectValue}
-                    onChange={(e) => {
-                      if (e.target.value === "other") {
-                        onChange({ target: { id: "staff_document_type", value: "Other (Please specify)" } });
-                      } else {
-                        onChange(e);
-                      }
-                    }}
-                    style={{ borderRadius: "0.375rem" }}
-                  >
-                    <option value="" disabled>Select Status</option>
-                    <option value="student_visa">Student Visa</option>
-                    <option value="bridging_visa">Bridging Visa</option>
-                    <option value="citizen">Citizen</option>
-                    <option value="permanent_residence">Permanent Residence</option>
-                    <option value="visa_485">Visa Subclass 485</option>
-                    <option value="other">Other</option>
-                  </select>
-                </div>
+                {/* Residential Status */}
+                {!hideFields.includes("staff_document_type") && (
+                  <div className="col-md-6">
+                    <label htmlFor="staff_document_type" className="form-label fw-bold text-dark small mb-1">
+                      Residential Status <span className="text-danger">*</span>
+                    </label>
+                    <select
+                      required
+                      className="form-select border bg-light shadow-none"
+                      id="staff_document_type"
+                      value={selectValue}
+                      onChange={(e) => {
+                        if (e.target.value === "other") {
+                          onChange({ target: { id: "staff_document_type", value: "Other (Please specify)" } });
+                        } else {
+                          onChange(e);
+                        }
+                      }}
+                      style={{ borderRadius: "0.375rem" }}
+                    >
+                      <option value="" disabled>Select Status</option>
+                      <option value="student_visa">Student Visa</option>
+                      <option value="bridging_visa">Bridging Visa</option>
+                      <option value="citizen">Citizen</option>
+                      <option value="permanent_residence">Permanent Residence</option>
+                      <option value="visa_485">Visa Subclass 485</option>
+                      <option value="other">Other</option>
+                    </select>
+                  </div>
+                )}
 
-                {showCustomStatus && (
+                {showCustomStatus && !hideFields.includes("staff_document_type") && (
                   <div className="col-md-6">
                     <label htmlFor="custom_staff_document" className="form-label fw-bold text-dark small mb-1">
                       Specify Status <span className="text-danger">*</span>
@@ -405,49 +420,51 @@ export default function ProfileForm({
                 </div>
 
                 {/* Date of Birth */}
-                <div className="col-md-6">
-                  <label htmlFor="date_of_birth" className="form-label fw-bold text-dark small mb-1">
-                    Date of Birth <span className="text-danger">*</span>
-                  </label>
-                  <div className="input-group">
-                    <span className="input-group-text bg-light border text-muted">
-                      <i className="fa-solid fa-cake-candles"></i>
-                    </span>
-                    <DatePicker
-                      id="date_of_birth"
-                      selected={parseDisplayDate(formData.date_of_birth)}
-                      onChange={(date) => {
-                        if (date) {
-                          const day = String(date.getDate()).padStart(2, "0");
-                          const month = String(date.getMonth() + 1).padStart(2, "0");
-                          const year = date.getFullYear();
-                          onChange({
-                            target: {
-                              id: "date_of_birth",
-                              name: "date_of_birth",
-                              value: `${day}/${month}/${year}`,
-                            },
-                          });
-                        } else {
-                          onChange({ target: { id: "date_of_birth", value: "" } });
-                        }
-                      }}
-                      dateFormat="dd/MM/yyyy"
-                      placeholderText="DD/MM/YYYY"
-                      className="form-control border bg-light ps-2 shadow-none"
-                      wrapperClassName="flex-grow-1"
-                      showYearDropdown
-                      scrollableYearDropdown
-                      yearDropdownItemNumber={100}
-                      maxDate={new Date()}
-                      required
-                      autoComplete="off"
-                      style={{ borderRadius: "0 0.375rem 0.375rem 0" }}
-                    />
+                {!hideFields.includes("date_of_birth") && (
+                  <div className="col-md-6">
+                    <label htmlFor="date_of_birth" className="form-label fw-bold text-dark small mb-1">
+                      Date of Birth <span className="text-danger">*</span>
+                    </label>
+                    <div className="input-group">
+                      <span className="input-group-text bg-light border text-muted">
+                        <i className="fa-solid fa-cake-candles"></i>
+                      </span>
+                      <DatePicker
+                        id="date_of_birth"
+                        selected={parseDisplayDate(formData.date_of_birth)}
+                        onChange={(date) => {
+                          if (date) {
+                            const day = String(date.getDate()).padStart(2, "0");
+                            const month = String(date.getMonth() + 1).padStart(2, "0");
+                            const year = date.getFullYear();
+                            onChange({
+                              target: {
+                                id: "date_of_birth",
+                                name: "date_of_birth",
+                                value: `${day}/${month}/${year}`,
+                              },
+                            });
+                          } else {
+                            onChange({ target: { id: "date_of_birth", value: "" } });
+                          }
+                        }}
+                        dateFormat="dd/MM/yyyy"
+                        placeholderText="DD/MM/YYYY"
+                        className="form-control border bg-light ps-2 shadow-none"
+                        wrapperClassName="flex-grow-1"
+                        showYearDropdown
+                        scrollableYearDropdown
+                        yearDropdownItemNumber={100}
+                        maxDate={new Date()}
+                        required
+                        autoComplete="off"
+                        style={{ borderRadius: "0 0.375rem 0.375rem 0" }}
+                      />
+                    </div>
                   </div>
-                </div>
+                )}
 
-                {/* Gender */}
+                {/* Gender – always visible */}
                 <div className="col-md-6">
                   <label className="form-label fw-bold text-dark small mb-1 d-block">Gender</label>
                   <div className="d-flex flex-wrap gap-2">
@@ -485,80 +502,82 @@ export default function ProfileForm({
                 </div>
 
                 {/* Country of Origin */}
-                <div className="col-md-6">
-                  <label htmlFor="origin_country" className="form-label fw-bold text-dark small mb-1">
-                    Country of Origin <span className="text-danger">*</span>
-                  </label>
-                  <Select
-                    inputId="origin_country"
-                    options={countryOptions}
-                    value={selectedCountry}
-                    required
-                    onChange={(selectedOption) => {
-                      onChange({
-                        target: {
-                          id: "origin_country",
-                          value: selectedOption ? selectedOption.value : "",
-                        },
-                      });
-                    }}
-                    placeholder="Search country..."
-                    isClearable
-                    isSearchable
-                    styles={{
-                      control: (base, state) => ({
-                        ...base,
-                        minHeight: "42px",
-                        backgroundColor: "#f8f9fa",
-                        borderColor: state.isFocused ? "#0A7C6E" : "transparent",
-                        boxShadow: state.isFocused
-                          ? "0 0 0 2px rgba(10,124,110,0.25)"
-                          : "none",
-                        borderRadius: "0.375rem",
-                        "&:hover": {
-                          borderColor: "#0A7C6E",
-                        },
-                      }),
-                      placeholder: (base) => ({
-                        ...base,
-                        color: "#6c757d",
-                      }),
-                      singleValue: (base) => ({
-                        ...base,
-                        color: "#212529",
-                      }),
-                      menu: (base) => ({
-                        ...base,
-                        borderRadius: "8px",
-                        overflow: "hidden",
-                      }),
-                      option: (base, state) => ({
-                        ...base,
-                        backgroundColor: state.isSelected
-                          ? "#0A7C6E"
-                          : state.isFocused
-                            ? "rgba(10,124,110,0.12)"
-                            : "#fff",
-                        color: state.isSelected ? "#fff" : "#212529",
-                        cursor: "pointer",
-                        ":active": {
-                          backgroundColor: "#0A7C6E",
-                          color: "#fff",
-                        },
-                      }),
-                      dropdownIndicator: (base, state) => ({
-                        ...base,
-                        color: state.isFocused ? "#0A7C6E" : "#6c757d",
-                        "&:hover": { color: "#0A7C6E" },
-                      }),
-                      clearIndicator: (base) => ({
-                        ...base,
-                        color: "#6c757d",
-                        "&:hover": { color: "#0A7C6E" },
-                      }),
-                    }}
-                  />
-                </div>
+                {!hideFields.includes("origin_country") && (
+                  <div className="col-md-6">
+                    <label htmlFor="origin_country" className="form-label fw-bold text-dark small mb-1">
+                      Country of Origin <span className="text-danger">*</span>
+                    </label>
+                    <Select
+                      inputId="origin_country"
+                      options={countryOptions}
+                      value={selectedCountry}
+                      required
+                      onChange={(selectedOption) => {
+                        onChange({
+                          target: {
+                            id: "origin_country",
+                            value: selectedOption ? selectedOption.value : "",
+                          },
+                        });
+                      }}
+                      placeholder="Search country..."
+                      isClearable
+                      isSearchable
+                      styles={{
+                        control: (base, state) => ({
+                          ...base,
+                          minHeight: "42px",
+                          backgroundColor: "#f8f9fa",
+                          borderColor: state.isFocused ? "#0A7C6E" : "transparent",
+                          boxShadow: state.isFocused
+                            ? "0 0 0 2px rgba(10,124,110,0.25)"
+                            : "none",
+                          borderRadius: "0.375rem",
+                          "&:hover": {
+                            borderColor: "#0A7C6E",
+                          },
+                        }),
+                        placeholder: (base) => ({
+                          ...base,
+                          color: "#6c757d",
+                        }),
+                        singleValue: (base) => ({
+                          ...base,
+                          color: "#212529",
+                        }),
+                        menu: (base) => ({
+                          ...base,
+                          borderRadius: "8px",
+                          overflow: "hidden",
+                        }),
+                        option: (base, state) => ({
+                          ...base,
+                          backgroundColor: state.isSelected
+                            ? "#0A7C6E"
+                            : state.isFocused
+                              ? "rgba(10,124,110,0.12)"
+                              : "#fff",
+                          color: state.isSelected ? "#fff" : "#212529",
+                          cursor: "pointer",
+                          ":active": {
+                            backgroundColor: "#0A7C6E",
+                            color: "#fff",
+                          },
+                        }),
+                        dropdownIndicator: (base, state) => ({
+                          ...base,
+                          color: state.isFocused ? "#0A7C6E" : "#6c757d",
+                          "&:hover": { color: "#0A7C6E" },
+                        }),
+                        clearIndicator: (base) => ({
+                          ...base,
+                          color: "#6c757d",
+                          "&:hover": { color: "#0A7C6E" },
+                        }),
+                      }}
+                    />
+                  </div>
+                )}
               </>
             )}
 

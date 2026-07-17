@@ -7,6 +7,7 @@ import StaffOnboardingForms from "../components/StaffOnboardingForms";
 import ProfileForm from "../components/ProfileForm";
 import { toast } from "react-toastify";
 import { apiURL } from "../utils/exports";
+import { getProfileImageUrlFromUserdata } from "../utils/profileImage"
 
 // ========== DATE HELPERS ==========
 const isoToDisplay = (val) => {
@@ -1097,6 +1098,7 @@ const StaffooStaff = () => {
 
                             {activeModalTab === "personal" ? (
                                 <ProfileForm
+                                    profileImageUrl={getProfileImageUrlFromUserdata(editingUser)}
                                     formData={{
                                         name: formData.name,
                                         email: formData.email,

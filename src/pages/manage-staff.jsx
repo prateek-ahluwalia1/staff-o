@@ -7,6 +7,7 @@ import ProfileForm from "../components/ProfileForm";
 import { useSelector } from "react-redux";
 import { toast } from "react-toastify";
 import { apiURL } from "../utils/exports";
+import { getProfileImageUrlFromUserdata } from "../utils/profileImage";
 
 // ========== DATE HELPERS ==========
 const isoToDisplay = (val) => {
@@ -56,6 +57,44 @@ const DOC_TYPES = [
   { value: "Birth Certificate", label: "Birth Certificate" },
   { value: "White Card", label: "White Card" },
 ];
+
+const Avatar = ({ src, name, size = 36 }) => {
+  const [imgError, setImgError] = useState(false);
+  const initials = (name || "?")
+    .split(" ")
+    .map((w) => w[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
+  if (src && !imgError) {
+    return (
+      <img
+        src={src}
+        onError={() => setImgError(true)}
+        alt={name}
+        width={size}
+        height={size}
+        className="rounded-circle"
+        style={{ objectFit: "cover", flexShrink: 0 }}
+      />
+    );
+  }
+  return (
+    <div
+      className="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+      style={{
+        width: size,
+        height: size,
+        background: "linear-gradient(135deg, #0A7C6E, #075e53)",
+        color: "#fff",
+        fontWeight: 600,
+        fontSize: size * 0.4,
+      }}
+    >
+      {initials}
+    </div>
+  );
+};
 
 const ManageStaff = () => {
   const { userdata } = useSelector((state) => state.auth);
@@ -894,6 +933,7 @@ const ManageStaff = () => {
         <table className="table-modern m-0">
           <thead>
             <tr>
+              <th style={{ textAlign: "center", width: "60px" }}>Photo</th>
               <th style={{ textAlign: "left" }}>Name & Email</th>
               <th style={{ textAlign: "left" }}>Phone</th>
               <th style={{ textAlign: "left" }}>Location</th>
@@ -906,6 +946,16 @@ const ManageStaff = () => {
             {staff.length > 0 ? (
               staff.map((user) => (
                 <tr key={user.id}>
+                  <td style={{ textAlign: "center", verticalAlign: "middle" }}>
+                    <div className="d-flex justify-content-center">
+                      <Avatar
+                        src={getProfileImageUrlFromUserdata(user)}
+                        name={user.name}
+                        size={36}
+                      />
+                    </div>
+                  </td>
+
                   <td>
                     <div className="fw-bold text-dark">{user.name}</div>
                     <div className="text-muted small" style={{ textTransform: "none" }}>
@@ -949,7 +999,7 @@ const ManageStaff = () => {
               ))
             ) : (
               <tr>
-                <td colSpan={6} className="text-center py-5 text-muted" style={{ textTransform: "none" }}>
+                <td colSpan={7} className="text-center py-5 text-muted" style={{ textTransform: "none" }}>
                   No staff records found.
                 </td>
               </tr>
@@ -1030,6 +1080,8 @@ const ManageStaff = () => {
 
               {activeModalTab === "personal" ? (
                 <ProfileForm
+                  hideFields={["staff_document_type", "date_of_birth", "origin_country"]}
+                  profileImageUrl={getProfileImageUrlFromUserdata(editingUser)}
                   formData={{
                     name: formData.name,
                     email: formData.email,

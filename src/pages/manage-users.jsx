@@ -1502,6 +1502,7 @@ const ManageUsers = () => {
 
               {activeModalTab === "personal" ? (
                 <ProfileForm
+                  profileImageUrl={getProfileImageUrlFromUserdata(editingUser)}
                   formData={{
                     name: formData.name,
                     email: formData.email,

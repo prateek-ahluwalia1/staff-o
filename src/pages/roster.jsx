@@ -58,7 +58,6 @@ const selectStyles = {
   placeholder: (base) => ({ ...base, color: "#94a3b8" }),
 };
 
-// --- Holiday Parsing Helpers (unchanged) ---
 const parseHolidayDate = (value) => {
   if (!value) return null;
   if (/^\d{8}$/.test(value)) {
@@ -123,12 +122,10 @@ export default function RosterPage() {
   const userId = userdata?.data?.id || userdata?.id;
   const userRole = userdata?.data?.user_type || userdata?.user_type;
 
-  // ----- Contractor state mapping -----
   const contractorStateValue = useMemo(() => {
     if (userRole !== 'contractor') return null;
     const stateName = userdata?.data?.state || userdata?.state;
     if (!stateName) return null;
-    // Normalize: map 'Victoria' -> 'vic', 'New South Wales' -> 'nsw', etc.
     const stateMap = {
       'Victoria': 'vic',
       'New South Wales': 'nsw',
@@ -177,7 +174,6 @@ export default function RosterPage() {
 
   const fetchCustomerSites = useCallback(() => {
     if (!userId) return;
-    // For contractor, use their own state; for admin/staff, use selected or all
     const effectiveStates = selectedStates.length > 0
       ? selectedStates
       : (userRole === 'contractor' ? [contractorStateValue] : states_array.map(s => s.value));
@@ -325,7 +321,6 @@ export default function RosterPage() {
   const handleRefresh = () => fetchCustomerSites();
 
   const openModalAction = (site, shift, dateStr, modalType, dateKey = null) => {
-    // Contractor cannot add shifts
     if (modalType === "add_shift" && userRole !== "admin") {
       return;
     }
@@ -404,6 +399,7 @@ export default function RosterPage() {
     const targetUrl = `${window.location.origin}${location.pathname}?state=${stateValue}`;
     window.open(targetUrl, "_blank");
   };
+
   if (userRole === "admin" && selectedStates.length === 0) {
     const visibleStates = userRole === 'contractor'
       ? states_array.filter(s => s.value === contractorStateValue)
@@ -545,23 +541,46 @@ export default function RosterPage() {
                       key={day.key}
                       className={`vr-col-day vr-day-cell ${day.isToday ? 'is-today' : ''} ${day.isHoliday ? 'is-holiday-cell' : ''}`}
                     >
+                      {/* Mobile Day Header (Only visible on mobile via CSS) */}
+                      <div className="mobile-day-header">
+                        <span className="mdh-date">
+                          {/* Fixed universally supported Calendar icon */}
+                          <i className="fa fa-calendar fas fa-calendar-alt" style={{ marginRight: '6px' }}></i>
+                          {day.dateLabel}
+                        </span>
+                        {day.isHoliday && (
+                          <span className="mdh-holiday">
+                            <i className="fa-solid fa-star"></i> {day.holidayName || 'Holiday'}
+                          </span>
+                        )}
+                      </div>
+
                       {dayShifts.length === 0 ? (
-                        // Hide the empty‑cell add button for contractors
                         userRole !== "contractor" && (
                           <div className="vr-empty-add-btn" onClick={() => openModalAction(site, null, day.dateLabel, "add_shift", day.key)}>
                             <i className="fa fa-plus"></i>
+                            <span className="mobile-only-text">Add Shift</span>
                           </div>
                         )
                       ) : (
-                        <>
+                        <div className="vr-shift-container">
                           {dayShifts.map((shift) => {
                             const status = shift.job_status ? shift.job_status.replace('_', '-') : 'pending';
                             const hasNote = Boolean(extractOperationNoteText(shift));
+                            const isAccepted = Boolean(shift.accepted_by); // Check if contractor accepted
+
                             return (
                               <div key={shift.id} className={`vr-shift-card bg-${status}`}>
                                 {hasNote && <div className="vr-note-dot"></div>}
                                 <div className="vr-shift-time">
                                   {format(shift.startDate, "HH:mm")} - {format(shift.endDate, "HH:mm")}
+
+                                  {/* Contractor Accepted Indicator */}
+                                  {isAccepted && (
+                                    <span className="vr-accepted-icon" title="Accepted by Contractor">
+                                      <i className="fa fa-handshake-o fas fa-handshake"></i>
+                                    </span>
+                                  )}
                                 </div>
                                 <div className="vr-shift-guard">
                                   {shift?.guards?.name || "Unassigned"}
@@ -587,13 +606,12 @@ export default function RosterPage() {
                               </div>
                             );
                           })}
-                          {/* Hide the "Add" button for contractors */}
                           {userRole !== "contractor" && (
                             <div className="vr-small-add-btn" onClick={() => openModalAction(site, null, day.dateLabel, "add_shift", day.key)}>
                               <i className="fa fa-plus"></i> Add
                             </div>
                           )}
-                        </>
+                        </div>
                       )}
                     </div>
                   );
@@ -609,6 +627,8 @@ export default function RosterPage() {
           </div>
           {columnTotals.totals.map((total, i) => (
             <div key={i} className={`vr-col-day vr-total-val ${weekDays[i].isHoliday ? 'is-holiday-cell' : ''}`}>
+              {/* Only shows on mobile to identify the day */}
+              <span className="mobile-footer-day">{weekDays[i].short}</span>
               {total.toFixed(1)}h
             </div>
           ))}
@@ -664,7 +684,6 @@ export default function RosterPage() {
         </div>
       )}
 
-      {/* add_shift modal only shown if not contractor */}
       {modal?.type === "add_shift" && userRole !== "contractor" && (
         <div className="embedded-job-backdrop" onClick={closeModal}>
           <div className="embedded-job-shell" onClick={(e) => e.stopPropagation()}>

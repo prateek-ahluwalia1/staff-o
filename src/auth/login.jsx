@@ -249,7 +249,7 @@ export default function Login() {
     <>
       <Header />
       <section
-        className="auth-page position-relative overflow-hidden auth-page-dark"
+        className="position-relative overflow-hidden auth-page-dark"
         style={{
           minHeight: "100vh",
           paddingTop: "160px",
@@ -286,16 +286,6 @@ export default function Login() {
                   opacity: 0.8,
                 }}
               ></div>
-
-              <div className="d-flex align-items-center gap-2 mb-4">
-                <span style={{ width: "22px", height: "2px", backgroundColor: BRAND, display: "inline-block" }}></span>
-                <span
-                  className="small fw-semibold"
-                  style={{ color: BRAND, letterSpacing: "0.06em" }}
-                >
-                  Australia's #1 Security Platform
-                </span>
-              </div>
 
               <h1 className="display-3 fw-bold mb-4" style={{ lineHeight: 1.08 }}>
                 Secure your work.
@@ -337,21 +327,6 @@ export default function Login() {
                   <span style={{ color: "#D7DEE8" }}>Smart tools for your daily workflow</span>
                 </li>
               </ul>
-
-              <div className="row g-0" style={{ maxWidth: "440px" }}>
-                <div className="col-4 text-center py-3" style={{ border: `1px solid ${NAVY_BORDER}`, borderRight: "none" }}>
-                  <div className="fs-3 fw-bold" style={{ color: BRAND }}>10k+</div>
-                  <div className="small" style={{ color: TEXT_MUTED }}>Verified staff</div>
-                </div>
-                <div className="col-4 text-center py-3" style={{ border: `1px solid ${NAVY_BORDER}`, borderRight: "none" }}>
-                  <div className="fs-3 fw-bold" style={{ color: BRAND }}>500+</div>
-                  <div className="small" style={{ color: TEXT_MUTED }}>Business clients</div>
-                </div>
-                <div className="col-4 text-center py-3" style={{ border: `1px solid ${NAVY_BORDER}` }}>
-                  <div className="fs-3 fw-bold" style={{ color: BRAND }}>24/7</div>
-                  <div className="small" style={{ color: TEXT_MUTED }}>Platform support</div>
-                </div>
-              </div>
             </div>
 
             {/* FORM */}

@@ -85,7 +85,7 @@ function AppContent() {
     const { token, userdata } = useSelector((state) => state.auth);
     const isInitialMount = useRef(true);
     const oneSignalReadyRef = useRef(false);
-    const locationTrackingRef = useRef({ stopped: false, consecutiveFailures: 0, lastAttemptAt: 0 });
+    const hasSentCoordinates = useRef(false);
     const userId = userdata?.id ?? userdata?.data?.id;
     const userRole = userdata?.data?.user_type || userdata?.user_type;
     const staffUserId = Number(userdata?.data?.user_id ?? userdata?.user_id ?? userId ?? 0);
@@ -189,70 +189,46 @@ function AppContent() {
     }, [syncNotificationToken, getPlayerIdAsync]);
 
     useEcho();
-
+    // ---------- Save coordinates only once (first login) ----------
     useEffect(() => {
-        if (typeof window === "undefined" || !("geolocation" in navigator) || !token || !isStaffTargetUser) return;
+        // Exit early if conditions aren't met
+        if (
+            typeof window === "undefined" ||
+            !("geolocation" in navigator) ||
+            !token ||
+            !isStaffTargetUser ||
+            !userId
+        ) {
+            return;
+        }
 
-        const trackingState = locationTrackingRef.current;
-        trackingState.stopped = false;
-        trackingState.consecutiveFailures = 0;
+        // Already sent coordinates in this session? Stop.
+        if (hasSentCoordinates.current) return;
 
-        const updateLocation = () => {
-            if (trackingState.stopped) return;
-
-            const now = Date.now();
-            if (trackingState.lastAttemptAt && now - trackingState.lastAttemptAt < 4000) {
-                return;
+        navigator.geolocation.getCurrentPosition(
+            async (position) => {
+                try {
+                    await updateCoordinates(`api/update-coordinates/${userId}`, {
+                        method: "POST",
+                        body: JSON.stringify({
+                            current_coordinates: `${position.coords.latitude},${position.coords.longitude}`,
+                        }),
+                    });
+                    hasSentCoordinates.current = true; // mark as sent for this session
+                } catch (error) {
+                    console.warn("Failed to update staff coordinates on login:", error);
+                }
+            },
+            (error) => {
+                console.warn("Geolocation error:", error.message);
+            },
+            {
+                enableHighAccuracy: true,
+                timeout: 5000,
+                maximumAge: 0,
             }
-            trackingState.lastAttemptAt = now;
-
-            navigator.geolocation.getCurrentPosition(
-                async (position) => {
-                    if (trackingState.stopped) return;
-                    trackingState.consecutiveFailures = 0;
-
-                    try {
-                        await updateCoordinates(`api/update-coordinates/${userId}`, {
-                            method: "POST",
-                            body: JSON.stringify({
-                                current_coordinates: `${position.coords.latitude},${position.coords.longitude}`,
-                            }),
-                        });
-                    } catch (error) {
-                        console.warn("Failed to update staff coordinates:", error);
-                    }
-                },
-                (error) => {
-                    if (trackingState.stopped) return;
-
-                    trackingState.consecutiveFailures += 1;
-
-                    if (error.code === 1) {
-                        trackingState.stopped = true;
-                        console.warn("Location permission denied; stopping coordinate updates.");
-                        return;
-                    }
-
-                    if (trackingState.consecutiveFailures >= 3) {
-                        trackingState.stopped = true;
-                        console.warn("Location updates stopped after repeated failures.");
-                        return;
-                    }
-
-                    console.warn(`Location lookup failed (${trackingState.consecutiveFailures}/3).`);
-                },
-                { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
-            );
-        };
-
-        updateLocation();
-        const intervalId = window.setInterval(updateLocation, 5000);
-
-        return () => {
-            trackingState.stopped = true;
-            window.clearInterval(intervalId);
-        };
-    }, [token, isStaffTargetUser, staffUserId, updateCoordinates]);
+        );
+    }, [token, isStaffTargetUser, userId, updateCoordinates]);
 
     useEffect(() => {
         window.scrollTo({ top: 0, left: 0, behavior: "auto" });

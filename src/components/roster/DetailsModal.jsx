@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { format } from "date-fns";
+import { apiURL } from "../../utils/exports";
 
 const parseApiDate = (dateValue) => {
   if (!dateValue) return null;
@@ -47,13 +48,10 @@ export default function DetailsModal({
   const shift = modal?.shift;
   const site = modal?.site;
 
-  // 1. Determine if a guard is actively assigned
   const hasGuard = Boolean(shift?.guards && shift?.guards?.name);
 
-  // 2. Default to "shift" if no guard is assigned
   const [activeTab, setActiveTab] = useState(hasGuard ? "guard" : "shift");
 
-  // 3. Filter tabs so only "Shift Information" is visible for pending/unassigned shifts
   const visibleTabs = SIDEBAR_TABS.filter((tab) => {
     if (!hasGuard) {
       return tab.id === "shift";
@@ -61,12 +59,23 @@ export default function DetailsModal({
     return true;
   });
 
+  // Helper to get the guard's profile image URL
+  const getGuardImageUrl = (guard) => {
+    if (!guard) return null;
+    const img = guard.profile_image || guard.staff?.profile_image || null;
+    if (!img) return null;
+    if (img.startsWith("http")) return img;
+    return `${apiURL}storage/${img}`;
+  };
+
+  const guardImageUrl = getGuardImageUrl(shift?.guards);
+
   const renderContent = () => {
     switch (activeTab) {
       case "guard":
         return (
           <div>
-            {/* Profile */}
+            {/* Profile – now shows real image */}
             <div
               style={{
                 display: "flex",
@@ -83,6 +92,7 @@ export default function DetailsModal({
                   width: "72px",
                   height: "72px",
                   borderRadius: "50%",
+                  overflow: "hidden",
                   background: "#0A7C6E",
                   display: "flex",
                   alignItems: "center",
@@ -93,9 +103,17 @@ export default function DetailsModal({
                   flexShrink: 0,
                 }}
               >
-                {shift?.guards?.name
-                  ? shift.guards.name.charAt(0).toUpperCase()
-                  : "?"}
+                {guardImageUrl ? (
+                  <img
+                    src={guardImageUrl}
+                    alt={shift?.guards?.name}
+                    style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                  />
+                ) : (
+                  shift?.guards?.name
+                    ? shift.guards.name.charAt(0).toUpperCase()
+                    : "?"
+                )}
               </div>
               <div>
                 <h5
@@ -114,7 +132,7 @@ export default function DetailsModal({
               </div>
             </div>
 
-            {/* Guard Info */}
+            {/* Guard Info – unchanged */}
             <div
               style={{
                 background: "#fff",
@@ -123,7 +141,6 @@ export default function DetailsModal({
                 padding: "16px 20px",
               }}
             >
-              <InfoRow label="Internal ID" value={shift?.guards?.user_id} />
               <InfoRow label="Address" value={shift?.guards?.address} />
               <InfoRow
                 label="Location"
@@ -159,7 +176,6 @@ export default function DetailsModal({
                   )
                 }
               />
-              <InfoRow label="Staff Type" value={shift?.guards?.user_type} />
             </div>
           </div>
         );
@@ -202,14 +218,6 @@ export default function DetailsModal({
                   {shift?.job_status || "N/A"}
                 </span>
               }
-            />
-            <InfoRow
-              label="Payable"
-              value={shift?.shift_payable === "yes" ? "Yes" : "No"}
-            />
-            <InfoRow
-              label="Chargeable"
-              value={shift?.shift_chargeable === "yes" ? "Yes" : "No"}
             />
             <InfoRow
               label="Hours"
@@ -373,7 +381,7 @@ export default function DetailsModal({
             <h3 className="m-0 fw-bold p-1 text-center">Shift Detail</h3>
           </div>
 
-          {/* Guard avatar preview in sidebar - Hidden if no guard */}
+          {/* Guard avatar preview in sidebar – now shows real image */}
           {hasGuard && (
             <div
               style={{
@@ -389,6 +397,7 @@ export default function DetailsModal({
                   width: "56px",
                   height: "56px",
                   borderRadius: "50%",
+                  overflow: "hidden",
                   background: "#0A7C6E",
                   display: "flex",
                   alignItems: "center",
@@ -399,7 +408,15 @@ export default function DetailsModal({
                   marginBottom: "8px",
                 }}
               >
-                {shift.guards.name.charAt(0).toUpperCase()}
+                {guardImageUrl ? (
+                  <img
+                    src={guardImageUrl}
+                    alt={shift.guards.name}
+                    style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                  />
+                ) : (
+                  shift.guards.name.charAt(0).toUpperCase()
+                )}
               </div>
               <div
                 style={{
@@ -420,7 +437,6 @@ export default function DetailsModal({
           )}
 
           <div className="overflow-auto py-2">
-            {/* Map over visibleTabs instead of SIDEBAR_TABS */}
             {visibleTabs.map((tab) => {
               const isActive = activeTab === tab.id;
               return (

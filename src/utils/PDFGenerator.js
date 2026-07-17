@@ -1,9 +1,11 @@
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
+// ─── Teal / Green brand palette ──────────────────────────
 const T = {
-  navy: [28, 43, 73],
-  blue: [37, 99, 235],
+  teal: [10, 124, 110],          // #0A7C6E – primary brand
+  tealDark: [7, 94, 83],         // #075e53
+  tealLight: [236, 253, 245],    // soft green background
   border: [203, 213, 225],
   text: [30, 41, 59],
   muted: [100, 116, 139],
@@ -29,7 +31,6 @@ const formatDateForDisplay = (dateStr) => {
 
 const formatDateToDDMMYYYY = (dateStr) => {
   if (!dateStr) return "-";
-  // Handle YYYY-MM-DD format
   if (dateStr.includes("-")) {
     const [year, month, day] = dateStr.split("-");
     return `${day}/${month}/${year}`;
@@ -37,29 +38,26 @@ const formatDateToDDMMYYYY = (dateStr) => {
   return dateStr;
 };
 
-// ─── SHARED HEADER ───────────────────────────────────────────────────────────
+// ─── SHARED HEADER (teal instead of navy) ────────────────
 const renderFormHeader = (doc, pageWidth, title, margin = 20) => {
   const barH = 22, barTop = 0;
-  doc.setFillColor(...T.navy);
+  doc.setFillColor(...T.teal);                    // ← teal
   doc.rect(0, barTop, pageWidth, barH, "F");
 
-  // Left Aligned Logo
   doc.setFont("helvetica", "bold"); doc.setTextColor(...T.white); doc.setFontSize(18);
   doc.text("STAFFOO", margin, barTop + 14);
 
-  // Right Aligned Company Info
   doc.setFontSize(7); doc.setFont("helvetica", "normal");
   const rx = pageWidth - margin;
   doc.text("Capital Services Pty Ltd  |  ABN: 48 613 317 838", rx, barTop + 9, { align: "right" });
   doc.text("21 Tanglewood Blvd, Truganina VIC 3029  |  admin@staffoo.com.au", rx, barTop + 14, { align: "right" });
 
-  // Centered Title Below Bar
   const titleY = barH + 12;
-  doc.setFont("helvetica", "bold"); doc.setFontSize(14); doc.setTextColor(...T.blue);
+  doc.setFont("helvetica", "bold"); doc.setFontSize(14); doc.setTextColor(...T.teal);   // ← teal title
   doc.text(title, pageWidth / 2, titleY, { align: "center" });
 
   const lineY = titleY + 4;
-  doc.setDrawColor(...T.blue); doc.setLineWidth(0.5);
+  doc.setDrawColor(...T.teal); doc.setLineWidth(0.5);               // ← teal line
   doc.line(margin, lineY, pageWidth - margin, lineY);
 
   return lineY + 8;
@@ -192,13 +190,10 @@ const generateTFNDeclarationPDF = (formData) => {
   doc.text("Employee Signature", mg, y);
   y += 5;
   doc.setFont("helvetica", "normal"); doc.setFontSize(8.5);
-  doc.setTextColor(...T.blue); doc.text("Date:", mg, y);
+  doc.setTextColor(...T.teal); doc.text("Date:", mg, y);          // ← teal label
   doc.setTextColor(...T.text);
   const tfnDate = formatDateForDisplay(signed_date);
   doc.text(String(tfnDate), mg + 12, y);
-
-  doc.setFontSize(10); doc.setFont("helvetica", "normal"); doc.setTextColor(...T.muted);
-  // doc.text("Staffoo is a brand of Capital Services Pty Ltd. ABN: 48 613 317 838, Truganina, VIC 3029.", pw / 2, ph - 8, { align: "center" });
 
   return doc;
 };
@@ -293,14 +288,10 @@ const generateSuperannuationPDF = (formData) => {
   doc.text("Employee Signature", mg, y);
   y += 5;
   doc.setFont("helvetica", "normal"); doc.setFontSize(8.5);
-  doc.setTextColor(...T.blue); doc.text("Date:", mg, y);
+  doc.setTextColor(...T.teal); doc.text("Date:", mg, y);         // ← teal
   doc.setTextColor(...T.text);
   const superDate = formatDateForDisplay(signed_date);
   doc.text(String(superDate), mg + 12, y);
-
-  doc.setFillColor(...T.navy); doc.rect(0, ph - 14, pw, 14, "F");
-  doc.setFont("helvetica", "normal"); doc.setFontSize(10); doc.setTextColor(...T.white);
-  // doc.text("Staffoo is a brand of Capital Services Pty Ltd.", pw / 2, ph - 5, { align: "center" });
 
   return doc;
 };
@@ -324,9 +315,9 @@ const generateEmployeeOnboardingPDF = (formData) => {
 
   const noticeH = 7;
   doc.setFillColor(...T.white); doc.rect(mg, y, bw, noticeH, "F");
-  doc.setDrawColor(...T.blue); doc.setLineWidth(0.4);
+  doc.setDrawColor(...T.teal); doc.setLineWidth(0.4);
   doc.setLineDashPattern([1.5, 1], 0); doc.rect(mg, y, bw, noticeH); doc.setLineDashPattern([], 0);
-  doc.setFont("helvetica", "bold"); doc.setFontSize(6.5); doc.setTextColor(...T.navy);
+  doc.setFont("helvetica", "bold"); doc.setFontSize(6.5); doc.setTextColor(...T.teal);
   doc.text("MANDATORY: ATTACH CLEAR COPIES OF ALL DOCUMENTS (PASSPORT, LICENSE, ID) WITH THIS FORM.", pw / 2, y + 4.5, { align: "center" });
   y += noticeH + 3;
 
@@ -338,8 +329,8 @@ const generateEmployeeOnboardingPDF = (formData) => {
     checkPage(12);
     const hdrH = 9, stripW = 3;
     doc.setFillColor(241, 245, 249); doc.rect(mg, y, bw, hdrH, "F");
-    doc.setFillColor(...T.blue); doc.rect(mg, y, stripW, hdrH, "F");
-    doc.setFont("helvetica", "bold"); doc.setFontSize(8); doc.setTextColor(...T.blue);
+    doc.setFillColor(...T.teal); doc.rect(mg, y, stripW, hdrH, "F");    // teal accent
+    doc.setFont("helvetica", "bold"); doc.setFontSize(8); doc.setTextColor(...T.teal);
     doc.text(title, mg + pad + stripW, y + 5);
     y += hdrH + 3;
   };
@@ -382,13 +373,11 @@ const generateEmployeeOnboardingPDF = (formData) => {
   doc.text("Work Rights Status:", mg, y + 3);
   const wr = String(work_rights || "").toLowerCase();
 
-  // Work Rights – 2 options per row, 2 rows
-  const col1X = mg + 32;               // left column checkbox x
-  const col2X = mg + 120;              // right column checkbox x (adjust if needed)
+  const col1X = mg + 32;
+  const col2X = mg + 120;
   const row1Y = y;
-  const row2Y = y + 10;                // vertical gap between rows
+  const row2Y = y + 10;
 
-  // Row 1
   checkbox(doc, col1X, row1Y, 3.5, wr.includes("citizen"));
   doc.setFont("helvetica", "normal");
   doc.setFontSize(7.5);
@@ -398,7 +387,6 @@ const generateEmployeeOnboardingPDF = (formData) => {
   checkbox(doc, col2X, row1Y, 3.5, wr.includes("student"));
   doc.text("Student Visa", col2X + 5.5, row1Y + 3);
 
-  // Row 2
   checkbox(doc, col1X, row2Y, 3.5, wr.includes("temporary"));
   doc.text("Temporary Visa Holder", col1X + 5.5, row2Y + 3);
 
@@ -408,13 +396,12 @@ const generateEmployeeOnboardingPDF = (formData) => {
   if (wr.includes("other") && visa_type) {
     doc.setFont("helvetica", "italic");
     doc.setFontSize(7.5);
-    doc.setTextColor(...T.blue);
-    // place visa type in parentheses right after "Other Visa:"
+    doc.setTextColor(...T.teal);
     const otherLabelWidth = doc.getTextWidth("Other Visa:");
     doc.text(`(${visa_type})`, col2X + 5.5 + otherLabelWidth + 1, row2Y + 3);
   }
 
-  y = row2Y + 10;   // final y after both rows (keeps vertical rhythm)
+  y = row2Y + 10;
 
   let parsedChecks = {};
   if (typeof id_checks === "string") {
@@ -452,7 +439,6 @@ const generateEmployeeOnboardingPDF = (formData) => {
     const rH = 8;
     doc.setFont("helvetica", "normal"); doc.setFontSize(7.5); doc.setTextColor(...T.text);
     doc.text(text, mg + pad, y + 5.5);
-
     doc.text(pts, mg + idDocW + idPtsW / 2, y + 5.5, { align: "center" });
 
     const isTicked = isCheckedValue(parsedChecks[key]);
@@ -516,51 +502,29 @@ const generateEmployeeOnboardingPDF = (formData) => {
   doc.setDrawColor(...T.lineGray); doc.setLineWidth(0.3); doc.line(mg + sigHw + 4, y + 7, mg + bw, y + 7);
   y += 13;
 
-  doc.setFontSize(10); doc.setFont("helvetica", "normal"); doc.setTextColor(...T.muted);
-  // doc.text("Staffoo is a brand of Capital Services Pty Ltd. ABN: 48 613 317 838, Truganina, VIC 3029.", pw / 2, ph - 7, { align: "center" });
-
   return doc;
 };
 
-
 // ─────────────────────────────────────────────────────────────────────────────
-//  MODERN BEAUTIFUL REPORTS (Invoice, Shift, Foot Patrol, Incident)
+//  MODERN REPORTS (Invoice, etc.) – header also teal
 // ─────────────────────────────────────────────────────────────────────────────
-
 const renderModernHeader = (doc, pageWidth, rightTitle) => {
   const headerHeight = 26;
   const margin = 15;
 
-  // ===========================
-  // Navy Header Background
-  // ===========================
-  doc.setFillColor(...T.navy);
+  doc.setFillColor(...T.teal);                     // ← teal header
   doc.rect(0, 0, pageWidth, headerHeight, "F");
 
-  // ===========================
-  // STAFFOO Logo
-  // ===========================
   doc.setFont("helvetica", "bold");
   doc.setFontSize(22);
   doc.setTextColor(...T.white);
   doc.text("STAFFOO", margin, 17);
 
-  // ===========================
-  // Right Title (INVOICE)
-  // ===========================
   doc.setFont("helvetica", "bold");
   doc.setFontSize(18);
   doc.setTextColor(...T.white);
-  doc.text(
-    rightTitle.toUpperCase(),
-    pageWidth - margin,
-    17,
-    { align: "right" }
-  );
+  doc.text(rightTitle.toUpperCase(), pageWidth - margin, 17, { align: "right" });
 
-  // ===========================
-  // Start content below header
-  // ===========================
   return headerHeight + 14;
 };
 
@@ -568,7 +532,6 @@ const drawGoldLine = (doc, y, pageWidth, margin = 15) => {
   doc.setDrawColor(...T.gold);
   doc.setLineWidth(0.5);
   doc.line(margin, y, pageWidth - margin, y);
-
   return y + 6;
 };
 
@@ -576,77 +539,31 @@ const renderModernFooter = (doc, pageWidth, pageHeight, showStripeBadge = false)
   const centerX = pageWidth / 2;
   let y = pageHeight - 28;
 
-  // ==========================================
-  // Stripe Notice
-  // ==========================================
   if (showStripeBadge) {
     const badgeWidth = 125;
     const badgeHeight = 8;
     const badgeX = (pageWidth - badgeWidth) / 2;
-
     doc.setFillColor(...T.greenFill);
     doc.setDrawColor(...T.greenBorder);
     doc.setLineWidth(0.3);
-
-    doc.roundedRect(
-      badgeX,
-      y,
-      badgeWidth,
-      badgeHeight,
-      2,
-      2,
-      "FD"
-    );
-
+    doc.roundedRect(badgeX, y, badgeWidth, badgeHeight, 2, 2, "FD");
     doc.setFont("helvetica", "bold");
     doc.setFontSize(7);
     doc.setTextColor(...T.greenText);
-
-    doc.text(
-      "Payment held via Stripe, and the hold will be released after completion of the shift.",
-      centerX,
-      y + 5,
-      {
-        align: "center",
-      }
-    );
-
+    doc.text("Payment held via Stripe, and the hold will be released after completion of the shift.", centerX, y + 5, { align: "center" });
     y += 13;
   }
 
-  // ==========================================
-  // Thank You
-  // ==========================================
   doc.setFont("helvetica", "bold");
   doc.setFontSize(9);
   doc.setTextColor(...T.text);
-
-  doc.text(
-    "Thank you for choosing STAFFOO.",
-    centerX,
-    y,
-    {
-      align: "center",
-    }
-  );
-
+  doc.text("Thank you for choosing STAFFOO.", centerX, y, { align: "center" });
   y += 5;
 
-  // ==========================================
-  // Billing
-  // ==========================================
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8);
   doc.setTextColor(...T.muted);
-
-  doc.text(
-    "For billing enquiries contact admin@staffoo.com.au | ABN: 48 613 317 838",
-    centerX,
-    y,
-    {
-      align: "center",
-    }
-  );
+  doc.text("For billing enquiries contact admin@staffoo.com.au | ABN: 48 613 317 838", centerX, y, { align: "center" });
 };
 
 const PDFGenerator = {
@@ -674,23 +591,13 @@ const PDFGenerator = {
       gstPercent,
     } = invoiceData;
 
-    const doc = new jsPDF({
-      orientation: "portrait",
-      unit: "mm",
-      format: "a4",
-      compress: true,
-    });
-
+    const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4", compress: true });
     const pw = doc.internal.pageSize.getWidth();
     const ph = doc.internal.pageSize.getHeight();
     const mg = 15;
-    const rightAlignParams = { align: "right" };
 
     let y = renderModernHeader(doc, pw, "Invoice");
 
-    // ==========================
-    // Bill To
-    // ==========================
     doc.setFont("helvetica", "bold");
     doc.setFontSize(10);
     doc.setTextColor(...T.text);
@@ -698,26 +605,10 @@ const PDFGenerator = {
 
     doc.setFont("helvetica", "normal");
     doc.setFontSize(9);
-
     let billY = y + 6;
-
-    if (to?.name) {
-      doc.text(to.name, mg, billY);
-      billY += 6;
-    }
-
-    if (to?.email) {
-      doc.text(to.email, mg, billY);
-      billY += 6;
-    }
-
-    if (to?.phone) {
-      doc.text(to.phone, mg, billY);
-    }
-
-    // ==========================
-    // Invoice Information
-    // ==========================
+    if (to?.name) { doc.text(to.name, mg, billY); billY += 6; }
+    if (to?.email) { doc.text(to.email, mg, billY); billY += 6; }
+    if (to?.phone) { doc.text(to.phone, mg, billY); }
 
     const labelX = pw - mg - 35;
     const valueX = pw - mg;
@@ -726,63 +617,26 @@ const PDFGenerator = {
       doc.setFont("helvetica", "bold");
       doc.setFontSize(9);
       doc.setTextColor(...T.text);
-
-      doc.text(label, labelX, yy, {
-        align: "right",
-      });
-
+      doc.text(label, labelX, yy, { align: "right" });
       doc.setFont("helvetica", "normal");
-
-      doc.text(
-        value ? String(value) : "-",
-        valueX,
-        yy,
-        {
-          align: "right",
-        }
-      );
+      doc.text(value ? String(value) : "-", valueX, yy, { align: "right" });
     };
 
     metaRow("Invoice #:", invoiceNo, y);
-
     metaRow("Date:", startDate, y + 6);
+    if (dueDate) metaRow("Due Date:", dueDate, y + 12);
+    metaRow("Payment Option:", paymentOption, y + 18);
+    if (paymentRef) metaRow("Payment Ref:", paymentRef, y + 24);
 
-    if (dueDate) {
-      metaRow("Due Date:", dueDate, y + 12);
-    }
+    y = drawGoldLine(doc, y + (paymentRef ? 32 : 26), pw, mg);
 
-    metaRow(
-      "Payment Option:",
-      paymentOption,
-      y + 18
-    );
-
-    if (paymentRef) {
-      metaRow(
-        "Payment Ref:",
-        paymentRef,
-        y + 24
-      );
-    }
-
-    y = drawGoldLine(
-      doc,
-      y + (paymentRef ? 32 : 26),
-      pw,
-      mg
-    );
-
-
-    doc.setFontSize(11); doc.setFont("helvetica", "bold"); doc.setTextColor(...T.navy);
+    doc.setFontSize(11); doc.setFont("helvetica", "bold"); doc.setTextColor(...T.teal);
     doc.text("Shift Details", mg, y + 2); y += 6;
 
     const fmt = (value) => `$${Number(value || 0).toFixed(2)}`;
 
     const td = items.map((item, index) => {
-      const amount =
-        item.amount ??
-        ((Number(item.qty || 0) * Number(item.rate || 0)));
-
+      const amount = item.amount ?? (Number(item.qty || 0) * Number(item.rate || 0));
       return [
         index + 1,
         formatDateToDDMMYYYY(item.startDate || item.shiftDate || startDate || "-"),
@@ -794,32 +648,15 @@ const PDFGenerator = {
     });
 
     const ptw = pw - mg * 2;
-
     autoTable(doc, {
       startY: y,
-
-      head: [[
-        "#",
-        "Start Date",
-        "End Date",
-        "Guards",
-        "Hours",
-        `Amount (${currency})`
-      ]],
-
+      head: [["#", "Start Date", "End Date", "Guards", "Hours", `Amount (${currency})`]],
       body: td,
-
       theme: "plain",
-
       tableWidth: ptw,
-
-      margin: {
-        left: mg,
-        right: mg,
-      },
-
+      margin: { left: mg, right: mg },
       headStyles: {
-        fillColor: T.navy,
+        fillColor: T.teal,            // ← teal table header
         textColor: T.white,
         fontStyle: "bold",
         fontSize: 9,
@@ -827,171 +664,62 @@ const PDFGenerator = {
         halign: "center",
         valign: "middle",
       },
-
       bodyStyles: {
         fontSize: 9,
         textColor: T.text,
         cellPadding: 4,
         valign: "middle",
         lineColor: T.lineGray,
-        lineWidth: {
-          bottom: 0.2,
-        },
+        lineWidth: { bottom: 0.2 },
       },
-
       columnStyles: {
-        0: {
-          cellWidth: ptw * 0.08,
-          halign: "center",
-        },
-
-        1: {
-          cellWidth: ptw * 0.22,
-          halign: "left",
-        },
-
-        2: {
-          cellWidth: ptw * 0.22,
-          halign: "left",
-        },
-
-        3: {
-          cellWidth: ptw * 0.12,
-          halign: "center",
-        },
-
-        4: {
-          cellWidth: ptw * 0.16,
-          halign: "center",
-        },
-
-        5: {
-          cellWidth: ptw * 0.20,
-          halign: "right",
-        },
+        0: { cellWidth: ptw * 0.08, halign: "center" },
+        1: { cellWidth: ptw * 0.22, halign: "left" },
+        2: { cellWidth: ptw * 0.22, halign: "left" },
+        3: { cellWidth: ptw * 0.12, halign: "center" },
+        4: { cellWidth: ptw * 0.16, halign: "center" },
+        5: { cellWidth: ptw * 0.20, halign: "right" },
       },
     });
 
     y = doc.lastAutoTable.finalY + 10;
-
     y = drawGoldLine(doc, y, pw, mg);
-
-    // ==========================================
-    // Payment Breakdown
-    // ==========================================
 
     doc.setFont("helvetica", "bold");
     doc.setFontSize(11);
-    doc.setTextColor(...T.navy);
+    doc.setTextColor(...T.teal);
     doc.text("Payment Breakdown", mg, y + 5);
 
     let ty = y + 14;
-
     const summaryLabelX = pw - mg - 35;
     const summaryValueX = pw - mg;
 
-    const summaryRow = (
-      label,
-      value,
-      {
-        labelColor = T.muted,
-        valueColor = T.text,
-        bold = false,
-        background = null,
-      } = {}
-    ) => {
-
+    const summaryRow = (label, value, { labelColor = T.muted, valueColor = T.text, bold = false, background = null } = {}) => {
       if (background) {
         doc.setFillColor(...background);
         doc.rect(mg, ty - 4.5, pw - mg * 2, 8, "F");
       }
-
-      doc.setFont(
-        "helvetica",
-        bold ? "bold" : "normal"
-      );
-
+      doc.setFont("helvetica", bold ? "bold" : "normal");
       doc.setFontSize(9);
-
       doc.setTextColor(...labelColor);
-
-      doc.text(
-        label,
-        summaryLabelX,
-        ty,
-        {
-          align: "right",
-        }
-      );
-
+      doc.text(label, summaryLabelX, ty, { align: "right" });
       doc.setTextColor(...valueColor);
-
-      doc.text(
-        value,
-        summaryValueX,
-        ty,
-        {
-          align: "right",
-        }
-      );
-
+      doc.text(value, summaryValueX, ty, { align: "right" });
       ty += 6;
     };
 
-    // -----------------------------
-
-    summaryRow(
-      "Subtotal",
-      fmt(subtotal)
-    );
-
-    if (includeGst) {
-      summaryRow(
-        `GST (${gstPercent}%)`,
-        fmt(gstAmount)
-      );
-    }
-
-    if (lateFeeAmount > 0) {
-      summaryRow(
-        "Late Fee",
-        fmt(lateFeeAmount)
-      );
-    }
-
-    if (discountAmount > 0) {
-      summaryRow(
-        `Discount (${discountPercent}%)`,
-        `- ${fmt(discountAmount)}`,
-        {
-          valueColor: T.gold,
-        }
-      );
-    }
-
-    // Small Divider
-
+    summaryRow("Subtotal", fmt(subtotal));
+    if (includeGst) summaryRow(`GST (${gstPercent}%)`, fmt(gstAmount));
+    if (lateFeeAmount > 0) summaryRow("Late Fee", fmt(lateFeeAmount));
+    if (discountAmount > 0) summaryRow(`Discount (${discountPercent}%)`, `- ${fmt(discountAmount)}`, { valueColor: T.gold });
     doc.setDrawColor(...T.lineGray);
     doc.setLineWidth(0.3);
+    doc.line(pw - 70, ty - 4, pw - mg, ty - 4);
+    summaryRow("Total Amount", fmt(grandTotal), { bold: true });
 
-    doc.line(
-      pw - 70,
-      ty - 4,
-      pw - mg,
-      ty - 4
-    );
-
-    summaryRow(
-      "Total Amount",
-      fmt(grandTotal),
-      {
-        bold: true,
-      }
-    );
     renderModernFooter(doc, pw, ph, true);
     return doc;
   },
-
 
   openPDFInNewTab: (doc) => { window.open(URL.createObjectURL(doc.output("blob")), "_blank"); },
   downloadPDF: (doc, fileName = "document.pdf") => { doc.save(fileName); },

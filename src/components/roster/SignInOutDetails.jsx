@@ -84,7 +84,9 @@ export default function SignInOutDetails({ rosterId, guardId, shift, site }) {
       submit("api/get-jobSignIn-jobSignOut", {
         guard_id: guardId,
         roster_id: rosterId,
-      });
+      },
+        { silentErrorToast: true }
+      );
     }
   }, [rosterId, guardId, submit]);
 

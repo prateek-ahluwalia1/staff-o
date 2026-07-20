@@ -81,7 +81,7 @@ class InvoiceService
         $css = '
         * { margin:0; padding:0; box-sizing:border-box; }
         body { font-family: DejaVu Sans, sans-serif; font-size:10px; color:#111827; }
-        .header { background:#1A2E4A; padding:18px 22px; }
+        .header { background:#0A7C6E; padding:18px 22px; }
         .header table { width:100%; }
         .header td { vertical-align:middle; }
         .logo { font-size:22px; font-weight:bold; color:#F0A500; letter-spacing:1px; }
@@ -93,19 +93,19 @@ class InvoiceService
         .meta .right { text-align:right; }
         .accent-line { height:3px; background:#F0A500; margin:0 22px; }
         .grey-line   { height:1px; background:#D1D5DB; margin:6px 22px; }
-        .section-title { padding:10px 22px 4px; font-size:12px; font-weight:bold; color:#1A2E4A; }
+        .section-title { padding:10px 22px 4px; font-size:12px; font-weight:bold; color:#0A7C6E; }
         .table-wrap { padding:0 22px; }
         .st { width:100%; border-collapse:collapse; font-size:9px; }
-        .st thead tr { background:#1A2E4A; color:#FFFFFF; }
+        .st thead tr { background:#0A7C6E; color:#FFFFFF; }
         .st thead th { padding:7px 6px; text-align:left; }
         .st tbody td { padding:6px 6px; border-bottom:1px solid #E5E7EB; }
         .tt { width:100%; border-collapse:collapse; font-size:9.5px; }
         .tt td { padding:4px 4px; }
         .tt .lbl { color:#6B7280; text-align:right; padding-right:16px; width:78%; }
         .tt .amt { text-align:right; }
-        .grand td { font-weight:bold; color:#1A2E4A; font-size:11px;
+        .grand td { font-weight:bold; color:#0A7C6E; font-size:11px;
                     border-top:2px solid #F0A500; background:#F7F9FC; padding-top:6px; }
-        .charged td { font-weight:bold; color:#1A2E4A; }
+        .charged td { font-weight:bold; color:#0A7C6E; }
         .balance td { font-weight:bold; color:#D97706; }
         .footer { padding:14px 22px 10px; text-align:center; font-size:10px; color:#9CA3AF; }
         .badge { background:#ECFDF5; color:#065F46; border:1px solid #6EE7B7;

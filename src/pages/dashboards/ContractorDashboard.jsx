@@ -84,7 +84,11 @@ export default function ContractorDashboard() {
                   <div className="profile-contact">
                     <i className="fa-solid fa-phone"></i> {phone}
                   </div>
-                  <div className="profile-contact" style={{ textTransform: "none" }}>
+
+                  <div
+                    className="profile-contact email-contact"
+                    style={{ textTransform: "none" }}
+                  >
                     <i className="fa-solid fa-envelope"></i> {email}
                   </div>
                 </div>

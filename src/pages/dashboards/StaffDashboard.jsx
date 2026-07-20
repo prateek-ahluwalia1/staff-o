@@ -87,7 +87,7 @@ export default function StaffDashboard() {
                 <h3>{username}</h3>
                 <p className="profile-role">{address}</p>
                 <div style={{ display: "flex", gap: "0.6rem", flexWrap: "wrap" }}>
-                  <div className="profile-contact" style={{ textTransform: "none" }}>
+                  <div className="profile-contact email-contact" style={{ textTransform: "none" }}>
                     <i className="fa-solid fa-envelope"></i> {email}
                   </div>
                 </div>

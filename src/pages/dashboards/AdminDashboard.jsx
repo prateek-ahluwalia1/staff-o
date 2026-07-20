@@ -111,7 +111,7 @@ export default function AdminDashboard() {
                 </span>
                 <h3>Admin Panel — {username}</h3>
                 <p className="profile-role">Platform Management and Analytics</p>
-                <div className="profile-contact" style={{ textTransform: "none" }}>
+                <div className="profile-contact email-contact" style={{ textTransform: "none" }}>
                   <i className="fa-solid fa-envelope"></i> {email}
                 </div>
               </div>

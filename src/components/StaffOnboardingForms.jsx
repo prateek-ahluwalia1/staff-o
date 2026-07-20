@@ -51,6 +51,14 @@ const displayToISO = (val) => {
     return cleaned;
 };
 
+const splitFullName = (fullName) => {
+    if (!fullName) return { first_name: "", surname: "" };
+    const parts = fullName.trim().split(/\s+/).filter(Boolean);
+    if (parts.length === 0) return { first_name: "", surname: "" };
+    if (parts.length === 1) return { first_name: parts[0], surname: "" };
+    return { first_name: parts[0], surname: parts.slice(1).join(" ") };
+};
+
 /* ---------- Shared react-select styling ---------- */
 const selectStyles = {
     control: (base, state) => ({
@@ -223,8 +231,7 @@ const PillRadioGroup = ({ name, value, onChange, options, required }) => (
             return (
                 <label
                     key={opt.value}
-                    className={`btn d-flex align-items-center gap-2 px-4 py-2 border rounded-pill transition-all ${isSelected ? "btn-primary-custom shadow-sm" : "btn-light border-light-subtle text-muted"
-                        }`}
+                    className={`btn d-flex align-items-center gap-2 px-4 py-2 border rounded-pill transition-all ${isSelected ? "btn-primary-custom shadow-sm" : "btn-light border-light-subtle text-muted"}`}
                     style={{ cursor: "pointer", fontSize: "0.9rem" }}
                 >
                     <input
@@ -305,6 +312,71 @@ const inputCls = "form-control border-light-subtle bg-light focus-ring focus-rin
 const selectCls = "form-select border-light-subtle bg-light focus-ring focus-ring-primary py-2 px-3";
 const labelCls = "form-label fw-semibold text-dark";
 
+/* ---------- Document Upload Field with Submission Indicator ---------- */
+const DocumentUploadField = ({ label, required, filePath, onUpload, onChangeFile, accept = ".pdf,.doc,.docx,.jpg,.jpeg,.png" }) => {
+    const [showReplace, setShowReplace] = useState(false);
+
+    const resolveDocUrl = (pathOrUrl) => {
+        if (!pathOrUrl) return "";
+        if (pathOrUrl.startsWith("http")) return pathOrUrl;
+        return `${apiURL}staff_documents/${pathOrUrl}`;
+    };
+
+    return (
+        <div className="mb-3">
+            <label className={labelCls}>
+                {label} {required && <span className="text-danger">*</span>}
+            </label>
+            {filePath ? (
+                <div className="p-3 bg-light rounded-3 border d-flex flex-wrap align-items-center gap-3">
+                    <div className="d-flex align-items-center gap-2 text-success">
+                        <i className="fa-solid fa-circle-check fs-5"></i>
+                        <span className="fw-bold">Document already submitted</span>
+                    </div>
+                    <a
+                        href={resolveDocUrl(filePath)}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="btn btn-sm btn-outline-primary rounded-pill"
+                    >
+                        <i className="fa-solid fa-file-lines me-1"></i> View Document
+                    </a>
+                    <button
+                        type="button"
+                        className="btn btn-sm btn-light border rounded-pill"
+                        onClick={() => setShowReplace(!showReplace)}
+                    >
+                        <i className="fa-solid fa-rotate me-1"></i> Replace
+                    </button>
+                    {showReplace && (
+                        <input
+                            type="file"
+                            className="form-control bg-white mt-2 w-100"
+                            accept={accept}
+                            onChange={(e) => {
+                                onUpload(e);
+                                setShowReplace(false);
+                            }}
+                            style={{ fontSize: "0.85rem" }}
+                        />
+                    )}
+                </div>
+            ) : (
+                <div className="d-flex align-items-center gap-3 flex-wrap p-3 bg-light rounded-3 border">
+                    <input
+                        type="file"
+                        className="form-control bg-white"
+                        style={{ maxWidth: "320px" }}
+                        accept={accept}
+                        onChange={onUpload}
+                        required={required}
+                    />
+                </div>
+            )}
+        </div>
+    );
+};
+
 /* ---------- Map staff info to onboarding prefill ---------- */
 const mapStaffInfoToOnboardForm = (staff) => ({
     o_name: staff.name || "",
@@ -340,27 +412,20 @@ const mapStaffInfoToOnboardForm = (staff) => ({
 });
 
 /* ---------- Map staff info to TFN prefill ---------- */
-const mapStaffInfoToTfnForm = (staff) => {
-    const fullName = (staff.name || "").trim();
-    const parts = fullName.split(/\s+/).filter(Boolean);
-    const first_name = parts[0] || "";
-    const surname = parts.length > 1 ? parts.slice(1).join(" ") : "";
-    return {
-        tfn: "",
-        title: "",
-        first_name,
-        surname,
-        prev_name: "",
-        dob: staff.date_of_birth ? isoToDisplay(staff.date_of_birth) : "",
-        address: staff.address || "",
-        basis: "casual",
-        aus_res: "no",
-        threshold: "no",
-        help: "no",
-        sig1: fullName,
-        date1: todayDDMMYYYY(),
-    };
-};
+const mapStaffInfoToTfnForm = (staff) => ({
+    tfn: "",
+    title: "",
+    full_name: staff.name || "",
+    prev_name: "",
+    dob: staff.date_of_birth ? isoToDisplay(staff.date_of_birth) : "",
+    address: staff.address || "",
+    basis: "casual",
+    aus_res: "no",
+    threshold: "no",
+    help: "no",
+    sig1: staff.name || "",
+    date1: todayDDMMYYYY(),
+});
 
 /* ---------- Map staff info to Superannuation prefill ---------- */
 const mapStaffInfoToSuperForm = (staff) => ({
@@ -376,7 +441,7 @@ const mapStaffInfoToSuperForm = (staff) => ({
     date2: todayDDMMYYYY(),
 });
 
-/* ---------- TFN Declaration Form ---------- */
+/* ---------- TFN Declaration Form (Full Name only) ---------- */
 const TfnDeclarationForm = ({ values, loading, onChange, onSubmit, dataModified, onDownloadPDF }) => (
     <div className="card border-0 shadow-sm rounded-4 overflow-hidden bg-white animate__animated animate__fadeIn">
         <FormCardHeader
@@ -421,33 +486,17 @@ const TfnDeclarationForm = ({ values, loading, onChange, onSubmit, dataModified,
                             <option value="Mrs">Mrs</option>
                         </select>
                     </div>
-                    <div className="col-md-5">
+                    <div className="col-md-10">
                         <label className={labelCls}>
-                            First Name <span className="text-danger">*</span>
+                            Full Name <span className="text-danger">*</span>
                         </label>
                         <input
                             type="text"
                             className={inputCls}
-                            name="first_name"
-                            placeholder="Jane"
+                            name="full_name"
+                            placeholder="Jane Smith"
                             maxLength="50"
-                            value={values.first_name}
-                            onChange={onChange}
-                            required
-                            style={{ fontSize: "1rem" }}
-                        />
-                    </div>
-                    <div className="col-md-5">
-                        <label className={labelCls}>
-                            Surname <span className="text-danger">*</span>
-                        </label>
-                        <input
-                            type="text"
-                            className={inputCls}
-                            name="surname"
-                            placeholder="Smith"
-                            maxLength="50"
-                            value={values.surname}
+                            value={values.full_name}
                             onChange={onChange}
                             required
                             style={{ fontSize: "1rem" }}
@@ -763,24 +812,6 @@ const EmployeeOnboardingForm = ({
     onDocUpload, verifyingSecurityLicense, onVerifySecurityLicense,
     onDownloadPDF
 }) => {
-    const resolveDocUrl = (pathOrUrl) => {
-        if (!pathOrUrl) return "";
-        if (pathOrUrl.startsWith("http")) return pathOrUrl;
-        return `${apiURL}staff_documents/${pathOrUrl}`;
-    };
-
-    const DocLink = ({ path }) =>
-        path ? (
-            <a
-                href={resolveDocUrl(path)}
-                target="_blank"
-                rel="noreferrer"
-                className="text-primary small fw-bold text-decoration-none d-inline-flex align-items-center gap-1"
-            >
-                <i className="fa-solid fa-file-lines"></i> View Attached Document
-            </a>
-        ) : null;
-
     return (
         <div className="card border-0 shadow-sm rounded-4 overflow-hidden bg-white animate__animated animate__fadeIn">
             <FormCardHeader
@@ -868,46 +899,12 @@ const EmployeeOnboardingForm = ({
                             </label>
                             <DateInput name="o_pexpiry" value={values.o_pexpiry} onChange={onChange} required />
                         </div>
-
-                        <div className="col-md-12">
-                            <label className={labelCls}>
-                                Upload Passport Document <span className="text-danger">*</span>
-                            </label>
-                            <div className="d-flex align-items-center gap-3 flex-wrap p-3 bg-light rounded-3 border">
-                                <input type="file" className="form-control bg-white" style={{ maxWidth: "320px" }}
-                                    accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" onChange={(e) => onDocUpload(e, "passport_doc")} />
-                                <DocLink path={values.passport_doc} />
-                            </div>
-                        </div>
-
-                        <div className="col-md-12">
-                            <label className={`${labelCls} d-block`}>
-                                Work Rights in Australia <span className="text-danger">*</span>
-                            </label>
-                            <PillRadioGroup
-                                name="work"
-                                value={values.work}
-                                onChange={onChange}
-                                required
-                                options={[
-                                    { value: "citizen", label: "Australian Citizen / PR" },
-                                    { value: "student", label: "Student Visa" },
-                                    { value: "temporary", label: "Temporary Visa Holder" },
-                                    { value: "other", label: "Other Visa" },
-                                ]}
-                            />
-                        </div>
-
-                        {values.work === "other" && (
-                            <div className="col-md-12 animate__animated animate__fadeIn">
-                                <label className={labelCls}>
-                                    Visa Type <span className="text-danger">*</span>
-                                </label>
-                                <input type="text" className={inputCls} name="o_visa_type"
-                                    placeholder="Specify your visa type" maxLength="30" value={values.o_visa_type}
-                                    onChange={onChange} required style={{ fontSize: "1rem" }} />
-                            </div>
-                        )}
+                        <DocumentUploadField
+                            label="Upload Passport Document"
+                            required
+                            filePath={values.passport_doc}
+                            onUpload={(e) => onDocUpload(e, "passport_doc")}
+                        />
                     </div>
 
                     <SectionHeader icon="fa-id-card">100-Point ID Check</SectionHeader>
@@ -991,7 +988,6 @@ const EmployeeOnboardingForm = ({
                                     ) : "Verify"}
                                 </button>
                             </div>
-
                             <div className="mt-3">
                                 <label className={labelCls}>
                                     Upload Security Licence Document <span className="text-danger">*</span>
@@ -1002,12 +998,12 @@ const EmployeeOnboardingForm = ({
                                         Please verify the security licence first to enable document upload.
                                     </div>
                                 ) : (
-                                    <div className="d-flex align-items-center gap-3 flex-wrap p-3 bg-light rounded-3 border">
-                                        <input type="file" className="form-control bg-white"
-                                            accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
-                                            onChange={(e) => onDocUpload(e, "security_license_doc")} />
-                                        <DocLink path={values.security_license_doc} />
-                                    </div>
+                                    <DocumentUploadField
+                                        label=""
+                                        required
+                                        filePath={values.security_license_doc}
+                                        onUpload={(e) => onDocUpload(e, "security_license_doc")}
+                                    />
                                 )}
                             </div>
                         </div>
@@ -1024,12 +1020,12 @@ const EmployeeOnboardingForm = ({
                             <input type="text" className={inputCls} name="o_fa" placeholder="FA-001234"
                                 maxLength="30" value={values.o_fa} onChange={onChange} style={{ fontSize: "1rem" }} />
                             <div className="mt-3">
-                                <label className={labelCls}>Upload First Aid Document</label>
-                                <div className="d-flex align-items-center gap-3 flex-wrap p-3 bg-light rounded-3 border">
-                                    <input type="file" className="form-control bg-white" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
-                                        onChange={(e) => onDocUpload(e, "first_aid_doc")} />
-                                    <DocLink path={values.first_aid_doc} />
-                                </div>
+                                <DocumentUploadField
+                                    label="Upload First Aid Document"
+                                    required
+                                    filePath={values.first_aid_doc}
+                                    onUpload={(e) => onDocUpload(e, "first_aid_doc")}
+                                />
                             </div>
                         </div>
                         <div className="col-md-6">
@@ -1062,24 +1058,26 @@ const EmployeeOnboardingForm = ({
 };
 
 /* ---------- Normalizers ---------- */
-const normalizeTfnData = (apiData) => ({
-    tfn: apiData?.tfn ?? "",
-    title: apiData?.title ?? "",
-    first_name: apiData?.first_name ?? "",
-    surname: apiData?.surname ?? "",
-    prev_name: apiData?.previous_name ?? apiData?.prev_name ?? "",
-    dob: isoToDisplay(apiData?.dob),
-    address: apiData?.address ?? "",
-    basis: apiData?.basis_of_payment ?? apiData?.basis ?? "casual",
-    aus_res: String(apiData?.australian_resident ?? apiData?.aus_res ?? "").toLowerCase() === "1" ? "yes" :
-        String(apiData?.australian_resident ?? apiData?.aus_res ?? "").toLowerCase() === "yes" ? "yes" : "no",
-    threshold: String(apiData?.claim_threshold ?? apiData?.threshold ?? "").toLowerCase() === "1" ? "yes" :
-        String(apiData?.claim_threshold ?? apiData?.threshold ?? "").toLowerCase() === "yes" ? "yes" : "no",
-    help: String(apiData?.help_debt ?? apiData?.help ?? "").toLowerCase() === "1" ? "yes" :
-        String(apiData?.help_debt ?? apiData?.help ?? "").toLowerCase() === "yes" ? "yes" : "no",
-    sig1: apiData?.signature ?? apiData?.sig1 ?? "",
-    date1: isoToDisplay(apiData?.signed_date ?? apiData?.date) || todayDDMMYYYY(),
-});
+const normalizeTfnData = (apiData) => {
+    const fullName = apiData?.full_name || `${apiData?.first_name || ""} ${apiData?.surname || ""}`.trim();
+    return {
+        tfn: apiData?.tfn ?? "",
+        title: apiData?.title ?? "",
+        full_name: fullName,
+        prev_name: apiData?.previous_name ?? apiData?.prev_name ?? "",
+        dob: isoToDisplay(apiData?.dob),
+        address: apiData?.address ?? "",
+        basis: apiData?.basis_of_payment ?? apiData?.basis ?? "casual",
+        aus_res: String(apiData?.australian_resident ?? apiData?.aus_res ?? "").toLowerCase() === "1" ? "yes" :
+            String(apiData?.australian_resident ?? apiData?.aus_res ?? "").toLowerCase() === "yes" ? "yes" : "no",
+        threshold: String(apiData?.claim_threshold ?? apiData?.threshold ?? "").toLowerCase() === "1" ? "yes" :
+            String(apiData?.claim_threshold ?? apiData?.threshold ?? "").toLowerCase() === "yes" ? "yes" : "no",
+        help: String(apiData?.help_debt ?? apiData?.help ?? "").toLowerCase() === "1" ? "yes" :
+            String(apiData?.help_debt ?? apiData?.help ?? "").toLowerCase() === "yes" ? "yes" : "no",
+        sig1: apiData?.signature ?? apiData?.sig1 ?? "",
+        date1: isoToDisplay(apiData?.signed_date ?? apiData?.date) || todayDDMMYYYY(),
+    };
+};
 
 const normalizeSuperData = (apiData) => ({
     s_name: apiData?.full_name ?? apiData?.s_name ?? "",
@@ -1134,7 +1132,6 @@ const StaffOnboardingForms = ({ submit, userId, onProfileUpdate }) => {
         (state) => state.auth.userdata?.data?.id || state.auth.userdata?.id
     );
 
-
     // ---- User‑profile refetch to update Redux after saves ----
     const userEditEndpoint = useMemo(
         () => (userId ? `api/user-edit/${userId}` : null),
@@ -1181,10 +1178,7 @@ const StaffOnboardingForms = ({ submit, userId, onProfileUpdate }) => {
             if (formType === "tfn") {
                 if (fetchedData) {
                     const normalized = normalizeTfnData(fetchedData);
-                    const hasContent =
-                        normalized.tfn.trim() !== "" ||
-                        normalized.first_name.trim() !== "" ||
-                        normalized.surname.trim() !== "";
+                    const hasContent = normalized.tfn.trim() !== "" || normalized.full_name.trim() !== "";
                     if (hasContent) {
                         setTfnForm(normalized);
                         setOriginalTfnForm(normalized);
@@ -1193,10 +1187,7 @@ const StaffOnboardingForms = ({ submit, userId, onProfileUpdate }) => {
             } else if (formType === "superannuation") {
                 if (fetchedData) {
                     const normalized = normalizeSuperData(fetchedData);
-                    const hasContent =
-                        normalized.s_name.trim() !== "" ||
-                        normalized.s_fundname.trim() !== "" ||
-                        normalized.s_fundabn.trim() !== "";
+                    const hasContent = normalized.s_name.trim() !== "" || normalized.s_fundname.trim() !== "";
                     if (hasContent) {
                         setSuperForm(normalized);
                         setOriginalSuperForm(normalized);
@@ -1205,13 +1196,7 @@ const StaffOnboardingForms = ({ submit, userId, onProfileUpdate }) => {
             } else if (formType === "onboarding") {
                 if (fetchedData) {
                     const normalized = normalizeOnboardData(fetchedData);
-                    const hasContent =
-                        normalized.o_name.trim() !== "" ||
-                        normalized.o_addr.trim() !== "" ||
-                        normalized.o_phone.trim() !== "" ||
-                        normalized.o_email.trim() !== "" ||
-                        normalized.o_passport.trim() !== "" ||
-                        normalized.o_seclic.trim() !== "";
+                    const hasContent = normalized.o_name.trim() !== "" || normalized.o_addr.trim() !== "";
                     if (hasContent) {
                         setOnboardForm(normalized);
                         setOriginalOnboardForm(normalized);
@@ -1360,9 +1345,10 @@ const StaffOnboardingForms = ({ submit, userId, onProfileUpdate }) => {
             endpoint = "api/tfn-declaration";
             pdfType = "tfn";
             fileName = `TFN_Declaration_${userId}_${new Date().getTime()}.pdf`;
+            const { first_name, surname } = splitFullName(tfnForm.full_name);
             payload = {
                 user_id: userId, tfn: tfnForm.tfn, title: tfnForm.title,
-                first_name: tfnForm.first_name, surname: tfnForm.surname,
+                first_name, surname,
                 previous_name: tfnForm.prev_name, dob: tfnForm.dob,
                 address: tfnForm.address, basis_of_payment: tfnForm.basis,
                 australian_resident: tfnForm.aus_res, claim_threshold: tfnForm.threshold,
@@ -1419,13 +1405,11 @@ const StaffOnboardingForms = ({ submit, userId, onProfileUpdate }) => {
         if (saveSucceeded) {
             toast.success("Form saved successfully!");
 
-            // 1) Refresh individual form data
             if (tabIndex === 0) await fetchFormData("onboarding");
             else if (tabIndex === 1) await fetchFormData("tfn");
             else if (tabIndex === 2) await fetchFormData("superannuation");
             setDataModified(false);
 
-            // 2) Generate & upload PDF
             try {
                 let doc;
                 if (tabIndex === 0) doc = PDFGenerator.generateEmployeeOnboardingPDF(pdfFormData);
@@ -1444,7 +1428,6 @@ const StaffOnboardingForms = ({ submit, userId, onProfileUpdate }) => {
         }
     };
 
-    /* ---------- Direct PDF download (no API call) ---------- */
     const downloadPDF = (formType) => {
         if (!userId) {
             toast.error("User ID missing");
@@ -1480,9 +1463,10 @@ const StaffOnboardingForms = ({ submit, userId, onProfileUpdate }) => {
             fileName = `Employee_Onboarding_${userId}.pdf`;
             doc = PDFGenerator.generateEmployeeOnboardingPDF(pdfFormData);
         } else if (formType === "tfn") {
+            const { first_name, surname } = splitFullName(tfnForm.full_name);
             pdfFormData = {
                 user_id: userId, tfn: tfnForm.tfn, title: tfnForm.title,
-                first_name: tfnForm.first_name, surname: tfnForm.surname,
+                first_name, surname,
                 previous_name: tfnForm.prev_name, dob: tfnForm.dob,
                 address: tfnForm.address, basis_of_payment: tfnForm.basis,
                 australian_resident: tfnForm.aus_res, claim_threshold: tfnForm.threshold,

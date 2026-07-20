@@ -874,7 +874,30 @@ export default function EditProfile() {
           --surface: #ffffff;
           --canvas: #f8fafc;
         }
+          .profile-hero-inner {
+  display: flex;
+  align-items: flex-start;
+  gap: 1.5rem;
+}
 
+@media (max-width: 768px) {
+  .profile-hero {
+    padding: 28px 20px 32px;
+    text-align: center;
+  }
+  .profile-hero-inner {
+    flex-direction: column;
+    align-items: center;
+    gap: 18px;
+  }
+}
+
+@media (max-width: 480px) {
+  .profile-hero {
+    padding: 24px 16px 28px;
+    border-radius: 16px;
+  }
+}
         .profile-hero {
           position: relative;
           background: linear-gradient(135deg, var(--navy-950) 0%, var(--navy-900) 65%, #0f2f52 100%);
@@ -941,8 +964,9 @@ export default function EditProfile() {
       `}</style>
 
       {/* Profile Hero Header */}
+      {/* Profile Hero Header */}
       <div className="profile-hero">
-        <div className="d-flex align-items-start gap-4" style={{ position: "relative", zIndex: 1 }}>
+        <div className="profile-hero-inner" style={{ position: "relative", zIndex: 1 }}>
           <AvatarUpload
             profilePhoto={profilePhoto}
             name={formData.name}

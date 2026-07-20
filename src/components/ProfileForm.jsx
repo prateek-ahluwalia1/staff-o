@@ -303,7 +303,6 @@ export default function ProfileForm({
                         }
                         onChange({ target: { id: "abn", value } });
                       }}
-                      required
                       maxLength={15}
                       pattern="^\d{2}-\d{3}-\d{3}-\d{3}$"
                       style={{ borderRadius: "0 0.375rem 0.375rem 0" }}

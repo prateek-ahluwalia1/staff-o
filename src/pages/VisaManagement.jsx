@@ -1,6 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { toast } from "react-toastify";
 import useSubmit from "../hooks/useSubmit";
+import useFetch from "../hooks/useFetch";
 import Loader from "../components/Loader";
 import { Link } from "react-router-dom";
 import { COUNTRIES } from "../utils/exports";
@@ -201,10 +202,25 @@ const DetailField = ({ label, value, colSize = "col-12 col-md-6" }) => (
 // --- Main Component ---
 export default function VisaManagement() {
     const { submit: submitVisaCheck, loading: checkingVisa } = useSubmit({ isAuth: true });
+    const { data: existingChecks, loading: loadingExisting } = useFetch("api/admin/visa-checks", { isAuth: true });
 
     const [formData, setFormData] = useState(initialForm);
     const [visaChecksList, setVisaChecksList] = useState([]);
     const [selectedCheckDetail, setSelectedCheckDetail] = useState(null);
+
+    // Merge existing checks from API on load
+    useEffect(() => {
+        if (existingChecks && !loadingExisting) {
+            const fetched = Array.isArray(existingChecks?.data?.data)
+                ? existingChecks.data.data
+                : Array.isArray(existingChecks?.data)
+                    ? existingChecks.data
+                    : Array.isArray(existingChecks)
+                        ? existingChecks
+                        : [];
+            setVisaChecksList(fetched);
+        }
+    }, [existingChecks, loadingExisting]);
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
@@ -238,6 +254,7 @@ export default function VisaManagement() {
         const data = unwrapVisaResponse(res);
 
         if (data?.id) {
+            // Prepend new check to existing list
             setVisaChecksList((prev) => [data, ...prev]);
             setFormData(initialForm);
 
@@ -515,8 +532,8 @@ export default function VisaManagement() {
                                     placeholder="Select country..."
                                     isClearable
                                     isSearchable
-                                    menuPortalTarget={document.body}          // <-- render menu at body level
-                                    menuPosition="fixed"                      // <-- position it absolutely
+                                    menuPortalTarget={document.body}
+                                    menuPosition="fixed"
                                     styles={{
                                         control: (base) => ({
                                             ...base,
@@ -526,7 +543,7 @@ export default function VisaManagement() {
                                             boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
                                             '&:hover': { borderColor: '#0A7C6E' },
                                         }),
-                                        menuPortal: (base) => ({ ...base, zIndex: 9999 })  // <-- ensure it's on top
+                                        menuPortal: (base) => ({ ...base, zIndex: 9999 })
                                     }}
                                 />
                             </div>
@@ -569,7 +586,14 @@ export default function VisaManagement() {
                                 </tr>
                             </thead>
                             <tbody>
-                                {visaChecksList.length === 0 && (
+                                {loadingExisting && (
+                                    <tr>
+                                        <td colSpan="4" className="text-center py-5">
+                                            <Loader compact />
+                                        </td>
+                                    </tr>
+                                )}
+                                {!loadingExisting && visaChecksList.length === 0 && (
                                     <tr>
                                         <td colSpan="4" className="text-center text-muted py-5" style={{ textTransform: "none" }}>
                                             <i className="fa-solid fa-folder-open fa-2x mb-3" style={{ opacity: 0.4 }}></i>
@@ -577,7 +601,7 @@ export default function VisaManagement() {
                                         </td>
                                     </tr>
                                 )}
-                                {visaChecksList.map((item) => {
+                                {!loadingExisting && visaChecksList.map((item) => {
                                     const isSelected = selectedCheckDetail?.id === item.id;
                                     return (
                                         <tr
@@ -607,7 +631,7 @@ export default function VisaManagement() {
                 </div>
             </div>
 
-            {/* Detailed Report (unchanged logic) */}
+            {/* Detailed Report (unchanged) */}
             {selectedCheckDetail && (
                 <div className="content-card mt-4">
                     <div className="card-header d-flex justify-content-between align-items-center">

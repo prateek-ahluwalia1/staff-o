@@ -399,6 +399,9 @@ const selectStyles = {
     borderColor: "#ced4da",
     boxShadow: "none",
     minWidth: "0",
+    borderRadius: "12px",
+    border: "1px solid #e2e8f0",
+    background: "#f8fafc",
   }),
   valueContainer: (base) => ({
     ...base,
@@ -606,100 +609,329 @@ export default function TimeSheet() {
     XLSX.writeFile(workbook, `timesheet-${Date.now()}.xlsx`);
   };
 
+  // Date range label for header stats
+  const rangeLabel = useMemo(() => {
+    const s = parseInputDate(startDate);
+    const e = parseInputDate(endDate);
+    if (!s || !e) return "—";
+    const startFormatted = formatDisplayDate(formatDateInput(s));
+    const endFormatted = formatDisplayDate(formatDateInput(e));
+    return `${startFormatted} – ${endFormatted}`;
+  }, [startDate, endDate]);
+
+  const totalStaffCount = timesheetData.length;
+
   return (
-    <div className="dashboard-main dashboard-tools-page">
-      <div className="dashboard-page-header">
-        <div>
-          <h1>Time Sheet</h1>
-          <p style={{ textTransform: "none" }}>
-            Filter, review, and drill into shift breakdowns.
-          </p>
-        </div>
-      </div>
+    <div className="container-fluid p-3 p-md-4" style={{ background: "#f8fafc", minHeight: "100vh" }}>
+      <style>{`
+        :root {
+          --navy-950: #0a1930;
+          --navy-900: #0e2340;
+          --teal: #0A7C6E;
+          --teal-dark: #075e53;
+          --teal-tint: #f0fdf9;
+          --teal-border: #d1fae5;
+          --amber: #d97706;
+          --amber-tint: #fffbeb;
+          --success: #16a34a;
+          --purple: #7c3aed;
+          --ink: #0f172a;
+          --slate: #1e293b;
+          --muted: #64748b;
+          --faint: #94a3b8;
+          --line: #e2e8f0;
+          --line-soft: #f1f5f9;
+          --surface: #ffffff;
+        }
 
-      <div className="card border-0 shadow-sm">
-        <div className="card-body py-3">
-          <div className="row g-2 w-100 timesheet-filter-grid align-items-end">
-            <div className="col-12 col-sm-6 col-lg-4">
-              <Select
-                isMulti
-                options={customerOptions}
-                components={{ Option: CheckboxOption }}
-                styles={selectStyles}
-                closeMenuOnSelect={false}
-                hideSelectedOptions={false}
-                controlShouldRenderValue={false}
-                value={resolveSelectedOptions(
-                  customerOptions,
-                  selectedCustomerValues
-                )}
-                isAllSelected={customerAllSelected}
-                onChange={(selected, actionMeta) =>
-                  setSelectedCustomerValues(
-                    normalizeMultiSelectValues(
-                      selected,
-                      actionMeta,
-                      selectedCustomerValues,
-                      customerOptions
-                    )
-                  )
-                }
-                placeholder={getSelectPlaceholder(
-                  "Select clients",
-                  selectedCustomerValues.length,
-                  customersList.length
-                )}
-                isLoading={customersLoading}
-              />
-            </div>
-            <div className="col-12 col-sm-6 col-lg-3">
-              <DateFilterInput
-                value={startDate}
-                onChange={setStartDate}
-                placeholder="Start date"
-              />
-            </div>
-            <div className="col-12 col-sm-6 col-lg-3">
-              <DateFilterInput
-                value={endDate}
-                onChange={setEndDate}
-                placeholder="End date"
-              />
-            </div>
+        /* Hero */
+        .ts-hero {
+          position: relative;
+          background: linear-gradient(135deg, var(--navy-950) 0%, var(--navy-900) 65%, #0f2f52 100%);
+          border-radius: 22px;
+          padding: 28px 24px 36px;
+          overflow: hidden;
+          isolation: isolate;
+          margin-bottom: 0;
+        }
+        .ts-hero::before {
+          content: "";
+          position: absolute;
+          inset: 0;
+          background-image: radial-gradient(rgba(255,255,255,0.10) 1px, transparent 1px);
+          background-size: 22px 22px;
+          opacity: 0.35;
+          z-index: -1;
+        }
+        .ts-hero::after {
+          content: "";
+          position: absolute;
+          top: -40px;
+          right: -40px;
+          width: 200px;
+          height: 200px;
+          border-radius: 50%;
+          background: radial-gradient(circle, rgba(10,124,110,0.45) 0%, rgba(10,124,110,0) 70%);
+          z-index: -1;
+        }
+        .ts-hero-eyebrow {
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          font-size: 11px;
+          font-weight: 700;
+          letter-spacing: 0.6px;
+          text-transform: uppercase;
+          color: #6ee7d8;
+          margin-bottom: 10px;
+        }
+        .ts-hero-eyebrow .dot {
+          width: 7px; height: 7px; border-radius: 50%;
+          background: #34d399;
+          box-shadow: 0 0 0 4px rgba(52,211,153,0.18);
+        }
+        .ts-hero h1 {
+          color: #fff;
+          font-size: 28px;
+          font-weight: 800;
+          letter-spacing: -0.4px;
+          margin: 0 0 6px;
+        }
+        .ts-hero p {
+          color: rgba(255,255,255,0.62);
+          font-size: 14px;
+          margin: 0;
+          text-transform: none;
+        }
+        .ts-hero-stats {
+          display: flex;
+          gap: 12px;
+          flex-wrap: wrap;
+          margin-top: 28px;
+        }
+        .ts-hero-stat {
+          background: rgba(255,255,255,0.06);
+          border: 1px solid rgba(255,255,255,0.12);
+          backdrop-filter: blur(6px);
+          border-radius: 14px;
+          padding: 12px 16px;
+          min-width: 140px;
+          flex: 1 1 150px;
+        }
+        .ts-hero-stat-label {
+          font-size: 10px;
+          font-weight: 700;
+          letter-spacing: 0.5px;
+          text-transform: uppercase;
+          color: rgba(255,255,255,0.5);
+          display: block;
+          margin-bottom: 4px;
+        }
+        .ts-hero-stat-value {
+          font-size: 18px;
+          font-weight: 700;
+          color: #fff;
+          letter-spacing: -0.2px;
+        }
 
-            <div className="col-12 col-sm-12 col-lg-2 d-flex gap-2 flex-wrap flex-sm-nowrap">
-              <button
-                className="btn btn-sm btn-primary-custom timesheet-action-btn w-100 px-2"
-                onClick={fetchTimesheets}
-                disabled={timesheetLoading}
-              >
-                <i className="fa-solid fa-search"></i> Search
-              </button>
-              <button
-                className="btn btn-sm btn-outline-primary-custom timesheet-action-btn w-100 px-2"
-                onClick={handleExport}
-                disabled={timesheetData.length === 0}
-              >
-                <i className="fa-solid fa-download"></i> Export
-              </button>
-            </div>
+        /* Filter card */
+        .ts-filter-card {
+          background: #fff;
+          border-radius: 18px;
+          box-shadow: 0 18px 40px -14px rgba(10, 25, 48, 0.28);
+          border: 1px solid var(--line-soft);
+          padding: 16px 18px;
+          margin-top: -30px;
+          margin-bottom: 24px;
+          position: relative;
+          z-index: 2;
+        }
+
+        /* Table card */
+        .ts-table-card {
+          background: #fff;
+          border-radius: 18px;
+          box-shadow: 0 10px 25px -8px rgba(15,23,42,0.08);
+          border: 1px solid var(--line-soft);
+          overflow: hidden;
+        }
+
+        /* Main table */
+        .ts-main-table {
+          margin-bottom: 0;
+        }
+        .ts-main-table thead th {
+          background: #f8fafc;
+          border-bottom: 2px solid var(--teal);
+          font-size: 0.8rem;
+          font-weight: 700;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+          color: var(--faint);
+          padding: 14px 10px;
+        }
+        .ts-main-table tbody td {
+          padding: 12px 10px;
+          font-size: 0.85rem;
+          border-color: var(--line-soft);
+        }
+        .ts-main-table tbody tr:hover td {
+          background: #f0fdf9;
+        }
+        .ts-main-table tbody tr.table-active td {
+          background: #e6f2f0;
+        }
+
+        /* Breakdown */
+        .ts-breakdown-wrapper {
+          background: #f8fafc;
+          padding: 16px;
+          border-top: 1px solid var(--line);
+        }
+        .ts-breakdown-table {
+          font-size: 0.8rem;
+          margin-bottom: 0;
+        }
+        .ts-breakdown-table thead th {
+          background: #e6f2f0;
+          font-weight: 700;
+          color: var(--ink);
+        }
+        .ts-breakdown-table tbody td {
+          background: #fff;
+          border-color: var(--line-soft);
+        }
+
+        /* Buttons */
+        .btn-teal {
+          background: var(--teal);
+          border: none;
+          color: white;
+          border-radius: 12px;
+          font-weight: 600;
+          padding: 10px 18px;
+          box-shadow: 0 4px 10px -2px rgba(10,124,110,0.4);
+          transition: all 0.15s;
+        }
+        .btn-teal:hover {
+          background: var(--teal-dark);
+          transform: translateY(-1px);
+          box-shadow: 0 8px 18px -4px rgba(10,124,110,0.5);
+          color: white;
+        }
+
+        .form-switch .form-check-input:checked {
+          background-color: var(--teal);
+          border-color: var(--teal);
+        }
+
+        @media (max-width: 768px) {
+          .ts-hero { padding: 20px 16px 28px; }
+          .ts-hero h1 { font-size: 22px; }
+        }
+      `}</style>
+
+      {/* Hero */}
+      <div className="ts-hero">
+        <span className="ts-hero-eyebrow">
+          <span className="dot"></span> Live
+        </span>
+        <h1>Time Sheet</h1>
+        <p>Filter, review, and drill into shift breakdowns.</p>
+        <div className="ts-hero-stats">
+          <div className="ts-hero-stat">
+            <span className="ts-hero-stat-label">Date Range</span>
+            <span className="ts-hero-stat-value">{rangeLabel || "—"}</span>
+          </div>
+          <div className="ts-hero-stat">
+            <span className="ts-hero-stat-label">Staff Count</span>
+            <span className="ts-hero-stat-value">{totalStaffCount}</span>
           </div>
         </div>
       </div>
 
-      {/* ── Table (responsive wrapper added) ── */}
-      <div className="card border-0 shadow-sm">
-        <div className="timesheet-table-shell">
-          <table className="table table-sm table-hover align-middle mb-0 timesheet-main-table">
-            <thead className="text-dark">
+      {/* Filter Card */}
+      <div className="ts-filter-card">
+        <div className="row g-2 align-items-end">
+          <div className="col-12 col-sm-6 col-lg-4">
+            <Select
+              isMulti
+              options={customerOptions}
+              components={{ Option: CheckboxOption }}
+              styles={selectStyles}
+              closeMenuOnSelect={false}
+              hideSelectedOptions={false}
+              controlShouldRenderValue={false}
+              value={resolveSelectedOptions(
+                customerOptions,
+                selectedCustomerValues
+              )}
+              isAllSelected={customerAllSelected}
+              onChange={(selected, actionMeta) =>
+                setSelectedCustomerValues(
+                  normalizeMultiSelectValues(
+                    selected,
+                    actionMeta,
+                    selectedCustomerValues,
+                    customerOptions
+                  )
+                )
+              }
+              placeholder={getSelectPlaceholder(
+                "Select clients",
+                selectedCustomerValues.length,
+                customersList.length
+              )}
+              isLoading={customersLoading}
+            />
+          </div>
+          <div className="col-12 col-sm-6 col-lg-3">
+            <DateFilterInput
+              value={startDate}
+              onChange={setStartDate}
+              placeholder="Start date"
+            />
+          </div>
+          <div className="col-12 col-sm-6 col-lg-3">
+            <DateFilterInput
+              value={endDate}
+              onChange={setEndDate}
+              placeholder="End date"
+            />
+          </div>
+          <div className="col-12 col-sm-6 col-lg-2 d-flex gap-2">
+            <button
+              className="btn btn-teal flex-fill"
+              onClick={fetchTimesheets}
+              disabled={timesheetLoading}
+            >
+              Search
+            </button>
+            <button
+              className="btn btn-outline-secondary flex-fill"
+              onClick={handleExport}
+              disabled={timesheetData.length === 0}
+              style={{ borderRadius: "12px", fontWeight: 600 }}
+            >
+              Export
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Table Card */}
+      <div className="ts-table-card">
+        <div className="table-responsive">
+          <table className="table ts-main-table align-middle">
+            <thead>
               <tr>
                 <th>Staff ID</th>
                 <th>Name</th>
                 <th>Total Hours</th>
-                <th title="Regular Hours (Mon-Fri)">Regular</th>
-                <th title="Total Saturday Hours">Saturday</th>
-                <th title="Total Sunday Hours">Sunday</th>
-                <th title="Total Public Holiday Hours">Public Holiday</th>
+                <th>Regular</th>
+                <th>Saturday</th>
+                <th>Sunday</th>
+                <th>Public Holiday</th>
                 <th>Shift Count</th>
               </tr>
             </thead>
@@ -714,11 +946,7 @@ export default function TimeSheet() {
 
               {!timesheetLoading && timesheetData.length === 0 && (
                 <tr>
-                  <td
-                    colSpan="8"
-                    className="text-center text-muted py-5"
-                    style={{ textTransform: "none" }}
-                  >
+                  <td colSpan="8" className="text-center text-muted py-5">
                     No timesheet records found.
                   </td>
                 </tr>
@@ -732,37 +960,31 @@ export default function TimeSheet() {
                       <tr
                         onClick={() => handleRowClick(row)}
                         style={{ cursor: "pointer" }}
-                        className={`timesheet-summary-row ${isSelected ? "table-active" : ""
-                          }`}
+                        className={isSelected ? "table-active" : ""}
                       >
-                        <td>
-                          {row.raw?.id ??
-                            row.raw?.guard_id ??
-                            row.raw?.staff_id ??
-                            "-"}
-                        </td>
-                        <td>{row.staffName}</td>
+                        <td>{row.raw?.id ?? row.raw?.guard_id ?? row.raw?.staff_id ?? "-"}</td>
+                        <td className="fw-bold">{row.staffName}</td>
                         <td className="fw-bold">{row.totalHours}</td>
                         <td>{row.regularHours}</td>
                         <td>{row.saturdayHours}</td>
                         <td>{row.sundayHours}</td>
                         <td>{row.phHours}</td>
-                        <td>{row.shiftCount}</td>
+                        <td className="text-center">{row.shiftCount}</td>
                       </tr>
 
                       {isSelected && (
-                        <tr className="timesheet-detail-row">
-                          <td colSpan="8" className="bg-light">
-                            <div className="p-3">
+                        <tr>
+                          <td colSpan="8" className="p-0">
+                            <div className="ts-breakdown-wrapper">
                               <h6
                                 className="fw-bold mb-3"
                                 style={{ color: "#0A7C6E" }}
                               >
                                 Detailed Shift Breakdown: {row.staffName}
                               </h6>
-                              <div className="table-responsive timesheet-breakdown-wrapper">
-                                <table className="table table-sm table-bordered align-middle mb-0 timesheet-breakdown-table">
-                                  <thead className="text-dark">
+                              <div className="table-responsive">
+                                <table className="table table-sm ts-breakdown-table align-middle">
+                                  <thead>
                                     <tr>
                                       <th>Shift ID</th>
                                       <th>Site</th>
@@ -786,10 +1008,7 @@ export default function TimeSheet() {
                                   <tbody>
                                     {detailsLoading ? (
                                       <tr>
-                                        <td
-                                          colSpan="17"
-                                          className="text-center py-3"
-                                        >
+                                        <td colSpan="17" className="text-center py-3">
                                           Loading details...
                                         </td>
                                       </tr>
@@ -802,22 +1021,14 @@ export default function TimeSheet() {
                                           <td>{item.guardName}</td>
                                           <td>{item.start}</td>
                                           <td>{item.end}</td>
-                                          <td className="fw-bold">
-                                            {item.totalHours}
-                                          </td>
+                                          <td className="fw-bold">{item.totalHours}</td>
                                           <td>{item.regularHours}</td>
                                           <td>{item.saturdayHours}</td>
                                           <td>{item.sundayHours}</td>
                                           <td>{item.phHours}</td>
-                                          <td className="text-capitalize">
-                                            {item.shiftPayable}
-                                          </td>
-                                          <td className="text-capitalize">
-                                            {item.shiftChargeable}
-                                          </td>
-                                          <td className="text-capitalize">
-                                            {item.jobStatus}
-                                          </td>
+                                          <td className="text-capitalize">{item.shiftPayable}</td>
+                                          <td className="text-capitalize">{item.shiftChargeable}</td>
+                                          <td className="text-capitalize">{item.jobStatus}</td>
                                           <td>{item.signInTime}</td>
                                           <td>{item.signOutTime}</td>
                                           <td className="text-center">
@@ -827,15 +1038,8 @@ export default function TimeSheet() {
                                                 type="checkbox"
                                                 role="switch"
                                                 checked={item.active}
-                                                disabled={
-                                                  togglingRosterId ===
-                                                  item.rosterId
-                                                }
-                                                onChange={() =>
-                                                  handleToggleManualApproval(
-                                                    item
-                                                  )
-                                                }
+                                                disabled={togglingRosterId === item.rosterId}
+                                                onChange={() => handleToggleManualApproval(item)}
                                               />
                                             </div>
                                           </td>
@@ -843,12 +1047,8 @@ export default function TimeSheet() {
                                       ))
                                     ) : (
                                       <tr>
-                                        <td
-                                          colSpan="17"
-                                          className="text-center text-muted py-4"
-                                        >
-                                          No breakdown data available for this
-                                          shift.
+                                        <td colSpan="17" className="text-center text-muted py-4">
+                                          No breakdown data available for this shift.
                                         </td>
                                       </tr>
                                     )}
@@ -868,179 +1068,8 @@ export default function TimeSheet() {
       </div>
 
       {customersLoading && (
-        <div className="mt-3 text-muted small">
-          Loading filters customers...
-        </div>
+        <div className="mt-3 text-muted small">Loading filters...</div>
       )}
-
-      <style>
-        {`
-          /* Filter grid */
-          .timesheet-filter-grid .css-b62m3t-container {
-            width: 100%;
-          }
-
-          /* Main table wrapper – allow horizontal swipe on mobile */
-          .timesheet-table-shell {
-            overflow-x: auto;
-            -webkit-overflow-scrolling: touch;
-            border-radius: 0.25rem;
-          }
-
-          /* Main table */
-          .timesheet-main-table {
-            table-layout: auto;        /* Let columns size naturally on small screens */
-            width: 100%;
-            min-width: 600px;          /* Ensure minimal width before scroll kicks in */
-            margin-bottom: 0;
-          }
-
-          /* Column widths on larger screens to avoid extremely wide tables */
-          @media (min-width: 992px) {
-            .timesheet-main-table {
-              table-layout: fixed;
-              min-width: 0;
-            }
-            .timesheet-main-table th:nth-child(1) { width: 12%; }
-            .timesheet-main-table th:nth-child(2) { width: 18%; }
-            .timesheet-main-table th:nth-child(3) { width: 11%; }
-            .timesheet-main-table th:nth-child(4) { width: 10%; }
-            .timesheet-main-table th:nth-child(5) { width: 10%; }
-            .timesheet-main-table th:nth-child(6) { width: 10%; }
-            .timesheet-main-table th:nth-child(7) { width: 12%; }
-            .timesheet-main-table th:nth-child(8) { width: 7%; }
-          }
-
-          .timesheet-main-table > thead > tr > th,
-          .timesheet-main-table > tbody > tr > td {
-            padding: 0.5rem 0.4rem;
-            font-size: 0.8rem;
-            line-height: 1.2;
-            white-space: normal;
-            word-break: break-word;
-            vertical-align: middle;
-          }
-
-          .timesheet-main-table > thead > tr > th {
-            background-color: #e6f2f0;
-            white-space: normal;
-            word-break: break-word;
-            border-right: 1px solid #dce8e6;
-            border-bottom: 2px solid #0A7C6E !important;
-            font-size: 0.82rem;
-            font-weight: 700;
-            letter-spacing: 0.02em;
-            text-align: center;
-            line-height: 1.2;
-            padding-top: 0.6rem;
-            padding-bottom: 0.6rem;
-          }
-          .timesheet-main-table > thead > tr > th:last-child {
-            border-right: 0;
-          }
-          .timesheet-main-table > tbody > tr.timesheet-summary-row > td {
-            border-bottom: 1px solid #e2e8e6;
-            border-right: 1px solid #edf2f0;
-            background-color: #fff;
-          }
-          .timesheet-main-table > tbody > tr.timesheet-summary-row > td:not(:nth-child(2)) {
-            text-align: center;
-          }
-          .timesheet-main-table > tbody > tr.timesheet-summary-row > td:last-child {
-            border-right: 0;
-          }
-          .timesheet-main-table > tbody > tr.timesheet-summary-row:nth-of-type(odd) > td {
-            background-color: #f8fcfb;
-          }
-          .timesheet-main-table > tbody > tr.timesheet-summary-row:hover > td {
-            background-color: #e6f2f0;
-          }
-          .timesheet-main-table > tbody > tr.timesheet-detail-row > td {
-            border-bottom: 2px solid #b8d0cc;
-          }
-
-          /* Breakdown table wrapper */
-          .timesheet-breakdown-wrapper {
-            -webkit-overflow-scrolling: touch;
-          }
-
-          .timesheet-breakdown-table th,
-          .timesheet-breakdown-table td {
-            font-size: 0.78rem;
-            padding: 0.45rem 0.4rem;
-            white-space: nowrap;
-            word-break: normal;
-            text-transform: none;
-            letter-spacing: normal;
-            text-align: left;
-            line-height: 1.25;
-          }
-          .timesheet-breakdown-table thead th {
-            background-color: #e6f2f0;
-            border-bottom: 2px solid #0A7C6E;
-            font-weight: 700;
-          }
-          .timesheet-breakdown-table tbody td {
-            background-color: #fff;
-          }
-          .timesheet-breakdown-table tbody tr:nth-child(even) td {
-            background-color: #f8fcfb;
-          }
-
-          /* Action buttons */
-          .timesheet-action-btn {
-            min-height: 44px;
-            white-space: nowrap;
-          }
-
-          /* Hide less important columns progressively on smaller screens */
-          @media (max-width: 1200px) {
-            .timesheet-main-table th:nth-child(5),
-            .timesheet-main-table th:nth-child(6),
-            .timesheet-main-table th:nth-child(7),
-            .timesheet-main-table td:nth-child(5),
-            .timesheet-main-table td:nth-child(6),
-            .timesheet-main-table td:nth-child(7) {
-              display: none;
-            }
-          }
-
-          @media (max-width: 768px) {
-            .timesheet-main-table th,
-            .timesheet-main-table td {
-              padding: 0.45rem 0.3rem;
-              font-size: 0.75rem;
-            }
-            .timesheet-main-table th:nth-child(4),
-            .timesheet-main-table td:nth-child(4) {
-              display: none;
-            }
-            .timesheet-main-table {
-              table-layout: auto;    /* allow columns to resize */
-              min-width: 400px;      /* scroll on very small screens if needed */
-            }
-          }
-
-          /* Extra small phones */
-          @media (max-width: 480px) {
-            .timesheet-main-table {
-              min-width: 380px;
-              font-size: 0.72rem;
-            }
-            .timesheet-main-table th,
-            .timesheet-main-table td {
-              padding: 0.4rem 0.2rem;
-            }
-            .timesheet-filter-grid .row > [class*="col-"] {
-              padding-right: 0.25rem;
-              padding-left: 0.25rem;
-            }
-            .dashboard-page-header h1 {
-              font-size: 1.4rem;
-            }
-          }
-        `}
-      </style>
     </div>
   );
 }

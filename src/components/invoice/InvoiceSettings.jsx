@@ -278,7 +278,7 @@ const InvoiceSettings = ({
         <div className="invoice-grand-total d-flex justify-content-between align-items-center text-primary fs-5">
           <span className="fw-bold">Total</span>
           <strong className="fw-bold">
-            ${grandTotal.toFixed(2)} <span className="fs-6 text-muted">{currency}</span>
+            {grandTotal.toFixed(2)} <span className="fs-6 text-muted">{currency}</span>
           </strong>
         </div>
       </div>

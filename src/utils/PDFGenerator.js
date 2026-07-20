@@ -633,7 +633,7 @@ const PDFGenerator = {
     doc.setFontSize(11); doc.setFont("helvetica", "bold"); doc.setTextColor(...T.teal);
     doc.text("Shift Details", mg, y + 2); y += 6;
 
-    const fmt = (value) => `$${Number(value || 0).toFixed(2)}`;
+    const fmt = (value) => `${Number(value || 0).toFixed(2)}`;
 
     const td = items.map((item, index) => {
       const amount = item.amount ?? (Number(item.qty || 0) * Number(item.rate || 0));

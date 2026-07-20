@@ -9,9 +9,7 @@ import InvoiceSettings from "../components/invoice/InvoiceSettings";
 import InvoiceToolbar from "../components/invoice/InvoiceToolbar";
 import PDFGenerator from "../utils/PDFGenerator";
 
-
 const formatDateForRange = (dateStr) => {
-  // Already returns DD/MM/YYYY (used for API)
   if (!dateStr) return "";
   const [year, month, day] = dateStr.split("-");
   if (!year || !month || !day) return "";
@@ -38,7 +36,7 @@ const Invoice = () => {
   const [currency, setCurrency] = useState("AUD");
 
   const [startDate, setStartDate] = useState(
-    new Date().toISOString().split("T")[0], // YYYY-MM-DD
+    new Date().toISOString().split("T")[0],
   );
   const [endDate, setEndDate] = useState("");
   const [dueDate, setDueDate] = useState("");
@@ -291,116 +289,279 @@ const Invoice = () => {
 
   if (!isAdmin) {
     return (
-      <div className="dashboard-main dashboard-tools-page">
-        <div className="dashboard-tools-access-state">
-          <i className="fa fa-lock"></i>
-          You do not have permission to access invoicing.
+      <div className="min-vh-100 d-flex align-items-center justify-content-center bg-light">
+        <div className="text-center">
+          <h3 className="text-danger fw-bold mb-3">Access Denied</h3>
+          <p className="text-muted">Only administrators can access invoicing.</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="dashboard-main dashboard-tools-page invoice-page container-fluid px-0">
-      {/* Header Section */}
-      <div className="dashboard-page-header d-flex flex-column flex-lg-row justify-content-between align-items-start align-items-lg-center">
-        <div className="mb-3 mb-lg-0">
-          <h1 className="mb-1">Invoicing</h1>
-          <p className="mb-0 text-muted"
-            style={{ textTransform: "none" }}
-          >Create and send invoices with your existing accounts flow.</p>
-        </div>
+    <div className="container-fluid p-3 p-md-4" style={{ background: "#f8fafc", minHeight: "100vh" }}>
+      <style>{`
+        :root {
+          --navy-950: #0a1930;
+          --navy-900: #0e2340;
+          --teal: #0A7C6E;
+          --teal-dark: #075e53;
+          --teal-tint: #f0fdf9;
+          --teal-border: #d1fae5;
+          --ink: #0f172a;
+          --slate: #1e293b;
+          --muted: #64748b;
+          --faint: #94a3b8;
+          --line: #e2e8f0;
+          --line-soft: #f1f5f9;
+          --surface: #ffffff;
+        }
 
-        <div className="d-flex flex-column flex-sm-row gap-2 w-100 w-lg-auto">
-          <button
-            type="button"
-            className="btn btn-outline-primary w-100 w-sm-auto"
-            onClick={handlePreview}
-            disabled={isSending}
-          >
-            <i className="fa-solid fa-eye me-2"></i> Preview
-          </button>
-          <button
-            type="button"
-            className="btn btn-outline-primary w-100 w-sm-auto"
-            onClick={handleDownload}
-            disabled={isSending}
-          >
-            <i className="fa-solid fa-download me-2"></i> Download
-          </button>
+        /* Hero */
+        .inv-hero {
+          position: relative;
+          background: linear-gradient(135deg, var(--navy-950) 0%, var(--navy-900) 65%, #0f2f52 100%);
+          border-radius: 22px;
+          padding: 28px 24px 36px;
+          overflow: hidden;
+          isolation: isolate;
+          margin-bottom: 1.5rem;
+        }
+        .inv-hero::before {
+          content: "";
+          position: absolute;
+          inset: 0;
+          background-image: radial-gradient(rgba(255,255,255,0.10) 1px, transparent 1px);
+          background-size: 22px 22px;
+          opacity: 0.35;
+          z-index: -1;
+          pointer-events: none;
+        }
+        .inv-hero::after {
+          content: "";
+          position: absolute;
+          top: -40px;
+          right: -40px;
+          width: 200px;
+          height: 200px;
+          border-radius: 50%;
+          background: radial-gradient(circle, rgba(10,124,110,0.45) 0%, rgba(10,124,110,0) 70%);
+          z-index: -1;
+          pointer-events: none;
+        }
+        .inv-hero-eyebrow {
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          font-size: 11px;
+          font-weight: 700;
+          letter-spacing: 0.6px;
+          text-transform: uppercase;
+          color: #6ee7d8;
+          margin-bottom: 10px;
+        }
+        .inv-hero-eyebrow .dot {
+          width: 7px; height: 7px; border-radius: 50%;
+          background: #34d399;
+          box-shadow: 0 0 0 4px rgba(52,211,153,0.18);
+        }
+        .inv-hero h1 {
+          color: #fff;
+          font-size: 28px;
+          font-weight: 800;
+          letter-spacing: -0.4px;
+          margin: 0 0 6px;
+        }
+        .inv-hero p {
+          color: rgba(255,255,255,0.62);
+          font-size: 14px;
+          margin: 0;
+          text-transform: none;
+        }
 
-          <button
-            type="button"
-            className="btn btn-primary-custom w-100 w-sm-auto"
-            onClick={handleSendInvoice}
-            disabled={isSending}
-          >
-            {isSending ? (
-              <i className="fa-solid fa-spinner fa-spin me-2"></i>
-            ) : (
-              <i className="fa-solid fa-paper-plane me-2"></i>
-            )}
-            {isSending ? "Sending..." : "Send Invoice"}
-          </button>
-        </div>
-      </div>
+        /* Cards */
+        .card-premium {
+          background: #fff;
+          border-radius: 18px;
+          box-shadow: 0 10px 25px -8px rgba(15,23,42,0.08);
+          border: 1px solid var(--line-soft);
+          padding: 24px;
+          margin-bottom: 24px;
+        }
 
-      {/* Main Layout using Bootstrap Grid */}
-      <div className="row mt-4 flex-column-reverse flex-xl-row">
-        {/* Main Content Area */}
-        <div className="col-12 col-xl-8 col-xxl-9 mb-4">
-          <div className="list-card p-3 p-md-4 bg-white rounded shadow-sm">
-            <InvoiceToolbar
-              selectedCustomerId={selectedCustomerId}
-              customersList={customersList}
-              startDate={startDate}
-              endDate={endDate}
-              isSearching={isSearching}
-              onCustomerChange={handleCustomerChange}
-              onStartDateChange={setStartDate}
-              onEndDateChange={setEndDate}
-              onSearch={handleSearch}
-            />
+        /* Buttons */
+        .btn-teal {
+          background: var(--teal) !important;
+          border: none;
+          color: #fff !important;
+          font-weight: 600;
+          border-radius: 12px;
+          padding: 0.65rem 1.5rem;
+          box-shadow: 0 4px 10px -2px rgba(10,124,110,0.4);
+          transition: all 0.15s;
+        }
+        .btn-teal:hover {
+          background: var(--teal-dark) !important;
+          transform: translateY(-1px);
+          box-shadow: 0 8px 16px -4px rgba(10,124,110,0.5);
+          color: #fff;
+        }
+        .btn-outline-teal {
+          background: transparent;
+          border: 1.5px solid var(--teal);
+          color: var(--teal);
+          font-weight: 600;
+          border-radius: 12px;
+          padding: 0.65rem 1.5rem;
+          transition: all 0.15s;
+        }
+        .btn-outline-teal:hover {
+          background: var(--teal-tint);
+          color: var(--teal-dark);
+        }
 
-            <InvoiceForm
-              from={from}
-              to={to}
-              onFromChange={handleFromChange}
-              onToChange={handleToChange}
-            />
+        /* Form inputs (override for child components) */
+        .inv-page .form-control,
+        .inv-page .form-select {
+          border-radius: 12px;
+          border: 1px solid var(--line);
+          background-color: #f8fafc;
+          padding: 0.65rem 1rem;
+          font-size: 0.9rem;
+          transition: border-color 0.15s, box-shadow 0.15s;
+        }
+        .inv-page .form-control:focus,
+        .inv-page .form-select:focus {
+          border-color: var(--teal);
+          box-shadow: 0 0 0 3px rgba(10,124,110,0.12);
+          background: #fff;
+        }
 
-            <InvoiceLineItems lineItems={lineItems} />
+        /* Ensure all premium cards inherit clean look */
+        .card-premium .form-control,
+        .card-premium .form-select {
+          background: #fff;
+          border-color: #e2e8f0;
+        }
+        .card-premium .form-control:focus,
+        .card-premium .form-select:focus {
+          border-color: var(--teal);
+        }
+
+        @media (max-width: 767.98px) {
+          .inv-hero { padding: 20px 16px 28px; }
+          .inv-hero h1 { font-size: 22px; }
+        }
+      `}</style>
+
+      <div className="inv-page">
+        {/* Hero */}
+        <div className="inv-hero">
+          <div className="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3">
+            <div>
+              <span className="inv-hero-eyebrow">
+                <span className="dot"></span> Finance
+              </span>
+              <h1>Invoicing</h1>
+              <p style={{ textTransform: "none" }}>Create and send professional invoices with ease.</p>
+            </div>
+            <div className="d-flex gap-2 flex-wrap">
+              <button className="btn btn-outline-teal" onClick={handlePreview} disabled={isSending}>
+                <i className="fa-solid fa-eye me-2"></i> Preview
+              </button>
+              <button className="btn btn-outline-teal" onClick={handleDownload} disabled={isSending}>
+                <i className="fa-solid fa-download me-2"></i> Download
+              </button>
+              <button className="btn btn-teal" onClick={handleSendInvoice} disabled={isSending}>
+                {isSending ? (
+                  <i className="fa-solid fa-spinner fa-spin me-2"></i>
+                ) : (
+                  <i className="fa-solid fa-paper-plane me-2"></i>
+                )}
+                {isSending ? "Sending..." : "Send Invoice"}
+              </button>
+            </div>
           </div>
         </div>
 
-        {/* Settings Sidebar */}
-        <div className="col-12 col-xl-4 col-xxl-3 mb-4">
-          <InvoiceSettings
-            invoiceNo={invoiceNo}
-            dueDate={dueDate}
-            currency={currency}
-            paymentMethods={paymentMethods}
-            lateFees={lateFees}
-            lateFeeValue={lateFeeValue}
-            includeNotes={includeNotes}
-            includeGst={includeGst}
-            gstPercent={gstPercent}
-            notes={notes}
-            subtotal={subtotal}
-            gstAmount={gstAmount}
-            lateFeeAmount={lateFeeAmount}
-            grandTotal={grandTotal}
-            onInvoiceNoChange={setInvoiceNo}
-            onDueDateChange={setDueDate}
-            onCurrencyChange={setCurrency}
-            onPaymentMethodToggle={togglePaymentMethod}
-            onLateFeeToggle={setLateFees}
-            onLateFeeValueChange={setLateFeeValue}
-            onIncludeNotesToggle={setIncludeNotes}
-            onIncludeGstToggle={setIncludeGst}
-            onGstPercentChange={setGstPercent}
-            onNotesChange={setNotes}
-          />
+        {/* Main layout */}
+        <div className="row">
+          {/* Left column: Toolbar + InvoiceForm + LineItems */}
+          <div className="col-12 col-xl-8 col-xxl-9 mb-4">
+            {/* Toolbar as filter card */}
+            <div className="card-premium">
+              <h6 className="fw-bold text-dark mb-3 pb-2 border-bottom">
+                <i className="fa fa-sliders me-2" style={{ color: "#0A7C6E" }}></i>Client & Date Range
+              </h6>
+              <InvoiceToolbar
+                selectedCustomerId={selectedCustomerId}
+                customersList={customersList}
+                startDate={startDate}
+                endDate={endDate}
+                isSearching={isSearching}
+                onCustomerChange={handleCustomerChange}
+                onStartDateChange={setStartDate}
+                onEndDateChange={setEndDate}
+                onSearch={handleSearch}
+              />
+            </div>
+
+            {/* Invoice Form */}
+            <div className="card-premium">
+              <h6 className="fw-bold text-dark mb-3 pb-2 border-bottom">
+                <i className="fa fa-building me-2" style={{ color: "#0A7C6E" }}></i>Company & Client Details
+              </h6>
+              <InvoiceForm
+                from={from}
+                to={to}
+                onFromChange={handleFromChange}
+                onToChange={handleToChange}
+              />
+            </div>
+
+            {/* Line Items */}
+            <div className="card-premium">
+              <h6 className="fw-bold text-dark mb-3 pb-2 border-bottom">
+                <i className="fa fa-list-ul me-2" style={{ color: "#0A7C6E" }}></i>Invoice Items
+              </h6>
+              <InvoiceLineItems lineItems={lineItems} />
+            </div>
+          </div>
+
+          {/* Right column: Settings */}
+          <div className="col-12 col-xl-4 col-xxl-3 mb-4">
+            <div className="card-premium sticky-top" style={{ top: "1rem" }}>
+              <h6 className="fw-bold text-dark mb-3 pb-2 border-bottom">
+                <i className="fa fa-cog me-2" style={{ color: "#0A7C6E" }}></i>Settings & Summary
+              </h6>
+              <InvoiceSettings
+                invoiceNo={invoiceNo}
+                dueDate={dueDate}
+                currency={currency}
+                paymentMethods={paymentMethods}
+                lateFees={lateFees}
+                lateFeeValue={lateFeeValue}
+                includeNotes={includeNotes}
+                includeGst={includeGst}
+                gstPercent={gstPercent}
+                notes={notes}
+                subtotal={subtotal}
+                gstAmount={gstAmount}
+                lateFeeAmount={lateFeeAmount}
+                grandTotal={grandTotal}
+                onInvoiceNoChange={setInvoiceNo}
+                onDueDateChange={setDueDate}
+                onCurrencyChange={setCurrency}
+                onPaymentMethodToggle={togglePaymentMethod}
+                onLateFeeToggle={setLateFees}
+                onLateFeeValueChange={setLateFeeValue}
+                onIncludeNotesToggle={setIncludeNotes}
+                onIncludeGstToggle={setIncludeGst}
+                onGstPercentChange={setGstPercent}
+                onNotesChange={setNotes}
+              />
+            </div>
+          </div>
         </div>
       </div>
     </div>

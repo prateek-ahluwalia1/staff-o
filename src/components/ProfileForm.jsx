@@ -351,7 +351,7 @@ export default function ProfileForm({
                 {!hideFields.includes("staff_document_type") && (
                   <div className="col-md-6">
                     <label htmlFor="staff_document_type" className="form-label fw-bold text-dark small mb-1">
-                      Residential Status <span className="text-danger">*</span>
+                      Visa Status <span className="text-danger">*</span>
                     </label>
                     <select
                       required
@@ -387,7 +387,7 @@ export default function ProfileForm({
                       type="text"
                       className="form-control border-primary shadow-sm bg-white"
                       id="custom_staff_document"
-                      placeholder="Enter your residential status"
+                      placeholder="Enter your Visa Status"
                       value={formData.staff_document_type === "Other (Please specify)" ? "" : formData.staff_document_type}
                       onChange={(e) => {
                         onChange({ target: { id: "staff_document_type", value: e.target.value } });

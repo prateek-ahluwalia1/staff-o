@@ -445,7 +445,7 @@ export default function PaySheet() {
     );
 
     return (
-        <div className="container-fluid p-3 p-md-4" style={{ background: "#f8fafc", minHeight: "100vh" }}>
+        <div className="container-fluid p-3 p-md-4" style={{ minHeight: "100vh" }}>
             <style>{`
         :root {
           --navy-950: #0a1930;

@@ -351,9 +351,6 @@ const LeaveManagement = () => {
           background: var(--canvas);
         }
 
-        .leave-page-container {
-          background: var(--canvas);
-        }
 
         /* Hero section */
         .leave-hero {

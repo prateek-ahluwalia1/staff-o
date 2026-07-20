@@ -158,9 +158,6 @@ const PublicHolidays = () => {
                     --surface: #ffffff;
                     --canvas: #f8fafc;
                 }
-                .ph-page-container {
-                    background: var(--canvas);
-                }
 
                 /* Header Card */
                 .ph-header-card {

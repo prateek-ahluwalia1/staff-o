@@ -77,7 +77,7 @@ const DateFilterInput = ({ value, onChange, placeholder, required }) => {
         type="button"
         className="input-group-text bg-white border-end-0"
         onClick={openPicker}
-        style={{ cursor: "pointer" }}
+        style={{ cursor: "pointer", minHeight: "44px" }}
         title="Open calendar"
       >
         <i className="fa-regular fa-calendar text-muted"></i>
@@ -101,6 +101,7 @@ const DateFilterInput = ({ value, onChange, placeholder, required }) => {
         maxLength={10}
         pattern="^(0[1-9]|[12][0-9]|3[01])/(0[1-9]|1[012])/\d{4}$"
         title="Enter a date in DD/MM/YYYY format"
+        style={{ minHeight: "44px" }}
       />
     </div>
   );
@@ -203,8 +204,10 @@ const getSelectPlaceholder = (baseLabel, selectedCount, allCount) => {
 const selectStyles = {
   control: (base) => ({
     ...base,
-    minHeight: "38px",
-    borderColor: "#ced4da",
+    minHeight: "44px",
+    borderColor: "#e2e8f0",
+    backgroundColor: "#f8fafc",
+    borderRadius: "12px",
     boxShadow: "none",
     minWidth: "0",
   }),
@@ -218,11 +221,23 @@ const selectStyles = {
     backgroundColor: state.isSelected
       ? "#0A7C6E"
       : state.isFocused
-        ? "#e7f1ff"
+        ? "#e6f2f0"
         : "#fff",
     color: state.isSelected ? "#fff" : "#212529",
   }),
 };
+
+// ── Modal Close Button (same as other premium pages) ──────────────────────────
+const ModalCloseButton = ({ onClick }) => (
+  <button
+    type="button"
+    className="modal-close-btn"
+    onClick={onClick}
+    aria-label="Close"
+  >
+    <i className="fa fa-times"></i>
+  </button>
+);
 
 // ── Main Component ────────────────────────────────────────────────────────────
 const PaySlip = () => {
@@ -257,7 +272,6 @@ const PaySlip = () => {
     [staffResponse],
   );
 
-  // ⬇️ UPDATED: Now shows Name - User ID instead of Name - Email
   const staffOptions = useMemo(
     () =>
       buildSelectOptions(
@@ -427,191 +441,439 @@ const PaySlip = () => {
 
   if (!isAdmin) {
     return (
-      <div className="dashboard-main dashboard-tools-page">
-        <div className="dashboard-tools-access-state">
-          <i className="fa fa-lock"></i>
-          You do not have permission to access payslip management.
+      <div className="min-h-screen bg-[#f8fafc] d-flex align-items-center justify-content-center">
+        <div className="text-center">
+          <h3 className="text-danger fw-bold mb-3">Access Denied</h3>
+          <p className="text-muted">
+            Only administrators can access payslip management.
+          </p>
         </div>
       </div>
     );
   }
 
-  return (
-    <div className="dashboard-main dashboard-tools-page">
-      <div className="dashboard-page-header">
-        <div>
-          <h1>Pay Slip</h1>
-          <p
-            style={{ textTransform: "none" }}
-          >
-            Upload and map payslip PDFs to date ranges, then fetch or auto-sync
-            staff payslips.
-          </p>
-        </div>
+  const dateRangeLabel = (() => {
+    const start = formatDisplayDate(filterStartDate);
+    const end = formatDisplayDate(filterEndDate);
+    return `${start} – ${end}`;
+  })();
 
-        <div className="d-flex flex-wrap gap-2 align-items-center">
+  return (
+    <div
+      className="container-fluid p-3 p-md-4"
+      style={{ background: "#f8fafc", minHeight: "100vh" }}
+    >
+      <style>{`
+        :root {
+          --navy-950: #0a1930;
+          --navy-900: #0e2340;
+          --teal: #0A7C6E;
+          --teal-dark: #075e53;
+          --teal-tint: #f0fdf9;
+          --teal-border: #d1fae5;
+          --amber: #d97706;
+          --success: #16a34a;
+          --purple: #7c3aed;
+          --ink: #0f172a;
+          --slate: #1e293b;
+          --muted: #64748b;
+          --faint: #94a3b8;
+          --line: #e2e8f0;
+          --line-soft: #f1f5f9;
+          --surface: #ffffff;
+        }
+
+        /* Hero */
+        .ps-hero {
+          position: relative;
+          background: linear-gradient(135deg, var(--navy-950) 0%, var(--navy-900) 65%, #0f2f52 100%);
+          border-radius: 22px;
+          padding: 34px 36px 46px;
+          overflow: hidden;
+          isolation: isolate;
+          margin-bottom: 1.5rem;
+        }
+        .ps-hero::before {
+          content: "";
+          position: absolute;
+          inset: 0;
+          background-image: radial-gradient(rgba(255,255,255,0.10) 1px, transparent 1px);
+          background-size: 22px 22px;
+          opacity: 0.35;
+          z-index: -1;
+          pointer-events: none;
+        }
+        .ps-hero::after {
+          content: "";
+          position: absolute;
+          top: -60px;
+          right: -60px;
+          width: 260px;
+          height: 260px;
+          border-radius: 50%;
+          background: radial-gradient(circle, rgba(10,124,110,0.45) 0%, rgba(10,124,110,0) 70%);
+          z-index: -1;
+          pointer-events: none;
+        }
+        .ps-hero-eyebrow {
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          font-size: 11px;
+          font-weight: 700;
+          letter-spacing: 0.6px;
+          text-transform: uppercase;
+          color: #6ee7d8;
+          margin-bottom: 10px;
+        }
+        .ps-hero-eyebrow .dot {
+          width: 7px; height: 7px; border-radius: 50%;
+          background: #34d399;
+          box-shadow: 0 0 0 4px rgba(52,211,153,0.18);
+        }
+        .ps-hero h1 {
+          color: #fff;
+          font-size: 28px;
+          font-weight: 800;
+          letter-spacing: -0.4px;
+          margin: 0 0 6px;
+        }
+        .ps-hero p {
+          color: rgba(255,255,255,0.62);
+          font-size: 14px;
+          margin: 0;
+          text-transform: none;
+        }
+        .ps-hero-stats {
+          display: flex;
+          gap: 12px;
+          flex-wrap: wrap;
+          margin-top: 28px;
+        }
+        .ps-hero-stat {
+          background: rgba(255,255,255,0.06);
+          border: 1px solid rgba(255,255,255,0.12);
+          backdrop-filter: blur(6px);
+          border-radius: 14px;
+          padding: 12px 18px;
+          min-width: 140px;
+          flex: 1 1 160px;
+        }
+        .ps-hero-stat-label {
+          font-size: 10px;
+          font-weight: 700;
+          letter-spacing: 0.5px;
+          text-transform: uppercase;
+          color: rgba(255,255,255,0.5);
+          display: block;
+          margin-bottom: 4px;
+        }
+        .ps-hero-stat-value {
+          font-size: 18px;
+          font-weight: 700;
+          color: #fff;
+          letter-spacing: -0.2px;
+        }
+
+        /* Filter card */
+        .ps-filter-card {
+          background: #fff;
+          border-radius: 18px;
+          box-shadow: 0 18px 40px -14px rgba(10, 25, 48, 0.28);
+          border: 1px solid var(--line-soft);
+          padding: 16px 18px;
+          margin-top: -30px;
+          margin-bottom: 24px;
+          position: relative;
+          z-index: 2;
+        }
+
+        /* Table card */
+        .ps-table-card {
+          background: #fff;
+          border-radius: 18px;
+          box-shadow: 0 10px 25px -8px rgba(15,23,42,0.08);
+          border: 1px solid var(--line-soft);
+          overflow: hidden;
+        }
+
+        .table-premium {
+          margin-bottom: 0;
+        }
+        .table-premium thead th {
+          background: #f8fafc;
+          border-bottom: 2px solid var(--teal);
+          font-size: 0.78rem;
+          font-weight: 700;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+          color: var(--faint);
+          padding: 14px 16px;
+        }
+        .table-premium tbody td {
+          padding: 14px 16px;
+          font-size: 0.9rem;
+          border-color: var(--line-soft);
+          vertical-align: middle;
+        }
+        .table-premium tbody tr:hover td {
+          background: #f0fdf9;
+        }
+
+        /* Buttons */
+        .btn-teal {
+          background: var(--teal) !important;
+          border: none;
+          color: #fff !important;
+          font-weight: 600;
+          border-radius: 12px;
+          padding: 0.65rem 1.5rem;
+          box-shadow: 0 4px 10px -2px rgba(10,124,110,0.4);
+          transition: all 0.15s;
+        }
+        .btn-teal:hover {
+          background: var(--teal-dark) !important;
+          transform: translateY(-1px);
+          box-shadow: 0 8px 16px -4px rgba(10,124,110,0.5);
+          color: #fff;
+        }
+        .btn-teal:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
+        }
+
+        .btn-outline-teal {
+          background: #fff;
+          border: 1.5px solid var(--teal);
+          color: var(--teal);
+          font-weight: 600;
+          border-radius: 12px;
+          padding: 0.65rem 1.5rem;
+          transition: all 0.15s;
+        }
+        .btn-outline-teal:hover {
+          background: var(--teal-tint);
+          color: var(--teal-dark);
+        }
+
+        /* Modal */
+        .modal-overlay-premium {
+          position: fixed;
+          inset: 0;
+          background: rgba(10,20,35,0.62);
+          backdrop-filter: blur(3px);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 9999;
+          padding: 20px;
+          animation: overlayFadeIn 0.18s ease-out;
+        }
+        @keyframes overlayFadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        .modal-content-premium {
+          background: #fff;
+          border-radius: 18px;
+          box-shadow: 0 30px 60px -18px rgba(10,25,48,0.5);
+          overflow: hidden;
+          max-height: 90vh;
+          display: flex;
+          flex-direction: column;
+        }
+        .modal-pop-in {
+          animation: modalPopIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        @keyframes modalPopIn {
+          from { opacity: 0; transform: scale(0.97) translateY(6px); }
+          to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+        .modal-header-premium {
+          background: linear-gradient(120deg, var(--navy-950), var(--navy-900) 70%, #10345a);
+          position: relative;
+          overflow: hidden;
+        }
+        .modal-header-premium::after {
+          content: "";
+          position: absolute;
+          top: -30px;
+          right: -30px;
+          width: 120px;
+          height: 120px;
+          border-radius: 50%;
+          background: radial-gradient(circle, rgba(10,124,110,0.5), transparent 70%);
+          pointer-events: none;
+          z-index: 0;
+        }
+        .modal-header-premium h5 {
+          position: relative;
+          z-index: 1;
+        }
+        .modal-close-btn {
+          position: relative;
+          z-index: 2;
+          flex-shrink: 0;
+          width: 34px;
+          height: 34px;
+          border-radius: 50%;
+          border: none;
+          background: rgba(255,255,255,0.08);
+          color: #fff;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 14px;
+          cursor: pointer;
+          transition: background 0.15s ease, transform 0.15s ease;
+        }
+        .modal-close-btn:hover {
+          background: rgba(255,255,255,0.18);
+          transform: rotate(90deg);
+        }
+
+        @media (max-width: 767.98px) {
+          .ps-hero {
+            padding: 26px 20px 40px;
+            border-radius: 18px;
+          }
+          .ps-hero h1 { font-size: 22px; }
+        }
+      `}</style>
+
+      {/* Hero */}
+      <div className="ps-hero">
+        <div className="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3">
+          <div>
+            <span className="ps-hero-eyebrow">
+              <span className="dot"></span> Payroll
+            </span>
+            <h1>Pay Slip</h1>
+            <p style={{ textTransform: "none" }}>
+              Upload and map payslip PDFs, fetch or auto-sync staff payslips.
+            </p>
+          </div>
           <button
             type="button"
-            className="btn btn-primary-custom"
+            className="btn btn-teal"
             onClick={() => setIsUploadModalOpen(true)}
           >
             <i className="fa-solid fa-file-arrow-up me-2"></i>
             Upload Pay Slip
           </button>
-          <span className="badge text-bg-light border px-3 py-2">
-            Selected Staff: {selectedCount}
-          </span>
-          <span className="badge text-bg-light border px-3 py-2">
-            Results: {guardPayslipRows.length}
-          </span>
         </div>
-      </div>
-
-      <div className="card border-0 shadow-sm mb-4">
-        <div className="card-body">
-          <div className="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
-            <h6 className="fw-bold m-0">Staff Filters</h6>
-            <span className="text-muted small"
-              style={{ textTransform: "none" }}
-            >
-              Select staff and date range
-            </span>
+        <div className="ps-hero-stats">
+          <div className="ps-hero-stat">
+            <span className="ps-hero-stat-label">Date Range</span>
+            <span className="ps-hero-stat-value">{dateRangeLabel || "—"}</span>
           </div>
-
-          {staffLoading ? (
-            <Loader compact message="Loading staff members..." />
-          ) : (
-            <>
-              <div className="row g-2 align-items-end mb-3 payslip-filter-row">
-                <div className="col-12 col-lg-4">
-                  <label className="form-label small fw-semibold text-muted mb-1">
-                    Staff
-                  </label>
-                  <Select
-                    isMulti
-                    options={staffOptions}
-                    components={{ Option: CheckboxOption }}
-                    styles={selectStyles}
-                    closeMenuOnSelect={false}
-                    hideSelectedOptions={false}
-                    controlShouldRenderValue={false}
-                    value={resolveSelectedOptions(staffOptions, selectedGuardIds)}
-                    isAllSelected={staffAllSelected}
-                    onChange={(selected, actionMeta) =>
-                      setSelectedGuardIds(
-                        normalizeMultiSelectValues(
-                          selected,
-                          actionMeta,
-                          selectedGuardIds,
-                          staffOptions,
-                        ),
-                      )
-                    }
-                    placeholder={getSelectPlaceholder(
-                      "Select Staff",
-                      selectedGuardIds.length,
-                      staffList.length,
-                    )}
-                    isLoading={staffLoading}
-                  />
-                </div>
-                <div className="col-6 col-lg-2">
-                  <label className="form-label small fw-semibold text-muted mb-1">
-                    Start Date
-                  </label>
-                  <DateFilterInput
-                    value={filterStartDate}
-                    onChange={setFilterStartDate}
-                    placeholder="Start date"
-                  />
-                </div>
-                <div className="col-6 col-lg-2">
-                  <label className="form-label small fw-semibold text-muted mb-1">
-                    End Date
-                  </label>
-                  <DateFilterInput
-                    value={filterEndDate}
-                    onChange={setFilterEndDate}
-                    placeholder="End date"
-                  />
-                </div>
-                <div className="col-6 col-lg-2 d-grid">
-                  <button
-                    type="button"
-                    className="btn btn-sm btn-primary-custom payslip-action-btn"
-                    onClick={handleGetGuardPayslips}
-                    disabled={actionLoading}
-                  >
-                    <i className="fa-solid fa-search me-1"></i> Fetch
-                  </button>
-                </div>
-                <div className="col-6 col-lg-2 d-grid">
-                  <button
-                    type="button"
-                    className="btn btn-sm btn-outline-primary payslip-action-btn"
-                    onClick={handleAutoUpdatePayslips}
-                    disabled={actionLoading}
-                  >
-                    <i className="fa-solid fa-rotate me-1"></i> Auto Sync
-                  </button>
-                </div>
-              </div>
-            </>
-          )}
+          <div className="ps-hero-stat">
+            <span className="ps-hero-stat-label">Staff Selected</span>
+            <span className="ps-hero-stat-value">{selectedCount}</span>
+          </div>
+          <div className="ps-hero-stat">
+            <span className="ps-hero-stat-label">Results</span>
+            <span className="ps-hero-stat-value">{guardPayslipRows.length}</span>
+          </div>
         </div>
       </div>
 
-      <div className="card border-0 shadow-sm">
-        <div className="table-responsive">
-          <table className="table table-hover align-middle mb-0">
-            <thead
-              style={{ borderBottom: "2px solid #0A7C6E", background: "#0A7C6E" }}
+      {/* Filter Card */}
+      <div className="ps-filter-card">
+        <div className="row g-2 align-items-end">
+          <div className="col-12 col-lg-4">
+            <label className="form-label small fw-bold text-muted mb-1">Staff</label>
+            <Select
+              isMulti
+              options={staffOptions}
+              components={{ Option: CheckboxOption }}
+              styles={selectStyles}
+              closeMenuOnSelect={false}
+              hideSelectedOptions={false}
+              controlShouldRenderValue={false}
+              value={resolveSelectedOptions(staffOptions, selectedGuardIds)}
+              isAllSelected={staffAllSelected}
+              onChange={(selected, actionMeta) =>
+                setSelectedGuardIds(
+                  normalizeMultiSelectValues(
+                    selected,
+                    actionMeta,
+                    selectedGuardIds,
+                    staffOptions,
+                  ),
+                )
+              }
+              placeholder={getSelectPlaceholder(
+                "Select Staff",
+                selectedGuardIds.length,
+                staffList.length,
+              )}
+              isLoading={staffLoading}
+            />
+          </div>
+          <div className="col-6 col-lg-2">
+            <label className="form-label small fw-bold text-muted mb-1">Start Date</label>
+            <DateFilterInput
+              value={filterStartDate}
+              onChange={setFilterStartDate}
+              placeholder="Start date"
+            />
+          </div>
+          <div className="col-6 col-lg-2">
+            <label className="form-label small fw-bold text-muted mb-1">End Date</label>
+            <DateFilterInput
+              value={filterEndDate}
+              onChange={setFilterEndDate}
+              placeholder="End date"
+            />
+          </div>
+          <div className="col-6 col-lg-2 d-grid">
+            <button
+              type="button"
+              className="btn btn-teal"
+              onClick={handleGetGuardPayslips}
+              disabled={actionLoading}
             >
+              <i className="fa-solid fa-search me-1"></i> Fetch
+            </button>
+          </div>
+          <div className="col-6 col-lg-2 d-grid">
+            <button
+              type="button"
+              className="btn btn-outline-teal"
+              onClick={handleAutoUpdatePayslips}
+              disabled={actionLoading}
+            >
+              <i className="fa-solid fa-rotate me-1"></i> Auto Sync
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Table Card */}
+      <div className="ps-table-card">
+        <div className="table-responsive">
+          <table className="table table-premium align-middle">
+            <thead>
               <tr>
-                <th
-                  className="text-white"
-                  style={{
-                    background: "#0A7C6E",
-                    borderRight: "1px solid #fff",
-                  }}
-                >Staff</th>
-                <th
-                  className="text-white"
-                  style={{
-                    background: "#0A7C6E",
-                    borderRight: "1px solid #fff",
-                  }}
-                >Start Date</th>
-                <th
-                  className="text-white"
-                  style={{
-                    background: "#0A7C6E",
-                    borderRight: "1px solid #fff",
-                  }}
-                >End Date</th>
-                <th
-                  className="text-white"
-                  style={{
-                    background: "#0A7C6E",
-                    borderRight: "1px solid #fff",
-                  }}
-                >PDF</th>
+                <th>Staff</th>
+                <th>Start Date</th>
+                <th>End Date</th>
+                <th>PDF</th>
               </tr>
             </thead>
             <tbody>
               {actionLoading && (
                 <tr>
-                  <td colSpan="4" className="text-center py-4">
-                    <Loader compact message="Processing request..." />
+                  <td colSpan="4" className="text-center py-5">
+                    <Loader compact />
                   </td>
                 </tr>
               )}
 
               {!actionLoading && guardPayslipRows.length === 0 && (
                 <tr>
-                  <td colSpan="4" className="text-center text-muted py-5"
-                    style={{ textTransform: "none" }}
-                  >
+                  <td colSpan="4" className="text-center text-muted py-5">
                     No staff payslip data loaded yet.
                   </td>
                 </tr>
@@ -620,7 +882,7 @@ const PaySlip = () => {
               {!actionLoading &&
                 guardPayslipRows.map((row, idx) => (
                   <tr key={row.id || `${row.guard_id || "staff"}-${idx}`}>
-                    <td>
+                    <td className="fw-bold">
                       {row.guard_name ||
                         row.name ||
                         `Staff #${row.guard_id || "-"}`}
@@ -633,7 +895,7 @@ const PaySlip = () => {
                           to={row.file_url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="btn btn-sm btn-outline-primary"
+                          className="btn btn-sm btn-teal"
                         >
                           <i className="fa-solid fa-up-right-from-square me-1"></i>
                           Open
@@ -649,59 +911,30 @@ const PaySlip = () => {
         </div>
       </div>
 
-      <style>
-        {`
-          .payslip-action-btn {
-            min-height: 36px;
-            padding-top: 0.35rem;
-            padding-bottom: 0.35rem;
-            font-size: 0.85rem;
-            line-height: 1.1;
-          }
-
-          .payslip-filter-row .css-b62m3t-container {
-            width: 100%;
-          }
-
-          .payslip-filter-row .form-control,
-          .payslip-filter-row .css-13cymwt-control,
-          .payslip-filter-row .css-t3ipsp-control {
-            min-height: 38px;
-          }
-        `}
-      </style>
-
+      {/* Upload Modal */}
       {isUploadModalOpen && (
-        <div
-          style={{
-            position: "fixed",
-            inset: 0,
-            backgroundColor: "rgba(15, 23, 42, 0.55)",
-            backdropFilter: "blur(4px)",
-            zIndex: 1080,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            padding: "16px",
-          }}
-        >
+        <div className="modal-overlay-premium" onClick={() => setIsUploadModalOpen(false)}>
           <div
-            className="card border-0 shadow"
-            style={{ width: "100%", maxWidth: "680px", borderRadius: "14px" }}
+            className="modal-content-premium modal-pop-in"
+            style={{ maxWidth: '680px', width: '100%' }}
+            onClick={(e) => e.stopPropagation()}
           >
-            <div className="card-header bg-white d-flex justify-content-between align-items-center py-3">
-              <h5 className="mb-0 fw-bold">Upload Pay Slip</h5>
-              <button
-                type="button"
-                className="btn-close"
-                onClick={() => setIsUploadModalOpen(false)}
-              ></button>
+            <div className="modal-header-premium d-flex justify-content-between align-items-center px-4 py-3">
+              <div>
+                <h5 className="text-white fw-bold mb-0">
+                  <i className="fa-solid fa-file-arrow-up me-2 opacity-75"></i>
+                  Upload Pay Slip
+                </h5>
+                <p className="text-white-50 small mb-0 mt-1" style={{ textTransform: "none" }}>
+                  Attach a PDF payslip for a specific date range.
+                </p>
+              </div>
+              <ModalCloseButton onClick={() => setIsUploadModalOpen(false)} />
             </div>
-
-            <div className="card-body">
+            <div className="p-4">
               <div className="row g-3">
                 <div className="col-12 col-md-6">
-                  <label className="form-label fw-semibold">Start Date</label>
+                  <label className="form-label small fw-bold text-muted">Start Date</label>
                   <DateFilterInput
                     value={uploadStartDate}
                     onChange={setUploadStartDate}
@@ -710,7 +943,7 @@ const PaySlip = () => {
                   />
                 </div>
                 <div className="col-12 col-md-6">
-                  <label className="form-label fw-semibold">End Date</label>
+                  <label className="form-label small fw-bold text-muted">End Date</label>
                   <DateFilterInput
                     value={uploadEndDate}
                     onChange={setUploadEndDate}
@@ -718,9 +951,8 @@ const PaySlip = () => {
                     required
                   />
                 </div>
-
                 <div className="col-12">
-                  <label className="form-label fw-semibold">Select PDF</label>
+                  <label className="form-label small fw-bold text-muted">Select PDF</label>
                   <input
                     type="file"
                     accept="application/pdf"
@@ -730,7 +962,6 @@ const PaySlip = () => {
                   />
                   <div className="form-text">Folder: payslip</div>
                 </div>
-
                 {uploadedPdf && (
                   <div className="col-12">
                     <div className="alert alert-success py-2 mb-0 small">
@@ -742,22 +973,28 @@ const PaySlip = () => {
                 )}
               </div>
             </div>
-
-            <div className="card-footer bg-white d-flex justify-content-end gap-2">
+            <div className="bg-white border-top px-4 py-3 d-flex justify-content-end gap-2">
               <button
                 type="button"
-                className="btn btn-light"
+                className="btn btn-light px-5 rounded-pill fw-bold"
                 onClick={() => setIsUploadModalOpen(false)}
               >
                 Cancel
               </button>
               <button
                 type="button"
-                className="btn btn-primary-custom"
+                className="btn btn-teal px-5 rounded-pill fw-bold"
                 onClick={handleSavePayslip}
                 disabled={isBusy}
               >
-                {isBusy ? "Saving..." : "Save Payslip"}
+                {isBusy ? (
+                  <>
+                    <span className="spinner-border spinner-border-sm me-2"></span>
+                    Saving...
+                  </>
+                ) : (
+                  "Save Payslip"
+                )}
               </button>
             </div>
           </div>

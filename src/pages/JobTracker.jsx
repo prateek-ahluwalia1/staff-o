@@ -24,7 +24,7 @@ const formatDateInput = (date) => {
   const y = date.getFullYear();
   const m = String(date.getMonth() + 1).padStart(2, "0");
   const d = String(date.getDate()).padStart(2, "0");
-  return `${y}-${m}-${d}`; // YYYY-MM-DD for internal state
+  return `${y}-${m}-${d}`;
 };
 
 const parseInputDate = (val) => {
@@ -38,12 +38,12 @@ const formatDateForPayload = (date) => {
   const dd = String(date.getDate()).padStart(2, "0");
   const mm = String(date.getMonth() + 1).padStart(2, "0");
   const yyyy = date.getFullYear();
-  return `${dd}/${mm}/${yyyy}`; // DD/MM/YYYY for API payloads
+  return `${dd}/${mm}/${yyyy}`;
 };
 
 const formatDisplayDate = (dateStr) => {
   if (!dateStr) return "";
-  if (/^\d{2}\/\d{2}\/\d{4}$/.test(dateStr)) return dateStr; // already DD/MM/YYYY
+  if (/^\d{2}\/\d{2}\/\d{4}$/.test(dateStr)) return dateStr;
   const isoMatch = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})$/);
   if (isoMatch) {
     const [, y, m, d] = isoMatch;
@@ -235,8 +235,10 @@ const getSelectPlaceholder = (baseLabel, selectedCount, allCount) => {
 const selectStyles = {
   control: (base) => ({
     ...base,
-    minHeight: "44px", // Touch friendly
-    borderColor: "#ced4da",
+    minHeight: "44px",
+    borderColor: "#e2e8f0",
+    backgroundColor: "#f8fafc",
+    borderRadius: "12px",
     boxShadow: "none",
     minWidth: "0",
   }),
@@ -250,13 +252,13 @@ const selectStyles = {
     backgroundColor: state.isSelected
       ? "#0A7C6E"
       : state.isFocused
-        ? "#e7f1ff"
+        ? "#e6f2f0"
         : "#fff",
     color: state.isSelected ? "#fff" : "#212529",
   }),
 };
 
-// ── Hybrid date input (DD/MM/YYYY visible, YYYY-MM-DD state) ──
+// ── Hybrid date input (unchanged) ──
 const DateFilterInput = ({ value, onChange, placeholder }) => {
   const pickerRef = useRef(null);
   const [displayValue, setDisplayValue] = useState(formatDisplayDate(value));
@@ -436,96 +438,295 @@ const JobTracker = () => {
     XLSX.writeFile(workbook, `job-tracker-${Date.now()}.xlsx`);
   };
 
-  return (
-    <div className="dashboard-main dashboard-tools-page">
-      <div className="dashboard-page-header">
-        <div>
-          <h1>Job Tracker</h1>
-          <p style={{ textTransform: "none" }}>
-            Review shifts, filter records, and export a clean tracker summary.
-          </p>
-        </div>
-      </div>
+  const rangeLabel = useMemo(() => {
+    const s = parseInputDate(startDate);
+    const e = parseInputDate(endDate);
+    if (!s || !e) return "—";
+    return `${formatDisplayDate(formatDateInput(s))} – ${formatDisplayDate(formatDateInput(e))}`;
+  }, [startDate, endDate]);
 
-      <div className="card border-0 shadow-sm mb-4">
-        <div className="card-body">
-          <div className="row g-2 align-items-end jobtracker-filter-row">
-            <div className="col-12 col-md-6 col-lg-4">
-              <Select
-                isMulti
-                options={customerOptions}
-                components={{ Option: CheckboxOption }}
-                styles={selectStyles}
-                closeMenuOnSelect={false}
-                hideSelectedOptions={false}
-                controlShouldRenderValue={false}
-                value={resolveSelectedOptions(
-                  customerOptions,
-                  selectedCustomerValues,
-                )}
-                isAllSelected={customerAllSelected}
-                onChange={(selected, actionMeta) =>
-                  setSelectedCustomerValues(
-                    normalizeMultiSelectValues(
-                      selected,
-                      actionMeta,
-                      selectedCustomerValues,
-                      customerOptions,
-                    ),
-                  )
-                }
-                placeholder={getSelectPlaceholder(
-                  "Select Clients",
-                  selectedCustomerValues.length,
-                  customerList.length,
-                )}
-                isLoading={customerLoading}
-              />
-            </div>
-            <div className="col-6 col-md-6 col-lg-2">
-              <DateFilterInput
-                value={startDate}
-                onChange={setStartDate}
-                placeholder="Start date"
-              />
-            </div>
-            <div className="col-6 col-md-6 col-lg-2">
-              <DateFilterInput
-                value={endDate}
-                onChange={setEndDate}
-                placeholder="End date"
-              />
-            </div>
-            <div className="col-6 col-md-6 col-lg-2 d-grid">
-              <button
-                className="btn btn-sm btn-primary-custom jobtracker-action-btn"
-                onClick={fetchReport}
-                disabled={loading}
-              >
-                <i className="fa-solid fa-search me-1"></i> Search
-              </button>
-            </div>
-            <div className="col-6 col-md-6 col-lg-2 d-grid">
-              <button
-                className="btn btn-sm btn-outline-primary jobtracker-action-btn"
-                onClick={handleExport}
-                disabled={rows.length === 0}
-              >
-                <i className="fa-solid fa-download me-1"></i> Export
-              </button>
-            </div>
+  const totalJobs = rows.length;
+
+  return (
+    <div
+      className="container-fluid p-3 p-md-4"
+      style={{ background: "#f8fafc", minHeight: "100vh" }}
+    >
+      <style>{`
+        :root {
+          --navy-950: #0a1930;
+          --navy-900: #0e2340;
+          --teal: #0A7C6E;
+          --teal-dark: #075e53;
+          --teal-tint: #f0fdf9;
+          --teal-border: #d1fae5;
+          --amber: #d97706;
+          --amber-tint: #fffbeb;
+          --success: #16a34a;
+          --purple: #7c3aed;
+          --ink: #0f172a;
+          --slate: #1e293b;
+          --muted: #64748b;
+          --faint: #94a3b8;
+          --line: #e2e8f0;
+          --line-soft: #f1f5f9;
+          --surface: #ffffff;
+        }
+
+        /* Hero */
+        .jt-hero {
+          position: relative;
+          background: linear-gradient(135deg, var(--navy-950) 0%, var(--navy-900) 65%, #0f2f52 100%);
+          border-radius: 22px;
+          padding: 28px 24px 36px;
+          overflow: hidden;
+          isolation: isolate;
+          margin-bottom: 0;
+        }
+        .jt-hero::before {
+          content: "";
+          position: absolute;
+          inset: 0;
+          background-image: radial-gradient(rgba(255,255,255,0.10) 1px, transparent 1px);
+          background-size: 22px 22px;
+          opacity: 0.35;
+          z-index: -1;
+        }
+        .jt-hero::after {
+          content: "";
+          position: absolute;
+          top: -40px;
+          right: -40px;
+          width: 200px;
+          height: 200px;
+          border-radius: 50%;
+          background: radial-gradient(circle, rgba(10,124,110,0.45) 0%, rgba(10,124,110,0) 70%);
+          z-index: -1;
+        }
+        .jt-hero-eyebrow {
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          font-size: 11px;
+          font-weight: 700;
+          letter-spacing: 0.6px;
+          text-transform: uppercase;
+          color: #6ee7d8;
+          margin-bottom: 10px;
+        }
+        .jt-hero-eyebrow .dot {
+          width: 7px; height: 7px; border-radius: 50%;
+          background: #34d399;
+          box-shadow: 0 0 0 4px rgba(52,211,153,0.18);
+        }
+        .jt-hero h1 {
+          color: #fff;
+          font-size: 28px;
+          font-weight: 800;
+          letter-spacing: -0.4px;
+          margin: 0 0 6px;
+        }
+        .jt-hero p {
+          color: rgba(255,255,255,0.62);
+          font-size: 14px;
+          margin: 0;
+          text-transform: none;
+        }
+        .jt-hero-stats {
+          display: flex;
+          gap: 12px;
+          flex-wrap: wrap;
+          margin-top: 28px;
+        }
+        .jt-hero-stat {
+          background: rgba(255,255,255,0.06);
+          border: 1px solid rgba(255,255,255,0.12);
+          backdrop-filter: blur(6px);
+          border-radius: 14px;
+          padding: 12px 16px;
+          min-width: 140px;
+          flex: 1 1 150px;
+        }
+        .jt-hero-stat-label {
+          font-size: 10px;
+          font-weight: 700;
+          letter-spacing: 0.5px;
+          text-transform: uppercase;
+          color: rgba(255,255,255,0.5);
+          display: block;
+          margin-bottom: 4px;
+        }
+        .jt-hero-stat-value {
+          font-size: 18px;
+          font-weight: 700;
+          color: #fff;
+          letter-spacing: -0.2px;
+        }
+
+        /* Filter card */
+        .jt-filter-card {
+          background: #fff;
+          border-radius: 18px;
+          box-shadow: 0 18px 40px -14px rgba(10, 25, 48, 0.28);
+          border: 1px solid var(--line-soft);
+          padding: 16px 18px;
+          margin-top: -30px;
+          margin-bottom: 24px;
+          position: relative;
+          z-index: 2;
+        }
+
+        /* Table card */
+        .jt-table-card {
+          background: #fff;
+          border-radius: 18px;
+          box-shadow: 0 10px 25px -8px rgba(15,23,42,0.08);
+          border: 1px solid var(--line-soft);
+          overflow: hidden;
+        }
+
+        /* Main table */
+        .jt-main-table {
+          margin-bottom: 0;
+        }
+        .jt-main-table thead th {
+          background: #f8fafc;
+          border-bottom: 2px solid var(--teal);
+          font-size: 0.78rem;
+          font-weight: 700;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+          color: var(--faint);
+          padding: 14px 10px;
+        }
+        .jt-main-table tbody td {
+          padding: 12px 10px;
+          font-size: 0.85rem;
+          border-color: var(--line-soft);
+        }
+        .jt-main-table tbody tr:hover td {
+          background: #f0fdf9;
+        }
+
+        /* Buttons */
+        .btn-teal {
+          background: var(--teal);
+          border: none;
+          color: white;
+          border-radius: 12px;
+          font-weight: 600;
+          padding: 10px 18px;
+          box-shadow: 0 4px 10px -2px rgba(10,124,110,0.4);
+          transition: all 0.15s;
+        }
+        .btn-teal:hover {
+          background: var(--teal-dark);
+          transform: translateY(-1px);
+          box-shadow: 0 8px 18px -4px rgba(10,124,110,0.5);
+          color: white;
+        }
+
+        @media (max-width: 768px) {
+          .jt-hero { padding: 20px 16px 28px; }
+          .jt-hero h1 { font-size: 22px; }
+        }
+      `}</style>
+
+      {/* Hero */}
+      <div className="jt-hero">
+        <span className="jt-hero-eyebrow">
+          <span className="dot"></span> Live
+        </span>
+        <h1>Job Tracker</h1>
+        <p>Review shifts, filter records, and export a clean tracker summary.</p>
+        <div className="jt-hero-stats">
+          <div className="jt-hero-stat">
+            <span className="jt-hero-stat-label">Date Range</span>
+            <span className="jt-hero-stat-value">{rangeLabel || "—"}</span>
+          </div>
+          <div className="jt-hero-stat">
+            <span className="jt-hero-stat-label">Total Jobs</span>
+            <span className="jt-hero-stat-value">{totalJobs}</span>
           </div>
         </div>
       </div>
 
-      {/* ─── Responsive table wrapper ─── */}
-      <div className="card border-0 shadow-sm">
-        <div className="jobtracker-table-shell">
-          <table className="table table-hover align-middle mb-0 jobtracker-main-table">
-            <thead
-              className="table-primary text-dark"
-              style={{ borderBottom: "2px solid #0A7C6E" }}
+      {/* Filter Card */}
+      <div className="jt-filter-card">
+        <div className="row g-2 align-items-end">
+          <div className="col-12 col-md-6 col-lg-4">
+            <Select
+              isMulti
+              options={customerOptions}
+              components={{ Option: CheckboxOption }}
+              styles={selectStyles}
+              closeMenuOnSelect={false}
+              hideSelectedOptions={false}
+              controlShouldRenderValue={false}
+              value={resolveSelectedOptions(
+                customerOptions,
+                selectedCustomerValues,
+              )}
+              isAllSelected={customerAllSelected}
+              onChange={(selected, actionMeta) =>
+                setSelectedCustomerValues(
+                  normalizeMultiSelectValues(
+                    selected,
+                    actionMeta,
+                    selectedCustomerValues,
+                    customerOptions,
+                  ),
+                )
+              }
+              placeholder={getSelectPlaceholder(
+                "Select Clients",
+                selectedCustomerValues.length,
+                customerList.length,
+              )}
+              isLoading={customerLoading}
+            />
+          </div>
+          <div className="col-6 col-md-6 col-lg-2">
+            <DateFilterInput
+              value={startDate}
+              onChange={setStartDate}
+              placeholder="Start date"
+            />
+          </div>
+          <div className="col-6 col-md-6 col-lg-2">
+            <DateFilterInput
+              value={endDate}
+              onChange={setEndDate}
+              placeholder="End date"
+            />
+          </div>
+          <div className="col-6 col-md-6 col-lg-2 d-grid">
+            <button
+              className="btn btn-teal"
+              onClick={fetchReport}
+              disabled={loading}
             >
+              <i className="fa-solid fa-search me-1"></i> Search
+            </button>
+          </div>
+          <div className="col-6 col-md-6 col-lg-2 d-grid">
+            <button
+              className="btn btn-outline-secondary"
+              onClick={handleExport}
+              disabled={rows.length === 0}
+              style={{ borderRadius: "12px", fontWeight: 600 }}
+            >
+              <i className="fa-solid fa-download me-1"></i> Export
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Table Card */}
+      <div className="jt-table-card">
+        <div className="table-responsive">
+          <table className="table jt-main-table align-middle">
+            <thead>
               <tr>
                 <th>Job ID</th>
                 <th>Job Title</th>
@@ -552,11 +753,7 @@ const JobTracker = () => {
 
               {!loading && rows.length === 0 && (
                 <tr>
-                  <td
-                    colSpan="12"
-                    className="text-center text-muted py-5"
-                    style={{ textTransform: "none" }}
-                  >
+                  <td colSpan="12" className="text-center text-muted py-5">
                     No job tracker records found.
                   </td>
                 </tr>
@@ -564,7 +761,7 @@ const JobTracker = () => {
 
               {!loading &&
                 rows.map((row) => (
-                  <tr key={row.id} className="jobtracker-data-row">
+                  <tr key={row.id}>
                     <td>{row.jobId}</td>
                     <td>{row.jobTitle}</td>
                     <td>{row.siteName}</td>
@@ -587,148 +784,6 @@ const JobTracker = () => {
       {customerLoading && (
         <div className="mt-3 text-muted small">Loading client filters...</div>
       )}
-
-      <style>
-        {`
-          /* Filter row spacing */
-          .jobtracker-filter-row > div {
-            margin-bottom: 0.5rem;
-          }
-
-          /* Action buttons – touch friendly */
-          .jobtracker-action-btn {
-            min-height: 44px;
-            white-space: nowrap;
-          }
-
-          /* Table wrapper – enables horizontal swipe on mobile */
-          .jobtracker-table-shell {
-            overflow-x: auto;
-            -webkit-overflow-scrolling: touch;
-            border-radius: 0.25rem;
-          }
-
-          /* Main table – auto layout on small, fixed on large */
-          .jobtracker-main-table {
-            table-layout: auto;
-            width: 100%;
-            min-width: 650px;       /* ensures scroll when viewport is narrower */
-            margin-bottom: 0;
-          }
-
-          @media (min-width: 992px) {
-            .jobtracker-main-table {
-              table-layout: fixed;
-              min-width: 0;
-            }
-            .jobtracker-main-table th:nth-child(1) { width: 7%; }
-            .jobtracker-main-table th:nth-child(2) { width: 14%; }
-            .jobtracker-main-table th:nth-child(3) { width: 10%; }
-            .jobtracker-main-table th:nth-child(4) { width: 10%; }
-            .jobtracker-main-table th:nth-child(5) { width: 10%; }
-            .jobtracker-main-table th:nth-child(6) { width: 9%; }
-            .jobtracker-main-table th:nth-child(7) { width: 9%; }
-            .jobtracker-main-table th:nth-child(8) { width: 8%; }
-            .jobtracker-main-table th:nth-child(9) { width: 8%; }
-            .jobtracker-main-table th:nth-child(10) { width: 7%; }
-            .jobtracker-main-table th:nth-child(11) { width: 7%; }
-            .jobtracker-main-table th:nth-child(12) { width: 9%; }
-          }
-
-          .jobtracker-main-table > thead > tr > th,
-          .jobtracker-main-table > tbody > tr > td {
-            padding: 0.65rem 0.55rem;
-            font-size: 0.82rem;
-            line-height: 1.25;
-            white-space: normal;
-            word-break: break-word;
-            vertical-align: middle;
-          }
-
-          .jobtracker-main-table > thead > tr > th {
-            text-align: center;
-            letter-spacing: 0.02em;
-            font-weight: 700;
-            border-right: 1px solid #d6e4ff;
-            border-bottom: 2px solid #0A7C6E !important;
-          }
-
-          .jobtracker-main-table > thead > tr > th:last-child,
-          .jobtracker-main-table > tbody > tr > td:last-child {
-            border-right: 0;
-          }
-
-          .jobtracker-main-table > tbody > tr.jobtracker-data-row > td {
-            background: #fff;
-            border-bottom: 1px solid #d9e1ea;
-            border-right: 1px solid #edf1f6;
-          }
-
-          .jobtracker-main-table > tbody > tr.jobtracker-data-row:nth-of-type(odd) > td {
-            background: #fbfdff;
-          }
-
-          .jobtracker-main-table > tbody > tr.jobtracker-data-row:hover > td {
-            background: #eef5ff;
-          }
-
-          /* Mobile & tablet adjustments */
-          @media (max-width: 768px) {
-            .jobtracker-main-table > thead > tr > th,
-            .jobtracker-main-table > tbody > tr > td {
-              padding: 0.5rem 0.4rem;
-              font-size: 0.74rem;
-            }
-
-            /* Hide less critical columns to avoid excessive scrolling */
-            .jobtracker-main-table > thead > tr > th:nth-child(6),
-            .jobtracker-main-table > thead > tr > th:nth-child(7),
-            .jobtracker-main-table > thead > tr > th:nth-child(8),
-            .jobtracker-main-table > thead > tr > th:nth-child(9),
-            .jobtracker-main-table > thead > tr > th:nth-child(10),
-            .jobtracker-main-table > thead > tr > th:nth-child(11),
-            .jobtracker-main-table > tbody > tr.jobtracker-data-row > td:nth-child(6),
-            .jobtracker-main-table > tbody > tr.jobtracker-data-row > td:nth-child(7),
-            .jobtracker-main-table > tbody > tr.jobtracker-data-row > td:nth-child(8),
-            .jobtracker-main-table > tbody > tr.jobtracker-data-row > td:nth-child(9),
-            .jobtracker-main-table > tbody > tr.jobtracker-data-row > td:nth-child(10),
-            .jobtracker-main-table > tbody > tr.jobtracker-data-row > td:nth-child(11) {
-              display: none;
-            }
-
-            .jobtracker-main-table {
-              min-width: 400px;
-            }
-
-            /* Make buttons full width on very small phones */
-            .jobtracker-filter-row .d-grid {
-              width: 100%;
-            }
-          }
-
-          @media (max-width: 480px) {
-            .jobtracker-main-table {
-              min-width: 380px;
-              font-size: 0.72rem;
-            }
-
-            .jobtracker-main-table > thead > tr > th,
-            .jobtracker-main-table > tbody > tr > td {
-              padding: 0.4rem 0.2rem;
-            }
-
-            .dashboard-page-header h1 {
-              font-size: 1.4rem;
-            }
-
-            /* Stack date inputs and buttons at full width */
-            .jobtracker-filter-row .col-6 {
-              width: 100%;
-              flex: 0 0 auto;
-            }
-          }
-        `}
-      </style>
     </div>
   );
 };

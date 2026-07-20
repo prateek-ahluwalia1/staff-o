@@ -301,7 +301,7 @@ export default function EventSecurityHero() {
 
                 <div style={styles.statBox}>
                   <div style={styles.statValue}>100%</div>
-                  <div style={styles.statLabel}>Licensed & Verified</div>
+                  <div style={styles.statLabel}>Licensed and Verified</div>
                 </div>
               </div>
 

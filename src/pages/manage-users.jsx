@@ -1267,9 +1267,9 @@ const ManageUsers = () => {
           <thead>
             <tr>
               <th style={{ textAlign: "center", width: "60px" }}>Photo</th>
-              <th style={{ textAlign: "left" }}>Name & Email</th>
+              <th style={{ textAlign: "left" }}>Name and Email</th>
               {activeTab === "sub_contractor" ? (
-                <th style={{ textAlign: "left" }}>Business & Phone</th>
+                <th style={{ textAlign: "left" }}>Business and Phone</th>
               ) : activeTab === "staff" ? (
                 <th style={{ textAlign: "left" }}>Resource Partner</th>
               ) : (
@@ -1942,7 +1942,7 @@ const ManageUsers = () => {
                       disabled={phoneLoading || phoneChangeSuccess}
                       style={{ minHeight: "44px" }}
                     >
-                      {phoneLoading ? "Verifying..." : "Verify & Update"}
+                      {phoneLoading ? "Verifying..." : "Verify and Update"}
                     </button>
                   </div>
                 </form>

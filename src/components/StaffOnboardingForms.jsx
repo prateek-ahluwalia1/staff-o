@@ -841,7 +841,7 @@ const EmployeeOnboardingForm = ({
                         </div>
                     </div>
 
-                    <SectionHeader icon="fa-passport">Passport & Work Rights</SectionHeader>
+                    <SectionHeader icon="fa-passport">Passport and Work Rights</SectionHeader>
                     <div className="row g-4 mb-4">
                         <div className="col-md-4">
                             <label className={labelCls}>
@@ -935,7 +935,7 @@ const EmployeeOnboardingForm = ({
                         ))}
                     </div>
 
-                    <SectionHeader icon="fa-building-columns">Banking, Tax & Superannuation</SectionHeader>
+                    <SectionHeader icon="fa-building-columns">Banking, Tax and Superannuation</SectionHeader>
                     <div className="row g-4 mb-4">
                         <div className="col-md-4">
                             <label className={labelCls}>Bank Name <span className="text-danger">*</span></label>
@@ -1038,7 +1038,7 @@ const EmployeeOnboardingForm = ({
                         </div>
                     </div>
 
-                    <SectionHeader icon="fa-signature">Declaration & Signature</SectionHeader>
+                    <SectionHeader icon="fa-signature">Declaration and Signature</SectionHeader>
                     <div className="row g-4">
                         <div className="col-md-6">
                             <label className={labelCls}>

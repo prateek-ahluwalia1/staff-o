@@ -211,7 +211,7 @@ export default function ReviewStep({ form, rate, setField, handleConfirm, setSte
           <div className="d-flex align-items-start gap-2 mb-1">
             <input id="terms" className="form-check-input mt-1 flex-shrink-0" type="checkbox" style={{ width: "1.1rem", height: "1.1rem", cursor: "pointer" }} checked={form.termsAccepted} onChange={(e) => setField("termsAccepted", e.target.checked)} disabled={isSubmitting} />
             <label htmlFor="terms" className="form-check-label fw-medium user-select-none text-break" style={{ cursor: "pointer", fontSize: "0.85rem", lineHeight: "1.4" }}>
-              I agree to the <NavLink to="/terms-of-use" target="_blank" rel="noopener noreferrer" className="text-primary text-decoration-none fw-bold">Terms & Conditions</NavLink>
+              I agree to the <NavLink to="/terms-of-use" target="_blank" rel="noopener noreferrer" className="text-primary text-decoration-none fw-bold">Terms and Conditions</NavLink>
             </label>
           </div>
           <div className="text-muted ps-4" style={{ fontSize: "0.7rem", textTransform: "none", lineHeight: "1.3" }}>
@@ -243,7 +243,7 @@ export default function ReviewStep({ form, rate, setField, handleConfirm, setSte
           ) : isAdmin ? (
             <><i className="fa-solid fa-paper-plane"></i> Post Job as Admin</>
           ) : (
-            <><i className="fa-brands fa-stripe fs-5"></i> Pay {fmt(activeAmount)} & Post</>
+            <><i className="fa-brands fa-stripe fs-5"></i> Pay {fmt(activeAmount)} and Post</>
           )}
         </button>
       </div>

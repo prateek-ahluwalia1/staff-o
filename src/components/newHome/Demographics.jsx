@@ -9,7 +9,7 @@ function Demographics() {
     <div><section className="demo-sec">
       <div className="demo-head reveal">
         <div>
-          <div className="label">Brand Reach & Demographics</div>
+          <div className="label">Brand Reach and Demographics</div>
           <h2>App Experience<br />By User Type</h2>
         </div>
       </div>

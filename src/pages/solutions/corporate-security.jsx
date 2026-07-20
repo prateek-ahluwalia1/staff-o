@@ -239,79 +239,79 @@ export default function CorporateSecurity() {
             </Helmet>
 
             <Header />
-<div style={styles.page}>
-  <div style={styles.container}>
-    {/* Left Content */}
-    <div style={styles.left}>
-      {/* Breadcrumb */}
-      <div style={styles.breadcrumb}>
-        <span>Home</span>
-        <span style={styles.breadcrumbSep}>&gt;</span>
-        <span>Solutions</span>
-        <span style={styles.breadcrumbSep}>&gt;</span>
-        <span style={styles.breadcrumbHighlight}>Corporate Security</span>
-      </div>
+            <div style={styles.page}>
+                <div style={styles.container}>
+                    {/* Left Content */}
+                    <div style={styles.left}>
+                        {/* Breadcrumb */}
+                        <div style={styles.breadcrumb}>
+                            <span>Home</span>
+                            <span style={styles.breadcrumbSep}>&gt;</span>
+                            <span>Solutions</span>
+                            <span style={styles.breadcrumbSep}>&gt;</span>
+                            <span style={styles.breadcrumbHighlight}>Corporate Security</span>
+                        </div>
 
-      {/* Heading */}
-      <h1 style={styles.heading}>
-        Corporate Security, <span style={styles.headingAccent}>Deployed When You Need It</span>
-      </h1>
+                        {/* Heading */}
+                        <h1 style={styles.heading}>
+                            Corporate Security, <span style={styles.headingAccent}>Deployed When You Need It</span>
+                        </h1>
 
-      {/* Description */}
-      <p style={styles.description}>
-        Connect with trained and licensed security guards ready for corporate office protection. 
-        Post your job and hire fast with Staffoo.
-      </p>
+                        {/* Description */}
+                        <p style={styles.description}>
+                            Connect with trained and licensed security guards ready for corporate office protection.
+                            Post your job and hire fast with Staffoo.
+                        </p>
 
-      {/* Buttons */}
-      <div style={styles.buttonGroup}>
-        <button
-          style={styles.btnPrimary}
-          onMouseEnter={() => setIsPrimaryHovered(true)}
-          onMouseLeave={() => setIsPrimaryHovered(false)}
-        >
-          Request Security Staff
-        </button>
+                        {/* Buttons */}
+                        <div style={styles.buttonGroup}>
+                            <button
+                                style={styles.btnPrimary}
+                                onMouseEnter={() => setIsPrimaryHovered(true)}
+                                onMouseLeave={() => setIsPrimaryHovered(false)}
+                            >
+                                Request Security Staff
+                            </button>
 
-        <button
-          style={styles.btnSecondary}
-          onMouseEnter={() => setIsSecondaryHovered(true)}
-          onMouseLeave={() => setIsSecondaryHovered(false)}
-        >
-          See how it works
-        </button>
-      </div>
-    </div>
+                            <button
+                                style={styles.btnSecondary}
+                                onMouseEnter={() => setIsSecondaryHovered(true)}
+                                onMouseLeave={() => setIsSecondaryHovered(false)}
+                            >
+                                See how it works
+                            </button>
+                        </div>
+                    </div>
 
-    {/* Right Card */}
-    <div style={styles.right}>
-      <div style={styles.card}>
-        <div style={styles.cardLabel}>Why Staffoo</div>
+                    {/* Right Card */}
+                    <div style={styles.right}>
+                        <div style={styles.card}>
+                            <div style={styles.cardLabel}>Why Staffoo</div>
 
-        {/* Stats Grid */}
-        <div style={styles.statsGrid}>
-          <div style={styles.statBox}>
-            <div style={styles.statValue}>500+ </div>
-            <div style={styles.statLabel}>Monthly <br /> deploys</div>
-          </div>
+                            {/* Stats Grid */}
+                            <div style={styles.statsGrid}>
+                                <div style={styles.statBox}>
+                                    <div style={styles.statValue}>500+ </div>
+                                    <div style={styles.statLabel}>Monthly <br /> deploys</div>
+                                </div>
 
-          <div style={styles.statBox}>
-            <div style={styles.statValue}>100%</div>
-            <div style={styles.statLabel}>Licensed & Verified</div>
-          </div>
-        </div>
+                                <div style={styles.statBox}>
+                                    <div style={styles.statValue}>100%</div>
+                                    <div style={styles.statLabel}>Licensed and Verified</div>
+                                </div>
+                            </div>
 
-        {/* Tags */}
-        <div style={styles.tagsGrid}>
-          <div style={styles.tag}>GPS <br /> Tracking</div>
-          <div style={styles.tag}>Payroll Management</div>
-          <div style={styles.tag}>Instant Deployment</div>
-          <div style={styles.tag}>Complince Covered</div>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
+                            {/* Tags */}
+                            <div style={styles.tagsGrid}>
+                                <div style={styles.tag}>GPS <br /> Tracking</div>
+                                <div style={styles.tag}>Payroll Management</div>
+                                <div style={styles.tag}>Instant Deployment</div>
+                                <div style={styles.tag}>Complince Covered</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
 
 

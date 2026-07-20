@@ -1304,7 +1304,7 @@ export default function EditProfile() {
               </div>
               <div className="d-flex gap-2">
                 <button type="button" className="btn btn-outline-secondary w-50" onClick={handleClosePhoneModal} disabled={phoneSubmitLoading}>Cancel</button>
-                <button type="submit" className="btn btn-primary-custom w-50" style={{ background: "#0A7C6E", borderColor: "#0A7C6E" }} disabled={phoneSubmitLoading || phoneChangeSuccess}>{phoneSubmitLoading ? "Verifying..." : "Verify & Update"}</button>
+                <button type="submit" className="btn btn-primary-custom w-50" style={{ background: "#0A7C6E", borderColor: "#0A7C6E" }} disabled={phoneSubmitLoading || phoneChangeSuccess}>{phoneSubmitLoading ? "Verifying..." : "Verify and Update"}</button>
               </div>
             </form>
           )}

@@ -311,7 +311,7 @@ const generateEmployeeOnboardingPDF = (formData) => {
   const pw = doc.internal.pageSize.getWidth(), ph = doc.internal.pageSize.getHeight();
   const mg = 13, bw = pw - mg * 2, pad = 2.5;
 
-  let y = renderFormHeader(doc, pw, "EMPLOYEE ONBOARDING & ID VERIFICATION FORM", mg);
+  let y = renderFormHeader(doc, pw, "EMPLOYEE ONBOARDING and ID VERIFICATION FORM", mg);
 
   const noticeH = 7;
   doc.setFillColor(...T.white); doc.rect(mg, y, bw, noticeH, "F");
@@ -360,7 +360,7 @@ const generateEmployeeOnboardingPDF = (formData) => {
   oneFld("Residential Address:", address);
   twoFld("Mobile Phone Number:", mobile, "Personal Email Address:", email);
 
-  section("2. PASSPORT & WORK RIGHTS");
+  section("2. PASSPORT and WORK RIGHTS");
   checkPage(14);
   const pw3 = (bw - 8) / 3;
   fld("Passport Number:", passport_number, mg, y, pw3);
@@ -454,7 +454,7 @@ const generateEmployeeOnboardingPDF = (formData) => {
   });
   y += 4;
 
-  section("4. BANKING, TAX & SUPERANNUATION");
+  section("4. BANKING, TAX and SUPERANNUATION");
   twoFld("Bank Name:", bank_name, "BSB Number:", bsb);
   twoFld("Account Number:", account_number, "Tax File Number (TFN):", tfn);
   oneFld("Superannuation Fund Name:", super_fund);

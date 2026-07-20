@@ -31,7 +31,7 @@ function HireSecurityStaff() {
 
   const why = [
     { icon: "fa-bolt", title: "Fast Hiring", desc: "No long recruitment cycles." },
-    { icon: "fa-shield", title: "Fully Verified", desc: "Identity & background checked staff." },
+    { icon: "fa-shield", title: "Fully Verified", desc: "Identity and background checked staff." },
     { icon: "fa-line-chart", title: "Cost Efficient", desc: "Reduce hiring overhead costs." },
     { icon: "fa-globe", title: "Nationwide Coverage", desc: "Hire staff anywhere in Australia." },
   ];

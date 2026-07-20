@@ -205,7 +205,7 @@ export default function DetailsStep({ form, setField, handleFile, attachmentPrev
 
         <div className="col-12 col-md-7 d-flex flex-column">
           <div className="d-flex justify-content-between align-items-end mb-2 mt-3 mt-md-0">
-            <label className="form-label small fw-bold text-dark mb-0">Job Description & Tasks</label>
+            <label className="form-label small fw-bold text-dark mb-0">Job Description and Tasks</label>
             <span className={`small fw-medium ${form.description?.length > MAX_DESCRIPTION_LENGTH * 0.9 ? "text-warning" : "text-muted"}`} style={{ fontSize: "0.75rem" }}>
               {form.description?.length || 0} / {MAX_DESCRIPTION_LENGTH}
             </span>

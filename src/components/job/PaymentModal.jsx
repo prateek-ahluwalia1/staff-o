@@ -213,7 +213,7 @@ function CardForm({
           style={{ fontSize: 13 }}
         >
           {paymentMode === "saved"
-            ? "Verify & Enter Card Details"
+            ? "Verify and Enter Card Details"
             : "Card Details"}
         </label>
 

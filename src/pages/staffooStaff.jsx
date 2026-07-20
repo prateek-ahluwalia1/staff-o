@@ -927,7 +927,7 @@ const StaffooStaff = () => {
                     <thead>
                         <tr>
                             <th style={{ textAlign: "center", width: "60px" }}>Photo</th>
-                            <th style={{ textAlign: "left" }}>Name & Email</th>
+                            <th style={{ textAlign: "left" }}>Name and Email</th>
                             <th style={{ textAlign: "left" }}>Phone</th>
                             <th style={{ textAlign: "left" }}>Status</th>
                             <th style={{ textAlign: "left" }}>Location</th>

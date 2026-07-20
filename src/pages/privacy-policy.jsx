@@ -9,7 +9,7 @@ const sections = [
       "Staffoo (operated by Capital Services Pty Ltd) is committed to protecting the privacy of our customers, Resource Partners, and staff in accordance with the Privacy Act 1988 (Cth) and the Australian Privacy Principles (APPs).",
   },
   {
-    title: "1.2 Information Collection & GPS Tracking",
+    title: "1.2 Information Collection and GPS Tracking",
     content:
       "Client Data: We collect business details, site addresses, contact information, and service requirements. Workforce Data: We collect identity documents, ABNs, State-specific Security Licenses, and certifications. GPS Movement Tracking: To ensure site security, lone-worker safety, and proof-of-attendance, Staffoo tracks the GPS location of all staff and Resource Partners. This tracking is active only while a user is 'Clocked In' for a shift. By using the app, workforce users consent to real-time location monitoring for the duration of their work assignment.",
   },
@@ -24,7 +24,7 @@ const sections = [
       "Authorization: Upon job acceptance by a staff member or Resource Partner, a payment hold (pre-authorization) will be placed on the customer’s nominated card via Stripe. Amount: The hold will be equal to the total value specified in the approved quotation or invoice. Final Charge: Funds are captured upon shift completion or as determined by the cancellation policy.",
   },
   {
-    title: "2.2 Cancellation & Refund Policy",
+    title: "2.2 Cancellation and Refund Policy",
     content:
       "Standard Cancellation: Cancellations made more than 24 hours before the shift start time are eligible for a full release of the payment hold. The '1-Hour Rule': In accordance with Australian security industry standards, if a client cancels a job within one (1) hour of the scheduled start time, a minimum charge of four (4) hours will be deducted from the held funds to compensate the assigned personnel.",
   },

@@ -603,7 +603,7 @@ export default function Login() {
                 <div className="d-flex flex-column gap-3 mb-4">
                   {[
                     { key: "customer", label: "Client", desc: "I want to hire security professionals.", icon: "fa-user-tie" },
-                    { key: "staff", label: "Staff", desc: "I am looking for security shifts & jobs.", icon: "fa-user-shield" },
+                    { key: "staff", label: "Staff", desc: "I am looking for security shifts and jobs.", icon: "fa-user-shield" },
                     { key: "contractor", label: "Resource Partner", desc: "I provide resources and contractor services.", icon: "fa-handshake" },
                   ].map((role) => {
                     const isActive = selectedRole === role.key;

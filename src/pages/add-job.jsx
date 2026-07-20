@@ -127,10 +127,10 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
   const STEP_TITLES = isEmbedded
     ? isAdmin
       ? ["Overview", "Schedule", "Details"]
-      : ["Overview", "Schedule", "Details", "Review & Confirm"]
+      : ["Overview", "Schedule", "Details", "Review and Confirm"]
     : isAdmin
       ? ["Location", "Schedule", "Details"]
-      : ["Location", "Schedule", "Details", "Review & Confirm"];
+      : ["Location", "Schedule", "Details", "Review and Confirm"];
 
   const [step, setStep] = useState(0);
   const [resolvingLocation, setResolvingLocation] = useState(false);
@@ -328,7 +328,7 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
 
         {!isAdmin && renderEmbeddedSection(
           "review",
-          "Review & Confirm",
+          "Review and Confirm",
           "Review the job summary and submit the shift.",
           <ReviewStep form={form} rate={breakdown} setStep={setStep} setField={setField} handleConfirm={handleConfirm} isSubmitting={isSubmitting} baseAmount={breakdown?.chargeTotalIncGst || 0} isAdmin={isAdmin} />
         )}
@@ -806,7 +806,7 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
 
     // 5. Validate Review / Terms (For non-admin)
     if (!isAdmin && !form.termsAccepted) {
-      toast.error("Accept Terms & Conditions to proceed.");
+      toast.error("Accept Terms and Conditions to proceed.");
       isEmbedded ? setEmbeddedAccordion((p) => ({ ...p, review: true })) : setStep(3);
       return;
     }
@@ -1161,7 +1161,7 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
                           onClick={handleCreateCustomer}
                           disabled={submittingCustomer}
                         >
-                          {submittingCustomer ? <>Saving...</> : <>Create & Continue</>}
+                          {submittingCustomer ? <>Saving...</> : <>Create and Continue</>}
                         </button>
                       </div>
                     </div>

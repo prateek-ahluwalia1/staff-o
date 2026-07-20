@@ -247,7 +247,7 @@ const StaffOnboardingPDFs = {
         doc.setTextColor(0, 85, 255);
         doc.setFontSize(14);
         doc.setFont("helvetica", "bold");
-        doc.text("EMPLOYEE ONBOARDING & ID VERIFICATION FORM", pageWidth / 2, y, { align: "center" });
+        doc.text("EMPLOYEE ONBOARDING and ID VERIFICATION FORM", pageWidth / 2, y, { align: "center" });
 
         y += 8;
         doc.setDrawColor(0, 85, 255);
@@ -280,7 +280,7 @@ const StaffOnboardingPDFs = {
         drawField(doc, 110, y, 80, "Personal Email Address:", apiData.email);
 
         y += 15;
-        drawSectionHeader("2. PASSPORT & WORK RIGHTS");
+        drawSectionHeader("2. PASSPORT and WORK RIGHTS");
         drawField(doc, margin, y, 55, "Passport Number:", apiData.passport_number);
         drawField(doc, 75, y, 55, "Country of Issue:", apiData.passport_country);
         drawField(doc, 135, y, 55, "Passport Expiry Date:", apiData.passport_expiry);
@@ -309,7 +309,7 @@ const StaffOnboardingPDFs = {
         });
         y = doc.lastAutoTable.finalY + 10;
 
-        drawSectionHeader("4. BANKING, TAX & SUPERANNUATION");
+        drawSectionHeader("4. BANKING, TAX and SUPERANNUATION");
         drawField(doc, margin, y, 55, "Bank Name:", apiData.bank_name);
         drawField(doc, 75, y, 55, "BSB Number:", apiData.bsb);
         drawField(doc, 135, y, 55, "Account Number:", apiData.account_number);

@@ -161,7 +161,7 @@ function EventSecurityProviders() {
 
                         {/* LONG CONTENT */}
                         <div style={cardStyle}>
-                            <h2 style={h2Style}>Deliver Safe & Successful Events</h2>
+                            <h2 style={h2Style}>Deliver Safe and Successful Events</h2>
 
                             <p style={textStyle}>
                                 Event security providers play a crucial role in ensuring safe

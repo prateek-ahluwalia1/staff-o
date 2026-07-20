@@ -493,7 +493,7 @@ export default function RosterPage() {
 
       <div className="vr-matrix-scroll-container">
         <div className="vr-matrix-header">
-          <div className="vr-col-site">Sites & Summary</div>
+          <div className="vr-col-site">Sites and Summary</div>
           {weekDays.map((day) => (
             <div
               key={day.key}

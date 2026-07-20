@@ -14,7 +14,8 @@ const InfoRow = ({ label, value, icon, transform = true }) => {
       ? value.charAt(0).toUpperCase() + value.slice(1)
       : value;
   return (
-    <div className="info-row">
+    <div
+      className="info-row">
       <span className="info-row-label">
         {icon && <i className={`fa-solid ${icon} info-row-icon`}></i>}
         {label}
@@ -626,7 +627,7 @@ export default function MyJobApplications() {
           .info-row:last-child { border-bottom: none; }
           .info-row-label { color: var(--muted); font-size: 13px; font-weight: 600; display: flex; align-items: center; }
           .info-row-icon { width: 16px; text-align: center; color: var(--teal); opacity: 0.85; margin-right: 8px; font-size: 12px; }
-          .info-row-value { color: var(--ink); font-weight: 600; font-size: 13px; text-align: right; max-width: 60%; }
+          .info-row-value { color: var(--ink); font-weight: 600; font-size: 13px; text-align: left; max-width: 60%; }
 
           .doc-pill {
             display: inline-block; background: rgba(10, 124, 110, 0.08); color: var(--teal);
@@ -810,23 +811,27 @@ export default function MyJobApplications() {
                     </div>
 
                     <div className="mt-auto pt-3 card-footer-row d-flex justify-content-between align-items-center">
-                      <div className="d-flex align-items-center gap-2">
-                        <div
-                          className="assignee-avatar"
-                          style={{
-                            backgroundColor: app.appliedVia === "Unassigned" ? "#e2e8f0" : "rgba(10, 124, 110, 0.12)",
-                            color: app.appliedVia === "Unassigned" ? "#94a3b8" : "#0A7C6E",
-                          }}
-                        >
-                          {getInitials(app.appliedVia)}
+                      {userType !== "staff" && (
+                        <div className="d-flex align-items-center gap-2">
+                          <div
+                            className="assignee-avatar"
+                            style={{
+                              backgroundColor: app.appliedVia === "Unassigned" ? "#e2e8f0" : "rgba(10, 124, 110, 0.12)",
+                              color: app.appliedVia === "Unassigned" ? "#94a3b8" : "#0A7C6E",
+                            }}
+                          >
+                            {getInitials(app.appliedVia)}
+                          </div>
+                          <div className="d-flex flex-column" style={{ minWidth: 0 }}>
+                            <span className="assignee-label">Assigned To</span>
+                            <span className="fw-bold text-truncate d-block assignee-name">
+                              {app.appliedVia}
+                            </span>
+                          </div>
+
                         </div>
-                        <div className="d-flex flex-column" style={{ minWidth: 0 }}>
-                          <span className="assignee-label">Assigned To</span>
-                          <span className="fw-bold text-truncate d-block assignee-name">
-                            {app.appliedVia}
-                          </span>
-                        </div>
-                      </div>
+                      )
+                      }
                       <button
                         type="button"
                         className="btn btn-primary-custom btn-sm details-btn flex-shrink-0 ms-2"
@@ -984,6 +989,7 @@ export default function MyJobApplications() {
                     </h5>
                     <InfoRow icon="fa-signature" label="Site Name" value={selectedApp.rawShift.site?.site_name} />
                     <InfoRow icon="fa-map-pin" label="Address" value={selectedApp.rawShift.site?.address} />
+                    <InfoRow icon="fa-id-badge" label="Job Type" value={selectedApp.rawShift.job_type || "N/A"} />
                   </div>
                 </div>
                 <div className="col-md-6">
@@ -1014,7 +1020,7 @@ export default function MyJobApplications() {
               </div>
 
               <div className="row g-4">
-                {userType !== "customer" && (
+                {(userType !== "customer" && userType !== "staff") && (
                   <div className="col-md-6">
                     <div className="info-panel h-100">
                       <h5>
@@ -1029,26 +1035,27 @@ export default function MyJobApplications() {
                     </div>
                   </div>
                 )}
-                <div className="col-md-6">
-                  <div className="info-panel h-100">
-                    <h5>
-                      <span className="info-panel-icon" style={{ background: "#dcfce7", color: "#16a34a" }}>
-                        <i className="fa-solid fa-shield-halved"></i>
-                      </span>
-                      Assignment Details
-                    </h5>
-                    {userType !== "staff" && <InfoRow icon="fa-user-shield" label="Assigned To" value={selectedApp.appliedVia} />}
-                    <InfoRow icon="fa-id-badge" label="Job Type" value={selectedApp.rawShift.job_type || "N/A"} />
-                    {userType === "admin" && <InfoRow icon="fa-money-bill" label="Job Amount" value={selectedApp.rawShift.job_amount ? `$${selectedApp.rawShift.job_amount}` : "N/A"} />}
-                    {selectedApp.rawShift.contractor && userType === "admin" && (
-                      <InfoRow
-                        icon="fa-building-user"
-                        label="Resource Partner"
-                        value={selectedApp.rawShift.contractor.name || "N/A"}
-                      />
-                    )}
+                {(userType !== "customer" && userType !== "staff") && (
+                  <div className="col-md-6">
+                    <div className="info-panel h-100">
+                      <h5>
+                        <span className="info-panel-icon" style={{ background: "#dcfce7", color: "#16a34a" }}>
+                          <i className="fa-solid fa-shield-halved"></i>
+                        </span>
+                        Assignment Details
+                      </h5>
+                      {userType !== "staff" && <InfoRow icon="fa-user-shield" label="Assigned To" value={selectedApp.appliedVia} />}
+                      {userType === "admin" && <InfoRow icon="fa-money-bill" label="Job Amount" value={selectedApp.rawShift.job_amount ? `$${selectedApp.rawShift.job_amount}` : "N/A"} />}
+                      {selectedApp.rawShift.contractor && userType === "admin" && (
+                        <InfoRow
+                          icon="fa-building-user"
+                          label="Resource Partner"
+                          value={selectedApp.rawShift.contractor.name || "N/A"}
+                        />
+                      )}
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
             </div>
 

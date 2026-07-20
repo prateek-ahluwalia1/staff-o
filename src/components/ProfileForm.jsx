@@ -279,7 +279,7 @@ export default function ProfileForm({
 
                 <div className="col-md-6">
                   <label htmlFor="abn" className="form-label fw-bold text-dark small mb-1">
-                    ABN <span className="text-danger">*</span>
+                    ABN
                   </label>
                   <div className="input-group">
                     <span className="input-group-text bg-light border text-muted">

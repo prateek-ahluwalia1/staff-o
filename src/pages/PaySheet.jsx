@@ -4,7 +4,7 @@ import { toast } from "react-toastify";
 import useSubmit from "../hooks/useSubmit";
 import Loader from "../components/Loader";
 
-// ── Helpers ──────────────────────────────────────────────────────────────────
+// ── Helpers (unchanged) ──────────────────────────────────────────────────────
 const fv = (v) => {
     const n = Number(v);
     return Number.isFinite(n) ? n : 0;
@@ -21,7 +21,7 @@ const fmtNum = (v) => {
     return n !== 0 ? n.toFixed(2) : "";
 };
 
-// ── Date helpers (DD/MM/YYYY for display, YYYY-MM-DD for state) ────────────
+// ── Date helpers (DD/MM/YYYY display, YYYY-MM-DD state) (unchanged) ──────────
 const formatDisplayDate = (dateStr) => {
     if (!dateStr) return "";
     if (/^\d{2}\/\d{2}\/\d{4}$/.test(dateStr)) return dateStr;
@@ -47,7 +47,7 @@ const toISODate = (val) => {
     return val;
 };
 
-// ── Hybrid date input ────────────────────────────────────────────────────────
+// ── Hybrid date input (unchanged) ────────────────────────────────────────────
 const DateFilterInput = ({ value, onChange, placeholder }) => {
     const pickerRef = useRef(null);
     const [displayValue, setDisplayValue] = useState(formatDisplayDate(value));
@@ -88,7 +88,7 @@ const DateFilterInput = ({ value, onChange, placeholder }) => {
                 type="button"
                 className="input-group-text bg-white border-end-0"
                 onClick={openPicker}
-                style={{ cursor: "pointer" }}
+                style={{ cursor: "pointer", minHeight: "44px" }}
                 title="Open calendar"
             >
                 <i className="fa-regular fa-calendar text-muted"></i>
@@ -110,12 +110,13 @@ const DateFilterInput = ({ value, onChange, placeholder }) => {
                 maxLength={10}
                 pattern="^(0[1-9]|[12][0-9]|3[01])/(0[1-9]|1[012])/\d{4}$"
                 title="Enter a date in DD/MM/YYYY format"
+                style={{ minHeight: "44px" }}
             />
         </div>
     );
 };
 
-// ── Column definitions ───────────────────────────────────────────────────────
+// ── Column definitions (unchanged) ───────────────────────────────────────────
 const COLUMNS = [
     { key: "state", label: "State", width: 85 },
     { key: "site_name", label: "Site Name", width: 220 },
@@ -144,9 +145,9 @@ const COLUMNS = [
     { key: "payroll", label: "Payroll", width: 80 },
 ];
 
-// ── Row builders ─────────────────────────────────────────────────────────────
+// ── Row builders (unchanged) ──────────────────────────────────────────────────
 const buildShiftRow = (shift, staff) => {
-    const rawDate = apiStr(shift.start?.split(" ")[0]); // e.g. "2026-06-12"
+    const rawDate = apiStr(shift.start?.split(" ")[0]);
     return {
         state: apiStr(shift.state),
         site_name: apiStr(shift.site_name),
@@ -154,7 +155,7 @@ const buildShiftRow = (shift, staff) => {
         staff_phone: staff.staff_phone,
         staff_type: staff.staff_type,
         customer: staff.customer_name,
-        date: formatDisplayDate(rawDate), // DD/MM/YYYY
+        date: formatDisplayDate(rawDate),
         shift_start: apiStr(shift.start?.split(" ")[1]),
         shift_end: apiStr(shift.end?.split(" ")[1]),
         sign_in: apiStr(shift.signin_time),
@@ -190,7 +191,7 @@ const buildGrandTotalRow = (totals) => ({
     gross_amount: fmtCurrency(totals.gross),
 });
 
-// ── Main component ──────────────────────────────────────────────────────────
+// ── Main component (redesigned) ──────────────────────────────────────────────
 export default function PaySheet() {
     const { submit: submitPaySheet, loading: paySheetLoading } = useSubmit({ isAuth: true });
     const [startDate, setStartDate] = useState("");
@@ -246,9 +247,29 @@ export default function PaySheet() {
             gross: paySheetData.reduce((s, r) => s + r.total_gross, 0),
             staff: paySheetData.length,
             shifts: paySheetData.reduce((s, r) => s + r.shifts.length, 0),
+            mfDay: 0,   // will be calculated below if needed
+            mfNight: 0,
+            sat: 0,
+            sun: 0,
+            ph: 0,
         }),
         [paySheetData]
     );
+
+    // Calculate additional grand totals for stat cards (optional)
+    const detailedTotals = useMemo(() => {
+        let mfDay = 0, mfNight = 0, sat = 0, sun = 0, ph = 0;
+        paySheetData.forEach(staff => {
+            staff.shifts.forEach(shift => {
+                mfDay += fv(shift.morning_hours);
+                mfNight += fv(shift.night_hours);
+                sat += fv(shift.saturday_morning_hours) + fv(shift.saturday_night_hours);
+                sun += fv(shift.sunday_morning_hours) + fv(shift.sunday_night_hours);
+                ph += fv(shift.ph_morning_hours) + fv(shift.ph_night_hours);
+            });
+        });
+        return { mfDay, mfNight, sat, sun, ph };
+    }, [paySheetData]);
 
     const tableRows = useMemo(() => {
         const rows = [];
@@ -263,7 +284,7 @@ export default function PaySheet() {
         return rows;
     }, [paySheetData, grandTotals]);
 
-    // ── Excel export ──────────────────────────────────────────────────────────
+    // ── Excel export (unchanged) ────────────────────────────────────────────────
     const handleExport = () => {
         if (!paySheetData.length) {
             toast.info("No paysheet data to export.");
@@ -352,7 +373,6 @@ export default function PaySheet() {
         const cleanRows = exportRows.map(({ _type, ...rest }) => rest);
         const ws = XLSX.utils.json_to_sheet(cleanRows);
 
-        // style subtotal/grandtotal rows
         const colCount = Object.keys(cleanRows[0] || {}).length;
         exportRows.forEach((row, i) => {
             if (row._type === "subtotal" || row._type === "grandtotal") {
@@ -415,81 +435,444 @@ export default function PaySheet() {
             { label: "Staff Members", value: grandTotals.staff, icon: "fa-users", color: "#0A7C6E", bg: "#e6f7f4" },
             { label: "Total Shifts", value: grandTotals.shifts, icon: "fa-calendar-check", color: "#2563eb", bg: "#eff6ff" },
             { label: "Total Hours", value: `${fmt(grandTotals.hours)}h`, icon: "fa-clock", color: "#d97706", bg: "#fffbeb" },
-            { label: "Weekday Hours", value: `${fmt(grandTotals.mfDay || 0)}h`, icon: "fa-sun", color: "#7c3aed", bg: "#faf5ff" },
-            { label: "Night Hours", value: `${fmt(grandTotals.mfNight || 0)}h`, icon: "fa-moon", color: "#0e7490", bg: "#ecfeff" },
-            { label: "Weekend Hours", value: `${fmt((grandTotals.sat || 0) + (grandTotals.sun || 0))}h`, icon: "fa-umbrella-beach", color: "#be185d", bg: "#fdf2f8" },
-            { label: "PH Hours", value: `${fmt(grandTotals.ph || 0)}h`, icon: "fa-star", color: "#b45309", bg: "#fffbeb" },
+            { label: "Weekday Hours", value: `${fmt(detailedTotals.mfDay)}h`, icon: "fa-sun", color: "#7c3aed", bg: "#faf5ff" },
+            { label: "Night Hours", value: `${fmt(detailedTotals.mfNight)}h`, icon: "fa-moon", color: "#0e7490", bg: "#ecfeff" },
+            { label: "Weekend Hours", value: `${fmt(detailedTotals.sat + detailedTotals.sun)}h`, icon: "fa-umbrella-beach", color: "#be185d", bg: "#fdf2f8" },
+            { label: "PH Hours", value: `${fmt(detailedTotals.ph)}h`, icon: "fa-star", color: "#b45309", bg: "#fffbeb" },
             { label: "Total Gross", value: `$${fmt(grandTotals.gross)}`, icon: "fa-dollar-sign", color: "#059669", bg: "#ecfdf5" },
         ],
-        [grandTotals]
+        [grandTotals, detailedTotals]
     );
 
     return (
-        <div className="dashboard-main dashboard-tools-page">
-            {/* header … unchanged */}
-            <div className="dashboard-page-header">
-                <div>
-                    <h1>Pay Sheet</h1>
-                    <p
-                        style={{ textTransform: "none" }}
-                    >Search and export detailed paysheet records for your staff</p>
-                </div>
-            </div>
+        <div className="container-fluid p-3 p-md-4" style={{ background: "#f8fafc", minHeight: "100vh" }}>
+            <style>{`
+        :root {
+          --navy-950: #0a1930;
+          --navy-900: #0e2340;
+          --teal: #0A7C6E;
+          --teal-dark: #075e53;
+          --teal-tint: #f0fdf9;
+          --teal-border: #d1fae5;
+          --amber: #d97706;
+          --amber-tint: #fffbeb;
+          --success: #16a34a;
+          --purple: #7c3aed;
+          --ink: #0f172a;
+          --slate: #1e293b;
+          --muted: #64748b;
+          --faint: #94a3b8;
+          --line: #e2e8f0;
+          --line-soft: #f1f5f9;
+          --surface: #ffffff;
+        }
 
-            {/* filter card */}
-            <div className="card border-0 ps-filter-card mb-4">
-                <div className="card-body py-3 px-4">
-                    <div className="row g-3 align-items-end">
-                        <div className="col-12 col-sm-6 col-lg-3">
-                            <label className="ps-form-label">
-                                <i className="fa-regular fa-calendar-days me-1"></i>Start Date
-                            </label>
-                            <DateFilterInput
-                                value={startDate}
-                                onChange={setStartDate}
-                                placeholder="Start date"
-                            />
-                        </div>
-                        <div className="col-12 col-sm-6 col-lg-3">
-                            <label className="ps-form-label">
-                                <i className="fa-regular fa-calendar-days me-1"></i>End Date
-                            </label>
-                            <DateFilterInput
-                                value={endDate}
-                                onChange={setEndDate}
-                                placeholder="End date"
-                            />
-                        </div>
-                        <div className="col-12 col-lg-6 d-flex gap-2 justify-content-end">
-                            <button
-                                className="btn ps-btn ps-btn-primary"
-                                onClick={fetchPaySheet}
-                                disabled={paySheetLoading}
-                            >
-                                {paySheetLoading ? (
-                                    <>
-                                        <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true" />
-                                        Searching…
-                                    </>
-                                ) : (
-                                    <>
-                                        <i className="fa-solid fa-magnifying-glass me-2" />Search
-                                    </>
-                                )}
-                            </button>
-                            <button
-                                className="btn ps-btn ps-btn-export"
-                                onClick={handleExport}
-                                disabled={!hasData}
-                            >
-                                <i className="fa-solid fa-file-excel me-2" />Export Excel
-                            </button>
-                        </div>
+        /* Hero */
+        .ps-hero {
+          position: relative;
+          background: linear-gradient(135deg, var(--navy-950) 0%, var(--navy-900) 65%, #0f2f52 100%);
+          border-radius: 22px;
+          padding: 28px 24px 36px;
+          overflow: hidden;
+          isolation: isolate;
+          margin-bottom: 0;
+        }
+        .ps-hero::before {
+          content: "";
+          position: absolute;
+          inset: 0;
+          background-image: radial-gradient(rgba(255,255,255,0.10) 1px, transparent 1px);
+          background-size: 22px 22px;
+          opacity: 0.35;
+          z-index: -1;
+        }
+        .ps-hero::after {
+          content: "";
+          position: absolute;
+          top: -40px;
+          right: -40px;
+          width: 200px;
+          height: 200px;
+          border-radius: 50%;
+          background: radial-gradient(circle, rgba(10,124,110,0.45) 0%, rgba(10,124,110,0) 70%);
+          z-index: -1;
+        }
+        .ps-hero-eyebrow {
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          font-size: 11px;
+          font-weight: 700;
+          letter-spacing: 0.6px;
+          text-transform: uppercase;
+          color: #6ee7d8;
+          margin-bottom: 10px;
+        }
+        .ps-hero-eyebrow .dot {
+          width: 7px; height: 7px; border-radius: 50%;
+          background: #34d399;
+          box-shadow: 0 0 0 4px rgba(52,211,153,0.18);
+        }
+        .ps-hero h1 {
+          color: #fff;
+          font-size: 28px;
+          font-weight: 800;
+          letter-spacing: -0.4px;
+          margin: 0 0 6px;
+        }
+        .ps-hero p {
+          color: rgba(255,255,255,0.62);
+          font-size: 14px;
+          margin: 0;
+          text-transform: none;
+        }
+        .ps-hero-stats {
+          display: flex;
+          gap: 12px;
+          flex-wrap: wrap;
+          margin-top: 28px;
+        }
+        .ps-hero-stat {
+          background: rgba(255,255,255,0.06);
+          border: 1px solid rgba(255,255,255,0.12);
+          backdrop-filter: blur(6px);
+          border-radius: 14px;
+          padding: 12px 16px;
+          min-width: 140px;
+          flex: 1 1 150px;
+        }
+        .ps-hero-stat-label {
+          font-size: 10px;
+          font-weight: 700;
+          letter-spacing: 0.5px;
+          text-transform: uppercase;
+          color: rgba(255,255,255,0.5);
+          display: block;
+          margin-bottom: 4px;
+        }
+        .ps-hero-stat-value {
+          font-size: 18px;
+          font-weight: 700;
+          color: #fff;
+          letter-spacing: -0.2px;
+        }
+
+        /* Filter card */
+        .ps-filter-card {
+          background: #fff;
+          border-radius: 18px;
+          box-shadow: 0 18px 40px -14px rgba(10, 25, 48, 0.28);
+          border: 1px solid var(--line-soft);
+          padding: 16px 18px;
+          margin-top: -30px;
+          margin-bottom: 24px;
+          position: relative;
+          z-index: 2;
+        }
+
+        /* Stat cards */
+        .ps-stat-card {
+          border-radius: 14px;
+          background: #fff;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+          border: 1px solid var(--line-soft);
+          transition: transform 0.15s, box-shadow 0.15s;
+        }
+        .ps-stat-card:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+        }
+        .ps-stat-icon {
+          width: 44px;
+          height: 44px;
+          border-radius: 12px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 1.1rem;
+          flex-shrink: 0;
+        }
+        .ps-stat-value {
+          font-size: 1.1rem;
+          font-weight: 800;
+          color: #111827;
+        }
+        .ps-stat-label {
+          font-size: 0.72rem;
+          color: #6b7280;
+          font-weight: 700;
+        }
+
+        /* Table card */
+        .ps-table-card {
+          border-radius: 18px;
+          overflow: hidden;
+          box-shadow: 0 10px 25px -8px rgba(15,23,42,0.08);
+          border: 1px solid var(--line-soft);
+        }
+        .ps-table-card-header {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          flex-wrap: wrap;
+          gap: 10px;
+          padding: 14px 18px;
+          background: linear-gradient(135deg, #f8fcfb 0%, #f0faf8 100%);
+          border-bottom: 1.5px solid #d4ecea;
+        }
+        .ps-table-icon {
+          width: 32px;
+          height: 32px;
+          border-radius: 8px;
+          background: linear-gradient(135deg, #0A7C6E, #0d9e8d);
+          color: #fff;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 0.85rem;
+        }
+        .ps-table-title {
+          font-size: 0.92rem;
+          font-weight: 800;
+          color: #0A7C6E;
+        }
+        .ps-table-subtitle {
+          font-size: 0.78rem;
+          color: #6b7280;
+          font-weight: 500;
+        }
+        .ps-summary-chip {
+          display: inline-flex;
+          align-items: center;
+          background: #f3f4f6;
+          color: #374151;
+          font-size: 0.75rem;
+          font-weight: 700;
+          padding: 4px 12px;
+          border-radius: 20px;
+          border: 1px solid #e5e7eb;
+        }
+        .ps-summary-chip--green {
+          background: #ecfdf5;
+          color: #059669;
+          border-color: #a7f3d0;
+        }
+
+        .ps-scroll-wrapper {
+          overflow-x: auto;
+          width: 100%;
+        }
+        .ps-main-table {
+          width: max-content;
+          min-width: 100%;
+          border-collapse: collapse;
+        }
+        .ps-main-table thead th {
+          background: #f8fafc;
+          border-bottom: 2px solid var(--teal);
+          font-size: 0.75rem;
+          font-weight: 700;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+          color: var(--faint);
+          padding: 14px 10px;
+          white-space: nowrap;
+        }
+        .ps-main-table tbody td {
+          padding: 12px 10px;
+          font-size: 0.85rem;
+          border-color: var(--line-soft);
+          white-space: nowrap;
+        }
+        .ps-main-table tbody tr:hover td {
+          background: #f0fdf9;
+        }
+
+        .ps-shift-row td { background: #fff; }
+        .ps-shift-row:nth-child(even) td { background: #f8fdfb; }
+        .ps-subtotal-row td {
+          background: #e2e2e2 !important;
+          border-top: 2px solid #bdbdbd;
+          border-bottom: 2px solid #bdbdbd;
+          font-weight: 700;
+        }
+        .ps-grandtotal-row td {
+          background: linear-gradient(135deg, #d1fae5 0%, #c8e6e3 100%) !important;
+          border-top: 2.5px solid var(--teal);
+          border-bottom: 2.5px solid var(--teal);
+          font-weight: 800;
+          color: #064e46;
+        }
+
+        .ps-cell-empty { color: #d1d5db; }
+        .ps-gross-badge {
+          display: inline-flex;
+          align-items: center;
+          background: #ecfdf5;
+          color: #059669;
+          font-weight: 700;
+          padding: 2px 9px;
+          border-radius: 20px;
+          border: 1px solid #a7f3d0;
+        }
+        .ps-state-badge {
+          display: inline-flex;
+          align-items: center;
+          background: #eff6ff;
+          color: #1d4ed8;
+          font-size: 0.68rem;
+          font-weight: 800;
+          padding: 2px 9px;
+          border-radius: 20px;
+          border: 1px solid #bfdbfe;
+        }
+        .ps-pill {
+          display: inline-flex;
+          align-items: center;
+          font-size: 0.69rem;
+          font-weight: 700;
+          padding: 2px 9px;
+          border-radius: 20px;
+          text-transform: capitalize;
+        }
+        .ps-pill--no  { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; }
+        .ps-pill--yes { background: #f0fdf4; color: #16a34a; border: 1px solid #bbf7d0; }
+        .ps-payroll-badge {
+          display: inline-flex;
+          align-items: center;
+          background: #faf5ff;
+          color: #7c3aed;
+          font-size: 0.69rem;
+          font-weight: 700;
+          padding: 2px 9px;
+          border-radius: 20px;
+          border: 1px solid #e9d5ff;
+        }
+        .ps-currency { color: #1f2937; }
+        .ps-number   { color: #1d4ed8; font-weight: 600; }
+        .ps-time     { color: #6b7280; }
+        .ps-grandtotal-label { font-weight: 800; color: #064e46; }
+
+        .ps-empty-state {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          padding: 60px 20px;
+          text-align: center;
+        }
+        .ps-empty-icon {
+          width: 72px;
+          height: 72px;
+          border-radius: 20px;
+          background: linear-gradient(135deg, #f3f4f6, #e5e7eb);
+          color: #9ca3af;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 2rem;
+          margin-bottom: 16px;
+        }
+        .ps-empty-title { font-size: 1rem; font-weight: 700; color: #374151; margin: 0 0 6px; }
+        .ps-empty-text  { font-size: 0.83rem; color: #9ca3af; margin: 0; max-width: 320px; }
+
+        /* Buttons */
+        .btn-teal {
+          background: var(--teal);
+          border: none;
+          color: white;
+          border-radius: 12px;
+          font-weight: 600;
+          padding: 10px 18px;
+          box-shadow: 0 4px 10px -2px rgba(10,124,110,0.4);
+          transition: all 0.15s;
+        }
+        .btn-teal:hover {
+          background: var(--teal-dark);
+          transform: translateY(-1px);
+          box-shadow: 0 8px 18px -4px rgba(10,124,110,0.5);
+          color: white;
+        }
+
+        @media (max-width: 768px) {
+          .ps-hero { padding: 20px 16px 28px; }
+          .ps-hero h1 { font-size: 22px; }
+        }
+      `}</style>
+
+            {/* Hero section */}
+            <div className="ps-hero">
+                <span className="ps-hero-eyebrow">
+                    <span className="dot"></span> Live
+                </span>
+                <h1>Pay Sheet</h1>
+                <p>Search and export detailed paysheet records for your staff</p>
+                <div className="ps-hero-stats">
+                    <div className="ps-hero-stat">
+                        <span className="ps-hero-stat-label">Date Range</span>
+                        <span className="ps-hero-stat-value">
+                            {startDate && endDate ? `${formatDisplayDate(startDate)} – ${formatDisplayDate(endDate)}` : "—"}
+                        </span>
+                    </div>
+                    <div className="ps-hero-stat">
+                        <span className="ps-hero-stat-label">Total Staff</span>
+                        <span className="ps-hero-stat-value">{grandTotals.staff || 0}</span>
                     </div>
                 </div>
             </div>
 
-            {/* stat cards (only if data) */}
+            {/* Filter card */}
+            <div className="ps-filter-card">
+                <div className="row g-3 align-items-end">
+                    <div className="col-12 col-sm-6 col-lg-3">
+                        <label className="form-label text-muted small fw-bold mb-1">
+                            <i className="fa-regular fa-calendar-days me-1"></i>Start Date
+                        </label>
+                        <DateFilterInput
+                            value={startDate}
+                            onChange={setStartDate}
+                            placeholder="Start date"
+                        />
+                    </div>
+                    <div className="col-12 col-sm-6 col-lg-3">
+                        <label className="form-label text-muted small fw-bold mb-1">
+                            <i className="fa-regular fa-calendar-days me-1"></i>End Date
+                        </label>
+                        <DateFilterInput
+                            value={endDate}
+                            onChange={setEndDate}
+                            placeholder="End date"
+                        />
+                    </div>
+                    <div className="col-12 col-lg-6 d-flex gap-2 justify-content-end align-items-end">
+                        <button
+                            className="btn btn-teal"
+                            onClick={fetchPaySheet}
+                            disabled={paySheetLoading}
+                        >
+                            {paySheetLoading ? (
+                                <>
+                                    <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true" />
+                                    Searching…
+                                </>
+                            ) : (
+                                <>
+                                    <i className="fa-solid fa-magnifying-glass me-2" />Search
+                                </>
+                            )}
+                        </button>
+                        <button
+                            className="btn btn-outline-secondary"
+                            onClick={handleExport}
+                            disabled={!hasData}
+                            style={{ borderRadius: "12px", fontWeight: 600 }}
+                        >
+                            <i className="fa-solid fa-file-excel me-2" />Export Excel
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            {/* Stat cards (only if data) */}
             {hasData && (
                 <div className="row g-3 mb-4">
                     {statCards.map((card) => (
@@ -510,8 +893,8 @@ export default function PaySheet() {
                 </div>
             )}
 
-            {/* main table card */}
-            <div className="card border-0 ps-table-card">
+            {/* Table card */}
+            <div className="ps-table-card">
                 <div className="ps-table-card-header">
                     <div className="d-flex align-items-center gap-2">
                         <div className="ps-table-icon">
@@ -568,9 +951,7 @@ export default function PaySheet() {
                                                 <i className="fa-solid fa-file-invoice-dollar" />
                                             </div>
                                             <h5 className="ps-empty-title">No paysheet data</h5>
-                                            <p className="ps-empty-text"
-                                                style={{ textTransform: "none" }}
-                                            >
+                                            <p className="ps-empty-text">
                                                 Select a date range above and click <strong>Search</strong> to load paysheet records.
                                             </p>
                                         </div>
@@ -610,74 +991,6 @@ export default function PaySheet() {
                     </table>
                 </div>
             </div>
-
-            {/* styles unchanged */}
-            <style>{`
-        .ps-page-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
-        .ps-page-header-left { display: flex; align-items: center; gap: 14px; }
-        .ps-page-icon { width: 48px; height: 48px; border-radius: 12px; background: linear-gradient(135deg, #0A7C6E, #0d9e8d); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; box-shadow: 0 4px 12px rgba(10,124,110,0.3); flex-shrink: 0; }
-        .ps-page-title  { font-size: 1.4rem; font-weight: 800; color: #111827; margin: 0; line-height: 1.2; }
-        .ps-page-subtitle { font-size: 0.82rem; color: #6b7280; margin: 2px 0 0; }
-
-        .ps-filter-card { border-radius: 12px; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.04); }
-        .ps-form-label { display: block; font-size: 0.78rem; font-weight: 700; color: #374151; margin-bottom: 6px; letter-spacing: 0.04em; }
-        .ps-date-input { border-radius: 8px; border: 1.5px solid #e5e7eb; font-size: 0.85rem; color: #111827; background: #fafafa; transition: border-color 0.15s, box-shadow 0.15s; }
-        .ps-date-input:focus { border-color: #0A7C6E; box-shadow: 0 0 0 3px rgba(10,124,110,0.12); background: #fff; outline: none; }
-
-        .ps-btn { min-height: 40px; font-weight: 700; font-size: 0.84rem; border-radius: 9px; padding: 0 20px; transition: all 0.15s; display: inline-flex; align-items: center; }
-        .ps-btn-primary { background: linear-gradient(135deg, #0A7C6E, #0d9e8d); color: #fff; border: none; box-shadow: 0 2px 8px rgba(10,124,110,0.3); }
-        .ps-btn-primary:hover:not(:disabled) { background: linear-gradient(135deg, #086358, #0A7C6E); box-shadow: 0 4px 14px rgba(10,124,110,0.4); color: #fff; transform: translateY(-1px); }
-        .ps-btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
-        .ps-btn-export { background: #fff; color: #0A7C6E; border: 2px solid #0A7C6E; }
-        .ps-btn-export:hover:not(:disabled) { background: #0A7C6E; color: #fff; transform: translateY(-1px); box-shadow: 0 4px 14px rgba(10,124,110,0.3); }
-        .ps-btn-export:disabled { opacity: 0.4; cursor: not-allowed; }
-
-        .ps-stat-card { border-radius: 12px; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.04); transition: transform 0.15s, box-shadow 0.15s; }
-        .ps-stat-card:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.1); }
-        .ps-stat-icon { width: 44px; height: 44px; border-radius: 11px; display: flex; align-items: center; justify-content: center; font-size: 1.05rem; flex-shrink: 0; }
-        .ps-stat-text { min-width: 0; }
-        .ps-stat-value { font-size: 1.1rem; font-weight: 800; color: #111827; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .ps-stat-label { font-size: 0.67rem; color: #6b7280; font-weight: 700; letter-spacing: 0.05em; margin-top: 2px; }
-
-        .ps-table-card { border-radius: 14px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.05); }
-        .ps-table-card-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; padding: 14px 18px; background: linear-gradient(135deg, #f8fcfb 0%, #f0faf8 100%); border-bottom: 1.5px solid #d4ecea; }
-        .ps-table-icon { width: 32px; height: 32px; border-radius: 8px; background: linear-gradient(135deg, #0A7C6E, #0d9e8d); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; }
-        .ps-table-title   { font-size: 0.92rem; font-weight: 800; color: #0A7C6E; }
-        .ps-table-subtitle { font-size: 0.78rem; color: #6b7280; font-weight: 500; }
-        .ps-summary-chip { display: inline-flex; align-items: center; background: #f3f4f6; color: #374151; font-size: 0.75rem; font-weight: 700; padding: 4px 12px; border-radius: 20px; border: 1px solid #e5e7eb; }
-        .ps-summary-chip--green { background: #ecfdf5; color: #059669; border-color: #a7f3d0; }
-
-        .ps-scroll-wrapper { overflow-x: auto; width: 100%; }
-        .ps-main-table { width: max-content; min-width: 100%; border-collapse: collapse; table-layout: auto; }
-        .ps-main-table thead th { background: linear-gradient(180deg, #e8f5f3 0%, #daf0ed 100%); border-bottom: 2px solid #0A7C6E; border-right: 1px solid #c8e6e3; font-size: 0.7rem; font-weight: 800; letter-spacing: 0.05em; color: #0d5c53; padding: 10px 10px; white-space: nowrap; position: sticky; top: 0; z-index: 2; }
-        .ps-main-table thead th:last-child { border-right: none; }
-        .ps-main-table tbody td { font-size: 0.79rem; padding: 7px 10px; white-space: nowrap; color: #374151; border-bottom: 1px solid #f0f5f4; border-right: 1px solid #f8fbfa; vertical-align: middle; }
-        .ps-main-table tbody td:last-child { border-right: none; }
-
-        .ps-shift-row td { background: #fff; }
-        .ps-shift-row:nth-child(even) td { background: #f8fdfb; }
-        .ps-shift-row:hover td { background: #edf7f5 !important; transition: background 0.1s; }
-
-        .ps-subtotal-row td { background: #e2e2e2 !important; border-top: 2px solid #bdbdbd; border-bottom: 2px solid #bdbdbd; font-weight: 700; color: #1f2937; }
-        .ps-grandtotal-row td { background: linear-gradient(135deg, #d1fae5 0%, #c8e6e3 100%) !important; border-top: 2.5px solid #0A7C6E; border-bottom: 2.5px solid #0A7C6E; font-weight: 800; color: #064e46; font-size: 0.8rem; }
-
-        .ps-cell-empty { color: #d1d5db; font-size: 0.75rem; }
-        .ps-gross-badge { display: inline-flex; align-items: center; background: #ecfdf5; color: #059669; font-weight: 700; font-size: 0.77rem; padding: 2px 9px; border-radius: 20px; border: 1px solid #a7f3d0; }
-        .ps-state-badge { display: inline-flex; align-items: center; background: #eff6ff; color: #1d4ed8; font-size: 0.68rem; font-weight: 800; padding: 2px 9px; border-radius: 20px; border: 1px solid #bfdbfe; letter-spacing: 0.05em; }
-        .ps-pill { display: inline-flex; align-items: center; font-size: 0.69rem; font-weight: 700; padding: 2px 9px; border-radius: 20px; text-transform: capitalize; }
-        .ps-pill--no  { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; }
-        .ps-pill--yes { background: #f0fdf4; color: #16a34a; border: 1px solid #bbf7d0; }
-        .ps-payroll-badge { display: inline-flex; align-items: center; background: #faf5ff; color: #7c3aed; font-size: 0.69rem; font-weight: 700; padding: 2px 9px; border-radius: 20px; border: 1px solid #e9d5ff; }
-        .ps-currency { color: #1f2937; font-variant-numeric: tabular-nums; }
-        .ps-number   { color: #1d4ed8; font-weight: 600; font-variant-numeric: tabular-nums; }
-        .ps-time     { color: #6b7280; font-variant-numeric: tabular-nums; font-size: 0.78rem; }
-        .ps-grandtotal-label { font-weight: 800; font-size: 0.82rem; color: #064e46; }
-
-        .ps-empty-state { display: flex; flex-direction: column; align-items: center; padding: 60px 20px; text-align: center; }
-        .ps-empty-icon { width: 72px; height: 72px; border-radius: 20px; background: linear-gradient(135deg, #f3f4f6, #e5e7eb); color: #9ca3af; display: flex; align-items: center; justify-content: center; font-size: 2rem; margin-bottom: 16px; }
-        .ps-empty-title { font-size: 1rem; font-weight: 700; color: #374151; margin: 0 0 6px; }
-        .ps-empty-text  { font-size: 0.83rem; color: #9ca3af; margin: 0; max-width: 320px; }
-      `}</style>
         </div>
     );
 }

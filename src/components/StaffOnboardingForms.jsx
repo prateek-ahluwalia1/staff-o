@@ -313,7 +313,7 @@ const selectCls = "form-select border-light-subtle bg-light focus-ring focus-rin
 const labelCls = "form-label fw-semibold text-dark";
 
 /* ---------- Document Upload Field with Submission Indicator ---------- */
-const DocumentUploadField = ({ label, required, filePath, onUpload, onChangeFile, accept = ".pdf,.doc,.docx,.jpg,.jpeg,.png" }) => {
+const DocumentUploadField = ({ label, required, filePath, onUpload, accept = ".pdf,.doc,.docx,.jpg,.jpeg,.png" }) => {
     const [showReplace, setShowReplace] = useState(false);
 
     const resolveDocUrl = (pathOrUrl) => {
@@ -780,7 +780,6 @@ const SuperannuationForm = ({ values, loading, onChange, onSubmit, dataModified,
                     </div>
                 </div>
 
-
                 <div className="mt-4 p-3 rounded-3 form-check d-flex align-items-center">
                     <input
                         className="form-check-input"
@@ -810,7 +809,7 @@ const SuperannuationForm = ({ values, loading, onChange, onSubmit, dataModified,
 const EmployeeOnboardingForm = ({
     values, loading, onChange, onSubmit, dataModified,
     onDocUpload, verifyingSecurityLicense, onVerifySecurityLicense,
-    onDownloadPDF
+    onDownloadPDF, securityLicenceModified  // new prop
 }) => {
     return (
         <div className="card border-0 shadow-sm rounded-4 overflow-hidden bg-white animate__animated animate__fadeIn">
@@ -907,6 +906,7 @@ const EmployeeOnboardingForm = ({
                         />
                     </div>
 
+                    {/* 100-Point ID Check – read-only, prefilled from response */}
                     <SectionHeader icon="fa-id-card">100-Point ID Check</SectionHeader>
                     <div className="border rounded-3 overflow-hidden mb-4">
                         {[
@@ -921,11 +921,22 @@ const EmployeeOnboardingForm = ({
                                 key={item.name}
                             >
                                 <div className="form-check mb-0 d-flex align-items-center" style={{ textTransform: "none" }}>
-                                    <input className="form-check-input" type="checkbox" id={item.name} name={item.name}
-                                        checked={values[item.name]} onChange={onChange} />
-                                    <label className="form-check-label small fw-medium"
-                                        style={{ marginLeft: "0.5rem", marginTop: "0.2rem" }}
-                                        htmlFor={item.name}>{item.label}</label>
+                                    <input
+                                        className="form-check-input"
+                                        type="checkbox"
+                                        id={item.name}
+                                        name={item.name}
+                                        checked={values[item.name]}
+                                        disabled  // read-only
+                                        style={{ cursor: "not-allowed" }}
+                                    />
+                                    <label
+                                        className="form-check-label small fw-medium"
+                                        style={{ marginLeft: "0.5rem", marginTop: "0.2rem", cursor: "default" }}
+                                        htmlFor={item.name}
+                                    >
+                                        {item.label}
+                                    </label>
                                 </div>
                                 <span className="badge rounded-pill bg-white text-muted border">{item.points} pts</span>
                             </div>
@@ -980,9 +991,13 @@ const EmployeeOnboardingForm = ({
                             <div className="input-group">
                                 <input type="text" className={inputCls + " rounded-start"} name="o_seclic" placeholder="VIC 123456"
                                     maxLength="30" value={values.o_seclic} onChange={onChange} required style={{ fontSize: "1rem" }} />
-                                <button type="button" className="btn btn-outline-primary"
+                                <button
+                                    type="button"
+                                    className="btn btn-outline-primary"
                                     onClick={onVerifySecurityLicense}
-                                    disabled={verifyingSecurityLicense || !values.o_seclic}>
+                                    disabled={verifyingSecurityLicense || !securityLicenceModified}
+                                    title={!securityLicenceModified ? "Change the licence number to verify" : "Verify licence"}
+                                >
                                     {verifyingSecurityLicense ? (
                                         <><span className="spinner-border spinner-border-sm me-1" /> Verifying...</>
                                     ) : "Verify"}
@@ -1168,6 +1183,10 @@ const StaffOnboardingForms = ({ submit, userId, onProfileUpdate }) => {
     const [tfnForm, setTfnForm] = useState(() => normalizeTfnData({}));
     const [superForm, setSuperForm] = useState(() => normalizeSuperData({}));
     const [onboardForm, setOnboardForm] = useState(() => normalizeOnboardData({}));
+
+    // Track if the security licence number has been modified
+    const securityLicenceModified =
+        originalOnboardForm && onboardForm.o_seclic !== originalOnboardForm.o_seclic;
 
     const fetchFormData = useCallback(async (formType) => {
         try {
@@ -1539,6 +1558,7 @@ const StaffOnboardingForms = ({ submit, userId, onProfileUpdate }) => {
                     verifyingSecurityLicense={verifyingSecurityLicense}
                     onVerifySecurityLicense={handleVerifySecurityLicense}
                     onDownloadPDF={downloadPDF}
+                    securityLicenceModified={securityLicenceModified}
                 />
             )}
 

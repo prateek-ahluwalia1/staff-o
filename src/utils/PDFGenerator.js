@@ -95,10 +95,13 @@ const checkbox = (doc, x, y, size = 3.5, ticked = false) => {
 //  1.  TAX FILE NUMBER DECLARATION
 // ─────────────────────────────────────────────────────────────────────────────
 const generateTFNDeclarationPDF = (formData) => {
+  // Accepts full_name OR first_name+surname; full_name takes precedence.
   const {
-    tfn, title, first_name, surname, previous_name, dob, address, basis_of_payment,
+    tfn, title, full_name, first_name, surname, previous_name, dob, address, basis_of_payment,
     australian_resident, claim_threshold, help_debt, signature, signed_date,
   } = formData;
+
+  const name = full_name || `${first_name || ""} ${surname || ""}`.trim();
 
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4", compress: true });
   const pw = doc.internal.pageSize.getWidth(), ph = doc.internal.pageSize.getHeight();
@@ -117,24 +120,13 @@ const generateTFNDeclarationPDF = (formData) => {
 
   row("1. Tax file number (TFN)", tfn);
 
-  const nameRowH = 22;
+  // ── Updated: full name in one line ─────────────────────────
+  const nameRowH = 16;   // simpler row, no sub‑columns
   drawBox(doc, mg, y, bw, nameRowH);
   doc.setFont("helvetica", "bold"); doc.setFontSize(8.5); doc.setTextColor(...T.text);
-  doc.text("2. Name", mg + pad, y + 5.5);
-  hLine(doc, mg, y + 8, bw);
-  const col1w = bw * 0.30, col2w = bw * 0.38;
-  vLine(doc, mg + col1w, y + 8, y + nameRowH);
-  vLine(doc, mg + col1w + col2w, y + 8, y + nameRowH);
-
-  const subLabelY = y + 12.5, subValY = y + 18.5;
-  doc.setFont("helvetica", "normal"); doc.setFontSize(7.5); doc.setTextColor(...T.muted);
-  doc.text("Title:", mg + pad, subLabelY);
-  doc.text("First Name:", mg + col1w + pad, subLabelY);
-  doc.text("Surname:", mg + col1w + col2w + pad, subLabelY);
-  doc.setFontSize(9); doc.setTextColor(...T.text);
-  doc.text(String(title || ""), mg + pad, subValY);
-  doc.text(String(first_name || ""), mg + col1w + pad, subValY);
-  doc.text(String(surname || ""), mg + col1w + col2w + pad, subValY);
+  doc.text("2. Full Name", mg + pad, y + 5.5);
+  doc.setFont("helvetica", "normal"); doc.setFontSize(9); doc.setTextColor(...T.text);
+  if (name) doc.text(name, mg + pad, y + 12);
   y += nameRowH;
 
   row("3. Previous name (if applicable)", previous_name || "");
@@ -224,7 +216,7 @@ const generateSuperannuationPDF = (formData) => {
   doc.setFont("helvetica", "bold"); doc.setFontSize(9.5); doc.setTextColor(...T.text);
   doc.text("Employee Details", mg + pad, y + 6.5);
   hLine(doc, mg, y + 9, bw);
-  field("Name:", full_name, mg + pad, y + 14, bw - pad * 2);
+  field("Full Name:", full_name, mg + pad, y + 14, bw - pad * 2);
   field("Employee Number (if known):", employee_number, mg + pad, y + 28, bw - pad * 2);
   y += 48;
 

@@ -1601,7 +1601,7 @@ private function calculateProfileCompletion(User $user): int
         'security_license' => hasCompleteDocument($securityLicense) ? true : false,
         'medicare_or_utility' => hasCompleteDocument($medicare) ? true : false,
     ];
-return $idChecks;
+    
     $record = Onboarding::updateOrCreate(
         ['user_id' => $request->user_id],
         [

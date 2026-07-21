@@ -1472,170 +1472,156 @@ private function calculateProfileCompletion(User $user): int
 
     //     return response()->json(['success' => true, 'message' => $message, 'data' => $record], $status);
     // }
-    public function onboardingStore(Request $request)
-    {
-        $validated = $request->validate([
-            'full_name'               => 'required|string|max:200',
-            'dob'                     => 'nullable|string',
-            'address'                 => 'nullable|string|max:255',
-            'mobile'                  => 'nullable|string|max:20',
-            'email'                   => 'nullable|email|max:150',
-            'passport_number'         => 'nullable|string|max:20',
-            'passport_country'        => 'nullable|string|max:100',
-            'passport_expiry'         => 'nullable|string',
-            'passport_doc'            => 'nullable|string',
-            'work_rights'             => 'nullable|string',
-            'id_checks'               => 'nullable|array',
-            'bank_name'               => 'nullable|string|max:100',
-            'bsb'                     => 'nullable|string|max:10',
-            'account_number'          => 'nullable|string|max:20',
-            'tfn'                     => 'nullable|string|max:11',
-            'super_fund'              => 'nullable|string|max:200',
-            'super_usi'               => 'nullable|string|max:50',
-            'super_member'            => 'nullable|string|max:50',
-            'security_license'        => 'nullable|string|max:50',
-            'security_license_expiry' => 'nullable|string',
-            'security_license_doc'    => 'nullable|string',
-            'first_aid_cert'          => 'nullable|string|max:50',
-            'first_aid_expiry'        => 'nullable|string',
-            'first_aid_doc'           => 'nullable|string',
-            'signature'               => 'nullable|string|max:150',
-            'date'                    => 'nullable|string',
-        ]);
+   public function onboardingStore(Request $request)
+{
+    $validated = $request->validate([
+        'full_name'               => 'required|string|max:200',
+        'dob'                     => 'nullable|string',
+        'address'                 => 'nullable|string|max:255',
+        'mobile'                  => 'nullable|string|max:20',
+        'email'                   => 'nullable|email|max:150',
+        'passport_number'         => 'nullable|string|max:20',
+        'passport_country'        => 'nullable|string|max:100',
+        'passport_expiry'         => 'nullable|string',
+        'passport_doc'            => 'nullable|string',
+        'work_rights'             => 'nullable|string',
+        'id_checks'               => 'nullable|array',
+        'bank_name'               => 'nullable|string|max:100',
+        'bsb'                     => 'nullable|string|max:10',
+        'account_number'          => 'nullable|string|max:20',
+        'tfn'                     => 'nullable|string|max:11',
+        'super_fund'              => 'nullable|string|max:200',
+        'super_usi'               => 'nullable|string|max:50',
+        'super_member'            => 'nullable|string|max:50',
+        'security_license'        => 'nullable|string|max:50',
+        'security_license_expiry' => 'nullable|string',
+        'security_license_doc'    => 'nullable|string',
+        'first_aid_cert'          => 'nullable|string|max:50',
+        'first_aid_expiry'        => 'nullable|string',
+        'first_aid_doc'           => 'nullable|string',
+        'signature'               => 'nullable|string|max:150',
+        'date'                    => 'nullable|string',
+    ]);
 
-        if ($request->filled(['security_license', 'security_license_expiry', 'security_license_doc'])) {
+    if ($request->filled(['security_license', 'security_license_expiry', 'security_license_doc'])) {
+    
+        // Find the existing document
+        $document = Document::where('user_id', $request->user_id)
+        ->where('document_type', 'security_license')
+        ->first();
+
+        // Only update if it exists
+        if ($document) {
         
-            // Find the existing document
-            $document = Document::where('user_id', $request->user_id)
-            ->where('document_type', 'security_license')
-            ->first();
-
-            // Only update if it exists
-            if ($document) {
-            
-                if (str_contains($request->security_license_expiry, '/')) {
-                    $formattedExpiry = Carbon::createFromFormat('d/m/Y', $request->security_license_expiry)->format('Y-m-d');
-                } else {
-                    $formattedExpiry = Carbon::parse($request->security_license_expiry)->format('Y-m-d');
-                }
-                
-                $document->update([
-                    'document_no'     => $request->security_license,
-                    'file'            => $request->security_license_doc,
-                    'document_expiry' => $formattedExpiry
-                ]);
+            if (str_contains($request->security_license_expiry, '/')) {
+                $formattedExpiry = Carbon::createFromFormat('d/m/Y', $request->security_license_expiry)->format('Y-m-d');
+            } else {
+                $formattedExpiry = Carbon::parse($request->security_license_expiry)->format('Y-m-d');
             }
+            
+            $document->update([
+                'document_no'     => $request->security_license,
+                'file'            => $request->security_license_doc,
+                'document_expiry' => $formattedExpiry
+            ]);
         }
-
-        if ($request->filled(['passport_number', 'passport_expiry', 'passport_doc'])) {
-            
-            // Find the existing document
-            $document = Document::where('user_id', $request->user_id)
-                                ->where('document_type', 'passport')
-                                ->first();
-
-            // Only update if it exists
-            if ($document) {
-                if (str_contains($request->passport_expiry, '/')) {
-                    $formattedExpiry = Carbon::createFromFormat('d/m/Y', $request->passport_expiry)->format('Y-m-d');
-                } else {
-                    $formattedExpiry = Carbon::parse($request->passport_expiry)->format('Y-m-d');
-                }
-                
-                $document->update([
-                    'document_no'     => $request->passport_number,
-                    'file'            => $request->passport_doc,
-                    'document_expiry' => $formattedExpiry
-                ]);
-            }
-        }
-
-        if ($request->filled(['first_aid_cert', 'first_aid_expiry', 'first_aid_doc'])) {
-            
-            // Find the existing document
-            $document = Document::where('user_id', $request->user_id)
-                                ->where('document_type', 'first_aid')
-                                ->first();
-
-            // Only update if it exists
-            if ($document) {
-                if (str_contains($request->first_aid_expiry, '/')) {
-                    $formattedExpiry = Carbon::createFromFormat('d/m/Y', $request->first_aid_expiry)->format('Y-m-d');
-                } else {
-                    $formattedExpiry = Carbon::parse($request->first_aid_expiry)->format('Y-m-d');
-                }
-                
-                $document->update([
-                    'document_no'     => $request->first_aid_cert,
-                    'file'            => $request->first_aid_doc,
-                    'document_expiry' => $formattedExpiry
-                ]);
-            }
-        }
-
-        // Get all documents from database after updates
-        $documents = Document::where('user_id', $request->user_id)->get()->keyBy('document_type');
-
-        // Check if document has all required fields and they are not null
-        $hasCompleteDocument = function($document) {
-            if (!$document) {
-                return false;
-            }
-            
-            // Check if document_no is not null
-            if (is_null($document->document_no) || $document->document_no === '') {
-                return false;
-            }
-            
-            // Check if document_expiry is not null
-            if (is_null($document->document_expiry) || $document->document_expiry === '') {
-                return false;
-            }
-            
-            // Check if file is not null
-            if (is_null($document->file) || $document->file === '') {
-                return false;
-            }
-            
-            return true;
-        };
-
-        // Get specific documents
-        $passport = $documents->get('passport');
-        $driverLicense = $documents->get('driver_license_front');
-        $securityLicense = $documents->get('security_license');
-        $medicare = $documents->get('medicare');
-        $utility = $documents->get('utility');
-
-        // Generate id_checks based on complete documents
-        $idChecks = [
-            'primary_id' => $hasCompleteDocument($passport) ? true : false,
-            'drivers_license' => $hasCompleteDocument($driverLicense) ? true : false,
-            'security_license' => $hasCompleteDocument($securityLicense) ? true : false,
-            'medicare_or_utility' => ($hasCompleteDocument($medicare) || $hasCompleteDocument($utility)) ? true : false,
-        ];
-
-        $record = Onboarding::updateOrCreate(
-            ['user_id' => $request->user_id],
-            [
-                ...$validated,
-                'user_id'     => $request->user_id,
-                'signed_date' => $request->date,
-                'id_checks'   => json_encode($idChecks),
-            ]
-        );
-
-        $status = $record->wasRecentlyCreated ? 201 : 200;
-        $message = $record->wasRecentlyCreated ? 'Onboarding saved.' : 'Onboarding updated.';
-
-        // Decode id_checks for response
-        $responseData = $record->toArray();
-        if (isset($responseData['id_checks'])) {
-            $responseData['id_checks'] = json_decode($responseData['id_checks'], true);
-        }
-
-        return response()->json(['success' => true, 'message' => $message, 'data' => $responseData], $status);
     }
+
+    if ($request->filled(['passport_number', 'passport_expiry', 'passport_doc'])) {
+        
+        // Find the existing document
+        $document = Document::where('user_id', $request->user_id)
+                            ->where('document_type', 'passport')
+                            ->first();
+
+        // Only update if it exists
+        if ($document) {
+            if (str_contains($request->passport_expiry, '/')) {
+                $formattedExpiry = Carbon::createFromFormat('d/m/Y', $request->passport_expiry)->format('Y-m-d');
+            } else {
+                $formattedExpiry = Carbon::parse($request->passport_expiry)->format('Y-m-d');
+            }
+            
+            $document->update([
+                'document_no'     => $request->passport_number,
+                'file'            => $request->passport_doc,
+                'document_expiry' => $formattedExpiry
+            ]);
+        }
+    }
+
+    if ($request->filled(['first_aid_cert', 'first_aid_expiry', 'first_aid_doc'])) {
+        
+        // Find the existing document
+        $document = Document::where('user_id', $request->user_id)
+                            ->where('document_type', 'first_aid')
+                            ->first();
+
+        // Only update if it exists
+        if ($document) {
+            if (str_contains($request->first_aid_expiry, '/')) {
+                $formattedExpiry = Carbon::createFromFormat('d/m/Y', $request->first_aid_expiry)->format('Y-m-d');
+            } else {
+                $formattedExpiry = Carbon::parse($request->first_aid_expiry)->format('Y-m-d');
+            }
+            
+            $document->update([
+                'document_no'     => $request->first_aid_cert,
+                'file'            => $request->first_aid_doc,
+                'document_expiry' => $formattedExpiry
+            ]);
+        }
+    }
+
+    // Get all documents from database after updates
+    $documentsCollection = Document::where('user_id', $request->user_id)->get();
+    $documents = $documentsCollection->keyBy('document_type');
+
+    // Get specific documents
+    $passport = $documents->get('passport');
+    $securityLicense = $documents->get('security_license');
+    $firstAid = $documents->get('first_aid');
+    $drivingLicense = $documents->get('driver_license_front');
+    $medicare = $documents->get('medicare');
+    $utility = $documents->get('utility');
+
+    // Check if document has complete data (same logic as resource)
+    function hasCompleteDocument($document) {
+        return $document && 
+            !is_null($document->document_no) && 
+            !is_null($document->document_expiry) && 
+            !is_null($document->file);
+    }
+
+    // Generate id_checks
+    $idChecks = [
+        'primary_id' => hasCompleteDocument($passport) ? true : false,
+        'drivers_license' => hasCompleteDocument($drivingLicense) ? true : false,
+        'security_license' => hasCompleteDocument($securityLicense) ? true : false,
+        'medicare_or_utility' => (hasCompleteDocument($medicare) || hasCompleteDocument($utility)) ? true : false,
+    ];
+
+    $record = Onboarding::updateOrCreate(
+        ['user_id' => $request->user_id],
+        [
+            ...$validated,
+            'user_id'     => $request->user_id,
+            'signed_date' => $request->date,
+            'id_checks'   => json_encode($idChecks),
+        ]
+    );
+
+    $status = $record->wasRecentlyCreated ? 201 : 200;
+    $message = $record->wasRecentlyCreated ? 'Onboarding saved.' : 'Onboarding updated.';
+
+    // Decode id_checks for response
+    $responseData = $record->toArray();
+    if (isset($responseData['id_checks'])) {
+        $responseData['id_checks'] = json_decode($responseData['id_checks'], true);
+    }
+
+    return response()->json(['success' => true, 'message' => $message, 'data' => $responseData], $status);
+}
 
     public function uploadStaffFile(Request $request)
     {

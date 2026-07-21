@@ -32,6 +32,14 @@ class UserEditResource extends JsonResource
         $passport        = $documents->get('passport');
         $securityLicense = $documents->get('security_license');
         $firstAid        = $documents->get('first_aid');
+        $drivingLicense  = $documents->get('driver_license_front');
+
+        function hasCompleteDocument($document) {
+            return $document && 
+                !is_null($document->document_no) && 
+                !is_null($document->document_expiry) && 
+                !is_null($document->file);
+        }
 
         return [
             'name'                    => $this->name,
@@ -47,16 +55,25 @@ class UserEditResource extends JsonResource
             'passport_no'             => $passport?->document_no ?? null,
             'passport_attachment'     => $passport?->file ?? null,
             'passport_expiry'         => $passport?->document_expiry ?? null,
+            'passport_checkbox'       => hasCompleteDocument($passport) ? 1 : 0,
+
+             // Passport
+            'driving_license_no'             => $drivingLicense?->document_no ?? null,
+            'driving_license_attachment'     => $drivingLicense?->file ?? null,
+            'driving_license_expiry'         => $drivingLicense?->document_expiry ?? null,
+            'driving_license_checkbox'       => hasCompleteDocument($drivingLicense) ? 1 : 0,
 
             // Security License
             'security_license_no'     => $securityLicense?->document_no ?? null,
             'security_license_expiry' => $securityLicense?->document_expiry ?? null,
             'security_license_file'   => $securityLicense?->file ?? null,
+            'security_license_checkbox' => hasCompleteDocument($securityLicense) ? 1 : 0,
 
             // First Aid
             'first_aid_no'            => $firstAid?->document_no ?? null,
             'first_aid_expiry'        => $firstAid?->document_expiry ?? null,
             'first_aid_file'          => $firstAid?->file ?? null,
+            'first_aid_checkbox'      => hasCompleteDocument($firstAid) ? 1 : 0,
         ];
     }
 }

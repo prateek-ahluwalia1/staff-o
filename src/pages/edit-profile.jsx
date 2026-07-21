@@ -949,6 +949,11 @@ export default function EditProfile() {
           color: #ffffff;
           box-shadow: 0 4px 6px -1px rgba(10, 124, 110, 0.2);
         }
+          .tabs-modern .tab-btn.inactive {
+          border: 1px solid var(--teal);
+          color: var(--teal);
+          box-shadow: 0 4px 6px -1px rgba(10, 124, 110, 0.2);
+        }
 
         .content-card {
           background: var(--surface);
@@ -998,7 +1003,7 @@ export default function EditProfile() {
       <div className="tabs-modern">
         {userType !== "admin" && (
           <button
-            className={`tab-btn ${activeTab === "personal" ? "active" : ""}`}
+            className={`tab-btn ${activeTab === "personal" ? "active" : "inactive"}`}
             onClick={() => setActiveTab("personal")}
           >
             Personal Information
@@ -1006,7 +1011,7 @@ export default function EditProfile() {
         )}
         {userType === "customer" && (
           <button
-            className={`tab-btn ${activeTab === "cards" ? "active" : ""}`}
+            className={`tab-btn ${activeTab === "cards" ? "active" : "inactive"}`}
             onClick={() => {
               setActiveTab("cards");
               setIsAddingCard(false);
@@ -1017,7 +1022,7 @@ export default function EditProfile() {
         )}
         {userType !== "customer" && userType !== "admin" && (
           <button
-            className={`tab-btn ${activeTab === "documents" ? "active" : ""}`}
+            className={`tab-btn ${activeTab === "documents" ? "active" : "inactive"}`}
             onClick={() => setActiveTab("documents")}
           >
             Documents
@@ -1025,7 +1030,7 @@ export default function EditProfile() {
         )}
         {(userType === "staff" && (userdata?.data?.user_id === 1 || userdata?.user_id === 1)) && (
           <button
-            className={`tab-btn ${activeTab === "onboarding" ? "active" : ""}`}
+            className={`tab-btn ${activeTab === "onboarding" ? "active" : "inactive"}`}
             onClick={() => setActiveTab("onboarding")}
           >
             Verification Forms

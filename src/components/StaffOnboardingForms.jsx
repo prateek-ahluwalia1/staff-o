@@ -51,14 +51,6 @@ const displayToISO = (val) => {
     return cleaned;
 };
 
-const splitFullName = (fullName) => {
-    if (!fullName) return { first_name: "", surname: "" };
-    const parts = fullName.trim().split(/\s+/).filter(Boolean);
-    if (parts.length === 0) return { first_name: "", surname: "" };
-    if (parts.length === 1) return { first_name: parts[0], surname: "" };
-    return { first_name: parts[0], surname: parts.slice(1).join(" ") };
-};
-
 /* ---------- Shared react-select styling ---------- */
 const selectStyles = {
     control: (base, state) => ({
@@ -1074,11 +1066,10 @@ const EmployeeOnboardingForm = ({
 
 /* ---------- Normalizers ---------- */
 const normalizeTfnData = (apiData) => {
-    const fullName = apiData?.full_name || `${apiData?.first_name || ""} ${apiData?.surname || ""}`.trim();
     return {
         tfn: apiData?.tfn ?? "",
         title: apiData?.title ?? "",
-        full_name: fullName,
+        full_name: apiData?.full_name,
         prev_name: apiData?.previous_name ?? apiData?.prev_name ?? "",
         dob: isoToDisplay(apiData?.dob),
         address: apiData?.address ?? "",
@@ -1364,10 +1355,9 @@ const StaffOnboardingForms = ({ submit, userId, onProfileUpdate }) => {
             endpoint = "api/tfn-declaration";
             pdfType = "tfn";
             fileName = `TFN_Declaration_${userId}_${new Date().getTime()}.pdf`;
-            const { first_name, surname } = splitFullName(tfnForm.full_name);
             payload = {
                 user_id: userId, tfn: tfnForm.tfn, title: tfnForm.title,
-                first_name, surname,
+                full_name: tfnForm.full_name,
                 previous_name: tfnForm.prev_name, dob: tfnForm.dob,
                 address: tfnForm.address, basis_of_payment: tfnForm.basis,
                 australian_resident: tfnForm.aus_res, claim_threshold: tfnForm.threshold,
@@ -1483,10 +1473,9 @@ const StaffOnboardingForms = ({ submit, userId, onProfileUpdate }) => {
             fileName = `Employee_Onboarding_${userId}.pdf`;
             doc = PDFGenerator.generateEmployeeOnboardingPDF(pdfFormData);
         } else if (formType === "tfn") {
-            const { first_name, surname } = splitFullName(tfnForm.full_name);
             pdfFormData = {
                 user_id: userId, tfn: tfnForm.tfn, title: tfnForm.title,
-                first_name, surname,
+                full_name: tfnForm.full_name,
                 previous_name: tfnForm.prev_name, dob: tfnForm.dob,
                 address: tfnForm.address, basis_of_payment: tfnForm.basis,
                 australian_resident: tfnForm.aus_res, claim_threshold: tfnForm.threshold,
@@ -1528,23 +1517,84 @@ const StaffOnboardingForms = ({ submit, userId, onProfileUpdate }) => {
                 </div>
             )}
 
-            <div className="d-flex flex-column flex-sm-row gap-2 mb-4 bg-light p-2 rounded-4 border">
-                {TAB_META.map((tab, idx) => (
-                    <button
-                        key={idx}
-                        type="button"
-                        style={{ fontSize: "0.9rem" }}
-                        className={`btn rounded-pill flex-fill fw-bold d-flex align-items-center justify-content-center gap-2 ${subTab === idx
-                            ? "btn-primary-custom shadow-sm"
-                            : "btn-light border-0 bg-transparent text-muted"
-                            }`}
-                        onClick={() => setSubTab(idx)}
-                        disabled={formDataLoading}
-                    >
-                        <i className={`fa-solid ${tab.icon}`}></i>
-                        <span>{tab.label}</span>
-                    </button>
-                ))}
+            <div
+                className="d-flex flex-column flex-sm-row gap-2 mb-4 p-2 rounded-4 border bg-white shadow-sm"
+                style={{
+                    transition: "all 0.3s ease",
+                }}
+            >
+                {TAB_META.map((tab, idx) => {
+                    const isActive = subTab === idx;
+
+                    return (
+                        <button
+                            key={idx}
+                            type="button"
+                            onClick={() => setSubTab(idx)}
+                            disabled={formDataLoading}
+                            aria-current={isActive ? "page" : undefined}
+                            aria-label={tab.label}
+                            className={`btn rounded-pill flex-fill d-flex align-items-center justify-content-center gap-2 fw-semibold ${isActive
+                                ? "btn-primary-custom shadow"
+                                : "btn-light border text-muted"
+                                }`}
+                            style={{
+                                minHeight: "48px",
+                                minWidth: "130px",
+                                fontSize: "0.92rem",
+                                transition: "all 0.25s ease",
+                                transform: isActive ? "scale(1.02)" : "scale(1)",
+                                opacity: formDataLoading ? 0.7 : 1,
+                                cursor: formDataLoading ? "not-allowed" : "pointer",
+                                boxShadow: isActive
+                                    ? "0 6px 18px rgba(13,110,253,.18)"
+                                    : "none",
+                            }}
+                            onMouseEnter={(e) => {
+                                if (!isActive && !formDataLoading) {
+                                    e.currentTarget.style.backgroundColor = "#f8f9fa";
+                                    e.currentTarget.style.transform = "translateY(-2px)";
+                                }
+                            }}
+                            onMouseLeave={(e) => {
+                                if (!isActive) {
+                                    e.currentTarget.style.backgroundColor = "";
+                                    e.currentTarget.style.transform = "translateY(0)";
+                                }
+                            }}
+                        >
+                            {formDataLoading && isActive ? (
+                                <div
+                                    className="spinner-border spinner-border-sm"
+                                    style={{ width: "0.9rem", height: "0.9rem" }}
+                                >
+                                    <span className="visually-hidden">Loading...</span>
+                                </div>
+                            ) : (
+                                <i
+                                    className={`fa-solid ${tab.icon}`}
+                                    style={{
+                                        fontSize: "1rem",
+                                        transition: "transform 0.25s ease",
+                                        transform: isActive ? "scale(1.15)" : "scale(1)",
+                                    }}
+                                />
+                            )}
+
+                            <span>{tab.label}</span>
+
+                            {isActive && !formDataLoading && (
+                                <i
+                                    className="fa-solid fa-check-circle"
+                                    style={{
+                                        fontSize: "0.75rem",
+                                        opacity: 0.8,
+                                    }}
+                                />
+                            )}
+                        </button>
+                    );
+                })}
             </div>
 
             {subTab === 0 && (

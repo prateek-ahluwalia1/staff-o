@@ -1573,25 +1573,35 @@ private function calculateProfileCompletion(User $user): int
         }
     }
 
-    // Get all documents from database after updates
+   // Get all documents from database after updates
     $documentsCollection = Document::where('user_id', $request->user_id)->get();
     $documents = $documentsCollection->keyBy('document_type');
 
     // Get specific documents
     $passport = $documents->get('passport');
     $securityLicense = $documents->get('security_license');
-    $firstAid = $documents->get('first_aid');
     $drivingLicense = $documents->get('driver_license_front');
     $medicare = $documents->get('first_aid');
 
+    // Check if document is complete
+    function hasCompleteDocument($document) {
+        return $document && 
+            !is_null($document->document_no) && 
+            $document->document_no !== '' &&
+            !is_null($document->document_expiry) && 
+            $document->document_expiry !== '' &&
+            !is_null($document->file) && 
+            $document->file !== '';
+    }
+
     // Generate id_checks
     $idChecks = [
-        'primary_id' => $this->hasCompleteDocument($passport) ? true : false,
-        'drivers_license' => $this->hasCompleteDocument($drivingLicense) ? true : false,
-        'security_license' => $this->hasCompleteDocument($securityLicense) ? true : false,
-        'medicare_or_utility' => $this->hasCompleteDocument($medicare) ? true : false,
+        'primary_id' => hasCompleteDocument($passport) ? true : false,
+        'drivers_license' => hasCompleteDocument($drivingLicense) ? true : false,
+        'security_license' => hasCompleteDocument($securityLicense) ? true : false,
+        'medicare_or_utility' => hasCompleteDocument($medicare) ? true : false,
     ];
-
+return $idChecks;
     $record = Onboarding::updateOrCreate(
         ['user_id' => $request->user_id],
         [

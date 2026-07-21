@@ -1339,7 +1339,7 @@ private function calculateProfileCompletion(User $user): int
             'member_account'  => 'nullable|string|max:50',
             'signature'       => 'nullable|string|max:150',
             'date'            => 'nullable|string',
-            'super_confirmation' => 'nullable',
+            'super_confirm'  => 'nullable',
         ]);
 
         $record = Superannuation::updateOrCreate(

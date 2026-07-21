@@ -120,6 +120,21 @@ class SendJobNotificationJob implements ShouldQueue
             // Get eligible guards with their eligible jobs
             $guardsWithJobs = $this->getEligibleGuardsByRadius($siteCoords, 25, $jobsToProcess);
             $this->notifyGuardsWithEligibleJobs($guardsWithJobs, $jobsToProcess, $title, $message, 25, $shouldConsolidate);
+
+            // Resource partners have no restrictions
+            $partners = $this->getResourcePartners($siteId);
+            $partnerData = [];
+            foreach ($partners as $partner) {
+                $partnerData[] = [
+                    'guard' => $partner,
+                    'eligible_job_ids' => $jobIds
+                ];
+            }
+            $partnermessage = $shouldConsolidate 
+            ? "{$shiftCount} security jobs available nearby at the same site."
+            : "New security job available nearby.";
+
+            $this->notifyGuardsWithEligibleJobs($partnerData, $jobsToProcess, $title, $partnermessage, 25, $shouldConsolidate);
             
             // Mark ONLY the processed jobs as notified
             $this->markJobsAsNotifiedForStage($jobsToProcess, 'stage_2');
@@ -152,6 +167,20 @@ class SendJobNotificationJob implements ShouldQueue
 
             $guardsWithJobs = $this->getEligibleGuardsByRadius($siteCoords, 35, $jobsToProcess);
             $this->notifyGuardsWithEligibleJobs($guardsWithJobs, $jobsToProcess, $title, $message, 35, $shouldConsolidate);
+
+            $partners = $this->getResourcePartners($siteId);
+            $partnerData = [];
+            foreach ($partners as $partner) {
+                $partnerData[] = [
+                    'guard' => $partner,
+                    'eligible_job_ids' => $jobIds
+                ];
+            }
+            $partnermessage = $shouldConsolidate 
+            ? "{$shiftCount} security jobs available nearby at the same site."
+            : "New security job available nearby.";
+
+            $this->notifyGuardsWithEligibleJobs($partnerData, $jobsToProcess, $title, $partnermessage, 35, $shouldConsolidate);
             
             $this->markJobsAsNotifiedForStage($jobsToProcess, 'stage_3');
             Log::info("Site #{$siteId} Stage 3: Notified for " . $jobsToProcess->count() . " job(s).", [

@@ -91,7 +91,7 @@
     font-size: 11px;
     font-weight: 700;
     color: #fff;
-    background: #2e4a7a;
+    background: #0a7c6e;
     text-transform: uppercase;
     letter-spacing: 1px;
     padding: 5px 10px;
@@ -121,7 +121,7 @@
   }
   .attendance-cell .lbl {
     font-weight: 700;
-    color: #1b2a4a;
+    color: #0a7c6e;
   }
 
   /* BREAKS TABLE */
@@ -138,7 +138,7 @@
     text-align: left;
     padding: 6px 8px;
     font-weight: 700;
-    color: #1b2a4a;
+    color: #0a7c6e;
     border: 1px solid #c8d4e8;
   }
   .breaks-table tbody td {
@@ -157,7 +157,7 @@
     overflow: hidden;
   }
   .report-header {
-    background: #1b2a4a;
+    background: #0a7c6e;
     padding: 8px 16px;
     display: table;
     width: 100%;
@@ -202,7 +202,7 @@
   }
   .info-col .lbl {
     font-weight: 700;
-    color: #1b2a4a;
+    color: #0a7c6e;
   }
 
   .detail-row {
@@ -216,7 +216,7 @@
   }
   .detail-row .lbl {
     font-weight: 700;
-    color: #1b2a4a;
+    color: #0a7c6e;
     display: block;
     margin-bottom: 5px;
   }
@@ -235,7 +235,7 @@
     text-align: left;
     padding: 6px 8px;
     font-weight: 700;
-    color: #1b2a4a;
+    color: #0a7c6e;
     border: 1px solid #c8d4e8;
   }
   .data-table tbody td {
@@ -280,7 +280,7 @@
   }
   .em-col .lbl {
     font-weight: 700;
-    color: #1b2a4a;
+    color: #0a7c6e;
   }
 
   /* PHOTOS */

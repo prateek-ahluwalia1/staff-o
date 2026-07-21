@@ -30,7 +30,7 @@
                             <tr>
                                 <td style="padding: 0 32px 12px 32px; text-align: center;">
                                     <h1 style="color:#0F2B3D; font-weight:600; font-size:28px; margin:0 0 8px 0; letter-spacing:-0.3px;">Verify your email address</h1>
-                                    <p style="color:#5A6872; font-size:16px; line-height:1.5; margin:0;">You're almost there! Verify your email to unlock all STAFFOO features.</p>
+                                    <p style="color:#5A6872; font-size:16px; line-height:1.5; margin:0;">You're almost there to unlock all STAFFOO features.</p>
                                                                                                          
                                 </td>
                             </tr>
@@ -85,7 +85,7 @@
                                                 </p>
                                                 <ul style="margin:6px 0 0 20px; padding-left:0; color:#2C5A6E; font-size:14px; line-height:1.6;">
                                                     <li>Create and assign shifts instantly.</li>
-                                                    <li>Track attendance and performance metrics<./li>
+                                                    <li>Track attendance and performance metrics.</li>
                                                     <li>Access real-time analytics and payroll insights.</li>
                                                 </ul>
                                             </td>

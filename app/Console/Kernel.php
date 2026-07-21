@@ -17,11 +17,13 @@ class Kernel extends ConsoleKernel
         $schedule->command('documents:check-expiry')->dailyAt('11:00');
         $schedule->command('app:send-job-notifications')
         ->everyMinute()
-        ->withoutOverlapping(60) // Prevent overlapping for 60 seconds
+        ->withoutOverlapping(60)
         ->runInBackground()
         ->onOneServer();
+        $schedule->command('attendance:auto-signout')
+            ->everyMinute()
+            ->withoutOverlapping();
          // $schedule->command('app:sync-public-holidays')->twiceYearly(1, 1);
-     // $schedule->command('notifications:asap-job')->everyMinute();
 
 
 

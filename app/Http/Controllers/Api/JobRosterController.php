@@ -61,8 +61,18 @@ class JobRosterController extends Controller
             $user = User::findOrFail($request->user_id);
     
             // ─── CREATE / FIND SITE ──────────────────────────────────────────
-            $site = Site::where('coordinates', $request->coordinates)->first();
-    
+            [$lat, $lng] = explode(',', $request->coordinates);
+            $lat = (float) trim($lat);
+            $lng = (float) trim($lng);
+
+            $radiusMeters = 30;
+
+            $site = Site::get()->first(function ($site) use ($lat, $lng, $radiusMeters) {
+                [$siteLat, $siteLng] = array_map('trim', explode(',', $site->coordinates));
+                $distance = $this->haversineDistance($lat, $lng, (float) $siteLat, (float) $siteLng);
+                return $distance <= $radiusMeters;
+            }); 
+
             if (!$site) {
                 $addressParts = explode(',', $request->address);
                 $firstPart = trim($addressParts[0]);
@@ -297,6 +307,22 @@ class JobRosterController extends Controller
                 'message' => $e->getMessage(),
             ], 500);
         }
+    }
+
+    private function haversineDistance($lat1, $lng1, $lat2, $lng2)
+    {
+        $earthRadius = 6371000; // meters
+
+        $latDiff = deg2rad($lat2 - $lat1);
+        $lngDiff = deg2rad($lng2 - $lng1);
+
+        $a = sin($latDiff / 2) * sin($latDiff / 2) +
+            cos(deg2rad($lat1)) * cos(deg2rad($lat2)) *
+            sin($lngDiff / 2) * sin($lngDiff / 2);
+
+        $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
+
+        return $earthRadius * $c; // distance in meters
     }
     
    private function sendJobInvoice(
@@ -882,7 +908,7 @@ class JobRosterController extends Controller
                                 'message' => $guard->name . ' accepted and confirmed the job.',
                                 'title' => 'Job Signin',
                                 'notification_token' => $client->notification_token,
-                                'page' => 'homepage',
+                                'page' => 'my-job-applications',
                                 'roster_id' => $id
                             ];
                             send_push_notification($notification_data);
@@ -1112,7 +1138,7 @@ class JobRosterController extends Controller
                         'message' => $guard->name . ' signin in their job.',
                         'title' => 'Job Signin',
                         'notification_token' => $a->notification_token,
-                        'page' => 'homepage',
+                        'page' => 'my-job-applications',
                         'roster_id' =>  $id
                     ];
                     send_push_notification($notification_data);
@@ -1294,6 +1320,7 @@ class JobRosterController extends Controller
                     'event_id'              => $item->id,
                     'guard_id'              => $item->assigned_to,
                     'job_id'                => $item->site_id,
+                    'description'           => $item->description,
                     'document_list'         => $item->document_list,
                     // 'break_status'          => $item->break_status,
                     'instructions_file'     => $item->instructions_file != '' ? 'https://' . request()->getHttpHost() . '/uploads/' . $item->instructions_file : "",
@@ -1422,7 +1449,7 @@ class JobRosterController extends Controller
                         'message' => $guard->name . ' report new incident.',
                         'title' => 'Incident Report',
                         'notification_token' => $a->notification_token,
-                        'page' => 'homepage',
+                        'page' => 'my-job-applications',
                         'roster_id' =>  $id
                     ];
                     send_push_notification($notification_data);
@@ -1517,7 +1544,7 @@ class JobRosterController extends Controller
                     'message' => $guard->name . ' report new foot patrol.',
                     'title' => 'Foot Patrol Report',
                     'notification_token' => $a->notification_token,
-                    'page' => 'homepage',
+                    'page' => 'my-job-applications',
                     'roster_id' =>  $id
                 ];
                 send_push_notification($notification_data);
@@ -1581,7 +1608,7 @@ class JobRosterController extends Controller
                     'message' => $guard->name . ' signout in their job.',
                     'title' => 'Job Signout',
                     'notification_token' => $a->notification_token,
-                    'page' => 'homepage',
+                    'page' => 'my-job-applications',
                     'roster_id' => $id
                 ];
                 send_push_notification($notification_data);
@@ -2112,7 +2139,7 @@ class JobRosterController extends Controller
                     'message' => $guard->name . ' start its task.',
                     'title' => 'start_task',
                     'notification_token' => $a->notification_token,
-                    'page' => 'homepage',
+                    'page' => 'my-job-applications',
                     'roster_id' =>  $id
                 ];
                 send_push_notification($notification_data);
@@ -2171,7 +2198,7 @@ class JobRosterController extends Controller
                     'message' => $guard->name . ' completed its task.',
                     'title' => 'end_task',
                     'notification_token' => $a->notification_token,
-                    'page' => 'homepage',
+                    'page' => 'my-job-applications',
                     'roster_id' =>  $id
                 ];
                 send_push_notification($notification_data);
@@ -2282,7 +2309,7 @@ class JobRosterController extends Controller
                     'message' => $guard->name . 'start break.',
                     'title' => 'start_break',
                     'notification_token' => $a->notification_token,
-                    'page' => 'homepage',
+                    'page' => 'my-job-applications',
                     'roster_id' =>  $id
                 ];
                 send_push_notification($notification_data);
@@ -2954,7 +2981,7 @@ class JobRosterController extends Controller
                                 'message' => $guard->name . ' Payslip Uploaded',
                                 'title' => 'Payslip Upload',
                                 'notification_token' => $a->notification_token,
-                                'page' => 'homepage'
+                                'page' => 'my-job-applications'
                             ];
                             send_push_notification($notification_data);
                         }
@@ -3541,6 +3568,70 @@ class JobRosterController extends Controller
         return $total;
     }
 
+    private function getResourcePartners($siteId)
+    {
+        $siteState = Site::where('id', $siteId)->value('state');
+
+        $stateMap = [
+            // Australia
+            'Victoria' => ['Victoria', 'VIC', 'vic'],
+            'VIC' => ['Victoria', 'VIC', 'vic'],
+            'vic' => ['Victoria', 'VIC', 'vic'],
+
+            'New South Wales' => ['New South Wales', 'NSW', 'nsw'],
+            'NSW' => ['New South Wales', 'NSW', 'nsw'],
+            'nsw' => ['New South Wales', 'NSW', 'nsw'],
+
+            'Queensland' => ['Queensland', 'QLD', 'qld'],
+            'QLD' => ['Queensland', 'QLD', 'qld'],
+            'qld' => ['Queensland', 'QLD', 'qld'],
+
+            'South Australia' => ['South Australia', 'SA', 'sa'],
+            'SA' => ['South Australia', 'SA', 'sa'],
+            'sa' => ['South Australia', 'SA', 'sa'],
+
+            'Western Australia' => ['Western Australia', 'WA', 'wa'],
+            'WA' => ['Western Australia', 'WA', 'wa'],
+            'wa' => ['Western Australia', 'WA', 'wa'],
+
+            'Tasmania' => ['Tasmania', 'TAS', 'tas'],
+            'TAS' => ['Tasmania', 'TAS', 'tas'],
+            'tas' => ['Tasmania', 'TAS', 'tas'],
+
+            'Australian Capital Territory' => ['Australian Capital Territory', 'ACT', 'act'],
+            'ACT' => ['Australian Capital Territory', 'ACT', 'act'],
+            'act' => ['Australian Capital Territory', 'ACT', 'act'],
+
+            'Northern Territory' => ['Northern Territory', 'NT', 'nt'],
+            'NT' => ['Northern Territory', 'NT', 'nt'],
+            'nt' => ['Northern Territory', 'NT', 'nt'],
+
+            // Pakistan
+            'Punjab' => ['Punjab', 'PUNJAB', 'punjab'],
+            'PUNJAB' => ['Punjab', 'PUNJAB', 'punjab'],
+            'punjab' => ['Punjab', 'PUNJAB', 'punjab'],
+
+        ];
+
+        $states = $stateMap[$siteState] ?? [$siteState];
+
+        $partners = User::whereNotIn('id', [1])
+            ->where('user_type', 'contractor')
+            ->whereIn('state', $states)
+            ->where('is_active', 1)
+            ->whereNotNull('notification_token')
+            ->whereNotNull('current_coordinates')
+            ->select('id', 'name', 'email', 'phone', 'notification_token','current_coordinates')
+            ->get();
+
+        Log::info("Found {$partners->count()} resource partners.", [
+            'site_state' => $siteState,
+            'matched_states' => $states
+        ]);
+
+        return $partners;
+    }
+
     private function sendConsolidatedNotifications($siteCoordinates, $jobIds, $createdBy)
     {
         // Get all jobs for this site
@@ -3563,7 +3654,11 @@ class JobRosterController extends Controller
         ]);
         
         // Get all guards within radius
-        $allGuards = $this->getStaffooGuardsByRadius($siteCoordinates, 15);
+        $Guards = $this->getStaffooGuardsByRadius($siteCoordinates, 15);
+        $partners = $this->getResourcePartners($jobs->first()->site_id);
+
+        $allGuards = $Guards->merge($partners);
+
         
         if ($allGuards->isEmpty()) {
             Log::info("No guards found within radius for site: {$siteName}");
@@ -3596,7 +3691,6 @@ class JobRosterController extends Controller
                 ]);
                 continue;
             }
-            
             // Get only the jobs this guard is eligible for
             $eligibleJobs = $jobs->filter(fn($job) => in_array($job->id, $eligibleJobIds));
             
@@ -4083,6 +4177,9 @@ class JobRosterController extends Controller
                 ->select('job_rosters.*', 'sites.id as jobId', 'sites.address', 'sites.coordinates')
                 ->first();
 
+            $startTime = Carbon::parse($updatedRoster->start)->format('g:i A');
+            $endTime = Carbon::parse($updatedRoster->end)->format('g:i A');
+
             // ============ SEND NOTIFICATIONS ============
             
             // 1. Send notification to Client (created_by)
@@ -4101,7 +4198,7 @@ class JobRosterController extends Controller
                     'message' => $message,
                     'title' => 'Job Accepted',
                     'notification_token' => $client->notification_token,
-                    'page' => 'homepage',
+                    'page' => 'my-job-applications',
                     'roster_id' => $request->roster_id
                 ];
                 send_push_notification($clientNotificationData);
@@ -4123,7 +4220,7 @@ class JobRosterController extends Controller
                     'message' => $message,
                     'title' => 'Job Accepted Successfully',
                     'notification_token' => $contractorUser->notification_token,
-                    'page' => 'homepage',
+                    'page' => 'my-job-applications',
                     'roster_id' => $request->roster_id
                 ];
                 send_push_notification($contractorNotificationData);
@@ -4139,10 +4236,10 @@ class JobRosterController extends Controller
                 
                 if ($guardUser && !empty($guardUser->notification_token)) {
                     $guardNotificationData = [
-                        'message' => 'You have been assigned to a new job by ' . ($contractor->name ?? 'Contractor') . '.',
-                        'title' => 'New Job Assignment',
+
+                        'message' => ($contractor->name ?? 'Contractor') . " assigned you a shift from {$startTime} to {$endTime}.",                        'title' => 'New Job Assignment',
                         'notification_token' => $guardUser->notification_token,
-                        'page' => 'homepage',
+                        'page' => 'my-job-applications',
                         'roster_id' => $request->roster_id
                     ];
                     send_push_notification($guardNotificationData);
@@ -4289,5 +4386,30 @@ class JobRosterController extends Controller
                 'to' => null,
             ]
         ]);
+    }
+
+    function auto_sign_out(Request $request)
+    {
+        $current_time = time();
+            // $closeTime = $current_time;
+        $closeTime = $current_time + (60*60+24);
+        $not_signout_shifts = DB::table('job_roster_activities')
+        ->join('job_rosters', 'job_roster_activities.job_roster_id', '=','job_rosters.id')
+        ->where('job_roster_activities.status', 1)
+        ->where('job_rosters.end','<=',date('Y-m-d H:i:s', $closeTime))
+        ->select('job_roster_activities.id', 'job_roster_activities.job_roster_id', 'job_rosters.end')->get();
+        foreach ($not_signout_shifts as $not_closed) {
+
+            $job_end_time = $not_closed->end;
+            $job_end_time = strtotime($job_end_time);
+            $current_time = time();
+            $diff = round(($current_time - $job_end_time) / 60,2);
+            if ($diff > 30) {
+                DB::table('job_roster_activities')->where('id', $not_closed->id)->update(['signout_time' => date('D M d Y H:i:s'), 'auto_signout' => 1, 'status' => 0]);
+                DB::table('job_rosters')->where('id', $not_closed->job_roster_id)->update(['job_status' => 'completed', 'signin_status' => 0]);
+            }
+        }
+    
+        return $this->sendResponse();
     }
 }

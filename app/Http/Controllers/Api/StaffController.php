@@ -1296,6 +1296,7 @@ private function calculateProfileCompletion(User $user): int
         $validated = $request->validate([
             'tfn'                => 'nullable|string|max:11',
             'title'              => 'nullable|string|max:10',
+            'full_name'         => 'required|string|max:100',
             'first_name'         => 'required|string|max:100',
             'surname'            => 'required|string|max:100',
             'previous_name'      => 'nullable|string|max:100',
@@ -1601,7 +1602,7 @@ private function calculateProfileCompletion(User $user): int
         'security_license' => hasCompleteDocument($securityLicense) ? true : false,
         'medicare_or_utility' => hasCompleteDocument($medicare) ? true : false,
     ];
-    
+
     $record = Onboarding::updateOrCreate(
         ['user_id' => $request->user_id],
         [

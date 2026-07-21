@@ -17,6 +17,7 @@ export default function SettingsHeaderContent({
     return text.split(" ").slice(0, 4).join(" ");
   };
 
+  // Progress circle dimensions (desktop)
   const radius = 38;
   const stroke = 8;
   const normalizedRadius = radius - stroke / 2;
@@ -47,327 +48,237 @@ export default function SettingsHeaderContent({
   const progressColor = getProgressColor();
 
   return (
-    <div className="settings-header-content d-flex align-items-center justify-content-between flex-wrap gap-4">
+    <div className="settings-header-wrapper d-flex align-items-center flex-wrap gap-4">
       <style>{`
-        .settings-header-content {
-          color: #fff;
+        /* ---- Reset / base for this component only ---- */
+        .settings-header-wrapper {
           position: relative;
-          z-index: 1;
-          flex: 1;
+          z-index: 2;
           width: 100%;
-          background: transparent !important;
+          color: #fff;
+        }
+
+        /* Left block */
+        .sh-left {
+          flex: 1 1 320px;
           min-width: 0;
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
         }
 
-        /* Neutralize the global ".settings-header-content span" pill rule
-           for every span we render here, then re-apply our own look
-           explicitly. Needed because that global rule matches by tag,
-           so it hits things we don't want it to. */
-        .settings-header-content span {
-          background: none !important;
-          color: inherit !important;
-          padding: 0 !important;
-          border-radius: 0 !important;
-          font-weight: inherit !important;
-          font-size: inherit !important;
-          margin-bottom: 0 !important;
-        }
-
-        .settings-hero-title {
-          font-size: 28px;
+        .sh-title {
+          font-size: 2rem;
           font-weight: 800;
-          letter-spacing: -0.4px;
+          letter-spacing: -0.5px;
           line-height: 1.2;
-          margin: 0 0 6px;
           display: flex;
           align-items: center;
           flex-wrap: wrap;
-          gap: 8px;
+          gap: 10px;
+          margin: 0;
           color: #fff;
+        }
+
+        .sh-name {
           word-break: break-word;
         }
 
-        .settings-hero-title-name {
-          overflow-wrap: anywhere;
+        .sh-subtitle {
+          color: rgba(255,255,255,0.7);
+          font-size: 0.95rem;
+          margin: 0;
+          line-height: 1.5;
         }
 
-        .settings-hero-subtitle {
-          color: rgba(255, 255, 255, 0.78);
-          font-size: 14px;
-          margin: 0 0 12px;
-          text-transform: none;
-        }
-
-        .settings-hero-meta {
+        /* Meta pills */
+        .sh-meta {
           display: flex;
           flex-wrap: wrap;
           gap: 10px;
-          min-width: 0;
+          margin-top: 4px;
         }
 
-        /* This is itself a <span>, so it needs its pill look re-applied
-           explicitly — the reset above stripped it. */
-        .settings-header-content .settings-hero-meta-item {
-          display: inline-flex !important;
+        .sh-meta-item {
+          display: inline-flex;
           align-items: center;
           gap: 8px;
-          background: rgba(255, 255, 255, 0.08) !important;
-          border: 1px solid rgba(255, 255, 255, 0.14);
-          backdrop-filter: blur(6px);
-          border-radius: 12px !important;
-          padding: 7px 14px !important;
-          font-size: 13px !important;
-          font-weight: 600 !important;
-          color: rgba(255, 255, 255, 0.92) !important;
-          max-width: 100%;
-          min-width: 0;
+          background: rgba(255, 255, 255, 0.08);
+          border: 1px solid rgba(255, 255, 255, 0.15);
+          border-radius: 14px;
+          padding: 8px 16px;
+          font-size: 0.875rem;
+          font-weight: 600;
+          color: rgba(255,255,255,0.9);
+          backdrop-filter: blur(10px);
+          white-space: nowrap;
         }
 
-        .settings-hero-meta-text {
+        .sh-meta-item i {
+          font-size: 0.85rem;
+          opacity: 0.8;
+          width: 16px;
+          text-align: center;
+        }
+
+        .sh-meta-text {
           overflow: hidden;
           text-overflow: ellipsis;
           white-space: nowrap;
+          max-width: 250px;
         }
 
-        .settings-hero-meta-item i {
-          font-size: 12px;
-          opacity: 0.85;
-          width: 16px;
-          text-align: center;
-          flex-shrink: 0;
-        }
-
-        /* Same story — the badge is a span, re-assert its real styling. */
-        .settings-header-content .status-badge-premium {
-          font-size: 11.5px !important;
-          font-weight: 700 !important;
-          padding: 3px 12px !important;
-          border-radius: 30px !important;
-          display: inline-flex !important;
+        /* Status badge */
+        .sh-badge {
+          display: inline-flex;
           align-items: center;
           gap: 6px;
+          padding: 4px 14px;
+          border-radius: 30px;
+          font-size: 0.75rem;
+          font-weight: 700;
           border: 1px solid;
-          letter-spacing: 0.2px;
           white-space: nowrap;
         }
 
-        .settings-header-content .status-badge-premium.active {
-          background: rgba(22, 163, 74, 0.15) !important;
-          color: #bbf7d0 !important;
+        .sh-badge--active {
+          background: rgba(22, 163, 74, 0.2);
+          color: #bbf7d0;
           border-color: rgba(34, 197, 94, 0.5);
         }
 
-        .settings-header-content .status-badge-premium.inactive {
-          background: rgba(220, 38, 38, 0.15) !important;
-          color: #fecaca !important;
+        .sh-badge--inactive {
+          background: rgba(220, 38, 38, 0.2);
+          color: #fecaca;
           border-color: rgba(248, 113, 113, 0.5);
         }
 
-        .verified-icon-premium {
+        .sh-verified {
           color: #6ee7d8;
-          font-size: 0.9em;
-          flex-shrink: 0;
+          font-size: 1.2rem;
         }
 
-        .progress-card {
-          background: rgba(255, 255, 255, 0.06);
-          border: 1px solid rgba(255, 255, 255, 0.12);
-          backdrop-filter: blur(6px);
-          border-radius: 14px;
-          padding: 10px 16px;
+        /* Progress card */
+        .sh-progress {
+          flex: 0 0 auto;
+          align-self: center;
+        }
+
+        .sh-progress-card {
+          background: rgba(255, 255, 255, 0.08);
+          border: 1px solid rgba(255, 255, 255, 0.15);
+          backdrop-filter: blur(12px);
+          border-radius: 20px;
+          padding: 12px 18px;
           display: flex;
           flex-direction: column;
           align-items: center;
-          gap: 4px;
-          min-width: 120px;
-          box-sizing: border-box;
+          gap: 6px;
         }
 
-        .progress-card-label {
-          font-size: 10px;
+        .sh-progress-label {
+          font-size: 0.65rem;
           font-weight: 700;
-          letter-spacing: 0.5px;
           text-transform: uppercase;
-          color: rgba(255, 255, 255, 0.55);
-          white-space: nowrap;
+          letter-spacing: 0.08em;
+          color: rgba(255,255,255,0.5);
         }
 
-        .progress-ring-wrapper {
+        .sh-progress-ring {
           position: relative;
           width: 90px;
           height: 90px;
-          flex-shrink: 0;
+          display: flex;
+          align-items: center;
+          justify-content: center;
         }
 
-        .progress-percentage {
+        .sh-progress-value {
           position: absolute;
-          top: 50%;
-          left: 50%;
-          transform: translate(-50%, -50%);
-          font-weight: 700;
-          font-size: 16px;
+          font-weight: 800;
+          font-size: 1rem;
           color: #fff;
         }
 
-        /* ---------- Responsive breakpoints ---------- */
-
+        /* Responsive */
         @media (max-width: 768px) {
-          .settings-header-content {
-            gap: 16px !important;
+          .sh-title {
+            font-size: 1.6rem;
           }
-          .settings-hero-title {
-            font-size: 22px;
+          .sh-subtitle {
+            font-size: 0.85rem;
           }
-          .settings-hero-subtitle {
-            font-size: 13px;
+          .sh-meta-item {
+            font-size: 0.8rem;
+            padding: 6px 12px;
           }
-          .settings-header-content .settings-hero-meta-item {
-            font-size: 12px !important;
+          .sh-progress-card {
+            flex-direction: row;
+            gap: 12px;
+            padding: 10px 16px;
+            width: 100%;
+            justify-content: center;
           }
-          .settings-hero-meta-text {
-            max-width: 55vw;
-          }
-          .progress-card {
-            min-width: 100px;
-            padding: 8px 12px;
-          }
-          .progress-ring-wrapper {
+          .sh-progress-ring {
             width: 70px;
             height: 70px;
           }
-          .progress-percentage {
-            font-size: 14px;
+          .sh-progress-value {
+            font-size: 0.9rem;
           }
         }
 
         @media (max-width: 576px) {
-          .settings-header-content {
-            gap: 12px !important;
+          .sh-left {
             text-align: center;
+            align-items: center;
           }
-          .settings-hero-title {
-            font-size: 19px;
-            gap: 6px;
+          .sh-meta {
             justify-content: center;
           }
-          .settings-hero-subtitle {
-            font-size: 12.5px;
-            margin-bottom: 10px;
-          }
-          .settings-hero-meta {
-            flex-direction: column;
-            align-items: stretch;
-            gap: 8px;
-            justify-content: center;
-          }
-          .settings-header-content .settings-hero-meta-item {
+          .sh-meta-item {
             width: 100%;
-            box-sizing: border-box;
             justify-content: center;
           }
-          .settings-hero-meta-text {
+          .sh-meta-text {
             max-width: none;
-            flex: initial;
           }
-          .settings-header-content .status-badge-premium {
-            font-size: 10.5px !important;
-            padding: 2px 10px !important;
-          }
-          .progress-card {
-            width: 100%;
-            flex-direction: row;
+          .sh-title {
             justify-content: center;
-            gap: 12px;
-            padding: 10px 14px;
-            min-width: 0;
-          }
-          .progress-card-label {
-            font-size: 10px;
-          }
-        }
-
-        @media (max-width: 400px) {
-          .settings-hero-title {
-            font-size: 17px;
-          }
-          .settings-hero-subtitle {
-            font-size: 12px;
-          }
-          .settings-header-content .status-badge-premium {
-            font-size: 10px !important;
-            padding: 2px 8px !important;
-            gap: 4px;
-          }
-          .settings-header-content .settings-hero-meta-item {
-            font-size: 11.5px !important;
-            gap: 6px;
-          }
-          .progress-ring-wrapper {
-            width: 56px;
-            height: 56px;
-          }
-          .progress-percentage {
-            font-size: 12px;
-          }
-          .progress-card-label {
-            font-size: 9px;
-          }
-        }
-
-        @media (max-width: 340px) {
-          .settings-hero-title {
-            font-size: 15.5px;
-          }
-          .progress-card {
-            padding: 8px 10px;
-          }
-          .progress-ring-wrapper {
-            width: 48px;
-            height: 48px;
+            font-size: 1.4rem;
           }
         }
       `}</style>
 
-      {/* Left text content */}
-      <div className="flex-grow-1 w-100 w-md-auto" style={{ minWidth: 0 }}>
-        <h1 className="settings-hero-title">
-          <span className="settings-hero-title-name">{name || "Staff Member"}</span>
-
+      {/* Left side */}
+      <div className="sh-left">
+        <h1 className="sh-title">
+          <span className="sh-name">{name || "Staff Member"}</span>
           {verified && (
-            <i
-              className="fa-solid fa-circle-check verified-icon-premium"
-              title="Verified Profile"
-            ></i>
+            <i className="fa-solid fa-circle-check sh-verified" title="Verified Profile"></i>
           )}
-
-          <span
-            className={`status-badge-premium ${isActiveProfile ? "active" : "inactive"}`}
-            title={isActiveProfile ? "Profile is active" : "Profile is inactive"}
-          >
+          <span className={`sh-badge ${isActiveProfile ? "sh-badge--active" : "sh-badge--inactive"}`}>
             <i className={`fa-solid ${isActiveProfile ? "fa-circle-check" : "fa-circle-xmark"}`}></i>
             {isActiveProfile ? "Active" : "Inactive"}
           </span>
         </h1>
-
-        <p className="settings-hero-subtitle">
+        <p className="sh-subtitle">
           Keep your information up to date so your profile stays accurate and complete.
         </p>
-
-        <div className="settings-hero-meta">
-          <span className="settings-hero-meta-item">
+        <div className="sh-meta">
+          <span className="sh-meta-item">
             <i className="fa-solid fa-envelope"></i>
-            <span className="settings-hero-meta-text">{email || "No email"}</span>
+            <span className="sh-meta-text">{email || "No email"}</span>
           </span>
-
           {userType !== "contractor" ? (
-            <span className="settings-hero-meta-item">
+            <span className="sh-meta-item">
               <i className="fa-solid fa-location-dot"></i>
-              <span className="settings-hero-meta-text">{limitToFirstFourWords(city) || "No location"}</span>
+              <span className="sh-meta-text">{limitToFirstFourWords(city) || "No location"}</span>
             </span>
           ) : (
-            <span className="settings-hero-meta-item">
+            <span className="sh-meta-item">
               <i className="fa-solid fa-briefcase"></i>
-              <span className="settings-hero-meta-text">{company_name || "No company name"}</span>
+              <span className="sh-meta-text">{company_name || "No company name"}</span>
             </span>
           )}
         </div>
@@ -375,64 +286,68 @@ export default function SettingsHeaderContent({
 
       {/* Right side: progress ring (only for staff / contractors, when incomplete) */}
       {userType !== "admin" && userType !== "customer" && pct > 0 && pct < 100 && (
-        <div className="progress-card flex-shrink-0 w-100 w-md-auto">
-          <span className="progress-card-label d-none d-md-block">Completion</span>
-          <div className="progress-ring-wrapper">
-            <svg height={radius * 2} width={radius * 2} className="d-none d-md-block">
-              <circle
-                stroke="rgba(255,255,255,0.15)"
-                fill="transparent"
-                strokeWidth={stroke}
-                r={normalizedRadius}
-                cx={radius}
-                cy={radius}
-              />
-              <circle
-                stroke={progressColor}
-                fill="transparent"
-                strokeWidth={stroke}
-                strokeLinecap="round"
-                strokeDasharray={`${circumference} ${circumference}`}
-                style={{
-                  strokeDashoffset,
-                  transition: "stroke-dashoffset 0.8s ease",
-                  transform: "rotate(-90deg)",
-                  transformOrigin: "50% 50%",
-                }}
-                r={normalizedRadius}
-                cx={radius}
-                cy={radius}
-              />
-            </svg>
-            <svg viewBox="0 0 60 60" className="d-md-none" style={{ width: "100%", height: "100%" }}>
-              <circle
-                stroke="rgba(255,255,255,0.15)"
-                fill="transparent"
-                strokeWidth="6"
-                r="25"
-                cx="30"
-                cy="30"
-              />
-              <circle
-                stroke={progressColor}
-                fill="transparent"
-                strokeWidth="6"
-                strokeLinecap="round"
-                strokeDasharray={`${50 * Math.PI} ${50 * Math.PI}`}
-                style={{
-                  strokeDashoffset: (50 * Math.PI) - (pct / 100) * (50 * Math.PI),
-                  transition: "stroke-dashoffset 0.8s ease",
-                  transform: "rotate(-90deg)",
-                  transformOrigin: "50% 50%",
-                }}
-                r="25"
-                cx="30"
-                cy="30"
-              />
-            </svg>
-            <div className="progress-percentage">{pct}%</div>
+        <div className="sh-progress">
+          <div className="sh-progress-card">
+            <span className="sh-progress-label d-none d-md-block">Completion</span>
+            <div className="sh-progress-ring">
+              {/* Desktop ring */}
+              <svg height={radius * 2} width={radius * 2} className="d-none d-md-block">
+                <circle
+                  stroke="rgba(255,255,255,0.15)"
+                  fill="transparent"
+                  strokeWidth={stroke}
+                  r={normalizedRadius}
+                  cx={radius}
+                  cy={radius}
+                />
+                <circle
+                  stroke={progressColor}
+                  fill="transparent"
+                  strokeWidth={stroke}
+                  strokeLinecap="round"
+                  strokeDasharray={`${circumference} ${circumference}`}
+                  style={{
+                    strokeDashoffset,
+                    transition: "stroke-dashoffset 0.8s ease",
+                    transform: "rotate(-90deg)",
+                    transformOrigin: "50% 50%",
+                  }}
+                  r={normalizedRadius}
+                  cx={radius}
+                  cy={radius}
+                />
+              </svg>
+              {/* Mobile ring */}
+              <svg viewBox="0 0 60 60" className="d-md-none" style={{ width: "100%", height: "100%" }}>
+                <circle
+                  stroke="rgba(255,255,255,0.15)"
+                  fill="transparent"
+                  strokeWidth="6"
+                  r="25"
+                  cx="30"
+                  cy="30"
+                />
+                <circle
+                  stroke={progressColor}
+                  fill="transparent"
+                  strokeWidth="6"
+                  strokeLinecap="round"
+                  strokeDasharray={`${50 * Math.PI} ${50 * Math.PI}`}
+                  style={{
+                    strokeDashoffset: (50 * Math.PI) - (pct / 100) * (50 * Math.PI),
+                    transition: "stroke-dashoffset 0.8s ease",
+                    transform: "rotate(-90deg)",
+                    transformOrigin: "50% 50%",
+                  }}
+                  r="25"
+                  cx="30"
+                  cy="30"
+                />
+              </svg>
+              <div className="sh-progress-value">{pct}%</div>
+            </div>
+            <span className="sh-progress-label d-md-none">Completion</span>
           </div>
-          <span className="progress-card-label d-md-none mt-1">Completion</span>
         </div>
       )}
     </div>

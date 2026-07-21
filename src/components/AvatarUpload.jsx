@@ -191,7 +191,7 @@ export default function AvatarUpload({
           <label
             htmlFor="avatar-file-input"
             className="upload-btn"
-            style={{ cursor: uploadProgress || loading ? "not-allowed" : "pointer" }}
+            style={{ cursor: uploadProgress || loading ? "not-allowed" : "pointer", fontSize: "0.6rem" }}
           >
             <i className="fa-solid fa-arrow-up-from-bracket" aria-hidden="true"></i>
             {uploadProgress || loading ? "Uploading..." : "Update Photo"}

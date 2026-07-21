@@ -9,6 +9,7 @@ export default function SettingsHeaderContent({
   profileCompletion = -1,
   isVerified,
   isActive,
+  avatar,
 }) {
   const pct = Math.min(100, Math.max(0, Number(profileCompletion) || 0));
 
@@ -17,7 +18,7 @@ export default function SettingsHeaderContent({
     return text.split(" ").slice(0, 4).join(" ");
   };
 
-  // Progress circle dimensions (desktop)
+  // Progress circle dimensions
   const radius = 38;
   const stroke = 8;
   const normalizedRadius = radius - stroke / 2;
@@ -45,20 +46,69 @@ export default function SettingsHeaderContent({
     isActive === "1"
   );
 
+  // Check if the user is both staff AND inactive
+  const isStaffInactive = userType === "staff" && !isActiveProfile;
+
   const progressColor = getProgressColor();
+  const showProgress =
+    userType !== "admin" && userType !== "customer" && pct > 0 && pct < 100;
+
+  // ---------- Progress ring sub‑component ----------
+  const ProgressRing = () => (
+    <div className="sh-progress-card">
+      <span className="sh-progress-label sh-progress-label--top">Completion</span>
+      <div className="sh-progress-ring">
+        <svg height={radius * 2} width={radius * 2}>
+          <circle
+            stroke="rgba(255,255,255,0.15)"
+            fill="transparent"
+            strokeWidth={stroke}
+            r={normalizedRadius}
+            cx={radius}
+            cy={radius}
+          />
+          <circle
+            stroke={progressColor}
+            fill="transparent"
+            strokeWidth={stroke}
+            strokeLinecap="round"
+            strokeDasharray={`${circumference} ${circumference}`}
+            style={{
+              strokeDashoffset,
+              transition: "stroke-dashoffset 0.8s ease",
+              transform: "rotate(-90deg)",
+              transformOrigin: "50% 50%",
+            }}
+            r={normalizedRadius}
+            cx={radius}
+            cy={radius}
+          />
+        </svg>
+        <div className="sh-progress-value">{pct}%</div>
+      </div>
+      <span className="sh-progress-label sh-progress-label--bottom">
+        Completion
+      </span>
+    </div>
+  );
 
   return (
-    <div className="settings-header-wrapper d-flex align-items-center flex-wrap gap-4">
+    <div className="settings-hero-content">
       <style>{`
-        /* ---- Reset / base for this component only ---- */
-        .settings-header-wrapper {
-          position: relative;
-          z-index: 2;
-          width: 100%;
+        .settings-hero-content {
           color: #fff;
+          width: 100%;
+          position: relative;
+          z-index: 1;
         }
 
-        /* Left block */
+        /* ---- Desktop layout ---- */
+        .sh-hero-inner {
+          display: flex;
+          align-items: center;
+          gap: 1.5rem;
+        }
+
         .sh-left {
           flex: 1 1 320px;
           min-width: 0;
@@ -67,6 +117,43 @@ export default function SettingsHeaderContent({
           gap: 8px;
         }
 
+        .sh-avatar-desktop,
+        .sh-progress-desktop {
+          flex-shrink: 0;
+        }
+
+        /* ---- Mobile layout ---- */
+        .sh-mobile-top {
+          display: none;
+        }
+
+        @media (max-width: 768px) {
+          .sh-hero-inner {
+            flex-direction: column;
+            gap: 0; 
+          }
+
+          .sh-left {
+            flex: none; 
+            width: 100%;
+          }
+
+          .sh-mobile-top {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 24px;
+            width: 100%;
+            margin-bottom: 24px; 
+          }
+
+          .sh-avatar-desktop,
+          .sh-progress-desktop {
+            display: none;
+          }
+        }
+
+        /* Titles / meta */
         .sh-title {
           font-size: 2rem;
           font-weight: 800;
@@ -79,26 +166,25 @@ export default function SettingsHeaderContent({
           margin: 0;
           color: #fff;
         }
-
         .sh-name {
           word-break: break-word;
         }
-
         .sh-subtitle {
           color: rgba(255,255,255,0.7);
           font-size: 0.95rem;
           margin: 0;
-          line-height: 1.5;
+          line-height: 1.4;
         }
-
-        /* Meta pills */
+        .sh-subtitle--danger {
+          color: #f87171; /* Vibrant red for good contrast on dark background */
+          font-weight: 600; /* Bolder to make it prominent */
+        }
         .sh-meta {
           display: flex;
           flex-wrap: wrap;
           gap: 10px;
           margin-top: 4px;
         }
-
         .sh-meta-item {
           display: inline-flex;
           align-items: center;
@@ -113,22 +199,18 @@ export default function SettingsHeaderContent({
           backdrop-filter: blur(10px);
           white-space: nowrap;
         }
-
         .sh-meta-item i {
           font-size: 0.85rem;
           opacity: 0.8;
           width: 16px;
           text-align: center;
         }
-
         .sh-meta-text {
           overflow: hidden;
           text-overflow: ellipsis;
           white-space: nowrap;
           max-width: 250px;
         }
-
-        /* Status badge */
         .sh-badge {
           display: inline-flex;
           align-items: center;
@@ -140,30 +222,22 @@ export default function SettingsHeaderContent({
           border: 1px solid;
           white-space: nowrap;
         }
-
         .sh-badge--active {
           background: rgba(22, 163, 74, 0.2);
           color: #bbf7d0;
           border-color: rgba(34, 197, 94, 0.5);
         }
-
         .sh-badge--inactive {
           background: rgba(220, 38, 38, 0.2);
           color: #fecaca;
           border-color: rgba(248, 113, 113, 0.5);
         }
-
         .sh-verified {
           color: #6ee7d8;
           font-size: 1.2rem;
         }
 
         /* Progress card */
-        .sh-progress {
-          flex: 0 0 auto;
-          align-self: center;
-        }
-
         .sh-progress-card {
           background: rgba(255, 255, 255, 0.08);
           border: 1px solid rgba(255, 255, 255, 0.15);
@@ -175,24 +249,28 @@ export default function SettingsHeaderContent({
           align-items: center;
           gap: 6px;
         }
-
         .sh-progress-label {
           font-size: 0.65rem;
           font-weight: 700;
           text-transform: uppercase;
           letter-spacing: 0.08em;
           color: rgba(255,255,255,0.5);
+          margin-bottom: 1rem;
         }
-
         .sh-progress-ring {
           position: relative;
-          width: 90px;
-          height: 90px;
+          width: 76px; 
+          height: 76px;
           display: flex;
           align-items: center;
           justify-content: center;
         }
-
+        @media (min-width: 769px) {
+          .sh-progress-ring {
+            width: 90px;
+            height: 90px;
+          }
+        }
         .sh-progress-value {
           position: absolute;
           font-weight: 800;
@@ -200,31 +278,34 @@ export default function SettingsHeaderContent({
           color: #fff;
         }
 
-        /* Responsive */
+        /* Top label hidden by default, shown on mobile */
+        .sh-progress-label--top {
+          display: none;
+        }
+        .sh-progress-label--bottom {
+          display: block; 
+        }
+
+        /* Mobile adjustments */
         @media (max-width: 768px) {
+          .sh-progress-label--top {
+            display: block;
+            margin-bottom: -4px; 
+          }
+          .sh-progress-label--bottom {
+            display: none;
+          }
           .sh-title {
-            font-size: 1.6rem;
+            font-size: 1.5rem;
+            justify-content: center;
           }
           .sh-subtitle {
             font-size: 0.85rem;
+            text-align: center;
           }
           .sh-meta-item {
             font-size: 0.8rem;
             padding: 6px 12px;
-          }
-          .sh-progress-card {
-            flex-direction: row;
-            gap: 12px;
-            padding: 10px 16px;
-            width: 100%;
-            justify-content: center;
-          }
-          .sh-progress-ring {
-            width: 70px;
-            height: 70px;
-          }
-          .sh-progress-value {
-            font-size: 0.9rem;
           }
         }
 
@@ -235,121 +316,90 @@ export default function SettingsHeaderContent({
           }
           .sh-meta {
             justify-content: center;
+            gap: 8px; 
           }
           .sh-meta-item {
-            width: 100%;
+            width: auto; 
             justify-content: center;
           }
           .sh-meta-text {
-            max-width: none;
-          }
-          .sh-title {
-            justify-content: center;
-            font-size: 1.4rem;
+            max-width: 180px; 
           }
         }
       `}</style>
 
-      {/* Left side */}
-      <div className="sh-left">
-        <h1 className="sh-title">
-          <span className="sh-name">{name || "Staff Member"}</span>
-          {verified && (
-            <i className="fa-solid fa-circle-check sh-verified" title="Verified Profile"></i>
-          )}
-          <span className={`sh-badge ${isActiveProfile ? "sh-badge--active" : "sh-badge--inactive"}`}>
-            <i className={`fa-solid ${isActiveProfile ? "fa-circle-check" : "fa-circle-xmark"}`}></i>
-            {isActiveProfile ? "Active" : "Inactive"}
-          </span>
-        </h1>
-        <p className="sh-subtitle">
-          Keep your information up to date so your profile stays accurate and complete.
-        </p>
-        <div className="sh-meta">
-          <span className="sh-meta-item">
-            <i className="fa-solid fa-envelope"></i>
-            <span className="sh-meta-text">{email || "No email"}</span>
-          </span>
-          {userType !== "contractor" ? (
-            <span className="sh-meta-item">
-              <i className="fa-solid fa-location-dot"></i>
-              <span className="sh-meta-text">{limitToFirstFourWords(city) || "No location"}</span>
-            </span>
-          ) : (
-            <span className="sh-meta-item">
-              <i className="fa-solid fa-briefcase"></i>
-              <span className="sh-meta-text">{company_name || "No company name"}</span>
-            </span>
-          )}
-        </div>
-      </div>
-
-      {/* Right side: progress ring (only for staff / contractors, when incomplete) */}
-      {userType !== "admin" && userType !== "customer" && pct > 0 && pct < 100 && (
-        <div className="sh-progress">
-          <div className="sh-progress-card">
-            <span className="sh-progress-label d-none d-md-block">Completion</span>
-            <div className="sh-progress-ring">
-              {/* Desktop ring */}
-              <svg height={radius * 2} width={radius * 2} className="d-none d-md-block">
-                <circle
-                  stroke="rgba(255,255,255,0.15)"
-                  fill="transparent"
-                  strokeWidth={stroke}
-                  r={normalizedRadius}
-                  cx={radius}
-                  cy={radius}
-                />
-                <circle
-                  stroke={progressColor}
-                  fill="transparent"
-                  strokeWidth={stroke}
-                  strokeLinecap="round"
-                  strokeDasharray={`${circumference} ${circumference}`}
-                  style={{
-                    strokeDashoffset,
-                    transition: "stroke-dashoffset 0.8s ease",
-                    transform: "rotate(-90deg)",
-                    transformOrigin: "50% 50%",
-                  }}
-                  r={normalizedRadius}
-                  cx={radius}
-                  cy={radius}
-                />
-              </svg>
-              {/* Mobile ring */}
-              <svg viewBox="0 0 60 60" className="d-md-none" style={{ width: "100%", height: "100%" }}>
-                <circle
-                  stroke="rgba(255,255,255,0.15)"
-                  fill="transparent"
-                  strokeWidth="6"
-                  r="25"
-                  cx="30"
-                  cy="30"
-                />
-                <circle
-                  stroke={progressColor}
-                  fill="transparent"
-                  strokeWidth="6"
-                  strokeLinecap="round"
-                  strokeDasharray={`${50 * Math.PI} ${50 * Math.PI}`}
-                  style={{
-                    strokeDashoffset: (50 * Math.PI) - (pct / 100) * (50 * Math.PI),
-                    transition: "stroke-dashoffset 0.8s ease",
-                    transform: "rotate(-90deg)",
-                    transformOrigin: "50% 50%",
-                  }}
-                  r="25"
-                  cx="30"
-                  cy="30"
-                />
-              </svg>
-              <div className="sh-progress-value">{pct}%</div>
-            </div>
-            <span className="sh-progress-label d-md-none">Completion</span>
-          </div>
+      {/* Mobile row: avatar + progress (visible only on mobile) */}
+      {showProgress && (
+        <div className="sh-mobile-top">
+          {avatar && <div className="sh-avatar-mobile">{avatar}</div>}
+          <ProgressRing />
         </div>
       )}
+
+      {/* Main flex container */}
+      <div className="sh-hero-inner">
+        {/* Desktop avatar (hidden on mobile) */}
+        {avatar && <div className="sh-avatar-desktop">{avatar}</div>}
+
+        {/* Left text content */}
+        <div className="sh-left">
+          <h1 className="sh-title">
+            <span className="sh-name">{name || "Staff Member"}</span>
+            {verified && (
+              <i
+                className="fa-solid fa-circle-check sh-verified"
+                title="Verified Profile"
+              ></i>
+            )}
+            <span
+              className={`sh-badge ${isActiveProfile ? "sh-badge--active" : "sh-badge--inactive"
+                }`}
+            >
+              <i
+                className={`fa-solid ${isActiveProfile ? "fa-circle-check" : "fa-circle-xmark"
+                  }`}
+              ></i>
+              {isActiveProfile ? "Active" : "Inactive"}
+            </span>
+          </h1>
+
+          {/* UPDATED LOGIC HERE */}
+          <p className={`sh-subtitle ${isStaffInactive ? "sh-subtitle--danger" : ""}`}>
+            {isStaffInactive
+              ? "Complete your personal info, upload all required documents, and fill out the three verification forms to become an active member."
+              : "Keep your information up to date so your profile stays accurate and complete."}
+          </p>
+
+          <div className="sh-meta">
+            <span className="sh-meta-item">
+              <i className="fa-solid fa-envelope"></i>
+              <span className="sh-meta-text">{email || "No email"}</span>
+            </span>
+            {userType !== "contractor" ? (
+              <span className="sh-meta-item">
+                <i className="fa-solid fa-location-dot"></i>
+                <span className="sh-meta-text">
+                  {limitToFirstFourWords(city) || "No location"}
+                </span>
+              </span>
+            ) : (
+              <span className="sh-meta-item">
+                <i className="fa-solid fa-briefcase"></i>
+                <span className="sh-meta-text">
+                  {company_name || "No company name"}
+                </span>
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* Desktop progress ring (hidden on mobile) */}
+        {showProgress && (
+          <div className="sh-progress-desktop">
+            <ProgressRing />
+          </div>
+        )}
+      </div>
     </div>
   );
 }

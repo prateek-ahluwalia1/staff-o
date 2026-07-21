@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useRef } from "react";
 import { useSelector } from "react-redux";
 import { toast } from "react-toastify";
 
@@ -34,7 +34,7 @@ export default function AvatarUpload({
 }) {
   const { userdata } = useSelector((state) => state.auth);
   const userRole = userdata?.user_type || userdata?.data?.user_type;
-  const [uploadProgress, setUploadProgress] = useState(false);
+  const fileInputRef = useRef(null);
 
   const handleFileChange = async (e) => {
     const file = e.target.files?.[0];
@@ -47,15 +47,17 @@ export default function AvatarUpload({
     }
 
     if (onPhotoChange) {
-      setUploadProgress(true);
       try {
         await onPhotoChange(file);
       } catch (error) {
         console.error("Error uploading photo:", error);
-      } finally {
-        setUploadProgress(false);
       }
     }
+  };
+
+  const openFileDialog = () => {
+    if (loading || userRole === "admin") return;
+    fileInputRef.current?.click();
   };
 
   const renderAvatar = () => {
@@ -65,10 +67,7 @@ export default function AvatarUpload({
           src={profilePhoto}
           alt={name || "Staff"}
           className="avatar-image"
-          style={{
-            opacity: uploadProgress || loading ? 0.6 : 1,
-            transition: "opacity 0.3s",
-          }}
+          style={{ opacity: loading ? 0.6 : 1, transition: "opacity 0.3s" }}
         />
       );
     }
@@ -78,7 +77,7 @@ export default function AvatarUpload({
         className="avatar-initials"
         style={{
           backgroundColor: getAvatarColor(name),
-          opacity: uploadProgress || loading ? 0.6 : 1,
+          opacity: loading ? 0.6 : 1,
           transition: "opacity 0.3s",
         }}
       >
@@ -94,7 +93,6 @@ export default function AvatarUpload({
           display: flex;
           flex-direction: column;
           align-items: center;
-          gap: 10px;
           position: relative;
         }
         .avatar-container {
@@ -102,16 +100,18 @@ export default function AvatarUpload({
           width: 120px;
           height: 120px;
           border-radius: 22px;
-          overflow: hidden;
+          overflow: visible;
           border: 3px solid rgba(255, 255, 255, 0.25);
           box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
           background: rgba(255, 255, 255, 0.08);
           backdrop-filter: blur(8px);
+          cursor: ${userRole !== "admin" ? "pointer" : "default"};
         }
         .avatar-image {
           width: 100%;
           height: 100%;
           object-fit: cover;
+          border-radius: 19px;
         }
         .avatar-initials {
           width: 100%;
@@ -124,51 +124,48 @@ export default function AvatarUpload({
           color: #fff;
           letter-spacing: 1px;
           text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+          border-radius: 19px;
         }
-        .upload-btn {
-          display: inline-flex;
+        .edit-badge {
+          position: absolute;
+          top: -6px;
+          right: -6px;
+          width: 32px;
+          height: 32px;
+          background: rgba(10, 124, 110, 0.9);
+          border: 2px solid #fff;
+          border-radius: 50%;
+          display: flex;
           align-items: center;
           justify-content: center;
-          gap: 6px;
-          padding: 8px 18px;
-          border-radius: 30px;
-          font-size: 13px;
-          font-weight: 600;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+          z-index: 2;
+          transition: transform 0.2s ease;
+        }
+        .edit-badge i {
           color: #fff;
-          background: rgba(10, 124, 110, 0.7);
-          border: 1px solid rgba(255, 255, 255, 0.25);
-          backdrop-filter: blur(4px);
-          cursor: pointer;
-          transition: all 0.2s ease;
-          box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+          font-size: 0.85rem;
         }
-        .upload-btn:hover:not(:disabled) {
-          background: rgba(10, 124, 110, 0.9);
-          transform: translateY(-1px);
-          box-shadow: 0 6px 14px rgba(0, 0, 0, 0.2);
-        }
-        .upload-btn:disabled {
-          opacity: 0.6;
-          cursor: not-allowed;
-          pointer-events: none;
-        }
-        .max-size-text {
-          font-size: 11px;
-          color: rgba(255, 255, 255, 0.65);
-          margin-top: -4px;
-          text-transform: none;
+        .avatar-container:active .edit-badge {
+          transform: scale(0.95);
         }
         .spinner {
           position: absolute;
           top: 50%;
           left: 50%;
           transform: translate(-50%, -50%);
+          z-index: 3;
         }
       `}</style>
 
-      <div className="avatar-container">
+      <div className="avatar-container" onClick={openFileDialog}>
         {renderAvatar()}
-        {(uploadProgress || loading) && (
+        {userRole !== "admin" && !loading && (
+          <div className="edit-badge">
+            <i className="fa-solid fa-pencil"></i>
+          </div>
+        )}
+        {loading && (
           <div className="spinner">
             <div className="spinner-border spinner-border-sm text-light" role="status">
               <span className="visually-hidden">Uploading...</span>
@@ -178,29 +175,13 @@ export default function AvatarUpload({
       </div>
 
       <input
-        id="avatar-file-input"
+        ref={fileInputRef}
         type="file"
         onChange={handleFileChange}
         accept="image/*"
         style={{ display: "none" }}
-        disabled={uploadProgress || loading}
+        disabled={loading}
       />
-
-      {userRole !== "admin" && (
-        <>
-          <label
-            htmlFor="avatar-file-input"
-            className="upload-btn"
-            style={{ cursor: uploadProgress || loading ? "not-allowed" : "pointer", fontSize: "0.6rem" }}
-          >
-            <i className="fa-solid fa-arrow-up-from-bracket" aria-hidden="true"></i>
-            {uploadProgress || loading ? "Uploading..." : "Update Photo"}
-          </label>
-          <span className="max-size-text">
-            Max {MAX_FILE_SIZE_MB}MB
-          </span>
-        </>
-      )}
     </div>
   );
 }

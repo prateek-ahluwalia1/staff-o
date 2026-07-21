@@ -874,38 +874,35 @@ export default function EditProfile() {
           --surface: #ffffff;
           --canvas: #f8fafc;
         }
+        .profile-hero-inner {
+          display: flex;
+          align-items: flex-start;
+          gap: 1.5rem;
+        }
+        @media (max-width: 768px) {
+          .profile-hero {
+            padding: 28px 20px 28px; /* reduced bottom padding */
+          }
           .profile-hero-inner {
-  display: flex;
-  align-items: flex-start;
-  gap: 1.5rem;
-}
-
-@media (max-width: 768px) {
-  .profile-hero {
-    padding: 28px 20px 32px;
-    text-align: center;
-  }
-  .profile-hero-inner {
-    flex-direction: column;
-    align-items: center;
-    gap: 18px;
-  }
-}
-
-@media (max-width: 480px) {
-  .profile-hero {
-    padding: 24px 16px 28px;
-    border-radius: 16px;
-  }
-}
+            flex-direction: column;
+            align-items: center;
+            gap: 18px;
+          }
+        }
+        @media (max-width: 480px) {
+          .profile-hero {
+            padding: 24px 16px 24px;
+            border-radius: 16px;
+          }
+        }
         .profile-hero {
           position: relative;
           background: linear-gradient(135deg, var(--navy-950) 0%, var(--navy-900) 65%, #0f2f52 100%);
           border-radius: 22px;
-          padding: 34px 36px 46px;
+          padding: 34px 36px 36px; /* reduced bottom padding */
           overflow: hidden;
           isolation: isolate;
-          margin-bottom: 2rem;
+          margin-bottom: 1.5rem; /* smaller space below hero */
         }
         .profile-hero::before {
           content: "";
@@ -961,19 +958,28 @@ export default function EditProfile() {
           overflow: hidden;
           margin-bottom: 1.5rem;
         }
+
+        /* ensure avatar container doesn't cause extra space */
+        .profile-hero-inner .avatar-upload-wrapper {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          flex-shrink: 0;
+        }
       `}</style>
 
       {/* Profile Hero Header */}
-      {/* Profile Hero Header */}
       <div className="profile-hero">
         <div className="profile-hero-inner" style={{ position: "relative", zIndex: 1 }}>
-          <AvatarUpload
-            profilePhoto={profilePhoto}
-            name={formData.name}
-            onPhotoChange={handleAvatarUpload}
-            loading={uploadLoading}
-          />
           <SettingsHeaderContent
+            avatar={
+              <AvatarUpload
+                profilePhoto={profilePhoto}
+                name={formData.name}
+                onPhotoChange={handleAvatarUpload}
+                loading={uploadLoading}
+              />
+            }
             company_name={formData.company_name}
             isVerified={isverified}
             userType={userType}

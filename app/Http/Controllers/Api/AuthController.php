@@ -192,7 +192,7 @@ class AuthController extends Controller
             return response()->json(['message' => 'User not found'], 404);
         }
 
-        if ($user->phone_verified == 1) {
+        if ($user->phone == $request->phone && $user->phone_verified == 1) {
             return response()->json(['message' => 'Phone already verified'], 400);
         }
 
@@ -226,9 +226,9 @@ class AuthController extends Controller
             return response()->json(['success' => false, 'message' => 'User not found'], 404);
         }
 
-        if ($user->phone_verified == 1) {
-            return response()->json(['success' => false, 'message' => 'Phone already verified'], 200);
-        }
+        // if ($user->phone_verified == 1) {
+        //     return response()->json(['success' => false, 'message' => 'Phone already verified'], 200);
+        // }
 
         // Check OTP expiry first
         // if (!$user->phone_otp_expires_at || now()->gt($user->phone_otp_expires_at)) {

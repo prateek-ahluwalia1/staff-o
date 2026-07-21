@@ -1297,8 +1297,6 @@ private function calculateProfileCompletion(User $user): int
             'tfn'                => 'nullable|string|max:11',
             'title'              => 'nullable|string|max:10',
             'full_name'         => 'required|string|max:100',
-            'first_name'         => 'required|string|max:100',
-            'surname'            => 'required|string|max:100',
             'previous_name'      => 'nullable|string|max:100',
             'dob'                => 'nullable|string',
             'address'            => 'nullable|string|max:255',

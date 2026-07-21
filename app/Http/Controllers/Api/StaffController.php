@@ -1582,23 +1582,14 @@ private function calculateProfileCompletion(User $user): int
     $securityLicense = $documents->get('security_license');
     $firstAid = $documents->get('first_aid');
     $drivingLicense = $documents->get('driver_license_front');
-    $medicare = $documents->get('medicare');
-    $utility = $documents->get('utility');
-
-    // Check if document has complete data (same logic as resource)
-    function hasCompleteDocument($document) {
-        return $document && 
-            !is_null($document->document_no) && 
-            !is_null($document->document_expiry) && 
-            !is_null($document->file);
-    }
+    $medicare = $documents->get('first_aid');
 
     // Generate id_checks
     $idChecks = [
-        'primary_id' => hasCompleteDocument($passport) ? true : false,
-        'drivers_license' => hasCompleteDocument($drivingLicense) ? true : false,
-        'security_license' => hasCompleteDocument($securityLicense) ? true : false,
-        'medicare_or_utility' => (hasCompleteDocument($medicare) || hasCompleteDocument($utility)) ? true : false,
+        'primary_id' => $this->hasCompleteDocument($passport) ? true : false,
+        'drivers_license' => $this->hasCompleteDocument($drivingLicense) ? true : false,
+        'security_license' => $this->hasCompleteDocument($securityLicense) ? true : false,
+        'medicare_or_utility' => $this->hasCompleteDocument($medicare) ? true : false,
     ];
 
     $record = Onboarding::updateOrCreate(
@@ -1623,6 +1614,12 @@ private function calculateProfileCompletion(User $user): int
     return response()->json(['success' => true, 'message' => $message, 'data' => $responseData], $status);
 }
 
+    public function hasCompleteDocument($document) {
+        return $document && 
+            !is_null($document->document_no) && 
+            !is_null($document->document_expiry) && 
+            !is_null($document->file);
+    }
     public function uploadStaffFile(Request $request)
     {
         try {

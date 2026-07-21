@@ -1017,7 +1017,7 @@ export default function EditProfile() {
             Documents
           </button>
         )}
-        {(userType === "staff" && (userdata?.data?.user_id === 1 || userdata?.id === 1)) && (
+        {(userType === "staff" && (userdata?.data?.user_id === 1 || userdata?.user_id === 1)) && (
           <button
             className={`tab-btn ${activeTab === "onboarding" ? "active" : ""}`}
             onClick={() => setActiveTab("onboarding")}

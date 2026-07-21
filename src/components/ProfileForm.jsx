@@ -442,7 +442,7 @@ export default function ProfileForm({
 
                       <div className="input-group">
                         <span className="input-group-text bg-light border text-muted">
-                          <i className="fa-solid fa-cake-candles"></i>
+                          <i className="fa-solid fa-calendar"></i>
                         </span>
 
                         <DatePicker

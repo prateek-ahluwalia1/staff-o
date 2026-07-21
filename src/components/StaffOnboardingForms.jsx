@@ -754,27 +754,6 @@ const SuperannuationForm = ({ values, loading, onChange, onSubmit, dataModified,
                     </div>
                 )}
 
-                <SectionHeader icon="fa-file-circle-check">Declaration</SectionHeader>
-                <div className="mb-4 p-3 rounded-3 form-check d-flex align-items-center">
-                    <input
-                        className="form-check-input"
-                        type="checkbox"
-                        id="super_confirm"
-                        name="super_confirm"
-                        checked={values.super_confirm}
-                        onChange={onChange}
-                        required
-                    />
-                    <label
-                        className="form-check-label text-muted small fw-medium"
-                        htmlFor="super_confirm"
-                        style={{ textTransform: "none", marginLeft: "0.5rem", marginTop: "0.2rem" }}
-                    >
-                        I confirm that the superannuation fund details provided are correct. I understand my super
-                        contributions will be paid into the fund I have selected above.
-                    </label>
-                </div>
-
                 <SectionHeader icon="fa-signature">Signature</SectionHeader>
                 <div className="row g-4">
                     <div className="col-md-6">
@@ -799,6 +778,27 @@ const SuperannuationForm = ({ values, loading, onChange, onSubmit, dataModified,
                         </label>
                         <DateInput name="date2" value={values.date2} onChange={onChange} required />
                     </div>
+                </div>
+
+
+                <div className="mt-4 p-3 rounded-3 form-check d-flex align-items-center">
+                    <input
+                        className="form-check-input"
+                        type="checkbox"
+                        id="super_confirm"
+                        name="super_confirm"
+                        checked={values.super_confirm}
+                        onChange={onChange}
+                        required
+                    />
+                    <label
+                        className="form-check-label text-muted small fw-medium"
+                        htmlFor="super_confirm"
+                        style={{ textTransform: "none", marginLeft: "0.5rem", marginTop: "0.2rem" }}
+                    >
+                        I confirm that the superannuation fund details provided are correct. I understand my super
+                        contributions will be paid into the fund I have selected above.
+                    </label>
                 </div>
             </div>
             <FormCardFooter loading={loading} saveLabel="Save Superannuation" disabled={!dataModified} />
@@ -1364,7 +1364,8 @@ const StaffOnboardingForms = ({ submit, userId, onProfileUpdate }) => {
                 employee_number: superForm.s_empno, fund_choice: superForm.fund_choice,
                 fund_name: superForm.s_fundname, fund_abn: superForm.s_fundabn,
                 fund_usi: superForm.s_usi, member_account: superForm.s_member,
-                super_confirm: superForm.super_confirm, signature: superForm.sig2,
+                super_confirm: superForm.super_confirm ? 1 : 0,
+                signature: superForm.sig2,
                 date: superForm.date2
             };
             pdfFormData = { ...payload };

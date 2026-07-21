@@ -257,12 +257,48 @@ const ManageUsers = () => {
     return {};
   }, [activeTab]);
 
-  // Helper to determine user status
   const getUserStatus = useCallback((user) => {
-    if (user.status) return user.status.toLowerCase();
-    if (user.deleted_at) return "inactive";
+    if (!user) return "inactive";
+
+    // API status field
+    if (user.status) {
+      return String(user.status).toLowerCase();
+    }
+
+    // Handle boolean is_active
+    if (typeof user.is_active === "boolean") {
+      return user.is_active ? "active" : "inactive";
+    }
+
+    // Handle numeric/string is_active
+    if (user.is_active !== undefined && user.is_active !== null) {
+      return ["1", 1, "true", true].includes(user.is_active)
+        ? "active"
+        : "inactive";
+    }
+
+    // Soft deleted users
+    if (user.deleted_at) {
+      return "inactive";
+    }
+
+    // Check nested object
     const nested = getNestedData(user);
-    if (nested.status) return nested.status.toLowerCase();
+
+    if (nested?.status) {
+      return String(nested.status).toLowerCase();
+    }
+
+    if (typeof nested?.is_active === "boolean") {
+      return nested.is_active ? "active" : "inactive";
+    }
+
+    if (nested?.is_active !== undefined && nested?.is_active !== null) {
+      return ["1", 1, "true", true].includes(nested.is_active)
+        ? "active"
+        : "inactive";
+    }
+
     return "active";
   }, [getNestedData]);
 

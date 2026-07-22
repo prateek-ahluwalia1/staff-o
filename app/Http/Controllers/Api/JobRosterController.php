@@ -4317,7 +4317,7 @@ class JobRosterController extends Controller
             if ($roster->accepted_by == $id) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'You have already accepted this job1.',
+                    'message' => 'You have already accepted this job.',
                     'data' => null,
                 ], 200);
             }

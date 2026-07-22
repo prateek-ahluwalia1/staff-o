@@ -14,14 +14,14 @@ import { GoogleOAuthProvider } from "@react-oauth/google";
 
 const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(
-  <React.StrictMode>
-    <GoogleOAuthProvider clientId="657305180305-1qs17b93eh5l5v8urt7148d5ek9mt8lr.apps.googleusercontent.com">
-      <Provider store={store}>
-        <PersistGate loading={null} persistor={persistor}>
-          <App />
-          <ToastContainer />
-        </PersistGate>
-      </Provider>
-    </GoogleOAuthProvider>
-  </React.StrictMode>,
+  // <React.StrictMode>
+  <GoogleOAuthProvider clientId="657305180305-1qs17b93eh5l5v8urt7148d5ek9mt8lr.apps.googleusercontent.com">
+    <Provider store={store}>
+      <PersistGate loading={null} persistor={persistor}>
+        <App />
+        <ToastContainer />
+      </PersistGate>
+    </Provider>
+  </GoogleOAuthProvider>
+  // </React.StrictMode>,
 );

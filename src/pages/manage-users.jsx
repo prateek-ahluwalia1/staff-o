@@ -938,6 +938,54 @@ const ManageUsers = () => {
           .pac-container {
   z-index: 10000 !important;
 }
+  .custom-input {
+  display: flex;
+  align-items: center;
+  height: 44px; /* Same as your other inputs */
+  border: 1px solid #d9dde3;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.custom-input-icon {
+  width: 42px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: #6c757d;
+  border-right: 1px solid #d9dde3;
+}
+
+.custom-input-field {
+  flex: 1;
+  border: none;
+  outline: none;
+  padding: 0 14px;
+  height: 100%;
+  font-size: 16px;
+  background: transparent;
+}
+
+.custom-input-field:focus {
+  outline: none;
+  box-shadow: none;
+}
+
+.custom-input-eye {
+  width: 42px;
+  height: 100%;
+  border: none;
+  background: transparent;
+  color: #6c757d;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+}
+
+.custom-input-eye:hover {
+  color: #0d6efd;
+}
         .manage-users-hero::after {
           content: "";
           position: absolute;
@@ -1582,27 +1630,45 @@ const ManageUsers = () => {
                   extraFields={
                     <>
                       <div className="col-md-6">
-                        <label className="form-label">
-                          Password {editingUser && <span className="text-muted fw-normal">(Leave blank to keep)</span>}
+                        <label className="form-label fw-semibold">
+                          Password{" "}
+                          {editingUser && (
+                            <span className="text-muted fw-normal">
+                              (Leave blank to keep)
+                            </span>
+                          )}
                         </label>
-                        <div className="position-relative">
+
+                        <div className="custom-input bg-light">
+                          <div className="custom-input-icon">
+                            <i className="fa-solid fa-lock"></i>
+                          </div>
+
                           <input
                             type={showPassword ? "text" : "password"}
-                            className="form-control pe-5"
+                            className="custom-input-field"
+                            placeholder="Enter password"
                             name="password"
                             value={formData.password}
                             minLength={8}
-                            onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
                             required={!editingUser}
-                            style={{ minHeight: "44px" }}
+                            onChange={(e) =>
+                              setFormData((prev) => ({
+                                ...prev,
+                                password: e.target.value,
+                              }))
+                            }
                           />
+
                           <button
                             type="button"
-                            className="btn btn-sm border-0 position-absolute end-0 top-50 translate-middle-y text-muted"
+                            className="custom-input-eye"
                             onClick={() => setShowPassword(!showPassword)}
-                            tabIndex="-1"
                           >
-                            <i className={`fa-solid ${showPassword ? 'fa-eye-slash' : 'fa-eye'}`}></i>
+                            <i
+                              className={`fa-solid ${showPassword ? "fa-eye-slash" : "fa-eye"
+                                }`}
+                            ></i>
                           </button>
                         </div>
                       </div>

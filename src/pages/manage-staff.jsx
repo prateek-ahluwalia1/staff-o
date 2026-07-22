@@ -1129,7 +1129,7 @@ const ManageStaff = () => {
                       <div className="position-relative">
                         <input
                           type={showPassword ? "text" : "password"}
-                          className="form-control pe-5"
+                          className="form-control pe-5 bg-light"
                           value={formData.password}
                           minLength={8}
                           onChange={(e) =>

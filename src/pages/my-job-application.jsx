@@ -14,8 +14,7 @@ const InfoRow = ({ label, value, icon, transform = true }) => {
       ? value.charAt(0).toUpperCase() + value.slice(1)
       : value;
   return (
-    <div
-      className="info-row">
+    <div className="info-row">
       <span className="info-row-label">
         {icon && <i className={`fa-solid ${icon} info-row-icon`}></i>}
         {label}
@@ -58,6 +57,52 @@ const DateField = ({ label, selected, onChange, placeholder, maxDate, minDate })
     />
   </div>
 );
+
+// ---------- Profile Image Component ----------
+const ProfileImage = ({ src, name, size = 36 }) => {
+  const [imgError, setImgError] = useState(false);
+  const initials = getInitials(name || "?");
+  const color = "#0A7C6E";
+
+  if (src && !imgError) {
+    return (
+      <img
+        src={src}
+        alt={name || "Avatar"}
+        style={{
+          width: size,
+          height: size,
+          borderRadius: "50%",
+          objectFit: "cover",
+          border: "2px solid #fff",
+          boxShadow: "0 0 0 1px var(--line)",
+        }}
+        onError={() => setImgError(true)}
+      />
+    );
+  }
+
+  return (
+    <div
+      style={{
+        width: size,
+        height: size,
+        borderRadius: "50%",
+        backgroundColor: "#e2e8f0",
+        color: "#94a3b8",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        fontSize: size * 0.35,
+        fontWeight: 700,
+        border: "2px solid #fff",
+        boxShadow: "0 0 0 1px var(--line)",
+      }}
+    >
+      {initials}
+    </div>
+  );
+};
 
 // ---------- Smart Pagination helper ----------
 const getPageNumbers = (currentPage, totalPages) => {
@@ -202,6 +247,11 @@ export default function MyJobApplications() {
       const contractorName = shift.contractor?.name || null;
       const appliedVia = shift.guards?.name || "Unassigned";
 
+      // Profile images
+      const customerProfileImage = shift.customer?.profile_image || null;
+      const guardProfileImage = shift.guards?.profile_image || null;
+      const contractorProfileImage = shift.contractor?.profile_image || null;
+
       return {
         rawShift: shift,
         id: shift.id,
@@ -224,6 +274,9 @@ export default function MyJobApplications() {
         isAcceptedByContractor,
         contractorName,
         documents,
+        customerProfileImage,
+        guardProfileImage,
+        contractorProfileImage,
       };
     });
   }, [submitData]);
@@ -847,26 +900,19 @@ export default function MyJobApplications() {
                         <div className="d-flex align-items-center gap-2"
                           style={{ flex: "1 1 140px", minWidth: 0 }}
                         >
-                          <div
-                            className="assignee-avatar"
-                            style={{
-                              backgroundColor: app.appliedVia === "Unassigned" ? "#e2e8f0" : "rgba(10, 124, 110, 0.12)",
-                              color: app.appliedVia === "Unassigned" ? "#94a3b8" : "#0A7C6E",
-                            }}
-                          >
-                            {getInitials(app.appliedVia)}
-                          </div>
+                          <ProfileImage
+                            src={app.guardProfileImage}
+                            name={app.appliedVia}
+                            size={36}
+                          />
                           <div className="d-flex flex-column" style={{ minWidth: 0 }}>
                             <span className="assignee-label">Assigned To</span>
                             <span className="fw-bold text-truncate d-block assignee-name">
                               {app.appliedVia}
                             </span>
-
                           </div>
-
                         </div>
-                      )
-                      }
+                      )}
                       <button
                         type="button"
                         className="btn btn-primary-custom btn-sm details-btn flex-shrink-0 ms-2"
@@ -1064,7 +1110,11 @@ export default function MyJobApplications() {
                         </span>
                         Client Details
                       </h5>
-                      <InfoRow icon="fa-user" label="Name" value={selectedApp.rawShift.customer?.name || "Unknown"} />
+                      <div className="d-flex align-items-center gap-2 mb-3">
+                        <ProfileImage src={selectedApp.customerProfileImage} name={selectedApp.rawShift.customer?.name || "Client"} size={40} />
+                        <span className="fw-bold">{selectedApp.rawShift.customer?.name || "Client"}</span>
+                      </div>
+                      {/* <InfoRow icon="fa-user" label="Name" value={selectedApp.rawShift.customer?.name || "Unknown"} /> */}
                       <InfoRow icon="fa-envelope" label="Email" value={selectedApp.rawShift.customer?.email || "N/A"} transform={false} />
                       <InfoRow icon="fa-phone" label="Phone" value={selectedApp.rawShift.customer?.phone || "N/A"} />
                     </div>
@@ -1079,7 +1129,11 @@ export default function MyJobApplications() {
                         </span>
                         Assignment Details
                       </h5>
-                      {userType !== "staff" && <InfoRow icon="fa-user-shield" label="Assigned To" value={selectedApp.appliedVia} />}
+                      <div className="d-flex align-items-center gap-2 mb-3">
+                        <ProfileImage src={selectedApp.guardProfileImage} name={selectedApp.appliedVia} size={40} />
+                        <span className="fw-bold">{selectedApp.appliedVia}</span>
+                      </div>
+                      {/* <InfoRow icon="fa-user-shield" label="Assigned To" value={selectedApp.appliedVia} /> */}
                       {userType === "admin" && <InfoRow icon="fa-money-bill" label="Job Amount" value={selectedApp.rawShift.job_amount ? `$${selectedApp.rawShift.job_amount}` : "N/A"} />}
                       {selectedApp.rawShift.contractor && userType === "admin" && (
                         <InfoRow

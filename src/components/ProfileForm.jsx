@@ -19,6 +19,7 @@ export default function ProfileForm({
   showPhoneOtp = false,
   hideFields = [],            // Array of field IDs to hide
   profileImageUrl = null,     // NEW: URL of the profile image to display
+  forceShowAllStaffFields = false,
 }) {
   const { userdata } = useSelector((state) => state.auth);
   const parseDisplayDate = (str) => {
@@ -31,6 +32,11 @@ export default function ProfileForm({
     }
     return null;
   };
+
+  const showStaffAdvFields = forceShowAllStaffFields
+    ? true
+    : Number(userdata?.data?.user_id ?? userdata?.user_id ?? 0) > 0;
+
 
   const predefinedStatuses = [
     "student_visa",
@@ -349,47 +355,47 @@ export default function ProfileForm({
             {userType === "staff" && (
               <>
                 {/* Residential Status */}
-                {!hideFields.includes("staff_document_type") &&
-                  Number(userdata?.data?.user_id ?? userdata?.user_id ?? 0) > 0 && (
-                    <div className="col-md-6">
-                      <label
-                        htmlFor="staff_document_type"
-                        className="form-label fw-bold text-dark small mb-1"
-                      >
-                        Visa Status <span className="text-danger">*</span>
-                      </label>
+                {!hideFields.includes("staff_document_type") && showStaffAdvFields && (
 
-                      <select
-                        required
-                        className="form-select border bg-light shadow-none"
-                        id="staff_document_type"
-                        value={selectValue}
-                        onChange={(e) => {
-                          if (e.target.value === "other") {
-                            onChange({
-                              target: {
-                                id: "staff_document_type",
-                                value: "Other (Please specify)",
-                              },
-                            });
-                          } else {
-                            onChange(e);
-                          }
-                        }}
-                        style={{ borderRadius: "0.375rem" }}
-                      >
-                        <option value="" disabled>
-                          Select Status
-                        </option>
-                        <option value="student_visa">Student Visa</option>
-                        <option value="bridging_visa">Bridging Visa</option>
-                        <option value="citizen">Citizen</option>
-                        <option value="permanent_residence">Permanent Residence</option>
-                        <option value="visa_485">Visa Subclass 485</option>
-                        <option value="other">Other</option>
-                      </select>
-                    </div>
-                  )}
+                  <div className="col-md-6">
+                    <label
+                      htmlFor="staff_document_type"
+                      className="form-label fw-bold text-dark small mb-1"
+                    >
+                      Visa Status <span className="text-danger">*</span>
+                    </label>
+
+                    <select
+                      required
+                      className="form-select border bg-light shadow-none"
+                      id="staff_document_type"
+                      value={selectValue}
+                      onChange={(e) => {
+                        if (e.target.value === "other") {
+                          onChange({
+                            target: {
+                              id: "staff_document_type",
+                              value: "Other (Please specify)",
+                            },
+                          });
+                        } else {
+                          onChange(e);
+                        }
+                      }}
+                      style={{ borderRadius: "0.375rem" }}
+                    >
+                      <option value="" disabled>
+                        Select Status
+                      </option>
+                      <option value="student_visa">Student Visa</option>
+                      <option value="bridging_visa">Bridging Visa</option>
+                      <option value="citizen">Citizen</option>
+                      <option value="permanent_residence">Permanent Residence</option>
+                      <option value="visa_485">Visa Subclass 485</option>
+                      <option value="other">Other</option>
+                    </select>
+                  </div>
+                )}
 
                 {showCustomStatus && !hideFields.includes("staff_document_type") && (
                   <div className="col-md-6">
@@ -433,57 +439,56 @@ export default function ProfileForm({
                 </div>
 
                 {/* Date of Birth */}
-                {!hideFields.includes("date_of_birth") &&
-                  Number(userdata?.data?.user_id ?? userdata?.user_id ?? 0) > 0 && (
-                    <div className="col-md-6">
-                      <label htmlFor="date_of_birth" className="form-label fw-bold text-dark small mb-1">
-                        Date of Birth <span className="text-danger">*</span>
-                      </label>
+                {!hideFields.includes("date_of_birth") && showStaffAdvFields && (
+                  <div className="col-md-6">
+                    <label htmlFor="date_of_birth" className="form-label fw-bold text-dark small mb-1">
+                      Date of Birth <span className="text-danger">*</span>
+                    </label>
 
-                      <div className="input-group">
-                        <span className="input-group-text bg-light border text-muted">
-                          <i className="fa-solid fa-calendar"></i>
-                        </span>
+                    <div className="input-group">
+                      <span className="input-group-text bg-light border text-muted">
+                        <i className="fa-solid fa-calendar"></i>
+                      </span>
 
-                        <DatePicker
-                          id="date_of_birth"
-                          selected={parseDisplayDate(formData.date_of_birth)}
-                          onChange={(date) => {
-                            if (date) {
-                              const day = String(date.getDate()).padStart(2, "0");
-                              const month = String(date.getMonth() + 1).padStart(2, "0");
-                              const year = date.getFullYear();
+                      <DatePicker
+                        id="date_of_birth"
+                        selected={parseDisplayDate(formData.date_of_birth)}
+                        onChange={(date) => {
+                          if (date) {
+                            const day = String(date.getDate()).padStart(2, "0");
+                            const month = String(date.getMonth() + 1).padStart(2, "0");
+                            const year = date.getFullYear();
 
-                              onChange({
-                                target: {
-                                  id: "date_of_birth",
-                                  name: "date_of_birth",
-                                  value: `${day}/${month}/${year}`,
-                                },
-                              });
-                            } else {
-                              onChange({
-                                target: {
-                                  id: "date_of_birth",
-                                  value: "",
-                                },
-                              });
-                            }
-                          }}
-                          dateFormat="dd/MM/yyyy"
-                          placeholderText="DD/MM/YYYY"
-                          className="form-control border bg-light ps-2 shadow-none"
-                          wrapperClassName="flex-grow-1"
-                          showYearDropdown
-                          scrollableYearDropdown
-                          yearDropdownItemNumber={100}
-                          maxDate={new Date()}
-                          required
-                          autoComplete="off"
-                        />
-                      </div>
+                            onChange({
+                              target: {
+                                id: "date_of_birth",
+                                name: "date_of_birth",
+                                value: `${day}/${month}/${year}`,
+                              },
+                            });
+                          } else {
+                            onChange({
+                              target: {
+                                id: "date_of_birth",
+                                value: "",
+                              },
+                            });
+                          }
+                        }}
+                        dateFormat="dd/MM/yyyy"
+                        placeholderText="DD/MM/YYYY"
+                        className="form-control border bg-light ps-2 shadow-none"
+                        wrapperClassName="flex-grow-1"
+                        showYearDropdown
+                        scrollableYearDropdown
+                        yearDropdownItemNumber={100}
+                        maxDate={new Date()}
+                        required
+                        autoComplete="off"
+                      />
                     </div>
-                  )}
+                  </div>
+                )}
 
                 {/* Gender – always visible */}
                 <div className="col-md-6">
@@ -523,7 +528,8 @@ export default function ProfileForm({
                 </div>
 
                 {/* Country of Origin */}
-                {!hideFields.includes("origin_country") && (
+                {!hideFields.includes("origin_country") && showStaffAdvFields && (
+
                   <div className="col-md-6">
                     <label htmlFor="origin_country" className="form-label fw-bold text-dark small mb-1">
                       Country of Birth <span className="text-danger">*</span>

@@ -1,11 +1,10 @@
-import React, { memo, useState, useMemo, useEffect } from "react";
+import React, { memo, useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { NavLink, useNavigate } from "react-router-dom";
 import { logOut } from "../store/slices/authSlice";
 import { toggleSidebar } from "../store/slices/sidebarSlice";
 import {
   setNotifications,
-  setUnreadCount,
   markNotificationRead,
   markAllRead,
 } from "../store/slices/notificationSlice";
@@ -16,10 +15,8 @@ import { getProfileImageUrlFromUserdata } from "../utils/profileImage";
 
 const Header = memo(function Header({ withSidebar = false }) {
   const { token, userdata } = useSelector((state) => state.auth);
-
   const items = useSelector((state) => state.notifications.items) || [];
   const unreadCount = useSelector((state) => state.notifications.unreadCount) || 0;
-
   const { isExpanded: sidebarExpanded } = useSelector((state) => state.sidebar);
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -30,25 +27,22 @@ const Header = memo(function Header({ withSidebar = false }) {
     [userId],
   );
 
-  const unreadEndpoint = useMemo(
-    () => (userId ? `api/notifications/unread/${userId}` : null),
-    [userId],
-  );
-
   const [showNotifications, setShowNotifications] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 1200);
 
   const { submit } = useSubmit({ isAuth: true });
+
+  // Only fetch if we haven't already populated the store
   const { data: notificationsData, refetch: refetchNotifications } = useFetch(
     notificationsEndpoint,
-    { isAuth: true, immediate: Boolean(notificationsEndpoint) },
-  );
-  const { data: unreadData, refetch: refetchUnreadCount } = useFetch(
-    unreadEndpoint,
-    { isAuth: true, immediate: Boolean(unreadEndpoint) },
+    {
+      isAuth: true,
+      immediate: Boolean(notificationsEndpoint) && items.length === 0, // skip if already have data
+    },
   );
 
+  // Populate store when data arrives
   useEffect(() => {
     if (notificationsData?.success && notificationsData?.data?.data) {
       dispatch(setNotifications(notificationsData.data.data));
@@ -57,26 +51,36 @@ const Header = memo(function Header({ withSidebar = false }) {
     }
   }, [dispatch, notificationsData]);
 
-  useEffect(() => {
-    if (unreadData?.success !== undefined) {
-      dispatch(setUnreadCount(unreadData.count));
-    } else if (unreadData !== null && unreadData !== undefined) {
-      dispatch(setUnreadCount(unreadData));
-    }
-  }, [dispatch, unreadData]);
+  // Close dropdowns on outside click
+  const notifRef = useRef(null);
+  const userMenuRef = useRef(null);
 
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (notifRef.current && !notifRef.current.contains(event.target)) {
+        setShowNotifications(false);
+      }
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target)) {
+        setShowUserMenu(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // Desktop detection
   useEffect(() => {
     const handleResize = () => setIsDesktop(window.innerWidth >= 1200);
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  const getNotificationTitle = (notif) => notif?.title || notif?.data?.title || "Notification";
-  const getNotificationMessage = (notif) => notif?.message || notif?.data?.message || "";
+  const getNotificationTitle = (notif) => notif?.title || "Notification";
+  const getNotificationMessage = (notif) => notif?.message || "";
 
   const getInitials = (name) => {
     if (!name) return "U";
-    return name.split(" ").map((word) => word[0]).join("").toUpperCase().slice(0, 2);
+    return name.split(" ").map((w) => w[0]).join("").toUpperCase().slice(0, 2);
   };
 
   const getAvatarColor = (name) => {
@@ -107,15 +111,10 @@ const Header = memo(function Header({ withSidebar = false }) {
     return (
       <div
         style={{
-          width: "100%",
-          height: "100%",
+          width: "100%", height: "100%",
           backgroundColor: getAvatarColor(displayName),
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          color: "white",
-          fontWeight: "bold",
-          fontSize: "0.9rem",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          color: "white", fontWeight: "bold", fontSize: "0.9rem",
         }}
       >
         {getInitials(displayName)}
@@ -129,16 +128,14 @@ const Header = memo(function Header({ withSidebar = false }) {
     await submit(`api/notifications/read/${notif.id}`, {}, { method: "POST" });
   };
 
-  const toggleNotifications = async () => {
-    const nextState = !showNotifications;
-    setShowNotifications(nextState);
+  const toggleNotifications = () => {
+    setShowNotifications((prev) => !prev);
     setShowUserMenu(false);
-    if (nextState) {
-      await Promise.all([refetchNotifications(), refetchUnreadCount()]);
-    }
-    if (nextState && userId) {
+    if (!showNotifications && userId) {
+      // Refresh on open
+      refetchNotifications();
       dispatch(markAllRead());
-      await submit(`api/notifications/mark-all-read/${userId}`, {}, { method: "POST" });
+      submit(`api/notifications/mark-all-read/${userId}`, {}, { method: "POST" });
     }
   };
 
@@ -157,23 +154,20 @@ const Header = memo(function Header({ withSidebar = false }) {
     }
   };
 
-  // Sidebar rail width — computed directly instead of relying on an
-  // external "header-with-sidebar-*" class we don't have the CSS for.
   const sidebarOffset = withSidebar && isDesktop ? (sidebarExpanded ? 280 : 80) : 0;
 
   return (
     <div className="hdr-root">
       <div className="hdr-bar" style={{ paddingLeft: sidebarOffset }}>
         <div className="hdr-container">
-
-          {/* Left: Logo — hidden when the expanded sidebar already shows its own logo */}
+          {/* Left: Logo */}
           <div className="hdr-left">
             <NavLink to="/" className="hdr-logo-link">
               <img src={staffologo} alt="Staffo" className="hdr-logo-img" />
             </NavLink>
           </div>
 
-          {/* Center: Desktop Navigation Links */}
+          {/* Center: Desktop Nav */}
           {token && (
             <div className="hdr-center">
               <NavLink to="/" className={({ isActive }) => `hdr-nav-link ${isActive ? "active" : ""}`}>Home</NavLink>
@@ -184,21 +178,17 @@ const Header = memo(function Header({ withSidebar = false }) {
 
           {/* Right: Actions */}
           <div className="hdr-right">
-
             {token && (
               <div className="hdr-actions">
-
                 {/* Notification Bell */}
-                <div className="hdr-notif-wrap">
+                <div className="hdr-notif-wrap" ref={notifRef}>
                   <button
                     className="hdr-bell-btn"
                     onClick={toggleNotifications}
                     aria-label="Toggle notifications"
                   >
                     <i className="fa fa-bell"></i>
-                    {unreadCount > 0 && (
-                      <span className="hdr-bell-badge">{unreadCount}</span>
-                    )}
+                    {unreadCount > 0 && <span className="hdr-bell-badge">{unreadCount}</span>}
                   </button>
 
                   {showNotifications && (
@@ -208,11 +198,10 @@ const Header = memo(function Header({ withSidebar = false }) {
                       </div>
                       <ul className="hdr-notif-list">
                         {items.length > 0 ? (
-                          items.map((notif, index) => (
+                          items.map((notif, idx) => (
                             <li
-                              key={notif.id || index}
+                              key={notif.id || idx}
                               className="hdr-notif-item"
-                              role="button"
                               onClick={() => markSingleNotificationRead(notif)}
                             >
                               {!notif.read_at && <span className="hdr-notif-dot"></span>}
@@ -236,32 +225,33 @@ const Header = memo(function Header({ withSidebar = false }) {
                 </div>
 
                 {/* User Menu */}
-                <div className="hdr-user-wrap">
-                  <button type="button" className="hdr-user-btn" onClick={toggleUserMenu}>
-                    <span className="hdr-avatar-ring">
-                      {renderUserAvatar()}
-                    </span>
+                <div className="hdr-user-wrap" ref={userMenuRef}>
+                  <button className="hdr-user-btn" onClick={toggleUserMenu}>
+                    <span className="hdr-avatar-ring">{renderUserAvatar()}</span>
                     <span className="hdr-user-name">{displayName}</span>
                     <i className={`fa-solid fa-chevron-down hdr-user-caret ${showUserMenu ? "open" : ""}`}></i>
                   </button>
 
                   {showUserMenu && (
                     <div className="hdr-panel hdr-user-panel">
-                      <NavLink className="hdr-user-menu-item" to="/edit-profile" onClick={() => setShowUserMenu(false)}>
+                      <NavLink
+                        className="hdr-user-menu-item"
+                        to="/edit-profile"
+                        onClick={() => setShowUserMenu(false)}
+                      >
                         <i className="fa-solid fa-user"></i> My Profile
                       </NavLink>
                       <div className="hdr-user-menu-divider"></div>
-                      <button type="button" className="hdr-user-menu-item danger" onClick={handleLogoutClick}>
+                      <button className="hdr-user-menu-item danger" onClick={handleLogoutClick}>
                         <i className="fa-solid fa-right-from-bracket"></i> Logout
                       </button>
                     </div>
                   )}
                 </div>
-
               </div>
             )}
 
-            {/* Mobile Sidebar Toggle Button */}
+            {/* Mobile toggle */}
             {!isDesktop && withSidebar && (
               <button
                 className="hdr-mobile-toggle-btn"
@@ -271,7 +261,6 @@ const Header = memo(function Header({ withSidebar = false }) {
                 <i className="fa-solid fa-bars"></i>
               </button>
             )}
-
           </div>
         </div>
       </div>

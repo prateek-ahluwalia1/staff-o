@@ -1,4 +1,4 @@
-// ========== DocumentTable component (redesigned for premium UI) ==========
+// ========== DocumentTable component (redesigned for premium UI, mobile card view) ==========
 import React, { useMemo } from "react";
 import { apiURL } from "../utils/exports";
 
@@ -79,29 +79,31 @@ export default function DocumentTable({
       <style>{`
         .document-table-wrapper {
           background: #fff;
-          border-radius: 16px;
+          border-radius: 18px;
           box-shadow: 0 4px 14px rgba(15, 23, 42, 0.06);
           border: 1px solid #f1f5f9;
           overflow: hidden;
         }
-        .document-table-wrapper .table-header {
+        .table-header {
           background: #f9fafb;
           padding: 20px 24px 16px;
           border-bottom: 1px solid #e2e8f0;
         }
-        .document-table-wrapper .table-header h3 {
+        .table-header h3 {
           font-size: 1.1rem;
           font-weight: 750;
           color: #1e293b;
           margin: 0;
           letter-spacing: -0.3px;
         }
-        .document-table-wrapper .table-header p {
+        .table-header p {
           color: #64748b;
           font-size: 0.85rem;
           margin: 4px 0 0;
           text-transform: none;
         }
+        
+        /* Desktop table */
         .doc-table {
           width: 100%;
           border-collapse: separate;
@@ -217,13 +219,75 @@ export default function DocumentTable({
           background: #c8f0dd;
           transform: translateY(-1px);
         }
-        @media (max-width: 575.98px) {
-          .document-table-wrapper .table-header {
-            padding: 16px 16px 12px;
+
+        /* Mobile card view */
+        .mobile-doc-cards {
+          display: none;
+        }
+        @media (max-width: 768px) {
+          .desktop-table-view {
+            display: none;
           }
-          .doc-table th,
-          .doc-table td {
-            padding: 10px 12px;
+          .mobile-doc-cards {
+            display: block;
+            padding: 16px;
+          }
+          .doc-card {
+            background: #fff;
+            border: 1px solid #e2e8f0;
+            border-radius: 16px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+            margin-bottom: 12px;
+            overflow: hidden;
+            transition: box-shadow 0.2s;
+          }
+          .doc-card:hover {
+            box-shadow: 0 6px 16px rgba(0,0,0,0.08);
+          }
+          .doc-card-inner {
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+          }
+          .doc-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+          }
+          .doc-card-title {
+            font-weight: 700;
+            font-size: 1rem;
+            color: #1e293b;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+          }
+          .doc-card-actions {
+            display: flex;
+            gap: 8px;
+          }
+          .doc-card-detail {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+          }
+          .doc-card-detail-label {
+            font-size: 0.75rem;
+            color: #64748b;
+            text-transform: uppercase;
+            font-weight: 600;
+          }
+          .doc-card-detail-value {
+            font-size: 0.9rem;
+            color: #1e293b;
+            font-weight: 500;
+          }
+          .doc-card-file-area {
+            display: flex;
+            align-items: center;
+            gap: 12px;
           }
         }
       `}</style>
@@ -233,7 +297,8 @@ export default function DocumentTable({
         <p>All documents associated with your profile.</p>
       </div>
 
-      <div style={{ overflowX: "auto", padding: "0 24px 24px" }}>
+      {/* Desktop Table (hidden on mobile) */}
+      <div className="desktop-table-view" style={{ overflowX: "auto", padding: "0 24px 24px" }}>
         <table className="doc-table">
           <thead>
             <tr>
@@ -249,7 +314,6 @@ export default function DocumentTable({
               processedDocuments.map((doc) => {
                 const status = getExpiryStatus(doc.document_expiry);
                 const displayLabel = DOC_CONFIG[doc.document_type]?.label || doc.document_name;
-
                 return (
                   <tr key={doc.id}>
                     <td>
@@ -314,6 +378,81 @@ export default function DocumentTable({
             )}
           </tbody>
         </table>
+      </div>
+
+      {/* Mobile Card View (hidden on desktop) */}
+      <div className="mobile-doc-cards">
+        {processedDocuments.length > 0 ? (
+          processedDocuments.map((doc) => {
+            const status = getExpiryStatus(doc.document_expiry);
+            const displayLabel = DOC_CONFIG[doc.document_type]?.label || doc.document_name;
+            return (
+              <div key={doc.id} className="doc-card">
+                <div className="doc-card-inner">
+                  <div className="doc-card-header">
+                    <div className="doc-card-title">
+                      <i className="fa-regular fa-file-lines" style={{ color: "#0A7C6E", fontSize: "1.1rem" }}></i>
+                      {displayLabel}
+                      {status === "expiring" && (
+                        <span className="expiry-badge expiring" style={{ marginLeft: 8 }}>
+                          <i className="fa-solid fa-clock"></i> Expiring
+                        </span>
+                      )}
+                      {status === "expired" && (
+                        <span className="expiry-badge expired" style={{ marginLeft: 8 }}>
+                          <i className="fa-solid fa-exclamation-circle"></i> Expired
+                        </span>
+                      )}
+                    </div>
+                    <div className="doc-card-actions">
+                      {doc.file ? (
+                        <a
+                          href={`${apiURL}staff_documents/${doc.file}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="file-link"
+                        >
+                          <i className="fa fa-eye" aria-hidden="true"></i>
+                        </a>
+                      ) : (
+                        <button
+                          type="button"
+                          className="add-file-btn"
+                          onClick={() => onAddFile(doc)}
+                        >
+                          <i className="fa fa-plus" aria-hidden="true"></i>
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        className="action-btn"
+                        onClick={() => onAddFile(doc)}
+                      >
+                        <i className="fa fa-pencil" aria-hidden="true"></i>
+                      </button>
+                    </div>
+                  </div>
+
+                  <div style={{ display: "flex", gap: "16px", marginTop: 4 }}>
+                    <div>
+                      <div className="doc-card-detail-label">Number</div>
+                      <div className="doc-card-detail-value">{doc.document_no || "-"}</div>
+                    </div>
+                    <div>
+                      <div className="doc-card-detail-label">Expiry</div>
+                      <div className="doc-card-detail-value">{formatAUSDate(doc.document_expiry)}</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })
+        ) : (
+          <div className="text-center py-5 text-muted">
+            <i className="fa-regular fa-folder-open fa-2x mb-2 d-block opacity-50"></i>
+            No documents found.
+          </div>
+        )}
       </div>
     </div>
   );

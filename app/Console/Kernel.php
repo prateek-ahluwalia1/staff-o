@@ -20,7 +20,7 @@ class Kernel extends ConsoleKernel
         ->withoutOverlapping(60)
         ->runInBackground()
         ->onOneServer();
-        $schedule->command('attendance:auto-signout')
+        $schedule->command('job:auto-signout')
             ->everyMinute()
             ->withoutOverlapping();
          // $schedule->command('app:sync-public-holidays')->twiceYearly(1, 1);

@@ -796,19 +796,20 @@ class JobRosterController extends Controller
                 ->first();
 
             if ($roster != null) {
+
+              // Check if already assigned to someone else
+                if (!is_null($roster->assigned_to) && $roster->assigned_to != '') {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'This job has already been assigned to someone else.'
+                    ], 200);
+                }
+
                 // Check if accepted_by is already set (contractor accepted)
                 if (!is_null($roster->accepted_by) && $roster->accepted_by != '') {
                     return response()->json([
                         'success' => false,
                         'message' => 'This job has already been accepted by a contractor.'
-                    ], 200);
-                }
-
-                // Check if already assigned to someone else
-                if (!is_null($roster->assigned_to) && $roster->assigned_to != '') {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'This job has already been assigned to someone else.'
                     ], 200);
                 }
 
@@ -4316,7 +4317,7 @@ class JobRosterController extends Controller
             if ($roster->accepted_by == $id) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'You have already accepted this job.',
+                    'message' => 'You have already accepted this job1.',
                     'data' => null,
                 ], 200);
             }

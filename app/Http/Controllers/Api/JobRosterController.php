@@ -1898,7 +1898,7 @@ class JobRosterController extends Controller
                     $q->whereBetween('start', [$start, $end])
                         ->where('roster_id', $roster_id)
                         ->orderBy('start', 'asc')
-                        ->with('guards','customer');
+                        ->with(['guards.staff', 'customer.customer']);
                         
                     if ($user->user_type === 'staff') {
                         $q->where('assigned_to', $user->id);
@@ -4377,7 +4377,11 @@ class JobRosterController extends Controller
         $query = JobRoster::whereBetween('start', [$start, $end])
             ->where('roster_id', $roster_id)
             ->orderBy('start', 'desc')
-            ->with(['site', 'guards', 'customer', 'contractor', 'rosterActivity'])
+            ->with([
+                'site', 'rosterActivity',
+                'guards.staff', 'customer.customer', 'contractor.contractor',
+            ])
+
             ->when($user->user_type === 'staff', function ($q) use ($user) {
                 return $q->where('assigned_to', $user->id);
             })

@@ -39,6 +39,9 @@ class User extends Authenticatable
         protected $hidden = [
             'password',
             'remember_token',
+            'staff',
+            'customer',
+            'contractor',
         ];
     
     
@@ -47,6 +50,10 @@ class User extends Authenticatable
         'is_active' => 'boolean',
         'is_online' => 'boolean',
         'last_seen' => 'datetime',
+    ];
+
+    protected $appends = [
+        'profile_image',
     ];
 
      public function customer()
@@ -136,5 +143,20 @@ class User extends Authenticatable
     public function guardQuestionnaireDetails()
     {
         return $this->hasMany(GuardQuestionnaireDetails::class, 'guard_id');
+    }
+
+     public function getProfileImageAttribute()
+    {
+        $image = null;
+
+        if ($this->user_type === 'staff') {
+            $image = $this->staff->profile_image ?? null;
+        } elseif ($this->user_type === 'customer') {
+            $image = $this->customer->profile_image ?? null;
+        } elseif ($this->user_type === 'contractor') {
+            $image = $this->contractor->profile_image ?? null;
+        }
+
+        return returnImgPath('storage', $image);
     }
 }

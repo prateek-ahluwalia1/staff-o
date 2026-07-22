@@ -356,6 +356,22 @@ Route::middleware('auth:sanctum')->group(function () {
             ], 500);
         }
     });
+
+    Route::get('/storage-link', function () {
+        try {
+            Artisan::call('storage:link');
+
+            return response()->json([
+                'success' => true,
+                'message' => Artisan::output(),
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 500);
+        }
+    });
     
     Route::any('/get-all-jobs', [JobRosterController::class, 'getAllJobs'])->name('get.all.jobs');
 

@@ -5,6 +5,7 @@ import { toast } from 'react-toastify';
 import useFetch from '../hooks/useFetch';
 import useSubmit from '../hooks/useSubmit';
 import Loader from '../components/Loader';
+import confetti from 'canvas-confetti';
 
 const InfoRow = ({ label, value, icon, transform = true }) => {
     const displayValue =
@@ -74,6 +75,8 @@ const CoverJobs = () => {
     useEffect(() => {
         if (selectedJob && removedJobIds.includes(selectedJob.id)) setSelectedJob(null);
     }, [removedJobIds, selectedJob]);
+
+    const successAudio = new Audio('/notification.wav');
 
     // Date / time helpers
     const formatDateTime = (dateString) => {
@@ -147,8 +150,37 @@ const CoverJobs = () => {
             const result = await submit(endpoint, payload, { method: 'POST' });
             if (result && !result.error) {
                 setRemovedJobIds(prev => (prev.includes(jobId) ? prev : [...prev, jobId]));
-                toast.success(selectedStaffId ? 'Job assigned successfully!' : (userRole === 'staff' ? 'Cover job accepted successfully!' : 'Job accepted successfully!'));
+                toast.success(
+                    selectedStaffId
+                        ? '🎉 Job assigned successfully!'
+                        : '🎉 Cover job accepted! You are all set.'
+                );
                 closeModal();
+
+                // 🎊 Confetti + sound celebration
+                confetti({
+                    particleCount: 150,
+                    spread: 70,
+                    origin: { y: 0.6 },
+                    colors: ['#0A7C6E', '#d97706', '#16a34a', '#fbbf24'],
+                });
+                setTimeout(() => {
+                    confetti({
+                        particleCount: 80,
+                        angle: 60,
+                        spread: 55,
+                        origin: { x: 0 },
+                    });
+                    confetti({
+                        particleCount: 80,
+                        angle: 120,
+                        spread: 55,
+                        origin: { x: 1 },
+                    });
+                }, 200);
+
+                // 🔊 Play local success sound
+                successAudio.play().catch(() => { });
             }
         } catch (err) {
             console.error('Accept job failed:', err);

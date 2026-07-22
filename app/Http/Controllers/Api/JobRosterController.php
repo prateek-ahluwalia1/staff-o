@@ -788,7 +788,9 @@ class JobRosterController extends Controller
                 ->where('job_rosters.id', '=', $request->input('roster_id'))->where(
                     function ($query) use ($a, $b) {
                         return $query->where('job_rosters.assigned_to', '=', $a)
-                            ->orWhere('job_rosters.assigned_to', '=', $b);
+                            ->orWhere('job_rosters.assigned_to', '=', $b)
+                            ->orWhere('job_rosters.accepted_by', '=', $a)
+                            ->orWhere('job_rosters.accepted_by', '=', $b);
                     }
                 )
                 ->select('job_rosters.*', 'sites.id as jobId', 'sites.address', 'sites.coordinates')
@@ -796,28 +798,28 @@ class JobRosterController extends Controller
 
                 if ($roster != null) {
 
-                // $user = User::where('id', $id)->first();
-                // if($user->user_type == "staff"){
-                //     $today = $roster->start;
-                //     $todayAssignedJobs = JobRoster::where('assigned_to', $user->id)
-                //         ->whereDate('start', $today)
-                //         ->get();
+                $user = User::where('id', $id)->first();
+                if($user->user_type == "staff"){
+                    $today = $roster->start;
+                    $todayAssignedJobs = JobRoster::where('assigned_to', $user->id)
+                        ->whereDate('start', $today)
+                        ->get();
 
-                //     $jobsCountToday = $todayAssignedJobs->count();
-                //     $hoursToday = $this->calculateTotalHours($todayAssignedJobs);
-                //     if($jobsCountToday >= 2){
-                //         return response()->json([
-                //             'success' => false,
-                //             'message' => 'Daily limit exceeded (Already have 2 jobs).'
-                //         ], 200);
-                //     }
-                //     elseif($hoursToday > 12){
-                //         return response()->json([
-                //             'success' => false,
-                //             'message' => 'Daily limit exceeded (12 hours).'
-                //         ], 200);
-                //     }
-                // }
+                    $jobsCountToday = $todayAssignedJobs->count();
+                    $hoursToday = $this->calculateTotalHours($todayAssignedJobs);
+                    if($jobsCountToday >= 2){
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'Daily limit exceeded (Already have 2 jobs).'
+                        ], 200);
+                    }
+                    elseif($hoursToday > 12){
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'Daily limit exceeded (12 hours).'
+                        ], 200);
+                    }
+                }
 
                 if (!$this->canAcceptJob($id, $roster->start, $roster->end)) {
 
@@ -3964,9 +3966,11 @@ class JobRosterController extends Controller
             ->select('job_rosters.*', 'sites.id as jobId', 'sites.address', 'sites.coordinates')
             ->first();
 
-        if ($roster == null) {
+        if ($roster != null) {
             $rosterExists = DB::table('job_rosters')
                 ->where('id', '=', $request->input('roster_id'))
+                ->whereNull('assigned_to')
+                ->whereNull('accepted_by')
                 ->first();
             
             if (!$rosterExists) {
@@ -4185,7 +4189,7 @@ class JobRosterController extends Controller
             // 1. Send notification to Client (created_by)
             $client = DB::table('users')
                 ->where('notification_token', '!=', '')
-                ->where('id', '=', $roster->created_by)
+                ->where('id', '=', $updatedRoster->created_by)
                 ->select('notification_token', 'name')
                 ->first();
             
@@ -4386,30 +4390,5 @@ class JobRosterController extends Controller
                 'to' => null,
             ]
         ]);
-    }
-
-    function auto_sign_out(Request $request)
-    {
-        $current_time = time();
-            // $closeTime = $current_time;
-        $closeTime = $current_time + (60*60+24);
-        $not_signout_shifts = DB::table('job_roster_activities')
-        ->join('job_rosters', 'job_roster_activities.job_roster_id', '=','job_rosters.id')
-        ->where('job_roster_activities.status', 1)
-        ->where('job_rosters.end','<=',date('Y-m-d H:i:s', $closeTime))
-        ->select('job_roster_activities.id', 'job_roster_activities.job_roster_id', 'job_rosters.end')->get();
-        foreach ($not_signout_shifts as $not_closed) {
-
-            $job_end_time = $not_closed->end;
-            $job_end_time = strtotime($job_end_time);
-            $current_time = time();
-            $diff = round(($current_time - $job_end_time) / 60,2);
-            if ($diff > 30) {
-                DB::table('job_roster_activities')->where('id', $not_closed->id)->update(['signout_time' => date('D M d Y H:i:s'), 'auto_signout' => 1, 'status' => 0]);
-                DB::table('job_rosters')->where('id', $not_closed->job_roster_id)->update(['job_status' => 'completed', 'signin_status' => 0]);
-            }
-        }
-    
-        return $this->sendResponse();
     }
 }

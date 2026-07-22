@@ -4313,8 +4313,9 @@ class JobRosterController extends Controller
                 ], 200);
             }
 
-            // Check if same contractor already accepted this job
-            if ($roster->accepted_by == $id) {
+            // ✅ FIX: Allow contractor to assign guard if they already accepted the job
+            // Only return error if trying to accept again WITHOUT assigning a guard
+            if ($roster->accepted_by == $id && !$request->has('guard_id')) {
                 return response()->json([
                     'success' => false,
                     'message' => 'You have already accepted this job.',
@@ -4322,18 +4323,21 @@ class JobRosterController extends Controller
                 ], 200);
             }
 
-            $rosterExists = DB::table('job_rosters')
-                ->where('id', '=', $request->input('roster_id'))
-                ->whereNull('assigned_to')
-                ->whereNull('accepted_by')
-                ->first();
-            
-            if (!$rosterExists) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Job already accepted or not available!',
-                    'data' => null,
-                ], 200);
+            // ✅ Only check for rosterExists if NOT already accepted by this contractor
+            if ($roster->accepted_by != $id) {
+                $rosterExists = DB::table('job_rosters')
+                    ->where('id', '=', $request->input('roster_id'))
+                    ->whereNull('assigned_to')
+                    ->whereNull('accepted_by')
+                    ->first();
+                
+                if (!$rosterExists) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Job already accepted or not available!',
+                        'data' => null,
+                    ], 200);
+                }
             }
         }
 

@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useCallback, useEffect } from "react";
 import { loadStripe } from "@stripe/stripe-js";
 import {
   Elements,
@@ -47,6 +47,7 @@ function CardForm({
   onClose,
   stripeDisabled,
   savedCards = [],
+  onSubmit,               // <-- new prop from parent
 }) {
   const stripe = useStripe();
   const elements = useElements();
@@ -67,6 +68,7 @@ function CardForm({
     cardComplete &&
     cardholderValid;
 
+  // Pre‑fill cardholder name when selecting a saved card
   useEffect(() => {
     if (paymentMode === "saved" && savedCards[selectedSavedIndex]) {
       const name = savedCards[selectedSavedIndex].card_holder_name;
@@ -76,10 +78,10 @@ function CardForm({
     }
   }, [paymentMode, selectedSavedIndex, savedCards]);
 
-  async function handleSubmit(e) {
-    e.preventDefault();
-    if (processing) return;
-    if (!stripe || !elements || !cardComplete || !cardholderValid) return;
+  // Actual submit logic, called by parent footer button
+  const handleSubmit = useCallback(async (e) => {
+    if (e) e.preventDefault();
+    if (processing || !canSubmit) return;
 
     setCardError("");
     setProcessing(true);
@@ -122,10 +124,15 @@ function CardForm({
       setCardError(err.message || "Payment failed.");
       setProcessing(false);
     }
-  }
+  }, [processing, canSubmit, stripe, elements, cardHolderName, onHoldPayment, onSuccess]);
+
+  // Pass submit handler to parent
+  useEffect(() => {
+    if (onSubmit) onSubmit(handleSubmit);
+  }, [handleSubmit, onSubmit]);
 
   return (
-    <form onSubmit={handleSubmit} noValidate>
+    <>
       <div className="jw-pm-amount-banner mb-4">
         <span className="small">{jobTitle || "Job posting"}</span>
         <span className="fw-bold fs-4">{fmt(amountAud)}</span>
@@ -133,20 +140,11 @@ function CardForm({
 
       {savedCards.length > 0 && (
         <div className="mb-4">
-          <label
-            className="form-label fw-semibold mb-2"
-            style={{ fontSize: 13 }}
-          >
-            Payment Method
-          </label>
           <div className="jw-pm-toggle mb-3">
             <button
               type="button"
               className={paymentMode === "saved" ? "active" : ""}
-              onClick={() => {
-                setPaymentMode("saved");
-                setCardError("");
-              }}
+              onClick={() => { setPaymentMode("saved"); setCardError(""); }}
               disabled={processing}
             >
               Use Saved Card
@@ -154,10 +152,7 @@ function CardForm({
             <button
               type="button"
               className={paymentMode === "new" ? "active" : ""}
-              onClick={() => {
-                setPaymentMode("new");
-                setCardError("");
-              }}
+              onClick={() => { setPaymentMode("new"); setCardError(""); }}
               disabled={processing}
             >
               Enter New Card
@@ -165,16 +160,10 @@ function CardForm({
           </div>
 
           {paymentMode === "saved" && (
-            <div className="d-flex flex-column gap-2">
-              <div className="text-muted small mb-1"
-                style={{ textTransform: "none" }}
-              >
-                Select a card to view its details, then enter them below.
-              </div>
+            <div className="jw-pm-cards-list">
               {savedCards.map((card, index) => {
                 const rawNumber = String(card?.card_number || "");
                 const isSelected = selectedSavedIndex === index;
-
                 return (
                   <div
                     key={index}
@@ -183,17 +172,13 @@ function CardForm({
                   >
                     <span className="jw-pm-card-check"><i className="fa-solid fa-check"></i></span>
                     <div className="jw-pm-card-ic"><i className="fa-regular fa-credit-card"></i></div>
-                    <div className="flex-grow-1">
-                      <div className="fw-bold text-dark">
+                    <div className="flex-grow-1" style={{ minWidth: 0 }}>
+                      <div className="fw-bold text-dark text-truncate" style={{ maxWidth: 180 }}>
                         {card?.card_holder_name || "Card Holder"}
                       </div>
-                      <div
-                        className="font-monospace mt-1"
-                        style={{ fontSize: "14px", letterSpacing: "1px", color: "#1a202c" }}
-                      >
+                      <div className="font-monospace mt-1" style={{ fontSize: "14px", letterSpacing: "1px", color: "#1a202c" }}>
                         {rawNumber || "No card number available"}
                       </div>
-
                       <div className="d-flex gap-3 mt-1 text-muted small">
                         {card?.expiry && <span>Exp: {card.expiry}</span>}
                         {card?.cvv && <span>CVV: {card.cvv}</span>}
@@ -208,15 +193,9 @@ function CardForm({
       )}
 
       <div className="mb-3">
-        <label
-          className="form-label fw-semibold mb-2"
-          style={{ fontSize: 13 }}
-        >
-          {paymentMode === "saved"
-            ? "Verify and Enter Card Details"
-            : "Card Details"}
+        <label className="form-label fw-semibold mb-2" style={{ fontSize: 13 }}>
+          {paymentMode === "saved" ? "Verify and Enter Card Details" : "Card Details"}
         </label>
-
         <div className="mb-2">
           <input
             type="text"
@@ -241,9 +220,7 @@ function CardForm({
       {cardError && <div className="text-danger small mb-2">{cardError}</div>}
 
       <div className="d-flex justify-content-center align-items-center mt-4 mb-2 gap-1 opacity-75">
-        <span className="text-muted fw-medium" style={{ fontSize: "12px" }}>
-          Powered by
-        </span>
+        <span className="text-muted fw-medium" style={{ fontSize: "12px" }}>Powered by</span>
         <span
           style={{
             color: "#635BFF",
@@ -258,25 +235,7 @@ function CardForm({
           stripe
         </span>
       </div>
-
-      <div className="d-flex gap-2 mt-2">
-        <button
-          type="submit"
-          className="btn fw-semibold flex-grow-1 jw-pm-pay-btn"
-          disabled={processing || !canSubmit}
-        >
-          {processing ? "Processing..." : `Pay ${fmt(amountAud)}`}
-        </button>
-        <button
-          type="button"
-          className="btn btn-outline-secondary"
-          onClick={onClose}
-          disabled={processing}
-        >
-          Cancel
-        </button>
-      </div>
-    </form>
+    </>
   );
 }
 
@@ -292,6 +251,13 @@ export default function PaymentModal({
   const stripePromise = useMemo(() => {
     if (!STRIPE_PUBLISHABLE_KEY) return null;
     return loadStripe(STRIPE_PUBLISHABLE_KEY);
+  }, []);
+
+  const [submitHandler, setSubmitHandler] = useState(null);
+  const [processing, setProcessing] = useState(false);
+
+  const handleFormSubmit = useCallback((handler) => {
+    setSubmitHandler(() => handler); // stable reference
   }, []);
 
   if (!open) return null;
@@ -328,72 +294,131 @@ export default function PaymentModal({
         .jw-pm-pay-btn { background: #0A7C6E; border-color: #0A7C6E; color: #fff; border-radius: 10px; }
         .jw-pm-pay-btn:hover:not(:disabled) { background: #075e53; border-color: #075e53; color: #fff; }
         .jw-pm-pay-btn:disabled { opacity: 0.6; }
-      `}</style>
-      <div
-        className="bg-white rounded-4 shadow-lg p-4"
-        style={{ width: "100%", maxWidth: 460, position: "relative" }}
-      >
-        <button onClick={onClose} style={closeButtonStyle}>
-          &times;
-        </button>
 
-        <div className="d-flex justify-content-between align-items-start mb-4 pe-4">
+        /* Scrollable card list */
+        .jw-pm-cards-list {
+          max-height: 220px;
+          overflow-y: auto;
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+          padding-right: 4px;
+        }
+
+        .text-truncate {
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+
+        /* Sticky footer */
+        .sticky-footer {
+          position: sticky;
+          bottom: 0;
+          background: white;
+          padding-top: 0.75rem;
+          margin-top: 1rem;
+          z-index: 5;
+        }
+      `}</style>
+
+      <div
+        className="bg-white rounded-4 shadow-lg d-flex flex-column"
+        style={{
+          width: "100%",
+          maxWidth: 460,
+          maxHeight: "90vh",
+          position: "relative",
+        }}
+      >
+        {/* Header with close button */}
+        <div className="d-flex justify-content-between align-items-center px-3 pt-3 pb-2">
           <div>
             <h5 className="fw-bold mb-1">Complete Payment</h5>
-            <p className="text-muted small mb-0"
-              style={{ textTransform: "none" }}
-            >
+            <p className="text-muted small mb-0" style={{ textTransform: "none" }}>
               Direct payment to the service provider.
             </p>
           </div>
-
-          <div
-            className="d-flex align-items-center gap-1 px-2 py-1 rounded"
-            style={{ backgroundColor: "#f0fdf9", border: "1px solid #d1fae5" }}
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="10"
-              height="10"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="#0A7C6E"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
+          <div className="d-flex align-items-center gap-2">
+            <div
+              className="d-flex align-items-center gap-1 px-2 py-1 rounded"
+              style={{ backgroundColor: "#f0fdf9", border: "1px solid #d1fae5" }}
             >
-              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-              <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-            </svg>
-            <span
-              style={{ fontSize: "10px", color: "#075e53", fontWeight: 600 }}
-            >
-              Secured by{" "}
-              <span
-                style={{
-                  color: "#635BFF",
-                  fontWeight: 800,
-                  letterSpacing: "-0.2px",
-                  fontFamily: "Arial, Helvetica, sans-serif",
-                }}
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="10"
+                height="10"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="#0A7C6E"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
               >
-                stripe
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+              </svg>
+              <span style={{ fontSize: "10px", color: "#075e53", fontWeight: 600 }}>
+                Secured by{" "}
+                <span
+                  style={{
+                    color: "#635BFF",
+                    fontWeight: 800,
+                    letterSpacing: "-0.2px",
+                    fontFamily: "Arial, Helvetica, sans-serif",
+                  }}
+                >
+                  stripe
+                </span>
               </span>
-            </span>
+            </div>
+            <button onClick={onClose} style={{
+              background: "none",
+              border: "none",
+              fontSize: 22,
+              cursor: "pointer",
+              color: "#6b7280",
+            }}>&times;</button>
           </div>
         </div>
 
-        <Elements stripe={stripePromise}>
-          <CardForm
-            amountAud={amountAud}
-            jobTitle={jobTitle}
-            onHoldPayment={onHoldPayment}
-            onSuccess={onSuccess}
-            onClose={onClose}
-            stripeDisabled={!STRIPE_PUBLISHABLE_KEY}
-            savedCards={savedCards}
-          />
-        </Elements>
+        {/* Scrollable content (cards + form) */}
+        <div style={{ overflowY: "auto", flex: 1, padding: "0 1.5rem" }}>
+          <Elements stripe={stripePromise}>
+            <CardForm
+              amountAud={amountAud}
+              jobTitle={jobTitle}
+              onHoldPayment={onHoldPayment}
+              onSuccess={onSuccess}
+              onClose={onClose}
+              stripeDisabled={!STRIPE_PUBLISHABLE_KEY}
+              savedCards={savedCards}
+              onSubmit={handleFormSubmit}
+            />
+          </Elements>
+        </div>
+
+        {/* Sticky footer with Pay/Cancel */}
+        <div className="sticky-footer px-3 pb-3">
+          <div className="d-flex gap-2">
+            <button
+              type="button"
+              className="btn fw-semibold flex-grow-1 jw-pm-pay-btn"
+              disabled={processing || !submitHandler}
+              onClick={() => submitHandler && submitHandler()}
+            >
+              {processing ? "Processing..." : `Pay ${fmt(amountAud)}`}
+            </button>
+            <button
+              type="button"
+              className="btn btn-outline-secondary"
+              onClick={onClose}
+              disabled={processing}
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -409,15 +434,4 @@ const overlayStyle = {
   alignItems: "center",
   justifyContent: "center",
   padding: "1rem",
-};
-
-const closeButtonStyle = {
-  position: "absolute",
-  top: 10,
-  right: 14,
-  background: "none",
-  border: "none",
-  fontSize: 22,
-  cursor: "pointer",
-  color: "#6b7280",
 };

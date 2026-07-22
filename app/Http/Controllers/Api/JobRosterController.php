@@ -780,19 +780,18 @@ class JobRosterController extends Controller
 
         public function accept_asap_job(Request $request, $id)
         {
-            $a = null;
-            $b = '';
-            $roster = DB::table('job_rosters')
-                ->join('sites', 'sites.id', '=', 'job_rosters.site_id')
-                ->where('job_rosters.asap', '=', '1')
-                ->where('job_rosters.id', '=', $request->input('roster_id'))->where(
-                    function ($query) use ($a, $b) {
-                        return $query->where('job_rosters.assigned_to', '=', $a)
+                $a = null;
+                $b = '';
+                $roster = DB::table('job_rosters')
+                    ->join('sites', 'sites.id', '=', 'job_rosters.site_id')
+                    ->where('job_rosters.asap', '=', '1')
+                    ->where('job_rosters.id', '=', $request->input('roster_id'))
+                    ->where(function ($query) use ($a, $b) {
+                        $query->whereNull('job_rosters.assigned_to')
                             ->orWhere('job_rosters.assigned_to', '=', $b)
-                            ->orWhere('job_rosters.accepted_by', '=', $a)
+                            ->orWhereNull('job_rosters.accepted_by')
                             ->orWhere('job_rosters.accepted_by', '=', $b);
-                    }
-                )
+                    })
                 ->select('job_rosters.*', 'sites.id as jobId', 'sites.address', 'sites.coordinates')
                 ->first();
 

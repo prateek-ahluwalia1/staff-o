@@ -76,7 +76,7 @@ const CoverJobs = () => {
         if (selectedJob && removedJobIds.includes(selectedJob.id)) setSelectedJob(null);
     }, [removedJobIds, selectedJob]);
 
-    const successAudio = new Audio('/notification.wav');
+    const successAudio = new Audio('/sounds/notification.wav');
 
     // Date / time helpers
     const formatDateTime = (dateString) => {

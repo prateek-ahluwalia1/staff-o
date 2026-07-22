@@ -36,6 +36,7 @@ import CorporateSecurityTeams from "./pages/solutions/for-corporate-security-tea
 import LabourHireAgencies from "./pages/solutions/for-labour-hire-agencies";
 import GPSGuardTracking from "./pages/features/gps-guard-tracking";
 import EventSecurityHero from "./pages/solutions/event-security";
+import confetti from "canvas-confetti";
 
 const Login = lazy(() => import("./auth/login"));
 const Register = lazy(() => import("./auth/register"));
@@ -76,6 +77,7 @@ const PaySheet = lazy(() => import("./pages/PaySheet"));
 const StafooStaff = lazy(() => import("./pages/staffooStaff"));
 const CoverJobs = lazy(() => import("./pages/CoverJobs"));
 
+
 const ONESIGNAL_APP_ID = "79041c59-5506-4e56-9de4-8a6619f85e1d";
 
 function AppContent() {
@@ -109,6 +111,8 @@ function AppContent() {
 
     const PENDING_NOTIFICATION_KEY = "pendingJobNotification";
     const PENDING_NOTIFICATION_TTL_MS = 5 * 60 * 1000;
+
+    const successAudio = new Audio("/sounds/notification.wav");
 
     const persistPendingNotification = (notification) => {
         try {

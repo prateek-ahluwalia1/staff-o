@@ -1,5 +1,8 @@
 import React from "react";
 import Select from "react-select";
+import confetti from "canvas-confetti";   // 🎊
+
+const successAudio = new Audio("/sounds/notification.wav");
 
 const InfoRow = ({ label, value, icon }) => (
     <div className="d-flex justify-content-between align-items-center py-2 border-bottom" style={{ borderColor: '#f1f5f9' }}>
@@ -32,8 +35,40 @@ export default function NotificationAcceptModal({
     selectedStaffId = '',
     onStaffChange,
     staffLoading = false,
+    celebrate = true,   // 🎉 new prop – set to false to disable confetti
 }) {
     if (!open || !job) return null;
+
+    const handleAcceptClick = () => {
+        // Call the parent's accept handler
+        onAccept(job.id, selectedStaffId);
+
+        // 🎊 Celebration effect
+        if (celebrate) {
+            confetti({
+                particleCount: 150,
+                spread: 70,
+                origin: { y: 0.6 },
+                colors: ['#0A7C6E', '#d97706', '#16a34a', '#fbbf24'],
+            });
+            setTimeout(() => {
+                confetti({
+                    particleCount: 80,
+                    angle: 60,
+                    spread: 55,
+                    origin: { x: 0 },
+                });
+                confetti({
+                    particleCount: 80,
+                    angle: 120,
+                    spread: 55,
+                    origin: { x: 1 },
+                });
+            }, 200);
+
+            successAudio.play().catch(() => { });
+        }
+    };
 
     return (
         <>
@@ -281,7 +316,7 @@ export default function NotificationAcceptModal({
                             </div>
                         </div>
 
-                        {/* Description (new) */}
+                        {/* Description */}
                         {job.description && (
                             <div className="mt-4 p-4 bg-white rounded-4 shadow-sm border border-light">
                                 <h5 className="fw-bold d-flex align-items-center mb-3 pb-2 border-bottom" style={{ fontSize: '16px', color: '#1e293b' }}>
@@ -385,7 +420,7 @@ export default function NotificationAcceptModal({
                             <button
                                 type="button"
                                 className="btn-success-premium"
-                                onClick={() => onAccept(job.id, selectedStaffId)}
+                                onClick={handleAcceptClick}
                                 disabled={accepting}
                             >
                                 {accepting ? 'Processing…' : selectedStaffId ? 'Assign Job' : 'Accept Job'}

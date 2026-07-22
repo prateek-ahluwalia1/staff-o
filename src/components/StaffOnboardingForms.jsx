@@ -1508,15 +1508,6 @@ const StaffOnboardingForms = ({ submit, userId, onProfileUpdate }) => {
 
     return (
         <div className="mt-3">
-            {formDataLoading && (
-                <div className="alert alert-info d-flex align-items-center gap-2 mb-4 rounded-3 border-0 shadow-sm">
-                    <div className="spinner-border spinner-border-sm" role="status">
-                        <span className="visually-hidden">Loading...</span>
-                    </div>
-                    Loading form data...
-                </div>
-            )}
-
             <div
                 className="d-flex flex-column flex-sm-row gap-2 mb-4 p-2 rounded-4 border bg-white shadow-sm"
                 style={{

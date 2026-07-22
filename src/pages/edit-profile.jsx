@@ -999,6 +999,31 @@ export default function EditProfile() {
         </div>
       </div>
 
+      {/* ⚠️ Inactive Profile Warning – amber style */}
+      {userType === "staff" && !(userdata?.data?.is_active || userdata?.is_active) && (
+        <div
+          className="d-flex align-items-center gap-3 px-4 py-3 rounded-3 shadow-sm mb-4"
+          style={{
+            backgroundColor: "#fffbeb",
+            borderLeft: "5px solid #d97706",
+            color: "#92400e",
+          }}
+          role="alert"
+        >
+          <i
+            className="fa-solid fa-triangle-exclamation fs-2"
+            style={{ color: "#d97706" }}
+          ></i>
+          <div>
+            <strong className="d-block mb-1 fw-bold">Action Required</strong>
+            <span style={{ textTransform: "none", fontSize: "0.9rem" }}>
+              Complete your personal information, upload all required documents,
+              and fill out the three verification forms to become an active member.
+            </span>
+          </div>
+        </div>
+      )}
+
       {/* Tabs */}
       <div className="tabs-modern">
         {userType !== "admin" && (

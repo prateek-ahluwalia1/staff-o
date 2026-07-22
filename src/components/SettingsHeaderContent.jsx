@@ -49,6 +49,7 @@ export default function SettingsHeaderContent({
   // Check if the user is both staff AND inactive
   const isStaffInactive = userType === "staff" && !isActiveProfile;
 
+
   const progressColor = getProgressColor();
   const showProgress =
     userType !== "admin" && userType !== "customer" && pct > 0 && pct < 100;
@@ -56,7 +57,11 @@ export default function SettingsHeaderContent({
   // ---------- Progress ring sub‑component ----------
   const ProgressRing = () => (
     <div className="sh-progress-card">
-      <span className="sh-progress-label sh-progress-label--top">Completion</span>
+      <span className="sh-progress-label sh-progress-label--top"
+        style={{
+          marginBottom: "0.2rem"
+        }}
+      >Completion</span>
       <div className="sh-progress-ring">
         <svg height={radius * 2} width={radius * 2}>
           <circle
@@ -107,6 +112,31 @@ export default function SettingsHeaderContent({
           display: flex;
           align-items: center;
           gap: 1.5rem;
+        }
+          .sh-subtitle--danger {
+          color: #f87171; /* Vibrant red for good contrast on dark background */
+          font-weight: 600; /* Bolder to make it prominent */
+        }
+          .sh-badge {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          padding: 4px 14px;
+          border-radius: 30px;
+          font-size: 0.75rem;
+          font-weight: 700;
+          border: 1px solid;
+          white-space: nowrap;
+        }
+        .sh-badge--active {
+          background: rgba(22, 163, 74, 0.2);
+          color: #bbf7d0;
+          border-color: rgba(34, 197, 94, 0.5);
+        }
+        .sh-badge--inactive {
+          background: rgba(220, 38, 38, 0.2);
+          color: #fecaca;
+          border-color: rgba(248, 113, 113, 0.5);
         }
 
         .sh-left {
@@ -175,10 +205,6 @@ export default function SettingsHeaderContent({
           margin: 0;
           line-height: 1.4;
         }
-        .sh-subtitle--danger {
-          color: #f87171; /* Vibrant red for good contrast on dark background */
-          font-weight: 600; /* Bolder to make it prominent */
-        }
         .sh-meta {
           display: flex;
           flex-wrap: wrap;
@@ -210,27 +236,6 @@ export default function SettingsHeaderContent({
           text-overflow: ellipsis;
           white-space: nowrap;
           max-width: 250px;
-        }
-        .sh-badge {
-          display: inline-flex;
-          align-items: center;
-          gap: 6px;
-          padding: 4px 14px;
-          border-radius: 30px;
-          font-size: 0.75rem;
-          font-weight: 700;
-          border: 1px solid;
-          white-space: nowrap;
-        }
-        .sh-badge--active {
-          background: rgba(22, 163, 74, 0.2);
-          color: #bbf7d0;
-          border-color: rgba(34, 197, 94, 0.5);
-        }
-        .sh-badge--inactive {
-          background: rgba(220, 38, 38, 0.2);
-          color: #fecaca;
-          border-color: rgba(248, 113, 113, 0.5);
         }
         .sh-verified {
           color: #6ee7d8;
@@ -329,10 +334,10 @@ export default function SettingsHeaderContent({
       `}</style>
 
       {/* Mobile row: avatar + progress (visible only on mobile) */}
-      {showProgress && (
+      {(avatar || showProgress) && (
         <div className="sh-mobile-top">
           {avatar && <div className="sh-avatar-mobile">{avatar}</div>}
-          <ProgressRing />
+          {showProgress && <ProgressRing />}
         </div>
       )}
 
@@ -363,11 +368,9 @@ export default function SettingsHeaderContent({
             </span>
           </h1>
 
-          {/* UPDATED LOGIC HERE */}
-          <p className={`sh-subtitle ${isStaffInactive ? "sh-subtitle--danger" : ""}`}>
-            {isStaffInactive
-              ? "Complete your personal info, upload all required documents, and fill out the three verification forms to become an active member."
-              : "Keep your information up to date so your profile stays accurate and complete."}
+          {/* Always the same subtitle */}
+          <p className="sh-subtitle">
+            Keep your information up to date so your profile stays accurate and complete.
           </p>
 
           <div className="sh-meta">

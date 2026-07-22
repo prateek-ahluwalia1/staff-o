@@ -635,6 +635,19 @@ export default function MyJobApplications() {
             font-size: 11px; font-weight: 600; margin-right: 4px; margin-bottom: 4px; text-transform: capitalize;
           }
 
+          .card-footer-row {
+  flex-wrap: wrap;
+  row-gap: 10px;
+}
+.card-footer-row > .d-flex.align-items-center.gap-2 {
+  flex: 1 1 140px;
+  min-width: 0; /* lets the truncated name actually shrink */
+}
+.details-btn {
+  flex: 1 1 auto;
+  text-align: center;
+}
+
           .modal-footer-custom { background: #fff; border-top: 1px solid var(--line); }
 
           /* Responsive */
@@ -643,16 +656,35 @@ export default function MyJobApplications() {
             .jobs-hero h1 { font-size: 22px; }
             .filter-card { margin: -26px 4px 0; padding: 14px; }
           }
-          @media (max-width: 575.98px) {
-            .filter-card { flex-direction: column; align-items: stretch; }
-            .search-box { width: 100%; }
-            .date-range-filter { width: 100%; }
-            .date-range-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 14px; width: 100%; }
-            .date-field { min-width: 0; width: 100%; }
-            .date-range-divider { display: none; }
-            .date-search-btn { width: 100%; margin-top: 4px; }
-          }
+@media (max-width: 575.98px) {
+  .filter-card { flex-direction: column; align-items: stretch; }
 
+  .search-box {
+    width: 100% !important;
+    height: 40px !important;
+    min-height: 40px !important;
+    max-height: 40px !important;
+    padding: 0 12px !important;
+    box-sizing: border-box !important;
+  }
+  .search-box input.form-control {
+    height: 100% !important;
+    min-height: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    line-height: 40px !important;
+    font-size: 13px !important;
+  }
+  .search-box i.fa-magnifying-glass {
+    font-size: 13px !important;
+  }
+
+  .date-range-filter { width: 100%; }
+  .date-range-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 14px; width: 100%; }
+  .date-field { min-width: 0; width: 100%; }
+  .date-range-divider { display: none; }
+  .date-search-btn { width: 100%; margin-top: 4px; }
+}
           .react-datepicker-wrapper { display: block; }
         `}
       </style>
@@ -812,7 +844,9 @@ export default function MyJobApplications() {
 
                     <div className="mt-auto pt-3 card-footer-row d-flex justify-content-between align-items-center">
                       {userType !== "staff" && (
-                        <div className="d-flex align-items-center gap-2">
+                        <div className="d-flex align-items-center gap-2"
+                          style={{ flex: "1 1 140px", minWidth: 0 }}
+                        >
                           <div
                             className="assignee-avatar"
                             style={{
@@ -827,6 +861,7 @@ export default function MyJobApplications() {
                             <span className="fw-bold text-truncate d-block assignee-name">
                               {app.appliedVia}
                             </span>
+
                           </div>
 
                         </div>

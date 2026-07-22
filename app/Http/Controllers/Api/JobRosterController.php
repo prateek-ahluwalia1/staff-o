@@ -3976,12 +3976,6 @@ class JobRosterController extends Controller
             if (!$rosterExists) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Job roster not found with the provided ID.',
-                    'data' => null,
-                ], 200);
-            } else {
-                return response()->json([
-                    'success' => false,
                     'message' => 'Job already accepted or not available!',
                     'data' => null,
                 ], 200);

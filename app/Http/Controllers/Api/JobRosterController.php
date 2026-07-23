@@ -806,12 +806,12 @@ class JobRosterController extends Controller
                 }
 
                 // Check if accepted_by is already set (contractor accepted)
-                if (!is_null($roster->accepted_by) && $roster->accepted_by != '') {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'This job has already been accepted by a contractor.'
-                    ], 200);
-                }
+                // if (!is_null($roster->accepted_by) && $roster->accepted_by != '') {
+                //     return response()->json([
+                //         'success' => false,
+                //         'message' => 'This job has already been accepted by a contractor.'
+                //     ], 200);
+                // }
 
                 $user = User::where('id', $id)->first();
                 if($user->user_type == "staff"){
@@ -3989,7 +3989,7 @@ class JobRosterController extends Controller
             if (!is_null($roster->accepted_by) && $roster->accepted_by != '' && $roster->accepted_by != $id) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'This job has already been accepted by another contractor.',
+                    'message' => 'This job has already been accepted by another resource partner.',
                     'data' => null,
                 ], 200);
             }

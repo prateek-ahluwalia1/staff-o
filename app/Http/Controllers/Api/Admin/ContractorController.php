@@ -71,7 +71,71 @@ class ContractorController extends Controller
     //         'message' => 'Contractors retrieved successfully'
     //     ]);
     // }
-    private function calculateProfileCompletion(User $user): int
+    public function index(Request $request)
+{
+    $query = User::where('user_type', 'contractor')->whereNotIn('id', [1])
+        ->with('contractor', 'documents');
+
+    // Search functionality
+    if ($request->has('search')) {
+        $search = $request->search;
+        $query->where(function($q) use ($search) {
+            $q->where('name', 'like', "%{$search}%")
+              ->orWhere('email', 'like', "%{$search}%")
+              ->orWhereHas('contractor', function($q) use ($search) {
+                  $q->where('company_name', 'like', "%{$search}%")
+                    ->orWhere('phone', 'like', "%{$search}%")
+                    ->orWhere('registration_number', 'like', "%{$search}%");
+              });
+        });
+    }
+
+    // Filter by status
+    if ($request->has('status')) {
+        if ($request->status === 'active') {
+            $query->where('is_active', 1);
+        } elseif ($request->status === 'inactive') {
+            $query->where('is_active', 0);
+        }
+    }
+
+    // Filter by city/state/country
+    if ($request->has('city')) {
+        $query->where('city', $request->city);
+    }
+    
+    if ($request->has('state')) {
+        $query->where('state', $request->state);
+    }
+    
+    if ($request->has('country')) {
+        $query->where('country', $request->country);
+    }
+
+    // Sorting
+    $sortField = $request->get('sort_field', 'created_at');
+    $sortDirection = $request->get('sort_direction', 'desc');
+    $query->orderBy($sortField, $sortDirection);
+
+    // Get all contractors before pagination to check their status
+    $contractorList = $query->get();
+    
+    // Calculate profile completion and update status for each contractor
+    foreach ($contractorList as $contractor) {
+        $this->calculateProfileCompletion($contractor);
+    }
+
+    // Re-query with pagination after status updates
+    $contractors = $query->orderBy('id', 'desc')->paginate($request->get('per_page', $request->limit));
+
+    return response()->json([
+        'success' => true,
+        'data' => $contractors,
+        'message' => 'Contractors retrieved successfully'
+    ]);
+}
+
+private function calculateProfileCompletion(User $user): int
 {
     $baseWeight = 50;
     $documentWeight = 50;
@@ -361,7 +425,6 @@ public function updateAllContractorsStatus()
         ]
     ]);
 }
-
 
     /**
      * Store a newly created contractor

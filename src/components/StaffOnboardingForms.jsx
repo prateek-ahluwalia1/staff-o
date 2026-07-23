@@ -897,6 +897,43 @@ const EmployeeOnboardingForm = ({
                             onUpload={(e) => onDocUpload(e, "passport_doc")}
                         />
                     </div>
+                    {/* Work Rights */}
+                    <div className="col-md-12 mb-4">
+                        <label className={`${labelCls} d-block`}>
+                            Work Rights in Australia <span className="text-danger">*</span>
+                        </label>
+                        <PillRadioGroup
+                            name="work"
+                            value={values.work}
+                            onChange={onChange}
+                            required
+                            options={[
+                                { value: "citizen", label: "Australian Citizen / PR" },
+                                { value: "student", label: "Student Visa" },
+                                { value: "temporary", label: "Temporary Visa Holder" },
+                                { value: "other", label: "Other Visa" },
+                            ]}
+                        />
+                    </div>
+
+                    {values.work === "other" && (
+                        <div className="col-md-12 animate__animated animate__fadeIn mb-4">
+                            <label className={labelCls}>
+                                Visa Type <span className="text-danger">*</span>
+                            </label>
+                            <input
+                                type="text"
+                                className={inputCls}
+                                name="o_visa_type"
+                                placeholder="Specify your visa type"
+                                maxLength="30"
+                                value={values.o_visa_type}
+                                onChange={onChange}
+                                required
+                                style={{ fontSize: "1rem" }}
+                            />
+                        </div>
+                    )}
 
                     {/* 100-Point ID Check – read-only, prefilled from response */}
                     <SectionHeader icon="fa-id-card">100-Point ID Check</SectionHeader>
@@ -1097,39 +1134,55 @@ const normalizeSuperData = (apiData) => ({
     sig2: apiData?.signature ?? apiData?.sig2 ?? "",
     date2: isoToDisplay(apiData?.signed_date ?? apiData?.date) || todayDDMMYYYY(),
 });
+const normalizeOnboardData = (apiData) => {
+    // Parse id_checks if it's a string
+    let parsedIdChecks = {};
+    if (apiData?.id_checks) {
+        if (typeof apiData.id_checks === "string") {
+            try {
+                parsedIdChecks = JSON.parse(apiData.id_checks);
+            } catch (e) {
+                console.warn("Failed to parse id_checks", e);
+            }
+        } else if (typeof apiData.id_checks === "object") {
+            parsedIdChecks = apiData.id_checks;
+        }
+    }
 
-const normalizeOnboardData = (apiData) => ({
-    o_name: apiData?.full_name ?? apiData?.o_name ?? "",
-    o_dob: isoToDisplay(apiData?.dob),
-    o_addr: apiData?.address ?? apiData?.o_addr ?? "",
-    o_phone: apiData?.mobile ?? apiData?.o_phone ?? "",
-    o_email: apiData?.email ?? apiData?.o_email ?? "",
-    o_passport: apiData?.passport_number ?? apiData?.o_passport ?? "",
-    o_pcountry: apiData?.passport_country ?? apiData?.o_pcountry ?? "",
-    o_pexpiry: isoToDisplay(apiData?.passport_expiry),
-    work: apiData?.work_rights ?? apiData?.work ?? "citizen",
-    o_visa_type: apiData?.visa_type ?? apiData?.o_visa_type ?? "",
-    passport_doc: apiData?.passport_doc ?? "",
-    chk_primary: Boolean(apiData?.id_checks?.primary_id ?? apiData?.chk_primary ?? false),
-    chk_driver: Boolean(apiData?.id_checks?.drivers_license ?? apiData?.chk_driver ?? false),
-    chk_security: Boolean(apiData?.id_checks?.security_license ?? apiData?.chk_security ?? false),
-    chk_medicare: Boolean(apiData?.id_checks?.medicare_or_utility ?? apiData?.chk_medicare ?? false),
-    o_bank: apiData?.bank_name ?? apiData?.o_bank ?? "",
-    o_bsb: apiData?.bsb ?? apiData?.o_bsb ?? "",
-    o_acct: apiData?.account_number ?? apiData?.o_acct ?? "",
-    o_tfn: apiData?.tfn ?? apiData?.o_tfn ?? "",
-    o_superfund: apiData?.super_fund ?? apiData?.o_superfund ?? "",
-    o_superusi: apiData?.super_usi ?? apiData?.o_superusi ?? "",
-    o_member: apiData?.super_member ?? apiData?.o_member ?? "",
-    o_seclic: apiData?.security_license ?? apiData?.o_seclic ?? "",
-    o_seclicexp: isoToDisplay(apiData?.security_license_expiry),
-    security_license_doc: apiData?.security_license_doc ?? "",
-    o_fa: apiData?.first_aid_cert ?? apiData?.o_fa ?? "",
-    o_faexp: isoToDisplay(apiData?.first_aid_expiry),
-    first_aid_doc: apiData?.first_aid_doc ?? "",
-    sig3: apiData?.signature ?? apiData?.sig3 ?? "",
-    date3: isoToDisplay(apiData?.signed_date ?? apiData?.date) || todayDDMMYYYY(),
-});
+    return {
+        o_name: apiData?.full_name ?? apiData?.o_name ?? "",
+        o_dob: isoToDisplay(apiData?.dob),
+        o_addr: apiData?.address ?? apiData?.o_addr ?? "",
+        o_phone: apiData?.mobile ?? apiData?.o_phone ?? "",
+        o_email: apiData?.email ?? apiData?.o_email ?? "",
+        o_passport: apiData?.passport_number ?? apiData?.o_passport ?? "",
+        o_pcountry: apiData?.passport_country ?? apiData?.o_pcountry ?? "",
+        o_pexpiry: isoToDisplay(apiData?.passport_expiry),
+        work: apiData?.work_rights ?? apiData?.work ?? "citizen",
+        o_visa_type: apiData?.visa_type ?? apiData?.o_visa_type ?? "",
+        passport_doc: apiData?.passport_doc ?? "",
+        chk_primary: Boolean(parsedIdChecks?.primary_id ?? apiData?.chk_primary ?? false),
+        chk_driver: Boolean(parsedIdChecks?.drivers_license ?? apiData?.chk_driver ?? false),
+        chk_security: Boolean(parsedIdChecks?.security_license ?? apiData?.chk_security ?? false),
+        chk_medicare: Boolean(parsedIdChecks?.medicare_or_utility ?? apiData?.chk_medicare ?? false),
+        // … rest remains exactly the same
+        o_bank: apiData?.bank_name ?? apiData?.o_bank ?? "",
+        o_bsb: apiData?.bsb ?? apiData?.o_bsb ?? "",
+        o_acct: apiData?.account_number ?? apiData?.o_acct ?? "",
+        o_tfn: apiData?.tfn ?? apiData?.o_tfn ?? "",
+        o_superfund: apiData?.super_fund ?? apiData?.o_superfund ?? "",
+        o_superusi: apiData?.super_usi ?? apiData?.o_superusi ?? "",
+        o_member: apiData?.super_member ?? apiData?.o_member ?? "",
+        o_seclic: apiData?.security_license ?? apiData?.o_seclic ?? "",
+        o_seclicexp: isoToDisplay(apiData?.security_license_expiry),
+        security_license_doc: apiData?.security_license_doc ?? "",
+        o_fa: apiData?.first_aid_cert ?? apiData?.o_fa ?? "",
+        o_faexp: isoToDisplay(apiData?.first_aid_expiry),
+        first_aid_doc: apiData?.first_aid_doc ?? "",
+        sig3: apiData?.signature ?? apiData?.sig3 ?? "",
+        date3: isoToDisplay(apiData?.signed_date ?? apiData?.date) || todayDDMMYYYY(),
+    };
+};
 
 /* ---------- Main Component ---------- */
 const StaffOnboardingForms = ({ submit, userId, onProfileUpdate }) => {

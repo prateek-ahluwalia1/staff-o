@@ -11,7 +11,7 @@
         table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
         img { -ms-interpolation-mode: bicubic; border: 0; height: auto; line-height: 100%; outline: none; text-decoration: none; }
         table { border-collapse: collapse !important; }
-        body { height: 100% !important; margin: 0 !important; padding: 0 !important; width: 100% !important; background-color: #f4f4f4; }
+        body { height: 100% !important; margin: 0 !important; padding: 0 !important; width: 100% !important; background-color: #ffffff; }
         a[x-apple-data-detectors] { color: inherit !important; text-decoration: none !important; font-size: inherit !important; font-family: inherit !important; font-weight: inherit !important; line-height: inherit !important; }
 
         /* Fonts */
@@ -73,12 +73,12 @@
             border-left: 4px solid #01a37e;
         }
         .btn-login {
-            background: linear-gradient(105deg, #f4f4f4 0%, #f4f4f4 100%);
+            background: linear-gradient(105deg, #01a37e 0%, #018a6b 100%);
             text-decoration: none !important;
             display: inline-block;
             font-weight: 600;
             margin-top: 16px;
-            color: #fff;
+            color: #ffffff !important;
             font-size: 15px;
             padding: 14px 32px;
             border-radius: 50px;
@@ -103,7 +103,7 @@
         }
     </style>
 </head>
-<body style="background-color: #f4f4f4; margin: 0 !important; padding: 0 !important;">
+<body style="background-color: #ffffff; margin: 0 !important; padding: 0 !important;">
     <!-- HIDDEN PREHEADER -->
     <div style="display: none; font-size: 1px; color: #fefefe; line-height: 1px; font-family: 'Lato', Helvetica, Arial, sans-serif; max-height: 0px; max-width: 0px; opacity: 0; overflow: hidden;">
         Your email has been successfully verified with STAFFOO
@@ -125,7 +125,7 @@
 
         <!-- === MAIN CARD: white card with verified badge & content === -->
         <tr>
-            <td bgcolor="#f4f4f4" align="center" style="padding: 0px 10px 30px 10px;">
+            <td bgcolor="#ffffff" align="center" style="padding: 0px 10px 30px 10px;">
                 <table border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 600px; background-color: #ffffff; border-radius: 16px; box-shadow: 0 2px 20px rgba(0, 0, 0, 0.08);">
                     <tr>
                         <td bgcolor="#ffffff" align="center" valign="top" style="padding: 30px 30px 20px 30px; border-radius: 16px 16px 0px 0px; color: #111111; font-family: 'Lato', Helvetica, Arial, sans-serif;">
@@ -206,7 +206,7 @@
 
         <!-- === FOOTER === -->
         <tr>
-            <td bgcolor="#f4f4f4" align="center" style="padding: 0px 10px 30px 10px;">
+            <td bgcolor="#ffffff" align="center" style="padding: 0px 10px 30px 10px;">
                 <table border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 600px;">
                     <tr>
                         <td align="center" style="padding: 20px 20px 10px 20px;">
@@ -227,7 +227,7 @@
 
         <!-- spacing -->
         <tr>
-            <td bgcolor="#f4f4f4" style="height: 20px; font-size: 0;">&nbsp;</td>
+            <td bgcolor="#ffffff" style="height: 20px; font-size: 0;">&nbsp;</td>
         </tr>
     </table>
 </body>

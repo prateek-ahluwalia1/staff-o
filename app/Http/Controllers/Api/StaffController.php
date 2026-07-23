@@ -1356,272 +1356,272 @@ private function calculateProfileCompletion(User $user): int
         return response()->json(['message' => $message, 'data' => $record], $status);
     }
 
-    // public function onboardingStore(Request $request)
-    // {
-    //     $validated = $request->validate([
-    //         'full_name'               => 'required|string|max:200',
-    //         'dob'                     => 'nullable|string',
-    //         'address'                 => 'nullable|string|max:255',
-    //         'mobile'                  => 'nullable|string|max:20',
-    //         'email'                   => 'nullable|email|max:150',
-    //         'passport_number'         => 'nullable|string|max:20',
-    //         'passport_country'        => 'nullable|string|max:100',
-    //         'passport_expiry'         => 'nullable|string',
-    //         'passport_doc'            => 'nullable|string',
-    //         'work_rights'             => 'nullable|string',
-    //         'id_checks'               => 'nullable|array',
-    //         'bank_name'               => 'nullable|string|max:100',
-    //         'bsb'                     => 'nullable|string|max:10',
-    //         'account_number'          => 'nullable|string|max:20',
-    //         'tfn'                     => 'nullable|string|max:11',
-    //         'super_fund'              => 'nullable|string|max:200',
-    //         'super_usi'               => 'nullable|string|max:50',
-    //         'super_member'            => 'nullable|string|max:50',
-    //         'security_license'        => 'nullable|string|max:50',
-    //         'security_license_expiry' => 'nullable|string',
-    //         'security_license_doc'    => 'nullable|string',
-    //         'first_aid_cert'          => 'nullable|string|max:50',
-    //         'first_aid_expiry'        => 'nullable|string',
-    //         'first_aid_doc'           => 'nullable|string',
-    //         'signature'               => 'nullable|string|max:150',
-    //         'date'                    => 'nullable|string',
-    //     ]);
+    public function onboardingStore(Request $request)
+    {
+        $validated = $request->validate([
+            'full_name'               => 'required|string|max:200',
+            'dob'                     => 'nullable|string',
+            'address'                 => 'nullable|string|max:255',
+            'mobile'                  => 'nullable|string|max:20',
+            'email'                   => 'nullable|email|max:150',
+            'passport_number'         => 'nullable|string|max:20',
+            'passport_country'        => 'nullable|string|max:100',
+            'passport_expiry'         => 'nullable|string',
+            'passport_doc'            => 'nullable|string',
+            'work_rights'             => 'nullable|string',
+            'id_checks'               => 'nullable|array',
+            'bank_name'               => 'nullable|string|max:100',
+            'bsb'                     => 'nullable|string|max:10',
+            'account_number'          => 'nullable|string|max:20',
+            'tfn'                     => 'nullable|string|max:11',
+            'super_fund'              => 'nullable|string|max:200',
+            'super_usi'               => 'nullable|string|max:50',
+            'super_member'            => 'nullable|string|max:50',
+            'security_license'        => 'nullable|string|max:50',
+            'security_license_expiry' => 'nullable|string',
+            'security_license_doc'    => 'nullable|string',
+            'first_aid_cert'          => 'nullable|string|max:50',
+            'first_aid_expiry'        => 'nullable|string',
+            'first_aid_doc'           => 'nullable|string',
+            'signature'               => 'nullable|string|max:150',
+            'date'                    => 'nullable|string',
+        ]);
 
-    //     $record = Onboarding::updateOrCreate(
-    //         ['user_id' => $request->user_id],   // match condition
-    //         [
-    //             ...$validated,
-    //             'user_id'     => $request->user_id,
-    //             'signed_date' => $request->date,
-    //         ]
-    //     );
+        $record = Onboarding::updateOrCreate(
+            ['user_id' => $request->user_id],   // match condition
+            [
+                ...$validated,
+                'user_id'     => $request->user_id,
+                'signed_date' => $request->date,
+            ]
+        );
 
-    //    if ($request->filled(['security_license', 'security_license_expiry', 'security_license_doc'])) {
+       if ($request->filled(['security_license', 'security_license_expiry', 'security_license_doc'])) {
     
-    //                     // Find the existing document
-    //         $document = Document::where('user_id', $request->user_id)
-    //         ->where('document_type', 'security_license')
-    //         ->first();
+                        // Find the existing document
+            $document = Document::where('user_id', $request->user_id)
+            ->where('document_type', 'security_license')
+            ->first();
 
-    //         // Only update if it exists
-    //         if ($document) {
+            // Only update if it exists
+            if ($document) {
             
-    //             if (str_contains($request->security_license_expiry, '/')) {
-    //                 $formattedExpiry = Carbon::createFromFormat('d/m/Y', $request->security_license_expiry)->format('Y-m-d');
-    //             } else {
-    //                 $formattedExpiry = Carbon::parse($request->security_license_expiry)->format('Y-m-d');
-    //             }
+                if (str_contains($request->security_license_expiry, '/')) {
+                    $formattedExpiry = Carbon::createFromFormat('d/m/Y', $request->security_license_expiry)->format('Y-m-d');
+                } else {
+                    $formattedExpiry = Carbon::parse($request->security_license_expiry)->format('Y-m-d');
+                }
                 
-    //             $document->update([
-    //                 'document_no'     => $request->security_license,
-    //                 'file'            => $request->security_license_doc,
-    //                 'document_expiry' => $formattedExpiry
-    //             ]);
-    //         }
-    //     }
+                $document->update([
+                    'document_no'     => $request->security_license,
+                    'file'            => $request->security_license_doc,
+                    'document_expiry' => $formattedExpiry
+                ]);
+            }
+        }
 
-    //     if ($request->filled(['passport_number', 'passport_expiry', 'passport_doc'])) {
+        if ($request->filled(['passport_number', 'passport_expiry', 'passport_doc'])) {
             
-    //         // Find the existing document
-    //         $document = Document::where('user_id', $request->user_id)
-    //                             ->where('document_type', 'passport')
-    //                             ->first();
+            // Find the existing document
+            $document = Document::where('user_id', $request->user_id)
+                                ->where('document_type', 'passport')
+                                ->first();
 
-    //         // Only update if it exists
-    //         if ($document) {
-    //             if (str_contains($request->passport_expiry, '/')) {
-    //                 $formattedExpiry = Carbon::createFromFormat('d/m/Y', $request->passport_expiry)->format('Y-m-d');
-    //             } else {
-    //                 $formattedExpiry = Carbon::parse($request->passport_expiry)->format('Y-m-d');
-    //             }
+            // Only update if it exists
+            if ($document) {
+                if (str_contains($request->passport_expiry, '/')) {
+                    $formattedExpiry = Carbon::createFromFormat('d/m/Y', $request->passport_expiry)->format('Y-m-d');
+                } else {
+                    $formattedExpiry = Carbon::parse($request->passport_expiry)->format('Y-m-d');
+                }
                 
-    //             $document->update([
-    //                 'document_no'     => $request->passport_number,
-    //                 'file'            => $request->passport_doc,
-    //                 'document_expiry' => $formattedExpiry
-    //             ]);
-    //         }
-    //     }
+                $document->update([
+                    'document_no'     => $request->passport_number,
+                    'file'            => $request->passport_doc,
+                    'document_expiry' => $formattedExpiry
+                ]);
+            }
+        }
 
-    //     if ($request->filled(['first_aid_cert', 'first_aid_expiry', 'first_aid_doc'])) {
+        if ($request->filled(['first_aid_cert', 'first_aid_expiry', 'first_aid_doc'])) {
             
-    //         // Find the existing document
-    //         $document = Document::where('user_id', $request->user_id)
-    //                             ->where('document_type', 'first_aid')
-    //                             ->first();
+            // Find the existing document
+            $document = Document::where('user_id', $request->user_id)
+                                ->where('document_type', 'first_aid')
+                                ->first();
 
-    //         // Only update if it exists
-    //         if ($document) {
-    //             if (str_contains($request->first_aid_expiry, '/')) {
-    //                 $formattedExpiry = Carbon::createFromFormat('d/m/Y', $request->first_aid_expiry)->format('Y-m-d');
-    //             } else {
-    //                 $formattedExpiry = Carbon::parse($request->first_aid_expiry)->format('Y-m-d');
-    //             }
+            // Only update if it exists
+            if ($document) {
+                if (str_contains($request->first_aid_expiry, '/')) {
+                    $formattedExpiry = Carbon::createFromFormat('d/m/Y', $request->first_aid_expiry)->format('Y-m-d');
+                } else {
+                    $formattedExpiry = Carbon::parse($request->first_aid_expiry)->format('Y-m-d');
+                }
                 
-    //             $document->update([
-    //                 'document_no'     => $request->first_aid_cert,
-    //                 'file'            => $request->first_aid_doc,
-    //                 'document_expiry' => $formattedExpiry
-    //             ]);
-    //         }
-    //     }
+                $document->update([
+                    'document_no'     => $request->first_aid_cert,
+                    'file'            => $request->first_aid_doc,
+                    'document_expiry' => $formattedExpiry
+                ]);
+            }
+        }
 
-    //     $status = $record->wasRecentlyCreated ? 201 : 200;
-    //     $message = $record->wasRecentlyCreated ? 'Onboarding saved.' : 'Onboarding updated.';
+        $status = $record->wasRecentlyCreated ? 201 : 200;
+        $message = $record->wasRecentlyCreated ? 'Onboarding saved.' : 'Onboarding updated.';
 
-    //     return response()->json(['success' => true, 'message' => $message, 'data' => $record], $status);
-    // }
-   public function onboardingStore(Request $request)
-{
-    $validated = $request->validate([
-        'full_name'               => 'required|string|max:200',
-        'dob'                     => 'nullable|string',
-        'address'                 => 'nullable|string|max:255',
-        'mobile'                  => 'nullable|string|max:20',
-        'email'                   => 'nullable|email|max:150',
-        'passport_number'         => 'nullable|string|max:20',
-        'passport_country'        => 'nullable|string|max:100',
-        'passport_expiry'         => 'nullable|string',
-        'passport_doc'            => 'nullable|string',
-        'work_rights'             => 'nullable|string',
-        'id_checks'               => 'nullable|array',
-        'bank_name'               => 'nullable|string|max:100',
-        'bsb'                     => 'nullable|string|max:10',
-        'account_number'          => 'nullable|string|max:20',
-        'tfn'                     => 'nullable|string|max:11',
-        'super_fund'              => 'nullable|string|max:200',
-        'super_usi'               => 'nullable|string|max:50',
-        'super_member'            => 'nullable|string|max:50',
-        'security_license'        => 'nullable|string|max:50',
-        'security_license_expiry' => 'nullable|string',
-        'security_license_doc'    => 'nullable|string',
-        'first_aid_cert'          => 'nullable|string|max:50',
-        'first_aid_expiry'        => 'nullable|string',
-        'first_aid_doc'           => 'nullable|string',
-        'signature'               => 'nullable|string|max:150',
-        'date'                    => 'nullable|string',
-    ]);
+        return response()->json(['success' => true, 'message' => $message, 'data' => $record], $status);
+    }
+//    public function onboardingStore(Request $request)
+// {
+//     $validated = $request->validate([
+//         'full_name'               => 'required|string|max:200',
+//         'dob'                     => 'nullable|string',
+//         'address'                 => 'nullable|string|max:255',
+//         'mobile'                  => 'nullable|string|max:20',
+//         'email'                   => 'nullable|email|max:150',
+//         'passport_number'         => 'nullable|string|max:20',
+//         'passport_country'        => 'nullable|string|max:100',
+//         'passport_expiry'         => 'nullable|string',
+//         'passport_doc'            => 'nullable|string',
+//         'work_rights'             => 'nullable|string',
+//         'id_checks'               => 'nullable|array',
+//         'bank_name'               => 'nullable|string|max:100',
+//         'bsb'                     => 'nullable|string|max:10',
+//         'account_number'          => 'nullable|string|max:20',
+//         'tfn'                     => 'nullable|string|max:11',
+//         'super_fund'              => 'nullable|string|max:200',
+//         'super_usi'               => 'nullable|string|max:50',
+//         'super_member'            => 'nullable|string|max:50',
+//         'security_license'        => 'nullable|string|max:50',
+//         'security_license_expiry' => 'nullable|string',
+//         'security_license_doc'    => 'nullable|string',
+//         'first_aid_cert'          => 'nullable|string|max:50',
+//         'first_aid_expiry'        => 'nullable|string',
+//         'first_aid_doc'           => 'nullable|string',
+//         'signature'               => 'nullable|string|max:150',
+//         'date'                    => 'nullable|string',
+//     ]);
 
-    if ($request->filled(['security_license', 'security_license_expiry', 'security_license_doc'])) {
+//     if ($request->filled(['security_license', 'security_license_expiry', 'security_license_doc'])) {
     
-        // Find the existing document
-        $document = Document::where('user_id', $request->user_id)
-        ->where('document_type', 'security_license')
-        ->first();
+//         // Find the existing document
+//         $document = Document::where('user_id', $request->user_id)
+//         ->where('document_type', 'security_license')
+//         ->first();
 
-        // Only update if it exists
-        if ($document) {
+//         // Only update if it exists
+//         if ($document) {
         
-            if (str_contains($request->security_license_expiry, '/')) {
-                $formattedExpiry = Carbon::createFromFormat('d/m/Y', $request->security_license_expiry)->format('Y-m-d');
-            } else {
-                $formattedExpiry = Carbon::parse($request->security_license_expiry)->format('Y-m-d');
-            }
+//             if (str_contains($request->security_license_expiry, '/')) {
+//                 $formattedExpiry = Carbon::createFromFormat('d/m/Y', $request->security_license_expiry)->format('Y-m-d');
+//             } else {
+//                 $formattedExpiry = Carbon::parse($request->security_license_expiry)->format('Y-m-d');
+//             }
             
-            $document->update([
-                'document_no'     => $request->security_license,
-                'file'            => $request->security_license_doc,
-                'document_expiry' => $formattedExpiry
-            ]);
-        }
-    }
+//             $document->update([
+//                 'document_no'     => $request->security_license,
+//                 'file'            => $request->security_license_doc,
+//                 'document_expiry' => $formattedExpiry
+//             ]);
+//         }
+//     }
 
-    if ($request->filled(['passport_number', 'passport_expiry', 'passport_doc'])) {
+//     if ($request->filled(['passport_number', 'passport_expiry', 'passport_doc'])) {
         
-        // Find the existing document
-        $document = Document::where('user_id', $request->user_id)
-                            ->where('document_type', 'passport')
-                            ->first();
+//         // Find the existing document
+//         $document = Document::where('user_id', $request->user_id)
+//                             ->where('document_type', 'passport')
+//                             ->first();
 
-        // Only update if it exists
-        if ($document) {
-            if (str_contains($request->passport_expiry, '/')) {
-                $formattedExpiry = Carbon::createFromFormat('d/m/Y', $request->passport_expiry)->format('Y-m-d');
-            } else {
-                $formattedExpiry = Carbon::parse($request->passport_expiry)->format('Y-m-d');
-            }
+//         // Only update if it exists
+//         if ($document) {
+//             if (str_contains($request->passport_expiry, '/')) {
+//                 $formattedExpiry = Carbon::createFromFormat('d/m/Y', $request->passport_expiry)->format('Y-m-d');
+//             } else {
+//                 $formattedExpiry = Carbon::parse($request->passport_expiry)->format('Y-m-d');
+//             }
             
-            $document->update([
-                'document_no'     => $request->passport_number,
-                'file'            => $request->passport_doc,
-                'document_expiry' => $formattedExpiry
-            ]);
-        }
-    }
+//             $document->update([
+//                 'document_no'     => $request->passport_number,
+//                 'file'            => $request->passport_doc,
+//                 'document_expiry' => $formattedExpiry
+//             ]);
+//         }
+//     }
 
-    if ($request->filled(['first_aid_cert', 'first_aid_expiry', 'first_aid_doc'])) {
+//     if ($request->filled(['first_aid_cert', 'first_aid_expiry', 'first_aid_doc'])) {
         
-        // Find the existing document
-        $document = Document::where('user_id', $request->user_id)
-                            ->where('document_type', 'first_aid')
-                            ->first();
+//         // Find the existing document
+//         $document = Document::where('user_id', $request->user_id)
+//                             ->where('document_type', 'first_aid')
+//                             ->first();
 
-        // Only update if it exists
-        if ($document) {
-            if (str_contains($request->first_aid_expiry, '/')) {
-                $formattedExpiry = Carbon::createFromFormat('d/m/Y', $request->first_aid_expiry)->format('Y-m-d');
-            } else {
-                $formattedExpiry = Carbon::parse($request->first_aid_expiry)->format('Y-m-d');
-            }
+//         // Only update if it exists
+//         if ($document) {
+//             if (str_contains($request->first_aid_expiry, '/')) {
+//                 $formattedExpiry = Carbon::createFromFormat('d/m/Y', $request->first_aid_expiry)->format('Y-m-d');
+//             } else {
+//                 $formattedExpiry = Carbon::parse($request->first_aid_expiry)->format('Y-m-d');
+//             }
             
-            $document->update([
-                'document_no'     => $request->first_aid_cert,
-                'file'            => $request->first_aid_doc,
-                'document_expiry' => $formattedExpiry
-            ]);
-        }
-    }
+//             $document->update([
+//                 'document_no'     => $request->first_aid_cert,
+//                 'file'            => $request->first_aid_doc,
+//                 'document_expiry' => $formattedExpiry
+//             ]);
+//         }
+//     }
 
-   // Get all documents from database after updates
-    $documentsCollection = Document::where('user_id', $request->user_id)->get();
-    $documents = $documentsCollection->keyBy('document_type');
+//    // Get all documents from database after updates
+//     $documentsCollection = Document::where('user_id', $request->user_id)->get();
+//     $documents = $documentsCollection->keyBy('document_type');
 
-    // Get specific documents
-    $passport = $documents->get('passport');
-    $securityLicense = $documents->get('security_license');
-    $drivingLicense = $documents->get('driver_license_front');
-    $medicare = $documents->get('first_aid');
+//     // Get specific documents
+//     $passport = $documents->get('passport');
+//     $securityLicense = $documents->get('security_license');
+//     $drivingLicense = $documents->get('driver_license_front');
+//     $medicare = $documents->get('first_aid');
 
-    // Check if document is complete
-    function hasCompleteDocument($document) {
-        return $document && 
-            !is_null($document->document_no) && 
-            $document->document_no !== '' &&
-            !is_null($document->document_expiry) && 
-            $document->document_expiry !== '' &&
-            !is_null($document->file) && 
-            $document->file !== '';
-    }
+//     // Check if document is complete
+//     function hasCompleteDocument($document) {
+//         return $document && 
+//             !is_null($document->document_no) && 
+//             $document->document_no !== '' &&
+//             !is_null($document->document_expiry) && 
+//             $document->document_expiry !== '' &&
+//             !is_null($document->file) && 
+//             $document->file !== '';
+//     }
 
-    // Generate id_checks
-    $idChecks = [
-        'primary_id' => hasCompleteDocument($passport) ? true : false,
-        'drivers_license' => hasCompleteDocument($drivingLicense) ? true : false,
-        'security_license' => hasCompleteDocument($securityLicense) ? true : false,
-        'medicare_or_utility' => hasCompleteDocument($medicare) ? true : false,
-    ];
+//     // Generate id_checks
+//     $idChecks = [
+//         'primary_id' => hasCompleteDocument($passport) ? true : false,
+//         'drivers_license' => hasCompleteDocument($drivingLicense) ? true : false,
+//         'security_license' => hasCompleteDocument($securityLicense) ? true : false,
+//         'medicare_or_utility' => hasCompleteDocument($medicare) ? true : false,
+//     ];
 
-    $record = Onboarding::updateOrCreate(
-        ['user_id' => $request->user_id],
-        [
-            ...$validated,
-            'user_id'     => $request->user_id,
-            'signed_date' => $request->date,
-            'id_checks'   => json_encode($idChecks),
-        ]
-    );
+//     $record = Onboarding::updateOrCreate(
+//         ['user_id' => $request->user_id],
+//         [
+//             ...$validated,
+//             'user_id'     => $request->user_id,
+//             'signed_date' => $request->date,
+//             'id_checks'   => json_encode($idChecks),
+//         ]
+//     );
 
-    $status = $record->wasRecentlyCreated ? 201 : 200;
-    $message = $record->wasRecentlyCreated ? 'Onboarding saved.' : 'Onboarding updated.';
+//     $status = $record->wasRecentlyCreated ? 201 : 200;
+//     $message = $record->wasRecentlyCreated ? 'Onboarding saved.' : 'Onboarding updated.';
 
-    // Decode id_checks for response
-    $responseData = $record->toArray();
-    if (isset($responseData['id_checks'])) {
-        $responseData['id_checks'] = json_decode($responseData['id_checks'], true);
-    }
+//     // Decode id_checks for response
+//     $responseData = $record->toArray();
+//     if (isset($responseData['id_checks'])) {
+//         $responseData['id_checks'] = json_decode($responseData['id_checks'], true);
+//     }
 
-    return response()->json(['success' => true, 'message' => $message, 'data' => $responseData], $status);
-}
+//     return response()->json(['success' => true, 'message' => $message, 'data' => $responseData], $status);
+// }
 
     public function hasCompleteDocument($document) {
         return $document && 

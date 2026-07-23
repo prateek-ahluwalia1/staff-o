@@ -61,7 +61,7 @@
         }
         .divider {
             height: 2px;
-            background: linear-gradient(90deg, transparent, #01a37e, #01a37e, transparent);
+            background: linear-gradient(90deg, transparent, #e0e0e0, #e0e0e0, transparent);
             width: 80px;
             margin: 20px auto;
         }
@@ -93,6 +93,14 @@
             color: #01a37e;
             text-decoration: none;
         }
+        .header-bg {
+            background-color: #f8f9fa;
+            padding: 20px 0;
+        }
+        .card-shadow {
+            box-shadow: 0 2px 20px rgba(0, 0, 0, 0.08);
+            border-radius: 16px;
+        }
     </style>
 </head>
 <body style="background-color: #f4f4f4; margin: 0 !important; padding: 0 !important;">
@@ -102,31 +110,29 @@
     </div>
 
     <table border="0" cellpadding="0" cellspacing="0" width="100%">
-        <!-- === TOP BANNER: green background with logo (only logo, no extra text) === -->
+        <!-- === TOP HEADER: light gray background with logo === -->
         <tr>
-            <td bgcolor="#01a37e" align="center" style="padding: 0px 10px 0px 10px;">
-              
+            <td bgcolor="#f8f9fa" align="center" style="padding: 20px 10px 10px 10px;">
+                <table border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 600px;">
+                    <tr>
+                        <td align="center" valign="top" style="padding: 20px 10px 20px 10px;" class="logo-container">
+                            <img src="https://apis.staffoo.com.au/uploads/staffologo.png" alt="STAFFOO Logo" width="180" height="auto" style="display: block; border: 0; width: 180px; max-width: 100%; height: auto;">
+                        </td>
+                    </tr>
+                </table>
             </td>
         </tr>
 
         <!-- === MAIN CARD: white card with verified badge & content === -->
         <tr>
-            <td bgcolor="#01a37e" align="center" style="padding: 0px 10px 0px 10px;">
-                <table border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 600px;">
+            <td bgcolor="#f4f4f4" align="center" style="padding: 0px 10px 30px 10px;">
+                <table border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 600px; background-color: #ffffff; border-radius: 16px; box-shadow: 0 2px 20px rgba(0, 0, 0, 0.08);">
                     <tr>
                         <td bgcolor="#ffffff" align="center" valign="top" style="padding: 30px 30px 20px 30px; border-radius: 16px 16px 0px 0px; color: #111111; font-family: 'Lato', Helvetica, Arial, sans-serif;">
-                              <table border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 600px;">
-                    <tr>
-                        <td align="center" valign="top" style="padding: 30px 10px 20px 10px;" class="logo-container">
-                            <!-- Logo placed in green banner, as requested: "logo show in green background i want on above verified" -->
-                            <img src="https://apis.staffoo.com.au/uploads/staffologo.png" alt="STAFFOO Logo" width="160" height="auto" style="display: block; border: 0; width: 160px; max-width: 100%; height: auto;">
-                        </td>
-                    </tr>
-                </table>
-                            <!-- Success Badge (VERIFIED) – now directly under the logo, clearly above content -->
+                            <!-- Success Badge (VERIFIED) -->
                             <div style="margin-bottom: 20px;">
                                 <div class="success-badge">
-                                    <span style="color: #ffffff; font-weight: 700; font-size: 14px;">VERIFIED</span>
+                                    <span style="color: #ffffff; font-weight: 700; font-size: 14px;">✓ VERIFIED</span>
                                 </div>
                             </div>
 
@@ -145,17 +151,10 @@
                             </p>
                         </td>
                     </tr>
-                </table>
-            </td>
-        </tr>
 
-        <!-- === CONTENT SECTION === -->
-        <tr>
-            <td bgcolor="#f4f4f4" align="center" style="padding: 0px 10px 30px 10px;">
-                <table border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 600px; border-radius: 0px 0px 16px 16px; overflow: hidden;">
+                    <!-- === CONTENT SECTION === -->
                     <tr>
-                        <td bgcolor="#ffffff" align="left" style="padding: 30px 30px 40px 30px;" class="responsive-padding">
-
+                        <td bgcolor="#ffffff" align="left" style="padding: 0px 30px 40px 30px;" class="responsive-padding">
                             <!-- Info Box: Document Verification -->
                             <div class="info-box">
                                 <table width="100%" border="0" cellspacing="0" cellpadding="0">
@@ -196,10 +195,9 @@
                                 </p>
                                 <p style="margin: 0; font-size: 13px; color: #6b7a86;">
                                     Contact our support team at
-                                    <a href="https://staffoo.com.au/contact-us" style="color: #01a37e; text-decoration: none;">support@staffoo.com.au</a>
+                                    <a href="mailto:support@staffoo.com.au" style="color: #01a37e; text-decoration: none;">support@staffoo.com.au</a>
                                 </p>
                             </div>
-
                         </td>
                     </tr>
                 </table>
@@ -213,7 +211,7 @@
                     <tr>
                         <td align="center" style="padding: 20px 20px 10px 20px;">
                             <p style="font-size: 12px; color: #8c9aa8; line-height: 1.5; margin: 0;">
-                                @ {{ date('Y') }} STAFFOO. All rights reserved.<br>
+                                © {{ date('Y') }} STAFFOO. All rights reserved.<br>
                                 Empowering smarter workforce management.
                             </p>
                             <p style="font-size: 11px; color: #9eacb8; margin-top: 12px;">

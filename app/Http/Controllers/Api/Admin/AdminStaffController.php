@@ -21,51 +21,324 @@ class AdminStaffController extends Controller
      /**
      * Display a listing of customers
      */
+    // public function index(Request $request)
+    // {
+    //     $query = User::where('user_type', 'staff')
+    //         ->with('staff', 'documents');
+
+    //     // Search functionality
+    //     if ($request->has('search')) {
+    //         $search = $request->search;
+    //         $query->where(function($q) use ($search) {
+    //             $q->where('name', 'like', "%{$search}%")
+    //               ->orWhere('email', 'like', "%{$search}%");
+    //         });
+    //     }
+
+    //     // Filter by status
+    //     if ($request->has('status')) {
+    //         if ($request->status === 'active') {
+    //             $query->where('is_active', 1);
+    //         } elseif ($request->status === 'inactive') {
+    //             $query->where('is_active', 0);
+    //         }
+    //     }
+
+    //     // Filter by city/state/country
+    //     if ($request->has('city')) {
+    //         $query->where('city', $request->city);
+    //     }
+        
+    //     if ($request->has('state')) {
+    //         $query->where('state', $request->state);
+    //     }
+        
+    //     if ($request->has('country')) {
+    //         $query->where('country', $request->country);
+    //     }
+
+    //     // Pagination
+    //     $staff = $query->orderBy('id', 'desc')->paginate($request->get('per_page', $request->limit));
+
+
+
+    //     return response()->json([
+    //         'success' => true,
+    //         'data' => $staff,
+    //         'message' => 'Staff retrieved successfully'
+    //     ]);
+    // }
     public function index(Request $request)
-    {
-        $query = User::where('user_type', 'staff')
-            ->with('staff', 'documents');
+{
+    $query = User::where('user_type', 'staff')
+        ->with('staff', 'documents');
 
-        // Search functionality
-        if ($request->has('search')) {
-            $search = $request->search;
-            $query->where(function($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('email', 'like', "%{$search}%");
-            });
+    // Search functionality
+    if ($request->has('search')) {
+        $search = $request->search;
+        $query->where(function($q) use ($search) {
+            $q->where('name', 'like', "%{$search}%")
+              ->orWhere('email', 'like', "%{$search}%");
+        });
+    }
+
+    // Filter by status
+    if ($request->has('status')) {
+        if ($request->status === 'active') {
+            $query->where('is_active', 1);
+        } elseif ($request->status === 'inactive') {
+            $query->where('is_active', 0);
         }
+    }
 
-        // Filter by status
-        if ($request->has('status')) {
-            if ($request->status === 'active') {
-                $query->where('is_active', 1);
-            } elseif ($request->status === 'inactive') {
-                $query->where('is_active', 0);
+    // Filter by city/state/country
+    if ($request->has('city')) {
+        $query->where('city', $request->city);
+    }
+    
+    if ($request->has('state')) {
+        $query->where('state', $request->state);
+    }
+    
+    if ($request->has('country')) {
+        $query->where('country', $request->country);
+    }
+
+    // Get all staff before pagination to check their status
+    $staffList = $query->get();
+    
+    // Calculate profile completion and update status for each staff member
+    foreach ($staffList as $staff) {
+        $this->calculateProfileCompletion($staff);
+    }
+
+    // Re-query with pagination after status updates
+    $staff = $query->orderBy('id', 'desc')->paginate($request->get('per_page', $request->limit));
+
+    return response()->json([
+        'success' => true,
+        'data' => $staff,
+        'message' => 'Staff retrieved successfully'
+    ]);
+}
+
+// Updated calculateProfileCompletion function
+private function calculateProfileCompletion(User $user): int
+{
+    $baseWeight = 50;
+    $documentWeight = 50;
+
+    $baseFields = ['name', 'email', 'user_type'];
+    
+    $staffFields = ['tfn_form', 'super_form', 'onboarding_form'];
+    
+    $allBaseFields = $baseFields;
+    if ($user->user_type === 'staff' && $user->user_id == 1) {
+        $allBaseFields = array_merge($baseFields, $staffFields);
+    }
+    
+    // Calculate base score
+    $filledBase = 0;
+    foreach ($allBaseFields as $field) {
+        if (in_array($field, ['tfn_form', 'super_form', 'onboarding_form'])) {
+            if ($user->staff && !empty($user->staff->{$field})) {
+                $filledBase++;
+            }
+        } else {
+            if (!empty($user->{$field})) {
+                $filledBase++;
             }
         }
-
-        // Filter by city/state/country
-        if ($request->has('city')) {
-            $query->where('city', $request->city);
-        }
-        
-        if ($request->has('state')) {
-            $query->where('state', $request->state);
-        }
-        
-        if ($request->has('country')) {
-            $query->where('country', $request->country);
-        }
-
-        // Pagination
-        $staff = $query->orderBy('id', 'desc')->paginate($request->get('per_page', $request->limit));
-
-        return response()->json([
-            'success' => true,
-            'data' => $staff,
-            'message' => 'Staff retrieved successfully'
-        ]);
     }
+    
+    $baseScore = ($filledBase / count($allBaseFields)) * $baseWeight;
+    $documents = $user->documents ?? collect();
+    $documentScore = 0;
+
+    if ($user->user_type === 'staff') {
+        if($user->user_id == 1) {
+            // Admin staff with full document requirements
+            $documentPoints = [
+                'passport'              => 70,
+                'citizen_ship'          => 70,
+                'medicare'              => 25,
+                'birth_certificate'     => 25,
+                'security_license'      => 40,
+                'driver_license_front'  => 70,
+                'driver_license_back'   => 0,
+                'working_with_children' => 0,
+                'first_aid'             => 0,
+                'cpr'                   => 0,
+                'visa'                  => 0,
+            ];
+
+            $totalDocPoints = 0;
+
+            foreach ($documents as $document) {
+                $docName = strtolower(str_replace(' ', '_', $document->document_name));
+
+                $hasFile = !empty($document->file);
+                $hasValidExpiry = false;
+
+                if (!empty($document->document_expiry)) {
+                    if ($document->document_expiry === 'current, pending renewal') {
+                        $hasValidExpiry = true;
+                    } else {
+                        $expiryDate = \Carbon\Carbon::parse($document->document_expiry);
+                        $hasValidExpiry = $expiryDate->isFuture();
+                    }
+                }
+
+                if ($hasFile && $hasValidExpiry) {
+                    $totalDocPoints += $documentPoints[$docName] ?? 0;
+                }
+            }
+
+            $documentScore = min(($totalDocPoints / 100) * $documentWeight, $documentWeight);
+            $totalScore = $baseScore + $documentScore;
+            $oldStatus = $user->is_active;
+            $newStatus = ($baseScore >= $baseWeight && $totalDocPoints >= 100) ? 1 : 0;
+
+            if ($user->is_active !== $newStatus) {
+                $user->is_active = $newStatus;
+                $user->save();
+
+                if ($newStatus === 1 && $oldStatus != 1) {
+                    $this->sendActivationNotification($user);
+                }
+            }
+        } else {
+            // Regular staff with security license and first aid
+            $securityLicenseDoc = $documents->firstWhere('document_type', 'security_license');
+            $firstAidDoc = $documents->firstWhere('document_type', 'first_aid');
+            
+            // Check if documents are valid (have future expiry dates)
+            $hasValidSecurityLicense = $this->isDocumentValid($securityLicenseDoc);
+            $hasValidFirstAid = $this->isDocumentValid($firstAidDoc);
+            
+            // Calculate document score based on all documents
+            $totalDocuments = $documents->count();
+            if ($totalDocuments > 0) {
+                $filledDocuments = $documents->filter(function ($doc) {
+                    return $this->isDocumentValid($doc);
+                })->count();
+                
+                $documentScore = ($filledDocuments / $totalDocuments) * $documentWeight;
+            }
+            
+            $oldStatus = $user->is_active;
+            // For regular staff: needs base score complete AND both security license AND first aid valid
+            $newStatus = ($baseScore >= $baseWeight && 
+                          $hasValidSecurityLicense && 
+                          $hasValidFirstAid) ? 1 : 0;
+
+            if ($user->is_active !== $newStatus) {
+                $user->is_active = $newStatus;
+                $user->save();
+                
+                if ($newStatus === 1 && $oldStatus != 1) {
+                    $this->sendActivationNotification($user);
+                }
+            }
+        }
+    } else {
+        // For contractors
+        if ($totalDocuments > 0) {
+            $filledDocuments = $documents->filter(function ($doc) {
+                return $this->isDocumentValid($doc);
+            })->count();
+
+            $documentScore = ($filledDocuments / $totalDocuments) * $documentWeight;
+        }
+
+        if ($user->user_type === 'contractor' && in_array(strtolower($user->state), ['victoria', 'queensland'])) {
+            $labourHireDoc = $documents->firstWhere('document_type', 'labour_hire');
+            if (!$labourHireDoc || empty($labourHireDoc->document_no)) {
+                $documentScore = $documentScore * 0.5;
+            }
+        }
+    }
+
+    // Final percentage
+    if (in_array($user->user_type, ['contractor', 'staff'])) {
+        $percentage = (int) round($baseScore + $documentScore);
+    } else {
+        $percentage = (int) round($baseScore + 50);
+    }
+
+    return min($percentage, 100);
+}
+
+// Helper function to check if a document is valid
+private function isDocumentValid($document): bool
+{
+    if (!$document) {
+        return false;
+    }
+
+    // Check if document number exists
+    if (empty($document->document_no)) {
+        return false;
+    }
+
+    // Check if file exists
+    if (empty($document->file)) {
+        return false;
+    }
+
+    // Check expiry date
+    if (!empty($document->document_expiry)) {
+        if ($document->document_expiry === 'current, pending renewal') {
+            return true;
+        }
+        $expiryDate = \Carbon\Carbon::parse($document->document_expiry);
+        return $expiryDate->isFuture();
+    }
+
+    return false;
+}
+
+// Helper function to send activation notification
+private function sendActivationNotification(User $user): void
+{
+    if (empty($user->notification_token)) {
+        return;
+    }
+
+    $notificationData = [
+        'notification_token' => $user->notification_token,
+        'message'            => "Congratulations! Your account is now active.",
+        'title'              => 'Account Activated',
+        'page'               => 'account-verified',
+    ];
+
+    if (function_exists('send_push_notification')) {
+        send_push_notification($notificationData);
+    }
+}
+
+// Optional: Create a separate method to manually activate a specific staff member
+public function activateStaff($id)
+{
+    $staff = User::where('user_type', 'staff')
+        ->with('staff', 'documents')
+        ->find($id);
+    
+    if (!$staff) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Staff member not found'
+        ], 404);
+    }
+
+    $this->calculateProfileCompletion($staff);
+    
+    return response()->json([
+        'success' => true,
+        'data' => $staff,
+        'message' => 'Staff activation status updated'
+    ]);
+}
 
     public function staffooStaff(Request $request)
     {

@@ -315,10 +315,10 @@ function AppContent() {
             const innerRoster = outerRoster?.roster ?? {};
             const jobId = innerRoster?.id;
 
-            if (!jobId) {
-                toast.error("Job already accepted on app.");
-                return;
-            }
+            // if (!jobId) {
+            //     toast.error("Job already accepted on app.");
+            //     return;
+            // }
 
             const startRaw = innerRoster?.start;
             const endRaw = innerRoster?.end;

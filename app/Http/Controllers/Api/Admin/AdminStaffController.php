@@ -241,22 +241,6 @@ private function calculateProfileCompletion(User $user): int
                 }
             }
         }
-    } else {
-        // For contractors
-        if ($totalDocuments > 0) {
-            $filledDocuments = $documents->filter(function ($doc) {
-                return $this->isDocumentValid($doc);
-            })->count();
-
-            $documentScore = ($filledDocuments / $totalDocuments) * $documentWeight;
-        }
-
-        if ($user->user_type === 'contractor' && in_array(strtolower($user->state), ['victoria', 'queensland'])) {
-            $labourHireDoc = $documents->firstWhere('document_type', 'labour_hire');
-            if (!$labourHireDoc || empty($labourHireDoc->document_no)) {
-                $documentScore = $documentScore * 0.5;
-            }
-        }
     }
 
     // Final percentage

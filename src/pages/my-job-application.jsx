@@ -233,12 +233,20 @@ export default function MyJobApplications() {
         } catch (e) { }
       }
 
+      // ── Document label mapping – only these two are used in your system ──
+      const DOC_LABELS = {
+        working_with_children: "Working With Children Check",
+        white_card: "White Card",
+      };
+
       let documents = [];
       if (shift.document_list) {
         try {
           const parsed = JSON.parse(shift.document_list);
           if (Array.isArray(parsed)) {
-            documents = parsed;
+            documents = parsed.map(
+              (code) => DOC_LABELS[code.toLowerCase()] || code.replace(/_/g, " ")
+            );
           }
         } catch (e) { }
       }
@@ -1059,6 +1067,32 @@ export default function MyJobApplications() {
                   </p>
                 </div>
               )}
+              {/* ---------- REQUIRED DOCUMENTS (pill badges) ---------- */}
+              {selectedApp.documents && selectedApp.documents.length > 0 && (
+                <div className="mt-4 p-4 bg-white rounded-4 shadow-sm border border-light mb-4">
+                  <h5 className="fw-bold d-flex align-items-center mb-3 pb-2 border-bottom" style={{ fontSize: '16px', color: '#1e293b' }}>
+                    <i className="fa-solid fa-file-shield me-2" style={{ color: '#0A7C6E' }}></i>
+                    Required Documents
+                  </h5>
+                  <div className="d-flex flex-wrap gap-2">
+                    {selectedApp.documents.map((doc, idx) => (
+                      <span
+                        key={idx}
+                        className="badge rounded-pill px-3 py-2"
+                        style={{
+                          backgroundColor: 'rgba(10, 124, 110, 0.1)',
+                          color: '#0A7C6E',
+                          border: '1px solid rgba(10, 124, 110, 0.3)',
+                          fontSize: '12px',
+                          fontWeight: 700,
+                        }}
+                      >
+                        {doc}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
               <div className="row g-4 mb-4">
                 <div className="col-md-6">
                   <div className="info-panel h-100">
@@ -1086,16 +1120,6 @@ export default function MyJobApplications() {
                     <InfoRow icon="fa-arrow-right-from-bracket" label="End Time" value={selectedApp.endDisplay} transform={false} />
                     <InfoRow icon="fa-hourglass-half" label="Total Hours" value={selectedApp.rawShift.hours} />
                     <InfoRow icon="fa-calendar-plus" label="Created At" value={selectedApp.createdAt} />
-                    <InfoRow
-                      icon="fa-file-shield"
-                      label="Required Documents"
-                      value={
-                        selectedApp.documents.length > 0
-                          ? selectedApp.documents.map((doc) => doc.replace(/_/g, " ")).join(", ")
-                          : "None"
-                      }
-                      transform={false}
-                    />
                   </div>
                 </div>
               </div>

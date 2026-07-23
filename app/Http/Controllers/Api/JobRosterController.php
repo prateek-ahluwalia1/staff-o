@@ -619,6 +619,7 @@ class JobRosterController extends Controller
     $guards = User::where('user_id', $id)
         ->with('staff', 'documents')
         ->where('user_type', 'staff')
+        ->orderBy('created_at', 'desc')
         ->get();
 
     return response()->json([

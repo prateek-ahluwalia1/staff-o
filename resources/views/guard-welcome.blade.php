@@ -73,7 +73,7 @@
             border-left: 4px solid #01a37e;
         }
         .btn-login {
-            background: linear-gradient(105deg, #01a37e 0%, #018a6b 100%);
+            background: linear-gradient(105deg, #f4f4f4 0%, #f4f4f4 100%);
             text-decoration: none !important;
             display: inline-block;
             font-weight: 600;

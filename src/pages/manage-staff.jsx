@@ -96,6 +96,13 @@ const Avatar = ({ src, name, size = 36 }) => {
   );
 };
 
+function capitalizeWords(str) {
+  return str
+    .split(' ')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+}
+
 const ManageStaff = () => {
   const { userdata } = useSelector((state) => state.auth);
   const loggedInContractorId = userdata?.id || userdata?.data?.id || null;
@@ -1216,7 +1223,7 @@ const ManageStaff = () => {
                   <option value="">Select Type</option>
                   {DOC_TYPES.map((type) => (
                     <option key={type.value} value={type.value}>
-                      {type.label}
+                      {capitalizeWords(type.label)}
                     </option>
                   ))}
                 </select>

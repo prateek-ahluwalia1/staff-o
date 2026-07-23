@@ -139,6 +139,7 @@ export default function DocumentTable({
           background-color: rgba(248, 250, 252, 0.6);
         }
         .doc-name {
+        text-transform: capitalize;
           font-weight: 600;
           color: #1e293b;
           display: flex;

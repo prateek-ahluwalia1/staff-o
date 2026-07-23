@@ -96,7 +96,15 @@ const normalizeToDisplay = (dateStr) => {
   }
   return dateStr;
 };
-// ===========================================================
+
+function capitalizeWords(str) {
+  return str
+    .split(' ')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+}
+
+
 
 export default function EditProfile() {
   const dispatch = useDispatch();
@@ -1388,7 +1396,8 @@ export default function EditProfile() {
             >
               <option value="">Select Type</option>
               {DOC_TYPES.map((doc) => (
-                <option key={doc.value} value={doc.value}>{doc.label}</option>
+                <option
+                  key={doc.value} value={doc.value}>{capitalizeWords(doc.label)}</option>
               ))}
             </select>
           </div>

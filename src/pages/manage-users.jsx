@@ -119,6 +119,13 @@ const Avatar = ({ src, name, size = 36 }) => {
   );
 };
 
+function capitalizeWords(str) {
+  return str
+    .split(' ')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+}
+
 const ManageUsers = () => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -1738,7 +1745,7 @@ const ManageUsers = () => {
                   <option value="">Select Type</option>
                   {DOC_TYPES.map((doc) => (
                     <option key={doc.value} value={doc.value}>
-                      {doc.label}
+                      {capitalizeWords(doc.label)}
                     </option>
                   ))}
                 </select>

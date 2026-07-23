@@ -116,6 +116,13 @@ const DOC_TYPES = [
     { value: "Working With Children Check", label: "Working With Children Check" },
 ];
 
+function capitalizeWords(str) {
+    return str
+        .split(' ')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' ');
+}
+
 const StaffooStaff = () => {
     const [page, setPage] = useState(1);
 
@@ -1229,7 +1236,7 @@ const StaffooStaff = () => {
                                 >
                                     <option value="">Select Type</option>
                                     {DOC_TYPES.map((type) => (
-                                        <option key={type.value} value={type.value}>{type.label}</option>
+                                        <option key={type.value} value={type.value}>{capitalizeWords(type.label)}</option>
                                     ))}
                                 </select>
                             </div>

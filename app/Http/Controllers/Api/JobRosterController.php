@@ -574,26 +574,220 @@ class JobRosterController extends Controller
             }
         }
 
-        public function getContractorStaff($id)
-        {
-            $guards = User::where('user_id', $id)->with('staff','documents')->where('user_type', 'staff')->get();
+        // public function getContractorStaff($id)
+        // {
+        //     $guards = User::where('user_id', $id)->with('staff','documents')->where('user_type', 'staff')->get();
 
-            if (!$guards) {
-                return response()->json([
-                    'code' => 200,
-                    'success' => false,
-                    'message' => 'Staff Not Found.',
-                    'guards' => null
-                ]);
+        //     if (!$guards) {
+        //         return response()->json([
+        //             'code' => 200,
+        //             'success' => false,
+        //             'message' => 'Staff Not Found.',
+        //             'guards' => null
+        //         ]);
+        //     }
+
+        //     return response()->json([
+        //         'code' => 200,
+        //         'success' => true,
+        //         'message' => 'Staff Found.',
+        //         'guards' => $guards
+        //     ]);
+        // }
+        public function getContractorStaff($id)
+{
+    $guards = User::where('user_id', $id)
+        ->with('staff', 'documents')
+        ->where('user_type', 'staff')
+        ->get();
+
+    if (!$guards || $guards->isEmpty()) {
+        return response()->json([
+            'code' => 200,
+            'success' => false,
+            'message' => 'Staff Not Found.',
+            'guards' => null
+        ]);
+    }
+
+    // Calculate profile completion and update status for each staff member
+    foreach ($guards as $staff) {
+        $this->calculateStaffProfileCompletion($staff);
+    }
+
+    // Refresh the collection with updated status
+    $guards = User::where('user_id', $id)
+        ->with('staff', 'documents')
+        ->where('user_type', 'staff')
+        ->get();
+
+    return response()->json([
+        'code' => 200,
+        'success' => true,
+        'message' => 'Staff Found.',
+        'guards' => $guards
+    ]);
+}
+
+private function calculateStaffProfileCompletion(User $user): int
+{
+    $baseWeight = 50;
+    $documentWeight = 50;
+
+    // Base fields for staff
+    $baseFields = ['name', 'email', 'user_type'];
+    $staffFields = ['tfn_form', 'super_form', 'onboarding_form'];
+    
+    $allBaseFields = $baseFields;
+    if ($user->user_id == 1) {
+        $allBaseFields = array_merge($baseFields, $staffFields);
+    }
+    
+    // Calculate base score
+    $filledBase = 0;
+    foreach ($allBaseFields as $field) {
+        if (in_array($field, ['tfn_form', 'super_form', 'onboarding_form'])) {
+            if ($user->staff && !empty($user->staff->{$field})) {
+                $filledBase++;
+            }
+        } else {
+            if (!empty($user->{$field})) {
+                $filledBase++;
+            }
+        }
+    }
+    
+    $baseScore = ($filledBase / count($allBaseFields)) * $baseWeight;
+    $documents = $user->documents ?? collect();
+    $documentScore = 0;
+    $totalDocuments = $documents->count();
+
+    if ($user->user_id == 1) {
+        // Admin staff with full document requirements
+        $documentPoints = [
+            'passport'              => 70,
+            'citizen_ship'          => 70,
+            'medicare'              => 25,
+            'birth_certificate'     => 25,
+            'security_license'      => 40,
+            'driver_license_front'  => 70,
+            'driver_license_back'   => 0,
+            'working_with_children' => 0,
+            'first_aid'             => 0,
+            'cpr'                   => 0,
+            'visa'                  => 0,
+        ];
+
+        $totalDocPoints = 0;
+
+        foreach ($documents as $document) {
+            $docName = strtolower(str_replace(' ', '_', $document->document_name));
+
+            $hasFile = !empty($document->file);
+            $hasValidExpiry = false;
+
+            if (!empty($document->document_expiry)) {
+                if ($document->document_expiry === 'current, pending renewal') {
+                    $hasValidExpiry = true;
+                } else {
+                    $expiryDate = \Carbon\Carbon::parse($document->document_expiry);
+                    $hasValidExpiry = $expiryDate->isFuture();
+                }
             }
 
-            return response()->json([
-                'code' => 200,
-                'success' => true,
-                'message' => 'Staff Found.',
-                'guards' => $guards
-            ]);
+            if ($hasFile && $hasValidExpiry) {
+                $totalDocPoints += $documentPoints[$docName] ?? 0;
+            }
         }
+
+        $documentScore = min(($totalDocPoints / 100) * $documentWeight, $documentWeight);
+        $newStatus = ($baseScore >= $baseWeight && $totalDocPoints >= 100) ? 1 : 0;
+        
+    } else {
+        // Regular staff with security license and first aid
+        $securityLicenseDoc = $documents->firstWhere('document_type', 'security_license');
+        $firstAidDoc = $documents->firstWhere('document_type', 'first_aid');
+        
+        $hasValidSecurityLicense = $this->isStaffDocumentValid($securityLicenseDoc);
+        $hasValidFirstAid = $this->isStaffDocumentValid($firstAidDoc);
+        
+        // Calculate document score
+        if ($totalDocuments > 0) {
+            $filledDocuments = $documents->filter(function ($doc) {
+                return $this->isStaffDocumentValid($doc);
+            })->count();
+            
+            $documentScore = ($filledDocuments / $totalDocuments) * $documentWeight;
+        }
+        
+        $newStatus = ($baseScore >= $baseWeight && 
+                      $hasValidSecurityLicense && 
+                      $hasValidFirstAid) ? 1 : 0;
+    }
+
+    $this->updateStaffStatus($user, $newStatus);
+
+    // Final percentage
+    $percentage = (int) round($baseScore + $documentScore);
+    return min($percentage, 100);
+}
+
+private function isStaffDocumentValid($document): bool
+{
+    if (!$document) {
+        return false;
+    }
+
+    if (empty($document->document_no)) {
+        return false;
+    }
+
+    if (empty($document->file)) {
+        return false;
+    }
+
+    if (!empty($document->document_expiry)) {
+        if ($document->document_expiry === 'current, pending renewal') {
+            return true;
+        }
+        $expiryDate = \Carbon\Carbon::parse($document->document_expiry);
+        return $expiryDate->isFuture();
+    }
+
+    return true;
+}
+
+private function updateStaffStatus(User $user, int $newStatus): void
+{
+    $oldStatus = $user->is_active;
+    
+    if ($user->is_active !== $newStatus) {
+        $user->is_active = $newStatus;
+        $user->save();
+
+        if ($newStatus === 1 && $oldStatus != 1) {
+            $this->sendStaffActivationNotification($user);
+        }
+    }
+}
+
+private function sendStaffActivationNotification(User $user): void
+{
+    if (empty($user->notification_token)) {
+        return;
+    }
+
+    $notificationData = [
+        'notification_token' => $user->notification_token,
+        'message'            => "Congratulations! Your staff account is now active.",
+        'title'              => 'Staff Account Activated',
+        'page'               => 'account-verified',
+    ];
+
+    if (function_exists('send_push_notification')) {
+        send_push_notification($notificationData);
+    }
+}
 
         public function getContractorActiveStaff($id)
         {

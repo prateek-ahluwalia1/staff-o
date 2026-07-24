@@ -379,7 +379,7 @@ function Header() {
       border-radius: 5px;
       text-decoration: none;
       font-weight: bold;
-      box-shadow: 0 4px 12px rgba(10,124,110,0.3);
+      box-shadow: 0 4px 12px rgba(10,124,110,0.4);
       transition: all 0.3s ease;
       display: inline-block;
     }

@@ -636,7 +636,7 @@ const CoverJobs = () => {
                                     ) : (
                                         <i className="fa-solid fa-check me-2"></i>
                                     )}
-                                    {selectedStaffId ? 'Confirm Assign' : 'Confirm Accept'}
+                                    {selectedStaffId ? 'Assign' : 'Accept'}
                                 </button>
                                 <button onClick={closeModal} className="btn btn-outline-secondary rounded-pill px-4 fw-semibold shadow-sm">
                                     Close

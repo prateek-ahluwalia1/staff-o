@@ -196,7 +196,6 @@ export default function SignInOutDetails({ rosterId, guardId, shift, site }) {
     >
       {/* ── Sign In Column ── */}
       <div>
-        <Field label="Sign In Date" value={formatDateToDDMMYYYY(signIn.date)} />
         <Field label="Sign Out Date" value={formatDateToDDMMYYYY(signOut.date)} />
         <Field label="Sign In Notes" value={d.signin_notes} />
         <ImageBox
@@ -221,7 +220,6 @@ export default function SignInOutDetails({ rosterId, guardId, shift, site }) {
       {/* ── Sign Out Column ── */}
       <div>
         <Field label="Sign In Date" value={formatDateToDDMMYYYY(signIn.date)} />
-        <Field label="Sign Out Date" value={formatDateToDDMMYYYY(signOut.date)} />
         <Field label="Sign Out Notes" value={d.signout_notes} />
         <ImageBox
           src={d.signout_selfie ? `${SELFIE_BASE}${d.signout_selfie}` : null}

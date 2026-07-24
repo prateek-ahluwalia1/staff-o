@@ -510,7 +510,7 @@ export default function PaymentHistory() {
                       customerOptions.find((o) => o.value === selectedCustomerId) || null
                     }
                     onChange={handleCustomerChange}
-                    placeholder="Choose a customer"
+                    placeholder="Choose a client"
                     isClearable
                     styles={customSelectStyles}
                     className="react-select-container"

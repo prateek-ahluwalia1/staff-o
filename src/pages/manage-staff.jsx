@@ -1432,7 +1432,7 @@ const ManageStaff = () => {
                   disabled={uploadLoading || submitLoading || !docForm.document_expiry || !docForm.file_url}
                   style={{ minHeight: "44px" }}
                 >
-                  {submitLoading ? "Saving..." : "Upload Document"}
+                  {submitLoading ? "Saving..." : "Upload"}
                 </button>
               </div>
             </form>

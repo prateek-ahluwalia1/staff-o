@@ -9,13 +9,12 @@ import { toast } from "react-toastify";
 import { apiURL } from "../utils/exports";
 import { getProfileImageUrlFromUserdata } from "../utils/profileImage"
 
-// ========== DATE HELPERS ==========
 const isoToDisplay = (val) => {
     if (!val) return "";
     if (/^\d{2}\/\d{2}\/\d{4}$/.test(val)) return val;
     const match = val.match(/^(\d{4})-(\d{2})-(\d{2})/);
     if (match) {
-        const [y, m, d] = match;
+        const [, y, m, d] = match;
         return `${d}/${m}/${y}`;
     }
     return val;
@@ -273,9 +272,6 @@ const StaffooStaff = () => {
         setIsModalOpen(false);
         setEditingUser(null);
     };
-
-    // ... (rest of the existing methods: openDocumentModal, closeDocumentModal, handleDocNumberChange, etc.)
-    // They are all unchanged and omitted for brevity in the answer – they are the same as in the original file.
 
     const openDocumentModal = (doc) => {
         setSelectedDoc(doc);
@@ -1471,7 +1467,7 @@ const StaffooStaff = () => {
                                     disabled={uploadLoading || submitLoading || !docForm.document_expiry || !docForm.file_url}
                                     style={{ minHeight: "44px" }}
                                 >
-                                    {submitLoading ? "Saving..." : "Upload Document"}
+                                    {submitLoading ? "Saving..." : "Upload"}
                                 </button>
                             </div>
                         </form>

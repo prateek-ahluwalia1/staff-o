@@ -4225,7 +4225,7 @@ private function sendStaffActivationNotification(User $user): void
             if (!$contractor || !$contractor->contractor) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Contractor data not found.',
+                    'message' => 'Resource partner data not found.',
                     'data' => null,
                 ], 200);
             }

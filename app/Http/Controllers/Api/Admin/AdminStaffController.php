@@ -400,6 +400,7 @@ public function activateStaff($id)
             'state' => $validated['state'] ?? null,
             'country' => $validated['country'] ?? null,
             'coordinates' => $validated['coordinates'] ?? null,
+            'phone' => $validated['phone'] ?? null,
             'is_active' => 0,
         ]);
 
@@ -657,6 +658,9 @@ public function activateStaff($id)
          $userData['country'] = $request->country;
         }
         
+        if ($request->has('phone')) {
+         $userData['phone'] = $request->phone;
+        }
         
         if ($request->has('coordinates')) {
          $userData['coordinates'] = $request->coordinates;

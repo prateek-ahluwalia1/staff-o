@@ -365,8 +365,9 @@ export default function RosterPage() {
         res = await saveUserAssignment(`api/update-roster-time`, payload, { method: "POST" });
       } else if (modal.type === "admin_assign" && modal.shift) {
         if (!selectedUserId) { toast.error("Select a user."); return; }
-        const payload = { roster_id: modal.shift.id, admin_id: userId };
-        res = await saveUserAssignment(`api/asap-jobs/accept/${selectedUserId}`, payload, { method: "POST" });
+        const payload = userRole === "admin" ? { roster_id: modal.shift.id, admin_id: userId } : { roster_id: modal.shift.id, guard_id: selectedUserId }
+        const endpoint = userRole === "admin" ? `api/asap-jobs/accept/${selectedUserId}` : `api/contractor/jobs/accept/${userId}`
+        res = await saveUserAssignment(endpoint, payload, { method: "POST" });
       }
       if (res === undefined) return;
       fetchCustomerSites();

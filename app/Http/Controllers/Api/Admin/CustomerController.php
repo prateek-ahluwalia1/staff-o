@@ -103,7 +103,7 @@ class CustomerController extends Controller
             'email' => $data['email'],
             'password' => Hash::make($data['password']),
             'user_type' => 'customer',
-            'is_active' => $data['is_active'] ?? 0, // Admin can set active status
+            'is_active' => 1, // Admin can set active status
             'address' => $data['address'] ?? null,
             'city' => $data['city'] ?? null,
             'state' => $data['state'] ?? null,
@@ -214,7 +214,7 @@ class CustomerController extends Controller
             'state' => $data['state'] ?? $user->state,
             'country' => $data['country'] ?? $user->country,
             'coordinates' => $data['coordinates'] ?? $user->coordinates,
-            'is_active' => $data['is_active'] ?? $user->is_active,
+            'is_active' => 1,
             'phone' => $data['phone'] ?? $user->phone,
         ];
 

@@ -1892,6 +1892,14 @@ const ManageUsers = () => {
                         <div className="text-center">
                           <i className="fa-solid fa-file-pdf fa-3x text-muted mb-3"></i>
                           <p className="fw-bold text-secondary mb-0">Document Selected</p>
+                          <a
+                            style={{ color: "#0A7C6E", fontWeight: "bold" }}
+                            href={`${apiURL}staff_documents/${docForm.file_url}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            View Document
+                          </a>
                         </div>
                       )}
                       {uploadLoading && (

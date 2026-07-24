@@ -115,7 +115,7 @@ export default function LogisticWWA() {
                     </h2>
 
                     <p style={styles.bodyText}>
-                        Unattended stock creates risk, and warehouses cannot afford it. Staffoo connects warehouse owners with security guards who understand the loading docks, how things operate when no one's around, and how things go missing overnight. Everyone on our app can provide proof of a security licence, and you can verify it at the same time. Decide how many hours you want them to work and provide your site with the security instructions, and you'll receive matches within hours. Incidents are recorded on site, which means nothing gets missed. Staffoo protects your warehouse from the first shipment to the last.
+                        Unattended stock creates risk, and warehouses cannot afford it. Staffoo connects warehouse owners with security guards who understand the loading docks, how things operate when no one's around, and how things go missing overnight. Everyone on our app can provide proof of a security license, and you can verify it at the same time. Decide how many hours you want them to work and provide your site with the security instructions, and you'll receive matches within hours. Incidents are recorded on site, which means nothing gets missed. Staffoo protects your warehouse from the first shipment to the last.
                     </p>
 
                     <ul style={styles.listContainer}>

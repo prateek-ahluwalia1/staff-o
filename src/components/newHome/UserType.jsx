@@ -74,10 +74,10 @@ function UserType() {
             <h3>Find Security Jobs That Match Your Skills</h3>
             <p
               style={{ textTransform: "none" }}
-            >Create your verified profile, upload all licences and compliance documents, and get matched to security shifts near you.</p>
+            >Create your verified profile, upload all licenses and compliance documents, and get matched to security shifts near you.</p>
             <ul className="up-perks"
               style={{ textTransform: "none" }}>
-              <li><span className="up-check up-check-staff">✓</span> Upload Security Master Licence and docs</li>
+              <li><span className="up-check up-check-staff">✓</span> Upload Security Master License and docs</li>
               <li><span className="up-check up-check-staff">✓</span> Browse and accept shifts near you</li>
               <li><span className="up-check up-check-staff">✓</span> Track earnings and assignment history</li>
               <li><span className="up-check up-check-staff">✓</span> Build reputation with verified reviews</li>

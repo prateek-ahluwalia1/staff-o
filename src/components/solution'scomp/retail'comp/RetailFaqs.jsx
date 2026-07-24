@@ -25,7 +25,7 @@ export default function RetailFaqs() {
         {
             id: 2,
             question: "Are your security guards licensed to work in my state?",
-            answer: "Our guards upload their state licence to their profiles. You can check the licence to confirm if it suits your location."
+            answer: "Our guards upload their state license to their profiles. You can check the license to confirm if it suits your location."
         },
         {
             id: 3,

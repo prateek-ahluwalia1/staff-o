@@ -17,7 +17,7 @@ export default function WhyChooseStaffoo() {
         {
             id: 1,
             title: "Compliant Profiles",
-            description: "Every security worker uploads their licence, ABN, and certifications on the site."
+            description: "Every security worker uploads their license, ABN, and certifications on the site."
         },
         {
             id: 2,

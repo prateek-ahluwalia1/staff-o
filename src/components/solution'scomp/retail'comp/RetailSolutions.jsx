@@ -25,7 +25,7 @@ export default function RelatedSolutions() {
         {
             id: 1,
             title: "Event Security Staffing",
-            description: "Hire guards who have their licences and want to work at festivals and public events."
+            description: "Hire guards who have their licenses and want to work at festivals and public events."
         },
         {
             id: 2,
@@ -50,7 +50,7 @@ export default function RelatedSolutions() {
         {
             id: 6,
             title: "Hospitality Security Staffing",
-            description: "Find licenced guards for hotels, bars, and entertainment venues."
+            description: "Find licensed guards for hotels, bars, and entertainment venues."
         }
     ];
 

@@ -22,7 +22,7 @@ export default function HowItWorks() {
         {
             number: 2,
             title: "Review Staff",
-            description: "Browse through profiles, check updated licences and certifications"
+            description: "Browse through profiles, check updated licenses and certifications"
         },
         {
             number: 3,

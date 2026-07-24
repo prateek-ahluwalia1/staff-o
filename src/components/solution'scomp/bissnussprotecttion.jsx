@@ -119,17 +119,17 @@ export default function BusinessProtection() {
                     </p>
 
                     <p style={styles.bodyText}>
-                        Every profile on Staffoo includes verified licences and certifications. We save you time and reduce risk. You can find the perfect fit, as many organisers fill shifts within hours for a safe and compliant event.
+                        Every profile on Staffoo includes verified licencses and certifications. We save you time and reduce risk. You can find the perfect fit, as many organisers fill shifts within hours for a safe and compliant event.
                     </p>
 
                     <ul style={styles.listContainer}>
                         <li style={styles.listItem}>
                             <span style={styles.bulletPoint}>•</span>
-                            Find licenced event security staff fast.
+                            Find licensed event security staff fast.
                         </li>
                         <li style={styles.listItem}>
                             <span style={styles.bulletPoint}>•</span>
-                            All profiles have updated and verified licences and certifications
+                            All profiles have updated and verified licenses and certifications
                         </li>
                         <li style={styles.listItem}>
                             <span style={styles.bulletPoint}>•</span>

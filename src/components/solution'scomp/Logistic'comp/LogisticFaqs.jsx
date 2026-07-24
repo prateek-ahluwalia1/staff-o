@@ -35,7 +35,7 @@ export default function LogisticFaqs() {
         {
             id: 4,
             question: "How to know a warehouse guard is licensed?",
-            answer: "Each guard profile includes an uploaded and verifiable state security licence, so you can verify who is entering your site."
+            answer: "Each guard profile includes an uploaded and verifiable state security license, so you can verify who is entering your site."
         },
         {
             id: 5,

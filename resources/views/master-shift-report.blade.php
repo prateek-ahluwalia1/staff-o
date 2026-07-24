@@ -17,7 +17,7 @@
   .page-header {
     display: table;
     width: 100%;
-    background: #1b2a4a;
+    background: #f0f4fb;
     padding: 14px 20px;
     margin-bottom: 0;
   }
@@ -38,7 +38,7 @@
   .page-header .title-cell .report-label {
     font-size: 18px;
     font-weight: 700;
-    color: #ffffff;
+    color: #0a7c6e;
     letter-spacing: 2px;
     text-transform: uppercase;
   }
@@ -60,7 +60,7 @@
   .shift-summary {
     background: #f0f4fb;
     border: 1px solid #c8d4e8;
-    border-left: 4px solid #1b2a4a;
+    border-left: 4px solid #0a7c6e;
     border-radius: 0 4px 4px 0;
     padding: 12px 16px;
     margin-bottom: 20px;
@@ -68,14 +68,14 @@
   .shift-summary .summary-title {
     font-size: 11px;
     font-weight: 700;
-    color: #1b2a4a;
+    color: #0a7c6e;
     text-transform: uppercase;
     letter-spacing: 1px;
     margin-bottom: 8px;
   }
   .shift-summary table { width: 100%; border-collapse: collapse; }
   .shift-summary td { font-size: 12px; padding: 3px 0; color: #444; }
-  .shift-summary td .lbl { font-weight: 700; color: #1b2a4a; }
+  .shift-summary td .lbl { font-weight: 700; color: #0a7c6e; }
   .badge {
     display: inline-block;
     background: #e8a020;

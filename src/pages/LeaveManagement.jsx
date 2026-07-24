@@ -1059,11 +1059,11 @@ const LeaveManagement = () => {
                     onClick={handleCloseModal}
                     disabled={submitLoading}
                   >
-                    Cancel
+                    Close
                   </button>
                   <button
                     type="submit"
-                    className="btn btn-primary-teal"
+                    className="btn btn-primary-teal text-white"
                     disabled={submitLoading}
                   >
                     {submitLoading ? "Submitting..." : "Submit Request"}

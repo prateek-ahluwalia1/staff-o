@@ -1684,14 +1684,6 @@ const ManageUsers = () => {
                 />
               ) : activeModalTab === "documents" ? (
                 <div>
-                  <div className="d-flex justify-content-between align-items-center mb-4">
-                    <div>
-                      <h6 className="fw-bold mb-1">Documents</h6>
-                      <p className="text-muted small mb-0" style={{ textTransform: "none" }}>
-                        Upload and manage documents.
-                      </p>
-                    </div>
-                  </div>
                   <DocumentTable
                     documents={documents}
                     userType={activeTab}
@@ -1709,7 +1701,7 @@ const ManageUsers = () => {
                 onClick={closeModal}
                 style={{ minHeight: "44px" }}
               >
-                Cancel
+                Close
               </button>
             </div>
           </div>
@@ -1932,7 +1924,7 @@ const ManageUsers = () => {
                   disabled={uploadLoading || submitLoading}
                   style={{ minHeight: "44px" }}
                 >
-                  Cancel
+                  Close
                 </button>
                 <button
                   type="submit"
@@ -1993,7 +1985,7 @@ const ManageUsers = () => {
                       disabled={phoneLoading}
                       style={{ minHeight: "44px" }}
                     >
-                      Cancel
+                      Close
                     </button>
                     <button
                       type="submit"
@@ -2043,7 +2035,7 @@ const ManageUsers = () => {
                       disabled={phoneLoading}
                       style={{ minHeight: "44px" }}
                     >
-                      Cancel
+                      Close
                     </button>
                     <button
                       type="submit"
@@ -2090,7 +2082,7 @@ const ManageUsers = () => {
                 disabled={deleteLoading}
                 style={{ minHeight: "44px" }}
               >
-                Cancel
+                Close
               </button>
               <button
                 type="button"

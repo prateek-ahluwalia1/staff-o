@@ -641,7 +641,7 @@ const RatesList = ({ forcedType } = {}) => {
                 className="btn btn-light px-5 rounded-pill fw-bold border"
                 onClick={closeEditModal}
               >
-                Cancel
+                Close
               </button>
               <button
                 type="submit"

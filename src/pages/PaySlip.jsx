@@ -979,7 +979,7 @@ const PaySlip = () => {
                 className="btn btn-light px-5 rounded-pill fw-bold"
                 onClick={() => setIsUploadModalOpen(false)}
               >
-                Cancel
+                Close
               </button>
               <button
                 type="button"

@@ -201,7 +201,9 @@ const StaffooStaff = () => {
     const passportDoc = useMemo(() => {
         if (!staffDocuments) return null;
         return staffDocuments.find(
-            (doc) => doc.document_type === "passport" && doc.document_no
+            (doc) =>
+                doc.document_type?.toLowerCase() === "passport" &&
+                doc.document_no
         ) || null;
     }, [staffDocuments]);
 
@@ -1201,7 +1203,7 @@ const StaffooStaff = () => {
                                 onClick={closeModal}
                                 style={{ minHeight: "44px" }}
                             >
-                                Cancel
+                                Close
                             </button>
                         </div>
                     </div>
@@ -1453,7 +1455,7 @@ const StaffooStaff = () => {
                                     disabled={uploadLoading || submitLoading}
                                     style={{ minHeight: "44px" }}
                                 >
-                                    Cancel
+                                    Close
                                 </button>
                                 <button
                                     type="submit"
@@ -1495,7 +1497,7 @@ const StaffooStaff = () => {
                                 disabled={deleteLoading}
                                 style={{ minHeight: "44px" }}
                             >
-                                Cancel
+                                Close
                             </button>
                             <button
                                 type="button"

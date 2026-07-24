@@ -1186,7 +1186,7 @@ const ManageStaff = () => {
                 onClick={closeModal}
                 style={{ minHeight: "44px" }}
               >
-                Cancel
+                Close
               </button>
             </div>
           </div>
@@ -1416,7 +1416,7 @@ const ManageStaff = () => {
                   disabled={uploadLoading || submitLoading}
                   style={{ minHeight: "44px" }}
                 >
-                  Cancel
+                  Close
                 </button>
                 <button
                   type="submit"
@@ -1458,7 +1458,7 @@ const ManageStaff = () => {
                 disabled={deleteLoading}
                 style={{ minHeight: "44px" }}
               >
-                Cancel
+                Close
               </button>
               <button
                 type="button"

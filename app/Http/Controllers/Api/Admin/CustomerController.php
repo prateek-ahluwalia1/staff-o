@@ -109,6 +109,7 @@ class CustomerController extends Controller
             'state' => $data['state'] ?? null,
             'country' => $data['country'] ?? null,
             'coordinates' => $data['coordinates'] ?? null,
+            'phone' => $data['phone'] ?? null,
             'is_email_approved' => 1,
         ]);
 
@@ -214,7 +215,7 @@ class CustomerController extends Controller
             'country' => $data['country'] ?? $user->country,
             'coordinates' => $data['coordinates'] ?? $user->coordinates,
             'is_active' => $data['is_active'] ?? $user->is_active,
-            'phone' => $data['phone'] ?? $user->customer->phone,
+            'phone' => $data['phone'] ?? $user->phone,
         ];
 
         if (isset($data['password'])) {

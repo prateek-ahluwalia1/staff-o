@@ -983,8 +983,10 @@ private function sendStaffActivationNotification(User $user): void
                 ->where('job_rosters.id', '=', $request->input('roster_id'))
                 ->where(function ($query) use ($a, $b) {
                     $query->whereNull('job_rosters.assigned_to')
-                        ->orWhere('job_rosters.assigned_to', '=', $b)
-                        ->orWhereNull('job_rosters.accepted_by')
+                        ->orWhere('job_rosters.assigned_to', '=', $b);
+                })
+                ->where(function ($query) use ($b) {
+                    $query->whereNull('job_rosters.accepted_by')
                         ->orWhere('job_rosters.accepted_by', '=', $b);
                 })
                 ->select('job_rosters.*', 'sites.id as jobId', 'sites.address', 'sites.coordinates')

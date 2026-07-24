@@ -977,7 +977,7 @@ private function sendStaffActivationNotification(User $user): void
         {
             $a = null;
             $b = '';
-            $roster = DB::table('job_rosters')
+           return $roster = DB::table('job_rosters')
                 ->join('sites', 'sites.id', '=', 'job_rosters.site_id')
                 ->where('job_rosters.asap', '=', '1')
                 ->where('job_rosters.id', '=', $request->input('roster_id'))

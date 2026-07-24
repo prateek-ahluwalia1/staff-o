@@ -19,7 +19,7 @@ function WhyStaffoo() {
               <h4>Verified Staff Only</h4>
               <p
                 style={{ textTransform: "none" }}
-              >Every security professional is vetted — licenses, qualifications, police checks all confirmed before they step on site.</p>
+              >Every security professional is vetted — licences, qualifications, police checks all confirmed before they step on site.</p>
             </div>
           </div>
           <div className="wf reveal reveal-d1">

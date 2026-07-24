@@ -45,7 +45,7 @@ export default function FAQ() {
             id: 2,
             question: "Are all security guards on Staffoo licensed in Australia?",
             answer:
-                "Yes, every security guard on Staffoo uploads their current verified license, First Aid certification, and ABN before applying.",
+                "Yes, every security guard on Staffoo uploads their current verified licence, First Aid certification, and ABN before applying.",
         },
         {
             id: 3,
@@ -58,7 +58,7 @@ export default function FAQ() {
             question:
                 "How does Staffoo help me comply with event security compliance requirements?",
             answer:
-                "Staffoo helps you comply by providing security staff who have uploaded verified license documents. We also offer GPS tracking and incident logging to support on-site compliance.",
+                "Staffoo helps you comply by providing security staff who have uploaded verified licence documents. We also offer GPS tracking and incident logging to support on-site compliance.",
         },
         {
             id: 5,

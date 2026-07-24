@@ -17,7 +17,7 @@ export default function WhyChooseStaffooRetail() {
         {
             id: 1,
             title: "Viewable Licensed Profiles",
-            description: "Guards on Staffoo are required to upload their security license to their profiles. It can be reviewed before hiring."
+            description: "Guards on Staffoo are required to upload their security licence to their profiles. It can be reviewed before hiring."
         },
         {
             id: 2,

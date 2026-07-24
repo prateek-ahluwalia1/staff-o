@@ -31,7 +31,7 @@ function HowItWorks() {
           <h3>Complete Your Profile</h3>
           <p
             style={{ textTransform: "none" }}
-          >Upload your Security Master License, First Aid, CPR, police check, and all compliance documents for employer verification.</p>
+          >Upload your Security Master Licence, First Aid, CPR, police check, and all compliance documents for employer verification.</p>
         </div>
         <div className="step-arrow">→</div>
         <div className="step reveal reveal-d2">

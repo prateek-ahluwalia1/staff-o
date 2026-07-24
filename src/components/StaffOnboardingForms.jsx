@@ -940,8 +940,8 @@ const EmployeeOnboardingForm = ({
                     <div className="border rounded-3 overflow-hidden mb-4">
                         {[
                             { label: "Birth Certificate, Passport, or Citizenship Certificate", points: 70, name: "chk_primary" },
-                            { label: "Driver License or Government Issued Photo ID", points: 40, name: "chk_driver" },
-                            { label: "Security License (Mandatory)", points: 40, name: "chk_security" },
+                            { label: "Driver Licence or Government Issued Photo ID", points: 40, name: "chk_driver" },
+                            { label: "Security Licence (Mandatory)", points: 40, name: "chk_security" },
                             { label: "Medicare Card, Utility Bill, or Bank Statement", points: 25, name: "chk_medicare" },
                         ].map((item, idx, arr) => (
                             <div
@@ -1015,7 +1015,7 @@ const EmployeeOnboardingForm = ({
                     <div className="row g-4 mb-4">
                         <div className="col-md-6">
                             <label className={labelCls}>
-                                Security License No. <span className="text-danger">*</span>
+                                Security Licence No. <span className="text-danger">*</span>
                             </label>
                             <div className="input-group">
                                 <input type="text" className={inputCls + " rounded-start"} name="o_seclic" placeholder="VIC 123456"
@@ -1025,7 +1025,7 @@ const EmployeeOnboardingForm = ({
                                     className="btn btn-outline-primary"
                                     onClick={onVerifySecurityLicense}
                                     disabled={verifyingSecurityLicense || !securityLicenceModified}
-                                    title={!securityLicenceModified ? "Change the license number to verify" : "Verify license"}
+                                    title={!securityLicenceModified ? "Change the licence number to verify" : "Verify licence"}
                                 >
                                     {verifyingSecurityLicense ? (
                                         <><span className="spinner-border spinner-border-sm me-1" /> Verifying...</>
@@ -1034,12 +1034,12 @@ const EmployeeOnboardingForm = ({
                             </div>
                             <div className="mt-3">
                                 <label className={labelCls}>
-                                    Upload Security License Document <span className="text-danger">*</span>
+                                    Upload Security Licence Document <span className="text-danger">*</span>
                                 </label>
                                 {!values.o_seclicexp ? (
                                     <div className="text-muted small bg-light p-3 rounded-3 border">
                                         <i className="fa-solid fa-circle-info me-1"></i>
-                                        Please verify the security license first to enable document upload.
+                                        Please verify the security licence first to enable document upload.
                                     </div>
                                 ) : (
                                     <DocumentUploadField
@@ -1053,7 +1053,7 @@ const EmployeeOnboardingForm = ({
                         </div>
                         <div className="col-md-6">
                             <label className={labelCls}>
-                                Security License Expiry <span className="text-danger">*</span>
+                                Security Licence Expiry <span className="text-danger">*</span>
                             </label>
                             <DateInput name="o_seclicexp" value={values.o_seclicexp} onChange={onChange}
                                 required disabled={true} />
@@ -1339,7 +1339,7 @@ const StaffOnboardingForms = ({ submit, userId, onProfileUpdate }) => {
 
     const handleVerifySecurityLicense = async () => {
         if (!userId || !onboardForm.o_seclic) {
-            toast.error("Please enter a Security License number first.");
+            toast.error("Please enter a Security Licence number first.");
             return;
         }
         if (!staffState) {

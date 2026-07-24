@@ -437,7 +437,7 @@ export default function RetailSecurity() {
                         </h2>
 
                         <p style={styles.bodyText}>
-                            Retail theft and losses are increasing every day in Australia. Shops, shopping malls, and other retail outlets need professional security staff they can trust. Staffoo connects security guards with retail employers and resource partners to meet security needs. Guards on Staffoo upload their licenses and certifications to their profiles.
+                            Retail theft and losses are increasing every day in Australia. Shops, shopping malls, and other retail outlets need professional security staff they can trust. Staffoo connects security guards with retail employers and resource partners to meet security needs. Guards on Staffoo upload their licences and certifications to their profiles.
                         </p>
 
                         <p style={styles.bodyText}>
@@ -451,7 +451,7 @@ export default function RetailSecurity() {
                             </li>
                             <li style={styles.listItem}>
                                 <span style={styles.bulletPoint}>•</span>
-                                Find guards with verified licenses for reliable protection
+                                Find guards with verified licences for reliable protection
                             </li>
                             <li style={styles.listItem}>
                                 <span style={styles.bulletPoint}>•</span>

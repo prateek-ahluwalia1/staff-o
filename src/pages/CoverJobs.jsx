@@ -565,33 +565,40 @@ const CoverJobs = () => {
                                     </div>
                                 </div>
                             </div>
+                            {/* Description & Required Documents – side by side when both exist */}
+                            {(selectedJob.description || (selectedJob.documents && selectedJob.documents.length > 0)) && (
+                                <div className="row g-4 mt-1">
+                                    {selectedJob.description && (
+                                        <div className={selectedJob.documents && selectedJob.documents.length > 0 ? "col-md-6" : "col-12"}>
+                                            <div className="p-4 bg-white rounded-4 shadow-sm border border-light h-100">
+                                                <h5 className="fw-bold d-flex align-items-center mb-3 pb-2 border-bottom" style={{ fontSize: '16px', color: '#1e293b' }}>
+                                                    <i className="fa-solid fa-align-left me-2" style={{ color: '#0A7C6E' }}></i>
+                                                    Description
+                                                </h5>
+                                                <p className="mb-0" style={{ fontSize: '14px', color: '#334155', textTransform: 'none', lineHeight: '1.6' }}>
+                                                    {selectedJob.description}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    )}
 
-                            {/* Description – separate section */}
-                            {selectedJob.description && (
-                                <div className="mt-4 p-4 bg-white rounded-4 shadow-sm border border-light">
-                                    <h5 className="fw-bold d-flex align-items-center mb-3 pb-2 border-bottom" style={{ fontSize: '16px', color: '#1e293b' }}>
-                                        <i className="fa-solid fa-align-left me-2" style={{ color: '#0A7C6E' }}></i>
-                                        Description
-                                    </h5>
-                                    <p className="mb-0" style={{ fontSize: '14px', color: '#334155', textTransform: 'none', lineHeight: '1.6' }}>
-                                        {selectedJob.description}
-                                    </p>
-                                </div>
-                            )}
-
-                            {selectedJob.documents && selectedJob.documents.length > 0 && (
-                                <div className="mt-4 p-4 bg-white rounded-4 shadow-sm border border-light">
-                                    <h5 className="fw-bold d-flex align-items-center mb-3 pb-2 border-bottom" style={{ fontSize: '16px', color: '#1e293b' }}>
-                                        <i className="fa-solid fa-file-lines me-2" style={{ color: '#0A7C6E' }}></i>
-                                        Required Documents
-                                    </h5>
-                                    <div className="d-flex flex-wrap gap-2">
-                                        {selectedJob.documents.map((doc) => (
-                                            <span key={doc} className="badge rounded-pill px-3 py-2" style={{ backgroundColor: 'rgba(10, 124, 110, 0.1)', color: '#0A7C6E', border: '1px solid rgba(10, 124, 110, 0.3)', fontSize: '12px', fontWeight: 700 }}>
-                                                {doc}
-                                            </span>
-                                        ))}
-                                    </div>
+                                    {selectedJob.documents && selectedJob.documents.length > 0 && (
+                                        <div className={selectedJob.description ? "col-md-6" : "col-12"}>
+                                            <div className="p-4 bg-white rounded-4 shadow-sm border border-light h-100">
+                                                <h5 className="fw-bold d-flex align-items-center mb-3 pb-2 border-bottom" style={{ fontSize: '16px', color: '#1e293b' }}>
+                                                    <i className="fa-solid fa-file-lines me-2" style={{ color: '#0A7C6E' }}></i>
+                                                    Required Documents
+                                                </h5>
+                                                <div className="d-flex flex-wrap gap-2">
+                                                    {selectedJob.documents.map((doc) => (
+                                                        <span key={doc} className="badge rounded-pill px-3 py-2" style={{ backgroundColor: 'rgba(10, 124, 110, 0.1)', color: '#0A7C6E', border: '1px solid rgba(10, 124, 110, 0.3)', fontSize: '12px', fontWeight: 700 }}>
+                                                            {doc}
+                                                        </span>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             )}
                         </div>

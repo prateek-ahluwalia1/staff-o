@@ -214,6 +214,7 @@ class CustomerController extends Controller
             'country' => $data['country'] ?? $user->country,
             'coordinates' => $data['coordinates'] ?? $user->coordinates,
             'is_active' => $data['is_active'] ?? $user->is_active,
+            'phone' => $data['phone'] ?? $user->customer->phone,
         ];
 
         if (isset($data['password'])) {

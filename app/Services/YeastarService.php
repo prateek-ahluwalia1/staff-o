@@ -27,7 +27,7 @@ class YeastarService
         $this->version      = config('yeastar.api_version', 'v1.0');
     }
 
-    // ─── Database-Backed Token Management (Thread Safe) ──────────────
+    // ─── Token Management (Safe DB Row Lock) ─────────────────────────
 
     public function getAccessToken(): string
     {
@@ -40,6 +40,7 @@ class YeastarService
             if ($config && !empty($config->yeastar_token) && !empty($config->yeastar_token_expires_at)) {
                 $expiresAt = \Carbon\Carbon::parse($config->yeastar_token_expires_at);
                 
+                // Return cached DB token if valid for at least another 2 minutes
                 if (now()->addMinutes(2)->lt($expiresAt)) {
                     return $config->yeastar_token;
                 }
@@ -204,7 +205,7 @@ class YeastarService
         return $this->api('post', 'pbx/get_system_info', []);
     }
 
-    // ─── Send SMS Methods (Restored Original Payload) ─────────────────
+    // ─── Send SMS Methods (Fixed using send_mode = direct) ────────────
 
     public function sendSmsOtp(string $toPhone, string $otp): bool
     {
@@ -217,21 +218,16 @@ class YeastarService
         try {
             $omnichannelId = 1;
             $senderId      = 1;
-            $assignToType  = 'extension';
-            $assignToId    = 3;
 
             if (empty($omnichannelId) || empty($senderId)) {
                 throw new Exception('Yeastar sms_omnichannel_id or sms_sender_id not configured');
             }
 
-            if (empty($assignToId)) {
-                throw new Exception('Yeastar sms_assign_to_id not configured (required when send_mode=new_session)');
-            }
-
             $normalizedPhone = $this->normalizeToE164($toPhone);
 
+            // CHANGED: send_mode set to 'direct' to send without opening open-ended sessions
             $result = $this->api('post', 'message_campaign/create', [
-                'name'           => 'AutoSMS-' . now()->timestamp,
+                'name'           => 'AutoSMS-' . now()->timestamp . '-' . rand(100, 999),
                 'channel_type'   => 'sms',
                 'omnichannel_id' => (int) $omnichannelId,
                 'sender'         => (int) $senderId,
@@ -242,9 +238,7 @@ class YeastarService
                 'content_type'   => 'text',
                 'content'        => $message,
                 'send_type'      => 'immediately',
-                'send_mode'      => 'new_session',
-                'assign_to_type' => $assignToType,
-                'assign_to_id'   => (int) $assignToId,
+                'send_mode'      => 'direct', 
             ]);
 
             Log::info('Yeastar SMS sent', [
@@ -265,15 +259,9 @@ class YeastarService
         try {
             $omnichannelId = 1;
             $senderId      = 1;
-            $assignToType  = 'extension';
-            $assignToId    = 3;
 
             if (empty($omnichannelId) || empty($senderId)) {
                 throw new Exception('Yeastar sms_omnichannel_id or sms_sender_id not configured');
-            }
-
-            if (empty($assignToId)) {
-                throw new Exception('Yeastar sms_assign_to_id not configured (required when send_mode=new_session)');
             }
 
             if (empty($phoneNumbers)) {
@@ -295,9 +283,7 @@ class YeastarService
                 'content_type'   => 'text',
                 'content'        => $message,
                 'send_type'      => 'immediately',
-                'send_mode'      => 'new_session',
-                'assign_to_type' => $assignToType,
-                'assign_to_id'   => (int) $assignToId,
+                'send_mode'      => 'direct',
             ]);
 
             Log::info('Yeastar Bulk SMS sent', [

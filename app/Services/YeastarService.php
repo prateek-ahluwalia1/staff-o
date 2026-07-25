@@ -31,15 +31,12 @@ class YeastarService
 
     public function getAccessToken(): string
     {
-        // Use a DB transaction with lockForUpdate to prevent race conditions across requests
         return DB::transaction(function () {
-            // Lock the config row while checking token validity
             $config = DB::table('configs')
-                ->where('id', 1) // Adjust 'id' or query key based on your configs table structure
+                ->where('id', 1)
                 ->lockForUpdate()
                 ->first();
 
-            // Check if token exists and has NOT expired (with a 2-minute safety margin)
             if ($config && !empty($config->yeastar_token) && !empty($config->yeastar_token_expires_at)) {
                 $expiresAt = \Carbon\Carbon::parse($config->yeastar_token_expires_at);
                 
@@ -48,7 +45,6 @@ class YeastarService
                 }
             }
 
-            // Token is missing or expired — fetch a fresh one
             $refreshToken = $config->yeastar_refresh_token ?? null;
             return $this->refreshOrFetchToken($refreshToken);
         });
@@ -56,7 +52,6 @@ class YeastarService
 
     protected function refreshOrFetchToken(?string $refreshToken = null): string
     {
-        // Try refreshing if refresh_token exists
         if ($refreshToken) {
             try {
                 $response = Http::withoutVerifying()
@@ -77,7 +72,6 @@ class YeastarService
             }
         }
 
-        // Fallback: Fetch completely new token via client_id & client_secret
         return $this->fetchFreshToken();
     }
 
@@ -108,7 +102,6 @@ class YeastarService
 
     protected function saveTokenToDb(string $accessToken, ?string $refreshToken = null): void
     {
-        // Yeastar tokens last 30 minutes (1800 seconds). Set expiration to 28 mins for safety.
         DB::table('configs')->where('id', 1)->update([
             'yeastar_token'            => $accessToken,
             'yeastar_refresh_token'    => $refreshToken,
@@ -125,16 +118,14 @@ class YeastarService
         $response = $this->makeRequest($method, $endpoint, $payload, $token);
         $json     = $response->json();
 
-        // Token expired error (10004) from Yeastar
         if (($json['errcode'] ?? 0) === 10004) {
             Log::warning("Yeastar token expired on [{$endpoint}], clearing DB token...");
             
-            // Invalidate current DB token timestamp to force re-auth
             DB::table('configs')->where('id', 1)->update([
                 'yeastar_token_expires_at' => now()->subMinute(),
             ]);
 
-            $token    = $this->getAccessToken(); // Will automatically trigger refresh inside transaction
+            $token    = $this->getAccessToken();
             $response = $this->makeRequest($method, $endpoint, $payload, $token);
             $json     = $response->json();
         }
@@ -156,20 +147,91 @@ class YeastarService
             ->{$method}($url, $payload);
     }
 
-    // ─── Send SMS Methods ─────────────────────────────────────────────
+    // ─── Call Methods ─────────────────────────────────────────────────
+
+    public function clickToCall(string $caller, string $callee, int $autoanswer = 1): array
+    {
+        return $this->api('post', 'call/dial', [
+            'caller'     => $caller,
+            'callee'     => $callee,
+            'autoanswer' => $autoanswer,
+        ]);
+    }
+
+    public function getActiveCalls(): array
+    {
+        return $this->api('post', 'call/query_active_call', []);
+    }
+
+    public function hangupCall(string $callId): array
+    {
+        return $this->api('post', 'call/hangup', ['call_id' => $callId]);
+    }
+
+    public function transferCall(string $callId, string $transferTo): array
+    {
+        return $this->api('post', 'call/transfer', [
+            'call_id'     => $callId,
+            'transfer_to' => $transferTo,
+        ]);
+    }
+
+    public function holdCall(string $callId): array
+    {
+        return $this->api('post', 'call/hold', ['call_id' => $callId]);
+    }
+
+    public function unholdCall(string $callId): array
+    {
+        return $this->api('post', 'call/unhold', ['call_id' => $callId]);
+    }
+
+    public function getExtensionStatus(string $extension): array
+    {
+        return $this->api('post', 'extension/query', ['extension' => $extension]);
+    }
+
+    public function getCallRecords(array $filters = []): array
+    {
+        return $this->api('post', 'cdr/get_cdr', array_merge([
+            'page'      => 1,
+            'page_size' => 20,
+        ], $filters));
+    }
+
+    public function getPbxInfo(): array
+    {
+        return $this->api('post', 'pbx/get_system_info', []);
+    }
+
+    // ─── Send SMS Methods (Restored Original Payload) ─────────────────
+
+    public function sendSmsOtp(string $toPhone, string $otp): bool
+    {
+        $message = "Your STAFFOO verification OTP is: {$otp}.";
+        return $this->sendSms($toPhone, $message);
+    }
 
     public function sendSms(string $toPhone, string $message): bool
     {
         try {
-            $omnichannelId = config('yeastar.sms_omnichannel_id', 1);
-            $senderId      = config('yeastar.sms_sender_id', 1);
-            $assignToType  = config('yeastar.sms_assign_to_type', 'extension');
-            $assignToId    = config('yeastar.sms_assign_to_id', 3);
+            $omnichannelId = 1;
+            $senderId      = 1;
+            $assignToType  = 'extension';
+            $assignToId    = 3;
+
+            if (empty($omnichannelId) || empty($senderId)) {
+                throw new Exception('Yeastar sms_omnichannel_id or sms_sender_id not configured');
+            }
+
+            if (empty($assignToId)) {
+                throw new Exception('Yeastar sms_assign_to_id not configured (required when send_mode=new_session)');
+            }
 
             $normalizedPhone = $this->normalizeToE164($toPhone);
 
-            $payload = [
-                'name'           => 'AutoSMS-' . now()->timestamp . '-' . rand(100, 999),
+            $result = $this->api('post', 'message_campaign/create', [
+                'name'           => 'AutoSMS-' . now()->timestamp,
                 'channel_type'   => 'sms',
                 'omnichannel_id' => (int) $omnichannelId,
                 'sender'         => (int) $senderId,
@@ -180,15 +242,10 @@ class YeastarService
                 'content_type'   => 'text',
                 'content'        => $message,
                 'send_type'      => 'immediately',
-                'send_mode'      => 'auto', // Avoids session exhaustion
-            ];
-
-            if (!empty($assignToId)) {
-                $payload['assign_to_type'] = $assignToType;
-                $payload['assign_to_id']   = (int) $assignToId;
-            }
-
-            $result = $this->api('post', 'message_campaign/create', $payload);
+                'send_mode'      => 'new_session',
+                'assign_to_type' => $assignToType,
+                'assign_to_id'   => (int) $assignToId,
+            ]);
 
             Log::info('Yeastar SMS sent', [
                 'phone'  => $normalizedPhone,
@@ -199,6 +256,61 @@ class YeastarService
 
         } catch (Exception $e) {
             Log::error('Yeastar SMS send failed: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    public function sendBulkSms(array $phoneNumbers, string $message): bool
+    {
+        try {
+            $omnichannelId = 1;
+            $senderId      = 1;
+            $assignToType  = 'extension';
+            $assignToId    = 3;
+
+            if (empty($omnichannelId) || empty($senderId)) {
+                throw new Exception('Yeastar sms_omnichannel_id or sms_sender_id not configured');
+            }
+
+            if (empty($assignToId)) {
+                throw new Exception('Yeastar sms_assign_to_id not configured (required when send_mode=new_session)');
+            }
+
+            if (empty($phoneNumbers)) {
+                return false;
+            }
+
+            $numberList = array_map(
+                fn($num) => ['number' => $this->normalizeToE164($num)],
+                $phoneNumbers
+            );
+
+            $result = $this->api('post', 'message_campaign/create', [
+                'name'           => 'AutoSMS-Bulk-' . now()->timestamp,
+                'channel_type'   => 'sms',
+                'omnichannel_id' => (int) $omnichannelId,
+                'sender'         => (int) $senderId,
+                'recipient_type' => 'input',
+                'number_list'    => $numberList,
+                'content_type'   => 'text',
+                'content'        => $message,
+                'send_type'      => 'immediately',
+                'send_mode'      => 'new_session',
+                'assign_to_type' => $assignToType,
+                'assign_to_id'   => (int) $assignToId,
+            ]);
+
+            Log::info('Yeastar Bulk SMS sent', [
+                'count'  => count($phoneNumbers),
+                'result' => $result,
+            ]);
+
+            return true;
+
+        } catch (Exception $e) {
+            Log::error('Yeastar Bulk SMS send failed: ' . $e->getMessage(), [
+                'count' => count($phoneNumbers),
+            ]);
             return false;
         }
     }

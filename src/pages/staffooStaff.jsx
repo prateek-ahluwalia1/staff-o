@@ -257,7 +257,7 @@ const StaffooStaff = () => {
 
     const passportDoc = useMemo(() => {
         if (!staffDocuments) return null;
-        return staffDocuments.find(doc => doc.document_type?.toLowerCase() === "passport" && doc.document_no) || null;
+        return staffDocuments.find(doc => doc.document_type?.toLowerCase() === "passport" && Boolean(doc.document_no)) || null;
     }, [staffDocuments]);
 
     const handleProfileFormChange = useCallback((e) => {

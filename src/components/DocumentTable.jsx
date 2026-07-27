@@ -60,11 +60,7 @@ const getExpiryStatus = (dateString) => {
   return "valid";
 };
 
-export default function DocumentTable({
-  documents,
-  onAddFile,
-  userType,
-}) {
+export default function DocumentTable({ documents, onAddFile, userType }) {
   const processedDocuments = useMemo(() => {
     if (!documents) return [];
     return [...documents].sort((a, b) => {
@@ -84,6 +80,7 @@ export default function DocumentTable({
           border: 1px solid #f1f5f9;
           overflow: hidden;
         }
+
         .table-header {
           background: #f9fafb;
           padding: 20px 24px 16px;
@@ -102,22 +99,22 @@ export default function DocumentTable({
           margin: 4px 0 0;
           text-transform: none;
         }
-        
-        /* Desktop table */
+
+        /* ── Desktop Table ── */
         .doc-table {
           width: 100%;
           border-collapse: separate;
           border-spacing: 0;
-          min-width: 750px;
+          min-width: 800px;
         }
         .doc-table th {
           background: #0A7C6E;
           color: #ffffff;
           font-weight: 700;
-          font-size: 0.7rem;
+          font-size: 0.75rem;
           text-transform: uppercase;
           letter-spacing: 0.05em;
-          padding: 12px 16px;
+          padding: 14px 16px;
           border: none;
           border-right: 1px solid rgba(255,255,255,0.15);
           text-align: left;
@@ -127,10 +124,10 @@ export default function DocumentTable({
           text-align: center;
         }
         .doc-table td {
-          padding: 14px 16px;
+          padding: 16px 16px;
           vertical-align: middle;
           border-bottom: 1px solid #f1f5f9;
-          font-size: 0.9rem;
+          font-size: 0.95rem;
         }
         .doc-table tr:last-child td {
           border-bottom: none;
@@ -138,15 +135,17 @@ export default function DocumentTable({
         .doc-table tr:hover td {
           background-color: rgba(248, 250, 252, 0.6);
         }
+
         .doc-name {
-        text-transform: capitalize;
+          text-transform: capitalize;
           font-weight: 600;
           color: #1e293b;
           display: flex;
           align-items: center;
-          gap: 6px;
+          gap: 8px;
           flex-wrap: wrap;
         }
+
         .expiry-badge {
           display: inline-flex;
           align-items: center;
@@ -169,22 +168,26 @@ export default function DocumentTable({
           color: #721c24;
           border: 1px solid #f5c2c7;
         }
+
         .doc-number {
           font-family: 'SF Mono', 'Fira Code', 'Fira Mono', Menlo, monospace;
-          font-size: 0.8rem;
+          font-size: 0.85rem;
           color: #475569;
           background: #f1f5f9;
           padding: 2px 8px;
           border-radius: 6px;
         }
+
         .file-link {
           color: #0A7C6E;
-          font-size: 1.1rem;
+          font-size: 1.2rem;
           transition: color 0.15s;
+          margin-right: 8px;
         }
         .file-link:hover {
           color: #075e53;
         }
+
         .action-btn {
           background: #f1f5f9;
           border: none;
@@ -204,6 +207,7 @@ export default function DocumentTable({
         .action-btn i {
           font-size: 0.85rem;
         }
+
         .add-file-btn {
           background: #e6f7f0;
           border: none;
@@ -221,7 +225,7 @@ export default function DocumentTable({
           transform: translateY(-1px);
         }
 
-        /* Mobile card view */
+        /* ── Mobile / Tablet Cards ── */
         .mobile-doc-cards {
           display: none;
         }
@@ -241,6 +245,7 @@ export default function DocumentTable({
             margin-bottom: 12px;
             overflow: hidden;
             transition: box-shadow 0.2s;
+            height: 100%;
           }
           .doc-card:hover {
             box-shadow: 0 6px 16px rgba(0,0,0,0.08);
@@ -258,7 +263,7 @@ export default function DocumentTable({
           }
           .doc-card-title {
             font-weight: 700;
-            font-size: 1rem;
+            font-size: 0.95rem;
             color: #1e293b;
             display: flex;
             align-items: center;
@@ -267,6 +272,7 @@ export default function DocumentTable({
           .doc-card-actions {
             display: flex;
             gap: 8px;
+            align-items: center;
           }
           .doc-card-detail {
             display: flex;
@@ -281,14 +287,28 @@ export default function DocumentTable({
             font-weight: 600;
           }
           .doc-card-detail-value {
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             color: #1e293b;
             font-weight: 500;
           }
-          .doc-card-file-area {
+          .file-link {
+            font-size: 1.1rem;
+          }
+        }
+
+        /* Tablet two‑column layout */
+        @media (min-width: 576px) and (max-width: 768px) {
+          .mobile-doc-cards .row {
             display: flex;
-            align-items: center;
-            gap: 12px;
+            flex-wrap: wrap;
+            margin-right: -8px;
+            margin-left: -8px;
+          }
+          .mobile-doc-cards .col-sm-6 {
+            flex: 0 0 50%;
+            max-width: 50%;
+            padding-right: 8px;
+            padding-left: 8px;
           }
         }
       `}</style>
@@ -307,7 +327,7 @@ export default function DocumentTable({
               <th>Document Number</th>
               <th>Expiration Date</th>
               <th>File</th>
-              <th>Action</th>
+              <th style={{ textAlign: "center" }}>Action</th>
             </tr>
           </thead>
           <tbody>
@@ -339,32 +359,51 @@ export default function DocumentTable({
                       {formatAUSDate(doc.document_expiry)}
                     </td>
                     <td>
-                      {doc.file ? (
-                        <a
-                          href={`${apiURL}staff_documents/${doc.file}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="file-link"
-                        >
-                          <i className="fa fa-eye" aria-hidden="true"></i>
-                        </a>
-                      ) : (
-                        <button
-                          type="button"
-                          className="add-file-btn"
-                          onClick={() => onAddFile(doc)}
-                        >
-                          <i className="fa fa-plus" aria-hidden="true"></i>
-                        </button>
-                      )}
+                      <div className="d-flex align-items-center gap-2">
+                        {doc.file ? (
+                          <a
+                            href={`${apiURL}staff_documents/${doc.file}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="file-link"
+                            title="View main document"
+                          >
+                            <i className="fa fa-eye"></i>
+                          </a>
+                        ) : (
+                          <button
+                            type="button"
+                            className="add-file-btn"
+                            onClick={() => onAddFile(doc)}
+                            title="Add main document"
+                          >
+                            <i className="fa fa-plus"></i>
+                          </button>
+                        )}
+                        {doc.document_type === 'visa' && doc.working_rights && (
+                          <a
+                            href={`${apiURL}staff_documents/${doc.working_rights}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="file-link"
+                            title="View Working Rights"
+                          >
+                            <i className="fa fa-file-contract"></i>
+                          </a>
+                        )}
+                        {!doc.file && !doc.working_rights && (
+                          <span className="text-muted" style={{ fontSize: "0.8rem" }}>—</span>
+                        )}
+                      </div>
                     </td>
                     <td style={{ textAlign: "center" }}>
                       <button
                         type="button"
                         className="action-btn"
                         onClick={() => onAddFile(doc)}
+                        title="Edit document"
                       >
-                        <i className="fa fa-pencil" aria-hidden="true"></i>
+                        <i className="fa fa-pencil"></i>
                       </button>
                     </td>
                   </tr>
@@ -381,73 +420,91 @@ export default function DocumentTable({
         </table>
       </div>
 
-      {/* Mobile Card View (hidden on desktop) */}
+      {/* Mobile / Tablet Card View */}
       <div className="mobile-doc-cards">
         {processedDocuments.length > 0 ? (
-          processedDocuments.map((doc) => {
-            const status = getExpiryStatus(doc.document_expiry);
-            const displayLabel = DOC_CONFIG[doc.document_type]?.label || doc.document_name;
-            return (
-              <div key={doc.id} className="doc-card">
-                <div className="doc-card-inner">
-                  <div className="doc-card-header">
-                    <div className="doc-card-title">
-                      <i className="fa-regular fa-file-lines" style={{ color: "#0A7C6E", fontSize: "1.1rem" }}></i>
-                      {displayLabel}
-                      {status === "expiring" && (
-                        <span className="expiry-badge expiring" style={{ marginLeft: 8 }}>
-                          <i className="fa-solid fa-clock"></i> Expiring
-                        </span>
-                      )}
-                      {status === "expired" && (
-                        <span className="expiry-badge expired" style={{ marginLeft: 8 }}>
-                          <i className="fa-solid fa-exclamation-circle"></i> Expired
-                        </span>
-                      )}
-                    </div>
-                    <div className="doc-card-actions">
-                      {doc.file ? (
-                        <a
-                          href={`${apiURL}staff_documents/${doc.file}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="file-link"
-                        >
-                          <i className="fa fa-eye" aria-hidden="true"></i>
-                        </a>
-                      ) : (
-                        <button
-                          type="button"
-                          className="add-file-btn"
-                          onClick={() => onAddFile(doc)}
-                        >
-                          <i className="fa fa-plus" aria-hidden="true"></i>
-                        </button>
-                      )}
-                      <button
-                        type="button"
-                        className="action-btn"
-                        onClick={() => onAddFile(doc)}
-                      >
-                        <i className="fa fa-pencil" aria-hidden="true"></i>
-                      </button>
-                    </div>
-                  </div>
+          <div className="row g-3">
+            {processedDocuments.map((doc) => {
+              const status = getExpiryStatus(doc.document_expiry);
+              const displayLabel = DOC_CONFIG[doc.document_type]?.label || doc.document_name;
+              return (
+                <div key={doc.id} className="col-sm-6 col-12">
+                  <div className="doc-card">
+                    <div className="doc-card-inner">
+                      <div className="doc-card-header">
+                        <div className="doc-card-title">
+                          <i className="fa-regular fa-file-lines" style={{ color: "#0A7C6E", fontSize: "1.1rem" }}></i>
+                          {displayLabel}
+                          {status === "expiring" && (
+                            <span className="expiry-badge expiring" style={{ marginLeft: 8 }}>
+                              <i className="fa-solid fa-clock"></i> Expiring
+                            </span>
+                          )}
+                          {status === "expired" && (
+                            <span className="expiry-badge expired" style={{ marginLeft: 8 }}>
+                              <i className="fa-solid fa-exclamation-circle"></i> Expired
+                            </span>
+                          )}
+                        </div>
+                        <div className="doc-card-actions">
+                          {doc.file ? (
+                            <a
+                              href={`${apiURL}staff_documents/${doc.file}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="file-link"
+                              title="View main document"
+                            >
+                              <i className="fa fa-eye"></i>
+                            </a>
+                          ) : doc.working_rights ? null : (
+                            <button
+                              type="button"
+                              className="add-file-btn"
+                              onClick={() => onAddFile(doc)}
+                              title="Add main document"
+                            >
+                              <i className="fa fa-plus"></i>
+                            </button>
+                          )}
+                          {doc.document_type === 'visa' && doc.working_rights && (
+                            <a
+                              href={`${apiURL}staff_documents/${doc.working_rights}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="file-link"
+                              title="View Working Rights"
+                            >
+                              <i className="fa fa-file-contract"></i>
+                            </a>
+                          )}
+                          <button
+                            type="button"
+                            className="action-btn"
+                            onClick={() => onAddFile(doc)}
+                            title="Edit document"
+                          >
+                            <i className="fa fa-pencil"></i>
+                          </button>
+                        </div>
+                      </div>
 
-                  <div style={{ display: "flex", gap: "16px", marginTop: 4 }}>
-                    <div>
-                      <div className="doc-card-detail-label">Number</div>
-                      <div className="doc-card-detail-value">{doc.document_no || "-"}</div>
-                    </div>
-                    <div>
-                      <div className="doc-card-detail-label">Expiry</div>
-                      <div className="doc-card-detail-value">{formatAUSDate(doc.document_expiry)}</div>
+                      <div style={{ display: "flex", gap: "16px", marginTop: 4 }}>
+                        <div>
+                          <div className="doc-card-detail-label">Number</div>
+                          <div className="doc-card-detail-value">{doc.document_no || "-"}</div>
+                        </div>
+                        <div>
+                          <div className="doc-card-detail-label">Expiry</div>
+                          <div className="doc-card-detail-value">{formatAUSDate(doc.document_expiry)}</div>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            );
-          })
+              );
+            })}
+          </div>
         ) : (
           <div className="text-center py-5 text-muted">
             <i className="fa-regular fa-folder-open fa-2x mb-2 d-block opacity-50"></i>

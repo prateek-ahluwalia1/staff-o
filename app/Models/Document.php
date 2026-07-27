@@ -13,6 +13,7 @@ class Document extends Model
         'document_no',
         'document_type',
         'document_expiry',
+        'working_rights',
         'file',
     ];
 

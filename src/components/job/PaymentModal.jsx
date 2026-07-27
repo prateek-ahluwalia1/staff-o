@@ -47,7 +47,8 @@ function CardForm({
   onClose,
   stripeDisabled,
   savedCards = [],
-  onSubmit,               // <-- new prop from parent
+  onSubmit,
+  onProcessingChange,
 }) {
   const stripe = useStripe();
   const elements = useElements();
@@ -85,6 +86,7 @@ function CardForm({
 
     setCardError("");
     setProcessing(true);
+    onProcessingChange?.(true)
 
     try {
       const cardElement = elements.getElement(CardElement);
@@ -116,6 +118,7 @@ function CardForm({
       if (!holdResult?.success) {
         setCardError(holdResult?.message || "Unable to hold payment.");
         setProcessing(false);
+        onProcessingChange?.(false);
         return;
       }
 
@@ -123,8 +126,9 @@ function CardForm({
     } catch (err) {
       setCardError(err.message || "Payment failed.");
       setProcessing(false);
+      onProcessingChange?.(false);
     }
-  }, [processing, canSubmit, stripe, elements, cardHolderName, onHoldPayment, onSuccess]);
+  }, [processing, canSubmit, stripe, elements, cardHolderName, onHoldPayment, onSuccess, onProcessingChange]);
 
   // Pass submit handler to parent
   useEffect(() => {
@@ -394,6 +398,7 @@ export default function PaymentModal({
               stripeDisabled={!STRIPE_PUBLISHABLE_KEY}
               savedCards={savedCards}
               onSubmit={handleFormSubmit}
+              onProcessingChange={setProcessing}
             />
           </Elements>
         </div>

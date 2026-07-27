@@ -96,6 +96,7 @@ class VisaController extends Controller
             ]
         ];
 
+        $guard = DB::table('documents')->where('document_type', 'passport')->where('document_no', $request->passport)->first();
         $response = $this->vsure->createVisaCheck($data);
 
         if (isset($response['error'])) {
@@ -109,12 +110,22 @@ class VisaController extends Controller
 
         $savedData = $this->saveVisaDetails($response, $request);
 
+        if($guard->document_category == 'bridging_visa'){
+        $show_document = true;
+        $work_entitlement = $response['json']['data']['visa']['australia']['work_entitlement'] ?? null;
         $expiry_date = $response['json']['data']['visa']['australia']['expiry_date'] ?? null;
+        }else{
+        $show_document = false;
+        $work_entitlement = $response['json']['data']['visa']['australia']['work_entitlement'] ?? null;
+        $expiry_date = $response['json']['data']['visa']['australia']['expiry_date'] ?? null;
+        }
 
         return response()->json([
             'success' => true,
             'code' => 200,
             'expiry' => $expiry_date,
+            'work_entitlement' => $work_entitlement,
+            'show_document' => $show_document,
         ]);
     }
 
@@ -124,15 +135,15 @@ class VisaController extends Controller
             $guard = DB::table('documents')->where('document_type', 'passport')->where('document_no', $request->passport)->first();
             
             if (!$guard) {
-                Log::error('Guard not found for ID: ' . $guard->user_id);
-                return ['error' => 'Guard not found'];
+                Log::error('Guard not found.');
+                return ['success' => false, 'message' => 'Guard not found'];
             }
 
             $documentData = $this->extractDocumentData($response);
             
             $isSuccess = isset($response) && $response['json']['data']['status'] == 'completed';
             
-            VisaDetails::where('user_id', $guard->user_id)->delete();
+            $delete =  VisaDetails::where('user_id', $guard->user_id)->delete();
             
             $insertData = [
                 'user_id' => $guard->user_id,

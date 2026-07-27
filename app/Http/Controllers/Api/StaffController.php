@@ -676,7 +676,7 @@ private function calculateProfileCompletion(User $user): int
         }
         $updateDocuments->document_no = (!empty($request->document_no) && $request->has('document_no') ? $request->document_no : '');
         $updateDocuments->document_type = (!empty($request->document_type) && $request->has('document_type') ? $request->document_type : '');
-
+        $updateDocuments->working_rights = (!empty($request->working_rights) && $request->has('working_rights')) ? $request->working_rights : null;
         if ($request->has('file')) {
             $updateDocuments->file = $request->file;
             $updateDocuments->file = str_replace(url('') . "/" . "staff_documents/", "", $request->file);

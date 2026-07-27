@@ -110,14 +110,15 @@ class VisaController extends Controller
 
         $savedData = $this->saveVisaDetails($response, $request);
 
-        if($guard->document_category == 'bridging_visa'){
-        $show_document = true;
+        // First, get the values
         $work_entitlement = $response['json']['data']['visa']['australia']['work_entitlement'] ?? null;
         $expiry_date = $response['json']['data']['visa']['australia']['expiry_date'] ?? null;
+
+        // Then check both conditions
+        if($guard->document_category == 'bridging_visa' && $work_entitlement !== null){
+            $show_document = true;
         }else{
-        $show_document = false;
-        $work_entitlement = $response['json']['data']['visa']['australia']['work_entitlement'] ?? null;
-        $expiry_date = $response['json']['data']['visa']['australia']['expiry_date'] ?? null;
+            $show_document = false;
         }
 
         return response()->json([

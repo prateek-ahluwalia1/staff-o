@@ -685,8 +685,8 @@ const ManageUsers = () => {
       payload = {
         ...payload,
         id: selectedDoc.id,
-        document_type: selectedDoc.document_type,
-        document_name: selectedDoc.document_name,
+        document_type: docForm.document_name,
+        document_name: docForm.document_name,
       };
     } else {
       payload = {
@@ -1282,7 +1282,28 @@ const ManageUsers = () => {
       `}</style>
 
       {/* Hero header */}
-      <div className="manage-users-hero">
+      <div className="manage-users-hero" style={{ position: "relative" }}>
+        <button
+          type="button"
+          className="btn btn-sm"
+          onClick={() => navigate("/staff-management")}
+          style={{
+            position: "absolute",
+            top: 24,
+            right: 28,
+            background: "rgba(255,255,255,0.12)",
+            color: "#fff",
+            border: "1px solid rgba(255,255,255,0.25)",
+            borderRadius: "30px",
+            padding: "8px 18px",
+            fontWeight: 700,
+            fontSize: "13px",
+          }}
+        >
+          <i className="fa-solid fa-users-gear me-2"></i>
+          View Staffoo Staff
+        </button>
+
         <span className="manage-users-hero-eyebrow">
           <span className="dot"></span> Admin
         </span>
@@ -1717,7 +1738,13 @@ const ManageUsers = () => {
                 <i className="fa-solid fa-file-arrow-up"></i>
               </span>
               <div>
-                <h5 className="mb-0 fw-bold">{selectedDoc ? "Update Document" : "Add Document"}</h5>
+                <h5 className="mb-0 fw-bold">
+                  {selectedDoc
+                    ? `Update Document — ${docForm.document_name}`
+                    : docForm.document_name
+                      ? `Add Document — ${docForm.document_name}`
+                      : "Add Document"}
+                </h5>
                 <div className="small text-muted">Upload a verification file.</div>
               </div>
             </div>

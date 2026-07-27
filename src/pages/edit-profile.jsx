@@ -4,7 +4,6 @@ import useSubmit from "../hooks/useSubmit";
 import { useSelector, useDispatch } from "react-redux";
 import { setUser } from "../store/slices/authSlice";
 import Loader from "../components/Loader";
-import Modal from "../components/Modal";
 import DocumentTable from "../components/DocumentTable";
 import ProfileForm from "../components/ProfileForm";
 import AvatarUpload from "../components/AvatarUpload";
@@ -13,6 +12,147 @@ import { apiURL } from "../utils/exports";
 import { resolveProfileImageUrl } from "../utils/profileImage";
 import { toast } from "react-toastify";
 import StaffOnboardingForms from "../components/StaffOnboardingForms";
+
+/* ──────────────────────────────────────────
+   Premium Modal Component (inline)
+   ────────────────────────────────────────── */
+const PremiumModal = ({ open, onClose, children, title, wide = false }) => {
+  if (!open) return null;
+  return (
+    <div
+      className="modal-overlay-premium"
+      onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+    >
+      <div
+        className={`modal-content-premium ${wide ? "modal-wide" : ""}`}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="modal-header-premium">
+          {title && <h3 className="modal-title">{title}</h3>}
+          <button className="modal-close-btn" onClick={onClose} type="button">
+            <i className="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+        <div className="modal-body">{children}</div>
+      </div>
+      <style>{`
+        :root {
+          --modal-navy-950: #0a1930;
+          --modal-navy-900: #0e2340;
+          --modal-teal: #0A7C6E;
+          --modal-teal-dark: #075e53;
+          --modal-line: #e2e8f0;
+          --modal-surface: #ffffff;
+          --modal-text: #1e293b;
+          --modal-muted: #64748b;
+        }
+        .modal-overlay-premium {
+          position: fixed;
+          inset: 0;
+          background: rgba(10, 20, 35, 0.62);
+          backdrop-filter: blur(6px);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 9999;
+          padding: 1.5rem;
+          animation: modalFadeIn 0.25s ease-out;
+        }
+        @keyframes modalFadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        .modal-content-premium {
+          background: var(--modal-surface);
+          border-radius: 22px;
+          box-shadow: 0 30px 60px -18px rgba(10, 25, 48, 0.5);
+          max-width: 600px;
+          width: 100%;
+          max-height: 90vh;
+          display: flex;
+          flex-direction: column;
+          overflow: hidden;
+          border: 1px solid rgba(255, 255, 255, 0.2);
+          animation: modalPopIn 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .modal-wide { max-width: 900px; }
+        @keyframes modalPopIn {
+          from { opacity: 0; transform: scale(0.96) translateY(10px); }
+          to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+        .modal-header-premium {
+          position: relative;
+          background: linear-gradient(120deg, var(--modal-navy-950), var(--modal-navy-900) 70%, #10345a);
+          padding: 16px 20px;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          flex-shrink: 0;
+          overflow: hidden;
+        }
+        .modal-header-premium::after {
+          content: "";
+          position: absolute;
+          top: -30px;
+          right: -30px;
+          width: 120px;
+          height: 120px;
+          border-radius: 50%;
+          background: radial-gradient(circle, rgba(10,124,110,0.5), transparent 70%);
+          pointer-events: none;
+        }
+        .modal-title {
+          margin: 0;
+          font-size: 19px;
+          font-weight: 700;
+          letter-spacing: 0.2px;
+          color: #fff;
+          position: relative;
+          z-index: 1;
+        }
+        .modal-close-btn {
+          position: relative;
+          z-index: 2;
+          width: 34px;
+          height: 34px;
+          border-radius: 50%;
+          border: none;
+          background: rgba(255,255,255,0.08);
+          color: #fff;
+          font-size: 16px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          transition: background 0.2s, transform 0.2s;
+          flex-shrink: 0;
+          margin-left: auto;
+        }
+        .modal-close-btn:hover {
+          background: rgba(255,255,255,0.18);
+          transform: rotate(90deg);
+        }
+        .modal-close-btn:focus-visible {
+          outline: 2px solid #6ee7d8;
+          outline-offset: 2px;
+        }
+        .modal-body {
+          padding: 24px;
+          overflow-y: auto;
+          flex: 1;
+          color: var(--modal-text);
+        }
+        @media (max-width: 576px) {
+          .modal-overlay-premium { padding: 0.75rem; }
+          .modal-body { padding: 16px; }
+          .modal-content-premium { border-radius: 18px; }
+        }
+      `}</style>
+    </div>
+  );
+};
 
 const INITIAL_CARD_STATE = {
   card_holder_name: "",
@@ -83,9 +223,7 @@ const isoToDisplay = (val) => {
 const normalizeToDisplay = (dateStr) => {
   if (!dateStr) return "";
   if (/^\d{2}\/\d{2}\/\d{4}$/.test(dateStr)) return dateStr;
-  if (/^\d{2}-\d{2}-\d{4}$/.test(dateStr)) {
-    return dateStr.replace(/-/g, "/");
-  }
+  if (/^\d{2}-\d{2}-\d{4}$/.test(dateStr)) return dateStr.replace(/-/g, "/");
   const iso = isoToDisplay(dateStr);
   if (iso !== dateStr) return iso;
   const d = new Date(dateStr);
@@ -104,7 +242,17 @@ function capitalizeWords(str) {
     .join(' ');
 }
 
-
+// Normalize document type for the select (used when opening existing document)
+const normalizeDocType = (rawDoc) => {
+  if (!rawDoc) return "";
+  const str = typeof rawDoc === "string" ? rawDoc : rawDoc?.document_type || rawDoc?.document_name || "";
+  const trimmed = str.trim();
+  if (!trimmed) return "";
+  if (DOC_TYPES.some((d) => d.value === trimmed)) return trimmed;
+  const match = DOC_TYPES.find((d) => d.value.toLowerCase() === trimmed.toLowerCase());
+  if (match) return match.value;
+  return trimmed.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+};
 
 export default function EditProfile() {
   const dispatch = useDispatch();
@@ -134,15 +282,9 @@ export default function EditProfile() {
     BaseURL: "https://apis.thescouts.com.au/",
   });
 
-  const { submit: uploadFile, loading: uploadLoading } = useSubmit({
-    isAuth: true,
-  });
-  const { submit: phoneSubmit, loading: phoneSubmitLoading } = useSubmit({
-    isAuth: true,
-  });
-  const { submit: deleteSubmit, loading: deleteLoading } = useSubmit({
-    isAuth: true,
-  });
+  const { submit: uploadFile, loading: uploadLoading } = useSubmit({ isAuth: true });
+  const { submit: phoneSubmit, loading: phoneSubmitLoading } = useSubmit({ isAuth: true });
+  const { submit: deleteSubmit, loading: deleteLoading } = useSubmit({ isAuth: true });
 
   const [profilePhoto, setProfilePhoto] = useState(null);
   const [formData, setFormData] = useState(INITIAL_FORM_STATE);
@@ -179,6 +321,10 @@ export default function EditProfile() {
     file_url: "",
     document_name: "",
     is_verified: false,
+    working_rights_file_path: "",
+    working_rights_file_url: "",
+    show_working_rights: false,
+    work_entitlement: "",
   });
 
   const isPhoneVerified = Boolean(
@@ -274,7 +420,7 @@ export default function EditProfile() {
     }
   }, [profileData]);
 
-  // ✅ Sync Redux whenever profileData changes (after any refetch)
+  // Sync Redux
   useEffect(() => {
     if (profileData?.success) {
       dispatch(setUser({ userdata: profileData }));
@@ -295,7 +441,6 @@ export default function EditProfile() {
         fields: ["address_components", "geometry", "formatted_address"],
         types: ["address"],
         componentRestrictions: { country: "au" },
-        fields: ["name", "address_components", "geometry", "formatted_address"],
       });
 
       addressInput.setAttribute("data-gmaps-initialized", "true");
@@ -360,14 +505,12 @@ export default function EditProfile() {
   const filteredDocuments = useMemo(() => {
     const allDocs = profileData?.data?.documents || [];
     const currentState = formData.state?.toLowerCase() || "";
-
-    const isTargetState = ["victoria", "vic", "queensland", "qld", "south australia", "sa"].some(
-      (targetState) => currentState.includes(targetState)
-    );
-
     return allDocs.filter((doc) => {
-      if (!isTargetState && doc.document_type === "labour_hire") {
-        return false;
+      if (doc.document_type === "labour_hire") {
+        const isTargetState = ["victoria", "vic", "queensland", "qld", "south australia", "sa"].some(
+          (targetState) => currentState.includes(targetState)
+        );
+        return isTargetState;
       }
       return true;
     });
@@ -381,12 +524,10 @@ export default function EditProfile() {
         setProfilePhoto(previewUrl);
         const payload = new FormData();
         payload.append("profile_image", file);
-        const res = await submit(`api/user-update/${userId}`, payload, {
-          method: "POST",
-        });
+        const res = await submit(`api/user-update/${userId}`, payload, { method: "POST" });
         if (res?.success) {
           toast.success("Avatar updated successfully!");
-          refetch(); // will trigger the useEffect to update Redux
+          refetch();
         } else {
           toast.error(res?.message || "Failed to save avatar");
           setProfilePhoto(null);
@@ -407,21 +548,12 @@ export default function EditProfile() {
         toast.error("Unable to update profile. Missing user id.");
         return;
       }
-
-      if (
-        !formData.address ||
-        !formData.city ||
-        !formData.state ||
-        !formData.country
-      ) {
-        toast.error(
-          "Please select a valid complete address from the Google Maps suggestions dropdown."
-        );
+      if (!formData.address || !formData.city || !formData.state || !formData.country) {
+        toast.error("Please select a valid complete address from the Google Maps suggestions dropdown.");
         return;
       }
 
       const payload = new FormData();
-
       Object.keys(formData).forEach((key) => {
         if (key === "profile_image") return;
         if (key === "bank_details") {
@@ -431,12 +563,10 @@ export default function EditProfile() {
         }
       });
 
-      const res = await submit(`api/user-update/${userId}`, payload, {
-        method: "POST",
-      });
+      const res = await submit(`api/user-update/${userId}`, payload, { method: "POST" });
       if (res === undefined) return;
       toast.success("Profile updated successfully!");
-      refetch(); // will trigger the useEffect to update Redux
+      refetch();
     },
     [formData, submit, userId, refetch]
   );
@@ -457,11 +587,7 @@ export default function EditProfile() {
       return;
     }
     setPhoneChangeError(null);
-    const res = await phoneSubmit(
-      `api/auth/resend-otp`,
-      { phone: newPhoneInput, id: userId },
-      { method: "POST" }
-    );
+    const res = await phoneSubmit(`api/auth/resend-otp`, { phone: newPhoneInput, id: userId }, { method: "POST" });
     if (!res) return;
     if (res.success) {
       setPhoneStep("otp");
@@ -477,33 +603,22 @@ export default function EditProfile() {
       return;
     }
     setPhoneChangeError(null);
-    const res = await phoneSubmit(
-      `api/auth/verify-phone`,
-      { phone: newPhoneInput, otp: phoneOtp, id: userId },
-      { method: "POST" }
-    );
+    const res = await phoneSubmit(`api/auth/verify-phone`, { phone: newPhoneInput, otp: phoneOtp, id: userId }, { method: "POST" });
     if (!res) return;
     if (res.success) {
       toast.success("Phone updated successfully!");
       setFormData((prev) => ({ ...prev, phone: newPhoneInput }));
-      refetch(); // sync Redux
-      setTimeout(() => {
-        handleClosePhoneModal();
-      }, 1500);
+      refetch();
+      setTimeout(() => handleClosePhoneModal(), 1500);
     } else {
-      setPhoneChangeError(
-        res.errors || res.message || "Invalid OTP. Please try again."
-      );
+      setPhoneChangeError(res.errors || res.message || "Invalid OTP. Please try again.");
     }
   };
 
   const handleCardNumberChange = (e) => {
     let value = e.target.value.replace(/\D/g, "");
     let formattedValue = value.replace(/(.{4})/g, "$1 ").trim();
-    setCardForm((prev) => ({
-      ...prev,
-      card_number: formattedValue.slice(0, 19),
-    }));
+    setCardForm((prev) => ({ ...prev, card_number: formattedValue.slice(0, 19) }));
   };
 
   const handleSaveNewCard = async (e) => {
@@ -538,15 +653,13 @@ export default function EditProfile() {
     const payload = new FormData();
     payload.append("bank_details", JSON.stringify(updatedCards));
 
-    const res = await submit(`api/user-update/${userId}`, payload, {
-      method: "POST",
-    });
+    const res = await submit(`api/user-update/${userId}`, payload, { method: "POST" });
     if (res === undefined) return;
 
     setFormData((prev) => ({ ...prev, bank_details: updatedCards }));
     setIsAddingCard(false);
     setCardForm(INITIAL_CARD_STATE);
-    setEditingCardIndex(null);  // reset editing index
+    setEditingCardIndex(null);
     refetch();
     toast.success(editingCardIndex !== null ? "Card updated!" : "Card added successfully!");
   };
@@ -570,13 +683,11 @@ export default function EditProfile() {
     const payload = new FormData();
     payload.append("bank_details", JSON.stringify(updatedCards));
 
-    const res = await submit(`api/user-update/${userId}`, payload, {
-      method: "POST",
-    });
+    const res = await submit(`api/user-update/${userId}`, payload, { method: "POST" });
     if (res === undefined) return;
 
     setFormData((prev) => ({ ...prev, bank_details: updatedCards }));
-    refetch(); // Redux sync
+    refetch();
     toast.success("Card removed successfully!");
     setShowCardDeleteModal(false);
     setCardToDeleteIndex(null);
@@ -625,11 +736,12 @@ export default function EditProfile() {
         );
 
         if (res?.success && res?.expiry) {
-          const expiryStr = res.expiry.replace(/\\\//g, "/");
+          const expiryStr = isoToDisplay(res.expiry.replace(/\\\//g, "/"));
           setDocForm((prev) => ({
             ...prev,
             document_expiry: expiryStr,
             is_verified: true,
+            show_working_rights: false,
           }));
           toast.success("Security License verified. Expiry date locked.");
         } else {
@@ -646,10 +758,9 @@ export default function EditProfile() {
 
     // ---- Visa Verification (uses uploaded passport) ----
     if (docForm.document_name === "Visa") {
-      // Look for the user's passport document
       const allDocs = profileData?.data?.documents || [];
       const passportDoc = allDocs.find(
-        (doc) => doc.document_type === "passport" && doc.document_no
+        (doc) => doc?.document_type?.toLowerCase() === "passport" && Boolean(doc.document_no)
       );
 
       if (!passportDoc) {
@@ -686,7 +797,6 @@ export default function EditProfile() {
       }
       const countryCode = originCountry.toUpperCase().slice(0, 3);
 
-      // Use passport document number for verification
       const passportNumber = passportDoc.document_no.toUpperCase();
 
       const payload = {
@@ -700,14 +810,28 @@ export default function EditProfile() {
       setVerifyingDoc(true);
       try {
         const res = await submit("api/admin/visa-expiry-check", payload, { method: "POST" });
-        if (res?.success && res?.expiry) {
-          const displayExpiry = normalizeToDisplay(res.expiry);
-          setDocForm((prev) => ({
-            ...prev,
-            document_expiry: displayExpiry,
-            is_verified: true,
-          }));
-          toast.success("Visa verified. Expiry date locked.");
+        if (res?.success) {
+          if (res.show_document) {
+            setDocForm((prev) => ({
+              ...prev,
+              document_expiry: "",
+              is_verified: true,
+              show_working_rights: true,
+              working_rights_file_path: "",
+              working_rights_file_url: "",
+              work_entitlement: res.work_entitlement || "",
+            }));
+            toast.success("Visa verified. Please upload your Working Rights document.");
+          } else if (res.expiry) {
+            const displayExpiry = normalizeToDisplay(res.expiry);
+            setDocForm((prev) => ({
+              ...prev,
+              document_expiry: displayExpiry,
+              is_verified: true,
+              show_working_rights: false,
+            }));
+            toast.success("Visa verified. Expiry date locked.");
+          }
         } else {
           setDocForm((prev) => ({ ...prev, is_verified: false }));
         }
@@ -720,11 +844,9 @@ export default function EditProfile() {
     }
   };
 
-  // ========== DOC NUMBER CHANGE (does not reset verified expiry for Visa) ==========
   const handleDocNumberChange = (e) => {
     const value = e.target.value.replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
     setDocForm((prev) => {
-      // For Visa, we don't want to clear the verified status when editing the grant number
       if (prev.document_name === "Visa") {
         return { ...prev, document_no: value };
       }
@@ -739,12 +861,35 @@ export default function EditProfile() {
 
   const handleDocFormChange = async (e) => {
     const { name, value, type, checked, files } = e.target;
+
+    if (name === "working_rights_file") {
+      const file = files[0];
+      if (!file) return;
+      if (file.size > 10 * 1024 * 1024) {
+        toast.error(`File too large. Max 10MB.`);
+        return;
+      }
+      const fd = new FormData();
+      fd.append("file", file);
+      fd.append("folder", "staff_documents");
+      const res = await uploadFile("api/upload-file", fd, { method: "POST" });
+      if (res?.success) {
+        setDocForm((prev) => ({
+          ...prev,
+          working_rights_file_path: res.path || res.data?.path || "",
+          working_rights_file_url: res.url || res.data?.url || "",
+        }));
+      }
+      return;
+    }
+
     if (
       name === "document_expiry" &&
       (docForm.document_name === "Security License" || docForm.document_name === "Visa")
     ) {
       return;
     }
+
     if (type === "checkbox") {
       setDocForm((prev) => ({ ...prev, [name]: checked }));
     } else if (type === "file") {
@@ -779,38 +924,32 @@ export default function EditProfile() {
       return;
     }
 
-    let payload = {
+    if (!docForm.show_working_rights && !docForm.document_expiry) {
+      toast.error("Please enter a valid expiry date.");
+      return;
+    }
+
+    const payload = {
       user_id: userId,
       no: docForm.no,
       exp: docForm.exp,
       document_no: docForm.document_no,
-      document_expiry: docForm.document_expiry,
-      file: docForm.file_path,
+      document_expiry: docForm.show_working_rights ? "" : docForm.document_expiry,
+      file: docForm.file_path || (selectedDoc?.file ?? ""),
+      document_name: docForm.document_name,
+      document_type: docForm.document_name,
     };
 
-    if (selectedDoc) {
-      payload = {
-        ...payload,
-        id: selectedDoc.id,
-        document_type: selectedDoc.document_type,
-        document_name: selectedDoc.document_name,
-      };
-    } else {
-      payload = {
-        ...payload,
-        document_type: docForm.document_name,
-        document_name: docForm.document_name,
-      };
+    if (docForm.show_working_rights) {
+      payload.working_rights =
+        docForm.working_rights_file_path || (selectedDoc?.working_rights ?? "");
     }
 
-    const res = await submit(
-      selectedDoc ? "api/guard-update-documents" : "api/guard-add-documents",
-      payload,
-      { method: "POST" }
-    );
+    if (selectedDoc) payload.id = selectedDoc.id;
 
+    const url = selectedDoc ? "api/guard-update-documents" : "api/guard-add-documents";
+    const res = await submit(url, payload, { method: "POST" });
     if (!res) return;
-
     if (res.success) {
       toast.success("Document saved successfully!");
       setShowDocModal(false);
@@ -820,49 +959,12 @@ export default function EditProfile() {
     }
   };
 
-  const handleDeleteProfile = useCallback(
-    async (e) => {
-      if (e) e.preventDefault();
-      if (!userId) {
-        toast.error("Unable to delete profile. Missing user id.");
-        return;
-      }
-      if (deleteConfirmText !== "DELETE") {
-        toast.error("Please type DELETE to confirm.");
-        return;
-      }
-
-      const res = await deleteSubmit(
-        `api/user-delete/${userId}`,
-        {},
-        { method: "POST" }
-      );
-      if (res === undefined) return;
-
-      if (res.success) {
-        toast.success("Profile deleted successfully!");
-        dispatch(setUser({ userdata: null }));
-        localStorage.removeItem("auth_token");
-        localStorage.removeItem("user");
-        setTimeout(() => {
-          window.location.href = "/login";
-        }, 1500);
-      } else {
-        toast.error(res.message || "Failed to delete profile");
-        setShowDeleteModal(false);
-        setDeleteConfirmText("");
-      }
-    },
-    [userId, deleteSubmit, deleteConfirmText, dispatch]
-  );
-
   if (fetchLoading || !userdata || !profileData?.data) {
     return <Loader />;
   }
 
   return (
     <div className="dashboard-main">
-      {/* Premium Design System Styles */}
       <style>{`
         :root {
           --navy-950: #0a1930;
@@ -888,29 +990,20 @@ export default function EditProfile() {
           gap: 1.5rem;
         }
         @media (max-width: 768px) {
-          .profile-hero {
-            padding: 28px 20px 28px; /* reduced bottom padding */
-          }
-          .profile-hero-inner {
-            flex-direction: column;
-            align-items: center;
-            gap: 18px;
-          }
+          .profile-hero { padding: 28px 20px 28px; }
+          .profile-hero-inner { flex-direction: column; align-items: center; gap: 18px; }
         }
         @media (max-width: 480px) {
-          .profile-hero {
-            padding: 24px 16px 24px;
-            border-radius: 16px;
-          }
+          .profile-hero { padding: 24px 16px 24px; border-radius: 16px; }
         }
         .profile-hero {
           position: relative;
           background: linear-gradient(135deg, var(--navy-950) 0%, var(--navy-900) 65%, #0f2f52 100%);
           border-radius: 22px;
-          padding: 34px 36px 36px; /* reduced bottom padding */
+          padding: 34px 36px 36px;
           overflow: hidden;
           isolation: isolate;
-          margin-bottom: 1.5rem; /* smaller space below hero */
+          margin-bottom: 1.5rem;
         }
         .profile-hero::before {
           content: "";
@@ -949,15 +1042,13 @@ export default function EditProfile() {
           border: 1px solid transparent;
           transition: all 0.2s ease-in-out;
         }
-        .tabs-modern .tab-btn:hover {
-          background: #f1f5f9;
-        }
+        .tabs-modern .tab-btn:hover { background: #f1f5f9; }
         .tabs-modern .tab-btn.active {
           background: var(--teal);
           color: #ffffff;
           box-shadow: 0 4px 6px -1px rgba(10, 124, 110, 0.2);
         }
-          .tabs-modern .tab-btn.inactive {
+        .tabs-modern .tab-btn.inactive {
           border: 1px solid var(--teal);
           color: var(--teal);
           box-shadow: 0 4px 6px -1px rgba(10, 124, 110, 0.2);
@@ -972,7 +1063,6 @@ export default function EditProfile() {
           margin-bottom: 1.5rem;
         }
 
-        /* ensure avatar container doesn't cause extra space */
         .profile-hero-inner .avatar-upload-wrapper {
           display: flex;
           align-items: center;
@@ -1045,10 +1135,7 @@ export default function EditProfile() {
         {userType === "customer" && (
           <button
             className={`tab-btn ${activeTab === "cards" ? "active" : "inactive"}`}
-            onClick={() => {
-              setActiveTab("cards");
-              setIsAddingCard(false);
-            }}
+            onClick={() => { setActiveTab("cards"); setIsAddingCard(false); }}
           >
             Payment Details
           </button>
@@ -1081,9 +1168,7 @@ export default function EditProfile() {
             const fieldId = id || name;
 
             if (fieldId === "address") {
-              if (isSelectingAddress.current) {
-                return;
-              }
+              if (isSelectingAddress.current) return;
               setFormData((prev) => ({
                 ...prev,
                 address: value,
@@ -1093,10 +1178,7 @@ export default function EditProfile() {
                 coordinates: "",
               }));
             } else {
-              setFormData((prev) => ({
-                ...prev,
-                [fieldId]: value,
-              }));
+              setFormData((prev) => ({ ...prev, [fieldId]: value }));
             }
           }}
           onSubmit={handleSubmit}
@@ -1115,10 +1197,7 @@ export default function EditProfile() {
       )}
 
       {activeTab === "onboarding" && userType === "staff" && (
-        <StaffOnboardingForms
-          submit={submit}
-          userId={userId}
-        />
+        <StaffOnboardingForms submit={submit} userId={userId} />
       )}
 
       {activeTab === "cards" && userType === "customer" && (
@@ -1264,6 +1343,7 @@ export default function EditProfile() {
             userType={userType}
             onAddFile={(doc) => {
               setSelectedDoc(doc);
+              const normalizedName = normalizeDocType(doc);
               if (!doc.document_no && !doc.document_expiry && !doc.file) {
                 setDocForm({
                   notes: "",
@@ -1274,8 +1354,11 @@ export default function EditProfile() {
                   file: null,
                   file_path: "",
                   file_url: "",
-                  document_name: doc.document_name || "",
+                  document_name: normalizedName,
                   is_verified: !!doc.document_expiry,
+                  working_rights_file_path: doc.working_rights || "",
+                  working_rights_file_url: doc.working_rights || "",
+                  show_working_rights: !!doc.working_rights,
                 });
               } else {
                 setDocForm({
@@ -1286,9 +1369,12 @@ export default function EditProfile() {
                   document_expiry: isoToDisplay(doc.document_expiry) || "",
                   file: null,
                   file_path: doc.file || "",
-                  file_url: doc.file,
-                  document_name: doc.document_name,
+                  file_url: doc.file || "",
+                  document_name: normalizedName,
                   is_verified: !!doc.document_expiry,
+                  working_rights_file_path: doc.working_rights || "",
+                  working_rights_file_url: doc.working_rights || "",
+                  show_working_rights: !!doc.working_rights,
                 });
               }
               setShowDocModal(true);
@@ -1306,6 +1392,9 @@ export default function EditProfile() {
                 file_url: "",
                 document_name: "",
                 is_verified: false,
+                working_rights_file_path: "",
+                working_rights_file_url: "",
+                show_working_rights: false,
               });
               setShowDocModal(true);
             }}
@@ -1314,7 +1403,7 @@ export default function EditProfile() {
       )}
 
       {/* Card Delete Confirm Modal */}
-      <Modal open={showCardDeleteModal} onClose={() => { setShowCardDeleteModal(false); setCardToDeleteIndex(null); }}>
+      <PremiumModal open={showCardDeleteModal} onClose={() => { setShowCardDeleteModal(false); setCardToDeleteIndex(null); }} title="Remove Card">
         <div className="p-4 text-center">
           <div className="mb-3 text-danger">
             <i className="fa-solid fa-circle-xmark fa-3x"></i>
@@ -1333,12 +1422,11 @@ export default function EditProfile() {
             <button type="button" className="btn btn-danger px-4 py-2 fw-bold shadow-sm" onClick={confirmRemoveCard} disabled={submitLoading}>{submitLoading ? "Removing..." : "Yes, Remove It"}</button>
           </div>
         </div>
-      </Modal>
+      </PremiumModal>
 
       {/* Phone Change / Verify Modal */}
-      <Modal open={showPhoneModal} onClose={handleClosePhoneModal}>
+      <PremiumModal open={showPhoneModal} onClose={handleClosePhoneModal} title={isPhoneVerified ? "Change Phone Number" : "Verify Phone Number"}>
         <div className="p-3">
-          <h5 className="mb-1">{isPhoneVerified ? "Change Phone Number" : "Verify or Change Phone Number"}</h5>
           <p className="text-muted small mb-4" style={{ textTransform: "none" }}>
             {phoneStep === "input"
               ? isPhoneVerified
@@ -1346,10 +1434,8 @@ export default function EditProfile() {
                 : "You can modify the number below before sending the verification OTP."
               : `Enter the OTP sent to ${newPhoneInput}`}
           </p>
-
           {phoneChangeSuccess && <div className="alert alert-success py-2">Phone number updated successfully!</div>}
           {phoneChangeError && <div className="alert alert-danger py-2">{phoneChangeError}</div>}
-
           {phoneStep === "input" ? (
             <form onSubmit={handleRequestPhoneOtp}>
               <div className="mb-3">
@@ -1377,13 +1463,12 @@ export default function EditProfile() {
             </form>
           )}
         </div>
-      </Modal>
+      </PremiumModal>
 
       {/* Document Modal */}
-      <Modal open={showDocModal} onClose={() => setShowDocModal(false)}>
-        <form onSubmit={handleDocSubmit} className="p-3" style={{ maxHeight: "80vh", overflowY: "auto" }}>
-          <h5>{selectedDoc ? "Edit Document" : "Add New Document"}</h5>
-
+      <PremiumModal open={showDocModal} onClose={() => setShowDocModal(false)} wide title={selectedDoc ? "Update Document" : "Add New Document"}>
+        <form onSubmit={handleDocSubmit} style={{ maxHeight: "80vh", overflowY: "auto" }}>
+          {/* Document Type */}
           <div className="mb-3">
             <label className="form-label fw-semibold">Document Type</label>
             <select
@@ -1396,18 +1481,18 @@ export default function EditProfile() {
             >
               <option value="">Select Type</option>
               {DOC_TYPES.map((doc) => (
-                <option
-                  key={doc.value} value={doc.value}>{capitalizeWords(doc.label)}</option>
+                <option key={doc.value} value={doc.value}>{capitalizeWords(doc.label)}</option>
               ))}
             </select>
           </div>
 
+          {/* Visa / Security License specific parts */}
           {docForm.document_name === "Visa" ? (
             <>
               {(() => {
                 const allDocs = profileData?.data?.documents || [];
                 const passportDoc = allDocs.find(
-                  (doc) => doc.document_type === "passport" && doc.document_no
+                  (doc) => doc.document_type?.toLowerCase() === "passport" && Boolean(doc.document_no)
                 );
                 return passportDoc ? (
                   <>
@@ -1426,7 +1511,6 @@ export default function EditProfile() {
                   </div>
                 );
               })()}
-
               <label className="form-label fw-semibold mt-2">Visa Grant Number <span className="text-danger">*</span></label>
               <input type="text" className="form-control" placeholder="e.g. ABC123456" value={docForm.document_no} onChange={handleDocNumberChange} required />
             </>
@@ -1444,60 +1528,55 @@ export default function EditProfile() {
             </div>
           )}
 
-          <div className="mb-3">
-            <label className="form-label fw-semibold">Expiry Date <span className="text-danger">*</span></label>
-            <div className="input-group position-relative">
-              <button type="button" className="input-group-text bg-white text-muted border-end-0"
-                onClick={(e) => {
-                  e.preventDefault();
-                  const hiddenPicker = document.getElementById("doc_expiry_picker");
-                  if (hiddenPicker) { try { hiddenPicker.showPicker(); } catch (err) { hiddenPicker.focus(); } }
-                }}
-                style={{ cursor: "pointer", zIndex: 10 }}
-                disabled={docForm.document_name === "Security License" || docForm.document_name === "Visa"}
-                title="Open Calendar">
-                <i className="fa-solid fa-calendar-days text-primary"></i>
-              </button>
-              <input type="date" id="doc_expiry_picker" className="position-absolute"
-                style={{ opacity: 0, width: 0, height: 0, pointerEvents: "none", bottom: 0, left: 40 }}
-                value={docForm.document_expiry ? (() => { const parts = docForm.document_expiry.split("/"); if (parts.length === 3) { const [d, m, y] = parts; return `${y}-${m}-${d}`; } return ""; })() : ""}
-                onChange={(e) => { const isoDate = e.target.value; if (isoDate) { const [y, m, d] = isoDate.split("-"); setDocForm((prev) => ({ ...prev, document_expiry: `${d}/${m}/${y}` })); } }}
-                disabled={docForm.document_name === "Security License" || docForm.document_name === "Visa"}
-              />
-              <input type="text" className="form-control border-start-0 ps-0" name="document_expiry" placeholder="DD/MM/YYYY"
-                value={docForm.document_expiry}
-                onChange={(e) => {
-                  let value = e.target.value.replace(/\D/g, "");
-                  if (value.length > 8) value = value.substring(0, 8);
-                  if (value.length > 2 && value.length <= 4) { value = value.replace(/^(\d{2})(\d+)/, "$1/$2"); }
-                  else if (value.length > 4) { value = value.replace(/^(\d{2})(\d{2})(\d+)/, "$1/$2/$3"); }
-                  setDocForm((prev) => ({ ...prev, document_expiry: value }));
-                }}
-                required maxLength={10} pattern="^(0[1-9]|[12][0-9]|3[01])/(0[1-9]|1[012])/\d{4}$"
-                disabled={docForm.document_name === "Security License" || docForm.document_name === "Visa"}
-                style={{ backgroundColor: docForm.document_name === "Security License" || docForm.document_name === "Visa" ? "#e9ecef" : "white" }}
-              />
-            </div>
-          </div>
-
-          <div className="mb-3">
-            <label className="form-label fw-semibold">Document/Image <span className="text-danger">*</span></label>
-            <div className="position-relative border rounded p-3 text-center bg-light" style={{ minHeight: "200px", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              {docForm.file_url ? (
-                <>
-                  {docForm.file_url.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
-                    <img src={docForm.file_url.startsWith("http") ? docForm.file_url : `${apiURL}staff_documents/${docForm.file_url}`} alt="Preview" style={{ width: "100%", maxHeight: "200px", objectFit: "contain", borderRadius: "8px", opacity: uploadLoading ? 0.3 : 1 }} />
+          {/* Working Rights block */}
+          {docForm.show_working_rights ? (
+            <>
+              {/* Work Entitlement Badge */}
+              {docForm.work_entitlement && (
+                <div className="mb-3 mt-3">
+                  <span
+                    className="d-inline-flex align-items-center rounded-pill px-3 py-2"
+                    style={{
+                      background: "#DCFCE7",
+                      border: "1px solid #86EFAC",
+                      color: "#166534",
+                      fontSize: "0.8rem",
+                      fontWeight: 600,
+                    }}
+                  >
+                    <i
+                      className="fa-solid fa-briefcase me-2"
+                      style={{ fontSize: "0.75rem" }}
+                    />
+                    <span style={{ opacity: 0.8, marginRight: 6 }}>
+                      Work Entitlement:
+                    </span>
+                    <strong className="text-uppercase">
+                      {docForm.work_entitlement}
+                    </strong>
+                  </span>
+                </div>
+              )}
+              <div className="mb-3 mt-4">
+                <label className="form-label fw-semibold">Upload Working Rights Document <span className="text-danger">*</span></label>
+                <div className="border rounded p-3 text-center bg-light" style={{ minHeight: "200px", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  {docForm.working_rights_file_url ? (
+                    docForm.working_rights_file_url.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
+                      <img
+                        src={docForm.working_rights_file_url.startsWith("http") ? docForm.working_rights_file_url : `${apiURL}staff_documents/${docForm.working_rights_file_url}`}
+                        alt="Working Rights"
+                        style={{ width: "100%", maxHeight: "200px", objectFit: "contain", borderRadius: "8px", opacity: uploadLoading ? 0.3 : 1 }}
+                      />
+                    ) : (
+                      <div className="text-center">
+                        <i className="fa-solid fa-file-pdf fa-3x text-muted mb-3"></i>
+                        <a style={{ color: "#0A7C6E", fontWeight: "bold" }} href={`${apiURL}staff_documents/${docForm.working_rights_file_url}`} target="_blank" rel="noopener noreferrer">View Uploaded Document</a>
+                      </div>
+                    )
                   ) : (
                     <div className="text-center">
-                      <i className="fa-solid fa-file-pdf fa-3x text-muted mb-3"></i>
-                      <a
-                        style={{ color: "#0A7C6E", fontWeight: "bold", marginLeft: "1rem" }}
-                        href={`${apiURL}staff_documents/${docForm.file_url}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        View Document
-                      </a>
+                      <i className="fa-solid fa-cloud-arrow-up fa-3x text-muted mb-3"></i>
+                      <p className="text-muted">Upload your Working Rights document</p>
                     </div>
                   )}
                   {uploadLoading && (
@@ -1506,44 +1585,105 @@ export default function EditProfile() {
                       <p className="small mt-1">Uploading...</p>
                     </div>
                   )}
-                </>
-              ) : (
-                <div className="text-center">
-                  <i className="fa-solid fa-cloud-arrow-up fa-3x text-muted mb-3"></i>
-                  <p className="text-muted">Upload document to view preview</p>
                 </div>
-              )}
-            </div>
-            <input type="file" className="form-control mt-2" onChange={handleDocFormChange} name="file" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.gif,.webp" />
-          </div>
+                <input type="file" className="form-control mt-2" onChange={handleDocFormChange} name="working_rights_file" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.gif,.webp" />
+              </div>
+              <div className="mb-3">
+                <label className="form-label fw-semibold">Document/Image <span className="text-danger">*</span></label>
+                <div className="position-relative border rounded p-3 text-center bg-light" style={{ minHeight: "200px", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  {docForm.file_url ? (
+                    <>
+                      {docForm.file_url.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
+                        <img src={docForm.file_url.startsWith("http") ? docForm.file_url : `${apiURL}staff_documents/${docForm.file_url}`} alt="Preview" style={{ width: "100%", maxHeight: "200px", objectFit: "contain", borderRadius: "8px", opacity: uploadLoading ? 0.3 : 1 }} />
+                      ) : (
+                        <div className="text-center">
+                          <i className="fa-solid fa-file-pdf fa-3x text-muted mb-3"></i>
+                          <a style={{ color: "#0A7C6E", fontWeight: "bold" }} href={`${apiURL}staff_documents/${docForm.file_url}`} target="_blank" rel="noopener noreferrer">View Document</a>
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <div className="text-center">
+                      <i className="fa-solid fa-cloud-arrow-up fa-3x text-muted mb-3"></i>
+                      <p className="text-muted">Upload document to view preview</p>
+                    </div>
+                  )}
+                </div>
+                <input type="file" className="form-control mt-2" onChange={handleDocFormChange} name="file" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.gif,.webp" />
+              </div>
+              <div className="d-flex gap-2 mt-3">
+                <button type="button" className="btn btn-outline-secondary w-50" onClick={() => setShowDocModal(false)} disabled={uploadLoading || submitLoading}>Cancel</button>
+                <button type="submit" className="btn btn-success w-50" disabled={uploadLoading || submitLoading || !docForm.working_rights_file_path || !docForm.file_path}>
+                  {submitLoading ? "Saving..." : "Upload"}
+                </button>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="mb-3 mt-3">
+                <label className="form-label fw-semibold">Expiry Date <span className="text-danger">*</span></label>
+                <div className="input-group position-relative">
+                  <button type="button" className="input-group-text bg-white text-muted border-end-0"
+                    onClick={(e) => { e.preventDefault(); const p = document.getElementById("doc_expiry_picker"); if (p) { try { p.showPicker(); } catch (_) { p.focus(); } } }}
+                    style={{ cursor: "pointer", zIndex: 10 }}
+                    disabled={docForm.document_name === "Security License" || docForm.document_name === "Visa"}
+                    title="Open Calendar">
+                    <i className="fa-solid fa-calendar-days text-primary"></i>
+                  </button>
+                  <input type="date" id="doc_expiry_picker" className="position-absolute"
+                    style={{ opacity: 0, width: 0, height: 0, pointerEvents: "none", bottom: 0, left: 40 }}
+                    value={docForm.document_expiry ? (() => { const parts = docForm.document_expiry.split("/"); if (parts.length === 3) { const [d, m, y] = parts; return `${y}-${m}-${d}`; } return ""; })() : ""}
+                    onChange={(e) => { const isoDate = e.target.value; if (isoDate) { const [y, m, d] = isoDate.split("-"); setDocForm((prev) => ({ ...prev, document_expiry: `${d}/${m}/${y}` })); } }}
+                    disabled={docForm.document_name === "Security License" || docForm.document_name === "Visa"}
+                  />
+                  <input type="text" className="form-control border-start-0 ps-0" name="document_expiry" placeholder="DD/MM/YYYY"
+                    value={docForm.document_expiry}
+                    onChange={(e) => {
+                      let value = e.target.value.replace(/\D/g, "");
+                      if (value.length > 8) value = value.substring(0, 8);
+                      if (value.length > 2 && value.length <= 4) { value = value.replace(/^(\d{2})(\d+)/, "$1/$2"); }
+                      else if (value.length > 4) { value = value.replace(/^(\d{2})(\d{2})(\d+)/, "$1/$2/$3"); }
+                      setDocForm((prev) => ({ ...prev, document_expiry: value }));
+                    }}
+                    required maxLength={10} pattern="^(0[1-9]|[12][0-9]|3[01])/(0[1-9]|1[012])/\d{4}$"
+                    disabled={docForm.document_name === "Security License" || docForm.document_name === "Visa"}
+                    style={{ backgroundColor: docForm.document_name === "Security License" || docForm.document_name === "Visa" ? "#e9ecef" : "white" }}
+                  />
+                </div>
+              </div>
 
-          <div className="d-flex gap-2">
-            <button type="button" className="btn btn-outline-secondary w-50" onClick={() => setShowDocModal(false)} disabled={uploadLoading || submitLoading}>Cancel</button>
-            <button type="submit" className="btn btn-success w-50" disabled={uploadLoading || submitLoading || !docForm.document_expiry || !docForm.file_url}>{submitLoading ? "Saving..." : "Upload"}</button>
-          </div>
+              <div className="mb-3">
+                <label className="form-label fw-semibold">Document/Image <span className="text-danger">*</span></label>
+                <div className="position-relative border rounded p-3 text-center bg-light" style={{ minHeight: "200px", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  {docForm.file_url ? (
+                    <>
+                      {docForm.file_url.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
+                        <img src={docForm.file_url.startsWith("http") ? docForm.file_url : `${apiURL}staff_documents/${docForm.file_url}`} alt="Preview" style={{ width: "100%", maxHeight: "200px", objectFit: "contain", borderRadius: "8px", opacity: uploadLoading ? 0.3 : 1 }} />
+                      ) : (
+                        <div className="text-center">
+                          <i className="fa-solid fa-file-pdf fa-3x text-muted mb-3"></i>
+                          <a style={{ color: "#0A7C6E", fontWeight: "bold" }} href={`${apiURL}staff_documents/${docForm.file_url}`} target="_blank" rel="noopener noreferrer">View Document</a>
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <div className="text-center">
+                      <i className="fa-solid fa-cloud-arrow-up fa-3x text-muted mb-3"></i>
+                      <p className="text-muted">Upload document to view preview</p>
+                    </div>
+                  )}
+                </div>
+                <input type="file" className="form-control mt-2" onChange={handleDocFormChange} name="file" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.gif,.webp" />
+              </div>
+
+              <div className="d-flex gap-2">
+                <button type="button" className="btn btn-outline-secondary w-50" onClick={() => setShowDocModal(false)} disabled={uploadLoading || submitLoading}>Cancel</button>
+                <button type="submit" className="btn btn-success w-50" disabled={uploadLoading || submitLoading || !docForm.document_expiry || !docForm.file_url}>{submitLoading ? "Saving..." : "Upload"}</button>
+              </div>
+            </>
+          )}
         </form>
-      </Modal>
-
-      {/* Profile Delete Modal */}
-      <Modal open={showDeleteModal} onClose={() => setShowDeleteModal(false)}>
-        <div className="p-3">
-          <h5 className="mb-1 text-danger fw-bold">
-            <i className="fa-solid fa-exclamation-circle me-2"></i>
-            Permanently Delete Profile?
-          </h5>
-          <div className="alert alert-danger py-2 mt-3" style={{ textTransform: "none" }}>
-            <strong>Warning:</strong> This action is permanent and cannot be undone. All your data will be deleted.
-          </div>
-          <p className="text-muted small mb-4" style={{ textTransform: "none" }}>
-            Please type <strong>DELETE</strong> to confirm you want to permanently delete your profile.
-          </p>
-          <input type="text" className="form-control mb-3 fw-bold text-center" placeholder="Type DELETE to confirm" value={deleteConfirmText} onChange={(e) => setDeleteConfirmText(e.target.value.toUpperCase())} autoFocus />
-          <div className="d-flex gap-2">
-            <button type="button" className="btn btn-outline-secondary w-50" onClick={() => { setShowDeleteModal(false); setDeleteConfirmText(""); }} disabled={deleteLoading}>Cancel</button>
-            <button type="button" className="btn btn-danger w-50" onClick={handleDeleteProfile} disabled={deleteLoading || deleteConfirmText !== "DELETE"}>{deleteLoading ? "Deleting..." : "Delete Profile"}</button>
-          </div>
-        </div>
-      </Modal>
+      </PremiumModal>
     </div>
   );
 }

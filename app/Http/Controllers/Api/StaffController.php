@@ -677,6 +677,7 @@ private function calculateProfileCompletion(User $user): int
         $updateDocuments->document_no = (!empty($request->document_no) && $request->has('document_no') ? $request->document_no : '');
         $updateDocuments->document_type = (!empty($request->document_type) && $request->has('document_type') ? $request->document_type : '');
         $updateDocuments->working_rights = (!empty($request->working_rights) && $request->has('working_rights')) ? $request->working_rights : null;
+
         if ($request->has('file')) {
             $updateDocuments->file = $request->file;
             $updateDocuments->file = str_replace(url('') . "/" . "staff_documents/", "", $request->file);
@@ -685,108 +686,6 @@ private function calculateProfileCompletion(User $user): int
 
         return response()->json(['message' => "Staff Documents Updated Successfully!", 'code' => 200, 'success' => true]);
     }
-    
-    //  public function documentsPoints(User $user)
-    // {
-    //     $documentPoints = [
-    //         'passport' => 70,
-    //         'citizen_ship' => 70,
-    //         'medicare' => 25,
-    //         'birth_certificate' => 25,
-    //         'security_license' => 40,
-    //         'driver_license_front' => 70,
-    //         'driver_license_back' => 0,
-    //         'working_with_children' => 0,
-    //         'first_aid' => 0,
-    //         'cpr' => 0,
-    //         'visa' => 0,
-    //     ];
-
-    //     $updateDocuments = Document::where('user_id', $user->id)->first();
-        
-    //     if (!$updateDocuments) {
-    //         return response()->json(['message' => "Document not found!", 'code' => 404, 'success' => false]);
-    //     }
-        
-    //     $allUserDocuments = Document::where('user_id', $user->id)->get();
-        
-    //     $totalPoints = 0;
-    //     $validDocuments = [];
-    //     $invalidDocuments = [];
-        
-    //     foreach ($allUserDocuments as $document) {
-    //         $docName = strtolower(str_replace(' ', '_', $document->document_name));
-            
-    //         $hasFile = !empty($document->file);
-    //         $hasValidExpiry = false;
-            
-    //         if (!empty($document->document_expiry)) {
-    //             if ($document->document_expiry == 'current, pending renewal') {
-    //                 $hasValidExpiry = true;
-    //             } else {
-    //                 $expiryDate = \Carbon\Carbon::parse($document->document_expiry);
-    //                 $hasValidExpiry = $expiryDate->isFuture();
-    //             }
-    //         }
-            
-    //         if ($hasFile && $hasValidExpiry) {
-    //             $points = $documentPoints[$docName] ?? 0;
-    //             $totalPoints += $points;
-                
-    //             $validDocuments[] = [
-    //                 'document_name' => $document->document_name,
-    //                 'points' => $points,
-    //                 'expiry' => $document->document_expiry,
-    //                 'document_no' => $document->document_no
-    //             ];
-    //         } else {
-    //             $invalidDocuments[] = [
-    //                 'document_name' => $document->document_name,
-    //                 'reason' => !$hasFile ? 'No file uploaded' : 'Invalid or missing expiry',
-    //                 'expiry' => $document->document_expiry ?? 'Not provided'
-    //             ];
-    //         }
-    //     }
-        
-    //     $accountStatus = $totalPoints >= 100 ? 1 : 0;
-        
-    //     $user = User::find($user->id);
-    //     if ($user) {
-    //         $oldStatus = $user->is_active;
-    //         $user->is_active = $accountStatus;
-    //         $user->save();
-            
-    //         // Send notification if account becomes active from inactive
-    //         if ($totalPoints >= 100 && $oldStatus != 1) {
-                 
-    //             $notificationData = [
-    //                 'notification_token' => $user->notification_token,
-    //                 'message' => "Congratulations! Your account is now active with {$totalPoints} verification points.",
-    //                 'title' => 'Account Activated',
-    //                 'page' => 'account-verified',
-    //             ];
-                
-    //             if (function_exists('send_push_notification')) {
-    //                 send_push_notification($notificationData);
-    //             }   
-    //         }
-    //     }
-        
-    //     return response()->json([
-    //         'message' => "Staff Documents Updated Successfully!",
-    //         'code' => 200,
-    //         'success' => true,
-    //         'data' => [
-    //             'total_points' => $totalPoints,
-    //             'required_points' => 100,
-    //             'account_status' => $accountStatus,
-    //             'valid_documents' => $validDocuments,
-    //             'invalid_documents' => $invalidDocuments,
-    //             'points_remaining' => $totalPoints >= 100 ? 0 : (100 - $totalPoints),
-    //             'is_verified' => $totalPoints >= 100
-    //         ]
-    //     ]);
-    // }
 
     public function editUser($id)
     {
@@ -992,14 +891,70 @@ private function calculateProfileCompletion(User $user): int
                             $old_doc_types = $old_docs->keys()->toArray();
                             $new_doc_keys = array_keys($new_doc_types);
 
-                            $to_delete_types = array_diff($old_doc_types, $new_doc_keys);
-                            $to_add_types = array_diff($new_doc_keys, $old_doc_types);
-                            $common_types = array_intersect($old_doc_types, $new_doc_keys);
+                            // FIX: Use array_diff_key and array_intersect_key (compare KEYS, not values)
+                            $to_delete_types = array_diff_key($old_docs->toArray(), $new_doc_types);
+                            $to_add_types = array_diff_key($new_doc_types, $old_docs->toArray());
+                            $common_types = array_intersect_key($old_docs->toArray(), $new_doc_types);
+
+                            // Get the keys for easier processing
+                            $to_delete_keys = array_keys($to_delete_types);
+                            $to_add_keys = array_keys($to_add_types);
+                            $common_keys = array_keys($common_types);
+
+                            // ===== HANDLE VISA DOCUMENT =====
+                            // 1. Always delete old visa if it exists
+                            if (in_array('visa', $old_doc_types)) {
+                                // Delete the old visa document
+                                Document::where('user_id', $user->id)
+                                    ->where('document_type', 'visa')
+                                    ->delete();
+                                
+                                // Remove visa from old_doc_types so it's not processed elsewhere
+                                if (($key = array_search('visa', $old_doc_types)) !== false) {
+                                    unset($old_doc_types[$key]);
+                                }
+                                // Remove from arrays if present
+                                if (($key = array_search('visa', $to_delete_keys)) !== false) {
+                                    unset($to_delete_keys[$key]);
+                                }
+                                if (($key = array_search('visa', $common_keys)) !== false) {
+                                    unset($common_keys[$key]);
+                                }
+                            }
+                            
+                            // 2. Check if new visa type has 'visa' document
+                            $has_visa_in_new = in_array('visa', $new_doc_keys);
+                            
+                            // 3. If new visa type has visa, add it
+                            if ($has_visa_in_new) {
+                                // Add visa to to_add_keys if not already there
+                                if (!in_array('visa', $to_add_keys)) {
+                                    $to_add_keys[] = 'visa';
+                                }
+                                // Remove visa from new_doc_keys for other processing
+                                if (($key = array_search('visa', $new_doc_keys)) !== false) {
+                                    unset($new_doc_keys[$key]);
+                                }
+                            }
+                            
+                            // Remove visa from any other arrays to avoid conflicts
+                            if (($key = array_search('visa', $to_delete_keys)) !== false) {
+                                unset($to_delete_keys[$key]);
+                            }
+                            if (($key = array_search('visa', $common_keys)) !== false) {
+                                unset($common_keys[$key]);
+                            }
+                            if (($key = array_search('visa', $to_add_keys)) !== false && $has_visa_in_new) {
+                                // Keep it in to_add_keys if we're adding it
+                            } else if (($key = array_search('visa', $to_add_keys)) !== false) {
+                                unset($to_add_keys[$key]);
+                            }
+                            // ===== END HANDLE VISA =====
 
                             // Update common types
-                            if (!empty($common_types)) {
+                            if (!empty($common_keys)) {
                                 $common_doc_ids = [];
-                                foreach ($common_types as $doc_type) {
+                                foreach ($common_keys as $doc_type) {
                                     if ($old_docs->has($doc_type)) {
                                         $common_doc_ids[] = $old_docs[$doc_type]->id;
                                     }
@@ -1009,25 +964,25 @@ private function calculateProfileCompletion(User $user): int
                                     ->update(['document_category' => $new_document_category]);
                             }
 
-                            // Delete old types that have no files
-                            if (!empty($to_delete_types)) {
+                            // Delete old types
+                            if (!empty($to_delete_keys)) {
                                 Document::where('user_id', $user->id)
                                     ->where('document_category', '!=', 'other-doc')
-                                    ->whereIn('document_type', $to_delete_types)
+                                    ->whereIn('document_type', $to_delete_keys)
                                     ->delete();
                             }
 
-                            // Add new types
-                            if (!empty($to_add_types)) {
+                            // Add new types (including visa if it exists in new)
+                            if (!empty($to_add_keys)) {
                                 $documents_to_insert = [];
 
-                                foreach ($to_add_types as $doc_type) {
+                                foreach ($to_add_keys as $doc_type) {
                                     if (!Document::where(['user_id' => $user->id, 'document_type' => $doc_type])->exists()) {
                                         $documents_to_insert[] = [
                                             'user_id' => $user->id,
                                             'document_category' => $new_document_category,
                                             'document_type' => $doc_type,
-                                            'document_name' => $new_doc_types[$doc_type],
+                                            'document_name' => $new_doc_types[$doc_type] ?? ucfirst(str_replace('_', ' ', $doc_type)),
                                             'created_at' => now(),
                                             'updated_at' => now()
                                         ];

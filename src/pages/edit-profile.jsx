@@ -242,17 +242,6 @@ function capitalizeWords(str) {
     .join(' ');
 }
 
-// Normalize document type for the select (used when opening existing document)
-const normalizeDocType = (rawDoc) => {
-  if (!rawDoc) return "";
-  const str = typeof rawDoc === "string" ? rawDoc : rawDoc?.document_type || rawDoc?.document_name || "";
-  const trimmed = str.trim();
-  if (!trimmed) return "";
-  if (DOC_TYPES.some((d) => d.value === trimmed)) return trimmed;
-  const match = DOC_TYPES.find((d) => d.value.toLowerCase() === trimmed.toLowerCase());
-  if (match) return match.value;
-  return trimmed.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
-};
 
 export default function EditProfile() {
   const dispatch = useDispatch();
@@ -1343,7 +1332,7 @@ export default function EditProfile() {
             userType={userType}
             onAddFile={(doc) => {
               setSelectedDoc(doc);
-              const normalizedName = normalizeDocType(doc);
+              const displayName = doc.document_name || doc.document_type || "";
               if (!doc.document_no && !doc.document_expiry && !doc.file) {
                 setDocForm({
                   notes: "",
@@ -1354,7 +1343,7 @@ export default function EditProfile() {
                   file: null,
                   file_path: "",
                   file_url: "",
-                  document_name: normalizedName,
+                  document_name: displayName,
                   is_verified: !!doc.document_expiry,
                   working_rights_file_path: doc.working_rights || "",
                   working_rights_file_url: doc.working_rights || "",
@@ -1370,7 +1359,7 @@ export default function EditProfile() {
                   file: null,
                   file_path: doc.file || "",
                   file_url: doc.file || "",
-                  document_name: normalizedName,
+                  document_name: displayName,
                   is_verified: !!doc.document_expiry,
                   working_rights_file_path: doc.working_rights || "",
                   working_rights_file_url: doc.working_rights || "",

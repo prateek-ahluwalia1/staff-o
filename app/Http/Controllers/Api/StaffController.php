@@ -995,9 +995,6 @@ private function calculateProfileCompletion(User $user): int
                             $to_delete_types = array_diff($old_doc_types, $new_doc_keys);
                             $to_add_types = array_diff($new_doc_keys, $old_doc_types);
                             $common_types = array_intersect($old_doc_types, $new_doc_keys);
-                            $to_delete_types = array_diff_key($old_doc_types, $new_doc_keys);
-                            $to_add_types = array_diff_key($new_doc_keys, $old_doc_types);
-                            $common_types = array_intersect_key($old_doc_types, $new_doc_keys);
 
                             // Update common types
                             if (!empty($common_types)) {

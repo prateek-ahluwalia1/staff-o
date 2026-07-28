@@ -35,7 +35,6 @@ const DOC_TYPES = [
   { value: "Security Master License", label: "Security Master License" },
   { value: "Security License", label: "Security License" },
   { value: "Working with Children Check", label: "Working With Children Check (WWCC)" },
-  { value: "Working With Children Check", label: "Working With Children Check (WWCC)" },
   { value: "Employment Application Form", label: "Employment Application Form" },
   { value: "TFN Declaration", label: "TFN Declaration" },
   { value: "Superannuation Form", label: "Superannuation Form" },
@@ -126,6 +125,132 @@ function capitalizeWords(str) {
     .join(' ');
 }
 
+/* ──────────────────────────────────────────
+   Premium Modal Component (inline)
+   ────────────────────────────────────────── */
+const PremiumModal = ({ open, onClose, children, title, wide = false }) => {
+  if (!open) return null;
+  return (
+    <div className="modal-overlay-premium" onClick={onClose} role="dialog" aria-modal="true">
+      <div className={`modal-content-premium ${wide ? "modal-wide" : ""}`} onClick={(e) => e.stopPropagation()}>
+        <div className="modal-header-premium">
+          {title && <h3 className="modal-title">{title}</h3>}
+          <button className="modal-close-btn" onClick={onClose} type="button">
+            <i className="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+        <div className="modal-body">{children}</div>
+      </div>
+      <style>{`
+        :root {
+          --modal-navy-950: #0a1930;
+          --modal-navy-900: #0e2340;
+          --modal-teal: #0A7C6E;
+          --modal-teal-dark: #075e53;
+          --modal-line: #e2e8f0;
+          --modal-surface: #ffffff;
+          --modal-text: #1e293b;
+          --modal-muted: #64748b;
+        }
+        .modal-overlay-premium {
+          position: fixed;
+          inset: 0;
+          background: rgba(10,20,35,0.62);
+          backdrop-filter: blur(6px);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 9999;
+          padding: 1.5rem;
+          animation: modalFadeIn 0.25s ease-out;
+        }
+        @keyframes modalFadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .modal-content-premium {
+          background: var(--modal-surface);
+          border-radius: 22px;
+          box-shadow: 0 30px 60px -18px rgba(10,25,48,0.5);
+          max-width: 600px;
+          width: 100%;
+          max-height: 90vh;
+          display: flex;
+          flex-direction: column;
+          overflow: hidden;
+          border: 1px solid rgba(255,255,255,0.2);
+          animation: modalPopIn 0.35s cubic-bezier(0.16,1,0.3,1);
+        }
+        .modal-wide { max-width: 900px; }
+        @keyframes modalPopIn {
+          from { opacity: 0; transform: scale(0.96) translateY(10px); }
+          to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+        .modal-header-premium {
+          position: relative;
+          background: linear-gradient(120deg, var(--modal-navy-950), var(--modal-navy-900) 70%, #10345a);
+          padding: 16px 20px;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          flex-shrink: 0;
+          overflow: hidden;
+        }
+        .modal-header-premium::after {
+          content: "";
+          position: absolute;
+          top: -30px;
+          right: -30px;
+          width: 120px;
+          height: 120px;
+          border-radius: 50%;
+          background: radial-gradient(circle, rgba(10,124,110,0.5), transparent 70%);
+          pointer-events: none;
+        }
+        .modal-title {
+          margin: 0;
+          font-size: 19px;
+          font-weight: 700;
+          letter-spacing: 0.2px;
+          color: #fff;
+          position: relative;
+          z-index: 1;
+        }
+        .modal-close-btn {
+          position: relative;
+          z-index: 2;
+          width: 34px;
+          height: 34px;
+          border-radius: 50%;
+          border: none;
+          background: rgba(255,255,255,0.08);
+          color: #fff;
+          font-size: 16px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          transition: background 0.2s, transform 0.2s;
+          flex-shrink: 0;
+          margin-left: auto;
+        }
+        .modal-close-btn:hover {
+          background: rgba(255,255,255,0.18);
+          transform: rotate(90deg);
+        }
+        .modal-body {
+          padding: 24px;
+          overflow-y: auto;
+          flex: 1;
+          color: var(--modal-text);
+        }
+        @media (max-width: 576px) {
+          .modal-overlay-premium { padding: 0.75rem; }
+          .modal-body { padding: 16px; }
+          .modal-content-premium { border-radius: 18px; }
+        }
+      `}</style>
+    </div>
+  );
+};
+
 const ManageUsers = () => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -154,12 +279,10 @@ const ManageUsers = () => {
   const contractorsList = contractorsResponse?.data?.data || [];
   const { submit, loading: submitLoading } = useSubmit({ isAuth: true });
   const { submit: uploadFile, loading: uploadLoading } = useSubmit({ isAuth: true });
-  // Security License verification hook
   const { submit: submitSecurityLicense } = useSubmit({
     isAuth: true,
     BaseURL: "https://apis.thescouts.com.au/",
   });
-  // Phone OTP hook
   const { submit: phoneSubmit, loading: phoneLoading } = useSubmit({ isAuth: true });
 
   const [users, setUsers] = useState([]);
@@ -172,7 +295,6 @@ const ManageUsers = () => {
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
 
-  // Phone OTP modal states
   const [showPhoneModal, setShowPhoneModal] = useState(false);
   const [phoneStep, setPhoneStep] = useState("input");
   const [newPhoneInput, setNewPhoneInput] = useState("");
@@ -180,7 +302,6 @@ const ManageUsers = () => {
   const [phoneChangeError, setPhoneChangeError] = useState(null);
   const [phoneChangeSuccess, setPhoneChangeSuccess] = useState(false);
 
-  // Password & Document States
   const [showPassword, setShowPassword] = useState(false);
   const [showDocModal, setShowDocModal] = useState(false);
   const [selectedDoc, setSelectedDoc] = useState(null);
@@ -198,7 +319,6 @@ const ManageUsers = () => {
     is_verified: false,
   });
 
-  // defaultFormState includes abn & acn
   const defaultFormState = useMemo(() => ({
     name: "",
     email: "",
@@ -235,7 +355,6 @@ const ManageUsers = () => {
     return [];
   }, [editingUser, activeTab]);
 
-  // ---- ProfileForm change handler ----
   const handleProfileFormChange = useCallback((e) => {
     const { id, value } = e.target;
     setFormData(prev => ({
@@ -266,46 +385,32 @@ const ManageUsers = () => {
 
   const getUserStatus = useCallback((user) => {
     if (!user) return "inactive";
-
-    // API status field
     if (user.status) {
       return String(user.status).toLowerCase();
     }
-
-    // Handle boolean is_active
     if (typeof user.is_active === "boolean") {
       return user.is_active ? "active" : "inactive";
     }
-
-    // Handle numeric/string is_active
     if (user.is_active !== undefined && user.is_active !== null) {
       return ["1", 1, "true", true].includes(user.is_active)
         ? "active"
         : "inactive";
     }
-
-    // Soft deleted users
     if (user.deleted_at) {
       return "inactive";
     }
-
-    // Check nested object
     const nested = getNestedData(user);
-
     if (nested?.status) {
       return String(nested.status).toLowerCase();
     }
-
     if (typeof nested?.is_active === "boolean") {
       return nested.is_active ? "active" : "inactive";
     }
-
     if (nested?.is_active !== undefined && nested?.is_active !== null) {
       return ["1", 1, "true", true].includes(nested.is_active)
         ? "active"
         : "inactive";
     }
-
     return "active";
   }, [getNestedData]);
 
@@ -835,7 +940,6 @@ const ManageUsers = () => {
     }
   };
 
-  // ----- PHONE OTP HANDLERS -----
   const handleClosePhoneModal = () => {
     setShowPhoneModal(false);
     setPhoneStep("input");
@@ -897,9 +1001,15 @@ const ManageUsers = () => {
       setPhoneChangeError(res.errors || res.message || "Invalid OTP. Please try again.");
     }
   };
-  // ----- END PHONE OTP HANDLERS -----
 
   if (loading && users.length === 0) return <Loader />;
+
+  // Build the title for the document modal (exactly as stored, no normalization)
+  const docModalTitle = selectedDoc
+    ? `Update Document — ${docForm.document_name}`
+    : docForm.document_name
+      ? `Add Document — ${docForm.document_name}`
+      : "Add Document";
 
   return (
     <div className="dashboard-main">
@@ -942,57 +1052,52 @@ const ManageUsers = () => {
           opacity: 0.35;
           z-index: -1;
         }
-          .pac-container {
-  z-index: 10000 !important;
-}
-  .custom-input {
-  display: flex;
-  align-items: center;
-  height: 44px; /* Same as your other inputs */
-  border: 1px solid #d9dde3;
-  border-radius: 8px;
-  overflow: hidden;
-}
-
-.custom-input-icon {
-  width: 42px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  color: #6c757d;
-  border-right: 1px solid #d9dde3;
-}
-
-.custom-input-field {
-  flex: 1;
-  border: none;
-  outline: none;
-  padding: 0 14px;
-  height: 100%;
-  font-size: 16px;
-  background: transparent;
-}
-
-.custom-input-field:focus {
-  outline: none;
-  box-shadow: none;
-}
-
-.custom-input-eye {
-  width: 42px;
-  height: 100%;
-  border: none;
-  background: transparent;
-  color: #6c757d;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  cursor: pointer;
-}
-
-.custom-input-eye:hover {
-  color: #0d6efd;
-}
+        .pac-container {
+          z-index: 10000 !important;
+        }
+        .custom-input {
+          display: flex;
+          align-items: center;
+          height: 44px;
+          border: 1px solid #d9dde3;
+          border-radius: 8px;
+          overflow: hidden;
+        }
+        .custom-input-icon {
+          width: 42px;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          color: #6c757d;
+          border-right: 1px solid #d9dde3;
+        }
+        .custom-input-field {
+          flex: 1;
+          border: none;
+          outline: none;
+          padding: 0 14px;
+          height: 100%;
+          font-size: 16px;
+          background: transparent;
+        }
+        .custom-input-field:focus {
+          outline: none;
+          box-shadow: none;
+        }
+        .custom-input-eye {
+          width: 42px;
+          height: 100%;
+          border: none;
+          background: transparent;
+          color: #6c757d;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          cursor: pointer;
+        }
+        .custom-input-eye:hover {
+          color: #0d6efd;
+        }
         .manage-users-hero::after {
           content: "";
           position: absolute;
@@ -1138,55 +1243,6 @@ const ManageUsers = () => {
         }
         .page-btn:disabled { opacity: 0.45; pointer-events: none; }
 
-        /* Modal styles */
-        .modal-overlay {
-          background: rgba(10,20,35,0.62);
-          backdrop-filter: blur(2px);
-        }
-        .modal-content-custom {
-          border: none;
-          border-radius: 18px;
-          box-shadow: 0 30px 60px -18px rgba(10,25,48,0.4);
-        }
-        .modal-header-custom {
-          background: linear-gradient(120deg, var(--navy-950), var(--navy-900) 70%, #10345a);
-          border-bottom: none;
-          border-radius: 18px 18px 0 0;
-          position: relative;
-          overflow: hidden;
-        }
-          @keyframes loadingBar {
-  0% { transform: translateX(-100%); }
-  100% { transform: translateX(100%); }
-}
-        .modal-header-custom::after {
-          content: "";
-          position: absolute;
-          top: -40px;
-          right: -40px;
-          width: 160px;
-          height: 160px;
-          border-radius: 50%;
-          background: radial-gradient(circle, rgba(10,124,110,0.5), transparent 70%);
-        }
-        .modal-close-btn {
-          background: rgba(255,255,255,0.14);
-          border: none;
-          color: #fff;
-          border-radius: 50%;
-          width: 32px;
-          height: 32px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          transition: background 0.15s;
-          position: relative;
-          z-index: 1;
-        }
-        .modal-close-btn:hover {
-          background: rgba(255,255,255,0.26);
-        }
-
         .confirm-modal-backdrop {
           position: fixed;
           inset: 0;
@@ -1225,35 +1281,6 @@ const ManageUsers = () => {
         @keyframes modalFadeIn {
           from { opacity: 0; transform: scale(0.98); }
           to { opacity: 1; transform: scale(1); }
-        }
-
-        .empty-state {
-          border: 1.5px dashed var(--line);
-          background: #fff;
-          border-radius: 18px;
-          padding: 56px 24px;
-        }
-        .empty-state i { font-size: 2rem; color: #94a3b8; }
-        .empty-state-title { color: var(--slate); font-weight: 700; font-size: 15px; margin-top: 14px; }
-        .empty-state-sub { color: var(--muted); font-size: 13px; margin-top: 4px; text-transform: none; }
-
-        .tabs-nav .nav-link {
-          border-radius: 8px;
-          padding: 0.5rem 1rem;
-          font-size: 0.88rem;
-          font-weight: 600;
-          color: #475569;
-          background: transparent;
-          border: 1px solid transparent;
-          transition: all 0.2s ease-in-out;
-        }
-        .tabs-nav .nav-link:hover {
-          background: #f1f5f9;
-        }
-        .tabs-nav .nav-link.active {
-          background: var(--teal);
-          color: #ffffff;
-          box-shadow: 0 4px 6px -1px rgba(10, 124, 110, 0.2);
         }
 
         .add-btn {
@@ -1442,7 +1469,6 @@ const ManageUsers = () => {
                         </div>
                       </td>
                     )}
-                    {/* Status badge */}
                     <td>
                       <span className={getStatusBadgeClass(status)}>
                         {status.charAt(0).toUpperCase() + status.slice(1)}
@@ -1710,7 +1736,6 @@ const ManageUsers = () => {
                     userType={activeTab}
                     onAddFile={openDocumentModal}
                   />
-                  {/* NO inline form here – the modal is now a separate overlay */}
                 </div>
               ) : null}
             </div>
@@ -1729,251 +1754,220 @@ const ManageUsers = () => {
         </div>
       )}
 
-      {/* DOCUMENT MODAL – separate, independent overlay */}
-      {showDocModal && (
-        <div className="confirm-modal-backdrop" onClick={closeDocumentModal}>
-          <div className="confirm-modal-card" onClick={(e) => e.stopPropagation()}>
-            <div className="confirm-modal-header px-4 py-3 d-flex align-items-center gap-3">
-              <span className="confirm-modal-icon icon-doc">
-                <i className="fa-solid fa-file-arrow-up"></i>
-              </span>
-              <div>
-                <h5 className="mb-0 fw-bold">
-                  {selectedDoc
-                    ? `Update Document — ${docForm.document_name}`
-                    : docForm.document_name
-                      ? `Add Document — ${docForm.document_name}`
-                      : "Add Document"}
-                </h5>
-                <div className="small text-muted">Upload a verification file.</div>
-              </div>
-            </div>
-            <form onSubmit={handleDocSubmit} className="p-4" style={{ maxHeight: "70vh", overflowY: "auto" }}>
-              {/* Document Type */}
-              <div className="mb-3">
-                <label className="form-label fw-bold text-dark">Document Type</label>
-                <select
-                  className="form-control bg-light border-0"
-                  name="document_name"
-                  value={docForm.document_name}
-                  onChange={handleDocFormChange}
-                  required
-                  disabled={!!selectedDoc}
-                  style={{ minHeight: "44px" }}
-                >
-                  <option value="">Select Type</option>
-                  {DOC_TYPES.map((doc) => (
-                    <option key={doc.value} value={doc.value}>
-                      {capitalizeWords(doc.label)}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              {/* Document Number + Verify */}
-              <div className="mb-3">
-                <label className="form-label fw-bold text-dark">
-                  Document Number <span className="text-danger">*</span>
-                </label>
-                {(docForm.document_name === "Security License" || docForm.document_name === "Visa") ? (
-                  <div className="input-group">
-                    <input
-                      type="text"
-                      className="form-control bg-light border-0"
-                      placeholder="e.g. ABC123456"
-                      value={docForm.document_no}
-                      onChange={handleDocNumberChange}
-                      required
-                      style={{ minHeight: "44px" }}
-                    />
-                    <button
-                      type="button"
-                      className="btn btn-dark fw-bold px-4 border-0"
-                      onClick={handleVerifyDocumentNumber}
-                      disabled={verifyingDoc || !docForm.document_no}
-                      style={{ minHeight: "44px" }}
-                    >
-                      {verifyingDoc ? (
-                        <>
-                          <span className="spinner-border spinner-border-sm me-1" />
-                          Verifying...
-                        </>
-                      ) : (
-                        "Verify"
-                      )}
-                    </button>
-                  </div>
-                ) : (
-                  <input
-                    type="text"
-                    className="form-control bg-light border-0"
-                    placeholder="e.g. ABC123456"
-                    value={docForm.document_no}
-                    onChange={handleDocNumberChange}
-                    required
-                    style={{ minHeight: "44px" }}
-                  />
-                )}
-              </div>
-              {/* Expiry Date */}
-              <div className="mb-3">
-                <label className="form-label fw-bold text-dark">
-                  Expiry Date <span className="text-danger">*</span>
-                </label>
-                <div className="input-group position-relative shadow-sm rounded-3 overflow-hidden">
-                  <button
-                    type="button"
-                    className="input-group-text bg-light text-muted border-0"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      const hiddenPicker = document.getElementById("doc_expiry_picker");
-                      if (hiddenPicker) {
-                        try { hiddenPicker.showPicker(); } catch (err) { hiddenPicker.focus(); }
-                      }
-                    }}
-                    style={{ cursor: "pointer", zIndex: 10, minHeight: "44px" }}
-                    disabled={docForm.document_name === "Security License" || docForm.document_name === "Visa"}
-                    title="Open Calendar"
-                  >
-                    <i className="fa-solid fa-calendar-days text-dark"></i>
-                  </button>
-                  <input
-                    type="date"
-                    id="doc_expiry_picker"
-                    className="position-absolute"
-                    style={{ opacity: 0, width: 0, height: 0, pointerEvents: "none", bottom: 0, left: 40 }}
-                    value={
-                      docForm.document_expiry
-                        ? (() => {
-                          const parts = docForm.document_expiry.split("/");
-                          if (parts.length === 3) {
-                            const [d, m, y] = parts;
-                            return `${y}-${m}-${d}`;
-                          }
-                          return "";
-                        })()
-                        : ""
-                    }
-                    onChange={(e) => {
-                      const isoDate = e.target.value;
-                      if (isoDate) {
-                        const [y, m, d] = isoDate.split("-");
-                        setDocForm(prev => ({
-                          ...prev,
-                          document_expiry: `${d}/${m}/${y}`,
-                        }));
-                      }
-                    }}
-                    disabled={docForm.document_name === "Security License" || docForm.document_name === "Visa"}
-                  />
-                  <input
-                    type="text"
-                    className="form-control bg-light border-0 ps-0"
-                    name="document_expiry"
-                    placeholder="DD/MM/YYYY"
-                    value={docForm.document_expiry}
-                    onChange={(e) => {
-                      let value = e.target.value.replace(/\D/g, "");
-                      if (value.length > 8) value = value.substring(0, 8);
-                      if (value.length > 2 && value.length <= 4) {
-                        value = value.replace(/^(\d{2})(\d+)/, "$1/$2");
-                      } else if (value.length > 4) {
-                        value = value.replace(/^(\d{2})(\d{2})(\d+)/, "$1/$2/$3");
-                      }
-                      setDocForm(prev => ({
-                        ...prev,
-                        document_expiry: value,
-                      }));
-                    }}
-                    required
-                    maxLength={10}
-                    pattern="^(0[1-9]|[12][0-9]|3[01])/(0[1-9]|1[012])/\d{4}$"
-                    disabled={docForm.document_name === "Security License" || docForm.document_name === "Visa"}
-                    style={{
-                      backgroundColor:
-                        docForm.document_name === "Security License" || docForm.document_name === "Visa"
-                          ? "#e9ecef"
-                          : "white",
-                      minHeight: "44px"
-                    }}
-                  />
-                </div>
-              </div>
-              {/* File Upload */}
-              <div className="mb-4">
-                <label className="form-label fw-bold text-dark">
-                  Document/Image <span className="text-danger">*</span>
-                </label>
-                <div
-                  className="position-relative border border-2 border-dashed rounded-4 p-4 text-center bg-light"
-                  style={{ minHeight: "200px", display: "flex", alignItems: "center", justifyContent: "center" }}
-                >
-                  {docForm.file_url ? (
-                    <>
-                      {docForm.file_url.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
-                        <img
-                          src={docForm.file_url.startsWith("http") ? docForm.file_url : `${apiURL}staff_documents/${docForm.file_url}`}
-                          alt="Preview"
-                          style={{ width: "100%", maxHeight: "200px", objectFit: "contain", borderRadius: "8px", opacity: uploadLoading ? 0.3 : 1 }}
-                        />
-                      ) : (
-                        <div className="text-center">
-                          <i className="fa-solid fa-file-pdf fa-3x text-muted mb-3"></i>
-                          <p className="fw-bold text-secondary mb-0">Document Selected</p>
-                          <a
-                            style={{ color: "#0A7C6E", fontWeight: "bold" }}
-                            href={`${apiURL}staff_documents/${docForm.file_url}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                          >
-                            View Document
-                          </a>
-                        </div>
-                      )}
-                      {uploadLoading && (
-                        <div className="position-absolute top-50 start-50 translate-middle">
-                          <div className="spinner-border text-primary" />
-                          <p className="small mt-1 fw-bold text-dark">Uploading...</p>
-                        </div>
-                      )}
-                    </>
-                  ) : (
-                    <div className="text-center">
-                      <p className="text-muted fw-medium mb-0">Upload document to view preview</p>
-                    </div>
-                  )}
-                </div>
+      {/* PREMIUM DOCUMENT MODAL – matching StaffooStaff design */}
+      <PremiumModal open={showDocModal} onClose={closeDocumentModal} wide title={docModalTitle}>
+        <form onSubmit={handleDocSubmit} style={{ maxHeight: "70vh", overflowY: "auto" }}>
+          {/* Document Type */}
+          <div className="mb-3">
+            <label className="form-label fw-semibold">Document Type</label>
+            <select
+              className="form-control"
+              name="document_name"
+              value={docForm.document_name}
+              onChange={handleDocFormChange}
+              required
+              disabled={!!selectedDoc}
+            >
+              <option value="">Select Type</option>
+              {DOC_TYPES.map((doc) => (
+                <option key={doc.value} value={doc.value}>
+                  {capitalizeWords(doc.label)}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Document Number + Verify */}
+          <div className="mb-3">
+            <label className="form-label fw-semibold">
+              Document Number <span className="text-danger">*</span>
+            </label>
+            {(docForm.document_name === "Security License" || docForm.document_name === "Visa") ? (
+              <div className="input-group">
                 <input
-                  type="file"
-                  className="form-control mt-3 bg-light border-0"
-                  onChange={handleDocFormChange}
-                  name="file"
-                  accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.gif,.webp"
-                  style={{ minHeight: "44px" }}
+                  type="text"
+                  className="form-control"
+                  placeholder="e.g. ABC123456"
+                  value={docForm.document_no}
+                  onChange={handleDocNumberChange}
+                  required
                 />
-              </div>
-              <div className="mt-2 pt-3 border-top d-flex justify-content-end gap-2">
                 <button
                   type="button"
-                  className="btn btn-light rounded-pill px-5 fw-bold text-muted border"
-                  onClick={closeDocumentModal}
-                  disabled={uploadLoading || submitLoading}
-                  style={{ minHeight: "44px" }}
+                  className="btn btn-outline-primary"
+                  onClick={handleVerifyDocumentNumber}
+                  disabled={verifyingDoc || !docForm.document_no}
                 >
-                  Close
-                </button>
-                <button
-                  type="submit"
-                  className="btn btn-dark rounded-pill px-5 fw-bold shadow-sm"
-                  disabled={uploadLoading || submitLoading || !docForm.document_expiry || !docForm.file_url}
-                  style={{ minHeight: "44px" }}
-                >
-                  {submitLoading ? "Saving..." : "Upload"}
+                  {verifyingDoc ? "Verifying..." : "Verify"}
                 </button>
               </div>
-            </form>
+            ) : (
+              <input
+                type="text"
+                className="form-control"
+                placeholder="e.g. ABC123456"
+                value={docForm.document_no}
+                onChange={handleDocNumberChange}
+                required
+              />
+            )}
           </div>
-        </div>
-      )}
+
+          {/* Expiry Date */}
+          <div className="mb-3">
+            <label className="form-label fw-semibold">
+              Expiry Date <span className="text-danger">*</span>
+            </label>
+            <div className="input-group position-relative">
+              <button
+                type="button"
+                className="input-group-text bg-white text-muted border-end-0"
+                onClick={(e) => {
+                  e.preventDefault();
+                  const hiddenPicker = document.getElementById("doc_expiry_picker");
+                  if (hiddenPicker) {
+                    try { hiddenPicker.showPicker(); } catch (_) { hiddenPicker.focus(); }
+                  }
+                }}
+                style={{ cursor: "pointer", zIndex: 10 }}
+                disabled={docForm.document_name === "Security License" || docForm.document_name === "Visa"}
+                title="Open Calendar"
+              >
+                <i className="fa-solid fa-calendar-days text-primary"></i>
+              </button>
+              <input
+                type="date"
+                id="doc_expiry_picker"
+                className="position-absolute"
+                style={{ opacity: 0, width: 0, height: 0, pointerEvents: "none", bottom: 0, left: 40 }}
+                value={
+                  docForm.document_expiry
+                    ? (() => {
+                      const parts = docForm.document_expiry.split("/");
+                      if (parts.length === 3) {
+                        const [d, m, y] = parts;
+                        return `${y}-${m}-${d}`;
+                      }
+                      return "";
+                    })()
+                    : ""
+                }
+                onChange={(e) => {
+                  const isoDate = e.target.value;
+                  if (isoDate) {
+                    const [y, m, d] = isoDate.split("-");
+                    setDocForm(prev => ({
+                      ...prev,
+                      document_expiry: `${d}/${m}/${y}`,
+                    }));
+                  }
+                }}
+                disabled={docForm.document_name === "Security License" || docForm.document_name === "Visa"}
+              />
+              <input
+                type="text"
+                className="form-control border-start-0 ps-0"
+                name="document_expiry"
+                placeholder="DD/MM/YYYY"
+                value={docForm.document_expiry}
+                onChange={(e) => {
+                  let value = e.target.value.replace(/\D/g, "");
+                  if (value.length > 8) value = value.substring(0, 8);
+                  if (value.length > 2 && value.length <= 4) {
+                    value = value.replace(/^(\d{2})(\d+)/, "$1/$2");
+                  } else if (value.length > 4) {
+                    value = value.replace(/^(\d{2})(\d{2})(\d+)/, "$1/$2/$3");
+                  }
+                  setDocForm(prev => ({
+                    ...prev,
+                    document_expiry: value,
+                  }));
+                }}
+                required
+                maxLength={10}
+                pattern="^(0[1-9]|[12][0-9]|3[01])/(0[1-9]|1[012])/\d{4}$"
+                disabled={docForm.document_name === "Security License" || docForm.document_name === "Visa"}
+                style={{
+                  backgroundColor: docForm.document_name === "Security License" || docForm.document_name === "Visa" ? "#e9ecef" : "white"
+                }}
+              />
+            </div>
+          </div>
+
+          {/* File Upload */}
+          <div className="mb-4">
+            <label className="form-label fw-semibold">
+              Document/Image <span className="text-danger">*</span>
+            </label>
+            <div
+              className="position-relative border rounded p-3 text-center bg-light"
+              style={{ minHeight: 200 }}
+            >
+              {docForm.file_url ? (
+                <>
+                  {docForm.file_url.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
+                    <img
+                      src={docForm.file_url.startsWith("http") ? docForm.file_url : `${apiURL}staff_documents/${docForm.file_url}`}
+                      alt="Preview"
+                      style={{ width: "100%", maxHeight: "200px", objectFit: "contain", borderRadius: 8, opacity: uploadLoading ? 0.3 : 1 }}
+                    />
+                  ) : (
+                    <div className="text-center">
+                      <i className="fa-solid fa-file-pdf fa-3x text-muted mb-3"></i>
+                      <p className="fw-bold text-secondary mb-0">Document Selected</p>
+                      <a
+                        style={{ color: "#0A7C6E", fontWeight: "bold" }}
+                        href={`${apiURL}staff_documents/${docForm.file_url}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        View Document
+                      </a>
+                    </div>
+                  )}
+                  {uploadLoading && (
+                    <div className="position-absolute top-50 start-50 translate-middle">
+                      <div className="spinner-border text-primary" />
+                      <p className="small mt-1 fw-bold text-dark">Uploading...</p>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div className="text-center">
+                  <i className="fa-solid fa-cloud-arrow-up fa-3x text-muted mb-3"></i>
+                  <p className="text-muted">Upload document to view preview</p>
+                </div>
+              )}
+            </div>
+            <input
+              type="file"
+              className="form-control mt-2"
+              onChange={handleDocFormChange}
+              name="file"
+              accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.gif,.webp"
+            />
+          </div>
+
+          <div className="mt-2 pt-3 border-top d-flex justify-content-end gap-2">
+            <button
+              type="button"
+              className="btn btn-light rounded-pill px-5 fw-bold text-muted border"
+              onClick={closeDocumentModal}
+              disabled={uploadLoading || submitLoading}
+              style={{ minHeight: 44 }}
+            >
+              Close
+            </button>
+            <button
+              type="submit"
+              className="btn btn-success w-50"
+              disabled={uploadLoading || submitLoading || !docForm.document_expiry || !docForm.file_url}
+            >
+              {submitLoading ? "Saving..." : "Upload"}
+            </button>
+          </div>
+        </form>
+      </PremiumModal>
 
       {/* PHONE OTP VERIFICATION MODAL */}
       {showPhoneModal && (

@@ -7,19 +7,44 @@ import { toast } from "react-toastify";
 import { useGoogleLogin } from "@react-oauth/google";
 import Header from "../components/newHome/Header";
 import { apiURL } from "../utils/exports";
-import {
-  normalizeAuthResponse,
-  extractUserId,
-} from "../utils/authResponseNormalizer";
+import { normalizeAuthResponse, extractUserId } from "../utils/authResponseNormalizer";
 import googleIcon from "../assets/images/google-color.svg";
+import staffologo from "../assets/images/staffo.png";
 
-const BRAND = "#1C9A7E";
-const BRAND_DARK = "#12735A";
-const NAVY_DEEP = "#0A0A0A";
-const NAVY = "#111111";
-const NAVY_CARD = "#141414";
-const NAVY_BORDER = "#262626";
-const TEXT_MUTED = "#9CA3AF";
+/* ── Design tokens ── */
+const G = "#0F7A4A";
+const G_DARK = "#0B5C39";
+const G_LIGHT = "#E3F3EA";
+const BORDER = "#E4E9E4";
+const TINT = "#F5F8F5";
+const INK = "#14181C";
+const INK_SOFT = "#232A2E";
+const TEXT_SEC = "#5B6660";
+
+const inputStyle = (error) => ({
+  width: "100%",
+  padding: "11px 14px",
+  borderRadius: "9px",
+  border: `1.5px solid ${error ? "#e03535" : BORDER}`,
+  background: TINT,
+  color: INK,
+  fontSize: "14.5px",
+  outline: "none",
+  fontFamily: "'Inter', sans-serif",
+  boxSizing: "border-box",
+  transition: "border-color .15s, box-shadow .15s",
+});
+
+const labelStyle = {
+  display: "block",
+  fontSize: "13.5px",
+  fontWeight: 600,
+  color: INK_SOFT,
+  marginBottom: "6px",
+  fontFamily: "'Inter', sans-serif",
+};
+
+const errorStyle = { fontSize: "12px", color: "#e03535", marginTop: "4px" };
 
 export default function Register() {
   const navigate = useNavigate();
@@ -30,172 +55,95 @@ export default function Register() {
   const incomingRole = location.state?.role?.toLowerCase();
   const validRoles = ["customer", "staff", "contractor"];
 
-  const [userType, setUserType] = useState(
-    validRoles.includes(incomingRole) ? incomingRole : ""
-  );
-
+  const [userType, setUserType] = useState(validRoles.includes(incomingRole) ? incomingRole : "");
   const [showPassword, setShowPassword] = useState(false);
   const [showVerifyModal, setShowVerifyModal] = useState(false);
-
-  // Single popup states
   const [showRoleModal, setShowRoleModal] = useState(false);
-  const [pendingAuthAction, setPendingAuthAction] = useState(null); // 'form' or 'google'
-  const [tempGoogleToken, setTempGoogleToken] = useState(null); // Holds token until role is selected
+  const [pendingAuthAction, setPendingAuthAction] = useState(null);
+  const [tempGoogleToken, setTempGoogleToken] = useState(null);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  const [focusedField, setFocusedField] = useState(null);
 
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    phone: "",
-    password: "",
-  });
-
+  const [formData, setFormData] = useState({ name: "", email: "", phone: "", password: "" });
   const [errors, setErrors] = useState({});
 
   const fetchLatestUserProfile = async (token, authUser) => {
     const userId = extractUserId(authUser);
     if (!userId) return authUser;
-
     try {
       const res = await fetch(`${apiURL}api/user-edit/${userId}`, {
-        headers: {
-          Accept: "application/json",
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { Accept: "application/json", Authorization: `Bearer ${token}` },
       });
-
       const json = await res.json();
-      if (!res.ok) {
-        console.error("Profile fetch error:", json);
-        return authUser;
-      }
-
+      if (!res.ok) return authUser;
       return json?.data || authUser;
-    } catch (error) {
-      console.error("Profile fetch error:", error);
-      return authUser;
-    }
+    } catch { return authUser; }
   };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     let newValue = value;
-
-    if (name === "name") {
-      newValue = value.replace(/[^a-zA-Z\s]/g, "");
-    } else if (name === "phone") {
-      newValue = value.replace(/[^\d+\s-]/g, "");
-    }
-
-    setFormData((prev) => ({
-      ...prev,
-      [name]: newValue,
-    }));
-
-    if (errors[name]) {
-      setErrors((prev) => ({ ...prev, [name]: null }));
-    }
+    if (name === "name") newValue = value.replace(/[^a-zA-Z\s]/g, "");
+    else if (name === "phone") newValue = value.replace(/[^\d+\s-]/g, "");
+    setFormData((p) => ({ ...p, [name]: newValue }));
+    if (errors[name]) setErrors((p) => ({ ...p, [name]: null }));
   };
 
   const validateForm = () => {
     const newErrors = {};
-
-    if (!formData.name.trim()) {
-      newErrors.name = "Full name is required.";
-    } else if (formData.name.trim().length < 2) {
-      newErrors.name = "Full name must be at least 2 characters.";
-    }
-
-    if (!formData.phone.trim()) {
-      newErrors.phone = "Phone number is required.";
-    }
-
+    if (!formData.name.trim()) newErrors.name = "Full name is required.";
+    else if (formData.name.trim().length < 2) newErrors.name = "Full name must be at least 2 characters.";
+    if (!formData.phone.trim()) newErrors.phone = "Phone number is required.";
     if (formData.phone.trim()) {
-      const pureDigits = formData.phone.replace(/[\s-]/g, '');
-      if (!/^\+?\d{10,15}$/.test(pureDigits)) {
-        newErrors.phone = "Please enter a valid phone number (10-15 digits).";
-      }
+      const pureDigits = formData.phone.replace(/[\s-]/g, "");
+      if (!/^\+?\d{10,15}$/.test(pureDigits)) newErrors.phone = "Please enter a valid phone number (10–15 digits).";
     }
-
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!formData.email.trim()) {
-      newErrors.email = "Email address is required.";
-    } else if (!emailRegex.test(formData.email)) {
-      newErrors.email = "Please enter a valid email address.";
-    }
-
-    if (!formData.password) {
-      newErrors.password = "Password is required.";
-    } else if (formData.password.length < 8) {
-      newErrors.password = "Password must be at least 8 characters.";
-    } else if (!/(?=.*[A-Za-z])(?=.*\d)/.test(formData.password)) {
-      newErrors.password = "Password must contain at least one letter and one number.";
-    }
-
+    const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!formData.email.trim()) newErrors.email = "Email address is required.";
+    else if (!emailRe.test(formData.email)) newErrors.email = "Please enter a valid email address.";
+    if (!formData.password) newErrors.password = "Password is required.";
+    else if (formData.password.length < 8) newErrors.password = "Password must be at least 8 characters.";
+    else if (!/(?=.*[A-Za-z])(?=.*\d)/.test(formData.password)) newErrors.password = "Password must contain at least one letter and one number.";
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  // 1. Triggered when clicking the main 'Sign up' form button
   const handleInitialSubmit = (e) => {
     e.preventDefault();
     if (!validateForm()) return;
-
     setPendingAuthAction("form");
     setShowRoleModal(true);
   };
 
-  // 2. Google Login flow
   const handleGoogleRegister = useGoogleLogin({
     flow: "implicit",
     onSuccess: async (tokenResponse) => {
       const googleToken = tokenResponse?.access_token || tokenResponse?.code;
-
-      if (!googleToken) {
-        toast.error("Invalid Google response.");
-        return;
-      }
-
+      if (!googleToken) { toast.error("Invalid Google response."); return; }
       setIsGoogleLoading(true);
-
       try {
-        // We do a silent fetch first to see if they are an existing user
         const checkRes = await fetch(`${apiURL}api/auth/google/callback`, {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Accept: "application/json",
-          },
+          headers: { "Content-Type": "application/json", Accept: "application/json" },
           body: JSON.stringify({ credential: googleToken }),
         });
-
         const data = await checkRes.json();
-
-        // If the backend accepts it and logs them in, bypass the popup entirely
         if (checkRes.ok) {
           const normalized = normalizeAuthResponse(data);
-
           if (normalized?.token) {
             dispatch(setToken({ token: normalized.token }));
-            const latestProfile = await fetchLatestUserProfile(
-              normalized.token,
-              normalized.user
-            );
+            const latestProfile = await fetchLatestUserProfile(normalized.token, normalized.user);
             dispatch(setUser({ userdata: latestProfile }));
             toast.success("Logged in successfully!");
             setIsGoogleLoading(false);
             return;
           }
         }
-
-        // If the response is not OK (e.g. requires role for new user), we show the popup
         setTempGoogleToken(googleToken);
         setPendingAuthAction("google");
         setShowRoleModal(true);
-
       } catch (error) {
-        // Fallback: If the check fails, assume they are new and show the popup
-        console.error("User check failed, proceeding to registration:", error);
+        console.error("User check failed:", error);
         setTempGoogleToken(googleToken);
         setPendingAuthAction("google");
         setShowRoleModal(true);
@@ -203,476 +151,321 @@ export default function Register() {
         setIsGoogleLoading(false);
       }
     },
-    onError: () => {
-      toast.error("Google authentication failed.");
-    }
+    onError: () => toast.error("Google authentication failed."),
   });
 
-  // 3. Executes the respective registration based on the popup's Continue button
   const executeRegistration = async () => {
     setShowRoleModal(false);
-
     if (pendingAuthAction === "form") {
-      const payload = {
-        ...formData,
-        password_confirmation: formData.password,
-        user_type: userType,
-      };
-
+      const payload = { ...formData, password_confirmation: formData.password, user_type: userType };
       const res = await submit("api/register/user", payload);
       if (!res) return;
-
       const normalized = normalizeAuthResponse(res);
-
-      if (!normalized?.token) {
-        console.error("Registration error response:", res);
-        return;
-      }
-
+      if (!normalized?.token) return;
       toast.success("Account created successfully!");
-      if (typeof window !== 'undefined' && window.fbq) {
-        window.fbq('track', 'CompleteRegistration');
-      }
+      if (typeof window !== "undefined" && window.fbq) window.fbq("track", "CompleteRegistration");
       setShowVerifyModal(true);
-
     } else if (pendingAuthAction === "google") {
       try {
-        const res = await submit("api/auth/google/callback", {
-          credential: tempGoogleToken,
-          user_type: userType,
-        });
-
+        const res = await submit("api/auth/google/callback", { credential: tempGoogleToken, user_type: userType });
         if (!res) return;
-
         const normalized = normalizeAuthResponse(res);
-
         if (normalized?.token) {
           dispatch(setToken({ token: normalized.token }));
-
-          const latestProfile = await fetchLatestUserProfile(
-            normalized.token,
-            normalized.user
-          );
-
+          const latestProfile = await fetchLatestUserProfile(normalized.token, normalized.user);
           dispatch(setUser({ userdata: latestProfile }));
           toast.success("Google signup successful!");
-        } else {
-          console.error("Google signup error response:", res);
         }
-      } catch {
-        console.error("Server connection error during Google signup.");
-      }
+      } catch { console.error("Server connection error during Google signup."); }
     }
   };
+
+  const getInputStyle = (field, extra = {}) => ({
+    ...inputStyle(errors[field]),
+    borderColor: focusedField === field ? G : (errors[field] ? "#e03535" : BORDER),
+    boxShadow: focusedField === field ? `0 0 0 3px ${G_LIGHT}` : "none",
+    ...extra,
+  });
 
   return (
     <>
       <Header />
 
-      <section
-        className="position-relative overflow-hidden auth-page-dark"
-        style={{
-          minHeight: "100vh",
-          paddingTop: "160px",
-          paddingBottom: "64px",
-          background: `radial-gradient(900px 480px at 12% 10%, rgba(28, 154, 126, 0.14), transparent 60%), ${NAVY_DEEP}`,
-          display: "flex",
-          alignItems: "flex-start",
-        }}
-      >
-        <div
-          className="position-absolute top-0 end-0 d-none d-lg-block"
-          style={{
-            width: "480px",
-            height: "480px",
-            background: "radial-gradient(circle, rgba(28,154,126,0.10) 0%, transparent 70%)",
-            transform: "translate(25%, -35%)",
-            pointerEvents: "none",
-          }}
-        ></div>
+      <div style={{ minHeight: "100vh", background: TINT, display: "flex", flexDirection: "column" }}>
+        <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: "48px 20px" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "64px", maxWidth: "1100px", width: "100%", alignItems: "center" }} className="auth-grid">
 
-        <div className="container position-relative" style={{ maxWidth: "1140px" }}>
-          <div className="row align-items-center g-5">
+            {/* LEFT: Brand / Hero Copy */}
+            <div className="auth-hero-col">
+              <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "32px" }}>
+                <img src={staffologo} alt="Staffoo" style={{ height: "42px", width: "auto" }} />
+              </div>
 
-            {/* LEFT: BRAND / HERO COPY */}
-            <div className="col-lg-6 d-none d-lg-block text-white position-relative">
-              <div
-                className="position-absolute"
-                style={{
-                  top: "-24px",
-                  left: "-8px",
-                  width: "32px",
-                  height: "32px",
-                  borderTop: `2px solid ${BRAND}`,
-                  borderLeft: `2px solid ${BRAND}`,
-                  opacity: 0.8,
-                }}
-              ></div>
-
-              <h1 className="display-3 fw-bold mb-4" style={{ lineHeight: 1.08 }}>
-                Build your identity.
-                <br />
-                <span style={{ color: BRAND }}>Join trusted teams.</span>
+              <h1 style={{ fontFamily: "'Barlow Semi Condensed', sans-serif", fontSize: "clamp(36px, 4vw, 52px)", fontWeight: 700, lineHeight: 1.08, color: INK, marginBottom: "20px" }}>
+                Build your identity.<br />
+                <span style={{ color: G }}>Join trusted teams.</span>
               </h1>
 
-              <p className="fs-5 mb-5" style={{ maxWidth: "440px", color: TEXT_MUTED }}>
-                Create your profile, connect with verified clients, and grow
-                your opportunities with one secure platform.
+              <p style={{ fontSize: "17px", color: TEXT_SEC, lineHeight: 1.7, maxWidth: "420px", marginBottom: "36px" }}>
+                Create your profile, connect with verified clients, and grow your opportunities with one secure platform.
               </p>
 
-              <ul className="list-unstyled d-flex flex-column gap-3 mb-5">
-                <li className="d-flex align-items-center gap-3">
-                  <span
-                    className="d-inline-flex align-items-center justify-content-center rounded-circle flex-shrink-0"
-                    style={{ width: "36px", height: "36px", backgroundColor: "rgba(28, 154, 126, 0.14)" }}
-                  >
-                    <i className="fa-solid fa-check" style={{ color: BRAND }}></i>
-                  </span>
-                  <span style={{ color: "#D7DEE8" }}>Verified jobs and trusted clients</span>
-                </li>
-                <li className="d-flex align-items-center gap-3">
-                  <span
-                    className="d-inline-flex align-items-center justify-content-center rounded-circle flex-shrink-0"
-                    style={{ width: "36px", height: "36px", backgroundColor: "rgba(28, 154, 126, 0.14)" }}
-                  >
-                    <i className="fa-solid fa-bolt" style={{ color: BRAND }}></i>
-                  </span>
-                  <span style={{ color: "#D7DEE8" }}>Smart matching for every shift</span>
-                </li>
-                <li className="d-flex align-items-center gap-3">
-                  <span
-                    className="d-inline-flex align-items-center justify-content-center rounded-circle flex-shrink-0"
-                    style={{ width: "36px", height: "36px", backgroundColor: "rgba(28, 154, 126, 0.14)" }}
-                  >
-                    <i className="fa-solid fa-gauge-high" style={{ color: BRAND }}></i>
-                  </span>
-                  <span style={{ color: "#D7DEE8" }}>Fast onboarding and secure access</span>
-                </li>
-              </ul>
+              <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+                {[
+                  { icon: "✓", text: "Verified jobs and trusted clients" },
+                  { icon: "⚡", text: "Smart matching for every shift" },
+                  { icon: "◈", text: "Fast onboarding and secure access" },
+                ].map((item) => (
+                  <div key={item.text} style={{ display: "flex", alignItems: "center", gap: "14px" }}>
+                    <div style={{ width: "36px", height: "36px", borderRadius: "50%", background: G_LIGHT, display: "flex", alignItems: "center", justifyContent: "center", color: G, fontWeight: 700, fontSize: "15px", flexShrink: 0 }}>
+                      {item.icon}
+                    </div>
+                    <span style={{ color: INK_SOFT, fontSize: "15px" }}>{item.text}</span>
+                  </div>
+                ))}
+              </div>
+
+              {/* 3 role chips */}
+              <div style={{ marginTop: "40px" }}>
+                <div style={{ fontSize: "13px", color: TEXT_SEC, fontWeight: 600, marginBottom: "14px", textTransform: "uppercase", letterSpacing: "0.05em" }}>Who is this for?</div>
+                <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+                  {[
+                    { label: "Clients", desc: "Hire verified staff" },
+                    { label: "Staff", desc: "Find security shifts" },
+                    { label: "Partners", desc: "Manage your team" },
+                  ].map((r) => (
+                    <div key={r.label} style={{ padding: "10px 16px", borderRadius: "10px", border: `1px solid ${BORDER}`, background: "#fff" }}>
+                      <div style={{ fontWeight: 700, color: INK, fontSize: "13.5px" }}>{r.label}</div>
+                      <div style={{ fontSize: "12px", color: TEXT_SEC }}>{r.desc}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
 
-            {/* FORM */}
-            <div className="col-lg-6">
-              <div
-                className="card rounded-4 mx-auto"
-                style={{
-                  maxWidth: "480px",
-                  backgroundColor: NAVY_CARD,
-                  border: `1px solid ${NAVY_BORDER}`,
-                  boxShadow: "0 30px 60px -20px rgba(0,0,0,0.6), 0 0 0 1px rgba(28,154,126,0.05)",
-                }}
-              >
-                <div className="card-body p-4 p-md-5">
-                  <div
-                    className="d-inline-flex align-items-center justify-content-center rounded-3 mb-3"
-                    style={{ width: "48px", height: "48px", backgroundColor: "rgba(28, 154, 126, 0.12)" }}
-                  >
-                    <i className="fa-solid fa-user-plus" style={{ color: BRAND, fontSize: "20px" }}></i>
-                  </div>
+            {/* RIGHT: Form Card */}
+            <div>
+              <div style={{ background: "#fff", border: `1px solid ${BORDER}`, borderRadius: "18px", padding: "40px", boxShadow: "0 20px 60px rgba(20,24,28,0.08)", maxWidth: "480px", margin: "0 auto" }}>
+                <div style={{ width: "48px", height: "48px", borderRadius: "12px", background: G_LIGHT, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: "20px" }}>
+                  <i className="fa-solid fa-user-plus" style={{ color: G, fontSize: "20px" }} />
+                </div>
+                <h2 style={{ fontFamily: "'Barlow Semi Condensed', sans-serif", fontSize: "26px", fontWeight: 700, color: INK, marginBottom: "6px" }}>
+                  Sign up
+                </h2>
+                <p style={{ fontSize: "14px", color: TEXT_SEC, marginBottom: "28px" }}>
+                  It only takes a few seconds.
+                </p>
 
-                  <h5 className="fw-bold mb-1 text-white">Sign up</h5>
-                  <p className="small mb-4" style={{ color: TEXT_MUTED }}>
-                    It only takes a few seconds.
-                  </p>
-
-                  <form onSubmit={handleInitialSubmit} noValidate>
-                    <div className="row g-3 mb-4">
-                      <div className="col-md-6">
-                        <label className="form-label small fw-medium mb-1 text-white">
-                          Full name <span className="text-danger">*</span>
-                        </label>
-                        <input
-                          type="text"
-                          className={`form-control py-2 ${errors.name ? "is-invalid" : ""}`}
-                          name="name"
-                          placeholder="Your name"
-                          value={formData.name}
-                          onChange={handleChange}
-                          style={{ backgroundColor: NAVY, borderColor: errors.name ? undefined : NAVY_BORDER, color: "#fff" }}
-                        />
-                        {errors.name && <div className="invalid-feedback" style={{ fontSize: "12px" }}>{errors.name}</div>}
-                      </div>
-
-                      <div className="col-md-6">
-                        <label className="form-label small fw-medium mb-1 text-white">
-                          Phone number <span className="text-danger">*</span>
-                        </label>
-                        <input
-                          type="tel"
-                          className={`form-control py-2 ${errors.phone ? "is-invalid" : ""}`}
-                          name="phone"
-                          placeholder="+61 400 000 000"
-                          value={formData.phone}
-                          onChange={handleChange}
-                          maxLength={20}
-                          required
-                          style={{ backgroundColor: NAVY, borderColor: errors.phone ? undefined : NAVY_BORDER, color: "#fff" }}
-                        />
-                        {errors.phone && <div className="invalid-feedback" style={{ fontSize: "12px" }}>{errors.phone}</div>}
-                      </div>
-
-                      <div className="col-md-6">
-                        <label className="form-label small fw-medium mb-1 text-white">
-                          Email address <span className="text-danger">*</span>
-                        </label>
-                        <input
-                          type="email"
-                          className={`form-control py-2 ${errors.email ? "is-invalid" : ""}`}
-                          name="email"
-                          placeholder="name@example.com"
-                          value={formData.email}
-                          onChange={handleChange}
-                          style={{ backgroundColor: NAVY, borderColor: errors.email ? undefined : NAVY_BORDER, color: "#fff" }}
-                        />
-                        {errors.email && <div className="invalid-feedback" style={{ fontSize: "12px" }}>{errors.email}</div>}
-                      </div>
-
-                      <div className="col-md-6">
-                        <label className="form-label small fw-medium mb-1 text-white">
-                          Password <span className="text-danger">*</span>
-                        </label>
-                        <div className="input-group">
-                          <input
-                            type={showPassword ? "text" : "password"}
-                            className={`form-control py-2 border-end-0 ${errors.password ? "is-invalid" : ""}`}
-                            name="password"
-                            placeholder="Min. 8 chars"
-                            value={formData.password}
-                            onChange={handleChange}
-                            minLength={8}
-                            style={{ backgroundColor: NAVY, borderColor: errors.password ? undefined : NAVY_BORDER, color: "#fff" }}
-                          />
-                          <span
-                            className="input-group-text"
-                            role="button"
-                            onClick={() => setShowPassword(!showPassword)}
-                            style={{
-                              backgroundColor: NAVY,
-                              borderColor: errors.password ? undefined : NAVY_BORDER,
-                              borderLeft: "none",
-                            }}
-                          >
-                            <i
-                              style={{ color: BRAND }}
-                              className={`fa-solid ${showPassword ? "fa-eye-slash" : "fa-eye"}`}
-                            ></i>
-                          </span>
-                          {errors.password && (
-                            <div className="invalid-feedback d-block" style={{ fontSize: "12px" }}>
-                              {errors.password}
-                            </div>
-                          )}
-                        </div>
-                      </div>
+                <form onSubmit={handleInitialSubmit} noValidate>
+                  {/* Name + Phone row */}
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px", marginBottom: "14px" }}>
+                    <div>
+                      <label style={labelStyle}>Full name <span style={{ color: "#e03535" }}>*</span></label>
+                      <input
+                        type="text"
+                        name="name"
+                        placeholder="Your name"
+                        value={formData.name}
+                        onChange={handleChange}
+                        onFocus={() => setFocusedField("name")}
+                        onBlur={() => setFocusedField(null)}
+                        style={getInputStyle("name")}
+                      />
+                      {errors.name && <p style={errorStyle}>{errors.name}</p>}
                     </div>
-
-                    <button
-                      type="submit"
-                      className="btn w-100 py-2 fw-semibold d-flex justify-content-center align-items-center gap-2 text-white"
-                      style={{
-                        background: `linear-gradient(135deg, ${BRAND}, ${BRAND_DARK})`,
-                        border: "none",
-                        borderRadius: "8px",
-                      }}
-                      disabled={loading || isGoogleLoading}
-                    >
-                      {loading && pendingAuthAction === "form" && <i className="fa-solid fa-spinner fa-spin"></i>}
-                      {loading && pendingAuthAction === "form" ? "Please wait..." : "Sign up"}
-                    </button>
-                  </form>
-
-                  <div className="d-flex align-items-center gap-3 my-4">
-                    <hr className="flex-grow-1 m-0" style={{ borderColor: NAVY_BORDER, opacity: 1 }} />
-                    <span className="small" style={{ color: TEXT_MUTED }}>OR</span>
-                    <hr className="flex-grow-1 m-0" style={{ borderColor: NAVY_BORDER, opacity: 1 }} />
+                    <div>
+                      <label style={labelStyle}>Phone <span style={{ color: "#e03535" }}>*</span></label>
+                      <input
+                        type="tel"
+                        name="phone"
+                        placeholder="+61 400 000 000"
+                        value={formData.phone}
+                        onChange={handleChange}
+                        onFocus={() => setFocusedField("phone")}
+                        onBlur={() => setFocusedField(null)}
+                        maxLength={20}
+                        style={getInputStyle("phone")}
+                      />
+                      {errors.phone && <p style={errorStyle}>{errors.phone}</p>}
+                    </div>
                   </div>
 
+                  {/* Email + Password row */}
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px", marginBottom: "24px" }}>
+                    <div>
+                      <label style={labelStyle}>Email <span style={{ color: "#e03535" }}>*</span></label>
+                      <input
+                        type="email"
+                        name="email"
+                        placeholder="name@example.com"
+                        value={formData.email}
+                        onChange={handleChange}
+                        onFocus={() => setFocusedField("email")}
+                        onBlur={() => setFocusedField(null)}
+                        style={getInputStyle("email")}
+                      />
+                      {errors.email && <p style={errorStyle}>{errors.email}</p>}
+                    </div>
+                    <div>
+                      <label style={labelStyle}>Password <span style={{ color: "#e03535" }}>*</span></label>
+                      <div style={{ position: "relative" }}>
+                        <input
+                          type={showPassword ? "text" : "password"}
+                          name="password"
+                          placeholder="Min. 8 chars"
+                          value={formData.password}
+                          onChange={handleChange}
+                          onFocus={() => setFocusedField("password")}
+                          onBlur={() => setFocusedField(null)}
+                          minLength={8}
+                          style={{ ...getInputStyle("password"), paddingRight: "42px" }}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          style={{ position: "absolute", right: "12px", top: "50%", transform: "translateY(-50%)", background: "none", border: "none", color: TEXT_SEC, cursor: "pointer", padding: 0, display: "flex" }}
+                        >
+                          <i className={`fa-solid ${showPassword ? "fa-eye-slash" : "fa-eye"}`} />
+                        </button>
+                      </div>
+                      {errors.password && <p style={errorStyle}>{errors.password}</p>}
+                    </div>
+                  </div>
+
+                  {/* Submit */}
                   <button
-                    type="button"
-                    onClick={() => handleGoogleRegister()}
-                    className="btn w-100 py-2 d-flex align-items-center justify-content-center gap-2"
+                    type="submit"
                     disabled={loading || isGoogleLoading}
                     style={{
-                      borderRadius: "8px",
-                      backgroundColor: NAVY,
-                      border: `1px solid ${NAVY_BORDER}`,
-                      color: "#fff",
+                      width: "100%", padding: "13px", borderRadius: "9px",
+                      background: `linear-gradient(135deg, ${G}, ${G_DARK})`,
+                      border: "none", color: "#fff", fontSize: "15px", fontWeight: 600,
+                      cursor: (loading || isGoogleLoading) ? "not-allowed" : "pointer",
+                      opacity: (loading || isGoogleLoading) ? 0.8 : 1,
+                      fontFamily: "'Inter', sans-serif",
+                      display: "flex", alignItems: "center", justifyContent: "center", gap: "8px",
                     }}
                   >
-                    {isGoogleLoading ? (
-                      <i className="fa-solid fa-spinner fa-spin"></i>
-                    ) : (
-                      <img src={googleIcon} alt="Google" width={16} />
-                    )}
-                    <span className="fw-medium small">
-                      {isGoogleLoading ? "Checking account..." : "Continue with Google"}
-                    </span>
+                    {loading && pendingAuthAction === "form" && <i className="fa-solid fa-spinner fa-spin" />}
+                    {loading && pendingAuthAction === "form" ? "Please wait..." : "Sign up"}
                   </button>
+                </form>
 
-                  <p className="text-center mt-4 mb-0 small" style={{ color: TEXT_MUTED }}>
-                    Already have an account?{" "}
-                    <NavLink to="/login" className="fw-bold text-decoration-none" style={{ color: BRAND }}>
-                      Sign in
-                    </NavLink>
-                  </p>
+                {/* Divider */}
+                <div style={{ display: "flex", alignItems: "center", gap: "12px", margin: "22px 0" }}>
+                  <hr style={{ flex: 1, margin: 0, borderColor: BORDER, opacity: 1 }} />
+                  <span style={{ fontSize: "12px", color: TEXT_SEC, fontWeight: 600 }}>OR</span>
+                  <hr style={{ flex: 1, margin: 0, borderColor: BORDER, opacity: 1 }} />
                 </div>
+
+                {/* Google */}
+                <button
+                  type="button"
+                  onClick={() => handleGoogleRegister()}
+                  disabled={loading || isGoogleLoading}
+                  style={{
+                    width: "100%", padding: "12px", borderRadius: "9px",
+                    background: "#fff", border: `1.5px solid ${BORDER}`,
+                    color: INK, fontSize: "14.5px", fontWeight: 600,
+                    cursor: (loading || isGoogleLoading) ? "not-allowed" : "pointer",
+                    fontFamily: "'Inter', sans-serif",
+                    display: "flex", alignItems: "center", justifyContent: "center", gap: "10px",
+                    transition: "border-color .15s, box-shadow .15s",
+                  }}
+                  onMouseEnter={(e) => { e.currentTarget.style.borderColor = G; e.currentTarget.style.boxShadow = `0 0 0 3px ${G_LIGHT}`; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.borderColor = BORDER; e.currentTarget.style.boxShadow = "none"; }}
+                >
+                  {isGoogleLoading ? <i className="fa-solid fa-spinner fa-spin" /> : <img src={googleIcon} alt="Google" width={18} />}
+                  {isGoogleLoading ? "Checking account..." : "Continue with Google"}
+                </button>
+
+                {/* Sign in link */}
+                <p style={{ textAlign: "center", marginTop: "24px", marginBottom: 0, fontSize: "14px", color: TEXT_SEC }}>
+                  Already have an account?{" "}
+                  <NavLink to="/login" style={{ color: G, fontWeight: 700, textDecoration: "none" }}>Sign in</NavLink>
+                </p>
               </div>
             </div>
           </div>
         </div>
-      </section>
+      </div>
 
-      {/* Unified Role Selection Popup Overlay */}
+      {/* ── ROLE SELECTION MODAL ── */}
       {showRoleModal && (
-        <div
-          className="modal show d-block auth-page-dark"
-          tabIndex="-1"
-          style={{ backgroundColor: "rgba(15, 23, 42, 0.7)" }}
-        >
-          <div className="modal-dialog modal-dialog-centered">
-            <div
-              className="modal-content rounded-4"
-              style={{ backgroundColor: NAVY_CARD, border: `1px solid ${NAVY_BORDER}`, boxShadow: "0 30px 60px -20px rgba(0,0,0,0.6)" }}
-            >
-              <div className="modal-body p-4 p-md-5">
-                <div className="text-center mb-4">
-                  <h3 className="fw-bold mb-2 text-white">Select account type</h3>
-                  <p className="small mb-0" style={{ color: TEXT_MUTED }}>
-                    Choose the profile type that best describes you to continue.
-                  </p>
-                </div>
+        <div style={{ position: "fixed", inset: 0, background: "rgba(20,24,28,0.5)", zIndex: 999, display: "flex", alignItems: "center", justifyContent: "center", padding: "20px" }}>
+          <div style={{ background: "#fff", border: `1px solid ${BORDER}`, borderRadius: "18px", padding: "40px", maxWidth: "460px", width: "100%", boxShadow: "0 24px 60px rgba(20,24,28,0.15)" }}>
+            <h3 style={{ fontFamily: "'Barlow Semi Condensed', sans-serif", fontSize: "24px", fontWeight: 700, color: INK, marginBottom: "8px" }}>Select account type</h3>
+            <p style={{ fontSize: "14px", color: TEXT_SEC, marginBottom: "24px" }}>Choose the profile type that best describes you to continue.</p>
 
-                <div className="d-flex flex-column gap-3 mb-4">
-                  {[
-                    { key: "customer", label: "Client", desc: "I want to hire security professionals.", icon: "fa-user-tie" },
-                    { key: "staff", label: "Staff", desc: "I am looking for security shifts and jobs.", icon: "fa-user-shield" },
-                    { key: "contractor", label: "Resource Partner", desc: "I provide resources and contractor services.", icon: "fa-handshake" },
-                  ].map((role) => {
-                    const isActive = userType === role.key;
-                    return (
-                      <button
-                        key={role.key}
-                        type="button"
-                        className="btn w-100 text-start d-flex align-items-center gap-3 p-3 rounded-3"
-                        onClick={() => setUserType(role.key)}
-                        style={{
-                          border: isActive ? `2px solid ${BRAND}` : `1px solid ${NAVY_BORDER}`,
-                          backgroundColor: isActive ? "rgba(28, 154, 126, 0.08)" : NAVY,
-                        }}
-                      >
-                        <div
-                          className="d-flex align-items-center justify-content-center rounded-circle flex-shrink-0"
-                          style={{
-                            width: "48px",
-                            height: "48px",
-                            backgroundColor: isActive ? BRAND : "#1B2A40",
-                            color: isActive ? "#0A1120" : TEXT_MUTED,
-                          }}
-                        >
-                          <i className={`fa-solid ${role.icon} fs-5`}></i>
-                        </div>
-                        <div>
-                          <h6 className="mb-1 fw-bold" style={{ color: isActive ? BRAND : "#fff" }}>
-                            {role.label}
-                          </h6>
-                          <p className="mb-0 small" style={{ color: TEXT_MUTED }}>{role.desc}</p>
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-
-                <div className="d-flex gap-3">
-                  <button
-                    type="button"
-                    className="btn py-2 fw-semibold w-50"
-                    style={{ borderRadius: "8px", backgroundColor: NAVY, border: `1px solid ${NAVY_BORDER}`, color: "#fff" }}
-                    onClick={() => {
-                      setShowRoleModal(false);
-                      setPendingAuthAction(null);
-                      setTempGoogleToken(null);
-                    }}
-                    disabled={loading}
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="button"
-                    className="btn py-2 fw-semibold w-50 text-white d-flex justify-content-center align-items-center gap-2"
+            <div style={{ display: "flex", flexDirection: "column", gap: "12px", marginBottom: "24px" }}>
+              {[
+                { key: "customer", label: "Client", desc: "I want to hire security professionals.", icon: "fa-user-tie" },
+                { key: "staff", label: "Staff", desc: "I am looking for security shifts and jobs.", icon: "fa-user-shield" },
+                { key: "contractor", label: "Resource Partner", desc: "I provide resources and contractor services.", icon: "fa-handshake" },
+              ].map((role) => {
+                const isActive = userType === role.key;
+                return (
+                  <button key={role.key} type="button" onClick={() => setUserType(role.key)}
                     style={{
-                      borderRadius: "8px",
-                      background: `linear-gradient(135deg, ${BRAND}, ${BRAND_DARK})`,
-                      border: "none",
-                      opacity: !userType || loading ? 0.6 : 1,
-                      cursor: !userType || loading ? "not-allowed" : "pointer",
-                    }}
-                    onClick={executeRegistration}
-                    disabled={loading || !userType}
-                  >
-                    {loading && <i className="fa-solid fa-spinner fa-spin"></i>}
-                    {loading ? "Processing..." : "Continue"}
+                      display: "flex", alignItems: "center", gap: "14px",
+                      padding: "14px 16px", borderRadius: "12px", cursor: "pointer", textAlign: "left",
+                      border: isActive ? `2px solid ${G}` : `1.5px solid ${BORDER}`,
+                      background: isActive ? G_LIGHT : TINT,
+                      transition: "all .15s",
+                    }}>
+                    <div style={{ width: "44px", height: "44px", borderRadius: "50%", background: isActive ? G : "#E4E9E4", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                      <i className={`fa-solid ${role.icon}`} style={{ color: isActive ? "#fff" : TEXT_SEC, fontSize: "18px" }} />
+                    </div>
+                    <div>
+                      <div style={{ fontWeight: 700, color: isActive ? G_DARK : INK, fontSize: "14.5px", marginBottom: "2px", fontFamily: "'Inter', sans-serif" }}>{role.label}</div>
+                      <div style={{ fontSize: "13px", color: TEXT_SEC }}>{role.desc}</div>
+                    </div>
                   </button>
-                </div>
-              </div>
+                );
+              })}
+            </div>
+
+            <div style={{ display: "flex", gap: "12px" }}>
+              <button type="button" onClick={() => { setShowRoleModal(false); setPendingAuthAction(null); setTempGoogleToken(null); }} disabled={loading}
+                style={{ flex: 1, padding: "12px", borderRadius: "9px", background: TINT, border: `1.5px solid ${BORDER}`, color: INK_SOFT, fontWeight: 600, cursor: "pointer", fontFamily: "'Inter', sans-serif", fontSize: "14.5px" }}>
+                Cancel
+              </button>
+              <button type="button" onClick={executeRegistration} disabled={loading || !userType}
+                style={{ flex: 1, padding: "12px", borderRadius: "9px", background: `linear-gradient(135deg, ${G}, ${G_DARK})`, border: "none", color: "#fff", fontWeight: 600, cursor: (!userType || loading) ? "not-allowed" : "pointer", opacity: (!userType || loading) ? 0.6 : 1, fontFamily: "'Inter', sans-serif", fontSize: "14.5px", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
+                {loading && <i className="fa-solid fa-spinner fa-spin" />}
+                {loading ? "Processing..." : "Continue"}
+              </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Verify Email Popup Overlay */}
+      {/* ── EMAIL VERIFY MODAL ── */}
       {showVerifyModal && (
-        <div
-          className="modal show d-block auth-page-dark"
-          tabIndex="-1"
-          style={{ backgroundColor: "rgba(15, 23, 42, 0.7)" }}
-        >
-          <div className="modal-dialog modal-dialog-centered">
-            <div
-              className="modal-content rounded-4"
-              style={{ backgroundColor: NAVY_CARD, border: `1px solid ${NAVY_BORDER}`, boxShadow: "0 30px 60px -20px rgba(0,0,0,0.6)" }}
-            >
-              <div className="modal-body p-4 p-md-5">
-                <div className="text-center mb-4">
-                  <div
-                    className="d-inline-flex align-items-center justify-content-center rounded-circle mb-3"
-                    style={{ width: "80px", height: "80px", backgroundColor: "rgba(28, 154, 126, 0.12)" }}
-                  >
-                    <i className="fa-solid fa-envelope-open-text" style={{ fontSize: "36px", color: BRAND }}></i>
-                  </div>
-                  <h3 className="fw-bold mb-2 text-white">Verify your email</h3>
-                  <p className="small mb-0" style={{ color: TEXT_MUTED }}>
-                    We've sent a verification link to{" "}
-                    <strong className="text-white">{formData.email}</strong>.
-                    Please check your inbox and click the link to activate your account.
-                  </p>
-                </div>
-
-                <div className="d-flex flex-column gap-3">
-                  <button
-                    type="button"
-                    className="btn py-2 fw-bold w-100"
-                    style={{ borderRadius: "8px", backgroundColor: NAVY, border: `1px solid ${NAVY_BORDER}`, color: "#fff" }}
-                    onClick={() => navigate("/login")}
-                  >
-                    Go to login page
-                  </button>
-                </div>
-              </div>
+        <div style={{ position: "fixed", inset: 0, background: "rgba(20,24,28,0.5)", zIndex: 999, display: "flex", alignItems: "center", justifyContent: "center", padding: "20px" }}>
+          <div style={{ background: "#fff", border: `1px solid ${BORDER}`, borderRadius: "18px", padding: "40px", maxWidth: "440px", width: "100%", boxShadow: "0 24px 60px rgba(20,24,28,0.15)", textAlign: "center" }}>
+            <div style={{ width: "72px", height: "72px", borderRadius: "50%", background: G_LIGHT, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 20px" }}>
+              <i className="fa-solid fa-envelope-open-text" style={{ fontSize: "28px", color: G }} />
             </div>
+            <h3 style={{ fontFamily: "'Barlow Semi Condensed', sans-serif", fontSize: "24px", fontWeight: 700, color: INK, marginBottom: "12px" }}>Verify your email</h3>
+            <p style={{ fontSize: "14px", color: TEXT_SEC, marginBottom: "28px", lineHeight: 1.6 }}>
+              We've sent a verification link to{" "}
+              <strong style={{ color: INK }}>{formData.email}</strong>. Please check your inbox and click the link to activate your account.
+            </p>
+            <button type="button" onClick={() => navigate("/login")}
+              style={{ width: "100%", padding: "13px", borderRadius: "9px", background: `linear-gradient(135deg, ${G}, ${G_DARK})`, border: "none", color: "#fff", fontSize: "15px", fontWeight: 600, cursor: "pointer", fontFamily: "'Inter', sans-serif" }}>
+              Go to login page
+            </button>
           </div>
         </div>
       )}
 
       <style>{`
-        .auth-page-dark .form-control::placeholder {
-          color: ${TEXT_MUTED};
-          opacity: 1;
-        }
-        .auth-page-dark .form-control:focus {
-          background-color: ${NAVY} !important;
-          border-color: ${BRAND} !important;
-          box-shadow: 0 0 0 0.2rem rgba(28, 154, 126, 0.18) !important;
-          color: #fff !important;
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Barlow+Semi+Condensed:wght@600;700&display=swap');
+        .auth-grid { grid-template-columns: 1fr 1fr; }
+        @media (max-width: 900px) {
+          .auth-grid { grid-template-columns: 1fr !important; gap: 32px !important; }
+          .auth-hero-col { display: none !important; }
         }
       `}</style>
     </>

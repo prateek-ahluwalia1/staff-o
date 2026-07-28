@@ -537,6 +537,39 @@ const StaffooStaff = () => {
 
     if (loading && staff.length === 0) return <Loader />;
 
+    // ── Document Number field (varies by document type); reused inside a
+    // two-column desktop row alongside Expiry Date / other paired fields.
+    const documentNumberField = docForm.document_name === "Visa" ? (
+        <>
+            {passportDoc ? (
+                <>
+                    <label className="form-label fw-semibold">Passport Number for Verification</label>
+                    <div className="input-group mb-2">
+                        <input type="text" className="form-control" value={passportDoc.document_no} readOnly disabled />
+                        <button type="button" className="btn btn-outline-primary" onClick={handleVerifyDocumentNumber} disabled={verifyingDoc}>{verifyingDoc ? "Verifying..." : "Verify Visa"}</button>
+                    </div>
+                </>
+            ) : (
+                <div className="alert alert-warning py-2 mb-2"><i className="fa fa-exclamation-triangle me-2" />Please add the passport document first.</div>
+            )}
+            <label className="form-label fw-semibold">Visa Grant Number <span className="text-danger">*</span></label>
+            <input type="text" className="form-control" value={docForm.document_no} onChange={handleDocNumberChange} required />
+        </>
+    ) : docForm.document_name === "Security License" ? (
+        <>
+            <label className="form-label fw-semibold">Document Number <span className="text-danger">*</span></label>
+            <div className="input-group">
+                <input type="text" className="form-control" value={docForm.document_no} onChange={handleDocNumberChange} required />
+                <button type="button" className="btn btn-outline-primary" onClick={handleVerifyDocumentNumber} disabled={verifyingDoc || !docForm.document_no}>{verifyingDoc ? "Verifying..." : "Verify"}</button>
+            </div>
+        </>
+    ) : (
+        <>
+            <label className="form-label fw-semibold">Document Number <span className="text-danger">*</span></label>
+            <input type="text" className="form-control" value={docForm.document_no} onChange={handleDocNumberChange} required />
+        </>
+    );
+
     return (
         <div className="dashboard-main">
             <style>{`
@@ -752,75 +785,54 @@ const StaffooStaff = () => {
                         </select>
                     </div>
 
-                    {docForm.document_name === "Visa" ? (
-                        <>
-                            {passportDoc ? (
-                                <>
-                                    <label className="form-label fw-semibold mt-2">Passport Number for Verification</label>
-                                    <div className="input-group mb-2">
-                                        <input type="text" className="form-control" value={passportDoc.document_no} readOnly disabled />
-                                        <button type="button" className="btn btn-outline-primary" onClick={handleVerifyDocumentNumber} disabled={verifyingDoc}>{verifyingDoc ? "Verifying..." : "Verify Visa"}</button>
-                                    </div>
-                                </>
-                            ) : (
-                                <div className="alert alert-warning py-2"><i className="fa fa-exclamation-triangle me-2" />Please add the passport document first.</div>
-                            )}
-                            <label className="form-label fw-semibold mt-2">Visa Grant Number <span className="text-danger">*</span></label>
-                            <input type="text" className="form-control" value={docForm.document_no} onChange={handleDocNumberChange} required />
-                        </>
-                    ) : docForm.document_name === "Security License" ? (
-                        <div className="input-group">
-                            <input type="text" className="form-control" value={docForm.document_no} onChange={handleDocNumberChange} required />
-                            <button type="button" className="btn btn-outline-primary" onClick={handleVerifyDocumentNumber} disabled={verifyingDoc || !docForm.document_no}>{verifyingDoc ? "Verifying..." : "Verify"}</button>
-                        </div>
-                    ) : (
-                        <div className="mb-3">
-                            <label className="form-label fw-semibold">Document Number <span className="text-danger">*</span></label>
-                            <input type="text" className="form-control" value={docForm.document_no} onChange={handleDocNumberChange} required />
-                        </div>
-                    )}
-
                     {/* Working Rights block */}
                     {docForm.show_working_rights ? (
                         <>
+                            <div className="mb-3">{documentNumberField}</div>
+
                             {docForm.work_entitlement && (
-                                <div className="mb-3 mt-3">
+                                <div className="mb-3">
                                     <span className="d-inline-flex align-items-center rounded-pill px-3 py-2" style={{ background: "#DCFCE7", border: "1px solid #86EFAC", color: "#166534", fontSize: "0.8rem", fontWeight: 600 }}>
                                         <i className="fa-solid fa-briefcase me-2" style={{ fontSize: "0.75rem" }} /><span style={{ opacity: 0.8, marginRight: 6 }}>Work Entitlement:</span><strong className="text-uppercase">{docForm.work_entitlement}</strong>
                                     </span>
                                 </div>
                             )}
-                            <div className="mb-3 mt-4">
-                                <label className="form-label fw-semibold">Upload Working Rights Document <span className="text-danger">*</span></label>
-                                <div className="border rounded p-3 text-center bg-light" style={{ minHeight: 200, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                                    {docForm.working_rights_file_url ? (
-                                        docForm.working_rights_file_url.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
-                                            <img src={docForm.working_rights_file_url.startsWith("http") ? docForm.working_rights_file_url : `${apiURL}staff_documents/${docForm.working_rights_file_url}`} alt="Working Rights" style={{ width: "100%", maxHeight: 200, objectFit: "contain", borderRadius: 8 }} />
+
+                            {/* Attachments side-by-side on desktop */}
+                            <div className="row g-3">
+                                <div className="col-12 col-md-6">
+                                    <label className="form-label fw-semibold">Upload Working Rights Document <span className="text-danger">*</span></label>
+                                    <div className="border rounded p-3 text-center bg-light" style={{ minHeight: 200, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                                        {docForm.working_rights_file_url ? (
+                                            docForm.working_rights_file_url.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
+                                                <img src={docForm.working_rights_file_url.startsWith("http") ? docForm.working_rights_file_url : `${apiURL}staff_documents/${docForm.working_rights_file_url}`} alt="Working Rights" style={{ width: "100%", maxHeight: 200, objectFit: "contain", borderRadius: 8 }} />
+                                            ) : (
+                                                <div className="text-center"><i className="fa-solid fa-file-pdf fa-3x text-muted mb-3"></i><a style={{ color: "#0A7C6E", fontWeight: "bold" }} href={`${apiURL}staff_documents/${docForm.working_rights_file_url}`} target="_blank" rel="noopener noreferrer">View Uploaded Document</a></div>
+                                            )
                                         ) : (
-                                            <div className="text-center"><i className="fa-solid fa-file-pdf fa-3x text-muted mb-3"></i><a style={{ color: "#0A7C6E", fontWeight: "bold" }} href={`${apiURL}staff_documents/${docForm.working_rights_file_url}`} target="_blank" rel="noopener noreferrer">View Uploaded Document</a></div>
-                                        )
-                                    ) : (
-                                        <div className="text-center"><i className="fa-solid fa-cloud-arrow-up fa-3x text-muted mb-3"></i><p className="text-muted">Upload your Working Rights document</p></div>
-                                    )}
-                                    {uploadLoading && <div className="position-absolute top-50 start-50 translate-middle"><div className="spinner-border text-primary" /><p className="small mt-1">Uploading...</p></div>}
+                                            <div className="text-center"><i className="fa-solid fa-cloud-arrow-up fa-3x text-muted mb-3"></i><p className="text-muted">Upload your Working Rights document</p></div>
+                                        )}
+                                        {uploadLoading && <div className="position-absolute top-50 start-50 translate-middle"><div className="spinner-border text-primary" /><p className="small mt-1">Uploading...</p></div>}
+                                    </div>
+                                    <input type="file" className="form-control mt-2" onChange={handleDocFormChange} name="working_rights_file" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.gif,.webp" />
                                 </div>
-                                <input type="file" className="form-control mt-2" onChange={handleDocFormChange} name="working_rights_file" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.gif,.webp" />
-                            </div>
-                            <div className="mb-3">
-                                <label className="form-label fw-semibold">Document/Image <span className="text-danger">*</span></label>
-                                <div className="position-relative border rounded p-3 text-center bg-light" style={{ minHeight: 200 }}>
-                                    {docForm.file_url ? (
-                                        docForm.file_url.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
-                                            <img src={docForm.file_url.startsWith("http") ? docForm.file_url : `${apiURL}staff_documents/${docForm.file_url}`} alt="Preview" style={{ width: "100%", maxHeight: 200, objectFit: "contain", borderRadius: 8 }} />
+                                <div className="col-12 col-md-6">
+                                    <label className="form-label fw-semibold">Document/Image <span className="text-danger">*</span></label>
+                                    <div className="position-relative border rounded p-3 text-center bg-light" style={{ minHeight: 200 }}>
+                                        {docForm.file_url ? (
+                                            docForm.file_url.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
+                                                <img src={docForm.file_url.startsWith("http") ? docForm.file_url : `${apiURL}staff_documents/${docForm.file_url}`} alt="Preview" style={{ width: "100%", maxHeight: 200, objectFit: "contain", borderRadius: 8 }} />
+                                            ) : (
+                                                <div className="text-center"><i className="fa-solid fa-file-pdf fa-3x text-muted mb-3"></i><a style={{ color: "#0A7C6E", fontWeight: "bold" }} href={`${apiURL}staff_documents/${docForm.file_url}`} target="_blank" rel="noopener noreferrer">View Document</a></div>
+                                            )
                                         ) : (
-                                            <div className="text-center"><i className="fa-solid fa-file-pdf fa-3x text-muted mb-3"></i><a style={{ color: "#0A7C6E", fontWeight: "bold" }} href={`${apiURL}staff_documents/${docForm.file_url}`} target="_blank" rel="noopener noreferrer">View Document</a></div>
-                                        )
-                                    ) : (
-                                        <div className="text-center"><i className="fa-solid fa-cloud-arrow-up fa-3x text-muted mb-3"></i><p className="text-muted">Upload document to view preview</p></div>
-                                    )}
+                                            <div className="text-center"><i className="fa-solid fa-cloud-arrow-up fa-3x text-muted mb-3"></i><p className="text-muted">Upload document to view preview</p></div>
+                                        )}
+                                    </div>
+                                    <input type="file" className="form-control mt-2" onChange={handleDocFormChange} name="file" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.gif,.webp" />
                                 </div>
-                                <input type="file" className="form-control mt-2" onChange={handleDocFormChange} name="file" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.gif,.webp" />
                             </div>
+
                             <div className="d-flex gap-2 mt-3">
                                 <button type="button" className="btn btn-outline-secondary w-50" onClick={closeDocumentModal}>Cancel</button>
                                 <button type="submit" className="btn btn-success w-50" disabled={uploadLoading || submitLoading || !docForm.working_rights_file_path || !docForm.file_path}>
@@ -830,29 +842,33 @@ const StaffooStaff = () => {
                         </>
                     ) : (
                         <>
-                            <div className="mb-3 mt-3">
-                                <label className="form-label fw-semibold">Expiry Date <span className="text-danger">*</span></label>
-                                <div className="input-group position-relative">
-                                    <button type="button" className="input-group-text bg-white text-muted border-end-0" onClick={(e) => { e.preventDefault(); const p = document.getElementById("doc_expiry_picker"); if (p) { try { p.showPicker(); } catch (_) { p.focus(); } } }} style={{ cursor: "pointer", zIndex: 10 }} disabled={docForm.document_name === "Security License" || docForm.document_name === "Visa"} title="Open Calendar"><i className="fa-solid fa-calendar-days text-primary"></i></button>
-                                    <input type="date" id="doc_expiry_picker" className="position-absolute" style={{ opacity: 0, width: 0, height: 0, pointerEvents: "none", bottom: 0, left: 40 }}
-                                        value={docForm.document_expiry ? (() => { const parts = docForm.document_expiry.split("/"); if (parts.length === 3) { const [d, m, y] = parts; return `${y}-${m}-${d}`; } return ""; })() : ""}
-                                        onChange={(e) => { const isoDate = e.target.value; if (isoDate) { const [y, m, d] = isoDate.split("-"); setDocForm(prev => ({ ...prev, document_expiry: `${d}/${m}/${y}` })); } }}
-                                        disabled={docForm.document_name === "Security License" || docForm.document_name === "Visa"} />
-                                    <input type="text" className="form-control border-start-0 ps-0" name="document_expiry" placeholder="DD/MM/YYYY"
-                                        value={docForm.document_expiry}
-                                        onChange={(e) => {
-                                            let value = e.target.value.replace(/\D/g, "");
-                                            if (value.length > 8) value = value.substring(0, 8);
-                                            if (value.length > 2 && value.length <= 4) { value = value.replace(/^(\d{2})(\d+)/, "$1/$2"); }
-                                            else if (value.length > 4) { value = value.replace(/^(\d{2})(\d{2})(\d+)/, "$1/$2/$3"); }
-                                            setDocForm(prev => ({ ...prev, document_expiry: value }));
-                                        }}
-                                        required maxLength={10} pattern="^(0[1-9]|[12][0-9]|3[01])/(0[1-9]|1[012])/\d{4}$"
-                                        disabled={docForm.document_name === "Security License" || docForm.document_name === "Visa"}
-                                        style={{ backgroundColor: docForm.document_name === "Security License" || docForm.document_name === "Visa" ? "#e9ecef" : "white" }} />
+                            {/* Document Number + Expiry Date side-by-side on desktop */}
+                            <div className="row g-3">
+                                <div className="col-12 col-md-6">{documentNumberField}</div>
+                                <div className="col-12 col-md-6">
+                                    <label className="form-label fw-semibold">Expiry Date <span className="text-danger">*</span></label>
+                                    <div className="input-group position-relative">
+                                        <button type="button" className="input-group-text bg-white text-muted border-end-0" onClick={(e) => { e.preventDefault(); const p = document.getElementById("doc_expiry_picker"); if (p) { try { p.showPicker(); } catch (_) { p.focus(); } } }} style={{ cursor: "pointer", zIndex: 10 }} disabled={docForm.document_name === "Security License" || docForm.document_name === "Visa"} title="Open Calendar"><i className="fa-solid fa-calendar-days text-primary"></i></button>
+                                        <input type="date" id="doc_expiry_picker" className="position-absolute" style={{ opacity: 0, width: 0, height: 0, pointerEvents: "none", bottom: 0, left: 40 }}
+                                            value={docForm.document_expiry ? (() => { const parts = docForm.document_expiry.split("/"); if (parts.length === 3) { const [d, m, y] = parts; return `${y}-${m}-${d}`; } return ""; })() : ""}
+                                            onChange={(e) => { const isoDate = e.target.value; if (isoDate) { const [y, m, d] = isoDate.split("-"); setDocForm(prev => ({ ...prev, document_expiry: `${d}/${m}/${y}` })); } }}
+                                            disabled={docForm.document_name === "Security License" || docForm.document_name === "Visa"} />
+                                        <input type="text" className="form-control border-start-0 ps-0" name="document_expiry" placeholder="DD/MM/YYYY"
+                                            value={docForm.document_expiry}
+                                            onChange={(e) => {
+                                                let value = e.target.value.replace(/\D/g, "");
+                                                if (value.length > 8) value = value.substring(0, 8);
+                                                if (value.length > 2 && value.length <= 4) { value = value.replace(/^(\d{2})(\d+)/, "$1/$2"); }
+                                                else if (value.length > 4) { value = value.replace(/^(\d{2})(\d{2})(\d+)/, "$1/$2/$3"); }
+                                                setDocForm(prev => ({ ...prev, document_expiry: value }));
+                                            }}
+                                            required maxLength={10} pattern="^(0[1-9]|[12][0-9]|3[01])/(0[1-9]|1[012])/\d{4}$"
+                                            disabled={docForm.document_name === "Security License" || docForm.document_name === "Visa"}
+                                            style={{ backgroundColor: docForm.document_name === "Security License" || docForm.document_name === "Visa" ? "#e9ecef" : "white" }} />
+                                    </div>
                                 </div>
                             </div>
-                            <div className="mb-3">
+                            <div className="mb-3 mt-3">
                                 <label className="form-label fw-semibold">Document/Image <span className="text-danger">*</span></label>
                                 <div className="position-relative border rounded p-3 text-center bg-light" style={{ minHeight: 200 }}>
                                     {docForm.file_url ? (

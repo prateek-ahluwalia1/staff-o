@@ -17,7 +17,7 @@ function Testamonial() {
               <div className="nh-case-industry">Retail</div>
               <h3>Filling last-minute cover across 12 stores</h3>
               <p className="nh-case-quote">
-                "We used to call three agencies before finding one guard. Now it's one post and it's done."
+                "We used to call three agencies before finding one staff. Now it's one post and it's done."
               </p>
             </div>
           </div>

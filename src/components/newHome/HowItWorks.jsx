@@ -18,7 +18,7 @@ function HowItWorks() {
           <div className="nh-step">
             <div className="nh-step-num">02</div>
             <h3>Review applicants</h3>
-            <p>See verified guards ranked by rating, distance and rate.</p>
+            <p>See verified staff ranked by rating, distance and rate.</p>
           </div>
           <div className="nh-step">
             <div className="nh-step-num">03</div>

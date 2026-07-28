@@ -1,41 +1,46 @@
 import React from "react";
 import Header from "../components/newHome/Header";
 import Footer from "../components/newHome/Footer";
-import useScrollReveal from "../hooks/useScrollReveal";
 import Hero from "../components/newHome/Hero";
-import Ticker from "../components/newHome/Ticker";
-// import Jobs from "../components/newHome/Jobs";
-import Categories from "../components/newHome/Categories";
-import HowItWorks from "../components/newHome/HowItWorks";
-import Demographics from "../components/newHome/Demographics";
 import UserType from "../components/newHome/UserType";
+import Ticker from "../components/newHome/Ticker";
+import Categories from "../components/newHome/Categories";
 import WhyStaffoo from "../components/newHome/WhyStaffoo";
+import HowItWorks from "../components/newHome/HowItWorks";
 import Testamonial from "../components/newHome/Testamonial";
-import AppSection from "../components/newHome/AppSection";
+import Demographics from "../components/newHome/Demographics";
 
 export default function Home() {
-  useScrollReveal();
-
   return (
-    <div style={{
-      background: "#0b0c0e",
-      color: "#f4f2ed",
-      fontFamily: 'Barlow, sans-serif',
-      fontSize: '16px',
-      lineHeight: '1.6',
-      overflowX: 'hidden'
-    }}>
+    <div className="nh-page">
+      {/* Sticky light header */}
       <Header />
-      <Hero />
-      <Ticker />
-      {/* <Jobs /> */}
-      <Categories />
-      <HowItWorks />
-      <Demographics />
+
+      {/* Dark disclaimer bar */}
       <UserType />
+
+      {/* Hero — light tint background, role tabs, duty card */}
+      <Hero />
+
+      {/* Stats bar — 2,000+ jobs, 1,200+ guards, 4.8★, 34 min */}
+      <Ticker />
+
+      {/* Security categories grid */}
+      <Categories />
+
+      {/* "What you get" — dark split section */}
       <WhyStaffoo />
+
+      {/* How it works — 4 steps */}
+      <HowItWorks />
+
+      {/* Case studies — 3 cards */}
       <Testamonial />
-      <AppSection />
+
+      {/* CTA band — "Ready to get started?" */}
+      <Demographics />
+
+      {/* Dark footer */}
       <Footer />
     </div>
   );

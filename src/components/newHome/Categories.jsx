@@ -1,77 +1,96 @@
 import React from 'react'
+import { Link } from 'react-router-dom'
 import "../../styles/staffoo.css"
 
+const categories = [
+  {
+    icon: <svg viewBox="0 0 24 24" fill="none" stroke="#0F7A4A" strokeWidth="1.8"><circle cx="12" cy="12" r="9" /></svg>,
+    name: 'Event & crowd control',
+    desc: 'Festivals, concerts, licensed venues',
+    to: '/solutions/event-security',
+  },
+  {
+    icon: <svg viewBox="0 0 24 24" fill="none" stroke="#0F7A4A" strokeWidth="1.8"><rect x="4" y="4" width="16" height="16" rx="2" /></svg>,
+    name: 'Corporate & office',
+    desc: 'Reception, access control, patrols',
+    to: '/solutions/event-security',
+  },
+  {
+    icon: <svg viewBox="0 0 24 24" fill="none" stroke="#0F7A4A" strokeWidth="1.8"><path d="M4 20V10l8-6 8 6v10" /></svg>,
+    name: 'Construction sites',
+    desc: 'Overnight & weekend site security',
+    to: '/solutions/warehouse-logistics-security',
+  },
+  {
+    icon: <svg viewBox="0 0 24 24" fill="none" stroke="#0F7A4A" strokeWidth="1.8"><path d="M6 6h15l-1.5 9h-12z" /></svg>,
+    name: 'Retail & loss prevention',
+    desc: 'Stores, shopping centres',
+    to: '/solutions/retail-security',
+  },
+  {
+    icon: <svg viewBox="0 0 24 24" fill="none" stroke="#0F7A4A" strokeWidth="1.8"><circle cx="12" cy="12" r="3" /><path d="M12 2v4M12 18v4M2 12h4M18 12h4" /></svg>,
+    name: 'Mobile patrol',
+    desc: 'Multi-site roaming coverage',
+    to: '/solutions/event-security',
+  },
+  {
+    icon: <svg viewBox="0 0 24 24" fill="none" stroke="#0F7A4A" strokeWidth="1.8"><path d="M12 3l7 4v5c0 5-3 8-7 9-4-1-7-4-7-9V7z" /></svg>,
+    name: 'Residential & estates',
+    desc: 'Gated communities, private homes',
+    to: '/solutions/retail-security',
+  },
+  {
+    icon: <svg viewBox="0 0 24 24" fill="none" stroke="#0F7A4A" strokeWidth="1.8"><path d="M4 10h16M4 14h16M9 4v16M15 4v16" /></svg>,
+    name: 'Concierge & front-of-house',
+    desc: 'Buildings, hotels, front desks',
+    to: '/solutions/event-security',
+  },
+  {
+    icon: <svg viewBox="0 0 24 24" fill="none" stroke="#0F7A4A" strokeWidth="1.8"><rect x="3" y="7" width="18" height="12" rx="2" /><path d="M8 7V5a2 2 0 012-2h4a2 2 0 012 2v2" /></svg>,
+    name: 'Cash-in-transit',
+    desc: 'Class 1C licensed guards',
+    to: '/solutions/warehouse-logistics-security',
+  },
+  {
+    icon: <svg viewBox="0 0 24 24" fill="none" stroke="#0F7A4A" strokeWidth="1.8"><path d="M12 2l3 6 6 1-4.5 4 1 6-5.5-3-5.5 3 1-6L4 9l6-1z" /></svg>,
+    name: 'Close protection',
+    desc: 'Executive & VIP bodyguards',
+    to: '/solutions/event-security',
+  },
+  {
+    icon: <svg viewBox="0 0 24 24" fill="none" stroke="#0F7A4A" strokeWidth="1.8"><path d="M12 3a9 9 0 100 18 9 9 0 000-18zM12 7v5l3 3" /></svg>,
+    name: 'Alarm response',
+    desc: 'Monitoring & rapid callout',
+    to: '/solutions/event-security',
+  },
+  {
+    icon: <svg viewBox="0 0 24 24" fill="none" stroke="#0F7A4A" strokeWidth="1.8"><circle cx="12" cy="8" r="4" /><path d="M4 21v-1a8 8 0 0116 0v1" /></svg>,
+    name: 'All categories',
+    desc: 'Browse the full directory →',
+    to: '/login',
+  },
+]
+
 function Categories() {
-
-
-
-
   return (
-    <div><section className="cats-sec">
-  <div className="cats-head reveal">
-    <div className="label">Find Your Path</div>
-    <h2>Browse Jobs By Categories</h2>
-  </div>
-  <div className="cats-row">
-    <div className="cat-card reveal">
-      <div className="cat-icon-wrap">
-        <svg viewBox="0 0 28 28"><path d="M14 3L25 7.5v9.5C25 23 14 26 14 26S3 23 3 17V7.5Z"/></svg>
+    <section className="nh-section">
+      <div className="nh-wrap">
+        <div className="nh-section-head">
+          <div className="nh-kicker">Categories</div>
+          <h2>What kind of security do you need?</h2>
+          <p>Every category maps to a real Australian security licence — so you know exactly who you're hiring.</p>
+        </div>
+        <div className="nh-cat-grid">
+          {categories.map((cat) => (
+            <Link key={cat.name} to={cat.to} className="nh-cat-card">
+              <div className="nh-cat-icon">{cat.icon}</div>
+              <h3>{cat.name}</h3>
+              <p>{cat.desc}</p>
+            </Link>
+          ))}
+        </div>
       </div>
-      <div className="cat-name">Security Licence</div>
-      <div className="cat-count">284</div>
-    </div>
-    <div className="cat-card reveal reveal-d1">
-      <div className="cat-icon-wrap">
-        <svg viewBox="0 0 28 28"><circle cx="14" cy="14" r="10"/><polyline points="14,9 14,14 17,17"/></svg>
-      </div>
-      <div className="cat-name">HISC Time Licence</div>
-      <div className="cat-count">118</div>
-    </div>
-    <div className="cat-card reveal reveal-d2">
-      <div className="cat-icon-wrap">
-        <svg viewBox="0 0 28 28"><path d="M14 4C9 4 5 8 5 13s4 9 9 9 9-4 9-9"/><path d="M17 7l4-3v4"/></svg>
-      </div>
-      <div className="cat-name">Working With Children</div>
-      <div className="cat-count">63</div>
-    </div>
-    <div className="cat-card reveal reveal-d3">
-      <div className="cat-icon-wrap">
-        <svg viewBox="0 0 28 28"><path d="M9 14h10M14 9v10"/><rect x="4" y="4" width="20" height="20" rx="2"/></svg>
-      </div>
-      <div className="cat-name">First Aid</div>
-      <div className="cat-count">201</div>
-    </div>
-    <div className="cat-card reveal">
-      <div className="cat-icon-wrap">
-        <svg viewBox="0 0 28 28"><path d="M14 4C8 4 4 9 4 15s4.5 9 10 9 10-4 10-9c0-3-1.5-5.5-4-7"/><path d="M18 8l-3 4 3 2"/></svg>
-      </div>
-      <div className="cat-name">CPR Certified</div>
-      <div className="cat-count">176</div>
-    </div>
-    <div className="cat-card reveal reveal-d1">
-      <div className="cat-icon-wrap">
-        <svg viewBox="0 0 28 28"><circle cx="14" cy="9" r="5"/><path d="M4 24c0-5.5 4.5-10 10-10s10 4.5 10 10"/></svg>
-      </div>
-      <div className="cat-name">Crowd Control</div>
-      <div className="cat-count">92</div>
-    </div>
-    <div className="cat-card reveal reveal-d2">
-      <div className="cat-icon-wrap">
-        <svg viewBox="0 0 28 28"><rect x="4" y="6" width="20" height="16" rx="2"/><path d="M4 11h20M9 6V4M19 6V4"/></svg>
-      </div>
-      <div className="cat-name">Event Security</div>
-      <div className="cat-count">147</div>
-    </div>
-    <div className="cat-card reveal reveal-d3">
-      <div className="cat-icon-wrap">
-        <svg viewBox="0 0 28 28"><rect x="6" y="4" width="16" height="20" rx="2"/><path d="M10 10h8M10 14h8M10 18h4"/></svg>
-      </div>
-      <div className="cat-name">Corporate Security</div>
-      <div className="cat-count">109</div>
-    </div>
-  </div>
-</section>
-</div>
+    </section>
   )
 }
 

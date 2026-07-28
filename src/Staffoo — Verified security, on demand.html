@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<!-- saved from url=(0061)file:///C:/Users/dell/Downloads/staffoo-homepage-design.html# -->
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Staffoo — Verified security, on demand</title>
+<link rel="preconnect" href="https://fonts.googleapis.com/">
+<link href="./Staffoo — Verified security, on demand_files/css2" rel="stylesheet">
+<style>
+  :root{
+    --white:#FFFFFF;
+    --tint:#F5F8F5;
+    --green:#0F7A4A;
+    --green-dark:#0B5C39;
+    --green-light:#E3F3EA;
+    --ink:#14181C;
+    --ink-soft:#232A2E;
+    --text-secondary:#5B6660;
+    --amber:#E2A33D;
+    --border:#E4E9E4;
+    --radius:14px;
+    --max:1180px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{
+    font-family:'Inter',sans-serif;
+    color:var(--ink);
+    background:var(--white);
+    line-height:1.55;
+    -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3,.display{
+    font-family:'Barlow Semi Condensed',sans-serif;
+    font-weight:600;
+    letter-spacing:0.01em;
+    line-height:1.08;
+  }
+  .wrap{max-width:var(--max);margin:0 auto;padding:0 32px;}
+  a{color:inherit;text-decoration:none;}
+  img{max-width:100%;display:block;}
+
+  /* ===== Header ===== */
+  header{
+    position:sticky;top:0;z-index:50;
+    background:rgba(255,255,255,0.96);
+    backdrop-filter:blur(8px);
+    border-bottom:1px solid var(--border);
+  }
+  .nav{
+    display:flex;align-items:center;justify-content:space-between;
+    height:76px;
+  }
+  .logo{
+    font-family:'Barlow Semi Condensed',sans-serif;
+    font-weight:700;font-size:24px;
+    display:flex;align-items:center;gap:8px;
+  }
+  .logo .dot{width:9px;height:9px;border-radius:50%;background:var(--green);}
+  .nav-links{display:flex;align-items:center;gap:32px;}
+  .nav-links > div{position:relative;}
+  .nav-item{
+    font-size:15px;font-weight:500;color:var(--ink-soft);
+    display:flex;align-items:center;gap:4px;cursor:pointer;
+    padding:8px 0;
+  }
+  .nav-item:hover{color:var(--green);}
+  .caret{width:9px;height:9px;border-right:1.5px solid currentColor;border-bottom:1.5px solid currentColor;transform:rotate(45deg);margin-top:-3px;opacity:0.7;}
+  .dropdown{
+    position:absolute;top:100%;left:-16px;
+    background:var(--white);border:1px solid var(--border);
+    border-radius:12px;box-shadow:0 12px 32px rgba(20,24,28,0.08);
+    padding:10px;min-width:240px;
+    opacity:0;visibility:hidden;transform:translateY(6px);
+    transition:all .18s ease;
+  }
+  .nav-links > div:hover .dropdown{opacity:1;visibility:visible;transform:translateY(0);}
+  .dropdown a{
+    display:block;padding:9px 12px;border-radius:8px;
+    font-size:14px;color:var(--ink-soft);
+  }
+  .dropdown a:hover{background:var(--tint);color:var(--green-dark);}
+  .nav-cta{display:flex;align-items:center;gap:14px;}
+  .btn{
+    display:inline-flex;align-items:center;justify-content:center;
+    padding:11px 22px;border-radius:9px;font-size:14.5px;font-weight:600;
+    cursor:pointer;border:1.5px solid transparent;white-space:nowrap;
+    transition:all .15s ease;
+  }
+  .btn-solid{background:var(--green);color:var(--white);}
+  .btn-solid:hover{background:var(--green-dark);}
+  .btn-outline{border-color:var(--ink);color:var(--ink);}
+  .btn-outline:hover{border-color:var(--green);color:var(--green);}
+  .btn-ghost{color:var(--ink-soft);font-weight:500;}
+
+  /* ===== Platform disclaimer bar ===== */
+  .platform-bar{
+    background:var(--ink);color:#C9D1CB;
+    font-size:13px;text-align:center;padding:10px 20px;
+  }
+  .platform-bar b{color:white;font-weight:600;}
+  .platform-bar .sep{margin:0 8px;opacity:0.4;}
+
+  /* ===== Role tabs ===== */
+  .role-tabs{
+    display:inline-flex;background:var(--white);border:1px solid var(--border);
+    border-radius:10px;padding:4px;margin-bottom:24px;gap:2px;
+  }
+  .role-tab{
+    padding:9px 18px;border-radius:7px;font-size:13.5px;font-weight:600;
+    color:var(--text-secondary);cursor:pointer;transition:all .15s ease;
+  }
+  .role-tab.active{background:var(--green);color:white;}
+  .role-tab:not(.active):hover{color:var(--ink);}
+
+  /* ===== Hero ===== */
+  .hero{
+    background:var(--tint);
+    border-bottom:1px solid var(--border);
+    padding:76px 0 0;
+    overflow:hidden;
+  }
+  .hero-grid{
+    display:grid;grid-template-columns:1.05fr 0.95fr;gap:40px;
+    align-items:center;
+  }
+  .eyebrow{
+    display:inline-flex;align-items:center;gap:8px;
+    background:var(--green-light);color:var(--green-dark);
+    font-size:13px;font-weight:600;padding:7px 14px;border-radius:999px;
+    margin-bottom:20px;
+  }
+  .eyebrow .pulse{width:7px;height:7px;border-radius:50%;background:var(--green);animation:pulse 1.8s infinite;}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+  .hero h1{font-size:56px;color:var(--ink);margin-bottom:20px;}
+  .hero h1 span{color:var(--green);}
+  .hero p{font-size:17px;color:var(--text-secondary);max-width:480px;margin-bottom:30px;}
+  .hero-actions{display:flex;gap:14px;margin-bottom:34px;}
+  .btn-lg{padding:15px 26px;font-size:15.5px;}
+  .trust-row{display:flex;gap:28px;flex-wrap:wrap;}
+  .trust-item{font-size:13.5px;color:var(--text-secondary);display:flex;align-items:center;gap:7px;}
+  .check{width:16px;height:16px;border-radius:50%;background:var(--green);flex-shrink:0;position:relative;}
+  .check::after{content:'';position:absolute;left:5px;top:2.5px;width:4px;height:8px;border-right:1.5px solid white;border-bottom:1.5px solid white;transform:rotate(45deg);}
+
+  /* Duty card visual */
+  .duty-card-frame{position:relative;padding:20px 0 40px;}
+  .duty-card{
+    background:var(--white);border:1px solid var(--border);border-radius:18px;
+    padding:22px;box-shadow:0 20px 48px rgba(20,24,28,0.10);
+    position:relative;z-index:2;
+  }
+  .duty-top{display:flex;gap:14px;align-items:center;margin-bottom:16px;}
+  .avatar{width:56px;height:56px;border-radius:50%;background:linear-gradient(160deg,#0F7A4A,#0B5C39);flex-shrink:0;}
+  .duty-name{font-family:'Barlow Semi Condensed';font-weight:600;font-size:19px;}
+  .duty-sub{font-size:13px;color:var(--text-secondary);}
+  .verified{
+    display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:600;
+    color:var(--green-dark);background:var(--green-light);padding:3px 9px;border-radius:6px;margin-left:8px;
+  }
+  .chip-row{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0 16px;}
+  .chip{
+    font-size:12px;font-weight:600;padding:6px 11px;border-radius:7px;
+    background:var(--tint);border:1px solid var(--border);color:var(--ink-soft);
+  }
+  .duty-stats{display:flex;justify-content:space-between;border-top:1px solid var(--border);padding-top:14px;}
+  .duty-stat b{display:block;font-family:'Barlow Semi Condensed';font-size:18px;}
+  .duty-stat span{font-size:11.5px;color:var(--text-secondary);}
+  .float-card{
+    position:absolute;background:var(--ink);color:white;padding:12px 16px;border-radius:12px;
+    font-size:12.5px;font-weight:600;box-shadow:0 16px 32px rgba(20,24,28,0.25);z-index:3;
+  }
+  .float-card.f1{top:-6px;right:10px;}
+  .float-card.f1 .amber-dot{width:7px;height:7px;border-radius:50%;background:var(--amber);display:inline-block;margin-right:6px;}
+  .float-card.f2{bottom:6px;left:-18px;background:var(--white);color:var(--ink);border:1px solid var(--border);}
+
+  /* ===== Sections shared ===== */
+  section{padding:88px 0;}
+  .section-head{max-width:600px;margin-bottom:48px;}
+  .kicker{font-size:13px;font-weight:700;color:var(--green-dark);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:10px;}
+  .section-head h2{font-size:36px;margin-bottom:12px;}
+  .section-head p{color:var(--text-secondary);font-size:16px;}
+
+  /* Categories */
+  .cat-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:16px;}
+  .cat-card{
+    border:1px solid var(--border);border-radius:var(--radius);padding:22px 18px;
+    transition:all .18s ease;cursor:pointer;
+  }
+  .cat-card:hover{border-color:var(--green);transform:translateY(-3px);box-shadow:0 12px 28px rgba(20,24,28,0.08);}
+  .cat-icon{width:38px;height:38px;border-radius:10px;background:var(--green-light);margin-bottom:14px;display:flex;align-items:center;justify-content:center;}
+  .cat-icon svg{width:18px;height:18px;}
+  .cat-card h3{font-size:16.5px;font-weight:600;margin-bottom:5px;}
+  .cat-card p{font-size:12.5px;color:var(--text-secondary);}
+
+  /* What you get split */
+  .split-wrap{background:var(--ink);border-radius:20px;padding:56px;color:white;}
+  .split-head{text-align:center;max-width:560px;margin:0 auto 44px;}
+  .split-head .kicker{color:#8FE3B8;}
+  .split-head h2{color:white;font-size:34px;}
+  .split-head p{color:#AAB3AE;}
+  .split-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px;}
+  .split-col{
+    background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.10);
+    border-radius:16px;padding:32px;
+  }
+  .split-col .tag{
+    display:inline-block;font-size:12px;font-weight:700;letter-spacing:0.04em;
+    text-transform:uppercase;padding:5px 11px;border-radius:6px;margin-bottom:16px;
+  }
+  .split-col.client .tag{background:var(--green-light);color:var(--green-dark);}
+  .split-col.guard .tag{background:rgba(226,163,61,0.18);color:var(--amber);}
+  .split-col h3{font-size:26px;color:white;margin-bottom:8px;}
+  .split-col .sub{font-size:13.5px;color:#9BA6A0;margin-bottom:18px;}
+  .feat-list{list-style:none;}
+  .feat-list li{
+    display:flex;gap:12px;padding:11px 0;border-top:1px solid rgba(255,255,255,0.08);
+    font-size:14.5px;color:#D5D9D5;
+  }
+  .feat-list li:first-child{border-top:none;}
+  .feat-list b{color:white;font-weight:600;}
+  .split-col .btn{margin-top:22px;width:100%;}
+
+  /* How it works */
+  .steps{display:grid;grid-template-columns:repeat(4,1fr);gap:20px;}
+  .step{position:relative;padding-top:8px;}
+  .step .num{
+    font-family:'Barlow Semi Condensed';font-size:44px;font-weight:700;color:var(--green-light);
+    -webkit-text-stroke:1.5px var(--green);
+    margin-bottom:8px;
+  }
+  .step h3{font-size:17px;margin-bottom:6px;}
+  .step p{font-size:13.5px;color:var(--text-secondary);}
+
+  /* Case studies */
+  .cases{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;}
+  .case-card{border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;background:var(--white);}
+  .case-img{height:160px;background:linear-gradient(135deg,#0F7A4A,#14181C);}
+  .case-body{padding:22px;}
+  .case-industry{font-size:12px;font-weight:700;color:var(--green-dark);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:8px;}
+  .case-body h3{font-size:18px;margin-bottom:10px;}
+  .case-body p{font-size:13.5px;color:var(--text-secondary);margin-bottom:14px;}
+  .case-quote{font-size:13.5px;font-style:italic;color:var(--ink-soft);border-left:2px solid var(--green);padding-left:12px;}
+
+  /* Stats bar */
+  .stats-bar{
+    background:var(--tint);border-top:1px solid var(--border);border-bottom:1px solid var(--border);
+    padding:0;
+  }
+  .stats-grid{display:grid;grid-template-columns:repeat(4,1fr);}
+  .stat{padding:40px 0;text-align:center;border-left:1px solid var(--border);}
+  .stat:first-child{border-left:none;}
+  .stat b{display:block;font-family:'Barlow Semi Condensed';font-size:34px;color:var(--green-dark);}
+  .stat span{font-size:13px;color:var(--text-secondary);}
+
+  /* Final CTA */
+  .cta-band{background:var(--green);border-radius:20px;padding:60px;text-align:center;color:white;}
+  .cta-band h2{font-size:34px;color:white;margin-bottom:12px;}
+  .cta-band p{color:#DDF3E7;margin-bottom:26px;}
+  .cta-actions{display:flex;gap:14px;justify-content:center;}
+  .cta-band .btn-outline{border-color:white;color:white;}
+  .cta-band .btn-outline:hover{background:rgba(255,255,255,0.12);}
+  .cta-band .btn-solid{background:white;color:var(--green-dark);}
+  .cta-band .btn-solid:hover{background:#EFF7F2;}
+
+  /* Footer */
+  footer{background:var(--ink);color:#AAB3AE;padding:64px 0 28px;}
+  .foot-grid{display:grid;grid-template-columns:1.4fr repeat(4,1fr);gap:32px;margin-bottom:48px;}
+  .foot-logo{font-family:'Barlow Semi Condensed';font-weight:700;font-size:22px;color:white;margin-bottom:12px;}
+  .foot-grid p{font-size:13.5px;line-height:1.6;max-width:260px;}
+  .foot-col h4{font-size:13px;font-weight:700;color:white;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:16px;}
+  .foot-col a{display:block;font-size:14px;padding:6px 0;color:#AAB3AE;}
+  .foot-col a:hover{color:var(--green-light);}
+  .foot-bottom{border-top:1px solid rgba(255,255,255,0.1);padding-top:24px;display:flex;justify-content:space-between;font-size:12.5px;}
+
+  @media(max-width:1000px){
+    .hero-grid{grid-template-columns:1fr;}
+    .cat-grid{grid-template-columns:repeat(2,1fr);}
+    .steps{grid-template-columns:repeat(2,1fr);}
+    .cases{grid-template-columns:1fr;}
+    .split-grid{grid-template-columns:1fr;}
+    .stats-grid{grid-template-columns:repeat(2,1fr);}
+    .foot-grid{grid-template-columns:1fr 1fr;}
+    .nav-links{display:none;}
+    .platform-bar{font-size:12px;line-height:1.5;}
+    .platform-bar .sep{display:none;}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap nav">
+    <div class="logo"><span class="dot"></span>Staffoo</div>
+    <nav class="nav-links">
+      <div class="nav-item">For clients <span class="caret"></span>
+        <div class="dropdown">
+          <a href="file:///C:/Users/dell/Downloads/staffoo-homepage-design.html#">Post a job</a>
+          <a href="file:///C:/Users/dell/Downloads/staffoo-homepage-design.html#">Browse guards</a>
+          <a href="file:///C:/Users/dell/Downloads/staffoo-homepage-design.html#">Hiring for a business or agency</a>
+          <a href="file:///C:/Users/dell/Downloads/staffoo-homepage-design.html#">How it works</a>
+          <a href="file:///C:/Users/dell/Downloads/staffoo-homepage-design.html#">Pricing</a>
+        </div>
+      </div>
+      <div class="nav-item">For guards <span class="caret"></span>
+        <div class="dropdown">
+          <a href="file:///C:/Users/dell/Downloads/staffoo-homepage-design.html#">Browse jobs</a>
+          <a href="file:///C:/Users/dell/Downloads/staffoo-homepage-design.html#">How to apply</a>
+          <a href="file:///C:/Users/dell/Downloads/staffoo-homepage-design.html#">Licensing &amp; requirements</a>
+          <a href="file:///C:/Users/dell/Downloads/staffoo-homepage-design.html#">Guard dashboard</a>
+        </div>
+      </div>
+      <div class="nav-item">Industries <span class="caret"></span>
+        <div class="dropdown">
+          <a href="file:///C:/Users/dell/Downloads/staffoo-homepage-design.html#">Event &amp; crowd control</a>
+          <a href="file:///C:/Users/dell/Downloads/staffoo-homepage-design.html#">Corporate &amp; office</a>
+          <a href="file:///C:/Users/dell/Downloads/staffoo-homepage-design.html#">Retail security</a>
+          <a href="file:///C:/Users/dell/Downloads/staffoo-homepage-design.html#">Construction sites</a>
+          <a href="file:///C:/Users/dell/Downloads/staffoo-homepage-design.html#">Residential &amp; estates</a>
+          <a href="file:///C:/Users/dell/Downloads/staffoo-homepage-design.html#">Cash-in-transit</a>
+        </div>
+      </div>
+      <div class="nav-item">Company <span class="caret"></span>
+        <div class="dropdown">
+          <a href="file:///C:/Users/dell/Downloads/staffoo-homepage-design.html#">About us</a>
+          <a href="file:///C:/Users/dell/Downloads/staffoo-homepage-design.html#">Case studies</a>
+          <a href="file:///C:/Users/dell/Downloads/staffoo-homepage-design.html#">Blog</a>
+          <a href="file:///C:/Users/dell/Downloads/staffoo-homepage-design.html#">Contact</a>
+        </div>
+      </div>
+    </nav>
+    <div class="nav-cta">
+      <a href="file:///C:/Users/dell/Downloads/staffoo-homepage-design.html#" class="btn btn-ghost">Log in</a>
+      <a href="file:///C:/Users/dell/Downloads/staffoo-homepage-design.html#" class="btn btn-solid">Sign up</a>
+    </div>
+  </div>
+</header>
+
+<div class="platform-bar">
+  <b></b> We connect you directly with independent, licensed guards verified before they ever apply.
+</div>
+
+<section class="hero">
+  <div class="wrap hero-grid">
+    <div>
+      <div class="role-tabs">
+        <span class="role-tab active">I need a guard</span>
+        <span class="role-tab">I'm a guard</span>
+      </div>
+      <h1>Verified security,<br>on <span>demand.</span></h1>
+      <p>Post a job and independent, licensed guards apply. Whether you're hiring one guard for a weekend or covering security across a whole business, review, hire and pay all in one place.</p>
+      <div class="hero-actions">
+        <a href="file:///C:/Users/dell/Downloads/staffoo-homepage-design.html#" class="btn btn-solid btn-lg">Post a job</a>
+        <a href="file:///C:/Users/dell/Downloads/staffoo-homepage-design.html#" class="btn btn-outline btn-lg">Find a job</a>
+      </div>
+      <div class="trust-row">
+        <div class="trust-item"><span class="check"></span>Licence verified</div>
+        <div class="trust-item"><span class="check"></span>For individuals &amp; businesses</div>
+        <div class="trust-item"><span class="check"></span>Rated by real clients</div>
+      </div>
+    </div>
+    <div class="duty-card-frame">
+      <div class="float-card f1"><span class="amber-dot"></span>Urgent — tonight, 8pm</div>
+      <div class="duty-card">
+        <div class="duty-top">
+          <div class="avatar"></div>
+          <div>
+            <div class="duty-name">J. Okafor <span class="verified">✓ Verified</span></div>
+            <div class="duty-sub">Sydney, NSW · 6 yrs experience</div>
+          </div>
+        </div>
+        <div class="chip-row">
+          <span class="chip">1A Security Officer</span>
+          <span class="chip">Crowd Controller</span>
+          <span class="chip">Event Security</span>
+        </div>
+        <div class="duty-stats">
+          <div class="duty-stat"><b>4.9★</b><span>142 shifts</span></div>
+          <div class="duty-stat"><b>$42/hr</b><span>avg. rate</span></div>
+          <div class="duty-stat"><b>&lt;2hr</b><span>response time</span></div>
+        </div>
+      </div>
+      <div class="float-card f2">Job filled in 34 min</div>
+    </div>
+  </div>
+</section>
+
+<div class="stats-bar">
+  <div class="wrap stats-grid">
+    <div class="stat"><b>2,000+</b><span>jobs filled</span></div>
+    <div class="stat"><b>1,200+</b><span>verified guards</span></div>
+    <div class="stat"><b>4.8★</b><span>average rating</span></div>
+    <div class="stat"><b>34 min</b><span>avg. time to fill</span></div>
+  </div>
+</div>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <div class="kicker">Categories</div>
+      <h2>What kind of security do you need?</h2>
+      <p>Every category maps to a real Australian security licence — so you know exactly who you're hiring.</p>
+    </div>
+    <div class="cat-grid">
+      <div class="cat-card"><div class="cat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#0F7A4A" stroke-width="1.8"><circle cx="12" cy="12" r="9"></circle></svg></div><h3>Event &amp; crowd control</h3><p>Festivals, concerts, licensed venues</p></div>
+      <div class="cat-card"><div class="cat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#0F7A4A" stroke-width="1.8"><rect x="4" y="4" width="16" height="16" rx="2"></rect></svg></div><h3>Corporate &amp; office</h3><p>Reception, access control, patrols</p></div>
+      <div class="cat-card"><div class="cat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#0F7A4A" stroke-width="1.8"><path d="M4 20V10l8-6 8 6v10"></path></svg></div><h3>Construction sites</h3><p>Overnight &amp; weekend site security</p></div>
+      <div class="cat-card"><div class="cat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#0F7A4A" stroke-width="1.8"><path d="M6 6h15l-1.5 9h-12z"></path></svg></div><h3>Retail &amp; loss prevention</h3><p>Stores, shopping centres</p></div>
+      <div class="cat-card"><div class="cat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#0F7A4A" stroke-width="1.8"><circle cx="12" cy="12" r="3"></circle><path d="M12 2v4M12 18v4M2 12h4M18 12h4"></path></svg></div><h3>Mobile patrol</h3><p>Multi-site roaming coverage</p></div>
+      <div class="cat-card"><div class="cat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#0F7A4A" stroke-width="1.8"><path d="M12 3l7 4v5c0 5-3 8-7 9-4-1-7-4-7-9V7z"></path></svg></div><h3>Residential &amp; estates</h3><p>Gated communities, private homes</p></div>
+      <div class="cat-card"><div class="cat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#0F7A4A" stroke-width="1.8"><path d="M4 10h16M4 14h16M9 4v16M15 4v16"></path></svg></div><h3>Concierge &amp; front-of-house</h3><p>Buildings, hotels, front desks</p></div>
+      <div class="cat-card"><div class="cat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#0F7A4A" stroke-width="1.8"><rect x="3" y="7" width="18" height="12" rx="2"></rect><path d="M8 7V5a2 2 0 012-2h4a2 2 0 012 2v2"></path></svg></div><h3>Cash-in-transit</h3><p>Class 1C licensed guards</p></div>
+      <div class="cat-card"><div class="cat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#0F7A4A" stroke-width="1.8"><path d="M12 2l3 6 6 1-4.5 4 1 6-5.5-3-5.5 3 1-6L4 9l6-1z"></path></svg></div><h3>Close protection</h3><p>Executive &amp; VIP bodyguards</p></div>
+      <div class="cat-card"><div class="cat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#0F7A4A" stroke-width="1.8"><path d="M12 3a9 9 0 100 18 9 9 0 000-18zM12 7v5l3 3"></path></svg></div><h3>Alarm response</h3><p>Monitoring &amp; rapid callout</p></div>
+      <div class="cat-card"><div class="cat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#0F7A4A" stroke-width="1.8"><circle cx="12" cy="8" r="4"></circle><path d="M4 21v-1a8 8 0 0116 0v1"></path></svg></div><h3>All categories</h3><p>Browse the full directory →</p></div>
+    </div>
+  </div>
+</section>
+
+<section style="background:var(--tint);border-top:1px solid var(--border);border-bottom:1px solid var(--border);">
+  <div class="wrap">
+    <div class="split-wrap">
+      <div class="split-head">
+        <div class="kicker">Two sides, one platform</div>
+        <h2>What you get on Staffoo</h2>
+        <p>Whether you're hiring or looking for work, here's exactly what's waiting for you.</p>
+      </div>
+      <div class="split-grid">
+        <div class="split-col client">
+          <span class="tag">Client</span>
+          <h3>Hire guards you can verify</h3>
+          <p class="sub">For individuals, businesses and agencies alike.</p>
+          <ul class="feat-list">
+            <li><b>Post a job in 2 minutes</b> — one shift or an ongoing roster, describe what you need.</li>
+            <li><b>See real licence status</b> — every guard's subclass is checked, not self-reported.</li>
+            <li><b>Compare rates &amp; reviews</b> — transparent hourly pricing, no hidden fees.</li>
+            <li><b>Manage multiple sites</b> — running more than one contract? Track them all from one dashboard.</li>
+            <li><b>Pay securely</b> — funds released once the shift is confirmed complete.</li>
+          </ul>
+          <a href="file:///C:/Users/dell/Downloads/staffoo-homepage-design.html#" class="btn btn-solid">Post your first job</a>
+        </div>
+        <div class="split-col guard">
+          <span class="tag">Guard</span>
+          <h3>Find shifts that fit your licence</h3>
+          <p class="sub">For licensed guards looking for consistent work.</p>
+          <ul class="feat-list">
+            <li><b>Build a duty profile</b> — licences, experience and ratings, all in one place.</li>
+            <li><b>Get matched automatically</b> — jobs filtered to your subclass and location.</li>
+            <li><b>Set your own rate</b> — no agency cut eating into your pay.</li>
+            <li><b>Apply in one tap</b> — no phone tag, no waiting on a callback.</li>
+            <li><b>Get paid on time</b> — payment released as soon as a shift is signed off.</li>
+          </ul>
+          <a href="file:///C:/Users/dell/Downloads/staffoo-homepage-design.html#" class="btn btn-outline">Browse open shifts</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <div class="kicker">How it works</div>
+      <h2>From posted job to filled shift</h2>
+    </div>
+    <div class="steps">
+      <div class="step"><div class="num">01</div><h3>Post the job</h3><p>Tell us the location, shift time and licence type you need.</p></div>
+      <div class="step"><div class="num">02</div><h3>Review applicants</h3><p>See verified guards ranked by rating, distance and rate.</p></div>
+      <div class="step"><div class="num">03</div><h3>Confirm &amp; brief</h3><p>Message directly, share site details, lock in the shift.</p></div>
+      <div class="step"><div class="num">04</div><h3>Track &amp; pay</h3><p>Live check-in, digital sign-off, secure payment release.</p></div>
+    </div>
+  </div>
+</section>
+
+<section style="background:var(--tint);border-top:1px solid var(--border);border-bottom:1px solid var(--border);">
+  <div class="wrap">
+    <div class="section-head">
+      <div class="kicker">Case studies</div>
+      <h2>Businesses running on Staffoo</h2>
+    </div>
+    <div class="cases">
+      <div class="case-card">
+        <div class="case-img"></div>
+        <div class="case-body">
+          <div class="case-industry">Retail</div>
+          <h3>Filling last-minute cover across 12 stores</h3>
+          <p class="case-quote">"We used to call three agencies before finding one guard. Now it's one post and it's done."</p>
+        </div>
+      </div>
+      <div class="case-card">
+        <div class="case-img" style="background:linear-gradient(135deg,#14181C,#0B5C39);"></div>
+        <div class="case-body">
+          <div class="case-industry">Construction</div>
+          <h3>Overnight coverage for a 40-site rollout</h3>
+          <p class="case-quote">"Licence verification alone saved us from two compliance headaches this year."</p>
+        </div>
+      </div>
+      <div class="case-card">
+        <div class="case-img" style="background:linear-gradient(135deg,#0B5C39,#0F7A4A);"></div>
+        <div class="case-body">
+          <div class="case-industry">Events</div>
+          <h3>Crowd control for a 3-day festival</h3>
+          <p class="case-quote">"34 crowd controllers booked and confirmed in under a day."</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="cta-band">
+      <h2>Ready to get started?</h2>
+      <p>Join in minutes — no setup fees, no lock-in contracts.</p>
+      <div class="cta-actions">
+        <a href="file:///C:/Users/dell/Downloads/staffoo-homepage-design.html#" class="btn btn-solid btn-lg">Post a job</a>
+        <a href="file:///C:/Users/dell/Downloads/staffoo-homepage-design.html#" class="btn btn-outline btn-lg">Sign up as a guard</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div class="foot-grid">
+      <div>
+        <div class="foot-logo">Staffoo</div>
+        <p>A platform connecting clients, individuals, businesses and agencies with independent, licensed security guards across Australia.</p>
+      </div>
+      <div class="foot-col">
+        <h4>For clients</h4>
+        <a href="file:///C:/Users/dell/Downloads/staffoo-homepage-design.html#">Post a job</a><a href="file:///C:/Users/dell/Downloads/staffoo-homepage-design.html#">Browse guards</a><a href="file:///C:/Users/dell/Downloads/staffoo-homepage-design.html#">Businesses &amp; agencies</a><a href="file:///C:/Users/dell/Downloads/staffoo-homepage-design.html#">Pricing</a>
+      </div>
+      <div class="foot-col">
+        <h4>For guards</h4>
+        <a href="file:///C:/Users/dell/Downloads/staffoo-homepage-design.html#">Browse jobs</a><a href="file:///C:/Users/dell/Downloads/staffoo-homepage-design.html#">How to apply</a><a href="file:///C:/Users/dell/Downloads/staffoo-homepage-design.html#">Licensing</a><a href="file:///C:/Users/dell/Downloads/staffoo-homepage-design.html#">Guard dashboard</a>
+      </div>
+      <div class="foot-col">
+        <h4>Industries</h4>
+        <a href="file:///C:/Users/dell/Downloads/staffoo-homepage-design.html#">Events</a><a href="file:///C:/Users/dell/Downloads/staffoo-homepage-design.html#">Corporate</a><a href="file:///C:/Users/dell/Downloads/staffoo-homepage-design.html#">Retail</a><a href="file:///C:/Users/dell/Downloads/staffoo-homepage-design.html#">Construction</a>
+      </div>
+      <div class="foot-col">
+        <h4>Company</h4>
+        <a href="file:///C:/Users/dell/Downloads/staffoo-homepage-design.html#">About</a><a href="file:///C:/Users/dell/Downloads/staffoo-homepage-design.html#">Case studies</a><a href="file:///C:/Users/dell/Downloads/staffoo-homepage-design.html#">Blog</a><a href="file:///C:/Users/dell/Downloads/staffoo-homepage-design.html#">Contact</a>
+      </div>
+    </div>
+    <div class="foot-bottom">
+      <span>© 2026 Staffoo. All rights reserved.</span>
+      <span>Privacy · Terms · Compliance</span>
+    </div>
+  </div>
+</footer>
+
+
+
+</body></html>

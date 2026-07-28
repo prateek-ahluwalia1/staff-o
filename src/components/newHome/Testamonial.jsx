@@ -1,63 +1,51 @@
 import React from 'react'
 import "../../styles/staffoo.css"
 
+// Testimonial is now the Case Studies section
 function Testamonial() {
   return (
-    <div><section className="test-sec">
-      <div className="test-sec-bg">❝</div>
-      <div className="test-head reveal">
-        <div className="label">Stories from our community</div>
-        <h2>Success Stories</h2>
-      </div>
-      <div className="test-grid">
-        <div className="test-card reveal">
-          <div className="test-stars">
-            <span className="test-star">★</span><span className="test-star">★</span><span className="test-star">★</span><span className="test-star">★</span><span className="test-star">★</span>
-          </div>
-          <p className="test-quote"
-            style={{ textTransform: "none" }}
-          >Staffoo made hiring security staff effortless. Within hours we had verified professionals for our event. I can trust the quality of the staff every single time.</p>
-          <div className="test-author">
-            <div className="test-av av-a">D</div>
-            <div>
-              <div className="test-name">Dianna R.</div>
-              <div className="test-role">Event Manager · Sydney</div>
+    <section className="nh-section nh-section-tint">
+      <div className="nh-wrap">
+        <div className="nh-section-head">
+          <div className="nh-kicker">Case studies</div>
+          <h2>Businesses running on Staffoo</h2>
+        </div>
+        <div className="nh-cases">
+          <div className="nh-case-card">
+            <div className="nh-case-img" style={{ background: 'linear-gradient(135deg, #0F7A4A, #14181C)' }} />
+            <div className="nh-case-body">
+              <div className="nh-case-industry">Retail</div>
+              <h3>Filling last-minute cover across 12 stores</h3>
+              <p className="nh-case-quote">
+                "We used to call three agencies before finding one guard. Now it's one post and it's done."
+              </p>
             </div>
           </div>
-        </div>
-        <div className="test-card reveal reveal-d1">
-          <div className="test-stars">
-            <span className="test-star">★</span><span className="test-star">★</span><span className="test-star">★</span><span className="test-star">★</span><span className="test-star">★</span>
-          </div>
-          <p className="test-quote"
-            style={{ textTransform: "none" }}
-          >Posting jobs on Staffoo is straightforward and the staff profiles are thorough. We've filled multiple positions without any hassle. Highly recommended platform.</p>
-          <div className="test-author">
-            <div className="test-av av-b">M</div>
-            <div>
-              <div className="test-name">Michael T.</div>
-              <div className="test-role">Operations Director · Melbourne</div>
+
+          <div className="nh-case-card">
+            <div className="nh-case-img" style={{ background: 'linear-gradient(135deg, #14181C, #0B5C39)' }} />
+            <div className="nh-case-body">
+              <div className="nh-case-industry">Construction</div>
+              <h3>Overnight coverage for a 40-site rollout</h3>
+              <p className="nh-case-quote">
+                "Licence verification alone saved us from two compliance headaches this year."
+              </p>
             </div>
           </div>
-        </div>
-        <div className="test-card reveal reveal-d2">
-          <div className="test-stars">
-            <span className="test-star">★</span><span className="test-star">★</span><span className="test-star">★</span><span className="test-star">★</span><span className="test-star">★</span>
-          </div>
-          <p className="test-quote"
-            style={{ textTransform: "none" }}
-          >The Resource Partner dashboard is a lifesaver. Assigning jobs and monitoring progress is seamless and I always know our security needs are met by qualified staff.</p>
-          <div className="test-author">
-            <div className="test-av av-c">S</div>
-            <div>
-              <div className="test-name">Sarah K.</div>
-              <div className="test-role">Resource Partner · Brisbane</div>
+
+          <div className="nh-case-card">
+            <div className="nh-case-img" style={{ background: 'linear-gradient(135deg, #0B5C39, #0F7A4A)' }} />
+            <div className="nh-case-body">
+              <div className="nh-case-industry">Events</div>
+              <h3>Crowd control for a 3-day festival</h3>
+              <p className="nh-case-quote">
+                "34 crowd controllers booked and confirmed in under a day."
+              </p>
             </div>
           </div>
         </div>
       </div>
     </section>
-    </div>
   )
 }
 

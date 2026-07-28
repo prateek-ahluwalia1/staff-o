@@ -1,79 +1,132 @@
-import React from 'react'
-import "../../styles/staffoo.css"
+import React, { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useSelector } from 'react-redux'
-import heroImg from "../../assets/images/hero-img.jpg"
+import "../../styles/staffoo.css"
 
 function Hero() {
-  // Check if the user is authenticated
   const { token } = useSelector((state) => state.auth)
+  const postJobRoute = token ? "/edit-profile" : "/register"
+  const findJobRoute = token ? "/edit-profile" : "/login"
 
-  // Determine the correct path based on authentication status
-  const targetRoute = token ? "/edit-profile" : "/login"
+  const [activeTab, setActiveTab] = useState('client')
 
   return (
-    <>
-      <section className="hero">
-        <div className="hero-left">
-          <div className="bracket bracket-tl"></div>
-          <div className="hero-eyebrow">
-            <span className="label">Australia's #1 Security Platform</span>
+    <section className="nh-hero">
+      <div className="nh-wrap nh-hero-grid">
+        {/* LEFT CONTENT */}
+        <div>
+          {/* Role Tabs */}
+          <div className="nh-role-tabs">
+            <button
+              className={`nh-role-tab ${activeTab === 'client' ? 'active' : ''}`}
+              onClick={() => setActiveTab('client')}
+            >
+              I need a staff
+            </button>
+            <button
+              className={`nh-role-tab ${activeTab === 'guard' ? 'active' : ''}`}
+              onClick={() => setActiveTab('guard')}
+            >
+              I'm a staff
+            </button>
           </div>
+
+          {/* Headline */}
           <h1>
-            Trusted<br />
-            <span className="hero-line"><em>Security</em> <span className="hero-plain">Workforce</span></span>
+            {activeTab === 'client' ? (
+              <>Verified security,<br />on <span>demand.</span></>
+            ) : (
+              <>Find shifts,<br />get <span>paid faster.</span></>
+            )}
           </h1>
-          <p className="hero-desc"
-            style={{ textTransform: "none" }}
-          >Whether you're hiring security staff, looking for verified shifts, or managing assignments across Australia — Staffoo makes it fast, compliant, and reliable.</p>
-          <div className="hero-ctas">
-            <Link to={targetRoute} className="btn-primary">Find Security Jobs</Link>
-            <Link to={targetRoute} className="btn-secondary">Post a Job</Link>
+
+          {/* Description */}
+          <p className="nh-hero-desc">
+            {activeTab === 'client'
+              ? "Post a job and independent, licensed staff apply. Whether you're hiring one staff for a weekend or covering security across a whole business, review, hire and pay all in one place."
+              : "Create your verified profile, upload your licences, and get matched to security shifts near you. Apply in one tap — no phone tag, no waiting on a callback."}
+          </p>
+
+          {/* CTAs */}
+          <div className="nh-hero-actions">
+            {activeTab === 'client' ? (
+              <>
+                <Link to={postJobRoute} className="nh-btn nh-btn-solid nh-btn-lg">Post a job</Link>
+                <Link to={findJobRoute} className="nh-btn nh-btn-outline nh-btn-lg">Find a staff</Link>
+              </>
+            ) : (
+              <>
+                <Link to={findJobRoute} className="nh-btn nh-btn-solid nh-btn-lg">Browse open shifts</Link>
+                <Link to={postJobRoute} className="nh-btn nh-btn-outline nh-btn-lg">Find a job</Link>
+              </>
+            )}
           </div>
-          <div className="hero-stats">
-            <div className="h-stat">
-              <div className="h-stat-num">50K+</div>
-              <div className="h-stat-label">Active Jobs</div>
+
+          {/* Trust row */}
+          <div className="nh-trust-row">
+            <div className="nh-trust-item">
+              <span className="nh-check" />
+              Licence verified
             </div>
-            <div className="h-stat">
-              <div className="h-stat-num">12K+</div>
-              <div className="h-stat-label">Verified Staff</div>
+            <div className="nh-trust-item">
+              <span className="nh-check" />
+              For individuals &amp; businesses
             </div>
-            <div className="h-stat">
-              <div className="h-stat-num">98%</div>
-              <div className="h-stat-label">Fill Rate</div>
-            </div>
-            <div className="h-stat">
-              <div className="h-stat-num">5★</div>
-              <div className="h-stat-label">Rated Platform</div>
+            <div className="nh-trust-item">
+              <span className="nh-check" />
+              Rated by real clients
             </div>
           </div>
-          <div className="bracket bracket-br"></div>
         </div>
 
-        {/* RIGHT: Guard illustration / photo area */}
-        <div className="hero-right">
-          <div className="hero-photo">
-            <img className="guard-silhouette" src={heroImg} alt="Security guard in uniform" />
-          </div>
-          <div className="hero-img-bg"></div>
-
-          {/* Floating verified badge */}
-          <div className="hero-verified-badge">
-            <div className="vb-dot"></div>
-            <span className="vb-text">38 Guards On Shift Now</span>
+        {/* RIGHT — Duty Card Visual */}
+        <div className="nh-duty-card-frame">
+          {/* Floating urgent badge */}
+          <div className="nh-float-card f1">
+            <span className="nh-amber-dot" />
+            Urgent — tonight, 8pm
           </div>
 
-          {/* Floating job card (aggregated) */}
-          <div className="hero-overlay-card">
-            <div className="oc-label">Live Summary</div>
-            <div className="oc-job-title">18 jobs in Victoria</div>
-            <div className="oc-job-loc">Multiple locations · Updated daily</div>
-            <div className="oc-pay">Avg $40<span>/hr</span></div>
+          {/* Main guard profile card */}
+          <div className="nh-duty-card">
+            <div className="nh-duty-top">
+              <div className="nh-avatar">JO</div>
+              <div>
+                <div className="nh-duty-name">
+                  J. Okafor
+                  <span className="nh-verified">✓ Verified</span>
+                </div>
+                <div className="nh-duty-sub">Sydney, NSW · 6 yrs experience</div>
+              </div>
+            </div>
+
+            <div className="nh-chip-row">
+              <span className="nh-chip">1A Security Officer</span>
+              <span className="nh-chip">Crowd Controller</span>
+              <span className="nh-chip">Event Security</span>
+            </div>
+
+            <div className="nh-duty-stats">
+              <div className="nh-duty-stat">
+                <b>4.9★</b>
+                <span>142 shifts</span>
+              </div>
+              <div className="nh-duty-stat">
+                <b>$42/hr</b>
+                <span>avg. rate</span>
+              </div>
+              <div className="nh-duty-stat">
+                <b>&lt;2hr</b>
+                <span>response time</span>
+              </div>
+            </div>
           </div>
+
+          {/* Floating "filled" badge */}
+          <div className="nh-float-card f2">Job filled in 34 min</div>
         </div>
-      </section>
-    </>
+      </div>
+    </section>
   )
 }
 

@@ -1,29 +1,29 @@
 import React from 'react'
 import "../../styles/staffoo.css"
 
+// Ticker is now the Stats Bar — 4 platform metrics
 function Ticker() {
   return (
-    <div><div className="ticker">
-  <div className="ticker-inner">
-    <div className="ticker-item">Security Licence <span className="ticker-dot"></span></div>
-    <div className="ticker-item">HISC Time Licence <span className="ticker-dot"></span></div>
-    <div className="ticker-item">Working With Children <span className="ticker-dot"></span></div>
-    <div className="ticker-item">First Aid Certified <span className="ticker-dot"></span></div>
-    <div className="ticker-item">CPR Certified <span className="ticker-dot"></span></div>
-    <div className="ticker-item">Background Checked <span className="ticker-dot"></span></div>
-    <div className="ticker-item">Stripe Payments <span className="ticker-dot"></span></div>
-    <div className="ticker-item">Instant Job Matching <span className="ticker-dot"></span></div>
-   {/* duplicate for seamless loop */}
-    <div className="ticker-item">Security Licence <span className="ticker-dot"></span></div>
-    <div className="ticker-item">HISC Time Licence <span className="ticker-dot"></span></div>
-    <div className="ticker-item">Working With Children <span className="ticker-dot"></span></div>
-    <div className="ticker-item">First Aid Certified <span className="ticker-dot"></span></div>
-    <div className="ticker-item">CPR Certified <span className="ticker-dot"></span></div>
-    <div className="ticker-item">Background Checked <span className="ticker-dot"></span></div>
-    <div className="ticker-item">Stripe Payments <span className="ticker-dot"></span></div>
-    <div className="ticker-item">Instant Job Matching <span className="ticker-dot"></span></div>
-  </div>
-</div></div>
+    <div className="nh-stats-bar">
+      <div className="nh-wrap nh-stats-grid">
+        <div className="nh-stat">
+          <b>2,000+</b>
+          <span>jobs filled</span>
+        </div>
+        <div className="nh-stat">
+          <b>1,200+</b>
+          <span>verified staff</span>
+        </div>
+        <div className="nh-stat">
+          <b>4.8★</b>
+          <span>average rating</span>
+        </div>
+        <div className="nh-stat">
+          <b>34 min</b>
+          <span>avg. time to fill</span>
+        </div>
+      </div>
+    </div>
   )
 }
 

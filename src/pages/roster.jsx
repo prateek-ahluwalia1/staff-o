@@ -487,7 +487,7 @@ export default function RosterPage() {
           <span className="vr-badge bg-rejected">Rejected</span>
           <span className="vr-badge bg-missed">Missed</span>
           <span className="vr-badge bg-mock">Mock</span>
-          <span className="vr-badge bg-op-notes">Op Notes</span>
+          <span className="vr-badge bg-op-notes">OpNotes</span>
           <span className="vr-badge bg-uncoverd">Uncovered</span>
         </div>
       )}

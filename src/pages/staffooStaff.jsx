@@ -351,6 +351,22 @@ const StaffooStaff = () => {
         }
         if (name === "document_expiry" && (docForm.document_name === "Security License" || docForm.document_name === "Visa")) return;
         if (type === "checkbox") setDocForm(prev => ({ ...prev, [name]: checked }));
+        else if (name === "document_name") {
+            // Changing the document type mid-form must reset anything tied to
+            // the previous type's verification (esp. show_working_rights,
+            // which should only ever be true for a verified Visa).
+            setDocForm(prev => ({
+                ...prev,
+                document_name: value,
+                document_no: "",
+                document_expiry: "",
+                is_verified: false,
+                show_working_rights: false,
+                working_rights_file_path: "",
+                working_rights_file_url: "",
+                work_entitlement: "",
+            }));
+        }
         else if (type === "file") {
             const file = files[0];
             if (!file) return;

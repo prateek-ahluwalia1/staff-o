@@ -675,7 +675,7 @@ private function calculateProfileCompletion(User $user): int
             $updateDocuments->document_expiry = $formattedExpiry;
         }
         $updateDocuments->document_no = (!empty($request->document_no) && $request->has('document_no') ? $request->document_no : '');
-        $updateDocuments->document_type = (!empty($request->document_type) && $request->has('document_type') ? $request->document_type : '');
+        $updateDocuments->document_type = !empty($request->document_type) ? strtolower(trim($request->document_type)) : '';        
         $updateDocuments->working_rights = (!empty($request->working_rights) && $request->has('working_rights')) ? $request->working_rights : null;
 
         if ($request->has('file')) {
@@ -880,6 +880,7 @@ private function calculateProfileCompletion(User $user): int
                         $document_categories = DocumentCategory::where('document_category', $request->staff_document_type)->first();
 
                         if ($document_categories) {
+                            // Get existing documents
                             $old_docs = Document::where('user_id', $user->id)
                                 ->where('document_category', '!=', 'other-doc')
                                 ->get()
@@ -888,80 +889,48 @@ private function calculateProfileCompletion(User $user): int
                             $new_doc_types = json_decode($document_categories->document_type, true);
                             $new_document_category = $document_categories->document_category ?: 'other';
 
-                            $old_doc_types = $old_docs->keys()->toArray();
-                            $new_doc_keys = array_keys($new_doc_types);
-
-                            // FIX: Use array_diff_key and array_intersect_key (compare KEYS, not values)
-                            $to_delete_types = array_diff_key($old_docs->toArray(), $new_doc_types);
-                            $to_add_types = array_diff_key($new_doc_types, $old_docs->toArray());
-                            $common_types = array_intersect_key($old_docs->toArray(), $new_doc_types);
-
-                            // Get the keys for easier processing
-                            $to_delete_keys = array_keys($to_delete_types);
-                            $to_add_keys = array_keys($to_add_types);
-                            $common_keys = array_keys($common_types);
-
-                            // ===== HANDLE VISA DOCUMENT =====
-                            // 1. Always delete old visa if it exists
-                            if (in_array('visa', $old_doc_types)) {
-                                // Delete the old visa document
-                                Document::where('user_id', $user->id)
-                                    ->where('document_type', 'visa')
-                                    ->delete();
-                                
-                                // Remove visa from old_doc_types so it's not processed elsewhere
-                                if (($key = array_search('visa', $old_doc_types)) !== false) {
-                                    unset($old_doc_types[$key]);
-                                }
-                                // Remove from arrays if present
-                                if (($key = array_search('visa', $to_delete_keys)) !== false) {
-                                    unset($to_delete_keys[$key]);
-                                }
-                                if (($key = array_search('visa', $common_keys)) !== false) {
-                                    unset($common_keys[$key]);
-                                }
-                            }
+                            // ===== HANDLE VISA =====
+                            // 1. Delete old visa if exists
+                            Document::where('user_id', $user->id)
+                                ->where('document_type', 'visa')
+                                ->delete();
                             
-                            // 2. Check if new visa type has 'visa' document
-                            $has_visa_in_new = in_array('visa', $new_doc_keys);
+                            // 2. Check if new type has visa
+                            $has_new_visa = isset($new_doc_types['visa']);
+                            $visa_name = $has_new_visa ? $new_doc_types['visa'] : null;
+                            // ===== END VISA HANDLING =====
+
+                            // Remove visa from old docs array for comparison
+                            $old_docs_filtered = $old_docs->filter(function($doc) {
+                                return $doc->document_type !== 'visa';
+                            });
                             
-                            // 3. If new visa type has visa, add it
-                            if ($has_visa_in_new) {
-                                // Add visa to to_add_keys if not already there
-                                if (!in_array('visa', $to_add_keys)) {
-                                    $to_add_keys[] = 'visa';
-                                }
-                                // Remove visa from new_doc_keys for other processing
-                                if (($key = array_search('visa', $new_doc_keys)) !== false) {
-                                    unset($new_doc_keys[$key]);
-                                }
-                            }
-                            
-                            // Remove visa from any other arrays to avoid conflicts
-                            if (($key = array_search('visa', $to_delete_keys)) !== false) {
-                                unset($to_delete_keys[$key]);
-                            }
-                            if (($key = array_search('visa', $common_keys)) !== false) {
-                                unset($common_keys[$key]);
-                            }
-                            if (($key = array_search('visa', $to_add_keys)) !== false && $has_visa_in_new) {
-                                // Keep it in to_add_keys if we're adding it
-                            } else if (($key = array_search('visa', $to_add_keys)) !== false) {
-                                unset($to_add_keys[$key]);
-                            }
-                            // ===== END HANDLE VISA =====
+                            // Remove visa from new types for comparison
+                            $new_doc_types_filtered = $new_doc_types;
+                            unset($new_doc_types_filtered['visa']);
+
+                            // Get keys
+                            $old_doc_keys = $old_docs_filtered->keys()->toArray();
+                            $new_doc_keys = array_keys($new_doc_types_filtered);
+
+                            // Compare keys
+                            $to_delete_keys = array_diff($old_doc_keys, $new_doc_keys);
+                            $to_add_keys = array_diff($new_doc_keys, $old_doc_keys);
+                            $common_keys = array_intersect($old_doc_keys, $new_doc_keys);
 
                             // Update common types
                             if (!empty($common_keys)) {
                                 $common_doc_ids = [];
                                 foreach ($common_keys as $doc_type) {
-                                    if ($old_docs->has($doc_type)) {
-                                        $common_doc_ids[] = $old_docs[$doc_type]->id;
+                                    if ($old_docs_filtered->has($doc_type)) {
+                                        $common_doc_ids[] = $old_docs_filtered[$doc_type]->id;
                                     }
                                 }
 
-                                Document::whereIn('id', $common_doc_ids)
-                                    ->update(['document_category' => $new_document_category]);
+                                if (!empty($common_doc_ids)) {
+                                    Document::whereIn('id', $common_doc_ids)
+                                        ->update(['document_category' => $new_document_category]);
+                                }
                             }
 
                             // Delete old types
@@ -972,7 +941,7 @@ private function calculateProfileCompletion(User $user): int
                                     ->delete();
                             }
 
-                            // Add new types (including visa if it exists in new)
+                            // Add new types
                             if (!empty($to_add_keys)) {
                                 $documents_to_insert = [];
 
@@ -982,7 +951,7 @@ private function calculateProfileCompletion(User $user): int
                                             'user_id' => $user->id,
                                             'document_category' => $new_document_category,
                                             'document_type' => $doc_type,
-                                            'document_name' => $new_doc_types[$doc_type] ?? ucfirst(str_replace('_', ' ', $doc_type)),
+                                            'document_name' => $new_doc_types_filtered[$doc_type],
                                             'created_at' => now(),
                                             'updated_at' => now()
                                         ];
@@ -991,6 +960,20 @@ private function calculateProfileCompletion(User $user): int
 
                                 if (!empty($documents_to_insert)) {
                                     Document::insert($documents_to_insert);
+                                }
+                            }
+
+                            // Add visa if new type has it
+                            if ($has_new_visa) {
+                                if (!Document::where(['user_id' => $user->id, 'document_type' => 'visa'])->exists()) {
+                                    Document::create([
+                                        'user_id' => $user->id,
+                                        'document_category' => $new_document_category,
+                                        'document_type' => 'visa',
+                                        'document_name' => $visa_name,
+                                        'created_at' => now(),
+                                        'updated_at' => now()
+                                    ]);
                                 }
                             }
                         }

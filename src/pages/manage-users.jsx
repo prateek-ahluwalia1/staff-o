@@ -580,6 +580,7 @@ const ManageUsers = () => {
         file_path: doc.file || "",
         file_url: doc.file || "",
         document_name: doc.document_name || doc.document_type || "",
+        document_type: doc.document_type || "",   // ← add this
         is_verified: !!doc.document_expiry,
       });
     } else {
@@ -593,6 +594,7 @@ const ManageUsers = () => {
         file_path: "",
         file_url: "",
         document_name: "",
+        document_type: "",   // ← add this
         is_verified: false,
       });
     }
@@ -777,7 +779,6 @@ const ManageUsers = () => {
       toast.error("Please save the profile first before uploading documents.");
       return;
     }
-
     let payload = {
       user_id: editingUser.id,
       no: docForm.no,
@@ -786,17 +787,18 @@ const ManageUsers = () => {
       document_expiry: docForm.document_expiry,
       file: docForm.file_path,
     };
+
     if (selectedDoc) {
       payload = {
         ...payload,
         id: selectedDoc.id,
-        document_type: docForm.document_name,
+        document_type: selectedDoc.document_type || docForm.document_type || "",
         document_name: docForm.document_name,
       };
     } else {
       payload = {
         ...payload,
-        document_type: docForm.document_name,
+        document_type: "",
         document_name: docForm.document_name,
       };
     }
@@ -806,6 +808,7 @@ const ManageUsers = () => {
       payload,
       { method: "POST" }
     );
+
     if (res.success) {
       toast.success("Document saved successfully!");
 

@@ -938,7 +938,7 @@ export default function EditProfile() {
       document_expiry: docForm.show_working_rights ? "" : docForm.document_expiry,
       file: docForm.file_path || (selectedDoc?.file ?? ""),
       document_name: docForm.document_name,
-      document_type: docForm.document_name,
+      document_type: selectedDoc?.document_type || docForm.document_type || "",
     };
 
     if (docForm.show_working_rights) {
@@ -1401,6 +1401,7 @@ export default function EditProfile() {
                   file_path: "",
                   file_url: "",
                   document_name: displayName,
+                  document_type: doc.document_type || "",   // ← keep original slug
                   is_verified: !!doc.document_expiry,
                   working_rights_file_path: doc.working_rights || "",
                   working_rights_file_url: doc.working_rights || "",
@@ -1417,6 +1418,7 @@ export default function EditProfile() {
                   file_path: doc.file || "",
                   file_url: doc.file || "",
                   document_name: displayName,
+                  document_type: doc.document_type || "",   // ← keep original slug
                   is_verified: !!doc.document_expiry,
                   working_rights_file_path: doc.working_rights || "",
                   working_rights_file_url: doc.working_rights || "",

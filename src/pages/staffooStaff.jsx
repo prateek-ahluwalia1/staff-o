@@ -314,14 +314,18 @@ const StaffooStaff = () => {
                 document_no: doc.document_no || "",
                 document_expiry: isoToDisplay(doc.document_expiry) || "",
                 file: null, file_path: doc.file || "", file_url: doc.file || "",
-                document_name: displayName, is_verified: !!doc.document_expiry,
+                document_name: displayName,
+                document_type: doc.document_type || "",
+                is_verified: !!doc.document_expiry,
                 working_rights_file_path: workingRights, working_rights_file_url: workingRights,
                 show_working_rights: !!workingRights, work_entitlement: "",
             });
         } else {
             setDocForm({
                 notes: "", no: false, exp: false, document_no: "", document_expiry: "",
-                file: null, file_path: "", file_url: "", document_name: "", is_verified: false,
+                file: null, file_path: "", file_url: "", document_name: "",
+                document_type: "",   // ← reset for a brand-new document
+                is_verified: false,
                 working_rights_file_path: "", working_rights_file_url: "", show_working_rights: false, work_entitlement: "",
             });
         }
@@ -436,7 +440,9 @@ const StaffooStaff = () => {
         const payload = {
             user_id: editingUser.id, no: docForm.no, exp: docForm.exp, document_no: docForm.document_no,
             document_expiry: docForm.show_working_rights ? "" : docForm.document_expiry,
-            file: docForm.file_path || (selectedDoc?.file ?? ""), document_name: docForm.document_name, document_type: docForm.document_name,
+            file: docForm.file_path || (selectedDoc?.file ?? ""),
+            document_name: docForm.document_name,
+            document_type: selectedDoc?.document_type || docForm.document_type || ""
         };
         if (docForm.show_working_rights) payload.working_rights = docForm.working_rights_file_path || (selectedDoc?.working_rights ?? "");
         if (selectedDoc?.id) payload.id = selectedDoc.id;

@@ -394,6 +394,7 @@ const ManageStaff = () => {
         file_path: doc.file || "",
         file_url: doc.file || "",
         document_name: doc.document_name || doc.document_type || "",
+        document_type: doc.document_type || "",   // ← preserve original slug
         is_verified: !!doc.document_expiry,
       });
     } else {
@@ -407,6 +408,7 @@ const ManageStaff = () => {
         file_path: "",
         file_url: "",
         document_name: "",
+        document_type: "",   // ← reset for a brand-new document
         is_verified: false,
       });
     }
@@ -598,7 +600,7 @@ const ManageStaff = () => {
       document_expiry: docForm.document_expiry,
       file: docForm.file_path,
       document_name: docForm.document_name,
-      document_type: docForm.document_name,
+      document_type: selectedDoc?.document_type || docForm.document_type || "",
     };
 
     if (selectedDoc?.id) {

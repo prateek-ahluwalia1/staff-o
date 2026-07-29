@@ -58,6 +58,7 @@ const isoToDisplay = (val) => {
   if (/^\d{2}\/\d{2}\/\d{4}$/.test(val)) return val;
   const match = val.match(/^(\d{4})-(\d{2})-(\d{2})$/);
   if (match) {
+    // eslint-disable-next-line
     const [_, y, m, d] = match;
     return `${d}/${m}/${y}`;
   }
@@ -472,7 +473,7 @@ const ManageUsers = () => {
         activeTab === "staff"
           ? fetchedUsers.filter((user) => {
             const partnerId = user.user_id ?? user.staff?.user_id;
-            return partnerId != 1;
+            return partnerId !== 1;
           })
           : fetchedUsers;
       setUsers(filteredUsers);
@@ -493,7 +494,7 @@ const ManageUsers = () => {
       setTotalPages(1);
       setTotalItems(0);
     }
-  }, [apiResponse, location.state, location.pathname, navigate, openModal]);
+  }, [apiResponse, location.state, location.pathname, navigate, openModal, activeTab]);
 
   // Google Maps Autocomplete
   const autocompleteRef = useRef(null);
@@ -1457,7 +1458,7 @@ const ManageUsers = () => {
                       <td>
                         {(() => {
                           const contractorId = user.user_id || user.staff?.user_id;
-                          const contractor = contractorsList.find(c => c.id == contractorId);
+                          const contractor = contractorsList.find(c => c.id === contractorId);
                           return (
                             <div className="fw-medium text-dark">
                               {contractor ? contractor.name : "—"}
@@ -1567,15 +1568,13 @@ const ManageUsers = () => {
                   <div className="mt-3 p-3 bg-white rounded-4 border shadow-sm w-100">
                     <label className="form-label fw-bold mb-2">Assign to Resource Partner *</label>
                     <Select
-                      options={contractorsList
-                        .filter((contractor) => contractor.id != 1)
+                      options={contractorsList.filter((contractor) => contractor.id !== 1)
                         .map((contractor) => ({
                           value: contractor.id,
                           label: `${contractor.name} ${contractor.company_name ? `(${contractor.company_name})` : ""}`
                         }))}
                       value={
-                        contractorsList
-                          .filter((c) => c.id == formData.user_id)
+                        contractorsList.filter((c) => c.id === formData.user_id)
                           .map((c) => ({
                             value: c.id,
                             label: `${c.name} ${c.company_name ? `(${c.company_name})` : ""}`
@@ -1588,11 +1587,11 @@ const ManageUsers = () => {
                         }))
                       }
                       placeholder={
-                        contractorsList.filter(c => c.id != 1).length === 0
+                        contractorsList.filter(c => c.id !== 1).length === 0
                           ? "No resource partners available"
                           : "Select a Resource Partner"
                       }
-                      isDisabled={contractorsList.filter(c => c.id != 1).length === 0}
+                      isDisabled={contractorsList.filter(c => c.id !== 1).length === 0}
                       isClearable
                       classNamePrefix="react-select"
                       styles={{

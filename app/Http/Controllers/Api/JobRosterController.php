@@ -1278,8 +1278,7 @@ private function sendStaffActivationNotification(User $user): void
                 return response()->json(['success' => false, 'message' => 'Please send coordinates.', 'code' => 404]);
             }
 
-            $coordinates = explode(',', $job->guards->current_coordinates);
-
+            $coordinates = $job->guards->current_coordinates ? explode(',', $job->guards->current_coordinates) : explode(',', $job->guards->coordinates ?? '0,0');
 
             if ($job->site->coordinates == null ||  $job->site->coordinates == '') {
                 return response()->json(['success' => false, 'message' => 'Location coordinates not set.', 'code' => 404]);
@@ -2759,8 +2758,12 @@ private function sendStaffActivationNotification(User $user): void
             }
 
             // Apply filters
-            if ($request->has('guard_id') && !empty($request->guard_id)) {
-                $baseQuery->whereIn('job_rosters.assigned_to', $request->guard_id);
+            if ($request->has('guard_ids') && !empty($request->guard_ids)) {
+                $baseQuery->whereIn('job_rosters.assigned_to', $request->guard_ids);
+            }
+            
+            if ($request->has('contractor_ids') && !empty($request->contractor_ids)) {
+                $baseQuery->whereIn('job_rosters.accepted_by', $request->contractor_ids);
             }
 
             if ($request->has('customer_ids') && !empty($request->customer_ids)) {

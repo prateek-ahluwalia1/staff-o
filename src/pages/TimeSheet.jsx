@@ -1314,8 +1314,6 @@ export default function TimeSheet() {
                                         <th>Saturday</th>
                                         <th>Sunday</th>
                                         <th>Public Holiday</th>
-                                        <th>Payable</th>
-                                        <th>Chargeable</th>
                                         <th>Job</th>
                                         <th>Sign In Time</th>
                                         <th>Sign Out Time</th>
@@ -1348,8 +1346,6 @@ export default function TimeSheet() {
                                             <td>{item.saturdayHours}</td>
                                             <td>{item.sundayHours}</td>
                                             <td>{item.phHours}</td>
-                                            <td className="text-capitalize">{item.shiftPayable}</td>
-                                            <td className="text-capitalize">{item.shiftChargeable}</td>
                                             <td>
                                               <span className="ts-job-badge text-capitalize">{item.jobStatus}</span>
                                             </td>

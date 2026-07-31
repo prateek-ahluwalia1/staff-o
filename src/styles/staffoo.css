@@ -26,9 +26,9 @@ html { scroll-behavior: smooth; } */
   /* ===== NEW LIGHT THEME TOKENS ===== */
   --nh-white: #FFFFFF;
   --nh-tint: #F5F8F5;
-  --nh-green: #0F7A4A;
-  --nh-green-dark: #0B5C39;
-  --nh-green-light: #E3F3EA;
+  --nh-green: #0A7C6E;
+  --nh-green-dark: #075E53;
+  --nh-green-light: #E1F3F0;
   --nh-ink: #14181C;
   --nh-ink-soft: #232A2E;
   --nh-text-secondary: #5B6660;
@@ -463,7 +463,7 @@ html { scroll-behavior: smooth; } */
   width: 56px;
   height: 56px;
   border-radius: 50%;
-  background: linear-gradient(160deg, #0F7A4A, #0B5C39);
+  background: linear-gradient(160deg, #0A7C6E, #075E53);
   flex-shrink: 0;
   display: flex;
   align-items: center;
@@ -861,7 +861,7 @@ html { scroll-behavior: smooth; } */
 
 .nh-case-img {
   height: 160px;
-  background: linear-gradient(135deg, #0F7A4A, #14181C);
+  background: linear-gradient(135deg, #0A7C6E, #14181C);
 }
 
 .nh-case-body {
@@ -1106,7 +1106,7 @@ html { scroll-behavior: smooth; } */
   }
 
   /* Brand col spans full width */
-  .nh-foot-grid > div:first-child {
+  .nh-foot-grid>div:first-child {
     grid-column: 1 / -1;
   }
 

@@ -12,7 +12,7 @@ function Testamonial() {
         </div>
         <div className="nh-cases">
           <div className="nh-case-card">
-            <div className="nh-case-img" style={{ background: 'linear-gradient(135deg, #0F7A4A, #14181C)' }} />
+            <div className="nh-case-img" style={{ background: 'linear-gradient(135deg, #0A7C6E, #14181C)' }} />
             <div className="nh-case-body">
               <div className="nh-case-industry">Retail</div>
               <h3>Filling last-minute cover across 12 stores</h3>
@@ -23,7 +23,7 @@ function Testamonial() {
           </div>
 
           <div className="nh-case-card">
-            <div className="nh-case-img" style={{ background: 'linear-gradient(135deg, #14181C, #0B5C39)' }} />
+            <div className="nh-case-img" style={{ background: 'linear-gradient(135deg, #14181C, #075E53)' }} />
             <div className="nh-case-body">
               <div className="nh-case-industry">Construction</div>
               <h3>Overnight coverage for a 40-site rollout</h3>
@@ -34,7 +34,7 @@ function Testamonial() {
           </div>
 
           <div className="nh-case-card">
-            <div className="nh-case-img" style={{ background: 'linear-gradient(135deg, #0B5C39, #0F7A4A)' }} />
+            <div className="nh-case-img" style={{ background: 'linear-gradient(135deg, #075E53, #0A7C6E)' }} />
             <div className="nh-case-body">
               <div className="nh-case-industry">Events</div>
               <h3>Crowd control for a 3-day festival</h3>

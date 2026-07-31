@@ -5,7 +5,7 @@ import { toast } from "react-toastify";
 import useSubmit from "../hooks/useSubmit";
 import useFetch from "../hooks/useFetch";
 import Loader from "../components/Loader";
-
+import { useSelector } from "react-redux";
 const ALL_OPTION_VALUE = "ALL";
 
 const getWeekRange = () => {
@@ -105,7 +105,7 @@ const DateFilterInput = ({ value, onChange, placeholder }) => {
   };
 
   return (
-    <div className="input-group">
+    <div className="input-group ts-date-input">
       <button
         type="button"
         className="input-group-text bg-white border-end-0"
@@ -184,6 +184,15 @@ const formatShiftDateTime = (value) => {
   const hh = String(parsed.getHours()).padStart(2, "0");
   const min = String(parsed.getMinutes()).padStart(2, "0");
   return `${dd}/${mm}/${yyyy} ${hh}:${min}`;
+};
+
+// Initials for the avatar chip, e.g. "John Smith" -> "JS"
+const getInitials = (name) => {
+  if (!name || name === "-") return "?";
+  const parts = String(name).trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "?";
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 };
 
 const normalizeTimesheetRow = (row, index) => {
@@ -393,20 +402,28 @@ const getSelectPlaceholder = (baseLabel, selectedCount, allCount) => {
 };
 
 const selectStyles = {
-  control: (base) => ({
+  control: (base, state) => ({
     ...base,
     minHeight: "44px",
-    borderColor: "#ced4da",
-    boxShadow: "none",
+    borderColor: state.isFocused ? "#0A7C6E" : "#e2e8f0",
+    boxShadow: state.isFocused ? "0 0 0 3px rgba(10,124,110,0.12)" : "none",
     minWidth: "0",
     borderRadius: "12px",
-    border: "1px solid #e2e8f0",
+    border: "1px solid",
     background: "#f8fafc",
+    transition: "border-color 0.15s, box-shadow 0.15s",
   }),
   valueContainer: (base) => ({
     ...base,
     paddingTop: 0,
     paddingBottom: 0,
+  }),
+  menu: (base) => ({
+    ...base,
+    borderRadius: "12px",
+    overflow: "hidden",
+    boxShadow: "0 12px 28px -8px rgba(15,23,42,0.22)",
+    border: "1px solid #e2e8f0",
   }),
   option: (base, state) => ({
     ...base,
@@ -416,11 +433,36 @@ const selectStyles = {
         ? "#e6f2f0"
         : "#fff",
     color: state.isSelected ? "#fff" : "#212529",
+    cursor: "pointer",
   }),
 };
 
+// ── Small presentational helpers ──
+const StaffAvatar = ({ name }) => (
+  <span className="ts-avatar" aria-hidden="true">
+    {getInitials(name)}
+  </span>
+);
+
+const HoursPill = ({ value, tone = "default" }) => (
+  <span className={`ts-hours-pill ts-hours-pill--${tone}`}>{value}</span>
+);
+
+const ExpandChevron = ({ open }) => (
+  <i
+    className={`fa-solid fa-chevron-right ts-chevron${open ? " ts-chevron--open" : ""}`}
+    aria-hidden="true"
+  ></i>
+);
+
 // ── Main component ──
 export default function TimeSheet() {
+  const { userdata } = useSelector((state) => state.auth);
+  const userRole = userdata?.user_type || userdata?.data?.user_type;
+  const userId = userdata?.id || userdata?.data?.id;
+
+  const isStaffOrContractor = userRole === "staff" || userRole === "contractor";
+
   const { submit: submitTimesheet, loading: timesheetLoading } = useSubmit({
     isAuth: true,
   });
@@ -468,17 +510,29 @@ export default function TimeSheet() {
   );
 
   const buildPayload = useCallback(() => {
-    const allCustomerIds = customersList
-      .map((customer) => Number(customer.id))
-      .filter((id) => Number.isFinite(id));
-
-    return {
+    const base = {
       length: 0,
       pageIndex: 0,
       pageSize: 20,
       previousPageIndex: 0,
       start: formatDateForPayload(parseInputDate(startDate)),
       end: formatDateForPayload(parseInputDate(endDate)),
+    };
+
+
+    if (userRole === "staff") {
+      return { ...base, guard_ids: [userId] };
+    }
+    if (userRole === "contractor") {
+      return { ...base, contractor_ids: [userId] };
+    }
+
+    const allCustomerIds = customersList
+      .map((customer) => Number(customer.id))
+      .filter((id) => Number.isFinite(id));
+
+    return {
+      ...base,
       customer_ids:
         selectedCustomerValues.length === 0
           ? allCustomerIds
@@ -486,7 +540,7 @@ export default function TimeSheet() {
             .map((id) => Number(id))
             .filter((id) => Number.isFinite(id)),
     };
-  }, [customersList, endDate, selectedCustomerValues, startDate]);
+  }, [customersList, endDate, selectedCustomerValues, startDate, isStaffOrContractor, userId]);
 
   const fetchTimesheets = useCallback(async () => {
     const parsedStartDate = parseInputDate(startDate);
@@ -503,9 +557,7 @@ export default function TimeSheet() {
     }
 
     const payload = buildPayload();
-    const res = await submitTimesheet("api/getTimesheet", payload, {
-      method: "POST",
-    });
+    const res = await submitTimesheet("api/getTimesheet", payload, { method: "POST" });
 
     if (!res) {
       setTimesheetData([]);
@@ -621,6 +673,22 @@ export default function TimeSheet() {
 
   const totalStaffCount = timesheetData.length;
 
+  const totalHoursSum = useMemo(
+    () =>
+      timesheetData
+        .reduce((acc, row) => acc + (Number(row.totalHours) || 0), 0)
+        .toFixed(2),
+    [timesheetData]
+  );
+
+  const dateColClass = isStaffOrContractor
+    ? "col-12 col-sm-6 col-lg-4"
+    : "col-12 col-sm-6 col-lg-3";
+  const buttonColClass = isStaffOrContractor
+    ? "col-12 col-sm-6 col-lg-4"
+    : "col-12 col-sm-6 col-lg-2";
+
+
   return (
     <div className="container-fluid p-3 p-md-4" style={{ minHeight: "100vh" }}>
       <style>{`
@@ -689,6 +757,11 @@ export default function TimeSheet() {
           width: 7px; height: 7px; border-radius: 50%;
           background: #34d399;
           box-shadow: 0 0 0 4px rgba(52,211,153,0.18);
+          animation: ts-pulse 2.2s ease-in-out infinite;
+        }
+        @keyframes ts-pulse {
+          0%, 100% { box-shadow: 0 0 0 4px rgba(52,211,153,0.18); }
+          50% { box-shadow: 0 0 0 7px rgba(52,211,153,0.08); }
         }
         .ts-hero h1 {
           color: #fff;
@@ -717,6 +790,11 @@ export default function TimeSheet() {
           padding: 12px 16px;
           min-width: 140px;
           flex: 1 1 150px;
+          transition: background 0.15s, border-color 0.15s;
+        }
+        .ts-hero-stat:hover {
+          background: rgba(255,255,255,0.09);
+          border-color: rgba(255,255,255,0.2);
         }
         .ts-hero-stat-label {
           font-size: 10px;
@@ -740,11 +818,22 @@ export default function TimeSheet() {
           border-radius: 18px;
           box-shadow: 0 18px 40px -14px rgba(10, 25, 48, 0.28);
           border: 1px solid var(--line-soft);
-          padding: 16px 18px;
+          padding: 18px 20px;
           margin-top: -30px;
           margin-bottom: 24px;
           position: relative;
           z-index: 2;
+        }
+        .ts-date-input .input-group-text {
+          border-radius: 12px 0 0 12px;
+          border-color: #e2e8f0;
+        }
+        .ts-date-input input[type="text"] {
+          border-radius: 0 12px 12px 0;
+        }
+        .ts-date-input input[type="text"]:focus {
+          border-color: var(--teal);
+          box-shadow: 0 0 0 3px rgba(10,124,110,0.12);
         }
 
         /* Table card */
@@ -755,6 +844,36 @@ export default function TimeSheet() {
           border: 1px solid var(--line-soft);
           overflow: hidden;
         }
+        .ts-table-summary {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          flex-wrap: wrap;
+          gap: 8px;
+          padding: 14px 20px;
+          border-bottom: 1px solid var(--line-soft);
+        }
+        .ts-table-summary-title {
+          font-size: 0.85rem;
+          font-weight: 700;
+          color: var(--ink);
+          margin: 0;
+        }
+        .ts-table-summary-sub {
+          font-size: 0.78rem;
+          color: var(--muted);
+          margin-left: 6px;
+          font-weight: 500;
+        }
+        .ts-total-hours-chip {
+          font-size: 0.78rem;
+          font-weight: 700;
+          color: var(--teal-dark);
+          background: var(--teal-tint);
+          border: 1px solid var(--teal-border);
+          padding: 5px 12px;
+          border-radius: 999px;
+        }
 
         /* Main table */
         .ts-main-table {
@@ -763,43 +882,154 @@ export default function TimeSheet() {
         .ts-main-table thead th {
           background: #f8fafc;
           border-bottom: 2px solid var(--teal);
-          font-size: 0.8rem;
+          font-size: 0.72rem;
           font-weight: 700;
           text-transform: uppercase;
           letter-spacing: 0.5px;
           color: var(--faint);
-          padding: 14px 10px;
+          padding: 13px 12px;
+          white-space: nowrap;
         }
         .ts-main-table tbody td {
-          padding: 12px 10px;
+          padding: 13px 12px;
           font-size: 0.85rem;
           border-color: var(--line-soft);
+          vertical-align: middle;
         }
-        .ts-main-table tbody tr:hover td {
+        .ts-main-table tbody tr.ts-row {
+          transition: background-color 0.12s ease;
+        }
+        .ts-main-table tbody tr.ts-row:hover td {
           background: #f0fdf9;
         }
-        .ts-main-table tbody tr.table-active td {
+        .ts-main-table tbody tr.ts-row.table-active td {
           background: #e6f2f0;
+        }
+        .ts-main-table tbody tr.ts-row:focus-visible td,
+        .ts-main-table tbody tr.ts-row:focus td {
+          outline: 2px solid var(--teal);
+          outline-offset: -2px;
+        }
+
+        .ts-staff-cell {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+        }
+        .ts-avatar {
+          flex-shrink: 0;
+          width: 32px;
+          height: 32px;
+          border-radius: 50%;
+          background: linear-gradient(135deg, var(--teal) 0%, var(--teal-dark) 100%);
+          color: #fff;
+          font-size: 0.72rem;
+          font-weight: 700;
+          letter-spacing: 0.3px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+        }
+
+        .ts-hours-pill {
+          display: inline-block;
+          padding: 3px 10px;
+          border-radius: 999px;
+          font-size: 0.78rem;
+          font-weight: 600;
+          background: var(--line-soft);
+          color: var(--slate);
+        }
+        .ts-hours-pill--total {
+          background: var(--teal-tint);
+          color: var(--teal-dark);
+          border: 1px solid var(--teal-border);
+        }
+        .ts-hours-pill--weekend {
+          background: var(--amber-tint);
+          color: var(--amber);
+        }
+
+        .ts-chevron {
+          color: var(--faint);
+          font-size: 0.7rem;
+          transition: transform 0.18s ease, color 0.15s ease;
+        }
+        .ts-chevron--open {
+          transform: rotate(90deg);
+          color: var(--teal);
+        }
+
+        .ts-shift-count-badge {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          min-width: 26px;
+          height: 22px;
+          padding: 0 6px;
+          border-radius: 999px;
+          background: #eef2f7;
+          color: var(--slate);
+          font-size: 0.75rem;
+          font-weight: 700;
         }
 
         /* Breakdown */
         .ts-breakdown-wrapper {
           background: #f8fafc;
-          padding: 16px;
+          padding: 18px 20px;
           border-top: 1px solid var(--line);
+          animation: ts-fade-in 0.15s ease;
+        }
+        @keyframes ts-fade-in {
+          from { opacity: 0; transform: translateY(-4px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        .ts-breakdown-heading {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          font-size: 0.85rem;
+          font-weight: 700;
+          color: var(--teal-dark);
+          margin: 0 0 12px;
+        }
+        .ts-breakdown-card {
+          background: #fff;
+          border-radius: 12px;
+          border: 1px solid var(--line-soft);
+          overflow: hidden;
         }
         .ts-breakdown-table {
           font-size: 0.8rem;
           margin-bottom: 0;
         }
         .ts-breakdown-table thead th {
-          background: #e6f2f0;
+          background: #f8fafc;
           font-weight: 700;
-          color: var(--ink);
+          color: var(--muted);
+          font-size: 0.68rem;
+          text-transform: uppercase;
+          letter-spacing: 0.4px;
+          border-bottom: 1px solid var(--line-soft);
+          white-space: nowrap;
+        }
+        .ts-breakdown-table tbody tr:hover td {
+          background: #fafcff;
         }
         .ts-breakdown-table tbody td {
           background: #fff;
           border-color: var(--line-soft);
+          vertical-align: middle;
+        }
+        .ts-job-badge {
+          display: inline-block;
+          padding: 2px 9px;
+          border-radius: 999px;
+          font-size: 0.72rem;
+          font-weight: 600;
+          background: #eef2f7;
+          color: var(--slate);
         }
 
         /* Buttons */
@@ -819,15 +1049,52 @@ export default function TimeSheet() {
           box-shadow: 0 8px 18px -4px rgba(10,124,110,0.5);
           color: white;
         }
+        .btn-teal:active {
+          transform: translateY(0);
+        }
+        .btn-teal:disabled {
+          opacity: 0.6;
+          transform: none;
+          box-shadow: none;
+        }
+        .btn-outline-secondary {
+          border-radius: 12px !important;
+          font-weight: 600;
+          transition: all 0.15s;
+        }
+        .btn-outline-secondary:hover {
+          transform: translateY(-1px);
+        }
 
         .form-switch .form-check-input:checked {
           background-color: var(--teal);
           border-color: var(--teal);
         }
+        .form-switch .form-check-input:focus {
+          border-color: var(--teal);
+          box-shadow: 0 0 0 3px rgba(10,124,110,0.15);
+        }
+
+        .ts-empty-state {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 8px;
+          padding: 48px 16px;
+        }
+        .ts-empty-state i {
+          font-size: 1.6rem;
+          color: var(--faint);
+        }
+        .ts-empty-state span {
+          color: var(--muted);
+          font-size: 0.9rem;
+        }
 
         @media (max-width: 768px) {
           .ts-hero { padding: 20px 16px 28px; }
           .ts-hero h1 { font-size: 22px; }
+          .ts-table-summary { padding: 12px 14px; }
         }
       `}</style>
 
@@ -843,77 +1110,88 @@ export default function TimeSheet() {
             <span className="ts-hero-stat-label">Date Range</span>
             <span className="ts-hero-stat-value">{rangeLabel || "—"}</span>
           </div>
+          {/* Conditionally show Staff Count – hidden for staff/contractor */}
+          {!isStaffOrContractor && (
+            <div className="ts-hero-stat">
+              <span className="ts-hero-stat-label">Staff Count</span>
+              <span className="ts-hero-stat-value">{totalStaffCount}</span>
+            </div>
+          )}
           <div className="ts-hero-stat">
-            <span className="ts-hero-stat-label">Staff Count</span>
-            <span className="ts-hero-stat-value">{totalStaffCount}</span>
+            <span className="ts-hero-stat-label">Total Hours</span>
+            <span className="ts-hero-stat-value">{totalHoursSum}</span>
           </div>
         </div>
       </div>
 
+
       {/* Filter Card */}
       <div className="ts-filter-card">
         <div className="row g-2 align-items-end">
-          <div className="col-12 col-sm-6 col-lg-4">
-            <Select
-              isMulti
-              options={customerOptions}
-              components={{ Option: CheckboxOption }}
-              styles={selectStyles}
-              closeMenuOnSelect={false}
-              hideSelectedOptions={false}
-              controlShouldRenderValue={false}
-              value={resolveSelectedOptions(
-                customerOptions,
-                selectedCustomerValues
-              )}
-              isAllSelected={customerAllSelected}
-              onChange={(selected, actionMeta) =>
-                setSelectedCustomerValues(
-                  normalizeMultiSelectValues(
-                    selected,
-                    actionMeta,
-                    selectedCustomerValues,
-                    customerOptions
+          {/* Clients dropdown – only for admin users */}
+          {!isStaffOrContractor && (
+            <div className="col-12 col-sm-6 col-lg-4">
+              <Select
+                isMulti
+                options={customerOptions}
+                components={{ Option: CheckboxOption }}
+                styles={selectStyles}
+                closeMenuOnSelect={false}
+                hideSelectedOptions={false}
+                controlShouldRenderValue={false}
+                value={resolveSelectedOptions(customerOptions, selectedCustomerValues)}
+                isAllSelected={customerAllSelected}
+                onChange={(selected, actionMeta) =>
+                  setSelectedCustomerValues(
+                    normalizeMultiSelectValues(
+                      selected,
+                      actionMeta,
+                      selectedCustomerValues,
+                      customerOptions
+                    )
                   )
-                )
-              }
-              placeholder={getSelectPlaceholder(
-                "Select clients",
-                selectedCustomerValues.length,
-                customersList.length
-              )}
-              isLoading={customersLoading}
-            />
+                }
+                placeholder={getSelectPlaceholder(
+                  "Select clients",
+                  selectedCustomerValues.length,
+                  customersList.length
+                )}
+                isLoading={customersLoading}
+              />
+            </div>
+          )}
+
+          <div className={dateColClass}>
+            <DateFilterInput value={startDate} onChange={setStartDate} placeholder="Start date" />
           </div>
-          <div className="col-12 col-sm-6 col-lg-3">
-            <DateFilterInput
-              value={startDate}
-              onChange={setStartDate}
-              placeholder="Start date"
-            />
+          <div className={dateColClass}>
+            <DateFilterInput value={endDate} onChange={setEndDate} placeholder="End date" />
           </div>
-          <div className="col-12 col-sm-6 col-lg-3">
-            <DateFilterInput
-              value={endDate}
-              onChange={setEndDate}
-              placeholder="End date"
-            />
-          </div>
-          <div className="col-12 col-sm-6 col-lg-2 d-flex gap-2">
+          <div className={`${buttonColClass} d-flex gap-2`}>
             <button
               className="btn btn-teal flex-fill"
               onClick={fetchTimesheets}
               disabled={timesheetLoading}
             >
-              Search
+              {timesheetLoading ? (
+                <span className="d-inline-flex align-items-center gap-2">
+                  <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                  Searching…
+                </span>
+              ) : (
+                <span className="d-inline-flex align-items-center gap-2">
+                  <i className="fa-solid fa-magnifying-glass"></i> Search
+                </span>
+              )}
             </button>
             <button
               className="btn btn-outline-secondary flex-fill"
               onClick={handleExport}
               disabled={timesheetData.length === 0}
-              style={{ borderRadius: "12px", fontWeight: 600 }}
             >
-              Export
+              <span className="d-inline-flex align-items-center gap-2">
+                <i className="fa-solid fa-file-export"></i> Export
+              </span>
             </button>
           </div>
         </div>
@@ -921,10 +1199,24 @@ export default function TimeSheet() {
 
       {/* Table Card */}
       <div className="ts-table-card">
+        <div className="ts-table-summary">
+          <p className="ts-table-summary-title">
+            Timesheet records
+            <span className="ts-table-summary-sub">
+              {totalStaffCount} {totalStaffCount === 1 ? "entry" : "entries"} · {rangeLabel}
+            </span>
+          </p>
+          {timesheetData.length > 0 && (
+            <span className="ts-total-hours-chip">
+              {totalHoursSum} hrs total
+            </span>
+          )}
+        </div>
         <div className="table-responsive">
           <table className="table ts-main-table align-middle">
             <thead>
               <tr>
+                <th style={{ width: "28px" }}></th>
                 <th>Staff ID</th>
                 <th>Name</th>
                 <th>Total Hours</th>
@@ -932,13 +1224,13 @@ export default function TimeSheet() {
                 <th>Saturday</th>
                 <th>Sunday</th>
                 <th>Public Holiday</th>
-                <th>Shift Count</th>
+                <th className="text-center">Shifts</th>
               </tr>
             </thead>
             <tbody>
               {timesheetLoading && (
                 <tr>
-                  <td colSpan="8" className="text-center py-4">
+                  <td colSpan="9" className="text-center py-4">
                     <Loader compact />
                   </td>
                 </tr>
@@ -946,8 +1238,11 @@ export default function TimeSheet() {
 
               {!timesheetLoading && timesheetData.length === 0 && (
                 <tr>
-                  <td colSpan="8" className="text-center text-muted py-5">
-                    No timesheet records found.
+                  <td colSpan="9" className="p-0">
+                    <div className="ts-empty-state">
+                      <i className="fa-regular fa-clock"></i>
+                      <span>No timesheet records found for this range.</span>
+                    </div>
                   </td>
                 </tr>
               )}
@@ -960,100 +1255,138 @@ export default function TimeSheet() {
                       <tr
                         onClick={() => handleRowClick(row)}
                         style={{ cursor: "pointer" }}
-                        className={isSelected ? "table-active" : ""}
+                        className={`ts-row${isSelected ? " table-active" : ""}`}
+                        tabIndex={0}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            e.preventDefault();
+                            handleRowClick(row);
+                          }
+                        }}
                       >
-                        <td>{row.raw?.id ?? row.raw?.guard_id ?? row.raw?.staff_id ?? "-"}</td>
-                        <td className="fw-bold">{row.staffName}</td>
-                        <td className="fw-bold">{row.totalHours}</td>
+                        <td>
+                          <ExpandChevron open={isSelected} />
+                        </td>
+                        <td className="text-muted">{row.raw?.id ?? row.raw?.guard_id ?? row.raw?.staff_id ?? "-"}</td>
+                        <td>
+                          <div className="ts-staff-cell">
+                            <StaffAvatar name={row.staffName} />
+                            <span className="fw-bold">{row.staffName}</span>
+                          </div>
+                        </td>
+                        <td>
+                          <HoursPill value={row.totalHours} tone="total" />
+                        </td>
                         <td>{row.regularHours}</td>
-                        <td>{row.saturdayHours}</td>
-                        <td>{row.sundayHours}</td>
+                        <td>
+                          <HoursPill value={row.saturdayHours} tone="weekend" />
+                        </td>
+                        <td>
+                          <HoursPill value={row.sundayHours} tone="weekend" />
+                        </td>
                         <td>{row.phHours}</td>
-                        <td className="text-center">{row.shiftCount}</td>
+                        <td className="text-center">
+                          <span className="ts-shift-count-badge">{row.shiftCount}</span>
+                        </td>
                       </tr>
 
                       {isSelected && (
                         <tr>
-                          <td colSpan="8" className="p-0">
+                          <td colSpan="9" className="p-0">
                             <div className="ts-breakdown-wrapper">
-                              <h6
-                                className="fw-bold mb-3"
-                                style={{ color: "#0A7C6E" }}
-                              >
+                              <h6 className="ts-breakdown-heading">
+                                <i className="fa-solid fa-list-check"></i>
                                 Detailed Shift Breakdown: {row.staffName}
                               </h6>
-                              <div className="table-responsive">
-                                <table className="table table-sm ts-breakdown-table align-middle">
-                                  <thead>
-                                    <tr>
-                                      <th>Shift ID</th>
-                                      <th>Site</th>
-                                      <th>Customer</th>
-                                      <th>Guard</th>
-                                      <th>Start</th>
-                                      <th>End</th>
-                                      <th>Total</th>
-                                      <th>Regular</th>
-                                      <th>Saturday</th>
-                                      <th>Sunday</th>
-                                      <th>Public Holiday</th>
-                                      <th>Payable</th>
-                                      <th>Chargeable</th>
-                                      <th>Job</th>
-                                      <th>Sign In Time</th>
-                                      <th>Sign Out Time</th>
-                                      <th className="text-center">Sign In</th>
-                                    </tr>
-                                  </thead>
-                                  <tbody>
-                                    {detailsLoading ? (
+                              <div className="ts-breakdown-card">
+                                <div className="table-responsive">
+                                  <table className="table table-sm ts-breakdown-table align-middle">
+                                    <thead>
                                       <tr>
-                                        <td colSpan="17" className="text-center py-3">
-                                          Loading details...
-                                        </td>
+                                        <th>Shift ID</th>
+                                        <th>Site</th>
+                                        <th>Customer</th>
+                                        <th>Guard</th>
+                                        <th>Start</th>
+                                        <th>End</th>
+                                        <th>Total</th>
+                                        <th>Regular</th>
+                                        <th>Saturday</th>
+                                        <th>Sunday</th>
+                                        <th>Public Holiday</th>
+                                        <th>Payable</th>
+                                        <th>Chargeable</th>
+                                        <th>Job</th>
+                                        <th>Sign In Time</th>
+                                        <th>Sign Out Time</th>
+                                        {!isStaffOrContractor && <th className="text-center">Sign In</th>}
                                       </tr>
-                                    ) : breakdownData.length > 0 ? (
-                                      breakdownData.map((item) => (
-                                        <tr key={item.id}>
-                                          <td>{item.id}</td>
-                                          <td>{item.siteName}</td>
-                                          <td>{item.customerName}</td>
-                                          <td>{item.guardName}</td>
-                                          <td>{item.start}</td>
-                                          <td>{item.end}</td>
-                                          <td className="fw-bold">{item.totalHours}</td>
-                                          <td>{item.regularHours}</td>
-                                          <td>{item.saturdayHours}</td>
-                                          <td>{item.sundayHours}</td>
-                                          <td>{item.phHours}</td>
-                                          <td className="text-capitalize">{item.shiftPayable}</td>
-                                          <td className="text-capitalize">{item.shiftChargeable}</td>
-                                          <td className="text-capitalize">{item.jobStatus}</td>
-                                          <td>{item.signInTime}</td>
-                                          <td>{item.signOutTime}</td>
-                                          <td className="text-center">
-                                            <div className="form-check form-switch d-flex justify-content-center m-0">
-                                              <input
-                                                className="form-check-input fs-5"
-                                                type="checkbox"
-                                                role="switch"
-                                                checked={item.active}
-                                                disabled={togglingRosterId === item.rosterId}
-                                                onChange={() => handleToggleManualApproval(item)}
-                                              />
+                                    </thead>
+                                    <tbody>
+                                      {detailsLoading ? (
+                                        <tr>
+                                          <td colSpan="17" className="text-center py-3">
+                                            <span className="d-inline-flex align-items-center gap-2 text-muted">
+                                              <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                                              Loading details…
+                                            </span>
+                                          </td>
+                                        </tr>
+                                      ) : breakdownData.length > 0 ? (
+                                        breakdownData.map((item) => (
+                                          <tr key={item.id}>
+                                            <td className="text-muted">{item.id}</td>
+                                            <td>{item.siteName}</td>
+                                            <td>{item.customerName}</td>
+                                            <td>{item.guardName}</td>
+                                            <td>{item.start}</td>
+                                            <td>{item.end}</td>
+                                            <td>
+                                              <HoursPill value={item.totalHours} tone="total" />
+                                            </td>
+                                            <td>{item.regularHours}</td>
+                                            <td>{item.saturdayHours}</td>
+                                            <td>{item.sundayHours}</td>
+                                            <td>{item.phHours}</td>
+                                            <td className="text-capitalize">{item.shiftPayable}</td>
+                                            <td className="text-capitalize">{item.shiftChargeable}</td>
+                                            <td>
+                                              <span className="ts-job-badge text-capitalize">{item.jobStatus}</span>
+                                            </td>
+                                            <td>{item.signInTime}</td>
+                                            <td>{item.signOutTime}</td>
+                                            {
+                                              !isStaffOrContractor && (
+                                                <td className="text-center">
+                                                  <div className="form-check form-switch d-flex justify-content-center m-0">
+                                                    <input
+                                                      className="form-check-input fs-5"
+                                                      type="checkbox"
+                                                      role="switch"
+                                                      checked={item.active}
+                                                      disabled={togglingRosterId === item.rosterId}
+                                                      onChange={() => handleToggleManualApproval(item)}
+                                                    />
+                                                  </div>
+                                                </td>
+                                              )
+                                            }
+
+                                          </tr>
+                                        ))
+                                      ) : (
+                                        <tr>
+                                          <td colSpan="17" className="p-0">
+                                            <div className="ts-empty-state" style={{ padding: "28px 16px" }}>
+                                              <i className="fa-regular fa-folder-open"></i>
+                                              <span>No breakdown data available for this shift.</span>
                                             </div>
                                           </td>
                                         </tr>
-                                      ))
-                                    ) : (
-                                      <tr>
-                                        <td colSpan="17" className="text-center text-muted py-4">
-                                          No breakdown data available for this shift.
-                                        </td>
-                                      </tr>
-                                    )}
-                                  </tbody>
-                                </table>
+                                      )}
+                                    </tbody>
+                                  </table>
+                                </div>
                               </div>
                             </div>
                           </td>

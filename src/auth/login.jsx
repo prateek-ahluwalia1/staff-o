@@ -12,8 +12,8 @@ import googleIcon from "../assets/images/google-color.svg";
 import "../styles/staffoo.css";
 
 /* ── Design tokens matching the new landing page ── */
-const G = "#0F7A4A";
-const G_DARK = "#0B5C39";
+const G = "#0A7C6E";
+const G_DARK = "#075E53";
 const G_LIGHT = "#E3F3EA";
 const BORDER = "#E4E9E4";
 const TINT = "#F5F8F5";

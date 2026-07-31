@@ -9,7 +9,6 @@ import Header from "../components/newHome/Header";
 import { apiURL } from "../utils/exports";
 import { normalizeAuthResponse, extractUserId } from "../utils/authResponseNormalizer";
 import googleIcon from "../assets/images/google-color.svg";
-import staffologo from "../assets/images/staffo.png";
 import "../styles/staffoo.css";
 
 /* ── Design tokens matching the new landing page ── */
@@ -194,9 +193,7 @@ export default function Login() {
           >
             {/* LEFT: Brand / Hero Copy */}
             <div className="auth-hero-col">
-              <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "32px" }}>
-                <img src={staffologo} alt="Staffoo" style={{ height: "42px", width: "auto" }} />
-              </div>
+
 
               <h1 style={{
                 fontFamily: "'Barlow Semi Condensed', sans-serif",

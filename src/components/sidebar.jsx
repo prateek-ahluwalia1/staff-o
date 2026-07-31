@@ -127,6 +127,7 @@ const Sidebar = memo(function Sidebar() {
     { to: "/roster", icon: "fa-solid fa-calendar-days", label: "Roster" },
     { to: "/cover-jobs", icon: "fa-solid fa-briefcase", label: "Cover Jobs" },
     { to: "/manage-staff", icon: "fa-solid fa-users-gear", label: "Staff Management" },
+    { to: '/timesheet', icon: 'fa-solid fa-clock', label: 'Timesheet' },
     { to: "/chat", icon: "fa-solid fa-comments", label: "Communications" },
     { to: "/edit-profile", icon: "fa-solid fa-user-pen", label: "Edit Profile" },
   ];
@@ -135,6 +136,7 @@ const Sidebar = memo(function Sidebar() {
     { to: "/dashboard", icon: "fa-solid fa-table-columns", label: "Dashboard" },
     ...(isStaffCoverJobsVisible ? [{ to: "/cover-jobs", icon: "fa-solid fa-briefcase", label: "Cover Jobs" }] : []),
     { to: "/my-job-applications", icon: "fa-solid fa-clipboard-user", label: "My Job Applications" },
+    { to: '/timesheet', icon: 'fa-solid fa-clock', label: 'Timesheet' },
     { to: "/chat", icon: "fa-solid fa-comments", label: "Communications" },
     { to: "/edit-profile", icon: "fa-solid fa-user-pen", label: "Edit Profile" },
   ];

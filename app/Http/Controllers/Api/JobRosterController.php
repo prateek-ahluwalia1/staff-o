@@ -1278,7 +1278,9 @@ private function sendStaffActivationNotification(User $user): void
                 return response()->json(['success' => false, 'message' => 'Please send coordinates.', 'code' => 404]);
             }
 
-            $coordinates = $job->guards->current_coordinates ? explode(',', $job->guards->current_coordinates) : explode(',', $job->guards->coordinates ?? '0,0');
+            $coordsString = $job->guards->current_coordinates ?? $job->guards->coordinates ?? '0,0';
+                
+            $coordinates = explode(',', $coordsString);
 
             if ($job->site->coordinates == null ||  $job->site->coordinates == '') {
                 return response()->json(['success' => false, 'message' => 'Location coordinates not set.', 'code' => 404]);

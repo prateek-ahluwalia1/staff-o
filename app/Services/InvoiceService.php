@@ -64,6 +64,7 @@ class InvoiceService
         $clientName    = htmlspecialchars($d['client_name']);
         $clientEmail   = htmlspecialchars($d['client_email']);
         $paymentRef    = htmlspecialchars($d['payment_intent_id'] ?? 'N/A');
+        $location      = htmlspecialchars($d['location'] ?? 'N/A');
         $paymentOption = ucfirst($d['payment_option']) . ' Payment';
         $discountLabel = ($d['payment_option'] === 'full')
             ? 'Discount (5% full-payment)'
@@ -130,6 +131,7 @@ class InvoiceService
         $html .= "<strong>Date:</strong> {$date}<br>";
         $html .= "<strong>Payment Option:</strong> {$paymentOption}<br>";
         $html .= "<strong>Payment Ref:</strong> {$paymentRef}";
+        $html .= "<strong>Site Location:</strong> {$location}";
         $html .= "</td></tr></table></div>";
         $html .= "<div class='accent-line'></div>";
 

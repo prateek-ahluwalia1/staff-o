@@ -130,7 +130,7 @@ class InvoiceService
         $html .= "<strong>Invoice #:</strong> {$invoiceNumber}<br>";
         $html .= "<strong>Date:</strong> {$date}<br>";
         $html .= "<strong>Payment Option:</strong> {$paymentOption}<br>";
-        $html .= "<strong>Payment Ref:</strong> {$paymentRef}";
+        $html .= "<strong>Payment Ref:</strong> {$paymentRef}<br>";
         $html .= "<strong>Site Location:</strong> {$location}";
         $html .= "</td></tr></table></div>";
         $html .= "<div class='accent-line'></div>";

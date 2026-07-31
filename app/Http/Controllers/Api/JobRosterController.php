@@ -363,6 +363,7 @@ class JobRosterController extends Controller
                 'grand_total'       => $grandTotal,
                 'amount_charged'    => $amountCharged,
                 'balance'           => $balance,
+                'location'          => $location,
             ];
     
             $pdfBytes  = app(\App\Services\InvoiceService::class)->generatePdf($invoiceData);

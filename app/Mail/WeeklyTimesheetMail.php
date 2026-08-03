@@ -51,7 +51,8 @@ class WeeklyTimesheetMail extends Mailable
             $this->excelFile = Excel::raw($export, \Maatwebsite\Excel\Excel::XLSX);
             
             Log::info('Excel file generated successfully', [
-                'size' => strlen($this->excelFile)
+                'size' => strlen($this->excelFile),
+                'user_type' => $this->userType
             ]);
         } catch (\Exception $e) {
             Log::error('Failed to generate Excel file', [
@@ -89,7 +90,9 @@ class WeeklyTimesheetMail extends Mailable
             $mail->attachData($this->excelFile, $fileName, [
                 'mime' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
             ]);
-            Log::info('Excel file attached to email');
+            Log::info('Excel file attached to email', [
+                'user_type' => $this->userType
+            ]);
         }
 
         return $mail;

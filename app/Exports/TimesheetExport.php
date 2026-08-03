@@ -47,7 +47,7 @@ class TimesheetExport implements FromCollection, WithHeadings, WithStyles, WithC
         if (empty($this->timesheetData)) {
             Log::warning('Timesheet data is empty in export');
             return collect([
-                ['No data found for the selected period', '', '', '', '', '', '', '', '', '']
+                ['No data found for the selected period', '', '', '', '', '', '', '', '', '', '']
             ]);
         }
 
@@ -75,16 +75,17 @@ class TimesheetExport implements FromCollection, WithHeadings, WithStyles, WithC
                                   ($breakdown['sunday_morning'] ?? 0) + ($breakdown['sunday_night'] ?? 0);
                         
                         $row = [
-                            'Shift ' . $shiftCounter++,
-                            $start->format('d/m/Y'),
-                            $start->format('H:i'),
-                            $end->format('H:i'),
-                            number_format($start->diffInHours($end), 2),
-                            $shift['site_name'] ?? 'N/A',
-                            $shift['contractor_name'] ?? 'N/A',
-                            number_format($breakdown['morning'] ?? 0, 2),
-                            number_format($breakdown['night'] ?? 0, 2),
-                            number_format($weekend, 2)
+                            'Employee Name' => $employee['name'] ?? 'N/A',
+                            'Shift #' => 'Shift ' . $shiftCounter++,
+                            'Date' => $start->format('d/m/Y'),
+                            'Start Time' => $start->format('H:i'),
+                            'End Time' => $end->format('H:i'),
+                            'Duration (Hrs)' => number_format($start->diffInHours($end), 2),
+                            'Site' => $shift['site_name'] ?? 'N/A',
+                            'Contractor' => $shift['contractor_name'] ?? 'N/A',
+                            'Morning Hrs' => number_format($breakdown['morning'] ?? 0, 2),
+                            'Night Hrs' => number_format($breakdown['night'] ?? 0, 2),
+                            'Weekend Hrs' => number_format($weekend, 2)
                         ];
                         
                         Log::info('Added row: ' . json_encode($row));
@@ -94,32 +95,34 @@ class TimesheetExport implements FromCollection, WithHeadings, WithStyles, WithC
                         Log::error('Error processing shift: ' . $e->getMessage());
                         Log::error('Shift data: ' . json_encode($shift));
                         $data->push([
-                            'Shift ' . $shiftCounter++,
-                            'Error',
-                            'Invalid',
-                            'Data',
-                            '0.00',
-                            'Error',
-                            'Error',
-                            '0.00',
-                            '0.00',
-                            '0.00'
+                            'Employee Name' => $employee['name'] ?? 'Error',
+                            'Shift #' => 'Shift ' . $shiftCounter++,
+                            'Date' => 'Error',
+                            'Start Time' => 'Invalid',
+                            'End Time' => 'Data',
+                            'Duration (Hrs)' => '0.00',
+                            'Site' => 'Error',
+                            'Contractor' => 'Error',
+                            'Morning Hrs' => '0.00',
+                            'Night Hrs' => '0.00',
+                            'Weekend Hrs' => '0.00'
                         ]);
                     }
                 }
             } else {
                 Log::info('No shifts found for employee');
                 $data->push([
-                    'No Shifts',
-                    'No data',
-                    '--',
-                    '--',
-                    '0.00',
-                    '--',
-                    '--',
-                    '0.00',
-                    '0.00',
-                    '0.00'
+                    'Employee Name' => $employee['name'] ?? 'N/A',
+                    'Shift #' => 'No Shifts',
+                    'Date' => 'No data',
+                    'Start Time' => '--',
+                    'End Time' => '--',
+                    'Duration (Hrs)' => '0.00',
+                    'Site' => '--',
+                    'Contractor' => '--',
+                    'Morning Hrs' => '0.00',
+                    'Night Hrs' => '0.00',
+                    'Weekend Hrs' => '0.00'
                 ]);
             }
         }
@@ -133,6 +136,7 @@ class TimesheetExport implements FromCollection, WithHeadings, WithStyles, WithC
     public function headings(): array
     {
         return [
+            'Employee Name',
             'Shift #',
             'Date',
             'Start Time',
@@ -149,16 +153,17 @@ class TimesheetExport implements FromCollection, WithHeadings, WithStyles, WithC
     public function columnWidths(): array
     {
         return [
-            'A' => 15,
+            'A' => 25,
             'B' => 15,
             'C' => 15,
             'D' => 15,
-            'E' => 18,
-            'F' => 35,
-            'G' => 25,
-            'H' => 15,
+            'E' => 15,
+            'F' => 18,
+            'G' => 35,
+            'H' => 25,
             'I' => 15,
             'J' => 15,
+            'K' => 15,
         ];
     }
 
@@ -193,9 +198,9 @@ class TimesheetExport implements FromCollection, WithHeadings, WithStyles, WithC
                 $sheet->insertNewRowBefore(1, 6);
                 
                 // Title
-                $sheet->mergeCells('A1:J1');
+                $sheet->mergeCells('A1:K1');
                 $sheet->setCellValue('A1', 'WEEKLY TIMESHEET REPORT');
-                $sheet->getStyle('A1:J1')->applyFromArray([
+                $sheet->getStyle('A1:K1')->applyFromArray([
                     'font' => ['bold' => true, 'size' => 16, 'color' => ['argb' => 'FFFFFFFF']],
                     'fill' => [
                         'fillType' => Fill::FILL_SOLID,
@@ -205,33 +210,33 @@ class TimesheetExport implements FromCollection, WithHeadings, WithStyles, WithC
                 ]);
 
                 // Report info
-                $sheet->mergeCells('A2:J2');
+                $sheet->mergeCells('A2:K2');
                 $sheet->setCellValue('A2', 'Report Date Range: ' . ($this->dateRange ?? 'N/A'));
-                $sheet->getStyle('A2:J2')->applyFromArray([
+                $sheet->getStyle('A2:K2')->applyFromArray([
                     'font' => ['bold' => true, 'size' => 12],
                     'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER]
                 ]);
 
-                $sheet->mergeCells('A3:J3');
+                $sheet->mergeCells('A3:K3');
                 $sheet->setCellValue('A3', 'Generated: ' . now()->format('d/m/Y H:i:s'));
-                $sheet->getStyle('A3:J3')->applyFromArray([
+                $sheet->getStyle('A3:K3')->applyFromArray([
                     'font' => ['size' => 11],
                     'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER]
                 ]);
 
-                $sheet->mergeCells('A4:J4');
+                $sheet->mergeCells('A4:K4');
                 $sheet->setCellValue('A4', 'Recipient: ' . ($this->userName ?? 'Unknown') . ' (' . ucfirst($this->userType ?? 'user') . ')');
-                $sheet->getStyle('A4:J4')->applyFromArray([
+                $sheet->getStyle('A4:K4')->applyFromArray([
                     'font' => ['bold' => true, 'size' => 11],
                     'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER]
                 ]);
 
                 // Empty row
-                $sheet->mergeCells('A5:J5');
+                $sheet->mergeCells('A5:K5');
                 $sheet->setCellValue('A5', '');
                 
                 // Style the headers row (row 6)
-                $sheet->getStyle('A6:J6')->applyFromArray([
+                $sheet->getStyle('A6:K6')->applyFromArray([
                     'font' => ['bold' => true, 'size' => 11, 'color' => ['argb' => 'FFFFFFFF']],
                     'fill' => [
                         'fillType' => Fill::FILL_SOLID,
@@ -273,7 +278,7 @@ class TimesheetExport implements FromCollection, WithHeadings, WithStyles, WithC
                 }
 
                 // Auto-size columns
-                foreach (range('A', 'J') as $col) {
+                foreach (range('A', 'K') as $col) {
                     $sheet->getColumnDimension($col)->setAutoSize(true);
                 }
 

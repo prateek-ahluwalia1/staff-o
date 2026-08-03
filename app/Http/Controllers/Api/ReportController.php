@@ -516,7 +516,7 @@ return $results;
         ];
     }
     
-       public function sendWeeklyTimesheetEmails()
+      public function sendWeeklyTimesheetEmails()
     {
         Log::info('=== SEND WEEKLY TIMESHEET EMAILS STARTED ===');
         
@@ -611,7 +611,7 @@ return $results;
                 'job_rosters.ph_night_hours',
                 'job_rosters.hours',
                 'job_rosters.site_id',
-                'sites.site_name as site_name',
+                'sites.name as site_name',
                 'job_rosters.accepted_by',
                 'contractors.name as contractor_name'
             )

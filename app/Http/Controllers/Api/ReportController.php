@@ -461,14 +461,14 @@ return $results;
     
 }
 //timesheet job
-   public function sendWeeklyTimesheetEmails()
+     public function sendWeeklyTimesheetEmails()
     {
         try {
             // Get previous week's date range (Monday to Sunday)
             $start = Carbon::now()->subWeek()->startOfWeek()->toDateString();
             $end = Carbon::now()->subWeek()->endOfWeek()->toDateString();
 
-            Log::info('Generating weekly timesheet report', [
+            \Log::info('Generating weekly timesheet report', [
                 'start' => $start,
                 'end' => $end
             ]);
@@ -477,7 +477,7 @@ return $results;
             $allTimesheetData = $this->getWeeklyTimesheetData($start, $end);
 
             if (empty($allTimesheetData)) {
-                Log::info('No timesheet data found for previous week: ' . $start . ' to ' . $end);
+                \Log::info('No timesheet data found for previous week: ' . $start . ' to ' . $end);
                 return response()->json([
                     'success' => false,
                     'message' => 'No timesheet data found for previous week'
@@ -488,7 +488,7 @@ return $results;
             $recipients = $this->getEmailRecipients($start, $end);
 
             // Log recipient counts
-            Log::info('Email recipients found', [
+            \Log::info('Email recipients found', [
                 'admins' => count($recipients['admins']),
                 'staff' => count($recipients['staff']),
                 'contractors' => count($recipients['contractors'])
@@ -504,7 +504,7 @@ return $results;
             ]);
 
         } catch (\Exception $e) {
-            Log::error('Error sending weekly timesheet emails: ' . $e->getMessage());
+            \Log::error('Error sending weekly timesheet emails: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to send weekly timesheet emails',
@@ -545,7 +545,7 @@ return $results;
                 'job_rosters.ph_night_hours',
                 'job_rosters.hours',
                 'job_rosters.site_id',
-                'sites.site_name as site_name',
+                'sites.name as site_name',
                 'job_rosters.accepted_by',
                 'contractors.name as contractor_name'
             )
@@ -632,27 +632,17 @@ return $results;
             ->toArray();
 
         // Get admin users (always get admins, they need the report)
-        // $admins = User::where('user_type', 'admin')->get();
+        $admins = User::where('role', 'admin')->get();
         
         // Get staff users who had shifts in the previous week
-        // $staff = User::whereIn('id', $usersWithShifts)
-        //     ->where('user_type', 'staff')
-        //     ->get();
-
-        $staff = User::where('id', 324)
-            ->where('user_type', 'staff')
+        $staff = User::whereIn('id', $usersWithShifts)
+            ->where('role', 'staff')
             ->get();
 
-            $admins = User::where('id', 324)
-            ->where('user_type', 'staff')
-            ->get();
-            $contractors = User::where('id', 324)
-            ->where('user_type', 'staff')
-            ->get();
         // Get contractors who accepted shifts in the previous week
-        // $contractors = User::whereIn('id', $contractorsWithShifts)
-        //     ->where('user_type', 'contractor')
-        //     ->get();
+        $contractors = User::whereIn('id', $contractorsWithShifts)
+            ->where('role', 'contractor')
+            ->get();
 
         return [
             'admins' => $admins,
@@ -676,8 +666,8 @@ return $results;
             ]
         ];
 
-        // Format date range for email subject
-        $dateRange = Carbon::parse($start)->format('M d, Y') . ' - ' . Carbon::parse($end)->format('M d, Y');
+        // Format date range for email subject (dd/mm/yyyy)
+        $dateRange = Carbon::parse($start)->format('d/m/Y') . ' - ' . Carbon::parse($end)->format('d/m/Y');
 
         // 1. Send to administrators (ALL DATA)
         foreach ($recipients['admins'] as $admin) {

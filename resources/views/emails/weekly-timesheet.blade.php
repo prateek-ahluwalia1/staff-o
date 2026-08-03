@@ -33,6 +33,7 @@
         .summary-item { background: white; padding: 10px; border-radius: 5px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
         .summary-item .label { color: #666; font-size: 12px; }
         .summary-item .value { font-size: 18px; font-weight: bold; color: #333; }
+        .date-time { font-size: 14px; }
         @media only screen and (max-width: 600px) {
             table { font-size: 12px; }
             th, td { padding: 8px; }
@@ -73,7 +74,7 @@
                 </div>
                 <div class="summary-item">
                     <div class="label">Generated</div>
-                    <div class="value" style="font-size: 14px;">{{ now()->format('F d, Y H:i:s') }}</div>
+                    <div class="value" style="font-size: 14px;">{{ now()->format('d/m/Y H:i:s') }}</div>
                 </div>
             </div>
         </div>
@@ -128,8 +129,8 @@
                         <div class="shift-details">
                             <p>
                                 <strong>Shift #{{ $loop->iteration }}:</strong>
-                                {{ \Carbon\Carbon::parse($shift['start'])->format('M d, Y H:i') }} - 
-                                {{ \Carbon\Carbon::parse($shift['end'])->format('M d, Y H:i') }}
+                                {{ \Carbon\Carbon::parse($shift['start'])->format('d/m/Y H:i') }} - 
+                                {{ \Carbon\Carbon::parse($shift['end'])->format('d/m/Y H:i') }}
                                 <br>
                                 <span class="site-name">📍 Site: {{ $shift['site_name'] ?? 'N/A' }}</span>
                                 @if(isset($shift['contractor_name']))
@@ -172,8 +173,8 @@
                         <div class="shift-details">
                             <p>
                                 <strong>Shift #{{ $loop->iteration }}:</strong>
-                                {{ \Carbon\Carbon::parse($shift['start'])->format('M d, Y H:i') }} - 
-                                {{ \Carbon\Carbon::parse($shift['end'])->format('M d, Y H:i') }}
+                                {{ \Carbon\Carbon::parse($shift['start'])->format('d/m/Y H:i') }} - 
+                                {{ \Carbon\Carbon::parse($shift['end'])->format('d/m/Y H:i') }}
                                 <br>
                                 <span class="site-name">📍 Site: {{ $shift['site_name'] ?? 'N/A' }}</span>
                                 @if(isset($shift['contractor_name']))

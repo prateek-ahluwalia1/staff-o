@@ -5,7 +5,7 @@ namespace App\Mail;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Queue\SerializesModels;
-use Illuminate\Mail\Mailables\Attachment;
+use Illuminate\Support\Facades\Log;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\TimesheetExport;
 
@@ -18,7 +18,7 @@ class WeeklyTimesheetMail extends Mailable
     public $userType;
     public $userName;
     public $isAdmin;
-    public $excelFile;
+    private $excelFile;
 
     public function __construct($timesheetData, $dateRange, $userType, $userName)
     {
@@ -27,18 +27,34 @@ class WeeklyTimesheetMail extends Mailable
         $this->userType = $userType;
         $this->userName = $userName;
         $this->isAdmin = ($userType == 'admin');
-        
-        // Generate Excel file
+
+        // Generate Excel file in constructor
         $this->generateExcelFile();
     }
 
     private function generateExcelFile()
     {
-        $export = new TimesheetExport($this->timesheetData, $this->dateRange, $this->userType, $this->userName);
-        $fileName = 'timesheet_report_' . now()->format('d_m_Y') . '.xlsx';
-        
-        // Store the file temporarily
-        $this->excelFile = Excel::raw($export, \Maatwebsite\Excel\Excel::XLSX);
+        try {
+            $export = new TimesheetExport(
+                $this->timesheetData, 
+                $this->dateRange, 
+                $this->userType, 
+                $this->userName
+            );
+            
+            // Generate Excel file as string
+            $this->excelFile = Excel::raw($export, \Maatwebsite\Excel\Excel::XLSX);
+            
+            Log::info('Excel file generated successfully', [
+                'size' => strlen($this->excelFile)
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Failed to generate Excel file', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            $this->excelFile = null;
+        }
     }
 
     public function build()
@@ -51,7 +67,7 @@ class WeeklyTimesheetMail extends Mailable
         
         $fileName = 'timesheet_report_' . now()->format('d_m_Y') . '.xlsx';
         
-        return $this->subject($subject)
+        $mail = $this->subject($subject)
                     ->view('emails.weekly-timesheet')
                     ->with([
                         'timesheetData' => $this->timesheetData,
@@ -62,17 +78,24 @@ class WeeklyTimesheetMail extends Mailable
                         'totalHours' => $this->calculateTotalHours(),
                         'totalShifts' => $this->calculateTotalShifts(),
                         'employeeCount' => count($this->timesheetData)
-                    ])
-                    ->attachData($this->excelFile, $fileName, [
-                        'mime' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
                     ]);
+
+        // Attach Excel file if generated successfully
+        if ($this->excelFile) {
+            $mail->attachData($this->excelFile, $fileName, [
+                'mime' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            ]);
+            Log::info('Excel file attached to email');
+        }
+
+        return $mail;
     }
 
     private function calculateTotalHours()
     {
         $total = 0;
         foreach ($this->timesheetData as $data) {
-            $total += $data['total_hours'];
+            $total += $data['total_hours'] ?? 0;
         }
         return number_format($total, 2);
     }
@@ -81,7 +104,7 @@ class WeeklyTimesheetMail extends Mailable
     {
         $total = 0;
         foreach ($this->timesheetData as $data) {
-            $total += count($data['shifts']);
+            $total += isset($data['shifts']) ? count($data['shifts']) : 0;
         }
         return $total;
     }

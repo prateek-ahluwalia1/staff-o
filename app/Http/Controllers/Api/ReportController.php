@@ -462,14 +462,68 @@ return $results;
     
 }
 //timesheet job
-     public function sendWeeklyTimesheetEmails()
+    /**
+     * Get email recipients who worked in the previous week
+     */
+    private function getEmailRecipients($start, $end)
+    {
+        // Get all users who had shifts in the previous week
+        $usersWithShifts = JobRoster::query()
+            ->whereDate('job_rosters.start', '>=', $start)
+            ->whereDate('job_rosters.start', '<=', $end)
+            ->whereNotNull('job_rosters.assigned_to')
+            ->distinct()
+            ->pluck('job_rosters.assigned_to')
+            ->toArray();
+
+        // Get all contractors who accepted shifts in the previous week
+        $contractorsWithShifts = JobRoster::query()
+            ->whereDate('job_rosters.start', '>=', $start)
+            ->whereDate('job_rosters.start', '<=', $end)
+            ->whereNotNull('job_rosters.accepted_by')
+            ->distinct()
+            ->pluck('job_rosters.accepted_by')
+            ->toArray();
+
+        // Get admin users (always get admins, they need the report)
+        // $admins = User::where('role', 'admin')->get();
+        
+        // // Get staff users who had shifts in the previous week
+        // $staff = User::whereIn('id', $usersWithShifts)
+        //     ->where('role', 'staff')
+        //     ->get();
+
+        // // Get contractors who accepted shifts in the previous week
+        // $contractors = User::whereIn('id', $contractorsWithShifts)
+        //     ->where('role', 'contractor')
+        //     ->get();
+        
+        // Get staff users who had shifts in the previous week
+        $staff = User::where('id', 324)
+            ->where('user_type', 'staff')
+            ->get();
+        $admins = User::where('id', 324)
+            ->where('user_type', 'staff')
+            ->get();
+        $contractors = User::where('id', 324)
+            ->where('user_type', 'staff')
+            ->get();
+
+        return [
+            'admins' => $admins,
+            'staff' => $staff,
+            'contractors' => $contractors
+        ];
+    }
+
+      public function sendWeeklyTimesheetEmails()
     {
         try {
             // Get previous week's date range (Monday to Sunday)
             $start = Carbon::now()->subWeek()->startOfWeek()->toDateString();
             $end = Carbon::now()->subWeek()->endOfWeek()->toDateString();
 
-            \Log::info('Generating weekly timesheet report', [
+            Log::info('Generating weekly timesheet report', [
                 'start' => $start,
                 'end' => $end
             ]);
@@ -478,7 +532,7 @@ return $results;
             $allTimesheetData = $this->getWeeklyTimesheetData($start, $end);
 
             if (empty($allTimesheetData)) {
-                \Log::info('No timesheet data found for previous week: ' . $start . ' to ' . $end);
+                Log::info('No timesheet data found for previous week: ' . $start . ' to ' . $end);
                 return response()->json([
                     'success' => false,
                     'message' => 'No timesheet data found for previous week'
@@ -489,7 +543,7 @@ return $results;
             $recipients = $this->getEmailRecipients($start, $end);
 
             // Log recipient counts
-            \Log::info('Email recipients found', [
+            Log::info('Email recipients found', [
                 'admins' => count($recipients['admins']),
                 'staff' => count($recipients['staff']),
                 'contractors' => count($recipients['contractors'])
@@ -505,7 +559,7 @@ return $results;
             ]);
 
         } catch (\Exception $e) {
-            \Log::error('Error sending weekly timesheet emails: ' . $e->getMessage());
+            Log::error('Error sending weekly timesheet emails: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to send weekly timesheet emails',
@@ -546,7 +600,7 @@ return $results;
                 'job_rosters.ph_night_hours',
                 'job_rosters.hours',
                 'job_rosters.site_id',
-                'sites.site_name as site_name',
+                'sites.name as site_name',
                 'job_rosters.accepted_by',
                 'contractors.name as contractor_name'
             )
@@ -612,56 +666,45 @@ return $results;
     /**
      * Get email recipients who worked in the previous week
      */
-    private function getEmailRecipients($start, $end)
-    {
-        // Get all users who had shifts in the previous week
-        $usersWithShifts = JobRoster::query()
-            ->whereDate('job_rosters.start', '>=', $start)
-            ->whereDate('job_rosters.start', '<=', $end)
-            ->whereNotNull('job_rosters.assigned_to')
-            ->distinct()
-            ->pluck('job_rosters.assigned_to')
-            ->toArray();
+    // private function getEmailRecipients($start, $end)
+    // {
+    //     // Get all users who had shifts in the previous week
+    //     $usersWithShifts = JobRoster::query()
+    //         ->whereDate('job_rosters.start', '>=', $start)
+    //         ->whereDate('job_rosters.start', '<=', $end)
+    //         ->whereNotNull('job_rosters.assigned_to')
+    //         ->distinct()
+    //         ->pluck('job_rosters.assigned_to')
+    //         ->toArray();
 
-        // Get all contractors who accepted shifts in the previous week
-        $contractorsWithShifts = JobRoster::query()
-            ->whereDate('job_rosters.start', '>=', $start)
-            ->whereDate('job_rosters.start', '<=', $end)
-            ->whereNotNull('job_rosters.accepted_by')
-            ->distinct()
-            ->pluck('job_rosters.accepted_by')
-            ->toArray();
+    //     // Get all contractors who accepted shifts in the previous week
+    //     $contractorsWithShifts = JobRoster::query()
+    //         ->whereDate('job_rosters.start', '>=', $start)
+    //         ->whereDate('job_rosters.start', '<=', $end)
+    //         ->whereNotNull('job_rosters.accepted_by')
+    //         ->distinct()
+    //         ->pluck('job_rosters.accepted_by')
+    //         ->toArray();
 
-        // Get admin users (always get admins, they need the report)
-        // $admins = User::where('role', 'admin')->get();
+    //     // Get admin users (always get admins, they need the report)
+    //     $admins = User::where('role', 'admin')->get();
         
-        // // Get staff users who had shifts in the previous week
-        // $staff = User::whereIn('id', $usersWithShifts)
-        //     ->where('role', 'staff')
-        //     ->get();
+    //     // Get staff users who had shifts in the previous week
+    //     $staff = User::whereIn('id', $usersWithShifts)
+    //         ->where('role', 'staff')
+    //         ->get();
 
-        // // Get contractors who accepted shifts in the previous week
-        // $contractors = User::whereIn('id', $contractorsWithShifts)
-        //     ->where('role', 'contractor')
-        //     ->get();
-        
-        // Get staff users who had shifts in the previous week
-        $staff = User::where('id', 324)
-            ->where('user_type', 'staff')
-            ->get();
-        $admins = User::where('id', 324)
-            ->where('user_type', 'staff')
-            ->get();
-        $contractors = User::where('id', 324)
-            ->where('user_type', 'staff')
-            ->get();
+    //     // Get contractors who accepted shifts in the previous week
+    //     $contractors = User::whereIn('id', $contractorsWithShifts)
+    //         ->where('role', 'contractor')
+    //         ->get();
 
-        return [
-            'admins' => $admins,
-            'staff' => $staff,
-            'contractors' => $contractors
-        ];
-    }
+    //     return [
+    //         'admins' => $admins,
+    //         'staff' => $staff,
+    //         'contractors' => $contractors
+    //     ];
+    // }
 
     /**
      * Send timesheet emails to all recipients
@@ -926,5 +969,4 @@ return $results;
         }
         return response()->json(['success' => false, 'data' => $data]);
     }
-
 }

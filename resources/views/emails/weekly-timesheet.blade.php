@@ -85,8 +85,6 @@
                     <p><strong>Name:</strong> {{ $employee['name'] }}</p>
                     <p><strong>Total Hours:</strong> {{ number_format($employee['total_hours'], 2) }} hours</p>
                     <p><strong>Total Shifts:</strong> {{ count($employee['shifts']) }}</p>
-                    <p><strong>Morning Hours:</strong> {{ number_format($employee['morning_hours'], 2) }}</p>
-                    <p><strong>Night Hours:</strong> {{ number_format($employee['night_hours'], 2) }}</p>
                 @endforeach
             @endif
         </div>
@@ -98,7 +96,7 @@
             <div class="file-info">
                 <p>📎 This email contains an Excel file with complete timesheet details including:</p>
                 <ul style="text-align: left; display: inline-block; margin: 10px auto;">
-                    <li>📋 Summary Sheet - Overall timesheet summary</li>
+                    <li>📋 Summary - Overall timesheet summary</li>
                     <li>📅 Detailed Shifts - Complete shift-by-shift breakdown</li>
                     <li>📈 Hours Breakdown - Detailed hours analysis</li>
                 </ul>

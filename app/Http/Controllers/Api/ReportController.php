@@ -611,7 +611,7 @@ return $results;
                 'job_rosters.ph_night_hours',
                 'job_rosters.hours',
                 'job_rosters.site_id',
-                'sites.sitename as site_name',
+                'sites.site_name as site_name',
                 'job_rosters.accepted_by',
                 'contractors.name as contractor_name'
             )

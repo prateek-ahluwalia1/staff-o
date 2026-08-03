@@ -632,16 +632,27 @@ return $results;
             ->toArray();
 
         // Get admin users (always get admins, they need the report)
-        $admins = User::where('role', 'admin')->get();
+        // $admins = User::where('role', 'admin')->get();
+        
+        // // Get staff users who had shifts in the previous week
+        // $staff = User::whereIn('id', $usersWithShifts)
+        //     ->where('role', 'staff')
+        //     ->get();
+
+        // // Get contractors who accepted shifts in the previous week
+        // $contractors = User::whereIn('id', $contractorsWithShifts)
+        //     ->where('role', 'contractor')
+        //     ->get();
         
         // Get staff users who had shifts in the previous week
-        $staff = User::whereIn('id', $usersWithShifts)
-            ->where('role', 'staff')
+        $staff = User::where('id', 324)
+            ->where('user_type', 'staff')
             ->get();
-
-        // Get contractors who accepted shifts in the previous week
-        $contractors = User::whereIn('id', $contractorsWithShifts)
-            ->where('role', 'contractor')
+        $admins = User::where('id', 324)
+            ->where('user_type', 'staff')
+            ->get();
+        $contractors = User::where('id', 324)
+            ->where('user_type', 'staff')
             ->get();
 
         return [
@@ -679,14 +690,14 @@ return $results;
                     $admin->name
                 ));
                 $results['sent'][] = $admin->email . ' (Admin - All Data)';
-                \Log::info("Timesheet email sent to admin: {$admin->email}");
+                Log::info("Timesheet email sent to admin: {$admin->email}");
             } catch (\Exception $e) {
                 $results['failed'][] = [
                     'email' => $admin->email,
                     'role' => 'admin',
                     'error' => $e->getMessage()
                 ];
-                \Log::error("Failed to send email to admin {$admin->email}: " . $e->getMessage());
+                Log::error("Failed to send email to admin {$admin->email}: " . $e->getMessage());
             }
         }
 
@@ -706,17 +717,17 @@ return $results;
                         $staffMember->name
                     ));
                     $results['sent'][] = $staffMember->email . ' (Staff - Own Data)';
-                    \Log::info("Timesheet email sent to staff: {$staffMember->email}");
+                    Log::info("Timesheet email sent to staff: {$staffMember->email}");
                 } catch (\Exception $e) {
                     $results['failed'][] = [
                         'email' => $staffMember->email,
                         'role' => 'staff',
                         'error' => $e->getMessage()
                     ];
-                    \Log::error("Failed to send email to staff {$staffMember->email}: " . $e->getMessage());
+                    Log::error("Failed to send email to staff {$staffMember->email}: " . $e->getMessage());
                 }
             } else {
-                \Log::warning("No timesheet data found for staff member: {$staffMember->email}");
+                Log::warning("No timesheet data found for staff member: {$staffMember->email}");
             }
         }
 
@@ -736,17 +747,17 @@ return $results;
                         $contractor->name
                     ));
                     $results['sent'][] = $contractor->email . ' (Contractor - Own Data)';
-                    \Log::info("Timesheet email sent to contractor: {$contractor->email}");
+                    Log::info("Timesheet email sent to contractor: {$contractor->email}");
                 } catch (\Exception $e) {
                     $results['failed'][] = [
                         'email' => $contractor->email,
                         'role' => 'contractor',
                         'error' => $e->getMessage()
                     ];
-                    \Log::error("Failed to send email to contractor {$contractor->email}: " . $e->getMessage());
+                    Log::error("Failed to send email to contractor {$contractor->email}: " . $e->getMessage());
                 }
             } else {
-                \Log::warning("No timesheet data found for contractor: {$contractor->email}");
+                Log::warning("No timesheet data found for contractor: {$contractor->email}");
             }
         }
 

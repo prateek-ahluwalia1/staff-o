@@ -5,12 +5,12 @@
     <style>
         body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; }
         .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
-        .header { background-color: #4CAF50; color: white; padding: 20px; text-align: center; border-radius: 5px 5px 0 0; }
-        .header.admin { background-color: #ff9800; }
+        .header { background-color: #0A7C6E; color: white; padding: 20px; text-align: center; border-radius: 5px 5px 0 0; }
+        .header.admin { background-color: #0A7C6E; }
         .summary { background-color: #f4f4f4; padding: 15px; margin: 20px 0; border-radius: 5px; }
         table { width: 100%; border-collapse: collapse; margin: 20px 0; }
-        th { background-color: #4CAF50; color: white; padding: 12px; text-align: left; }
-        th.admin-th { background-color: #ff9800; }
+        th { background-color: #0A7C6E; color: white; padding: 12px; text-align: left; }
+        th.admin-th { background-color: #0A7C6E; }
         td { padding: 10px; border-bottom: 1px solid #ddd; }
         tr:hover { background-color: #f5f5f5; }
         .shift-details { background-color: #f9f9f9; padding: 10px; margin: 5px 0; border-radius: 3px; }
@@ -24,7 +24,7 @@
         .hours-breakdown ul li { padding: 5px 0; border-bottom: 1px solid #eee; }
         .personal-note { background-color: #e3f2fd; padding: 10px; border-radius: 5px; margin-bottom: 20px; border-left: 4px solid #2196F3; }
         .employee-card { background-color: #e8f5e9; padding: 15px; border-radius: 5px; margin-bottom: 20px; border-left: 4px solid #4CAF50; }
-        .employee-card.admin-card { border-left-color: #ff9800; }
+        .employee-card.admin-card { border-left-color: #0A7C6E; }
         .site-name { color: #666; font-size: 14px; }
         .contractor-name { color: #2196F3; font-size: 14px; }
         .shift-details p { margin: 5px 0; }

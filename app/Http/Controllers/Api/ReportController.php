@@ -465,57 +465,6 @@ return $results;
     /**
      * Get email recipients who worked in the previous week
      */
-    private function getEmailRecipients($start, $end)
-    {
-        // Get all users who had shifts in the previous week
-        $usersWithShifts = JobRoster::query()
-            ->whereDate('job_rosters.start', '>=', $start)
-            ->whereDate('job_rosters.start', '<=', $end)
-            ->whereNotNull('job_rosters.assigned_to')
-            ->distinct()
-            ->pluck('job_rosters.assigned_to')
-            ->toArray();
-
-        // Get all contractors who accepted shifts in the previous week
-        $contractorsWithShifts = JobRoster::query()
-            ->whereDate('job_rosters.start', '>=', $start)
-            ->whereDate('job_rosters.start', '<=', $end)
-            ->whereNotNull('job_rosters.accepted_by')
-            ->distinct()
-            ->pluck('job_rosters.accepted_by')
-            ->toArray();
-
-        // Get admin users (always get admins, they need the report)
-        // $admins = User::where('role', 'admin')->get();
-        
-        // // Get staff users who had shifts in the previous week
-        // $staff = User::whereIn('id', $usersWithShifts)
-        //     ->where('role', 'staff')
-        //     ->get();
-
-        // // Get contractors who accepted shifts in the previous week
-        // $contractors = User::whereIn('id', $contractorsWithShifts)
-        //     ->where('role', 'contractor')
-        //     ->get();
-        
-        // Get staff users who had shifts in the previous week
-        $staff = User::where('id', 324)
-            ->where('user_type', 'staff')
-            ->get();
-        $admins = User::where('id', 324)
-            ->where('user_type', 'staff')
-            ->get();
-        $contractors = User::where('id', 324)
-            ->where('user_type', 'staff')
-            ->get();
-
-        return [
-            'admins' => $admins,
-            'staff' => $staff,
-            'contractors' => $contractors
-        ];
-    }
-    
       public function sendWeeklyTimesheetEmails()
     {
         Log::info('=== SEND WEEKLY TIMESHEET EMAILS STARTED ===');
@@ -715,56 +664,56 @@ return $results;
     /**
      * Get email recipients who worked in the previous week
      */
-    // private function getEmailRecipients($start, $end)
-    // {
-    //     Log::info('=== GET EMAIL RECIPIENTS ===');
+    private function getEmailRecipients($start, $end)
+    {
+        Log::info('=== GET EMAIL RECIPIENTS ===');
         
-    //     // Get all users who had shifts in the previous week
-    //     $usersWithShifts = JobRoster::query()
-    //         ->whereDate('job_rosters.start', '>=', $start)
-    //         ->whereDate('job_rosters.start', '<=', $end)
-    //         ->whereNotNull('job_rosters.assigned_to')
-    //         ->distinct()
-    //         ->pluck('job_rosters.assigned_to')
-    //         ->toArray();
+        // Get all users who had shifts in the previous week
+        $usersWithShifts = JobRoster::query()
+            ->whereDate('job_rosters.start', '>=', $start)
+            ->whereDate('job_rosters.start', '<=', $end)
+            ->whereNotNull('job_rosters.assigned_to')
+            ->distinct()
+            ->pluck('job_rosters.assigned_to')
+            ->toArray();
 
-    //     // Get all contractors who accepted shifts in the previous week
-    //     $contractorsWithShifts = JobRoster::query()
-    //         ->whereDate('job_rosters.start', '>=', $start)
-    //         ->whereDate('job_rosters.start', '<=', $end)
-    //         ->whereNotNull('job_rosters.accepted_by')
-    //         ->distinct()
-    //         ->pluck('job_rosters.accepted_by')
-    //         ->toArray();
+        // Get all contractors who accepted shifts in the previous week
+        $contractorsWithShifts = JobRoster::query()
+            ->whereDate('job_rosters.start', '>=', $start)
+            ->whereDate('job_rosters.start', '<=', $end)
+            ->whereNotNull('job_rosters.accepted_by')
+            ->distinct()
+            ->pluck('job_rosters.accepted_by')
+            ->toArray();
 
-    //     Log::info('Users with shifts: ' . count($usersWithShifts));
-    //     Log::info('Contractors with shifts: ' . count($contractorsWithShifts));
+        Log::info('Users with shifts: ' . count($usersWithShifts));
+        Log::info('Contractors with shifts: ' . count($contractorsWithShifts));
 
-    //     // Get admin users (always get admins, they need the report)
-    //     $admins = User::where('role', 'admin')->get();
+        // Get admin users (always get admins, they need the report)
+        $admins = User::where('role', 'admin')->get();
         
-    //     // Get staff users who had shifts in the previous week
-    //     $staff = User::whereIn('id', $usersWithShifts)
-    //         ->where('role', 'staff')
-    //         ->get();
+        // Get staff users who had shifts in the previous week
+        $staff = User::whereIn('id', $usersWithShifts)
+            ->where('role', 'staff')
+            ->get();
 
-    //     // Get contractors who accepted shifts in the previous week
-    //     $contractors = User::whereIn('id', $contractorsWithShifts)
-    //         ->where('role', 'contractor')
-    //         ->get();
+        // Get contractors who accepted shifts in the previous week
+        $contractors = User::whereIn('id', $contractorsWithShifts)
+            ->where('role', 'contractor')
+            ->get();
 
-    //     Log::info('Recipients found:', [
-    //         'admins' => $admins->count(),
-    //         'staff' => $staff->count(),
-    //         'contractors' => $contractors->count()
-    //     ]);
+        Log::info('Recipients found:', [
+            'admins' => $admins->count(),
+            'staff' => $staff->count(),
+            'contractors' => $contractors->count()
+        ]);
 
-    //     return [
-    //         'admins' => $admins,
-    //         'staff' => $staff,
-    //         'contractors' => $contractors
-    //     ];
-    // }
+        return [
+            'admins' => $admins,
+            'staff' => $staff,
+            'contractors' => $contractors
+        ];
+    }
 
     /**
      * Send timesheet emails to all recipients
@@ -881,24 +830,6 @@ return $results;
         Log::info('Email sending completed. Sent: ' . count($results['sent']) . ', Failed: ' . count($results['failed']));
         
         return $results;
-    }
-
-    /**
-     * Get timesheet with pagination (Your existing method)
-     */
-    public function getTimesheet(Request $request)
-    {
-        // ... your existing getTimesheet code ...
-        // Keep your original implementation
-    }
-
-    /**
-     * Get timesheet details (Your existing method)
-     */
-    public function getTimeSheetDetails(Request $request)
-    {
-        // ... your existing getTimeSheetDetails code ...
-        // Keep your original implementation
     }
 
     /**

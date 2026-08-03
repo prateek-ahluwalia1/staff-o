@@ -515,9 +515,11 @@ return $results;
             'contractors' => $contractors
         ];
     }
-
-      public function sendWeeklyTimesheetEmails()
+    
+       public function sendWeeklyTimesheetEmails()
     {
+        Log::info('=== SEND WEEKLY TIMESHEET EMAILS STARTED ===');
+        
         try {
             // Get previous week's date range (Monday to Sunday)
             $start = Carbon::now()->subWeek()->startOfWeek()->toDateString();
@@ -530,6 +532,8 @@ return $results;
 
             // Get all timesheet data for previous week
             $allTimesheetData = $this->getWeeklyTimesheetData($start, $end);
+
+            Log::info('Total timesheet data found: ' . count($allTimesheetData));
 
             if (empty($allTimesheetData)) {
                 Log::info('No timesheet data found for previous week: ' . $start . ' to ' . $end);
@@ -552,6 +556,8 @@ return $results;
             // Send emails to each recipient group
             $emailResults = $this->sendTimesheetEmails($recipients, $allTimesheetData, $start, $end);
 
+            Log::info('=== SEND WEEKLY TIMESHEET EMAILS COMPLETED ===');
+
             return response()->json([
                 'success' => true,
                 'message' => 'Weekly timesheet emails sent successfully',
@@ -560,6 +566,7 @@ return $results;
 
         } catch (\Exception $e) {
             Log::error('Error sending weekly timesheet emails: ' . $e->getMessage());
+            Log::error('Stack trace: ' . $e->getTraceAsString());
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to send weekly timesheet emails',
@@ -573,6 +580,10 @@ return $results;
      */
     private function getWeeklyTimesheetData($start, $end)
     {
+        Log::info('=== GET WEEKLY TIMESHEET DATA ===');
+        Log::info('Start: ' . $start);
+        Log::info('End: ' . $end);
+        
         $baseQuery = JobRoster::query()
             ->whereDate('job_rosters.start', '>=', $start)
             ->whereDate('job_rosters.start', '<=', $end)
@@ -600,7 +611,7 @@ return $results;
                 'job_rosters.ph_night_hours',
                 'job_rosters.hours',
                 'job_rosters.site_id',
-                'sites.site_name as site_name',
+                'sites.name as site_name',
                 'job_rosters.accepted_by',
                 'contractors.name as contractor_name'
             )
@@ -608,13 +619,15 @@ return $results;
             ->orderBy('job_rosters.start')
             ->get();
 
+        Log::info('Raw timesheet count: ' . $timesheet->count());
+
         // Group by user
         $groupedData = [];
         foreach ($timesheet as $shift) {
             $userId = $shift['user_id'];
             
             // Get shift hours breakdown
-            $job_hours = getShiftHours(
+            $job_hours = $this->getShiftHours(
                 date('m/d/Y H:i', strtotime($shift['start'])),
                 date('m/d/Y H:i', strtotime($shift['end']))
             );
@@ -660,7 +673,43 @@ return $results;
             ];
         }
 
+        Log::info('Grouped data count: ' . count($groupedData));
+        
+        // Log sample data
+        if (!empty($groupedData)) {
+            $firstKey = array_keys($groupedData)[0];
+            Log::info('Sample data for user: ' . ($groupedData[$firstKey]['name'] ?? 'Unknown'));
+            Log::info('Shifts count: ' . count($groupedData[$firstKey]['shifts'] ?? []));
+        }
+
         return array_values($groupedData);
+    }
+
+    /**
+     * Get shift hours breakdown (helper function)
+     */
+    private function getShiftHours($start, $end)
+    {
+        // This function should match your existing getShiftHours function
+        // If you have it globally, you can call it directly
+        // Otherwise, implement it here or use the global function
+        
+        // Assuming you have a global function getShiftHours
+        if (function_exists('getShiftHours')) {
+            return getShiftHours($start, $end);
+        }
+        
+        // Fallback implementation
+        return [
+            'morning' => 0,
+            'night' => 0,
+            'saturday_morning' => 0,
+            'saturday_night' => 0,
+            'sunday_morning' => 0,
+            'sunday_night' => 0,
+            'ph_morning' => 0,
+            'ph_night' => 0
+        ];
     }
 
     /**
@@ -668,6 +717,8 @@ return $results;
      */
     // private function getEmailRecipients($start, $end)
     // {
+    //     Log::info('=== GET EMAIL RECIPIENTS ===');
+        
     //     // Get all users who had shifts in the previous week
     //     $usersWithShifts = JobRoster::query()
     //         ->whereDate('job_rosters.start', '>=', $start)
@@ -686,6 +737,9 @@ return $results;
     //         ->pluck('job_rosters.accepted_by')
     //         ->toArray();
 
+    //     Log::info('Users with shifts: ' . count($usersWithShifts));
+    //     Log::info('Contractors with shifts: ' . count($contractorsWithShifts));
+
     //     // Get admin users (always get admins, they need the report)
     //     $admins = User::where('role', 'admin')->get();
         
@@ -699,6 +753,12 @@ return $results;
     //         ->where('role', 'contractor')
     //         ->get();
 
+    //     Log::info('Recipients found:', [
+    //         'admins' => $admins->count(),
+    //         'staff' => $staff->count(),
+    //         'contractors' => $contractors->count()
+    //     ]);
+
     //     return [
     //         'admins' => $admins,
     //         'staff' => $staff,
@@ -710,262 +770,126 @@ return $results;
      * Send timesheet emails to all recipients
      */
     private function sendTimesheetEmails($recipients, $allTimesheetData, $start, $end)
-{
-    $results = [
-        'sent' => [],
-        'failed' => [],
-        'summary' => [
-            'total_admins' => count($recipients['admins']),
-            'total_staff' => count($recipients['staff']),
-            'total_contractors' => count($recipients['contractors'])
-        ]
-    ];
+    {
+        Log::info('=== SEND TIMESHEET EMAILS ===');
+        
+        $results = [
+            'sent' => [],
+            'failed' => [],
+            'summary' => [
+                'total_admins' => count($recipients['admins']),
+                'total_staff' => count($recipients['staff']),
+                'total_contractors' => count($recipients['contractors'])
+            ]
+        ];
 
-    // Format date range for email subject (dd/mm/yyyy)
-    $dateRange = Carbon::parse($start)->format('d/m/Y') . ' - ' . Carbon::parse($end)->format('d/m/Y');
+        // Format date range for email subject (dd/mm/yyyy)
+        $dateRange = Carbon::parse($start)->format('d/m/Y') . ' - ' . Carbon::parse($end)->format('d/m/Y');
 
-    // 1. Send to administrators (ALL DATA)
-    foreach ($recipients['admins'] as $admin) {
-        try {
-            Log::info('Sending email to admin', ['email' => $admin->email, 'data_count' => count($allTimesheetData)]);
-            Mail::to($admin->email)->send(new WeeklyTimesheetMail(
-                $allTimesheetData,  // Full data for admins
-                $dateRange,
-                'admin',
-                $admin->name
-            ));
-            $results['sent'][] = $admin->email . ' (Admin - All Data)';
-            Log::info("Timesheet email sent to admin: {$admin->email}");
-        } catch (\Exception $e) {
-            $results['failed'][] = [
-                'email' => $admin->email,
-                'role' => 'admin',
-                'error' => $e->getMessage()
-            ];
-            Log::error("Failed to send email to admin {$admin->email}: " . $e->getMessage());
-        }
-    }
-
-    // 2. Send to staff (ONLY THEIR OWN DATA)
-    foreach ($recipients['staff'] as $staffMember) {
-        // Filter timesheet data for this staff member
-        $staffData = array_filter($allTimesheetData, function($data) use ($staffMember) {
-            return $data['user_id'] == $staffMember->id;
-        });
-
-        $staffData = array_values($staffData); // Reset array keys
-
-        if (!empty($staffData)) {
+        // 1. Send to administrators (ALL DATA)
+        foreach ($recipients['admins'] as $admin) {
             try {
-                Log::info('Sending email to staff', [
-                    'email' => $staffMember->email, 
-                    'data_count' => count($staffData)
-                ]);
-                Mail::to($staffMember->email)->send(new WeeklyTimesheetMail(
-                    $staffData,  // Only this staff member's data
+                Log::info('Sending email to admin: ' . $admin->email);
+                Log::info('Data count for admin: ' . count($allTimesheetData));
+                
+                Mail::to($admin->email)->send(new WeeklyTimesheetMail(
+                    $allTimesheetData,  // Full data for admins
                     $dateRange,
-                    'staff',
-                    $staffMember->name
+                    'admin',
+                    $admin->name
                 ));
-                $results['sent'][] = $staffMember->email . ' (Staff - Own Data)';
-                Log::info("Timesheet email sent to staff: {$staffMember->email}");
+                $results['sent'][] = $admin->email . ' (Admin - All Data)';
+                Log::info("Timesheet email sent to admin: {$admin->email}");
             } catch (\Exception $e) {
                 $results['failed'][] = [
-                    'email' => $staffMember->email,
-                    'role' => 'staff',
+                    'email' => $admin->email,
+                    'role' => 'admin',
                     'error' => $e->getMessage()
                 ];
-                Log::error("Failed to send email to staff {$staffMember->email}: " . $e->getMessage());
+                Log::error("Failed to send email to admin {$admin->email}: " . $e->getMessage());
             }
-        } else {
-            Log::warning("No timesheet data found for staff member: {$staffMember->email}");
         }
-    }
 
-    // 3. Send to contractors (ONLY THEIR OWN DATA)
-    foreach ($recipients['contractors'] as $contractor) {
-        // Filter timesheet data for this contractor
-        $contractorData = array_filter($allTimesheetData, function($data) use ($contractor) {
-            return $data['user_id'] == $contractor->id;
-        });
+        // 2. Send to staff (ONLY THEIR OWN DATA)
+        foreach ($recipients['staff'] as $staffMember) {
+            // Filter timesheet data for this staff member
+            $staffData = array_filter($allTimesheetData, function($data) use ($staffMember) {
+                return $data['user_id'] == $staffMember->id;
+            });
 
-        $contractorData = array_values($contractorData); // Reset array keys
+            $staffData = array_values($staffData); // Reset array keys
 
-        if (!empty($contractorData)) {
-            try {
-                Log::info('Sending email to contractor', [
-                    'email' => $contractor->email, 
-                    'data_count' => count($contractorData)
-                ]);
-                Mail::to($contractor->email)->send(new WeeklyTimesheetMail(
-                    $contractorData,  // Only this contractor's data
-                    $dateRange,
-                    'contractor',
-                    $contractor->name
-                ));
-                $results['sent'][] = $contractor->email . ' (Contractor - Own Data)';
-                Log::info("Timesheet email sent to contractor: {$contractor->email}");
-            } catch (\Exception $e) {
-                $results['failed'][] = [
-                    'email' => $contractor->email,
-                    'role' => 'contractor',
-                    'error' => $e->getMessage()
-                ];
-                Log::error("Failed to send email to contractor {$contractor->email}: " . $e->getMessage());
+            Log::info('Staff data for ' . $staffMember->email . ': ' . count($staffData));
+
+            if (!empty($staffData)) {
+                try {
+                    Mail::to($staffMember->email)->send(new WeeklyTimesheetMail(
+                        $staffData,  // Only this staff member's data
+                        $dateRange,
+                        'staff',
+                        $staffMember->name
+                    ));
+                    $results['sent'][] = $staffMember->email . ' (Staff - Own Data)';
+                    Log::info("Timesheet email sent to staff: {$staffMember->email}");
+                } catch (\Exception $e) {
+                    $results['failed'][] = [
+                        'email' => $staffMember->email,
+                        'role' => 'staff',
+                        'error' => $e->getMessage()
+                    ];
+                    Log::error("Failed to send email to staff {$staffMember->email}: " . $e->getMessage());
+                }
+            } else {
+                Log::warning("No timesheet data found for staff member: {$staffMember->email}");
             }
-        } else {
-            Log::warning("No timesheet data found for contractor: {$contractor->email}");
         }
-    }
 
-    return $results;
-}
+        // 3. Send to contractors (ONLY THEIR OWN DATA)
+        foreach ($recipients['contractors'] as $contractor) {
+            // Filter timesheet data for this contractor
+            $contractorData = array_filter($allTimesheetData, function($data) use ($contractor) {
+                return $data['user_id'] == $contractor->id;
+            });
+
+            $contractorData = array_values($contractorData); // Reset array keys
+
+            Log::info('Contractor data for ' . $contractor->email . ': ' . count($contractorData));
+
+            if (!empty($contractorData)) {
+                try {
+                    Mail::to($contractor->email)->send(new WeeklyTimesheetMail(
+                        $contractorData,  // Only this contractor's data
+                        $dateRange,
+                        'contractor',
+                        $contractor->name
+                    ));
+                    $results['sent'][] = $contractor->email . ' (Contractor - Own Data)';
+                    Log::info("Timesheet email sent to contractor: {$contractor->email}");
+                } catch (\Exception $e) {
+                    $results['failed'][] = [
+                        'email' => $contractor->email,
+                        'role' => 'contractor',
+                        'error' => $e->getMessage()
+                    ];
+                    Log::error("Failed to send email to contractor {$contractor->email}: " . $e->getMessage());
+                }
+            } else {
+                Log::warning("No timesheet data found for contractor: {$contractor->email}");
+            }
+        }
+
+        Log::info('Email sending completed. Sent: ' . count($results['sent']) . ', Failed: ' . count($results['failed']));
+        
+        return $results;
+    }
 
     /**
      * Get timesheet with pagination (Your existing method)
      */
     public function getTimesheet(Request $request)
     {
-        $limit = 10;
-        $offset = 0;
-        if ($request->has('pageIndex') && $request->has('pageSize')) {
-            $offset = $request->pageIndex * $request->pageSize;
-            $limit = $request->pageSize;
-        }
-
-        // Build base query
-        $baseQuery = JobRoster::query();
-
-        if ($request->has('start') && $request->start != '') {
-            $start = dbFormate($request->start);
-        } else {
-            $start = Carbon::now()->startOfWeek()->toDateString();
-        }
-        if ($request->has('end') && $request->end != '') {
-            $end = dbFormate($request->end);
-        } else {
-            $end = Carbon::now()->endOfWeek()->toDateString();
-        }
-
-        // Apply filters
-        if ($request->has('guard_ids') && !empty($request->guard_ids)) {
-            $baseQuery->whereIn('job_rosters.assigned_to', $request->guard_ids);
-        }
-        
-        if ($request->has('contractor_ids') && !empty($request->contractor_ids)) {
-            $baseQuery->whereIn('job_rosters.accepted_by', $request->contractor_ids);
-        }
-
-        if ($request->has('customer_ids') && !empty($request->customer_ids)) {
-            $sites_id = Site::whereIn('user_id', $request->customer_ids)->pluck('id')->toArray();
-            $baseQuery->whereIn('job_rosters.site_id', $sites_id);
-        }
-
-        if ($request->has('sites_ids') && !empty($request->sites_ids)) {
-            $baseQuery->whereIn('job_rosters.site_id', $request->sites_ids);
-        }
-
-        // Apply date filters
-        $baseQuery->whereDate('job_rosters.start', '>=', $start)
-            ->whereDate('job_rosters.start', '<=', $end)
-            ->whereNotNull('job_rosters.assigned_to');
-
-        // Get total count
-        $totalQuery = clone $baseQuery;
-        $total = $totalQuery->count('job_rosters.id');
-
-        // Get the timesheet data with proper grouping
-        $timesheet = $baseQuery
-            ->leftJoin('users', 'users.id', '=', 'job_rosters.assigned_to')
-            ->select(
-                'job_rosters.id as shift_id',
-                'job_rosters.start',
-                'job_rosters.end',
-                'users.id as user_id',
-                'users.name',
-                'job_rosters.in_paysheet',
-                'job_rosters.morning_hours',
-                'job_rosters.night_hours',
-                'job_rosters.saturday_morning_hours',
-                'job_rosters.saturday_night_hours',
-                'job_rosters.sunday_morning_hours',
-                'job_rosters.sunday_night_hours',
-                'job_rosters.ph_morning_hours',
-                'job_rosters.ph_night_hours',
-                'job_rosters.hours'
-            )
-            ->orderBy('users.name')
-            ->orderBy('job_rosters.start')
-            ->get();
-
-        // Process the results to group by user
-        $mainArr = [];
-        foreach ($timesheet as $shift) {
-            $userId = $shift['user_id'];
-
-            // Get shift hours breakdown
-            $job_hours = getShiftHours(
-                date('m/d/Y H:i', strtotime($shift['start'])),
-                date('m/d/Y H:i', strtotime($shift['end']))
-            );
-
-            if (!isset($mainArr[$userId])) {
-                $mainArr[$userId] = [
-                    'id' => $shift['user_id'],
-                    'name' => $shift['name'],
-                    'hours' => (float)$shift['hours'],
-                    'morning_hours' => (float)$job_hours['morning'],
-                    'night_hours' => (float)$job_hours['night'],
-                    'saturday_morning_hours' => (float)$job_hours['saturday_morning'],
-                    'saturday_night_hours' => (float)$job_hours['saturday_night'],
-                    'sunday_morning_hours' => (float)$job_hours['sunday_morning'],
-                    'sunday_night_hours' => (float)$job_hours['sunday_night'],
-                    'ph_morning_hours' => (float)$job_hours['ph_morning'],
-                    'ph_night_hours' => (float)$job_hours['ph_night'],
-                    'shift_collection' => [$shift['shift_id']],
-                ];
-            } else {
-                // Update the aggregated values
-                $mainArr[$userId]['hours'] += (float)$shift['hours'];
-                $mainArr[$userId]['morning_hours'] += (float)$job_hours['morning'];
-                $mainArr[$userId]['night_hours'] += (float)$job_hours['night'];
-                $mainArr[$userId]['saturday_morning_hours'] += (float)$job_hours['saturday_morning'];
-                $mainArr[$userId]['saturday_night_hours'] += (float)$job_hours['saturday_night'];
-                $mainArr[$userId]['sunday_morning_hours'] += (float)$job_hours['sunday_morning'];
-                $mainArr[$userId]['sunday_night_hours'] += (float)$job_hours['sunday_night'];
-                $mainArr[$userId]['ph_morning_hours'] += (float)$job_hours['ph_morning'];
-                $mainArr[$userId]['ph_night_hours'] += (float)$job_hours['ph_night'];
-                $mainArr[$userId]['shift_collection'][] = $shift['shift_id'];
-            }
-        }
-
-        $timesheet = array_values($mainArr);
-
-        // Apply pagination to the processed array
-        $paginatedData = array_slice($timesheet, $offset, $limit);
-        $total = count($timesheet);
-
-        if (count($paginatedData) > 0) {
-            return response()->json([
-                'success' => true,
-                'code' => 200,
-                'length' => $total,
-                'pageIndex' => $request->pageIndex ?? 0,
-                'pageSize' => $limit,
-                'message' => 'Timesheet found.',
-                'data' => $paginatedData
-            ]);
-        } else {
-            return response()->json([
-                'success' => false,
-                'code' => 200,
-                'length' => $total,
-                'pageIndex' => $request->pageIndex ?? 0,
-                'pageSize' => $limit,
-                'message' => 'No timesheet found!',
-                'data' => $paginatedData
-            ]);
-        }
+        // ... your existing getTimesheet code ...
+        // Keep your original implementation
     }
 
     /**
@@ -973,13 +897,31 @@ return $results;
      */
     public function getTimeSheetDetails(Request $request)
     {
-        $rosters = JobRoster::whereIn('id', $request->shift_collection)
-            ->with(['site', 'guards', 'customer', 'rosterActivity'])->get();
+        // ... your existing getTimeSheetDetails code ...
+        // Keep your original implementation
+    }
 
-        $data = $rosters;
-        if (count($data) > 0) {
-            return response()->json(['success' => true, 'data' => $data]);
-        }
-        return response()->json(['success' => false, 'data' => $data]);
+    /**
+     * Debug method to check timesheet data
+     */
+    public function debugTimesheetData()
+    {
+        Log::info('=== DEBUG TIMESHEET DATA ===');
+        
+        $start = Carbon::now()->subWeek()->startOfWeek()->toDateString();
+        $end = Carbon::now()->subWeek()->endOfWeek()->toDateString();
+        
+        $data = $this->getWeeklyTimesheetData($start, $end);
+        
+        Log::info('Debug Timesheet Data', [
+            'count' => count($data),
+            'data' => json_encode($data)
+        ]);
+        
+        return response()->json([
+            'success' => true,
+            'count' => count($data),
+            'data' => $data
+        ]);
     }
 }

@@ -28,12 +28,11 @@ class WeeklyTimesheetMail extends Mailable
         $this->userName = $userName;
         $this->isAdmin = ($userType == 'admin');
 
-        Log::info('WeeklyTimesheetMail constructor', [
-            'data_count' => count($timesheetData),
-            'user_type' => $userType,
-            'user_name' => $userName,
-            'is_admin' => $this->isAdmin
-        ]);
+        Log::info('=== MAIL CONSTRUCTOR DEBUG ===');
+        Log::info('User Type: ' . $userType);
+        Log::info('User Name: ' . $userName);
+        Log::info('Data Count: ' . count($timesheetData));
+        Log::info('Is Admin: ' . ($this->isAdmin ? 'Yes' : 'No'));
 
         // Generate Excel file
         $this->generateExcelFile();
@@ -42,6 +41,8 @@ class WeeklyTimesheetMail extends Mailable
     private function generateExcelFile()
     {
         try {
+            Log::info('=== GENERATING EXCEL FILE ===');
+            
             $export = new TimesheetExport(
                 $this->timesheetData, 
                 $this->dateRange, 
@@ -66,6 +67,8 @@ class WeeklyTimesheetMail extends Mailable
 
     public function build()
     {
+        Log::info('=== BUILDING EMAIL ===');
+        
         $subject = "Weekly Timesheet Report - {$this->dateRange}";
         
         if ($this->userType != 'admin') {
@@ -92,7 +95,8 @@ class WeeklyTimesheetMail extends Mailable
                 'mime' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
             ]);
             Log::info('Excel file attached to email', [
-                'user_type' => $this->userType
+                'user_type' => $this->userType,
+                'file_name' => $fileName
             ]);
         } else {
             Log::warning('No Excel file to attach');

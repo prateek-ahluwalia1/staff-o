@@ -28,7 +28,13 @@ class WeeklyTimesheetMail extends Mailable
         $this->userName = $userName;
         $this->isAdmin = ($userType == 'admin');
 
-        // Generate Excel file in constructor
+        Log::info('WeeklyTimesheetMail constructor', [
+            'data_count' => count($timesheetData),
+            'user_type' => $userType,
+            'user_name' => $userName
+        ]);
+
+        // Generate Excel file
         $this->generateExcelFile();
     }
 
@@ -42,7 +48,6 @@ class WeeklyTimesheetMail extends Mailable
                 $this->userName
             );
             
-            // Generate Excel file as string
             $this->excelFile = Excel::raw($export, \Maatwebsite\Excel\Excel::XLSX);
             
             Log::info('Excel file generated successfully', [
@@ -80,7 +85,6 @@ class WeeklyTimesheetMail extends Mailable
                         'employeeCount' => count($this->timesheetData)
                     ]);
 
-        // Attach Excel file if generated successfully
         if ($this->excelFile) {
             $mail->attachData($this->excelFile, $fileName, [
                 'mime' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',

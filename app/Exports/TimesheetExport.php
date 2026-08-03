@@ -12,7 +12,9 @@ use Maatwebsite\Excel\Events\AfterSheet;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
+use PhpOffice\PhpSpreadsheet\Style\Color;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Log;
 
 class TimesheetExport implements FromArray, WithHeadings, WithStyles, WithColumnWidths, ShouldAutoSize, WithEvents
 {
@@ -27,116 +29,136 @@ class TimesheetExport implements FromArray, WithHeadings, WithStyles, WithColumn
         $this->dateRange = $dateRange;
         $this->userType = $userType;
         $this->userName = $userName;
+        
+        Log::info('TimesheetExport constructor', [
+            'data_count' => count($timesheetData),
+            'user_type' => $userType,
+            'user_name' => $userName
+        ]);
     }
 
-    /**
-     * Convert data to array format for Excel
-     */
     public function array(): array
     {
         $data = [];
-        $sno = 1;
         
         if (empty($this->timesheetData)) {
+            Log::warning('Timesheet data is empty in export');
             return [
                 ['No data found for the selected period']
             ];
         }
 
+        Log::info('Processing timesheet data for export', [
+            'employee_count' => count($this->timesheetData)
+        ]);
+
         foreach ($this->timesheetData as $employee) {
-            $row = [
-                'S.No' => $sno++,
-                'Employee Name' => $employee['name'] ?? 'N/A',
-                'Total Hours' => isset($employee['total_hours']) ? number_format($employee['total_hours'], 2) : '0.00',
-                'Morning Hours' => isset($employee['morning_hours']) ? number_format($employee['morning_hours'], 2) : '0.00',
-                'Night Hours' => isset($employee['night_hours']) ? number_format($employee['night_hours'], 2) : '0.00',
-                'Saturday Hours' => isset($employee['saturday_morning_hours']) && isset($employee['saturday_night_hours']) 
-                    ? number_format($employee['saturday_morning_hours'] + $employee['saturday_night_hours'], 2) 
-                    : '0.00',
-                'Sunday Hours' => isset($employee['sunday_morning_hours']) && isset($employee['sunday_night_hours']) 
-                    ? number_format($employee['sunday_morning_hours'] + $employee['sunday_night_hours'], 2) 
-                    : '0.00',
-                'PH Hours' => isset($employee['ph_morning_hours']) && isset($employee['ph_night_hours']) 
-                    ? number_format($employee['ph_morning_hours'] + $employee['ph_night_hours'], 2) 
-                    : '0.00',
-                'Total Shifts' => isset($employee['shifts']) ? count($employee['shifts']) : 0,
-                'Shift Details' => $this->getShiftDetails($employee['shifts'] ?? [])
+            // Add employee header row
+            $data[] = [
+                'EMPLOYEE: ' . ($employee['name'] ?? 'N/A'),
+                '', '', '', '', '', '', '', '', ''
             ];
             
-            $data[] = $row;
+            // Add employee summary
+            $data[] = [
+                'Total Hours: ' . (isset($employee['total_hours']) ? number_format($employee['total_hours'], 2) : '0.00'),
+                'Morning: ' . (isset($employee['morning_hours']) ? number_format($employee['morning_hours'], 2) : '0.00'),
+                'Night: ' . (isset($employee['night_hours']) ? number_format($employee['night_hours'], 2) : '0.00'),
+                'Saturday: ' . (isset($employee['saturday_morning_hours']) && isset($employee['saturday_night_hours']) 
+                    ? number_format($employee['saturday_morning_hours'] + $employee['saturday_night_hours'], 2) 
+                    : '0.00'),
+                'Sunday: ' . (isset($employee['sunday_morning_hours']) && isset($employee['sunday_night_hours']) 
+                    ? number_format($employee['sunday_morning_hours'] + $employee['sunday_night_hours'], 2) 
+                    : '0.00'),
+                'PH Hours: ' . (isset($employee['ph_morning_hours']) && isset($employee['ph_night_hours']) 
+                    ? number_format($employee['ph_morning_hours'] + $employee['ph_night_hours'], 2) 
+                    : '0.00'),
+                'Total Shifts: ' . (isset($employee['shifts']) ? count($employee['shifts']) : 0),
+                '', '', ''
+            ];
+            
+            // Add shift headers
+            $data[] = [
+                'Shift #', 'Date', 'Start', 'End', 'Duration', 'Site', 'Contractor', 
+                'Morning Hrs', 'Night Hrs', 'Weekend Hrs'
+            ];
+            
+            // Add each shift
+            if (isset($employee['shifts']) && !empty($employee['shifts'])) {
+                foreach ($employee['shifts'] as $index => $shift) {
+                    try {
+                        $start = Carbon::parse($shift['start']);
+                        $end = Carbon::parse($shift['end']);
+                        $breakdown = $shift['hours_breakdown'] ?? [];
+                        
+                        // Calculate weekend hours
+                        $weekend = ($breakdown['saturday_morning'] ?? 0) + ($breakdown['saturday_night'] ?? 0) + 
+                                  ($breakdown['sunday_morning'] ?? 0) + ($breakdown['sunday_night'] ?? 0);
+                        
+                        $data[] = [
+                            'Shift ' . ($index + 1),
+                            $start->format('d/m/Y'),
+                            $start->format('H:i'),
+                            $end->format('H:i'),
+                            number_format($start->diffInHours($end), 2),
+                            $shift['site_name'] ?? 'N/A',
+                            $shift['contractor_name'] ?? 'N/A',
+                            number_format($breakdown['morning'] ?? 0, 2),
+                            number_format($breakdown['night'] ?? 0, 2),
+                            number_format($weekend, 2)
+                        ];
+                    } catch (\Exception $e) {
+                        Log::error('Error processing shift', [
+                            'shift' => $shift,
+                            'error' => $e->getMessage()
+                        ]);
+                        $data[] = [
+                            'Shift ' . ($index + 1),
+                            'Invalid data',
+                            '', '', '', '', '', '', '', ''
+                        ];
+                    }
+                }
+            } else {
+                $data[] = ['No shifts found for this employee', '', '', '', '', '', '', '', '', ''];
+            }
+            
+            // Add empty row between employees
+            $data[] = ['', '', '', '', '', '', '', '', '', ''];
         }
 
         return $data;
     }
 
-    private function getShiftDetails($shifts)
-    {
-        if (empty($shifts)) {
-            return 'No shifts';
-        }
-        
-        $details = [];
-        foreach ($shifts as $index => $shift) {
-            try {
-                $start = Carbon::parse($shift['start']);
-                $end = Carbon::parse($shift['end']);
-                $breakdown = $shift['hours_breakdown'] ?? [];
-                
-                $details[] = sprintf(
-                    "Shift %d: %s %s-%s | Site: %s | Contractor: %s | Morning: %sh | Night: %sh",
-                    $index + 1,
-                    $start->format('d/m/Y'),
-                    $start->format('H:i'),
-                    $end->format('H:i'),
-                    $shift['site_name'] ?? 'N/A',
-                    $shift['contractor_name'] ?? 'N/A',
-                    number_format($breakdown['morning'] ?? 0, 2),
-                    number_format($breakdown['night'] ?? 0, 2)
-                );
-            } catch (\Exception $e) {
-                $details[] = "Shift " . ($index + 1) . ": Invalid data";
-            }
-        }
-        return implode("\n", $details);
-    }
-
     public function headings(): array
     {
         return [
-            'S.No',
-            'Employee Name',
-            'Total Hours',
-            'Morning Hours',
-            'Night Hours',
-            'Saturday Hours',
-            'Sunday Hours',
-            'PH Hours',
-            'Total Shifts',
-            'Shift Details'
+            'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'
         ];
     }
 
     public function columnWidths(): array
     {
         return [
-            'A' => 10,
-            'B' => 30,
+            'A' => 20,
+            'B' => 15,
             'C' => 15,
             'D' => 15,
             'E' => 15,
-            'F' => 15,
-            'G' => 15,
+            'F' => 30,
+            'G' => 25,
             'H' => 15,
             'I' => 15,
-            'J' => 60,
+            'J' => 15,
         ];
     }
 
     public function styles($sheet)
     {
         return [
+            // Style for headers
             1 => [
-                'font' => ['bold' => true, 'size' => 12, 'color' => ['argb' => 'FFFFFFFF']],
+                'font' => ['bold' => true, 'size' => 12],
                 'fill' => [
                     'fillType' => Fill::FILL_SOLID,
                     'startColor' => ['argb' => 'FF4CAF50']
@@ -151,7 +173,8 @@ class TimesheetExport implements FromArray, WithHeadings, WithStyles, WithColumn
         return [
             AfterSheet::class => function(AfterSheet $event) {
                 $sheet = $event->sheet->getDelegate();
-                $lastRow = $sheet->getHighestRow();
+                $highestRow = $sheet->getHighestRow();
+                $highestColumn = $sheet->getHighestColumn();
 
                 // Add title
                 $sheet->mergeCells('A1:J1');
@@ -165,7 +188,7 @@ class TimesheetExport implements FromArray, WithHeadings, WithStyles, WithColumn
                     'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER]
                 ]);
 
-                // Add report info
+                // Report info
                 $sheet->mergeCells('A2:J2');
                 $sheet->setCellValue('A2', 'Report Date Range: ' . ($this->dateRange ?? 'N/A'));
                 $sheet->getStyle('A2:J2')->applyFromArray([
@@ -187,55 +210,76 @@ class TimesheetExport implements FromArray, WithHeadings, WithStyles, WithColumn
                     'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER]
                 ]);
 
-                // Only style headings if there is data
-                if ($lastRow >= 6) {
-                    // Set headings row
-                    $headings = ['S.No', 'Employee Name', 'Total Hours', 'Morning Hours', 'Night Hours', 
-                                'Saturday Hours', 'Sunday Hours', 'PH Hours', 'Total Shifts', 'Shift Details'];
-                    $col = 'A';
-                    $row = 6;
-                    foreach ($headings as $heading) {
-                        $sheet->setCellValue($col . $row, $heading);
-                        $sheet->getStyle($col . $row)->applyFromArray([
-                            'font' => ['bold' => true, 'size' => 11, 'color' => ['argb' => 'FFFFFFFF']],
+                // Style employee headers
+                $row = 6;
+                $employeeCount = 0;
+                $currentRow = $row;
+
+                while ($currentRow <= $highestRow) {
+                    $cellValue = $sheet->getCell('A' . $currentRow)->getValue();
+                    
+                    // Check if this is an employee header
+                    if (strpos($cellValue, 'EMPLOYEE:') !== false) {
+                        $employeeCount++;
+                        $sheet->getStyle('A' . $currentRow . ':J' . $currentRow)->applyFromArray([
+                            'font' => ['bold' => true, 'size' => 14, 'color' => ['argb' => 'FFFFFFFF']],
                             'fill' => [
                                 'fillType' => Fill::FILL_SOLID,
                                 'startColor' => ['argb' => 'FF2196F3']
                             ],
-                            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 
-                                           'vertical' => Alignment::VERTICAL_CENTER]
+                            'alignment' => ['horizontal' => Alignment::HORIZONTAL_LEFT]
                         ]);
-                        $col++;
+                        $sheet->mergeCells('A' . $currentRow . ':J' . $currentRow);
                     }
-
-                    // Apply borders to data
-                    $styleArray = [
-                        'borders' => [
-                            'allBorders' => [
-                                'borderStyle' => Border::BORDER_THIN,
-                                'color' => ['argb' => 'FF000000']
-                            ]
-                        ],
-                        'alignment' => [
-                            'vertical' => Alignment::VERTICAL_TOP
-                        ]
-                    ];
                     
-                    $sheet->getStyle('A6:J' . $lastRow)->applyFromArray($styleArray);
-
-                    // Wrap text in Shift Details column
-                    $sheet->getStyle('J6:J' . $lastRow)->getAlignment()->setWrapText(true);
-
-                    // Auto size columns
-                    foreach (range('A', 'J') as $col) {
-                        $sheet->getColumnDimension($col)->setAutoSize(true);
+                    // Check if this is a shift header row
+                    if ($cellValue == 'Shift #') {
+                        $sheet->getStyle('A' . $currentRow . ':J' . $currentRow)->applyFromArray([
+                            'font' => ['bold' => true, 'size' => 11, 'color' => ['argb' => 'FFFFFFFF']],
+                            'fill' => [
+                                'fillType' => Fill::FILL_SOLID,
+                                'startColor' => ['argb' => 'FFFF9800']
+                            ],
+                            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER]
+                        ]);
                     }
+                    
+                    // Apply borders to all data
+                    if ($currentRow >= 6) {
+                        $sheet->getStyle('A' . $currentRow . ':J' . $currentRow)->applyFromArray([
+                            'borders' => [
+                                'allBorders' => [
+                                    'borderStyle' => Border::BORDER_THIN,
+                                    'color' => ['argb' => 'FF000000']
+                                ]
+                            ]
+                        ]);
+                    }
+                    
+                    $currentRow++;
+                }
 
-                    // Set row height for shift details
-                    for ($i = 7; $i <= $lastRow; $i++) {
-                        $sheet->getRowDimension($i)->setRowHeight(60);
+                // Auto-size columns
+                foreach (range('A', 'J') as $col) {
+                    $sheet->getColumnDimension($col)->setAutoSize(true);
+                }
+                
+                // Set row heights
+                for ($i = 6; $i <= $highestRow; $i++) {
+                    $value = $sheet->getCell('A' . $i)->getValue();
+                    if (strpos($value, 'EMPLOYEE:') !== false) {
+                        $sheet->getRowDimension($i)->setRowHeight(25);
+                    } elseif ($value == 'Shift #') {
+                        $sheet->getRowDimension($i)->setRowHeight(20);
+                    } else {
+                        $sheet->getRowDimension($i)->setRowHeight(18);
                     }
                 }
+
+                Log::info('Excel styling completed', [
+                    'employees_found' => $employeeCount,
+                    'total_rows' => $highestRow
+                ]);
             },
         ];
     }

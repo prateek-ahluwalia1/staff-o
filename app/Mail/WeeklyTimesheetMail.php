@@ -6,6 +6,7 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Mail\Mailables\Attachment;
+use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\TimesheetExport;
 
 class WeeklyTimesheetMail extends Mailable
@@ -28,8 +29,16 @@ class WeeklyTimesheetMail extends Mailable
         $this->isAdmin = ($userType == 'admin');
         
         // Generate Excel file
-        $export = new TimesheetExport($timesheetData, $dateRange, $userType, $userName);
-        $this->excelFile = $export->generate();
+        $this->generateExcelFile();
+    }
+
+    private function generateExcelFile()
+    {
+        $export = new TimesheetExport($this->timesheetData, $this->dateRange, $this->userType, $this->userName);
+        $fileName = 'timesheet_report_' . now()->format('d_m_Y') . '.xlsx';
+        
+        // Store the file temporarily
+        $this->excelFile = Excel::raw($export, \Maatwebsite\Excel\Excel::XLSX);
     }
 
     public function build()
@@ -39,6 +48,8 @@ class WeeklyTimesheetMail extends Mailable
         if ($this->userType != 'admin') {
             $subject = "Your Weekly Timesheet Report - {$this->dateRange}";
         }
+        
+        $fileName = 'timesheet_report_' . now()->format('d_m_Y') . '.xlsx';
         
         return $this->subject($subject)
                     ->view('emails.weekly-timesheet')
@@ -52,8 +63,7 @@ class WeeklyTimesheetMail extends Mailable
                         'totalShifts' => $this->calculateTotalShifts(),
                         'employeeCount' => count($this->timesheetData)
                     ])
-                    ->attach($this->excelFile, [
-                        'as' => 'timesheet_report_' . now()->format('d_m_Y') . '.xlsx',
+                    ->attachData($this->excelFile, $fileName, [
                         'mime' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
                     ]);
     }
@@ -74,13 +84,5 @@ class WeeklyTimesheetMail extends Mailable
             $total += count($data['shifts']);
         }
         return $total;
-    }
-
-    public function __destruct()
-    {
-        // Clean up temporary file
-        if ($this->excelFile && file_exists($this->excelFile)) {
-            unlink($this->excelFile);
-        }
     }
 }

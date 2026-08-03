@@ -2,16 +2,22 @@
 
 namespace App\Exports;
 
-use PhpOffice\PhpSpreadsheet\Spreadsheet;
-use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use Maatwebsite\Excel\Concerns\FromArray;
+use Maatwebsite\Excel\Concerns\WithMultipleSheets;
+use Maatwebsite\Excel\Concerns\WithTitle;
+use Maatwebsite\Excel\Concerns\WithHeadings;
+use Maatwebsite\Excel\Concerns\WithStyles;
+use Maatwebsite\Excel\Concerns\WithColumnWidths;
+use Maatwebsite\Excel\Concerns\ShouldAutoSize;
+use Maatwebsite\Excel\Concerns\WithMapping;
+use Maatwebsite\Excel\Concerns\WithEvents;
+use Maatwebsite\Excel\Events\AfterSheet;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
-use PhpOffice\PhpSpreadsheet\Style\Color;
-use PhpOffice\PhpSpreadsheet\Worksheet\PageSetup;
 use Carbon\Carbon;
 
-class TimesheetExport
+class TimesheetExport implements WithMultipleSheets, ShouldAutoSize
 {
     private $timesheetData;
     private $dateRange;
@@ -26,385 +32,514 @@ class TimesheetExport
         $this->userName = $userName;
     }
 
-    public function generate()
+    /**
+     * @return array
+     */
+    public function sheets(): array
     {
-        $spreadsheet = new Spreadsheet();
-        
-        // Set document properties
-        $spreadsheet->getProperties()
-            ->setCreator('Timesheet System')
-            ->setTitle('Weekly Timesheet Report')
-            ->setSubject('Timesheet Report')
-            ->setDescription('Weekly timesheet report');
+        return [
+            new SummarySheet($this->timesheetData, $this->dateRange, $this->userType, $this->userName),
+            new DetailedShiftsSheet($this->timesheetData),
+            new HoursBreakdownSheet($this->timesheetData),
+        ];
+    }
+}
 
-        // Remove default sheet
-        $spreadsheet->removeSheetByIndex(0);
+/**
+ * Summary Sheet
+ */
+class SummarySheet implements FromArray, WithHeadings, WithStyles, WithColumnWidths, WithTitle, WithEvents
+{
+    private $timesheetData;
+    private $dateRange;
+    private $userType;
+    private $userName;
 
-        // Create Summary Sheet
-        $this->createSummarySheet($spreadsheet);
-
-        // Create Detailed Shifts Sheet
-        $this->createDetailedShiftsSheet($spreadsheet);
-
-        // Create Hours Breakdown Sheet
-        $this->createHoursBreakdownSheet($spreadsheet);
-
-        // Set active sheet to first sheet
-        $spreadsheet->setActiveSheetIndex(0);
-
-        // Create writer
-        $writer = new Xlsx($spreadsheet);
-        
-        // Save to temporary file
-        $tempFile = tempnam(sys_get_temp_dir(), 'timesheet_');
-        $writer->save($tempFile);
-        
-        return $tempFile;
+    public function __construct($timesheetData, $dateRange, $userType, $userName)
+    {
+        $this->timesheetData = $timesheetData;
+        $this->dateRange = $dateRange;
+        $this->userType = $userType;
+        $this->userName = $userName;
     }
 
-    private function createSummarySheet($spreadsheet)
+    public function title(): string
     {
-        $sheet = new \PhpOffice\PhpSpreadsheet\Worksheet\Worksheet($spreadsheet, 'Summary');
-        $spreadsheet->addSheet($sheet, 0);
-        
-        // Set page orientation and margins
-        $sheet->getPageSetup()
-            ->setOrientation(PageSetup::ORIENTATION_PORTRAIT)
-            ->setPaperSize(PageSetup::PAPERSIZE_A4);
-        $sheet->getPageMargins()
-            ->setTop(1)
-            ->setRight(0.75)
-            ->setLeft(0.75)
-            ->setBottom(1);
+        return 'Summary';
+    }
 
-        // Add styles
-        $titleStyle = [
-            'font' => [
-                'bold' => true,
-                'size' => 16,
-                'color' => ['argb' => 'FFFFFFFF']
-            ],
-            'fill' => [
-                'fillType' => Fill::FILL_SOLID,
-                'startColor' => ['argb' => 'FF4CAF50']
-            ],
-            'alignment' => [
-                'horizontal' => Alignment::HORIZONTAL_CENTER,
-                'vertical' => Alignment::VERTICAL_CENTER
-            ]
+    public function headings(): array
+    {
+        return [
+            'S.No',
+            'Employee Name',
+            'Total Hours',
+            'Morning Hours',
+            'Night Hours',
+            'Saturday Hours',
+            'Sunday Hours',
+            'PH Hours',
+            'Total Shifts'
         ];
+    }
 
-        $headerStyle = [
-            'font' => [
-                'bold' => true,
-                'size' => 12,
-                'color' => ['argb' => 'FFFFFFFF']
-            ],
-            'fill' => [
-                'fillType' => Fill::FILL_SOLID,
-                'startColor' => ['argb' => 'FF2196F3']
-            ],
-            'alignment' => [
-                'horizontal' => Alignment::HORIZONTAL_CENTER,
-                'vertical' => Alignment::VERTICAL_CENTER
-            ]
-        ];
-
-        $borderStyle = [
-            'borders' => [
-                'allBorders' => [
-                    'borderStyle' => Border::BORDER_THIN,
-                    'color' => ['argb' => 'FF000000']
-                ]
-            ]
-        ];
-
-        // Title
-        $sheet->mergeCells('A1:G1');
-        $sheet->setCellValue('A1', 'WEEKLY TIMESHEET REPORT');
-        $sheet->getStyle('A1:G1')->applyFromArray($titleStyle);
-        $sheet->getRowDimension(1)->setRowHeight(40);
-
-        // Report Info
-        $sheet->mergeCells('A2:G2');
-        $sheet->setCellValue('A2', 'Report Date Range: ' . $this->dateRange);
-        $sheet->getStyle('A2:G2')->applyFromArray([
-            'font' => ['size' => 12, 'bold' => true],
-            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER]
-        ]);
-
-        $sheet->mergeCells('A3:G3');
-        $sheet->setCellValue('A3', 'Generated: ' . now()->format('d/m/Y H:i:s'));
-        $sheet->getStyle('A3:G3')->applyFromArray([
-            'font' => ['size' => 11],
-            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER]
-        ]);
-
-        $sheet->mergeCells('A4:G4');
-        $sheet->setCellValue('A4', 'Recipient: ' . $this->userName . ' (' . ucfirst($this->userType) . ')');
-        $sheet->getStyle('A4:G4')->applyFromArray([
-            'font' => ['size' => 11, 'bold' => true],
-            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER]
-        ]);
-
-        // Summary Headers
-        $row = 6;
-        $sheet->setCellValue("A{$row}", 'Employee Summary');
-        $sheet->mergeCells("A{$row}:G{$row}");
-        $sheet->getStyle("A{$row}:G{$row}")->applyFromArray([
-            'font' => ['bold' => true, 'size' => 14],
-            'fill' => [
-                'fillType' => Fill::FILL_SOLID,
-                'startColor' => ['argb' => 'FFE0E0E0']
-            ],
-            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER]
-        ]);
-
-        // Headers
-        $row = 7;
-        $headers = ['S.No', 'Employee Name', 'Total Hours', 'Morning', 'Night', 'Saturday', 'Sunday', 'PH Hours', 'Shifts'];
-        $col = 'A';
-        foreach ($headers as $header) {
-            $sheet->setCellValue($col . $row, $header);
-            $sheet->getStyle($col . $row)->applyFromArray($headerStyle);
-            $col++;
-        }
-
-        // Data
-        $row = 8;
+    public function array(): array
+    {
+        $data = [];
         $sno = 1;
+        
         foreach ($this->timesheetData as $employee) {
-            $col = 'A';
-            $sheet->setCellValue($col . $row, $sno++);
-            $sheet->setCellValue(++$col . $row, $employee['name']);
-            $sheet->setCellValue(++$col . $row, number_format($employee['total_hours'], 2));
-            $sheet->setCellValue(++$col . $row, number_format($employee['morning_hours'], 2));
-            $sheet->setCellValue(++$col . $row, number_format($employee['night_hours'], 2));
-            $sheet->setCellValue(++$col . $row, 
-                number_format($employee['saturday_morning_hours'] + $employee['saturday_night_hours'], 2)
-            );
-            $sheet->setCellValue(++$col . $row, 
-                number_format($employee['sunday_morning_hours'] + $employee['sunday_night_hours'], 2)
-            );
-            $sheet->setCellValue(++$col . $row, 
-                number_format($employee['ph_morning_hours'] + $employee['ph_night_hours'], 2)
-            );
-            $sheet->setCellValue(++$col . $row, count($employee['shifts']));
-            
-            // Apply borders
-            $sheet->getStyle("A{$row}:G{$row}")->applyFromArray($borderStyle);
-            $row++;
+            $data[] = [
+                $sno++,
+                $employee['name'],
+                number_format($employee['total_hours'], 2),
+                number_format($employee['morning_hours'], 2),
+                number_format($employee['night_hours'], 2),
+                number_format($employee['saturday_morning_hours'] + $employee['saturday_night_hours'], 2),
+                number_format($employee['sunday_morning_hours'] + $employee['sunday_night_hours'], 2),
+                number_format($employee['ph_morning_hours'] + $employee['ph_night_hours'], 2),
+                count($employee['shifts'])
+            ];
         }
 
-        // Auto size columns
-        foreach (range('A', 'G') as $col) {
-            $sheet->getColumnDimension($col)->setAutoSize(true);
+        // Add total row
+        if (!empty($data)) {
+            $totalRow = [
+                '',
+                'TOTAL',
+                array_sum(array_column($data, 2)),
+                array_sum(array_column($data, 3)),
+                array_sum(array_column($data, 4)),
+                array_sum(array_column($data, 5)),
+                array_sum(array_column($data, 6)),
+                array_sum(array_column($data, 7)),
+                array_sum(array_column($data, 8))
+            ];
+            $data[] = $totalRow;
         }
 
-        // Add totals row
-        if ($row > 8) {
-            $sheet->setCellValue('B' . $row, 'TOTAL');
-            $sheet->getStyle('B' . $row)->applyFromArray(['font' => ['bold' => true]]);
-            $sheet->setCellValue('C' . $row, '=SUM(C8:C' . ($row - 1) . ')');
-            $sheet->setCellValue('D' . $row, '=SUM(D8:D' . ($row - 1) . ')');
-            $sheet->setCellValue('E' . $row, '=SUM(E8:E' . ($row - 1) . ')');
-            $sheet->setCellValue('F' . $row, '=SUM(F8:F' . ($row - 1) . ')');
-            $sheet->setCellValue('G' . $row, '=SUM(G8:G' . ($row - 1) . ')');
-            $sheet->setCellValue('H' . $row, '=SUM(H8:H' . ($row - 1) . ')');
-            $sheet->getStyle("A{$row}:G{$row}")->applyFromArray($borderStyle);
-            $sheet->getStyle("B{$row}:G{$row}")->applyFromArray(['font' => ['bold' => true]]);
-        }
+        return $data;
     }
 
-    private function createDetailedShiftsSheet($spreadsheet)
+    public function columnWidths(): array
     {
-        $sheet = new \PhpOffice\PhpSpreadsheet\Worksheet\Worksheet($spreadsheet, 'Detailed Shifts');
-        $spreadsheet->addSheet($sheet, 1);
+        return [
+            'A' => 10,
+            'B' => 30,
+            'C' => 15,
+            'D' => 15,
+            'E' => 15,
+            'F' => 15,
+            'G' => 15,
+            'H' => 15,
+            'I' => 15,
+        ];
+    }
 
-        // Set page orientation and margins
-        $sheet->getPageSetup()
-            ->setOrientation(PageSetup::ORIENTATION_LANDSCAPE)
-            ->setPaperSize(PageSetup::PAPERSIZE_A4);
-        $sheet->getPageMargins()
-            ->setTop(1)
-            ->setRight(0.75)
-            ->setLeft(0.75)
-            ->setBottom(1);
-
-        // Headers
-        $headerStyle = [
-            'font' => [
-                'bold' => true,
-                'size' => 11,
-                'color' => ['argb' => 'FFFFFFFF']
+    public function styles($sheet)
+    {
+        return [
+            1 => [
+                'font' => ['bold' => true, 'size' => 14, 'color' => ['argb' => 'FFFFFFFF']],
+                'fill' => [
+                    'fillType' => Fill::FILL_SOLID,
+                    'startColor' => ['argb' => 'FF4CAF50']
+                ],
+                'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER]
             ],
-            'fill' => [
-                'fillType' => Fill::FILL_SOLID,
-                'startColor' => ['argb' => 'FFFF9800']
-            ],
-            'alignment' => [
-                'horizontal' => Alignment::HORIZONTAL_CENTER,
-                'vertical' => Alignment::VERTICAL_CENTER
-            ]
         ];
+    }
 
-        $borderStyle = [
-            'borders' => [
-                'allBorders' => [
-                    'borderStyle' => Border::BORDER_THIN,
-                    'color' => ['argb' => 'FF000000']
-                ]
-            ]
+    public function registerEvents(): array
+    {
+        return [
+            AfterSheet::class => function(AfterSheet $event) {
+                // Get sheet
+                $sheet = $event->sheet->getDelegate();
+                $lastRow = $sheet->getHighestRow();
+
+                // Add title
+                $sheet->mergeCells('A1:I1');
+                $sheet->setCellValue('A1', 'WEEKLY TIMESHEET REPORT');
+                
+                // Style the title
+                $sheet->getStyle('A1:I1')->applyFromArray([
+                    'font' => ['bold' => true, 'size' => 16, 'color' => ['argb' => 'FFFFFFFF']],
+                    'fill' => [
+                        'fillType' => Fill::FILL_SOLID,
+                        'startColor' => ['argb' => 'FF4CAF50']
+                    ],
+                    'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER]
+                ]);
+
+                // Add report info
+                $sheet->mergeCells('A2:I2');
+                $sheet->setCellValue('A2', 'Report Date Range: ' . $this->dateRange);
+                $sheet->getStyle('A2:I2')->applyFromArray([
+                    'font' => ['bold' => true, 'size' => 12],
+                    'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER]
+                ]);
+
+                $sheet->mergeCells('A3:I3');
+                $sheet->setCellValue('A3', 'Generated: ' . now()->format('d/m/Y H:i:s'));
+                $sheet->getStyle('A3:I3')->applyFromArray([
+                    'font' => ['size' => 11],
+                    'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER]
+                ]);
+
+                $sheet->mergeCells('A4:I4');
+                $sheet->setCellValue('A4', 'Recipient: ' . $this->userName . ' (' . ucfirst($this->userType) . ')');
+                $sheet->getStyle('A4:I4')->applyFromArray([
+                    'font' => ['bold' => true, 'size' => 11],
+                    'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER]
+                ]);
+
+                // Set headings row
+                $headings = ['S.No', 'Employee Name', 'Total Hours', 'Morning Hours', 'Night Hours', 
+                            'Saturday Hours', 'Sunday Hours', 'PH Hours', 'Total Shifts'];
+                $col = 'A';
+                $row = 6;
+                foreach ($headings as $heading) {
+                    $sheet->setCellValue($col . $row, $heading);
+                    $sheet->getStyle($col . $row)->applyFromArray([
+                        'font' => ['bold' => true, 'size' => 12, 'color' => ['argb' => 'FFFFFFFF']],
+                        'fill' => [
+                            'fillType' => Fill::FILL_SOLID,
+                            'startColor' => ['argb' => 'FF2196F3']
+                        ],
+                        'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER]
+                    ]);
+                    $col++;
+                }
+
+                // Apply borders to data
+                $styleArray = [
+                    'borders' => [
+                        'allBorders' => [
+                            'borderStyle' => Border::BORDER_THIN,
+                            'color' => ['argb' => 'FF000000']
+                        ]
+                    ]
+                ];
+                
+                if ($lastRow >= 6) {
+                    $sheet->getStyle('A6:I' . $lastRow)->applyFromArray($styleArray);
+                }
+
+                // Style total row
+                if ($lastRow > 6) {
+                    $sheet->getStyle('B' . $lastRow . ':I' . $lastRow)->applyFromArray([
+                        'font' => ['bold' => true],
+                        'fill' => [
+                            'fillType' => Fill::FILL_SOLID,
+                            'startColor' => ['argb' => 'FFE0E0E0']
+                        ]
+                    ]);
+                }
+
+                // Auto size columns
+                foreach (range('A', 'I') as $col) {
+                    $sheet->getColumnDimension($col)->setAutoSize(true);
+                }
+            },
         ];
+    }
+}
 
-        // Title
-        $sheet->mergeCells('A1:M1');
-        $sheet->setCellValue('A1', 'DETAILED SHIFT INFORMATION');
-        $sheet->getStyle('A1:M1')->applyFromArray([
-            'font' => ['bold' => true, 'size' => 16],
-            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER]
-        ]);
+/**
+ * Detailed Shifts Sheet
+ */
+class DetailedShiftsSheet implements FromArray, WithHeadings, WithStyles, WithColumnWidths, WithTitle, WithEvents
+{
+    private $timesheetData;
 
-        // Headers
-        $row = 3;
-        $headers = [
-            'S.No', 'Employee', 'Shift ID', 'Date', 'Start Time', 'End Time', 
-            'Duration', 'Site', 'Contractor', 'Morning Hrs', 'Night Hrs',
-            'Sat/Sun Hrs', 'PH Hrs'
+    public function __construct($timesheetData)
+    {
+        $this->timesheetData = $timesheetData;
+    }
+
+    public function title(): string
+    {
+        return 'Detailed Shifts';
+    }
+
+    public function headings(): array
+    {
+        return [
+            'S.No',
+            'Employee',
+            'Shift ID',
+            'Date',
+            'Start Time',
+            'End Time',
+            'Duration (Hrs)',
+            'Site',
+            'Contractor',
+            'Morning Hrs',
+            'Night Hrs',
+            'Weekend Hrs',
+            'PH Hrs'
         ];
-        $col = 'A';
-        foreach ($headers as $header) {
-            $sheet->setCellValue($col . $row, $header);
-            $sheet->getStyle($col . $row)->applyFromArray($headerStyle);
-            $col++;
-        }
+    }
 
-        // Data
-        $row = 4;
+    public function array(): array
+    {
+        $data = [];
         $sno = 1;
+        
         foreach ($this->timesheetData as $employee) {
             foreach ($employee['shifts'] as $shift) {
-                $col = 'A';
-                $sheet->setCellValue($col . $row, $sno++);
-                $sheet->setCellValue(++$col . $row, $employee['name']);
-                $sheet->setCellValue(++$col . $row, $shift['shift_id']);
-                $sheet->setCellValue(++$col . $row, Carbon::parse($shift['start'])->format('d/m/Y'));
-                $sheet->setCellValue(++$col . $row, Carbon::parse($shift['start'])->format('H:i'));
-                $sheet->setCellValue(++$col . $row, Carbon::parse($shift['end'])->format('H:i'));
+                $breakdown = $shift['hours_breakdown'] ?? [];
+                $weekend = ($breakdown['saturday_morning'] ?? 0) + ($breakdown['saturday_night'] ?? 0) + 
+                          ($breakdown['sunday_morning'] ?? 0) + ($breakdown['sunday_night'] ?? 0);
+                $ph = ($breakdown['ph_morning'] ?? 0) + ($breakdown['ph_night'] ?? 0);
                 
-                // Calculate duration
                 $start = Carbon::parse($shift['start']);
                 $end = Carbon::parse($shift['end']);
                 $duration = $start->diffInHours($end);
-                $sheet->setCellValue(++$col . $row, number_format($duration, 2));
                 
-                $sheet->setCellValue(++$col . $row, $shift['site_name'] ?? 'N/A');
-                $sheet->setCellValue(++$col . $row, $shift['contractor_name'] ?? 'N/A');
-                
-                $breakdown = $shift['hours_breakdown'] ?? [];
-                $sheet->setCellValue(++$col . $row, number_format($breakdown['morning'] ?? 0, 2));
-                $sheet->setCellValue(++$col . $row, number_format($breakdown['night'] ?? 0, 2));
-                
-                $weekend = ($breakdown['saturday_morning'] ?? 0) + ($breakdown['saturday_night'] ?? 0) + 
-                          ($breakdown['sunday_morning'] ?? 0) + ($breakdown['sunday_night'] ?? 0);
-                $sheet->setCellValue(++$col . $row, number_format($weekend, 2));
-                
-                $ph = ($breakdown['ph_morning'] ?? 0) + ($breakdown['ph_night'] ?? 0);
-                $sheet->setCellValue(++$col . $row, number_format($ph, 2));
-                
-                // Apply borders
-                $sheet->getStyle("A{$row}:M{$row}")->applyFromArray($borderStyle);
-                $row++;
+                $data[] = [
+                    $sno++,
+                    $employee['name'],
+                    $shift['shift_id'],
+                    $start->format('d/m/Y'),
+                    $start->format('H:i'),
+                    $end->format('H:i'),
+                    number_format($duration, 2),
+                    $shift['site_name'] ?? 'N/A',
+                    $shift['contractor_name'] ?? 'N/A',
+                    number_format($breakdown['morning'] ?? 0, 2),
+                    number_format($breakdown['night'] ?? 0, 2),
+                    number_format($weekend, 2),
+                    number_format($ph, 2)
+                ];
             }
         }
 
-        // Auto size columns
-        foreach (range('A', 'M') as $col) {
-            $sheet->getColumnDimension($col)->setAutoSize(true);
-        }
+        return $data;
     }
 
-    private function createHoursBreakdownSheet($spreadsheet)
+    public function columnWidths(): array
     {
-        $sheet = new \PhpOffice\PhpSpreadsheet\Worksheet\Worksheet($spreadsheet, 'Hours Breakdown');
-        $spreadsheet->addSheet($sheet, 2);
+        return [
+            'A' => 10,
+            'B' => 25,
+            'C' => 15,
+            'D' => 15,
+            'E' => 15,
+            'F' => 15,
+            'G' => 15,
+            'H' => 25,
+            'I' => 25,
+            'J' => 15,
+            'K' => 15,
+            'L' => 15,
+            'M' => 15,
+        ];
+    }
 
-        // Set page orientation
-        $sheet->getPageSetup()
-            ->setOrientation(PageSetup::ORIENTATION_LANDSCAPE)
-            ->setPaperSize(PageSetup::PAPERSIZE_A4);
-
-        $headerStyle = [
-            'font' => [
-                'bold' => true,
-                'size' => 11,
-                'color' => ['argb' => 'FFFFFFFF']
+    public function styles($sheet)
+    {
+        return [
+            1 => [
+                'font' => ['bold' => true, 'size' => 12],
+                'fill' => [
+                    'fillType' => Fill::FILL_SOLID,
+                    'startColor' => ['argb' => 'FFFF9800']
+                ],
+                'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER]
             ],
-            'fill' => [
-                'fillType' => Fill::FILL_SOLID,
-                'startColor' => ['argb' => 'FF9C27B0']
-            ],
-            'alignment' => [
-                'horizontal' => Alignment::HORIZONTAL_CENTER,
-                'vertical' => Alignment::VERTICAL_CENTER
-            ]
         ];
+    }
 
-        $borderStyle = [
-            'borders' => [
-                'allBorders' => [
-                    'borderStyle' => Border::BORDER_THIN,
-                    'color' => ['argb' => 'FF000000']
-                ]
-            ]
+    public function registerEvents(): array
+    {
+        return [
+            AfterSheet::class => function(AfterSheet $event) {
+                $sheet = $event->sheet->getDelegate();
+                $lastRow = $sheet->getHighestRow();
+
+                // Add title
+                $sheet->mergeCells('A1:M1');
+                $sheet->setCellValue('A1', 'DETAILED SHIFT INFORMATION');
+                $sheet->getStyle('A1:M1')->applyFromArray([
+                    'font' => ['bold' => true, 'size' => 16],
+                    'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER]
+                ]);
+
+                // Set headings
+                $headings = ['S.No', 'Employee', 'Shift ID', 'Date', 'Start Time', 'End Time', 
+                            'Duration (Hrs)', 'Site', 'Contractor', 'Morning Hrs', 'Night Hrs', 
+                            'Weekend Hrs', 'PH Hrs'];
+                $col = 'A';
+                $row = 3;
+                foreach ($headings as $heading) {
+                    $sheet->setCellValue($col . $row, $heading);
+                    $sheet->getStyle($col . $row)->applyFromArray([
+                        'font' => ['bold' => true, 'size' => 11, 'color' => ['argb' => 'FFFFFFFF']],
+                        'fill' => [
+                            'fillType' => Fill::FILL_SOLID,
+                            'startColor' => ['argb' => 'FFFF9800']
+                        ],
+                        'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER]
+                    ]);
+                    $col++;
+                }
+
+                // Apply borders
+                $styleArray = [
+                    'borders' => [
+                        'allBorders' => [
+                            'borderStyle' => Border::BORDER_THIN,
+                            'color' => ['argb' => 'FF000000']
+                        ]
+                    ]
+                ];
+                
+                if ($lastRow >= 3) {
+                    $sheet->getStyle('A3:M' . $lastRow)->applyFromArray($styleArray);
+                }
+            },
         ];
+    }
+}
 
-        // Title
-        $sheet->mergeCells('A1:K1');
-        $sheet->setCellValue('A1', 'HOURS BREAKDOWN BY EMPLOYEE');
-        $sheet->getStyle('A1:K1')->applyFromArray([
-            'font' => ['bold' => true, 'size' => 16],
-            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER]
-        ]);
+/**
+ * Hours Breakdown Sheet
+ */
+class HoursBreakdownSheet implements FromArray, WithHeadings, WithStyles, WithColumnWidths, WithTitle, WithEvents
+{
+    private $timesheetData;
 
-        // Headers
-        $row = 3;
-        $headers = [
-            'S.No', 'Employee', 'Total Hrs', 'Morning', 'Night', 
-            'Sat Morning', 'Sat Night', 'Sun Morning', 'Sun Night',
-            'PH Morning', 'PH Night'
+    public function __construct($timesheetData)
+    {
+        $this->timesheetData = $timesheetData;
+    }
+
+    public function title(): string
+    {
+        return 'Hours Breakdown';
+    }
+
+    public function headings(): array
+    {
+        return [
+            'S.No',
+            'Employee',
+            'Total Hrs',
+            'Morning',
+            'Night',
+            'Sat Morning',
+            'Sat Night',
+            'Sun Morning',
+            'Sun Night',
+            'PH Morning',
+            'PH Night'
         ];
-        $col = 'A';
-        foreach ($headers as $header) {
-            $sheet->setCellValue($col . $row, $header);
-            $sheet->getStyle($col . $row)->applyFromArray($headerStyle);
-            $col++;
-        }
+    }
 
-        // Data
-        $row = 4;
+    public function array(): array
+    {
+        $data = [];
         $sno = 1;
+        
         foreach ($this->timesheetData as $employee) {
-            $col = 'A';
-            $sheet->setCellValue($col . $row, $sno++);
-            $sheet->setCellValue(++$col . $row, $employee['name']);
-            $sheet->setCellValue(++$col . $row, number_format($employee['total_hours'], 2));
-            $sheet->setCellValue(++$col . $row, number_format($employee['morning_hours'], 2));
-            $sheet->setCellValue(++$col . $row, number_format($employee['night_hours'], 2));
-            $sheet->setCellValue(++$col . $row, number_format($employee['saturday_morning_hours'], 2));
-            $sheet->setCellValue(++$col . $row, number_format($employee['saturday_night_hours'], 2));
-            $sheet->setCellValue(++$col . $row, number_format($employee['sunday_morning_hours'], 2));
-            $sheet->setCellValue(++$col . $row, number_format($employee['sunday_night_hours'], 2));
-            $sheet->setCellValue(++$col . $row, number_format($employee['ph_morning_hours'], 2));
-            $sheet->setCellValue(++$col . $row, number_format($employee['ph_night_hours'], 2));
-            
-            $sheet->getStyle("A{$row}:K{$row}")->applyFromArray($borderStyle);
-            $row++;
+            $data[] = [
+                $sno++,
+                $employee['name'],
+                number_format($employee['total_hours'], 2),
+                number_format($employee['morning_hours'], 2),
+                number_format($employee['night_hours'], 2),
+                number_format($employee['saturday_morning_hours'], 2),
+                number_format($employee['saturday_night_hours'], 2),
+                number_format($employee['sunday_morning_hours'], 2),
+                number_format($employee['sunday_night_hours'], 2),
+                number_format($employee['ph_morning_hours'], 2),
+                number_format($employee['ph_night_hours'], 2)
+            ];
         }
 
-        // Auto size columns
-        foreach (range('A', 'K') as $col) {
-            $sheet->getColumnDimension($col)->setAutoSize(true);
-        }
+        return $data;
+    }
+
+    public function columnWidths(): array
+    {
+        return [
+            'A' => 10,
+            'B' => 30,
+            'C' => 15,
+            'D' => 15,
+            'E' => 15,
+            'F' => 15,
+            'G' => 15,
+            'H' => 15,
+            'I' => 15,
+            'J' => 15,
+            'K' => 15,
+        ];
+    }
+
+    public function styles($sheet)
+    {
+        return [
+            1 => [
+                'font' => ['bold' => true, 'size' => 12],
+                'fill' => [
+                    'fillType' => Fill::FILL_SOLID,
+                    'startColor' => ['argb' => 'FF9C27B0']
+                ],
+                'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER]
+            ],
+        ];
+    }
+
+    public function registerEvents(): array
+    {
+        return [
+            AfterSheet::class => function(AfterSheet $event) {
+                $sheet = $event->sheet->getDelegate();
+                $lastRow = $sheet->getHighestRow();
+
+                // Add title
+                $sheet->mergeCells('A1:K1');
+                $sheet->setCellValue('A1', 'HOURS BREAKDOWN BY EMPLOYEE');
+                $sheet->getStyle('A1:K1')->applyFromArray([
+                    'font' => ['bold' => true, 'size' => 16],
+                    'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER]
+                ]);
+
+                // Set headings
+                $headings = ['S.No', 'Employee', 'Total Hrs', 'Morning', 'Night', 'Sat Morning', 
+                            'Sat Night', 'Sun Morning', 'Sun Night', 'PH Morning', 'PH Night'];
+                $col = 'A';
+                $row = 3;
+                foreach ($headings as $heading) {
+                    $sheet->setCellValue($col . $row, $heading);
+                    $sheet->getStyle($col . $row)->applyFromArray([
+                        'font' => ['bold' => true, 'size' => 11, 'color' => ['argb' => 'FFFFFFFF']],
+                        'fill' => [
+                            'fillType' => Fill::FILL_SOLID,
+                            'startColor' => ['argb' => 'FF9C27B0']
+                        ],
+                        'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER]
+                    ]);
+                    $col++;
+                }
+
+                // Apply borders
+                $styleArray = [
+                    'borders' => [
+                        'allBorders' => [
+                            'borderStyle' => Border::BORDER_THIN,
+                            'color' => ['argb' => 'FF000000']
+                        ]
+                    ]
+                ];
+                
+                if ($lastRow >= 3) {
+                    $sheet->getStyle('A3:K' . $lastRow)->applyFromArray($styleArray);
+                }
+            },
+        ];
     }
 }

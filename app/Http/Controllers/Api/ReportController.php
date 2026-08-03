@@ -642,15 +642,22 @@ return $results;
         $staff = User::where('id', 324)
             ->where('user_type', 'staff')
             ->get();
+
+            $admins = User::where('id', 324)
+            ->where('user_type', 'staff')
+            ->get();
+            $contractors = User::where('id', 324)
+            ->where('user_type', 'staff')
+            ->get();
         // Get contractors who accepted shifts in the previous week
         // $contractors = User::whereIn('id', $contractorsWithShifts)
         //     ->where('user_type', 'contractor')
         //     ->get();
 
         return [
-            // 'admins' => $admins,
+            'admins' => $admins,
             'staff' => $staff,
-            // 'contractors' => $contractors
+            'contractors' => $contractors
         ];
     }
 

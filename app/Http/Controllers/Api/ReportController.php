@@ -710,103 +710,116 @@ return $results;
      * Send timesheet emails to all recipients
      */
     private function sendTimesheetEmails($recipients, $allTimesheetData, $start, $end)
-    {
-        $results = [
-            'sent' => [],
-            'failed' => [],
-            'summary' => [
-                'total_admins' => count($recipients['admins']),
-                'total_staff' => count($recipients['staff']),
-                'total_contractors' => count($recipients['contractors'])
-            ]
-        ];
+{
+    $results = [
+        'sent' => [],
+        'failed' => [],
+        'summary' => [
+            'total_admins' => count($recipients['admins']),
+            'total_staff' => count($recipients['staff']),
+            'total_contractors' => count($recipients['contractors'])
+        ]
+    ];
 
-        // Format date range for email subject (dd/mm/yyyy)
-        $dateRange = Carbon::parse($start)->format('d/m/Y') . ' - ' . Carbon::parse($end)->format('d/m/Y');
+    // Format date range for email subject (dd/mm/yyyy)
+    $dateRange = Carbon::parse($start)->format('d/m/Y') . ' - ' . Carbon::parse($end)->format('d/m/Y');
 
-        // 1. Send to administrators (ALL DATA)
-        foreach ($recipients['admins'] as $admin) {
+    // 1. Send to administrators (ALL DATA)
+    foreach ($recipients['admins'] as $admin) {
+        try {
+            Log::info('Sending email to admin', ['email' => $admin->email, 'data_count' => count($allTimesheetData)]);
+            Mail::to($admin->email)->send(new WeeklyTimesheetMail(
+                $allTimesheetData,  // Full data for admins
+                $dateRange,
+                'admin',
+                $admin->name
+            ));
+            $results['sent'][] = $admin->email . ' (Admin - All Data)';
+            Log::info("Timesheet email sent to admin: {$admin->email}");
+        } catch (\Exception $e) {
+            $results['failed'][] = [
+                'email' => $admin->email,
+                'role' => 'admin',
+                'error' => $e->getMessage()
+            ];
+            Log::error("Failed to send email to admin {$admin->email}: " . $e->getMessage());
+        }
+    }
+
+    // 2. Send to staff (ONLY THEIR OWN DATA)
+    foreach ($recipients['staff'] as $staffMember) {
+        // Filter timesheet data for this staff member
+        $staffData = array_filter($allTimesheetData, function($data) use ($staffMember) {
+            return $data['user_id'] == $staffMember->id;
+        });
+
+        $staffData = array_values($staffData); // Reset array keys
+
+        if (!empty($staffData)) {
             try {
-                Mail::to($admin->email)->send(new WeeklyTimesheetMail(
-                    $allTimesheetData,  // Full data for admins
+                Log::info('Sending email to staff', [
+                    'email' => $staffMember->email, 
+                    'data_count' => count($staffData)
+                ]);
+                Mail::to($staffMember->email)->send(new WeeklyTimesheetMail(
+                    $staffData,  // Only this staff member's data
                     $dateRange,
-                    'admin',
-                    $admin->name
+                    'staff',
+                    $staffMember->name
                 ));
-                $results['sent'][] = $admin->email . ' (Admin - All Data)';
-                Log::info("Timesheet email sent to admin: {$admin->email}");
+                $results['sent'][] = $staffMember->email . ' (Staff - Own Data)';
+                Log::info("Timesheet email sent to staff: {$staffMember->email}");
             } catch (\Exception $e) {
                 $results['failed'][] = [
-                    'email' => $admin->email,
-                    'role' => 'admin',
+                    'email' => $staffMember->email,
+                    'role' => 'staff',
                     'error' => $e->getMessage()
                 ];
-                Log::error("Failed to send email to admin {$admin->email}: " . $e->getMessage());
+                Log::error("Failed to send email to staff {$staffMember->email}: " . $e->getMessage());
             }
+        } else {
+            Log::warning("No timesheet data found for staff member: {$staffMember->email}");
         }
-
-        // 2. Send to staff (ONLY THEIR OWN DATA)
-        foreach ($recipients['staff'] as $staffMember) {
-            // Filter timesheet data for this staff member
-            $staffData = array_filter($allTimesheetData, function($data) use ($staffMember) {
-                return $data['user_id'] == $staffMember->id;
-            });
-
-            if (!empty($staffData)) {
-                try {
-                    Mail::to($staffMember->email)->send(new WeeklyTimesheetMail(
-                        array_values($staffData),  // Only this staff member's data
-                        $dateRange,
-                        'staff',
-                        $staffMember->name
-                    ));
-                    $results['sent'][] = $staffMember->email . ' (Staff - Own Data)';
-                    Log::info("Timesheet email sent to staff: {$staffMember->email}");
-                } catch (\Exception $e) {
-                    $results['failed'][] = [
-                        'email' => $staffMember->email,
-                        'role' => 'staff',
-                        'error' => $e->getMessage()
-                    ];
-                    Log::error("Failed to send email to staff {$staffMember->email}: " . $e->getMessage());
-                }
-            } else {
-                Log::warning("No timesheet data found for staff member: {$staffMember->email}");
-            }
-        }
-
-        // 3. Send to contractors (ONLY THEIR OWN DATA)
-        foreach ($recipients['contractors'] as $contractor) {
-            // Filter timesheet data for this contractor
-            $contractorData = array_filter($allTimesheetData, function($data) use ($contractor) {
-                return $data['user_id'] == $contractor->id;
-            });
-
-            if (!empty($contractorData)) {
-                try {
-                    Mail::to($contractor->email)->send(new WeeklyTimesheetMail(
-                        array_values($contractorData),  // Only this contractor's data
-                        $dateRange,
-                        'contractor',
-                        $contractor->name
-                    ));
-                    $results['sent'][] = $contractor->email . ' (Contractor - Own Data)';
-                    Log::info("Timesheet email sent to contractor: {$contractor->email}");
-                } catch (\Exception $e) {
-                    $results['failed'][] = [
-                        'email' => $contractor->email,
-                        'role' => 'contractor',
-                        'error' => $e->getMessage()
-                    ];
-                    Log::error("Failed to send email to contractor {$contractor->email}: " . $e->getMessage());
-                }
-            } else {
-                Log::warning("No timesheet data found for contractor: {$contractor->email}");
-            }
-        }
-
-        return $results;
     }
+
+    // 3. Send to contractors (ONLY THEIR OWN DATA)
+    foreach ($recipients['contractors'] as $contractor) {
+        // Filter timesheet data for this contractor
+        $contractorData = array_filter($allTimesheetData, function($data) use ($contractor) {
+            return $data['user_id'] == $contractor->id;
+        });
+
+        $contractorData = array_values($contractorData); // Reset array keys
+
+        if (!empty($contractorData)) {
+            try {
+                Log::info('Sending email to contractor', [
+                    'email' => $contractor->email, 
+                    'data_count' => count($contractorData)
+                ]);
+                Mail::to($contractor->email)->send(new WeeklyTimesheetMail(
+                    $contractorData,  // Only this contractor's data
+                    $dateRange,
+                    'contractor',
+                    $contractor->name
+                ));
+                $results['sent'][] = $contractor->email . ' (Contractor - Own Data)';
+                Log::info("Timesheet email sent to contractor: {$contractor->email}");
+            } catch (\Exception $e) {
+                $results['failed'][] = [
+                    'email' => $contractor->email,
+                    'role' => 'contractor',
+                    'error' => $e->getMessage()
+                ];
+                Log::error("Failed to send email to contractor {$contractor->email}: " . $e->getMessage());
+            }
+        } else {
+            Log::warning("No timesheet data found for contractor: {$contractor->email}");
+        }
+    }
+
+    return $results;
+}
 
     /**
      * Get timesheet with pagination (Your existing method)

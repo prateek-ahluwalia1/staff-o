@@ -31,7 +31,8 @@ class WeeklyTimesheetMail extends Mailable
         Log::info('WeeklyTimesheetMail constructor', [
             'data_count' => count($timesheetData),
             'user_type' => $userType,
-            'user_name' => $userName
+            'user_name' => $userName,
+            'is_admin' => $this->isAdmin
         ]);
 
         // Generate Excel file
@@ -93,6 +94,8 @@ class WeeklyTimesheetMail extends Mailable
             Log::info('Excel file attached to email', [
                 'user_type' => $this->userType
             ]);
+        } else {
+            Log::warning('No Excel file to attach');
         }
 
         return $mail;

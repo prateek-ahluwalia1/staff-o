@@ -2,7 +2,7 @@
 
 namespace App\Exports;
 
-use Maatwebsite\Excel\Concerns\FromArray;
+use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithStyles;
 use Maatwebsite\Excel\Concerns\WithColumnWidths;
@@ -15,7 +15,7 @@ use PhpOffice\PhpSpreadsheet\Style\Fill;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
 
-class TimesheetExport implements FromArray, WithHeadings, WithStyles, WithColumnWidths, ShouldAutoSize, WithEvents
+class TimesheetExport implements FromCollection, WithHeadings, WithStyles, WithColumnWidths, ShouldAutoSize, WithEvents
 {
     private $timesheetData;
     private $dateRange;
@@ -36,26 +36,18 @@ class TimesheetExport implements FromArray, WithHeadings, WithStyles, WithColumn
         ]);
     }
 
-    public function array(): array
+    public function collection()
     {
-        $data = [];
+        $data = collect();
         
         if (empty($this->timesheetData)) {
             Log::warning('Timesheet data is empty in export');
-            return [
-                ['No data found for the selected period']
-            ];
+            return collect([['No data found for the selected period']]);
         }
 
-        // Add headers for all user types
-        $data[] = ['Shift #', 'Date', 'Start Time', 'End Time', 'Duration (Hrs)', 'Site', 'Contractor', 'Morning Hrs', 'Night Hrs', 'Weekend Hrs'];
-        
         $shiftCounter = 1;
         
         foreach ($this->timesheetData as $employee) {
-            // For Admin - Show all employees with their shifts
-            // For Staff/Contractor - Show only their shifts
-            
             if (isset($employee['shifts']) && !empty($employee['shifts'])) {
                 foreach ($employee['shifts'] as $shift) {
                     try {
@@ -67,33 +59,54 @@ class TimesheetExport implements FromArray, WithHeadings, WithStyles, WithColumn
                         $weekend = ($breakdown['saturday_morning'] ?? 0) + ($breakdown['saturday_night'] ?? 0) + 
                                   ($breakdown['sunday_morning'] ?? 0) + ($breakdown['sunday_night'] ?? 0);
                         
-                        $data[] = [
-                            'Shift ' . $shiftCounter++,
-                            $start->format('d/m/Y'),
-                            $start->format('H:i'),
-                            $end->format('H:i'),
-                            number_format($start->diffInHours($end), 2),
-                            $shift['site_name'] ?? 'N/A',
-                            $shift['contractor_name'] ?? 'N/A',
-                            number_format($breakdown['morning'] ?? 0, 2),
-                            number_format($breakdown['night'] ?? 0, 2),
-                            number_format($weekend, 2)
-                        ];
+                        $data->push([
+                            'Shift #' => 'Shift ' . $shiftCounter++,
+                            'Date' => $start->format('d/m/Y'),
+                            'Start Time' => $start->format('H:i'),
+                            'End Time' => $end->format('H:i'),
+                            'Duration (Hrs)' => number_format($start->diffInHours($end), 2),
+                            'Site' => $shift['site_name'] ?? 'N/A',
+                            'Contractor' => $shift['contractor_name'] ?? 'N/A',
+                            'Morning Hrs' => number_format($breakdown['morning'] ?? 0, 2),
+                            'Night Hrs' => number_format($breakdown['night'] ?? 0, 2),
+                            'Weekend Hrs' => number_format($weekend, 2)
+                        ]);
                     } catch (\Exception $e) {
                         Log::error('Error processing shift', [
                             'shift' => $shift,
                             'error' => $e->getMessage()
                         ]);
-                        $data[] = [
-                            'Shift ' . $shiftCounter++,
-                            'Invalid data',
-                            '', '', '', '', '', '', '', ''
-                        ];
+                        $data->push([
+                            'Shift #' => 'Shift ' . $shiftCounter++,
+                            'Date' => 'Invalid data',
+                            'Start Time' => '',
+                            'End Time' => '',
+                            'Duration (Hrs)' => '',
+                            'Site' => '',
+                            'Contractor' => '',
+                            'Morning Hrs' => '',
+                            'Night Hrs' => '',
+                            'Weekend Hrs' => ''
+                        ]);
                     }
                 }
-            } else {
-                $data[] = ['No shifts found', '', '', '', '', '', '', '', '', ''];
             }
+        }
+
+        // If no data found, add a message
+        if ($data->isEmpty()) {
+            $data->push([
+                'Shift #' => 'No shifts found',
+                'Date' => '',
+                'Start Time' => '',
+                'End Time' => '',
+                'Duration (Hrs)' => '',
+                'Site' => '',
+                'Contractor' => '',
+                'Morning Hrs' => '',
+                'Night Hrs' => '',
+                'Weekend Hrs' => ''
+            ]);
         }
 
         return $data;
@@ -152,9 +165,11 @@ class TimesheetExport implements FromArray, WithHeadings, WithStyles, WithColumn
             AfterSheet::class => function(AfterSheet $event) {
                 $sheet = $event->sheet->getDelegate();
                 $highestRow = $sheet->getHighestRow();
-                $highestColumn = $sheet->getHighestColumn();
-
-                // Add title
+                
+                // Add title and info rows
+                $sheet->insertNewRowBefore(1, 6);
+                
+                // Title
                 $sheet->mergeCells('A1:J1');
                 $sheet->setCellValue('A1', 'WEEKLY TIMESHEET REPORT');
                 $sheet->getStyle('A1:J1')->applyFromArray([
@@ -188,19 +203,26 @@ class TimesheetExport implements FromArray, WithHeadings, WithStyles, WithColumn
                     'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER]
                 ]);
 
-                // Style the headers row (row 6)
+                // Empty row
+                $sheet->mergeCells('A5:J5');
+                $sheet->setCellValue('A5', '');
+                
+                // Now headings are at row 6
                 $sheet->getStyle('A6:J6')->applyFromArray([
                     'font' => ['bold' => true, 'size' => 11, 'color' => ['argb' => 'FFFFFFFF']],
                     'fill' => [
                         'fillType' => Fill::FILL_SOLID,
                         'startColor' => ['argb' => 'FF2196F3']
                     ],
-                    'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER]
+                    'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER]
                 ]);
 
                 // Apply borders to all data rows
-                if ($highestRow >= 6) {
-                    $sheet->getStyle('A6:J' . $highestRow)->applyFromArray([
+                $startRow = 6;
+                $endRow = $sheet->getHighestRow();
+                
+                if ($endRow >= $startRow) {
+                    $sheet->getStyle('A6:J' . $endRow)->applyFromArray([
                         'borders' => [
                             'allBorders' => [
                                 'borderStyle' => Border::BORDER_THIN,
@@ -210,7 +232,7 @@ class TimesheetExport implements FromArray, WithHeadings, WithStyles, WithColumn
                     ]);
 
                     // Alternate row colors for better readability
-                    for ($row = 7; $row <= $highestRow; $row++) {
+                    for ($row = 7; $row <= $endRow; $row++) {
                         if ($row % 2 == 0) {
                             $sheet->getStyle('A' . $row . ':J' . $row)->applyFromArray([
                                 'fill' => [
@@ -220,6 +242,10 @@ class TimesheetExport implements FromArray, WithHeadings, WithStyles, WithColumn
                             ]);
                         }
                     }
+                    
+                    // Center align all data
+                    $sheet->getStyle('A7:J' . $endRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+                    $sheet->getStyle('A7:J' . $endRow)->getAlignment()->setVertical(Alignment::VERTICAL_CENTER);
                 }
 
                 // Auto-size columns
@@ -230,9 +256,18 @@ class TimesheetExport implements FromArray, WithHeadings, WithStyles, WithColumn
                 // Freeze the header row
                 $sheet->freezePane('A7');
 
+                // Set row heights
+                $sheet->getRowDimension(1)->setRowHeight(30);
+                $sheet->getRowDimension(6)->setRowHeight(25);
+                
+                for ($row = 7; $row <= $endRow; $row++) {
+                    $sheet->getRowDimension($row)->setRowHeight(20);
+                }
+
                 Log::info('Excel styling completed', [
-                    'total_rows' => $highestRow,
-                    'user_type' => $this->userType
+                    'total_rows' => $endRow,
+                    'user_type' => $this->userType,
+                    'user_name' => $this->userName
                 ]);
             },
         ];

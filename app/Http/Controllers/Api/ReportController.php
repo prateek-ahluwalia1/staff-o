@@ -10,8 +10,12 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Services\ReportPdfService;
 use Carbon\Carbon;
+use App\Models\User;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\WeeklyTimesheetMail;
 use App\Models\JobRoster;
 use App\Models\Payrate;
+use Illuminate\Support\Facades\Log;
 
 class ReportController extends Controller
 {
@@ -26,7 +30,7 @@ class ReportController extends Controller
                 'status' => $request->status
             ]);
         }
-        // $filename = time().'_job_tracker_report.xlsx';  
+        $filename = time().'_job_tracker_report.xlsx';  
         // Excel::store(new JobtrackerReportExport, 'excel/guard/'.$filename, 'excels');
         return response()->json(['success' =>  true, 'message' => 'Report generate successfully.','path' => 'https://'.request()->getHttpHost().'/excel/guard/'.$filename]);
     }
@@ -246,188 +250,6 @@ class ReportController extends Controller
             'data' => $statuses
         ]);
     }
-
-    //  public function getPaysheet(Request $request)
-    // {
-    //     $limit = 10;
-    //     $offset = 0;
-    //     if ($request->has('pageIndex') && $request->has('pageSize')) {
-    //         $offset = $request->pageIndex * $request->pageSize;
-    //         $limit  = $request->pageSize;
-    //     }
- 
-    //     // Date range
-    //     if ($request->has('start') && $request->start != '') {
-    //         $start = dbFormate($request->start);
-    //     } else {
-    //         $start = Carbon::now()->startOfWeek()->toDateString();
-    //     }
-    //     if ($request->has('end') && $request->end != '') {
-    //         $end = dbFormate($request->end);
-    //     } else {
-    //         $end = Carbon::now()->endOfWeek()->toDateString();
-    //     }
- 
-    //     // Base query
-    //     $baseQuery = JobRoster::query()
-    //         ->leftJoin('users',  'users.id',  '=', 'job_rosters.assigned_to')
-    //         ->leftJoin('sites',  'sites.id',  '=', 'job_rosters.site_id')
-    //         ->leftJoin('users as customers', 'customers.id', '=', 'sites.user_id')
-    //         ->whereNotNull('job_rosters.assigned_to')
-    //         ->whereDate('job_rosters.start', '>=', $start)
-    //         ->whereDate('job_rosters.start', '<=', $end);
- 
-    //     // Optional filters
-    //     // if ($request->filled('guard_id')) {
-    //     //     $baseQuery->whereIn('job_rosters.assigned_to', $request->guard_id);
-    //     // }
-    //     // if ($request->filled('customer_ids')) {
-    //     //     $siteIds = Site::whereIn('user_id', $request->customer_ids)->pluck('id')->toArray();
-    //     //     $baseQuery->whereIn('job_rosters.site_id', $siteIds);
-    //     // }
-    //     // if ($request->filled('sites_ids')) {
-    //     //     $baseQuery->whereIn('job_rosters.site_id', $request->sites_ids);
-    //     // }
- 
-    //     $shifts = $baseQuery->select([
-    //         'job_rosters.id          as shift_id',
-    //         'job_rosters.start',
-    //         'job_rosters.end',
-    //         'job_rosters.hours',
-    //         'job_rosters.in_paysheet',
-    //         'job_rosters.morning_hours',
-    //         'job_rosters.night_hours',
-    //         'job_rosters.saturday_morning_hours',
-    //         'job_rosters.saturday_night_hours',
-    //         'job_rosters.sunday_morning_hours',
-    //         'job_rosters.sunday_night_hours',
-    //         'job_rosters.ph_morning_hours',
-    //         'job_rosters.ph_night_hours',
-    //         'users.id                as user_id',
-    //         'users.name              as staff_name',
-    //         'users.phone             as staff_phone',
-    //         // 'users.employment_type   as staff_type',
-    //         'sites.id                as site_id',
-    //         'sites.site_name              as site_name',
-    //         // 'sites.level             as site_level',
-    //         'sites.state             as state',
-    //         'customers.name          as customer_name',
-    //     ])
-    //     ->orderBy('users.name')
-    //     ->orderBy('job_rosters.start')
-    //     ->get();
- 
-    //     // Pre-load all charge rates keyed by site_level (charge_rates.id = 1 per site level)
-    //     // Adjust the query below if your charge_rates table uses a different key.
-    //     $chargeRates = ChargeRate::where('id', 1)->get();
-    //         // ->keyBy('site_level'); // keyed by site level so lookup is O(1)
- 
-    //     // Build per-employee grouped structure
-    //     $mainArr = [];
- 
-    //     foreach ($shifts as $shift) {
-    //         $userId = $shift->user_id;
- 
-    //         // Recalculate hour breakdowns fresh (same helper used in timesheet)
-    //         $jobHours = getShiftHours(
-    //             date('m/d/Y H:i', strtotime($shift->start)),
-    //             date('m/d/Y H:i', strtotime($shift->end))
-    //         );
- 
-    //         // Resolve charge rate for this shift's site level
-    //         $rate      = $chargeRates->get($shift->site_level);
-    //         $mfDay     = $rate ? (float) $rate->mf_morning_rate  : 0;
-    //         $mfNight   = $rate ? (float) $rate->mf_night_rate    : 0;
-    //         $satMorn   = $rate ? (float) $rate->saturday_morning_rate : 0;
-    //         $satNight  = $rate ? (float) $rate->saturday_night_rate   : 0;
-    //         $sunMorn   = $rate ? (float) $rate->sunday_morning_rate   : 0;
-    //         $sunNight  = $rate ? (float) $rate->sunday_night_rate     : 0;
-    //         $phMorn    = $rate ? (float) $rate->ph_morning_rate   : 0;
-    //         $phNight   = $rate ? (float) $rate->ph_night_rate     : 0;
- 
-    //         // Per-shift gross
-    //         $shiftGross = $this->calculateGross($jobHours, $mfDay, $mfNight, $satMorn, $satNight, $sunMorn, $sunNight, $phMorn, $phNight);
- 
-    //         // Shift row (used inside shift_collection for detail view)
-    //         $shiftRow = [
-    //             'shift_id'               => $shift->shift_id,
-    //             'state'                  => $shift->state,
-    //             'site_name'              => $shift->site_name,
-    //             'site_level'             => $shift->site_level,
-    //             'date'                   => date('d-m-Y', strtotime($shift->start)),
-    //             'shift_start'            => date('H:i', strtotime($shift->start)),
-    //             'shift_end'              => date('H:i', strtotime($shift->end)),
-    //             'sign_in'                => $shift->sign_in  ?? '-',
-    //             'sign_out'               => $shift->sign_out ?? '-',
-    //             'hours'                  => (float) $shift->hours,
-    //             'morning_hours'          => (float) $jobHours['morning'],
-    //             'mf_day_rate'            => $mfDay,
-    //             'night_hours'            => (float) $jobHours['night'],
-    //             'mf_night_rate'          => $mfNight,
-    //             'saturday_morning_hours' => (float) $jobHours['saturday_morning'],
-    //             'saturday_morning_rate'  => $satMorn,
-    //             'saturday_night_hours'   => (float) $jobHours['saturday_night'],
-    //             'saturday_night_rate'    => $satNight,
-    //             'sunday_morning_hours'   => (float) $jobHours['sunday_morning'],
-    //             'sunday_morning_rate'    => $sunMorn,
-    //             'sunday_night_hours'     => (float) $jobHours['sunday_night'],
-    //             'sunday_night_rate'      => $sunNight,
-    //             'ph_morning_hours'       => (float) $jobHours['ph_morning'],
-    //             'ph_morning_rate'        => $phMorn,
-    //             'ph_night_hours'         => (float) $jobHours['ph_night'],
-    //             'ph_night_rate'          => $phNight,
-    //             'gross_amount'           => round($shiftGross, 4),
-    //         ];
- 
-    //         if (!isset($mainArr[$userId])) {
-    //             $mainArr[$userId] = [
-    //                 'user_id'                => $userId,
-    //                 'staff_name'             => $shift->staff_name,
-    //                 'staff_phone'            => $shift->staff_phone ?? '',
-    //                 'staff_type'             => $shift->staff_type  ?? '',
-    //                 'customer_name'          => $shift->customer_name ?? '',
-    //                 // Aggregated hour totals
-    //                 'total_hours'            => (float) $shift->hours,
-    //                 'total_morning_hours'    => (float) $jobHours['morning'],
-    //                 'total_night_hours'      => (float) $jobHours['night'],
-    //                 'total_saturday_morning' => (float) $jobHours['saturday_morning'],
-    //                 'total_saturday_night'   => (float) $jobHours['saturday_night'],
-    //                 'total_sunday_morning'   => (float) $jobHours['sunday_morning'],
-    //                 'total_sunday_night'     => (float) $jobHours['sunday_night'],
-    //                 'total_ph_morning'       => (float) $jobHours['ph_morning'],
-    //                 'total_ph_night'         => (float) $jobHours['ph_night'],
-    //                 'total_gross'            => round($shiftGross, 4),
-    //                 'shift_collection'       => [$shiftRow],
-    //             ];
-    //         } else {
-    //             $mainArr[$userId]['total_hours']            += (float) $shift->hours;
-    //             $mainArr[$userId]['total_morning_hours']    += (float) $jobHours['morning'];
-    //             $mainArr[$userId]['total_night_hours']      += (float) $jobHours['night'];
-    //             $mainArr[$userId]['total_saturday_morning'] += (float) $jobHours['saturday_morning'];
-    //             $mainArr[$userId]['total_saturday_night']   += (float) $jobHours['saturday_night'];
-    //             $mainArr[$userId]['total_sunday_morning']   += (float) $jobHours['sunday_morning'];
-    //             $mainArr[$userId]['total_sunday_night']     += (float) $jobHours['sunday_night'];
-    //             $mainArr[$userId]['total_ph_morning']       += (float) $jobHours['ph_morning'];
-    //             $mainArr[$userId]['total_ph_night']         += (float) $jobHours['ph_night'];
-    //             $mainArr[$userId]['total_gross']            += round($shiftGross, 4);
-    //             $mainArr[$userId]['shift_collection'][]      = $shiftRow;
-    //         }
-    //     }
- 
-    //     $paysheet      = array_values($mainArr);
-    //     $total         = count($paysheet);
-    //     $paginatedData = array_slice($paysheet, $offset, $limit);
- 
-    //     return response()->json([
-    //         'success'   => count($paginatedData) > 0,
-    //         'code'      => 200,
-    //         'length'    => $total,
-    //         'pageIndex' => $request->pageIndex ?? 0,
-    //         'pageSize'  => $limit,
-    //         'message'   => count($paginatedData) > 0 ? 'Paysheet found.' : 'No paysheet found!',
-    //         'data'      => $paginatedData,
-    //     ]);
-    // }
  
     // -------------------------------------------------------------------------
     // Export paysheet to Excel (matches the uploaded report format exactly)
@@ -638,4 +460,462 @@ $results = DB::table('job_rosters AS jr')
 return $results;
     
 }
+//timesheet job
+   public function sendWeeklyTimesheetEmails()
+    {
+        try {
+            // Get previous week's date range (Monday to Sunday)
+            $start = Carbon::now()->subWeek()->startOfWeek()->toDateString();
+            $end = Carbon::now()->subWeek()->endOfWeek()->toDateString();
+
+            Log::info('Generating weekly timesheet report', [
+                'start' => $start,
+                'end' => $end
+            ]);
+
+            // Get all timesheet data for previous week
+            $allTimesheetData = $this->getWeeklyTimesheetData($start, $end);
+
+            if (empty($allTimesheetData)) {
+                Log::info('No timesheet data found for previous week: ' . $start . ' to ' . $end);
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No timesheet data found for previous week'
+                ]);
+            }
+
+            // Get recipients who worked in the previous week
+            $recipients = $this->getEmailRecipients($start, $end);
+
+            // Log recipient counts
+            Log::info('Email recipients found', [
+                'admins' => count($recipients['admins']),
+                'staff' => count($recipients['staff']),
+                'contractors' => count($recipients['contractors'])
+            ]);
+
+            // Send emails to each recipient group
+            $emailResults = $this->sendTimesheetEmails($recipients, $allTimesheetData, $start, $end);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Weekly timesheet emails sent successfully',
+                'data' => $emailResults
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error sending weekly timesheet emails: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to send weekly timesheet emails',
+                'error' => $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * Get weekly timesheet data
+     */
+    private function getWeeklyTimesheetData($start, $end)
+    {
+        $baseQuery = JobRoster::query()
+            ->whereDate('job_rosters.start', '>=', $start)
+            ->whereDate('job_rosters.start', '<=', $end)
+            ->whereNotNull('job_rosters.assigned_to');
+
+        $timesheet = $baseQuery
+            ->leftJoin('users', 'users.id', '=', 'job_rosters.assigned_to')
+            ->leftJoin('sites', 'sites.id', '=', 'job_rosters.site_id')
+            ->leftJoin('users as contractors', 'contractors.id', '=', 'job_rosters.accepted_by')
+            ->select(
+                'job_rosters.id as shift_id',
+                'job_rosters.start',
+                'job_rosters.end',
+                'users.id as user_id',
+                'users.name',
+                'users.email as user_email',
+                'job_rosters.in_paysheet',
+                'job_rosters.morning_hours',
+                'job_rosters.night_hours',
+                'job_rosters.saturday_morning_hours',
+                'job_rosters.saturday_night_hours',
+                'job_rosters.sunday_morning_hours',
+                'job_rosters.sunday_night_hours',
+                'job_rosters.ph_morning_hours',
+                'job_rosters.ph_night_hours',
+                'job_rosters.hours',
+                'job_rosters.site_id',
+                'sites.name as site_name',
+                'job_rosters.accepted_by',
+                'contractors.name as contractor_name'
+            )
+            ->orderBy('users.name')
+            ->orderBy('job_rosters.start')
+            ->get();
+
+        // Group by user
+        $groupedData = [];
+        foreach ($timesheet as $shift) {
+            $userId = $shift['user_id'];
+            
+            // Get shift hours breakdown
+            $job_hours = getShiftHours(
+                date('m/d/Y H:i', strtotime($shift['start'])),
+                date('m/d/Y H:i', strtotime($shift['end']))
+            );
+
+            if (!isset($groupedData[$userId])) {
+                $groupedData[$userId] = [
+                    'user_id' => $shift['user_id'],
+                    'name' => $shift['name'],
+                    'email' => $shift['user_email'],
+                    'total_hours' => (float)$shift['hours'],
+                    'morning_hours' => (float)$job_hours['morning'],
+                    'night_hours' => (float)$job_hours['night'],
+                    'saturday_morning_hours' => (float)$job_hours['saturday_morning'],
+                    'saturday_night_hours' => (float)$job_hours['saturday_night'],
+                    'sunday_morning_hours' => (float)$job_hours['sunday_morning'],
+                    'sunday_night_hours' => (float)$job_hours['sunday_night'],
+                    'ph_morning_hours' => (float)$job_hours['ph_morning'],
+                    'ph_night_hours' => (float)$job_hours['ph_night'],
+                    'shifts' => []
+                ];
+            } else {
+                $groupedData[$userId]['total_hours'] += (float)$shift['hours'];
+                $groupedData[$userId]['morning_hours'] += (float)$job_hours['morning'];
+                $groupedData[$userId]['night_hours'] += (float)$job_hours['night'];
+                $groupedData[$userId]['saturday_morning_hours'] += (float)$job_hours['saturday_morning'];
+                $groupedData[$userId]['saturday_night_hours'] += (float)$job_hours['saturday_night'];
+                $groupedData[$userId]['sunday_morning_hours'] += (float)$job_hours['sunday_morning'];
+                $groupedData[$userId]['sunday_night_hours'] += (float)$job_hours['sunday_night'];
+                $groupedData[$userId]['ph_morning_hours'] += (float)$job_hours['ph_morning'];
+                $groupedData[$userId]['ph_night_hours'] += (float)$job_hours['ph_night'];
+            }
+
+            // Add shift details
+            $groupedData[$userId]['shifts'][] = [
+                'shift_id' => $shift['shift_id'],
+                'start' => $shift['start'],
+                'end' => $shift['end'],
+                'site_id' => $shift['site_id'],
+                'site_name' => $shift['site_name'],
+                'accepted_by' => $shift['accepted_by'],
+                'contractor_name' => $shift['contractor_name'],
+                'hours_breakdown' => $job_hours
+            ];
+        }
+
+        return array_values($groupedData);
+    }
+
+    /**
+     * Get email recipients who worked in the previous week
+     */
+    private function getEmailRecipients($start, $end)
+    {
+        // Get all users who had shifts in the previous week
+        $usersWithShifts = JobRoster::query()
+            ->whereDate('job_rosters.start', '>=', $start)
+            ->whereDate('job_rosters.start', '<=', $end)
+            ->whereNotNull('job_rosters.assigned_to')
+            ->distinct()
+            ->pluck('job_rosters.assigned_to')
+            ->toArray();
+
+        // Get all contractors who accepted shifts in the previous week
+        $contractorsWithShifts = JobRoster::query()
+            ->whereDate('job_rosters.start', '>=', $start)
+            ->whereDate('job_rosters.start', '<=', $end)
+            ->whereNotNull('job_rosters.accepted_by')
+            ->distinct()
+            ->pluck('job_rosters.accepted_by')
+            ->toArray();
+
+        // Get admin users (always get admins, they need the report)
+        // $admins = User::where('user_type', 'admin')->get();
+        
+        // Get staff users who had shifts in the previous week
+        // $staff = User::whereIn('id', $usersWithShifts)
+        //     ->where('user_type', 'staff')
+        //     ->get();
+
+        $staff = User::where('id', 324)
+            ->where('user_type', 'staff')
+            ->get();
+        // Get contractors who accepted shifts in the previous week
+        // $contractors = User::whereIn('id', $contractorsWithShifts)
+        //     ->where('user_type', 'contractor')
+        //     ->get();
+
+        return [
+            // 'admins' => $admins,
+            'staff' => $staff,
+            // 'contractors' => $contractors
+        ];
+    }
+
+    /**
+     * Send timesheet emails to all recipients
+     */
+    private function sendTimesheetEmails($recipients, $allTimesheetData, $start, $end)
+    {
+        $results = [
+            'sent' => [],
+            'failed' => [],
+            'summary' => [
+                'total_admins' => count($recipients['admins']),
+                'total_staff' => count($recipients['staff']),
+                'total_contractors' => count($recipients['contractors'])
+            ]
+        ];
+
+        // Format date range for email subject
+        $dateRange = Carbon::parse($start)->format('M d, Y') . ' - ' . Carbon::parse($end)->format('M d, Y');
+
+        // 1. Send to administrators (ALL DATA)
+        foreach ($recipients['admins'] as $admin) {
+            try {
+                Mail::to($admin->email)->send(new WeeklyTimesheetMail(
+                    $allTimesheetData,  // Full data for admins
+                    $dateRange,
+                    'admin',
+                    $admin->name
+                ));
+                $results['sent'][] = $admin->email . ' (Admin - All Data)';
+                \Log::info("Timesheet email sent to admin: {$admin->email}");
+            } catch (\Exception $e) {
+                $results['failed'][] = [
+                    'email' => $admin->email,
+                    'role' => 'admin',
+                    'error' => $e->getMessage()
+                ];
+                \Log::error("Failed to send email to admin {$admin->email}: " . $e->getMessage());
+            }
+        }
+
+        // 2. Send to staff (ONLY THEIR OWN DATA)
+        foreach ($recipients['staff'] as $staffMember) {
+            // Filter timesheet data for this staff member
+            $staffData = array_filter($allTimesheetData, function($data) use ($staffMember) {
+                return $data['user_id'] == $staffMember->id;
+            });
+
+            if (!empty($staffData)) {
+                try {
+                    Mail::to($staffMember->email)->send(new WeeklyTimesheetMail(
+                        array_values($staffData),  // Only this staff member's data
+                        $dateRange,
+                        'staff',
+                        $staffMember->name
+                    ));
+                    $results['sent'][] = $staffMember->email . ' (Staff - Own Data)';
+                    \Log::info("Timesheet email sent to staff: {$staffMember->email}");
+                } catch (\Exception $e) {
+                    $results['failed'][] = [
+                        'email' => $staffMember->email,
+                        'role' => 'staff',
+                        'error' => $e->getMessage()
+                    ];
+                    \Log::error("Failed to send email to staff {$staffMember->email}: " . $e->getMessage());
+                }
+            } else {
+                \Log::warning("No timesheet data found for staff member: {$staffMember->email}");
+            }
+        }
+
+        // 3. Send to contractors (ONLY THEIR OWN DATA)
+        foreach ($recipients['contractors'] as $contractor) {
+            // Filter timesheet data for this contractor
+            $contractorData = array_filter($allTimesheetData, function($data) use ($contractor) {
+                return $data['user_id'] == $contractor->id;
+            });
+
+            if (!empty($contractorData)) {
+                try {
+                    Mail::to($contractor->email)->send(new WeeklyTimesheetMail(
+                        array_values($contractorData),  // Only this contractor's data
+                        $dateRange,
+                        'contractor',
+                        $contractor->name
+                    ));
+                    $results['sent'][] = $contractor->email . ' (Contractor - Own Data)';
+                    \Log::info("Timesheet email sent to contractor: {$contractor->email}");
+                } catch (\Exception $e) {
+                    $results['failed'][] = [
+                        'email' => $contractor->email,
+                        'role' => 'contractor',
+                        'error' => $e->getMessage()
+                    ];
+                    \Log::error("Failed to send email to contractor {$contractor->email}: " . $e->getMessage());
+                }
+            } else {
+                \Log::warning("No timesheet data found for contractor: {$contractor->email}");
+            }
+        }
+
+        return $results;
+    }
+
+    /**
+     * Get timesheet with pagination (Your existing method)
+     */
+    public function getTimesheet(Request $request)
+    {
+        $limit = 10;
+        $offset = 0;
+        if ($request->has('pageIndex') && $request->has('pageSize')) {
+            $offset = $request->pageIndex * $request->pageSize;
+            $limit = $request->pageSize;
+        }
+
+        // Build base query
+        $baseQuery = JobRoster::query();
+
+        if ($request->has('start') && $request->start != '') {
+            $start = dbFormate($request->start);
+        } else {
+            $start = Carbon::now()->startOfWeek()->toDateString();
+        }
+        if ($request->has('end') && $request->end != '') {
+            $end = dbFormate($request->end);
+        } else {
+            $end = Carbon::now()->endOfWeek()->toDateString();
+        }
+
+        // Apply filters
+        if ($request->has('guard_ids') && !empty($request->guard_ids)) {
+            $baseQuery->whereIn('job_rosters.assigned_to', $request->guard_ids);
+        }
+        
+        if ($request->has('contractor_ids') && !empty($request->contractor_ids)) {
+            $baseQuery->whereIn('job_rosters.accepted_by', $request->contractor_ids);
+        }
+
+        if ($request->has('customer_ids') && !empty($request->customer_ids)) {
+            $sites_id = Site::whereIn('user_id', $request->customer_ids)->pluck('id')->toArray();
+            $baseQuery->whereIn('job_rosters.site_id', $sites_id);
+        }
+
+        if ($request->has('sites_ids') && !empty($request->sites_ids)) {
+            $baseQuery->whereIn('job_rosters.site_id', $request->sites_ids);
+        }
+
+        // Apply date filters
+        $baseQuery->whereDate('job_rosters.start', '>=', $start)
+            ->whereDate('job_rosters.start', '<=', $end)
+            ->whereNotNull('job_rosters.assigned_to');
+
+        // Get total count
+        $totalQuery = clone $baseQuery;
+        $total = $totalQuery->count('job_rosters.id');
+
+        // Get the timesheet data with proper grouping
+        $timesheet = $baseQuery
+            ->leftJoin('users', 'users.id', '=', 'job_rosters.assigned_to')
+            ->select(
+                'job_rosters.id as shift_id',
+                'job_rosters.start',
+                'job_rosters.end',
+                'users.id as user_id',
+                'users.name',
+                'job_rosters.in_paysheet',
+                'job_rosters.morning_hours',
+                'job_rosters.night_hours',
+                'job_rosters.saturday_morning_hours',
+                'job_rosters.saturday_night_hours',
+                'job_rosters.sunday_morning_hours',
+                'job_rosters.sunday_night_hours',
+                'job_rosters.ph_morning_hours',
+                'job_rosters.ph_night_hours',
+                'job_rosters.hours'
+            )
+            ->orderBy('users.name')
+            ->orderBy('job_rosters.start')
+            ->get();
+
+        // Process the results to group by user
+        $mainArr = [];
+        foreach ($timesheet as $shift) {
+            $userId = $shift['user_id'];
+
+            // Get shift hours breakdown
+            $job_hours = getShiftHours(
+                date('m/d/Y H:i', strtotime($shift['start'])),
+                date('m/d/Y H:i', strtotime($shift['end']))
+            );
+
+            if (!isset($mainArr[$userId])) {
+                $mainArr[$userId] = [
+                    'id' => $shift['user_id'],
+                    'name' => $shift['name'],
+                    'hours' => (float)$shift['hours'],
+                    'morning_hours' => (float)$job_hours['morning'],
+                    'night_hours' => (float)$job_hours['night'],
+                    'saturday_morning_hours' => (float)$job_hours['saturday_morning'],
+                    'saturday_night_hours' => (float)$job_hours['saturday_night'],
+                    'sunday_morning_hours' => (float)$job_hours['sunday_morning'],
+                    'sunday_night_hours' => (float)$job_hours['sunday_night'],
+                    'ph_morning_hours' => (float)$job_hours['ph_morning'],
+                    'ph_night_hours' => (float)$job_hours['ph_night'],
+                    'shift_collection' => [$shift['shift_id']],
+                ];
+            } else {
+                // Update the aggregated values
+                $mainArr[$userId]['hours'] += (float)$shift['hours'];
+                $mainArr[$userId]['morning_hours'] += (float)$job_hours['morning'];
+                $mainArr[$userId]['night_hours'] += (float)$job_hours['night'];
+                $mainArr[$userId]['saturday_morning_hours'] += (float)$job_hours['saturday_morning'];
+                $mainArr[$userId]['saturday_night_hours'] += (float)$job_hours['saturday_night'];
+                $mainArr[$userId]['sunday_morning_hours'] += (float)$job_hours['sunday_morning'];
+                $mainArr[$userId]['sunday_night_hours'] += (float)$job_hours['sunday_night'];
+                $mainArr[$userId]['ph_morning_hours'] += (float)$job_hours['ph_morning'];
+                $mainArr[$userId]['ph_night_hours'] += (float)$job_hours['ph_night'];
+                $mainArr[$userId]['shift_collection'][] = $shift['shift_id'];
+            }
+        }
+
+        $timesheet = array_values($mainArr);
+
+        // Apply pagination to the processed array
+        $paginatedData = array_slice($timesheet, $offset, $limit);
+        $total = count($timesheet);
+
+        if (count($paginatedData) > 0) {
+            return response()->json([
+                'success' => true,
+                'code' => 200,
+                'length' => $total,
+                'pageIndex' => $request->pageIndex ?? 0,
+                'pageSize' => $limit,
+                'message' => 'Timesheet found.',
+                'data' => $paginatedData
+            ]);
+        } else {
+            return response()->json([
+                'success' => false,
+                'code' => 200,
+                'length' => $total,
+                'pageIndex' => $request->pageIndex ?? 0,
+                'pageSize' => $limit,
+                'message' => 'No timesheet found!',
+                'data' => $paginatedData
+            ]);
+        }
+    }
+
+    /**
+     * Get timesheet details (Your existing method)
+     */
+    public function getTimeSheetDetails(Request $request)
+    {
+        $rosters = JobRoster::whereIn('id', $request->shift_collection)
+            ->with(['site', 'guards', 'customer', 'rosterActivity'])->get();
+
+        $data = $rosters;
+        if (count($data) > 0) {
+            return response()->json(['success' => true, 'data' => $data]);
+        }
+        return response()->json(['success' => false, 'data' => $data]);
+    }
+
 }

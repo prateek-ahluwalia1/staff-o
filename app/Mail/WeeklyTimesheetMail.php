@@ -5,7 +5,8 @@ namespace App\Mail;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Queue\SerializesModels;
-use Carbon\Carbon;
+use Illuminate\Mail\Mailables\Attachment;
+use App\Exports\TimesheetExport;
 
 class WeeklyTimesheetMail extends Mailable
 {
@@ -16,6 +17,7 @@ class WeeklyTimesheetMail extends Mailable
     public $userType;
     public $userName;
     public $isAdmin;
+    public $excelFile;
 
     public function __construct($timesheetData, $dateRange, $userType, $userName)
     {
@@ -24,6 +26,10 @@ class WeeklyTimesheetMail extends Mailable
         $this->userType = $userType;
         $this->userName = $userName;
         $this->isAdmin = ($userType == 'admin');
+        
+        // Generate Excel file
+        $export = new TimesheetExport($timesheetData, $dateRange, $userType, $userName);
+        $this->excelFile = $export->generate();
     }
 
     public function build()
@@ -45,6 +51,10 @@ class WeeklyTimesheetMail extends Mailable
                         'totalHours' => $this->calculateTotalHours(),
                         'totalShifts' => $this->calculateTotalShifts(),
                         'employeeCount' => count($this->timesheetData)
+                    ])
+                    ->attach($this->excelFile, [
+                        'as' => 'timesheet_report_' . now()->format('d_m_Y') . '.xlsx',
+                        'mime' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
                     ]);
     }
 
@@ -64,5 +74,13 @@ class WeeklyTimesheetMail extends Mailable
             $total += count($data['shifts']);
         }
         return $total;
+    }
+
+    public function __destruct()
+    {
+        // Clean up temporary file
+        if ($this->excelFile && file_exists($this->excelFile)) {
+            unlink($this->excelFile);
+        }
     }
 }

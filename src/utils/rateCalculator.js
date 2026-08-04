@@ -12,10 +12,8 @@ export function getSlot(hour) {
 const SEGMENT_LABELS = {
   weekday_day: "Mon–Fri (Day 06:00–18:00)",
   weekday_night: "Mon–Fri (Night 18:00–06:00)",
-  sat_day: "Saturday (Day 06:00–18:00)",
-  sat_night: "Saturday (Night 18:00–06:00)",
-  sun_day: "Sunday (Day 06:00–18:00)",
-  sun_night: "Sunday (Night 18:00–06:00)",
+  sat_all: "Saturday",
+  sun_all: "Sunday",
 };
 
 function nextBoundary(t) {
@@ -85,7 +83,11 @@ export function computeShiftBreakdown(scheduleDays, rates = null) {
       while (t < end) {
         const boundary = nextBoundary(t);
         const segEnd = boundary < end ? boundary : end;
-        const key = `${getDayType(t)}_${getSlot(t.getHours())}`;
+
+        const dayType = getDayType(t);
+        // Force weekends into "all" instead of calculating day/night
+        const slot = (dayType === "sat" || dayType === "sun") ? "all" : getSlot(t.getHours());
+        const key = `${dayType}_${slot}`;
 
         const segHours = (segEnd - t) / 3_600_000;
         const billableHours = segHours * guards;
@@ -109,10 +111,13 @@ export function computeShiftBreakdown(scheduleDays, rates = null) {
   const segments = keyOrder.map((key) => {
     const [dayType, slot] = key.split("_");
 
-    // Apply strict rounding mathematically instead of string toFixed
     const billableHours = roundToTwo(hoursMap.get(key));
-    const payRate = rates.pay[dayType]?.[slot] ?? 0;
-    const chargeRate = rates.charge[dayType]?.[slot] ?? 0;
+
+    // For weekends ("all"), safely fallback to the "day" rate value from your API map
+    const actualSlot = slot === "all" ? "day" : slot;
+
+    const payRate = rates.pay[dayType]?.[actualSlot] ?? 0;
+    const chargeRate = rates.charge[dayType]?.[actualSlot] ?? 0;
 
     const payAmt = roundToTwo(payRate * billableHours);
     const chargeAmt = roundToTwo(chargeRate * billableHours);

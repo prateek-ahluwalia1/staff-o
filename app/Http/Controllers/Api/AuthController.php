@@ -682,18 +682,18 @@ class AuthController extends Controller
         ]);
 
         // Create document placeholders — same as your registerContractor()
-        $document_categories = DocumentCategory::where('document_category', 'contractor_document')->first();
+        // $document_categories = DocumentCategory::where('document_category', 'contractor_document')->first();
 
-        if ($document_categories) {
-            foreach (json_decode($document_categories->document_type) as $key => $value) {
-                $document = new Document();
-                $document->user_id            = $user->id;
-                $document->document_category  = $document_categories->document_category ?: 'other';
-                $document->document_type      = $key;
-                $document->document_name      = $value;
-                $document->save();
-            }
-        }
+        // if ($document_categories) {
+        //     foreach (json_decode($document_categories->document_type) as $key => $value) {
+        //         $document = new Document();
+        //         $document->user_id            = $user->id;
+        //         $document->document_category  = $document_categories->document_category ?: 'other';
+        //         $document->document_type      = $key;
+        //         $document->document_name      = $value;
+        //         $document->save();
+        //     }
+        // }
 
         return response()->json([
             'success' => true,

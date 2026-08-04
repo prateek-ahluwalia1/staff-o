@@ -749,6 +749,7 @@ private function calculateProfileCompletion(User $user): int
                 'state' => 'nullable|string',
                 'country' => 'nullable|string',
                 'coordinates' => 'nullable|string',
+                'states_allowed' => 'nullable|array'
             ];
 
             if ($user->user_type === 'customer') {
@@ -799,7 +800,8 @@ private function calculateProfileCompletion(User $user): int
                 'country',
                 'address',
                 'phone',
-                'coordinates'
+                'coordinates',
+                'states_allowed'
             ])->toArray());
 
               if (empty($user->staffo_id) || $user->staffo_id == null ){

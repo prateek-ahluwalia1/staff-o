@@ -33,6 +33,7 @@ use SimpleSoftwareIO\QrCode\Facades\QrCode;
 use App\Mail\InvoiceMail;
 use App\Services\InvoiceService;
 use Illuminate\Support\Facades\Storage;
+use App\Mail\ContractorJobInvoice;
 
 
 class JobRosterController extends Controller
@@ -4163,356 +4164,356 @@ private function sendStaffActivationNotification(User $user): void
         return $R * $c;
     }
 
-    public function contractor_accept_job(Request $request, $id)
-    {
-        $a = null;
-        $b = '';
+    // public function contractor_accept_job(Request $request, $id)
+    // {
+    //     $a = null;
+    //     $b = '';
         
-        // Get the roster with conditions
-        $roster = DB::table('job_rosters')
-            ->join('sites', 'sites.id', '=', 'job_rosters.site_id')
-            ->where('job_rosters.id', '=', $request->input('roster_id'))
-            ->where(function ($query) use ($a, $b) {
-                return $query->where('job_rosters.assigned_to', '=', $a)
-                    ->orWhere('job_rosters.assigned_to', '=', $b)
-                    ->orWhere('job_rosters.accepted_by', '=', $a)
-                    ->orWhere('job_rosters.accepted_by', '=', $b);
-            })
-            ->select('job_rosters.*', 'sites.id as jobId', 'sites.address', 'sites.coordinates')
-            ->first();
+    //     // Get the roster with conditions
+    //     $roster = DB::table('job_rosters')
+    //         ->join('sites', 'sites.id', '=', 'job_rosters.site_id')
+    //         ->where('job_rosters.id', '=', $request->input('roster_id'))
+    //         ->where(function ($query) use ($a, $b) {
+    //             return $query->where('job_rosters.assigned_to', '=', $a)
+    //                 ->orWhere('job_rosters.assigned_to', '=', $b)
+    //                 ->orWhere('job_rosters.accepted_by', '=', $a)
+    //                 ->orWhere('job_rosters.accepted_by', '=', $b);
+    //         })
+    //         ->select('job_rosters.*', 'sites.id as jobId', 'sites.address', 'sites.coordinates')
+    //         ->first();
 
-        if ($roster != null) {
-            // Check if assigned_to is already set
-            if (!is_null($roster->assigned_to) && $roster->assigned_to != '') {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'This job has already been assigned to a staff member.',
-                    'data' => null,
-                ], 200);
-            }
+    //     if ($roster != null) {
+    //         // Check if assigned_to is already set
+    //         if (!is_null($roster->assigned_to) && $roster->assigned_to != '') {
+    //             return response()->json([
+    //                 'success' => false,
+    //                 'message' => 'This job has already been assigned to a staff member.',
+    //                 'data' => null,
+    //             ], 200);
+    //         }
 
-            // Check if accepted_by is already set by another contractor
-            if (!is_null($roster->accepted_by) && $roster->accepted_by != '' && $roster->accepted_by != $id) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'This job has already been accepted by another resource partner.',
-                    'data' => null,
-                ], 200);
-            }
+    //         // Check if accepted_by is already set by another contractor
+    //         if (!is_null($roster->accepted_by) && $roster->accepted_by != '' && $roster->accepted_by != $id) {
+    //             return response()->json([
+    //                 'success' => false,
+    //                 'message' => 'This job has already been accepted by another resource partner.',
+    //                 'data' => null,
+    //             ], 200);
+    //         }
 
-            // ✅ FIX: Allow contractor to assign guard if they already accepted the job
-            // Only return error if trying to accept again WITHOUT assigning a guard
-            if ($roster->accepted_by == $id && !$request->has('guard_id')) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'You have already accepted this job.',
-                    'data' => null,
-                ], 200);
-            }
+    //         // ✅ FIX: Allow contractor to assign guard if they already accepted the job
+    //         // Only return error if trying to accept again WITHOUT assigning a guard
+    //         if ($roster->accepted_by == $id && !$request->has('guard_id')) {
+    //             return response()->json([
+    //                 'success' => false,
+    //                 'message' => 'You have already accepted this job.',
+    //                 'data' => null,
+    //             ], 200);
+    //         }
 
-            // ✅ Only check for rosterExists if NOT already accepted by this contractor
-            if ($roster->accepted_by != $id) {
-                $rosterExists = DB::table('job_rosters')
-                    ->where('id', '=', $request->input('roster_id'))
-                    ->whereNull('assigned_to')
-                    ->whereNull('accepted_by')
-                    ->first();
+    //         // ✅ Only check for rosterExists if NOT already accepted by this contractor
+    //         if ($roster->accepted_by != $id) {
+    //             $rosterExists = DB::table('job_rosters')
+    //                 ->where('id', '=', $request->input('roster_id'))
+    //                 ->whereNull('assigned_to')
+    //                 ->whereNull('accepted_by')
+    //                 ->first();
                 
-                if (!$rosterExists) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Job already accepted or not available!',
-                        'data' => null,
-                    ], 200);
-                }
-            }
-        }
+    //             if (!$rosterExists) {
+    //                 return response()->json([
+    //                     'success' => false,
+    //                     'message' => 'Job already accepted or not available!',
+    //                     'data' => null,
+    //                 ], 200);
+    //             }
+    //         }
+    //     }
 
-        try {
-            $contractor = \App\Models\User::with('contractor')->find($id);
+    //     try {
+    //         $contractor = \App\Models\User::with('contractor')->find($id);
 
-            if (!$contractor || !$contractor->contractor) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Resource partner data not found.',
-                    'data' => null,
-                ], 200);
-            }
+    //         if (!$contractor || !$contractor->contractor) {
+    //             return response()->json([
+    //                 'success' => false,
+    //                 'message' => 'Resource partner data not found.',
+    //                 'data' => null,
+    //             ], 200);
+    //         }
 
-            if ($request->has('guard_id') && !empty($request->guard_id)) {
+    //         if ($request->has('guard_id') && !empty($request->guard_id)) {
                 
-            if (!$this->canAcceptJob($request->guard_id, $roster->start, $roster->end)) {
-                    // Get previous shift details
-                    $lastShift = DB::table('job_rosters')
-                        ->where('assigned_to', $request->guard_id)
-                        ->where('end', '<=', $roster->start)
-                        ->orderBy('end', 'desc')
-                        ->first();
+    //         if (!$this->canAcceptJob($request->guard_id, $roster->start, $roster->end)) {
+    //                 // Get previous shift details
+    //                 $lastShift = DB::table('job_rosters')
+    //                     ->where('assigned_to', $request->guard_id)
+    //                     ->where('end', '<=', $roster->start)
+    //                     ->orderBy('end', 'desc')
+    //                     ->first();
                     
-                    // Get next shift details
-                    $nextShift = DB::table('job_rosters')
-                        ->where('assigned_to', $request->guard_id)
-                        ->where('start', '>=', $roster->end)
-                        ->orderBy('start', 'asc')
-                        ->first();
+    //                 // Get next shift details
+    //                 $nextShift = DB::table('job_rosters')
+    //                     ->where('assigned_to', $request->guard_id)
+    //                     ->where('start', '>=', $roster->end)
+    //                     ->orderBy('start', 'asc')
+    //                     ->first();
                     
-                    $previousRestHours = 0;
-                    $nextRestHours = 0;
-                    $restrictionReason = '';
+    //                 $previousRestHours = 0;
+    //                 $nextRestHours = 0;
+    //                 $restrictionReason = '';
                     
-                    if ($lastShift) {
-                        $previousRestHours = Carbon::parse($lastShift->end)->diffInHours(Carbon::parse($roster->start));
-                        if ($previousRestHours < 8) {
-                            $restrictionReason = 'Only ' . $previousRestHours . ' hours rest before this shift. Need 8 hours.';
-                        }
-                    }
+    //                 if ($lastShift) {
+    //                     $previousRestHours = Carbon::parse($lastShift->end)->diffInHours(Carbon::parse($roster->start));
+    //                     if ($previousRestHours < 8) {
+    //                         $restrictionReason = 'Only ' . $previousRestHours . ' hours rest before this shift. Need 8 hours.';
+    //                     }
+    //                 }
                     
-                    if ($nextShift && empty($restrictionReason)) {
-                        $nextRestHours = Carbon::parse($roster->end)->diffInHours(Carbon::parse($nextShift->start));
-                        if ($nextRestHours < 8) {
-                            $restrictionReason = 'Only ' . $nextRestHours . ' hours rest after this shift. Need 8 hours.';
-                        }
-                    }
+    //                 if ($nextShift && empty($restrictionReason)) {
+    //                     $nextRestHours = Carbon::parse($roster->end)->diffInHours(Carbon::parse($nextShift->start));
+    //                     if ($nextRestHours < 8) {
+    //                         $restrictionReason = 'Only ' . $nextRestHours . ' hours rest after this shift. Need 8 hours.';
+    //                     }
+    //                 }
                     
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Staff must complete 8 hours rest before or after accepting this shift.',
-                        'data' => null,
-                        'details' => [
-                            'guard_id' => $request->guard_id,
-                            'shift_start' => $roster->start,
-                            'shift_end' => $roster->end,
-                            'previous_shift' => $lastShift ? [
-                                'end' => $lastShift->end,
-                                'rest_hours_available' => $previousRestHours,
-                                'rest_hours_required' => 8,
-                                'rest_hours_shortfall' => max(0, 8 - $previousRestHours)
-                            ] : null,
-                            'next_shift' => $nextShift ? [
-                                'start' => $nextShift->start,
-                                'rest_hours_available' => $nextRestHours,
-                                'rest_hours_required' => 8,
-                                'rest_hours_shortfall' => max(0, 8 - $nextRestHours)
-                            ] : null,
-                            'restriction_reason' => $restrictionReason
-                        ],
-                        'roster_details' => [
-                            'id' => $roster->id,
-                            'site' => $roster->address,
-                            'hours' => $roster->hours,
-                            'asap' => $roster->asap
-                        ]
-                    ], 200);
-                }
+    //                 return response()->json([
+    //                     'success' => false,
+    //                     'message' => 'Staff must complete 8 hours rest before or after accepting this shift.',
+    //                     'data' => null,
+    //                     'details' => [
+    //                         'guard_id' => $request->guard_id,
+    //                         'shift_start' => $roster->start,
+    //                         'shift_end' => $roster->end,
+    //                         'previous_shift' => $lastShift ? [
+    //                             'end' => $lastShift->end,
+    //                             'rest_hours_available' => $previousRestHours,
+    //                             'rest_hours_required' => 8,
+    //                             'rest_hours_shortfall' => max(0, 8 - $previousRestHours)
+    //                         ] : null,
+    //                         'next_shift' => $nextShift ? [
+    //                             'start' => $nextShift->start,
+    //                             'rest_hours_available' => $nextRestHours,
+    //                             'rest_hours_required' => 8,
+    //                             'rest_hours_shortfall' => max(0, 8 - $nextRestHours)
+    //                         ] : null,
+    //                         'restriction_reason' => $restrictionReason
+    //                     ],
+    //                     'roster_details' => [
+    //                         'id' => $roster->id,
+    //                         'site' => $roster->address,
+    //                         'hours' => $roster->hours,
+    //                         'asap' => $roster->asap
+    //                     ]
+    //                 ], 200);
+    //             }
 
-                // Calculate weekly hours
-                $rosterStart = Carbon::parse($roster->start);
-                $weekStart = $rosterStart->copy()->startOfWeek();
-                $weekEnd = $rosterStart->copy()->endOfWeek();
+    //             // Calculate weekly hours
+    //             $rosterStart = Carbon::parse($roster->start);
+    //             $weekStart = $rosterStart->copy()->startOfWeek();
+    //             $weekEnd = $rosterStart->copy()->endOfWeek();
 
-                $currentWeekHours = DB::table('job_rosters')
-                    ->where('assigned_to', $request->guard_id)
-                    ->whereBetween('start', [$weekStart, $weekEnd])
-                    ->sum('hours');
+    //             $currentWeekHours = DB::table('job_rosters')
+    //                 ->where('assigned_to', $request->guard_id)
+    //                 ->whereBetween('start', [$weekStart, $weekEnd])
+    //                 ->sum('hours');
 
-                $currentWeekHours = $currentWeekHours ?? 0;
-                $currentJobHours = $roster->hours ?? 0;
-                $totalHours = $currentWeekHours + $currentJobHours;
+    //             $currentWeekHours = $currentWeekHours ?? 0;
+    //             $currentJobHours = $roster->hours ?? 0;
+    //             $totalHours = $currentWeekHours + $currentJobHours;
 
-                // Get user with staff relationship
-                $user = \App\Models\User::with('staff')->find($request->guard_id);
+    //             // Get user with staff relationship
+    //             $user = \App\Models\User::with('staff')->find($request->guard_id);
 
-                if (!$user || !$user->staff) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Staff data not found.',
-                        'data' => null,
-                        'details' => [
-                            'guard_id' => $request->guard_id,
-                            'user_exists' => $user ? true : false,
-                            'staff_exists' => $user && $user->staff ? true : false
-                        ]
-                    ], 200);
-                }
+    //             if (!$user || !$user->staff) {
+    //                 return response()->json([
+    //                     'success' => false,
+    //                     'message' => 'Staff data not found.',
+    //                     'data' => null,
+    //                     'details' => [
+    //                         'guard_id' => $request->guard_id,
+    //                         'user_exists' => $user ? true : false,
+    //                         'staff_exists' => $user && $user->staff ? true : false
+    //                     ]
+    //                 ], 200);
+    //             }
 
-                // Check visa type and weekly limits
-                $visaType = $user->staff->staff_document_type;
-                $maxHours = $visaType === 'student_visa' ? 24 : 38;
+    //             // Check visa type and weekly limits
+    //             $visaType = $user->staff->staff_document_type;
+    //             $maxHours = $visaType === 'student_visa' ? 24 : 38;
 
-                if ($totalHours > $maxHours) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => $visaType === 'student_visa' 
-                            ? 'Weekly limit exceeded (24 hours for student visa).' 
-                            : 'Weekly limit exceeded (38 hours allowed).',
-                        'data' => null,
-                        'details' => [
-                            'guard_id' => $request->guard_id,
-                            'visa_type' => $visaType,
-                            'max_weekly_hours' => $maxHours,
-                            'current_week_hours' => $currentWeekHours,
-                            'current_job_hours' => $currentJobHours,
-                            'total_hours' => $totalHours,
-                            'hours_remaining' => $maxHours - $totalHours,
-                            'week_start' => $weekStart->format('Y-m-d'),
-                            'week_end' => $weekEnd->format('Y-m-d')
-                        ],
-                        'roster_details' => [
-                            'id' => $roster->id,
-                            'start' => $roster->start,
-                            'end' => $roster->end,
-                            'hours' => $roster->hours
-                        ]
-                    ], 200);
-                }
+    //             if ($totalHours > $maxHours) {
+    //                 return response()->json([
+    //                     'success' => false,
+    //                     'message' => $visaType === 'student_visa' 
+    //                         ? 'Weekly limit exceeded (24 hours for student visa).' 
+    //                         : 'Weekly limit exceeded (38 hours allowed).',
+    //                     'data' => null,
+    //                     'details' => [
+    //                         'guard_id' => $request->guard_id,
+    //                         'visa_type' => $visaType,
+    //                         'max_weekly_hours' => $maxHours,
+    //                         'current_week_hours' => $currentWeekHours,
+    //                         'current_job_hours' => $currentJobHours,
+    //                         'total_hours' => $totalHours,
+    //                         'hours_remaining' => $maxHours - $totalHours,
+    //                         'week_start' => $weekStart->format('Y-m-d'),
+    //                         'week_end' => $weekEnd->format('Y-m-d')
+    //                     ],
+    //                     'roster_details' => [
+    //                         'id' => $roster->id,
+    //                         'start' => $roster->start,
+    //                         'end' => $roster->end,
+    //                         'hours' => $roster->hours
+    //                     ]
+    //                 ], 200);
+    //             }
 
-                // Check if already assigned to this shift
-                $is_already_assign = DB::table('job_rosters')
-                    ->where('assigned_to', $request->guard_id)
-                    ->whereBetween('start', [$roster->start, $roster->end])
-                    ->first();
+    //             // Check if already assigned to this shift
+    //             $is_already_assign = DB::table('job_rosters')
+    //                 ->where('assigned_to', $request->guard_id)
+    //                 ->whereBetween('start', [$roster->start, $roster->end])
+    //                 ->first();
                     
-                if ($is_already_assign != null) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Staff is already assigned to a shift during this time.',
-                        'data' => null,
-                        'details' => [
-                            'guard_id' => $request->guard_id,
-                            'requested_shift' => [
-                                'start' => $roster->start,
-                                'end' => $roster->end
-                            ],
-                            'existing_shift' => [
-                                'id' => $is_already_assign->id,
-                                'start' => $is_already_assign->start,
-                                'end' => $is_already_assign->end
-                            ]
-                        ]
-                    ], 200);
-                }
-            }
+    //             if ($is_already_assign != null) {
+    //                 return response()->json([
+    //                     'success' => false,
+    //                     'message' => 'Staff is already assigned to a shift during this time.',
+    //                     'data' => null,
+    //                     'details' => [
+    //                         'guard_id' => $request->guard_id,
+    //                         'requested_shift' => [
+    //                             'start' => $roster->start,
+    //                             'end' => $roster->end
+    //                         ],
+    //                         'existing_shift' => [
+    //                             'id' => $is_already_assign->id,
+    //                             'start' => $is_already_assign->start,
+    //                             'end' => $is_already_assign->end
+    //                         ]
+    //                     ]
+    //                 ], 200);
+    //             }
+    //         }
 
-            // Get guard details if provided
-            $guardName = 'Guard';
-            if ($request->has('guard_id') && !empty($request->guard_id)) {
-                $guard = \App\Models\User::find($request->guard_id);
-                $guardName = $guard ? $guard->name : 'Guard';
-            }
+    //         // Get guard details if provided
+    //         $guardName = 'Guard';
+    //         if ($request->has('guard_id') && !empty($request->guard_id)) {
+    //             $guard = \App\Models\User::find($request->guard_id);
+    //             $guardName = $guard ? $guard->name : 'Guard';
+    //         }
 
-            // Update the roster
-            $updateData = ['accepted_by' => $id];
+    //         // Update the roster
+    //         $updateData = ['accepted_by' => $id];
             
-            // Only update assigned_to if guard_id is provided
-            if ($request->has('guard_id') && !empty($request->guard_id)) {
-                $updateData['assigned_to'] = $request->guard_id;
-                $updateData['job_status'] = "confirmed";
-                $updateData['publish_status'] = 1;
-            }
+    //         // Only update assigned_to if guard_id is provided
+    //         if ($request->has('guard_id') && !empty($request->guard_id)) {
+    //             $updateData['assigned_to'] = $request->guard_id;
+    //             $updateData['job_status'] = "confirmed";
+    //             $updateData['publish_status'] = 1;
+    //         }
             
-            DB::table('job_rosters')
-                ->where('id', '=', $request->roster_id)
-                ->update($updateData);
+    //         DB::table('job_rosters')
+    //             ->where('id', '=', $request->roster_id)
+    //             ->update($updateData);
 
-            // Get updated roster data
-            $updatedRoster = DB::table('job_rosters')
-                ->join('sites', 'sites.id', '=', 'job_rosters.site_id')
-                ->where('job_rosters.id', '=', $request->roster_id)
-                ->select('job_rosters.*', 'sites.id as jobId', 'sites.address', 'sites.coordinates')
-                ->first();
+    //         // Get updated roster data
+    //         $updatedRoster = DB::table('job_rosters')
+    //             ->join('sites', 'sites.id', '=', 'job_rosters.site_id')
+    //             ->where('job_rosters.id', '=', $request->roster_id)
+    //             ->select('job_rosters.*', 'sites.id as jobId', 'sites.address', 'sites.coordinates')
+    //             ->first();
 
-            $startTime = Carbon::parse($updatedRoster->start)->format('g:i A');
-            $endTime = Carbon::parse($updatedRoster->end)->format('g:i A');
+    //         $startTime = Carbon::parse($updatedRoster->start)->format('g:i A');
+    //         $endTime = Carbon::parse($updatedRoster->end)->format('g:i A');
 
-            // ============ SEND NOTIFICATIONS ============
+    //         // ============ SEND NOTIFICATIONS ============
             
-            // 1. Send notification to Client (created_by)
-            $client = DB::table('users')
-                ->where('notification_token', '!=', '')
-                ->where('id', '=', $updatedRoster->created_by)
-                ->select('notification_token', 'name')
-                ->first();
+    //         // 1. Send notification to Client (created_by)
+    //         $client = DB::table('users')
+    //             ->where('notification_token', '!=', '')
+    //             ->where('id', '=', $updatedRoster->created_by)
+    //             ->select('notification_token', 'name')
+    //             ->first();
             
-            if ($client && !empty($client->notification_token)) {
-                $message = $request->has('guard_id') && !empty($request->guard_id) 
-                    ? $guardName . ' accepted and confirmed the job.'
-                    : 'Job has been accepted by contractor.';
+    //         if ($client && !empty($client->notification_token)) {
+    //             $message = $request->has('guard_id') && !empty($request->guard_id) 
+    //                 ? $guardName . ' accepted and confirmed the job.'
+    //                 : 'Job has been accepted by contractor.';
                     
-                $clientNotificationData = [
-                    'message' => $message,
-                    'title' => 'Job Accepted',
-                    'notification_token' => $client->notification_token,
-                    'page' => 'my-job-applications',
-                    'roster_id' => $request->roster_id
-                ];
-                send_push_notification($clientNotificationData);
-            }
+    //             $clientNotificationData = [
+    //                 'message' => $message,
+    //                 'title' => 'Job Accepted',
+    //                 'notification_token' => $client->notification_token,
+    //                 'page' => 'my-job-applications',
+    //                 'roster_id' => $request->roster_id
+    //             ];
+    //             send_push_notification($clientNotificationData);
+    //         }
 
-            // 2. Send notification to Contractor (accepted_by)
-            $contractorUser = DB::table('users')
-                ->where('notification_token', '!=', '')
-                ->where('id', '=', $id)
-                ->select('notification_token', 'name')
-                ->first();
+    //         // 2. Send notification to Contractor (accepted_by)
+    //         $contractorUser = DB::table('users')
+    //             ->where('notification_token', '!=', '')
+    //             ->where('id', '=', $id)
+    //             ->select('notification_token', 'name')
+    //             ->first();
             
-            if ($contractorUser && !empty($contractorUser->notification_token)) {
-                $message = $request->has('guard_id') && !empty($request->guard_id)
-                    ? 'You have successfully accepted the job for ' . $guardName . '.'
-                    : 'You have successfully accepted the job.';
+    //         if ($contractorUser && !empty($contractorUser->notification_token)) {
+    //             $message = $request->has('guard_id') && !empty($request->guard_id)
+    //                 ? 'You have successfully accepted the job for ' . $guardName . '.'
+    //                 : 'You have successfully accepted the job.';
                     
-                $contractorNotificationData = [
-                    'message' => $message,
-                    'title' => 'Job Accepted Successfully',
-                    'notification_token' => $contractorUser->notification_token,
-                    'page' => 'my-job-applications',
-                    'roster_id' => $request->roster_id
-                ];
-                send_push_notification($contractorNotificationData);
-            }
+    //             $contractorNotificationData = [
+    //                 'message' => $message,
+    //                 'title' => 'Job Accepted Successfully',
+    //                 'notification_token' => $contractorUser->notification_token,
+    //                 'page' => 'my-job-applications',
+    //                 'roster_id' => $request->roster_id
+    //             ];
+    //             send_push_notification($contractorNotificationData);
+    //         }
 
-            // 3. Send notification to Staff/Guard (only if guard_id is provided)
-            if ($request->has('guard_id') && !empty($request->guard_id)) {
-                $guardUser = DB::table('users')
-                    ->where('notification_token', '!=', '')
-                    ->where('id', '=', $request->guard_id)
-                    ->select('notification_token', 'name')
-                    ->first();
+    //         // 3. Send notification to Staff/Guard (only if guard_id is provided)
+    //         if ($request->has('guard_id') && !empty($request->guard_id)) {
+    //             $guardUser = DB::table('users')
+    //                 ->where('notification_token', '!=', '')
+    //                 ->where('id', '=', $request->guard_id)
+    //                 ->select('notification_token', 'name')
+    //                 ->first();
                 
-                if ($guardUser && !empty($guardUser->notification_token)) {
-                    $guardNotificationData = [
-                        'message' => ($contractor->name ?? 'Contractor') . " assigned you a shift from {$startTime} to {$endTime}.",
-                        'title' => 'New Job Assignment',
-                        'notification_token' => $guardUser->notification_token,
-                        'page' => 'my-job-applications',
-                        'roster_id' => $request->roster_id
-                    ];
-                    send_push_notification($guardNotificationData);
-                }
-            }
+    //             if ($guardUser && !empty($guardUser->notification_token)) {
+    //                 $guardNotificationData = [
+    //                     'message' => ($contractor->name ?? 'Contractor') . " assigned you a shift from {$startTime} to {$endTime}.",
+    //                     'title' => 'New Job Assignment',
+    //                     'notification_token' => $guardUser->notification_token,
+    //                     'page' => 'my-job-applications',
+    //                     'roster_id' => $request->roster_id
+    //                 ];
+    //                 send_push_notification($guardNotificationData);
+    //             }
+    //         }
 
-            // Prepare response data
-            $responseData = [
-                'roster' => $updatedRoster,
-                'update_details' => $updateData,
-            ];
+    //         // Prepare response data
+    //         $responseData = [
+    //             'roster' => $updatedRoster,
+    //             'update_details' => $updateData,
+    //         ];
 
-            return response()->json([
-                'success' => true,
-                'message' => $request->has('guard_id') && !empty($request->guard_id) 
-                    ? 'Job accepted and assigned to guard successfully.' 
-                    : 'Job accepted successfully.',
-                'data' => $responseData
-            ], 200);
+    //         return response()->json([
+    //             'success' => true,
+    //             'message' => $request->has('guard_id') && !empty($request->guard_id) 
+    //                 ? 'Job accepted and assigned to guard successfully.' 
+    //                 : 'Job accepted successfully.',
+    //             'data' => $responseData
+    //         ], 200);
             
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'An error occurred while processing the request.',
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ], 500);
-        }
-    }
+    //     } catch (\Exception $e) {
+    //         return response()->json([
+    //             'success' => false,
+    //             'message' => 'An error occurred while processing the request.',
+    //             'error' => $e->getMessage(),
+    //             'trace' => $e->getTraceAsString()
+    //         ], 500);
+    //     }
+    // }
 
     public function getJobsDetail(Request $request)
     {
@@ -4635,4 +4636,438 @@ private function sendStaffActivationNotification(User $user): void
             ]
         ]);
     }
+
+/*
+|--------------------------------------------------------------------------
+| HOW TO USE THIS FILE
+|--------------------------------------------------------------------------
+| This is NOT a standalone file to drop into your project. It contains:
+|
+|   1. The full contractor_accept_job() method (with ONE addition near
+|      the bottom — clearly marked "// >>> NEW").
+|   2. A new private method sendContractorInvoice() to add to the same
+|      controller class.
+|
+| Copy method #1 OVER your existing contractor_accept_job() method,
+| and paste method #2 anywhere else inside the same controller class
+| (e.g. right below contractor_accept_job).
+|
+| Make sure this is imported at the top of your controller file:
+|   use App\Mail\ContractorJobInvoice;
+|   use Illuminate\Support\Facades\Mail;   (you likely already have this)
+*/
+
+public function contractor_accept_job(Request $request, $id)
+{
+    $a = null;
+    $b = '';
+
+    // Get the roster with conditions
+    $roster = DB::table('job_rosters')
+        ->join('sites', 'sites.id', '=', 'job_rosters.site_id')
+        ->where('job_rosters.id', '=', $request->input('roster_id'))
+        ->where(function ($query) use ($a, $b) {
+            return $query->where('job_rosters.assigned_to', '=', $a)
+                ->orWhere('job_rosters.assigned_to', '=', $b)
+                ->orWhere('job_rosters.accepted_by', '=', $a)
+                ->orWhere('job_rosters.accepted_by', '=', $b);
+        })
+        ->select('job_rosters.*', 'sites.id as jobId', 'sites.address', 'sites.coordinates')
+        ->first();
+
+    if ($roster != null) {
+        // Check if assigned_to is already set
+        if (!is_null($roster->assigned_to) && $roster->assigned_to != '') {
+            return response()->json([
+                'success' => false,
+                'message' => 'This job has already been assigned to a staff member.',
+                'data' => null,
+            ], 200);
+        }
+
+        // Check if accepted_by is already set by another contractor
+        if (!is_null($roster->accepted_by) && $roster->accepted_by != '' && $roster->accepted_by != $id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'This job has already been accepted by another resource partner.',
+                'data' => null,
+            ], 200);
+        }
+
+        // ✅ FIX: Allow contractor to assign guard if they already accepted the job
+        // Only return error if trying to accept again WITHOUT assigning a guard
+        if ($roster->accepted_by == $id && !$request->has('guard_id')) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You have already accepted this job.',
+                'data' => null,
+            ], 200);
+        }
+
+        // ✅ Only check for rosterExists if NOT already accepted by this contractor
+        if ($roster->accepted_by != $id) {
+            $rosterExists = DB::table('job_rosters')
+                ->where('id', '=', $request->input('roster_id'))
+                ->whereNull('assigned_to')
+                ->whereNull('accepted_by')
+                ->first();
+
+            if (!$rosterExists) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Job already accepted or not available!',
+                    'data' => null,
+                ], 200);
+            }
+        }
+    }
+
+    try {
+        $contractor = \App\Models\User::with('contractor')->find($id);
+
+        if (!$contractor || !$contractor->contractor) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Resource partner data not found.',
+                'data' => null,
+            ], 200);
+        }
+
+        if ($request->has('guard_id') && !empty($request->guard_id)) {
+
+        if (!$this->canAcceptJob($request->guard_id, $roster->start, $roster->end)) {
+                // Get previous shift details
+                $lastShift = DB::table('job_rosters')
+                    ->where('assigned_to', $request->guard_id)
+                    ->where('end', '<=', $roster->start)
+                    ->orderBy('end', 'desc')
+                    ->first();
+
+                // Get next shift details
+                $nextShift = DB::table('job_rosters')
+                    ->where('assigned_to', $request->guard_id)
+                    ->where('start', '>=', $roster->end)
+                    ->orderBy('start', 'asc')
+                    ->first();
+
+                $previousRestHours = 0;
+                $nextRestHours = 0;
+                $restrictionReason = '';
+
+                if ($lastShift) {
+                    $previousRestHours = Carbon::parse($lastShift->end)->diffInHours(Carbon::parse($roster->start));
+                    if ($previousRestHours < 8) {
+                        $restrictionReason = 'Only ' . $previousRestHours . ' hours rest before this shift. Need 8 hours.';
+                    }
+                }
+
+                if ($nextShift && empty($restrictionReason)) {
+                    $nextRestHours = Carbon::parse($roster->end)->diffInHours(Carbon::parse($nextShift->start));
+                    if ($nextRestHours < 8) {
+                        $restrictionReason = 'Only ' . $nextRestHours . ' hours rest after this shift. Need 8 hours.';
+                    }
+                }
+
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Staff must complete 8 hours rest before or after accepting this shift.',
+                    'data' => null,
+                    'details' => [
+                        'guard_id' => $request->guard_id,
+                        'shift_start' => $roster->start,
+                        'shift_end' => $roster->end,
+                        'previous_shift' => $lastShift ? [
+                            'end' => $lastShift->end,
+                            'rest_hours_available' => $previousRestHours,
+                            'rest_hours_required' => 8,
+                            'rest_hours_shortfall' => max(0, 8 - $previousRestHours)
+                        ] : null,
+                        'next_shift' => $nextShift ? [
+                            'start' => $nextShift->start,
+                            'rest_hours_available' => $nextRestHours,
+                            'rest_hours_required' => 8,
+                            'rest_hours_shortfall' => max(0, 8 - $nextRestHours)
+                        ] : null,
+                        'restriction_reason' => $restrictionReason
+                    ],
+                    'roster_details' => [
+                        'id' => $roster->id,
+                        'site' => $roster->address,
+                        'hours' => $roster->hours,
+                        'asap' => $roster->asap
+                    ]
+                ], 200);
+            }
+
+            // Calculate weekly hours
+            $rosterStart = Carbon::parse($roster->start);
+            $weekStart = $rosterStart->copy()->startOfWeek();
+            $weekEnd = $rosterStart->copy()->endOfWeek();
+
+            $currentWeekHours = DB::table('job_rosters')
+                ->where('assigned_to', $request->guard_id)
+                ->whereBetween('start', [$weekStart, $weekEnd])
+                ->sum('hours');
+
+            $currentWeekHours = $currentWeekHours ?? 0;
+            $currentJobHours = $roster->hours ?? 0;
+            $totalHours = $currentWeekHours + $currentJobHours;
+
+            // Get user with staff relationship
+            $user = \App\Models\User::with('staff')->find($request->guard_id);
+
+            if (!$user || !$user->staff) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Staff data not found.',
+                    'data' => null,
+                    'details' => [
+                        'guard_id' => $request->guard_id,
+                        'user_exists' => $user ? true : false,
+                        'staff_exists' => $user && $user->staff ? true : false
+                    ]
+                ], 200);
+            }
+
+            // Check visa type and weekly limits
+            $visaType = $user->staff->staff_document_type;
+            $maxHours = $visaType === 'student_visa' ? 24 : 38;
+
+            if ($totalHours > $maxHours) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $visaType === 'student_visa'
+                        ? 'Weekly limit exceeded (24 hours for student visa).'
+                        : 'Weekly limit exceeded (38 hours allowed).',
+                    'data' => null,
+                    'details' => [
+                        'guard_id' => $request->guard_id,
+                        'visa_type' => $visaType,
+                        'max_weekly_hours' => $maxHours,
+                        'current_week_hours' => $currentWeekHours,
+                        'current_job_hours' => $currentJobHours,
+                        'total_hours' => $totalHours,
+                        'hours_remaining' => $maxHours - $totalHours,
+                        'week_start' => $weekStart->format('Y-m-d'),
+                        'week_end' => $weekEnd->format('Y-m-d')
+                    ],
+                    'roster_details' => [
+                        'id' => $roster->id,
+                        'start' => $roster->start,
+                        'end' => $roster->end,
+                        'hours' => $roster->hours
+                    ]
+                ], 200);
+            }
+
+            // Check if already assigned to this shift
+            $is_already_assign = DB::table('job_rosters')
+                ->where('assigned_to', $request->guard_id)
+                ->whereBetween('start', [$roster->start, $roster->end])
+                ->first();
+
+            if ($is_already_assign != null) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Staff is already assigned to a shift during this time.',
+                    'data' => null,
+                    'details' => [
+                        'guard_id' => $request->guard_id,
+                        'requested_shift' => [
+                            'start' => $roster->start,
+                            'end' => $roster->end
+                        ],
+                        'existing_shift' => [
+                            'id' => $is_already_assign->id,
+                            'start' => $is_already_assign->start,
+                            'end' => $is_already_assign->end
+                        ]
+                    ]
+                ], 200);
+            }
+        }
+
+        // Get guard details if provided
+        $guardName = 'Guard';
+        if ($request->has('guard_id') && !empty($request->guard_id)) {
+            $guard = \App\Models\User::find($request->guard_id);
+            $guardName = $guard ? $guard->name : 'Guard';
+        }
+
+        // Update the roster
+        $updateData = ['accepted_by' => $id];
+
+        // Only update assigned_to if guard_id is provided
+        if ($request->has('guard_id') && !empty($request->guard_id)) {
+            $updateData['assigned_to'] = $request->guard_id;
+            $updateData['job_status'] = "confirmed";
+            $updateData['publish_status'] = 1;
+        }
+
+        DB::table('job_rosters')
+            ->where('id', '=', $request->roster_id)
+            ->update($updateData);
+
+        // Get updated roster data
+        $updatedRoster = DB::table('job_rosters')
+            ->join('sites', 'sites.id', '=', 'job_rosters.site_id')
+            ->where('job_rosters.id', '=', $request->roster_id)
+            ->select('job_rosters.*', 'sites.id as jobId', 'sites.address', 'sites.coordinates')
+            ->first();
+
+        $startTime = Carbon::parse($updatedRoster->start)->format('g:i A');
+        $endTime = Carbon::parse($updatedRoster->end)->format('g:i A');
+
+        // ============ SEND NOTIFICATIONS ============
+
+        // 1. Send notification to Client (created_by)
+        $client = DB::table('users')
+            ->where('notification_token', '!=', '')
+            ->where('id', '=', $updatedRoster->created_by)
+            ->select('notification_token', 'name')
+            ->first();
+
+        if ($client && !empty($client->notification_token)) {
+            $message = $request->has('guard_id') && !empty($request->guard_id)
+                ? $guardName . ' accepted and confirmed the job.'
+                : 'Job has been accepted by contractor.';
+
+            $clientNotificationData = [
+                'message' => $message,
+                'title' => 'Job Accepted',
+                'notification_token' => $client->notification_token,
+                'page' => 'my-job-applications',
+                'roster_id' => $request->roster_id
+            ];
+            send_push_notification($clientNotificationData);
+        }
+
+        // 2. Send notification to Contractor (accepted_by)
+        $contractorUser = DB::table('users')
+            ->where('notification_token', '!=', '')
+            ->where('id', '=', $id)
+            ->select('notification_token', 'name')
+            ->first();
+
+        if ($contractorUser && !empty($contractorUser->notification_token)) {
+            $message = $request->has('guard_id') && !empty($request->guard_id)
+                ? 'You have successfully accepted the job for ' . $guardName . '.'
+                : 'You have successfully accepted the job.';
+
+            $contractorNotificationData = [
+                'message' => $message,
+                'title' => 'Job Accepted Successfully',
+                'notification_token' => $contractorUser->notification_token,
+                'page' => 'my-job-applications',
+                'roster_id' => $request->roster_id
+            ];
+            send_push_notification($contractorNotificationData);
+        }
+
+        // 3. Send notification to Staff/Guard (only if guard_id is provided)
+        if ($request->has('guard_id') && !empty($request->guard_id)) {
+            $guardUser = DB::table('users')
+                ->where('notification_token', '!=', '')
+                ->where('id', '=', $request->guard_id)
+                ->select('notification_token', 'name')
+                ->first();
+
+            if ($guardUser && !empty($guardUser->notification_token)) {
+                $guardNotificationData = [
+                    'message' => ($contractor->name ?? 'Contractor') . " assigned you a shift from {$startTime} to {$endTime}.",
+                    'title' => 'New Job Assignment',
+                    'notification_token' => $guardUser->notification_token,
+                    'page' => 'my-job-applications',
+                    'roster_id' => $request->roster_id
+                ];
+                send_push_notification($guardNotificationData);
+            }
+        }
+
+        // >>> NEW: 4. Send invoice email to client + admin with contractor details,
+        // only once a guard has actually been assigned (job confirmed).
+        if ($request->has('guard_id') && !empty($request->guard_id)) {
+            $this->sendContractorInvoice($contractor, $updatedRoster, $guardName);
+        }
+
+        // Prepare response data
+        $responseData = [
+            'roster' => $updatedRoster,
+            'update_details' => $updateData,
+        ];
+
+        return response()->json([
+            'success' => true,
+            'message' => $request->has('guard_id') && !empty($request->guard_id)
+                ? 'Job accepted and assigned to guard successfully.'
+                : 'Job accepted successfully.',
+            'data' => $responseData
+        ], 200);
+
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => 'An error occurred while processing the request.',
+            'error' => $e->getMessage(),
+            'trace' => $e->getTraceAsString()
+        ], 500);
+    }
+}
+
+// >>> NEW: add this method anywhere else in the same controller class
+
+/**
+ * Sends an invoice/confirmation email to the job's client and all admins,
+ * clearly identifying the contractor (resource partner) who fulfilled it —
+ * so billing/records reflect the contractor's name, not Staffoo.
+ *
+ * @param \App\Models\User $contractor  The contractor who accepted the job (has ->contractor relation loaded)
+ * @param object           $roster      The updated job_rosters + sites row
+ * @param string           $guardName   Name of the guard assigned to the shift
+ */
+private function sendContractorInvoice($contractor, $roster, $guardName)
+{
+    $clientEmail = DB::table('users')->where('id', $roster->created_by)->value('email');
+
+    $adminEmails = DB::table('users')
+        ->where('user_type', 'admin')
+        ->where('is_active', 1)
+        ->pluck('email');
+
+    $invoiceData = [
+        'contractor_name'    => $contractor->name,
+        'contractor_company' => $contractor->contractor->company_name ?? null, // adjust field name to match your contractors table
+        'contractor_email'   => $contractor->email,
+        'contractor_phone'   => $contractor->phone,
+        'contractor_abn'     => $contractor->contractor->abn ?? null,          // adjust/remove if you don't store ABN
+        'guard_name'         => $guardName,
+        'roster'             => $roster,
+    ];
+
+    try {
+        if ($clientEmail) {
+            \Illuminate\Support\Facades\Mail::to($clientEmail)
+                ->queue(new \App\Mail\ContractorJobInvoice($invoiceData));
+        }
+
+        foreach ($adminEmails as $adminEmail) {
+            if (!empty($adminEmail)) {
+                \Illuminate\Support\Facades\Mail::to($adminEmail)
+                    ->queue(new \App\Mail\ContractorJobInvoice($invoiceData));
+            }
+        }
+
+        \Illuminate\Support\Facades\Log::info('Contractor job invoice queued.', [
+            'contractor_id' => $contractor->id,
+            'roster_id' => $roster->id,
+            'client_email' => $clientEmail,
+            'admin_count' => $adminEmails->count(),
+        ]);
+    } catch (\Exception $e) {
+        \Illuminate\Support\Facades\Log::error('Failed to send contractor invoice: ' . $e->getMessage(), [
+            'contractor_id' => $contractor->id ?? null,
+            'roster_id' => $roster->id ?? null,
+        ]);
+    }
+}
 }

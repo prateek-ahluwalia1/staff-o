@@ -366,18 +366,18 @@ export default function NotificationAcceptModal({
                         {showStaffSelector && (
                             <div style={{ marginBottom: 12 }}>
                                 <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: '#334155', marginBottom: 6 }}>
-                                    Assign to active staff (optional)
+                                    Assign to active staff
                                 </label>
                                 <Select
                                     className="react-select-container"
                                     options={[
-                                        { value: '', label: 'Accept directly for myself' },
+                                        { value: '', label: 'Accept Job' },
                                         ...staffOptions,
                                     ]}
                                     value={
                                         staffOptions.find((option) => option.value === selectedStaffId)
                                             ? staffOptions.find((option) => option.value === selectedStaffId)
-                                            : { value: '', label: 'Accept directly for myself' }
+                                            : { value: '', label: 'Accept Job' }
                                     }
                                     onChange={(option) => onStaffChange?.(option?.value || '')}
                                     isLoading={staffLoading}

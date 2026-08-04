@@ -606,14 +606,14 @@ const CoverJobs = () => {
                         <div className="modal-footer" style={{ background: '#fff', padding: '16px 24px', borderTop: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', gap: '12px' }}>
                             {userRole === 'contractor' && (
                                 <div className="w-100">
-                                    <label className="form-label fw-semibold" style={{ fontSize: '13px', color: '#334155' }}>Assign to active staff (optional)</label>
+                                    <label className="form-label fw-semibold" style={{ fontSize: '13px', color: '#334155' }}>Assign to active staff</label>
                                     <Select
                                         className="react-select-container"
-                                        options={[{ value: '', label: 'Accept directly for myself' }, ...contractorStaffOptions]}
+                                        options={[{ value: '', label: 'Accept Job' }, ...contractorStaffOptions]}
                                         value={
                                             contractorStaffOptions.find(o => o.value === selectedStaffId)
                                                 ? contractorStaffOptions.find(o => o.value === selectedStaffId)
-                                                : { value: '', label: 'Accept directly for myself' }
+                                                : { value: '', label: 'Accept Job' }
                                         }
                                         onChange={(option) => setSelectedStaffId(option?.value || '')}
                                         isLoading={staffLoading}

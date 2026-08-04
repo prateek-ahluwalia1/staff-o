@@ -180,6 +180,7 @@ const INITIAL_FORM_STATE = {
   date_of_birth: "",
   company_name: "",
   bank_details: [],
+  states_allowed: [],
 };
 
 const DOC_TYPES = [
@@ -207,6 +208,9 @@ const DOC_TYPES = [
   { value: "White Card", label: "White Card" },
   { value: "Working with Children Check", label: "Working with Children Check" },
 ];
+
+
+
 
 // ========== DATE HELPERS (DD/MM/YYYY everywhere) ==========
 const isoToDisplay = (val) => {
@@ -359,6 +363,17 @@ export default function EditProfile() {
       }
     }
 
+    const rawStatesAllowed = d.states_allowed ?? contractor.states_allowed ?? null;
+    let existingStatesAllowed = [];
+    if (rawStatesAllowed) {
+      try {
+        const parsed = typeof rawStatesAllowed === "string" ? JSON.parse(rawStatesAllowed) : rawStatesAllowed;
+        existingStatesAllowed = Array.isArray(parsed) ? parsed : [parsed];
+      } catch (e) {
+        console.error("Failed to parse states_allowed", e);
+      }
+    }
+
     setFormData({
       name: d.name || "",
       email: d.email || "",
@@ -369,6 +384,7 @@ export default function EditProfile() {
       address: d.address || staff.address || contractor.address || "",
       city: d.city || staff.city || contractor.city || "",
       state: d.state || staff.state || contractor.state || "",
+      states_allowed: existingStatesAllowed || [],
       country: d.country || staff.country || contractor.country || "",
       coordinates:
         d.coordinates || staff.coordinates || contractor.coordinates || "",
@@ -488,9 +504,34 @@ export default function EditProfile() {
     };
   }, [activeTab, fetchLoading]);
 
+  const STATE_DOC_TYPE_MAP = {
+    vic: "contractor_document",
+    nsw: "nsw_document",
+    qld: "qld_document",
+    tas: "tas_document",
+    wa: "wa_document",
+    sa: "sa_document",
+  };
+  const STATE_CATEGORY_MAP = {
+    vic: "contractor_document",
+    nsw: "nsw_document",
+    qld: "qld_document",
+    tas: "tas_document",
+    wa: "wa_document",
+    sa: "sa_document",
+  };
+
   const filteredDocuments = useMemo(() => {
     const allDocs = profileData?.data?.documents || [];
     const currentState = formData.state?.toLowerCase() || "";
+
+    if (userType === "contractor") {
+      const allowedCategories = (formData.states_allowed || [])
+        .map((code) => STATE_CATEGORY_MAP[code])
+        .filter(Boolean);
+      return allDocs.filter((doc) => allowedCategories.includes(doc.document_category));
+    }
+
     return allDocs.filter((doc) => {
       if (doc.document_type === "labour_hire") {
         const isTargetState = ["victoria", "vic", "queensland", "qld", "south australia", "sa"].some(
@@ -500,7 +541,7 @@ export default function EditProfile() {
       }
       return true;
     });
-  }, [profileData?.data?.documents, formData.state]);
+  }, [profileData?.data?.documents, formData.state, formData.states_allowed, userType]);
 
   const handleAvatarUpload = useCallback(
     async (file) => {
@@ -544,6 +585,8 @@ export default function EditProfile() {
         if (key === "profile_image") return;
         if (key === "bank_details") {
           payload.append("bank_details", JSON.stringify(formData.bank_details));
+        } else if (key === "states_allowed") {
+          payload.append("states_allowed", JSON.stringify(formData.states_allowed || []));
         } else {
           payload.append(key, formData[key]);
         }

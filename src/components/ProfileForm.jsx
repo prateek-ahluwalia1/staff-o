@@ -1,4 +1,4 @@
-import React, { useRef } from "react";
+import React from "react";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { COUNTRIES } from "../utils/exports";
@@ -56,6 +56,15 @@ export default function ProfileForm({
     act: "Australian Capital Territory",
     nt: "Northern Territory",
   };
+
+  const CONTRACTOR_STATE_OPTIONS = [
+    { code: "vic", label: "Victoria" },
+    { code: "nsw", label: "New South Wales" },
+    { code: "qld", label: "Queensland" },
+    { code: "tas", label: "Tasmania" },
+    { code: "wa", label: "Western Australia" },
+    { code: "sa", label: "South Australia" },
+  ];
 
   const showCustomStatus =
     formData.staff_document_type &&
@@ -347,6 +356,140 @@ export default function ProfileForm({
                       style={{ borderRadius: "0 0.375rem 0.375rem 0" }}
                     />
                   </div>
+                </div>
+                <div className="col-12">
+                  <div className="d-flex justify-content-between align-items-center mb-2">
+                    <label className="form-label fw-bold text-dark small mb-0">
+                      States You Operate In <span className="text-danger">*</span>
+                    </label>
+                    <span className="state-count-badge">
+                      {(formData.states_allowed || []).length} of {CONTRACTOR_STATE_OPTIONS.length} selected
+                    </span>
+                  </div>
+
+                  <div className="state-picker-grid">
+                    {CONTRACTOR_STATE_OPTIONS.map((state) => {
+                      const isSelected = (formData.states_allowed || []).includes(state.code);
+                      return (
+                        <button
+                          type="button"
+                          key={state.code}
+                          className={`state-picker-chip ${isSelected ? "selected" : ""}`}
+                          onClick={() => {
+                            const current = formData.states_allowed || [];
+                            const updated = isSelected
+                              ? current.filter((c) => c !== state.code)
+                              : [...current, state.code];
+                            onChange({ target: { id: "states_allowed", value: updated } });
+                          }}
+                        >
+                          <span className="state-picker-box">
+                            <i className="fa-solid fa-check"></i>
+                          </span>
+                          <span className="state-picker-label">{state.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  <div className="state-picker-hint">
+                    <i className="fa-solid fa-circle-info"></i>
+                    <span>
+                      Select the states you're licensed to work in — document requirements below will update accordingly.
+                    </span>
+                  </div>
+
+                  <style>{`
+    .state-count-badge {
+      font-size: 0.72rem; font-weight: 700; color: #0A7C6E;
+      background: #e6f7f0; padding: 3px 10px; border-radius: 20px;
+    }
+
+    .state-picker-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 10px;
+    }
+
+    .state-picker-chip {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 11px 14px;
+      border-radius: 10px;
+      border: 1.5px solid #e2e8f0;
+      background: #f8fafc;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      text-align: left;
+    }
+    .state-picker-chip:hover {
+      border-color: #94d3c9;
+      background: #f0fdf9;
+    }
+    .state-picker-chip.selected {
+      border-color: #0A7C6E;
+      background: #f0fdf9;
+    }
+
+    .state-picker-box {
+      width: 18px;
+      height: 18px;
+      border-radius: 5px;
+      border: 1.5px solid #cbd5e1;
+      background: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: all 0.15s ease;
+    }
+    .state-picker-box i {
+      font-size: 0.6rem;
+      color: #fff;
+      opacity: 0;
+      transform: scale(0.5);
+      transition: all 0.15s ease;
+    }
+    .state-picker-chip.selected .state-picker-box {
+      background: #0A7C6E;
+      border-color: #0A7C6E;
+    }
+    .state-picker-chip.selected .state-picker-box i {
+      opacity: 1;
+      transform: scale(1);
+    }
+
+    .state-picker-label {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #475569;
+    }
+    .state-picker-chip.selected .state-picker-label {
+      color: #075e53;
+      font-weight: 700;
+    }
+
+    .state-picker-hint {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      margin-top: 12px;
+      padding: 10px 14px;
+      background: #f8fafc;
+      border-left: 3px solid #0A7C6E;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      color: #64748b;
+      text-transform: none;
+    }
+    .state-picker-hint i {
+      color: #0A7C6E;
+      font-size: 0.85rem;
+      margin-top: 1px;
+      flex-shrink: 0;
+    }
+  `}</style>
                 </div>
               </>
             )}

@@ -3835,7 +3835,7 @@ private function sendStaffActivationNotification(User $user): void
 
         $partners = User::whereNotIn('id', [1])
             ->where('user_type', 'contractor')
-            ->whereIn('state', $states)
+            // ->whereIn('state', $states)
             ->where('is_active', 1)
             ->whereNotNull('notification_token')
             ->whereNotNull('current_coordinates')

@@ -21,6 +21,14 @@ const STATE_MAP = {
   'ACT': 'act',
   'Northern Territory': 'nt'
 };
+const STATE_CATEGORY_MAP = {
+  vic: "contractor_document",
+  nsw: "nsw_document",
+  qld: "qld_document",
+  tas: "tas_document",
+  wa: "wa_document",
+  sa: "sa_document",
+};
 const roleLabels = {
   customer: "Client",
   sub_contractor: "Resource Partner",
@@ -339,22 +347,28 @@ const ManageUsers = () => {
     origin_country: "",
     abn: "",
     acn: "",
+    states_allowed: [],
   }), []);
 
   const [formData, setFormData] = useState(defaultFormState);
 
-  // ---------- dynamic documents for staff and sub_contractor ----------
+
   const documents = useMemo(() => {
     if (!editingUser) return [];
-    if (editingUser.documents && editingUser.documents.length > 0) return editingUser.documents;
-    if (activeTab === "staff") {
-      return editingUser.staff?.documents || [];
-    }
+    let docs = [];
+    if (editingUser.documents && editingUser.documents.length > 0) docs = editingUser.documents;
+    else if (activeTab === "staff") docs = editingUser.staff?.documents || [];
+    else if (activeTab === "sub_contractor") docs = editingUser.contractor?.documents || [];
+
     if (activeTab === "sub_contractor") {
-      return editingUser.contractor?.documents || [];
+      const allowedCategories = (formData.states_allowed || [])
+        .map((code) => STATE_CATEGORY_MAP[code])
+        .filter(Boolean);
+      return docs.filter((doc) => allowedCategories.includes(doc.document_category));
     }
-    return [];
-  }, [editingUser, activeTab]);
+
+    return docs;
+  }, [editingUser, activeTab, formData.states_allowed]);
 
   const handleProfileFormChange = useCallback((e) => {
     const { id, value } = e.target;
@@ -427,12 +441,23 @@ const ManageUsers = () => {
   };
 
   const openModal = useCallback((user = null) => {
+
     setShowPassword(false);
     setActiveModalTab("personal");
     setShowDocModal(false);
     setSelectedDoc(null);
     if (user) {
       const extraInfo = getNestedData(user);
+      const rawStatesAllowed = user.states_allowed ?? extraInfo.states_allowed ?? null;
+      let existingStatesAllowed = [];
+      if (rawStatesAllowed) {
+        try {
+          const parsed = typeof rawStatesAllowed === "string" ? JSON.parse(rawStatesAllowed) : rawStatesAllowed;
+          existingStatesAllowed = Array.isArray(parsed) ? parsed : [parsed];
+        } catch (e) {
+          console.error("Failed to parse states_allowed", e);
+        }
+      }
       setEditingUser(user);
       setFormData({
         name: user.name || "",
@@ -453,6 +478,7 @@ const ManageUsers = () => {
         origin_country: user.origin_country || extraInfo.origin_country || "",
         abn: user.abn || extraInfo.abn || "",
         acn: user.acn || extraInfo.acn || "",
+        states_allowed: existingStatesAllowed,
       });
     } else {
       setEditingUser(null);
@@ -1660,6 +1686,7 @@ const ManageUsers = () => {
                     abn: formData.abn || "",
                     acn: formData.acn || "",
                     security_license_no: formData.security_license_no || "",
+                    states_allowed: formData.states_allowed,
                   }}
                   onChange={handleProfileFormChange}
                   onSubmit={handleSubmit}
@@ -1735,7 +1762,7 @@ const ManageUsers = () => {
                 <div>
                   <DocumentTable
                     documents={documents}
-                    userType={activeTab}
+                    userType={activeTab === "sub_contractor" ? "contractor" : activeTab}
                     onAddFile={openDocumentModal}
                   />
                 </div>

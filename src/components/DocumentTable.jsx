@@ -17,9 +17,8 @@ const DOC_CONFIG = {
   vaccination: { label: "Vaccination Certificate", sort: 12 },
 };
 
-// document_category -> state, in the order we want groups displayed
 const STATE_CATEGORY_ORDER = [
-  "contractor_document", // Victoria
+  "contractor_document",
   "nsw_document",
   "qld_document",
   "tas_document",

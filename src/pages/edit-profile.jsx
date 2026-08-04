@@ -504,14 +504,6 @@ export default function EditProfile() {
     };
   }, [activeTab, fetchLoading]);
 
-  const STATE_DOC_TYPE_MAP = {
-    vic: "contractor_document",
-    nsw: "nsw_document",
-    qld: "qld_document",
-    tas: "tas_document",
-    wa: "wa_document",
-    sa: "sa_document",
-  };
   const STATE_CATEGORY_MAP = {
     vic: "contractor_document",
     nsw: "nsw_document",

@@ -154,6 +154,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::any('update-staff/{id}',  [StaffController::class, 'updateStaff'])->name('update.staff');
     Route::any('guard-all-documents', [StaffController::class, 'getAllGuardDocument'])->name('guard.all.documents');
     Route::any('guard-add-documents', [StaffController::class, 'addGuardDocuments'])->name('guard.add.documents');
+    Route::any('add-states/$id', [StaffController::class, 'addDocuments'])->name('add.documents');
+    Route::any('remove-states/$id', [StaffController::class, 'deleteDocuments'])->name('delete.documents');
     Route::any('guard-update-documents', [StaffController::class, 'updateGuardDocuments'])->name('guard.update.documents');
     Route::any('user-update/{id}', [StaffController::class, 'updateUser'])->name('user.update');
 

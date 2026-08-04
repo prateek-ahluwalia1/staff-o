@@ -1234,7 +1234,9 @@ private function calculateProfileCompletion(User $user): int
         $validated = $request->validate([
             'tfn'                => 'nullable|string|max:11',
             'title'              => 'nullable|string|max:10',
-            'full_name'         => 'required|string|max:100',
+            'full_name'          => 'nullable|string|max:100',
+            'first_name'         => 'nullable|string|max:100',
+            'surname'            => 'nullable|string|max:100',
             'previous_name'      => 'nullable|string|max:100',
             'dob'                => 'nullable|string',
             'address'            => 'nullable|string|max:255',
@@ -1267,7 +1269,7 @@ private function calculateProfileCompletion(User $user): int
     public function superannuationStore(Request $request)
     {
         $validated = $request->validate([
-            'full_name'       => 'required|string|max:200',
+            'full_name'       => 'nullable|string|max:200',
             'employee_number' => 'nullable|string|max:50',
             'fund_choice'     => 'nullable|in:own,employer',
             'fund_name'       => 'nullable|string|max:200',
@@ -1831,5 +1833,77 @@ private function calculateProfileCompletion(User $user): int
                 'error' => $e->getMessage()
             ]);
         }
+    }
+
+    public function addDocuments(Request $request, $id)
+    {
+        try {
+            
+            $document_categories = DocumentCategory::where('document_category', $request->document_type)->first();
+
+            if (!$document_categories) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Document category not found!',
+                    'code' => 404
+                ], 404);
+            }
+
+            $documentTypes = json_decode($document_categories->document_type, true);
+
+            if (!$documentTypes || empty($documentTypes)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No document types available!',
+                    'code' => 404
+                ], 404);
+            }
+
+            foreach ($documentTypes as $key => $value) {
+                $guard_documents = new Document();
+                $guard_documents->user_id = $id;
+                $guard_documents->document_category = $document_categories->document_category ?? 'other';
+                $guard_documents->document_type = $key;
+                $guard_documents->document_name = $value;
+                $guard_documents->save();
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => count($documentTypes) . ' documents added successfully!',
+                'code' => 200,
+                'data' => [
+                    'user_id' => $request->user_id,
+                    'total_documents' => count($documentTypes)
+                ]
+            ], 200);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Something went wrong!',
+                'error' => $e->getMessage(),
+                'code' => 500
+            ], 500);
+        }
+    }
+
+    public function deleteDocuments(Request $request, $id)
+    {
+        $query = Document::where('user_id', $id)->where('document_type', $request->document_type);
+        
+        $deleted = $query->delete();
+        
+        if ($deleted === 0) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No documents found to delete!'
+            ], 404);
+        }
+        
+        return response()->json([
+            'success' => true,
+            'message' => $deleted . ' document(s) deleted successfully!'
+        ]);
     }
 }

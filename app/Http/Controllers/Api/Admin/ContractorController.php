@@ -196,10 +196,6 @@ private function updateUserStatus(User $user, int $newStatus): void
     if ($user->is_active !== $newStatus) {
         $user->is_active = $newStatus;
         $user->save();
-
-        if ($newStatus === 1 && $oldStatus != 1) {
-            $this->sendActivationNotification($user);
-        }
     }
 }
 
@@ -226,24 +222,6 @@ private function isDocumentValid($document): bool
     }
 
     return true;
-}
-
-private function sendActivationNotification(User $user): void
-{
-    if (empty($user->notification_token)) {
-        return;
-    }
-
-    $notificationData = [
-        'notification_token' => $user->notification_token,
-        'message'            => "Congratulations! Your account is now active.",
-        'title'              => 'Account Activated',
-        'page'               => 'account-verified',
-    ];
-
-    if (function_exists('send_push_notification')) {
-        send_push_notification($notificationData);
-    }
 }
 
     /**

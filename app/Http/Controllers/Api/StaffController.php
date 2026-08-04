@@ -833,6 +833,7 @@ private function calculateProfileCompletion(User $user): int
             }
 
             if ($user->user_type === 'contractor') {
+                // Update contractor profile
                 $profileData = collect($data)->only([
                     'company_name',
                     'registration_number',
@@ -841,7 +842,7 @@ private function calculateProfileCompletion(User $user): int
                     'acn',
                 ])->toArray();
 
-                 if ($request->hasFile('profile_image')) {
+                if ($request->hasFile('profile_image')) {
                     $profileData['profile_image'] = $request->file('profile_image')->store('staff-profiles', 'public');
                 } elseif (array_key_exists('profile_image', $data)) {
                     $profileData['profile_image'] = $data['profile_image'];
@@ -853,6 +854,70 @@ private function calculateProfileCompletion(User $user): int
                     $profileData['user_id'] = $user->id;
                     Contractor::create($profileData);
                 }
+
+                // Handle documents based on allowed states
+                $allowedStates = $user->states_allowed ?? [];
+                
+                // State to document category mapping
+                $stateDocumentMap = [
+                    'vic' => 'contractor_document',
+                    'nsw' => 'nsw_document',
+                    'qld' => 'qld_document',
+                    'tas' => 'tas_document',
+                    'wa' => 'wa_document',
+                    'sa' => 'sa_document'
+                ];
+
+                // Get document categories for allowed states
+                $documentCategories = DocumentCategory::whereIn('document_category', array_values($stateDocumentMap))
+                    ->get()
+                    ->keyBy('document_category');
+
+                $documentsToKeep = [];
+
+                foreach ($allowedStates as $state) {
+                    $state = strtolower($state);
+                    if (isset($stateDocumentMap[$state])) {
+                        $categoryKey = $stateDocumentMap[$state];
+                        $category = $documentCategories->get($categoryKey);
+                        
+                        if ($category) {
+                            $documentTypes = json_decode($category->document_type, true) ?? [];
+                            
+                            foreach ($documentTypes as $key => $value) {
+                                // Check if document already exists
+                                $existingDoc = Document::where('user_id', $user->id)
+                                    ->where('document_category', $categoryKey)
+                                    ->where('document_type', $key)
+                                    ->first();
+                                
+                                if (!$existingDoc) {
+                                    // Create new document
+                                    Document::create([
+                                        'user_id' => $user->id,
+                                        'document_category' => $categoryKey,
+                                        'document_type' => $key,
+                                        'document_name' => $value
+                                    ]);
+                                }
+                                
+                                // Track document to keep
+                                $documentsToKeep[] = $categoryKey . '_' . $key;
+                            }
+                        }
+                    }
+                }
+
+                // Delete documents that are not in allowed states
+                $allUserDocuments = Document::where('user_id', $user->id)->get();
+                
+                foreach ($allUserDocuments as $doc) {
+                    $docIdentifier = $doc->document_category . '_' . $doc->document_type;
+                    if (!in_array($docIdentifier, $documentsToKeep)) {
+                        $doc->delete();
+                    }
+                }
+
                 $user->load('contractor', 'documents');
             }
 

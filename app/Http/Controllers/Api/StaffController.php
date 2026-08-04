@@ -702,9 +702,19 @@ private function calculateProfileCompletion(User $user): int
         $percentage = $this->calculateProfileCompletion($user);
         // $verificationPoints = $this->documentsPoints($user);
 
-        if ($percentage === 100 && (int) $user->is_active !== 1) {
-            $user->is_active = 1;
-            $user->save();
+        if($user->user_type == 'contractor'){
+            if ($percentage === 100 && (int) $user->is_active !== 1) {
+                $user->is_active = 1;
+                $user->save();
+            }else{
+                $user->is_active = 0;
+                $user->save();
+            }
+        }else{
+            if ($percentage === 100 && (int) $user->is_active !== 1) {
+                $user->is_active = 1;
+                $user->save();
+            }
         }
 
         $user->profile_completion_percentage = $percentage;

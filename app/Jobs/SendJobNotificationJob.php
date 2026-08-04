@@ -657,24 +657,24 @@ class SendJobNotificationJob implements ShouldQueue
 
             $this->sendAppNotification($guard, $eligibleJobs, $title, $message, $radius, $isConsolidated);
 
-            if (!empty($guard->phone)) {
-                try {
-                    $sms = send_sms($guard->phone, $message);
+            // if (!empty($guard->phone)) {
+            //     try {
+            //         // $sms = send_sms($guard->phone, $message);
 
-                    Log::info("SMS sent successfully.", [
-                        'guard_id' => $guard->id,
-                        'phone'    => $guard->phone,
-                        'response' => $sms,
-                    ]);
-                } catch (\Throwable $e) {
-                    Log::error("Failed to send SMS.", [
-                        'guard_id' => $guard->id,
-                        'phone'    => $guard->phone,
-                        'error'    => $e->getMessage(),
-                    ]);
+            //         Log::info("SMS sent successfully.", [
+            //             'guard_id' => $guard->id,
+            //             'phone'    => $guard->phone,
+            //             'response' => $sms,
+            //         ]);
+            //     } catch (\Throwable $e) {
+            //         Log::error("Failed to send SMS.", [
+            //             'guard_id' => $guard->id,
+            //             'phone'    => $guard->phone,
+            //             'error'    => $e->getMessage(),
+            //         ]);
 
-                }
-            }
+            //     }
+            // }
 
             $this->sendEmail($guard, $title, $message, $eligibleJobs, $isConsolidated);
 

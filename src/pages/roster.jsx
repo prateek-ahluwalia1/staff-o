@@ -122,10 +122,29 @@ export default function RosterPage() {
   const userId = userdata?.data?.id || userdata?.id;
   const userRole = userdata?.data?.user_type || userdata?.user_type;
 
-  const contractorStateValue = useMemo(() => {
-    if (userRole !== 'contractor') return null;
+  const contractorAllowedStates = useMemo(() => {
+    if (userRole !== 'contractor') return [];
+
+    const raw =
+      userdata?.data?.states_allowed ??
+      userdata?.states_allowed ??
+      userdata?.data?.contractor?.states_allowed;
+
+    if (raw) {
+      try {
+        const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed.map((s) => String(s).toLowerCase());
+        }
+      } catch (e) {
+        console.error('Failed to parse states_allowed', e);
+      }
+    }
+
+    // Legacy fallback for contractors who haven't set states_allowed yet —
+    // derive a single state from their residential address, same as before.
     const stateName = userdata?.data?.state || userdata?.state;
-    if (!stateName) return null;
+    if (!stateName) return [];
     const stateMap = {
       'Victoria': 'vic',
       'New South Wales': 'nsw',
@@ -135,9 +154,9 @@ export default function RosterPage() {
       'South Australia': 'sa',
       'Australian Capital Territory': 'act',
       'ACT': 'act',
-      'Northern Territory': 'nt'
+      'Northern Territory': 'nt',
     };
-    return stateMap[stateName] || stateName.toLowerCase();
+    return [stateMap[stateName] || stateName.toLowerCase()];
   }, [userRole, userdata]);
 
   const staffContractorId = userRole === "admin" ? 1 : userId;
@@ -176,7 +195,9 @@ export default function RosterPage() {
     if (!userId) return;
     const effectiveStates = selectedStates.length > 0
       ? selectedStates
-      : (userRole === 'contractor' ? [contractorStateValue] : states_array.map(s => s.value));
+      : (userRole === 'contractor' ? contractorAllowedStates : states_array.map(s => s.value));
+
+    if (effectiveStates.length === 0) return;
 
     if (effectiveStates.length === 0) return;
 
@@ -189,13 +210,12 @@ export default function RosterPage() {
       roster_id: "1",
     };
     submit("api/fetch-customer-sites", payload, { method: "POST", silentErrorToast: true });
-  }, [userId, monday, weeksToView, submit, selectedStates, userRole, contractorStateValue]);
+  }, [userId, monday, weeksToView, submit, selectedStates, userRole, contractorAllowedStates]);
 
   const fetchHolidays = useCallback(async () => {
     const effectiveStates = selectedStates.length > 0
       ? selectedStates
-      : (userRole === 'contractor' ? [contractorStateValue] : states_array.map(s => s.value));
-
+      : (userRole === 'contractor' ? contractorAllowedStates : states_array.map(s => s.value));
     let allHolidays = [];
     for (const state of effectiveStates) {
       const res = await submitHolidayList(
@@ -210,7 +230,7 @@ export default function RosterPage() {
       allHolidays = [...allHolidays, ...stateHolidays];
     }
     setHolidays(allHolidays);
-  }, [selectedStates, submitHolidayList, userRole, contractorStateValue]);
+  }, [selectedStates, submitHolidayList, userRole, contractorAllowedStates]);
 
   useEffect(() => {
     fetchCustomerSites();
@@ -401,9 +421,13 @@ export default function RosterPage() {
     window.open(targetUrl, "_blank");
   };
 
-  if (userRole === "admin" && selectedStates.length === 0) {
+  const showRegionPicker =
+    selectedStates.length === 0 &&
+    (userRole === "admin" || (userRole === "contractor" && contractorAllowedStates.length > 1));
+
+  if (showRegionPicker) {
     const visibleStates = userRole === 'contractor'
-      ? states_array.filter(s => s.value === contractorStateValue)
+      ? states_array.filter((s) => contractorAllowedStates.includes(s.value))
       : states_array;
 
     return (
@@ -423,7 +447,6 @@ export default function RosterPage() {
           ) : (
             visibleStates.map((stateInfo) => {
               const isFeatured = userRole === 'admin' && stateInfo.value === 'vic';
-
               return (
                 <button
                   key={stateInfo.value}
@@ -431,9 +454,7 @@ export default function RosterPage() {
                   className={`staffoo-state-card ${isFeatured ? 'is-featured' : ''}`}
                   onClick={() => openStateRosterInNewTab(stateInfo.value)}
                 >
-                  {isFeatured && (
-                    <span className="featured-watermark">{stateInfo.value.toUpperCase()}</span>
-                  )}
+                  {isFeatured && <span className="featured-watermark">{stateInfo.value.toUpperCase()}</span>}
                   <div className="state-card-left">
                     <span className="state-name">{stateInfo.label}</span>
                     <span className="state-code">{stateInfo.value.toUpperCase()}</span>
@@ -445,6 +466,20 @@ export default function RosterPage() {
               );
             })
           )}
+        </div>
+      </div>
+    );
+  }
+
+  if (userRole === "contractor" && contractorAllowedStates.length === 0 && selectedStates.length === 0) {
+    return (
+      <div className="staffoo-page-container">
+        <div className="staffoo-header-card">
+          <span className="staffoo-eyebrow"><span className="dot"></span> Roster</span>
+          <h2>No Operating States Set</h2>
+          <p style={{ textTransform: "none" }}>
+            You haven't selected any states you operate in yet. Add them in your profile to see your roster.
+          </p>
         </div>
       </div>
     );

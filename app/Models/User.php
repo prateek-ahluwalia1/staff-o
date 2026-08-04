@@ -33,7 +33,8 @@ class User extends Authenticatable
             'phone_otp',
             'phone_verified',
             'current_coordinates',
-            'is_email_approved'
+            'is_email_approved',
+            'states_allowed'
         ];
     
         protected $hidden = [

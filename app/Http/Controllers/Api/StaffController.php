@@ -703,7 +703,7 @@ private function calculateProfileCompletion(User $user): int
         // $verificationPoints = $this->documentsPoints($user);
 
         if($user->user_type == 'contractor'){
-            if ($percentage === 100 && (int) $user->is_active !== 1) {
+            if ($percentage === 100) {
                 $user->is_active = 1;
                 $user->save();
             }else{

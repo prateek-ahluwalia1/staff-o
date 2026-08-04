@@ -3839,15 +3839,18 @@ private function sendStaffActivationNotification(User $user): void
             ->where('is_active', 1)
             ->whereNotNull('notification_token')
             ->whereNotNull('current_coordinates')
-            ->select('id', 'name', 'email', 'phone', 'notification_token','current_coordinates')
-            ->get();
+            ->select('id', 'name', 'email', 'phone', 'notification_token', 'current_coordinates', 'states_allowed')
+            ->get()
+            ->filter(fn($partner) => $this->userAllowedForState($partner, $siteState))
+            ->values();
 
-        Log::info("Found {$partners->count()} resource partners.", [
+        Log::info("Found {$partners->count()} resource partners with states_allowed permission.", [
             'site_state' => $siteState,
             'matched_states' => $states
         ]);
 
         return $partners;
+
     }
 
     private function sendConsolidatedNotifications($siteCoordinates, $jobIds, $createdBy)
@@ -3872,8 +3875,10 @@ private function sendStaffActivationNotification(User $user): void
         ]);
         
         // Get all guards within radius
-        $Guards = $this->getStaffooGuardsByRadius($siteCoordinates, 15);
+        $siteState = $jobs->first()->site->state ?? null;
+        $Guards = $this->getStaffooGuardsByRadius($siteCoordinates, 15, $siteState);
         $partners = $this->getResourcePartners($jobs->first()->site_id);
+        
 
         $allGuards = $Guards->merge($partners);
 
@@ -4011,18 +4016,24 @@ private function sendStaffActivationNotification(User $user): void
         return true;
     }
 
-    private function getStaffooGuardsByRadius(string $siteCoords, int $radiusKm)
+    private function getStaffooGuardsByRadius(string $siteCoords, int $radiusKm, ?string $siteState = null)
     {
-        return User::where('user_id', 1)
-            ->where('is_active', 1)
-            ->where('user_type', 'staff')
-            ->whereNotNull('current_coordinates')
-            ->whereNotNull('notification_token')
-            ->select('id', 'name', 'email', 'phone', 'current_coordinates', 'notification_token')
-            ->get()
-            ->filter(function ($guard) use ($siteCoords, $radiusKm) {
-                return $this->isWithinRadius($siteCoords, $guard->current_coordinates, $radiusKm);
-            });
+          $staffoo = User::find(1);
+            if (!$this->userAllowedForState($staffoo, $siteState)) {
+                Log::info("Staffoo (id 1) has no states_allowed permission for state '{$siteState}', skipping Staffoo staff notifications.");
+                return collect();
+            }
+
+            return User::where('user_id', 1)
+                ->where('is_active', 1)
+                ->where('user_type', 'staff')
+                ->whereNotNull('current_coordinates')
+                ->whereNotNull('notification_token')
+                ->select('id', 'name', 'email', 'phone', 'current_coordinates', 'notification_token')
+                ->get()
+                ->filter(function ($guard) use ($siteCoords, $radiusKm) {
+                    return $this->isWithinRadius($siteCoords, $guard->current_coordinates, $radiusKm);
+                });
         
     }
 
@@ -5069,5 +5080,53 @@ private function sendContractorInvoice($contractor, $roster, $guardName)
             'roster_id' => $roster->id ?? null,
         ]);
     }
+}
+
+/**
+ * Check whether a user (contractor OR Staffoo/id 1) is allowed to
+ * receive job notifications for the given site state, based on their
+ * states_allowed column (e.g. ["nsw","vic"]).
+ */
+private function userAllowedForState($user, ?string $siteState): bool
+{
+    if (!$user || !$siteState) {
+        return false;
+    }
+
+    $allowed = $user->states_allowed;
+
+    if (is_string($allowed)) {
+        $allowed = json_decode($allowed, true) ?? [];
+    }
+
+    if (!is_array($allowed) || empty($allowed)) {
+        return false;
+    }
+
+    $abbrMap = [
+        'victoria'                      => 'vic',
+        'new south wales'                => 'nsw',
+        'queensland'                     => 'qld',
+        'south australia'                => 'sa',
+        'western australia'              => 'wa',
+        'tasmania'                       => 'tas',
+        'australian capital territory'   => 'act',
+        'northern territory'             => 'nt',
+        'punjab'                         => 'punjab',
+    ];
+
+    $siteStateNormalized = strtolower(trim($siteState));
+    $siteStateAbbr = $abbrMap[$siteStateNormalized] ?? $siteStateNormalized;
+
+    foreach ($allowed as $state) {
+        $stateNormalized = strtolower(trim($state));
+        $stateAbbr = $abbrMap[$stateNormalized] ?? $stateNormalized;
+
+        if ($stateAbbr === $siteStateAbbr) {
+            return true;
+        }
+    }
+
+    return false;
 }
 }

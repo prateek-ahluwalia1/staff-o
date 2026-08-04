@@ -749,8 +749,8 @@ private function calculateProfileCompletion(User $user): int
                 'state' => 'nullable|string',
                 'country' => 'nullable|string',
                 'coordinates' => 'nullable|string',
-                'states_allowed' => 'nullable|array'
-            ];
+                'states_allowed' => 'nullable|json'            
+                ];
 
             if ($user->user_type === 'customer') {
                 $rules = array_merge($rules, [
@@ -856,8 +856,10 @@ private function calculateProfileCompletion(User $user): int
                 }
 
                 // Handle documents based on allowed states
-                $allowedStates = $user->states_allowed ?? [];
-                
+                $allowedStates = [];
+                    if (!empty($user->states_allowed)) {
+                        $allowedStates = json_decode($user->states_allowed, true) ?? [];
+                    }                
                 // State to document category mapping
                 $stateDocumentMap = [
                     'vic' => 'contractor_document',

@@ -4976,29 +4976,7 @@ public function contractor_accept_job(Request $request, $id)
                 'roster_id' => $request->roster_id
             ];
             send_push_notification($clientNotificationData);
-        }
-
-        // 2. Send notification to Contractor (accepted_by)
-        $contractorUser = DB::table('users')
-            ->where('notification_token', '!=', '')
-            ->where('id', '=', $id)
-            ->select('notification_token', 'name')
-            ->first();
-
-        if ($contractorUser && !empty($contractorUser->notification_token)) {
-            $message = $request->has('guard_id') && !empty($request->guard_id)
-                ? 'You have successfully accepted the job for ' . $guardName . '.'
-                : 'You have successfully accepted the job.';
-
-            $contractorNotificationData = [
-                'message' => $message,
-                'title' => 'Job Accepted Successfully',
-                'notification_token' => $contractorUser->notification_token,
-                'page' => 'my-job-applications',
-                'roster_id' => $request->roster_id
-            ];
-            send_push_notification($contractorNotificationData);
-        }
+        }        
 
         // 3. Send notification to Staff/Guard (only if guard_id is provided)
         if ($request->has('guard_id') && !empty($request->guard_id)) {

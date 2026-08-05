@@ -712,10 +712,10 @@ private function calculateStaffProfileCompletion(User $user): int
     } else {
         // Regular staff with security license and first aid
         $securityLicenseDoc = $documents->firstWhere('document_type', 'security_license');
-        $firstAidDoc = $documents->firstWhere('document_type', 'first_aid');
+        // $firstAidDoc = $documents->firstWhere('document_type', 'first_aid');
         
         $hasValidSecurityLicense = $this->isStaffDocumentValid($securityLicenseDoc);
-        $hasValidFirstAid = $this->isStaffDocumentValid($firstAidDoc);
+        // $hasValidFirstAid = $this->isStaffDocumentValid($firstAidDoc);
         
         // Calculate document score
         if ($totalDocuments > 0) {
@@ -727,8 +727,7 @@ private function calculateStaffProfileCompletion(User $user): int
         }
         
         $newStatus = ($baseScore >= $baseWeight && 
-                      $hasValidSecurityLicense && 
-                      $hasValidFirstAid) ? 1 : 0;
+                      $hasValidSecurityLicense) ? 1 : 0;
     }
 
     $this->updateStaffStatus($user, $newStatus);

@@ -238,6 +238,7 @@ private function isDocumentValid($document): bool
             'state' => 'nullable|string|max:100',
             'country' => 'nullable|string|max:100',
             'coordinates' => 'nullable|string',
+            'states_allowed' => 'nullable|json',          
             
             // Contractor specific fields
             'company_name' => 'required|string|max:255',
@@ -275,6 +276,7 @@ private function isDocumentValid($document): bool
             'country' => $data['country'] ?? null,
             'coordinates' => $data['coordinates'] ?? null,
             'phone' => $data['phone'] ?? null,
+            'states_allowed' => $data['states_allowed'] ?? null,
             'is_email_approved' => 1,
         ]);
 
@@ -293,7 +295,61 @@ private function isDocumentValid($document): bool
         ]);
 
         // Create document entries from categories
-        $this->createDocumentEntries($user);
+        // $this->createDocumentEntries($user);
+        // Handle documents based on allowed states
+        $allowedStates = [];
+            if (!empty($user->states_allowed)) {
+                $allowedStates = json_decode($user->states_allowed, true) ?? [];
+            }                
+        // State to document category mapping
+        $stateDocumentMap = [
+            'vic' => 'contractor_document',
+            'nsw' => 'nsw_document',
+            'qld' => 'qld_document',
+            'tas' => 'tas_document',
+            'wa' => 'wa_document',
+            'sa' => 'sa_document'
+        ];
+
+        // Get document categories for allowed states
+        $documentCategories = DocumentCategory::whereIn('document_category', array_values($stateDocumentMap))
+            ->get()
+            ->keyBy('document_category');
+
+        $documentsToKeep = [];
+
+        foreach ($allowedStates as $state) {
+            $state = strtolower($state);
+            if (isset($stateDocumentMap[$state])) {
+                $categoryKey = $stateDocumentMap[$state];
+                $category = $documentCategories->get($categoryKey);
+                
+                if ($category) {
+                    $documentTypes = json_decode($category->document_type, true) ?? [];
+                    
+                    foreach ($documentTypes as $key => $value) {
+                        // Check if document already exists
+                        $existingDoc = Document::where('user_id', $user->id)
+                            ->where('document_category', $categoryKey)
+                            ->where('document_type', $key)
+                            ->first();
+                        
+                        if (!$existingDoc) {
+                            // Create new document
+                            Document::create([
+                                'user_id' => $user->id,
+                                'document_category' => $categoryKey,
+                                'document_type' => $key,
+                                'document_name' => $value
+                            ]);
+                        }
+                        
+                        // Track document to keep
+                        $documentsToKeep[] = $categoryKey . '_' . $key;
+                    }
+                }
+            }
+        }
 
         // Load relationships
         $user->load('contractor', 'documents');
@@ -352,6 +408,7 @@ private function isDocumentValid($document): bool
             'country' => 'nullable|string|max:100',
             'coordinates' => 'nullable|string',
             'is_active' => 'nullable|boolean',
+            'states_allowed' => 'nullable|json',          
             
             // Contractor specific fields
             'company_name' => 'sometimes|required|string|max:255',
@@ -379,6 +436,7 @@ private function isDocumentValid($document): bool
             'coordinates' => $data['coordinates'] ?? $user->coordinates,
             'is_active' => $data['is_active'] ?? $user->is_active,
             'phone' => $data['phone'] ?? $user->phone,
+            'states_allowed' => $data['states_allowed'] ?? null,
         ];
 
         if (isset($data['password'])) {
@@ -399,6 +457,70 @@ private function isDocumentValid($document): bool
             ]);
         }
 
+        // Handle documents based on allowed states
+        $allowedStates = [];
+            if (!empty($user->states_allowed)) {
+                $allowedStates = json_decode($user->states_allowed, true) ?? [];
+            }                
+        // State to document category mapping
+        $stateDocumentMap = [
+            'vic' => 'contractor_document',
+            'nsw' => 'nsw_document',
+            'qld' => 'qld_document',
+            'tas' => 'tas_document',
+            'wa' => 'wa_document',
+            'sa' => 'sa_document'
+        ];
+
+        // Get document categories for allowed states
+        $documentCategories = DocumentCategory::whereIn('document_category', array_values($stateDocumentMap))
+            ->get()
+            ->keyBy('document_category');
+
+        $documentsToKeep = [];
+
+        foreach ($allowedStates as $state) {
+            $state = strtolower($state);
+            if (isset($stateDocumentMap[$state])) {
+                $categoryKey = $stateDocumentMap[$state];
+                $category = $documentCategories->get($categoryKey);
+                
+                if ($category) {
+                    $documentTypes = json_decode($category->document_type, true) ?? [];
+                    
+                    foreach ($documentTypes as $key => $value) {
+                        // Check if document already exists
+                        $existingDoc = Document::where('user_id', $user->id)
+                            ->where('document_category', $categoryKey)
+                            ->where('document_type', $key)
+                            ->first();
+                        
+                        if (!$existingDoc) {
+                            // Create new document
+                            Document::create([
+                                'user_id' => $user->id,
+                                'document_category' => $categoryKey,
+                                'document_type' => $key,
+                                'document_name' => $value
+                            ]);
+                        }
+                        
+                        // Track document to keep
+                        $documentsToKeep[] = $categoryKey . '_' . $key;
+                    }
+                }
+            }
+        }
+
+        // Delete documents that are not in allowed states
+        $allUserDocuments = Document::where('user_id', $user->id)->get();
+        
+        foreach ($allUserDocuments as $doc) {
+            $docIdentifier = $doc->document_category . '_' . $doc->document_type;
+            if (!in_array($docIdentifier, $documentsToKeep)) {
+                $doc->delete();
+            }
+        }
         // Load relationships
         $user->load('contractor', 'documents');
 

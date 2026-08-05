@@ -3685,30 +3685,56 @@ private function sendStaffActivationNotification(User $user): void
                 ->where('start', '>', now())
                 ->orderBy('created_at', 'desc');
 
-            // State filter for staff
-            if (!empty($user->state)) {
+            // ─── STATE FILTER ───
+            // Contractors: filtered by their OWN states_allowed.
+            // Staff: filtered by Staffoo's (contractor id 1) states_allowed.
+            if ($user->user_type === 'staff') {
+                $allowedStates = User::where('id', 1)->value('states_allowed');
+            } else {
+                $allowedStates = $user->states_allowed;
+            }
 
-                $stateMap = [
-                    // Australia
-                    'Victoria' => ['Victoria', 'VIC', 'vic'],
-                    'New South Wales' => ['New South Wales', 'NSW', 'nsw'],
-                    'Queensland' => ['Queensland', 'QLD', 'qld'],
-                    'South Australia' => ['South Australia', 'SA', 'sa'],
-                    'Western Australia' => ['Western Australia', 'WA', 'wa'],
-                    'Tasmania' => ['Tasmania', 'TAS', 'tas'],
-                    'Australian Capital Territory' => ['Australian Capital Territory', 'ACT', 'act'],
-                    'Northern Territory' => ['Northern Territory', 'NT', 'nt'],
+            if (is_string($allowedStates)) {
+                $allowedStates = json_decode($allowedStates, true) ?? [];
+            }
 
-                    // Pakistan
-                    'Punjab' => ['Punjab', 'PUNJAB', 'punjab'],
+            if (is_array($allowedStates) && !empty($allowedStates)) {
+                $abbrMap = [
+                    'victoria'                      => ['victoria', 'vic'],
+                    'new south wales'                => ['new south wales', 'nsw'],
+                    'queensland'                     => ['queensland', 'qld'],
+                    'south australia'                => ['south australia', 'sa'],
+                    'western australia'              => ['western australia', 'wa'],
+                    'tasmania'                       => ['tasmania', 'tas'],
+                    'australian capital territory'   => ['australian capital territory', 'act'],
+                    'northern territory'             => ['northern territory', 'nt'],
+                    'punjab'                         => ['punjab'],
                 ];
 
-                $states = $stateMap[$user->state] ?? [$user->state];
+                $states = [];
+                foreach ($allowedStates as $allowedState) {
+                    $normalized = strtolower(trim($allowedState));
+                    $matched = false;
+
+                    foreach ($abbrMap as $variants) {
+                        if (in_array($normalized, $variants, true)) {
+                            $states = array_merge($states, $variants);
+                            $matched = true;
+                            break;
+                        }
+                    }
+
+                    if (!$matched) {
+                        $states[] = $allowedState;
+                    }
+                }
+                $states = array_unique($states);
 
                 $query->whereHas('site', function ($q) use ($states) {
                     $q->whereIn('state', $states);
                 });
-            }
+
+            } 
 
             $jobs = $query->paginate($perPage);
 

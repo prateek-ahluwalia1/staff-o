@@ -108,8 +108,8 @@ export default function ReviewStep({ form, rate, setField, handleConfirm, setSte
         </div>
       </div>
 
-      {/* SCHEDULE SUMMARY — calendar-badge chip strip */}
-      <div className="mb-4">
+      {/* SCHEDULE SUMMARY */}
+      <div className="mb-4 pb-4 border-bottom">
         <div className="d-flex align-items-center gap-2 mb-2 mb-md-3">
           <i className="fa-regular fa-calendar-check text-success fs-6 fs-md-5"></i>
           <h6 className="fw-bold mb-0">Schedule Summary</h6>
@@ -150,75 +150,81 @@ export default function ReviewStep({ form, rate, setField, handleConfirm, setSte
         )}
       </div>
 
-      {/* RATE BREAKDOWN */}
-      <div className="mb-4">
-        {rate && <RateBreakdown rate={rate} jobTypeLabel={jobTypeLabel} paymentOption={form.paymentOption} />}
-      </div>
+      {/* SPLIT LAYOUT: Payment Options (Left) / Rate Breakdown (Right) */}
+      <div className="row g-4 mb-4">
 
-      {/* PAYMENT OPTIONS — pricing cards */}
-      <div className="mb-4 pt-3 border-top">
-        <div className="d-flex align-items-center gap-2 mb-3">
-          <i className="fa-solid fa-credit-card text-primary fs-6 fs-md-5"></i>
-          <h6 className="fw-bold mb-0">{isAdmin ? "Client Invoice Terms" : "Payment Options"}</h6>
-        </div>
+        {/* LEFT COLUMN: Payment Options & Terms */}
+        <div className="col-12 col-lg-5">
+          <div className="d-flex align-items-center gap-2 mb-3">
+            <i className="fa-solid fa-credit-card text-primary fs-6 fs-md-5"></i>
+            <h6 className="fw-bold mb-0">{isAdmin ? "Client Invoice Terms" : "Payment Options"}</h6>
+          </div>
 
-        <div className="row g-3">
-          <div className="col-12 col-md-6">
-            <div
-              className={`jw-pricing-card ${isFull ? "selected" : ""}`}
-              onClick={() => setField("paymentOption", "full")}
-            >
-              <span className="jw-pricing-check"><i className="fa-solid fa-check"></i></span>
-              <div className="d-flex align-items-center gap-2 mb-2">
-                <span className="fw-bold fs-6 text-dark">Pay in Full</span>
-                <span className="badge bg-success text-white shadow-sm" style={{ fontSize: "0.65rem" }}>Save 5%</span>
+          <div className="row g-3 mb-4">
+            {/* Note: changed to col-12 so the cards stack vertically on the left pane */}
+            <div className="col-12">
+              <div
+                className={`jw-pricing-card ${isFull ? "selected" : ""}`}
+                onClick={() => setField("paymentOption", "full")}
+              >
+                <span className="jw-pricing-check"><i className="fa-solid fa-check"></i></span>
+                <div className="d-flex align-items-center gap-2 mb-2">
+                  <span className="fw-bold fs-6 text-dark">Pay in Full</span>
+                  <span className="badge bg-success text-white shadow-sm" style={{ fontSize: "0.65rem" }}>Save 5%</span>
+                </div>
+                <div className="small text-muted mb-3" style={{ textTransform: "none", fontSize: "0.8rem", lineHeight: "1.4" }}>
+                  Pay the total amount now and receive an instant 5% discount on your booking.
+                </div>
+                <div className="pt-2 border-top">
+                  <div className="fw-bold fs-5 text-dark">
+                    {fmt(fullTotal)} <span className="fw-normal text-muted" style={{ fontSize: "0.75rem" }}>total</span>
+                  </div>
+                </div>
               </div>
-              <div className="small text-muted mb-3" style={{ textTransform: "none", fontSize: "0.8rem", lineHeight: "1.4" }}>
-                Pay the total amount now and receive an instant 5% discount on your booking.
-              </div>
-              <div className="pt-2 border-top">
-                <div className="fw-bold fs-5 text-dark">
-                  {fmt(fullTotal)} <span className="fw-normal text-muted" style={{ fontSize: "0.75rem" }}>total</span>
+            </div>
+
+            <div className="col-12">
+              <div
+                className={`jw-pricing-card ${isSplit ? "selected" : ""}`}
+                onClick={() => setField("paymentOption", "split")}
+              >
+                <span className="jw-pricing-check"><i className="fa-solid fa-check"></i></span>
+                <div className="mb-2">
+                  <span className="fw-bold fs-6 text-dark">Split Payment (50/50)</span>
+                </div>
+                <div className="small text-muted mb-3" style={{ textTransform: "none", fontSize: "0.8rem", lineHeight: "1.4" }}>
+                  Pay 50% upfront to secure staff. The remaining 50% is charged upon shift completion.
+                </div>
+                <div className="pt-2 border-top">
+                  <div className="fw-bold fs-5 text-dark">
+                    {fmt(splitUpfront)} <span className="fw-normal text-muted" style={{ fontSize: "0.75rem" }}>upfront</span>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-          <div className="col-12 col-md-6">
-            <div
-              className={`jw-pricing-card ${isSplit ? "selected" : ""}`}
-              onClick={() => setField("paymentOption", "split")}
-            >
-              <span className="jw-pricing-check"><i className="fa-solid fa-check"></i></span>
-              <div className="mb-2">
-                <span className="fw-bold fs-6 text-dark">Split Payment (50/50)</span>
+
+          {/* TERMS & CONDITIONS */}
+          {!isAdmin && (
+            <div className="jw-terms-box p-2 p-md-3">
+              <div className="d-flex align-items-start gap-2 mb-1">
+                <input id="terms" className="form-check-input mt-1 flex-shrink-0" type="checkbox" style={{ width: "1.1rem", height: "1.1rem", cursor: "pointer" }} checked={form.termsAccepted} onChange={(e) => setField("termsAccepted", e.target.checked)} disabled={isSubmitting} />
+                <label htmlFor="terms" className="form-check-label fw-medium user-select-none text-break" style={{ cursor: "pointer", fontSize: "0.85rem", lineHeight: "1.4" }}>
+                  I agree to the <NavLink to="/terms-of-use" target="_blank" rel="noopener noreferrer" className="text-primary text-decoration-none fw-bold">Terms and Conditions</NavLink>
+                </label>
               </div>
-              <div className="small text-muted mb-3" style={{ textTransform: "none", fontSize: "0.8rem", lineHeight: "1.4" }}>
-                Pay 50% upfront to secure staff. The remaining 50% is charged upon shift completion.
-              </div>
-              <div className="pt-2 border-top">
-                <div className="fw-bold fs-5 text-dark">
-                  {fmt(splitUpfront)} <span className="fw-normal text-muted" style={{ fontSize: "0.75rem" }}>upfront</span>
-                </div>
+              <div className="text-muted ps-4" style={{ fontSize: "0.7rem", textTransform: "none", lineHeight: "1.3" }}>
+                *Note: A 10% incidental authorisation hold may be applied by Stripe to cover potential unplanned overtime. The hold will be released after completion of the shift.
               </div>
             </div>
-          </div>
+          )}
+        </div>
+
+        {/* RIGHT COLUMN: Rate Breakdown */}
+        <div className="col-12 col-lg-7">
+          {rate && <RateBreakdown rate={rate} jobTypeLabel={jobTypeLabel} paymentOption={form.paymentOption} />}
         </div>
       </div>
-
-      {/* TERMS & CONDITIONS */}
-      {!isAdmin && (
-        <div className="jw-terms-box p-2 p-md-3 mb-4">
-          <div className="d-flex align-items-start gap-2 mb-1">
-            <input id="terms" className="form-check-input mt-1 flex-shrink-0" type="checkbox" style={{ width: "1.1rem", height: "1.1rem", cursor: "pointer" }} checked={form.termsAccepted} onChange={(e) => setField("termsAccepted", e.target.checked)} disabled={isSubmitting} />
-            <label htmlFor="terms" className="form-check-label fw-medium user-select-none text-break" style={{ cursor: "pointer", fontSize: "0.85rem", lineHeight: "1.4" }}>
-              I agree to the <NavLink to="/terms-of-use" target="_blank" rel="noopener noreferrer" className="text-primary text-decoration-none fw-bold">Terms and Conditions</NavLink>
-            </label>
-          </div>
-          <div className="text-muted ps-4" style={{ fontSize: "0.7rem", textTransform: "none", lineHeight: "1.3" }}>
-            *Note: A 10% incidental authorisation hold may be applied by Stripe to cover potential unplanned overtime. The hold will be released after completion of the shift.
-          </div>
-        </div>
-      )}
 
       {/* TOTAL DUE RIBBON */}
       {!isAdmin && (

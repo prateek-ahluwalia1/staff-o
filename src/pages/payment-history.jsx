@@ -577,7 +577,7 @@ export default function PaymentHistory() {
                             {formatDate(tx.created_at)}
                           </td>
                           <td className="fw-bold" style={{ color: "#0f172a" }}>
-                            {formatAmount(tx.total_amount)}
+                            {formatAmount(tx.amount_charged)}
                           </td>
                           <td>
                             <span

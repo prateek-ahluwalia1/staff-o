@@ -315,10 +315,10 @@ function AppContent() {
             const innerRoster = outerRoster?.roster ?? {};
             const jobId = innerRoster?.id;
 
-            // if (!jobId) {
-            //     toast.error("Job already accepted on app.");
-            //     return;
-            // }
+            if (!jobId) {
+                console.error("Job already accepted on app.");
+                return;
+            }
 
             const startRaw = innerRoster?.start;
             const endRaw = innerRoster?.end;
@@ -464,7 +464,6 @@ function AppContent() {
 
             const allowedRoles = ["contractor", "resource_partner", ...(canHandleStaffCoverJobs ? ["staff"] : [])];
 
-            // Only allow accept modal for allowed roles
             if (userId && allowedRoles.includes(userRole)) {
                 openAcceptModal(notification);
             } else if (!userId) {

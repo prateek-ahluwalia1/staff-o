@@ -1578,7 +1578,7 @@ const ManageUsers = () => {
           display: "flex", justifyContent: "center", alignItems: "center",
         }}>
           <div className="modal-inner-content" style={{
-            width: "95%", maxWidth: "900px", height: "90vh", background: "#ffffff",
+            width: "95%", maxWidth: "1200px", height: "90vh", background: "#ffffff",
             borderRadius: "20px", boxShadow: "0 25px 50px -12px rgba(0,0,0,0.25)",
             display: "flex", flexDirection: "column", overflow: "hidden",
           }}>
@@ -1798,14 +1798,21 @@ const ManageUsers = () => {
               disabled={!!selectedDoc}
             >
               <option value="">Select Type</option>
-              {DOC_TYPES.map((doc) => (
-                <option key={doc.value} value={doc.value}>
-                  {capitalizeWords(doc.label)}
+              {DOC_TYPES.map((type) => (
+                <option key={type.value} value={type.value}>
+                  {capitalizeWords(type.label)}
                 </option>
               ))}
+
+              {/* 👇 Fallback: show the actual value from DB if it's not in DOC_TYPES */}
+              {docForm.document_name &&
+                !DOC_TYPES.some((t) => t.value === docForm.document_name) && (
+                  <option value={docForm.document_name} disabled>
+                    {capitalizeWords(docForm.document_name)}
+                  </option>
+                )}
             </select>
           </div>
-
           {/* Document Number + Verify */}
           <div className="mb-3">
             <label className="form-label fw-semibold">

@@ -735,7 +735,7 @@ const StaffooStaff = () => {
             {/* Main modal (unchanged) */}
             {isModalOpen && (
                 <div className="full-screen-modal" style={{ position: "fixed", top: 0, left: 0, width: "100vw", height: "100vh", zIndex: 1060, background: "rgba(0,0,0,0.4)", backdropFilter: "blur(8px)", display: "flex", justifyContent: "center", alignItems: "center" }}>
-                    <div className="modal-inner-content" style={{ width: "95%", maxWidth: "900px", height: "90vh", background: "#ffffff", borderRadius: "20px", boxShadow: "0 25px 50px -12px rgba(0,0,0,0.25)", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+                    <div className="modal-inner-content" style={{ width: "95%", maxWidth: "1200px", height: "90vh", background: "#ffffff", borderRadius: "20px", boxShadow: "0 25px 50px -12px rgba(0,0,0,0.25)", display: "flex", flexDirection: "column", overflow: "hidden" }}>
                         <div className="px-4 py-3 border-bottom bg-white d-flex justify-content-between align-items-center">
                             <h4 className="fw-bold mb-0">{editingUser ? "Update Staff Profile" : "Add New Staff"}</h4>
                             <button className="btn-close shadow-none" onClick={closeModal}></button>
@@ -801,9 +801,28 @@ const StaffooStaff = () => {
                 <form onSubmit={handleDocSubmit} style={{ maxHeight: "80vh", overflowY: "auto" }}>
                     <div className="mb-3">
                         <label className="form-label fw-semibold">Document Type</label>
-                        <select className="form-control" name="document_name" value={docForm.document_name} onChange={handleDocFormChange} required disabled={!!selectedDoc}>
+                        <select
+                            className="form-control"
+                            name="document_name"
+                            value={docForm.document_name}
+                            onChange={handleDocFormChange}
+                            required
+                            disabled={!!selectedDoc}
+                        >
                             <option value="">Select Type</option>
-                            {DOC_TYPES.map(doc => <option key={doc.value} value={doc.value}>{capitalizeWords(doc.label)}</option>)}
+                            {DOC_TYPES.map((doc) => (
+                                <option key={doc.value} value={doc.value}>
+                                    {capitalizeWords(doc.label)}
+                                </option>
+                            ))}
+
+                            {/* Fallback: show the actual DB value if not in DOC_TYPES */}
+                            {docForm.document_name &&
+                                !DOC_TYPES.some((t) => t.value === docForm.document_name) && (
+                                    <option value={docForm.document_name} disabled>
+                                        {capitalizeWords(docForm.document_name)}
+                                    </option>
+                                )}
                         </select>
                     </div>
 

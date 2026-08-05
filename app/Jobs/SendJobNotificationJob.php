@@ -48,7 +48,6 @@ class SendJobNotificationJob implements ShouldQueue
             ->get();
 
         if ($unassignedJobs->isEmpty()) {
-            Log::info('No unassigned jobs found.');
             return;
         }
 

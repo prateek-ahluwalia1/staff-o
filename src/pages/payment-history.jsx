@@ -17,6 +17,14 @@ const formatDate = (dateString) => {
   });
 };
 
+const formatStatus = (status) => {
+  if (!status) return "-";
+
+  return status
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+};
+
 const formatAmount = (amount) => {
   const num = Number(amount) || 0;
   return new Intl.NumberFormat("en-AU", {
@@ -27,12 +35,42 @@ const formatAmount = (amount) => {
 
 const getStatusBadgeClass = (status) => {
   const s = String(status || "").toLowerCase();
-  if (["paid", "succeeded", "success", "captured"].includes(s))
+
+  if (
+    [
+      "paid",
+      "succeeded",
+      "success",
+      "captured",
+      "partially_captured",
+    ].includes(s)
+  ) {
     return "badge-success";
-  if (["pending", "processing", "held"].includes(s))
+  }
+
+  if (
+    [
+      "pending",
+      "processing",
+      "held",
+      "requires_capture",
+      "authorized",
+    ].includes(s)
+  ) {
     return "badge-warning";
-  if (["failed", "cancelled"].includes(s))
+  }
+
+  if (
+    [
+      "failed",
+      "cancelled",
+      "canceled",
+      "expired",
+    ].includes(s)
+  ) {
     return "badge-danger";
+  }
+
   return "badge-secondary";
 };
 
@@ -580,10 +618,8 @@ export default function PaymentHistory() {
                             {formatAmount(tx.amount_charged)}
                           </td>
                           <td>
-                            <span
-                              className={`badge-premium ${getStatusBadgeClass(tx.status)}`}
-                            >
-                              {tx.status.charAt(0).toUpperCase() + tx.status.slice(1)}
+                            <span className={`badge-premium ${getStatusBadgeClass(tx.status)}`}>
+                              {formatStatus(tx.status)}
                             </span>
                           </td>
                           <td>

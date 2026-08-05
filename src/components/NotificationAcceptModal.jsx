@@ -366,18 +366,18 @@ export default function NotificationAcceptModal({
                         {showStaffSelector && (
                             <div style={{ marginBottom: 12 }}>
                                 <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: '#334155', marginBottom: 6 }}>
-                                    Assign to active staff
+                                    Assign to staff
                                 </label>
                                 <Select
                                     className="react-select-container"
                                     options={[
-                                        { value: '', label: 'Accept Job' },
+                                        { value: '', label: 'Select staff' },
                                         ...staffOptions,
                                     ]}
                                     value={
                                         staffOptions.find((option) => option.value === selectedStaffId)
                                             ? staffOptions.find((option) => option.value === selectedStaffId)
-                                            : { value: '', label: 'Accept Job' }
+                                            : { value: '', label: 'Select staff' }
                                     }
                                     onChange={(option) => onStaffChange?.(option?.value || '')}
                                     isLoading={staffLoading}
@@ -405,7 +405,7 @@ export default function NotificationAcceptModal({
                                     }}
                                 />
                                 <div style={{ fontSize: 12, color: '#64748b', marginTop: 6 }}>
-                                    Leave this empty to accept the job directly.
+                                    Leave this blank to accept the job immediately. You can assign it to the roster later.
                                 </div>
                             </div>
                         )}

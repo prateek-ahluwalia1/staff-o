@@ -606,14 +606,14 @@ const CoverJobs = () => {
                         <div className="modal-footer" style={{ background: '#fff', padding: '16px 24px', borderTop: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', gap: '12px' }}>
                             {userRole === 'contractor' && (
                                 <div className="w-100">
-                                    <label className="form-label fw-semibold" style={{ fontSize: '13px', color: '#334155' }}>Assign to active staff</label>
+                                    <label className="form-label fw-semibold" style={{ fontSize: '13px', color: '#334155' }}>Assign to staff</label>
                                     <Select
                                         className="react-select-container"
-                                        options={[{ value: '', label: 'Accept Job' }, ...contractorStaffOptions]}
+                                        options={[{ value: '', label: 'Select staff' }, ...contractorStaffOptions]}
                                         value={
                                             contractorStaffOptions.find(o => o.value === selectedStaffId)
                                                 ? contractorStaffOptions.find(o => o.value === selectedStaffId)
-                                                : { value: '', label: 'Accept Job' }
+                                                : { value: '', label: 'Select staff' }
                                         }
                                         onChange={(option) => setSelectedStaffId(option?.value || '')}
                                         isLoading={staffLoading}
@@ -628,7 +628,7 @@ const CoverJobs = () => {
                                             menu: (base) => ({ ...base, position: 'absolute' }),
                                         }}
                                     />
-                                    <div className="text-muted mt-2" style={{ fontSize: '12px' }}>Leave this empty to accept the job directly.</div>
+                                    <div className="text-muted mt-2" style={{ fontSize: '12px' }}>Leave this blank to accept the job immediately. You can assign it to the roster later.</div>
                                 </div>
                             )}
                             <div className="d-flex gap-2 ms-auto">

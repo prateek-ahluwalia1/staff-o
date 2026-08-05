@@ -1488,7 +1488,7 @@ const ManageStaff = () => {
             </label>
             <div
               className="position-relative border rounded p-3 text-center bg-light"
-              style={{ minHeight: 200 }}
+              style={{ minHeight: 200, maxHeight: 400, overflow: "hidden" }}
             >
               {docForm.file_url ? (
                 <>

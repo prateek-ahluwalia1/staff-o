@@ -859,7 +859,7 @@ const StaffooStaff = () => {
                                 </div>
                                 <div className="col-12 col-md-6">
                                     <label className="form-label fw-semibold">Document/Image <span className="text-danger">*</span></label>
-                                    <div className="position-relative border rounded p-3 text-center bg-light" style={{ minHeight: 200 }}>
+                                    <div className="position-relative border rounded p-3 text-center bg-light" style={{ minHeight: 200, maxHeight: 400, overflow: "hidden" }}>
                                         {docForm.file_url ? (
                                             docForm.file_url.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
                                                 <img src={docForm.file_url.startsWith("http") ? docForm.file_url : `${apiURL}staff_documents/${docForm.file_url}`} alt="Preview" style={{ width: "100%", maxHeight: 200, objectFit: "contain", borderRadius: 8 }} />
@@ -911,7 +911,7 @@ const StaffooStaff = () => {
                             </div>
                             <div className="mb-3 mt-3">
                                 <label className="form-label fw-semibold">Document/Image <span className="text-danger">*</span></label>
-                                <div className="position-relative border rounded p-3 text-center bg-light" style={{ minHeight: 200 }}>
+                                <div className="position-relative border rounded p-3 text-center bg-light" style={{ minHeight: 200, maxHeight: 400, overflow: "hidden" }}>
                                     {docForm.file_url ? (
                                         docForm.file_url.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
                                             <img src={docForm.file_url.startsWith("http") ? docForm.file_url : `${apiURL}staff_documents/${docForm.file_url}`} alt="Preview" style={{ width: "100%", maxHeight: 200, objectFit: "contain", borderRadius: 8 }} />

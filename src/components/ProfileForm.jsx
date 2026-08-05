@@ -395,7 +395,7 @@ export default function ProfileForm({
                   <div className="state-picker-hint">
                     <i className="fa-solid fa-circle-info"></i>
                     <span>
-                      Select the states you're licensed to work in — document requirements below will update accordingly.
+                      Select one or more states where you're licensed to work. Required documents will update automatically based on your selection.
                     </span>
                   </div>
 

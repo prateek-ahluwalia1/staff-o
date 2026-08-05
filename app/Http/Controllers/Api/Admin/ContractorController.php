@@ -408,7 +408,7 @@ private function isDocumentValid($document): bool
             'country' => 'nullable|string|max:100',
             'coordinates' => 'nullable|string',
             'is_active' => 'nullable|boolean',
-            'states_allowed' => 'nullable|json',          
+            'states_allowed' => 'nullable|array',          
             
             // Contractor specific fields
             'company_name' => 'sometimes|required|string|max:255',

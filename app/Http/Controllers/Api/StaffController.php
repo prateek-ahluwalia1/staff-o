@@ -125,15 +125,14 @@ private function calculateProfileCompletion(User $user): int
             }
         }else{
             $securityLicenseDoc = $documents->firstWhere('document_type', 'security_license');
-            $firstAidDoc = $documents->firstWhere('document_type', 'first_aid');
+            // $firstAidDoc = $documents->firstWhere('document_type', 'first_aid');
             
             $hasSecurityLicenseWithExpiry = $securityLicenseDoc && !empty($securityLicenseDoc->document_expiry);
-            $hasFirstAidWithExpiry = $firstAidDoc && !empty($firstAidDoc->document_expiry);
+            // $hasFirstAidWithExpiry = $firstAidDoc && !empty($firstAidDoc->document_expiry);
             
             $oldStatus = $user->is_active;
             $newStatus = ($baseScore >= $baseWeight && 
-                          $hasSecurityLicenseWithExpiry && 
-                          $hasFirstAidWithExpiry) ? 1 : 0;
+                          $hasSecurityLicenseWithExpiry) ? 1 : 0;
 
             if ($user->is_active !== $newStatus) {
                 $user->is_active = $newStatus;

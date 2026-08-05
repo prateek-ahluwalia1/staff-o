@@ -210,11 +210,11 @@ private function calculateProfileCompletion(User $user): int
         } else {
             // Regular staff with security license and first aid
             $securityLicenseDoc = $documents->firstWhere('document_type', 'security_license');
-            $firstAidDoc = $documents->firstWhere('document_type', 'first_aid');
+            // $firstAidDoc = $documents->firstWhere('document_type', 'first_aid');
             
             // Check if documents are valid (have future expiry dates)
             $hasValidSecurityLicense = $this->isDocumentValid($securityLicenseDoc);
-            $hasValidFirstAid = $this->isDocumentValid($firstAidDoc);
+            // $hasValidFirstAid = $this->isDocumentValid($firstAidDoc);
             
             // Calculate document score based on all documents
             $totalDocuments = $documents->count();
@@ -229,8 +229,7 @@ private function calculateProfileCompletion(User $user): int
             $oldStatus = $user->is_active;
             // For regular staff: needs base score complete AND both security license AND first aid valid
             $newStatus = ($baseScore >= $baseWeight && 
-                          $hasValidSecurityLicense && 
-                          $hasValidFirstAid) ? 1 : 0;
+                          $hasValidSecurityLicense) ? 1 : 0;
 
             if ($user->is_active !== $newStatus) {
                 $user->is_active = $newStatus;

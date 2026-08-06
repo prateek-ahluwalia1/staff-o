@@ -165,7 +165,7 @@ class ChargeRateController extends Controller
     {
         $charge_rate = ContractorChargeRate::where('user_id', $request->user_id)->where('state', $request->state)->first();
         if($charge_rate){
-            return response()->json(['message' => "Hi,this charge rate already exist!" ,  'code' => 404, 'success' => false]);
+            return response()->json(['message' => "This charge rate already exist!" ,  'code' => 404, 'success' => false]);
         }else{
         $charge_rate = new ContractorChargeRate();
         $charge_rate->title = $request->title;

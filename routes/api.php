@@ -87,6 +87,11 @@ Route::middleware('auth:sanctum')->group(function () {
      Route::any('get-all-archive-chargerates',  [ChargeRateController::class, 'getAllArchiveChargeRate'])->name('get.all.archive_charge_rate');
      Route::any('charge_rate/remove',  [ChargeRateController::class, 'removeChargeRate'])->name('charge_rate.remove');
 
+     //contractor charge rate
+     Route::any('store-contractor-rate',  [ChargeRateController::class, 'contactorStore']);
+     Route::any('update-contractor-rate',  [ChargeRateController::class, 'ContractorUpdate']);
+     Route::any('get-all-contractor-rates',  [ChargeRateController::class, 'getContractorChargeRate']);
+
     //payrate routes
     Route::any('payrate/store',  [PayRateController::class, 'store'])->name('payrate.store');
     Route::any('payrate/update',  [PayRateController::class, 'update'])->name('payrate.update');

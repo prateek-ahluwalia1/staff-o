@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import { useSelector } from "react-redux";
 import useFetch from "../hooks/useFetch";
 import Loader from "../components/Loader";
@@ -38,13 +38,24 @@ const ContractorRatesView = () => {
     });
 
     const [activeCat, setActiveCat] = useState("def"); // "def" | "eba"
+    const [selectedId, setSelectedId] = useState(null);
 
     const rows = useMemo(() => {
         if (!data) return [];
         return Array.isArray(data?.data) ? data.data : Array.isArray(data) ? data : [];
     }, [data]);
 
-    const rate = rows[0]; // contractor only ever has their own single rate
+    // Default to the first rate once data arrives
+    useEffect(() => {
+        if (rows.length && selectedId === null) {
+            setSelectedId(rows[0].id);
+        }
+    }, [rows, selectedId]);
+
+    const rate = useMemo(
+        () => rows.find((r) => r.id === selectedId) || rows[0],
+        [rows, selectedId]
+    );
 
     if (userType !== "contractor") {
         return (
@@ -95,11 +106,6 @@ const ContractorRatesView = () => {
           overflow: hidden;
           isolation: isolate;
           margin-bottom: 1.5rem;
-          display: flex;
-          flex-wrap: wrap;
-          gap: 20px;
-          justify-content: space-between;
-          align-items: flex-end;
         }
         .rates-hero::before {
           content: "";
@@ -149,15 +155,81 @@ const ContractorRatesView = () => {
           font-size: 14px;
           margin: 0;
         }
-        .rates-hero-badge {
-          padding: 8px 18px;
-          border-radius: 12px;
-          background: rgba(10,124,110,0.18);
-          border: 1px solid rgba(110,231,216,0.3);
-          color: #6ee7d8;
-          font-weight: 700;
-          font-size: 13px;
+
+        /* Rate picker strip */
+        .rate-picker {
+          display: flex;
+          gap: 12px;
+          overflow-x: auto;
+          padding-bottom: 6px;
+          margin-bottom: 1.5rem;
+          scrollbar-width: thin;
+        }
+        .rate-pill {
+          flex: 0 0 auto;
+          min-width: 220px;
+          text-align: left;
+          background: #fff;
+          border: 1.5px solid var(--line-soft);
+          border-radius: 16px;
+          padding: 16px 18px;
+          cursor: pointer;
+          transition: all 0.18s ease;
+          position: relative;
+        }
+        .rate-pill:hover {
+          border-color: rgba(10,124,110,0.35);
+          box-shadow: 0 8px 18px -10px rgba(15,23,42,0.18);
+        }
+        .rate-pill.active {
+          border-color: var(--teal);
+          background: #f0fdf9;
+          box-shadow: 0 8px 20px -8px rgba(10,124,110,0.3);
+        }
+        .rate-pill .pill-title {
+          font-weight: 800;
+          font-size: 14px;
+          color: var(--ink);
+          margin-bottom: 4px;
           white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+        .rate-pill .pill-state {
+          display: inline-block;
+          font-size: 11px;
+          font-weight: 700;
+          text-transform: uppercase;
+          letter-spacing: 0.4px;
+          color: var(--teal-dark);
+          background: rgba(10,124,110,0.08);
+          padding: 3px 9px;
+          border-radius: 20px;
+          margin-bottom: 8px;
+        }
+        .rate-pill .pill-rate {
+          font-size: 13px;
+          color: var(--muted);
+        }
+        .rate-pill .pill-rate b {
+          color: var(--ink);
+          font-weight: 800;
+        }
+        .rate-pill.active::after {
+          content: "\\2713";
+          position: absolute;
+          top: 12px;
+          right: 14px;
+          width: 20px;
+          height: 20px;
+          border-radius: 50%;
+          background: var(--teal);
+          color: #fff;
+          font-size: 11px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-weight: 700;
         }
 
         .summary-grid {
@@ -283,8 +355,9 @@ const ContractorRatesView = () => {
         .rate-row .metro .amount { color: var(--teal-dark); }
 
         @media (max-width: 767.98px) {
-          .rates-hero { padding: 26px 20px 34px; border-radius: 18px; align-items: flex-start; }
+          .rates-hero { padding: 26px 20px 34px; border-radius: 18px; }
           .rates-hero h1 { font-size: 21px; }
+          .rate-pill { min-width: 190px; }
           .rate-row { grid-template-columns: 1fr 1fr; row-gap: 8px; }
           .rate-row .slot-col { grid-column: 1 / -1; }
         }
@@ -292,32 +365,45 @@ const ContractorRatesView = () => {
 
             {/* Hero */}
             <div className="rates-hero">
-                <div>
-                    <span className="rates-hero-eyebrow"><span className="dot"></span> My Rates</span>
-                    <h1>{rate?.title || "Contractor Rate Card"}</h1>
-                    <p>Read‑only view — rates are managed by Staffoo admin.</p>
-                </div>
-                {rate?.status && (
-                    <span className="rates-hero-badge text-capitalize">
-                        <i className="fa fa-circle-check me-2"></i>{rate.status}
-                    </span>
-                )}
+                <span className="rates-hero-eyebrow"><span className="dot"></span> My Rates</span>
+                <h1>My Charged Rates</h1>
+                <p>Rates are managed by Staffoo admin.</p>
             </div>
 
-            {!rate ? (
+            {rows.length === 0 ? (
                 <div className="rate-card text-center py-5 text-muted">
                     No rates have been assigned to you yet.
                 </div>
             ) : (
                 <>
-                    {/* Summary cards */}
+                    {/* Rate picker — only shown when there's more than one rate */}
+                    {rows.length > 1 && (
+                        <div className="rate-picker">
+                            {rows.map((r) => (
+                                <button
+                                    key={r.id}
+                                    className={`rate-pill ${r.id === rate?.id ? "active" : ""}`}
+                                    onClick={() => setSelectedId(r.id)}
+                                >
+                                    <span className="pill-state">{STATE_NAME_MAP[r.state] || r.state}</span>
+                                    <div className="pill-title">{r.title}</div>
+                                </button>
+                            ))}
+                        </div>
+                    )}
+
+                    {/* Summary cards for the selected rate */}
                     <div className="summary-grid">
+                        <div className="summary-card">
+                            <div className="label">Rate Title</div>
+                            <div className="value">{rate.title}</div>
+                        </div>
                         <div className="summary-card">
                             <div className="label">State</div>
                             <div className="value">{STATE_NAME_MAP[rate.state] || rate.state || "—"}</div>
                         </div>
                         <div className="summary-card">
-                            <div className="label">Standard Metro (Mon–Fri Day)</div>
+                            <div className="label">Award Metro (Mon–Fri Day)</div>
                             <div className="value teal">{fmt(rate.def_metro_mon_to_fri_day_rate)}</div>
                         </div>
                         <div className="summary-card">
@@ -350,7 +436,7 @@ const ContractorRatesView = () => {
                             </span>
                             <div>
                                 <h6>{activeCat === "def" ? "Award Rates" : "EBA Agreement Rates"}</h6>
-                                <span>Metro vs Regional, by time slot</span>
+                                <span>Metro vs Regional, by time slot — {rate.title}</span>
                             </div>
                         </div>
 

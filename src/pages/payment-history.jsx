@@ -602,9 +602,10 @@ export default function PaymentHistory() {
                     <thead>
                       <tr>
                         <th>Date</th>
-                        <th>Amount</th>
+                        <th>Amount Charged</th>
+                        <th>Total Amount</th>
                         <th>Status</th>
-                        <th>Transaction ID</th>
+                        {/* <th>Transaction ID</th> */}
                         <th className="text-center">Actions</th>
                       </tr>
                     </thead>
@@ -617,12 +618,15 @@ export default function PaymentHistory() {
                           <td className="fw-bold" style={{ color: "#0f172a" }}>
                             {formatAmount(tx.amount_charged)}
                           </td>
+                          <td className="fw-bold" style={{ color: "#0f172a" }}>
+                            {formatAmount(tx.total_amount)}
+                          </td>
                           <td>
                             <span className={`badge-premium ${getStatusBadgeClass(tx.status)}`}>
                               {formatStatus(tx.status)}
                             </span>
                           </td>
-                          <td>
+                          {/* <td>
                             <span
                               className="small"
                               style={{
@@ -635,7 +639,7 @@ export default function PaymentHistory() {
                             >
                               {tx.payment_intent_id}
                             </span>
-                          </td>
+                          </td> */}
                           <td className="text-center">
                             {tx.invoice_filename ? (
                               <div className="d-flex gap-2 justify-content-center">

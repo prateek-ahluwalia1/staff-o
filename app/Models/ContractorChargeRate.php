@@ -65,4 +65,9 @@ class ContractorChargeRate extends Model
     protected $casts = [
         'status' => 'string',
     ];
+
+     public function user()
+    {
+        return $this->belongsTo(User::class, 'user_id');
+    }
 }

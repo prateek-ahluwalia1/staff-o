@@ -274,7 +274,7 @@ class ChargeRateController extends Controller
 
     public function getContractorChargeRate()
     {
-        $charge_rate = ContractorChargeRate::where('status', 'active')->orderBy('title', 'asc')->get();
+        $charge_rate = ContractorChargeRate::with('user')->where('status', 'active')->orderBy('title', 'asc')->get();
 
         return response()->json(['success' => true, 'data' => $charge_rate]);  
     }

@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useCallback } from "react";
 import { useLocation } from "react-router-dom";
+import Select from "react-select";   // npm install react-select
 import useFetch from "../hooks/useFetch";
 import useSubmit from "../hooks/useSubmit";
 import { useSelector } from "react-redux";
@@ -37,7 +38,77 @@ const UI_SLOT_ROWS = [
   },
 ];
 
-// Reusable close button (same as Induction reference)
+// First 6 states only for contractors
+const CONTRACTOR_STATES = [
+  { value: "", label: "Select State...", disabled: true },
+  { value: "nsw", label: "New South Wales (NSW)" },
+  { value: "vic", label: "Victoria (VIC)" },
+  { value: "qld", label: "Queensland (QLD)" },
+  { value: "wa", label: "Western Australia (WA)" },
+  { value: "sa", label: "South Australia (SA)" },
+  { value: "tas", label: "Tasmania (TAS)" },
+];
+
+const STATE_NAME_MAP = {
+  NSW: "New South Wales",
+  VIC: "Victoria",
+  QLD: "Queensland",
+  WA: "Western Australia",
+  SA: "South Australia",
+  TAS: "Tasmania",
+  ACT: "Australian Capital Territory",
+  NT: "Northern Territory",
+
+  nsw: "New South Wales",
+  vic: "Victoria",
+  qld: "Queensland",
+  wa: "Western Australia",
+  sa: "South Australia",
+  tas: "Tasmania",
+  act: "Australian Capital Territory",
+  nt: "Northern Territory",
+};
+
+// All states for non‑contractor
+const ALL_STATES = [
+  { value: "", label: "Select State...", disabled: true },
+  { value: "NSW", label: "New South Wales (NSW)" },
+  { value: "VIC", label: "Victoria (VIC)" },
+  { value: "QLD", label: "Queensland (QLD)" },
+  { value: "WA", label: "Western Australia (WA)" },
+  { value: "SA", label: "South Australia (SA)" },
+  { value: "TAS", label: "Tasmania (TAS)" },
+  { value: "ACT", label: "Australian Capital Territory (ACT)" },
+  { value: "NT", label: "Northern Territory (NT)" },
+];
+
+// Custom styles for React Select to match the green theme
+const selectStyles = {
+  control: (base, state) => ({
+    ...base,
+    borderColor: state.isFocused ? '#0A7C6E' : '#e2e8f0',
+    boxShadow: state.isFocused ? '0 0 0 1px #0A7C6E' : 'none',
+    minHeight: '38px',
+    '&:hover': {
+      borderColor: '#0A7C6E'
+    }
+  }),
+  option: (base, state) => ({
+    ...base,
+    backgroundColor: state.isSelected
+      ? '#0A7C6E'
+      : state.isFocused
+        ? '#f0fdf9'
+        : 'white',
+    color: state.isSelected ? 'white' : '#1e293b',
+    cursor: 'pointer',
+    '&:active': {
+      backgroundColor: '#075e53'
+    }
+  })
+};
+
+// Reusable close button
 const ModalCloseButton = ({ onClick }) => (
   <button
     type="button"
@@ -53,27 +124,73 @@ const RatesList = ({ forcedType } = {}) => {
   const location = useLocation();
   const { pathname, state } = location;
   const rateTypeFromState = state && state.rateType;
+
+  // Determine mode
   const isCharge = forcedType
     ? forcedType === "charge"
     : rateTypeFromState
       ? rateTypeFromState === "charge"
       : pathname.includes("charge");
+  const isContractor = forcedType === "contractor";
+  const isPayRate = forcedType === "pay" || (!forcedType && rateTypeFromState === "pay");
 
-  const title = isCharge ? "Charge Rates" : "Pay Rates";
-  const firstColumn = isCharge ? "Charged Rate" : "Pay Rate";
+  const title = isContractor
+    ? "Contractor Charge Rates"
+    : isCharge
+      ? "Charge Rates"
+      : "Pay Rates";
 
-  // ── Only edit mode is used; no adding/creating ──
+  const firstColumn = isContractor
+    ? "Contractor Rate"
+    : isCharge
+      ? "Charged Rate"
+      : "Pay Rate";
+
+  // Endpoints
+  const listEndpoint = useMemo(() => {
+    if (isContractor) return "api/get-all-contractor-rates";
+    if (isCharge) return "api/get-all-chargerates";
+    return "api/get-all-payrates";
+  }, [isCharge, isContractor]);
+
+  const updateEndpoint = useMemo(() => {
+    if (isContractor) return "api/update-contractor-rate";
+    if (isCharge) return "api/charge_rate/update";
+    return "api/payrate/update";
+  }, [isCharge, isContractor]);
+
+  const createEndpoint = useMemo(() => {
+    if (isContractor) return "api/store-contractor-rate";
+    return null;
+  }, [isContractor]);
+
+  // Contractors data
+  const {
+    data: contractorsResp,
+    loading: contractorsLoading,
+    error: contractorsError,
+  } = useFetch("api/admin/get-contractors", {
+    isAuth: true,
+    immediate: isContractor,
+  });
+
+  const contractors = useMemo(() => {
+    if (!contractorsResp) return [];
+    const arr = contractorsResp.data?.data ?? contractorsResp.data;
+    return Array.isArray(arr) ? arr : [];
+  }, [contractorsResp]);
+
+  // Prepare react‑select options
+  const contractorOptions = useMemo(() => {
+    return contractors.map((c) => ({
+      value: c.id,
+      label: c.name + (c.contractor?.company_name ? ` - ${c.contractor.company_name}` : ""),
+    }));
+  }, [contractors]);
+
+  // State for modals
   const [showEditModal, setShowEditModal] = useState(false);
-  const [isEditing, setIsEditing] = useState(false); // will always be true when modal open
-
-  const listEndpoint = useMemo(
-    () => (isCharge ? "api/get-all-chargerates" : "api/get-all-payrates"),
-    [isCharge],
-  );
-  const updateEndpoint = useMemo(
-    () => (isCharge ? "api/charge_rate/update" : "api/payrate/update"),
-    [isCharge],
-  );
+  const [showAddModal, setShowAddModal] = useState(false);
 
   const { userdata } = useSelector((state) => state.auth || {});
   const userType = userdata?.data?.user_type || userdata?.user_type;
@@ -93,6 +210,7 @@ const RatesList = ({ forcedType } = {}) => {
       state: "",
       ot_base_rate: "",
       id: null,
+      user_id: "",
     };
     RATE_CATEGORIES.forEach((c) =>
       TIME_KEYS.forEach((t) => (f[`${c}_${t}`] = "")),
@@ -107,27 +225,63 @@ const RatesList = ({ forcedType } = {}) => {
     setForm((s) => ({ ...s, [id]: value }));
   }, []);
 
-  // ── Open modal for editing only ──
+  // Handler for react‑select single
+  const handleContractorChange = useCallback((selectedOption) => {
+    setForm((s) => ({
+      ...s,
+      user_id: selectedOption ? selectedOption.value : "",
+      level: selectedOption ? selectedOption.label : "",
+    }));
+  }, []);
+
+  // Open edit modal
   const handleEditOpen = useCallback(
     (rateObj) => {
       const cleanRate = { ...rateObj };
+
+      const existingUserId = cleanRate.user_id;
+
       delete cleanRate.name;
       delete cleanRate.rate;
-      delete cleanRate.user_id;
+
+      if (!isContractor) delete cleanRate.user_id;
+
+      // Convert state to uppercase so it matches dropdown values ("vic" -> "VIC")
+      if (cleanRate.state) {
+        cleanRate.state = cleanRate.state.toUpperCase();
+      }
+
+      // Ensure user_id is properly mapped for contractors
+      if (isContractor) {
+        if (existingUserId) {
+          cleanRate.user_id = existingUserId;
+        } else if (cleanRate.user?.id) {
+          cleanRate.user_id = cleanRate.user.id;
+        }
+      }
+
       setForm({ ...makeInitialForm(), ...cleanRate });
-      setIsEditing(true);
       setShowEditModal(true);
     },
-    [makeInitialForm],
+    [makeInitialForm, isContractor],
   );
+
+  const handleAddOpen = () => {
+    setForm(makeInitialForm());
+    setShowAddModal(true);
+  };
 
   const closeEditModal = () => {
     setShowEditModal(false);
-    setIsEditing(false);
     setForm(makeInitialForm());
   };
 
-  // ── Submit edit (update only) ──
+  const closeAddModal = () => {
+    setShowAddModal(false);
+    setForm(makeInitialForm());
+  };
+
+  // Submit edit (update)
   const handleEditSubmit = async (e) => {
     e.preventDefault();
     const body = { ...form };
@@ -151,9 +305,16 @@ const RatesList = ({ forcedType } = {}) => {
       });
     });
 
+    if (isContractor) {
+      body.position = "full_time";
+      delete body.ot_base_rate;
+    } else {
+      delete body.user_id;
+    }
+
     delete body.name;
     delete body.rate;
-    delete body.user_id;
+    delete body.user; // Clean API-injected user object before sending
 
     const res = await submit(updateEndpoint, body, { method: "POST" });
     if (res === undefined) return;
@@ -167,11 +328,59 @@ const RatesList = ({ forcedType } = {}) => {
     }
   };
 
+  // Submit add (create) – contractor only
+  const handleAddSubmit = async (e) => {
+    e.preventDefault();
+    if (!createEndpoint) return;
+
+    const body = { ...form };
+    body.customer_id = userdata?.data?.id || userdata?.id || null;
+
+    delete body.ot_base_rate;
+
+    RATE_CATEGORIES.forEach((c) => {
+      body[`${c}_metro_sat_night_rate`] = body[`${c}_metro_sat_day_rate`];
+      body[`${c}_reg_sat_night_rate`] = body[`${c}_reg_sat_day_rate`];
+      body[`${c}_metro_sun_night_rate`] = body[`${c}_metro_sun_day_rate`];
+      body[`${c}_reg_sun_night_rate`] = body[`${c}_reg_sun_day_rate`];
+      body[`${c}_metro_pub_holi_night_rate`] = body[`${c}_metro_pub_holi_day_rate`];
+      body[`${c}_reg_pub_holi_night_rate`] = body[`${c}_reg_pub_holi_day_rate`];
+
+      TIME_KEYS.forEach((t) => {
+        const k = `${c}_${t}`;
+        if (body[k] !== "" && body[k] !== undefined) body[k] = Number(body[k]);
+      });
+    });
+
+    body.position = "full_time";
+    delete body.id;
+
+    const res = await submit(createEndpoint, body, { method: "POST" });
+    if (res === undefined) return;
+
+    if (res?.success) {
+      toast.success("Contractor rate created successfully!");
+      closeAddModal();
+      await refetch(listEndpoint);
+    } else {
+      toast.error(res?.message || "Creation failed");
+    }
+  };
+
   const rows = Array.isArray(data?.data)
     ? data.data
     : Array.isArray(data)
       ? data
       : [];
+
+  const stateOptions = isContractor ? CONTRACTOR_STATES : ALL_STATES;
+
+  // FIXED: Compare as strings to prevent strict-equality mismatch 
+  // (e.g., API string "535" vs contractorOptions integer 535)
+  const selectedContractorValue = useMemo(() => {
+    if (!isContractor || !form.user_id) return null;
+    return contractorOptions.find((opt) => String(opt.value) === String(form.user_id)) || null;
+  }, [isContractor, contractorOptions, form.user_id]);
 
   if (!isAdmin) {
     return (
@@ -189,13 +398,17 @@ const RatesList = ({ forcedType } = {}) => {
     );
   }
 
-  if (loading) return <Loader />;
+  if (loading || (isContractor && contractorsLoading)) return <Loader />;
 
-  if (error) {
+  if (error || (isContractor && contractorsError)) {
     const errMsg =
       typeof error === "string"
         ? error
-        : error?.message || JSON.stringify(error) || "An error occurred";
+        : error?.message || JSON.stringify(error) ||
+        (typeof contractorsError === "string"
+          ? contractorsError
+          : contractorsError?.message) ||
+        "An error occurred";
     return (
       <div
         className="min-h-screen bg-[#f8fafc] d-flex align-items-center justify-content-center"
@@ -240,7 +453,6 @@ const RatesList = ({ forcedType } = {}) => {
           --surface: #ffffff;
         }
 
-        /* Hero */
         .rates-hero {
           position: relative;
           background: linear-gradient(135deg, var(--navy-950) 0%, var(--navy-900) 65%, #0f2f52 100%);
@@ -249,6 +461,10 @@ const RatesList = ({ forcedType } = {}) => {
           overflow: hidden;
           isolation: isolate;
           margin-bottom: 1.5rem;
+          display: flex;
+          flex-wrap: wrap;
+          justify-content: space-between;
+          align-items: flex-start;
         }
         .rates-hero::before {
           content: "";
@@ -302,7 +518,23 @@ const RatesList = ({ forcedType } = {}) => {
           text-transform: none;
         }
 
-        /* Table card */
+        .rates-hero .btn-add {
+          margin-top: 10px;
+          background: #0A7C6E;
+          border: none;
+          color: #fff;
+          font-weight: 600;
+          padding: 10px 24px;
+          border-radius: 12px;
+          transition: all 0.2s;
+          white-space: nowrap;
+        }
+        .rates-hero .btn-add:hover {
+          background: #075e53;
+          transform: translateY(-1px);
+          box-shadow: 0 8px 20px rgba(10,124,110,0.3);
+        }
+
         .rates-table-card {
           background: #fff;
           border-radius: 18px;
@@ -334,7 +566,6 @@ const RatesList = ({ forcedType } = {}) => {
           background: #f0fdf9;
         }
 
-        /* Action button */
         .action-btn {
           width: 34px;
           height: 34px;
@@ -362,7 +593,6 @@ const RatesList = ({ forcedType } = {}) => {
           border: 1px solid rgba(10,124,110,0.2);
         }
 
-        /* Modals */
         .modal-overlay-premium {
           position: fixed;
           inset: 0;
@@ -456,7 +686,7 @@ const RatesList = ({ forcedType } = {}) => {
         }
       `}</style>
 
-      {/* Hero – no add button, only title and description */}
+      {/* Hero with Add button for contractor */}
       <div className="rates-hero">
         <div>
           <span className="rates-hero-eyebrow">
@@ -464,9 +694,20 @@ const RatesList = ({ forcedType } = {}) => {
           </span>
           <h1>{title}</h1>
           <p style={{ textTransform: "none" }}>
-            View and edit {isCharge ? "charge" : "pay"} rates by job level and state.
+            View and edit{" "}
+            {isContractor
+              ? "contractor charge"
+              : isCharge
+                ? "charge"
+                : "pay"}{" "}
+            rates by job level and state.
           </p>
         </div>
+        {isContractor && (
+          <button className="btn-add" onClick={handleAddOpen}>
+            <i className="fa fa-plus me-2"></i> Add Contractor Rate
+          </button>
+        )}
       </div>
 
       {/* Table */}
@@ -477,7 +718,7 @@ const RatesList = ({ forcedType } = {}) => {
               <tr>
                 <th>{firstColumn}</th>
                 <th>Rate Preview</th>
-                <th>Level</th>
+                <th>{isContractor ? "Contractor" : "Level"}</th>
                 <th>State</th>
                 <th className="text-center">Actions</th>
               </tr>
@@ -496,15 +737,31 @@ const RatesList = ({ forcedType } = {}) => {
                   <td>
                     <div className="fw-bold text-dark">{r.title || r.name}</div>
                     <small className="text-muted">
-                      {isCharge ? "Client charge" : "Staff pay"}
+                      {isContractor
+                        ? "Contractor rate"
+                        : isCharge
+                          ? "Client charge"
+                          : "Staff pay"}
                     </small>
                   </td>
                   <td className="fw-bold text-teal">
-                    ${Number((isCharge ? r.def_metro_mon_to_fri_day_rate : r.ot_base_rate) || 0).toFixed(2)}
+                    $
+                    {Number(
+                      (isContractor || isCharge
+                        ? r.def_metro_mon_to_fri_day_rate
+                        : r.ot_base_rate) || 0
+                    ).toFixed(2)}
                   </td>
-                  <td className="text-muted">{r.level}</td>
+                  {/* FIXED: Display actual user's name from nested object for contractors */}
+                  <td className="text-muted">
+                    {isContractor
+                      ? (r.user?.name ? `${r.user.name}${r.user.contractor?.company_name ? ` - ${r.user.contractor.company_name}` : ""}` : "Unknown Contractor")
+                      : r.level}
+                  </td>
                   <td>
-                    <span className="badge-premium">{r.state}</span>
+                    <span className="badge-premium">
+                      {STATE_NAME_MAP[r.state] || r.state}
+                    </span>
                   </td>
                   <td className="text-center">
                     <button
@@ -522,12 +779,12 @@ const RatesList = ({ forcedType } = {}) => {
         </div>
       </div>
 
-      {/* Edit Modal – same premium style as Induction */}
+      {/* Edit Modal */}
       {showEditModal && (
         <div className="modal-overlay-premium" onClick={closeEditModal}>
           <div
             className="modal-content-premium modal-pop-in w-100"
-            style={{ maxWidth: '1400px', maxHeight: '92vh' }}
+            style={{ maxWidth: "1400px", maxHeight: "92vh" }}
             onClick={(e) => e.stopPropagation()}
           >
             <div className="modal-header-premium d-flex justify-content-between align-items-center px-4 py-3">
@@ -536,9 +793,6 @@ const RatesList = ({ forcedType } = {}) => {
                   <i className="fa fa-pen-to-square me-2 opacity-75"></i>
                   Edit Rate Details
                 </h5>
-                <p className="text-white-50 small mb-0 mt-1 ms-5" style={{ textTransform: "none" }}>
-                  Adjust hourly rates for Metro and Regional areas.
-                </p>
               </div>
               <ModalCloseButton onClick={closeEditModal} />
             </div>
@@ -548,45 +802,117 @@ const RatesList = ({ forcedType } = {}) => {
                 {/* General Information */}
                 <div className="bg-white rounded-3 p-4 mb-4 shadow-sm border">
                   <h6 className="fw-bold text-dark mb-4 pb-2 border-bottom">
-                    <i className="fa fa-info-circle me-2" style={{ color: "#0A7C6E" }}></i> General Information
+                    <i
+                      className="fa fa-info-circle me-2"
+                      style={{ color: "#0A7C6E" }}
+                    ></i>{" "}
+                    General Information
                   </h6>
                   <div className="row g-3">
-                    <div className={!isCharge ? "col-md-6" : "col-md-12"}>
-                      <label className="form-label small fw-bold text-muted">Title / Role Name *</label>
-                      <input id="title" value={form.title} onChange={handleFormChange} className="form-control clean-input" placeholder="Enter role title" required />
+                    <div className={!isPayRate && !isContractor ? "col-md-12" : "col-md-6"}>
+                      <label className="form-label small fw-bold text-muted">
+                        Title / Role Name *
+                      </label>
+                      <input
+                        id="title"
+                        value={form.title}
+                        onChange={handleFormChange}
+                        className="form-control clean-input"
+                        placeholder="Enter role title"
+                        required
+                      />
                     </div>
-                    {!isCharge && (
+                    {isPayRate && (
                       <div className="col-md-6">
-                        <label className="form-label small fw-bold text-muted">Base Rate ($) *</label>
+                        <label className="form-label small fw-bold text-muted">
+                          Base Rate ($) *
+                        </label>
                         <div className="input-group">
-                          <span className="input-group-text bg-white"><i className="fa fa-dollar-sign text-muted"></i></span>
-                          <input id="ot_base_rate" type="number" step="0.01" value={form.ot_base_rate} onChange={handleFormChange} className="form-control clean-input" placeholder="Enter base rate" required={!isCharge} />
+                          <span className="input-group-text bg-white">
+                            <i className="fa fa-dollar-sign text-muted"></i>
+                          </span>
+                          <input
+                            id="ot_base_rate"
+                            type="number"
+                            step="0.01"
+                            value={form.ot_base_rate}
+                            onChange={handleFormChange}
+                            className="form-control clean-input"
+                            placeholder="Enter base rate"
+                            required
+                          />
                         </div>
                       </div>
                     )}
+
+                    {/* Position / Category – hidden for contractor */}
+                    {!isContractor && (
+                      <div className="col-md-4">
+                        <label className="form-label small fw-bold text-muted">
+                          Position / Category
+                        </label>
+                        <select
+                          id="position"
+                          value={form.position}
+                          onChange={handleFormChange}
+                          className="form-select clean-input"
+                        >
+                          <option value="full_time">Full Time</option>
+                          <option value="casual">Casual</option>
+                        </select>
+                      </div>
+                    )}
+
+                    {/* Job Level / Contractor Selector */}
+                    {isContractor ? (
+                      <div className="col-md-4">
+                        <label className="form-label small fw-bold text-muted">
+                          Contractor *
+                        </label>
+                        <Select
+                          name="contractor"
+                          options={contractorOptions}
+                          value={selectedContractorValue}
+                          onChange={handleContractorChange}
+                          styles={selectStyles}
+                          className="basic-single-select"
+                          classNamePrefix="select"
+                          placeholder="Select contractor..."
+                          noOptionsMessage={() => "No contractors found"}
+                        />
+                      </div>
+                    ) : (
+                      <div className="col-md-4">
+                        <label className="form-label small fw-bold text-muted">
+                          Job Level
+                        </label>
+                        <input
+                          id="level"
+                          value={form.level}
+                          onChange={handleFormChange}
+                          className="form-control clean-input"
+                          placeholder="Enter job level"
+                        />
+                      </div>
+                    )}
+
+                    {/* State dropdown */}
                     <div className="col-md-4">
-                      <label className="form-label small fw-bold text-muted">Position / Category</label>
-                      <select id="position" value={form.position} onChange={handleFormChange} className="form-select clean-input">
-                        <option value="full_time">Full Time</option>
-                        <option value="casual">Casual</option>
-                      </select>
-                    </div>
-                    <div className="col-md-4">
-                      <label className="form-label small fw-bold text-muted">Job Level</label>
-                      <input id="level" value={form.level} onChange={handleFormChange} className="form-control clean-input" placeholder="Enter job level" />
-                    </div>
-                    <div className="col-md-4">
-                      <label className="form-label small fw-bold text-muted">Location State</label>
-                      <select id="state" value={form.state} onChange={handleFormChange} className="form-select clean-input" required>
-                        <option value="" disabled>Select State...</option>
-                        <option value="NSW">New South Wales (NSW)</option>
-                        <option value="VIC">Victoria (VIC)</option>
-                        <option value="QLD">Queensland (QLD)</option>
-                        <option value="WA">Western Australia (WA)</option>
-                        <option value="SA">South Australia (SA)</option>
-                        <option value="TAS">Tasmania (TAS)</option>
-                        <option value="ACT">Australian Capital Territory (ACT)</option>
-                        <option value="NT">Northern Territory (NT)</option>
+                      <label className="form-label small fw-bold text-muted">
+                        Location State
+                      </label>
+                      <select
+                        id="state"
+                        value={form.state}
+                        onChange={handleFormChange}
+                        className="form-select clean-input"
+                        required
+                      >
+                        {stateOptions.map((s) => (
+                          <option key={s.value} value={s.value} disabled={s.disabled}>
+                            {s.label}
+                          </option>
+                        ))}
                       </select>
                     </div>
                   </div>
@@ -598,32 +924,76 @@ const RatesList = ({ forcedType } = {}) => {
                     <div className="col-xl-6" key={cat}>
                       <div className="bg-white rounded-3 p-4 shadow-sm border h-100">
                         <h6 className="fw-bold text-dark mb-4 pb-2 border-bottom text-capitalize">
-                          <i className={`fa ${cat === "def" ? "fa-clock" : "fa-briefcase"} me-2`} style={{ color: "#0A7C6E" }}></i>
-                          {cat === "def" ? "Award Rates" : "EBA Agreement Rates"}
+                          <i
+                            className={`fa ${cat === "def" ? "fa-clock" : "fa-briefcase"} me-2`}
+                            style={{ color: "#0A7C6E" }}
+                          ></i>
+                          {cat === "def"
+                            ? "Award Rates"
+                            : "EBA Agreement Rates"}
                         </h6>
-                        <div className="d-none d-md-grid mb-3" style={{ gridTemplateColumns: '2fr 1.2fr 1.2fr', gap: '1.5rem', borderBottom: '2px solid #e2e8f0', paddingBottom: '0.75rem' }}>
-                          <div className="fw-bold text-muted small">Time Slot</div>
-                          <div className="fw-bold text-muted small">Metro Area ($)</div>
-                          <div className="fw-bold text-muted small">Regional Area ($)</div>
+                        <div
+                          className="d-none d-md-grid mb-3"
+                          style={{
+                            gridTemplateColumns: "2fr 1.2fr 1.2fr",
+                            gap: "1.5rem",
+                            borderBottom: "2px solid #e2e8f0",
+                            paddingBottom: "0.75rem",
+                          }}
+                        >
+                          <div className="fw-bold text-muted small">
+                            Time Slot
+                          </div>
+                          <div className="fw-bold text-muted small">
+                            Metro Area ($)
+                          </div>
+                          <div className="fw-bold text-muted small">
+                            Regional Area ($)
+                          </div>
                         </div>
                         {UI_SLOT_ROWS.map((row) => {
                           const metroId = `${cat}_${row.metro}`;
                           const regId = `${cat}_${row.reg}`;
                           return (
-                            <div key={metroId} className="row g-3 mb-3 mb-md-0 py-2 border-bottom border-light align-items-center">
+                            <div
+                              key={metroId}
+                              className="row g-3 mb-3 mb-md-0 py-2 border-bottom border-light align-items-center"
+                            >
                               <div className="col-12 col-md-5">
-                                <label className="form-label small fw-semibold text-dark mb-1">{row.label}</label>
+                                <label className="form-label small fw-semibold text-dark mb-1">
+                                  {row.label}
+                                </label>
                               </div>
                               <div className="col-6 col-md-3">
                                 <div className="input-group input-group-sm">
-                                  <span className="input-group-text bg-white"><i className="fa fa-dollar-sign text-muted small"></i></span>
-                                  <input id={metroId} type="number" step="0.01" value={form[metroId]} onChange={handleFormChange} className="form-control clean-input" placeholder="Metro" />
+                                  <span className="input-group-text bg-white">
+                                    <i className="fa fa-dollar-sign text-muted small"></i>
+                                  </span>
+                                  <input
+                                    id={metroId}
+                                    type="number"
+                                    step="0.01"
+                                    value={form[metroId]}
+                                    onChange={handleFormChange}
+                                    className="form-control clean-input"
+                                    placeholder="Metro"
+                                  />
                                 </div>
                               </div>
                               <div className="col-6 col-md-3">
                                 <div className="input-group input-group-sm">
-                                  <span className="input-group-text bg-white"><i className="fa fa-dollar-sign text-muted small"></i></span>
-                                  <input id={regId} type="number" step="0.01" value={form[regId]} onChange={handleFormChange} className="form-control clean-input" placeholder="Regional" />
+                                  <span className="input-group-text bg-white">
+                                    <i className="fa fa-dollar-sign text-muted small"></i>
+                                  </span>
+                                  <input
+                                    id={regId}
+                                    type="number"
+                                    step="0.01"
+                                    value={form[regId]}
+                                    onChange={handleFormChange}
+                                    className="form-control clean-input"
+                                    placeholder="Regional"
+                                  />
                                 </div>
                               </div>
                             </div>
@@ -655,6 +1025,204 @@ const RatesList = ({ forcedType } = {}) => {
                   </span>
                 ) : (
                   "Save Changes"
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add Modal (contractor only) */}
+      {showAddModal && (
+        <div className="modal-overlay-premium" onClick={closeAddModal}>
+          <div
+            className="modal-content-premium modal-pop-in w-100"
+            style={{ maxWidth: "1400px", maxHeight: "92vh" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="modal-header-premium d-flex justify-content-between align-items-center px-4 py-3">
+              <div>
+                <h5 className="text-white fw-bold mb-0 mt-2">
+                  <i className="fa fa-plus-circle me-2 opacity-75"></i>
+                  Add New Contractor Rate
+                </h5>
+              </div>
+              <ModalCloseButton onClick={closeAddModal} />
+            </div>
+
+            <div className="flex-grow-1 overflow-auto p-4 bg-light">
+              <form id="addRateForm" onSubmit={handleAddSubmit}>
+                {/* General Information */}
+                <div className="bg-white rounded-3 p-4 mb-4 shadow-sm border">
+                  <h6 className="fw-bold text-dark mb-4 pb-2 border-bottom">
+                    <i
+                      className="fa fa-info-circle me-2"
+                      style={{ color: "#0A7C6E" }}
+                    ></i>{" "}
+                    General Information
+                  </h6>
+                  <div className="row g-3">
+                    <div className="col-md-6">
+                      <label className="form-label small fw-bold text-muted">
+                        Title / Role Name *
+                      </label>
+                      <input
+                        id="title"
+                        value={form.title}
+                        onChange={handleFormChange}
+                        className="form-control clean-input"
+                        placeholder="Enter role title"
+                        required
+                      />
+                    </div>
+
+                    {/* Contractor single‑select */}
+                    <div className="col-md-6">
+                      <label className="form-label small fw-bold text-muted">
+                        Contractor *
+                      </label>
+                      <Select
+                        name="contractor"
+                        options={contractorOptions}
+                        value={selectedContractorValue}
+                        onChange={handleContractorChange}
+                        styles={selectStyles}
+                        className="basic-single-select"
+                        classNamePrefix="select"
+                        placeholder="Select contractor..."
+                        noOptionsMessage={() => "No contractors found"}
+                      />
+                    </div>
+
+                    {/* State dropdown – only 6 states */}
+                    <div className="col-md-6">
+                      <label className="form-label small fw-bold text-muted">
+                        Location State *
+                      </label>
+                      <select
+                        id="state"
+                        value={form.state}
+                        onChange={handleFormChange}
+                        className="form-select clean-input"
+                        required
+                      >
+                        {CONTRACTOR_STATES.map((s) => (
+                          <option key={s.value} value={s.value} disabled={s.disabled}>
+                            {s.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Rates Matrices */}
+                <div className="row g-4">
+                  {RATE_CATEGORIES.map((cat) => (
+                    <div className="col-xl-6" key={cat}>
+                      <div className="bg-white rounded-3 p-4 shadow-sm border h-100">
+                        <h6 className="fw-bold text-dark mb-4 pb-2 border-bottom text-capitalize">
+                          <i
+                            className={`fa ${cat === "def" ? "fa-clock" : "fa-briefcase"} me-2`}
+                            style={{ color: "#0A7C6E" }}
+                          ></i>
+                          {cat === "def"
+                            ? "Award Rates"
+                            : "EBA Agreement Rates"}
+                        </h6>
+                        <div
+                          className="d-none d-md-grid mb-3"
+                          style={{
+                            gridTemplateColumns: "2fr 1.2fr 1.2fr",
+                            gap: "1.5rem",
+                            borderBottom: "2px solid #e2e8f0",
+                            paddingBottom: "0.75rem",
+                          }}
+                        >
+                          <div className="fw-bold text-muted small">
+                            Time Slot
+                          </div>
+                          <div className="fw-bold text-muted small">
+                            Metro Area ($)
+                          </div>
+                          <div className="fw-bold text-muted small">
+                            Regional Area ($)
+                          </div>
+                        </div>
+                        {UI_SLOT_ROWS.map((row) => {
+                          const metroId = `${cat}_${row.metro}`;
+                          const regId = `${cat}_${row.reg}`;
+                          return (
+                            <div
+                              key={metroId}
+                              className="row g-3 mb-3 mb-md-0 py-2 border-bottom border-light align-items-center"
+                            >
+                              <div className="col-12 col-md-5">
+                                <label className="form-label small fw-semibold text-dark mb-1">
+                                  {row.label}
+                                </label>
+                              </div>
+                              <div className="col-6 col-md-3">
+                                <div className="input-group input-group-sm">
+                                  <span className="input-group-text bg-white">
+                                    <i className="fa fa-dollar-sign text-muted small"></i>
+                                  </span>
+                                  <input
+                                    id={metroId}
+                                    type="number"
+                                    step="0.01"
+                                    value={form[metroId]}
+                                    onChange={handleFormChange}
+                                    className="form-control clean-input"
+                                    placeholder="Metro"
+                                  />
+                                </div>
+                              </div>
+                              <div className="col-6 col-md-3">
+                                <div className="input-group input-group-sm">
+                                  <span className="input-group-text bg-white">
+                                    <i className="fa fa-dollar-sign text-muted small"></i>
+                                  </span>
+                                  <input
+                                    id={regId}
+                                    type="number"
+                                    step="0.01"
+                                    value={form[regId]}
+                                    onChange={handleFormChange}
+                                    className="form-control clean-input"
+                                    placeholder="Regional"
+                                  />
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </form>
+            </div>
+
+            <div className="bg-white border-top px-4 py-3 d-flex justify-content-end gap-2">
+              <button
+                className="btn btn-light px-5 rounded-pill fw-bold border"
+                onClick={closeAddModal}
+              >
+                Close
+              </button>
+              <button
+                type="submit"
+                form="addRateForm"
+                className="btn btn-primary-custom px-5 rounded-pill fw-bold shadow"
+                disabled={submitting}
+              >
+                {submitting ? (
+                  <span>
+                    <i className="fa fa-spinner fa-spin me-2"></i>Creating...
+                  </span>
+                ) : (
+                  "Create Rate"
                 )}
               </button>
             </div>

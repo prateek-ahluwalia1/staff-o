@@ -6,6 +6,7 @@ import payrateimg from "../assets/images/pay.png";
 import chargerateimg from "../assets/images/charge.png";
 import invoiceimg from "../assets/images/invoice.png";
 import payslipimg from "../assets/images/pay-slip.png";
+import contractorimg from "../assets/images/contractor-rates.png";
 
 const PayChargerate = () => {
   const navigate = useNavigate();
@@ -137,6 +138,16 @@ const PayChargerate = () => {
                 onClick={() =>
                   navigate("/rates/pay", { state: { rateType: "pay" } })
                 }
+              />
+            </div>
+            <div className="col">
+              <Card
+                title="Contractor Charge Rates"
+                description="It is used to manage contractor charge rates"
+                accent="linear-gradient(135deg, #8b5cf6, #a78bfa)"
+                image={contractorimg}
+                type="contractor rates"
+                onClick={() => navigate("/rates/contractor")}
               />
             </div>
           </>

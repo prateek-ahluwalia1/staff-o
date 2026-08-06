@@ -91,7 +91,7 @@ Route::middleware('auth:sanctum')->group(function () {
      Route::any('store-contractor-rate',  [ChargeRateController::class, 'contactorStore']);
      Route::any('update-contractor-rate',  [ChargeRateController::class, 'ContractorUpdate']);
      Route::any('get-all-contractor-rates',  [ChargeRateController::class, 'getContractorChargeRate']);
-     Route::any('get-contractor-rates/{$id}',  [ChargeRateController::class, 'ChargeRate']);
+     Route::any('get-contractor-rates/{id}',  [ChargeRateController::class, 'ChargeRate']);
 
     //payrate routes
     Route::any('payrate/store',  [PayRateController::class, 'store'])->name('payrate.store');

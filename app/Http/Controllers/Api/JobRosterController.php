@@ -5157,9 +5157,11 @@ public function calculateJobAmount(Request $request)
 {
     // Validate request
     $validator = Validator::make($request->all(), [
-        'start_time' => 'required',
-        'end_time' => 'required',
-        'state' => 'required',
+        'shifts' => 'required|array|min:1',
+        'shifts.*.start_time' => 'required',
+        'shifts.*.end_time' => 'required',
+        'shifts.*.number_of_guards' => 'required|integer|min:1',
+        'state' => 'required|string'
     ]);
 
     if ($validator->fails()) {
@@ -5170,48 +5172,58 @@ public function calculateJobAmount(Request $request)
         ], 422);
     }
 
-    // Get hours division
-    $hours = getShiftHours($request->start_time, $request->end_time);
+    // Calculate total hours for all shifts
+    $totalHours = [
+        'morning' => 0,
+        'night' => 0,
+        'saturday_morning' => 0,
+        'saturday_night' => 0,
+        'sunday_morning' => 0,
+        'sunday_night' => 0,
+        'ph_morning' => 0,
+        'ph_night' => 0
+    ];
 
-    // Get all charge rates for the state
+    foreach ($request->shifts as $shift) {
+        $hours = getShiftHours($shift['start_time'], $shift['end_time']);
+        $guards = $shift['number_of_guards'] ?? 1;
+        
+        foreach ($totalHours as $key => $value) {
+            $totalHours[$key] += ($hours[$key] ?? 0) * $guards;
+        }
+    }
+
+    // Get charge rates
     $chargeRates = ContractorChargeRate::where('state', $request->state)->get();
 
     if ($chargeRates->isEmpty()) {
         return response()->json([
             'success' => false,
-            'message' => 'No charge rates found for this state'
+            'message' => 'No charge rates found'
         ], 404);
     }
 
-    // Calculate amounts for each rate
+    // Calculate amounts
     $amounts = [];
     foreach ($chargeRates as $rate) {
-        $amount = $this->calculateAmount($hours, $rate);
+        $amount = 
+            ($rate->def_metro_mon_to_fri_day_rate * $totalHours['morning']) +
+            ($rate->def_metro_mon_to_fri_night_rate * $totalHours['night']) +
+            ($rate->def_metro_sat_day_rate * ($totalHours['saturday_morning'] + $totalHours['saturday_night'])) +
+            ($rate->def_metro_sun_day_rate * ($totalHours['sunday_morning'] + $totalHours['sunday_night'])) +
+            ($rate->def_metro_pub_holi_day_rate * ($totalHours['ph_morning'] + $totalHours['ph_night']));
+        
         $amounts[] = round($amount, 2);
     }
-
-    // Get min and max
-    $minAmount = min($amounts);
-    $maxAmount = max($amounts);
 
     return response()->json([
         'success' => true,
         'data' => [
-            'min' => $minAmount,
-            'max' => $maxAmount,
-            'difference' => round($maxAmount - $minAmount, 2),
-            'average' => round(array_sum($amounts) / count($amounts), 2) 
+            'min' => min($amounts),
+            'max' => max($amounts),
+            'difference' => round(max($amounts) - min($amounts), 2),
+            'average' => round(array_sum($amounts) / count($amounts), 2)
         ]
     ]);
-}
-
-private function calculateAmount($hours, $rate)
-{
-    return 
-        ($rate->def_metro_mon_to_fri_day_rate * ($hours['morning'] ?? 0)) +
-        ($rate->def_metro_mon_to_fri_night_rate * ($hours['night'] ?? 0)) +
-        ($rate->def_metro_sat_day_rate * (($hours['saturday_morning'] ?? 0) + ($hours['saturday_night'] ?? 0))) +
-        ($rate->def_metro_sun_day_rate * (($hours['sunday_morning'] ?? 0) + ($hours['sunday_night'] ?? 0))) +
-        ($rate->def_metro_pub_holi_day_rate * (($hours['ph_morning'] ?? 0) + ($hours['ph_night'] ?? 0)));
 }
 }

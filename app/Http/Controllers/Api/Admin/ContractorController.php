@@ -126,7 +126,11 @@ class ContractorController extends Controller
     }
 
     // Re-query with pagination after status updates
-    $contractors = $query->orderBy('id', 'desc')->paginate($request->get('per_page', $request->limit));
+    if($request->page){
+    $contractors = $query->orderBy('id', 'desc')->paginate(50);
+    }else{
+    $contractors = $contractorList;
+    }
 
     return response()->json([
         'success' => true,

@@ -5151,6 +5151,7 @@ public function calculateJobAmount(Request $request)
 //new code start
 public function contractor_accept_job(Request $request, $id)
 {
+    return 'abc';
     $a = null;
     $b = '';
 

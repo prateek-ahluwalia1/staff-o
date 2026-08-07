@@ -211,16 +211,6 @@ class JobRosterController extends Controller
                 }
             }
     
-            // if($request->posting_type == 'broadcast')
-            // {
-            //     $this->sendNotificationsWithinRadius(
-            //         $site->coordinates,
-            //         [$jobId],
-            //         $request->user_id,
-            //         $createdJob
-            //     );   
-                
-            // }
             if ($request->posting_type == 'broadcast' && !empty($createdJobIds)) {
                 // Get the first created job for reference (site, coordinates, etc.)
                 $firstJob = JobRoster::with('site')->find($createdJobIds[0]);
@@ -5131,5 +5121,35 @@ private function userAllowedForState($user, ?string $siteState): bool
     }
 
     return false;
+}
+
+public function checkState(Request $request)
+{
+    // Get user with ID 1
+    $user = User::find(1);
+    
+    if (!$user) {
+        return response()->json([
+            'status' => false,
+            'message' => 'User not found'
+        ], 404);
+    }
+    
+    $state = $request->input('state'); // "vic"
+    $statesAllowed = $user->states_allowed; // ["vic"] or JSON string
+    
+    // If states_allowed is stored as JSON string, decode it
+    if (is_string($statesAllowed)) {
+        $statesAllowed = json_decode($statesAllowed, true);
+    }
+    
+    $result = in_array($state, $statesAllowed);
+    
+    return response()->json([
+        'status' => $result,
+        'message' => $result ? 'State is allowed for user' : 'State is not allowed for user',
+        'user_id' => $user->id,
+        'user_states' => $statesAllowed
+    ]);
 }
 }

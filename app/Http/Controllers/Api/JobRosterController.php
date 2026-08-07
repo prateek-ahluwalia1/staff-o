@@ -190,6 +190,7 @@ class JobRosterController extends Controller
                         'payment_intent_id' => $isAdminOverride ? null : $paymentIntentId,
                         'payment_status'    => $isAdminOverride ? 'not_required' : 'held',
                         'payment_captured'  => $isAdminOverride ? 1 : 0,
+                        'contractor_invoice' => $request->contractor_invoice,
     
                         'job_amount'             => $jobAmount,
                         'morning_hours'          => $hours['morning']          ?? 0,

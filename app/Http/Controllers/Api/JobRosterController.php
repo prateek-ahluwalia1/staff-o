@@ -37,6 +37,7 @@ use App\Mail\ContractorJobInvoice;
 use App\Models\ContractorChargeRate;
 use Stripe\PaymentLink;
 use Stripe\Price;
+use Stripe\Product;
 
 class JobRosterController extends Controller
 {
@@ -3770,6 +3771,7 @@ private function sendStaffActivationNotification(User $user): void
                     'created_at' => $job->created_at,
                     'document_list' => $job->document_list,
                     'description' => $job->description,
+                    'contractor_invoice' => $job->contractor_invoice
                 ];
             })->toArray();
 
@@ -5386,9 +5388,9 @@ private function generateAndSendInvoiceWithPayment($roster, $contractor, $client
         }
 
         // 2. Get contractor charge rates for the state
-        $chargeRates = ContractorChargeRate::where('state', $roster->state)->get();
+        $rate = ContractorChargeRate::where('user_id', $contractor->id)->where('state', $roster->state)->first();
         
-        if ($chargeRates->isEmpty()) {
+        if ($rate->isEmpty()) {
             Log::error('No charge rates found for state', ['state' => $roster->state]);
             return null;
         }
@@ -5400,7 +5402,7 @@ private function generateAndSendInvoiceWithPayment($roster, $contractor, $client
 
         foreach ($shifts as $index => $shift) {
             // Get hours breakdown
-            $hours = getShiftHours($shift->start_time, $shift->end_time);
+            $hours = getShiftHours($shift->start, $shift->end);
             
             // Multiply by number of guards
             $guards = $shift->number_of_guards ?? 1;
@@ -5409,13 +5411,12 @@ private function generateAndSendInvoiceWithPayment($roster, $contractor, $client
             }, $hours);
 
             // Calculate amount using the first rate (or average)
-            $rate = $chargeRates->first();
             $shiftAmount = $this->calculateAmount($hours, $rate);
             
             // Store shift details
             $shiftDetails[] = [
-                'start' => Carbon::parse($shift->start_time)->format('d/m/Y H:i'),
-                'end' => Carbon::parse($shift->end_time)->format('d/m/Y H:i'),
+                'start' => Carbon::parse($shift->start)->format('d/m/Y H:i'),
+                'end' => Carbon::parse($shift->end)->format('d/m/Y H:i'),
                 'numberOfGuards' => $guards,
                 'hours' => $this->calculateTotalShiftHours($hours),
                 'amount' => round($shiftAmount, 2)
@@ -5547,8 +5548,8 @@ private function generateAndSendInvoiceWithPayment($roster, $contractor, $client
  */
 private function getShiftsForRoster($rosterId)
 {
-    return DB::table('job_shifts')
-        ->where('roster_id', $rosterId)
+    return DB::table('job_rosters')
+        ->where('id', $rosterId)
         ->get();
 }
 

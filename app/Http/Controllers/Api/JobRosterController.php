@@ -5151,7 +5151,6 @@ public function calculateJobAmount(Request $request)
 //new code start
 public function contractor_accept_job(Request $request, $id)
 {
-    return 'abc';
     $a = null;
     $b = '';
 
@@ -5327,6 +5326,7 @@ public function contractor_accept_job(Request $request, $id)
 
         // Generate invoice if contractor_invoice == 1
         $invoiceResult = null;
+        return $updatedRoster;
         if ($updatedRoster->contractor_invoice == 1) {
             try {
                 $invoiceResult = $this->generateAndSendInvoiceWithPayment(

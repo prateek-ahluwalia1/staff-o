@@ -355,6 +355,7 @@ function AppContent() {
                 shiftCount: outerRoster?.job_count ?? "N/A",
                 hours: innerRoster?.hours ?? "N/A",
                 jobAmount: innerRoster?.job_amount ?? "N/A",
+                contractorInvoice: innerRoster.contractor_invoice,
                 date: startRaw
                     ? new Date(startRaw).toLocaleDateString("en-AU")
                     : "TBD",
@@ -564,7 +565,10 @@ function AppContent() {
                     setSelectedStaffId("");
                 }}
                 accepting={acceptingJob}
-                showStaffSelector={userRole === "contractor"}
+                showStaffSelector={
+                    userRole === "contractor" &&
+                    acceptModalJob?.contractorInvoice === 1
+                }
                 staffOptions={contractorStaffOptions}
                 selectedStaffId={selectedStaffId}
                 onStaffChange={setSelectedStaffId}

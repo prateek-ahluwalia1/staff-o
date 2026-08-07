@@ -1,0 +1,514 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap');
+
+/* ==========================================================================
+   Tokens — scoped to the admin dashboard so nothing else in the app shifts
+   ========================================================================== */
+.dashboard-main {
+  --ink: #0b1120;
+  --ink-soft: #1c2540;
+  --text: #101828;
+  --muted: #64748b;
+  --canvas: #f4f6f8;
+  --surface: #ffffff;
+  --line: #e2e8f0;
+
+  --teal: #0f766e;
+  --teal-bright: #14b8a6;
+  --teal-soft: #e5f4f2;
+
+  --amber: #b45309;
+  --amber-soft: #fdf1de;
+
+  --green: #047857;
+  --green-soft: #e2f6ee;
+
+  --slate: #334155;
+  --slate-soft: #eef1f5;
+
+  --radius-lg: 18px;
+  --radius-md: 12px;
+  --shadow-card: 0 1px 2px rgba(16, 24, 40, 0.04), 0 8px 20px -12px rgba(16, 24, 40, 0.10);
+
+  font-family: 'Inter', -apple-system, sans-serif;
+  color: var(--text);
+}
+
+.dashboard-main {
+  min-height: 100vh;
+  padding-bottom: 1rem;
+}
+
+.dashboard-main h1,
+.dashboard-main h2,
+.dashboard-main h3,
+.dashboard-main h4 {
+  font-family: 'Space Grotesk', 'Inter', sans-serif;
+}
+
+.dashboard-main .mono {
+  font-family: 'IBM Plex Mono', monospace;
+}
+
+/* ==========================================================================
+   Console header — replaces the stock-photo banner
+   ========================================================================== */
+.dashboard-cover-card {
+  position: relative;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  margin-bottom: 2rem;
+  background: var(--ink);
+  box-shadow: var(--shadow-card);
+}
+
+/* Concentric-ring motif lifted from the Staffoo mark, used as ambient texture */
+.dashboard-cover-media {
+  display: none;
+}
+
+.dashboard-cover-profile {
+  position: relative;
+  padding: 2.25rem 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2rem;
+  flex-wrap: wrap;
+  background:
+    radial-gradient(circle at 88% 30%, rgba(20, 184, 166, 0.16) 0%, transparent 42%),
+    repeating-radial-gradient(circle at 88% 30%, transparent 0, transparent 26px, rgba(255, 255, 255, 0.035) 27px, transparent 28px),
+    linear-gradient(135deg, #0b1120 0%, #101a33 100%);
+}
+
+.cover-avatar {
+  margin: 0;
+  flex-shrink: 0;
+}
+
+.cover-avatar img,
+.avatar-placeholder {
+  width: 62px;
+  height: 62px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.14);
+  box-shadow: none;
+  object-fit: cover;
+  background: var(--teal-bright);
+}
+
+.avatar-placeholder {
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 1.35rem;
+  font-weight: 600;
+}
+
+.profile-info {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  flex-grow: 1;
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+
+.profile-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.dash-live {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  width: fit-content;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.68rem;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--teal-bright);
+}
+
+.dash-live-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--teal-bright);
+  box-shadow: 0 0 0 0 rgba(20, 184, 166, 0.6);
+  animation: dash-pulse 2.2s infinite;
+}
+
+@keyframes dash-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(20, 184, 166, 0.55);
+  }
+
+  70% {
+    box-shadow: 0 0 0 7px rgba(20, 184, 166, 0);
+  }
+
+  100% {
+    box-shadow: 0 0 0 0 rgba(20, 184, 166, 0);
+  }
+}
+
+.profile-text h3 {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #ffffff;
+  letter-spacing: -0.01em;
+}
+
+.profile-role {
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 0.9rem;
+  font-weight: 400;
+  margin: 0;
+}
+
+.profile-contact {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 0.82rem;
+  font-weight: 500;
+  width: fit-content;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 0.4rem 0.85rem;
+  border-radius: 30px;
+  margin-top: 0.15rem;
+}
+
+.profile-contact i {
+  color: var(--teal-bright);
+  font-size: 0.85rem;
+}
+
+.headline-metric {
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.headline-metric .hm-label {
+  display: block;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.68rem;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.45);
+  margin-bottom: 0.35rem;
+}
+
+.headline-metric .hm-value {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 2.1rem;
+  font-weight: 600;
+  color: #ffffff;
+  letter-spacing: -0.01em;
+}
+
+/* ==========================================================================
+   Stat grids
+   ========================================================================== */
+.dashboard-stats {
+  margin-bottom: 1.25rem;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.stats-grid-large {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1rem;
+}
+
+/* ==========================================================================
+   Panels / charts / table shell
+   ========================================================================== */
+.dashboard-panel,
+.chart-container {
+  position: relative;
+  background: var(--surface);
+  padding: 1.5rem;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow-card);
+  margin-bottom: 1.5rem;
+  overflow: hidden;
+}
+
+.dashboard-panel::before,
+.chart-container::before {
+  content: "";
+  position: absolute;
+  top: -60px;
+  right: -60px;
+  width: 160px;
+  height: 160px;
+  border-radius: 50%;
+  background: repeating-radial-gradient(circle, transparent 0, transparent 13px, rgba(15, 118, 110, 0.05) 14px, transparent 15px);
+  pointer-events: none;
+}
+
+.dashboard-panel>*,
+.chart-container>* {
+  position: relative;
+}
+
+.chart-container h4 {
+  margin: 0 0 1.1rem 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.panel-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.25rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.panel-heading h3 {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.panel-heading a,
+.panel-heading button {
+  color: var(--teal);
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.85rem;
+  transition: color 0.2s ease;
+}
+
+.panel-heading a:hover,
+.panel-heading button:hover {
+  color: var(--teal-bright);
+}
+
+.dashboard-charts {
+  margin-bottom: 0.25rem;
+}
+
+/* ==========================================================================
+   Table
+   ========================================================================== */
+.table {
+  margin-bottom: 0;
+}
+
+.table thead {
+  border-top: none;
+  border-bottom: 1px solid var(--line);
+}
+
+.table th {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: var(--muted);
+  padding: 0.75rem 1rem;
+  border: none;
+}
+
+.table td {
+  padding: 0.9rem 1rem;
+  border-color: var(--line);
+  vertical-align: middle;
+  font-size: 0.9rem;
+}
+
+.table tbody tr {
+  transition: background 0.15s ease;
+}
+
+.table tbody tr:hover {
+  background: var(--canvas);
+}
+
+.fw-500 {
+  font-weight: 500;
+}
+
+.partner-cell {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+}
+
+.partner-chip {
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  background: var(--teal-soft);
+  color: var(--teal);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 600;
+  font-size: 0.8rem;
+  flex-shrink: 0;
+}
+
+.revenue-cell {
+  font-family: 'IBM Plex Mono', monospace;
+  font-weight: 600;
+  color: var(--green);
+}
+
+.manage-btn {
+  background: var(--surface);
+  color: var(--teal);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 0.4rem 0.95rem;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.8rem;
+  display: inline-block;
+  transition: all 0.15s ease;
+}
+
+.manage-btn:hover {
+  background: var(--teal);
+  color: #ffffff;
+  border-color: var(--teal);
+}
+
+/* ==========================================================================
+   Status badges — replaces raw Bootstrap bg-success / bg-warning / bg-info
+   ========================================================================== */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.3rem 0.7rem;
+  border-radius: 20px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: capitalize;
+  letter-spacing: 0.01em;
+}
+
+.status-badge::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.status-badge.is-active {
+  background: var(--teal-soft);
+  color: var(--teal);
+}
+
+.status-badge.is-active::before {
+  background: var(--teal);
+}
+
+.status-badge.is-completed {
+  background: var(--green-soft);
+  color: var(--green);
+}
+
+.status-badge.is-completed::before {
+  background: var(--green);
+}
+
+.status-badge.is-pending {
+  background: var(--amber-soft);
+  color: var(--amber);
+}
+
+.status-badge.is-pending::before {
+  background: var(--amber);
+}
+
+/* ==========================================================================
+   Responsive
+   ========================================================================== */
+@media (max-width: 768px) {
+  .dashboard-cover-profile {
+    padding: 1.75rem;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .profile-info {
+    width: 100%;
+  }
+
+  .headline-metric {
+    text-align: left;
+  }
+
+  .stats-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .stats-grid-large {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .panel-heading {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+}
+
+@media (max-width: 576px) {
+
+  .stats-grid,
+  .stats-grid-large {
+    grid-template-columns: 1fr;
+  }
+
+  .profile-info {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .table {
+    font-size: 0.85rem;
+  }
+
+  .table th,
+  .table td {
+    padding: 0.65rem 0.5rem;
+  }
+}
+
+/* Mobile only */
+@media (max-width: 768px) {
+  .email-contact {
+    max-width: 20ch;
+    /* About 20 characters */
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    display: inline-block;
+    vertical-align: middle;
+  }
+}

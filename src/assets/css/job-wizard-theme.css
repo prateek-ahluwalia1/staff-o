@@ -1,0 +1,572 @@
+/* =========================================================================
+   ADD JOB WIZARD — SHARED THEME
+   Scoped under .job-wizard so it never leaks into unrelated pages.
+   ========================================================================= */
+
+.job-wizard {
+    --jw-navy-950: #0a1930;
+    --jw-navy-900: #0e2340;
+    --jw-teal: #0A7C6E;
+    --jw-teal-dark: #075e53;
+    --jw-teal-tint: #f0fdf9;
+    --jw-teal-border: #d1fae5;
+    --jw-ink: #0f172a;
+    --jw-slate: #1e293b;
+    --jw-muted: #64748b;
+    --jw-faint: #94a3b8;
+    --jw-line: #e2e8f0;
+    --jw-line-soft: #f1f5f9;
+    --jw-canvas: #f6f8fa;
+}
+
+/* --- Remap Bootstrap's default blue "-primary" utilities to teal --- */
+.job-wizard .text-primary {
+    color: var(--jw-teal) !important;
+}
+
+.job-wizard .bg-primary {
+    background-color: var(--jw-teal) !important;
+}
+
+.job-wizard .border-primary {
+    border-color: var(--jw-teal) !important;
+}
+
+.job-wizard .btn-primary {
+    background-color: var(--jw-teal) !important;
+    border-color: var(--jw-teal) !important;
+}
+
+.job-wizard .btn-primary:hover,
+.job-wizard .btn-primary:focus {
+    background-color: var(--jw-teal-dark) !important;
+    border-color: var(--jw-teal-dark) !important;
+}
+
+.job-wizard .btn-outline-primary {
+    color: var(--jw-teal) !important;
+    border-color: var(--jw-teal) !important;
+}
+
+.job-wizard .btn-outline-primary:hover {
+    background-color: var(--jw-teal) !important;
+    color: #fff !important;
+}
+
+.job-wizard .bg-primary.bg-opacity-10 {
+    background-color: rgba(10, 124, 110, 0.1) !important;
+}
+
+.job-wizard .border-primary-subtle,
+.job-wizard .border-primary.border-opacity-25 {
+    border-color: rgba(10, 124, 110, 0.3) !important;
+}
+
+.job-wizard .badge.bg-primary {
+    background-color: var(--jw-teal) !important;
+}
+
+.job-wizard .form-check-input:checked {
+    background-color: var(--jw-teal) !important;
+    border-color: var(--jw-teal) !important;
+}
+
+.job-wizard .form-check-input:focus {
+    border-color: var(--jw-teal) !important;
+    box-shadow: 0 0 0 3px rgba(10, 124, 110, 0.15) !important;
+}
+
+.job-wizard a.text-primary:hover {
+    color: var(--jw-teal-dark) !important;
+}
+
+.job-wizard .progress-bar.bg-primary {
+    background-color: var(--jw-teal) !important;
+}
+
+.job-wizard .spinner-border.text-primary {
+    color: var(--jw-teal) !important;
+}
+
+/* --- Section headers (icon badge + title + subtitle) --- */
+.jw-section-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--jw-line-soft);
+}
+
+.jw-section-head-left {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.jw-section-head h4,
+.jw-section-head h5,
+.jw-section-head h6 {
+    margin: 0 0 4px;
+    font-weight: 800;
+    color: var(--jw-ink);
+    letter-spacing: -0.2px;
+}
+
+.jw-section-head p {
+    margin: 0;
+    color: var(--jw-muted);
+    font-size: 13.5px;
+    text-transform: none;
+}
+
+.jw-icon-badge {
+    width: 38px;
+    height: 38px;
+    border-radius: 11px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 15px;
+    background: var(--jw-teal-tint);
+    color: var(--jw-teal);
+}
+
+/* --- Card surfaces --- */
+.jw-card {
+    background: #fff;
+    border: 1px solid var(--jw-line-soft);
+    border-radius: 16px;
+    box-shadow: 0 2px 10px rgba(15, 23, 42, 0.04);
+}
+
+.jw-tint-panel {
+    background: var(--jw-teal-tint);
+    border: 1px solid var(--jw-teal-border);
+    border-radius: 14px;
+}
+
+/* --- Buttons --- */
+.jw-btn-teal {
+    background: var(--jw-teal) !important;
+    border-color: var(--jw-teal) !important;
+    color: #fff !important;
+    box-shadow: 0 6px 14px -4px rgba(10, 124, 110, 0.4);
+    transition: all 0.15s;
+}
+
+.jw-btn-teal:hover {
+    background: var(--jw-teal-dark) !important;
+    border-color: var(--jw-teal-dark) !important;
+    transform: translateY(-1px);
+}
+
+/* --- Pill toggle (mode switches) --- */
+.jw-pill-toggle {
+    background: var(--jw-canvas);
+    border: 1px solid var(--jw-line);
+    border-radius: 999px;
+    padding: 4px;
+    display: inline-flex;
+    gap: 2px;
+}
+
+.jw-pill-toggle button {
+    border: none;
+    background: transparent;
+    border-radius: 999px;
+    padding: 8px 18px;
+    font-size: 12.5px;
+    font-weight: 700;
+    color: var(--jw-muted);
+    transition: all 0.15s;
+    white-space: nowrap;
+}
+
+.jw-pill-toggle button.active {
+    background: var(--jw-teal);
+    color: #fff;
+    box-shadow: 0 3px 8px rgba(10, 124, 110, 0.35);
+}
+
+.jw-pill-toggle.jw-pill-toggle-light button.active {
+    background: #fff;
+    color: var(--jw-ink);
+    box-shadow: 0 1px 4px rgba(15, 23, 42, 0.12);
+}
+
+/* --- Chips / badges --- */
+.jw-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border-radius: 30px;
+    padding: 5px 12px;
+    font-size: 11.5px;
+    font-weight: 700;
+    background: var(--jw-teal-tint);
+    color: var(--jw-teal-dark);
+    border: 1px solid var(--jw-teal-border);
+}
+
+/* --- Empty / error states --- */
+.jw-empty {
+    text-align: center;
+    color: var(--jw-faint);
+    border: 1.5px dashed var(--jw-line);
+    border-radius: 14px;
+    padding: 24px;
+    background: var(--jw-canvas);
+}
+
+.jw-alert-error {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    color: #b91c1c;
+    border-radius: 12px;
+    padding: 12px 16px;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+/* --- Inputs --- */
+.job-wizard .form-control:focus,
+.job-wizard .form-select:focus {
+    border-color: var(--jw-teal) !important;
+    box-shadow: 0 0 0 3px rgba(10, 124, 110, 0.12) !important;
+}
+
+/* =========================================================================
+   RICHER COMPONENT PATTERNS — these are structural, not just recolors.
+   ========================================================================= */
+
+/* --- Toggle switch (replaces Yes/No button pairs) --- */
+.jw-switch-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 15px 18px;
+    border-radius: 14px;
+    border: 1.5px solid var(--jw-line-soft);
+    background: #fff;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.jw-switch-row:hover {
+    border-color: var(--jw-teal-border);
+}
+
+.jw-switch-row.on {
+    border-color: var(--jw-teal-border);
+    background: var(--jw-teal-tint);
+}
+
+.jw-switch-row-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13.5px;
+    font-weight: 600;
+    color: var(--jw-ink);
+}
+
+.jw-switch-row-label i {
+    color: var(--jw-faint);
+    transition: color 0.15s;
+}
+
+.jw-switch-row.on .jw-switch-row-label i {
+    color: var(--jw-teal);
+}
+
+.jw-switch {
+    position: relative;
+    width: 44px;
+    height: 25px;
+    border-radius: 999px;
+    flex-shrink: 0;
+    background: #cbd5e1;
+    transition: background 0.2s;
+    border: none;
+}
+
+.jw-switch.on {
+    background: var(--jw-teal);
+}
+
+.jw-switch .jw-thumb {
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 19px;
+    height: 19px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+    transition: transform 0.2s;
+}
+
+.jw-switch.on .jw-thumb {
+    transform: translateX(19px);
+}
+
+/* --- Bolder segmented control (mode switches) --- */
+.jw-segmented {
+    display: inline-flex;
+    background: var(--jw-canvas);
+    border: 1px solid var(--jw-line);
+    border-radius: 14px;
+    padding: 5px;
+    gap: 4px;
+}
+
+.jw-segmented button {
+    border: none;
+    background: transparent;
+    border-radius: 10px;
+    padding: 10px 20px;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--jw-muted);
+    transition: all 0.18s;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    white-space: nowrap;
+}
+
+.jw-segmented button.active {
+    background: var(--jw-navy-950);
+    color: #fff;
+    box-shadow: 0 6px 14px -4px rgba(10, 25, 48, 0.35);
+}
+
+.jw-segmented.jw-segmented-sm button {
+    padding: 7px 14px;
+    font-size: 12px;
+}
+
+.jw-segmented.jw-segmented-sm button.active {
+    background: #fff;
+    color: var(--jw-ink);
+    box-shadow: 0 2px 6px rgba(15, 23, 42, 0.12);
+}
+
+/* --- Date badge tile (calendar look, used in Schedule + Review) --- */
+.jw-date-badge {
+    width: 54px;
+    flex-shrink: 0;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
+}
+
+.jw-date-badge .jw-db-mon {
+    background: var(--jw-navy-950);
+    color: #fff;
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    text-align: center;
+    padding: 4px 0;
+}
+
+.jw-date-badge .jw-db-day {
+    background: #fff;
+    border: 1px solid var(--jw-line);
+    border-top: none;
+    font-size: 19px;
+    font-weight: 800;
+    color: var(--jw-ink);
+    text-align: center;
+    padding: 6px 0 7px;
+}
+
+/* --- Day card (Schedule step) --- */
+.jw-day-card-v2 {
+    display: flex;
+    gap: 14px;
+    background: #fff;
+    border: 1px solid var(--jw-line-soft);
+    border-radius: 16px;
+    padding: 16px;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.03);
+}
+
+/* --- Pricing card (payment options, radio-style selection) --- */
+.jw-pricing-card {
+    position: relative;
+    border-radius: 18px;
+    border: 2px solid var(--jw-line);
+    background: #fff;
+    padding: 20px;
+    cursor: pointer;
+    transition: all 0.18s;
+    height: 100%;
+}
+
+.jw-pricing-card:hover {
+    border-color: var(--jw-teal-border);
+}
+
+.jw-pricing-card.selected {
+    border-color: var(--jw-teal);
+    box-shadow: 0 14px 30px -12px rgba(10, 124, 110, 0.4);
+    background: linear-gradient(180deg, var(--jw-teal-tint) 0%, #fff 55%);
+}
+
+.jw-pricing-check {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: var(--jw-line);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 11px;
+    transition: all 0.18s;
+}
+
+.jw-pricing-card.selected .jw-pricing-check {
+    background: var(--jw-teal);
+    box-shadow: 0 0 0 4px rgba(10, 124, 110, 0.15);
+}
+
+/* --- Stat tile (compact icon + label + value) --- */
+.jw-stat-tile {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: #fff;
+    border: 1px solid var(--jw-line-soft);
+    border-radius: 14px;
+    padding: 14px 16px;
+}
+
+.jw-stat-tile .jw-stat-ic {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 15px;
+}
+
+.jw-stat-tile .jw-stat-label {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    color: var(--jw-faint);
+    display: block;
+    margin-bottom: 2px;
+}
+
+.jw-stat-tile .jw-stat-value {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--jw-ink);
+}
+
+/* --- Total ribbon (final payable amount callout) --- */
+.jw-total-ribbon {
+    background: linear-gradient(135deg, var(--jw-navy-950) 0%, var(--jw-navy-900) 65%, #10345a 100%);
+    border-radius: 18px;
+    padding: 20px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    color: #fff;
+    gap: 16px;
+    flex-wrap: wrap;
+    position: relative;
+    overflow: hidden;
+    isolation: isolate;
+}
+
+.jw-total-ribbon::after {
+    content: "";
+    position: absolute;
+    top: -50px;
+    right: -50px;
+    width: 200px;
+    height: 200px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(10, 124, 110, 0.5) 0%, rgba(10, 124, 110, 0) 70%);
+    z-index: -1;
+}
+
+.jw-total-ribbon .jw-tr-label {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: rgba(255, 255, 255, 0.6);
+    margin-bottom: 4px;
+}
+
+.jw-total-ribbon .jw-tr-value {
+    font-size: 26px;
+    font-weight: 800;
+    letter-spacing: -0.4px;
+}
+
+/* --- Upload dropzone (bigger, more inviting) --- */
+.jw-dropzone {
+    cursor: pointer;
+    border: 2px dashed var(--jw-line);
+    background: var(--jw-canvas);
+    border-radius: 18px;
+    transition: all 0.2s;
+    text-align: center;
+}
+
+.jw-dropzone:hover {
+    border-color: var(--jw-teal);
+    background: var(--jw-teal-tint);
+}
+
+.jw-dropzone-icon {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: #fff;
+    color: var(--jw-teal);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 10px;
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+    font-size: 20px;
+}
+
+/* --- Timeline chip (Review schedule) --- */
+.jw-timeline-scroll {
+    display: flex;
+    gap: 12px;
+    overflow-x: auto;
+    padding-bottom: 6px;
+}
+
+.jw-timeline-scroll::-webkit-scrollbar {
+    height: 6px;
+}
+
+.jw-timeline-scroll::-webkit-scrollbar-thumb {
+    background: var(--jw-line);
+    border-radius: 4px;
+}

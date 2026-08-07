@@ -34,7 +34,7 @@ use App\Mail\InvoiceMail;
 use App\Services\InvoiceService;
 use Illuminate\Support\Facades\Storage;
 use App\Mail\ContractorJobInvoice;
-
+use App\Models\ContractorChargeRate;
 
 class JobRosterController extends Controller
 {
@@ -5146,10 +5146,72 @@ public function checkState(Request $request)
     $result = in_array($state, $statesAllowed);
     
     return response()->json([
-        'status' => $result,
+        'state_match' => $result,
         'message' => $result ? 'State is allowed for user' : 'State is not allowed for user',
         'user_id' => $user->id,
         'user_states' => $statesAllowed
     ]);
+}
+
+public function calculateJobAmount(Request $request)
+{
+    // Validate request
+    $validator = Validator::make($request->all(), [
+        'start_time' => 'required',
+        'end_time' => 'required',
+        'state' => 'required',
+    ]);
+
+    if ($validator->fails()) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Validation failed',
+            'errors' => $validator->errors()
+        ], 422);
+    }
+
+    // Get hours division
+    $hours = getShiftHours($request->start_time, $request->end_time);
+
+    // Get all charge rates for the state
+    $chargeRates = ContractorChargeRate::where('state', $request->state)->get();
+
+    if ($chargeRates->isEmpty()) {
+        return response()->json([
+            'success' => false,
+            'message' => 'No charge rates found for this state'
+        ], 404);
+    }
+
+    // Calculate amounts for each rate
+    $amounts = [];
+    foreach ($chargeRates as $rate) {
+        $amount = $this->calculateAmount($hours, $rate);
+        $amounts[] = round($amount, 2);
+    }
+
+    // Get min and max
+    $minAmount = min($amounts);
+    $maxAmount = max($amounts);
+
+    return response()->json([
+        'success' => true,
+        'data' => [
+            'min' => $minAmount,
+            'max' => $maxAmount,
+            'difference' => round($maxAmount - $minAmount, 2),
+            'average' => round(array_sum($amounts) / count($amounts), 2) 
+        ]
+    ]);
+}
+
+private function calculateAmount($hours, $rate)
+{
+    return 
+        ($rate->def_metro_mon_to_fri_day_rate * ($hours['morning'] ?? 0)) +
+        ($rate->def_metro_mon_to_fri_night_rate * ($hours['night'] ?? 0)) +
+        ($rate->def_metro_sat_day_rate * (($hours['saturday_morning'] ?? 0) + ($hours['saturday_night'] ?? 0))) +
+        ($rate->def_metro_sun_day_rate * (($hours['sunday_morning'] ?? 0) + ($hours['sunday_night'] ?? 0))) +
+        ($rate->def_metro_pub_holi_day_rate * (($hours['ph_morning'] ?? 0) + ($hours['ph_night'] ?? 0)));
 }
 }

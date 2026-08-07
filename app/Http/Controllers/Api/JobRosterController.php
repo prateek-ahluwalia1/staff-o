@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Mail\ContractorInvoiceMail;
 use App\Models\ChargeRate;
 use App\Models\Document;
 use App\Models\DocumentCategory;
@@ -32,6 +33,7 @@ use Stripe\Transfer;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
 use App\Mail\InvoiceMail;
 use App\Services\InvoiceService;
+use App\Services\ContractorInvoiceService;
 use Illuminate\Support\Facades\Storage;
 use App\Mail\ContractorJobInvoice;
 use App\Models\ContractorChargeRate;
@@ -5150,7 +5152,20 @@ public function calculateJobAmount(Request $request)
     ]);
 }
 
-//new code start
+//new code here
+/**
+ * Drop-in replacement for `contractor_accept_job` plus the new helper
+ * `generateContractorInvoiceAndPaymentLink`.
+ *
+ * Add these `use` statements at the top of the controller file if not
+ * already present:
+ *
+ *   use App\Services\ContractorInvoiceService;
+ *   use App\Mail\InvoiceMail;
+ *   use Illuminate\Support\Facades\Mail;
+ *   use Illuminate\Support\Facades\Log;
+ */
+
 public function contractor_accept_job(Request $request, $id)
 {
     $a = null;
@@ -5189,6 +5204,7 @@ public function contractor_accept_job(Request $request, $id)
         }
 
         // Allow contractor to assign guard if they already accepted the job
+        // Only return error if trying to accept again WITHOUT assigning a guard
         if ($roster->accepted_by == $id && !$request->has('guard_id')) {
             return response()->json([
                 'success' => false,
@@ -5216,7 +5232,7 @@ public function contractor_accept_job(Request $request, $id)
     }
 
     try {
-        $contractor = User::with('contractor')->find($id);
+        $contractor = \App\Models\User::with('contractor')->find($id);
 
         if (!$contractor || !$contractor->contractor) {
             return response()->json([
@@ -5226,18 +5242,73 @@ public function contractor_accept_job(Request $request, $id)
             ], 200);
         }
 
-        // Guard validation logic
         if ($request->has('guard_id') && !empty($request->guard_id)) {
-            // Check rest hours
+
             if (!$this->canAcceptJob($request->guard_id, $roster->start, $roster->end)) {
+                // Get previous shift details
+                $lastShift = DB::table('job_rosters')
+                    ->where('assigned_to', $request->guard_id)
+                    ->where('end', '<=', $roster->start)
+                    ->orderBy('end', 'desc')
+                    ->first();
+
+                // Get next shift details
+                $nextShift = DB::table('job_rosters')
+                    ->where('assigned_to', $request->guard_id)
+                    ->where('start', '>=', $roster->end)
+                    ->orderBy('start', 'asc')
+                    ->first();
+
+                $previousRestHours = 0;
+                $nextRestHours = 0;
+                $restrictionReason = '';
+
+                if ($lastShift) {
+                    $previousRestHours = Carbon::parse($lastShift->end)->diffInHours(Carbon::parse($roster->start));
+                    if ($previousRestHours < 8) {
+                        $restrictionReason = 'Only ' . $previousRestHours . ' hours rest before this shift. Need 8 hours.';
+                    }
+                }
+
+                if ($nextShift && empty($restrictionReason)) {
+                    $nextRestHours = Carbon::parse($roster->end)->diffInHours(Carbon::parse($nextShift->start));
+                    if ($nextRestHours < 8) {
+                        $restrictionReason = 'Only ' . $nextRestHours . ' hours rest after this shift. Need 8 hours.';
+                    }
+                }
+
                 return response()->json([
                     'success' => false,
                     'message' => 'Staff must complete 8 hours rest before or after accepting this shift.',
                     'data' => null,
+                    'details' => [
+                        'guard_id' => $request->guard_id,
+                        'shift_start' => $roster->start,
+                        'shift_end' => $roster->end,
+                        'previous_shift' => $lastShift ? [
+                            'end' => $lastShift->end,
+                            'rest_hours_available' => $previousRestHours,
+                            'rest_hours_required' => 8,
+                            'rest_hours_shortfall' => max(0, 8 - $previousRestHours)
+                        ] : null,
+                        'next_shift' => $nextShift ? [
+                            'start' => $nextShift->start,
+                            'rest_hours_available' => $nextRestHours,
+                            'rest_hours_required' => 8,
+                            'rest_hours_shortfall' => max(0, 8 - $nextRestHours)
+                        ] : null,
+                        'restriction_reason' => $restrictionReason
+                    ],
+                    'roster_details' => [
+                        'id' => $roster->id,
+                        'site' => $roster->address,
+                        'hours' => $roster->hours,
+                        'asap' => $roster->asap
+                    ]
                 ], 200);
             }
 
-            // Check weekly hours
+            // Calculate weekly hours
             $rosterStart = Carbon::parse($roster->start);
             $weekStart = $rosterStart->copy()->startOfWeek();
             $weekEnd = $rosterStart->copy()->endOfWeek();
@@ -5247,28 +5318,54 @@ public function contractor_accept_job(Request $request, $id)
                 ->whereBetween('start', [$weekStart, $weekEnd])
                 ->sum('hours');
 
+            $currentWeekHours = $currentWeekHours ?? 0;
             $currentJobHours = $roster->hours ?? 0;
-            $totalHours = ($currentWeekHours ?? 0) + $currentJobHours;
+            $totalHours = $currentWeekHours + $currentJobHours;
 
-            $user = User::with('staff')->find($request->guard_id);
+            // Get user with staff relationship
+            $user = \App\Models\User::with('staff')->find($request->guard_id);
+
             if (!$user || !$user->staff) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Staff data not found.',
                     'data' => null,
+                    'details' => [
+                        'guard_id' => $request->guard_id,
+                        'user_exists' => $user ? true : false,
+                        'staff_exists' => $user && $user->staff ? true : false
+                    ]
                 ], 200);
             }
 
+            // Check visa type and weekly limits
             $visaType = $user->staff->staff_document_type;
             $maxHours = $visaType === 'student_visa' ? 24 : 38;
 
             if ($totalHours > $maxHours) {
                 return response()->json([
                     'success' => false,
-                    'message' => $visaType === 'student_visa' 
-                        ? 'Weekly limit exceeded (24 hours for student visa).' 
+                    'message' => $visaType === 'student_visa'
+                        ? 'Weekly limit exceeded (24 hours for student visa).'
                         : 'Weekly limit exceeded (38 hours allowed).',
                     'data' => null,
+                    'details' => [
+                        'guard_id' => $request->guard_id,
+                        'visa_type' => $visaType,
+                        'max_weekly_hours' => $maxHours,
+                        'current_week_hours' => $currentWeekHours,
+                        'current_job_hours' => $currentJobHours,
+                        'total_hours' => $totalHours,
+                        'hours_remaining' => $maxHours - $totalHours,
+                        'week_start' => $weekStart->format('Y-m-d'),
+                        'week_end' => $weekEnd->format('Y-m-d')
+                    ],
+                    'roster_details' => [
+                        'id' => $roster->id,
+                        'start' => $roster->start,
+                        'end' => $roster->end,
+                        'hours' => $roster->hours
+                    ]
                 ], 200);
             }
 
@@ -5283,23 +5380,36 @@ public function contractor_accept_job(Request $request, $id)
                     'success' => false,
                     'message' => 'Staff is already assigned to a shift during this time.',
                     'data' => null,
+                    'details' => [
+                        'guard_id' => $request->guard_id,
+                        'requested_shift' => [
+                            'start' => $roster->start,
+                            'end' => $roster->end
+                        ],
+                        'existing_shift' => [
+                            'id' => $is_already_assign->id,
+                            'start' => $is_already_assign->start,
+                            'end' => $is_already_assign->end
+                        ]
+                    ]
                 ], 200);
             }
         }
 
-        // Get guard details
+        // Get guard details if provided
         $guardName = 'Guard';
         if ($request->has('guard_id') && !empty($request->guard_id)) {
-            $guard = User::find($request->guard_id);
+            $guard = \App\Models\User::find($request->guard_id);
             $guardName = $guard ? $guard->name : 'Guard';
         }
 
         // Update the roster
         $updateData = ['accepted_by' => $id];
 
+        // Only update assigned_to if guard_id is provided
         if ($request->has('guard_id') && !empty($request->guard_id)) {
             $updateData['assigned_to'] = $request->guard_id;
-            $updateData['job_status'] = "pending_payment"; // Changed to pending until payment
+            $updateData['job_status'] = "confirmed";
             $updateData['publish_status'] = 1;
         }
 
@@ -5317,413 +5427,251 @@ public function contractor_accept_job(Request $request, $id)
         $startTime = Carbon::parse($updatedRoster->start)->format('g:i A');
         $endTime = Carbon::parse($updatedRoster->end)->format('g:i A');
 
-        // Get client
-        $client = DB::table('users')
-            ->where('id', '=', $updatedRoster->created_by)
-            ->select('id', 'name', 'email', 'notification_token')
-            ->first();
-
-        // Send notifications
-        $this->sendNotifications($updatedRoster, $contractor, $guardName, $client, $startTime, $endTime, $request);
-
-        // Generate invoice if contractor_invoice == 1
+        // ============ INVOICE + STRIPE PAYMENT LINK ============
+        // Only runs when a guard was assigned AND the site requires contractor invoicing
         $invoiceResult = null;
-        if ($updatedRoster->contractor_invoice == 1) {
-            try {
-                $invoiceResult = $this->generateAndSendInvoiceWithPayment(
-                    $updatedRoster,
-                    $contractor,
-                    $client
-                );
-            } catch (\Exception $e) {
-                Log::error('Invoice generation failed: ' . $e->getMessage(), [
-                    'roster_id' => $updatedRoster->id,
-                    'contractor_id' => $id
+        if ($updatedRoster->contractor_invoice === 1) {
+            $invoiceResult = $this->generateContractorInvoiceAndPaymentLink($contractor, $updatedRoster);
+
+            // If invoicing is required, job stays pending until payment clears via webhook
+            if ($invoiceResult['success']) {
+                DB::table('job_rosters')->where('id', $updatedRoster->id)->update([
+                    'payment_status' => 'pending_payment',
                 ]);
+                $updatedRoster->payment_status = 'pending_payment';
             }
         }
 
-        // Prepare response
+        // ============ SEND NOTIFICATIONS ============
+
+        // 1. Send notification to Client (created_by)
+        $client = DB::table('users')
+            ->where('notification_token', '!=', '')
+            ->where('id', '=', $updatedRoster->created_by)
+            ->select('notification_token', 'name')
+            ->first();
+
+        if ($client && !empty($client->notification_token)) {
+            $message = $request->has('guard_id') && !empty($request->guard_id)
+                ? $guardName . ' accepted and confirmed the job.'
+                : 'Job has been accepted by contractor.';
+
+            $clientNotificationData = [
+                'message' => $message,
+                'title' => 'Job Accepted',
+                'notification_token' => $client->notification_token,
+                'page' => 'my-job-applications',
+                'roster_id' => $request->roster_id
+            ];
+            send_push_notification($clientNotificationData);
+        }
+
+        // 3. Send notification to Staff/Guard (only if guard_id is provided)
+        if ($request->has('guard_id') && !empty($request->guard_id)) {
+            $guardUser = DB::table('users')
+                ->where('notification_token', '!=', '')
+                ->where('id', '=', $request->guard_id)
+                ->select('notification_token', 'name')
+                ->first();
+
+            if ($guardUser && !empty($guardUser->notification_token)) {
+                $guardNotificationData = [
+                    'message' => ($contractor->name ?? 'Contractor') . " assigned you a shift from {$startTime} to {$endTime}.",
+                    'title' => 'New Job Assignment',
+                    'notification_token' => $guardUser->notification_token,
+                    'page' => 'my-job-applications',
+                    'roster_id' => $request->roster_id
+                ];
+                send_push_notification($guardNotificationData);
+            }
+        }
+
+        // Prepare response data
         $responseData = [
             'roster' => $updatedRoster,
             'update_details' => $updateData,
+            'invoice' => $invoiceResult,
         ];
-
-        if ($invoiceResult) {
-            $responseData['invoice'] = $invoiceResult;
-        }
 
         return response()->json([
             'success' => true,
             'message' => $request->has('guard_id') && !empty($request->guard_id)
-                ? 'Job accepted and assigned to guard successfully. Waiting for payment.'
+                ? 'Job accepted and assigned to guard successfully.'
                 : 'Job accepted successfully.',
             'data' => $responseData
         ], 200);
 
     } catch (\Exception $e) {
-        Log::error('Error in contractor_accept_job: ' . $e->getMessage(), [
-            'trace' => $e->getTraceAsString()
-        ]);
         return response()->json([
             'success' => false,
             'message' => 'An error occurred while processing the request.',
-            'error' => $e->getMessage()
+            'error' => $e->getMessage(),
+            'trace' => $e->getTraceAsString()
         ], 500);
     }
 }
 
 /**
- * Generate and send invoice with payment link
+ * Builds the invoice, creates a Stripe payment link, emails the client,
+ * and stores the link/invoice number on the roster.
+ *
+ * Assumes:
+ *  - $contractor->contractor->company_name and ->abn exist
+ *  - job_rosters has invoice_number / payment_link_url / payment_status columns
+ *  - getShiftHours($start, $end) is a global helper already in the app
+ *
+ * @return array{success: bool, payment_link: string|null, invoice_number: string|null}
  */
-private function generateAndSendInvoiceWithPayment($roster, $contractor, $client)
+private function generateContractorInvoiceAndPaymentLink($contractor, $updatedRoster)
 {
-    try {
-        // 1. Get shifts for this roster
-        $shifts = $this->getShiftsForRoster($roster->id);
-        
-        if (empty($shifts) || $shifts->isEmpty()) {
-            Log::error('No shifts found for roster', ['roster_id' => $roster->id]);
-            return null;
-        }
+    // 1. Get contractor's rate card for this site's state
+    $rate = DB::table('contractor_chargerates')
+        ->where('user_id', $contractor->id)
+        ->where('state', $updatedRoster->state)
+        ->first();
 
-        // 2. Get contractor charge rates for the state
-        $rate = ContractorChargeRate::where('user_id', $contractor->id)->where('state', $roster->state)->first();
-        
-        if ($rate->isEmpty()) {
-            Log::error('No charge rates found for state', ['state' => $roster->state]);
-            return null;
-        }
-
-        // 3. Calculate hours and amount for each shift
-        $shiftDetails = [];
-        $baseTotal = 0;
-        $totalHours = [];
-
-        foreach ($shifts as $index => $shift) {
-            // Get hours breakdown
-            $hours = getShiftHours($shift->start, $shift->end);
-            
-            // Multiply by number of guards
-            $guards = $shift->number_of_guards ?? 1;
-            $hours = array_map(function($value) use ($guards) {
-                return round($value * $guards, 2);
-            }, $hours);
-
-            // Calculate amount using the first rate (or average)
-            $shiftAmount = $this->calculateAmount($hours, $rate);
-            
-            // Store shift details
-            $shiftDetails[] = [
-                'start' => Carbon::parse($shift->start)->format('d/m/Y H:i'),
-                'end' => Carbon::parse($shift->end)->format('d/m/Y H:i'),
-                'numberOfGuards' => $guards,
-                'hours' => $this->calculateTotalShiftHours($hours),
-                'amount' => round($shiftAmount, 2)
-            ];
-            
-            $baseTotal += $shiftAmount;
-
-            // Accumulate total hours
-            foreach ($hours as $key => $value) {
-                if (!isset($totalHours[$key])) {
-                    $totalHours[$key] = 0;
-                }
-                $totalHours[$key] += $value;
-            }
-        }
-
-        // 4. Calculate final amounts with 15% service fee
-        $serviceFee = round($baseTotal * 0.15, 2);
-        $grandTotal = round($baseTotal + $serviceFee, 2);
-        $discount = 0;
-        $amountCharged = $grandTotal;
-        $balance = 0;
-
-        // 5. Generate invoice number
-        $invoiceNumber = 'INV-' . strtoupper(uniqid());
-        $paymentIntentId = 'pi_' . uniqid();
-
-        // 6. Create Stripe payment link
-        $paymentLink = $this->createStripePaymentLink(
-            $grandTotal,
-            $invoiceNumber,
-            $roster,
-            $client,
-            $contractor
-        );
-
-        if (!$paymentLink) {
-            Log::error('Failed to create Stripe payment link', [
-                'roster_id' => $roster->id,
-                'amount' => $grandTotal
-            ]);
-            return null;
-        }
-
-        // 7. Save transaction record
-        $transactionId = DB::table('transactions')->insertGetId([
-            'job_roster_id' => $roster->id,
-            'payment_intent_id' => $paymentIntentId,
-            'amount' => $baseTotal,
-            'service_fee' => $serviceFee,
-            'total_amount' => $grandTotal,
-            'amount_charged' => $amountCharged,
-            'discount' => $discount,
-            'balance' => $balance,
-            'status' => 'pending',
-            'payment_status' => 'unpaid',
-            'payment_link' => $paymentLink,
-            'created_at' => now(),
-            'updated_at' => now()
+    if (!$rate) {
+        Log::warning('No ContractorChargeRate found', [
+            'contractor_id' => $contractor->id,
+            'state' => $updatedRoster->state,
         ]);
-
-        // 8. Build invoice data
-        $invoiceData = [
-            'invoice_number' => $invoiceNumber,
-            'date' => now()->format('d M Y'),
-            'client_name' => $client->name ?? 'Client',
-            'client_email' => $client->email ?? '',
-            'payment_intent_id' => $paymentIntentId,
-            'payment_option' => 'full',
-            'shifts' => $shiftDetails,
-            'base_total' => $baseTotal,
-            'discount' => $discount,
-            'service_fee' => $serviceFee,
-            'grand_total' => $grandTotal,
-            'amount_charged' => $amountCharged,
-            'balance' => $balance,
-            'location' => $roster->address ?? 'N/A',
-            'payment_link' => $paymentLink,
-            'contractor_name' => $contractor->name ?? 'Contractor',
-            'state' => $roster->state ?? 'N/A',
-            'hours_breakdown' => $totalHours
-        ];
-
-        // 9. Generate PDF
-        $pdfBytes = app(\App\Services\InvoiceService::class)->generatePdf($invoiceData);
-        $pdfBase64 = base64_encode($pdfBytes);
-
-        // 10. Save PDF
-        $this->saveInvoicePdf($pdfBytes, $invoiceNumber, $client->name, $paymentIntentId);
-
-        // 11. Update job roster with invoice info
-        DB::table('job_rosters')
-            ->where('id', $roster->id)
-            ->update([
-                'invoice_number' => $invoiceNumber,
-                'payment_intent_id' => $paymentIntentId,
-                'invoice_sent' => 1,
-                'invoice_sent_at' => now(),
-                'updated_at' => now()
-            ]);
-
-        // 12. Send invoice email to client
-        $this->sendInvoiceEmail($client, $pdfBase64, $invoiceNumber, $paymentLink, $grandTotal, $contractor);
-
-        Log::info('Invoice with payment link sent successfully', [
-            'invoice_number' => $invoiceNumber,
-            'client_email' => $client->email,
-            'payment_link' => $paymentLink,
-            'roster_id' => $roster->id
-        ]);
-
-        return [
-            'invoice_number' => $invoiceNumber,
-            'payment_link' => $paymentLink,
-            'grand_total' => $grandTotal
-        ];
-
-    } catch (\Exception $e) {
-        Log::error('Invoice generation failed: ' . $e->getMessage(), [
-            'roster_id' => $roster->id,
-            'trace' => $e->getTraceAsString()
-        ]);
-        return null;
+        return ['success' => false, 'payment_link' => null, 'invoice_number' => null];
     }
-}
 
-/**
- * Get shifts for a roster
- */
-private function getShiftsForRoster($rosterId)
-{
-    return DB::table('job_rosters')
-        ->where('id', $rosterId)
-        ->get();
-}
+    // 2. Split the shift into day/night/weekend/PH buckets
+    $hours = getShiftHours($updatedRoster->start, $updatedRoster->end);
 
-/**
- * Calculate amount based on hours and rate
- */
-private function calculateAmount($hours, $rate)
-{
-    return 
-        ($rate->def_metro_mon_to_fri_day_rate * ($hours['morning'] ?? 0)) +
-        ($rate->def_metro_mon_to_fri_night_rate * ($hours['night'] ?? 0)) +
-        ($rate->def_metro_sat_day_rate * (($hours['saturday_morning'] ?? 0) + ($hours['saturday_night'] ?? 0))) +
-        ($rate->def_metro_sun_day_rate * (($hours['sunday_morning'] ?? 0) + ($hours['sunday_night'] ?? 0))) +
-        ($rate->def_metro_pub_holi_day_rate * (($hours['ph_morning'] ?? 0) + ($hours['ph_night'] ?? 0)));
-}
+    $bucketRateMap = [
+        'morning'          => 'def_metro_mon_to_fri_day_rate',
+        'night'            => 'def_metro_mon_to_fri_night_rate',
+        'saturday_morning' => 'def_metro_sat_day_rate',
+        'saturday_night'   => 'def_metro_sat_night_rate',
+        'sunday_morning'   => 'def_metro_sun_day_rate',
+        'sunday_night'     => 'def_metro_sun_night_rate',
+        'ph_morning'       => 'def_metro_pub_holi_day_rate',
+        'ph_night'         => 'def_metro_pub_holi_night_rate',
+    ];
 
-/**
- * Calculate total hours from breakdown
- */
-private function calculateTotalShiftHours($hours)
-{
-    return round(
-        ($hours['morning'] ?? 0) +
-        ($hours['night'] ?? 0) +
-        ($hours['saturday_morning'] ?? 0) +
-        ($hours['saturday_night'] ?? 0) +
-        ($hours['sunday_morning'] ?? 0) +
-        ($hours['sunday_night'] ?? 0) +
-        ($hours['ph_morning'] ?? 0) +
-        ($hours['ph_night'] ?? 0),
-    2);
-}
+    $baseTotal = 0.0;
+    $totalHours = 0.0;
 
-/**
- * Create Stripe payment link
- */
-private function createStripePaymentLink($amount, $invoiceNumber, $roster, $client, $contractor)
-{
+    foreach ($bucketRateMap as $bucketKey => $rateColumn) {
+        $bucketHours = (float) ($hours[$bucketKey] ?? 0);
+        if ($bucketHours <= 0) {
+            continue;
+        }
+        $baseTotal  += $bucketHours * (float) $rate->{$rateColumn};
+        $totalHours += $bucketHours;
+    }
+
+    // 3. Add 15% service fee
+    $serviceFee = round($baseTotal * 0.15, 2);
+    $grandTotal = round($baseTotal + $serviceFee, 2);
+
+    if ($grandTotal <= 0) {
+        Log::warning('Invoice grand total is zero, skipping payment link', [
+            'roster_id' => $updatedRoster->id,
+        ]);
+        return ['success' => false, 'payment_link' => null, 'invoice_number' => null];
+    }
+
+    // 4. Get client details
+    $client = DB::table('users')->where('id', $updatedRoster->created_by)->first();
+
+    // 5. Build invoice number
+    $invoiceNumber = 'INV-' . $updatedRoster->id . '-' . now()->format('Ymd His');
+
+    // 6. Create Stripe product/price/payment link
+    \Stripe\Stripe::setApiKey(config('services.stripe.secret'));
+
     try {
-        Stripe::setApiKey(config('services.stripe.secret'));
-
-        // Create product
-        $product = Product::create([
-            'name' => 'Security Services - Invoice #' . $invoiceNumber,
-            'description' => 'Security services provided by ' . ($contractor->name ?? 'Staffoo'),
+        $product = \Stripe\Product::create([
+            'name' => "Invoice {$invoiceNumber} - " . ($updatedRoster->address ?? 'Job Shift'),
         ]);
 
-        // Create price
-        $price = Price::create([
-            'product' => $product->id,
-            'unit_amount' => (int)($amount * 100),
-            'currency' => 'aud',
+        $price = \Stripe\Price::create([
+            'product'     => $product->id,
+            'unit_amount' => (int) round($grandTotal * 100), // cents
+            'currency'    => 'aud',
         ]);
 
-        // Create payment link
-        $paymentLink = PaymentLink::create([
+        $paymentLink = \Stripe\PaymentLink::create([
             'line_items' => [
-                [
-                    'price' => $price->id,
-                    'quantity' => 1,
-                ],
+                ['price' => $price->id, 'quantity' => 1],
             ],
-            'payment_intent_data' => [
-                'metadata' => [
-                    'invoice_number' => $invoiceNumber,
-                    'roster_id' => $roster->id,
-                    'client_id' => $client->id ?? 0,
-                    'contractor_id' => $roster->accepted_by ?? 0
-                ],
+            'metadata' => [
+                'roster_id'      => $updatedRoster->id,
+                'contractor_id'  => $contractor->id,
+                'invoice_number' => $invoiceNumber,
             ],
             'after_completion' => [
                 'type' => 'redirect',
-                'redirect' => [
-                    'url' => config('app.frontend_url') . '/payment-success?invoice=' . $invoiceNumber,
-                ],
-            ],
-            'metadata' => [
-                'invoice_number' => $invoiceNumber,
-                'roster_id' => $roster->id,
+                'redirect' => ['url' => config('app.url') . '/payment-success?roster_id=' . $updatedRoster->id],
             ],
         ]);
-
-        return $paymentLink->url;
-
     } catch (\Exception $e) {
-        Log::error('Stripe payment link creation failed: ' . $e->getMessage(), [
-            'invoice_number' => $invoiceNumber,
-            'amount' => $amount
-        ]);
-        return null;
+        Log::error('Stripe payment link creation failed', ['error' => $e->getMessage()]);
+        return ['success' => false, 'payment_link' => null, 'invoice_number' => null];
     }
-}
 
-/**
- * Send invoice email with payment link
- */
-private function sendInvoiceEmail($client, $pdfBase64, $invoiceNumber, $paymentLink, $grandTotal, $contractor)
-{
+    // 7. Build PDF invoice (contractor-branded)
+    $invoiceData = [
+        'invoice_number'    => $invoiceNumber,
+        'date'              => now()->format('d M Y'),
+        'client_name'       => $client->name ?? 'Client',
+        'client_email'      => $client->email ?? '',
+        'payment_intent_id' => $paymentLink->id,
+        'payment_option'    => 'full',
+        'location'          => $updatedRoster->address ?? 'N/A',
+        'shifts' => [[
+            'start'          => \Carbon\Carbon::parse($updatedRoster->start)->format('d M Y g:i A'),
+            'end'            => \Carbon\Carbon::parse($updatedRoster->end)->format('d M Y g:i A'),
+            'numberOfGuards' => 1,
+            'hours'          => $totalHours,
+            'amount'         => $baseTotal,
+        ]],
+        'base_total'     => $baseTotal,
+        'discount'       => 0,
+        'service_fee'    => $serviceFee,
+        'grand_total'    => $grandTotal,
+        'amount_charged' => $grandTotal,
+        'balance'        => 0,
+        // contractor branding
+        'contractor_name' => $contractor->contractor->company_name ?? $contractor->name,
+        'contractor_abn'  => $contractor->contractor->abn ?? 'N/A',
+    ];
+
     try {
-        // Send to client
-        \Illuminate\Support\Facades\Mail::to($client->email)
-            ->queue(new \App\Mail\InvoiceWithPaymentMail(
-                pdfBase64: $pdfBase64,
-                invoiceNumber: $invoiceNumber,
-                clientName: $client->name,
-                paymentLink: $paymentLink,
-                grandTotal: $grandTotal,
-                contractorName: $contractor->name ?? 'Contractor',
-                isAdmin: false
-            ));
-
-        // Send copy to admin
-        $adminEmails = User::where('user_type', 'admin')->pluck('email')->toArray();
-        
-        foreach ($adminEmails as $adminEmail) {
-            if (!empty($adminEmail)) {
-                \Illuminate\Support\Facades\Mail::to($adminEmail)
-                    ->queue(new \App\Mail\InvoiceWithPaymentMail(
-                        pdfBase64: $pdfBase64,
-                        invoiceNumber: $invoiceNumber,
-                        clientName: $client->name,
-                        paymentLink: $paymentLink,
-                        grandTotal: $grandTotal,
-                        contractorName: $contractor->name ?? 'Contractor',
-                        isAdmin: true
-                    ));
-            }
-        }
+        $invoiceService = new ContractorInvoiceService();
+        $pdfBytes = $invoiceService->generatePdf($invoiceData);
     } catch (\Exception $e) {
-        Log::error('Failed to send invoice email: ' . $e->getMessage());
-    }
-}
-
-/**
- * Send notifications
- */
-private function sendNotifications($roster, $contractor, $guardName, $client, $startTime, $endTime, $request)
-{
-    // Send to client
-    if ($client && !empty($client->notification_token)) {
-        $message = $request->has('guard_id') && !empty($request->guard_id)
-            ? $guardName . ' accepted and confirmed the job.'
-            : 'Job has been accepted by contractor.';
-
-        send_push_notification([
-            'message' => $message,
-            'title' => 'Job Accepted',
-            'notification_token' => $client->notification_token,
-            'page' => 'my-job-applications',
-            'data' => [
-                'roster_id' => $request->roster_id,
-                'status' => $roster->job_status
-            ]
-        ]);
+        Log::error('Invoice PDF generation failed', ['error' => $e->getMessage()]);
+        return ['success' => false, 'payment_link' => $paymentLink->url, 'invoice_number' => $invoiceNumber];
     }
 
-    // Send to guard
-    if ($request->has('guard_id') && !empty($request->guard_id)) {
-        $guardUser = DB::table('users')
-            ->where('id', '=', $request->guard_id)
-            ->select('notification_token', 'name')
-            ->first();
+    // 8. Save link/invoice number on roster
+    DB::table('job_rosters')->where('id', $updatedRoster->id)->update([
+        'invoice_number'   => $invoiceNumber,
+        'payment_link_url' => $paymentLink->url,
+        'payment_status'   => 'pending',
+    ]);
 
-        if ($guardUser && !empty($guardUser->notification_token)) {
-            send_push_notification([
-                'message' => ($contractor->name ?? 'Contractor') . " assigned you a shift from {$startTime} to {$endTime}.",
-                'title' => 'New Job Assignment',
-                'notification_token' => $guardUser->notification_token,
-                'page' => 'my-job-applications',
-                'data' => [
-                    'roster_id' => $request->roster_id
-                ]
-            ]);
+    // 9. Email client with PDF + pay link
+    if (!empty($client->email)) {
+        try {
+            Mail::to($client->email)->send(new ContractorInvoiceMail(
+                $client->name ?? 'Client',
+                $pdfBytes,
+                $invoiceNumber,
+                $paymentLink->url,
+                $contractor->contractor->company_name ?? $contractor->name
+            ));
+        } catch (\Exception $e) {
+            Log::error('Invoice email send failed', ['error' => $e->getMessage()]);
         }
     }
+
+    return ['success' => true, 'payment_link' => $paymentLink->url, 'invoice_number' => $invoiceNumber];
 }
+
 }

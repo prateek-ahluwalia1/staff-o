@@ -5326,7 +5326,6 @@ public function contractor_accept_job(Request $request, $id)
 
         // Generate invoice if contractor_invoice == 1
         $invoiceResult = null;
-        return $updatedRoster;
         if ($updatedRoster->contractor_invoice == 1) {
             try {
                 $invoiceResult = $this->generateAndSendInvoiceWithPayment(

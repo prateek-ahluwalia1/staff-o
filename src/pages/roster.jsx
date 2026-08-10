@@ -644,7 +644,7 @@ export default function RosterPage() {
                                   )}
                                   {isContractorZeroInvoiceBreakdown ? (
                                     <button title="Breakdown Shift" onClick={() => openModalAction(site, shift, day.dateLabel, "shift_breakdown")}>
-                                      <i className="fa-solid fa-scissors" style={{ color: "#0A7C6E" }}></i>
+                                      <i className="fa-solid fa-scissors"></i>
                                     </button>
                                   ) : (
                                     (userRole === "contractor" || userRole === "admin") && !shift.assigned_to && (

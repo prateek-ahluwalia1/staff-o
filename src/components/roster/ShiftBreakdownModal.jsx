@@ -328,7 +328,9 @@ export default function ShiftBreakdownModal({ modal, closeModal, onSuccess }) {
               Shift Window: <strong>{startDate ? format(startDate, "EEE dd MMM HH:mm") : ""}</strong> &rarr; <strong>{endDate ? format(endDate, "EEE dd MMM HH:mm") : ""}</strong> ({totalDuration}h)
             </div>
           </div>
-          <button type="button" className="btn-close" onClick={closeModal} aria-label="Close"></button>
+          <button type="button" className="btn-close" onClick={closeModal} aria-label="Close">
+            <i className="fa-solid fa-xmark"></i>
+          </button>
         </div>
 
         <div className="vr-modal-content p-3">
@@ -349,9 +351,8 @@ export default function ShiftBreakdownModal({ modal, closeModal, onSuccess }) {
           <div className="d-flex border rounded-3 p-1 mb-3 bg-light">
             <button
               type="button"
-              className={`btn btn-sm flex-fill fw-bold rounded-2 py-2 ${
-                mode === "suggested" ? "btn-teal text-white shadow-sm" : "btn-light text-dark"
-              }`}
+              className={`btn btn-sm flex-fill fw-bold rounded-2 py-2 ${mode === "suggested" ? "btn-teal text-white shadow-sm" : "btn-light text-dark"
+                }`}
               style={mode === "suggested" ? { backgroundColor: "#0A7C6E" } : {}}
               onClick={() => setMode("suggested")}
             >
@@ -360,9 +361,8 @@ export default function ShiftBreakdownModal({ modal, closeModal, onSuccess }) {
             </button>
             <button
               type="button"
-              className={`btn btn-sm flex-fill fw-bold rounded-2 py-2 ${
-                mode === "custom" ? "btn-teal text-white shadow-sm" : "btn-light text-dark"
-              }`}
+              className={`btn btn-sm flex-fill fw-bold rounded-2 py-2 ${mode === "custom" ? "btn-teal text-white shadow-sm" : "btn-light text-dark"
+                }`}
               style={mode === "custom" ? { backgroundColor: "#0A7C6E" } : {}}
               onClick={() => setMode("custom")}
             >
@@ -375,12 +375,12 @@ export default function ShiftBreakdownModal({ modal, closeModal, onSuccess }) {
           {mode === "suggested" ? (
             <div className="alert alert-info py-2 px-3 small mb-3">
               <i className="fa-solid fa-circle-info me-2"></i>
-              <strong>Suggested Split:</strong> Chunks shift matching the job creation rules (e.g. 24h split into 8h / 8h / 8h chunks, 16h into 8h / 8h chunks).
+              <strong>Suggested Split:</strong> Chunks shift matching the job creation rules (e.g. 24h split into 8h / 8h / 8h chunks).
             </div>
           ) : (
             <div className="alert alert-secondary py-2 px-3 small mb-3">
               <i className="fa-solid fa-sliders me-2"></i>
-              <strong>Custom Split:</strong> Adjust dates &amp; times using the same controls as job creation. Must remain strictly within <strong>{startDate ? format(startDate, "dd/MM HH:mm") : ""}</strong> to <strong>{endDate ? format(endDate, "dd/MM HH:mm") : ""}</strong>.
+              <strong>Custom Split:</strong> Adjust dates and times. Must remain strictly within <strong>{startDate ? format(startDate, "dd/MM HH:mm") : ""}</strong> to <strong>{endDate ? format(endDate, "dd/MM HH:mm") : ""}</strong>.
             </div>
           )}
 
@@ -414,9 +414,8 @@ export default function ShiftBreakdownModal({ modal, closeModal, onSuccess }) {
                 return (
                   <div
                     key={seg.id}
-                    className={`p-3 bg-white border rounded-3 shadow-sm position-relative ${
-                      segEval && !segEval.isValid ? "border-danger bg-light-danger" : ""
-                    }`}
+                    className={`p-3 bg-white border rounded-3 shadow-sm position-relative ${segEval && !segEval.isValid ? "border-danger bg-light-danger" : ""
+                      }`}
                   >
                     <div className="d-flex justify-content-between align-items-center mb-2">
                       <span className="fw-bold text-teal" style={{ color: "#0A7C6E" }}>

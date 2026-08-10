@@ -288,26 +288,19 @@ export default function ShiftBreakdownModal({ modal, closeModal, onSuccess }) {
     };
 
     try {
-      let res = await saveBreakdown("api/split-roster-shift", payload, {
+      const res = await saveBreakdown("api/split-roster-shift", payload, {
         method: "POST",
-        silentErrorToast: true,
       });
 
-      if (!res?.success) {
-        res = await saveBreakdown("api/update-roster-time", payload, { method: "POST" });
-      }
-
       if (res && (res.success || res.code === 200)) {
-        toast.success("Shift breakdown saved successfully!");
+        toast.success(res?.message || "Shift breakdown saved successfully!");
         if (onSuccess) onSuccess();
         closeModal();
       } else {
-        toast.success(res?.message || "Shift breakdown updated successfully!");
-        if (onSuccess) onSuccess();
-        closeModal();
+        console.error(res?.message || "Failed to save shift breakdown.");
       }
     } catch (err) {
-      toast.error(err.message || "Failed to save shift breakdown.");
+      console.error(err.message || "Failed to save shift breakdown.");
     }
   };
 

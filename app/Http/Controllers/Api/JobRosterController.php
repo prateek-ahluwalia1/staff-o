@@ -3992,48 +3992,49 @@ private function sendStaffActivationNotification(User $user): void
     {
         $jobDate = date('Y-m-d', strtotime($job->start));
         $jobDuration = $this->calculateShiftDuration($job->start, $job->end);
+        $user = User::where('id', $guardId)->first();
 
-        // Get all assigned jobs for this guard on THIS SPECIFIC date
-        $assignedJobs = JobRoster::where('assigned_to', $guardId)
-            ->whereDate('start', $jobDate)
-            ->where('job_status', '!=', 'cancelled')
-            ->get();
+        if($user->user_type == 'staff'){
+            $assignedJobs = JobRoster::where('assigned_to', $guardId)
+                ->whereDate('start', $jobDate)
+                ->get();
 
-        // Check maximum jobs limit for THIS DAY (2 jobs per day)
-        if ($assignedJobs->count() >= 2) {
-            Log::info("Guard #{$guardId} blocked for job #{$job->id} on {$jobDate}: Already has {$assignedJobs->count()} jobs on this day (max 2)");
-            return false;
-        }
-
-        // Check maximum hours limit for THIS DAY (12 hours per day)
-        $totalHoursToday = 0;
-        foreach ($assignedJobs as $assignedJob) {
-            try {
-                $start = \Carbon\Carbon::parse($assignedJob->start);
-                $end = \Carbon\Carbon::parse($assignedJob->end);
-                $totalHoursToday += $start->diffInHours($end);
-            } catch (\Exception $e) {
-                Log::warning("Error calculating hours for job #{$assignedJob->id}: " . $e->getMessage());
+            // Check maximum jobs limit for THIS DAY (2 jobs per day)
+            if ($assignedJobs->count() >= 2) {
+                Log::info("Guard #{$guardId} blocked for job #{$job->id} on {$jobDate}: Already has {$assignedJobs->count()} jobs on this day (max 2)");
+                return false;
             }
-        }
 
-        // If already worked 12+ hours on this day
-        if ($totalHoursToday >= 12) {
-            Log::info("Guard #{$guardId} blocked for job #{$job->id} on {$jobDate}: Already worked {$totalHoursToday} hours on this day (max 12)");
-            return false;
-        }
+            // Check maximum hours limit for THIS DAY (12 hours per day)
+            $totalHoursToday = 0;
+            foreach ($assignedJobs as $assignedJob) {
+                try {
+                    $start = \Carbon\Carbon::parse($assignedJob->start);
+                    $end = \Carbon\Carbon::parse($assignedJob->end);
+                    $totalHoursToday += $start->diffInHours($end);
+                } catch (\Exception $e) {
+                    Log::warning("Error calculating hours for job #{$assignedJob->id}: " . $e->getMessage());
+                }
+            }
 
-        // Check if adding this job would exceed 12 hours on this day
-        if (($totalHoursToday + $jobDuration) > 12) {
-            Log::info("Guard #{$guardId} blocked for job #{$job->id} on {$jobDate}: Current hours ({$totalHoursToday}) + this job ({$jobDuration}h) would exceed 12 hours");
-            return false;
-        }
+            // If already worked 12+ hours on this day
+            if ($totalHoursToday >= 12) {
+                Log::info("Guard #{$guardId} blocked for job #{$job->id} on {$jobDate}: Already worked {$totalHoursToday} hours on this day (max 12)");
+                return false;
+            }
 
-        Log::info("Guard #{$guardId} is eligible for job #{$job->id} on {$jobDate}", [
-            'jobs_that_day' => $assignedJobs->count(),
-            'hours_that_day' => round($totalHoursToday, 1),
-            'job_duration' => $jobDuration
-        ]);
+            // Check if adding this job would exceed 12 hours on this day
+            if (($totalHoursToday + $jobDuration) > 12) {
+                Log::info("Guard #{$guardId} blocked for job #{$job->id} on {$jobDate}: Current hours ({$totalHoursToday}) + this job ({$jobDuration}h) would exceed 12 hours");
+                return false;
+            }
+
+            Log::info("Guard #{$guardId} is eligible for job #{$job->id} on {$jobDate}", [
+                'jobs_that_day' => $assignedJobs->count(),
+                'hours_that_day' => round($totalHoursToday, 1),
+                'job_duration' => $jobDuration
+            ]);
+        }
 
         return true;
     }

@@ -179,6 +179,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index']);
 
     Route::any('job-post', [JobRosterController::class, 'jobData'])->name('job.post');
+    Route::post('split-roster-shift', [JobRosterController::class, 'update_shift_breakdown']);
     Route::any('check-state', [JobRosterController::class, 'checkState']);
     Route::post('/calculate-job-amount', [JobRosterController::class, 'calculateJobAmount']);
     Route::any('/confirm_task/{id}', [JobRosterController::class, 'confirm_task']);

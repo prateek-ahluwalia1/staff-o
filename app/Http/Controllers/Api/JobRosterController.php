@@ -5681,4 +5681,99 @@ private function generateContractorInvoiceAndPaymentLink($contractor, $updatedRo
     return ['success' => true, 'payment_link' => $paymentLink->url, 'invoice_number' => $invoiceNumber];
 }
 
+public function update_shift_breakdown(Request $request)
+{
+    $request->validate([
+        'roster_id' => 'required|integer',
+        'shifts'    => 'required|array|min:1',
+        'shifts.*.start' => 'required|date',
+        'shifts.*.end'   => 'required|date',
+    ]);
+
+    try {
+        $originalRoster = DB::table('job_rosters')->where('id', $request->roster_id)->first();
+
+        if (!$originalRoster) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Job roster not found.',
+                'data' => null,
+            ], 200);
+        }
+
+        // Cast the original row to an array once — used as the base
+        // for every row (existing update + any newly created ones),
+        // so every other column ("all data same") is preserved automatically.
+        $originalRosterArray = (array) $originalRoster;
+        unset($originalRosterArray['id']); // never carry the id over when cloning
+
+        $bucketColumnMap = [
+            'morning'          => 'morning_hours',
+            'night'            => 'night_hours',
+            'saturday_morning' => 'saturday_morning_hours',
+            'saturday_night'   => 'saturday_night_hours',
+            'sunday_morning'   => 'sunday_morning_hours',
+            'sunday_night'     => 'sunday_night_hours',
+            'ph_morning'       => 'ph_morning_hours',
+            'ph_night'         => 'ph_night_hours',
+        ];
+
+        $updatedRosters = [];
+
+        foreach ($request->shifts as $index => $shift) {
+            $start = $shift['start'];
+            $end   = $shift['end'];
+
+            // Recalculate the hour buckets for this specific start/end
+            $hours = getShiftHours($start, $end);
+
+            $totalHours = 0;
+            $bucketData = [];
+            foreach ($bucketColumnMap as $hoursKey => $columnName) {
+                $bucketHours = (float) ($hours[$hoursKey] ?? 0);
+                $bucketData[$columnName] = $bucketHours;
+                $totalHours += $bucketHours;
+            }
+
+            $shiftData = array_merge($bucketData, [
+                'start' => $start,
+                'end'   => $end,
+                'hours' => $totalHours,
+            ]);
+
+            if ($index === 0) {
+                // Update the existing roster row
+                DB::table('job_rosters')
+                    ->where('id', $originalRoster->id)
+                    ->update($shiftData);
+
+                $updatedRosters[] = DB::table('job_rosters')->where('id', $originalRoster->id)->first();
+            } else {
+                // Clone the original row's data, override start/end/hours,
+                // insert as a brand new roster row
+                $newRosterData = array_merge($originalRosterArray, $shiftData);
+
+                $newId = DB::table('job_rosters')->insertGetId($newRosterData);
+                $updatedRosters[] = DB::table('job_rosters')->where('id', $newId)->first();
+            }
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Shifts updated successfully.',
+            'data' => [
+                'rosters' => $updatedRosters,
+            ],
+        ], 200);
+
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => 'An error occurred while updating shifts.',
+            'error' => $e->getMessage(),
+            'trace' => $e->getTraceAsString(),
+        ], 500);
+    }
+}
+
 }

@@ -287,8 +287,11 @@ export default function RosterPage() {
         return { ...shift, startDate, endDate };
       }).filter(Boolean);
 
-      const totalHours = roster.reduce((sum, shift) => sum + Number(shift.hours || 0), 0);
-      const shiftWithCustomer = site.job_roster?.find(shift => shift?.customer?.name);
+      const weekShifts = roster.filter((shift) =>
+        weekDays.some((d) => isSameDay(d.dateObj, shift.startDate))
+      );
+      const totalHours = weekShifts.reduce((sum, shift) => sum + Number(shift.hours || 0), 0);
+      const shiftWithCustomer = (site.job_roster || []).find(shift => shift?.customer?.name);
       const clientName = shiftWithCustomer?.customer?.name || "Unknown Client";
 
       return {
@@ -296,11 +299,11 @@ export default function RosterPage() {
         displayName: site.site_name || "Unknown Site",
         clientName: clientName,
         siteData: site,
-        hoursDisplay: `${totalHours.toFixed(1)}h`,
+        hoursDisplay: `${totalHours.toFixed(1)}h Total`,
         jobRoster: roster,
       };
     });
-  }, [submitData]);
+  }, [submitData, weekDays]);
 
   const filteredSites = useMemo(() => {
     if (!searchQuery.trim()) return sites;

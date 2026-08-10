@@ -366,7 +366,10 @@ export default function EditProfile() {
     }
 
     const admin = d.admin || {};
-    const rawStatesAllowed = d.states_allowed ?? business.states_allowed ?? contractor.states_allowed ?? admin.states_allowed ?? null;
+    const rawStatesAllowed = userType === "admin"
+      ? (business.states_allowed ?? d.states_allowed ?? null)
+      : (d.states_allowed ?? contractor.states_allowed ?? business.states_allowed ?? admin.states_allowed ?? null);
+
     let existingStatesAllowed = [];
     if (rawStatesAllowed) {
       try {
@@ -381,9 +384,9 @@ export default function EditProfile() {
       name: d.name || "",
       email: d.email || "",
       origin_country: staff.origin_country || d.origin_country || "",
-      abn: d.abn || business.abn || contractor.abn || "",
-      acn: d.acn || business.acn || contractor.acn || "",
-      phone: staff.phone || contractor.phone || customer.phone || business.phone || d.phone || "",
+      abn: userType === "admin" ? (business.contractor?.abn || business.abn || d.abn || "") : (d.abn || business.abn || contractor.abn || ""),
+      acn: userType === "admin" ? (business.contractor?.acn || business.acn || d.acn || "") : (d.acn || business.acn || contractor.acn || ""),
+      phone: userType === "admin" ? (business.phone || business.contractor?.phone || d.phone || "") : (staff.phone || contractor.phone || customer.phone || business.phone || d.phone || ""),
       address: userType === "admin" ? (business.address || d.address || "") : (d.address || staff.address || contractor.address || business.address || ""),
       city: userType === "admin" ? (business.city || d.city || "") : (d.city || staff.city || contractor.city || business.city || ""),
       state: userType === "admin" ? (business.state || d.state || "") : (d.state || staff.state || contractor.state || business.state || ""),
@@ -398,13 +401,9 @@ export default function EditProfile() {
       security_license_no: staff.security_license_no || "",
       date_of_birth: isoToDisplay(d.date_of_birth || staff.date_of_birth || ""),
       company_name:
-        d.company_name ||
-        business.name ||
-        business.company_name ||
-        contractor.company_name ||
-        staff.company_name ||
-        customer.company_name ||
-        "",
+        userType === "admin"
+          ? (business.name || business.contractor?.company_name || business.company_name || d.company_name || "")
+          : (d.company_name || business.name || business.company_name || contractor.company_name || staff.company_name || customer.company_name || ""),
       registration_number:
         d.registration_number ||
         contractor.registration_number ||
@@ -412,24 +411,20 @@ export default function EditProfile() {
         "",
       bank_details: existingBankDetails,
       profile_image:
-        d.profile_image ||
-        business.profile_image ||
-        staff.profile_image ||
-        contractor.profile_image ||
-        customer.profile_image ||
-        "",
+        userType === "admin"
+          ? (business.profile_image || business.contractor?.profile_image || d.profile_image || "")
+          : (d.profile_image || business.profile_image || staff.profile_image || contractor.profile_image || customer.profile_image || ""),
     });
 
     const profileImageUrl =
-      d.profile_image ||
-      business.profile_image ||
-      staff.profile_image ||
-      contractor.profile_image ||
-      customer.profile_image;
+      userType === "admin"
+        ? (business.profile_image || business.contractor?.profile_image || d.profile_image)
+        : (d.profile_image || business.profile_image || staff.profile_image || contractor.profile_image || customer.profile_image);
+
     if (profileImageUrl) {
       setProfilePhoto(resolveProfileImageUrl(profileImageUrl));
     }
-  }, [profileData]);
+  }, [profileData, userType]);
 
   // Sync Redux
   useEffect(() => {
@@ -525,7 +520,28 @@ export default function EditProfile() {
   const filteredDocuments = useMemo(() => {
     const dataDocs = profileData?.data?.documents || [];
     const bizDocs = profileData?.business?.documents || [];
-    const allDocs = dataDocs.length > 0 ? dataDocs : bizDocs;
+
+    let allDocs = [];
+
+    if (userType === "admin") {
+      const docMap = new Map();
+
+      // First add all template/business documents
+      bizDocs.forEach((doc) => {
+        const key = `${doc.document_category}_${doc.document_type || doc.document_name}`;
+        docMap.set(key, doc);
+      });
+
+      // Then override with uploaded documents from dataDocs
+      dataDocs.forEach((doc) => {
+        const key = `${doc.document_category}_${doc.document_type || doc.document_name}`;
+        docMap.set(key, doc);
+      });
+
+      allDocs = Array.from(docMap.values());
+    } else {
+      allDocs = dataDocs.length > 0 ? dataDocs : bizDocs;
+    }
     const currentState = formData.state?.toLowerCase() || "";
 
     if (userType === "contractor" || userType === "admin") {
@@ -585,13 +601,17 @@ export default function EditProfile() {
 
       const payload = new FormData();
       Object.keys(formData).forEach((key) => {
-        if (key === "profile_image") return;
+        if (key === "profile_image" || key === "email") return;
+        if (userType === "admin" && (key === "name" || key === "phone" || key === "gender" || key === "date_of_birth" || key === "staff_document_type" || key === "security_license_no")) return;
+
         if (key === "bank_details") {
           payload.append("bank_details", JSON.stringify(formData.bank_details));
         } else if (key === "states_allowed") {
           payload.append("states_allowed", JSON.stringify(formData.states_allowed || []));
         } else {
-          payload.append(key, formData[key]);
+          if (formData[key] !== undefined && formData[key] !== null) {
+            payload.append(key, formData[key]);
+          }
         }
       });
 
@@ -985,6 +1005,7 @@ export default function EditProfile() {
       file: docForm.file_path || (selectedDoc?.file ?? ""),
       document_name: docForm.document_name,
       document_type: selectedDoc?.document_type || docForm.document_type || "",
+      document_category: selectedDoc?.document_category || docForm.document_category || "",
     };
 
     if (docForm.show_working_rights) {

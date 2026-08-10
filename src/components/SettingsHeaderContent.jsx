@@ -46,9 +46,6 @@ export default function SettingsHeaderContent({
     isActive === "1"
   );
 
-  // Check if the user is both staff AND inactive
-  const isStaffInactive = userType === "staff" && !isActiveProfile;
-
 
   const progressColor = getProgressColor();
   const showProgress =
@@ -358,16 +355,18 @@ export default function SettingsHeaderContent({
                 title="Verified Profile"
               ></i>
             )}
-            <span
-              className={`sh-badge ${isActiveProfile ? "sh-badge--active" : "sh-badge--inactive"
-                }`}
-            >
-              <i
-                className={`fa-solid ${isActiveProfile ? "fa-circle-check" : "fa-circle-xmark"
+            {userType !== "admin" && (
+              <span
+                className={`sh-badge ${isActiveProfile ? "sh-badge--active" : "sh-badge--inactive"
                   }`}
-              ></i>
-              {isActiveProfile ? "Active" : "Inactive"}
-            </span>
+              >
+                <i
+                  className={`fa-solid ${isActiveProfile ? "fa-circle-check" : "fa-circle-xmark"
+                    }`}
+                ></i>
+                {isActiveProfile ? "Active" : "Inactive"}
+              </span>
+            )}
           </h1>
 
           {/* Always the same subtitle */}

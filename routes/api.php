@@ -50,6 +50,7 @@ Route::any('password-save', [AuthController::class, 'showPasswordResetForm'])->n
 // Route::post('/register/staff', [AuthController::class, 'registerStaff']);
 
 Route::post('/login', [AuthController::class, 'login']);
+Route::post('stripe/webhook', [StripeWebhookController::class, 'handle']);
 
 Route::prefix('contact-us')->group(function () {
     Route::post('/', [ContactUsController::class, 'store']);
@@ -254,7 +255,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/get-guard-leaves/{guard_id}', [LeaveManagementController::class, 'getGuardLeave']);
 
     Route::get('user-transactions/{user}', [JobRosterController::class, 'getUserTransactions']);
-    Route::post('stripe/webhook', [StripeWebhookController::class, 'handle']);
 
  
     // Notifications

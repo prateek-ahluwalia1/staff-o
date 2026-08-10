@@ -5606,7 +5606,7 @@ private function generateContractorInvoiceAndPaymentLink($contractor, $updatedRo
             ],
             'after_completion' => [
                 'type' => 'redirect',
-                'redirect' => ['url' => config('app.url') . '/payment-success?roster_id=' . $updatedRoster->id],
+                'redirect' => ['url' => config('app.frontend_url') . '/my-job-applications?roster_id=' . $updatedRoster->id],
             ],
         ]);
     } catch (\Exception $e) {

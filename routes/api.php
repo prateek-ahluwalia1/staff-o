@@ -27,6 +27,7 @@ use App\Http\Controllers\AgoraController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\VisaController;
 use App\Http\Controllers\IvrController2;
+use App\Http\Controllers\StripeWebhookController;
 
 /*
 |--------------------------------------------------------------------------
@@ -253,6 +254,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/get-guard-leaves/{guard_id}', [LeaveManagementController::class, 'getGuardLeave']);
 
     Route::get('user-transactions/{user}', [JobRosterController::class, 'getUserTransactions']);
+    Route::post('stripe/webhook', [StripeWebhookController::class, 'handle']);
 
  
     // Notifications

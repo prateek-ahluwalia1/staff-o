@@ -120,10 +120,10 @@ const ContractorRatesView = () => {
         toast.success(res?.message || "Rate update request submitted for Admin review!");
         setShowRequestModal(false);
       } else {
-        toast.error(res?.message || "Failed to submit rate update request.");
+        console.error(res?.message || "Failed to submit rate update request.");
       }
     } catch (err) {
-      toast.error(err.message || "Failed to submit rate update request.");
+      console.error(err.message || "Failed to submit rate update request.");
     }
   };
 

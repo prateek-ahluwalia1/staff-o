@@ -27,7 +27,7 @@ use App\Http\Controllers\AgoraController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\VisaController;
 use App\Http\Controllers\IvrController2;
-use App\Http\Controllers\StripeWebhookController;
+use App\Http\Controllers\Api\StripeWebhookController;
 
 /*
 |--------------------------------------------------------------------------

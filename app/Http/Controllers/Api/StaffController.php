@@ -696,6 +696,8 @@ private function calculateProfileCompletion(User $user): int
             $user->load('contractor', 'documents');
         } elseif ($user->user_type === 'staff') {
             $user->load('staff', 'documents');
+        } elseif ($user->user_type === 'admin'){
+           $adminUser = User::with(['documents'])->find(1);
         }
 
         $percentage = $this->calculateProfileCompletion($user);
@@ -718,7 +720,7 @@ private function calculateProfileCompletion(User $user): int
 
         $user->profile_completion_percentage = $percentage;
 
-        return response()->json(['success' => true, 'code' => 200, 'data' => $user]);
+        return response()->json(['success' => true, 'code' => 200, 'data' => $user, 'business' => $adminUser ?? null]);
     }
     
     public function getStaffInfo($id)

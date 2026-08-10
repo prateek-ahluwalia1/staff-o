@@ -19,6 +19,7 @@ import useFetch from "../hooks/useFetch";
 import ActivityDashboardModal from "../components/roster/ActivityDashboardModal";
 import TimeEditModal from "../components/roster/TimeEditModal";
 import DetailsModal from "../components/roster/DetailsModal";
+import ShiftBreakdownModal from "../components/roster/ShiftBreakdownModal";
 import AddJob from "./add-job";
 import "../assets/css/roster.css";
 import { useLocation } from "react-router-dom";
@@ -605,9 +606,17 @@ export default function RosterPage() {
                             const hasNote = Boolean(extractOperationNoteText(shift));
                             const isAccepted = Boolean(shift.accepted_by); // Check if contractor accepted
 
+                            const shiftDuration = Number(shift.hours || 0) || (shift.endDate && shift.startDate ? (shift.endDate - shift.startDate) / 3600000 : 0);
+                            const isContractorZeroInvoiceBreakdown = userRole === "contractor" && Number(shift.contractor_invoice) === 0 && shiftDuration > 12;
+
                             return (
                               <div key={shift.id} className={`vr-shift-card bg-${status}`}>
                                 {hasNote && <div className="vr-note-dot"></div>}
+                                {isContractorZeroInvoiceBreakdown && (
+                                  <span className="vr-breakdown-indicator" title="Requires Shift Breakdown (>12h, Invoice 0)">
+                                    <i className="fa-solid fa-scissors" style={{ fontSize: "10px" }}></i>
+                                  </span>
+                                )}
                                 <div className="vr-shift-time">
                                   {format(shift.startDate, "HH:mm")} - {format(shift.endDate, "HH:mm")}
 
@@ -633,10 +642,16 @@ export default function RosterPage() {
                                       <i className="fa fa-edit fas fa-edit"></i>
                                     </button>
                                   )}
-                                  {(userRole === "contractor" || userRole === "admin") && !shift.assigned_to && (
-                                    <button title="Assign" onClick={() => openModalAction(site, shift, day.dateLabel, "admin_assign")}>
-                                      <i className="fa fa-user-plus"></i>
+                                  {isContractorZeroInvoiceBreakdown ? (
+                                    <button title="Breakdown Shift" onClick={() => openModalAction(site, shift, day.dateLabel, "shift_breakdown")}>
+                                      <i className="fa-solid fa-scissors" style={{ color: "#0A7C6E" }}></i>
                                     </button>
+                                  ) : (
+                                    (userRole === "contractor" || userRole === "admin") && !shift.assigned_to && (
+                                      <button title="Assign" onClick={() => openModalAction(site, shift, day.dateLabel, "admin_assign")}>
+                                        <i className="fa fa-user-plus"></i>
+                                      </button>
+                                    )
                                   )}
                                 </div>
                               </div>
@@ -674,6 +689,7 @@ export default function RosterPage() {
       {modal?.type === "activity" && <ActivityDashboardModal modal={modal} closeModal={closeModal} userRole={userRole} />}
       {modal?.type === "time" && <TimeEditModal modal={modal} closeModal={closeModal} editForm={editForm} setEditForm={setEditForm} timeEditError={timeEditError} clearTimeEditError={() => setTimeEditError("")} handleSave={handleSave} saveLoading={saveLoading} />}
       {modal?.type === "details" && <DetailsModal modal={modal} closeModal={closeModal} guardShiftsList={guardShiftsList} totalGuardHours={totalGuardHours} />}
+      {modal?.type === "shift_breakdown" && <ShiftBreakdownModal modal={modal} closeModal={closeModal} onSuccess={fetchCustomerSites} />}
 
       {modal?.type === "admin_assign" && (
         <div className="vr-modal-backdrop" onClick={closeModal}>

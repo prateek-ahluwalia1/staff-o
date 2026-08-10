@@ -604,10 +604,21 @@ export default function RosterPage() {
                           {dayShifts.map((shift) => {
                             const status = shift.job_status ? shift.job_status.replace('_', '-') : 'pending';
                             const hasNote = Boolean(extractOperationNoteText(shift));
-                            const isAccepted = Boolean(shift.accepted_by); // Check if contractor accepted
+                            const isAccepted = Boolean(shift.accepted_by);
 
                             const shiftDuration = Number(shift.hours || 0) || (shift.endDate && shift.startDate ? (shift.endDate - shift.startDate) / 3600000 : 0);
-                            const isContractorZeroInvoiceBreakdown = userRole === "contractor" && Number(shift.contractor_invoice) === 0 && shiftDuration > 12;
+                            const invoiceType = Number(shift.contractor_invoice);
+                            const isConfirmed = String(shift.job_status || "").toLowerCase() === "confirmed";
+
+                            // Contractor Zero Invoice Breakdown: Contractor + Invoice 0 + Confirmed + Duration > 12
+                            const isContractorZeroInvoiceBreakdown = userRole === "contractor" && invoiceType === 0 && isConfirmed && shiftDuration > 12;
+
+                            // Assign Staff Button: Shown when staff not assigned AND (Admin OR Invoice 1 OR (Invoice 0 & Confirmed & Duration <= 12))
+                            const showAssignButton = !shift.assigned_to && (
+                              userRole === "admin" ||
+                              invoiceType === 1 ||
+                              (userRole === "contractor" && invoiceType === 0 && isConfirmed && shiftDuration <= 12)
+                            );
 
                             return (
                               <div key={shift.id} className={`vr-shift-card bg-${status}`}>
@@ -642,16 +653,15 @@ export default function RosterPage() {
                                       <i className="fa fa-edit fas fa-edit"></i>
                                     </button>
                                   )}
-                                  {isContractorZeroInvoiceBreakdown ? (
+                                  {isContractorZeroInvoiceBreakdown && (
                                     <button title="Breakdown Shift" onClick={() => openModalAction(site, shift, day.dateLabel, "shift_breakdown")}>
                                       <i className="fa-solid fa-scissors"></i>
                                     </button>
-                                  ) : (
-                                    (userRole === "contractor" || userRole === "admin") && !shift.assigned_to && (
-                                      <button title="Assign" onClick={() => openModalAction(site, shift, day.dateLabel, "admin_assign")}>
-                                        <i className="fa fa-user-plus"></i>
-                                      </button>
-                                    )
+                                  )}
+                                  {showAssignButton && (
+                                    <button title="Assign" onClick={() => openModalAction(site, shift, day.dateLabel, "admin_assign")}>
+                                      <i className="fa fa-user-plus"></i>
+                                    </button>
                                   )}
                                 </div>
                               </div>

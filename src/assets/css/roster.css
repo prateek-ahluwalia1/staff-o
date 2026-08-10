@@ -48,7 +48,8 @@
 .vibrant-roster-app {
     display: flex;
     flex-direction: column;
-    height: calc(100vh - 160px);
+    height: auto;
+    min-height: calc(100vh - 160px);
     width: 100%;
     background-color: var(--surface);
     font-family: 'Inter', sans-serif;
@@ -59,7 +60,7 @@
     border-radius: 16px;
     box-shadow: 0 4px 16px rgba(15, 23, 42, 0.06);
     border: 1px solid var(--line-soft);
-    overflow: hidden;
+    overflow: visible;
 }
 
 /* --- 1. HEADER --- */
@@ -457,8 +458,7 @@
 
 .vr-matrix-body {
     flex: 1;
-    min-height: 0;
-    overflow-y: auto;
+    overflow-y: visible;
     overflow-x: hidden;
     background: var(--surface);
 }

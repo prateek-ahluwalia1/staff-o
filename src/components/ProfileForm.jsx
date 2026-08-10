@@ -366,7 +366,7 @@ export default function ProfileForm({
                 <div className="col-12">
                   <div className="d-flex justify-content-between align-items-center mb-2">
                     <label className="form-label fw-bold text-dark small mb-0">
-                      States You Operate In <span className="text-danger">*</span>
+                      States You Operate In
                     </label>
                     <span className="state-count-badge">
                       {(formData.states_allowed || []).length} of {CONTRACTOR_STATE_OPTIONS.length} selected

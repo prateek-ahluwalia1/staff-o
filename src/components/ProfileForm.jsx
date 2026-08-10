@@ -119,77 +119,83 @@ export default function ProfileForm({
             </div>
             <div>
               <h3 className="fw-bold mb-1" style={{ letterSpacing: "-0.02em" }}>
-                Personal Information
+                {userType === "admin" ? "Business Information" : "Personal Information"}
               </h3>
               <p className="text-muted mb-0 small" style={{ textTransform: "none" }}>
-                Keep your profile details current to ensure smooth account operation.
+                {userType === "admin"
+                  ? "Manage your business details and operating states."
+                  : "Keep your profile details current to ensure smooth account operation."}
               </p>
             </div>
           </div>
         </div>
 
-        {/* Form Body – unchanged from the version with hideFields support */}
+        {/* Form Body */}
         <div className="card-body px-4 px-md-5 py-4 py-md-5">
           <div className="row g-4">
-            {/* Full Name */}
-            <div className="col-md-6">
-              <label htmlFor="name" className="form-label fw-bold text-dark small mb-1">
-                Full Name <span className="text-danger">*</span>
-              </label>
-              <div className="input-group">
-                <span className="input-group-text bg-light border text-muted">
-                  <i className="fa-solid fa-user"></i>
-                </span>
-                <input
-                  type="text"
-                  className="form-control border bg-light ps-2 shadow-none"
-                  id="name"
-                  placeholder="John Doe"
-                  value={formData.name || ""}
-                  onChange={(e) => {
-                    let value = e.target.value
-                      .replace(/[^a-zA-Z\s]/g, "")
-                      .replace(/\s+/g, " ");
-                    onChange({ target: { id: "name", value } });
-                  }}
-                  required
-                  style={{ borderRadius: "0 0.375rem 0.375rem 0" }}
-                />
-              </div>
-            </div>
-
-            {/* Email */}
-            <div className="col-md-6">
-              <label htmlFor="email" className="form-label fw-bold text-dark small mb-1">
-                Email Address <span className="text-danger">*</span>
-              </label>
-              <div className="input-group">
-                <span className="input-group-text bg-light border text-muted">
-                  <i className="fa-solid fa-envelope"></i>
-                </span>
-                <input
-                  type="email"
-                  className="form-control border bg-light ps-2 shadow-none"
-                  id="email"
-                  placeholder="user@example.com"
-                  value={formData.email || ""}
-                  onChange={onChange}
-                  readOnly={isEdit}
-                  disabled={isEdit}
-                  required
-                  style={{
-                    borderRadius: "0 0.375rem 0.375rem 0",
-                    cursor: isEdit ? "not-allowed" : "text",
-                    opacity: isEdit ? 0.8 : 1,
-                  }}
-                />
-              </div>
-              {isEdit && (
-                <div className="text-muted small mt-1">
-                  <i className="fa-solid fa-lock me-1"></i> Email cannot be changed.
+            {/* Full Name (hidden for Admin) */}
+            {userType !== "admin" && (
+              <div className="col-md-6">
+                <label htmlFor="name" className="form-label fw-bold text-dark small mb-1">
+                  Full Name <span className="text-danger">*</span>
+                </label>
+                <div className="input-group">
+                  <span className="input-group-text bg-light border text-muted">
+                    <i className="fa-solid fa-user"></i>
+                  </span>
+                  <input
+                    type="text"
+                    className="form-control border bg-light ps-2 shadow-none"
+                    id="name"
+                    placeholder="John Doe"
+                    value={formData.name || ""}
+                    onChange={(e) => {
+                      let value = e.target.value
+                        .replace(/[^a-zA-Z\s]/g, "")
+                        .replace(/\s+/g, " ");
+                      onChange({ target: { id: "name", value } });
+                    }}
+                    required
+                    style={{ borderRadius: "0 0.375rem 0.375rem 0" }}
+                  />
                 </div>
-              )}
-            </div>
+              </div>
+            )}
+
+            {/* Email (hidden for Admin) */}
+            {userType !== "admin" && (
+              <div className="col-md-6">
+                <label htmlFor="email" className="form-label fw-bold text-dark small mb-1">
+                  Email Address <span className="text-danger">*</span>
+                </label>
+                <div className="input-group">
+                  <span className="input-group-text bg-light border text-muted">
+                    <i className="fa-solid fa-envelope"></i>
+                  </span>
+                  <input
+                    type="email"
+                    className="form-control border bg-light ps-2 shadow-none"
+                    id="email"
+                    placeholder="user@example.com"
+                    value={formData.email || ""}
+                    onChange={onChange}
+                    readOnly={isEdit}
+                    disabled={isEdit}
+                    required
+                    style={{
+                      borderRadius: "0 0.375rem 0.375rem 0",
+                      cursor: isEdit ? "not-allowed" : "text",
+                      opacity: isEdit ? 0.8 : 1,
+                    }}
+                  />
+                </div>
+                {isEdit && (
+                  <div className="text-muted small mt-1">
+                    <i className="fa-solid fa-lock me-1"></i> Email cannot be changed.
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Phone */}
             {userType !== "admin" && (
@@ -265,8 +271,8 @@ export default function ProfileForm({
               </div>
             )}
 
-            {/* Contractor Specific Fields – unchanged */}
-            {userType === "contractor" && (
+            {/* Contractor & Admin Specific Fields (Manage Business & States Allowed) */}
+            {(userType === "contractor" || userType === "admin") && (
               <>
                 <div className="col-md-6">
                   <label htmlFor="company_name" className="form-label fw-bold text-dark small mb-1">

@@ -56,7 +56,7 @@ export default function AvatarUpload({
   };
 
   const openFileDialog = () => {
-    if (loading || userRole === "admin") return;
+    if (loading) return;
     fileInputRef.current?.click();
   };
 
@@ -105,7 +105,7 @@ export default function AvatarUpload({
           box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
           background: rgba(255, 255, 255, 0.08);
           backdrop-filter: blur(8px);
-          cursor: ${userRole !== "admin" ? "pointer" : "default"};
+          cursor: pointer;
         }
         .avatar-image {
           width: 100%;
@@ -160,7 +160,7 @@ export default function AvatarUpload({
 
       <div className="avatar-container" onClick={openFileDialog}>
         {renderAvatar()}
-        {userRole !== "admin" && !loading && (
+        {!loading && (
           <div className="edit-badge">
             <i className="fa-solid fa-pencil"></i>
           </div>

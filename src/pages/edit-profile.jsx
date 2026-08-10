@@ -251,8 +251,9 @@ function capitalizeWords(str) {
 export default function EditProfile() {
   const dispatch = useDispatch();
   const { userdata } = useSelector((state) => state.auth);
-  const userId = userdata?.data?.id || userdata?.id;
   const userType = userdata?.data?.user_type || userdata?.user_type;
+  const userId = userdata?.data?.id || userdata?.id;
+  const updateUserId = userType === "admin" ? 1 : userId;
   const isverified =
     userdata?.data?.customer?.verify_profile ||
     userdata?.customer?.verify_profile;
@@ -344,11 +345,12 @@ export default function EditProfile() {
   useEffect(() => {
     if (!profileData?.data) return;
     const d = profileData.data;
+    const business = profileData.business || d.business || {};
     const staff = d.staff || {};
-    const contractor = d.contractor || staff.contractor || {};
+    const contractor = d.contractor || business.contractor || staff.contractor || {};
     const customer = d.customer || {};
 
-    const rawBankDetails = customer.bank_details ?? d.bank_details ?? null;
+    const rawBankDetails = customer.bank_details ?? d.bank_details ?? business.bank_details ?? null;
 
     let existingBankDetails = [];
     if (rawBankDetails) {
@@ -363,7 +365,8 @@ export default function EditProfile() {
       }
     }
 
-    const rawStatesAllowed = d.states_allowed ?? contractor.states_allowed ?? null;
+    const admin = d.admin || {};
+    const rawStatesAllowed = d.states_allowed ?? business.states_allowed ?? contractor.states_allowed ?? admin.states_allowed ?? null;
     let existingStatesAllowed = [];
     if (rawStatesAllowed) {
       try {
@@ -378,22 +381,26 @@ export default function EditProfile() {
       name: d.name || "",
       email: d.email || "",
       origin_country: staff.origin_country || d.origin_country || "",
-      abn: d.abn || contractor.abn || "",
-      acn: d.acn || contractor.acn || "",
-      phone: staff.phone || contractor.phone || customer.phone || d.phone || "",
-      address: d.address || staff.address || contractor.address || "",
-      city: d.city || staff.city || contractor.city || "",
-      state: d.state || staff.state || contractor.state || "",
+      abn: d.abn || business.abn || contractor.abn || "",
+      acn: d.acn || business.acn || contractor.acn || "",
+      phone: staff.phone || contractor.phone || customer.phone || business.phone || d.phone || "",
+      address: userType === "admin" ? (business.address || d.address || "") : (d.address || staff.address || contractor.address || business.address || ""),
+      city: userType === "admin" ? (business.city || d.city || "") : (d.city || staff.city || contractor.city || business.city || ""),
+      state: userType === "admin" ? (business.state || d.state || "") : (d.state || staff.state || contractor.state || business.state || ""),
       states_allowed: existingStatesAllowed || [],
-      country: d.country || staff.country || contractor.country || "",
+      country: userType === "admin" ? (business.country || d.country || "") : (d.country || staff.country || contractor.country || business.country || ""),
       coordinates:
-        d.coordinates || staff.coordinates || contractor.coordinates || "",
+        userType === "admin"
+          ? (business.coordinates || d.coordinates || "")
+          : (d.coordinates || staff.coordinates || contractor.coordinates || business.coordinates || ""),
       gender: staff.gender || contractor.gender || d.gender || "",
       staff_document_type: staff.staff_document_type || "",
       security_license_no: staff.security_license_no || "",
       date_of_birth: isoToDisplay(d.date_of_birth || staff.date_of_birth || ""),
       company_name:
         d.company_name ||
+        business.name ||
+        business.company_name ||
         contractor.company_name ||
         staff.company_name ||
         customer.company_name ||
@@ -406,6 +413,7 @@ export default function EditProfile() {
       bank_details: existingBankDetails,
       profile_image:
         d.profile_image ||
+        business.profile_image ||
         staff.profile_image ||
         contractor.profile_image ||
         customer.profile_image ||
@@ -414,6 +422,7 @@ export default function EditProfile() {
 
     const profileImageUrl =
       d.profile_image ||
+      business.profile_image ||
       staff.profile_image ||
       contractor.profile_image ||
       customer.profile_image;
@@ -514,10 +523,12 @@ export default function EditProfile() {
   };
 
   const filteredDocuments = useMemo(() => {
-    const allDocs = profileData?.data?.documents || [];
+    const dataDocs = profileData?.data?.documents || [];
+    const bizDocs = profileData?.business?.documents || [];
+    const allDocs = dataDocs.length > 0 ? dataDocs : bizDocs;
     const currentState = formData.state?.toLowerCase() || "";
 
-    if (userType === "contractor") {
+    if (userType === "contractor" || userType === "admin") {
       const allowedCategories = (formData.states_allowed || [])
         .map((code) => STATE_CATEGORY_MAP[code])
         .filter(Boolean);
@@ -533,7 +544,7 @@ export default function EditProfile() {
       }
       return true;
     });
-  }, [profileData?.data?.documents, formData.state, formData.states_allowed, userType]);
+  }, [profileData?.data?.documents, profileData?.business?.documents, formData.state, formData.states_allowed, userType]);
 
   const handleAvatarUpload = useCallback(
     async (file) => {
@@ -543,7 +554,7 @@ export default function EditProfile() {
         setProfilePhoto(previewUrl);
         const payload = new FormData();
         payload.append("profile_image", file);
-        const res = await submit(`api/user-update/${userId}`, payload, { method: "POST" });
+        const res = await submit(`api/user-update/${updateUserId}`, payload, { method: "POST" });
         if (res?.success) {
           toast.success("Avatar updated successfully!");
           refetch();
@@ -557,7 +568,7 @@ export default function EditProfile() {
         setProfilePhoto(null);
       }
     },
-    [userId, submit, refetch]
+    [userId, updateUserId, submit, refetch]
   );
 
   const handleSubmit = useCallback(
@@ -584,12 +595,12 @@ export default function EditProfile() {
         }
       });
 
-      const res = await submit(`api/user-update/${userId}`, payload, { method: "POST" });
+      const res = await submit(`api/user-update/${updateUserId}`, payload, { method: "POST" });
       if (res === undefined) return;
       toast.success("Profile updated successfully!");
       refetch();
     },
-    [formData, submit, userId, refetch]
+    [formData, submit, userId, updateUserId, refetch]
   );
 
   const handleClosePhoneModal = () => {
@@ -674,7 +685,7 @@ export default function EditProfile() {
     const payload = new FormData();
     payload.append("bank_details", JSON.stringify(updatedCards));
 
-    const res = await submit(`api/user-update/${userId}`, payload, { method: "POST" });
+    const res = await submit(`api/user-update/${updateUserId}`, payload, { method: "POST" });
     if (res === undefined) return;
 
     setFormData((prev) => ({ ...prev, bank_details: updatedCards }));
@@ -704,7 +715,7 @@ export default function EditProfile() {
     const payload = new FormData();
     payload.append("bank_details", JSON.stringify(updatedCards));
 
-    const res = await submit(`api/user-update/${userId}`, payload, { method: "POST" });
+    const res = await submit(`api/user-update/${updateUserId}`, payload, { method: "POST" });
     if (res === undefined) return;
 
     setFormData((prev) => ({ ...prev, bank_details: updatedCards }));
@@ -1205,14 +1216,12 @@ export default function EditProfile() {
 
       {/* Tabs */}
       <div className="tabs-modern">
-        {userType !== "admin" && (
-          <button
-            className={`tab-btn ${activeTab === "personal" ? "active" : "inactive"}`}
-            onClick={() => setActiveTab("personal")}
-          >
-            Personal Information
-          </button>
-        )}
+        <button
+          className={`tab-btn ${activeTab === "personal" ? "active" : "inactive"}`}
+          onClick={() => setActiveTab("personal")}
+        >
+          {userType === "admin" ? "Business Information" : "Personal Information"}
+        </button>
         {userType === "customer" && (
           <button
             className={`tab-btn ${activeTab === "cards" ? "active" : "inactive"}`}
@@ -1221,7 +1230,7 @@ export default function EditProfile() {
             Payment Details
           </button>
         )}
-        {userType !== "customer" && userType !== "admin" && (
+        {userType !== "customer" && (
           <button
             className={`tab-btn ${activeTab === "documents" ? "active" : "inactive"}`}
             onClick={() => setActiveTab("documents")}
@@ -1417,7 +1426,7 @@ export default function EditProfile() {
         </div>
       )}
 
-      {activeTab === "documents" && userType !== "customer" && userType !== "admin" && (
+      {activeTab === "documents" && userType !== "customer" && (
         <div className="content-card p-4">
           <DocumentTable
             documents={filteredDocuments}

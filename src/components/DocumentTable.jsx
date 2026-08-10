@@ -256,7 +256,7 @@ export default function DocumentTable({ documents, onAddFile, userType }) {
   // Contractors: group documents by state (document_category) — each state
   // has its own repeated set of document types (public_liability, workcover, etc).
   const stateGroups = useMemo(() => {
-    if (userType !== "contractor") return null;
+    if (userType !== "contractor" && userType !== "admin") return null;
     const byCategory = {};
     (documents || []).forEach((doc) => {
       const cat = doc.document_category || "other";
@@ -522,7 +522,7 @@ export default function DocumentTable({ documents, onAddFile, userType }) {
     `}</style>
   );
 
-  if (userType === "contractor") {
+  if (userType === "contractor" || userType === "admin") {
     return (
       <div className="document-table-wrapper">
         {sharedStyles}

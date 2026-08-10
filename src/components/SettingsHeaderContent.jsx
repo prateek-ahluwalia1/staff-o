@@ -349,7 +349,9 @@ export default function SettingsHeaderContent({
         {/* Left text content */}
         <div className="sh-left">
           <h1 className="sh-title">
-            <span className="sh-name">{name || "Staff Member"}</span>
+            <span className="sh-name">
+              {userType === "admin" ? (company_name || name || "Business Profile") : (name || "Staff Member")}
+            </span>
             {verified && (
               <i
                 className="fa-solid fa-circle-check sh-verified"
@@ -378,21 +380,12 @@ export default function SettingsHeaderContent({
               <i className="fa-solid fa-envelope"></i>
               <span className="sh-meta-text">{email || "No email"}</span>
             </span>
-            {userType !== "contractor" ? (
-              <span className="sh-meta-item">
-                <i className="fa-solid fa-location-dot"></i>
-                <span className="sh-meta-text">
-                  {limitToFirstFourWords(city) || "No location"}
-                </span>
+            <span className="sh-meta-item">
+              <i className="fa-solid fa-location-dot"></i>
+              <span className="sh-meta-text">
+                {limitToFirstFourWords(city) || "No location"}
               </span>
-            ) : (
-              <span className="sh-meta-item">
-                <i className="fa-solid fa-briefcase"></i>
-                <span className="sh-meta-text">
-                  {company_name || "No company name"}
-                </span>
-              </span>
-            )}
+            </span>
           </div>
         </div>
 

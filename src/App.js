@@ -29,7 +29,7 @@ import ConstructionSites from "./pages/industries/construction-sites";
 import ResidentialEstates from "./pages/industries/residential-estates";
 import WorkingStaff from "./pages/forstaff/working-staff";
 import HowToApply from "./pages/forstaff/How-to-apply";
-import EventSecurityHero from "./pages/solutions/event-security";
+// import EventSecurityHero from "./pages/solutions/event-security";
 import ContractorRatesView from "./pages/ContractorRatesView";
 
 const Login = lazy(() => import("./auth/login"));

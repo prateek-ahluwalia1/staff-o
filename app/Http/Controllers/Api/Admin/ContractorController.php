@@ -139,11 +139,64 @@ class ContractorController extends Controller
     ]);
 }
 
+// private function calculateProfileCompletion(User $user): int
+// {
+//     $baseWeight = 50;
+//     $documentWeight = 50;
+
+//     // Base fields only
+//     $baseFields = ['name', 'email', 'user_type'];
+    
+//     // Calculate base score
+//     $filledBase = 0;
+//     foreach ($baseFields as $field) {
+//         if (!empty($user->{$field})) {
+//             $filledBase++;
+//         }
+//     }
+    
+//     $baseScore = ($filledBase / count($baseFields)) * $baseWeight;
+//     $documents = $user->documents ?? collect();
+//     $documentScore = 0;
+//     $totalDocuments = $documents->count();
+
+//     // Check for labour hire document if in specific states
+//     $hasLabourHire = true;
+//     $labourHireRequired = false;
+    
+//     if (in_array(strtolower($user->state), ['victoria', 'queensland'])) {
+//         $labourHireRequired = true;
+//         $labourHireDoc = $documents->firstWhere('document_type', 'labour_hire');
+//         $hasLabourHire = $labourHireDoc && $this->isDocumentValid($labourHireDoc);
+//     }
+
+//     // Calculate document score
+//     if ($totalDocuments > 0) {
+//         $filledDocuments = $documents->filter(function ($doc) {
+//             return $this->isDocumentValid($doc);
+//         })->count();
+
+//         $documentScore = ($filledDocuments / $totalDocuments) * $documentWeight;
+//     }
+
+//     // Contractor activation logic
+//     $baseComplete = $baseScore >= $baseWeight;
+//     $hasValidDocuments = $totalDocuments > 0 && $documentScore > 0;
+//     $labourHireValid = !$labourHireRequired || ($labourHireRequired && $hasLabourHire);
+    
+//     $newStatus = ($baseComplete && $hasValidDocuments && $labourHireValid) ? 1 : 0;
+
+//     $this->updateUserStatus($user, $newStatus);
+
+//     // Final percentage
+//     $percentage = (int) round($baseScore + $documentScore);
+//     return min($percentage, 100);
+// }
 private function calculateProfileCompletion(User $user): int
 {
     $baseWeight = 50;
     $documentWeight = 50;
-
+ 
     // Base fields only
     $baseFields = ['name', 'email', 'user_type'];
     
@@ -159,7 +212,7 @@ private function calculateProfileCompletion(User $user): int
     $documents = $user->documents ?? collect();
     $documentScore = 0;
     $totalDocuments = $documents->count();
-
+ 
     // Check for labour hire document if in specific states
     $hasLabourHire = true;
     $labourHireRequired = false;
@@ -169,27 +222,60 @@ private function calculateProfileCompletion(User $user): int
         $labourHireDoc = $documents->firstWhere('document_type', 'labour_hire');
         $hasLabourHire = $labourHireDoc && $this->isDocumentValid($labourHireDoc);
     }
-
+ 
     // Calculate document score
     if ($totalDocuments > 0) {
         $filledDocuments = $documents->filter(function ($doc) {
             return $this->isDocumentValid($doc);
         })->count();
-
+ 
         $documentScore = ($filledDocuments / $totalDocuments) * $documentWeight;
     }
-
+ 
+    // ============ NEW: states_allowed vs contractor_charge_rates check ============
+    // Contractor must have a rate card for EVERY state in states_allowed.
+    // Empty/missing states_allowed also counts as not valid (forces inactive).
+    $statesAllowed = $user->states_allowed;
+ 
+    if (is_string($statesAllowed)) {
+        $statesAllowed = json_decode($statesAllowed, true) ?: [];
+    }
+    $statesAllowed = array_map('strtolower', $statesAllowed ?? []);
+ 
+    $statesAllowedValid = false;
+ 
+    if (!empty($statesAllowed)) {
+        $ratedStates = DB::table('contractor_charge_rates')
+            ->where('user_id', $user->id)
+            ->pluck('state')
+            ->map(fn($s) => strtolower($s))
+            ->unique()
+            ->toArray();
+ 
+        $missingStates = array_diff($statesAllowed, $ratedStates);
+        $statesAllowedValid = empty($missingStates);
+    }
+    // ============ END NEW ============
+ 
     // Contractor activation logic
     $baseComplete = $baseScore >= $baseWeight;
     $hasValidDocuments = $totalDocuments > 0 && $documentScore > 0;
     $labourHireValid = !$labourHireRequired || ($labourHireRequired && $hasLabourHire);
     
-    $newStatus = ($baseComplete && $hasValidDocuments && $labourHireValid) ? 1 : 0;
-
+    $newStatus = ($baseComplete && $hasValidDocuments && $labourHireValid && $statesAllowedValid) ? 1 : 0;
+ 
     $this->updateUserStatus($user, $newStatus);
-
+ 
     // Final percentage
     $percentage = (int) round($baseScore + $documentScore);
+ 
+    // Keep percentage consistent with the activation decision above —
+    // if states_allowed isn't fully covered, don't show 100% even though
+    // base + documents might otherwise sum to it.
+    if (!$statesAllowedValid) {
+        $percentage = min($percentage, 99);
+    }
+ 
     return min($percentage, 100);
 }
 

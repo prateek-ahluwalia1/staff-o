@@ -5939,7 +5939,7 @@ public function list_charge_rate_requests(Request $request)
     if ($request->has('status') && !empty($request->status)) {
         $query->where('charge_rate_requests.status', $request->status);
     } else {
-        $query->where('charge_rate_requests.status', 'pending'); // default view
+        $query->where('charge_rate_requests.status', 'pending');
     }
 
     $requests = $query->orderBy('charge_rate_requests.created_at', 'desc')->get();

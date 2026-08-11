@@ -205,6 +205,33 @@ private function calculateProfileCompletion(User $user): int
         $percentage = (int) round($baseScore + 50);
     }
 
+    if ($user->user_type === 'contractor') {
+        $statesAllowed = $user->states_allowed;
+ 
+        if (is_string($statesAllowed)) {
+            $statesAllowed = json_decode($statesAllowed, true) ?: [];
+        }
+        $statesAllowed = array_map('strtolower', $statesAllowed ?? []);
+ 
+        if (empty($statesAllowed)) {
+            // No allowed states set at all -> treat as incomplete, force inactive
+            $percentage = min($percentage, 99);
+        } else {
+            $ratedStates = DB::table('contractor_chargerates')
+                ->where('user_id', $user->id)
+                ->pluck('state')
+                ->map(fn($s) => strtolower($s))
+                ->unique()
+                ->toArray();
+ 
+            $missingStates = array_diff($statesAllowed, $ratedStates);
+ 
+            if (!empty($missingStates)) {
+                $percentage = min($percentage, 99);
+            }
+        }
+    }
+
     return min($percentage, 100);
 }
 

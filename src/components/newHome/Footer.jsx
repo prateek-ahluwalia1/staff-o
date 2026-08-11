@@ -38,22 +38,24 @@ function Footer() {
             <Link to="/pricing">Pricing</Link>
           </div>
 
-          {/* For guards */}
+          {/* For staff */}
           <div className="nh-foot-col">
-            <h4>For guards</h4>
-            <Link to="/login">Browse jobs</Link>
-            <Link to="/register">How to apply</Link>
-            <Link to="/register">Licensing</Link>
-            <Link to="/edit-profile">Guard dashboard</Link>
+            <h4>For staff</h4>
+            <Link to="/forstaff/working-staff">Working on Staffoo</Link>
+            {/* <Link to="/login">Browse jobs</Link> */}
+            <Link to="/forstaff/how-to-apply">How to apply</Link>
+            {/* <Link to="/forstaff/working-staff">Licensing &amp; requirements</Link>
+            <Link to="/edit-profile">Staff dashboard</Link> */}
           </div>
 
           {/* Industries */}
           <div className="nh-foot-col">
             <h4>Industries</h4>
-            <Link to="/solutions/event-security">Events</Link>
-            <Link to="/solutions/retail-security">Retail</Link>
-            <Link to="/solutions/warehouse-logistics-security">Warehouse &amp; Logistics</Link>
-            <Link to="/solutions/event-security">Construction</Link>
+            <Link to="/industries/event-crowd-control">Events &amp; Crowd Control</Link>
+            <Link to="/industries/retail-security">Retail Security</Link>
+            <Link to="/industries/corporate-office">Corporate &amp; Office</Link>
+            <Link to="/industries/construction-sites">Construction Sites</Link>
+            <Link to="/industries/residential-estates">Residential &amp; Estates</Link>
           </div>
 
           {/* Company */}

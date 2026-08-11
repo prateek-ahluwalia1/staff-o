@@ -101,21 +101,21 @@ function Header() {
             <div>
               <span className="nh-nav-item">For staff <span className="nh-caret" /></span>
               <div className="nh-dropdown">
-                <NavLink to="/login" onClick={handleLinkClick}>Browse jobs</NavLink>
-                <NavLink to="/register" onClick={handleLinkClick}>How to apply</NavLink>
-                <NavLink to="/register" onClick={handleLinkClick}>Licensing &amp; requirements</NavLink>
-                <NavLink to="/edit-profile" onClick={handleLinkClick}>Dashboard</NavLink>
+                <NavLink to="/forstaff/working-staff" onClick={handleLinkClick}>Working on Staffoo</NavLink>
+                <NavLink to="/forstaff/how-to-apply" onClick={handleLinkClick}>How to apply</NavLink>
+                {/* <NavLink to="/forstaff/working-staff" onClick={handleLinkClick}>Licensing &amp; requirements</NavLink>
+                <NavLink to="/edit-profile" onClick={handleLinkClick}>Staff dashboard</NavLink> */}
               </div>
             </div>
 
             <div>
               <span className="nh-nav-item">Industries <span className="nh-caret" /></span>
               <div className="nh-dropdown">
-                <NavLink to="/solutions/event-security" onClick={handleLinkClick}>Event &amp; crowd control</NavLink>
-                <NavLink to="/solutions/retail-security" onClick={handleLinkClick}>Retail security</NavLink>
-                <NavLink to="/solutions/warehouse-logistics-security" onClick={handleLinkClick}>Warehouse &amp; logistics</NavLink>
-                <NavLink to="/solutions/event-security" onClick={handleLinkClick}>Construction sites</NavLink>
-                <NavLink to="/solutions/retail-security" onClick={handleLinkClick}>Residential &amp; estates</NavLink>
+                <NavLink to="/industries/event-crowd-control" onClick={handleLinkClick}>Event &amp; crowd control</NavLink>
+                <NavLink to="/industries/retail-security" onClick={handleLinkClick}>Retail security</NavLink>
+                <NavLink to="/industries/corporate-office" onClick={handleLinkClick}>Corporate &amp; Office</NavLink>
+                <NavLink to="/industries/construction-sites" onClick={handleLinkClick}>Construction sites</NavLink>
+                <NavLink to="/industries/residential-estates" onClick={handleLinkClick}>Residential &amp; estates</NavLink>
               </div>
             </div>
 
@@ -264,9 +264,13 @@ function Header() {
 
         {/* Nav links */}
         <div style={{ borderBottom: '1px solid #E4E9E4', paddingBottom: '8px', marginBottom: '8px' }}>
-          <NavLink to="/solutions/event-security" onClick={handleLinkClick}>Event Security</NavLink>
-          <NavLink to="/solutions/retail-security" onClick={handleLinkClick}>Retail Security</NavLink>
-          <NavLink to="/solutions/warehouse-logistics-security" onClick={handleLinkClick}>Warehouse &amp; Logistics</NavLink>
+          <NavLink to="/forstaff/working-staff" onClick={handleLinkClick}>Working on Staffoo</NavLink>
+          <NavLink to="/forstaff/how-to-apply" onClick={handleLinkClick}>How to apply</NavLink>
+          <NavLink to="/industries/event-crowd-control" onClick={handleLinkClick}>Event &amp; Crowd Control</NavLink>
+          <NavLink to="/industries/retail-security" onClick={handleLinkClick}>Retail Security</NavLink>
+          <NavLink to="/industries/corporate-office" onClick={handleLinkClick}>Corporate &amp; Office</NavLink>
+          <NavLink to="/industries/construction-sites" onClick={handleLinkClick}>Construction Sites</NavLink>
+          <NavLink to="/industries/residential-estates" onClick={handleLinkClick}>Residential &amp; Estates</NavLink>
           <NavLink to="/pricing" onClick={handleLinkClick}>Pricing</NavLink>
           <NavLink to="/about-us" onClick={handleLinkClick}>About Us</NavLink>
           <NavLink to="/contact-us" onClick={handleLinkClick}>Contact</NavLink>

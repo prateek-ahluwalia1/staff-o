@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useCallback } from "react";
 import { useLocation } from "react-router-dom";
-import Select from "react-select";   // npm install react-select
+import Select from "react-select";
 import useFetch from "../hooks/useFetch";
 import useSubmit from "../hooks/useSubmit";
 import { useSelector } from "react-redux";
@@ -11,34 +11,13 @@ import { TIME_KEYS } from "../utils/exports";
 const RATE_CATEGORIES = ["def", "eba"];
 
 const UI_SLOT_ROWS = [
-  {
-    label: "Mon-Fri (Day 06:00 - 18:00)",
-    metro: "metro_mon_to_fri_day_rate",
-    reg: "reg_mon_to_fri_day_rate",
-  },
-  {
-    label: "Mon-Fri (Night 18:00 - 06:00)",
-    metro: "metro_mon_to_fri_night_rate",
-    reg: "reg_mon_to_fri_night_rate",
-  },
-  {
-    label: "Saturday",
-    metro: "metro_sat_day_rate",
-    reg: "reg_sat_day_rate",
-  },
-  {
-    label: "Sunday",
-    metro: "metro_sun_day_rate",
-    reg: "reg_sun_day_rate",
-  },
-  {
-    label: "Public Holiday",
-    metro: "metro_pub_holi_day_rate",
-    reg: "reg_pub_holi_day_rate",
-  },
+  { label: "Mon–Fri Day", metro: "metro_mon_to_fri_day_rate", reg: "reg_mon_to_fri_day_rate" },
+  { label: "Mon–Fri Night", metro: "metro_mon_to_fri_night_rate", reg: "reg_mon_to_fri_night_rate" },
+  { label: "Saturday", metro: "metro_sat_day_rate", reg: "reg_sat_day_rate" },
+  { label: "Sunday", metro: "metro_sun_day_rate", reg: "reg_sun_day_rate" },
+  { label: "Public Holiday", metro: "metro_pub_holi_day_rate", reg: "reg_pub_holi_day_rate" },
 ];
 
-// First 6 states only for contractors
 const CONTRACTOR_STATES = [
   { value: "", label: "Select State...", disabled: true },
   { value: "nsw", label: "New South Wales (NSW)" },
@@ -148,7 +127,7 @@ const RatesList = ({ forcedType } = {}) => {
 
   // Endpoints
   const listEndpoint = useMemo(() => {
-    if (isContractor) return "api/get-all-contractor-rates";
+    if (isContractor) return null; // No longer fetching active rates for admin review (only requests)
     if (isCharge) return "api/get-all-chargerates";
     return "api/get-all-payrates";
   }, [isCharge, isContractor]);
@@ -171,7 +150,7 @@ const RatesList = ({ forcedType } = {}) => {
     error: contractorsError,
   } = useFetch("api/admin/get-contractors", {
     isAuth: true,
-    immediate: isContractor,
+    immediate: false, // Not needed in contractor mode anymore
   });
 
   const contractors = useMemo(() => {
@@ -192,6 +171,12 @@ const RatesList = ({ forcedType } = {}) => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
 
+  // Rate request review state
+  const [reviewRequest, setReviewRequest] = useState(null); // { request, mode: "view"|"reject" }
+  const [reviewNote, setReviewNote] = useState("");
+  const [processingRequestId, setProcessingRequestId] = useState(null);
+  const [requestTab, setRequestTab] = useState("pending"); // "pending" | "approved" | "rejected"
+
   const { userdata } = useSelector((state) => state.auth || {});
   const userType = userdata?.data?.user_type || userdata?.user_type;
   const isAdmin = userType === "admin";
@@ -201,6 +186,70 @@ const RatesList = ({ forcedType } = {}) => {
     immediate: true,
   });
   const { submit, loading: submitting } = useSubmit({ isAuth: true });
+
+  // Fetch contractor rate requests (contractor mode only)
+  const {
+    data: requestsData,
+    loading: requestsLoading,
+    refetch: refetchRequests,
+  } = useFetch(isContractor ? `api/charge-rate-requests?status=${requestTab}` : null, {
+    isAuth: true,
+    immediate: isContractor,
+  });
+
+  const rateRequests = useMemo(() => {
+    if (!requestsData) return [];
+    const arr = requestsData?.data ?? requestsData;
+    return Array.isArray(arr) ? arr : [];
+  }, [requestsData]);
+
+  const adminId = userdata?.data?.id || userdata?.id || null;
+
+  const handleApproveRequest = async (request) => {
+    setProcessingRequestId(request.id);
+    try {
+      const res = await submit(
+        `api/accept-charge-rate-request/${request.id}`,
+        { admin_id: adminId },
+        { method: "POST" }
+      );
+      if (res?.success || res?.code === 200) {
+        toast.success(res?.message || "Rate request approved successfully!");
+        setReviewRequest(null);
+        await refetchRequests();
+        if (listEndpoint) await refetch(listEndpoint);
+      } else {
+        toast.error(res?.message || "Failed to approve request.");
+      }
+    } catch (err) {
+      toast.error("Failed to approve request.");
+    } finally {
+      setProcessingRequestId(null);
+    }
+  };
+
+  const handleRejectRequest = async (request) => {
+    setProcessingRequestId(request.id);
+    try {
+      const res = await submit(
+        `api/reject-charge-rate-request/${request.id}`,
+        { admin_id: adminId, reason: reviewNote },
+        { method: "POST" }
+      );
+      if (res?.success || res?.code === 200) {
+        toast.success(res?.message || "Rate request rejected.");
+        setReviewRequest(null);
+        setReviewNote("");
+        await refetchRequests();
+      } else {
+        toast.error(res?.message || "Failed to reject request.");
+      }
+    } catch (err) {
+      toast.error("Failed to reject request.");
+    } finally {
+      setProcessingRequestId(null);
+    }
+  };
 
   const makeInitialForm = useCallback(() => {
     const f = {
@@ -398,9 +447,9 @@ const RatesList = ({ forcedType } = {}) => {
     );
   }
 
-  if (loading || (isContractor && contractorsLoading)) return <Loader />;
+  if (loading && listEndpoint) return <Loader />;
 
-  if (error || (isContractor && contractorsError)) {
+  if ((error && listEndpoint) || (isContractor && contractorsError && false)) {
     const errMsg =
       typeof error === "string"
         ? error
@@ -546,6 +595,13 @@ const RatesList = ({ forcedType } = {}) => {
         .table-premium {
           margin-bottom: 0;
         }
+
+        /* ── Tabs ── */
+        .rate-tabs { display: inline-flex; background: #e2e8f0; border-radius: 12px; padding: 6px; gap: 6px; box-shadow: inset 0 2px 4px rgba(15,23,42,0.05); }
+        .rate-tab { position: relative; border: none; background: transparent; padding: 10px 24px; border-radius: 8px; font-weight: 700; font-size: 14px; color: var(--muted); transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1); cursor: pointer; outline: none; user-select: none; }
+        .rate-tab:hover:not(.active) { color: var(--ink); background: rgba(255,255,255,0.4); }
+        .rate-tab:active { transform: scale(0.96); }
+        .rate-tab.active { background: var(--surface); color: var(--teal-dark); box-shadow: 0 4px 12px rgba(15,23,42,0.08), 0 1px 2px rgba(15,23,42,0.04); }
         .table-premium thead th {
           background: #f8fafc;
           border-bottom: 2px solid var(--teal);
@@ -677,16 +733,58 @@ const RatesList = ({ forcedType } = {}) => {
           box-shadow: 0 0 0 1px var(--teal);
         }
 
+        /* ── Request Tabs ── */
+        .req-tab-bar {
+          display: flex;
+          gap: 0;
+          border-bottom: 2px solid var(--line);
+          padding: 0 24px;
+          background: #fff;
+        }
+        .req-tab-btn {
+          padding: 13px 20px;
+          font-size: 13px;
+          font-weight: 700;
+          color: var(--muted);
+          border: none;
+          background: transparent;
+          cursor: pointer;
+          border-bottom: 3px solid transparent;
+          margin-bottom: -2px;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          transition: color 0.18s;
+        }
+        .req-tab-btn:hover { color: var(--ink); }
+        .req-tab-btn.active { color: var(--teal); border-bottom-color: var(--teal); }
+        .req-tab-count {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          min-width: 20px;
+          height: 20px;
+          border-radius: 30px;
+          font-size: 11px;
+          font-weight: 800;
+          padding: 0 6px;
+        }
+        .req-tab-count.pending { background: rgba(217,119,6,0.12); color: #d97706; }
+        .req-tab-count.approved { background: rgba(22,163,74,0.12); color: #16a34a; }
+        .req-tab-count.rejected { background: rgba(220,38,38,0.12); color: #dc2626; }
+        .req-tab-count.all { background: rgba(10,124,110,0.1); color: var(--teal); }
+
         @media (max-width: 767.98px) {
           .rates-hero {
             padding: 26px 20px 40px;
             border-radius: 18px;
           }
           .rates-hero h1 { font-size: 22px; }
+          .req-tab-bar { padding: 0 12px; }
+          .req-tab-btn { padding: 10px 12px; font-size: 12px; }
         }
       `}</style>
 
-      {/* Hero with Add button for contractor */}
       <div className="rates-hero">
         <div>
           <span className="rates-hero-eyebrow">
@@ -694,84 +792,414 @@ const RatesList = ({ forcedType } = {}) => {
           </span>
           <h1>{title}</h1>
           <p style={{ textTransform: "none" }}>
-            View and edit{" "}
             {isContractor
-              ? "contractor charge"
+              ? "View contractor charge rates. Approve or reject rate adjustment requests below."
               : isCharge
-                ? "charge"
-                : "pay"}{" "}
-            rates by job level and state.
+                ? "View and edit charge rates by job level and state."
+                : "View and edit pay rates by job level and state."}
           </p>
         </div>
-        {isContractor && (
-          <button className="btn-add" onClick={handleAddOpen}>
-            <i className="fa fa-plus me-2"></i> Add Contractor Rate
-          </button>
-        )}
       </div>
 
-      {/* Table */}
-      <div className="rates-table-card">
-        <div className="table-responsive">
-          <table className="table table-premium align-middle">
-            <thead>
-              <tr>
-                <th>{firstColumn}</th>
-                <th>{isContractor ? "Contractor" : "Level"}</th>
-                <th>State</th>
-                <th className="text-center">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.length === 0 && (
+      {/* Rates Table — hidden in contractor mode (admin sees requests panel only) */}
+      {!isContractor && (
+        <div className="rates-table-card">
+          <div className="table-responsive">
+            <table className="table table-premium align-middle">
+              <thead>
                 <tr>
-                  <td colSpan="5" className="text-center py-5 text-muted">
-                    No rates available
-                  </td>
+                  <th>{firstColumn}</th>
+                  <th>Level</th>
+                  <th>State</th>
+                  <th className="text-center">Actions</th>
                 </tr>
+              </thead>
+              <tbody>
+                {rows.length === 0 && (
+                  <tr>
+                    <td colSpan={4} className="text-center py-5 text-muted">No rates available</td>
+                  </tr>
+                )}
+                {rows.map((r) => (
+                  <tr key={r.id}>
+                    <td>
+                      <div className="fw-bold text-dark">{r.title || r.name}</div>
+                      <small className="text-muted">{isCharge ? "Client charge" : "Staff pay"}</small>
+                    </td>
+                    <td className="text-muted">{r.level}</td>
+                    <td>
+                      <span className="badge-premium">{STATE_NAME_MAP[r.state] || r.state}</span>
+                    </td>
+                    <td className="text-center">
+                      <button className="action-btn" onClick={() => handleEditOpen(r)} title="Edit Rate">
+                        <i className="fa fa-edit" />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* ── Rate Requests (contractor mode only) ── */}
+      {isContractor && (() => {
+        return (
+          <div className="mt-4">
+
+            <div className="rate-tabs mb-4">
+              {[
+                { key: "pending", label: "Pending", icon: "fa-clock" },
+                { key: "approved", label: "Approved", icon: "fa-check" },
+                { key: "rejected", label: "Rejected", icon: "fa-times" },
+              ].map(tab => (
+                <button
+                  key={tab.key}
+                  type="button"
+                  className={`rate-tab ${requestTab === tab.key ? "active" : ""}`}
+                  onClick={() => setRequestTab(tab.key)}
+                >
+                  <i className={`fa ${tab.icon} me-2`}></i>{tab.label}
+                </button>
+              ))}
+            </div>
+
+            <div className="rates-table-card">
+
+              {/* Table body */}
+              {requestsLoading ? (
+                <div className="text-center py-5">
+                  <i className="fa fa-spinner fa-spin text-muted fs-4"></i>
+                </div>
+              ) : rateRequests.length === 0 ? (
+                <div className="text-center py-5">
+                  <i
+                    className={`fa ${requestTab === "pending" ? "fa-inbox"
+                        : requestTab === "approved" ? "fa-check-circle"
+                          : "fa-times-circle"
+                      } fa-2x mb-3 d-block`}
+                    style={{
+                      color: requestTab === "pending" ? "#d97706"
+                        : requestTab === "approved" ? "#0A7C6E"
+                          : "#dc2626",
+                    }}
+                  ></i>
+                  <div className="fw-bold text-dark mb-1">
+                    No {requestTab.charAt(0).toUpperCase() + requestTab.slice(1)} Requests
+                  </div>
+                  <div className="text-muted small">
+                    {requestTab === "pending"
+                      ? "All requests have been reviewed."
+                      : requestTab === "approved"
+                        ? "No requests have been approved yet."
+                        : "No requests have been rejected."}
+                  </div>
+                </div>
+              ) : (
+                <div className="table-responsive">
+                  <table className="table table-premium align-middle mb-0">
+                    <thead>
+                      <tr>
+                        <th>Contractor</th>
+                        <th>Rate / State</th>
+                        <th>Type</th>
+                        <th>Submitted</th>
+                        {requestTab !== "pending" && <th>Status</th>}
+                        <th className="text-center">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {rateRequests.map((req) => {
+                        const isPending = !req.status || req.status === "pending";
+                        const isApproved = req.status === "approved";
+                        const isProcessing = processingRequestId === req.id;
+                        return (
+                          <tr key={req.id}>
+                            <td>
+                              <div className="fw-bold text-dark">
+                                {req.user?.name || req.contractor_name || "Contractor"}
+                              </div>
+                              <small className="text-muted">
+                                {req.user?.contractor?.company_name || req.company_name || ""}
+                              </small>
+                            </td>
+                            <td>
+                              <div className="fw-semibold text-dark">{req.title || req.rate?.title || "Rate Adjustment"}</div>
+                              <small className="text-muted">{STATE_NAME_MAP[req.state] || req.state || ""}</small>
+                            </td>
+                            <td>
+                              <span
+                                style={{
+                                  padding: "3px 12px",
+                                  borderRadius: "20px",
+                                  fontSize: "11px",
+                                  fontWeight: 700,
+                                  background: req.rate_id ? "rgba(124,58,237,0.1)" : "rgba(10,124,110,0.1)",
+                                  color: req.rate_id ? "#7c3aed" : "#0A7C6E",
+                                  border: `1px solid ${req.rate_id ? "rgba(124,58,237,0.2)" : "rgba(10,124,110,0.2)"}`,
+                                }}
+                              >
+                                {req.rate_id ? "Update Request" : "New Rate Request"}
+                              </span>
+                            </td>
+                            <td className="text-muted small">
+                              {req.created_at
+                                ? new Date(req.created_at).toLocaleDateString("en-AU", {
+                                  day: "numeric", month: "short", year: "numeric",
+                                })
+                                : "—"}
+                            </td>
+                            {requestTab !== "pending" && (
+                              <td>
+                                {isApproved ? (
+                                  <span style={{ padding: "3px 12px", borderRadius: "20px", fontSize: "11px", fontWeight: 700, background: "rgba(22,163,74,0.1)", color: "#16a34a", border: "1px solid rgba(22,163,74,0.2)" }}>
+                                    Approved
+                                  </span>
+                                ) : (
+                                  <span style={{ padding: "3px 12px", borderRadius: "20px", fontSize: "11px", fontWeight: 700, background: "rgba(220,38,38,0.1)", color: "#dc2626", border: "1px solid rgba(220,38,38,0.2)" }}>
+                                    Rejected
+                                  </span>
+                                )}
+                              </td>
+                            )}
+                            <td className="text-center">
+                              {isPending ? (
+                                <div className="d-flex gap-2 justify-content-center">
+                                  <button
+                                    className="action-btn"
+                                    style={{ background: "rgba(10,124,110,0.1)", color: "#0A7C6E" }}
+                                    title="View & Approve"
+                                    disabled={isProcessing}
+                                    onClick={() => setReviewRequest({ request: req, mode: "view" })}
+                                  >
+                                    <i className="fa fa-eye" />
+                                  </button>
+                                  <button
+                                    className="action-btn"
+                                    style={{ background: "rgba(22,163,74,0.1)", color: "#16a34a" }}
+                                    title="Approve"
+                                    disabled={isProcessing}
+                                    onClick={() => handleApproveRequest(req)}
+                                  >
+                                    {isProcessing ? <i className="fa fa-spinner fa-spin" /> : <i className="fa fa-check" />}
+                                  </button>
+                                  <button
+                                    className="action-btn"
+                                    style={{ background: "rgba(220,38,38,0.1)", color: "#dc2626" }}
+                                    title="Reject"
+                                    disabled={isProcessing}
+                                    onClick={() => { setReviewRequest({ request: req, mode: "reject" }); setReviewNote(""); }}
+                                  >
+                                    <i className="fa fa-times" />
+                                  </button>
+                                </div>
+                              ) : (
+                                <button
+                                  className="action-btn"
+                                  title="View Request"
+                                  onClick={() => setReviewRequest({ request: req, mode: "view" })}
+                                >
+                                  <i className="fa fa-eye" />
+                                </button>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* ── Review / Reject Modal ── */}
+      {reviewRequest && (
+        <div
+          className="modal-overlay-premium"
+          onClick={() => setReviewRequest(null)}
+          style={{ zIndex: 9999 }}
+        >
+          <div
+            className="modal-content-premium modal-pop-in w-100"
+            style={{ maxWidth: "860px", maxHeight: "92vh" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="modal-header-premium d-flex justify-content-between align-items-center px-4 py-3">
+              <div>
+                <h5 className="text-white fw-bold mb-0">
+                  <i className={`fa ${reviewRequest.mode === "reject" ? "fa-times-circle" : "fa-file-alt"} me-2 opacity-75`}></i>
+                  {reviewRequest.mode === "reject" ? "Reject Rate Request" : "Review Rate Request"}
+                </h5>
+              </div>
+              <ModalCloseButton onClick={() => setReviewRequest(null)} />
+            </div>
+
+            {/* Body */}
+            <div className="flex-grow-1 overflow-auto p-4 bg-light">
+              {/* Contractor info banner */}
+              <div className="bg-white rounded-3 p-3 mb-4 shadow-sm border">
+                <div className="d-flex align-items-start justify-content-between flex-wrap gap-2 mb-2">
+                  <div>
+                    <div className="fw-bold text-dark">
+                      {reviewRequest.request.user?.name || "Contractor"}
+                    </div>
+                    <small className="text-muted">
+                      {reviewRequest.request.user?.contractor?.company_name || ""} &bull; {STATE_NAME_MAP[reviewRequest.request.state] || reviewRequest.request.state || ""}
+                    </small>
+                  </div>
+                  <span
+                    style={{
+                      padding: "4px 14px", borderRadius: "20px", fontSize: "11px", fontWeight: 700,
+                      background: reviewRequest.request.rate_id ? "rgba(124,58,237,0.1)" : "rgba(10,124,110,0.1)",
+                      color: reviewRequest.request.rate_id ? "#7c3aed" : "#0A7C6E",
+                      border: `1px solid ${reviewRequest.request.rate_id ? "rgba(124,58,237,0.2)" : "rgba(10,124,110,0.2)"}`,
+                    }}
+                  >
+                    {reviewRequest.request.rate_id ? "Update Request" : "New Rate Request"}
+                  </span>
+                </div>
+                <div className="d-flex flex-wrap gap-3 pt-2 border-top">
+                  {reviewRequest.request.title && (
+                    <div>
+                      <div className="text-muted" style={{ fontSize: "10px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.5px" }}>Rate Title</div>
+                      <div className="fw-bold text-dark" style={{ fontSize: "13px" }}>{reviewRequest.request.title}</div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Reason from contractor */}
+              {reviewRequest.request.reason && (
+                <div className="bg-white rounded-3 p-3 mb-4 shadow-sm border">
+                  <h6 className="fw-bold text-dark mb-2 small text-uppercase" style={{ color: "#64748b", letterSpacing: "0.5px" }}>
+                    <i className="fa fa-comment-alt me-1" style={{ color: "#0A7C6E" }}></i> Contractor's Reason
+                  </h6>
+                  <p className="mb-0 text-dark" style={{ fontSize: "13.5px" }}>{reviewRequest.request.reason}</p>
+                </div>
               )}
 
-              {rows.map((r) => (
-                <tr key={r.id}>
-                  <td>
-                    <div className="fw-bold text-dark">{r.title || r.name}</div>
-                    <small className="text-muted">
-                      {isContractor
-                        ? "Contractor rate"
-                        : isCharge
-                          ? "Client charge"
-                          : "Staff pay"}
-                    </small>
-                  </td>
-                  {/* FIXED: Display actual user's name from nested object for contractors */}
-                  <td className="text-muted">
-                    {isContractor
-                      ? (r.user?.name ? `${r.user.name}${r.user.contractor?.company_name ? ` - ${r.user.contractor.company_name}` : ""}` : "Unknown Contractor")
-                      : r.level}
-                  </td>
-                  <td>
-                    <span className="badge-premium">
-                      {STATE_NAME_MAP[r.state] || r.state}
-                    </span>
-                  </td>
-                  <td className="text-center">
-                    <button
-                      className="action-btn"
-                      onClick={() => handleEditOpen(r)}
-                      title="Edit Rate"
-                    >
-                      <i className="fa fa-edit" />
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
+              {/* Proposed rates grid */}
+              <div className="row g-4">
+                {RATE_CATEGORIES.map((cat) => (
+                  <div className="col-xl-6" key={cat}>
+                    <div className="bg-white rounded-3 p-4 shadow-sm border h-100">
+                      <h6 className="fw-bold text-dark mb-4 pb-2 border-bottom">
+                        <i className={`fa ${cat === "def" ? "fa-clock" : "fa-briefcase"} me-2`} style={{ color: "#0A7C6E" }}></i>
+                        {cat === "def" ? "Award Rates" : "EBA Agreement Rates"}
+                      </h6>
+                      <div
+                        className="d-none d-md-grid mb-3"
+                        style={{ gridTemplateColumns: "2fr 1.2fr 1.2fr", gap: "1rem", borderBottom: "2px solid #e2e8f0", paddingBottom: "0.75rem" }}
+                      >
+                        <div className="fw-bold text-muted small">Time Slot</div>
+                        <div className="fw-bold text-muted small">Metro ($)</div>
+                        <div className="fw-bold text-muted small">Regional ($)</div>
+                      </div>
+                      {UI_SLOT_ROWS.map((row) => {
+                        const req = reviewRequest.request;
+                        const metroVal = req[`${cat}_${row.metro}`];
+                        const regVal = req[`${cat}_${row.reg}`];
+                        return (
+                          <div
+                            key={row.metro}
+                            className="row g-3 mb-2 py-2 border-bottom border-light align-items-center"
+                          >
+                            <div className="col-12 col-md-5">
+                              <span className="small fw-semibold text-dark">{row.label}</span>
+                            </div>
+                            <div className="col-6 col-md-3">
+                              <span className="fw-bold" style={{ color: "#0A7C6E" }}>
+                                {metroVal !== undefined && metroVal !== null && metroVal !== "" ? `$${Number(metroVal).toFixed(2)}` : <span className="text-muted">—</span>}
+                              </span>
+                            </div>
+                            <div className="col-6 col-md-3">
+                              <span className="fw-bold text-dark">
+                                {regVal !== undefined && regVal !== null && regVal !== "" ? `$${Number(regVal).toFixed(2)}` : <span className="text-muted">—</span>}
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+              </div>
 
-      {/* Edit Modal */}
-      {showEditModal && (
+              {/* Reject note input */}
+              {reviewRequest.mode === "reject" && (
+                <div className="bg-white rounded-3 p-3 mt-4 shadow-sm border">
+                  <label className="form-label fw-bold small text-dark mb-1">
+                    <i className="fa fa-exclamation-triangle me-1 text-danger"></i> Rejection Reason (optional)
+                  </label>
+                  <textarea
+                    rows={3}
+                    className="form-control clean-input"
+                    placeholder="Add a note to the contractor about why this request was rejected..."
+                    value={reviewNote}
+                    onChange={(e) => setReviewNote(e.target.value)}
+                    style={{ fontSize: "13.5px" }}
+                  ></textarea>
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="bg-white border-top px-4 py-3 d-flex justify-content-between align-items-center">
+              <button
+                className="btn btn-light px-4 rounded-pill fw-bold border"
+                onClick={() => setReviewRequest(null)}
+              >
+                Close
+              </button>
+              {(!reviewRequest.request.status || reviewRequest.request.status === "pending") && (
+                <div className="d-flex gap-2">
+                  {reviewRequest.mode !== "reject" ? (
+                    <>
+                      <button
+                        className="btn rounded-pill fw-bold px-4"
+                        style={{ background: "rgba(220,38,38,0.08)", color: "#dc2626", border: "1.5px solid rgba(220,38,38,0.2)" }}
+                        onClick={() => setReviewRequest({ ...reviewRequest, mode: "reject" })}
+                        disabled={processingRequestId === reviewRequest.request.id}
+                      >
+                        <i className="fa fa-times me-2"></i>Reject
+                      </button>
+                      <button
+                        className="btn px-5 rounded-pill fw-bold text-white shadow"
+                        style={{ background: "linear-gradient(135deg, #0A7C6E, #0b9b8a)", border: "none" }}
+                        onClick={() => handleApproveRequest(reviewRequest.request)}
+                        disabled={processingRequestId === reviewRequest.request.id}
+                      >
+                        {processingRequestId === reviewRequest.request.id
+                          ? <><i className="fa fa-spinner fa-spin me-2"></i>Approving...</>
+                          : <><i className="fa fa-check me-2"></i>Approve Request</>}
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      className="btn px-5 rounded-pill fw-bold text-white shadow"
+                      style={{ background: "linear-gradient(135deg, #dc2626, #b91c1c)", border: "none" }}
+                      onClick={() => handleRejectRequest(reviewRequest.request)}
+                      disabled={processingRequestId === reviewRequest.request.id}
+                    >
+                      {processingRequestId === reviewRequest.request.id
+                        ? <><i className="fa fa-spinner fa-spin me-2"></i>Rejecting...</>
+                        : <><i className="fa fa-times me-2"></i>Confirm Rejection</>}
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Modal — only for non-contractor rates */}
+      {showEditModal && !isContractor && (
         <div className="modal-overlay-premium" onClick={closeEditModal}>
           <div
             className="modal-content-premium modal-pop-in w-100"
@@ -1023,8 +1451,8 @@ const RatesList = ({ forcedType } = {}) => {
         </div>
       )}
 
-      {/* Add Modal (contractor only) */}
-      {showAddModal && (
+      {/* Add Modal — only for non-contractor rates (contractor uses request flow) */}
+      {showAddModal && !isContractor && (
         <div className="modal-overlay-premium" onClick={closeAddModal}>
           <div
             className="modal-content-premium modal-pop-in w-100"

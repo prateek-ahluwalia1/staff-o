@@ -5798,7 +5798,7 @@ public function request_rate_update(Request $request)
 
     try {
         // 1. Get the existing rate card (the "current" values)
-        $existingRate = DB::table('contractor_charge_rates')->where('id', $request->rate_id)->first();
+        $existingRate = DB::table('contractor_chargerates')->where('id', $request->rate_id)->first();
 
         if (!$existingRate) {
             return response()->json([

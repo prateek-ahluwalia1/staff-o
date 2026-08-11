@@ -890,7 +890,7 @@ const ContractorRatesView = () => {
       <div className="rates-hero d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
         <div>
           <span className="rates-hero-eyebrow"><span className="dot"></span> My Rates</span>
-          <h1>My Charged Rates</h1>
+          <h1>My Charge Rates</h1>
           <p>These rates are managed and assigned by your Staffoo administrator.</p>
         </div>
         <div>

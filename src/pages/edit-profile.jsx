@@ -303,6 +303,7 @@ export default function EditProfile() {
   const navigate = useNavigate();
 
   const [showDocModal, setShowDocModal] = useState(false);
+  const [initialStatesAllowed, setInitialStatesAllowed] = useState([]);
   const [selectedDoc, setSelectedDoc] = useState(null);
   const [verifyingDoc, setVerifyingDoc] = useState(false);
   const [docForm, setDocForm] = useState({
@@ -425,6 +426,8 @@ export default function EditProfile() {
           ? (business.profile_image || business.contractor?.profile_image || d.profile_image || "")
           : (d.profile_image || business.profile_image || staff.profile_image || contractor.profile_image || customer.profile_image || ""),
     });
+
+    setInitialStatesAllowed(existingStatesAllowed || []);
 
     const profileImageUrl =
       userType === "admin"
@@ -597,6 +600,13 @@ export default function EditProfile() {
     [userId, updateUserId, submit, refetch]
   );
 
+  const hasStatesChanged = useMemo(() => {
+    if (userType !== "contractor") return false;
+    const initial = [...initialStatesAllowed].sort();
+    const current = [...(formData.states_allowed || [])].sort();
+    return JSON.stringify(initial) !== JSON.stringify(current);
+  }, [initialStatesAllowed, formData.states_allowed, userType]);
+
   const handleSubmit = useCallback(
     async (e) => {
       if (e) e.preventDefault();
@@ -629,8 +639,13 @@ export default function EditProfile() {
       if (res === undefined) return;
       toast.success("Profile updated successfully!");
       refetch();
+
+      if (hasStatesChanged) {
+        setInitialStatesAllowed(formData.states_allowed || []);
+        setActiveTab("documents");
+      }
     },
-    [formData, submit, userId, updateUserId, refetch]
+    [formData, submit, userId, updateUserId, refetch, hasStatesChanged]
   );
 
   const handleClosePhoneModal = () => {
@@ -1283,6 +1298,7 @@ export default function EditProfile() {
       {activeTab === "personal" && (
         <ProfileForm
           formData={formData}
+          submitText={hasStatesChanged ? "Next" : "Save Changes"}
           showPhoneOtp={true}
           onChange={(e) => {
             const { id, name, value } = e.target;

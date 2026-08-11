@@ -20,6 +20,7 @@ export default function ProfileForm({
   hideFields = [],            // Array of field IDs to hide
   profileImageUrl = null,     // NEW: URL of the profile image to display
   forceShowAllStaffFields = false,
+  submitText = "Save Changes", // NEW: Text for the submit button
 }) {
   const { userdata } = useSelector((state) => state.auth);
   const parseDisplayDate = (str) => {
@@ -841,7 +842,7 @@ export default function ProfileForm({
                 </>
               ) : (
                 <>
-                  <i className="fa-solid fa-check me-1"></i> Save Changes
+                  <i className={`fa-solid ${submitText === "Next" ? "fa-arrow-right" : "fa-check"} me-1`}></i> {submitText}
                 </>
               )}
             </button>

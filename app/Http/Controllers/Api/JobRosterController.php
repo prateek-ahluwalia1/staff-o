@@ -36,6 +36,7 @@ use App\Services\InvoiceService;
 use App\Services\ContractorInvoiceService;
 use Illuminate\Support\Facades\Storage;
 use App\Mail\ContractorJobInvoice;
+use App\Mail\RateUpdateRequestMail;
 use App\Models\ContractorChargeRate;
 use Stripe\PaymentLink;
 use Stripe\Price;
@@ -5771,6 +5772,146 @@ public function update_shift_breakdown(Request $request)
         return response()->json([
             'success' => false,
             'message' => 'An error occurred while updating shifts.',
+            'error' => $e->getMessage(),
+            'trace' => $e->getTraceAsString(),
+        ], 500);
+    }
+}
+
+/**
+ * Add this method to your controller. Add these use statements at the top:
+ *
+ *   use App\Mail\RateUpdateRequestMail;
+ *   use Illuminate\Support\Facades\Mail;
+ *   use Illuminate\Support\Facades\Log;
+ *
+ * Route:
+ *   Route::post('request-rate-update', [YourController::class, 'request_rate_update']);
+ */
+public function request_rate_update(Request $request)
+{
+    $request->validate([
+        'rate_id' => 'required|integer',
+        'user_id' => 'required|integer',
+        'reason'  => 'required|string',
+    ]);
+
+    try {
+        // 1. Get the existing rate card (the "current" values)
+        $existingRate = DB::table('contractor_charge_rates')->where('id', $request->rate_id)->first();
+
+        if (!$existingRate) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Rate card not found.',
+                'data' => null,
+            ], 200);
+        }
+
+        // 2. Get the contractor who requested the change
+        $contractor = DB::table('users')->where('id', $request->user_id)->first();
+
+        if (!$contractor) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Contractor not found.',
+                'data' => null,
+            ], 200);
+        }
+
+        // 3. Get admin emails
+        $adminEmails = DB::table('users')
+            ->where('user_type', 'admin')
+            ->whereNotNull('email')
+            ->pluck('email')
+            ->toArray();
+
+        if (empty($adminEmails)) {
+            Log::warning('No admin emails found for rate update request notification.');
+        }
+
+        // 4. Build old vs new comparison rows for every rate field in the payload
+        $rateFieldLabels = [
+            'def_metro_mon_to_fri_day_rate'   => 'Default Metro Mon–Fri Day',
+            'def_reg_mon_to_fri_day_rate'     => 'Default Regional Mon–Fri Day',
+            'def_metro_mon_to_fri_night_rate' => 'Default Metro Mon–Fri Night',
+            'def_reg_mon_to_fri_night_rate'   => 'Default Regional Mon–Fri Night',
+            'def_metro_sat_day_rate'          => 'Default Metro Saturday Day',
+            'def_reg_sat_day_rate'            => 'Default Regional Saturday Day',
+            'def_metro_sat_night_rate'        => 'Default Metro Saturday Night',
+            'def_reg_sat_night_rate'          => 'Default Regional Saturday Night',
+            'def_metro_sun_day_rate'          => 'Default Metro Sunday Day',
+            'def_reg_sun_day_rate'            => 'Default Regional Sunday Day',
+            'def_metro_sun_night_rate'        => 'Default Metro Sunday Night',
+            'def_reg_sun_night_rate'          => 'Default Regional Sunday Night',
+            'def_metro_pub_holi_day_rate'     => 'Default Metro Public Holiday Day',
+            'def_reg_pub_holi_day_rate'       => 'Default Regional Public Holiday Day',
+            'def_metro_pub_holi_night_rate'   => 'Default Metro Public Holiday Night',
+            'def_reg_pub_holi_night_rate'     => 'Default Regional Public Holiday Night',
+            'eba_metro_mon_to_fri_day_rate'   => 'EBA Metro Mon–Fri Day',
+            'eba_reg_mon_to_fri_day_rate'     => 'EBA Regional Mon–Fri Day',
+            'eba_metro_mon_to_fri_night_rate' => 'EBA Metro Mon–Fri Night',
+            'eba_reg_mon_to_fri_night_rate'   => 'EBA Regional Mon–Fri Night',
+            'eba_metro_sat_day_rate'          => 'EBA Metro Saturday Day',
+            'eba_reg_sat_day_rate'            => 'EBA Regional Saturday Day',
+            'eba_metro_sat_night_rate'        => 'EBA Metro Saturday Night',
+            'eba_reg_sat_night_rate'          => 'EBA Regional Saturday Night',
+            'eba_metro_sun_day_rate'          => 'EBA Metro Sunday Day',
+            'eba_reg_sun_day_rate'            => 'EBA Regional Sunday Day',
+            'eba_metro_sun_night_rate'        => 'EBA Metro Sunday Night',
+            'eba_reg_sun_night_rate'          => 'EBA Regional Sunday Night',
+            'eba_metro_pub_holi_day_rate'     => 'EBA Metro Public Holiday Day',
+            'eba_reg_pub_holi_day_rate'       => 'EBA Regional Public Holiday Day',
+            'eba_metro_pub_holi_night_rate'   => 'EBA Metro Public Holiday Night',
+            'eba_reg_pub_holi_night_rate'     => 'EBA Regional Public Holiday Night',
+        ];
+
+        $rateRows = [];
+        foreach ($rateFieldLabels as $column => $label) {
+            if (!$request->has($column)) {
+                continue; // skip fields not sent in this payload
+            }
+
+            $oldValue = (float) ($existingRate->{$column} ?? 0);
+            $newValue = (float) $request->input($column);
+
+            $rateRows[] = [
+                'label'   => $label,
+                'old'     => $oldValue,
+                'new'     => $newValue,
+                'changed' => $oldValue != $newValue,
+            ];
+        }
+
+        // 5. Email all admins
+        if (!empty($adminEmails)) {
+            try {
+                Mail::to($adminEmails)->send(new RateUpdateRequestMail(
+                    $contractor->name ?? 'Contractor',
+                    $contractor->email ?? '',
+                    $request->title ?? $existingRate->title,
+                    $request->state ?? $existingRate->state,
+                    $request->reason,
+                    $rateRows
+                ));
+            } catch (\Exception $e) {
+                Log::error('Failed to send rate update request email', ['error' => $e->getMessage()]);
+            }
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Rate update request submitted. Admins have been notified.',
+            'data' => [
+                'rate_id' => $request->rate_id,
+                'changed_fields' => array_values(array_filter($rateRows, fn($r) => $r['changed'])),
+            ],
+        ], 200);
+
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => 'An error occurred while processing the rate update request.',
             'error' => $e->getMessage(),
             'trace' => $e->getTraceAsString(),
         ], 500);

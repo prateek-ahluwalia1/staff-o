@@ -402,7 +402,7 @@ export default function ProfileForm({
                   <div className="state-picker-hint">
                     <i className="fa-solid fa-circle-info"></i>
                     <span>
-                      Select one or more states where you're licensed to work. Required documents will update automatically based on your selection.
+                      Select the states where you operate. Your charge rates and required documents will be managed according to these selected state.
                     </span>
                   </div>
 

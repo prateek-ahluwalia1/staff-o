@@ -431,7 +431,7 @@ const ContractorRatesView = () => {
           </div>
           <h5 className="fw-bold text-dark mb-2">No Rates Assigned</h5>
           <p className="text-muted mx-auto mb-0" style={{ maxWidth: "400px" }}>
-            You currently do not have any active rates assigned to your profile. Please contact the Staffoo admin if you believe this is a mistake.
+            You currently do not have any active rates assigned to your profile. Please request charge rates for states you selected in profile section.
           </p>
         </div>
       ) : (

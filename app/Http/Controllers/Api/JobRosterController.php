@@ -5099,6 +5099,21 @@ private function canonicalizeState(?string $state): ?string
         return $state;
     }
 
+    private function getStateAliases(): array
+    {
+        return [
+            // Australia
+            'victoria'                      => ['victoria', 'vic'],
+            'new south wales'                => ['new south wales', 'nsw'],
+            'queensland'                     => ['queensland', 'qld'],
+            'south australia'                => ['south australia', 'sa'],
+            'western australia'              => ['western australia', 'wa'],
+            'tasmania'                       => ['tasmania', 'tas'],
+            'australian capital territory'   => ['australian capital territory', 'act'],
+            'northern territory'             => ['northern territory', 'nt'],
+        ];
+    }
+
 
 public function checkState(Request $request)
 {

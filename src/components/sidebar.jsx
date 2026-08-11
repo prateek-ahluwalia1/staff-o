@@ -160,7 +160,10 @@ const Sidebar = memo(function Sidebar() {
 
   useEffect(() => {
     if (isProfileActive) return;
-    const protectedRoutes = navItems.filter((item) => item.to !== "/edit-profile").map((item) => item.to);
+    const alwaysAllowed = ["/edit-profile", "/my-rates"];
+    const protectedRoutes = navItems
+      .filter((item) => !alwaysAllowed.includes(item.to))
+      .map((item) => item.to);
     if (protectedRoutes.includes(location.pathname)) {
       navigate("/edit-profile", { replace: true });
     }

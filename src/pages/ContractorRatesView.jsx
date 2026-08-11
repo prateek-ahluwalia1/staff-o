@@ -179,7 +179,6 @@ const ContractorRatesView = () => {
   }
 
   // ── Today's date string for min on effective_from ────────────────────────
-  const todayStr = new Date().toISOString().split("T")[0];
 
   return (
     <div className="container-fluid p-3 p-md-4 fade-in" style={{ minHeight: "100vh" }}>

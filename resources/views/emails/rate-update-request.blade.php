@@ -5,8 +5,11 @@
 <style>
     body { font-family: Arial, Helvetica, sans-serif; font-size: 14px; color: #111827; margin:0; padding:0; }
     .wrapper { max-width: 640px; margin: 0 auto; padding: 24px; }
-    .header { background:#0A7C6E; padding:18px 22px; border-radius:6px 6px 0 0; }
-    .header h1 { color:#fff; font-size:18px; margin:0; }
+    .header { background:#0A7C6E; padding:14px 22px; border-radius:6px 6px 0 0; }
+    .header table { width:100%; }
+    .header td { vertical-align:middle; }
+    .header img { height:32px; display:block; }
+    .header h1 { color:#fff; font-size:16px; margin:0; padding-top:6px; }
     .body { border:1px solid #E5E7EB; border-top:none; padding:20px 22px; border-radius:0 0 6px 6px; }
     .meta { margin-bottom:16px; line-height:1.8; }
     .meta strong { color:#374151; }
@@ -27,6 +30,11 @@
 <body>
 <div class="wrapper">
     <div class="header">
+        <table>
+            <tr>
+                <td><img src="https://apis.staffoo.com.au/uploads/staffologo.png" alt="STAFFOO Logo" width="150" height="50" style="display:block; border:0; width:150px; height:auto; margin:0 auto;"></td>
+            </tr>
+        </table>
         <h1>Contractor Rate Update Request</h1>
     </div>
     <div class="body">

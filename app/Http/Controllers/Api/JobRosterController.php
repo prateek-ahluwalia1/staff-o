@@ -3815,55 +3815,11 @@ private function sendStaffActivationNotification(User $user): void
     {
         $siteState = Site::where('id', $siteId)->value('state');
 
-        $stateMap = [
-            // Australia
-            'Victoria' => ['Victoria', 'VIC', 'vic'],
-            'VIC' => ['Victoria', 'VIC', 'vic'],
-            'vic' => ['Victoria', 'VIC', 'vic'],
-
-            'New South Wales' => ['New South Wales', 'NSW', 'nsw'],
-            'NSW' => ['New South Wales', 'NSW', 'nsw'],
-            'nsw' => ['New South Wales', 'NSW', 'nsw'],
-
-            'Queensland' => ['Queensland', 'QLD', 'qld'],
-            'QLD' => ['Queensland', 'QLD', 'qld'],
-            'qld' => ['Queensland', 'QLD', 'qld'],
-
-            'South Australia' => ['South Australia', 'SA', 'sa'],
-            'SA' => ['South Australia', 'SA', 'sa'],
-            'sa' => ['South Australia', 'SA', 'sa'],
-
-            'Western Australia' => ['Western Australia', 'WA', 'wa'],
-            'WA' => ['Western Australia', 'WA', 'wa'],
-            'wa' => ['Western Australia', 'WA', 'wa'],
-
-            'Tasmania' => ['Tasmania', 'TAS', 'tas'],
-            'TAS' => ['Tasmania', 'TAS', 'tas'],
-            'tas' => ['Tasmania', 'TAS', 'tas'],
-
-            'Australian Capital Territory' => ['Australian Capital Territory', 'ACT', 'act'],
-            'ACT' => ['Australian Capital Territory', 'ACT', 'act'],
-            'act' => ['Australian Capital Territory', 'ACT', 'act'],
-
-            'Northern Territory' => ['Northern Territory', 'NT', 'nt'],
-            'NT' => ['Northern Territory', 'NT', 'nt'],
-            'nt' => ['Northern Territory', 'NT', 'nt'],
-
-            // Pakistan
-            'Punjab' => ['Punjab', 'PUNJAB', 'punjab'],
-            'PUNJAB' => ['Punjab', 'PUNJAB', 'punjab'],
-            'punjab' => ['Punjab', 'PUNJAB', 'punjab'],
-
-        ];
-
-        $states = $stateMap[$siteState] ?? [$siteState];
-
         $partners = User::whereNotIn('id', [1])
             ->where('user_type', 'contractor')
             // ->whereIn('state', $states)
             ->where('is_active', 1)
             ->whereNotNull('notification_token')
-            ->whereNotNull('current_coordinates')
             ->select('id', 'name', 'email', 'phone', 'notification_token', 'current_coordinates', 'states_allowed')
             ->get()
             ->filter(fn($partner) => $this->userAllowedForState($partner, $siteState))
@@ -3871,7 +3827,6 @@ private function sendStaffActivationNotification(User $user): void
 
         Log::info("Found {$partners->count()} resource partners with states_allowed permission.", [
             'site_state' => $siteState,
-            'matched_states' => $states
         ]);
 
         return $partners;

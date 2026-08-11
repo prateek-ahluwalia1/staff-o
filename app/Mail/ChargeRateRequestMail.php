@@ -6,37 +6,34 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Queue\SerializesModels;
 
-class RateUpdateRequestMail extends Mailable
+class ChargeRateRequestMail extends Mailable
 {
     use Queueable, SerializesModels;
 
     public $contractorName;
     public $contractorEmail;
-    public $rateTitle;
+    public $title;
     public $state;
-    public $reason;
-    public $rateRows; // [ ['label' => 'Metro Mon-Fri Day', 'old' => 34, 'new' => 40, 'changed' => true], ... ]
+    public $rateRows; // [ ['label' => 'Metro Mon-Fri Day', 'value' => 34], ... ]
 
-    public function __construct($contractorName, $contractorEmail, $rateTitle, $state, $reason, $rateRows)
+    public function __construct($contractorName, $contractorEmail, $title, $state, $rateRows)
     {
         $this->contractorName  = $contractorName;
         $this->contractorEmail = $contractorEmail;
-        $this->rateTitle       = $rateTitle;
+        $this->title           = $title;
         $this->state           = $state;
-        $this->reason          = $reason;
         $this->rateRows        = $rateRows;
     }
 
     public function build()
     {
-        return $this->subject("Rate Update Request — {$this->contractorName} ({$this->rateTitle})")
-            ->view('emails.rate-update-request')
+        return $this->subject("New Charge Rate Request — {$this->contractorName}")
+            ->view('emails.charge-rate-request')
             ->with([
                 'contractorName'  => $this->contractorName,
                 'contractorEmail' => $this->contractorEmail,
-                'rateTitle'       => $this->rateTitle,
+                'title'           => $this->title,
                 'state'           => $this->state,
-                'reason'          => $this->reason,
                 'rateRows'        => $this->rateRows,
             ]);
     }

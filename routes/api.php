@@ -180,7 +180,10 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::any('job-post', [JobRosterController::class, 'jobData'])->name('job.post');
     Route::post('split-roster-shift', [JobRosterController::class, 'update_shift_breakdown']);
-    Route::post('store-contractor-rate-request', [JobRosterController::class, 'request_rate_update']);
+    Route::post('request-charge-rate', [JobRosterController::class, 'request_charge_rate']);
+    Route::get('charge-rate-requests', [JobRosterController::class, 'list_charge_rate_requests']);
+    Route::post('accept-charge-rate-request/{id}', [JobRosterController::class, 'accept_charge_rate_request']);
+    Route::post('reject-charge-rate-request/{id}', [JobRosterController::class, 'reject_charge_rate_request']);
     Route::any('check-state', [JobRosterController::class, 'checkState']);
     Route::post('/calculate-job-amount', [JobRosterController::class, 'calculateJobAmount']);
     Route::any('/confirm_task/{id}', [JobRosterController::class, 'confirm_task']);

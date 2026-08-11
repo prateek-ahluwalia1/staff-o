@@ -225,7 +225,7 @@ class JobRosterController extends Controller
                 // Send a single consolidated notification for ALL shifts on this site
                 $this->sendConsolidatedNotifications(
                     $request->coordinates,
-                    $createdJobIds, // Pass ALL job IDs
+                    $createdJobIds,
                     $request->user_id
                 );
             }
@@ -5779,36 +5779,77 @@ public function update_shift_breakdown(Request $request)
 }
 
 /**
- * Add this method to your controller. Add these use statements at the top:
+ * Add these methods to your controller. Add these use statements at the top:
  *
- *   use App\Mail\RateUpdateRequestMail;
+ *   use App\Mail\ChargeRateRequestMail;
+ *   use App\Mail\ChargeRateRejectedMail;
+ *   use App\Models\ContractorChargeRate;
  *   use Illuminate\Support\Facades\Mail;
  *   use Illuminate\Support\Facades\Log;
  *
- * Route:
- *   Route::post('request-rate-update', [YourController::class, 'request_rate_update']);
+ * Routes:
+ *   Route::post('request-charge-rate', [YourController::class, 'request_charge_rate']);
+ *   Route::get('charge-rate-requests', [YourController::class, 'list_charge_rate_requests']);
+ *   Route::post('accept-charge-rate-request/{id}', [YourController::class, 'accept_charge_rate_request']);
+ *   Route::post('reject-charge-rate-request/{id}', [YourController::class, 'reject_charge_rate_request']);
  */
-public function request_rate_update(Request $request)
+
+// All rate fields shared across submit/accept/email — single source of truth
+private function chargeRateFieldLabels(): array
+{
+    return [
+        'def_metro_mon_to_fri_day_rate'   => 'Default Metro Mon–Fri Day',
+        'def_metro_mon_to_fri_night_rate' => 'Default Metro Mon–Fri Night',
+        'def_metro_sat_day_rate'          => 'Default Metro Saturday Day',
+        'def_metro_sat_night_rate'        => 'Default Metro Saturday Night',
+        'def_metro_sun_day_rate'          => 'Default Metro Sunday Day',
+        'def_metro_sun_night_rate'        => 'Default Metro Sunday Night',
+        'def_metro_pub_holi_day_rate'     => 'Default Metro Public Holiday Day',
+        'def_metro_pub_holi_night_rate'   => 'Default Metro Public Holiday Night',
+
+        'def_reg_mon_to_fri_day_rate'     => 'Default Regional Mon–Fri Day',
+        'def_reg_mon_to_fri_night_rate'   => 'Default Regional Mon–Fri Night',
+        'def_reg_sat_day_rate'            => 'Default Regional Saturday Day',
+        'def_reg_sat_night_rate'          => 'Default Regional Saturday Night',
+        'def_reg_sun_day_rate'            => 'Default Regional Sunday Day',
+        'def_reg_sun_night_rate'          => 'Default Regional Sunday Night',
+        'def_reg_pub_holi_day_rate'       => 'Default Regional Public Holiday Day',
+        'def_reg_pub_holi_night_rate'     => 'Default Regional Public Holiday Night',
+
+        'eba_metro_mon_to_fri_day_rate'   => 'EBA Metro Mon–Fri Day',
+        'eba_metro_mon_to_fri_night_rate' => 'EBA Metro Mon–Fri Night',
+        'eba_metro_sat_day_rate'          => 'EBA Metro Saturday Day',
+        'eba_metro_sat_night_rate'        => 'EBA Metro Saturday Night',
+        'eba_metro_sun_day_rate'          => 'EBA Metro Sunday Day',
+        'eba_metro_sun_night_rate'        => 'EBA Metro Sunday Night',
+        'eba_metro_pub_holi_day_rate'     => 'EBA Metro Public Holiday Day',
+        'eba_metro_pub_holi_night_rate'   => 'EBA Metro Public Holiday Night',
+
+        'eba_reg_mon_to_fri_day_rate'     => 'EBA Regional Mon–Fri Day',
+        'eba_reg_mon_to_fri_night_rate'   => 'EBA Regional Mon–Fri Night',
+        'eba_reg_sat_day_rate'            => 'EBA Regional Saturday Day',
+        'eba_reg_sat_night_rate'          => 'EBA Regional Saturday Night',
+        'eba_reg_sun_day_rate'            => 'EBA Regional Sunday Day',
+        'eba_reg_sun_night_rate'          => 'EBA Regional Sunday Night',
+        'eba_reg_pub_holi_day_rate'       => 'EBA Regional Public Holiday Day',
+        'eba_reg_pub_holi_night_rate'     => 'EBA Regional Public Holiday Night',
+
+        'ot_base_rate'                    => 'Overtime Base Rate',
+    ];
+}
+
+/**
+ * STEP 1 — Contractor submits the form.
+ * Saves a pending row in charge_rate_requests and emails admins.
+ */
+public function request_charge_rate(Request $request)
 {
     $request->validate([
-        'rate_id' => 'required|integer',
         'user_id' => 'required|integer',
-        'reason'  => 'required|string',
+        'state'   => 'required|string',
     ]);
 
     try {
-        // 1. Get the existing rate card (the "current" values)
-        $existingRate = DB::table('contractor_chargerates')->where('id', $request->rate_id)->first();
-
-        if (!$existingRate) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Rate card not found.',
-                'data' => null,
-            ], 200);
-        }
-
-        // 2. Get the contractor who requested the change
         $contractor = DB::table('users')->where('id', $request->user_id)->first();
 
         if (!$contractor) {
@@ -5819,99 +5860,229 @@ public function request_rate_update(Request $request)
             ], 200);
         }
 
-        // 3. Get admin emails
+        $rateFieldLabels = $this->chargeRateFieldLabels();
+
+        // Build the row to insert — every rate field defaults to 0 if not sent
+        $insertData = [
+            'user_id'        => $request->user_id,
+            'title'          => $request->title,
+            'state'          => $request->state,
+            'effective_from' => $request->effective_from,
+            'status'         => 'pending',
+            'created_at'     => now(),
+            'updated_at'     => now(),
+        ];
+
+        $rateRows = []; // for the email
+        foreach ($rateFieldLabels as $column => $label) {
+            $value = $request->has($column) ? (float) $request->input($column) : 0;
+            $insertData[$column] = $value;
+            $rateRows[] = ['label' => $label, 'value' => $value];
+        }
+
+        $requestId = DB::table('charge_rate_requests')->insertGetId($insertData);
+
+        // Email admins
         $adminEmails = DB::table('users')
             ->where('user_type', 'admin')
             ->whereNotNull('email')
             ->pluck('email')
             ->toArray();
 
-        if (empty($adminEmails)) {
-            Log::warning('No admin emails found for rate update request notification.');
-        }
-
-        // 4. Build old vs new comparison rows for every rate field in the payload
-        $rateFieldLabels = [
-            'def_metro_mon_to_fri_day_rate'   => 'Default Metro Mon–Fri Day',
-            'def_reg_mon_to_fri_day_rate'     => 'Default Regional Mon–Fri Day',
-            'def_metro_mon_to_fri_night_rate' => 'Default Metro Mon–Fri Night',
-            'def_reg_mon_to_fri_night_rate'   => 'Default Regional Mon–Fri Night',
-            'def_metro_sat_day_rate'          => 'Default Metro Saturday Day',
-            'def_reg_sat_day_rate'            => 'Default Regional Saturday Day',
-            'def_metro_sat_night_rate'        => 'Default Metro Saturday Night',
-            'def_reg_sat_night_rate'          => 'Default Regional Saturday Night',
-            'def_metro_sun_day_rate'          => 'Default Metro Sunday Day',
-            'def_reg_sun_day_rate'            => 'Default Regional Sunday Day',
-            'def_metro_sun_night_rate'        => 'Default Metro Sunday Night',
-            'def_reg_sun_night_rate'          => 'Default Regional Sunday Night',
-            'def_metro_pub_holi_day_rate'     => 'Default Metro Public Holiday Day',
-            'def_reg_pub_holi_day_rate'       => 'Default Regional Public Holiday Day',
-            'def_metro_pub_holi_night_rate'   => 'Default Metro Public Holiday Night',
-            'def_reg_pub_holi_night_rate'     => 'Default Regional Public Holiday Night',
-            'eba_metro_mon_to_fri_day_rate'   => 'EBA Metro Mon–Fri Day',
-            'eba_reg_mon_to_fri_day_rate'     => 'EBA Regional Mon–Fri Day',
-            'eba_metro_mon_to_fri_night_rate' => 'EBA Metro Mon–Fri Night',
-            'eba_reg_mon_to_fri_night_rate'   => 'EBA Regional Mon–Fri Night',
-            'eba_metro_sat_day_rate'          => 'EBA Metro Saturday Day',
-            'eba_reg_sat_day_rate'            => 'EBA Regional Saturday Day',
-            'eba_metro_sat_night_rate'        => 'EBA Metro Saturday Night',
-            'eba_reg_sat_night_rate'          => 'EBA Regional Saturday Night',
-            'eba_metro_sun_day_rate'          => 'EBA Metro Sunday Day',
-            'eba_reg_sun_day_rate'            => 'EBA Regional Sunday Day',
-            'eba_metro_sun_night_rate'        => 'EBA Metro Sunday Night',
-            'eba_reg_sun_night_rate'          => 'EBA Regional Sunday Night',
-            'eba_metro_pub_holi_day_rate'     => 'EBA Metro Public Holiday Day',
-            'eba_reg_pub_holi_day_rate'       => 'EBA Regional Public Holiday Day',
-            'eba_metro_pub_holi_night_rate'   => 'EBA Metro Public Holiday Night',
-            'eba_reg_pub_holi_night_rate'     => 'EBA Regional Public Holiday Night',
-        ];
-
-        $rateRows = [];
-        foreach ($rateFieldLabels as $column => $label) {
-            if (!$request->has($column)) {
-                continue; // skip fields not sent in this payload
-            }
-
-            $oldValue = (float) ($existingRate->{$column} ?? 0);
-            $newValue = (float) $request->input($column);
-
-            $rateRows[] = [
-                'label'   => $label,
-                'old'     => $oldValue,
-                'new'     => $newValue,
-                'changed' => $oldValue != $newValue,
-            ];
-        }
-
-        // 5. Email all admins
         if (!empty($adminEmails)) {
             try {
-                Mail::to($adminEmails)->send(new RateUpdateRequestMail(
+                Mail::to($adminEmails)->send(new ChargeRateRequestMail(
                     $contractor->name ?? 'Contractor',
                     $contractor->email ?? '',
-                    $request->title ?? $existingRate->title,
-                    $request->state ?? $existingRate->state,
-                    $request->reason,
+                    $request->title,
+                    $request->state,
                     $rateRows
                 ));
             } catch (\Exception $e) {
-                Log::error('Failed to send rate update request email', ['error' => $e->getMessage()]);
+                Log::error('Failed to send charge rate request email', ['error' => $e->getMessage()]);
             }
+        } else {
+            Log::warning('No admin emails found for charge rate request notification.');
         }
 
         return response()->json([
             'success' => true,
-            'message' => 'Rate update request submitted. Admins have been notified.',
+            'message' => 'Charge rate request submitted for admin review.',
             'data' => [
-                'rate_id' => $request->rate_id,
-                'changed_fields' => array_values(array_filter($rateRows, fn($r) => $r['changed'])),
+                'charge_rate_request_id' => $requestId,
+                'status' => 'pending',
             ],
         ], 200);
 
     } catch (\Exception $e) {
         return response()->json([
             'success' => false,
-            'message' => 'An error occurred while processing the rate update request.',
+            'message' => 'An error occurred while submitting the charge rate request.',
+            'error' => $e->getMessage(),
+            'trace' => $e->getTraceAsString(),
+        ], 500);
+    }
+}
+
+/**
+ * STEP 2 — Admin views pending (or all) requests.
+ * GET /charge-rate-requests?status=pending
+ */
+public function list_charge_rate_requests(Request $request)
+{
+    $query = DB::table('charge_rate_requests')
+        ->join('users', 'users.id', '=', 'charge_rate_requests.user_id')
+        ->select('charge_rate_requests.*', 'users.name as contractor_name', 'users.email as contractor_email');
+
+    if ($request->has('status') && !empty($request->status)) {
+        $query->where('charge_rate_requests.status', $request->status);
+    } else {
+        $query->where('charge_rate_requests.status', 'pending'); // default view
+    }
+
+    $requests = $query->orderBy('charge_rate_requests.created_at', 'desc')->get();
+
+    return response()->json([
+        'success' => true,
+        'message' => 'Charge rate requests fetched successfully.',
+        'data' => $requests,
+    ], 200);
+}
+
+/**
+ * STEP 3a — Admin accepts a request.
+ * Applies the rates to contractor_charge_rates (update if a row already
+ * exists for this user_id + state, otherwise create a new one).
+ */
+public function accept_charge_rate_request(Request $request, $id)
+{
+    try {
+        $rateRequest = DB::table('charge_rate_requests')->where('id', $id)->first();
+
+        if (!$rateRequest) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Charge rate request not found.',
+                'data' => null,
+            ], 200);
+        }
+
+        if ($rateRequest->status !== 'pending') {
+            return response()->json([
+                'success' => false,
+                'message' => 'This request has already been reviewed.',
+                'data' => null,
+            ], 200);
+        }
+
+        $rateFieldLabels = $this->chargeRateFieldLabels();
+
+        // Find existing rate card for this contractor + state, else create new
+        $charge_rate = ContractorChargeRate::where('user_id', $rateRequest->user_id)
+            ->where('state', $rateRequest->state)
+            ->first();
+
+        if (!$charge_rate) {
+            $charge_rate = new ContractorChargeRate();
+        }
+
+        $charge_rate->title   = $rateRequest->title;
+        $charge_rate->user_id = $rateRequest->user_id;
+        $charge_rate->state   = $rateRequest->state;
+
+        foreach ($rateFieldLabels as $column => $label) {
+            $charge_rate->{$column} = $rateRequest->{$column} ?? 0;
+        }
+
+        $charge_rate->effective_from = $rateRequest->effective_from;
+        $charge_rate->save();
+
+        // Mark the request approved
+        DB::table('charge_rate_requests')->where('id', $id)->update([
+            'status'                    => 'approved',
+            'reviewed_by'               => auth()->id() ?? $request->input('admin_id'),
+            'reviewed_at'               => now(),
+            'contractor_charge_rate_id' => $charge_rate->id,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Charge rate request approved and applied.',
+            'data' => [
+                'charge_rate_request_id'    => $id,
+                'contractor_charge_rate_id' => $charge_rate->id,
+            ],
+        ], 200);
+
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => 'An error occurred while approving the charge rate request.',
+            'error' => $e->getMessage(),
+            'trace' => $e->getTraceAsString(),
+        ], 500);
+    }
+}
+
+/**
+ * STEP 3b — Admin rejects a request.
+ * Marks it rejected and emails the contractor.
+ */
+public function reject_charge_rate_request(Request $request, $id)
+{
+    try {
+        $rateRequest = DB::table('charge_rate_requests')->where('id', $id)->first();
+
+        if (!$rateRequest) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Charge rate request not found.',
+                'data' => null,
+            ], 200);
+        }
+
+        if ($rateRequest->status !== 'pending') {
+            return response()->json([
+                'success' => false,
+                'message' => 'This request has already been reviewed.',
+                'data' => null,
+            ], 200);
+        }
+
+        DB::table('charge_rate_requests')->where('id', $id)->update([
+            'status'      => 'rejected',
+            'reviewed_by' => auth()->id() ?? $request->input('admin_id'),
+            'reviewed_at' => now(),
+            'review_note' => $request->input('reason'),
+        ]);
+
+        $contractor = DB::table('users')->where('id', $rateRequest->user_id)->first();
+
+        if ($contractor && !empty($contractor->email)) {
+            try {
+                Mail::to($contractor->email)->send(new ChargeRateRejectedMail(
+                    $contractor->name ?? 'Contractor',
+                    $rateRequest->title,
+                    $rateRequest->state,
+                    $request->input('reason')
+                ));
+            } catch (\Exception $e) {
+                Log::error('Failed to send charge rate rejection email', ['error' => $e->getMessage()]);
+            }
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Charge rate request rejected and contractor notified.',
+            'data' => [
+                'charge_rate_request_id' => $id,
+            ],
+        ], 200);
+
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => 'An error occurred while rejecting the charge rate request.',
             'error' => $e->getMessage(),
             'trace' => $e->getTraceAsString(),
         ], 500);

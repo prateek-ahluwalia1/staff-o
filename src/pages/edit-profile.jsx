@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import useFetch from "../hooks/useFetch";
 import useSubmit from "../hooks/useSubmit";
 import { useSelector, useDispatch } from "react-redux";
@@ -298,6 +299,9 @@ export default function EditProfile() {
   const [phoneChangeError, setPhoneChangeError] = useState(null);
   const [phoneChangeSuccess, setPhoneChangeSuccess] = useState(false);
 
+  const [showChargeRateModal, setShowChargeRateModal] = useState(false);
+  const navigate = useNavigate();
+
   const [showDocModal, setShowDocModal] = useState(false);
   const [selectedDoc, setSelectedDoc] = useState(null);
   const [verifyingDoc, setVerifyingDoc] = useState(false);
@@ -344,6 +348,12 @@ export default function EditProfile() {
 
   useEffect(() => {
     if (!profileData?.data) return;
+    
+    const currentUserType = profileData.data.user_type || userType;
+    if (currentUserType === "contractor" && (profileData.charge_rate === true || profileData.charge_rate === "true" || profileData.charge_rate == 1)) {
+      setShowChargeRateModal(true);
+    }
+
     const d = profileData.data;
     const business = profileData.business || d.business || {};
     const staff = d.staff || {};
@@ -1765,6 +1775,41 @@ export default function EditProfile() {
             </>
           )}
         </form>
+      </PremiumModal>
+
+      {/* Missing Charge Rates Modal */}
+      <PremiumModal 
+        open={showChargeRateModal} 
+        onClose={() => setShowChargeRateModal(false)} 
+        title="Charge Rates Missing"
+      >
+        <div className="text-center py-4">
+          <div className="mb-4">
+            <i className="fa-solid fa-file-invoice-dollar fa-4x text-warning"></i>
+          </div>
+          <h4 className="fw-bold mb-3">Please Add Your Charge Rates</h4>
+          <p className="text-muted mb-4">
+            States added, but rates for these states are not added yet. Please add them to be eligible for jobs.
+          </p>
+          <div className="d-flex justify-content-center gap-3 mt-2">
+            <button 
+              className="btn btn-light px-4 py-2 rounded-pill fw-bold border" 
+              onClick={() => setShowChargeRateModal(false)}
+            >
+              Close
+            </button>
+            <button 
+              className="btn btn-primary px-4 py-2 rounded-pill fw-bold" 
+              style={{ backgroundColor: "#0A7C6E", borderColor: "#0A7C6E" }}
+              onClick={() => {
+                setShowChargeRateModal(false);
+                navigate("/my-rates");
+              }}
+            >
+              Add Charge Rates Now
+            </button>
+          </div>
+        </div>
       </PremiumModal>
     </div>
   );

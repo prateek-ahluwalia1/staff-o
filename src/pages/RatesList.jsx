@@ -717,7 +717,6 @@ const RatesList = ({ forcedType } = {}) => {
             <thead>
               <tr>
                 <th>{firstColumn}</th>
-                <th>Rate Preview</th>
                 <th>{isContractor ? "Contractor" : "Level"}</th>
                 <th>State</th>
                 <th className="text-center">Actions</th>
@@ -743,14 +742,6 @@ const RatesList = ({ forcedType } = {}) => {
                           ? "Client charge"
                           : "Staff pay"}
                     </small>
-                  </td>
-                  <td className="fw-bold text-teal">
-                    $
-                    {Number(
-                      (isContractor || isCharge
-                        ? r.def_metro_mon_to_fri_day_rate
-                        : r.ot_base_rate) || 0
-                    ).toFixed(2)}
                   </td>
                   {/* FIXED: Display actual user's name from nested object for contractors */}
                   <td className="text-muted">

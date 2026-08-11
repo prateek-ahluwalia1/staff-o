@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Mail\ChargeRateRejectedMail;
+use App\Mail\ChargeRateRequestMail;
 use App\Mail\ContractorInvoiceMail;
 use App\Models\ChargeRate;
 use App\Models\Document;

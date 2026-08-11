@@ -15,6 +15,7 @@ const DOC_CONFIG = {
   first_aid: { label: "First Aid Certificate", sort: 10 },
   cpr: { label: "CPR Certificate", sort: 11 },
   vaccination: { label: "Vaccination Certificate", sort: 12 },
+
 };
 
 const STATE_CATEGORY_ORDER = [

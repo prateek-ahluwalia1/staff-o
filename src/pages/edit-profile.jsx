@@ -203,6 +203,7 @@ const DOC_TYPES = [
   { value: "Security Master License", label: "Security Master License" },
   { value: "Public Liability", label: "Public Liability" },
   { value: "Workcover", label: "Workcover" },
+  { value: "Security Industry Membership Certificate", label: "Security Industry Membership Certificate" },
   { value: "Security Industry Membership certificate", label: "Security Industry Membership certificate" },
   { value: "Labour Hire", label: "Labour Hire" },
   { value: "ASIC Report", label: "ASIC Report" },
@@ -349,10 +350,14 @@ export default function EditProfile() {
 
   useEffect(() => {
     if (!profileData?.data) return;
-    
+
     const currentUserType = profileData.data.user_type || userType;
     if (currentUserType === "contractor" && (profileData.charge_rate === true || profileData.charge_rate === "true" || profileData.charge_rate == 1)) {
-      setShowChargeRateModal(true);
+      const storageKey = `chargeRateModalShown_${profileData.data.id}`;
+      if (!localStorage.getItem(storageKey)) {
+        setShowChargeRateModal(true);
+        localStorage.setItem(storageKey, "true");
+      }
     }
 
     const d = profileData.data;
@@ -1794,39 +1799,147 @@ export default function EditProfile() {
       </PremiumModal>
 
       {/* Missing Charge Rates Modal */}
-      <PremiumModal 
-        open={showChargeRateModal} 
-        onClose={() => setShowChargeRateModal(false)} 
-        title="Charge Rates Missing"
+      <PremiumModal
+        open={showChargeRateModal}
+        onClose={() => setShowChargeRateModal(false)}
+        title="Complete Your State Requirements"
       >
-        <div className="text-center py-4">
-          <div className="mb-4">
-            <i className="fa-solid fa-file-invoice-dollar fa-4x text-warning"></i>
-          </div>
-          <h4 className="fw-bold mb-3">Please Add Your Charge Rates</h4>
-          <p className="text-muted mb-4">
-            States added, but rates for these states are not added yet. Please add them to be eligible for jobs.
-          </p>
-          <div className="d-flex justify-content-center gap-3 mt-2">
-            <button 
-              className="btn btn-light px-4 py-2 rounded-pill fw-bold border" 
-              onClick={() => setShowChargeRateModal(false)}
-            >
-              Close
-            </button>
-            <button 
-              className="btn btn-primary px-4 py-2 rounded-pill fw-bold" 
-              style={{ backgroundColor: "#0A7C6E", borderColor: "#0A7C6E" }}
-              onClick={() => {
-                setShowChargeRateModal(false);
-                navigate("/my-rates");
+        <div className="px-2 px-md-3 py-3">
+          {/* Steps */}
+          <div className="position-relative">
+
+            {/* Connecting Line */}
+            <div
+              className="position-absolute d-none d-md-block"
+              style={{
+                left: "27px",
+                top: "45px",
+                bottom: "45px",
+                width: "2px",
+                backgroundColor: "#DDEBE8",
+                zIndex: 0,
               }}
-            >
-              Add Charge Rates Now
-            </button>
+            ></div>
+
+            {/* STEP 1 */}
+            <div className="d-flex position-relative mb-4">
+              <div
+                className="flex-shrink-0 d-flex align-items-center justify-content-center rounded-circle fw-bold"
+                style={{
+                  width: "54px",
+                  height: "54px",
+                  backgroundColor: "#E8F6F3",
+                  color: "#0A7C6E",
+                  border: "2px solid #0A7C6E",
+                  zIndex: 1,
+                }}
+              >
+                1
+              </div>
+
+              <div className="ms-3 pt-1">
+                <div className="d-flex align-items-center gap-2 mb-1">
+                  <h6 className="fw-bold mb-0">
+                    Select Your Licensed States
+                  </h6>
+                </div>
+
+                <p className="text-muted mb-0" style={{ fontSize: "13px" }}>
+                  Select the states where you currently hold a valid
+                  <strong className="text-dark"> Security Master License</strong>.
+                </p>
+              </div>
+            </div>
+
+            {/* STEP 2 */}
+            <div className="d-flex position-relative mb-4">
+              <div
+                className="flex-shrink-0 d-flex align-items-center justify-content-center rounded-circle fw-bold"
+                style={{
+                  width: "54px",
+                  height: "54px",
+                  backgroundColor: "#FFF7E6",
+                  color: "#D99000",
+                  border: "2px solid #F0B429",
+                  zIndex: 1,
+                }}
+              >
+                2
+              </div>
+
+              <div className="ms-3 pt-1">
+                <h6 className="fw-bold mb-1">
+                  Upload Required Documents
+                </h6>
+
+                <p className="text-muted mb-0" style={{ fontSize: "13px" }}>
+                  Add the required license and supporting documents for each
+                  state you selected.
+                </p>
+              </div>
+            </div>
+
+            {/* STEP 3 */}
+            <div className="d-flex position-relative mb-3">
+              <div
+                className="flex-shrink-0 d-flex align-items-center justify-content-center rounded-circle fw-bold"
+                style={{
+                  width: "54px",
+                  height: "54px",
+                  backgroundColor: "#F0EBFF",
+                  color: "#6F42C1",
+                  border: "2px solid #6F42C1",
+                  zIndex: 1,
+                }}
+              >
+                3
+              </div>
+
+              <div className="ms-3 pt-1">
+                <h6 className="fw-bold mb-1">
+                  Request Charge Rates
+                </h6>
+
+                <p className="text-muted mb-0" style={{ fontSize: "13px" }}>
+                  Once your states and documents are complete, request the
+                  <strong className="text-dark"> charge rates</strong> applicable
+                  to your selected states.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Info Box */}
+          <div
+            className="mt-4 p-3 rounded-3 d-flex align-items-start"
+            style={{
+              backgroundColor: "#F3F8F7",
+              border: "1px solid #D8ECE8",
+            }}
+          >
+            <i
+              className="fa-solid fa-circle-info mt-1 me-3"
+              style={{
+                color: "#0A7C6E",
+                fontSize: "17px",
+              }}
+            ></i>
+
+            <div>
+              <div className="fw-bold mb-1" style={{ fontSize: "13px" }}>
+                Why is this required?
+              </div>
+
+              <div className="text-muted" style={{ fontSize: "12px" }}>
+                Your charge rates are based on the states where you are
+                licensed and verified. Completing all three steps ensures
+                your profile is ready to operate in those states.
+              </div>
+            </div>
           </div>
         </div>
       </PremiumModal>
+
     </div>
   );
 }

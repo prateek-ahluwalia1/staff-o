@@ -128,8 +128,8 @@ const Sidebar = memo(function Sidebar() {
     { to: "/cover-jobs", icon: "fa-solid fa-briefcase", label: "Cover Jobs" },
     { to: "/manage-staff", icon: "fa-solid fa-users-gear", label: "Staff Management" },
     { to: '/timesheet', icon: 'fa-solid fa-clock', label: 'Timesheet' },
-    { to: '/my-rates', icon: 'fa-solid fa-money-bill-wave', label: 'My Rates' },
     { to: "/chat", icon: "fa-solid fa-comments", label: "Communications" },
+    { to: '/my-rates', icon: 'fa-solid fa-money-bill-wave', label: 'My Rates' },
     { to: "/edit-profile", icon: "fa-solid fa-user-pen", label: "Edit Profile" },
   ];
 
@@ -299,7 +299,7 @@ const Sidebar = memo(function Sidebar() {
         {/* Dashboard Navigation Links */}
         <ul style={styles.navUl}>
           {navItems.map((item) => {
-            const disabled = !isProfileActive && item.label !== "Edit Profile";
+            const disabled = !isProfileActive && item.label !== "Edit Profile" && item.label !== "My Rates";
             const isActive = location.pathname === item.to;
             return (
               <li key={item.label}>

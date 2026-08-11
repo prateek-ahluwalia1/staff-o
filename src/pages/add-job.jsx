@@ -12,6 +12,7 @@ import ScheduleStep from "../components/job/ScheduleStep";
 import DetailsStep from "../components/job/DetailsStep";
 import ReviewStep from "../components/job/ReviewStep";
 import PaymentModal from "../components/job/PaymentModal";
+import PriceRangeModal from "../components/job/PriceRangeModal";
 import AdminClientProfile from "../components/job/AdminClientProfile";
 import "../assets/css/job-wizard-theme.css";
 
@@ -123,6 +124,19 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
   const { data: chargeratesData, loading: chargeratesLoading } = useFetch("api/get-chargerates", { isAuth: true });
   const { submit: submitJob, loading: submitLoading } = useSubmit({ isAuth: true });
   const { submit: uploadFile, loading: uploadLoading } = useSubmit({ isAuth: true });
+
+  // --- STATE-BASED PRICING MODE ---
+  // On leaving the Location step we call `api/check-state`. If it comes back
+  // true, we keep the existing day/night segment-splitting rate calculation.
+  // If it comes back false, we skip shift splitting entirely and instead
+  // fetch a price range from `api/check-price-range` when leaving the
+  // Schedule step; that range is shown to non-admins in a confirm popup
+  // instead of the Stripe payment modal, and the job always posts as broadcast.
+  const { submit: submitStateCheck, loading: checkingState } = useSubmit({ isAuth: true });
+  const { submit: submitPriceRange, loading: checkingPriceRange } = useSubmit({ isAuth: true });
+  const [stateCheckResult, setStateCheckResult] = useState(null); // null = not checked yet, true = split flow, false = price-range flow
+  const [priceRange, setPriceRange] = useState(null); // { low, high }
+  const [priceRangeModalOpen, setPriceRangeModalOpen] = useState(false);
 
   const STEP_TITLES = isEmbedded
     ? isAdmin
@@ -330,7 +344,7 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
           "review",
           "Review and Confirm",
           "Review the job summary and submit the shift.",
-          <ReviewStep form={form} rate={breakdown} setStep={setStep} setField={setField} handleConfirm={handleConfirm} isSubmitting={isSubmitting} baseAmount={breakdown?.chargeTotalIncGst || 0} isAdmin={isAdmin} />
+          <ReviewStep form={form} rate={breakdown} setStep={setStep} setField={setField} handleConfirm={handleConfirm} isSubmitting={isSubmitting} baseAmount={breakdown?.chargeTotalIncGst || 0} isAdmin={isAdmin} stateCheckResult={stateCheckResult} priceRange={priceRange} />
         )}
       </div>
     </>
@@ -388,6 +402,13 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
 
       return updatedForm;
     });
+
+    // Changing the location resets the state-based pricing decision, since
+    // it was derived from the previously selected state.
+    if (name === "coordinates" || name === "state") {
+      setStateCheckResult(null);
+      setPriceRange(null);
+    }
 
     setScheduleError((prev) => {
       if (prev && ["scheduleDays", "dateRange"].includes(name)) {
@@ -526,6 +547,13 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
       return false;
     }
 
+    // When check-state came back false, this state doesn't use split/segmented
+    // billing — keep each shift exactly as the user entered it, no chunking.
+    if (stateCheckResult === false) {
+      setScheduleError("");
+      return true;
+    }
+
     let wasModified = false;
     const MIN_HOURS = 4;
 
@@ -604,6 +632,99 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
     return true;
   }
 
+  // Formats a date ("YYYY-MM-DD") + time ("HH:mm") into the
+  // "YYYY-MM-DD HH:mm:ss" shape api/calculate-job-amount expects.
+  function toApiDateTime(dateStr, timeStr) {
+    const time = timeStr && timeStr.length === 5 ? `${timeStr}:00` : (timeStr || "00:00:00");
+    return `${dateStr} ${time}`;
+  }
+
+  // Calls api/check-state with the selected state (e.g. "vic", "qld") to
+  // decide whether this job uses split/segmented billing (true) or the
+  // simplified price-range flow (false).
+  // Response shape: { state_match, message, user_id, user_states }
+  async function runStateCheck() {
+    try {
+      const res = await submitStateCheck("api/check-state", { state: form.state }, { method: "POST" });
+
+      // FIX: Safely parse the state_match value. 
+      // This unwraps the payload if your hook placed it in a .data object,
+      // and strictly parses strings ("false", "0") to prevent them from becoming TRUE.
+      const payload = res?.data || res || {};
+      const rawMatch = payload.state_match;
+      const isSplit = rawMatch === true || rawMatch === 1 || String(rawMatch).toLowerCase() === "true" || String(rawMatch) === "1";
+
+      // If this flips from what it was on a previous check, any schedule the
+      // user already built (e.g. chunked shifts from the true/split scenario)
+      // no longer applies under the new rules - clear it so they re-enter
+      // a clean schedule instead of posting a stale, wrongly-split one.
+      if (stateCheckResult !== null && stateCheckResult !== isSplit) {
+        setForm((f) => ({ ...f, scheduleDays: [], dateRange: [null, null] }));
+        setScheduleError("");
+        toast.info("Pricing rules changed for this location — please re-enter your schedule.");
+      }
+
+      setStateCheckResult(isSplit);
+      if (!isSplit) setPriceRange(null);
+      return isSplit;
+    } catch (err) {
+      toast.error(err.message || "Failed to verify pricing for this location.");
+      return null;
+    }
+  }
+
+  // Calls api/calculate-job-amount with ALL unsplit shifts
+  // to get an estimated low/high price for the entire job.
+  async function runPriceRangeCheck() {
+    if (!form.scheduleDays || form.scheduleDays.length === 0) return null;
+
+    // 1. Loop through all days and shifts to build an array
+    const shiftsPayload = form.scheduleDays.flatMap((day) =>
+      day.shifts.map((shift) => {
+        let endDate = day.date;
+
+        // If the shift crosses midnight, increment the end date by 1
+        if (shift.endTime <= shift.startTime) {
+          const d = new Date(day.date);
+          d.setDate(d.getDate() + 1);
+          endDate = d.toISOString().split("T")[0];
+        }
+
+        return {
+          start_time: toApiDateTime(day.date, shift.startTime),
+          end_time: toApiDateTime(endDate, shift.endTime),
+          number_of_guards: shift.numGuards
+        };
+      })
+    );
+
+    try {
+      // 2. Send the entire array of shifts instead of just one
+      const res = await submitPriceRange("api/calculate-job-amount", {
+        shifts: shiftsPayload,
+        state: form.state,
+      }, { method: "POST" });
+
+      const payload = res?.data || res || {};
+
+      if (payload?.success === false || res?.success === false) {
+        toast.error(payload?.message || res?.message || "Failed to calculate an estimated price for this schedule.");
+        return null;
+      }
+
+      // Safely extract min/max depending on how your backend wraps the response
+      const low = Number(payload?.min ?? payload?.data?.min ?? 0);
+      const high = Number(payload?.max ?? payload?.data?.max ?? 0);
+
+      const range = { low, high };
+      setPriceRange(range);
+      return range;
+    } catch (err) {
+      toast.error(err.message || "Failed to calculate an estimated price for this schedule.");
+      return null;
+    }
+  }
+
   function handleFile(e) {
     const files = Array.from(e.target.files || []);
     const previews = files.map((file) => ({ name: file.name, url: URL.createObjectURL(file), type: file.type, size: file.size }));
@@ -625,16 +746,36 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
     });
   }
 
-  function next() {
-    if (step === 0 && !form.coordinates) {
-      setLocationError("Please select a valid location before continuing.");
+  async function next() {
+    if (step === 0) {
+      if (!form.coordinates) {
+        setLocationError("Please select a valid location before continuing.");
+        return;
+      }
+      if (!form.state) {
+        toast.error("Unable to detect the state for this location. Please re-select it.");
+        return;
+      }
+
+      const isSplit = await runStateCheck();
+      if (isSplit === null) return;
+
+      setStep(step + 1);
       return;
     }
+
     if (step === 1) {
       if (!validateSchedule(true)) return;
+
+      if (stateCheckResult === false) {
+        const range = await runPriceRangeCheck();
+        if (!range) return;
+      }
+
       setTimeout(() => setStep(step + 1), 50);
       return;
     }
+
     if (step === 2) {
       if (!form.title.trim()) {
         toast.error("Job title is required");
@@ -660,14 +801,49 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
     const shiftsPayload = form.scheduleDays.flatMap(day =>
       day.shifts.map(shift => {
         let endDateTime = `${day.date}T${shift.endTime}`;
-        if (shift.endTime < shift.startTime) {
+
+        if (shift.endTime <= shift.startTime) {
           const d = new Date(day.date);
           d.setDate(d.getDate() + 1);
           endDateTime = `${d.toISOString().split('T')[0]}T${shift.endTime}`;
         }
-        return { start: `${day.date}T${shift.startTime}`, end: endDateTime, numberOfGuards: shift.numGuards };
+
+        return {
+          start: `${day.date}T${shift.startTime}`,
+          end: endDateTime,
+          numberOfGuards: shift.numGuards
+        };
       })
     );
+
+    const basePayload = {
+      user_id: form.user_id || userdata?.data?.id || userdata?.id || null,
+      title: (form.title || "").trim(),
+      job_type: form.jobType === "others" ? form.customJobType : form.jobType,
+      job_level: calculatedLevel,
+      description: form.description,
+      address: form.location || form.address,
+      coordinates: form.coordinates || "",
+      state: form.state,
+      shifts: shiftsPayload,
+      job_location_state: form.state,
+      is_document: (form.document_types && form.document_types.length > 0) || document_list.length > 0,
+      document_list,
+      document_types: form.document_types || [],
+      job_instruction: form.description || "",
+      contractor_invoice: stateCheckResult ? 1 : 0,
+    };
+
+    if (stateCheckResult === false) {
+      return {
+        ...basePayload,
+        payment_option: null,
+        estimated_price_low: priceRange?.low ?? 0,
+        estimated_price_high: priceRange?.high ?? 0,
+        financials: null,
+        posting_type: "broadcast",
+      };
+    }
 
     const baseAmount = breakdown?.chargeTotalIncGst || 0;
     const roundToTwo = (num) => Math.round((num + Number.EPSILON) * 100) / 100;
@@ -685,27 +861,14 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
     }
 
     return {
-      user_id: form.user_id || userdata?.data?.id || userdata?.id || null,
-      title: (form.title || "").trim(),
-      job_type: form.jobType === "others" ? form.customJobType : form.jobType,
-      job_level: calculatedLevel,
-      description: form.description,
-      address: form.location || form.address,
-      coordinates: form.coordinates || "",
-      state: form.state,
-      shifts: shiftsPayload,
+      ...basePayload,
       payment_option: form.paymentOption,
-      job_location_state: form.state,
       financials: {
         base_total_inc_gst: baseAmount,
         discount_applied: discountApplied,
         amount_to_charge_today: finalAmountDueToday,
         balance_deferred: balanceRemaining
       },
-      is_document: (form.document_types && form.document_types.length > 0) || document_list.length > 0,
-      document_list,
-      document_types: form.document_types || [],
-      job_instruction: form.description || "",
       posting_type: isAdmin ? postingMode : "broadcast"
     };
   }
@@ -745,6 +908,32 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
       else { toast.error(postRes?.message || "Job posting failed."); }
     } catch (err) { toast.error(err.message || "Failed to post job."); }
     finally { setPostingJob(false); }
+  }
+
+
+  async function handlePriceRangeAccept() {
+    if (!pendingDraft?.payload) return toast.error("Missing job draft.");
+    setPriceRangeModalOpen(false);
+    setPostingJob(true);
+    try {
+      const postRes = await submitJob("api/job-post", {
+        ...pendingDraft.payload,
+        payment_intent_id: "admin_override_no_payment",
+      }, { method: "POST" });
+
+      if (postRes?.success) {
+        setPendingDraft(null);
+        toast.success("Job posted successfully!");
+        navigate("/my-job-applications");
+        if (isEmbedded && onClose) onClose();
+      } else {
+        toast.error(postRes?.message || "Job posting failed.");
+      }
+    } catch (err) {
+      toast.error(err.message || "Failed to post job.");
+    } finally {
+      setPostingJob(false);
+    }
   }
 
   async function handleConfirm(e) {
@@ -811,12 +1000,20 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
       return;
     }
 
-    // 6. Validate Base Amount
-    const baseAmount = breakdown?.chargeTotalIncGst || 0;
-    if (baseAmount <= 0) {
-      toast.error("Unable to calculate payment amount. Please check your schedule and try again.");
-      isEmbedded ? setEmbeddedAccordion((p) => ({ ...p, schedule: true })) : setStep(1);
-      return;
+    // 6. Validate pricing data is available before posting
+    if (!isAdmin && stateCheckResult === false) {
+      if (!priceRange || (priceRange.low <= 0 && priceRange.high <= 0)) {
+        toast.error("Unable to calculate an estimated price. Please review your schedule and try again.");
+        isEmbedded ? setEmbeddedAccordion((p) => ({ ...p, schedule: true })) : setStep(1);
+        return;
+      }
+    } else if (!isAdmin) {
+      const baseAmount = breakdown?.chargeTotalIncGst || 0;
+      if (baseAmount <= 0) {
+        toast.error("Unable to calculate payment amount. Please check your schedule and try again.");
+        isEmbedded ? setEmbeddedAccordion((p) => ({ ...p, schedule: true })) : setStep(1);
+        return;
+      }
     }
 
     // If all validation passes, proceed to submit
@@ -840,6 +1037,12 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
         }
         setPostingJob(false);
       }
+      else if (stateCheckResult === false) {
+        // Price-range flow: let the user accept the estimate instead of collecting payment.
+        setPendingDraft({ payload, amountAud: null });
+        setPostingJob(false);
+        setPriceRangeModalOpen(true);
+      }
       else {
         setPendingDraft({ payload, amountAud: payload.financials.amount_to_charge_today });
         setPostingJob(false);
@@ -851,7 +1054,7 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
     }
   }
 
-  const isSubmitting = submitLoading || uploadLoading || postingJob;
+  const isSubmitting = submitLoading || uploadLoading || postingJob || checkingState || checkingPriceRange;
 
   const embeddedClientName = customerDetails?.name || initialSite?.customer_name || initialSite?.client_name || "Not selected";
   const embeddedSiteName = initialSite?.site_name || initialSite?.displayName || initialSite?.title || form.location || "Unknown site";
@@ -1189,11 +1392,19 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
                   </>
                 )}
 
-                {step === 3 && !isAdmin && <ReviewStep form={form} rate={breakdown} setStep={setStep} setField={setField} handleConfirm={handleConfirm} isSubmitting={isSubmitting} baseAmount={breakdown?.chargeTotalIncGst || 0} isAdmin={isAdmin} />}    <div className="d-flex justify-content-between mt-5 pt-4 border-top">
+                {step === 3 && !isAdmin && <ReviewStep form={form} rate={breakdown} setStep={setStep} setField={setField} handleConfirm={handleConfirm} isSubmitting={isSubmitting} baseAmount={breakdown?.chargeTotalIncGst || 0} isAdmin={isAdmin} stateCheckResult={stateCheckResult} priceRange={priceRange} />}    <div className="d-flex justify-content-between mt-5 pt-4 border-top">
                   <button type="button" className="btn btn-outline-secondary rounded-pill px-4 fw-bold" onClick={back} disabled={isSubmitting}>Back</button>
 
                   {step < STEP_TITLES.length - 1 ? (
-                    <button type="button" className="btn btn-primary-custom btn-lg rounded-pill px-5 fw-bold shadow-sm" onClick={next} disabled={isSubmitting}>Next</button>
+                    <button type="button" className="btn btn-primary-custom btn-lg rounded-pill px-5 fw-bold shadow-sm" onClick={next} disabled={isSubmitting}>
+                      {(step === 0 && checkingState) ? (
+                        <><span className="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>Checking...</>
+                      ) : (step === 1 && checkingPriceRange) ? (
+                        <><span className="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>Calculating...</>
+                      ) : (
+                        "Next"
+                      )}
+                    </button>
                   ) : (
                     isAdmin && (
                       <button type="button" className="btn btn-dark btn-lg rounded-pill px-5 fw-bold shadow-sm" onClick={handleConfirm} disabled={isSubmitting}>
@@ -1230,6 +1441,7 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
           {chargeratesLoading ? (<div className="text-center py-5">Loading rates...</div>) : renderContent()}
         </div>
         <PaymentModal open={paymentModalOpen} onClose={() => !postingJob && setPaymentModalOpen(false)} amountAud={pendingDraft?.amountAud || 0} jobTitle={form.title} onHoldPayment={handleHoldPayment} onSuccess={handlePaymentSuccess} savedCards={savedCards} />
+        <PriceRangeModal open={priceRangeModalOpen} onClose={() => !postingJob && setPriceRangeModalOpen(false)} priceRange={priceRange} jobTitle={form.title} onAccept={handlePriceRangeAccept} isPosting={postingJob} />
       </div>
     );
   }
@@ -1238,6 +1450,7 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
     <div className="job-wizard">
       {renderContent()}
       <PaymentModal open={paymentModalOpen} onClose={() => !postingJob && setPaymentModalOpen(false)} amountAud={pendingDraft?.amountAud || 0} jobTitle={form.title} onHoldPayment={handleHoldPayment} onSuccess={handlePaymentSuccess} savedCards={savedCards} />
+      <PriceRangeModal open={priceRangeModalOpen} onClose={() => !postingJob && setPriceRangeModalOpen(false)} priceRange={priceRange} jobTitle={form.title} onAccept={handlePriceRangeAccept} isPosting={postingJob} />
     </div>
   );
 }

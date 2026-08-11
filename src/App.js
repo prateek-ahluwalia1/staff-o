@@ -29,6 +29,8 @@ import ConstructionSites from "./pages/industries/construction-sites";
 import ResidentialEstates from "./pages/industries/residential-estates";
 import WorkingStaff from "./pages/forstaff/working-staff";
 import HowToApply from "./pages/forstaff/How-to-apply";
+import EventSecurityHero from "./pages/solutions/event-security";
+import ContractorRatesView from "./pages/ContractorRatesView";
 
 const Login = lazy(() => import("./auth/login"));
 const Register = lazy(() => import("./auth/register"));
@@ -68,6 +70,7 @@ const PublicHolidays = lazy(() => import("./pages/PublicHolidays"));
 const PaySheet = lazy(() => import("./pages/PaySheet"));
 const StafooStaff = lazy(() => import("./pages/staffooStaff"));
 const CoverJobs = lazy(() => import("./pages/CoverJobs"));
+const ContractorRates = lazy(() => import("./pages/ContractorRates"));
 
 
 const ONESIGNAL_APP_ID = "79041c59-5506-4e56-9de4-8a6619f85e1d";
@@ -103,8 +106,6 @@ function AppContent() {
 
     const PENDING_NOTIFICATION_KEY = "pendingJobNotification";
     const PENDING_NOTIFICATION_TTL_MS = 5 * 60 * 1000;
-
-    const successAudio = new Audio("/sounds/notification.wav");
 
     const persistPendingNotification = (notification) => {
         try {
@@ -307,10 +308,10 @@ function AppContent() {
             const innerRoster = outerRoster?.roster ?? {};
             const jobId = innerRoster?.id;
 
-            // if (!jobId) {
-            //     toast.error("Job already accepted on app.");
-            //     return;
-            // }
+            if (!jobId) {
+                console.error("Job already accepted on app.");
+                return;
+            }
 
             const startRaw = innerRoster?.start;
             const endRaw = innerRoster?.end;
@@ -348,6 +349,7 @@ function AppContent() {
                 shiftCount: outerRoster?.job_count ?? "N/A",
                 hours: innerRoster?.hours ?? "N/A",
                 jobAmount: innerRoster?.job_amount ?? "N/A",
+                contractorInvoice: innerRoster.contractor_invoice,
                 date: startRaw
                     ? new Date(startRaw).toLocaleDateString("en-AU")
                     : "TBD",
@@ -456,7 +458,6 @@ function AppContent() {
 
             const allowedRoles = ["contractor", "resource_partner", ...(canHandleStaffCoverJobs ? ["staff"] : [])];
 
-            // Only allow accept modal for allowed roles
             if (userId && allowedRoles.includes(userRole)) {
                 openAcceptModal(notification);
             } else if (!userId) {
@@ -558,7 +559,10 @@ function AppContent() {
                     setSelectedStaffId("");
                 }}
                 accepting={acceptingJob}
-                showStaffSelector={userRole === "contractor"}
+                showStaffSelector={
+                    userRole === "contractor" &&
+                    acceptModalJob?.contractorInvoice === 1
+                }
                 staffOptions={contractorStaffOptions}
                 selectedStaffId={selectedStaffId}
                 onStaffChange={setSelectedStaffId}
@@ -617,8 +621,10 @@ function AppContent() {
                     <Route path="/pay-charge-rate" element={<PayChargeRate />} />
                     <Route path="/rates/charge" element={<RatesList />} />
                     <Route path="/rates/pay" element={<RatesList />} />
+                    <Route path="/rates/contractor" element={<ProtectedRoute allowedRoles={["admin"]}><ContractorRates /></ProtectedRoute>} />
                     <Route path="/wfm-tools" element={<ProtectedRoute allowedRoles={["admin", "contractor"]}><WFMTools /></ProtectedRoute>} />
                     <Route path="/leave" element={<ProtectedRoute allowedRoles={["admin", "contractor"]}><LeaveManagement /></ProtectedRoute>} />
+                    <Route path="/my-rates" element={<ProtectedRoute allowedRoles={["contractor"]}><ContractorRatesView /></ProtectedRoute>} />
                     <Route path="/holidays" element={<ProtectedRoute allowedRoles={["admin"]}><PublicHolidays /></ProtectedRoute>} />
                     <Route path="/staff-management" element={<ProtectedRoute allowedRoles={["admin"]}><StafooStaff /></ProtectedRoute>} />
                     <Route path="/reports" element={<ProtectedRoute allowedRoles={["admin"]}><Reports /></ProtectedRoute>} />

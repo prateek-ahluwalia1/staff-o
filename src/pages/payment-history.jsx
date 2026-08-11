@@ -17,6 +17,14 @@ const formatDate = (dateString) => {
   });
 };
 
+const formatStatus = (status) => {
+  if (!status) return "-";
+
+  return status
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+};
+
 const formatAmount = (amount) => {
   const num = Number(amount) || 0;
   return new Intl.NumberFormat("en-AU", {
@@ -27,12 +35,42 @@ const formatAmount = (amount) => {
 
 const getStatusBadgeClass = (status) => {
   const s = String(status || "").toLowerCase();
-  if (["paid", "succeeded", "success", "captured"].includes(s))
+
+  if (
+    [
+      "paid",
+      "succeeded",
+      "success",
+      "captured",
+      "partially_captured",
+    ].includes(s)
+  ) {
     return "badge-success";
-  if (["pending", "processing", "held"].includes(s))
+  }
+
+  if (
+    [
+      "pending",
+      "processing",
+      "held",
+      "requires_capture",
+      "authorized",
+    ].includes(s)
+  ) {
     return "badge-warning";
-  if (["failed", "cancelled"].includes(s))
+  }
+
+  if (
+    [
+      "failed",
+      "cancelled",
+      "canceled",
+      "expired",
+    ].includes(s)
+  ) {
     return "badge-danger";
+  }
+
   return "badge-secondary";
 };
 
@@ -564,9 +602,10 @@ export default function PaymentHistory() {
                     <thead>
                       <tr>
                         <th>Date</th>
-                        <th>Amount</th>
+                        <th>Amount Charged</th>
+                        <th>Total Amount</th>
                         <th>Status</th>
-                        <th>Transaction ID</th>
+                        {/* <th>Transaction ID</th> */}
                         <th className="text-center">Actions</th>
                       </tr>
                     </thead>
@@ -577,16 +616,17 @@ export default function PaymentHistory() {
                             {formatDate(tx.created_at)}
                           </td>
                           <td className="fw-bold" style={{ color: "#0f172a" }}>
+                            {formatAmount(tx.amount_charged)}
+                          </td>
+                          <td className="fw-bold" style={{ color: "#0f172a" }}>
                             {formatAmount(tx.total_amount)}
                           </td>
                           <td>
-                            <span
-                              className={`badge-premium ${getStatusBadgeClass(tx.status)}`}
-                            >
-                              {tx.status.charAt(0).toUpperCase() + tx.status.slice(1)}
+                            <span className={`badge-premium ${getStatusBadgeClass(tx.status)}`}>
+                              {formatStatus(tx.status)}
                             </span>
                           </td>
-                          <td>
+                          {/* <td>
                             <span
                               className="small"
                               style={{
@@ -599,7 +639,7 @@ export default function PaymentHistory() {
                             >
                               {tx.payment_intent_id}
                             </span>
-                          </td>
+                          </td> */}
                           <td className="text-center">
                             {tx.invoice_filename ? (
                               <div className="d-flex gap-2 justify-content-center">

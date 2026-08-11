@@ -46,9 +46,6 @@ export default function SettingsHeaderContent({
     isActive === "1"
   );
 
-  // Check if the user is both staff AND inactive
-  const isStaffInactive = userType === "staff" && !isActiveProfile;
-
 
   const progressColor = getProgressColor();
   const showProgress =
@@ -349,23 +346,27 @@ export default function SettingsHeaderContent({
         {/* Left text content */}
         <div className="sh-left">
           <h1 className="sh-title">
-            <span className="sh-name">{name || "Staff Member"}</span>
+            <span className="sh-name">
+              {userType === "admin" ? (company_name || name || "Business Profile") : (name || "Staff Member")}
+            </span>
             {verified && (
               <i
                 className="fa-solid fa-circle-check sh-verified"
                 title="Verified Profile"
               ></i>
             )}
-            <span
-              className={`sh-badge ${isActiveProfile ? "sh-badge--active" : "sh-badge--inactive"
-                }`}
-            >
-              <i
-                className={`fa-solid ${isActiveProfile ? "fa-circle-check" : "fa-circle-xmark"
+            {userType !== "admin" && (
+              <span
+                className={`sh-badge ${isActiveProfile ? "sh-badge--active" : "sh-badge--inactive"
                   }`}
-              ></i>
-              {isActiveProfile ? "Active" : "Inactive"}
-            </span>
+              >
+                <i
+                  className={`fa-solid ${isActiveProfile ? "fa-circle-check" : "fa-circle-xmark"
+                    }`}
+                ></i>
+                {isActiveProfile ? "Active" : "Inactive"}
+              </span>
+            )}
           </h1>
 
           {/* Always the same subtitle */}
@@ -378,21 +379,12 @@ export default function SettingsHeaderContent({
               <i className="fa-solid fa-envelope"></i>
               <span className="sh-meta-text">{email || "No email"}</span>
             </span>
-            {userType !== "contractor" ? (
-              <span className="sh-meta-item">
-                <i className="fa-solid fa-location-dot"></i>
-                <span className="sh-meta-text">
-                  {limitToFirstFourWords(city) || "No location"}
-                </span>
+            <span className="sh-meta-item">
+              <i className="fa-solid fa-location-dot"></i>
+              <span className="sh-meta-text">
+                {limitToFirstFourWords(city) || "No location"}
               </span>
-            ) : (
-              <span className="sh-meta-item">
-                <i className="fa-solid fa-briefcase"></i>
-                <span className="sh-meta-text">
-                  {company_name || "No company name"}
-                </span>
-              </span>
-            )}
+            </span>
           </div>
         </div>
 

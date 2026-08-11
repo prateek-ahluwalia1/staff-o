@@ -19,6 +19,7 @@ import useFetch from "../hooks/useFetch";
 import ActivityDashboardModal from "../components/roster/ActivityDashboardModal";
 import TimeEditModal from "../components/roster/TimeEditModal";
 import DetailsModal from "../components/roster/DetailsModal";
+import ShiftBreakdownModal from "../components/roster/ShiftBreakdownModal";
 import AddJob from "./add-job";
 import "../assets/css/roster.css";
 import { useLocation } from "react-router-dom";
@@ -286,8 +287,11 @@ export default function RosterPage() {
         return { ...shift, startDate, endDate };
       }).filter(Boolean);
 
-      const totalHours = roster.reduce((sum, shift) => sum + Number(shift.hours || 0), 0);
-      const shiftWithCustomer = site.job_roster?.find(shift => shift?.customer?.name);
+      const weekShifts = roster.filter((shift) =>
+        weekDays.some((d) => isSameDay(d.dateObj, shift.startDate))
+      );
+      const totalHours = weekShifts.reduce((sum, shift) => sum + Number(shift.hours || 0), 0);
+      const shiftWithCustomer = (site.job_roster || []).find(shift => shift?.customer?.name);
       const clientName = shiftWithCustomer?.customer?.name || "Unknown Client";
 
       return {
@@ -295,11 +299,11 @@ export default function RosterPage() {
         displayName: site.site_name || "Unknown Site",
         clientName: clientName,
         siteData: site,
-        hoursDisplay: `${totalHours.toFixed(1)}h`,
+        hoursDisplay: `${totalHours.toFixed(1)}h Total`,
         jobRoster: roster,
       };
     });
-  }, [submitData]);
+  }, [submitData, weekDays]);
 
   const filteredSites = useMemo(() => {
     if (!searchQuery.trim()) return sites;
@@ -603,11 +607,30 @@ export default function RosterPage() {
                           {dayShifts.map((shift) => {
                             const status = shift.job_status ? shift.job_status.replace('_', '-') : 'pending';
                             const hasNote = Boolean(extractOperationNoteText(shift));
-                            const isAccepted = Boolean(shift.accepted_by); // Check if contractor accepted
+                            const isAccepted = Boolean(shift.accepted_by);
+
+                            const shiftDuration = Number(shift.hours || 0) || (shift.endDate && shift.startDate ? (shift.endDate - shift.startDate) / 3600000 : 0);
+                            const invoiceType = Number(shift.contractor_invoice);
+                            const isConfirmed = String(shift.job_status || "").toLowerCase() === "confirmed";
+
+                            // Contractor Zero Invoice Breakdown: Contractor + Invoice 0 + Confirmed + Duration > 12
+                            const isContractorZeroInvoiceBreakdown = userRole === "contractor" && invoiceType === 0 && isConfirmed && shiftDuration > 12;
+
+                            // Assign Staff Button: Shown when staff not assigned AND (Admin OR Invoice 1 OR (Invoice 0 & Confirmed & Duration <= 12))
+                            const showAssignButton = !shift.assigned_to && (
+                              userRole === "admin" ||
+                              invoiceType === 1 ||
+                              (userRole === "contractor" && invoiceType === 0 && isConfirmed && shiftDuration <= 12)
+                            );
 
                             return (
                               <div key={shift.id} className={`vr-shift-card bg-${status}`}>
                                 {hasNote && <div className="vr-note-dot"></div>}
+                                {isContractorZeroInvoiceBreakdown && (
+                                  <span className="vr-breakdown-indicator" title="Requires Shift Breakdown (>12h, Invoice 0)">
+                                    <i className="fa-solid fa-scissors" style={{ fontSize: "10px" }}></i>
+                                  </span>
+                                )}
                                 <div className="vr-shift-time">
                                   {format(shift.startDate, "HH:mm")} - {format(shift.endDate, "HH:mm")}
 
@@ -633,7 +656,12 @@ export default function RosterPage() {
                                       <i className="fa fa-edit fas fa-edit"></i>
                                     </button>
                                   )}
-                                  {(userRole === "contractor" || userRole === "admin") && !shift.assigned_to && (
+                                  {isContractorZeroInvoiceBreakdown && (
+                                    <button title="Breakdown Shift" onClick={() => openModalAction(site, shift, day.dateLabel, "shift_breakdown")}>
+                                      <i className="fa-solid fa-scissors"></i>
+                                    </button>
+                                  )}
+                                  {showAssignButton && (
                                     <button title="Assign" onClick={() => openModalAction(site, shift, day.dateLabel, "admin_assign")}>
                                       <i className="fa fa-user-plus"></i>
                                     </button>
@@ -674,6 +702,7 @@ export default function RosterPage() {
       {modal?.type === "activity" && <ActivityDashboardModal modal={modal} closeModal={closeModal} userRole={userRole} />}
       {modal?.type === "time" && <TimeEditModal modal={modal} closeModal={closeModal} editForm={editForm} setEditForm={setEditForm} timeEditError={timeEditError} clearTimeEditError={() => setTimeEditError("")} handleSave={handleSave} saveLoading={saveLoading} />}
       {modal?.type === "details" && <DetailsModal modal={modal} closeModal={closeModal} guardShiftsList={guardShiftsList} totalGuardHours={totalGuardHours} />}
+      {modal?.type === "shift_breakdown" && <ShiftBreakdownModal modal={modal} closeModal={closeModal} onSuccess={fetchCustomerSites} />}
 
       {modal?.type === "admin_assign" && (
         <div className="vr-modal-backdrop" onClick={closeModal}>

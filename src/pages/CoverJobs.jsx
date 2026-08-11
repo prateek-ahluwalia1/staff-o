@@ -125,6 +125,8 @@ const CoverJobs = () => {
     };
 
     const openModal = (job) => {
+        // Clear staff selection when opening a new job.
+        // If contractor_invoice is 0, we won't show the dropdown at all.
         setSelectedStaffId("");
         let documents = [];
         try {
@@ -145,13 +147,18 @@ const CoverJobs = () => {
     const handleAcceptJob = async (jobId) => {
         setLoadingIds(prev => [...prev, jobId]);
         try {
-            const payload = selectedStaffId ? { roster_id: jobId, guard_id: Number(selectedStaffId) } : { roster_id: jobId };
+            // Only include guard_id if contractor_invoice !== 0 and a staff is selected
+            const includeGuardId = selectedJob?.contractor_invoice === 1 && selectedStaffId;
+            const payload = includeGuardId
+                ? { roster_id: jobId, guard_id: Number(selectedStaffId) }
+                : { roster_id: jobId };
+
             const endpoint = getAcceptEndpoint();
             const result = await submit(endpoint, payload, { method: 'POST' });
             if (result && !result.error) {
                 setRemovedJobIds(prev => (prev.includes(jobId) ? prev : [...prev, jobId]));
                 toast.success(
-                    selectedStaffId
+                    includeGuardId
                         ? '🎉 Job assigned successfully!'
                         : '🎉 Cover job accepted! You are all set.'
                 );
@@ -604,7 +611,8 @@ const CoverJobs = () => {
                         </div>
 
                         <div className="modal-footer" style={{ background: '#fff', padding: '16px 24px', borderTop: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                            {userRole === 'contractor' && (
+                            {/* Show assign-to-staff only when contractor_invoice is not 0 */}
+                            {userRole === 'contractor' && selectedJob.contractor_invoice === 1 && (
                                 <div className="w-100">
                                     <label className="form-label fw-semibold" style={{ fontSize: '13px', color: '#334155' }}>Assign to staff</label>
                                     <Select
@@ -643,7 +651,13 @@ const CoverJobs = () => {
                                     ) : (
                                         <i className="fa-solid fa-check me-2"></i>
                                     )}
-                                    {selectedStaffId ? 'Assign' : 'Accept'}
+                                    {/* Button text depends on contractor_invoice and selected staff */}
+                                    {selectedJob.contractor_invoice === 0
+                                        ? 'Accept'
+                                        : selectedStaffId
+                                            ? 'Assign'
+                                            : 'Accept'
+                                    }
                                 </button>
                                 <button onClick={closeModal} className="btn btn-outline-secondary rounded-pill px-4 fw-semibold shadow-sm">
                                     Close

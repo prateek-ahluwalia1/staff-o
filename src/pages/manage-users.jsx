@@ -917,6 +917,11 @@ const ManageUsers = () => {
     }
 
     const payload = { ...formData };
+
+    if (Array.isArray(payload.states_allowed)) {
+      payload.states_allowed = JSON.stringify(payload.states_allowed);
+    }
+
     if (editingUser && !payload.password) delete payload.password;
     if (activeTab !== "staff") delete payload.user_id;
 

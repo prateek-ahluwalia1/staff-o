@@ -19,7 +19,7 @@ root.render(
     <Provider store={store}>
       <PersistGate loading={null} persistor={persistor}>
         <App />
-        <ToastContainer />
+        <ToastContainer style={{ zIndex: 9999999 }} />
       </PersistGate>
     </Provider>
   </GoogleOAuthProvider>

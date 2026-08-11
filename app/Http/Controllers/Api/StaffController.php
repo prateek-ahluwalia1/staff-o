@@ -798,7 +798,7 @@ private function calculateProfileCompletion(User $user): int
             $statesAllowed = array_map('strtolower', $statesAllowed ?? []);
     
             if (!empty($statesAllowed)) {
-                $ratedStates = DB::table('contractor_charge_rates')
+                $ratedStates = DB::table('contractor_chargerates')
                     ->where('user_id', $user->id)
                     ->pluck('state')
                     ->map(fn($s) => strtolower($s))

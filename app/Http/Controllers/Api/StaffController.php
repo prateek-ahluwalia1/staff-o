@@ -713,10 +713,46 @@ private function calculateProfileCompletion(User $user): int
         return response()->json(['message' => "Staff Documents Updated Successfully!", 'code' => 200, 'success' => true]);
     }
 
+    // public function editUser($id)
+    // {
+    //     $user = User::findOrFail($id);
+
+    //     if ($user->user_type === 'customer') {
+    //         $user->load(['customer']);
+    //     } elseif ($user->user_type === 'contractor') {
+    //         $user->load('contractor', 'documents');
+    //     } elseif ($user->user_type === 'staff') {
+    //         $user->load('staff', 'documents');
+    //     } elseif ($user->user_type === 'admin'){
+    //        $adminUser = User::with(['documents'])->find(1);
+    //     }
+
+    //     $percentage = $this->calculateProfileCompletion($user);
+    //     // $verificationPoints = $this->documentsPoints($user);
+
+    //     if($user->user_type == 'contractor'){
+    //         if ($percentage === 100) {
+    //             $user->is_active = 1;
+    //             $user->save();
+    //         }else{
+    //             $user->is_active = 0;
+    //             $user->save();
+    //         }
+    //     }else{
+    //         if ($percentage === 100 && (int) $user->is_active !== 1) {
+    //             $user->is_active = 1;
+    //             $user->save();
+    //         }
+    //     }
+
+    //     $user->profile_completion_percentage = $percentage;
+
+    //     return response()->json(['success' => true, 'code' => 200, 'data' => $user, 'business' => $adminUser ?? null]);
+    // }
     public function editUser($id)
     {
         $user = User::findOrFail($id);
-
+    
         if ($user->user_type === 'customer') {
             $user->load(['customer']);
         } elseif ($user->user_type === 'contractor') {
@@ -724,12 +760,12 @@ private function calculateProfileCompletion(User $user): int
         } elseif ($user->user_type === 'staff') {
             $user->load('staff', 'documents');
         } elseif ($user->user_type === 'admin'){
-           $adminUser = User::with(['documents'])->find(1);
+        $adminUser = User::with(['documents'])->find(1);
         }
-
+    
         $percentage = $this->calculateProfileCompletion($user);
         // $verificationPoints = $this->documentsPoints($user);
-
+    
         if($user->user_type == 'contractor'){
             if ($percentage === 100) {
                 $user->is_active = 1;
@@ -744,10 +780,46 @@ private function calculateProfileCompletion(User $user): int
                 $user->save();
             }
         }
-
+    
         $user->profile_completion_percentage = $percentage;
-
-        return response()->json(['success' => true, 'code' => 200, 'data' => $user, 'business' => $adminUser ?? null]);
+    
+        // ============ NEW: charge_rate key for contractors ============
+        // true only if the contractor has a rate card in contractor_charge_rates
+        // for EVERY state listed in states_allowed. Empty/missing states_allowed
+        // also counts as false.
+        $chargeRateComplete = null;
+    
+        if ($user->user_type === 'contractor') {
+            $statesAllowed = $user->states_allowed;
+    
+            if (is_string($statesAllowed)) {
+                $statesAllowed = json_decode($statesAllowed, true) ?: [];
+            }
+            $statesAllowed = array_map('strtolower', $statesAllowed ?? []);
+    
+            if (!empty($statesAllowed)) {
+                $ratedStates = DB::table('contractor_charge_rates')
+                    ->where('user_id', $user->id)
+                    ->pluck('state')
+                    ->map(fn($s) => strtolower($s))
+                    ->unique()
+                    ->toArray();
+    
+                $missingStates = array_diff($statesAllowed, $ratedStates);
+                $chargeRateComplete = empty($missingStates);
+            } else {
+                $chargeRateComplete = false;
+            }
+        }
+        // ============ END NEW ============
+    
+        return response()->json([
+            'success' => true,
+            'code' => 200,
+            'data' => $user,
+            'business' => $adminUser ?? null,
+            'charge_rate' => $chargeRateComplete,
+        ]);
     }
     
     public function getStaffInfo($id)

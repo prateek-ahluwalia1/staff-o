@@ -5,9 +5,10 @@
 <style>
     body { font-family: Arial, Helvetica, sans-serif; font-size: 14px; color: #111827; margin:0; padding:0; }
     .wrapper { max-width: 640px; margin: 0 auto; padding: 24px; }
-    .header { background:#0A7C6E; padding:14px 22px; border-radius:6px 6px 0 0; }
-    .header img { height:32px; display:block; }
-    .header h1 { color:#fff; font-size:16px; margin:0; padding-top:6px; }
+    .logo-band { background:#FFFFFF; padding:18px 22px; text-align:center; border:1px solid #E5E7EB; border-bottom:none; border-radius:6px 6px 0 0; }
+    .logo-band img { height:40px; }
+    .header { background:#0A7C6E; padding:14px 22px; }
+    .header h1 { color:#fff; font-size:16px; margin:0; }
     .body { border:1px solid #E5E7EB; border-top:none; padding:20px 22px; border-radius:0 0 6px 6px; }
     .meta { margin-bottom:16px; line-height:1.8; }
     .meta strong { color:#374151; }
@@ -20,8 +21,10 @@
 </head>
 <body>
 <div class="wrapper">
+    <div class="logo-band">
+        <img src="https://apis.staffoo.com.au/uploads/staffologo.png" alt="Staffoo Logo">
+    </div>
     <div class="header">
-        <img src="{{ asset('images/staffoo-logo-white.png') }}" alt="STAFFOO">
         <h1>New Charge Rate Request</h1>
     </div>
     <div class="body">

@@ -3866,7 +3866,7 @@ private function sendStaffActivationNotification(User $user): void
             ->whereNotNull('current_coordinates')
             ->select('id', 'name', 'email', 'phone', 'notification_token', 'current_coordinates', 'states_allowed')
             ->get()
-            ->filter(fn($partner) => $this->userAllowedForState($partner, $siteState))
+            ->filter(fn($partner) => $this->userHasStatePermission($partner, $siteState))
             ->values();
 
         Log::info("Found {$partners->count()} resource partners with states_allowed permission.", [
@@ -4045,7 +4045,7 @@ private function sendStaffActivationNotification(User $user): void
     private function getStaffooGuardsByRadius(string $siteCoords, int $radiusKm, ?string $siteState = null)
     {
           $staffoo = User::find(1);
-            if (!$this->userAllowedForState($staffoo, $siteState)) {
+            if (!$this->userHasStatePermission($staffoo, $siteState)) {
                 Log::info("Staffoo (id 1) has no states_allowed permission for state '{$siteState}', skipping Staffoo staff notifications.");
                 return collect();
             }
@@ -5051,6 +5051,54 @@ private function userAllowedForState($user, ?string $siteState): bool
 
     return false;
 }
+
+private function userHasStatePermission(?User $user, ?string $siteState): bool
+{
+    if (!$user || !$siteState) {
+        return false;
+    }
+
+    $allowed = $user->states_allowed;
+
+    // Support both a JSON/array cast column and a raw JSON string column.
+    if (is_string($allowed)) {
+        $allowed = json_decode($allowed, true) ?? [];
+    }
+
+    if (!is_array($allowed) || empty($allowed)) {
+        return false;
+    }
+
+    $siteCanonical = $this->canonicalizeState($siteState);
+
+    foreach ($allowed as $allowedState) {
+        if ($this->canonicalizeState($allowedState) === $siteCanonical) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+private function canonicalizeState(?string $state): ?string
+    {
+        if (!$state) {
+            return null;
+        }
+
+        $state = strtolower(trim($state));
+
+        foreach ($this->getStateAliases() as $canonical => $aliases) {
+            if (in_array($state, $aliases, true)) {
+                return $canonical;
+            }
+        }
+
+        // Unknown / unmapped state - use the lowercased value as-is so an
+        // exact (but unmapped) match still works.
+        return $state;
+    }
+
 
 public function checkState(Request $request)
 {

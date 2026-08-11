@@ -57,6 +57,7 @@ const DOC_TYPES = [
   { value: "Workcover", label: "Workcover" },
   { value: "Labour Hire", label: "Labour Hire" },
   { value: "ASIC Report", label: "ASIC Report" },
+  { value: "Security Industry Membership Certificate", label: "Security Industry Membership Certificate" },
   { value: "Security Industry Membership certificate", label: "Security Industry Membership certificate" },
 ];
 

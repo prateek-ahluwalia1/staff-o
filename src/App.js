@@ -19,22 +19,16 @@ import { useEcho } from "./hooks/useEcho";
 import { logOut } from "./store/slices/authSlice";
 import useSubmit from "./hooks/useSubmit";
 import useFetch from "./hooks/useFetch";
-import RetailSecurity from "./pages/solutions/retail-security";
 import Careers from "./pages/career";
-import WarehouseLogisticsSecurity from "./pages/solutions/warehouse-logistics-security";
-import CorporateSecurity from "./pages/solutions/corporate-security";
-import GovernmentSecurity from "./pages/solutions/government-security";
-import HealthcareSecurity from "./pages/solutions/healthcare-security";
-import TransportSecurity from "./pages/solutions/transport-security";
-import AviationSecurity from "./pages/solutions/aviation-security";
-import ForSecurityCompanies from "./pages/solutions/for-security-companies";
-import ForSecurityGuards from "./pages/solutions/for-security-guards";
-import SecuritySubcontractors from "./pages/solutions/security-subcontractors";
-import HireSecurityStaff from "./pages/solutions/hire-security-staff";
-import EventSecurityProviders from "./pages/solutions/for-event-security-providers";
-import CorporateSecurityTeams from "./pages/solutions/for-corporate-security-teams";
-import LabourHireAgencies from "./pages/solutions/for-labour-hire-agencies";
 import GPSGuardTracking from "./pages/features/gps-guard-tracking";
+import confetti from "canvas-confetti";
+import EventCrowdControl from "./pages/industries/Event-crowd-control";
+import RetailSecurity from "./pages/industries/retail-security";
+import CorporateOffice from "./pages/industries/corporate-office";
+import ConstructionSites from "./pages/industries/construction-sites";
+import ResidentialEstates from "./pages/industries/residential-estates";
+import WorkingStaff from "./pages/forstaff/working-staff";
+import HowToApply from "./pages/forstaff/How-to-apply";
 import EventSecurityHero from "./pages/solutions/event-security";
 import ContractorRatesView from "./pages/ContractorRatesView";
 
@@ -580,30 +574,26 @@ function AppContent() {
                 <Route path="/public-profile" element={<ProtectedRoute public><PublicProfilePreview /></ProtectedRoute>} />
                 <Route path="/faqs" element={<ProtectedRoute public><Faqs /></ProtectedRoute>} />
 
-                {/* Solutions */}
-                <Route path="/solutions/event-security" element={<ProtectedRoute public><EventSecurityHero /></ProtectedRoute>} />
-                <Route path="/solutions/retail-security" element={<ProtectedRoute public><RetailSecurity /></ProtectedRoute>} />
-                <Route path="/solutions/warehouse-logistics-security" element={<ProtectedRoute public><WarehouseLogisticsSecurity /></ProtectedRoute>} />
-                <Route path="/solutions/corporate-security" element={<ProtectedRoute public><CorporateSecurity /></ProtectedRoute>} />
-                <Route path="/solutions/government-security" element={<ProtectedRoute public><GovernmentSecurity /></ProtectedRoute>} />
-                <Route path="/solutions/healthcare-security" element={<ProtectedRoute public><HealthcareSecurity /></ProtectedRoute>} />
-                <Route path="/solutions/transport-security" element={<ProtectedRoute public><TransportSecurity /></ProtectedRoute>} />
-                <Route path="/solutions/aviation-security" element={<ProtectedRoute public><AviationSecurity /></ProtectedRoute>} />
-                <Route path="/solutions/for-security-companies" element={<ProtectedRoute public><ForSecurityCompanies /></ProtectedRoute>} />
-                <Route path="/solutions/for-security-guards" element={<ProtectedRoute public><ForSecurityGuards /></ProtectedRoute>} />
-                <Route path="/solutions/security-subcontractors" element={<ProtectedRoute public><SecuritySubcontractors /></ProtectedRoute>} />
-                <Route path="/solutions/hire-security-staff" element={<ProtectedRoute public><HireSecurityStaff /></ProtectedRoute>} />
-                <Route path="/solutions/for-event-security-providers" element={<ProtectedRoute public><EventSecurityProviders /></ProtectedRoute>} />
-                <Route path="/solutions/for-corporate-security-teams" element={<ProtectedRoute public><CorporateSecurityTeams /></ProtectedRoute>} />
-                <Route path="/solutions/for-labour-hire-agencies" element={<ProtectedRoute public><LabourHireAgencies /></ProtectedRoute>} />
+                {/* industries */}
+                <Route path="/industries/event-crowd-control" element={<ProtectedRoute public><EventCrowdControl /></ProtectedRoute>} />
+                <Route path="/industries/retail-security" element={<ProtectedRoute public><RetailSecurity /></ProtectedRoute>} />
+                <Route path="/industries/corporate-office" element={<ProtectedRoute public><CorporateOffice /></ProtectedRoute>} />
+                <Route path="/industries/construction-sites" element={<ProtectedRoute public><ConstructionSites /></ProtectedRoute>} />
+                <Route path="/industries/residential-estates" element={<ProtectedRoute public><ResidentialEstates /></ProtectedRoute>} />
+
+
+                {/* for staff */}
+                <Route path="/forstaff/working-staff" element={<ProtectedRoute public><WorkingStaff /></ProtectedRoute>} />
+                <Route path="/forstaff/how-to-apply" element={<ProtectedRoute public><HowToApply /></ProtectedRoute>} />
+
 
                 {/* Features */}
                 <Route path="/features/gps-guard-tracking" element={<ProtectedRoute public><GPSGuardTracking /></ProtectedRoute>} />
 
                 {/* Catch‑all for resources/features/pricing */}
-                <Route path="/resources/:slug" element={<ProtectedRoute public><EventSecurityHero /></ProtectedRoute>} />
-                <Route path="/features/:slug" element={<ProtectedRoute public><EventSecurityHero /></ProtectedRoute>} />
-                <Route path="/pricing" element={<ProtectedRoute public><EventSecurityHero /></ProtectedRoute>} />
+                <Route path="/resources/:slug" element={<ProtectedRoute public><EventCrowdControl /></ProtectedRoute>} />
+                <Route path="/features/:slug" element={<ProtectedRoute public><EventCrowdControl /></ProtectedRoute>} />
+                <Route path="/pricing" element={<ProtectedRoute public><EventCrowdControl /></ProtectedRoute>} />
 
                 {/* Company */}
                 <Route path="/terms-of-use" element={<ProtectedRoute public><TermsOfUse /></ProtectedRoute>} />

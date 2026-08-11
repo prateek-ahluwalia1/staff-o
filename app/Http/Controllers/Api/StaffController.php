@@ -787,30 +787,30 @@ private function calculateProfileCompletion(User $user): int
         // true only if the contractor has a rate card in contractor_charge_rates
         // for EVERY state listed in states_allowed. Empty/missing states_allowed
         // also counts as false.
-        $chargeRateComplete = null;
-    
-        if ($user->user_type === 'contractor') {
-            $statesAllowed = $user->states_allowed;
-    
-            if (is_string($statesAllowed)) {
-                $statesAllowed = json_decode($statesAllowed, true) ?: [];
-            }
-            $statesAllowed = array_map('strtolower', $statesAllowed ?? []);
-    
-            if (!empty($statesAllowed)) {
-                $ratedStates = DB::table('contractor_chargerates')
-                    ->where('user_id', $user->id)
-                    ->pluck('state')
-                    ->map(fn($s) => strtolower($s))
-                    ->unique()
-                    ->toArray();
-    
-                $missingStates = array_diff($statesAllowed, $ratedStates);
-                $chargeRateComplete = empty($missingStates);
-            } else {
-                $chargeRateComplete = false;
-            }
+       $chargeRateComplete = null;
+ 
+    if ($user->user_type === 'contractor') {
+        $statesAllowed = $user->states_allowed;
+ 
+        if (is_string($statesAllowed)) {
+            $statesAllowed = json_decode($statesAllowed, true) ?: [];
         }
+        $statesAllowed = array_map('strtolower', $statesAllowed ?? []);
+ 
+        if (!empty($statesAllowed)) {
+            $ratedStates = DB::table('contractor_chargerates')
+                ->where('user_id', $user->id)
+                ->pluck('state')
+                ->map(fn($s) => strtolower($s))
+                ->unique()
+                ->toArray();
+ 
+            $missingStates = array_diff($statesAllowed, $ratedStates);
+            $chargeRateComplete = !empty($missingStates);
+        } else {
+            $chargeRateComplete = true;
+        }
+    }
         // ============ END NEW ============
     
         return response()->json([

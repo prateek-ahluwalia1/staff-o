@@ -400,14 +400,17 @@ const ContractorRatesView = ({ selectedStates = [] }) => {
         }
       `}</style>
 
-      {/* ── Hero ── */}
-      <div className="rates-hero d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
-        <div>
-          <span className="rates-hero-eyebrow"><span className="dot"></span> My Rates</span>
-          <h1>My Charge Rates</h1>
-          <p>These rates are managed and assigned by your Staffoo administrator.</p>
-        </div>
-        <div>
+
+      {/* ── Rates View ── */}
+      {rows.length === 0 ? (
+        <div className="rate-card text-center py-5">
+          <div className="mb-3">
+            <i className="fa fa-folder-open" style={{ fontSize: "3rem", color: "var(--line)" }}></i>
+          </div>
+          <h5 className="fw-bold text-dark mb-2">No Rates Assigned</h5>
+          <p className="text-muted mx-auto mb-4" style={{ maxWidth: "400px" }}>
+            You currently do not have any active rates assigned to your profile. Please request charge rates for states you selected in profile section.
+          </p>
           <button
             type="button"
             className="btn text-white rounded-pill px-4 py-2 fw-bold shadow-sm d-inline-flex align-items-center gap-2"
@@ -417,45 +420,41 @@ const ContractorRatesView = ({ selectedStates = [] }) => {
             <i className="fa-solid fa-paper-plane"></i> Request Rate Update
           </button>
         </div>
-      </div>
-
-      {/* ── Rates View ── */}
-      {rows.length === 0 ? (
-        <div className="rate-card text-center py-5">
-          <div className="mb-3">
-            <i className="fa fa-folder-open" style={{ fontSize: "3rem", color: "var(--line)" }}></i>
-          </div>
-          <h5 className="fw-bold text-dark mb-2">No Rates Assigned</h5>
-          <p className="text-muted mx-auto mb-0" style={{ maxWidth: "400px" }}>
-            You currently do not have any active rates assigned to your profile. Please request charge rates for states you selected in profile section.
-          </p>
-        </div>
       ) : (
         <div className="fade-in" style={{ animationDelay: "0.1s" }}>
           {rows.length > 1 && (
-            <div className="rate-picker">
+            <div className="rr-tab-bar w-100 mb-4">
               {rows.map((r) => (
                 <button
                   key={r.id}
                   type="button"
-                  className={`rate-pill ${r.id === rate?.id ? "active" : ""}`}
+                  className={`rr-tab-btn flex-grow-1 justify-content-center ${r.id === rate?.id ? "active" : ""}`}
                   onClick={() => setSelectedId(r.id)}
-                  aria-label={`Select rate: ${r.title || "My Rates"}`}
+                  aria-label={`Select rate: ${STATE_NAME_MAP[r.state] || r.state}`}
                 >
-                  <span className="pill-state">{STATE_NAME_MAP[r.state] || r.state}</span>
-                  <div className="pill-title" title={r.title || "My Rates"}>{r.title || "My Rates"}</div>
+                  <i className="fa fa-map-marker-alt"></i> {STATE_NAME_MAP[r.state] || r.state}
                 </button>
               ))}
             </div>
           )}
 
           <div className="rate-card mt-2">
-            <div className="rate-card-head">
-              <span className="icon-badge"><i className="fa fa-clock"></i></span>
-              <div>
-                <h6>My Rates</h6>
-                <span>Metro vs Regional, by time slot — {rate?.title || ""}</span>
+            <div className="rate-card-head d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3">
+              <div className="d-flex align-items-center gap-3">
+                <span className="icon-badge mb-0"><i className="fa fa-clock"></i></span>
+                <div>
+                  <h6 className="mb-0">My Rates</h6>
+                  <span>Metro vs Regional, by time slot — {rate?.title || ""}</span>
+                </div>
               </div>
+              <button
+                type="button"
+                className="btn text-white rounded-pill px-4 py-2 fw-bold shadow-sm d-inline-flex align-items-center gap-2 mt-2 mt-md-0"
+                style={{ backgroundColor: "var(--teal)", border: "none" }}
+                onClick={handleOpenRequestModal}
+              >
+                <i className="fa-solid fa-paper-plane"></i> Request Rate Update
+              </button>
             </div>
             {SLOT_ROWS.map((row) => {
               const metroVal = rate ? rate[`def_${row.metro}`] : 0;
@@ -506,9 +505,9 @@ const ContractorRatesView = ({ selectedStates = [] }) => {
               <div style={{ flex: 1, overflowY: "auto", padding: "24px 28px 20px" }}>
 
                 {/* ── State Tabs Info ── */}
-                <div className="rr-form-section" style={{ paddingBottom: "16px" }}>
-                  <div className="rr-section-title d-flex justify-content-between align-items-center mb-3">
-                    <div>
+                <div className="rr-form-section" style={{ padding: "14px 20px", marginBottom: "16px" }}>
+                  <div className="rr-section-title d-flex justify-content-between align-items-center mb-2">
+                    <div style={{ fontSize: "12.5px" }}>
                       <i className="fa fa-map-marked-alt"></i> Select State to Enter Rates
                     </div>
                     {selectedStates.length > 1 && activeStateTab && (
@@ -525,7 +524,7 @@ const ContractorRatesView = ({ selectedStates = [] }) => {
                   </div>
 
                   {selectedStates.length > 0 ? (
-                    <div className="rr-tab-bar w-100 mb-2">
+                    <div className="rr-tab-bar w-100 mb-1">
                       {selectedStates.map(s => (
                         <button
                           key={s}

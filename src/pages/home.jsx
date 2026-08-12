@@ -16,6 +16,7 @@ export default function Home() {
       {/* Sticky light header */}
       <Header />
 
+
       {/* Dark disclaimer bar */}
       <UserType />
 

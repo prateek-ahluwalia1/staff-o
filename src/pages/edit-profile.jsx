@@ -13,6 +13,7 @@ import { resolveProfileImageUrl } from "../utils/profileImage";
 import { toast } from "react-toastify";
 import StaffOnboardingForms from "../components/StaffOnboardingForms";
 import ContractorRatesView from "./ContractorRatesView";
+import CoverJobsBanner from "../components/CoverJobsBanner";
 
 const PremiumModal = ({ open, onClose, children, title, wide = false }) => {
   if (!open) return null;
@@ -1209,6 +1210,8 @@ export default function EditProfile() {
           flex-shrink: 0;
         }
       `}</style>
+
+      <CoverJobsBanner />
 
       {/* Profile Hero Header */}
       <div className="profile-hero">

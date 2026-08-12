@@ -1,13 +1,11 @@
 <?php
 
-namespace App\Http\Controllers\Api;
+namespace App\Http\Controllers;
 
 use App\Models\Transaction;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use App\Http\Controllers\Controller;
-
 
 class StripeWebhookController extends Controller
 {
@@ -29,37 +27,44 @@ class StripeWebhookController extends Controller
             return response()->json(['error' => 'Invalid signature'], 400);
         }
 
-        if ($event->type === 'checkout.session.completed') {
-            $this->handleCheckoutSessionCompleted($event);
+        // With capture_method = manual, the PaymentIntent moves to
+        // 'requires_capture' the moment the hold succeeds — Stripe fires
+        // payment_intent.amount_capturable_updated for that transition.
+        // (checkout.session.completed still fires too, but the session's
+        // payment_status stays 'unpaid' for a hold, so it's not useful here.)
+        if ($event->type === 'payment_intent.amount_capturable_updated') {
+            $this->handlePaymentIntentHoldSucceeded($event);
         }
 
         return response()->json(['status' => 'ok']);
     }
 
     /**
-     * SUCCESS CASE: payment via the contractor invoice payment link went through.
-     * - Flips job_status to 'confirmed' and payment_status to 'paid' on job_rosters
-     * - Creates the matching row in the transactions table
+     * HOLD CONFIRMED: funds have been authorized (held) on the client's card,
+     * but NOT captured yet — capture happens later, after shift completion
+     * (separate task, not built yet).
+     * - Flips job_status to 'confirmed' and payment_status to 'held' on job_rosters
+     * - Creates the matching row in the transactions table with status 'authorized'
      */
-    private function handleCheckoutSessionCompleted($event)
+    private function handlePaymentIntentHoldSucceeded($event)
     {
-        $session = $event->data->object;
+        $paymentIntent = $event->data->object; // this event's object IS the PaymentIntent
 
-        $rosterId     = $session->metadata->roster_id ?? null;
-        $contractorId = $session->metadata->contractor_id ?? null;
+        $rosterId     = $paymentIntent->metadata->roster_id ?? null;
+        $contractorId = $paymentIntent->metadata->contractor_id ?? null;
 
         if (!$rosterId) {
-            Log::warning('checkout.session.completed had no roster_id in metadata', [
-                'session_id' => $session->id ?? null,
+            Log::warning('payment_intent.amount_capturable_updated had no roster_id in metadata', [
+                'payment_intent_id' => $paymentIntent->id ?? null,
             ]);
             return;
         }
 
-        // Only proceed if the session actually succeeded
-        if (($session->payment_status ?? null) !== 'paid') {
-            Log::info('checkout.session.completed received but payment_status is not paid', [
+        // Only proceed if Stripe actually has capturable funds held
+        if (empty($paymentIntent->amount_capturable) || $paymentIntent->amount_capturable <= 0) {
+            Log::info('payment_intent.amount_capturable_updated received but amount_capturable is 0', [
                 'roster_id' => $rosterId,
-                'payment_status' => $session->payment_status ?? null,
+                'payment_intent_id' => $paymentIntent->id,
             ]);
             return;
         }
@@ -72,8 +77,8 @@ class StripeWebhookController extends Controller
         }
 
         // Avoid double-processing if Stripe retries the webhook
-        if ($updatedRoster->payment_status === 'paid') {
-            Log::info('Roster already marked paid, skipping duplicate webhook', ['roster_id' => $rosterId]);
+        if ($updatedRoster->payment_status === 'held') {
+            Log::info('Roster already marked held, skipping duplicate webhook', ['roster_id' => $rosterId]);
             return;
         }
 
@@ -83,44 +88,40 @@ class StripeWebhookController extends Controller
         $baseTotal  = $meta['base_total']  ?? 0;
         $discount   = $meta['discount']    ?? 0;
         $serviceFee = $meta['service_fee'] ?? 0;
-        $grandTotal = $meta['grand_total'] ?? (($session->amount_total ?? 0) / 100);
-        $currency   = $meta['currency']    ?? ($session->currency ?? 'aud');
+        $grandTotal = $meta['grand_total'] ?? (($paymentIntent->amount_capturable ?? 0) / 100);
+        $currency   = $meta['currency']    ?? ($paymentIntent->currency ?? 'aud');
 
-        // Try to get the charge id off the payment intent (optional, best-effort)
-        $chargeId = null;
-        try {
-            if (!empty($session->payment_intent)) {
-                $paymentIntent = \Stripe\PaymentIntent::retrieve($session->payment_intent);
-                $chargeId = $paymentIntent->latest_charge ?? null;
-            }
-        } catch (\Exception $e) {
-            Log::warning('Could not retrieve payment intent/charge for transaction record', [
-                'error' => $e->getMessage(),
-            ]);
-        }
-
-        // 1. Update the roster
+        // 1. Update the roster — job proceeds now that funds are held,
+        // but payment_status is 'held', not 'paid', since capture is a later step
         DB::table('job_rosters')->where('id', $rosterId)->update([
             'job_status'     => 'confirmed',
-            'payment_status' => 'paid',
+            'payment_status' => 'held',
+            'payment_intent_id' => $paymentIntent->id,
+            'payment_captured'  => 0,
         ]);
 
         // 2. Create the transaction record
+        // No charge_id yet — a charge only exists once the PaymentIntent is captured
         try {
+            if (is_string($rosterId)) {
+                $rosterIds = array_map('intval', explode(',', $rosterId));
+            } else {
+                $rosterIds = (array) $rosterId;
+            }
             Transaction::create([
-                'user_id'                   => $updatedRoster->created_by, // client who paid
-                'job_roster_id'             => $rosterId,
-                'payment_intent_id'         => $session->payment_intent ?? null,
-                'charge_id'                 => $chargeId,
+                'user_id'                   => $updatedRoster->created_by, // client who authorized payment
+                'job_roster_id'             => $rosterIds,
+                'payment_intent_id'         => $paymentIntent->id,
+                'charge_id'                 => null,
                 'amount'                    => $baseTotal,
                 'discount'                  => $discount,
-                'amount_charged'            => $grandTotal,
-                'balance'                   => 0,
+                'amount_charged'            => 0, // nothing captured/charged yet
+                'balance'                   => $grandTotal, // full amount still held, not captured
                 'service_fee'               => $serviceFee,
                 'total_amount'              => $grandTotal,
                 'currency'                  => $currency,
-                'status'                    => 'completed',
-                'response'                  => json_encode($session),
+                'status'                    => 'held', // held, not completed
+                'response'                  => json_encode($paymentIntent),
                 'payment_option'            => 'full',
                 'balance_status'            => null,
                 'balance_payment_intent_id' => null,
@@ -133,9 +134,10 @@ class StripeWebhookController extends Controller
             ]);
         }
 
-        Log::info('Job confirmed and transaction recorded via Stripe webhook', [
+        Log::info('Payment hold confirmed via Stripe webhook, job confirmed', [
             'roster_id' => $rosterId,
             'contractor_id' => $contractorId,
+            'payment_intent_id' => $paymentIntent->id,
         ]);
     }
 }

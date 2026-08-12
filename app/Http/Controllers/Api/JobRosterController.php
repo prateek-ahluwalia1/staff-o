@@ -3898,7 +3898,7 @@ private function sendStaffActivationNotification(User $user): void
             $eligibleJobs = $jobs->filter(fn($job) => in_array($job->id, $eligibleJobIds));
             
             // Calculate distance for this guard
-            // $distance = $this->getDistance($siteCoordinates, $guard->current_coordinates);
+            $distance = $this->getDistance($siteCoordinates, $guard->current_coordinates);
             
             // 1. App Push Notification with ONLY eligible jobs
             $this->sendConsolidatedAppNotification(
@@ -3906,7 +3906,7 @@ private function sendStaffActivationNotification(User $user): void
                 $eligibleJobs,  // Send ONLY eligible jobs
                 $title, 
                 $message, 
-                300,
+                $distance,
                 15
             );
             
@@ -5558,14 +5558,23 @@ private function generateContractorInvoiceAndPaymentLink($contractor, $updatedRo
             'line_items' => [
                 ['price' => $price->id, 'quantity' => 1],
             ],
+
+            'payment_intent_data' => [
+                'capture_method' => 'manual', // authorize/hold only — capture happens later, after shift completion
+                'metadata' => [
+                    'roster_id'      => $updatedRoster->id,
+                    'contractor_id'  => $contractor->id,
+                    'invoice_number' => $invoiceNumber,
+                ],
+            ],
             'metadata' => [
                 'roster_id'      => $updatedRoster->id,
                 'contractor_id'  => $contractor->id,
                 'invoice_number' => $invoiceNumber,
             ],
-          'after_completion' => [
+            'after_completion' => [
                 'type' => 'redirect',
-                'redirect' => ['url' => 'https://staging.app.staffoo.com.au' . '/my-job-applications?roster_id=' . $updatedRoster->id],
+                'redirect' => ['url' => 'https://staging.app.staffoo.com.au/my-job-applications?roster_id=' . $updatedRoster->id],
             ],
         ]);
     } catch (\Exception $e) {

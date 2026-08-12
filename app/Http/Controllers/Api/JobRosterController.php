@@ -5920,7 +5920,7 @@ public function request_charge_rate(Request $request)
                 'title'          => $rateEntry['title'] ?? null,
                 'state'          => $rateEntry['state'],
                 'effective_from' => $rateEntry['effective_from'] ?? null,
-                'notes'          => $request->notes ?? null,
+                'review_note'    => $request->notes ?? null,
                 'status'         => 'pending',
                 'created_at'     => now(),
                 'updated_at'     => now(),

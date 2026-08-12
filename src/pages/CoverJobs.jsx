@@ -160,9 +160,8 @@ const CoverJobs = () => {
             if (result && !result.error) {
                 setRemovedJobIds(prev => (prev.includes(jobId) ? prev : [...prev, jobId]));
                 closeModal();
-                
                 if (selectedJob?.contractor_invoice === 0) {
-                    setSuccessMessage('Job accepted! Please wait for client confirmation.');
+                    setSuccessMessage('Please wait for the client to give further confirmation. We will notify you shortly and the shift will appear on your Roster page.');
                     setShowSuccessPopup(true);
                 } else {
                     toast.success(

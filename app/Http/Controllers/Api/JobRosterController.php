@@ -3898,7 +3898,7 @@ private function sendStaffActivationNotification(User $user): void
             $eligibleJobs = $jobs->filter(fn($job) => in_array($job->id, $eligibleJobIds));
             
             // Calculate distance for this guard
-            $distance = $this->getDistance($siteCoordinates, $guard->current_coordinates);
+            // $distance = $this->getDistance($siteCoordinates, $guard->current_coordinates);
             
             // 1. App Push Notification with ONLY eligible jobs
             $this->sendConsolidatedAppNotification(
@@ -3906,7 +3906,7 @@ private function sendStaffActivationNotification(User $user): void
                 $eligibleJobs,  // Send ONLY eligible jobs
                 $title, 
                 $message, 
-                $distance,
+                15,
                 15
             );
             

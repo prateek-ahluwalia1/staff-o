@@ -129,7 +129,6 @@ const Sidebar = memo(function Sidebar() {
     { to: "/manage-staff", icon: "fa-solid fa-users-gear", label: "Staff Management" },
     { to: '/timesheet', icon: 'fa-solid fa-clock', label: 'Timesheet' },
     { to: "/chat", icon: "fa-solid fa-comments", label: "Communications" },
-    { to: '/my-rates', icon: 'fa-solid fa-money-bill-wave', label: 'My Rates' },
     { to: "/edit-profile", icon: "fa-solid fa-user-pen", label: "Edit Profile" },
   ];
 
@@ -160,7 +159,7 @@ const Sidebar = memo(function Sidebar() {
 
   useEffect(() => {
     if (isProfileActive) return;
-    const alwaysAllowed = ["/edit-profile", "/my-rates"];
+    const alwaysAllowed = ["/edit-profile"];
     const protectedRoutes = navItems
       .filter((item) => !alwaysAllowed.includes(item.to))
       .map((item) => item.to);

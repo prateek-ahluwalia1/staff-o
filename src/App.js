@@ -21,7 +21,6 @@ import useSubmit from "./hooks/useSubmit";
 import useFetch from "./hooks/useFetch";
 import Careers from "./pages/career";
 import GPSGuardTracking from "./pages/features/gps-guard-tracking";
-import confetti from "canvas-confetti";
 import EventCrowdControl from "./pages/industries/Event-crowd-control";
 import RetailSecurity from "./pages/industries/retail-security";
 import CorporateOffice from "./pages/industries/corporate-office";
@@ -29,8 +28,6 @@ import ConstructionSites from "./pages/industries/construction-sites";
 import ResidentialEstates from "./pages/industries/residential-estates";
 import WorkingStaff from "./pages/forstaff/working-staff";
 import HowToApply from "./pages/forstaff/How-to-apply";
-// import EventSecurityHero from "./pages/solutions/event-security";
-import ContractorRatesView from "./pages/ContractorRatesView";
 
 const Login = lazy(() => import("./auth/login"));
 const Register = lazy(() => import("./auth/register"));
@@ -624,7 +621,6 @@ function AppContent() {
                     <Route path="/rates/contractor" element={<ProtectedRoute allowedRoles={["admin"]}><ContractorRates /></ProtectedRoute>} />
                     <Route path="/wfm-tools" element={<ProtectedRoute allowedRoles={["admin", "contractor"]}><WFMTools /></ProtectedRoute>} />
                     <Route path="/leave" element={<ProtectedRoute allowedRoles={["admin", "contractor"]}><LeaveManagement /></ProtectedRoute>} />
-                    <Route path="/my-rates" element={<ProtectedRoute allowedRoles={["contractor"]}><ContractorRatesView /></ProtectedRoute>} />
                     <Route path="/holidays" element={<ProtectedRoute allowedRoles={["admin"]}><PublicHolidays /></ProtectedRoute>} />
                     <Route path="/staff-management" element={<ProtectedRoute allowedRoles={["admin"]}><StafooStaff /></ProtectedRoute>} />
                     <Route path="/reports" element={<ProtectedRoute allowedRoles={["admin"]}><Reports /></ProtectedRoute>} />

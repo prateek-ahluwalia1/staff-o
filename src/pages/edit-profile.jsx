@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
-import { useNavigate } from "react-router-dom";
 import useFetch from "../hooks/useFetch";
 import useSubmit from "../hooks/useSubmit";
 import { useSelector, useDispatch } from "react-redux";
@@ -13,10 +12,8 @@ import { apiURL } from "../utils/exports";
 import { resolveProfileImageUrl } from "../utils/profileImage";
 import { toast } from "react-toastify";
 import StaffOnboardingForms from "../components/StaffOnboardingForms";
+import ContractorRatesView from "./ContractorRatesView";
 
-/* ──────────────────────────────────────────
-   Premium Modal Component (inline)
-   ────────────────────────────────────────── */
 const PremiumModal = ({ open, onClose, children, title, wide = false }) => {
   if (!open) return null;
   return (
@@ -301,7 +298,6 @@ export default function EditProfile() {
   const [phoneChangeSuccess, setPhoneChangeSuccess] = useState(false);
 
   const [showChargeRateModal, setShowChargeRateModal] = useState(false);
-  const navigate = useNavigate();
 
   const [showDocModal, setShowDocModal] = useState(false);
   const [initialStatesAllowed, setInitialStatesAllowed] = useState([]);
@@ -1289,6 +1285,14 @@ export default function EditProfile() {
             Documents
           </button>
         )}
+        {userType === "contractor" && (
+          <button
+            className={`tab-btn ${activeTab === "rates" ? "active" : "inactive"}`}
+            onClick={() => setActiveTab("rates")}
+          >
+            My Rates
+          </button>
+        )}
         {(userType === "staff" && (userdata?.data?.user_id === 1 || userdata?.user_id === 1)) && (
           <button
             className={`tab-btn ${activeTab === "onboarding" ? "active" : "inactive"}`}
@@ -1340,6 +1344,10 @@ export default function EditProfile() {
 
       {activeTab === "onboarding" && userType === "staff" && (
         <StaffOnboardingForms submit={submit} userId={userId} />
+      )}
+
+      {activeTab === "rates" && userType === "contractor" && (
+        <ContractorRatesView />
       )}
 
       {activeTab === "cards" && userType === "customer" && (
@@ -1543,6 +1551,17 @@ export default function EditProfile() {
               setShowDocModal(true);
             }}
           />
+          {userType === "contractor" && (
+            <div className="mt-4 text-end">
+              <button
+                className="btn px-4 py-2 rounded-pill fw-bold"
+                style={{ background: "#0A7C6E", borderColor: "#0A7C6E", color: "white" }}
+                onClick={() => setActiveTab("rates")}
+              >
+                Proceed to My Rates <i className="fa-solid fa-arrow-right ms-2"></i>
+              </button>
+            </div>
+          )}
         </div>
       )}
 

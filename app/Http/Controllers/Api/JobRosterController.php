@@ -38,6 +38,7 @@ use App\Services\InvoiceService;
 use App\Services\ContractorInvoiceService;
 use Illuminate\Support\Facades\Storage;
 use App\Mail\ContractorJobInvoice;
+use App\Mail\JobSplitNotificationMail;
 use App\Mail\RateUpdateRequestMail;
 use App\Models\ContractorChargeRate;
 use Stripe\PaymentLink;
@@ -5654,8 +5655,9 @@ public function update_shift_breakdown(Request $request)
     $request->validate([
         'roster_id' => 'required|integer',
         'shifts'    => 'required|array|min:1',
-        'shifts.*.start' => 'required|date',
-        'shifts.*.end'   => 'required|date',
+        'shifts.*.start'    => 'required|date',
+        'shifts.*.end'      => 'required|date',
+        'shifts.*.guard_id' => 'nullable|integer',
     ]);
 
     try {
@@ -5669,11 +5671,8 @@ public function update_shift_breakdown(Request $request)
             ], 200);
         }
 
-        // Cast the original row to an array once — used as the base
-        // for every row (existing update + any newly created ones),
-        // so every other column ("all data same") is preserved automatically.
         $originalRosterArray = (array) $originalRoster;
-        unset($originalRosterArray['id']); // never carry the id over when cloning
+        unset($originalRosterArray['id']);
 
         $bucketColumnMap = [
             'morning'          => 'morning_hours',
@@ -5692,7 +5691,6 @@ public function update_shift_breakdown(Request $request)
             $start = $shift['start'];
             $end   = $shift['end'];
 
-            // Recalculate the hour buckets for this specific start/end
             $hours = getShiftHours($start, $end);
 
             $totalHours = 0;
@@ -5704,9 +5702,9 @@ public function update_shift_breakdown(Request $request)
             }
 
             $shiftData = array_merge($bucketData, [
-                'start' => $start,
-                'end'   => $end,
-                'hours' => $totalHours,
+                'start'       => $start,
+                'end'         => $end,
+                'hours'       => $totalHours,
                 'assigned_to' => $shift['guard_id'] ?? null,
             ]);
 
@@ -5718,14 +5716,47 @@ public function update_shift_breakdown(Request $request)
 
                 $updatedRosters[] = DB::table('job_rosters')->where('id', $originalRoster->id)->first();
             } else {
-                // Clone the original row's data, override start/end/hours,
-                // insert as a brand new roster row
+             
                 $newRosterData = array_merge($originalRosterArray, $shiftData);
 
                 $newId = DB::table('job_rosters')->insertGetId($newRosterData);
                 $updatedRosters[] = DB::table('job_rosters')->where('id', $newId)->first();
             }
         }
+
+        // ============ NEW: Job Split Notification email to client ============
+        try {
+            $site = DB::table('sites')->where('id', $originalRoster->site_id)->first();
+
+            $client = DB::table('users')->where('id', $originalRoster->created_by)->first();
+
+            // Collect guard ids to resolve names in one query (avoid N+1)
+            $guardIds = collect($updatedRosters)->pluck('assigned_to')->filter()->unique()->values();
+            $guardNames = $guardIds->isNotEmpty()
+                ? DB::table('users')->whereIn('id', $guardIds)->pluck('name', 'id')
+                : collect();
+
+            $shiftRows = collect($updatedRosters)->map(function ($roster) use ($guardNames) {
+                return [
+                    'start'      => \Carbon\Carbon::parse($roster->start)->format('d M Y, g:i A'),
+                    'end'        => \Carbon\Carbon::parse($roster->end)->format('d M Y, g:i A'),
+                    'hours'      => $roster->hours,
+                    'guard_name' => $roster->assigned_to ? ($guardNames[$roster->assigned_to] ?? null) : null,
+                ];
+            })->toArray();
+
+            if ($client && !empty($client->email)) {
+                Mail::to($client->email)->send(new JobSplitNotificationMail(
+                    $client->name ?? 'Client',
+                    $site->address ?? null,
+                    count($updatedRosters),
+                    $shiftRows
+                ));
+            }
+        } catch (\Exception $e) {
+            Log::error('Failed to send job split notification email', ['error' => $e->getMessage()]);
+        }
+        // ============ END NEW ============
 
         return response()->json([
             'success' => true,
@@ -5744,22 +5775,6 @@ public function update_shift_breakdown(Request $request)
         ], 500);
     }
 }
-
-/**
- * Add these methods to your controller. Add these use statements at the top:
- *
- *   use App\Mail\ChargeRateRequestMail;
- *   use App\Mail\ChargeRateRejectedMail;
- *   use App\Models\ContractorChargeRate;
- *   use Illuminate\Support\Facades\Mail;
- *   use Illuminate\Support\Facades\Log;
- *
- * Routes:
- *   Route::post('request-charge-rate', [YourController::class, 'request_charge_rate']);
- *   Route::get('charge-rate-requests', [YourController::class, 'list_charge_rate_requests']);
- *   Route::post('accept-charge-rate-request/{id}', [YourController::class, 'accept_charge_rate_request']);
- *   Route::post('reject-charge-rate-request/{id}', [YourController::class, 'reject_charge_rate_request']);
- */
 
 // All rate fields shared across submit/accept/email — single source of truth
 private function chargeRateFieldLabels(): array
@@ -5805,91 +5820,6 @@ private function chargeRateFieldLabels(): array
     ];
 }
 
-/**
- * STEP 1 — Contractor submits the form.
- * Saves a pending row in charge_rate_requests and emails admins.
- */
-// public function request_charge_rate(Request $request)
-// {
-//     $request->validate([
-//         'user_id' => 'required|integer',
-//         'state'   => 'required|string',
-//     ]);
-
-//     try {
-//         $contractor = DB::table('users')->where('id', $request->user_id)->first();
-
-//         if (!$contractor) {
-//             return response()->json([
-//                 'success' => false,
-//                 'message' => 'Contractor not found.',
-//                 'data' => null,
-//             ], 200);
-//         }
-
-//         $rateFieldLabels = $this->chargeRateFieldLabels();
-
-//         // Build the row to insert — every rate field defaults to 0 if not sent
-//         $insertData = [
-//             'user_id'        => $request->user_id,
-//             'title'          => $request->title,
-//             'state'          => $request->state,
-//             'effective_from' => $request->effective_from,
-//             'status'         => 'pending',
-//             'created_at'     => now(),
-//             'updated_at'     => now(),
-//         ];
-
-//         $rateRows = []; // for the email
-//         foreach ($rateFieldLabels as $column => $label) {
-//             $value = $request->has($column) ? (float) $request->input($column) : 0;
-//             $insertData[$column] = $value;
-//             $rateRows[] = ['label' => $label, 'value' => $value];
-//         }
-
-//         $requestId = DB::table('charge_rate_requests')->insertGetId($insertData);
-
-//         // Email admins
-//         $adminEmails = DB::table('users')
-//             ->where('user_type', 'admin')
-//             ->whereNotNull('email')
-//             ->pluck('email')
-//             ->toArray();
-
-//         if (!empty($adminEmails)) {
-//             try {
-//                 Mail::to($adminEmails)->send(new ChargeRateRequestMail(
-//                     $contractor->name ?? 'Contractor',
-//                     $contractor->email ?? '',
-//                     $request->title,
-//                     $request->state,
-//                     $rateRows
-//                 ));
-//             } catch (\Exception $e) {
-//                 Log::error('Failed to send charge rate request email', ['error' => $e->getMessage()]);
-//             }
-//         } else {
-//             Log::warning('No admin emails found for charge rate request notification.');
-//         }
-
-//         return response()->json([
-//             'success' => true,
-//             'message' => 'Charge rate request submitted for admin review.',
-//             'data' => [
-//                 'charge_rate_request_id' => $requestId,
-//                 'status' => 'pending',
-//             ],
-//         ], 200);
-
-//     } catch (\Exception $e) {
-//         return response()->json([
-//             'success' => false,
-//             'message' => 'An error occurred while submitting the charge rate request.',
-//             'error' => $e->getMessage(),
-//             'trace' => $e->getTraceAsString(),
-//         ], 500);
-//     }
-// }
 public function request_charge_rate(Request $request)
 {
     $request->validate([

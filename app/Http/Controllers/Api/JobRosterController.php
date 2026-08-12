@@ -5707,6 +5707,7 @@ public function update_shift_breakdown(Request $request)
                 'start' => $start,
                 'end'   => $end,
                 'hours' => $totalHours,
+                'assigned_to' => $shift['guard_id'] ?? null,
             ]);
 
             if ($index === 0) {

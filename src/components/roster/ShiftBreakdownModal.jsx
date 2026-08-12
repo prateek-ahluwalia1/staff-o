@@ -4,6 +4,8 @@ import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { toast } from "react-toastify";
 import useSubmit from "../../hooks/useSubmit";
+import Select from "react-select";
+import { useNavigate } from "react-router-dom";
 
 const API_DATE_FORMAT = "yyyy-MM-dd HH:mm";
 const DISPLAY_DATETIME_FORMAT = "yyyy-MM-dd HH:mm";
@@ -128,9 +130,19 @@ export function generateSuggestedBreakdown(startDate, endDate) {
   return segments;
 }
 
-export default function ShiftBreakdownModal({ modal, closeModal, onSuccess }) {
+export default function ShiftBreakdownModal({ modal, closeModal, onSuccess, staffOptions = [] }) {
   const { site, shift } = modal || {};
   const { submit: saveBreakdown, loading: submitting } = useSubmit({ isAuth: true });
+  const navigate = useNavigate();
+
+  const selectStaffOptions = useMemo(() => {
+    const opts = staffOptions.map(staff => ({
+      value: staff.id,
+      label: staff.name
+    }));
+    opts.push({ value: 'ADD_NEW', label: '+ Add New Staff' });
+    return opts;
+  }, [staffOptions]);
 
   const startDate = useMemo(() => shift?.startDate || parseShiftDate(shift?.start), [shift]);
   const endDate = useMemo(() => shift?.endDate || parseShiftDate(shift?.end), [shift]);
@@ -148,6 +160,16 @@ export default function ShiftBreakdownModal({ modal, closeModal, onSuccess }) {
 
   // Initialize custom segments state from suggested breakdown or 2 initial parts
   const [customSegments, setCustomSegments] = useState([]);
+  const [staffAssignments, setStaffAssignments] = useState({});
+
+  const handleStaffChange = (segId, option) => {
+    if (option?.value === 'ADD_NEW') {
+      closeModal();
+      navigate('/manage-staff');
+      return;
+    }
+    setStaffAssignments(prev => ({ ...prev, [segId]: option ? option.value : null }));
+  };
 
   useEffect(() => {
     if (suggestedList.length > 0 && customSegments.length === 0) {
@@ -277,6 +299,7 @@ export default function ShiftBreakdownModal({ modal, closeModal, onSuccess }) {
       start: b.start,
       end: b.end,
       hours: b.hours,
+      guard_id: staffAssignments[b.id] || null,
     }));
 
     const payload = {
@@ -391,9 +414,21 @@ export default function ShiftBreakdownModal({ modal, closeModal, onSuccess }) {
                       <div className="text-muted small">Segment {idx + 1}</div>
                     </div>
                   </div>
-                  <span className="badge bg-light text-dark border px-3 py-2 fw-bold fs-6">
-                    {seg.hours} hrs
-                  </span>
+                  <div className="d-flex flex-column align-items-end gap-2">
+                    <span className="badge bg-light text-dark border px-3 py-2 fw-bold fs-6">
+                      {seg.hours} hrs
+                    </span>
+                    <Select
+                      className="text-start"
+                      classNamePrefix="select"
+                      placeholder="Unassigned"
+                      isClearable
+                      options={selectStaffOptions}
+                      value={selectStaffOptions.find(o => o.value === staffAssignments[seg.id]) || null}
+                      onChange={(option) => handleStaffChange(seg.id, option)}
+                      styles={{ container: base => ({ ...base, minWidth: '160px' }) }}
+                    />
+                  </div>
                 </div>
               ))}
             </div>
@@ -454,13 +489,14 @@ export default function ShiftBreakdownModal({ modal, closeModal, onSuccess }) {
                             selected={seg.endDateObj}
                             onChange={(d) => d && handleCustomChange(idx, "endDateObj", d)}
                             dateFormat="dd/MM/yyyy"
-                            minDate={startDate}
+                            minDate={seg.startDateObj || startDate}
                             maxDate={endDate}
-                            className="form-control form-control-sm shadow-sm"
+                            className={`form-control form-control-sm shadow-sm ${segEval && !segEval.isValid ? "is-invalid" : ""}`}
                           />
                           <CompactTime
                             value={seg.endTimeStr}
                             onChange={(val) => handleCustomChange(idx, "endTimeStr", val)}
+                            containerClass={segEval && !segEval.isValid ? "border-danger" : ""}
                           />
                           {segEval?.crossesMidnight && (
                             <span
@@ -472,6 +508,20 @@ export default function ShiftBreakdownModal({ modal, closeModal, onSuccess }) {
                             </span>
                           )}
                         </div>
+                      </div>
+
+                      {/* Staff Assignment */}
+                      <div className="d-flex flex-column flex-sm-row align-items-sm-center gap-2 flex-fill">
+                        <span className="small text-muted fw-semibold" style={{ minWidth: "40px" }}>Staff:</span>
+                        <Select
+                          className="text-start w-100"
+                          classNamePrefix="select"
+                          placeholder="Unassigned"
+                          isClearable
+                          options={selectStaffOptions}
+                          value={selectStaffOptions.find(o => o.value === staffAssignments[seg.id]) || null}
+                          onChange={(option) => handleStaffChange(seg.id, option)}
+                        />
                       </div>
                     </div>
 

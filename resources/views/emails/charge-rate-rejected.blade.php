@@ -25,7 +25,7 @@
         <img src="https://apis.staffoo.com.au/uploads/staffologo.png" alt="Staffoo Logo">
     </div>
     <div class="header">
-        <h1>Charge Rate Request Update</h1>
+        <h1>Required Updated Charge Rates</h1>
     </div>
     <div class="body">
         <p>Hi {{ $contractorName }},</p>
@@ -33,7 +33,7 @@
         <p>
             Your charge rate request <strong>"{{ $title }}"</strong> for
             <strong>{{ strtoupper($state) }}</strong> has been reviewed and was
-            <strong>not approved</strong> by our admin team.
+            <strong>not approved</strong> by Staffoo.
         </p>
 
         @if(!empty($reviewNote))
@@ -43,7 +43,8 @@
             </div>
         @endif
 
-        <p>You're welcome to submit an updated request with revised rates at any time.</p>
+        <p>Your account is being placed on hold until revised rates are submitted and reviewed.</p><br>
+        <p>You are welcome to resubmit an updated request with revised rates at any time.</p>
 
         <p>Thank you,<br>STAFFOO Team</p>
     </div>

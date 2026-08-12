@@ -1021,7 +1021,7 @@ const RatesList = ({ forcedType } = {}) => {
               {reviewRequest.request.reason && (
                 <div className="bg-white rounded-3 p-3 mb-4 shadow-sm border">
                   <h6 className="fw-bold text-dark mb-2 small text-uppercase" style={{ color: "#64748b", letterSpacing: "0.5px" }}>
-                    <i className="fa fa-comment-alt me-1" style={{ color: "#0A7C6E" }}></i> Contractor's Reason
+                    <i className="fa fa-comment-alt me-1" style={{ color: "#0A7C6E" }}></i> Resource Partner's Reason
                   </h6>
                   <p className="mb-0 text-dark" style={{ fontSize: "13.5px" }}>{reviewRequest.request.reason}</p>
                 </div>

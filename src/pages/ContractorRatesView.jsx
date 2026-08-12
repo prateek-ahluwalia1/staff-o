@@ -178,7 +178,7 @@ const ContractorRatesView = ({ selectedStates = [] }) => {
         <div className="text-center p-5 bg-white rounded-4 shadow-sm border" style={{ maxWidth: "400px" }}>
           <div className="mb-3"><i className="fa fa-lock text-danger" style={{ fontSize: "2.5rem" }}></i></div>
           <h3 className="text-dark fw-bold mb-2">Access Denied</h3>
-          <p className="text-muted mb-0">This portal is restricted to active contractors only.</p>
+          <p className="text-muted mb-0">This portal is restricted to active Resource Partners only.</p>
         </div>
       </div>
     );
@@ -454,7 +454,7 @@ const ContractorRatesView = ({ selectedStates = [] }) => {
               <span className="icon-badge"><i className="fa fa-clock"></i></span>
               <div>
                 <h6>Resource Partner Rates</h6>
-                <span>Metro vs Regional, by time slot — {rate?.title || "Contractor Rate"}</span>
+                <span>Metro vs Regional, by time slot — {rate?.title || "Resource Partner Rate"}</span>
               </div>
             </div>
             {SLOT_ROWS.map((row) => {

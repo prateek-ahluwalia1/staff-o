@@ -5943,26 +5943,17 @@ public function request_charge_rate(Request $request)
             ];
         }
 
-        // Email admins — one email covering every state in this submission
-        $adminEmails = DB::table('users')
-            ->where('user_type', 'admin')
-            ->whereNotNull('email')
-            ->pluck('email')
-            ->toArray();
-
-        if (!empty($adminEmails)) {
-            try {
-                Mail::to($adminEmails)->send(new ChargeRateRequestMail(
-                    $contractor->name ?? 'Contractor',
-                    $contractor->email ?? '',
-                    $emailStateBlocks,
-                    $request->notes
-                ));
-            } catch (\Exception $e) {
-                Log::error('Failed to send charge rate request email', ['error' => $e->getMessage()]);
-            }
-        } else {
-            Log::warning('No admin emails found for charge rate request notification.');
+       $adminEmails = ['admin@staffoo.com.au'];
+ 
+        try {
+            Mail::to($adminEmails)->send(new ChargeRateRequestMail(
+                $contractor->name ?? 'Contractor',
+                $contractor->email ?? '',
+                $emailStateBlocks,
+                $request->notes
+            ));
+        } catch (\Exception $e) {
+            Log::error('Failed to send charge rate request email', ['error' => $e->getMessage()]);
         }
 
         return response()->json([

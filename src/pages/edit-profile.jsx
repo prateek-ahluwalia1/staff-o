@@ -140,6 +140,7 @@ const PremiumModal = ({ open, onClose, children, title, wide = false }) => {
         .modal-body {
           padding: 24px;
           overflow-y: auto;
+          overflow-x: hidden;
           flex: 1;
           color: var(--modal-text);
         }
@@ -1636,7 +1637,7 @@ export default function EditProfile() {
 
       {/* Document Modal */}
       <PremiumModal open={showDocModal} onClose={() => setShowDocModal(false)} wide title={selectedDoc ? "Update Document" : "Add New Document"}>
-        <form onSubmit={handleDocSubmit} style={{ maxHeight: "80vh", overflowY: "auto" }}>
+        <form onSubmit={handleDocSubmit} className="d-flex flex-column gap-1">
           {/* Document Type */}
           <div className="mb-3">
             <label className="form-label fw-semibold">Document Type</label>
@@ -1792,11 +1793,11 @@ export default function EditProfile() {
 
               <div className="mb-3 mt-3">
                 <label className="form-label fw-semibold">Document/Image <span className="text-danger">*</span></label>
-                <div className="position-relative border rounded p-3 text-center bg-light" style={{ minHeight: "200px", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <div className="position-relative border rounded p-3 text-center bg-light" style={{ minHeight: "200px", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
                   {docForm.file_url ? (
                     <>
                       {docForm.file_url.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
-                        <img src={docForm.file_url.startsWith("http") ? docForm.file_url : `${apiURL}staff_documents/${docForm.file_url}`} alt="Preview" style={{ width: "100%", maxHeight: "200px", objectFit: "contain", borderRadius: "8px", opacity: uploadLoading ? 0.3 : 1 }} />
+                        <img src={docForm.file_url.startsWith("http") ? docForm.file_url : `${apiURL}staff_documents/${docForm.file_url}`} alt="Preview" style={{ maxWidth: "100%", maxHeight: "200px", objectFit: "contain", borderRadius: "8px", opacity: uploadLoading ? 0.3 : 1 }} />
                       ) : (
                         <div className="text-center">
                           <i className="fa-solid fa-file-pdf fa-3x text-muted mb-3"></i>

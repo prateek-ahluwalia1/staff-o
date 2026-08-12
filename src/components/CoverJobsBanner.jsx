@@ -25,7 +25,7 @@ export default function CoverJobsBanner() {
       marginBottom: '20px',
       boxShadow: '0 4px 6px rgba(10, 124, 110, 0.2)'
     }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', }}>
         <i className="fa-solid fa-briefcase fs-4"></i>
         <div>
           <strong style={{ fontSize: '1rem', display: 'block' }}>You have {availableJobsCount} Cover {availableJobsCount === 1 ? 'Job' : 'Jobs'} Available!</strong>

@@ -122,6 +122,28 @@ const ContractorRatesView = ({ selectedStates = [] }) => {
       return;
     }
 
+    let hasBlank = false;
+    for (const stateVal of selectedStates) {
+      const stateForm = requestForm[stateVal] || {};
+      for (const row of SLOT_ROWS) {
+        const mk = `def_${row.metro}`;
+        const rk = `def_${row.reg}`;
+        if (
+          stateForm[mk] === "" || stateForm[mk] === undefined ||
+          stateForm[rk] === "" || stateForm[rk] === undefined
+        ) {
+          hasBlank = true;
+          break;
+        }
+      }
+      if (hasBlank) break;
+    }
+
+    if (hasBlank) {
+      toast.error("Please enter rates for all selected states.");
+      return;
+    }
+
     const ratesPayload = selectedStates.map(stateVal => {
       const stateObj = {
         title: `${STATE_NAME_MAP[stateVal] || stateVal} My Charge Rates`,
@@ -576,6 +598,9 @@ const ContractorRatesView = ({ selectedStates = [] }) => {
                                       placeholder="0.00"
                                       value={currentForm[metroKey] ?? ""}
                                       onChange={handleRequestFormChange}
+                                      onKeyDown={(e) => {
+                                        if (['e', 'E', '+', '-'].includes(e.key)) e.preventDefault();
+                                      }}
                                     />
                                   </div>
                                 </div>
@@ -595,6 +620,9 @@ const ContractorRatesView = ({ selectedStates = [] }) => {
                                       placeholder="0.00"
                                       value={currentForm[regKey] ?? ""}
                                       onChange={handleRequestFormChange}
+                                      onKeyDown={(e) => {
+                                        if (['e', 'E', '+', '-'].includes(e.key)) e.preventDefault();
+                                      }}
                                     />
                                   </div>
                                 </div>

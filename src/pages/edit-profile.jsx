@@ -1210,8 +1210,11 @@ export default function EditProfile() {
           flex-shrink: 0;
         }
       `}</style>
+      {userdata && (
+        userType === "contractor" ||
+        (userType === "staff" && Number(userdata?.data?.user_id ?? userdata?.user_id) === 1)
+      ) && <CoverJobsBanner />}
 
-      <CoverJobsBanner />
 
       {/* Profile Hero Header */}
       <div className="profile-hero">

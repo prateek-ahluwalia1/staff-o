@@ -104,10 +104,9 @@ class StripeWebhookController extends Controller
         // 2. Create the transaction record
         // No charge_id yet — a charge only exists once the PaymentIntent is captured
         try {
-            $rosterIds = is_array($rosterId) ? $rosterId : [(int) $rosterId];
             Transaction::create([
                 'user_id'                   => $updatedRoster->created_by, // client who authorized payment
-                'job_roster_id'             => $rosterIds,
+                'job_roster_id'             => json_encode([(int) $rosterId]),
                 'payment_intent_id'         => $paymentIntent->id,
                 'charge_id'                 => null,
                 'amount'                    => $baseTotal,

@@ -9,6 +9,7 @@ use App\Http\Resources\UserEditResource;
 use App\Models\Contractor;
 use App\Models\Document;
 use App\Models\DocumentCategory;
+use App\Models\JobRoster;
 use App\Models\Onboarding;
 use App\Models\Staff;
 use App\Models\Superannuation;
@@ -713,42 +714,6 @@ private function calculateProfileCompletion(User $user): int
         return response()->json(['message' => "Staff Documents Updated Successfully!", 'code' => 200, 'success' => true]);
     }
 
-    // public function editUser($id)
-    // {
-    //     $user = User::findOrFail($id);
-
-    //     if ($user->user_type === 'customer') {
-    //         $user->load(['customer']);
-    //     } elseif ($user->user_type === 'contractor') {
-    //         $user->load('contractor', 'documents');
-    //     } elseif ($user->user_type === 'staff') {
-    //         $user->load('staff', 'documents');
-    //     } elseif ($user->user_type === 'admin'){
-    //        $adminUser = User::with(['documents'])->find(1);
-    //     }
-
-    //     $percentage = $this->calculateProfileCompletion($user);
-    //     // $verificationPoints = $this->documentsPoints($user);
-
-    //     if($user->user_type == 'contractor'){
-    //         if ($percentage === 100) {
-    //             $user->is_active = 1;
-    //             $user->save();
-    //         }else{
-    //             $user->is_active = 0;
-    //             $user->save();
-    //         }
-    //     }else{
-    //         if ($percentage === 100 && (int) $user->is_active !== 1) {
-    //             $user->is_active = 1;
-    //             $user->save();
-    //         }
-    //     }
-
-    //     $user->profile_completion_percentage = $percentage;
-
-    //     return response()->json(['success' => true, 'code' => 200, 'data' => $user, 'business' => $adminUser ?? null]);
-    // }
     public function editUser($id)
     {
         $user = User::findOrFail($id);
@@ -812,6 +777,62 @@ private function calculateProfileCompletion(User $user): int
         }
     }
         // ============ END NEW ============
+
+         // ============ NEW: available jobs count ============
+    // Simple count: unassigned + unaccepted upcoming jobs matching the
+    // user's allowed states (staff use Staffoo/contractor id 1's states,
+    // same as getAvailableJobs). No daily hour/job cap filtering here.
+    $availableJobsCount = 0;
+ 
+    $allowedStatesForCount = $user->user_type === 'staff'
+        ? User::where('id', 1)->value('states_allowed')
+        : $user->states_allowed;
+ 
+    if (is_string($allowedStatesForCount)) {
+        $allowedStatesForCount = json_decode($allowedStatesForCount, true) ?? [];
+    }
+ 
+    if (is_array($allowedStatesForCount) && !empty($allowedStatesForCount)) {
+        $abbrMap = [
+            'victoria'                      => ['victoria', 'vic'],
+            'new south wales'                => ['new south wales', 'nsw'],
+            'queensland'                     => ['queensland', 'qld'],
+            'south australia'                => ['south australia', 'sa'],
+            'western australia'              => ['western australia', 'wa'],
+            'tasmania'                       => ['tasmania', 'tas'],
+            'australian capital territory'   => ['australian capital territory', 'act'],
+            'northern territory'             => ['northern territory', 'nt'],
+            'punjab'                         => ['punjab'],
+        ];
+ 
+        $states = [];
+        foreach ($allowedStatesForCount as $allowedState) {
+            $normalized = strtolower(trim($allowedState));
+            $matched = false;
+ 
+            foreach ($abbrMap as $variants) {
+                if (in_array($normalized, $variants, true)) {
+                    $states = array_merge($states, $variants);
+                    $matched = true;
+                    break;
+                }
+            }
+ 
+            if (!$matched) {
+                $states[] = $allowedState;
+            }
+        }
+        $states = array_unique($states);
+ 
+        $availableJobsCount = JobRoster::whereNull('assigned_to')
+            ->whereNull('accepted_by')
+            ->where('start', '>', now())
+            ->whereHas('site', function ($q) use ($states) {
+                $q->whereIn('state', $states);
+            })
+            ->count();
+    }
+    // ============ END NEW ============
     
         return response()->json([
             'success' => true,
@@ -819,6 +840,7 @@ private function calculateProfileCompletion(User $user): int
             'data' => $user,
             'business' => $adminUser ?? null,
             'charge_rate' => $chargeRateComplete,
+            'available_jobs_count' => $availableJobsCount,
         ]);
     }
     

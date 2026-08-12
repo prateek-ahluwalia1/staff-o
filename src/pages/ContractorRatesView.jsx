@@ -15,39 +15,31 @@ const STATE_NAME_MAP = {
   act: "Australian Capital Territory", nt: "Northern Territory",
 };
 
-const CONTRACTOR_STATES = [
-  { value: "nsw", label: "New South Wales (NSW)" },
-  { value: "vic", label: "Victoria (VIC)" },
-  { value: "qld", label: "Queensland (QLD)" },
-  { value: "wa", label: "Western Australia (WA)" },
-  { value: "sa", label: "South Australia (SA)" },
-  { value: "tas", label: "Tasmania (TAS)" },
-];
-
 // 5-row grid — day and night rates for weekends are mirrored in the payload
 const SLOT_ROWS = [
   { label: "Mon–Fri Day", sub: "06:00–18:00", metro: "metro_mon_to_fri_day_rate", reg: "reg_mon_to_fri_day_rate" },
   { label: "Mon–Fri Night", sub: "18:00–06:00", metro: "metro_mon_to_fri_night_rate", reg: "reg_mon_to_fri_night_rate" },
-  { label: "Saturday", sub: "Day rate", metro: "metro_sat_day_rate", reg: "reg_sat_day_rate" },
-  { label: "Sunday", sub: "Day rate", metro: "metro_sun_day_rate", reg: "reg_sun_day_rate" },
-  { label: "Public Holiday", sub: "Day rate", metro: "metro_pub_holi_day_rate", reg: "reg_pub_holi_day_rate" },
+  { label: "Saturday", sub: "", metro: "metro_sat_day_rate", reg: "reg_sat_day_rate" },
+  { label: "Sunday", sub: "", metro: "metro_sun_day_rate", reg: "reg_sun_day_rate" },
+  { label: "Public Holiday", sub: "", metro: "metro_pub_holi_day_rate", reg: "reg_pub_holi_day_rate" },
 ];
-
 
 const fmt = (v) => `$${Number(v || 0).toFixed(2)}`;
 
-const makeBlankForm = () => {
-  const f = { title: "", state: "" };
-  ["def", "eba"].forEach((cat) =>
+const makeBlankForm = (states = []) => {
+  const f = {};
+  states.forEach(s => {
+    f[s] = {};
     SLOT_ROWS.forEach((row) => {
-      f[`${cat}_${row.metro}`] = "";
-      f[`${cat}_${row.reg}`] = "";
-    })
-  );
+      f[s][`def_${row.metro}`] = "";
+      f[s][`def_${row.reg}`] = "";
+    });
+  });
+  f.reason = "";
   return f;
 };
 
-const ContractorRatesView = () => {
+const ContractorRatesView = ({ selectedStates = [] }) => {
   const { userdata } = useSelector((state) => state.auth || {});
   const userId = userdata?.data?.id || userdata?.id;
   const userType = userdata?.data?.user_type || userdata?.user_type;
@@ -64,12 +56,11 @@ const ContractorRatesView = () => {
 
   const { submit, loading: submitting } = useSubmit({ isAuth: true });
 
-  const [activeCat, setActiveCat] = useState("def");
   const [selectedId, setSelectedId] = useState(null);
 
   const [showRequestModal, setShowRequestModal] = useState(false);
-  const [requestCat, setRequestCat] = useState("def");
-  const [requestForm, setRequestForm] = useState(makeBlankForm);
+  const [activeStateTab, setActiveStateTab] = useState(null);
+  const [requestForm, setRequestForm] = useState(() => makeBlankForm(selectedStates));
 
   const rows = useMemo(() => {
     if (!data) return [];
@@ -87,63 +78,96 @@ const ContractorRatesView = () => {
 
   // ── Open modal with a blank fresh form ──────────────────────────────────
   const handleOpenRequestModal = () => {
-    setRequestForm(makeBlankForm());
-    setRequestCat("def");
+    setRequestForm(makeBlankForm(selectedStates));
+    setActiveStateTab(selectedStates[0] || null);
     setShowRequestModal(true);
   };
 
   const handleRequestFormChange = (e) => {
     const { id, value } = e.target;
-    setRequestForm((prev) => ({ ...prev, [id]: value }));
+    if (id === "reason") {
+      setRequestForm((prev) => ({ ...prev, reason: value }));
+    } else {
+      setRequestForm((prev) => ({
+        ...prev,
+        [activeStateTab]: {
+          ...prev[activeStateTab],
+          [id]: value
+        }
+      }));
+    }
+  };
+
+  const handleCopyToAll = () => {
+    if (!activeStateTab) return;
+    const currentRates = requestForm[activeStateTab];
+    setRequestForm(prev => {
+      const next = { ...prev };
+      selectedStates.forEach(s => {
+        if (s !== activeStateTab) {
+          next[s] = { ...currentRates };
+        }
+      });
+      return next;
+    });
+    toast.success("Rates copied to all other states!");
   };
 
   // ── Submit ───────────────────────────────────────────────────────────────
   const handleRequestSubmit = async (e) => {
     e.preventDefault();
 
-    if (!requestForm.state) {
-      toast.error("Please select a state for your rate request.");
+    if (!selectedStates || selectedStates.length === 0) {
+      toast.error("You must have selected states in your profile before requesting rates.");
       return;
     }
-    if (!requestForm.title.trim()) {
-      toast.error("Please enter a title for your rate request.");
-      return;
-    }
-    const payload = {
-      user_id: userId,
-      title: requestForm.title.trim(),
-      state: requestForm.state,
-    };
 
-    // Auto-mirror night rates for Sat, Sun, Pub Holi
-    ["def", "eba"].forEach((cat) =>
+    const ratesPayload = selectedStates.map(stateVal => {
+      const stateObj = {
+        title: `${STATE_NAME_MAP[stateVal] || stateVal} Resource Partner Rates`,
+        state: stateVal,
+      };
+
+      // Auto-mirror night rates for Sat, Sun, Pub Holi
       SLOT_ROWS.forEach((row) => {
-        const mk = `${cat}_${row.metro}`;
-        const rk = `${cat}_${row.reg}`;
-        payload[mk] = requestForm[mk] !== "" ? Number(requestForm[mk]) : undefined;
-        payload[rk] = requestForm[rk] !== "" ? Number(requestForm[rk]) : undefined;
+        const mk = `def_${row.metro}`;
+        const rk = `def_${row.reg}`;
+        const stateForm = requestForm[stateVal] || {};
+        stateObj[mk] = stateForm[mk] !== "" && stateForm[mk] !== undefined ? Number(stateForm[mk]) : undefined;
+        stateObj[rk] = stateForm[rk] !== "" && stateForm[rk] !== undefined ? Number(stateForm[rk]) : undefined;
 
         // Auto-mirror logic
         const metroNight = row.metro.replace("_day_", "_night_");
         const regNight = row.reg.replace("_day_", "_night_");
         if (metroNight !== row.metro) {
-          payload[`${cat}_${metroNight}`] = payload[mk];
-          payload[`${cat}_${regNight}`] = payload[rk];
+          stateObj[`def_${metroNight}`] = stateObj[mk];
+          stateObj[`def_${regNight}`] = stateObj[rk];
         }
-      })
-    );
+      });
+
+      return stateObj;
+    });
+
+    const finalPayload = {
+      user_id: userId,
+      rates: ratesPayload,
+    };
+
+    if (requestForm.reason) {
+      finalPayload.notes = requestForm.reason;
+    }
 
     try {
-      const res = await submit("api/request-charge-rate", payload, { method: "POST" });
+      const res = await submit("api/request-charge-rate", finalPayload, { method: "POST" });
       if (res && (res.success || res.code === 200 || res?.data?.charge_rate_request_id)) {
-        toast.success(res?.message || "Rate update request submitted for Admin review!");
+        toast.success(res.message || "Rate update requests submitted for Admin review!");
         setShowRequestModal(false);
-        setRequestForm(makeBlankForm());
+        setRequestForm(makeBlankForm(selectedStates));
       } else {
-        toast.error(res?.message || "Failed to submit rate update request.");
+        console.error(res?.message || "Failed to submit rate update requests.");
       }
     } catch (err) {
-      toast.error(err?.message || "Failed to submit rate update request.");
+      console.error(err?.message || "Failed to submit rate update request.");
     }
   };
 
@@ -177,8 +201,6 @@ const ContractorRatesView = () => {
       </div>
     );
   }
-
-  // ── Today's date string for min on effective_from ────────────────────────
 
   return (
     <div className="container-fluid p-3 p-md-4 fade-in" style={{ minHeight: "100vh" }}>
@@ -264,13 +286,6 @@ const ContractorRatesView = () => {
         .rate-pill .pill-state { display: inline-block; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; color: var(--teal-dark); background: rgba(10,124,110,0.08); padding: 3px 9px; border-radius: 20px; margin-bottom: 10px; }
         .rate-pill.active::after { content: "\\2713"; position: absolute; top: 14px; right: 14px; width: 20px; height: 20px; border-radius: 50%; background: var(--teal); color: #fff; font-size: 11px; display: flex; align-items: center; justify-content: center; font-weight: 700; box-shadow: 0 2px 6px rgba(10,124,110,0.3); }
 
-        /* ── Tabs ── */
-        .rate-tabs { display: inline-flex; background: #e2e8f0; border-radius: 12px; padding: 6px; margin-bottom: 1.5rem; gap: 6px; box-shadow: inset 0 2px 4px rgba(15,23,42,0.05); }
-        .rate-tab { position: relative; border: none; background: transparent; padding: 10px 24px; border-radius: 8px; font-weight: 700; font-size: 14px; color: var(--muted); transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1); cursor: pointer; outline: none; user-select: none; }
-        .rate-tab:hover:not(.active) { color: var(--ink); background: rgba(255,255,255,0.4); }
-        .rate-tab:active { transform: scale(0.96); }
-        .rate-tab.active { background: var(--surface); color: var(--teal-dark); box-shadow: 0 4px 12px rgba(15,23,42,0.08), 0 1px 2px rgba(15,23,42,0.04); }
-
         /* ── Rate card ── */
         .rate-card { background: var(--surface); border-radius: 18px; border: 1px solid var(--line); box-shadow: 0 8px 24px -8px rgba(15,23,42,0.05); overflow: hidden; }
         .rate-card-head { padding: 20px 24px; border-bottom: 1px solid var(--line); display: flex; align-items: center; gap: 12px; background: #fafbfc; }
@@ -329,28 +344,9 @@ const ContractorRatesView = () => {
         }
         .rr-section-title { font-size: 13px; font-weight: 800; color: #0a1e3a; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
         .rr-section-title i { color: #0A7C6E; }
-        .rr-field-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #7a8caa; margin-bottom: 6px; display: block; }
-        .rr-field-label.required::after { content: " *"; color: #e74c3c; }
-        .rr-text-input {
-          width: 100%; border: 1.5px solid #dce5f0; border-radius: 10px;
-          padding: 0 12px; font-size: 13.5px; font-weight: 600; color: #0a1e3a;
-          height: 40px; outline: none; background: #f8fafd;
-          transition: border-color 0.18s, box-shadow 0.18s, background 0.18s;
-        }
-        .rr-text-input:focus { border-color: #0A7C6E; box-shadow: 0 0 0 3px rgba(10,124,110,0.12); background: #fff; }
-        .rr-select-input {
-          width: 100%; border: 1.5px solid #dce5f0; border-radius: 10px;
-          padding: 0 12px; font-size: 13.5px; font-weight: 600; color: #0a1e3a;
-          height: 40px; outline: none; background: #f8fafd; appearance: none;
-          background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239bafc8' stroke-width='2.5'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
-          background-repeat: no-repeat; background-position: right 12px center;
-          transition: border-color 0.18s, box-shadow 0.18s, background 0.18s;
-          cursor: pointer;
-        }
-        .rr-select-input:focus { border-color: #0A7C6E; box-shadow: 0 0 0 3px rgba(10,124,110,0.12); background-color: #fff; }
-
+        
         /* ── Tab Bar ── */
-        .rr-tab-bar { display: inline-flex; background: #e8edf4; border-radius: 12px; padding: 4px; margin-bottom: 20px; gap: 4px; }
+        .rr-tab-bar { display: inline-flex; background: #e8edf4; border-radius: 12px; padding: 4px; gap: 4px; flex-wrap: wrap; }
         .rr-tab-btn { padding: 9px 22px; border-radius: 9px; border: none; font-size: 13px; font-weight: 700; cursor: pointer; transition: all 0.2s cubic-bezier(0.4,0,0.2,1); display: flex; align-items: center; gap: 7px; color: #6b7a99; background: transparent; }
         .rr-tab-btn.active { background: #fff; color: #0a1e3a; box-shadow: 0 2px 10px rgba(10,30,58,0.12), 0 0 0 1px rgba(10,30,58,0.06); }
         .rr-tab-btn.active i { color: #0A7C6E; }
@@ -444,31 +440,26 @@ const ContractorRatesView = () => {
                   type="button"
                   className={`rate-pill ${r.id === rate?.id ? "active" : ""}`}
                   onClick={() => setSelectedId(r.id)}
-                  aria-label={`Select rate: ${r.title}`}
+                  aria-label={`Select rate: ${r.title || "Resource Partner Rates"}`}
                 >
                   <span className="pill-state">{STATE_NAME_MAP[r.state] || r.state}</span>
-                  <div className="pill-title" title={r.title}>{r.title}</div>
+                  <div className="pill-title" title={r.title || "Resource Partner Rates"}>{r.title || "Resource Partner Rates"}</div>
                 </button>
               ))}
             </div>
           )}
 
-          <div className="rate-tabs">
-            <button type="button" className={`rate-tab ${activeCat === "def" ? "active" : ""}`} onClick={() => setActiveCat("def")}>Award Rates</button>
-            <button type="button" className={`rate-tab ${activeCat === "eba" ? "active" : ""}`} onClick={() => setActiveCat("eba")}>EBA Agreement Rates</button>
-          </div>
-
-          <div className="rate-card">
+          <div className="rate-card mt-2">
             <div className="rate-card-head">
-              <span className="icon-badge"><i className={`fa ${activeCat === "def" ? "fa-clock" : "fa-briefcase"}`}></i></span>
+              <span className="icon-badge"><i className="fa fa-clock"></i></span>
               <div>
-                <h6>{activeCat === "def" ? "Award Rates" : "EBA Agreement Rates"}</h6>
+                <h6>Resource Partner Rates</h6>
                 <span>Metro vs Regional, by time slot — {rate?.title || "Contractor Rate"}</span>
               </div>
             </div>
             {SLOT_ROWS.map((row) => {
-              const metroVal = rate ? rate[`${activeCat}_${row.metro}`] : 0;
-              const regVal = rate ? rate[`${activeCat}_${row.reg}`] : 0;
+              const metroVal = rate ? rate[`def_${row.metro}`] : 0;
+              const regVal = rate ? rate[`def_${row.reg}`] : 0;
               return (
                 <div className="rate-row" key={row.label}>
                   <div className="slot-col">
@@ -514,110 +505,108 @@ const ContractorRatesView = () => {
             >
               <div style={{ flex: 1, overflowY: "auto", padding: "24px 28px 20px" }}>
 
-                {/* ── General Info ── */}
-                <div className="rr-form-section">
-                  <div className="rr-section-title">
-                    <i className="fa fa-info-circle"></i> General Information
-                  </div>
-                  <div className="row g-3">
-                    <div className="col-12 col-md-6">
-                      <label className="rr-field-label required">State</label>
-                      <select
-                        id="state"
-                        className="rr-select-input"
-                        value={requestForm.state}
-                        onChange={handleRequestFormChange}
-                        required
+                {/* ── State Tabs Info ── */}
+                <div className="rr-form-section" style={{ paddingBottom: "16px" }}>
+                  <div className="rr-section-title d-flex justify-content-between align-items-center mb-3">
+                    <div>
+                      <i className="fa fa-map-marked-alt"></i> Select State to Enter Rates
+                    </div>
+                    {selectedStates.length > 1 && activeStateTab && (
+                      <button
+                        type="button"
+                        className="btn btn-sm btn-outline-primary"
+                        style={{ fontSize: "12px", borderRadius: "20px" }}
+                        onClick={handleCopyToAll}
+                        title="Copy these rates to all other states"
                       >
-                        <option value="" disabled>Select state…</option>
-                        {CONTRACTOR_STATES.map((s) => (
-                          <option key={s.value} value={s.value}>{s.label}</option>
-                        ))}
-                      </select>
-                    </div>
-                    {/* Title */}
-                    <div className="col-12 col-md-6">
-                      <label className="rr-field-label required">Rate Title</label>
-                      <input
-                        type="text"
-                        id="title"
-                        className="rr-text-input"
-                        placeholder="e.g. NSW Standard Rate 2026"
-                        value={requestForm.title}
-                        onChange={handleRequestFormChange}
-                        required
-                      />
-                    </div>
+                        <i className="fa fa-copy"></i> Apply to All States
+                      </button>
+                    )}
                   </div>
+
+                  {selectedStates.length > 0 ? (
+                    <div className="rr-tab-bar w-100 mb-2">
+                      {selectedStates.map(s => (
+                        <button
+                          key={s}
+                          type="button"
+                          className={`rr-tab-btn flex-grow-1 justify-content-center ${activeStateTab === s ? "active" : ""}`}
+                          onClick={() => setActiveStateTab(s)}
+                        >
+                          <i className="fa fa-map-marker-alt"></i> {STATE_NAME_MAP[s] || s}
+                        </button>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-muted text-center py-3">No states selected in profile. Please select states in Personal Information to proceed.</div>
+                  )}
+                  {selectedStates.length > 0 && (
+                    <p className="text-muted mt-2 mb-0 text-center" style={{ fontSize: "12.5px" }}>
+                      You are currently editing rates for <strong>{STATE_NAME_MAP[activeStateTab] || activeStateTab}</strong>
+                    </p>
+                  )}
                 </div>
 
-                {/* ── Category Tabs ── */}
-                <div className="rr-tab-bar">
-                  <button type="button" className={`rr-tab-btn ${requestCat === "def" ? "active" : ""}`} onClick={() => setRequestCat("def")}>
-                    <i className="fa fa-clock"></i> Award Rates
-                  </button>
-                  <button type="button" className={`rr-tab-btn ${requestCat === "eba" ? "active" : ""}`} onClick={() => setRequestCat("eba")}>
-                    <i className="fa fa-briefcase"></i> EBA Agreement Rates
-                  </button>
-                </div>
-
-                {/* ── Slot Cards Grid (8 rows) ── */}
-                <div className="row g-3 mb-4">
-                  {SLOT_ROWS.map((row) => {
-                    const metroKey = `${requestCat}_${row.metro}`;
-                    const regKey = `${requestCat}_${row.reg}`;
-                    return (
-                      <div className="col-12 col-sm-6 col-xl-3" key={row.label}>
-                        <div className="rr-slot-card h-100">
-                          <div className="rr-slot-header">
-                            <span className="rr-slot-name">{row.label}</span>
-                            <span className="rr-slot-time">{row.sub}</span>
-                          </div>
-                          <div className="row g-2">
-                            {/* Metro */}
-                            <div className="col-6">
-                              <div className="rr-input-group">
-                                <div className="rr-input-label metro">
-                                  <i className="fa fa-city" style={{ fontSize: "9px", marginRight: "3px" }}></i> Metro
-                                </div>
-                                <div className="rr-input-wrap metro">
-                                  <span className="rr-currency-sign">$</span>
-                                  <input
-                                    type="number" step="0.01" min="0"
-                                    className="rr-field"
-                                    id={metroKey}
-                                    placeholder="0.00"
-                                    value={requestForm[metroKey] ?? ""}
-                                    onChange={handleRequestFormChange}
-                                  />
+                {/* ── Slot Cards Grid (5 rows) ── */}
+                {activeStateTab && (
+                  <div className="row g-3 mb-4 fade-in">
+                    {SLOT_ROWS.map((row) => {
+                      const metroKey = `def_${row.metro}`;
+                      const regKey = `def_${row.reg}`;
+                      const currentForm = requestForm[activeStateTab] || {};
+                      return (
+                        <div className="col-12 col-sm-6 col-xl-4" key={row.label}>
+                          <div className="rr-slot-card h-100">
+                            <div className="rr-slot-header">
+                              <span className="rr-slot-name">{row.label}</span>
+                              <span className="rr-slot-time">{row.sub}</span>
+                            </div>
+                            <div className="row g-2">
+                              {/* Metro */}
+                              <div className="col-6">
+                                <div className="rr-input-group">
+                                  <div className="rr-input-label metro">
+                                    <i className="fa fa-city" style={{ fontSize: "9px", marginRight: "3px" }}></i> Metro
+                                  </div>
+                                  <div className="rr-input-wrap metro">
+                                    <span className="rr-currency-sign">$</span>
+                                    <input
+                                      type="number" step="0.01" min="0"
+                                      className="rr-field"
+                                      id={metroKey}
+                                      placeholder="0.00"
+                                      value={currentForm[metroKey] ?? ""}
+                                      onChange={handleRequestFormChange}
+                                    />
+                                  </div>
                                 </div>
                               </div>
-                            </div>
-                            {/* Regional */}
-                            <div className="col-6">
-                              <div className="rr-input-group">
-                                <div className="rr-input-label regional">
-                                  <i className="fa fa-tree" style={{ fontSize: "9px", marginRight: "3px" }}></i> Regional
-                                </div>
-                                <div className="rr-input-wrap regional">
-                                  <span className="rr-currency-sign">$</span>
-                                  <input
-                                    type="number" step="0.01" min="0"
-                                    className="rr-field"
-                                    id={regKey}
-                                    placeholder="0.00"
-                                    value={requestForm[regKey] ?? ""}
-                                    onChange={handleRequestFormChange}
-                                  />
+                              {/* Regional */}
+                              <div className="col-6">
+                                <div className="rr-input-group">
+                                  <div className="rr-input-label regional">
+                                    <i className="fa fa-tree" style={{ fontSize: "9px", marginRight: "3px" }}></i> Regional
+                                  </div>
+                                  <div className="rr-input-wrap regional">
+                                    <span className="rr-currency-sign">$</span>
+                                    <input
+                                      type="number" step="0.01" min="0"
+                                      className="rr-field"
+                                      id={regKey}
+                                      placeholder="0.00"
+                                      value={currentForm[regKey] ?? ""}
+                                      onChange={handleRequestFormChange}
+                                    />
+                                  </div>
                                 </div>
                               </div>
                             </div>
                           </div>
                         </div>
-                      </div>
-                    );
-                  })}
-                </div>
+                      );
+                    })}
+                  </div>
+                )}
 
                 {/* ── Notes ── */}
                 <div className="rr-reason-section">
@@ -647,7 +636,7 @@ const ContractorRatesView = () => {
                   <button type="button" className="rr-btn-cancel" onClick={() => setShowRequestModal(false)} disabled={submitting}>
                     Cancel
                   </button>
-                  <button type="submit" className="rr-btn-submit" disabled={submitting}>
+                  <button type="submit" className="rr-btn-submit" disabled={submitting || selectedStates.length === 0}>
                     {submitting ? (
                       <>
                         <span className="spinner-border" role="status" aria-hidden="true" style={{ width: "14px", height: "14px", borderWidth: "2px" }}></span>

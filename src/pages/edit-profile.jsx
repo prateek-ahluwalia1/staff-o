@@ -1347,7 +1347,7 @@ export default function EditProfile() {
       )}
 
       {activeTab === "rates" && userType === "contractor" && (
-        <ContractorRatesView />
+        <ContractorRatesView selectedStates={formData.states_allowed || []} />
       )}
 
       {activeTab === "cards" && userType === "customer" && (

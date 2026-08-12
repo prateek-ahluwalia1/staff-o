@@ -114,13 +114,13 @@ const RatesList = ({ forcedType } = {}) => {
   const isPayRate = forcedType === "pay" || (!forcedType && rateTypeFromState === "pay");
 
   const title = isContractor
-    ? "Contractor Charge Rates"
+    ? "Resource Partner Charge Rates"
     : isCharge
       ? "Charge Rates"
       : "Pay Rates";
 
   const firstColumn = isContractor
-    ? "Contractor Rate"
+    ? "Resource Partner Rate"
     : isCharge
       ? "Charged Rate"
       : "Pay Rate";
@@ -737,7 +737,7 @@ const RatesList = ({ forcedType } = {}) => {
           <h1>{title}</h1>
           <p style={{ textTransform: "none" }}>
             {isContractor
-              ? "View contractor charge rates. Approve or reject rate adjustment requests below."
+              ? "View Resource Partner charge rates. Approve or reject rate adjustment requests below."
               : isCharge
                 ? "View and edit charge rates by job level and state."
                 : "View and edit pay rates by job level and state."}
@@ -845,7 +845,7 @@ const RatesList = ({ forcedType } = {}) => {
                   <table className="table table-premium align-middle mb-0">
                     <thead>
                       <tr>
-                        <th>Contractor</th>
+                        <th>Resource Partner</th>
                         <th>Rate / State</th>
                         <th>Type</th>
                         <th>Submitted</th>
@@ -862,7 +862,7 @@ const RatesList = ({ forcedType } = {}) => {
                           <tr key={req.id}>
                             <td>
                               <div className="fw-bold text-dark">
-                                {req.user?.name || req.contractor_name || "Contractor"}
+                                {req.user?.name || req.contractor_name || "Resource Partner"}
                               </div>
                               <small className="text-muted">
                                 {req.user?.contractor?.company_name || req.company_name || ""}
@@ -990,7 +990,7 @@ const RatesList = ({ forcedType } = {}) => {
                 <div className="d-flex align-items-start justify-content-between flex-wrap gap-2 mb-2">
                   <div>
                     <div className="fw-bold text-dark">
-                      {reviewRequest.request.user?.name || "Contractor"}
+                      {reviewRequest.request.user?.name || "Resource Partner"}
                     </div>
                     <small className="text-muted">
                       {reviewRequest.request.user?.contractor?.company_name || ""} &bull; {STATE_NAME_MAP[reviewRequest.request.state] || reviewRequest.request.state || ""}
@@ -1029,12 +1029,12 @@ const RatesList = ({ forcedType } = {}) => {
 
               {/* Proposed rates grid */}
               <div className="row g-4">
-                {RATE_CATEGORIES.map((cat) => (
-                  <div className="col-xl-6" key={cat}>
+                {["def"].map((cat) => (
+                  <div className="col-12" key={cat}>
                     <div className="bg-white rounded-3 p-4 shadow-sm border h-100">
                       <h6 className="fw-bold text-dark mb-4 pb-2 border-bottom">
-                        <i className={`fa ${cat === "def" ? "fa-clock" : "fa-briefcase"} me-2`} style={{ color: "#0A7C6E" }}></i>
-                        {cat === "def" ? "Award Rates" : "EBA Agreement Rates"}
+                        <i className="fa fa-clock me-2" style={{ color: "#0A7C6E" }}></i>
+                        Resource Partner Rates
                       </h6>
                       <div
                         className="d-none d-md-grid mb-3"
@@ -1083,7 +1083,7 @@ const RatesList = ({ forcedType } = {}) => {
                   <textarea
                     rows={3}
                     className="form-control clean-input"
-                    placeholder="Add a note to the contractor about why this request was rejected..."
+                    placeholder="Add a note to the Resource Partner about why this request was rejected..."
                     value={reviewNote}
                     onChange={(e) => setReviewNote(e.target.value)}
                     style={{ fontSize: "13.5px" }}
@@ -1230,7 +1230,7 @@ const RatesList = ({ forcedType } = {}) => {
                     {isContractor ? (
                       <div className="col-md-4">
                         <label className="form-label small fw-bold text-muted">
-                          Contractor *
+                          Resource Partner *
                         </label>
                         <Select
                           name="contractor"
@@ -1240,8 +1240,8 @@ const RatesList = ({ forcedType } = {}) => {
                           styles={selectStyles}
                           className="basic-single-select"
                           classNamePrefix="select"
-                          placeholder="Select contractor..."
-                          noOptionsMessage={() => "No contractors found"}
+                          placeholder="Select Resource Partner..."
+                          noOptionsMessage={() => "No Resource Partners found"}
                         />
                       </div>
                     ) : (
@@ -1292,7 +1292,7 @@ const RatesList = ({ forcedType } = {}) => {
                             style={{ color: "#0A7C6E" }}
                           ></i>
                           {cat === "def"
-                            ? "Award Rates"
+                            ? "Resource Partner Rates"
                             : "EBA Agreement Rates"}
                         </h6>
                         <div

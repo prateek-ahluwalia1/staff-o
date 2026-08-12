@@ -60,6 +60,7 @@
                     </thead>
                     <tbody>
                         @foreach ($block['rateRows'] as $row)
+                            @continue(!str_starts_with($row['label'], 'Default'))
                             <tr>
                                 <td>{{ $row['label'] }}</td>
                                 <td>${{ number_format($row['value'], 2) }}</td>

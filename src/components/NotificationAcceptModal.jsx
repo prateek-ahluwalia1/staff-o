@@ -448,7 +448,7 @@ export default function NotificationAcceptModal({
                                     classNamePrefix="react-select"
                                     placeholder="Select staff"
                                     menuPortalTarget={document.body}
-                                    menuPosition="absolute"
+                                    menuPosition="fixed"
                                     styles={{
                                         control: (base) => ({
                                             ...base,
@@ -460,10 +460,6 @@ export default function NotificationAcceptModal({
                                         menuPortal: (base) => ({
                                             ...base,
                                             zIndex: 99999,
-                                        }),
-                                        menu: (base) => ({
-                                            ...base,
-                                            position: 'absolute',
                                         }),
                                     }}
                                 />

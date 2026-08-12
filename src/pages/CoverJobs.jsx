@@ -636,11 +636,10 @@ const CoverJobs = () => {
                                         classNamePrefix="react-select"
                                         placeholder="Select staff"
                                         menuPortalTarget={document.body}
-                                        menuPosition="absolute"
+                                        menuPosition="fixed"
                                         styles={{
                                             control: (base) => ({ ...base, borderRadius: 10, borderColor: '#cbd5e1', boxShadow: 'none', minHeight: 44 }),
                                             menuPortal: (base) => ({ ...base, zIndex: 99999 }),
-                                            menu: (base) => ({ ...base, position: 'absolute' }),
                                         }}
                                     />
                                     <div className="text-muted mt-2" style={{ fontSize: '12px' }}>Leave this blank to accept the job immediately. You can assign it to the roster later.</div>

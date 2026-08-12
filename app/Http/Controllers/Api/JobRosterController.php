@@ -5808,11 +5808,94 @@ private function chargeRateFieldLabels(): array
  * STEP 1 — Contractor submits the form.
  * Saves a pending row in charge_rate_requests and emails admins.
  */
+// public function request_charge_rate(Request $request)
+// {
+//     $request->validate([
+//         'user_id' => 'required|integer',
+//         'state'   => 'required|string',
+//     ]);
+
+//     try {
+//         $contractor = DB::table('users')->where('id', $request->user_id)->first();
+
+//         if (!$contractor) {
+//             return response()->json([
+//                 'success' => false,
+//                 'message' => 'Contractor not found.',
+//                 'data' => null,
+//             ], 200);
+//         }
+
+//         $rateFieldLabels = $this->chargeRateFieldLabels();
+
+//         // Build the row to insert — every rate field defaults to 0 if not sent
+//         $insertData = [
+//             'user_id'        => $request->user_id,
+//             'title'          => $request->title,
+//             'state'          => $request->state,
+//             'effective_from' => $request->effective_from,
+//             'status'         => 'pending',
+//             'created_at'     => now(),
+//             'updated_at'     => now(),
+//         ];
+
+//         $rateRows = []; // for the email
+//         foreach ($rateFieldLabels as $column => $label) {
+//             $value = $request->has($column) ? (float) $request->input($column) : 0;
+//             $insertData[$column] = $value;
+//             $rateRows[] = ['label' => $label, 'value' => $value];
+//         }
+
+//         $requestId = DB::table('charge_rate_requests')->insertGetId($insertData);
+
+//         // Email admins
+//         $adminEmails = DB::table('users')
+//             ->where('user_type', 'admin')
+//             ->whereNotNull('email')
+//             ->pluck('email')
+//             ->toArray();
+
+//         if (!empty($adminEmails)) {
+//             try {
+//                 Mail::to($adminEmails)->send(new ChargeRateRequestMail(
+//                     $contractor->name ?? 'Contractor',
+//                     $contractor->email ?? '',
+//                     $request->title,
+//                     $request->state,
+//                     $rateRows
+//                 ));
+//             } catch (\Exception $e) {
+//                 Log::error('Failed to send charge rate request email', ['error' => $e->getMessage()]);
+//             }
+//         } else {
+//             Log::warning('No admin emails found for charge rate request notification.');
+//         }
+
+//         return response()->json([
+//             'success' => true,
+//             'message' => 'Charge rate request submitted for admin review.',
+//             'data' => [
+//                 'charge_rate_request_id' => $requestId,
+//                 'status' => 'pending',
+//             ],
+//         ], 200);
+
+//     } catch (\Exception $e) {
+//         return response()->json([
+//             'success' => false,
+//             'message' => 'An error occurred while submitting the charge rate request.',
+//             'error' => $e->getMessage(),
+//             'trace' => $e->getTraceAsString(),
+//         ], 500);
+//     }
+// }
 public function request_charge_rate(Request $request)
 {
     $request->validate([
-        'user_id' => 'required|integer',
-        'state'   => 'required|string',
+        'user_id'         => 'required|integer',
+        'rates'           => 'required|array|min:1',
+        'rates.*.state'   => 'required|string',
+        'rates.*.title'   => 'nullable|string',
     ]);
 
     try {
@@ -5828,27 +5911,39 @@ public function request_charge_rate(Request $request)
 
         $rateFieldLabels = $this->chargeRateFieldLabels();
 
-        // Build the row to insert — every rate field defaults to 0 if not sent
-        $insertData = [
-            'user_id'        => $request->user_id,
-            'title'          => $request->title,
-            'state'          => $request->state,
-            'effective_from' => $request->effective_from,
-            'status'         => 'pending',
-            'created_at'     => now(),
-            'updated_at'     => now(),
-        ];
+        $requestIds = [];
+        $emailStateBlocks = []; // for the combined email: one block per state
 
-        $rateRows = []; // for the email
-        foreach ($rateFieldLabels as $column => $label) {
-            $value = $request->has($column) ? (float) $request->input($column) : 0;
-            $insertData[$column] = $value;
-            $rateRows[] = ['label' => $label, 'value' => $value];
+        foreach ($request->rates as $rateEntry) {
+            $insertData = [
+                'user_id'        => $request->user_id,
+                'title'          => $rateEntry['title'] ?? null,
+                'state'          => $rateEntry['state'],
+                'effective_from' => $rateEntry['effective_from'] ?? null,
+                'review_note'   => $request->notes ?? null,
+                'status'         => 'pending',
+                'created_at'     => now(),
+                'updated_at'     => now(),
+            ];
+
+            $rateRows = []; // for this state's block in the email
+            foreach ($rateFieldLabels as $column => $label) {
+                $value = array_key_exists($column, $rateEntry) ? (float) $rateEntry[$column] : 0;
+                $insertData[$column] = $value;
+                $rateRows[] = ['label' => $label, 'value' => $value];
+            }
+
+            $requestId = DB::table('charge_rate_requests')->insertGetId($insertData);
+            $requestIds[] = $requestId;
+
+            $emailStateBlocks[] = [
+                'state'    => $rateEntry['state'],
+                'title'    => $rateEntry['title'] ?? null,
+                'rateRows' => $rateRows,
+            ];
         }
 
-        $requestId = DB::table('charge_rate_requests')->insertGetId($insertData);
-
-        // Email admins
+        // Email admins — one email covering every state in this submission
         $adminEmails = DB::table('users')
             ->where('user_type', 'admin')
             ->whereNotNull('email')
@@ -5860,9 +5955,8 @@ public function request_charge_rate(Request $request)
                 Mail::to($adminEmails)->send(new ChargeRateRequestMail(
                     $contractor->name ?? 'Contractor',
                     $contractor->email ?? '',
-                    $request->title,
-                    $request->state,
-                    $rateRows
+                    $emailStateBlocks,
+                    $request->notes
                 ));
             } catch (\Exception $e) {
                 Log::error('Failed to send charge rate request email', ['error' => $e->getMessage()]);
@@ -5875,7 +5969,7 @@ public function request_charge_rate(Request $request)
             'success' => true,
             'message' => 'Charge rate request submitted for admin review.',
             'data' => [
-                'charge_rate_request_id' => $requestId,
+                'charge_rate_request_ids' => $requestIds,
                 'status' => 'pending',
             ],
         ], 200);
@@ -5889,7 +5983,6 @@ public function request_charge_rate(Request $request)
         ], 500);
     }
 }
-
 /**
  * STEP 2 — Admin views pending (or all) requests.
  * GET /charge-rate-requests?status=pending

@@ -12,7 +12,13 @@
     .body { border:1px solid #E5E7EB; border-top:none; padding:20px 22px; border-radius:0 0 6px 6px; }
     .meta { margin-bottom:16px; line-height:1.8; }
     .meta strong { color:#374151; }
-    table { width:100%; border-collapse: collapse; font-size:12px; margin-bottom: 16px; }
+    .notes-box {
+        background:#F9FAFB; border:1px solid #E5E7EB; border-radius:6px;
+        padding:12px 14px; margin-bottom:20px; color:#374151; font-size:13px;
+    }
+    .state-block { margin-bottom: 24px; }
+    .state-title { font-size:14px; font-weight:bold; color:#0A7C6E; margin-bottom:8px; }
+    table { width:100%; border-collapse: collapse; font-size:12px; margin-bottom: 6px; }
     thead th { background:#0A7C6E; color:#fff; text-align:left; padding:8px 10px; }
     tbody td { padding:7px 10px; border-bottom:1px solid #E5E7EB; }
     tbody tr:nth-child(even) { background:#F9FAFB; }
@@ -30,26 +36,39 @@
     <div class="body">
         <div class="meta">
             <strong>Contractor:</strong> {{ $contractorName }} ({{ $contractorEmail }})<br>
-            <strong>Title:</strong> {{ $title }}<br>
-            <strong>State:</strong> {{ strtoupper($state) }}
+            <strong>States Requested:</strong> {{ collect($stateBlocks)->pluck('state')->map(fn($s) => strtoupper($s))->implode(', ') }}
         </div>
 
-        <table>
-            <thead>
-                <tr>
-                    <th>Rate Type</th>
-                    <th>Requested Value</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach ($rateRows as $row)
-                    <tr>
-                        <td>{{ $row['label'] }}</td>
-                        <td>${{ number_format($row['value'], 2) }}</td>
-                    </tr>
-                @endforeach
-            </tbody>
-        </table>
+        @if(!empty($notes))
+            <div class="notes-box">
+                <strong>Notes from contractor:</strong><br>
+                {{ $notes }}
+            </div>
+        @endif
+
+        @foreach ($stateBlocks as $block)
+            <div class="state-block">
+                <div class="state-title">
+                    {{ strtoupper($block['state']) }}{{ !empty($block['title']) ? ' — ' . $block['title'] : '' }}
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Rate Type</th>
+                            <th>Requested Value</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach ($block['rateRows'] as $row)
+                            <tr>
+                                <td>{{ $row['label'] }}</td>
+                                <td>${{ number_format($row['value'], 2) }}</td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        @endforeach
 
         <p style="font-size:13px; color:#6B7280;">
             Please review this request in the admin panel and accept or reject it.

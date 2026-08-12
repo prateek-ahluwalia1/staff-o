@@ -12,29 +12,28 @@ class ChargeRateRequestMail extends Mailable
 
     public $contractorName;
     public $contractorEmail;
-    public $title;
-    public $state;
-    public $rateRows; // [ ['label' => 'Metro Mon-Fri Day', 'value' => 34], ... ]
+    public $stateBlocks; // [ ['state' => 'vic', 'title' => '...', 'rateRows' => [...]], ... ]
+    public $notes;
 
-    public function __construct($contractorName, $contractorEmail, $title, $state, $rateRows)
+    public function __construct($contractorName, $contractorEmail, $stateBlocks, $notes = null)
     {
         $this->contractorName  = $contractorName;
         $this->contractorEmail = $contractorEmail;
-        $this->title           = $title;
-        $this->state           = $state;
-        $this->rateRows        = $rateRows;
+        $this->stateBlocks     = $stateBlocks;
+        $this->notes           = $notes;
     }
 
     public function build()
     {
-        return $this->subject("New Charge Rate Request — {$this->contractorName}")
+        $stateList = collect($this->stateBlocks)->pluck('state')->map(fn($s) => strtoupper($s))->implode(', ');
+
+        return $this->subject("New Charge Rate Request — {$this->contractorName} ({$stateList})")
             ->view('emails.charge-rate-request')
             ->with([
                 'contractorName'  => $this->contractorName,
                 'contractorEmail' => $this->contractorEmail,
-                'title'           => $this->title,
-                'state'           => $this->state,
-                'rateRows'        => $this->rateRows,
+                'stateBlocks'     => $this->stateBlocks,
+                'notes'           => $this->notes,
             ]);
     }
 }

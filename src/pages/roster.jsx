@@ -632,18 +632,34 @@ export default function RosterPage() {
                                   </span>
                                 )}
                                 <div className="vr-shift-time">
-                                  {format(shift.startDate, "HH:mm")} - {format(shift.endDate, "HH:mm")}
-
-                                  {/* Contractor Accepted Indicator */}
-                                  {isAccepted && (
-                                    <span className="vr-accepted-icon" title="Accepted by Contractor">
-                                      <i className="fa fa-handshake-o fas fa-handshake"></i>
+                                  {isContractorZeroInvoiceBreakdown ? (
+                                    <span 
+                                      className="d-block w-100"
+                                      style={{ color: '#082f49', fontWeight: 800, cursor: 'pointer', fontSize: '10.5px', lineHeight: '1.3', whiteSpace: 'normal', textTransform: 'uppercase' }}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        openModalAction(site, shift, day.dateLabel, "shift_breakdown", day.key);
+                                      }}
+                                    >
+                                      Job confirmed.<br/>Click here to split
                                     </span>
+                                  ) : (
+                                    <>
+                                      {format(shift.startDate, "HH:mm")} - {format(shift.endDate, "HH:mm")}
+                                      {/* Contractor Accepted Indicator */}
+                                      {isAccepted && (
+                                        <span className="vr-accepted-icon" title="Accepted by Contractor">
+                                          <i className="fa fa-handshake-o fas fa-handshake"></i>
+                                        </span>
+                                      )}
+                                    </>
                                   )}
                                 </div>
-                                <div className="vr-shift-guard">
-                                  {shift?.guards?.name || "Unassigned"}
-                                </div>
+                                {!isContractorZeroInvoiceBreakdown && (
+                                  <div className="vr-shift-guard">
+                                    {shift?.guards?.name || "Unassigned"}
+                                  </div>
+                                )}
                                 <div className="vr-shift-actions">
                                   <button title="Activity" onClick={() => openModalAction(site, shift, day.dateLabel, "activity")}>
                                     <i className="fa fa-list"></i>

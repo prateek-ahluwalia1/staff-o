@@ -679,7 +679,7 @@
 
 .vr-breakdown-indicator {
     position: absolute;
-    bottom: 5px;
+    top: 6px;
     right: 6px;
     display: inline-flex;
     align-items: center;

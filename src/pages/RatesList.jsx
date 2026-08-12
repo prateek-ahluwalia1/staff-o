@@ -846,8 +846,7 @@ const RatesList = ({ forcedType } = {}) => {
                     <thead>
                       <tr>
                         <th>Resource Partner</th>
-                        <th>Rate / State</th>
-                        <th>Type</th>
+                        <th>Title / State</th>
                         <th>Submitted</th>
                         {requestTab !== "pending" && <th>Status</th>}
                         <th className="text-center">Actions</th>
@@ -871,21 +870,6 @@ const RatesList = ({ forcedType } = {}) => {
                             <td>
                               <div className="fw-semibold text-dark">{req.title || req.rate?.title || "Rate Adjustment"}</div>
                               <small className="text-muted">{STATE_NAME_MAP[req.state] || req.state || ""}</small>
-                            </td>
-                            <td>
-                              <span
-                                style={{
-                                  padding: "3px 12px",
-                                  borderRadius: "20px",
-                                  fontSize: "11px",
-                                  fontWeight: 700,
-                                  background: req.rate_id ? "rgba(124,58,237,0.1)" : "rgba(10,124,110,0.1)",
-                                  color: req.rate_id ? "#7c3aed" : "#0A7C6E",
-                                  border: `1px solid ${req.rate_id ? "rgba(124,58,237,0.2)" : "rgba(10,124,110,0.2)"}`,
-                                }}
-                              >
-                                {req.rate_id ? "Update Request" : "New Rate Request"}
-                              </span>
                             </td>
                             <td className="text-muted small">
                               {req.created_at
@@ -988,30 +972,12 @@ const RatesList = ({ forcedType } = {}) => {
               {/* Contractor info banner */}
               <div className="bg-white rounded-3 p-3 mb-4 shadow-sm border">
                 <div className="d-flex align-items-start justify-content-between flex-wrap gap-2 mb-2">
-                  <div>
-                    <div className="fw-bold text-dark">
-                      {reviewRequest.request.user?.name || "Resource Partner"}
-                    </div>
-                    <small className="text-muted">
-                      {reviewRequest.request.user?.contractor?.company_name || ""} &bull; {STATE_NAME_MAP[reviewRequest.request.state] || reviewRequest.request.state || ""}
-                    </small>
-                  </div>
-                  <span
-                    style={{
-                      padding: "4px 14px", borderRadius: "20px", fontSize: "11px", fontWeight: 700,
-                      background: reviewRequest.request.rate_id ? "rgba(124,58,237,0.1)" : "rgba(10,124,110,0.1)",
-                      color: reviewRequest.request.rate_id ? "#7c3aed" : "#0A7C6E",
-                      border: `1px solid ${reviewRequest.request.rate_id ? "rgba(124,58,237,0.2)" : "rgba(10,124,110,0.2)"}`,
-                    }}
-                  >
-                    {reviewRequest.request.rate_id ? "Update Request" : "New Rate Request"}
-                  </span>
                 </div>
                 <div className="d-flex flex-wrap gap-3 pt-2 border-top">
                   {reviewRequest.request.title && (
                     <div>
-                      <div className="text-muted" style={{ fontSize: "10px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.5px" }}>Rate Title</div>
-                      <div className="fw-bold text-dark" style={{ fontSize: "13px" }}>{reviewRequest.request.title}</div>
+                      <div className="text-muted" style={{ fontSize: "10px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.5px" }}>Rate Title { }</div>
+                      <div className="fw-bold text-dark" style={{ fontSize: "13px" }}>{reviewRequest.request.title} ( {STATE_NAME_MAP[reviewRequest.request.state] || reviewRequest.request.state || ""} )</div>
                     </div>
                   )}
                 </div>

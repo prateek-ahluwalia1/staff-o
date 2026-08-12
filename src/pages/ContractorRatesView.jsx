@@ -124,7 +124,7 @@ const ContractorRatesView = ({ selectedStates = [] }) => {
 
     const ratesPayload = selectedStates.map(stateVal => {
       const stateObj = {
-        title: `${STATE_NAME_MAP[stateVal] || stateVal} Resource Partner Rates`,
+        title: `${STATE_NAME_MAP[stateVal] || stateVal} My Charge Rates`,
         state: stateVal,
       };
 
@@ -440,10 +440,10 @@ const ContractorRatesView = ({ selectedStates = [] }) => {
                   type="button"
                   className={`rate-pill ${r.id === rate?.id ? "active" : ""}`}
                   onClick={() => setSelectedId(r.id)}
-                  aria-label={`Select rate: ${r.title || "Resource Partner Rates"}`}
+                  aria-label={`Select rate: ${r.title || "My Rates"}`}
                 >
                   <span className="pill-state">{STATE_NAME_MAP[r.state] || r.state}</span>
-                  <div className="pill-title" title={r.title || "Resource Partner Rates"}>{r.title || "Resource Partner Rates"}</div>
+                  <div className="pill-title" title={r.title || "My Rates"}>{r.title || "My Rates"}</div>
                 </button>
               ))}
             </div>
@@ -453,8 +453,8 @@ const ContractorRatesView = ({ selectedStates = [] }) => {
             <div className="rate-card-head">
               <span className="icon-badge"><i className="fa fa-clock"></i></span>
               <div>
-                <h6>Resource Partner Rates</h6>
-                <span>Metro vs Regional, by time slot — {rate?.title || "Resource Partner Rate"}</span>
+                <h6>My Rates</h6>
+                <span>Metro vs Regional, by time slot — {rate?.title || ""}</span>
               </div>
             </div>
             {SLOT_ROWS.map((row) => {
@@ -633,9 +633,6 @@ const ContractorRatesView = ({ selectedStates = [] }) => {
                   Your request will be reviewed by the Staffoo admin team.
                 </div>
                 <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
-                  <button type="button" className="rr-btn-cancel" onClick={() => setShowRequestModal(false)} disabled={submitting}>
-                    Cancel
-                  </button>
                   <button type="submit" className="rr-btn-submit" disabled={submitting || selectedStates.length === 0}>
                     {submitting ? (
                       <>
@@ -645,7 +642,7 @@ const ContractorRatesView = ({ selectedStates = [] }) => {
                     ) : (
                       <>
                         <i className="fa-solid fa-paper-plane"></i>
-                        Submit Rate Request
+                        Save and Submit
                       </>
                     )}
                   </button>

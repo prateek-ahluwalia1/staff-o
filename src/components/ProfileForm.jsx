@@ -17,10 +17,10 @@ export default function ProfileForm({
   footer = null,
   isEdit = false,
   showPhoneOtp = false,
-  hideFields = [],            // Array of field IDs to hide
-  profileImageUrl = null,     // NEW: URL of the profile image to display
+  hideFields = [],
+  profileImageUrl = null,
   forceShowAllStaffFields = false,
-  submitText = "Save Changes", // NEW: Text for the submit button
+  submitText = "Save Changes",
 }) {
   const { userdata } = useSelector((state) => state.auth);
   const parseDisplayDate = (str) => {
@@ -761,7 +761,7 @@ export default function ProfileForm({
             {/* Address Full Width */}
             <div className="col-12 mt-4 pt-3 border-top">
               <label htmlFor="address" className="form-label fw-bold text-dark small mb-1">
-                Residential Address <span className="text-danger">*</span>
+                {userType === "contractor" ? "Business Address" : "Residential Address"} <span className="text-danger">*</span>
               </label>
               <div className="input-group">
                 <span className="input-group-text bg-light border text-muted">

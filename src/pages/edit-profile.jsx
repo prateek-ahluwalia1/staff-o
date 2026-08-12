@@ -1802,7 +1802,7 @@ export default function EditProfile() {
       <PremiumModal
         open={showChargeRateModal}
         onClose={() => setShowChargeRateModal(false)}
-        title="Complete Your State Requirements"
+        title="Complete Your Profile Requirements"
       >
         <div className="px-2 px-md-3 py-3">
           {/* Steps */}

@@ -97,6 +97,7 @@ function AppContent() {
         label: staff.name || "Unnamed staff",
     }));
     const [acceptModalOpen, setAcceptModalOpen] = useState(false);
+    const [acceptModalSuccess, setAcceptModalSuccess] = useState(false);
     const [acceptModalJob, setAcceptModalJob] = useState(null);
     const [acceptingJob, setAcceptingJob] = useState(false);
     const [selectedStaffId, setSelectedStaffId] = useState("");
@@ -391,16 +392,20 @@ function AppContent() {
                     { method: "POST" }
                 );
                 if (result && !result.error) {
-                    toast.success(
-                        chosenStaffId
-                            ? "Job assigned successfully!"
-                            : userRole === "staff"
-                                ? "Cover job accepted successfully!"
-                                : "Job accepted successfully!"
-                    );
-                    setAcceptModalOpen(false);
-                    setAcceptModalJob(null);
-                    setSelectedStaffId("");
+                    if (acceptModalJob?.contractorInvoice === 0) {
+                        setAcceptModalSuccess(true);
+                    } else {
+                        toast.success(
+                            chosenStaffId
+                                ? "Job assigned successfully!"
+                                : userRole === "staff"
+                                    ? "Cover job accepted successfully!"
+                                    : "Job accepted successfully!"
+                        );
+                        setAcceptModalOpen(false);
+                        setAcceptModalJob(null);
+                        setSelectedStaffId("");
+                    }
                 }
             } catch (err) {
                 console.error("Accept job failed:", err);
@@ -554,8 +559,11 @@ function AppContent() {
                     setAcceptModalOpen(false);
                     setAcceptModalJob(null);
                     setSelectedStaffId("");
+                    setAcceptModalSuccess(false);
                 }}
                 accepting={acceptingJob}
+                success={acceptModalSuccess}
+                successMessage="Please wait for the client to give further confirmation. We will notify you shortly and the shift will appear on your Roster page."
                 showStaffSelector={
                     userRole === "contractor" &&
                     acceptModalJob?.contractorInvoice === 1

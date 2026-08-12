@@ -36,6 +36,8 @@ export default function NotificationAcceptModal({
     onStaffChange,
     staffLoading = false,
     celebrate = true,   // 🎉 new prop – set to false to disable confetti
+    success = false,    // 🎉 NEW PROP
+    successMessage = '', // 🎉 NEW PROP
 }) {
     if (!open || !job) return null;
 
@@ -262,10 +264,71 @@ export default function NotificationAcceptModal({
                 aria-modal="true"
                 aria-labelledby="accept-title"
             >
-                <div
-                    className="modal-content-premium"
-                    onClick={(e) => e.stopPropagation()}
-                >
+                {success ? (
+                    <div
+                        className="modal-content-premium position-relative"
+                        style={{
+                            background: '#fff', borderRadius: '28px', width: '90%', maxWidth: '420px',
+                            boxShadow: '0 40px 80px -20px rgba(0, 0, 0, 0.4)', overflow: 'hidden',
+                            animation: 'modalSlideUp 0.4s cubic-bezier(0.2, 0.8, 0.2, 1)'
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        {/* Premium Header Decoration */}
+                        <div style={{
+                            background: 'linear-gradient(135deg, #0A7C6E 0%, #0d9685 100%)',
+                            height: '110px', width: '100%', position: 'absolute', top: 0, left: 0, zIndex: 0,
+                        }}>
+                            <svg width="100%" height="100%" style={{ opacity: 0.1 }}>
+                                <defs>
+                                    <pattern id="diagonalHatch" width="10" height="10" patternTransform="rotate(45 0 0)" patternUnits="userSpaceOnUse">
+                                        <line x1="0" y1="0" x2="0" y2="10" stroke="#ffffff" strokeWidth="2" />
+                                    </pattern>
+                                </defs>
+                                <rect width="100%" height="100%" fill="url(#diagonalHatch)" />
+                            </svg>
+                        </div>
+                        
+                        <div className="text-center position-relative" style={{ zIndex: 1, padding: '60px 32px 36px' }}>
+                            {/* Icon Wrapper */}
+                            <div className="mb-4 d-inline-flex align-items-center justify-content-center" style={{
+                                width: '84px', height: '84px', borderRadius: '50%',
+                                background: '#fff', padding: '8px',
+                                boxShadow: '0 8px 24px rgba(10, 124, 110, 0.25)'
+                            }}>
+                                <div style={{
+                                    width: '100%', height: '100%', borderRadius: '50%',
+                                    background: 'linear-gradient(135deg, #0A7C6E 0%, #16a34a 100%)',
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center'
+                                }}>
+                                    <i className="fa-solid fa-check text-white" style={{ fontSize: '32px' }}></i>
+                                </div>
+                            </div>
+                            
+                            <h3 className="fw-bolder mb-2" style={{ color: '#0a1930', letterSpacing: '-0.5px' }}>Success!</h3>
+                            <p className="text-muted mb-4" style={{ fontSize: '15.5px', lineHeight: '1.5' }}>
+                                {successMessage}
+                            </p>
+                            
+                            <button
+                                className="btn w-100 rounded-pill text-white fw-bold py-3 shadow"
+                                style={{
+                                    background: 'linear-gradient(135deg, #0A7C6E 0%, #086b5e 100%)',
+                                    fontSize: '15px', border: 'none', transition: 'all 0.2s'
+                                }}
+                                onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 10px 20px -5px rgba(10, 124, 110, 0.4)'; }}
+                                onMouseLeave={(e) => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = 'none'; }}
+                                onClick={onClose}
+                            >
+                                Continue to Dashboard
+                            </button>
+                        </div>
+                    </div>
+                ) : (
+                    <div
+                        className="modal-content-premium"
+                        onClick={(e) => e.stopPropagation()}
+                    >
                     {/* Header */}
                     <div className="modal-header-custom">
                         <h3 id="accept-title">
@@ -428,6 +491,7 @@ export default function NotificationAcceptModal({
                         </div>
                     </div>
                 </div>
+                )}
             </div>
         </>
     );

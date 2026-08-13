@@ -5671,8 +5671,11 @@ public function update_shift_breakdown(Request $request)
             ], 200);
         }
 
+        // Cast the original row to an array once — used as the base
+        // for every row (existing update + any newly created ones),
+        // so every other column ("all data same") is preserved automatically.
         $originalRosterArray = (array) $originalRoster;
-        unset($originalRosterArray['id']);
+        unset($originalRosterArray['id']); // never carry the id over when cloning
 
         $bucketColumnMap = [
             'morning'          => 'morning_hours',
@@ -5691,6 +5694,7 @@ public function update_shift_breakdown(Request $request)
             $start = $shift['start'];
             $end   = $shift['end'];
 
+            // Recalculate the hour buckets for this specific start/end
             $hours = getShiftHours($start, $end);
 
             $totalHours = 0;
@@ -5716,13 +5720,31 @@ public function update_shift_breakdown(Request $request)
 
                 $updatedRosters[] = DB::table('job_rosters')->where('id', $originalRoster->id)->first();
             } else {
-             
+                // Clone the original row's data, override start/end/hours,
+                // insert as a brand new roster row
                 $newRosterData = array_merge($originalRosterArray, $shiftData);
 
                 $newId = DB::table('job_rosters')->insertGetId($newRosterData);
                 $updatedRosters[] = DB::table('job_rosters')->where('id', $newId)->first();
             }
         }
+
+        // ============ NEW: Update transactions.job_roster_id with all split roster ids ============
+        try {
+            $allRosterIds = collect($updatedRosters)->pluck('id')->map(fn($id) => (int) $id)->values()->toArray();
+
+            DB::table('transactions')
+                ->whereRaw("JSON_CONTAINS(job_roster_id, ?)", [json_encode((int) $originalRoster->id)])
+                ->update([
+                    'job_roster_id' => json_encode($allRosterIds),
+                ]);
+        } catch (\Exception $e) {
+            Log::error('Failed to update transaction job_roster_id after shift split', [
+                'roster_id' => $originalRoster->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
+        // ============ END NEW ============
 
         // ============ NEW: Job Split Notification email to client ============
         try {

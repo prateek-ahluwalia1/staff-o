@@ -210,7 +210,7 @@ class JobRosterController extends Controller
                         'sunday_night_hours'     => $hours['sunday_night']      ?? 0,
                         'ph_morning_hours'       => $hours['ph_morning']        ?? 0,
                         'ph_night_hours'         => $hours['ph_night']          ?? 0,
-                        'hours'                  => $guardWorkingHours,
+                        'hours'                  => $totalShiftHours,
                         'created_at'             => now(),
                         'updated_at'             => now()
                     ];

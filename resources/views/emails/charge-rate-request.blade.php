@@ -73,6 +73,10 @@
                 // Group the flat rateRows (label/value pairs) into
                 // [ 'Mon–Fri Day' => ['metro' => 12.00, 'regional' => 12.00], ... ]
                 // by parsing "Default Metro X" / "Default Regional X" labels.
+                //
+                // Saturday/Sunday/Public Holiday are collapsed into ONE card each
+                // (Day rate only — Night rate for these three is intentionally dropped).
+                // Mon–Fri stays split into separate Day and Night cards.
                 $categories = [];
                 foreach ($block['rateRows'] as $row) {
                     if (!str_starts_with($row['label'], 'Default')) {
@@ -81,6 +85,22 @@
                     $isMetro = str_contains($row['label'], 'Metro');
                     $type = $isMetro ? 'metro' : 'regional';
                     $category = trim(str_replace(['Default Metro', 'Default Regional'], '', $row['label']));
+
+                    $collapsed = false;
+                    foreach (['Saturday', 'Sunday', 'Public Holiday'] as $collapsedBase) {
+                        if (str_starts_with($category, $collapsedBase)) {
+                            if (str_ends_with($category, 'Night')) {
+                                $collapsed = true; // skip Night entries for these three
+                                break;
+                            }
+                            $category = $collapsedBase; // "Saturday Day" -> "Saturday"
+                            break;
+                        }
+                    }
+                    if ($collapsed) {
+                        continue;
+                    }
+
                     $categories[$category][$type] = $row['value'];
                 }
                 $categoryChunks = array_chunk($categories, 3, true);

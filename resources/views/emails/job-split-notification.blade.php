@@ -41,8 +41,8 @@
         <div class="badge">Split into {{ $partsCount }} part{{ $partsCount > 1 ? 's' : '' }}</div>
 
         <p class="intro">
-            Your job has been split into {{ $partsCount }} separate shift{{ $partsCount > 1 ? 's' : '' }}
-            to better match staffing availability. The updated shift breakdown is below.
+            Your job has been split into {{ $partsCount }} separate job{{ $partsCount > 1 ? 's' : '' }}
+            to better match staffing availability. The updated job breakdown is below.
         </p>
 
         @if(!empty($siteAddress))
@@ -58,7 +58,7 @@
                     <th>Start</th>
                     <th>End</th>
                     <th>Hours</th>
-                    <th>Guard</th>
+                    <th>Staff</th>
                 </tr>
             </thead>
             <tbody>

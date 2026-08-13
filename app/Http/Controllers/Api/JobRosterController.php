@@ -5621,6 +5621,14 @@ private function generateContractorInvoiceAndPaymentLink($contractor, $updatedRo
     // 8. Save link/invoice number on roster
     DB::table('job_rosters')->where('id', $updatedRoster->id)->update([
         'invoice_filename'   => $invoiceNumber,
+        'payment_status'   => 'pending',
+         'invoice_meta'     => json_encode([
+            'base_total'   => $baseTotal,
+            'discount'     => 0,
+            'service_fee'  => $serviceFee,
+            'grand_total'  => $grandTotal,
+            'currency'     => 'aud',
+        ]),
     ]);
 
     // 9. Email client with PDF + pay link

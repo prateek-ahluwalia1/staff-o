@@ -1556,6 +1556,7 @@ private function sendStaffActivationNotification(User $user): void
                     'completed_status'      => $completed_status,
                     'site'                   => $item->site,
                     'guard'                 => $item->guards,
+                    'contractor_invoice'    => $item->contractor_invoice,
                     'is_document'           => $item->is_document,
                     'job_roster_activities' => $item->rosterActivity,
                     'job_roster_task'       => $item->jobRosterTask,

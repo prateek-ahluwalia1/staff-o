@@ -23,6 +23,7 @@ import ShiftBreakdownModal from "../components/roster/ShiftBreakdownModal";
 import AddJob from "./add-job";
 import "../assets/css/roster.css";
 import { useLocation } from "react-router-dom";
+import { isPending } from "@reduxjs/toolkit";
 
 const API_DATE_FORMAT = "yyyy-MM-dd HH:mm";
 const UPDATE_API_DATE_FORMAT = "MM-dd-yyyy HH:mm";
@@ -612,9 +613,11 @@ export default function RosterPage() {
                             const shiftDuration = Number(shift.hours || 0) || (shift.endDate && shift.startDate ? (shift.endDate - shift.startDate) / 3600000 : 0);
                             const invoiceType = Number(shift.contractor_invoice);
                             const isConfirmed = String(shift.job_status || "").toLowerCase() === "confirmed";
+                            const isPending = String(shift.job_status || "").toLowerCase() === "pending";
 
                             // Contractor Zero Invoice Breakdown: Contractor + Invoice 0 + Confirmed + Duration > 12
                             const isContractorZeroInvoiceBreakdown = userRole === "contractor" && invoiceType === 0 && isConfirmed && shiftDuration > 12;
+                            const isContractorZeroInvoiceBreakdownText = userRole === "contractor" && invoiceType === 0 && isPending;
 
                             // Assign Staff Button: Shown when staff not assigned AND (Admin OR Invoice 1 OR (Invoice 0 & Confirmed & Duration <= 12))
                             const showAssignButton = !shift.assigned_to && (
@@ -643,6 +646,13 @@ export default function RosterPage() {
                                     >
                                       Job confirmed.<br />Click here to split
                                     </span>
+                                  ) : isContractorZeroInvoiceBreakdownText ? (
+                                    <span
+                                      className="d-block w-100"
+                                      style={{ color: '#082f49', fontWeight: 800, fontSize: '10.5px', lineHeight: '1.3', whiteSpace: 'normal', textTransform: 'uppercase' }}
+                                    >
+                                      Waiting for client<br />confirmation...
+                                    </span>
                                   ) : (
                                     <>
                                       {format(shift.startDate, "HH:mm")} - {format(shift.endDate, "HH:mm")}
@@ -667,7 +677,7 @@ export default function RosterPage() {
                                   <button title="Details" onClick={() => openModalAction(site, shift, day.dateLabel, "details")}>
                                     <i className="fa fa-info"></i>
                                   </button>
-                                  {userRole !== "staff" && !shift.assigned_to && (
+                                  {userRole === "admin" && !shift.assigned_to && (
                                     <button title="Time Edit" onClick={() => openModalAction(site, shift, day.dateLabel, "time")}>
                                       <i className="fa fa-edit fas fa-edit"></i>
                                     </button>

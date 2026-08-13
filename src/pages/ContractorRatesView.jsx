@@ -61,6 +61,7 @@ const ContractorRatesView = ({ selectedStates = [] }) => {
   const [showRequestModal, setShowRequestModal] = useState(false);
   const [activeStateTab, setActiveStateTab] = useState(null);
   const [requestForm, setRequestForm] = useState(() => makeBlankForm(selectedStates));
+  const [formErrors, setFormErrors] = useState({});
 
   const rows = useMemo(() => {
     if (!data) return [];
@@ -78,8 +79,25 @@ const ContractorRatesView = ({ selectedStates = [] }) => {
 
   // ── Open modal with a blank fresh form ──────────────────────────────────
   const handleOpenRequestModal = () => {
-    setRequestForm(makeBlankForm(selectedStates));
+    const f = makeBlankForm(selectedStates);
+    selectedStates.forEach(s => {
+      const existingStateRate = rows.find(r => r.state === s);
+      if (existingStateRate) {
+        SLOT_ROWS.forEach(row => {
+          const mk = `def_${row.metro}`;
+          const rk = `def_${row.reg}`;
+          if (existingStateRate[mk] !== undefined && existingStateRate[mk] !== null) {
+            f[s][mk] = existingStateRate[mk];
+          }
+          if (existingStateRate[rk] !== undefined && existingStateRate[rk] !== null) {
+            f[s][rk] = existingStateRate[rk];
+          }
+        });
+      }
+    });
+    setRequestForm(f);
     setActiveStateTab(selectedStates[0] || null);
+    setFormErrors({});
     setShowRequestModal(true);
   };
 
@@ -95,6 +113,16 @@ const ContractorRatesView = ({ selectedStates = [] }) => {
           [id]: value
         }
       }));
+      if (formErrors[activeStateTab]?.[id]) {
+        setFormErrors((prev) => {
+          const next = { ...prev };
+          if (next[activeStateTab]) {
+            next[activeStateTab] = { ...next[activeStateTab] };
+            delete next[activeStateTab][id];
+          }
+          return next;
+        });
+      }
     }
   };
 
@@ -122,27 +150,37 @@ const ContractorRatesView = ({ selectedStates = [] }) => {
       return;
     }
 
-    let hasBlank = false;
+    let newErrors = {};
+    let firstErrorState = null;
+
     for (const stateVal of selectedStates) {
       const stateForm = requestForm[stateVal] || {};
+      let stateErrors = {};
+      
       for (const row of SLOT_ROWS) {
         const mk = `def_${row.metro}`;
         const rk = `def_${row.reg}`;
-        if (
-          stateForm[mk] === "" || stateForm[mk] === undefined ||
-          stateForm[rk] === "" || stateForm[rk] === undefined
-        ) {
-          hasBlank = true;
-          break;
+        if (stateForm[mk] === "" || stateForm[mk] === undefined) {
+          stateErrors[mk] = true;
+        }
+        if (stateForm[rk] === "" || stateForm[rk] === undefined) {
+          stateErrors[rk] = true;
         }
       }
-      if (hasBlank) break;
+      
+      if (Object.keys(stateErrors).length > 0) {
+        newErrors[stateVal] = stateErrors;
+        if (!firstErrorState) firstErrorState = stateVal;
+      }
     }
 
-    if (hasBlank) {
-      toast.error("Please enter rates for all selected states.");
+    if (firstErrorState) {
+      setFormErrors(newErrors);
+      setActiveStateTab(firstErrorState);
       return;
     }
+
+    setFormErrors({});
 
     const ratesPayload = selectedStates.map(stateVal => {
       const stateObj = {
@@ -391,6 +429,10 @@ const ContractorRatesView = ({ selectedStates = [] }) => {
         .rr-input-wrap.regional .rr-currency-sign { color: #4a6fa5; border-color: rgba(74,111,165,0.2); }
         .rr-field { flex: 1; border: none; background: transparent; padding: 0 9px; font-size: 13.5px; font-weight: 700; color: #0a1e3a; height: 36px; outline: none; width: 0; }
 
+        .rr-input-wrap.has-error { border-color: #ef4444; box-shadow: 0 0 0 3px rgba(239,68,68,0.12); background: #fffaf9; }
+        .rr-input-wrap.has-error:focus-within { border-color: #ef4444; box-shadow: 0 0 0 3px rgba(239,68,68,0.25); background: #fff; }
+        .rr-input-wrap.has-error .rr-currency-sign { color: #ef4444; border-color: rgba(239,68,68,0.2); }
+
         /* ── Reason & Footer ── */
         .rr-reason-section { background: #fff; border: 1.5px solid #e4eaf3; border-radius: 14px; padding: 18px 20px; }
         .rr-reason-label { font-size: 13px; font-weight: 700; color: #0a1e3a; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
@@ -589,7 +631,7 @@ const ContractorRatesView = ({ selectedStates = [] }) => {
                                   <div className="rr-input-label metro">
                                     <i className="fa fa-city" style={{ fontSize: "9px", marginRight: "3px" }}></i> Metro
                                   </div>
-                                  <div className="rr-input-wrap metro">
+                                  <div className={`rr-input-wrap metro ${formErrors[activeStateTab]?.[metroKey] ? 'has-error' : ''}`}>
                                     <span className="rr-currency-sign">$</span>
                                     <input
                                       type="number" step="0.01" min="0"
@@ -611,7 +653,7 @@ const ContractorRatesView = ({ selectedStates = [] }) => {
                                   <div className="rr-input-label regional">
                                     <i className="fa fa-tree" style={{ fontSize: "9px", marginRight: "3px" }}></i> Regional
                                   </div>
-                                  <div className="rr-input-wrap regional">
+                                  <div className={`rr-input-wrap regional ${formErrors[activeStateTab]?.[regKey] ? 'has-error' : ''}`}>
                                     <span className="rr-currency-sign">$</span>
                                     <input
                                       type="number" step="0.01" min="0"

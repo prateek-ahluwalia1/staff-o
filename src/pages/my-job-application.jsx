@@ -62,7 +62,6 @@ const DateField = ({ label, selected, onChange, placeholder, maxDate, minDate })
 const ProfileImage = ({ src, name, size = 36 }) => {
   const [imgError, setImgError] = useState(false);
   const initials = getInitials(name || "?");
-  const color = "#0A7C6E";
 
   if (src && !imgError) {
     return (

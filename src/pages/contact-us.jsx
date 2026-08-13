@@ -1,9 +1,11 @@
 import React, { useState } from "react";
+import { Helmet } from "react-helmet";
 import { toast } from "react-toastify";
 import Header from "../components/newHome/Header";
 import Footer from "../components/newHome/Footer";
 import useSubmit from "../hooks/useSubmit";
 import { Link } from 'react-router-dom';
+import "../components/industries/event-crowd-comp/styles.css";
 
 const initialForm = {
   fullName: "",
@@ -105,337 +107,37 @@ export default function ContactUs() {
 
   return (
     <>
-      <Header />
+      <Helmet>
+        <title>Contact Us | Staffoo</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="true" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap"
+          rel="stylesheet"
+        />
+      </Helmet>
 
-      {/* INTERNAL STYLESHEET */}
-      <style>{`
-        .stf-contact-page {
-          background-color: #0d1216;
-          color: #ffffff;
-          font-family: 'Inter', system-ui, -apple-system, sans-serif;
-          min-height: 100vh;
-          padding-bottom: 80px;
-        }
-        
-        .stf-container {
-          max-width: 1200px;
-          margin: 0 auto;
-          padding: 0 24px;
-        }
+      <div className="stf-industry-page">
+        <Header />
 
-        /* Hero Section */
-        .stf-hero {
-          padding: 80px 0 60px;
-        }
-        .stf-badge {
-          color: #0A7C6E;
-          
-          font-size: 0.75rem;
-          font-weight: 700;
-          letter-spacing: 1.5px;
-          margin-bottom: 24px;
-          display: flex;
-          align-items: center;
-          gap: 10px;
-        }
-        .stf-badge::before {
-          content: '';
-          display: inline-block;
-          width: 20px;
-          height: 1px;
-          background-color: #0A7C6E;
-        }
-        .stf-hero h1 {
-          font-size: 4.5rem;
-          font-weight: 800;
-          margin: 0 0 24px 0;
-          line-height: 1.05;
-          letter-spacing: -1px;
-        }
-        .stf-hero h1 span {
-          color: #0A7C6E;
-        }
-        .stf-hero p {
-          font-size: 1.125rem;
-          color: #9ca3af;
-          max-width: 650px;
-          line-height: 1.6;
-          margin: 0;
-        }
+        <div className="stf-breadcrumb-section">
+          <div className="stf-wrap">
+            <div className="stf-breadcrumb">
+              <Link className="text-black text-decoration-none" to="/">Home</Link>
+              <span className="sep mx-2">/</span>
+              <span className="current text-muted">Contact Us</span>
+            </div>
+          </div>
+        </div>
 
-        /* Layout Grid */
-        .stf-grid {
-          display: flex;
-          flex-wrap: wrap;
-          gap: 32px;
-          align-items: stretch;
-        }
-        .stf-col-info {
-          flex: 1;
-          min-width: 320px;
-        }
-        .stf-col-form {
-          flex: 1.5;
-          min-width: 320px;
-        }
-
-        /* Cards */
-        .stf-card {
-          background-color: #12191d;
-          border: 1px solid #1f2933;
-          border-radius: 8px;
-          padding: 48px;
-          height: 100%;
-          box-sizing: border-box;
-        }
-        .stf-card h2 {
-          font-size: 2.25rem;
-          font-weight: 700;
-          margin: 0 0 16px 0;
-          color: #ffffff;
-        }
-        .stf-card-desc {
-          color: #9ca3af;
-          line-height: 1.6;
-          margin-bottom: 48px;
-          font-size: 1rem;
-        }
-
-        /* Info List */
-        .stf-info-list {
-          list-style: none;
-          padding: 0;
-          margin: 0 0 48px 0;
-        }
-        .stf-info-list li {
-          display: flex;
-          align-items: flex-start;
-          margin-bottom: 32px;
-          gap: 20px;
-        }
-        .stf-info-icon {
-          color: #0A7C6E;
-          font-size: 1.25rem;
-          margin-top: 4px;
-        }
-        .stf-info-text h5 {
-          margin: 0 0 8px 0;
-          font-size: 1.1rem;
-          font-weight: 600;
-          color: #ffffff;
-        }
-        .stf-info-text p, .stf-info-text a {
-          margin: 0;
-          color: #9ca3af;
-          text-decoration: none;
-          font-size: 0.95rem;
-          transition: color 0.2s;
-        }
-        .stf-info-text a:hover {
-          color: #0A7C6E;
-        }
-
-        /* Socials */
-        .stf-socials {
-          display: flex;
-          gap: 16px;
-        }
-        .stf-socials a {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          width: 44px;
-          height: 44px;
-          border-radius: 4px;
-          background-color: #1a2329;
-          color: #0A7C6E;
-          text-decoration: none;
-          font-size: 1.2rem;
-          transition: all 0.2s ease;
-          border: 1px solid transparent;
-        }
-        .stf-socials a:hover {
-          background-color: #0A7C6E;
-          color: #ffffff;
-          border-color: #0A7C6E;
-        }
-
-        /* Form Grid & Elements */
-        .stf-form-grid {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 24px;
-        }
-        .stf-form-full {
-          grid-column: span 2;
-        }
-        
-        .stf-label {
-          display: block;
-          font-size: 0.85rem;
-          color: #d1d5db;
-          margin-bottom: 10px;
-          font-weight: 500;
-        }
-        .stf-label span {
-          color: #ef4444;
-        }
-
-        .stf-input {
-          width: 100%;
-          background-color: #0d1216;
-          border: 1px solid #2a3740;
-          color: #ffffff;
-          padding: 14px 16px;
-          border-radius: 4px;
-          box-sizing: border-box;
-          outline: none;
-          transition: all 0.2s ease;
-          font-family: inherit;
-          font-size: 1rem;
-        }
-        .stf-input:focus {
-          border-color: #0A7C6E;
-          box-shadow: 0 0 0 1px #0A7C6E;
-        }
-        .stf-input.stf-invalid {
-          border-color: #ef4444;
-        }
-        .stf-input::placeholder {
-          color: #4b5563;
-        }
-        
-        select.stf-input {
-          appearance: none;
-          background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
-          background-repeat: no-repeat;
-          background-position: right 16px center;
-          background-size: 16px;
-          padding-right: 40px;
-        }
-        select.stf-input option {
-          background-color: #12191d;
-          color: #ffffff;
-        }
-
-        textarea.stf-input {
-          resize: vertical;
-          min-height: 120px;
-        }
-
-        .stf-error-msg {
-          color: #ef4444;
-          font-size: 0.8rem;
-          margin-top: 8px;
-          display: block;
-        }
-
-        /* Checkbox */
-        .stf-checkbox-wrapper {
-          display: flex;
-          align-items: flex-start;
-          gap: 12px;
-          margin-top: 8px;
-        }
-        .stf-checkbox {
-          appearance: none;
-          background-color: #0d1216;
-          margin: 2px 0 0 0;
-          font: inherit;
-          color: #0A7C6E;
-          width: 1.15em;
-          height: 1.15em;
-          border: 1px solid #2a3740;
-          border-radius: 3px;
-          display: grid;
-          place-content: center;
-          cursor: pointer;
-        }
-        .stf-checkbox::before {
-          content: "";
-          width: 0.65em;
-          height: 0.65em;
-          transform: scale(0);
-          transition: 120ms transform ease-in-out;
-          box-shadow: inset 1em 1em #0A7C6E;
-          background-color: #0A7C6E;
-          transform-origin: center;
-          clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
-        }
-        .stf-checkbox:checked::before {
-          transform: scale(1);
-        }
-        .stf-checkbox.stf-invalid {
-          border-color: #ef4444;
-        }
-
-        .stf-checkbox-label {
-          font-size: 0.95rem;
-          color: #d1d5db;
-          cursor: pointer;
-          user-select: none;
-          line-height: 1.4;
-        }
-
-        /* Button */
-        .stf-submit-btn {
-          background-color: #0A7C6E;
-          color: #ffffff;
-          border: none;
-          padding: 16px;
-          width: 100%;
-          border-radius: 4px;
-          font-weight: 600;
-          font-size: 1rem;
-          cursor: pointer;
-          transition: background-color 0.2s;
-          margin-top: 16px;
-        }
-        .stf-submit-btn:hover {
-          background-color: #0d8c6b;
-        }
-        .stf-submit-btn:disabled {
-          opacity: 0.7;
-          cursor: not-allowed;
-        }
-
-        /* Map */
-        .stf-map-container {
-          margin-top: 60px;
-          border-radius: 8px;
-          overflow: hidden;
-          border: 1px solid #1f2933;
-          background-color: #12191d;
-          padding: 8px;
-        }
-        .stf-map-container iframe {
-          border-radius: 4px;
-          display: block;
-        }
-
-        /* Responsive */
-        @media (max-width: 992px) {
-          .stf-hero h1 { font-size: 3.5rem; }
-          .stf-card { padding: 32px; }
-        }
-        @media (max-width: 768px) {
-          .stf-hero { padding: 50px 0 40px; }
-          .stf-hero h1 { font-size: 2.75rem; }
-          .stf-form-grid { grid-template-columns: 1fr; }
-          .stf-form-full { grid-column: span 1; }
-        }
-      `}</style>
-
-      <div className="stf-contact-page">
         {/* Banner Section */}
-        <section className="stf-hero">
-          <div className="stf-container">
-            <span className="stf-badge">
-              <i className="fa fa-envelope-open" aria-hidden="true"></i>
-              Contact Staffoo
-            </span>
-            <h1>Let&apos;s Build <span>Your Team</span> Faster</h1>
-            <p>
+        <section style={{ padding: "80px 0 60px" }}>
+          <div className="stf-wrap">
+
+            <h1 style={{ fontSize: "4.5rem", fontWeight: 800, margin: "0 0 24px 0", lineHeight: 1.05, letterSpacing: "-1px" }}>
+              Let&apos;s Build <span style={{ color: "var(--green)" }}>Your Team</span> Faster
+            </h1>
+            <p style={{ fontSize: "1.125rem", color: "var(--text-secondary)", maxWidth: "650px", lineHeight: 1.6, margin: 0 }}>
               Send us your hiring needs, billing questions, or platform
               feedback. Our support team usually replies within one business
               day.
@@ -444,299 +146,300 @@ export default function ContactUs() {
         </section>
 
         {/* Content Section */}
-        <section>
-          <div className="stf-container stf-grid">
+        <section style={{ paddingBottom: "80px" }}>
+          <div className="stf-wrap">
+            <div className="row g-5">
 
-            {/* Left Column: Contact Info */}
-            <div className="stf-col-info">
-              <div className="stf-card">
-                <h2>Get in Touch</h2>
-                <p className="stf-card-desc">
-                  Reach us by email, phone, or by using this form. For urgent
-                  account issues, include your registered email and a short
-                  summary so we can prioritize your case.
-                </p>
+              {/* Left Column: Contact Info */}
+              <div className="col-lg-5">
+                <div style={{ backgroundColor: "var(--tint)", border: "1px solid var(--border)", borderRadius: "14px", padding: "48px", height: "100%" }}>
+                  <h2 style={{ fontSize: "2.25rem", color: "var(--ink)", margin: "0 0 16px 0" }}>Get in Touch</h2>
+                  <p style={{ color: "var(--text-secondary)", lineHeight: 1.6, marginBottom: "48px", fontSize: "1rem" }}>
+                    Reach us by email, phone, or by using this form. For urgent
+                    account issues, include your registered email and a short
+                    summary so we can prioritize your case.
+                  </p>
 
-                <ul className="stf-info-list">
-                  <li>
-                    <span className="stf-info-icon">
-                      <i className="fa fa-map-marker" aria-hidden="true"></i>
-                    </span>
-                    <div className="stf-info-text">
-                      <h5>Admin Office</h5>
-                      <p>21 Tanglewood Bvd, Truganina VIC 3029, Australia</p>
-                    </div>
-                  </li>
-                  <li>
-                    <span className="stf-info-icon">
-                      <i className="fa fa-envelope" aria-hidden="true"></i>
-                    </span>
-                    <div className="stf-info-text">
-                      <h5>Email</h5>
-                      <a href="mailto:admin@staffoo.com.au"
-                        style={{ textTransform: "none" }}
-                      >
-                        admin@staffoo.com.au
-                      </a>
-                    </div>
-                  </li>
-                  <li>
-                    <span className="stf-info-icon">
-                      <i className="fa fa-phone" aria-hidden="true"></i>
-                    </span>
-                    <div className="stf-info-text">
-                      <h5>Phone</h5>
-                      <Link to="tel:1800 782 366">1800 782 366</Link>
-                    </div>
-                  </li>
-                  <li>
-                    <span className="stf-info-icon">
-                      <i className="fa fa-clock" aria-hidden="true"></i>
-                    </span>
-                    <div className="stf-info-text">
-                      <h5>Business Hours</h5>
-                      <p>Mon - Fri, 9:00 AM - 6:00 PM (AEST)</p>
-                    </div>
-                  </li>
-                </ul>
+                  <ul style={{ listStyle: "none", padding: 0, margin: "0 0 48px 0" }}>
+                    <li style={{ display: "flex", alignItems: "flex-start", marginBottom: "32px", gap: "20px" }}>
+                      <span style={{ color: "var(--green)", fontSize: "1.25rem", marginTop: "4px" }}>
+                        <i className="fa fa-map-marker" aria-hidden="true"></i>
+                      </span>
+                      <div>
+                        <h5 style={{ margin: "0 0 8px 0", fontSize: "1.1rem", color: "var(--ink)", fontWeight: 600 }}>Admin Office</h5>
+                        <p style={{ margin: 0, color: "var(--text-secondary)", fontSize: "0.95rem" }}>21 Tanglewood Bvd, Truganina VIC 3029, Australia</p>
+                      </div>
+                    </li>
+                    <li style={{ display: "flex", alignItems: "flex-start", marginBottom: "32px", gap: "20px" }}>
+                      <span style={{ color: "var(--green)", fontSize: "1.25rem", marginTop: "4px" }}>
+                        <i className="fa fa-envelope" aria-hidden="true"></i>
+                      </span>
+                      <div>
+                        <h5 style={{ margin: "0 0 8px 0", fontSize: "1.1rem", color: "var(--ink)", fontWeight: 600 }}>Email</h5>
+                        <a href="mailto:admin@staffoo.com.au" style={{ color: "var(--text-secondary)", textDecoration: "none", fontSize: "0.95rem", transition: "color 0.2s" }} onMouseEnter={(e) => e.target.style.color = 'var(--green)'} onMouseLeave={(e) => e.target.style.color = 'var(--text-secondary)'}>
+                          admin@staffoo.com.au
+                        </a>
+                      </div>
+                    </li>
+                    <li style={{ display: "flex", alignItems: "flex-start", marginBottom: "32px", gap: "20px" }}>
+                      <span style={{ color: "var(--green)", fontSize: "1.25rem", marginTop: "4px" }}>
+                        <i className="fa fa-phone" aria-hidden="true"></i>
+                      </span>
+                      <div>
+                        <h5 style={{ margin: "0 0 8px 0", fontSize: "1.1rem", color: "var(--ink)", fontWeight: 600 }}>Phone</h5>
+                        <Link to="tel:1800 782 366" style={{ color: "var(--text-secondary)", textDecoration: "none", fontSize: "0.95rem", transition: "color 0.2s" }} onMouseEnter={(e) => e.target.style.color = 'var(--green)'} onMouseLeave={(e) => e.target.style.color = 'var(--text-secondary)'}>1800 782 366</Link>
+                      </div>
+                    </li>
+                    <li style={{ display: "flex", alignItems: "flex-start", marginBottom: "32px", gap: "20px" }}>
+                      <span style={{ color: "var(--green)", fontSize: "1.25rem", marginTop: "4px" }}>
+                        <i className="fa fa-clock" aria-hidden="true"></i>
+                      </span>
+                      <div>
+                        <h5 style={{ margin: "0 0 8px 0", fontSize: "1.1rem", color: "var(--ink)", fontWeight: 600 }}>Business Hours</h5>
+                        <p style={{ margin: 0, color: "var(--text-secondary)", fontSize: "0.95rem" }}>Mon - Fri, 9:00 AM - 6:00 PM (AEST)</p>
+                      </div>
+                    </li>
+                  </ul>
 
-                <div className="stf-socials" aria-label="Social links">
-                  <Link
-                    to="https://www.facebook.com/profile.php?id=61582204185867"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label="Facebook"
-                  >
-                    <i className="fab fa-facebook" aria-hidden="true"></i>
-                  </Link>
-                  <Link
-                    to="https://www.instagram.com/staffoo_/"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label="Instagram"
-                  >
-                    <i className="fab fa-instagram" aria-hidden="true"></i>
-                  </Link>
-                  <Link
-                    to="https://www.linkedin.com/company/staff-o/"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label="LinkedIn"
-                  >
-                    <i className="fab fa-linkedin" aria-hidden="true"></i>
-                  </Link>
+                  <div style={{ display: "flex", gap: "16px" }}>
+                    <Link to="https://www.facebook.com/profile.php?id=61582204185867" target="_blank" rel="noopener noreferrer"
+                      style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "44px", height: "44px", borderRadius: "8px", backgroundColor: "var(--white)", color: "var(--green)", border: "1px solid var(--border)", textDecoration: "none", fontSize: "1.2rem", transition: "all 0.2s ease" }}
+                      onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--green)'; e.currentTarget.style.color = 'white'; e.currentTarget.style.borderColor = 'var(--green)' }}
+                      onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'var(--white)'; e.currentTarget.style.color = 'var(--green)'; e.currentTarget.style.borderColor = 'var(--border)' }}
+                    >
+                      <i className="fab fa-facebook" aria-hidden="true"></i>
+                    </Link>
+                    <Link to="https://www.instagram.com/staffoo_/" target="_blank" rel="noopener noreferrer"
+                      style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "44px", height: "44px", borderRadius: "8px", backgroundColor: "var(--white)", color: "var(--green)", border: "1px solid var(--border)", textDecoration: "none", fontSize: "1.2rem", transition: "all 0.2s ease" }}
+                      onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--green)'; e.currentTarget.style.color = 'white'; e.currentTarget.style.borderColor = 'var(--green)' }}
+                      onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'var(--white)'; e.currentTarget.style.color = 'var(--green)'; e.currentTarget.style.borderColor = 'var(--border)' }}
+                    >
+                      <i className="fab fa-instagram" aria-hidden="true"></i>
+                    </Link>
+                    <Link to="https://www.linkedin.com/company/staff-o/" target="_blank" rel="noopener noreferrer"
+                      style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "44px", height: "44px", borderRadius: "8px", backgroundColor: "var(--white)", color: "var(--green)", border: "1px solid var(--border)", textDecoration: "none", fontSize: "1.2rem", transition: "all 0.2s ease" }}
+                      onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--green)'; e.currentTarget.style.color = 'white'; e.currentTarget.style.borderColor = 'var(--green)' }}
+                      onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'var(--white)'; e.currentTarget.style.color = 'var(--green)'; e.currentTarget.style.borderColor = 'var(--border)' }}
+                    >
+                      <i className="fab fa-linkedin" aria-hidden="true"></i>
+                    </Link>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            {/* Right Column: Form */}
-            <div className="stf-col-form">
-              <div className="stf-card">
-                <h2>Send a Message</h2>
-                <p className="stf-card-desc">
-                  Tell us what you need and we will route your message to the
-                  right team.
-                </p>
+              {/* Right Column: Form */}
+              <div className="col-lg-7">
+                <div style={{ backgroundColor: "var(--white)", border: "1px solid var(--border)", borderRadius: "14px", padding: "48px", height: "100%", boxShadow: "0 2px 8px rgba(0,0,0,0.02)" }}>
+                  <h2 style={{ fontSize: "2.25rem", color: "var(--ink)", margin: "0 0 16px 0" }}>Send a Message</h2>
+                  <p style={{ color: "var(--text-secondary)", lineHeight: 1.6, marginBottom: "40px", fontSize: "1rem" }}>
+                    Tell us what you need and we will route your message to the
+                    right team.
+                  </p>
 
-                <form onSubmit={handleSubmit} noValidate>
-                  <div className="stf-form-grid">
+                  <form onSubmit={handleSubmit} noValidate>
+                    <div className="row g-4">
 
-                    <div>
-                      <label htmlFor="fullName" className="stf-label">
-                        Full Name <span>*</span>
-                      </label>
-                      <input
-                        id="fullName"
-                        name="fullName"
-                        type="text"
-                        className={`stf-input ${errors.fullName ? "stf-invalid" : ""}`}
-                        placeholder="Enter your full name"
-                        value={form.fullName}
-                        onChange={handleChange}
-                        autoComplete="name"
-                        required
-                      />
-                      {errors.fullName && (
-                        <span className="stf-error-msg">{errors.fullName}</span>
-                      )}
-                    </div>
-
-                    <div>
-                      <label htmlFor="email" className="stf-label">
-                        Email Address <span>*</span>
-                      </label>
-                      <input
-                        id="email"
-                        name="email"
-                        type="email"
-                        className={`stf-input ${errors.email ? "stf-invalid" : ""}`}
-                        placeholder="you@example.com"
-                        value={form.email}
-                        onChange={handleChange}
-                        autoComplete="email"
-                        required
-                      />
-                      {errors.email && (
-                        <span className="stf-error-msg">{errors.email}</span>
-                      )}
-                    </div>
-
-                    <div>
-                      <label htmlFor="phone" className="stf-label">
-                        Phone Number
-                      </label>
-                      <input
-                        id="phone"
-                        name="phone"
-                        type="tel"
-                        className={`stf-input ${errors.phone ? "stf-invalid" : ""}`}
-                        placeholder="Optional"
-                        value={form.phone}
-                        onChange={handleChange}
-                        autoComplete="tel"
-                      />
-                      {errors.phone && (
-                        <span className="stf-error-msg">{errors.phone}</span>
-                      )}
-                    </div>
-
-                    <div>
-                      <label htmlFor="company" className="stf-label">
-                        Company
-                      </label>
-                      <input
-                        id="company"
-                        name="company"
-                        type="text"
-                        className="stf-input"
-                        placeholder="Optional"
-                        value={form.company}
-                        onChange={handleChange}
-                        autoComplete="organization"
-                      />
-                    </div>
-
-                    <div>
-                      <label htmlFor="inquiryType" className="stf-label">
-                        Inquiry Type
-                      </label>
-                      <select
-                        id="inquiryType"
-                        name="inquiryType"
-                        className="stf-input"
-                        value={form.inquiryType}
-                        onChange={handleChange}
-                      >
-                        <option>General</option>
-                        <option>Hiring Support</option>
-                        <option>Candidate Support</option>
-                        <option>Billing</option>
-                        <option>Technical Issue</option>
-                        <option>Partnership</option>
-                      </select>
-                    </div>
-
-                    <div>
-                      <label htmlFor="subject" className="stf-label">
-                        Subject <span>*</span>
-                      </label>
-                      <input
-                        id="subject"
-                        name="subject"
-                        type="text"
-                        className={`stf-input ${errors.subject ? "stf-invalid" : ""}`}
-                        placeholder="What can we help with?"
-                        value={form.subject}
-                        onChange={handleChange}
-                        required
-                      />
-                      {errors.subject && (
-                        <span className="stf-error-msg">{errors.subject}</span>
-                      )}
-                    </div>
-
-                    <div className="stf-form-full">
-                      <label htmlFor="message" className="stf-label">
-                        Message <span>*</span>
-                      </label>
-                      <textarea
-                        id="message"
-                        name="message"
-                        className={`stf-input ${errors.message ? "stf-invalid" : ""}`}
-                        placeholder="Please include details such as timeline, role types, or account issue context."
-                        value={form.message}
-                        onChange={handleChange}
-                        required
-                      ></textarea>
-                      {errors.message && (
-                        <span className="stf-error-msg">{errors.message}</span>
-                      )}
-                    </div>
-
-                    {/* Honeypot Field */}
-                    <div style={{ display: "none" }}>
-                      <label htmlFor="website">Website</label>
-                      <input
-                        id="website"
-                        name="website"
-                        type="text"
-                        value={form.website}
-                        onChange={handleChange}
-                        tabIndex="-1"
-                        autoComplete="off"
-                      />
-                    </div>
-
-                    <div className="stf-form-full">
-                      <div className="stf-checkbox-wrapper">
-                        <input
-                          id="consent"
-                          name="consent"
-                          type="checkbox"
-                          className={`stf-checkbox ${errors.consent ? "stf-invalid" : ""}`}
-                          checked={form.consent}
-                          onChange={handleChange}
-                        />
-                        <label htmlFor="consent" className="stf-checkbox-label">
-                          I agree to be contacted regarding my request.
+                      <div className="col-md-6">
+                        <label htmlFor="fullName" style={{ display: "block", fontSize: "0.85rem", color: "var(--text-secondary)", marginBottom: "10px", fontWeight: 600 }}>
+                          Full Name <span style={{ color: "#ef4444" }}>*</span>
                         </label>
+                        <input
+                          id="fullName"
+                          name="fullName"
+                          type="text"
+                          className="form-control shadow-none"
+                          style={{ backgroundColor: "var(--white)", border: `1px solid ${errors.fullName ? '#ef4444' : 'var(--border)'}`, color: "var(--ink)", padding: "14px 16px", borderRadius: "8px", fontSize: "1rem", outline: "none" }}
+                          placeholder="Enter your full name"
+                          value={form.fullName}
+                          onChange={handleChange}
+                          autoComplete="name"
+                          required
+                        />
+                        {errors.fullName && <span style={{ color: "#ef4444", fontSize: "0.8rem", marginTop: "8px", display: "block" }}>{errors.fullName}</span>}
                       </div>
-                      {errors.consent && (
-                        <span className="stf-error-msg">{errors.consent}</span>
-                      )}
-                    </div>
 
-                    <div className="stf-form-full">
-                      <button
-                        type="submit"
-                        className="stf-submit-btn"
-                        disabled={loading}
-                      >
-                        {loading ? "Sending message..." : "Submit Message"}
-                      </button>
-                    </div>
+                      <div className="col-md-6">
+                        <label htmlFor="email" style={{ display: "block", fontSize: "0.85rem", color: "var(--text-secondary)", marginBottom: "10px", fontWeight: 600 }}>
+                          Email Address <span style={{ color: "#ef4444" }}>*</span>
+                        </label>
+                        <input
+                          id="email"
+                          name="email"
+                          type="email"
+                          className="form-control shadow-none"
+                          style={{ backgroundColor: "var(--white)", border: `1px solid ${errors.email ? '#ef4444' : 'var(--border)'}`, color: "var(--ink)", padding: "14px 16px", borderRadius: "8px", fontSize: "1rem", outline: "none" }}
+                          placeholder="you@example.com"
+                          value={form.email}
+                          onChange={handleChange}
+                          autoComplete="email"
+                          required
+                        />
+                        {errors.email && <span style={{ color: "#ef4444", fontSize: "0.8rem", marginTop: "8px", display: "block" }}>{errors.email}</span>}
+                      </div>
 
-                  </div>
-                </form>
+                      <div className="col-md-6">
+                        <label htmlFor="phone" style={{ display: "block", fontSize: "0.85rem", color: "var(--text-secondary)", marginBottom: "10px", fontWeight: 600 }}>
+                          Phone Number
+                        </label>
+                        <input
+                          id="phone"
+                          name="phone"
+                          type="tel"
+                          className="form-control shadow-none"
+                          style={{ backgroundColor: "var(--white)", border: `1px solid ${errors.phone ? '#ef4444' : 'var(--border)'}`, color: "var(--ink)", padding: "14px 16px", borderRadius: "8px", fontSize: "1rem", outline: "none" }}
+                          placeholder="Optional"
+                          value={form.phone}
+                          onChange={handleChange}
+                          autoComplete="tel"
+                        />
+                        {errors.phone && <span style={{ color: "#ef4444", fontSize: "0.8rem", marginTop: "8px", display: "block" }}>{errors.phone}</span>}
+                      </div>
+
+                      <div className="col-md-6">
+                        <label htmlFor="company" style={{ display: "block", fontSize: "0.85rem", color: "var(--text-secondary)", marginBottom: "10px", fontWeight: 600 }}>
+                          Company
+                        </label>
+                        <input
+                          id="company"
+                          name="company"
+                          type="text"
+                          className="form-control shadow-none"
+                          style={{ backgroundColor: "var(--white)", border: "1px solid var(--border)", color: "var(--ink)", padding: "14px 16px", borderRadius: "8px", fontSize: "1rem", outline: "none" }}
+                          placeholder="Optional"
+                          value={form.company}
+                          onChange={handleChange}
+                          autoComplete="organization"
+                        />
+                      </div>
+
+                      <div className="col-md-6">
+                        <label htmlFor="inquiryType" style={{ display: "block", fontSize: "0.85rem", color: "var(--text-secondary)", marginBottom: "10px", fontWeight: 600 }}>
+                          Inquiry Type
+                        </label>
+                        <select
+                          id="inquiryType"
+                          name="inquiryType"
+                          className="form-select shadow-none"
+                          style={{ backgroundColor: "var(--white)", border: "1px solid var(--border)", color: "var(--ink)", padding: "14px 16px", borderRadius: "8px", fontSize: "1rem", outline: "none", cursor: "pointer" }}
+                          value={form.inquiryType}
+                          onChange={handleChange}
+                        >
+                          <option>General</option>
+                          <option>Hiring Support</option>
+                          <option>Candidate Support</option>
+                          <option>Billing</option>
+                          <option>Technical Issue</option>
+                          <option>Partnership</option>
+                        </select>
+                      </div>
+
+                      <div className="col-md-6">
+                        <label htmlFor="subject" style={{ display: "block", fontSize: "0.85rem", color: "var(--text-secondary)", marginBottom: "10px", fontWeight: 600 }}>
+                          Subject <span style={{ color: "#ef4444" }}>*</span>
+                        </label>
+                        <input
+                          id="subject"
+                          name="subject"
+                          type="text"
+                          className="form-control shadow-none"
+                          style={{ backgroundColor: "var(--white)", border: `1px solid ${errors.subject ? '#ef4444' : 'var(--border)'}`, color: "var(--ink)", padding: "14px 16px", borderRadius: "8px", fontSize: "1rem", outline: "none" }}
+                          placeholder="What can we help with?"
+                          value={form.subject}
+                          onChange={handleChange}
+                          required
+                        />
+                        {errors.subject && <span style={{ color: "#ef4444", fontSize: "0.8rem", marginTop: "8px", display: "block" }}>{errors.subject}</span>}
+                      </div>
+
+                      <div className="col-12">
+                        <label htmlFor="message" style={{ display: "block", fontSize: "0.85rem", color: "var(--text-secondary)", marginBottom: "10px", fontWeight: 600 }}>
+                          Message <span style={{ color: "#ef4444" }}>*</span>
+                        </label>
+                        <textarea
+                          id="message"
+                          name="message"
+                          className="form-control shadow-none"
+                          style={{ backgroundColor: "var(--white)", border: `1px solid ${errors.message ? '#ef4444' : 'var(--border)'}`, color: "var(--ink)", padding: "14px 16px", borderRadius: "8px", fontSize: "1rem", outline: "none", minHeight: "120px", resize: "vertical" }}
+                          placeholder="Please include details such as timeline, role types, or account issue context."
+                          value={form.message}
+                          onChange={handleChange}
+                          required
+                        ></textarea>
+                        {errors.message && <span style={{ color: "#ef4444", fontSize: "0.8rem", marginTop: "8px", display: "block" }}>{errors.message}</span>}
+                      </div>
+
+                      {/* Honeypot Field */}
+                      <div style={{ display: "none" }}>
+                        <label htmlFor="website">Website</label>
+                        <input
+                          id="website"
+                          name="website"
+                          type="text"
+                          value={form.website}
+                          onChange={handleChange}
+                          tabIndex="-1"
+                          autoComplete="off"
+                        />
+                      </div>
+
+                      <div className="col-12">
+                        <div style={{ display: "flex", alignItems: "flex-start", gap: "12px" }}>
+                          <input
+                            id="consent"
+                            name="consent"
+                            type="checkbox"
+                            className="form-check-input mt-1"
+                            style={{ cursor: "pointer", borderColor: errors.consent ? "#ef4444" : "var(--border)" }}
+                            checked={form.consent}
+                            onChange={handleChange}
+                          />
+                          <label htmlFor="consent" style={{ fontSize: "0.95rem", color: "var(--text-secondary)", cursor: "pointer", userSelect: "none", lineHeight: 1.4 }}>
+                            I agree to be contacted regarding my request.
+                          </label>
+                        </div>
+                        {errors.consent && <span style={{ color: "#ef4444", fontSize: "0.8rem", marginTop: "8px", display: "block" }}>{errors.consent}</span>}
+                      </div>
+
+                      <div className="col-12 mt-4">
+                        <button
+                          type="submit"
+                          className="btn"
+                          disabled={loading}
+                          style={{
+                            backgroundColor: "var(--green)", color: "var(--white)", border: "none", padding: "16px", width: "100%",
+                            borderRadius: "8px", fontWeight: 600, fontSize: "1rem", transition: "background-color 0.2s"
+                          }}
+                          onMouseEnter={(e) => { if (!loading) e.currentTarget.style.backgroundColor = 'var(--green-dark)' }}
+                          onMouseLeave={(e) => { if (!loading) e.currentTarget.style.backgroundColor = 'var(--green)' }}
+                        >
+                          {loading ? "Sending message..." : "Submit Message"}
+                        </button>
+                      </div>
+
+                    </div>
+                  </form>
+                </div>
               </div>
-            </div>
 
+            </div>
           </div>
         </section>
 
         {/* Map Section */}
-        <section className="stf-container">
-          <div className="stf-map-container">
-            <iframe
-              title="Staffoo office map"
-              src="https://www.google.com/maps?q=21+Tanglewood+Bvd+Truganina+VIC+3029&output=embed"
-              width="100%"
-              height="420"
-              style={{ border: 0 }}
-              loading="lazy"
-              referrerPolicy="no-referrer-when-downgrade"
-              allowFullScreen
-            ></iframe>
+        <section style={{ paddingBottom: "80px" }}>
+          <div className="stf-wrap">
+            <div style={{ borderRadius: "14px", overflow: "hidden", border: "1px solid var(--border)", backgroundColor: "var(--tint)", padding: "8px", boxShadow: "0 2px 8px rgba(0,0,0,0.02)" }}>
+              <iframe
+                title="Staffoo office map"
+                src="https://www.google.com/maps?q=21+Tanglewood+Bvd+Truganina+VIC+3029&output=embed"
+                width="100%"
+                height="420"
+                style={{ border: 0, borderRadius: "8px", display: "block" }}
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+                allowFullScreen
+              ></iframe>
+            </div>
           </div>
         </section>
       </div>

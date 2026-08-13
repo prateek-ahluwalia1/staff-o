@@ -1,4 +1,4 @@
-import React, { memo, useState, useMemo, useEffect, useRef, useCallback } from "react";
+import React, { memo, useState, useMemo, useEffect, useRef } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { NavLink, useNavigate } from "react-router-dom";
 import { logOut } from "../store/slices/authSlice";
@@ -171,8 +171,8 @@ const Header = memo(function Header({ withSidebar = false }) {
           {token && (
             <div className="hdr-center">
               <NavLink to="/" className={({ isActive }) => `hdr-nav-link ${isActive ? "active" : ""}`}>Home</NavLink>
-              <NavLink to="/contact-us" className={({ isActive }) => `hdr-nav-link ${isActive ? "active" : ""}`}>Contact Us</NavLink>
-              <NavLink to="/about-us" className={({ isActive }) => `hdr-nav-link ${isActive ? "active" : ""}`}>About Us</NavLink>
+              <NavLink to="/contact-us" className={({ isActive }) => `hdr-nav-link ${isActive ? "active" : ""}`}>Contact us</NavLink>
+              <NavLink to="/about-us" className={({ isActive }) => `hdr-nav-link ${isActive ? "active" : ""}`}>About us</NavLink>
             </div>
           )}
 

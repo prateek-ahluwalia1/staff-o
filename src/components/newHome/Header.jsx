@@ -124,7 +124,6 @@ function Header() {
               <div className="nh-dropdown">
                 <NavLink to="/about-us" onClick={handleLinkClick}>About us</NavLink>
                 <NavLink to="/contact-us" onClick={handleLinkClick}>Contact</NavLink>
-                <NavLink to="/careers" onClick={handleLinkClick}>Careers</NavLink>
                 <NavLink to="/privacy-policy" onClick={handleLinkClick}>Privacy Policy</NavLink>
                 <NavLink to="/terms-of-use" onClick={handleLinkClick}>Terms of Use</NavLink>
               </div>

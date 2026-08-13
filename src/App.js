@@ -19,7 +19,6 @@ import { useEcho } from "./hooks/useEcho";
 import { logOut } from "./store/slices/authSlice";
 import useSubmit from "./hooks/useSubmit";
 import useFetch from "./hooks/useFetch";
-import Careers from "./pages/career";
 import GPSGuardTracking from "./pages/features/gps-guard-tracking";
 import EventCrowdControl from "./pages/industries/Event-crowd-control";
 import RetailSecurity from "./pages/industries/retail-security";
@@ -605,7 +604,6 @@ function AppContent() {
                 <Route path="/privacy-policy" element={<ProtectedRoute public><PrivacyPolicy /></ProtectedRoute>} />
                 <Route path="/about-us" element={<ProtectedRoute public><AboutUs /></ProtectedRoute>} />
                 <Route path="/contact-us" element={<ProtectedRoute public><ContactUs /></ProtectedRoute>} />
-                <Route path="/careers" element={<ProtectedRoute public><Careers /></ProtectedRoute>} />
 
                 {/* Auth */}
                 <Route path="/login" element={<ProtectedRoute guestOnly><Login /></ProtectedRoute>} />

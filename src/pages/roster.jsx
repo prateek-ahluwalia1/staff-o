@@ -633,7 +633,7 @@ export default function RosterPage() {
                                 )}
                                 <div className="vr-shift-time">
                                   {isContractorZeroInvoiceBreakdown ? (
-                                    <span 
+                                    <span
                                       className="d-block w-100"
                                       style={{ color: '#082f49', fontWeight: 800, cursor: 'pointer', fontSize: '10.5px', lineHeight: '1.3', whiteSpace: 'normal', textTransform: 'uppercase' }}
                                       onClick={(e) => {
@@ -641,7 +641,7 @@ export default function RosterPage() {
                                         openModalAction(site, shift, day.dateLabel, "shift_breakdown", day.key);
                                       }}
                                     >
-                                      Job confirmed.<br/>Click here to split
+                                      Job confirmed.<br />Click here to split
                                     </span>
                                   ) : (
                                     <>

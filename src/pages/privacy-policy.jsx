@@ -1,6 +1,9 @@
 import React from "react";
+import { Helmet } from "react-helmet";
+import { Link } from "react-router-dom";
 import Header from "../components/newHome/Header";
 import Footer from "../components/newHome/Footer";
+import "../components/industries/event-crowd-comp/styles.css";
 
 const sections = [
   {
@@ -48,118 +51,43 @@ const sections = [
 export default function PrivacyPolicy() {
   return (
     <>
-      <Header />
+      <Helmet>
+        <title>Privacy Policy | Staffoo</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="true" />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap"
+            rel="stylesheet"
+        />
+      </Helmet>
 
-      {/* INTERNAL STYLESHEET */}
-      <style>{`
-        .stf-privacy-page {
-          background-color: #0d1216;
-          color: #ffffff;
-          font-family: 'Inter', system-ui, -apple-system, sans-serif;
-          min-height: 100vh;
-          padding-bottom: 80px;
-        }
+      <div className="stf-industry-page">
+        <Header />
 
-        .stf-container {
-          max-width: 900px;
-          margin: 0 auto;
-          padding: 0 24px;
-        }
+        <div className="stf-breadcrumb-section">
+            <div className="stf-wrap">
+                <div className="stf-breadcrumb">
+                    <Link className="text-black text-decoration-none" to="/">Home</Link>
+                    <span className="sep mx-2">/</span>
+                    <span className="current text-muted">Privacy Policy</span>
+                </div>
+            </div>
+        </div>
 
-        /* Hero Section */
-        .stf-hero {
-          text-align: center;
-          padding: 80px 0 50px;
-        }
-        .stf-badge {
-          color: #0A7C6E;
-          
-          font-size: 0.75rem;
-          font-weight: 700;
-          letter-spacing: 1.5px;
-          margin-bottom: 24px;
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          gap: 10px;
-        }
-        .stf-hero h1 {
-          font-size: 3.5rem;
-          font-weight: 800;
-          margin: 0 0 24px 0;
-          line-height: 1.1;
-          letter-spacing: -1px;
-        }
-        .stf-hero p {
-          font-size: 1.125rem;
-          color: #9ca3af;
-          max-width: 650px;
-          margin: 0 auto;
-          line-height: 1.6;
-        }
-
-        /* Content Card */
-        .stf-card {
-          background-color: #12191d;
-          border: 1px solid #1f2933;
-          border-radius: 8px;
-          padding: 48px;
-        }
-
-        /* Typography & Layout for Legal Content */
-        .stf-policy-section {
-          margin-bottom: 32px;
-        }
-        .stf-policy-section h2 {
-          font-size: 1.2rem;
-          font-weight: 600;
-          color: #ffffff;
-          margin: 0 0 12px 0;
-        }
-        .stf-policy-section p {
-          color: #9ca3af;
-          line-height: 1.7;
-          margin: 0;
-          font-size: 1rem;
-        }
-
-        .stf-contact-details {
-          margin-top: 16px;
-        }
-        .stf-contact-details p {
-          margin-bottom: 6px;
-        }
-        .stf-contact-details p:last-child {
-          margin-bottom: 0;
-        }
-
-        .stf-date-effective {
-          margin-top: 48px;
-          padding-top: 24px;
-          border-top: 1px solid #1f2933;
-          color: #4b5563;
-          font-size: 0.9rem;
-          font-weight: 500;
-        }
-
-        /* Responsive */
-        @media (max-width: 768px) {
-          .stf-hero h1 { font-size: 2.5rem; }
-          .stf-card { padding: 32px 24px; }
-          .stf-policy-section h2 { font-size: 1.1rem; }
-        }
-      `}</style>
-
-      <div className="stf-privacy-page">
         {/* Hero Section */}
-        <section className="stf-hero">
-          <div className="stf-container">
-            <span className="stf-badge">
+        <section style={{ textAlign: "center", padding: "80px 0 50px" }}>
+          <div className="stf-wrap">
+            <span style={{
+                color: "var(--green)", fontSize: "0.75rem", fontWeight: 700, letterSpacing: "1.5px", 
+                marginBottom: "24px", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: "10px", textTransform: "uppercase"
+            }}>
               <i className="fa fa-shield" aria-hidden="true"></i>
               Legal
             </span>
-            <h1>Terms of Service & Privacy Policy</h1>
-            <p>
+            <h1 style={{ fontSize: "3.5rem", margin: "0 auto 24px auto", maxWidth: "900px", lineHeight: 1.1 }}>
+              Terms of Service & Privacy Policy
+            </h1>
+            <p style={{ fontSize: "1.125rem", color: "var(--text-secondary)", maxWidth: "650px", margin: "0 auto", lineHeight: 1.6 }}>
               Staffoo is committed to protecting your privacy and handling your
               information in accordance with Australian privacy law.
             </p>
@@ -167,35 +95,40 @@ export default function PrivacyPolicy() {
         </section>
 
         {/* Content Section */}
-        <section>
-          <div className="stf-container">
-            <div className="stf-card">
+        <section style={{ paddingBottom: "80px" }}>
+          <div className="stf-wrap" style={{ maxWidth: "900px" }}>
+            <div style={{ backgroundColor: "var(--white)", border: "1px solid var(--border)", borderRadius: "14px", padding: "48px", boxShadow: "0 2px 8px rgba(0,0,0,0.02)" }}>
 
               {/* Dynamic Sections */}
-              {sections.map((section) => (
-                <article key={section.title} className="stf-policy-section">
-                  <h2>{section.title}</h2>
-                  <p>{section.content}</p>
+              {sections.map((section, index) => (
+                <article key={section.title} style={{ marginBottom: "32px", borderBottom: index !== sections.length - 1 ? "1px solid var(--border)" : "none", paddingBottom: index !== sections.length - 1 ? "32px" : "0" }}>
+                  <h2 style={{ fontSize: "1.3rem", fontWeight: 700, color: "var(--ink)", margin: "0 0 12px 0", fontFamily: "'Barlow Semi Condensed', sans-serif" }}>
+                    {section.title}
+                  </h2>
+                  <p style={{ color: "var(--text-secondary)", lineHeight: 1.7, margin: 0, fontSize: "1rem" }}>
+                    {section.content}
+                  </p>
                 </article>
               ))}
 
               {/* Static Contact Section */}
-              <article className="stf-policy-section">
-                <h2>Part 5: Contact Information</h2>
-                <div className="stf-contact-details">
-                  <p>Capital Services Pty Ltd</p>
-                  <p>ABN: 48 613 317 838</p>
-                  <p>
-                    Registered Office: 21 Tanglewood Bvd, Truganina VIC 3029,
-                    Australia
+              <article style={{ marginTop: "32px", borderTop: "1px solid var(--border)", paddingTop: "32px" }}>
+                <h2 style={{ fontSize: "1.3rem", fontWeight: 700, color: "var(--ink)", margin: "0 0 16px 0", fontFamily: "'Barlow Semi Condensed', sans-serif" }}>
+                  Part 5: Contact Information
+                </h2>
+                <div style={{ color: "var(--text-secondary)", fontSize: "1rem", lineHeight: 1.6 }}>
+                  <p style={{ marginBottom: "6px" }}><strong>Capital Services Pty Ltd</strong></p>
+                  <p style={{ marginBottom: "6px" }}>ABN: 48 613 317 838</p>
+                  <p style={{ marginBottom: "6px" }}>
+                    Registered Office: 21 Tanglewood Bvd, Truganina VIC 3029, Australia
                   </p>
-                  <p>Email: admin@staffoo.com.au</p>
-                  <p>Phone: 1800 782 366</p>
+                  <p style={{ marginBottom: "6px" }}>Email: <a href="mailto:admin@staffoo.com.au" style={{ color: "var(--green)", textDecoration: "none" }}>admin@staffoo.com.au</a></p>
+                  <p style={{ margin: 0 }}>Phone: 1800 782 366</p>
                 </div>
               </article>
 
               {/* Effective Date */}
-              <div className="stf-date-effective">
+              <div style={{ marginTop: "48px", paddingTop: "24px", borderTop: "1px solid var(--border)", color: "var(--text-secondary)", fontSize: "0.9rem", fontWeight: 500, textAlign: "center" }}>
                 Effective Date: March 14, 2026.
               </div>
 

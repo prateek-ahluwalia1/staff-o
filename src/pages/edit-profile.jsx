@@ -640,7 +640,6 @@ export default function EditProfile() {
 
       const res = await submit(`api/user-update/${updateUserId}`, payload, { method: "POST" });
       if (res === undefined) return;
-      toast.success("Profile updated successfully!");
       refetch();
 
       if (hasStatesChanged) {

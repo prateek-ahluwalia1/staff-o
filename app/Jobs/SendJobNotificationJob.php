@@ -675,7 +675,7 @@ class SendJobNotificationJob implements ShouldQueue
             //     }
             // }
 
-            $this->sendEmail($guard, $title, $message, $eligibleJobs, $isConsolidated);
+            // $this->sendEmail($guard, $title, $message, $eligibleJobs, $isConsolidated);
 
             $notificationCount++;
             Log::info("Notified guard #{$guard->id} for " . $eligibleJobs->count() . " eligible job(s)", [

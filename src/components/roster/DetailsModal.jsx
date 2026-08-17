@@ -11,8 +11,8 @@ const parseApiDate = (dateValue) => {
 
 const SIDEBAR_TABS = [
   { id: "guard", label: "Staff Information", bg: "#e8f4fd" },
-  { id: "shift", label: "Shift Information", bg: "#e8f8e8" },
-  { id: "schedule", label: "All Shifts", bg: "#fff9c4" },
+  { id: "shift", label: "Job Information", bg: "#e8f8e8" },
+  { id: "schedule", label: "All Jobs", bg: "#fff9c4" },
 ];
 
 // ── small components ─────────────────────────────────────────────────────────
@@ -89,7 +89,7 @@ export default function DetailsModal({
               </div>
               <div>
                 <h5 className="guard-name">
-                  {shift?.guards?.name || "Unassigned Shift"}
+                  {shift?.guards?.name || "Unassigned Job"}
                 </h5>
                 <p className="guard-email">
                   {shift?.guards?.email || "Please assign staff to see details"}
@@ -120,7 +120,7 @@ export default function DetailsModal({
       case "shift":
         return (
           <div className="info-card">
-            <InfoRow label="Shift Location" value={site?.displayName} />
+            <InfoRow label="Job Location" value={site?.displayName} />
             <InfoRow label="Date" value={modal?.dateStr} />
             <InfoRow
               label="Scheduled Time"
@@ -131,7 +131,7 @@ export default function DetailsModal({
               }
             />
             <InfoRow
-              label="Shift Status"
+              label="Job Status"
               value={
                 <span className={`shift-status ${shift?.job_status === "confirmed" ? "confirmed" : "pending"}`}>
                   {shift?.job_status || "N/A"}
@@ -149,7 +149,7 @@ export default function DetailsModal({
         return (
           <div>
             <div className="schedule-header">
-              <h5>Staff Shift Schedule</h5>
+              <h5>Staff Job Schedule</h5>
               <span className="total-hours">Total: {totalGuardHours.toFixed(2)} hrs</span>
             </div>
 
@@ -180,7 +180,7 @@ export default function DetailsModal({
                 })}
               </div>
             ) : (
-              <div className="empty-state">No other shifts found for this staff.</div>
+              <div className="empty-state">No other jobs found for this staff.</div>
             )}
           </div>
         );
@@ -496,7 +496,7 @@ export default function DetailsModal({
           <div className="modal-sidebar">
             {/* Desktop only header + avatar */}
             <div className="sidebar-header">
-              <h3 style={{ margin: 0, fontWeight: "bold" }}>Shift Detail</h3>
+              <h3 style={{ margin: 0, fontWeight: "bold" }}>Job Detail</h3>
             </div>
             {hasGuard && (
               <div className="sidebar-avatar">

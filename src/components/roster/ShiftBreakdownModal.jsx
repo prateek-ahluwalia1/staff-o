@@ -191,7 +191,7 @@ export default function ShiftBreakdownModal({ modal, closeModal, onSuccess, staf
 
     const lastEndDT = combineDateAndTime(defaultStartD, defaultStartT);
     if (lastEndDT && endDate && lastEndDT >= endDate) {
-      toast.warning("Custom segments already cover the shift time window.");
+      toast.warning("Custom segments already cover the job time window.");
       return;
     }
 
@@ -209,7 +209,7 @@ export default function ShiftBreakdownModal({ modal, closeModal, onSuccess, staf
 
   const handleRemoveCustomSegment = (index) => {
     if (customSegments.length <= 1) {
-      toast.error("You must have at least one shift segment.");
+      toast.error("You must have at least one job segment.");
       return;
     }
     setCustomSegments((prev) => prev.filter((_, i) => i !== index));
@@ -242,10 +242,10 @@ export default function ShiftBreakdownModal({ modal, closeModal, onSuccess, staf
           boundsError = "End time must be after start time";
         } else if (startDate && startDT < startDate) {
           isWithinBounds = false;
-          boundsError = `Start cannot be before shift start (${format(startDate, "dd/MM HH:mm")})`;
+          boundsError = `Start cannot be before job start (${format(startDate, "dd/MM HH:mm")})`;
         } else if (endDate && endDT > endDate) {
           isWithinBounds = false;
-          boundsError = `End cannot exceed shift end (${format(endDate, "dd/MM HH:mm")})`;
+          boundsError = `End cannot exceed job end (${format(endDate, "dd/MM HH:mm")})`;
         } else {
           hrs = Math.round(((endDT - startDT) / 3600000) * 100) / 100;
         }
@@ -278,19 +278,19 @@ export default function ShiftBreakdownModal({ modal, closeModal, onSuccess, staf
 
   const handleSubmit = async () => {
     if (activeBreakdown.length === 0) {
-      toast.error("No shift segments created.");
+      toast.error("No job segments created.");
       return;
     }
 
     if (mode === "custom") {
       const invalidSeg = activeBreakdown.find((b) => !b.isValid || b.hours <= 0);
       if (invalidSeg) {
-        toast.error(invalidSeg?.boundsError || "Please ensure all custom segments have valid times within the shift window.");
+        toast.error(invalidSeg?.boundsError || "Please ensure all custom segments have valid times within the job window.");
         return;
       }
 
       if (customTotalHours > totalDuration) {
-        toast.error(`Total segment duration (${customTotalHours}h) cannot exceed original shift duration (${totalDuration}h).`);
+        toast.error(`Total segment duration (${customTotalHours}h) cannot exceed original job duration (${totalDuration}h).`);
         return;
       }
     }
@@ -316,14 +316,14 @@ export default function ShiftBreakdownModal({ modal, closeModal, onSuccess, staf
       });
 
       if (res && (res.success || res.code === 200)) {
-        toast.success(res?.message || "Shift breakdown saved successfully!");
+        toast.success(res?.message || "Job breakdown saved successfully!");
         if (onSuccess) onSuccess();
         closeModal();
       } else {
-        console.error(res?.message || "Failed to save shift breakdown.");
+        console.error(res?.message || "Failed to save job breakdown.");
       }
     } catch (err) {
-      console.error(err.message || "Failed to save shift breakdown.");
+      console.error(err.message || "Failed to save job breakdown.");
     }
   };
 
@@ -338,10 +338,10 @@ export default function ShiftBreakdownModal({ modal, closeModal, onSuccess, staf
           <div>
             <h3 className="mb-0 fw-bold">
               <i className="fa-solid fa-scissors text-teal me-2" style={{ color: "#0A7C6E" }}></i>
-              Contractor Shift Breakdown
+              Resource Partner Job Breakdown
             </h3>
             <div className="text-muted small">
-              Shift Window: <strong>{startDate ? format(startDate, "EEE dd MMM HH:mm") : ""}</strong> &rarr; <strong>{endDate ? format(endDate, "EEE dd MMM HH:mm") : ""}</strong> ({totalDuration}h)
+              Job Window: <strong>{startDate ? format(startDate, "EEE dd MMM HH:mm") : ""}</strong> &rarr; <strong>{endDate ? format(endDate, "EEE dd MMM HH:mm") : ""}</strong> ({totalDuration}h)
             </div>
           </div>
           <button type="button" className="btn-close" onClick={closeModal} aria-label="Close">
@@ -355,11 +355,11 @@ export default function ShiftBreakdownModal({ modal, closeModal, onSuccess, staf
             <div className="d-flex justify-content-between align-items-center mb-1">
               <strong className="text-dark">{site?.displayName || "Site"}</strong>
               <span className="badge bg-teal text-white px-2 py-1" style={{ backgroundColor: "#0A7C6E" }}>
-                <i className="fa-solid fa-scissors me-1"></i> Contractor Breakdown
+                <i className="fa-solid fa-scissors me-1"></i> Resource Partner Breakdown
               </span>
             </div>
             <div className="small text-muted">
-              Shift ID: #{shift?.id} &bull; Total Duration: <strong>{totalDuration} hours</strong>
+              Job ID: #{shift?.id} &bull; Total Duration: <strong>{totalDuration} hours</strong>
             </div>
           </div>
 
@@ -391,7 +391,7 @@ export default function ShiftBreakdownModal({ modal, closeModal, onSuccess, staf
           {mode === "suggested" ? (
             <div className="alert alert-info py-2 px-3 small mb-3">
               <i className="fa-solid fa-circle-info me-2"></i>
-              <strong>Suggested Split:</strong> Chunks shift matching the job creation rules (e.g. 24h split into 8h / 8h / 8h chunks).
+              <strong>Suggested Split:</strong> Chunks job matching the job creation rules (e.g. 24h split into 8h / 8h / 8h chunks).
             </div>
           ) : (
             <div className="alert alert-secondary py-2 px-3 small mb-3">
@@ -565,7 +565,7 @@ export default function ShiftBreakdownModal({ modal, closeModal, onSuccess, staf
             onClick={handleSubmit}
             disabled={submitting || hasBoundsError}
           >
-            {submitting ? "Saving Breakdown..." : "Confirm & Breakdown Shift"}
+            {submitting ? "Saving Breakdown..." : "Confirm & Breakdown Job"}
           </button>
         </div>
       </div>

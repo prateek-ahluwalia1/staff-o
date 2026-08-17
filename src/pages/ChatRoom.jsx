@@ -24,7 +24,7 @@ import { getProfileImageUrlFromUserdata } from "../utils/profileImage";
 
 const CATEGORY_LABELS = {
   staff: "Staff",
-  customers: "Customers",
+  customers: "Clients",
   contractors: "Resource Partners",
   admin: "Admin Support",
 };

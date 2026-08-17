@@ -371,7 +371,7 @@ export default function ScheduleStep({ form, setField, scheduleError = "" }) {
       {form.scheduleDays.length === 0 ? (
         <div className="jw-empty mt-2">
           <i className="fa-solid fa-calendar-days fs-3 d-block mb-2"></i>
-          Select a date {form.scheduleMode === "single" ? "" : "or range "}above to add shift times.
+          Select a date {form.scheduleMode === "single" ? "" : "or range "}above to add job times.
         </div>
       ) : (
         <div className="d-flex flex-column gap-3 mt-2">
@@ -398,7 +398,7 @@ export default function ScheduleStep({ form, setField, scheduleError = "" }) {
                       style={{ opacity: 0.85 }}
                       onClick={() => addShift(dayIndex)}
                     >
-                      + Add shift
+                      + Add Job
                     </button>
                   </div>
                   <div className="d-flex flex-column gap-2">
@@ -465,7 +465,7 @@ export default function ScheduleStep({ form, setField, scheduleError = "" }) {
                             type="button"
                             className="btn btn-sm text-danger p-1 border-0 opacity-75"
                             onClick={() => removeShift(dayIndex, shiftIndex)}
-                            title="Remove shift"
+                            title="Remove job"
                           >
                             <i className="fa-solid fa-trash-can fs-5"></i>
                           </button>

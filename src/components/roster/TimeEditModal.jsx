@@ -114,7 +114,7 @@ export default function TimeEditModal({
       >
         <div style={{ padding: "24px 28px", borderBottom: "1px solid #eef2f7", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <div>
-            <h3 style={{ margin: 0, fontSize: "1.2rem", fontWeight: 700 }}>Edit Shift Times</h3>
+            <h3 style={{ margin: 0, fontSize: "1.2rem", fontWeight: 700 }}>Edit Job Times</h3>
             <p style={{ margin: "6px 0 0", color: "#6b7280", fontSize: "0.95rem", textTransform: "none" }}>
               Update the times for this roster entry. Site, date, and staff assignment stay unchanged.
             </p>

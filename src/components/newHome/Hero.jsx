@@ -36,7 +36,7 @@ function Hero() {
             {activeTab === 'client' ? (
               <>Verified security,<br />on <span>demand.</span></>
             ) : (
-              <>Find shifts,<br />get <span>paid faster.</span></>
+              <>Find jobs,<br />get <span>paid faster.</span></>
             )}
           </h1>
 
@@ -44,7 +44,7 @@ function Hero() {
           <p className="nh-hero-desc">
             {activeTab === 'client'
               ? "Post a job and independent, licensed staff apply. Whether you're hiring one staff for a weekend or covering security across a whole business, review, hire and pay all in one place."
-              : "Create your verified profile, upload your licences, and get matched to security shifts near you. Apply in one tap — no phone tag, no waiting on a callback."}
+              : "Create your verified profile, upload your licences, and get matched to security jobs near you. Apply in one tap — no phone tag, no waiting on a callback."}
           </p>
 
           {/* CTAs */}
@@ -56,7 +56,7 @@ function Hero() {
               </>
             ) : (
               <>
-                <Link to={findJobRoute} className="nh-btn nh-btn-solid nh-btn-lg">Browse open shifts</Link>
+                <Link to={findJobRoute} className="nh-btn nh-btn-solid nh-btn-lg">Browse open jobs</Link>
                 <Link to={postJobRoute} className="nh-btn nh-btn-outline nh-btn-lg">Find a job</Link>
               </>
             )}
@@ -109,7 +109,7 @@ function Hero() {
             <div className="nh-duty-stats">
               <div className="nh-duty-stat">
                 <b>4.9★</b>
-                <span>142 shifts</span>
+                <span>142 jobs</span>
               </div>
               <div className="nh-duty-stat">
                 <b>$42/hr</b>

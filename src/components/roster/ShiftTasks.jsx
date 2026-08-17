@@ -51,7 +51,7 @@ export default function ShiftTasks({ rosterId, guardId }) {
           fontSize: "14px",
         }}
       >
-        Failed to load shift tasks. Please try again.
+        Failed to load job tasks. Please try again.
       </div>
     );
   }
@@ -94,7 +94,7 @@ export default function ShiftTasks({ rosterId, guardId }) {
           )}
           {shiftStart && shiftEnd && (
             <span>
-              <span style={{ color: "#888" }}>Shift: </span>
+              <span style={{ color: "#888" }}>Job Time: </span>
               <strong>
                 {shiftStart} – {shiftEnd}
               </strong>
@@ -125,7 +125,7 @@ export default function ShiftTasks({ rosterId, guardId }) {
             }}
           >
             <i className="fa fa-download"></i>
-            Export All Shift Tasks
+            Export All Job Tasks
           </button>
         </div>
       )}
@@ -141,7 +141,7 @@ export default function ShiftTasks({ rosterId, guardId }) {
             borderRadius: "8px",
           }}
         >
-          No tasks found for this shift.
+          No tasks found for this job.
         </div>
       ) : (
         <div style={{ position: "relative", paddingLeft: "56px" }}>

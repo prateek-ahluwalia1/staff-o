@@ -315,14 +315,14 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
         {renderEmbeddedSection(
           "overview",
           "Overview",
-          "Confirm the pre-filled site, client and date before adding shift details.",
+          "Confirm the pre-filled site, client and date before adding job details.",
           renderEmbeddedSummary()
         )}
 
         {renderEmbeddedSection(
           "schedule",
           "Schedule",
-          "Set the date, time and guard coverage for the shift.",
+          "Set the date, time and guard coverage for the job.",
           <ScheduleStep form={form} setField={setField} scheduleError={scheduleError} applyShiftToAllDays={applyShiftToAllDays} />
         )}
 
@@ -343,7 +343,7 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
         {!isAdmin && renderEmbeddedSection(
           "review",
           "Review and Confirm",
-          "Review the job summary and submit the shift.",
+          "Review the job summary and submit the job.",
           <ReviewStep form={form} rate={breakdown} setStep={setStep} setField={setField} handleConfirm={handleConfirm} isSubmitting={isSubmitting} baseAmount={breakdown?.chargeTotalIncGst || 0} isAdmin={isAdmin} stateCheckResult={stateCheckResult} priceRange={priceRange} />
         )}
       </div>
@@ -426,7 +426,7 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
       const dateString = normalizedInitialDate && !Number.isNaN(normalizedInitialDate.getTime())
         ? normalizedInitialDate.toISOString().split("T")[0]
         : "";
-      const siteTitle = initialSite.site_name || initialSite.displayName || initialSite.title || "Roster Shift";
+      const siteTitle = initialSite.site_name || initialSite.displayName || initialSite.title || "Roster job";
       const siteJobType = initialSite.jobType || initialSite.job_type || "static-security";
       setSelectedSiteId(siteId);
       setForm((f) => ({
@@ -465,7 +465,7 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
       }));
       return { ...prevForm, scheduleDays: updatedDays };
     });
-    toast.success("Shift successfully applied to all selected days!");
+    toast.success("Job successfully applied to all selected days!");
   }, []);
 
   const clientOptions = useMemo(() => {
@@ -532,7 +532,7 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
 
     for (const day of form.scheduleDays) {
       if (day.shifts.length === 0) {
-        setScheduleError(`Please add at least one shift for ${day.date}.`);
+        setScheduleError(`Please add at least one job for ${day.date}.`);
         return false;
       }
       for (const shift of day.shifts) {
@@ -543,7 +543,7 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
     }
 
     if (hasMissingTimes) {
-      setScheduleError("Please ensure all shifts have start and end times.");
+      setScheduleError("Please ensure all jobs have start and end times.");
       return false;
     }
 
@@ -1070,10 +1070,10 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
       <div className="d-flex flex-column gap-3">
         <div className="d-flex justify-content-between align-items-center gap-3 flex-wrap">
           <div>
-            <h4 className="mb-1 fw-bold text-dark">Prefilled shift overview</h4>
+            <h4 className="mb-1 fw-bold text-dark">Prefilled job overview</h4>
             <p className="text-muted small mb-0"
               style={{ textTransform: "none" }}
-            >Client, location and date are prefilled for this roster entry. Review and continue to add shift times.</p>
+            >Client, location and date are prefilled for this roster entry. Review and continue to add job times.</p>
           </div>
         </div>
         <div className="embedded-summary-row">
@@ -1430,10 +1430,10 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
       <div className="embedded-job-modal job-wizard">
         <div className="embedded-job-header">
           <div>
-            <h3 className="mb-1 fw-bold text-white">{isAdmin ? "Add Shift" : "Create Job"}</h3>
+            <h3 className="mb-1 fw-bold text-white">{isAdmin ? "Add Job" : "Create Job"}</h3>
             <p className="text-muted small mb-0"
               style={{ textTransform: "none" }}
-            >Prefilled location and date. Use the schedule and details steps to set the shift time.</p>
+            >Prefilled location and date. Use the schedule and details steps to set the job time.</p>
           </div>
           <button type="button" className="btn-close" onClick={onClose} aria-label="Close">×</button>
         </div>

@@ -9,7 +9,7 @@ export default function HeroSection() {
                         <span className="stf-eyebrow">For licensed staff</span>
                         <h1>How to apply: sign up, upload, activate</h1>
                         <p className="lead">
-                            There's no interview and no waiting on a review queue. Your documents are checked on the spot as you upload them, and once your three activation forms are in, your profile goes live and you can start accepting shifts.
+                            There's no interview and no waiting on a review queue. Your documents are checked on the spot as you upload them, and once your three activation forms are in, your profile goes live and you can start accepting jobs.
                         </p>
 
                         <div className="stf-hero-actions">
@@ -99,7 +99,7 @@ export default function HeroSection() {
                                     <div className="stf-app-ico next">4</div>
                                     <div>
                                         <div className="stf-app-name">Profile live</div>
-                                        <div className="stf-app-meta">Start accepting shifts near you</div>
+                                        <div className="stf-app-meta">Start accepting jobs near you</div>
                                     </div>
                                     <span className="stf-app-status idle">Next</span>
                                 </div>

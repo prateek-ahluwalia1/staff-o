@@ -8,7 +8,7 @@ export default function AfterActivationSection() {
                     <div className="stf-kicker">Once you're live</div>
                     <h2>What your first day on the platform looks like</h2>
                     <p>
-                        Submitting the last form switches your profile on immediately. Shifts appear filtered to your licence and sorted by distance from your suburb, with the pay rate on every listing before you commit to anything.
+                        Submitting the last form switches your profile on immediately. Jobs appear filtered to your licence and sorted by distance from your suburb, with the pay rate on every listing before you commit to anything.
                     </p>
                 </div>
                 <div className="stf-inside-grid">

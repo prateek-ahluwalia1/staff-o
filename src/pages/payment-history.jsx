@@ -530,7 +530,7 @@ export default function PaymentHistory() {
           </span>
           <h1>{displayTitle}</h1>
           <p style={{ textTransform: "none" }}>
-            All shift payments, transactions, and receipts in a single place.
+            All job payments, transactions, and receipts in a single place.
           </p>
         </div>
 

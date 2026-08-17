@@ -204,7 +204,7 @@ export default function Login() {
                 marginBottom: "20px",
               }}>
                 Secure your work.<br />
-                <span style={{ color: G }}>Access trusted shifts.</span>
+                <span style={{ color: G }}>Access trusted jobs.</span>
               </h1>
 
               <p style={{ fontSize: "17px", color: TEXT_SEC, lineHeight: 1.7, maxWidth: "420px", marginBottom: "36px" }}>
@@ -213,7 +213,7 @@ export default function Login() {
 
               <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
                 {[
-                  { icon: "✓", text: "Verified shifts and trusted clients" },
+                  { icon: "✓", text: "Verified jobs and trusted clients" },
                   { icon: "⚡", text: "Instant access to live job updates" },
                   { icon: "◈", text: "Smart tools for your daily workflow" },
                 ].map((item) => (
@@ -452,7 +452,7 @@ export default function Login() {
             <div style={{ display: "flex", flexDirection: "column", gap: "12px", marginBottom: "24px" }}>
               {[
                 { key: "customer", label: "Client", desc: "I want to hire security professionals.", icon: "fa-user-tie" },
-                { key: "staff", label: "Staff", desc: "I am looking for security shifts and jobs.", icon: "fa-user-shield" },
+                { key: "staff", label: "Staff", desc: "I am looking for security jobs.", icon: "fa-user-shield" },
                 { key: "contractor", label: "Resource Partner", desc: "I provide resources and contractor services.", icon: "fa-handshake" },
               ].map((role) => {
                 const isActive = selectedRole === role.key;

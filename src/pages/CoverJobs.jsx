@@ -161,7 +161,7 @@ const CoverJobs = () => {
                 setRemovedJobIds(prev => (prev.includes(jobId) ? prev : [...prev, jobId]));
                 closeModal();
                 if (selectedJob?.contractor_invoice === 0) {
-                    setSuccessMessage('Please wait for the client to give further confirmation. We will notify you shortly and the shift will appear on your Roster page.');
+                    setSuccessMessage('Please wait for the client to give further confirmation. We will notify you shortly and the job will appear on your Roster page.');
                     setShowSuccessPopup(true);
                 } else {
                     toast.success(
@@ -398,7 +398,7 @@ const CoverJobs = () => {
                         <span className="dot"></span> Available
                     </span>
                     <h1>Cover Jobs</h1>
-                    <p>{totalJobs} open shift{totalJobs !== 1 ? 's' : ''} waiting for you</p>
+                    <p>{totalJobs} open job{totalJobs !== 1 ? 's' : ''} waiting for you</p>
                 </div>
 
                 <div className="row row-cols-1 row-cols-md-2 row-cols-xl-4 g-4">
@@ -407,7 +407,7 @@ const CoverJobs = () => {
                             <div className="text-center py-5 bg-white rounded-4 shadow-sm border border-light ">
                                 <i className="fa-solid fa-briefcase mb-3 d-block" style={{ fontSize: '2.5rem', color: '#94a3b8' }}></i>
                                 <h5 className="text-muted">No cover jobs available</h5>
-                                <p className="text-muted small" style={{ textTransform: 'none' }}>Check back later for new shifts.</p>
+                                <p className="text-muted small" style={{ textTransform: 'none' }}>Check back later for new jobs.</p>
                             </div>
                         </div>
                     ) : (
@@ -444,7 +444,7 @@ const CoverJobs = () => {
                                             </div>
 
                                             <h5 className="fw-bold mb-2" style={{ color: '#0f172a', letterSpacing: '-0.3px' }}>
-                                                {job.site_name || job.siteName || 'Untitled Shift'}
+                                                {job.site_name || job.siteName || 'Untitled Job'}
                                             </h5>
                                             <p className="text-muted mb-3 d-flex align-items-start" style={{ fontSize: '13px', lineHeight: '1.4' }}>
                                                 <i className="fa-solid fa-location-dot mt-1 me-2" style={{ color: '#0A7C6E', opacity: 0.8, minWidth: '14px' }}></i>
@@ -571,7 +571,7 @@ const CoverJobs = () => {
                                             <div className="rounded-circle d-flex align-items-center justify-content-center me-3" style={{ width: '36px', height: '36px', background: '#fef3c7', color: '#d97706' }}>
                                                 <i className="fa-solid fa-clock-rotate-left"></i>
                                             </div>
-                                            Shift Info
+                                            Job Info
                                         </h5>
                                         <InfoRow icon="fa-circle-info" label="Status" value={selectedJob.job_status} />
                                         <InfoRow icon="fa-play" label="Start Time" value={formatDateTime(selectedJob.start_time || selectedJob.startTime)} transform={false} />
@@ -708,7 +708,7 @@ const CoverJobs = () => {
                                 <rect width="100%" height="100%" fill="url(#diagonalHatch)" />
                             </svg>
                         </div>
-                        
+
                         <div className="text-center position-relative" style={{ zIndex: 1, padding: '60px 32px 36px' }}>
                             {/* Icon Wrapper */}
                             <div className="mb-4 d-inline-flex align-items-center justify-content-center" style={{
@@ -724,12 +724,12 @@ const CoverJobs = () => {
                                     <i className="fa-solid fa-check text-white" style={{ fontSize: '32px' }}></i>
                                 </div>
                             </div>
-                            
+
                             <h3 className="fw-bolder mb-2" style={{ color: '#0a1930', letterSpacing: '-0.5px' }}>Success!</h3>
                             <p className="text-muted mb-4" style={{ fontSize: '15.5px', lineHeight: '1.5' }}>
                                 {successMessage}
                             </p>
-                            
+
                             <button
                                 className="btn w-100 rounded-pill text-white fw-bold py-3 shadow"
                                 style={{

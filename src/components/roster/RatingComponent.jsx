@@ -7,7 +7,7 @@ export default function RatingComponent({ rosterId, guardId }) {
   const [hoveredRating, setHoveredRating] = useState(0);
   const [description, setDescription] = useState("");
   // New unified state for API messages
-  const [message, setMessage] = useState(null); 
+  const [message, setMessage] = useState(null);
 
   const {
     submit: fetchRating,
@@ -40,33 +40,33 @@ export default function RatingComponent({ rosterId, guardId }) {
 
   const handleSubmit = async () => {
     if (!selectedRating || !rosterId) return;
-    
+
     // Clear previous message
     setMessage(null);
-    
+
     const res = await submitRating("api/jobroster-give-rating", {
       guard_id: guardId,
       roster_id: rosterId,
       rating: selectedRating,
       rating_desc: description.trim(),
     });
-    
+
     if (!res?.success) {
       // Use API message or fallback error
-      setMessage({ 
-        type: "error", 
-        text: res?.message || "Failed to submit rating. Please try again." 
+      setMessage({
+        type: "error",
+        text: res?.message || "Failed to submit rating. Please try again."
       });
       return;
     }
-    
+
     if (res?.success) {
       // Use API message or fallback success
-      setMessage({ 
-        type: "success", 
-        text: res.message || "Rating submitted successfully!" 
+      setMessage({
+        type: "success",
+        text: res.message || "Rating submitted successfully!"
       });
-      
+
       fetchRating("api/get-jobroster-rating", {
         guard_id: guardId,
         roster_id: rosterId,
@@ -95,7 +95,7 @@ export default function RatingComponent({ rosterId, guardId }) {
 
   return (
     <div style={{ maxWidth: "480px" }}>
-      
+
       {/* Inline Feedback Message */}
       {message && (
         <div
@@ -106,9 +106,8 @@ export default function RatingComponent({ rosterId, guardId }) {
             fontSize: "14px",
             backgroundColor: message.type === "error" ? "#fde8e8" : "#e8f8f0",
             color: message.type === "error" ? "#c81e1e" : "#155724",
-            border: `1px solid ${
-              message.type === "error" ? "#f8b4b4" : "#c3e6cb"
-            }`,
+            border: `1px solid ${message.type === "error" ? "#f8b4b4" : "#c3e6cb"
+              }`,
           }}
         >
           {message.type === "success" ? "✅ " : "⚠️ "}
@@ -126,7 +125,7 @@ export default function RatingComponent({ rosterId, guardId }) {
             marginBottom: "10px",
           }}
         >
-          Rate this shift
+          Rate this job
         </label>
         <div className="d-flex gap-2">
           {[1, 2, 3, 4, 5].map((star) => (
@@ -151,7 +150,7 @@ export default function RatingComponent({ rosterId, guardId }) {
           <div style={{ fontSize: "13px", color: "#888", marginTop: "6px" }}>
             {
               ["", "Poor", "Fair", "Good", "Very Good", "Excellent"][
-                selectedRating
+              selectedRating
               ]
             }
           </div>

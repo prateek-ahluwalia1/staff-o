@@ -217,7 +217,7 @@ export default function ReviewStep({ form, rate, setField, handleConfirm, setSte
                     <span className="fw-bold fs-6 text-dark">Split Payment (50/50)</span>
                   </div>
                   <div className="small text-muted mb-3" style={{ textTransform: "none", fontSize: "0.8rem", lineHeight: "1.4" }}>
-                    Pay 50% upfront to secure staff. The remaining 50% is charged upon shift completion.
+                    Pay 50% upfront to secure staff. The remaining 50% is charged upon job completion.
                   </div>
                   <div className="pt-2 border-top">
                     <div className="fw-bold fs-5 text-dark">
@@ -250,7 +250,7 @@ export default function ReviewStep({ form, rate, setField, handleConfirm, setSte
               </div>
               {!isRangeFlow && (
                 <div className="text-muted ps-4" style={{ fontSize: "0.7rem", textTransform: "none", lineHeight: "1.3" }}>
-                  *Note: A 10% incidental authorisation hold may be applied by Stripe to cover potential unplanned overtime. The hold will be released after completion of the shift.
+                  *Note: A 10% incidental authorisation hold may be applied by Stripe to cover potential unplanned overtime. The hold will be released after completion of the job.
                 </div>
               )}
             </div>

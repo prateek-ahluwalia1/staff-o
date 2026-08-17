@@ -27,11 +27,11 @@ function WhyStaffoo() {
               <h3>Hire staff you can verify</h3>
               <p className="nh-split-sub">For individuals, businesses and agencies alike.</p>
               <ul className="nh-feat-list">
-                <li><b>Post a job in 2 minutes</b> — one shift or an ongoing roster, describe what you need.</li>
+                <li><b>Post a job in 2 minutes</b> — one job or an ongoing roster, describe what you need.</li>
                 <li><b>See real licence status</b> — every staff's subclass is checked, not self-reported.</li>
                 <li><b>Compare rates &amp; reviews</b> — transparent hourly pricing, no hidden fees.</li>
                 <li><b>Manage multiple sites</b> — running more than one contract? Track them all from one dashboard.</li>
-                <li><b>Pay securely</b> — funds released once the shift is confirmed complete.</li>
+                <li><b>Pay securely</b> — funds released once the job is confirmed complete.</li>
               </ul>
               <Link to={postJobRoute} className="nh-btn nh-btn-solid">Post your first job</Link>
             </div>
@@ -39,16 +39,16 @@ function WhyStaffoo() {
             {/* STAFF SIDE */}
             <div className="nh-split-col guard">
               <span className="nh-split-tag">Staff</span>
-              <h3>Find shifts that fit your licence</h3>
+              <h3>Find jobs that fit your licence</h3>
               <p className="nh-split-sub">For licensed staff looking for consistent work.</p>
               <ul className="nh-feat-list">
                 <li><b>Build a duty profile</b> — licences, experience and ratings, all in one place.</li>
                 <li><b>Get matched automatically</b> — jobs filtered to your subclass and location.</li>
                 <li><b>Set your own rate</b> — no agency cut eating into your pay.</li>
                 <li><b>Apply in one tap</b> — no phone tag, no waiting on a callback.</li>
-                <li><b>Get paid on time</b> — payment released as soon as a shift is signed off.</li>
+                <li><b>Get paid on time</b> — payment released as soon as a job is signed off.</li>
               </ul>
-              <Link to={findJobRoute} className="nh-btn nh-btn-outline">Browse open shifts</Link>
+              <Link to={findJobRoute} className="nh-btn nh-btn-outline">Browse open jobs</Link>
             </div>
           </div>
         </div>

@@ -321,7 +321,7 @@ export default function Induction() {
                             <div className="table-responsive">
                                 <table className="table align-middle table-premium">
                                     <thead className="table-light text-secondary small">
-                                        <tr><th>GUARD NAME</th><th>DATE</th><th>STATUS</th><th>ACTION</th></tr>
+                                        <tr><th>STAFF NAME</th><th>DATE</th><th>STATUS</th><th>ACTION</th></tr>
                                     </thead>
                                     <tbody>
                                         {historyRows.map((record, index) => {

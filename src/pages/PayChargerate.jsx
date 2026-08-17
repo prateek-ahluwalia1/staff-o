@@ -119,7 +119,7 @@ const PayChargerate = () => {
             <div className="col">
               <Card
                 title="Charge Rates"
-                description="Amount charged from customers."
+                description="Amount charged from clients."
                 accent="linear-gradient(135deg, #16a34a, #22c55e)"
                 image={chargerateimg}
                 type="charge"
@@ -142,11 +142,11 @@ const PayChargerate = () => {
             </div>
             <div className="col">
               <Card
-                title="Contractor Charge Rates"
-                description="It is used to manage contractor charge rates"
+                title="Resource Partner Charge Rates"
+                description="It is used to manage resource partner charge rates"
                 accent="linear-gradient(135deg, #8b5cf6, #a78bfa)"
                 image={contractorimg}
-                type="contractor rates"
+                type="Resource partner rates"
                 onClick={() => navigate("/rates/contractor")}
               />
             </div>

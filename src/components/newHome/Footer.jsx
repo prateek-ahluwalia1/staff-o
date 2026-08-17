@@ -33,8 +33,8 @@ function Footer() {
           <div className="nh-foot-col">
             <h4>For clients</h4>
             <Link to="/register">Post a job</Link>
-            <Link to="/login">Browse guards</Link>
-            <Link to="/register">Businesses &amp; agencies</Link>
+            <Link to="/login">Browse staff</Link>
+            <Link to="/register">Businesses and agencies</Link>
             <Link to="/pricing">Pricing</Link>
           </div>
 

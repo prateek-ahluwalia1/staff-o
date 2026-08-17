@@ -756,7 +756,7 @@ export default function MyJobApplications() {
             <span className="dot"></span> Live
           </span>
           <h1>Job Applications</h1>
-          <p>Viewing shifts for the selected date range.</p>
+          <p>Viewing jobs for the selected date range.</p>
 
           <div className="jobs-hero-stats">
             <div className="jobs-hero-stat">
@@ -764,7 +764,7 @@ export default function MyJobApplications() {
               <span className="jobs-hero-stat-value">{rangeLabel || "—"}</span>
             </div>
             <div className="jobs-hero-stat">
-              <span className="jobs-hero-stat-label">Total Shifts</span>
+              <span className="jobs-hero-stat-label">Total Jobs</span>
               <span className="jobs-hero-stat-value">{pagination.total}</span>
             </div>
             <div className="jobs-hero-stat">
@@ -822,7 +822,7 @@ export default function MyJobApplications() {
             <div className="col-12 empty-state text-center w-100">
               <i className="fa-solid fa-magnifying-glass-minus d-block"></i>
               <div className="empty-state-title">
-                {applications.length > 0 ? "No shifts match your search" : "No shifts found"}
+                {applications.length > 0 ? "No jobs match your search" : "No jobs found"}
               </div>
               <div className="empty-state-sub" style={{ textTransform: "none" }}>
                 {applications.length > 0
@@ -1006,7 +1006,7 @@ export default function MyJobApplications() {
               style={{ padding: "20px 24px" }}
             >
               <h3 style={{ margin: 0, fontSize: "19px", fontWeight: "700", letterSpacing: "0.2px", color: "#fff", position: "relative", zIndex: 1 }}>
-                <i className="fa-solid fa-clipboard-check me-2 opacity-75"></i> Shift &amp; Site Details
+                <i className="fa-solid fa-clipboard-check me-2 opacity-75"></i> Job Details
               </h3>
               <button onClick={closeModal} className="modal-close-btn">
                 <i className="fa-solid fa-xmark"></i>
@@ -1074,7 +1074,7 @@ export default function MyJobApplications() {
                       <span className="info-panel-icon" style={{ background: "#fef3c7", color: "#d97706" }}>
                         <i className="fa-solid fa-clock-rotate-left"></i>
                       </span>
-                      Shift Information
+                      Job Information
                     </h5>
                     <InfoRow icon="fa-circle-info" label="Status" value={selectedApp.rawShift.job_status} />
                     <InfoRow icon="fa-arrow-right-to-bracket" label="Start Time" value={selectedApp.startDisplay} transform={false} />

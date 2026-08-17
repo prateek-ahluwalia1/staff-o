@@ -335,7 +335,7 @@ const StaffOnboardingPDFs = {
         doc.setFont("helvetica", "bold");
         doc.text("DECLARATION:", margin + 2, y + 5);
         doc.setFont("helvetica", "normal");
-        doc.text("I confirm that all information and attached documents are authentic. I agree to the Staffoo App Handshake Protocol for shift", margin + 27, y + 5);
+        doc.text("I confirm that all information and attached documents are authentic. I agree to the Staffoo App Handshake Protocol for job", margin + 27, y + 5);
         doc.text("verification and, if a student, will strictly adhere to the 24-hour weekly cap.", margin + 2, y + 9);
 
         y += 20;

@@ -638,7 +638,7 @@ const JobTracker = () => {
           <span className="dot"></span> Live
         </span>
         <h1>Job Tracker</h1>
-        <p>Review shifts, filter records, and export a clean tracker summary.</p>
+        <p>Review jobs, filter records, and export a clean tracker summary.</p>
         <div className="jt-hero-stats">
           <div className="jt-hero-stat">
             <span className="jt-hero-stat-label">Date Range</span>

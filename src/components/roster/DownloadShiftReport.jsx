@@ -53,7 +53,7 @@ export default function DownloadShiftReport({ rosterId, guardId, shift }) {
                     </div>
                     <h4 className="fw-bold mb-3">Report Downloaded!</h4>
                     <p className="text-muted text-center mb-4" style={{ maxWidth: "400px" }}>
-                        Your end shift report has been successfully downloaded.
+                        Your end job report has been successfully downloaded.
                     </p>
                     <button
                         onClick={downloadPDF}

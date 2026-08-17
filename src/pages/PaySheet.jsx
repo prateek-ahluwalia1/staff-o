@@ -123,10 +123,10 @@ const COLUMNS = [
     { key: "staff", label: "Staff", width: 145 },
     { key: "staff_phone", label: "Staff Phone", width: 115 },
     { key: "staff_type", label: "Staff Type", width: 95 },
-    { key: "customer", label: "Customer", width: 160 },
+    { key: "customer", label: "Client", width: 160 },
     { key: "date", label: "Date", width: 100 },
-    { key: "shift_start", label: "Shift Start", width: 82 },
-    { key: "shift_end", label: "Shift End", width: 82 },
+    { key: "shift_start", label: "Job Start", width: 82 },
+    { key: "shift_end", label: "Job End", width: 82 },
     { key: "sign_in", label: "Sign In", width: 75 },
     { key: "sign_out", label: "Sign Out", width: 75 },
     { key: "hours", label: "Hours", width: 65 },
@@ -303,10 +303,10 @@ export default function PaySheet() {
                     "Account Holder Name": r.account_holder,
                     "Staff Phone": r.staff_phone,
                     "Staff Type": r.staff_type,
-                    "Customer": r.customer,
+                    "Client": r.customer,
                     "Date": r.date,
-                    "Shift Start": r.shift_start,
-                    "Shift End": r.shift_end,
+                    "Job Start": r.shift_start,
+                    "Job End": r.shift_end,
                     "Sign In": r.sign_in,
                     "Sign Out": r.sign_out,
                     "Hours": fv(shift.hours),
@@ -342,8 +342,8 @@ export default function PaySheet() {
             const blankRow = Object.fromEntries(
                 [
                     "State", "Site Name", "Site Level", "Staff", "Account Holder Name",
-                    "Staff Phone", "Staff Type", "Customer", "Date", "Shift Start",
-                    "Shift End", "Sign In", "Sign Out", "M-F Day Rates", "M-F Night Rates",
+                    "Staff Phone", "Staff Type", "Client", "Date", "Job Start",
+                    "Job End", "Sign In", "Sign Out", "M-F Day Rates", "M-F Night Rates",
                     "Saturday Rates", "Sunday Rates", "Public Holiday Rates",
                     "Total Travel Time", "Reimbursement Text", "Reimbursement",
                     "Tax", "Super", "Net Payable", "Payroll", "Bank Name", "BSB",
@@ -433,7 +433,7 @@ export default function PaySheet() {
     const statCards = useMemo(
         () => [
             { label: "Staff Members", value: grandTotals.staff, icon: "fa-users", color: "#0A7C6E", bg: "#e6f7f4" },
-            { label: "Total Shifts", value: grandTotals.shifts, icon: "fa-calendar-check", color: "#2563eb", bg: "#eff6ff" },
+            { label: "Total Jobs", value: grandTotals.shifts, icon: "fa-calendar-check", color: "#2563eb", bg: "#eff6ff" },
             { label: "Total Hours", value: `${fmt(grandTotals.hours)}h`, icon: "fa-clock", color: "#d97706", bg: "#fffbeb" },
             { label: "Weekday Hours", value: `${fmt(detailedTotals.mfDay)}h`, icon: "fa-sun", color: "#7c3aed", bg: "#faf5ff" },
             { label: "Night Hours", value: `${fmt(detailedTotals.mfNight)}h`, icon: "fa-moon", color: "#0e7490", bg: "#ecfeff" },
@@ -904,7 +904,7 @@ export default function PaySheet() {
                             <span className="ps-table-title">Complete Paysheet</span>
                             {hasData && (
                                 <span className="ps-table-subtitle ms-2">
-                                    {grandTotals.shifts} shift{grandTotals.shifts !== 1 ? "s" : ""} across {grandTotals.staff} staff member{grandTotals.staff !== 1 ? "s" : ""}
+                                    {grandTotals.shifts} job{grandTotals.shifts !== 1 ? "s" : ""} across {grandTotals.staff} staff member{grandTotals.staff !== 1 ? "s" : ""}
                                 </span>
                             )}
                         </div>

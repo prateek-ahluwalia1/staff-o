@@ -562,7 +562,7 @@ function AppContent() {
                 }}
                 accepting={acceptingJob}
                 success={acceptModalSuccess}
-                successMessage="Please wait for the client to give further confirmation. We will notify you shortly and the shift will appear on your Roster page."
+                successMessage="Please wait for the client to give further confirmation. We will notify you shortly and the job will appear on your Roster page."
                 showStaffSelector={
                     userRole === "contractor" &&
                     acceptModalJob?.contractorInvoice === 1

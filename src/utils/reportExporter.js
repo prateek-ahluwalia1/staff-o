@@ -219,7 +219,7 @@ const reportExporter = {
     // Create worksheet and workbook
     const worksheet = toWorksheet(exportData);
     const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Shift Tasks");
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Job Tasks");
 
     // Write file
     XLSX.writeFile(workbook, `${filename}-${Date.now()}.xlsx`);

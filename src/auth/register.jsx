@@ -209,7 +209,7 @@ export default function Register() {
               <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
                 {[
                   { icon: "✓", text: "Verified jobs and trusted clients" },
-                  { icon: "⚡", text: "Smart matching for every shift" },
+                  { icon: "⚡", text: "Smart matching for every job" },
                   { icon: "◈", text: "Fast onboarding and secure access" },
                 ].map((item) => (
                   <div key={item.text} style={{ display: "flex", alignItems: "center", gap: "14px" }}>
@@ -227,7 +227,7 @@ export default function Register() {
                 <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
                   {[
                     { label: "Clients", desc: "Hire verified staff" },
-                    { label: "Staff", desc: "Find security shifts" },
+                    { label: "Staff", desc: "Find security jobs" },
                     { label: "Partners", desc: "Manage your team" },
                   ].map((r) => (
                     <div key={r.label} style={{ padding: "10px 16px", borderRadius: "10px", border: `1px solid ${BORDER}`, background: "#fff" }}>
@@ -396,7 +396,7 @@ export default function Register() {
             <div style={{ display: "flex", flexDirection: "column", gap: "12px", marginBottom: "24px" }}>
               {[
                 { key: "customer", label: "Client", desc: "I want to hire security professionals.", icon: "fa-user-tie" },
-                { key: "staff", label: "Staff", desc: "I am looking for security shifts and jobs.", icon: "fa-user-shield" },
+                { key: "staff", label: "Staff", desc: "I am looking for security jobs.", icon: "fa-user-shield" },
                 { key: "contractor", label: "Resource Partner", desc: "I provide resources and contractor services.", icon: "fa-handshake" },
               ].map((role) => {
                 const isActive = userType === role.key;

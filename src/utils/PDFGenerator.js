@@ -459,7 +459,7 @@ const generateEmployeeOnboardingPDF = (formData) => {
   checkPage(25);
   y += 2;
 
-  const declTxt = "I confirm that all information and attached documents are authentic. I agree to the Staffoo App Handshake Protocol for shift verification and, if a student, will strictly adhere to the 24-hour weekly cap.";
+  const declTxt = "I confirm that all information and attached documents are authentic. I agree to the Staffoo App Handshake Protocol for job verification and, if a student, will strictly adhere to the 24-hour weekly cap.";
   const declLines = doc.splitTextToSize(declTxt, bw - 28);
   const declBoxH = 6 + (declLines.length * 3.5);
 
@@ -542,7 +542,7 @@ const renderModernFooter = (doc, pageWidth, pageHeight, showStripeBadge = false)
     doc.setFont("helvetica", "bold");
     doc.setFontSize(7);
     doc.setTextColor(...T.greenText);
-    doc.text("Payment held via Stripe, and the hold will be released after completion of the shift.", centerX, y + 5, { align: "center" });
+    doc.text("Payment held via Stripe, and the hold will be released after completion of the job.", centerX, y + 5, { align: "center" });
     y += 13;
   }
 
@@ -623,7 +623,7 @@ const PDFGenerator = {
     y = drawGoldLine(doc, y + (paymentRef ? 32 : 26), pw, mg);
 
     doc.setFontSize(11); doc.setFont("helvetica", "bold"); doc.setTextColor(...T.teal);
-    doc.text("Shift Details", mg, y + 2); y += 6;
+    doc.text("Job Details", mg, y + 2); y += 6;
 
     const fmt = (value) => `${Number(value || 0).toFixed(2)}`;
 
@@ -642,7 +642,7 @@ const PDFGenerator = {
     const ptw = pw - mg * 2;
     autoTable(doc, {
       startY: y,
-      head: [["#", "Start Date", "End Date", "Guards", "Hours", `Amount (${currency})`]],
+      head: [["#", "Start Date", "End Date", "Staff", "Hours", `Amount (${currency})`]],
       body: td,
       theme: "plain",
       tableWidth: ptw,

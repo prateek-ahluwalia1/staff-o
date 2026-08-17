@@ -58,7 +58,7 @@ function IncidentDetail({ report, onBack, meta }) {
           {report?.site_name || meta?.loaction || "N/A"}
         </div>
         <div className="col-md-6 mb-2">
-          <strong>Shift:</strong>{" "}
+          <strong>Job:</strong>{" "}
           {meta?.shift_start && meta?.shift_end
             ? `${meta.shift_start} – ${meta.shift_end}`
             : "N/A"}
@@ -309,7 +309,7 @@ export default function IncidentReport({ rosterId, guardId }) {
   if (error) return <div style={{ padding: "20px", background: "#fff3f3", borderRadius: "8px", color: "#c0392b", fontSize: "14px" }}>Failed to load incident reports. Please try again.</div>;
 
   const reports = data?.data || [];
-  if (reports.length === 0) return <div style={{ textAlign: "center", padding: "48px 20px", color: "#888", fontSize: "14px", background: "#f8f9fa", borderRadius: "8px" }}>No incident reports found for this shift.</div>;
+  if (reports.length === 0) return <div style={{ textAlign: "center", padding: "48px 20px", color: "#888", fontSize: "14px", background: "#f8f9fa", borderRadius: "8px" }}>No incident reports found for this job.</div>;
 
   const handleDownload = async () => {
     setPdfError(null);

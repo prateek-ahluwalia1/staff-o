@@ -621,7 +621,7 @@ export default function TimeSheet() {
   const handleToggleManualApproval = async (item) => {
     const rosterId = item?.rosterId;
     if (!rosterId) {
-      toast.error("Roster ID is missing for this shift.");
+      toast.error("Roster ID is missing for this job.");
       return;
     }
     setTogglingRosterId(rosterId);
@@ -653,7 +653,7 @@ export default function TimeSheet() {
       "Saturday Hours": row.saturdayHours,
       "Sunday Hours": row.sundayHours,
       "Public Holiday Hours": row.phHours,
-      "Shift Count": row.shiftCount,
+      "Job Count": row.shiftCount,
     }));
     const worksheet = XLSX.utils.json_to_sheet(exportRows);
     const workbook = XLSX.utils.book_new();
@@ -1104,7 +1104,7 @@ export default function TimeSheet() {
           <span className="dot"></span> Live
         </span>
         <h1>Time Sheet</h1>
-        <p>Filter, review, and drill into shift breakdowns.</p>
+        <p>Filter, review, and drill into job breakdowns.</p>
         <div className="ts-hero-stats">
           <div className="ts-hero-stat">
             <span className="ts-hero-stat-label">Date Range</span>
@@ -1224,7 +1224,7 @@ export default function TimeSheet() {
                 <th>Saturday</th>
                 <th>Sunday</th>
                 <th>Public Holiday</th>
-                <th className="text-center">Shifts</th>
+                <th className="text-center">Jobs</th>
               </tr>
             </thead>
             <tbody>
@@ -1296,17 +1296,17 @@ export default function TimeSheet() {
                             <div className="ts-breakdown-wrapper">
                               <h6 className="ts-breakdown-heading">
                                 <i className="fa-solid fa-list-check"></i>
-                                Detailed Shift Breakdown: {row.staffName}
+                                Detailed Job Breakdown: {row.staffName}
                               </h6>
                               <div className="ts-breakdown-card">
                                 <div className="table-responsive">
                                   <table className="table table-sm ts-breakdown-table align-middle">
                                     <thead>
                                       <tr>
-                                        <th>Shift ID</th>
+                                        <th>Job ID</th>
                                         <th>Site</th>
-                                        <th>Customer</th>
-                                        <th>Guard</th>
+                                        <th>Client</th>
+                                        <th>Staff</th>
                                         <th>Start</th>
                                         <th>End</th>
                                         <th>Total</th>

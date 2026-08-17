@@ -288,7 +288,7 @@ export default function NotificationAcceptModal({
                                 <rect width="100%" height="100%" fill="url(#diagonalHatch)" />
                             </svg>
                         </div>
-                        
+
                         <div className="text-center position-relative" style={{ zIndex: 1, padding: '60px 32px 36px' }}>
                             {/* Icon Wrapper */}
                             <div className="mb-4 d-inline-flex align-items-center justify-content-center" style={{
@@ -304,12 +304,12 @@ export default function NotificationAcceptModal({
                                     <i className="fa-solid fa-check text-white" style={{ fontSize: '32px' }}></i>
                                 </div>
                             </div>
-                            
+
                             <h3 className="fw-bolder mb-2" style={{ color: '#0a1930', letterSpacing: '-0.5px' }}>Success!</h3>
                             <p className="text-muted mb-4" style={{ fontSize: '15.5px', lineHeight: '1.5' }}>
                                 {successMessage}
                             </p>
-                            
+
                             <button
                                 className="btn w-100 rounded-pill text-white fw-bold py-3 shadow"
                                 style={{
@@ -329,164 +329,164 @@ export default function NotificationAcceptModal({
                         className="modal-content-premium"
                         onClick={(e) => e.stopPropagation()}
                     >
-                    {/* Header */}
-                    <div className="modal-header-custom">
-                        <h3 id="accept-title">
-                            <i className="fa-solid fa-clipboard-check me-2 opacity-75"></i>
-                            Job Details
-                        </h3>
-                        <button
-                            className="modal-close-btn-premium"
-                            onClick={onClose}
-                            aria-label="Close"
-                        >
-                            <i className="fa-solid fa-xmark"></i>
-                        </button>
-                    </div>
-
-                    {/* Body */}
-                    <div className="modal-body-premium">
-                        <div className="row g-4">
-                            {/* Site Info */}
-                            <div className="col-md-6">
-                                <div className="info-panel-premium">
-                                    <h5>
-                                        <div className="info-panel-icon" style={{ background: '#e0f2fe', color: '#0ea5e9' }}>
-                                            <i className="fa-solid fa-building"></i>
-                                        </div>
-                                        Site Info
-                                    </h5>
-                                    <InfoRow icon="fa-signature" label="Site Name" value={job.siteName} />
-                                    <InfoRow icon="fa-map-pin" label="Address" value={job.address} />
-                                </div>
-                            </div>
-
-                            {/* Shift Info */}
-                            <div className="col-md-6">
-                                <div className="info-panel-premium">
-                                    <h5>
-                                        <div className="info-panel-icon" style={{ background: '#fef3c7', color: '#d97706' }}>
-                                            <i className="fa-solid fa-clock-rotate-left"></i>
-                                        </div>
-                                        Shift Info
-                                    </h5>
-                                    <InfoRow icon="fa-calendar-day" label="Date" value={job.date} />
-                                    <InfoRow icon="fa-play" label="Start Time" value={formatTime24(job.startTime)} />
-                                    <InfoRow icon="fa-stop" label="End Time" value={formatTime24(job.endTime)} />
-                                    <InfoRow icon="fa-clock" label="Hours" value={`${job.hours} hrs`} />
-                                    <InfoRow icon="fa-layer-group" label="Shift Count" value={job.shiftCount} />
-                                </div>
-                            </div>
+                        {/* Header */}
+                        <div className="modal-header-custom">
+                            <h3 id="accept-title">
+                                <i className="fa-solid fa-clipboard-check me-2 opacity-75"></i>
+                                Job Details
+                            </h3>
+                            <button
+                                className="modal-close-btn-premium"
+                                onClick={onClose}
+                                aria-label="Close"
+                            >
+                                <i className="fa-solid fa-xmark"></i>
+                            </button>
                         </div>
 
-                        {/* Description */}
-                        {job.description && (
-                            <div className="mt-4 p-4 bg-white rounded-4 shadow-sm border border-light">
-                                <h5 className="fw-bold d-flex align-items-center mb-3 pb-2 border-bottom" style={{ fontSize: '16px', color: '#1e293b' }}>
-                                    <i className="fa-solid fa-align-left me-2" style={{ color: '#0A7C6E' }}></i>
-                                    Description
-                                </h5>
-                                <p className="mb-0" style={{ fontSize: '14px', color: '#334155', textTransform: 'none', lineHeight: '1.6' }}>
-                                    {job.description}
-                                </p>
-                            </div>
-                        )}
-
-                        {/* Required Documents */}
-                        {job.documents && job.documents.length > 0 && (
-                            <div className="row g-4 mt-4">
-                                <div className="col-12">
+                        {/* Body */}
+                        <div className="modal-body-premium">
+                            <div className="row g-4">
+                                {/* Site Info */}
+                                <div className="col-md-6">
                                     <div className="info-panel-premium">
                                         <h5>
-                                            <i className="fa-solid fa-file-lines me-2" style={{ color: '#0A7C6E' }}></i>
-                                            Required Documents
+                                            <div className="info-panel-icon" style={{ background: '#e0f2fe', color: '#0ea5e9' }}>
+                                                <i className="fa-solid fa-building"></i>
+                                            </div>
+                                            Site Info
                                         </h5>
-                                        <div className="d-flex flex-wrap gap-2">
-                                            {job.documents.map((doc) => (
-                                                <span
-                                                    key={doc}
-                                                    className="badge rounded-pill px-3 py-2"
-                                                    style={{
-                                                        backgroundColor: 'rgba(10, 124, 110, 0.1)',
-                                                        color: '#0A7C6E',
-                                                        border: '1px solid rgba(10, 124, 110, 0.3)',
-                                                        fontSize: '12px',
-                                                        fontWeight: 700,
-                                                    }}
-                                                >
-                                                    {doc}
-                                                </span>
-                                            ))}
-                                        </div>
+                                        <InfoRow icon="fa-signature" label="Site Name" value={job.siteName} />
+                                        <InfoRow icon="fa-map-pin" label="Address" value={job.address} />
+                                    </div>
+                                </div>
+
+                                {/* Shift Info */}
+                                <div className="col-md-6">
+                                    <div className="info-panel-premium">
+                                        <h5>
+                                            <div className="info-panel-icon" style={{ background: '#fef3c7', color: '#d97706' }}>
+                                                <i className="fa-solid fa-clock-rotate-left"></i>
+                                            </div>
+                                            Job Info
+                                        </h5>
+                                        <InfoRow icon="fa-calendar-day" label="Date" value={job.date} />
+                                        <InfoRow icon="fa-play" label="Start Time" value={formatTime24(job.startTime)} />
+                                        <InfoRow icon="fa-stop" label="End Time" value={formatTime24(job.endTime)} />
+                                        <InfoRow icon="fa-clock" label="Hours" value={`${job.hours} hrs`} />
+                                        <InfoRow icon="fa-layer-group" label="Job Count" value={job.shiftCount} />
                                     </div>
                                 </div>
                             </div>
-                        )}
-                    </div>
 
-                    {/* Footer */}
-                    <div className="modal-footer-premium" style={{ flexDirection: 'column', alignItems: 'stretch' }}>
-                        {showStaffSelector && (
-                            <div style={{ marginBottom: 12 }}>
-                                <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: '#334155', marginBottom: 6 }}>
-                                    Assign to staff
-                                </label>
-                                <Select
-                                    className="react-select-container"
-                                    options={[
-                                        { value: '', label: 'Select staff' },
-                                        ...staffOptions,
-                                    ]}
-                                    value={
-                                        staffOptions.find((option) => option.value === selectedStaffId)
-                                            ? staffOptions.find((option) => option.value === selectedStaffId)
-                                            : { value: '', label: 'Select staff' }
-                                    }
-                                    onChange={(option) => onStaffChange?.(option?.value || '')}
-                                    isLoading={staffLoading}
-                                    isClearable={false}
-                                    classNamePrefix="react-select"
-                                    placeholder="Select staff"
-                                    menuPortalTarget={document.body}
-                                    menuPosition="fixed"
-                                    styles={{
-                                        control: (base) => ({
-                                            ...base,
-                                            borderRadius: 10,
-                                            borderColor: '#cbd5e1',
-                                            boxShadow: 'none',
-                                            minHeight: 44,
-                                        }),
-                                        menuPortal: (base) => ({
-                                            ...base,
-                                            zIndex: 99999,
-                                        }),
-                                    }}
-                                />
-                                <div style={{ fontSize: 12, color: '#64748b', marginTop: 6 }}>
-                                    Leave this blank to accept the job immediately. You can assign it to the roster later.
+                            {/* Description */}
+                            {job.description && (
+                                <div className="mt-4 p-4 bg-white rounded-4 shadow-sm border border-light">
+                                    <h5 className="fw-bold d-flex align-items-center mb-3 pb-2 border-bottom" style={{ fontSize: '16px', color: '#1e293b' }}>
+                                        <i className="fa-solid fa-align-left me-2" style={{ color: '#0A7C6E' }}></i>
+                                        Description
+                                    </h5>
+                                    <p className="mb-0" style={{ fontSize: '14px', color: '#334155', textTransform: 'none', lineHeight: '1.6' }}>
+                                        {job.description}
+                                    </p>
                                 </div>
+                            )}
+
+                            {/* Required Documents */}
+                            {job.documents && job.documents.length > 0 && (
+                                <div className="row g-4 mt-4">
+                                    <div className="col-12">
+                                        <div className="info-panel-premium">
+                                            <h5>
+                                                <i className="fa-solid fa-file-lines me-2" style={{ color: '#0A7C6E' }}></i>
+                                                Required Documents
+                                            </h5>
+                                            <div className="d-flex flex-wrap gap-2">
+                                                {job.documents.map((doc) => (
+                                                    <span
+                                                        key={doc}
+                                                        className="badge rounded-pill px-3 py-2"
+                                                        style={{
+                                                            backgroundColor: 'rgba(10, 124, 110, 0.1)',
+                                                            color: '#0A7C6E',
+                                                            border: '1px solid rgba(10, 124, 110, 0.3)',
+                                                            fontSize: '12px',
+                                                            fontWeight: 700,
+                                                        }}
+                                                    >
+                                                        {doc}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Footer */}
+                        <div className="modal-footer-premium" style={{ flexDirection: 'column', alignItems: 'stretch' }}>
+                            {showStaffSelector && (
+                                <div style={{ marginBottom: 12 }}>
+                                    <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: '#334155', marginBottom: 6 }}>
+                                        Assign to staff
+                                    </label>
+                                    <Select
+                                        className="react-select-container"
+                                        options={[
+                                            { value: '', label: 'Select staff' },
+                                            ...staffOptions,
+                                        ]}
+                                        value={
+                                            staffOptions.find((option) => option.value === selectedStaffId)
+                                                ? staffOptions.find((option) => option.value === selectedStaffId)
+                                                : { value: '', label: 'Select staff' }
+                                        }
+                                        onChange={(option) => onStaffChange?.(option?.value || '')}
+                                        isLoading={staffLoading}
+                                        isClearable={false}
+                                        classNamePrefix="react-select"
+                                        placeholder="Select staff"
+                                        menuPortalTarget={document.body}
+                                        menuPosition="fixed"
+                                        styles={{
+                                            control: (base) => ({
+                                                ...base,
+                                                borderRadius: 10,
+                                                borderColor: '#cbd5e1',
+                                                boxShadow: 'none',
+                                                minHeight: 44,
+                                            }),
+                                            menuPortal: (base) => ({
+                                                ...base,
+                                                zIndex: 99999,
+                                            }),
+                                        }}
+                                    />
+                                    <div style={{ fontSize: 12, color: '#64748b', marginTop: 6 }}>
+                                        Leave this blank to accept the job immediately. You can assign it to the roster later.
+                                    </div>
+                                </div>
+                            )}
+                            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
+                                <button
+                                    type="button"
+                                    className="btn-outline-premium"
+                                    onClick={onClose}
+                                >
+                                    Close
+                                </button>
+                                <button
+                                    type="button"
+                                    className="btn-success-premium"
+                                    onClick={handleAcceptClick}
+                                    disabled={accepting}
+                                >
+                                    {accepting ? 'Processing…' : selectedStaffId ? 'Assign Job' : 'Accept Job'}
+                                </button>
                             </div>
-                        )}
-                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
-                            <button
-                                type="button"
-                                className="btn-outline-premium"
-                                onClick={onClose}
-                            >
-                                Close
-                            </button>
-                            <button
-                                type="button"
-                                className="btn-success-premium"
-                                onClick={handleAcceptClick}
-                                disabled={accepting}
-                            >
-                                {accepting ? 'Processing…' : selectedStaffId ? 'Assign Job' : 'Accept Job'}
-                            </button>
                         </div>
                     </div>
-                </div>
                 )}
             </div>
         </>

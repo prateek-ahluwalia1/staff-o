@@ -629,7 +629,7 @@ export default function RosterPage() {
                               <div key={shift.id} className={`vr-shift-card bg-${status}`}>
                                 {hasNote && <div className="vr-note-dot"></div>}
                                 {isContractorZeroInvoiceBreakdown && (
-                                  <span className="vr-breakdown-indicator" title="Requires Shift Breakdown (>12h, Invoice 0)">
+                                  <span className="vr-breakdown-indicator" title="Requires Job Breakdown (>12h, Invoice 0)">
                                     <i className="fa-solid fa-scissors" style={{ fontSize: "10px" }}></i>
                                   </span>
                                 )}
@@ -740,7 +740,7 @@ export default function RosterPage() {
               <div className="vr-modal-summary">
                 <div><strong>Site:</strong> {modal.site.displayName}</div>
                 <div><strong>Date:</strong> {modal.dateStr}</div>
-                <div><strong>Shift:</strong> {format(modal.shift.startDate, "HH:mm")} - {format(modal.shift.endDate, "HH:mm")}</div>
+                <div><strong>Job:</strong> {format(modal.shift.startDate, "HH:mm")} - {format(modal.shift.endDate, "HH:mm")}</div>
               </div>
               <div className="vr-input-group">
                 <label>Select Staff Member</label>

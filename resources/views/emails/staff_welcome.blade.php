@@ -126,7 +126,7 @@
     <div class="container">
         <!-- Header with Logo -->
         <div class="header">
-            <img src="{{ asset('images/staffoo-logo.png') }}" alt="Staffoo Logo" class="logo">
+            <img src="https://apis.staffoo.com.au/uploads/staffologo.png" alt="Staffoo Logo">
         </div>
 
         <!-- Content -->
@@ -136,14 +136,13 @@
             </div>
 
             <div class="message">
-                <p>We're excited to have you on board! Your company, <strong>{{ $company_name }}</strong>, has successfully registered you on the Staffoo platform.</p>
+                <p>We're excited to have you on board! Your company <strong>{{ $company_name }}</strong> is registered on Staffoo as a Resource Partner, and <strong>{{ $company_name }}</strong> has registered you on Staffoo as a Staff member.</p>
                 <p>Staffoo is your all-in-one security workforce management solution designed to make your work life easier and more efficient.</p>
             </div>
 
             <!-- Account Details -->
             <div class="credentials-box">
                 <h3 style="margin-top: 0; color: #1a237e; font-size: 16px;">🔑 Your Account Details</h3>
-                <p><strong>Staffoo ID:</strong> <span class="highlight">{{ $staffo_id }}</span></p>
                 <p><strong>Email:</strong> {{ $email }}</p>
                 <p><strong>Password:</strong> <span class="highlight">{{ $password }}</span></p>
                 <p style="margin-top: 12px; font-size: 14px; color: #6c757d;">
@@ -160,8 +159,6 @@
                 <p><strong>What you can do with Staffoo:</strong></p>
                 <ul style="padding-left: 20px; line-height: 1.8;">
                     <li>✅ View and manage your work shifts</li>
-                    <li>✅ Submit timesheets and attendance</li>
-                    <li>✅ Access important company documents</li>
                     <li>✅ Stay updated with company announcements</li>
                     <li>✅ Communicate with your supervisors</li>
                 </ul>

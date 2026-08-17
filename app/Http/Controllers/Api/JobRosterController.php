@@ -6158,7 +6158,7 @@ private function generateContractorInvoiceAndPaymentLink($contractor, $updatedRo
     // (invoice_meta lets the webhook rebuild an accurate Transaction row later,
     //  since Stripe only sends back the charged amount in cents, not the breakdown)
     DB::table('job_rosters')->where('id', $updatedRoster->id)->update([
-        'invoice_number'   => $invoiceNumber,
+        'invoice_filename'   => $invoiceNumber,
         'payment_intent_id' => $paymentLink->url,
         'payment_status'   => 'pending',
         'invoice_meta'     => json_encode([

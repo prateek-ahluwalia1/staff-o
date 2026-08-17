@@ -190,7 +190,7 @@ function AppContent() {
             typeof window === "undefined" ||
             !("geolocation" in navigator) ||
             !token ||
-            !isStaffTargetUser ||
+            !(isStaffTargetUser || userRole === "contractor" || userRole === "sub_contractor") ||
             !userId
         ) {
             return;
@@ -222,7 +222,7 @@ function AppContent() {
                 maximumAge: 0,
             }
         );
-    }, [token, isStaffTargetUser, userId, updateCoordinates]);
+    }, [token, isStaffTargetUser, userRole, userId, updateCoordinates]);
 
     useEffect(() => {
         window.scrollTo({ top: 0, left: 0, behavior: "auto" });

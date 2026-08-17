@@ -1,70 +1,172 @@
-# Getting Started with Create React App
+🚀 EmbedAI: Autonomous Agent SaaS & Live Support Platform
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+EmbedAI is a multi-tenant, enterprise-grade SaaS platform that allows businesses to upload their knowledge bases, train an AI agent, and deploy a customizable support widget to their website in minutes.
 
-## Available Scripts
+Unlike standard "dumb" API wrappers, EmbedAI is powered by LangGraph for autonomous tool-calling, features Semantic Caching to slash LLM costs, and includes real-time WebSocket Human Handoff for when the AI needs backup.
 
-In the project directory, you can run:
+✨ Enterprise-Grade Features
 
-### `npm start`
+🧠 Agentic Workflows (LangGraph): The AI doesn't just answer questions; it reasons. It autonomously decides when to query the Vector DB, when to ask clarifying questions, and when to trigger Zod-validated tools (like capturing lead info for frustrated users).
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+⚡ Semantic Caching Layer: Intercepts repeated customer questions using Vector Similarity Search. If a match is found (>95% similarity), it serves the cached answer instantly with 0 latency and $0.00 API cost.
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+🤝 Live Human Handoff (WebSockets): Admins can monitor live AI chats in their dashboard. With one click, they can "Pause the AI" and seamlessly take over the conversation in real-time.
 
-### `npm test`
+🔒 Bank-Grade Session Security: Short-lived JWTs in memory, long-lived HttpOnly refresh cookies, concurrent session limits (max 5 devices), and a dashboard to remotely revoke access from unknown devices.
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+🏢 True Multi-Tenancy: Secure metadata filtering at the database level ensures that Company A's AI can never hallucinate and leak Company B's uploaded PDFs.
 
-### `npm run build`
+📊 ROI Analytics: Real-time dashboard tracking total queries, cache hits, and calculated dollars saved.
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+🛠️ Tech Stack
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+Frontend:
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+React.js 18 (Vite)
 
-### `npm run eject`
+TypeScript
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+Tailwind CSS
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+Recharts (Analytics)
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+React Router DOM & React Helmet Async (SEO)
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+Backend & AI Engine:
 
-## Learn More
+Node.js & Express.js
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+MongoDB Atlas (Document Storage & Vector Search)
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+Socket.io (Real-time WebSockets)
 
-### Code Splitting
+LangChain.js & LangGraph (Agent Orchestration)
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+Google Gemini / OpenAI / Anthropic (Dynamic LLM Routing)
 
-### Analyzing the Bundle Size
+🏗️ System Architecture
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+graph TD
+    User([Website Visitor]) -->|Types Question| Widget(Chat Widget)
+    Widget -->|WebSocket Emit| Server(Express Backend)
+    
+    Server --> CacheCheck{Semantic Cache}
+    
+    CacheCheck -->|Similarity > 95%| CacheHit[Return Cached Answer]
+    CacheHit --> Widget
+    
+    CacheCheck -->|Cache Miss| LangGraph[LangGraph Agent]
+    
+    LangGraph <--> Checkpointer[(Thread Memory)]
+    LangGraph <--> VectorDB[(MongoDB Vector Search)]
+    LangGraph <--> Tools{Zod Tools}
+    
+    Tools -->|Frustrated User?| LeadDB[(Lead Database)]
+    Tools -->|Requires Factual Data?| VectorDB
+    
+    LangGraph -->|Stream Chunks| Widget
+    
+    Admin([Company Admin]) -->|Monitors| Dashboard(Admin Inbox)
+    Server <-->|Live Sync| Dashboard
+    Dashboard -->|Take Over Chat| Server
 
-### Making a Progressive Web App
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+🚀 Local Development Setup
 
-### Advanced Configuration
+1. Prerequisites
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+Node.js (v18+)
 
-### Deployment
+MongoDB Atlas Cluster (with a created Vector Search Index)
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+Google Gemini API Key (or OpenAI/Anthropic)
 
-### `npm run build` fails to minify
+2. Clone and Install
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+git clone https://github.com/yourusername/embedai.git
+cd embedai
+
+# Install Backend Dependencies
+cd backend
+npm install
+
+# Install Frontend Dependencies
+cd ../frontend
+npm install
+
+
+3. Environment Variables
+
+Create a .env file in the /backend directory:
+
+PORT=5000
+FRONTEND_URL=http://localhost:5173
+MONGO_URI=mongodb+srv://<user>:<password>@cluster.mongodb.net/embedai
+JWT_ACCESS_SECRET=your_super_secret_access_key
+JWT_REFRESH_SECRET=your_super_secret_refresh_key
+
+# Default AI Models
+CHAT_MODEL=gemini-3.6-flash
+EMBEDDING_MODEL=text-embedding-004
+
+# Optional: LangSmith Tracing
+LANGCHAIN_TRACING_V2=true
+LANGCHAIN_API_KEY=your_langsmith_key
+LANGCHAIN_PROJECT=EmbedAI_Local
+
+
+4. Configure MongoDB Vector Search Index
+
+In your MongoDB Atlas Dashboard, create a new Atlas Vector Search index on the documentchunks collection named vector_index using this JSON:
+
+{
+  "fields": [
+    {
+      "numDimensions": 768,
+      "path": "embedding",
+      "similarity": "cosine",
+      "type": "vector"
+    },
+    {
+      "path": "botId",
+      "type": "filter"
+    }
+  ]
+}
+
+
+5. Run the Application
+
+Open two terminal windows:
+
+Terminal 1 (Backend):
+
+cd backend
+npm run dev
+
+
+Terminal 2 (Frontend):
+
+cd frontend
+npm run dev
+
+
+Navigate to http://localhost:5173 to view the landing page and create your first workspace!
+
+🛡️ Security Best Practices Implemented
+
+Rate Limiting: Protects against Brute Force logins, API exhaustion, and malicious bulk document uploads.
+
+Device Fingerprinting: ua-parser-js tracks OS, browser, and IP address for active session management.
+
+Token Rotation: Refresh tokens are rotated upon use, and suspected token theft triggers a nuclear revocation of all active sessions for that user.
+
+Helmet.js: Secures Express apps by setting various HTTP headers.
+
+🤝 Contributing
+
+Contributions, issues, and feature requests are welcome! Feel free to check issues page.
+
+📝 License
+
+This project is MIT licensed.

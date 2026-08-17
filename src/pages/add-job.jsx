@@ -1263,15 +1263,23 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
                     if (!selected) return;
                     setSelectedSiteId(selected ? selected.value : "");
                     if (selected && selected.siteData) {
-                      setField("location", selected.siteData.address || "");
-                      setField("address", selected.siteData.address || "");
+                      const address = selected.siteData.address || "";
+                      let foundState = selected.siteData.state || selected.siteData.site_state || "";
+                      if (!foundState && address) {
+                        const match = address.match(/\b(vic|nsw|qld|tas|wa|sa|act|nt)\b/i);
+                        if (match) foundState = match[1].toLowerCase();
+                      }
+                      setField("location", address);
+                      setField("address", address);
                       setField("coordinates", selected.siteData.coordinates || "");
+                      if (foundState) setField("state", foundState.toLowerCase());
                     }
                     if (selected.value === "manual" || selected.isManual) {
                       setSelectedSiteId("manual");
                       setField("location", "");
                       setField("address", "");
                       setField("coordinates", "");
+                      setField("state", "");
                       setLocationError("");
 
                       setTimeout(() => {
@@ -1285,9 +1293,6 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
                       }, 150);
                     } else {
                       setSelectedSiteId(selected.siteData.id);
-                      setField("location", selected.siteData.address || "");
-                      setField("address", selected.siteData.address || "");
-                      setField("coordinates", selected.siteData.coordinates || "");
                       setLocationError("");
                     }
                   }}

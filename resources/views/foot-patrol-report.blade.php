@@ -17,7 +17,7 @@
   .page-header {
     display: table;
     width: 100%;
-    background: #0a7c6e;
+    background: #ffffff;
     padding: 14px 20px;
     margin-bottom: 0;
   }
@@ -38,7 +38,7 @@
   .page-header .title-cell .report-label {
     font-size: 18px;
     font-weight: 700;
-    color: #ffffff;
+    color: #0a7c6e;
     letter-spacing: 2px;
     text-transform: uppercase;
   }

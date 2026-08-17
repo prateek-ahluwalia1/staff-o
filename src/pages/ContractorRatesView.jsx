@@ -156,7 +156,7 @@ const ContractorRatesView = ({ selectedStates = [] }) => {
     for (const stateVal of selectedStates) {
       const stateForm = requestForm[stateVal] || {};
       let stateErrors = {};
-      
+
       for (const row of SLOT_ROWS) {
         const mk = `def_${row.metro}`;
         const rk = `def_${row.reg}`;
@@ -167,7 +167,7 @@ const ContractorRatesView = ({ selectedStates = [] }) => {
           stateErrors[rk] = true;
         }
       }
-      
+
       if (Object.keys(stateErrors).length > 0) {
         newErrors[stateVal] = stateErrors;
         if (!firstErrorState) firstErrorState = stateVal;

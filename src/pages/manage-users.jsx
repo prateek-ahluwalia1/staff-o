@@ -286,7 +286,11 @@ const ManageUsers = () => {
     { isAuth: true }
   );
 
-  const contractorsList = contractorsResponse?.data?.data || [];
+  const contractorsList = useMemo(() => {
+    if (!contractorsResponse) return [];
+    const arr = contractorsResponse.data?.data ?? contractorsResponse.data;
+    return Array.isArray(arr) ? arr : [];
+  }, [contractorsResponse]);
   const { submit, loading: submitLoading } = useSubmit({ isAuth: true });
   const { submit: uploadFile, loading: uploadLoading } = useSubmit({ isAuth: true });
   const { submit: submitSecurityLicense } = useSubmit({
@@ -1600,7 +1604,7 @@ const ManageUsers = () => {
                   <div className="mt-3 p-3 bg-white rounded-4 border shadow-sm w-100">
                     <label className="form-label fw-bold mb-2">Assign to Resource Partner *</label>
                     <Select
-                      options={contractorsList.filter((contractor) => contractor.id !== 1)
+                      options={contractorsList.filter((contractor) => contractor.id !== 1 && getUserStatus(contractor) === "active")
                         .map((contractor) => ({
                           value: contractor.id,
                           label: `${contractor.name} ${contractor.company_name ? `(${contractor.company_name})` : ""}`
@@ -1619,11 +1623,11 @@ const ManageUsers = () => {
                         }))
                       }
                       placeholder={
-                        contractorsList.filter(c => c.id !== 1).length === 0
-                          ? "No resource partners available"
+                        contractorsList.filter(c => c.id !== 1 && getUserStatus(c) === "active").length === 0
+                          ? "No active partners found..."
                           : "Select a Resource Partner"
                       }
-                      isDisabled={contractorsList.filter(c => c.id !== 1).length === 0}
+                      isDisabled={contractorsList.filter(c => c.id !== 1 && getUserStatus(c) === "active").length === 0}
                       isClearable
                       classNamePrefix="react-select"
                       styles={{

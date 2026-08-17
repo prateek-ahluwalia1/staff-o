@@ -865,6 +865,366 @@ private function calculateProfileCompletion(User $user): int
         ]);    
     }
 
+    // public function updateUser(Request $request, $id)
+    // {
+    //     try {
+    //         $user = User::findOrFail($id);
+
+    //         $rules = [
+    //             'name' => 'sometimes|required|string|max:255',
+    //             'email' => 'sometimes|required|email|unique:users,email,' . $user->id,
+    //             'password' => 'nullable|confirmed|min:6',
+    //             'is_active' => 'sometimes|boolean',
+    //             'staff_document_type' => 'nullable|string',
+    //             'address' => 'nullable',
+    //             'city' => 'nullable|string',
+    //             'state' => 'nullable|string',
+    //             'country' => 'nullable|string',
+    //             'coordinates' => 'nullable|string',
+    //             'states_allowed' => 'nullable|json'            
+    //             ];
+
+    //         if ($user->user_type === 'customer') {
+    //             $rules = array_merge($rules, [
+    //                 'phone' => 'nullable|string',
+    //                 'bank_details' => 'nullable',
+    //                 'email_otp' => 'nullable|string',
+    //                 'profile_image' => 'sometimes|nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+    //             ]);
+    //         }
+
+    //         if ($user->user_type === 'contractor') {
+    //             $rules = array_merge($rules, [
+    //                 'company_name' => 'sometimes|required|string|max:255',
+    //                 'registration_number' => 'nullable|string|max:255',
+    //                 'phone' => 'nullable|string|max:20',
+    //                 'acn' => 'nullable|string',
+    //                 'abn' => 'nullable|string',
+    //                 // 'profile_image' => 'sometimes|nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+    //             ]);
+    //         }
+
+    //         if ($user->user_type === 'staff') {
+    //             $rules = array_merge($rules, [
+    //                 // 'profile_image' => 'sometimes|nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+    //                 'gender' => 'sometimes|nullable|in:male,female,other',
+    //                 'phone' => 'sometimes|nullable|string',
+    //                 'staff_document_type' => 'sometimes|nullable|string',
+    //                 'security_license_no' => 'sometimes|nullable|string',
+    //                 'date_of_birth' => 'sometimes|nullable|string',
+    //                 'origin_country' => 'sometimes|nullable|string'
+    //             ]);
+    //         }
+
+    //         $data = $request->validate($rules);
+
+    //         if (isset($data['password'])) {
+    //             $data['password'] = Hash::make($data['password']);
+    //         }
+
+    //         $user->update(collect($data)->only([
+    //             'name',
+    //             'email',
+    //             'password',
+    //             'is_active',
+    //             'city',
+    //             'state',
+    //             'country',
+    //             'address',
+    //             'phone',
+    //             'coordinates',
+    //             'states_allowed'
+    //         ])->toArray());
+
+    //           if (empty($user->staffo_id) || $user->staffo_id == null ){
+    //                 $user->staffo_id = 'STAFO' . $user->id;
+    //                 $user->update();
+    //             }
+
+    //             if ($user->user_type === 'customer') {
+    //              $profileData = collect($data)->only([
+    //                 'phone',
+    //                 'company_name',
+    //                 'bank_details',
+    //             ])->toArray();
+
+    //             if ($request->hasFile('profile_image')) {
+    //                 $profileData['profile_image'] = $request->file('profile_image')->store('staff-profiles', 'public');
+    //             } elseif (array_key_exists('profile_image', $data)) {
+    //                 $profileData['profile_image'] = $data['profile_image'];
+    //             }
+
+    //             if ($user->customer) {
+    //                 $user->customer->update($profileData);
+    //             } else {
+    //                 $profileData['user_id'] = $user->id;
+    //                 Customer::create($profileData);
+    //             }
+
+    //             $user->load(['customer']);
+    //         }
+
+    //         if ($user->user_type === 'contractor') {
+    //             // Update contractor profile
+    //             $profileData = collect($data)->only([
+    //                 'company_name',
+    //                 'registration_number',
+    //                 'phone',
+    //                 'abn',
+    //                 'acn',
+    //             ])->toArray();
+
+    //             if ($request->hasFile('profile_image')) {
+    //                 $profileData['profile_image'] = $request->file('profile_image')->store('staff-profiles', 'public');
+    //             } elseif (array_key_exists('profile_image', $data)) {
+    //                 $profileData['profile_image'] = $data['profile_image'];
+    //             }
+
+    //             if ($user->contractor) {
+    //                 $user->contractor->update($profileData);
+    //             } else {
+    //                 $profileData['user_id'] = $user->id;
+    //                 Contractor::create($profileData);
+    //             }
+
+    //             // Handle documents based on allowed states
+    //             $allowedStates = [];
+    //                 if (!empty($user->states_allowed)) {
+    //                     $allowedStates = json_decode($user->states_allowed, true) ?? [];
+    //                 }                
+    //             // State to document category mapping
+    //             $stateDocumentMap = [
+    //                 'vic' => 'contractor_document',
+    //                 'nsw' => 'nsw_document',
+    //                 'qld' => 'qld_document',
+    //                 'tas' => 'tas_document',
+    //                 'wa' => 'wa_document',
+    //                 'sa' => 'sa_document'
+    //             ];
+
+    //             // Get document categories for allowed states
+    //             $documentCategories = DocumentCategory::whereIn('document_category', array_values($stateDocumentMap))
+    //                 ->get()
+    //                 ->keyBy('document_category');
+
+    //             $documentsToKeep = [];
+
+    //             foreach ($allowedStates as $state) {
+    //                 $state = strtolower($state);
+    //                 if (isset($stateDocumentMap[$state])) {
+    //                     $categoryKey = $stateDocumentMap[$state];
+    //                     $category = $documentCategories->get($categoryKey);
+                        
+    //                     if ($category) {
+    //                         $documentTypes = json_decode($category->document_type, true) ?? [];
+                            
+    //                         foreach ($documentTypes as $key => $value) {
+    //                             // Check if document already exists
+    //                             $existingDoc = Document::where('user_id', $user->id)
+    //                                 ->where('document_category', $categoryKey)
+    //                                 ->where('document_type', $key)
+    //                                 ->first();
+                                
+    //                             if (!$existingDoc) {
+    //                                 // Create new document
+    //                                 Document::create([
+    //                                     'user_id' => $user->id,
+    //                                     'document_category' => $categoryKey,
+    //                                     'document_type' => $key,
+    //                                     'document_name' => $value
+    //                                 ]);
+    //                             }
+                                
+    //                             // Track document to keep
+    //                             $documentsToKeep[] = $categoryKey . '_' . $key;
+    //                         }
+    //                     }
+    //                 }
+    //             }
+
+    //             // Delete documents that are not in allowed states
+    //             $allUserDocuments = Document::where('user_id', $user->id)->get();
+                
+    //             foreach ($allUserDocuments as $doc) {
+    //                 $docIdentifier = $doc->document_category . '_' . $doc->document_type;
+    //                 if (!in_array($docIdentifier, $documentsToKeep)) {
+    //                     $doc->delete();
+    //                 }
+    //             }
+
+    //             $user->load('contractor', 'documents');
+    //         }
+
+    //         if ($user->user_type === 'staff') {
+    //             $staff = Staff::where('user_id', $user->id)->first();
+
+    //             if (!empty($data['staff_document_type']) && $user->user_id == 1) {
+    //                 $check_old_data_exist = Document::where('user_id', $user->id)
+    //                     ->where('document_category', '!=', 'other-doc')
+    //                     ->first();
+
+    //                 if (!$staff || !$check_old_data_exist) {
+    //                     $document_categories = DocumentCategory::where('document_category', $request->staff_document_type)->first();
+    //                     if ($document_categories) {
+    //                         foreach (json_decode($document_categories->document_type) as $key => $value) {
+    //                             $guard_documents = new Document();
+    //                             $guard_documents->user_id = $user->id;
+    //                             $guard_documents->document_category = ($document_categories->document_category != '' ? $document_categories->document_category : 'other');
+    //                             $guard_documents->document_type = $key;
+    //                             $guard_documents->document_name = $value;
+    //                             $guard_documents->save();
+    //                         }
+    //                     }
+    //                 }
+    //                 // Case 2: Updating existing documents
+    //                 else if ($staff && $staff->staff_document_type != $request->staff_document_type) {
+    //                     $document_categories = DocumentCategory::where('document_category', $request->staff_document_type)->first();
+
+    //                     if ($document_categories) {
+    //                         // Get existing documents
+    //                         $old_docs = Document::where('user_id', $user->id)
+    //                             ->where('document_category', '!=', 'other-doc')
+    //                             ->get()
+    //                             ->keyBy('document_type');
+
+    //                         $new_doc_types = json_decode($document_categories->document_type, true);
+    //                         $new_document_category = $document_categories->document_category ?: 'other';
+
+    //                         // ===== HANDLE VISA =====
+    //                         // 1. Delete old visa if exists
+    //                         Document::where('user_id', $user->id)
+    //                             ->where('document_type', 'visa')
+    //                             ->delete();
+                            
+    //                         // 2. Check if new type has visa
+    //                         $has_new_visa = isset($new_doc_types['visa']);
+    //                         $visa_name = $has_new_visa ? $new_doc_types['visa'] : null;
+    //                         // ===== END VISA HANDLING =====
+
+    //                         // Remove visa from old docs array for comparison
+    //                         $old_docs_filtered = $old_docs->filter(function($doc) {
+    //                             return $doc->document_type !== 'visa';
+    //                         });
+                            
+    //                         // Remove visa from new types for comparison
+    //                         $new_doc_types_filtered = $new_doc_types;
+    //                         unset($new_doc_types_filtered['visa']);
+
+    //                         // Get keys
+    //                         $old_doc_keys = $old_docs_filtered->keys()->toArray();
+    //                         $new_doc_keys = array_keys($new_doc_types_filtered);
+
+    //                         // Compare keys
+    //                         $to_delete_keys = array_diff($old_doc_keys, $new_doc_keys);
+    //                         $to_add_keys = array_diff($new_doc_keys, $old_doc_keys);
+    //                         $common_keys = array_intersect($old_doc_keys, $new_doc_keys);
+
+    //                         // Update common types
+    //                         if (!empty($common_keys)) {
+    //                             $common_doc_ids = [];
+    //                             foreach ($common_keys as $doc_type) {
+    //                                 if ($old_docs_filtered->has($doc_type)) {
+    //                                     $common_doc_ids[] = $old_docs_filtered[$doc_type]->id;
+    //                                 }
+    //                             }
+
+    //                             if (!empty($common_doc_ids)) {
+    //                                 Document::whereIn('id', $common_doc_ids)
+    //                                     ->update(['document_category' => $new_document_category]);
+    //                             }
+    //                         }
+
+    //                         // Delete old types
+    //                         if (!empty($to_delete_keys)) {
+    //                             Document::where('user_id', $user->id)
+    //                                 ->where('document_category', '!=', 'other-doc')
+    //                                 ->whereIn('document_type', $to_delete_keys)
+    //                                 ->delete();
+    //                         }
+
+    //                         // Add new types
+    //                         if (!empty($to_add_keys)) {
+    //                             $documents_to_insert = [];
+
+    //                             foreach ($to_add_keys as $doc_type) {
+    //                                 if (!Document::where(['user_id' => $user->id, 'document_type' => $doc_type])->exists()) {
+    //                                     $documents_to_insert[] = [
+    //                                         'user_id' => $user->id,
+    //                                         'document_category' => $new_document_category,
+    //                                         'document_type' => $doc_type,
+    //                                         'document_name' => $new_doc_types_filtered[$doc_type],
+    //                                         'created_at' => now(),
+    //                                         'updated_at' => now()
+    //                                     ];
+    //                                 }
+    //                             }
+
+    //                             if (!empty($documents_to_insert)) {
+    //                                 Document::insert($documents_to_insert);
+    //                             }
+    //                         }
+
+    //                         // Add visa if new type has it
+    //                         if ($has_new_visa) {
+    //                             if (!Document::where(['user_id' => $user->id, 'document_type' => 'visa'])->exists()) {
+    //                                 Document::create([
+    //                                     'user_id' => $user->id,
+    //                                     'document_category' => $new_document_category,
+    //                                     'document_type' => 'visa',
+    //                                     'document_name' => $visa_name,
+    //                                     'created_at' => now(),
+    //                                     'updated_at' => now()
+    //                                 ]);
+    //                             }
+    //                         }
+    //                     }
+    //                 }
+    //             }
+
+    //             // Now update the staff record with ALL data including the document type
+    //             $staffData = collect($data)->only([
+    //                 'gender',
+    //                 'phone',
+    //                 'staff_document_type',
+    //                 'security_license_no',
+    //                 'date_of_birth',
+    //                 'origin_country'
+    //             ])->toArray();
+
+    //             if ($request->hasFile('profile_image')) {
+    //                 $staffData['profile_image'] = $request->file('profile_image')->store('staff-profiles', 'public');
+    //             } elseif (array_key_exists('profile_image', $data)) {
+    //                 $staffData['profile_image'] = $data['profile_image'];
+    //             }
+
+    //             if ($staff) {
+    //                 $staff->update($staffData);
+    //             } else {
+    //                 $staffData['user_id'] = $user->id;
+    //                 Staff::create($staffData);
+    //             }
+
+    //             $user->load(['staff', 'documents']);
+    //         }
+
+    //         return response()->json(['success' => true, 'code' => 200, 'data' => $user]);
+    //     } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+    //         return response()->json([
+    //             'message' => 'User not found'
+    //         ], 404);
+    //     } catch (\Illuminate\Validation\ValidationException $e) {
+    //         return response()->json([
+    //             'message' => 'Validation failed',
+    //             'errors' => $e->errors()
+    //         ], 422);
+    //     } catch (\Exception $e) {
+    //         return response()->json([
+    //             'message' => 'Failed to update user',
+    //             'error' => $e->getMessage()
+    //         ], 500);
+    //     }
+    // }
+
     public function updateUser(Request $request, $id)
     {
         try {
@@ -918,6 +1278,57 @@ private function calculateProfileCompletion(User $user): int
 
             $data = $request->validate($rules);
 
+            // ============ NEW: states_allowed removal check ============
+            if (isset($data['states_allowed']) && $user->user_type === 'contractor') {
+                $oldStatesAllowed = [];
+                if (!empty($user->states_allowed)) {
+                    $oldStatesAllowed = json_decode($user->states_allowed, true) ?? [];
+                }
+                $newStatesAllowed = json_decode($data['states_allowed'], true) ?? [];
+
+                $oldStatesNormalized = array_map('strtolower', $oldStatesAllowed);
+                $newStatesNormalized = array_map('strtolower', $newStatesAllowed);
+
+                $removedStates = array_diff($oldStatesNormalized, $newStatesNormalized);
+
+                if (!empty($removedStates)) {
+                    // Only states the contractor actually has a rate card for are relevant
+                    $ratedStates = DB::table('contractor_chargerates')
+                        ->where('user_id', $user->id)
+                        ->pluck('state')
+                        ->map(fn($s) => strtolower($s))
+                        ->unique()
+                        ->toArray();
+
+                    $statesToCheck = array_values(array_intersect($removedStates, $ratedStates));
+
+                    foreach ($statesToCheck as $state) {
+                        $hasJob = DB::table('job_rosters')
+                            ->join('sites', 'sites.id', '=', 'job_rosters.site_id')
+                            ->where('job_rosters.accepted_by', $user->id)
+                            ->whereRaw('LOWER(sites.state) = ?', [$state])
+                            ->exists();
+
+                        if ($hasJob) {
+                            return response()->json([
+                                'success' => false,
+                                'message' => "Do not remove state {$state} because you have a job in that state.",
+                                'data' => null,
+                            ], 200);
+                        }
+                    }
+
+                    // Safe to remove — delete the now-unused rate cards for removed states
+                    if (!empty($statesToCheck)) {
+                        DB::table('contractor_chargerates')
+                            ->where('user_id', $user->id)
+                            ->whereRaw('LOWER(state) IN (' . implode(',', array_fill(0, count($statesToCheck), '?')) . ')', $statesToCheck)
+                            ->delete();
+                    }
+                }
+            }
+            // ============ END NEW ============
+
             if (isset($data['password'])) {
                 $data['password'] = Hash::make($data['password']);
             }
@@ -936,13 +1347,13 @@ private function calculateProfileCompletion(User $user): int
                 'states_allowed'
             ])->toArray());
 
-              if (empty($user->staffo_id) || $user->staffo_id == null ){
+            if (empty($user->staffo_id) || $user->staffo_id == null ){
                     $user->staffo_id = 'STAFO' . $user->id;
                     $user->update();
                 }
 
                 if ($user->user_type === 'customer') {
-                 $profileData = collect($data)->only([
+                $profileData = collect($data)->only([
                     'phone',
                     'company_name',
                     'bank_details',
@@ -1206,83 +1617,6 @@ private function calculateProfileCompletion(User $user): int
 
                 $user->load(['staff', 'documents']);
             }
-
-
-            // if ($user->user_type === 'customer') {
-
-            //     $customer = $user->customer;
-
-            //     $newEmail = $request->email ?? $user->email;
-            //     // $newPhone = $request->phone ?? optional($customer)->phone;
-
-            //     $emailChanged = $newEmail != $user->email;
-            //     // $phoneChanged = $newPhone != optional($customer)->phone;
-
-            //     if ($emailChanged || $customer->verify_profile == 0) {
-
-            //         // If OTP not provided → send OTP
-            //         if (!$request->email_otp) {
-
-            //             $emailOtp = rand(100000, 999999);
-            //             // $phoneOtp = rand(100000, 999999);
-
-            //             if ($customer) {
-            //                 $customer->update([
-            //                     'email_otp' => $emailOtp,
-            //                     // 'phone_otp' => $phoneOtp,
-            //                     'otp_expires_at' => now()->addMinutes(10)
-            //                 ]);
-            //             }
-
-            //             // Send Email OTP
-            //             if ($emailChanged) {
-            //                 Mail::raw("Your verification OTP is: $emailOtp", function ($message) use ($newEmail) {
-            //                     $message->to($newEmail)
-            //                         ->subject('Email Verification OTP');
-            //                 });
-
-            //                 return response()->json([
-            //                     'success' => false,
-            //                     'otp_required' => true,
-            //                     'message' => 'OTP sent to email. Please verify to continue.'
-            //                 ]);
-            //             }
-
-            //             // Send SMS OTP (integrate gateway)
-            //             // if ($phoneChanged) {
-            //             //     // SMS::send($newPhone, "Your OTP is: $phoneOtp");
-            //             // }
-
-            //             return response()->json([
-            //                 'success' => true,
-            //                 'otp_required' => false,
-            //                 'message' => 'User Updated Successfully.'
-            //             ]);
-            //         }
-
-            //         // Verify OTP
-            //         if (!$customer || $customer->otp_expires_at < now()) {
-            //             return response()->json([
-            //                 'message' => 'OTP expired'
-            //             ], 400);
-            //         }
-
-            //         if ($request->email_otp != $customer->email_otp) {
-
-            //             return response()->json([
-            //                 'message' => 'Invalid OTP'
-            //             ], 400);
-            //         }
-
-            //         // OTP verified
-            //         $customer->update([
-            //             'email_otp' => null,
-            //             'phone_otp' => null,
-            //             'otp_expires_at' => null,
-            //             'verify_profile' => 1
-            //         ]);
-            //     }
-            // }
 
             return response()->json(['success' => true, 'code' => 200, 'data' => $user]);
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {

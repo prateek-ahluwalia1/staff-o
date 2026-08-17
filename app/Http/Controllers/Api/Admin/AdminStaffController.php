@@ -18,57 +18,7 @@ use Illuminate\Support\Facades\Storage;
 class AdminStaffController extends Controller
 {
 
-     /**
-     * Display a listing of customers
-     */
-    // public function index(Request $request)
-    // {
-    //     $query = User::where('user_type', 'staff')
-    //         ->with('staff', 'documents');
-
-    //     // Search functionality
-    //     if ($request->has('search')) {
-    //         $search = $request->search;
-    //         $query->where(function($q) use ($search) {
-    //             $q->where('name', 'like', "%{$search}%")
-    //               ->orWhere('email', 'like', "%{$search}%");
-    //         });
-    //     }
-
-    //     // Filter by status
-    //     if ($request->has('status')) {
-    //         if ($request->status === 'active') {
-    //             $query->where('is_active', 1);
-    //         } elseif ($request->status === 'inactive') {
-    //             $query->where('is_active', 0);
-    //         }
-    //     }
-
-    //     // Filter by city/state/country
-    //     if ($request->has('city')) {
-    //         $query->where('city', $request->city);
-    //     }
-        
-    //     if ($request->has('state')) {
-    //         $query->where('state', $request->state);
-    //     }
-        
-    //     if ($request->has('country')) {
-    //         $query->where('country', $request->country);
-    //     }
-
-    //     // Pagination
-    //     $staff = $query->orderBy('id', 'desc')->paginate($request->get('per_page', $request->limit));
-
-
-
-    //     return response()->json([
-    //         'success' => true,
-    //         'data' => $staff,
-    //         'message' => 'Staff retrieved successfully'
-    //     ]);
-    // }
-    public function index(Request $request)
+public function index(Request $request)
 {
     $query = User::where('user_type', 'staff')
         ->with('staff', 'documents');
@@ -564,6 +514,10 @@ public function activateStaff($id)
 
         DB::commit();
 
+        if($user->user_id != 1){
+          $this->sendStaffWelcomeEmail($user, $validated['password']);
+        }
+
         return response()->json([
             'success' => true,
             'message' => 'Staff registered successfully.',
@@ -933,4 +887,33 @@ public function activateStaff($id)
             'message' => 'Staff deleted successfully'
         ]);
     }
+
+    private function sendStaffWelcomeEmail($user, $plainPassword)
+{
+    try {
+        $company = User::find($user->user_id);
+        $companyName = $company ? $company->name : 'your company';
+        
+        $data = [
+            'name' => $user->name,
+            'email' => $user->email,
+            'password' => $plainPassword,
+            'company_name' => $companyName,
+            'staffo_id' => $user->staffo_id,
+        ];
+
+        Mail::send('emails.staff_welcome', $data, function ($message) use ($user) {
+            $message->to($user->email, $user->name)
+                    ->subject('Welcome to Staffoo - Your Account Details');
+        });
+
+        \Log::info('Welcome email sent to staff: ' . $user->email);
+    } catch (\Exception $e) {
+        \Log::error('Failed to send welcome email to staff: ' . $e->getMessage(), [
+            'user_id' => $user->id,
+            'email' => $user->email
+        ]);
+        // Don't throw exception - email failure shouldn't stop the registration process
+    }
+}
 }

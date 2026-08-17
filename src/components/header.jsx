@@ -6,7 +6,6 @@ import { toggleSidebar } from "../store/slices/sidebarSlice";
 import {
   setNotifications,
   markNotificationRead,
-  markAllRead,
 } from "../store/slices/notificationSlice";
 import useSubmit from "../hooks/useSubmit";
 import useFetch from "../hooks/useFetch";
@@ -131,12 +130,6 @@ const Header = memo(function Header({ withSidebar = false }) {
   const toggleNotifications = () => {
     setShowNotifications((prev) => !prev);
     setShowUserMenu(false);
-    if (!showNotifications && userId) {
-      // Refresh on open
-      refetchNotifications();
-      dispatch(markAllRead());
-      submit(`api/notifications/mark-all-read/${userId}`, {}, { method: "POST" });
-    }
   };
 
   const toggleUserMenu = () => {

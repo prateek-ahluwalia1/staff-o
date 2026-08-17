@@ -136,4 +136,51 @@ class StripeWebhookController extends Controller
             'payment_intent_id' => $paymentIntent->id,
         ]);
     }
+
+        /**
+         * GET /invoice/pay/{rosterId}
+         *
+         * This is what the "Pay Now" button in the invoice email links to —
+         * NOT the raw Stripe payment link. It checks the roster's current
+         * payment_status first:
+         *   - already held/paid -> send to a friendly "already paid" page,
+         *     never touches Stripe, so no duplicate hold gets created
+         *   - not yet paid -> forward on to the actual Stripe payment link
+         */
+        public function redirectToPay($rosterId)
+        {
+            $roster = DB::table('job_rosters')->where('id', $rosterId)->first();
+
+            if (!$roster) {
+                abort(404, 'Invoice not found.');
+            }
+
+            // Payment already held or completed — don't let a second click create another hold
+            if (in_array($roster->payment_status, ['held', 'paid'])) {
+                return redirect()->route('invoice-already-paid', ['rosterId' => $rosterId]);
+            }
+
+            // payment_intent_id column currently stores the Stripe Payment Link URL
+            // (per the existing generateContractorInvoiceAndPaymentLink logic)
+            if (empty($roster->payment_intent_id)) {
+                abort(404, 'Payment link not available for this invoice.');
+            }
+
+            return redirect()->away($roster->payment_intent_id);
+        }
+
+        /**
+         * GET /invoice/already-paid/{rosterId}
+         * Simple landing page shown if the client clicks Pay Now again
+         * after the payment has already been held/completed.
+         */
+        public function alreadyPaid($rosterId)
+        {
+            $roster = DB::table('job_rosters')->where('id', $rosterId)->first();
+
+            return view('emails.invoice-already-paid', [
+                'invoiceNumber' => $roster->invoice_filename ?? null,
+                'paymentStatus' => $roster->payment_status ?? null,
+            ]);
+        }
 }

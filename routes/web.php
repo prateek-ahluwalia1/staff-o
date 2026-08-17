@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\StripeWebhookController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -16,3 +17,5 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', function () {
     return view('welcome');
 });
+Route::get('emails/pay/{rosterId}', [StripeWebhookController::class, 'redirectToPay'])->name('invoice.pay');
+Route::get('emails/already-paid/{rosterId}', [StripeWebhookController::class, 'alreadyPaid'])->name('invoice-already-paid');

@@ -5933,9 +5933,9 @@ public function contractor_accept_job(Request $request, $id)
             // If invoicing is required, job stays pending until payment clears via webhook
             if ($invoiceResult['success']) {
                 DB::table('job_rosters')->where('id', $updatedRoster->id)->update([
-                    'job_status' => 'pending_payment',
+                    'job_status' => 'pending',
                 ]);
-                $updatedRoster->job_status = 'pending_payment';
+                $updatedRoster->job_status = 'pending';
             }
         }
 

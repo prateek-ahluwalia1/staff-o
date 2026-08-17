@@ -163,9 +163,15 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
   const [pendingDraft, setPendingDraft] = useState(null);
   const [postingJob, setPostingJob] = useState(false);
 
-  // --- ADMIN ASSIGNMENT STATE ---
   const [postingMode, setPostingMode] = useState("broadcast");
   const [assignedStaff, setAssignedStaff] = useState("");
+
+  useEffect(() => {
+    if (stateCheckResult === false && postingMode === "assign") {
+      setPostingMode("broadcast");
+      setAssignedStaff("");
+    }
+  }, [stateCheckResult, postingMode]);
 
   const clientSelectRef = useRef(null);
 
@@ -269,12 +275,19 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
             style={{ textTransform: "none" }}
           >Job will be available for all eligible staff to apply.</div>
         </label>
-        <label className={`flex-grow-1 p-3 rounded-3 border transition-all ${postingMode === "assign" ? "border-primary bg-white shadow-sm" : "border-light-subtle bg-white opacity-75"}`} style={{ cursor: "pointer" }}>
-          <input type="radio" name="postMode" className="d-none" checked={postingMode === "assign"} onChange={() => setPostingMode("assign")} />
+        <label className={`flex-grow-1 p-3 rounded-3 border transition-all ${postingMode === "assign" ? "border-primary bg-white shadow-sm" : "border-light-subtle bg-white opacity-75"} ${stateCheckResult === false ? "opacity-50" : ""}`} style={{ cursor: stateCheckResult === false ? "not-allowed" : "pointer" }}>
+          <input type="radio" name="postMode" className="d-none" checked={postingMode === "assign"} disabled={stateCheckResult === false} onChange={() => setPostingMode("assign")} />
           <div className="fw-bold text-dark mb-1"><i className="fa-solid fa-user-check text-success me-2"></i>Assign to Staff</div>
           <div className="small text-muted"
             style={{ textTransform: "none" }}
-          >Directly assign this job to a specific staff member.</div>
+          >
+            {stateCheckResult === false ? (
+              <span className="text-danger d-flex align-items-start gap-1 mt-1" style={{ fontSize: "12px", lineHeight: "1.3" }}>
+                <i className="fa-solid fa-circle-info mt-1"></i>
+                Disabled because this location uses a price range flow which requires broadcast.
+              </span>
+            ) : "Directly assign this job to a specific staff member."}
+          </div>
         </label>
       </div>
 

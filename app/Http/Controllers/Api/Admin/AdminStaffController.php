@@ -893,7 +893,7 @@ public function activateStaff($id)
 {
     try {
         $company = User::find($user->user_id);
-        $companyName = $company ? $company->name : 'your company';
+        $companyName = $company ? $company->contractor->company_name : 'your company';
         
         $data = [
             'name' => $user->name,

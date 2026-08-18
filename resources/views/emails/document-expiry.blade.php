@@ -50,7 +50,7 @@
         .btn {
             display: inline-block;
             padding: 10px 20px;
-            background: #007bff;
+            background: #0a7c6e;
             color: white;
             text-decoration: none;
             border-radius: 4px;
@@ -72,12 +72,12 @@
             background: #f8f9fa;
             padding: 15px;
             margin: 15px 0;
-            border-left: 4px solid #007bff;
+            border-left: 4px solid #0a7c6e;
             border-radius: 4px;
         }
         .user-section h3 {
             margin-top: 0;
-            color: #007bff;
+            color: #0a7c6e;
         }
         .summary-box {
             background: #e9ecef;
@@ -96,7 +96,7 @@
             overflow: hidden;
         }
         .doc-table th {
-            background: #007bff;
+            background: #0a7c6e;
             color: white;
         }
         .urgent {

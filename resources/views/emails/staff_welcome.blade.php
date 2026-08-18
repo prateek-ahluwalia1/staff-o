@@ -35,7 +35,7 @@
         .greeting {
             font-size: 24px;
             font-weight: 600;
-            color: #1a237e;
+            color: #0a7c6e;
             margin-bottom: 20px;
         }
         .message {
@@ -45,7 +45,7 @@
         }
         .credentials-box {
             background-color: #f8f9fa;
-            border-left: 4px solid #1a237e;
+            border-left: 4px solid #0a7c6e;
             padding: 20px;
             margin: 25px 0;
             border-radius: 6px;
@@ -55,7 +55,7 @@
             font-size: 15px;
         }
         .credentials-box strong {
-            color: #1a237e;
+            color: #0a7c6e;
         }
         .highlight {
             background-color: #e8edf3;
@@ -70,7 +70,7 @@
         }
         .btn {
             display: inline-block;
-            background-color: #1a237e;
+            background-color: #0a7c6e;
             color: #ffffff !important;
             padding: 14px 35px;
             border-radius: 8px;
@@ -80,7 +80,7 @@
             transition: background-color 0.3s ease;
         }
         .btn:hover {
-            background-color: #0d1555;
+            background-color: #0a7c6e;
         }
         .footer {
             text-align: center;
@@ -90,7 +90,7 @@
             font-size: 14px;
         }
         .footer a {
-            color: #1a237e;
+            color: #0a7c6e;
             text-decoration: none;
         }
         .social-links {
@@ -125,8 +125,8 @@
 <body>
     <div class="container">
         <!-- Header with Logo -->
-        <div class="header">
-            <img src="https://apis.staffoo.com.au/uploads/staffologo.png" alt="Staffoo Logo">
+       <div class="header" style="text-align: center; padding: 30px 0 20px 0; border-bottom: 2px solid #e8edf3;">
+            <img src="https://apis.staffoo.com.au/uploads/staffologo.png" alt="Staffoo Logo" style="max-width: 180px; height: auto; display: inline-block;">
         </div>
 
         <!-- Content -->
@@ -152,16 +152,7 @@
 
             <!-- Call to Action -->
             <div class="cta-section">
-                <a href="https://staffoo.com/download" class="btn">📲 Download Staffoo App</a>
-            </div>
-
-            <div class="message">
-                <p><strong>What you can do with Staffoo:</strong></p>
-                <ul style="padding-left: 20px; line-height: 1.8;">
-                    <li>✅ View and manage your work shifts</li>
-                    <li>✅ Stay updated with company announcements</li>
-                    <li>✅ Communicate with your supervisors</li>
-                </ul>
+                <a href="https://play.google.com/store/apps/details?id=com.staffoo" class="btn">📲 Download Staffoo App</a>
             </div>
 
             <div class="message" style="margin-top: 25px;">
@@ -177,14 +168,14 @@
                 &copy; {{ date('Y') }} Staffoo. All rights reserved.
             </p>
             <div class="social-links">
-                <a href="https://staffoo.com">Website</a> |
-                <a href="mailto:support@staffoo.com">Support</a> |
-                <a href="https://staffoo.com/privacy">Privacy Policy</a>
+                <a href="https://staffoo.com.au">Website</a> |
+                <a href="mailto:admin@staffoo.com.au">Support</a> |
+                <a href="https://staffoo.com.au/privacy-policy">Privacy Policy</a>
             </div>
             <div class="support">
                 <p style="margin: 5px 0;">
                     Need help? Contact us at 
-                    <a href="mailto:support@staffoo.com">support@staffoo.com</a>
+                    <a href="mailto:admin@staffoo.com.au">admin@staffoo.com.au</a>
                 </p>
                 <p style="margin: 5px 0; font-size: 12px; color: #999;">
                     This is an automated message, please do not reply directly to this email.

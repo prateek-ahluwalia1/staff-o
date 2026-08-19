@@ -43,6 +43,7 @@ const useFetch = (endpoint, { isAuth = false, immediate = true, method = "GET", 
         const json = isJsonResponse ? await res.json() : null;
 
         if (res.status === 401 && json?.message === "Unauthenticated.") {
+          sessionStorage.clear();
           dispatch(logOut());
           setData(null);
           setError("Unauthenticated.");

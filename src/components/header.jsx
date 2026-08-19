@@ -140,6 +140,7 @@ const Header = memo(function Header({ withSidebar = false }) {
   const handleLogoutClick = async () => {
     try {
       await submit(`api/logout/${userId}`, {}, { method: "POST" });
+      sessionStorage.clear();
       dispatch(logOut());
       navigate("/login");
     } catch (error) {

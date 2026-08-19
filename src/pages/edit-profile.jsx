@@ -13,7 +13,7 @@ import { resolveProfileImageUrl } from "../utils/profileImage";
 import { toast } from "react-toastify";
 import StaffOnboardingForms from "../components/StaffOnboardingForms";
 import ContractorRatesView from "./ContractorRatesView";
-import CoverJobsBanner from "../components/CoverJobsBanner";
+import { Link } from "react-router-dom";
 
 const PremiumModal = ({ open, onClose, children, title, wide = false }) => {
   if (!open) return null;
@@ -300,6 +300,7 @@ export default function EditProfile() {
   const [phoneChangeSuccess, setPhoneChangeSuccess] = useState(false);
 
   const [showChargeRateModal, setShowChargeRateModal] = useState(false);
+  const [showCoverJobsModal, setShowCoverJobsModal] = useState(false);
 
   const [showDocModal, setShowDocModal] = useState(false);
   const [initialStatesAllowed, setInitialStatesAllowed] = useState([]);
@@ -352,9 +353,9 @@ export default function EditProfile() {
     const currentUserType = profileData.data.user_type || userType;
     if (currentUserType === "contractor" && (profileData.charge_rate === true || profileData.charge_rate === "true" || profileData.charge_rate == 1)) {
       const storageKey = `chargeRateModalShown_${profileData.data.id}`;
-      if (!localStorage.getItem(storageKey)) {
+      if (!sessionStorage.getItem(storageKey)) {
         setShowChargeRateModal(true);
-        localStorage.setItem(storageKey, "true");
+        sessionStorage.setItem(storageKey, "true");
       }
     }
 
@@ -441,6 +442,22 @@ export default function EditProfile() {
       setProfilePhoto(resolveProfileImageUrl(profileImageUrl));
     }
   }, [profileData, userType]);
+
+  useEffect(() => {
+    if (!showChargeRateModal && profileData?.data && userdata) {
+      const currentUserType = profileData.data.user_type || userType;
+      const availableJobsCount = userdata?.data?.available_jobs_count || userdata?.available_jobs_count || 0;
+      const isActive = userdata?.data?.is_active || userdata?.is_active;
+
+      if (availableJobsCount > 0 && (currentUserType === "contractor" || currentUserType === "staff") && isActive) {
+        const cjStorageKey = `coverJobsModalShown_${profileData.data.id}`;
+        if (!sessionStorage.getItem(cjStorageKey)) {
+          setShowCoverJobsModal(true);
+          sessionStorage.setItem(cjStorageKey, "true");
+        }
+      }
+    }
+  }, [showChargeRateModal, profileData, userdata, userType]);
 
   // Sync Redux
   useEffect(() => {
@@ -1210,10 +1227,6 @@ export default function EditProfile() {
           flex-shrink: 0;
         }
       `}</style>
-      {userdata && (
-        userType === "contractor" ||
-        (userType === "staff" && Number(userdata?.data?.user_id ?? userdata?.user_id) === 1)
-      ) && <CoverJobsBanner />}
 
 
       {/* Profile Hero Header */}
@@ -1821,6 +1834,44 @@ export default function EditProfile() {
             </>
           )}
         </form>
+      </PremiumModal>
+
+      {/* Cover Jobs Modal */}
+      <PremiumModal
+        open={showCoverJobsModal}
+        onClose={() => setShowCoverJobsModal(false)}
+        title="Cover Jobs Available!"
+      >
+        <div className="px-2 px-md-3 py-4 text-center">
+          <div
+            className="d-inline-flex align-items-center justify-content-center rounded-circle mb-3"
+            style={{ width: "80px", height: "80px", backgroundColor: "#E8F6F3", color: "#0A7C6E" }}
+          >
+            <i className="fa-solid fa-briefcase fa-2x"></i>
+          </div>
+          <h4 className="fw-bold mb-3" style={{ color: "#0A7C6E" }}>
+            You have {userdata?.data?.available_jobs_count || userdata?.available_jobs_count || 0} cover jobs available!
+          </h4>
+          <p className="text-muted mb-4">
+            Take a look and accept the ones that work best for your schedule.
+          </p>
+          <div className="d-flex justify-content-center gap-3">
+            <button
+              type="button"
+              className="btn btn-outline-secondary px-4 fw-bold rounded-pill"
+              onClick={() => setShowCoverJobsModal(false)}
+            >
+              Maybe Later
+            </button>
+            <Link
+              to="/cover-jobs"
+              className="btn btn-dark px-4 fw-bold rounded-pill shadow-sm"
+              onClick={() => setShowCoverJobsModal(false)}
+            >
+              View Cover Jobs <i className="fa-solid fa-arrow-right ms-2"></i>
+            </Link>
+          </div>
+        </div>
       </PremiumModal>
 
       {/* Missing Charge Rates Modal */}

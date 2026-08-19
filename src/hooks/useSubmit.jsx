@@ -47,11 +47,15 @@ const useSubmit = ({ isAuth = false, BaseURL = apiURL } = {}) => {
         // 401 handling...
         if (res.status === 401) {
           if (responseType === "blob") {
+            sessionStorage.clear();
             dispatch(logOut());
             return { success: false, error: "Unauthorized", status: 401 };
           }
           const errorJson = await res.json();
-          if (errorJson.message === "Unauthenticated.") dispatch(logOut());
+          if (errorJson.message === "Unauthenticated.") {
+            sessionStorage.clear();
+            dispatch(logOut());
+          }
           if (!silentErrorToast) toast.error(errorJson.message || "Unauthorized");
           return { success: false, error: errorJson.message, status: 401, data: errorJson };
         }

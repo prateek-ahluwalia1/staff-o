@@ -53,6 +53,7 @@ const Sidebar = memo(function Sidebar() {
       e.preventDefault();
       try {
         await submit(`api/logout/${userId}`, {}, { method: "POST" });
+        sessionStorage.clear();
         dispatch(logOut());
         navigate("/login");
       } catch (error) {

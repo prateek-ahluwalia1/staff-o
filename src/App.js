@@ -496,6 +496,7 @@ function AppContent() {
         const verifySession = async () => {
             if (!token || !userdata) {
                 if (token) {
+                    sessionStorage.clear();
                     dispatch(logOut());
                 }
                 return;
@@ -503,6 +504,7 @@ function AppContent() {
 
             const uid = userdata?.data?.id || userdata?.id;
             if (!uid) {
+                sessionStorage.clear();
                 dispatch(logOut());
                 toast.error("Invalid user session. Please log in again.");
                 navigate("/login", { replace: true });
@@ -520,6 +522,7 @@ function AppContent() {
                 });
 
                 if (profileRes.status === 401) {
+                    sessionStorage.clear();
                     dispatch(logOut());
                     toast.error("Session expired. Please log in again.");
                     navigate("/login", { replace: true });
@@ -538,6 +541,7 @@ function AppContent() {
                 );
             } catch (error) {
                 console.error("Session verification failed:", error);
+                sessionStorage.clear();
                 dispatch(logOut());
                 toast.error("Session verification failed. Please log in again.");
                 navigate("/login", { replace: true });

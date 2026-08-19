@@ -540,7 +540,12 @@ const StaffooStaff = () => {
             const res = await submit(url, payload, { method });
             if (res.success) {
                 toast.success(editingUser ? "Staff member updated successfully!" : "Staff member created successfully!");
-                refetch(); closeModal();
+                refetch();
+                if (editingUser) {
+                    setActiveModalTab("documents");
+                } else {
+                    closeModal();
+                }
             }
         } catch (err) { toast.error(err.message || "Submission failed"); }
     };
@@ -763,11 +768,7 @@ const StaffooStaff = () => {
                                     userType="staff"
                                     onChangePhone={() => { }}
                                     isPhoneVerified={false}
-                                    footer={
-                                        <button type="submit" form="profile-form" className="btn btn-dark rounded-pill px-5 fw-bold shadow-sm" disabled={submitLoading} style={{ minHeight: 44 }}>
-                                            {submitLoading ? "Saving..." : editingUser ? "Update Profile" : "Create Staff"}
-                                        </button>
-                                    }
+                                    footer={<></>}
                                     extraFields={
                                         <div className="col-md-6">
                                             <label className="form-label">Password {editingUser && <span className="text-muted fw-normal">(Leave blank to keep)</span>}</label>
@@ -791,6 +792,16 @@ const StaffooStaff = () => {
                         </div>
                         <div className="px-4 py-3 border-top bg-light d-flex justify-content-end gap-2">
                             <button type="button" className="btn btn-light rounded-pill px-5 fw-bold text-muted border" onClick={closeModal} style={{ minHeight: 44 }}>Close</button>
+                            {activeModalTab === "personal" && (
+                                <button type="submit" form="profile-form" className="btn btn-dark rounded-pill px-5 fw-bold shadow-sm" disabled={submitLoading} style={{ minHeight: 44 }}>
+                                    {submitLoading ? "Saving..." : editingUser ? "Save & Next" : "Create Staff"}
+                                </button>
+                            )}
+                            {activeModalTab === "documents" && (
+                                <button type="button" className="btn btn-dark rounded-pill px-5 fw-bold shadow-sm" onClick={() => setActiveModalTab("onboarding")} style={{ minHeight: 44 }}>
+                                    Next: Verification Forms
+                                </button>
+                            )}
                         </div>
                     </div>
                 </div>

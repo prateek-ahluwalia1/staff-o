@@ -939,7 +939,12 @@ const ManageUsers = () => {
             : "User created successfully!",
         );
         refetch();
-        closeModal();
+        
+        if (editingUser && (activeTab === "staff" || activeTab === "sub_contractor")) {
+          setActiveModalTab("documents");
+        } else {
+          closeModal();
+        }
       }
     } catch (err) {
       toast.error(err.message || "Submission failed");
@@ -1709,17 +1714,7 @@ const ManageUsers = () => {
                   }
                   onChangePhone={handleOpenPhoneModal}
                   isPhoneVerified={false}
-                  footer={
-                    <button
-                      type="submit"
-                      form="profile-form"
-                      className="btn btn-dark rounded-pill px-5 fw-bold shadow-sm"
-                      disabled={submitLoading}
-                      style={{ minHeight: "44px" }}
-                    >
-                      {submitLoading ? "Saving..." : editingUser ? "Update Profile" : "Create User"}
-                    </button>
-                  }
+                  footer={<></>}
                   extraFields={
                     <>
                       <div className="col-md-6">
@@ -1788,6 +1783,17 @@ const ManageUsers = () => {
               >
                 Close
               </button>
+              {activeModalTab === "personal" && (
+                <button
+                  type="submit"
+                  form="profile-form"
+                  className="btn btn-dark rounded-pill px-5 fw-bold shadow-sm"
+                  disabled={submitLoading}
+                  style={{ minHeight: "44px" }}
+                >
+                  {submitLoading ? "Saving..." : (editingUser && (activeTab === "staff" || activeTab === "sub_contractor")) ? "Save & Next" : (editingUser ? "Update Profile" : "Create User")}
+                </button>
+              )}
             </div>
           </div>
         </div>

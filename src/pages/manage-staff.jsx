@@ -745,7 +745,11 @@ const ManageStaff = () => {
       if (res.success) {
         toast.success(editingUser ? "Staff member updated successfully!" : "Staff member created successfully!");
         refetch();
-        closeModal();
+        if (editingUser) {
+          setActiveModalTab("documents");
+        } else {
+          closeModal();
+        }
       }
     } catch (err) {
       toast.error(err.message || "Submission failed");
@@ -1249,17 +1253,7 @@ const ManageStaff = () => {
                   userType="staff"
                   onChangePhone={() => { }}
                   isPhoneVerified={false}
-                  footer={
-                    <button
-                      type="submit"
-                      form="profile-form"
-                      className="btn btn-dark rounded-pill px-5 fw-bold shadow-sm"
-                      disabled={submitLoading}
-                      style={{ minHeight: "44px" }}
-                    >
-                      {submitLoading ? "Saving..." : editingUser ? "Update Profile" : "Create Staff"}
-                    </button>
-                  }
+                  footer={<></>}
                   extraFields={
                     <div className="col-md-6">
                       <label className="form-label">
@@ -1323,6 +1317,17 @@ const ManageStaff = () => {
               >
                 Close
               </button>
+              {activeModalTab === "personal" && (
+                <button
+                  type="submit"
+                  form="profile-form"
+                  className="btn btn-dark rounded-pill px-5 fw-bold shadow-sm"
+                  disabled={submitLoading}
+                  style={{ minHeight: "44px" }}
+                >
+                  {submitLoading ? "Saving..." : editingUser ? "Save & Next" : "Create Staff"}
+                </button>
+              )}
             </div>
           </div>
         </div>

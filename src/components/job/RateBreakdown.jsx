@@ -15,7 +15,7 @@ function fmt(v) {
 
 const roundToTwo = (num) => Math.round((num + Number.EPSILON) * 100) / 100;
 
-export default function RateBreakdown({ rate, jobTypeLabel = "Security Guard", paymentOption = "full" }) {
+export default function RateBreakdown({ rate, paymentOption = "full" }) {
   if (!rate || !Array.isArray(rate.segments) || rate.segments.length === 0) return null;
 
   const { segments, chargeTotal, chargeGst, chargeTotalIncGst, totalHours } = rate;
@@ -60,7 +60,7 @@ export default function RateBreakdown({ rate, jobTypeLabel = "Security Guard", p
                 <td className="ps-3 py-3">
                   <div className="text-muted fw-medium text-nowrap" style={{ fontSize: "0.8rem" }}>
                     <i className="fa-regular fa-clock me-1 opacity-75"></i>
-                    {seg.label.replace("06:00–18:00", "Day").replace("18:00–06:00", "Night")}
+                    {seg.label}
                   </div>
                 </td>
                 <td className="py-3 text-center fw-bold text-dark" style={{ fontSize: "0.9rem" }}>{Number(seg.hours).toFixed(2)}</td>

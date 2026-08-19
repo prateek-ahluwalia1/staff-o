@@ -85,7 +85,7 @@ export default function ReviewStep({ form, rate, setField, handleConfirm, setSte
         <div className="jw-section-head-left">
           <span className="jw-icon-badge"><i className="fa-solid fa-clipboard-check"></i></span>
           <div>
-            <h4 className="fs-5 fs-md-4">Review &amp; Confirm <span className="text-danger">*</span></h4>
+            <h4 className="fs-5 fs-md-4">Review and Confirm <span className="text-danger">*</span></h4>
             <p>Please review your job details before submitting.</p>
           </div>
         </div>

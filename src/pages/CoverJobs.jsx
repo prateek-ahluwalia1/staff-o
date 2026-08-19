@@ -472,18 +472,20 @@ const CoverJobs = () => {
                                                 </div>
                                             </div>
 
-                                            <div className="d-flex justify-content-between align-items-center pt-3 border-top" style={{ borderColor: '#f1f5f9' }}>
-                                                <div className="d-flex flex-column">
-                                                    <span className="text-muted mb-1" style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase' }}>State</span>
-                                                    <span className="fw-bold text-dark" style={{ fontSize: '13px', textTransform: 'capitalize' }}>{job.state || 'N/A'}</span>
-                                                </div>
+                                            <div
+                                                className="d-flex justify-content-between align-items-center pt-3 border-top"
+                                                style={{ borderColor: '#f1f5f9' }}
+                                            >
                                                 <button
-                                                    className="btn accept-btn d-flex align-items-center gap-1 text-white"
+                                                    className="btn accept-btn d-flex align-items-center justify-content-center gap-1 text-white w-100"
                                                     onClick={() => openModal(job)}
                                                     disabled={isProcessing}
                                                 >
                                                     {isProcessing ? (
-                                                        <span className="spinner-border spinner-border-sm me-1" role="status"></span>
+                                                        <span
+                                                            className="spinner-border spinner-border-sm me-1"
+                                                            role="status"
+                                                        ></span>
                                                     ) : (
                                                         <i className="fa-solid fa-check"></i>
                                                     )}
@@ -647,10 +649,9 @@ const CoverJobs = () => {
                             )}
                             <div className="d-flex gap-2 ms-auto">
                                 <button
-                                    className="btn btn-success rounded-pill px-4 fw-semibold shadow-sm"
+                                    className="btn accept-btn text-white rounded-pill px-4 fw-semibold shadow-sm"
                                     onClick={() => handleAcceptJob(selectedJob.id)}
                                     disabled={loadingIds.includes(selectedJob.id)}
-                                    style={{ background: '#16a34a', border: 'none' }}
                                 >
                                     {loadingIds.includes(selectedJob.id) ? (
                                         <span className="spinner-border spinner-border-sm me-2" role="status"></span>

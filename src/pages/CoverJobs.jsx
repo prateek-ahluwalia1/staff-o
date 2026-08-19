@@ -161,7 +161,7 @@ const CoverJobs = () => {
                 setRemovedJobIds(prev => (prev.includes(jobId) ? prev : [...prev, jobId]));
                 closeModal();
                 if (selectedJob?.contractor_invoice === 0) {
-                    setSuccessMessage('Please wait for the client to give further confirmation. We will notify you shortly and the job will appear on your Roster page.');
+                    setSuccessMessage('Your job has been added to your roster and is currently pending confirmation. We will notify you once it has been confirmed.');
                     setShowSuccessPopup(true);
                 } else {
                     toast.success(

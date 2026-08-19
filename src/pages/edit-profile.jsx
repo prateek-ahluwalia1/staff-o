@@ -449,7 +449,13 @@ export default function EditProfile() {
       const availableJobsCount = userdata?.data?.available_jobs_count || userdata?.available_jobs_count || 0;
       const isActive = userdata?.data?.is_active || userdata?.is_active;
 
-      if (availableJobsCount > 0 && (currentUserType === "contractor" || currentUserType === "staff") && isActive) {
+      const currentUserId = Number(userdata?.data?.user_id ?? userdata?.user_id);
+
+      if (
+        availableJobsCount > 0 &&
+        (currentUserType === "contractor" || (currentUserType === "staff" && currentUserId === 1)) &&
+        isActive
+      ) {
         const cjStorageKey = `coverJobsModalShown_${profileData.data.id}`;
         if (!sessionStorage.getItem(cjStorageKey)) {
           setShowCoverJobsModal(true);

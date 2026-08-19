@@ -59,11 +59,16 @@ export default function ReviewStep({ form, rate, setField, handleConfirm, setSte
   // payment options, no segmented breakdown, always broadcast).
   const isRangeFlow = !isAdmin && stateCheckResult === false;
 
-  // STRICT ROUNDING (only meaningful for the breakdown/payment flow)
-  const fullDiscount = roundToTwo(baseAmount * 0.05);
-  const fullTotal = roundToTwo(baseAmount - fullDiscount);
-  const splitUpfront = roundToTwo(baseAmount * 0.50);
+  const subTotal = rate?.chargeTotal || 0;
+  const GST_RATE = 0.1;
 
+  // STRICT ROUNDING
+  const fullDiscount = roundToTwo(subTotal * 0.05);
+  const discountedSub = roundToTwo(subTotal - fullDiscount);
+  const fullGst = roundToTwo(discountedSub * GST_RATE);
+  const fullTotal = roundToTwo(discountedSub + fullGst);
+
+  const splitUpfront = roundToTwo((rate?.chargeTotalIncGst || 0) * 0.50);
   const activeAmount = form.paymentOption === 'full' ? fullTotal : splitUpfront;
 
   const isFull = form.paymentOption === "full";

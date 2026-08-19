@@ -858,26 +858,32 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
       };
     }
 
-    const baseAmount = breakdown?.chargeTotalIncGst || 0;
+    const GST_RATE = 0.1;
+    const subTotal = breakdown?.chargeTotal || 0;
+    const baseAmountIncGst = breakdown?.chargeTotalIncGst || 0;
     const roundToTwo = (num) => Math.round((num + Number.EPSILON) * 100) / 100;
 
     let discountApplied = 0;
-    let finalAmountDueToday = baseAmount;
+    let finalAmountDueToday = baseAmountIncGst;
     let balanceRemaining = 0;
+    let computedTotalIncGst = baseAmountIncGst;
 
     if (form.paymentOption === 'full') {
-      discountApplied = roundToTwo(baseAmount * 0.05);
-      finalAmountDueToday = roundToTwo(baseAmount - discountApplied);
+      discountApplied = roundToTwo(subTotal * 0.05);
+      const discountedSub = roundToTwo(subTotal - discountApplied);
+      const fullGst = roundToTwo(discountedSub * GST_RATE);
+      finalAmountDueToday = roundToTwo(discountedSub + fullGst);
+      computedTotalIncGst = finalAmountDueToday;
     } else if (form.paymentOption === 'split') {
-      finalAmountDueToday = roundToTwo(baseAmount * 0.50);
-      balanceRemaining = roundToTwo(baseAmount - finalAmountDueToday);
+      finalAmountDueToday = roundToTwo(baseAmountIncGst * 0.50);
+      balanceRemaining = roundToTwo(baseAmountIncGst - finalAmountDueToday);
     }
 
     return {
       ...basePayload,
       payment_option: form.paymentOption,
       financials: {
-        base_total_inc_gst: baseAmount,
+        base_total_inc_gst: computedTotalIncGst,
         discount_applied: discountApplied,
         amount_to_charge_today: finalAmountDueToday,
         balance_deferred: balanceRemaining

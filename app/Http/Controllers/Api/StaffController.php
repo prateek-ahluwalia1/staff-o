@@ -107,6 +107,12 @@ private function calculateProfileCompletion(User $user): int
             $oldStatus = $user->is_active;
             $newStatus = ($baseScore >= $baseWeight && $totalDocPoints >= 100) ? 1 : 0;
 
+            if ($newStatus === 1 && $oldStatus != 1) {
+                sendAccountStatusEmail($user, 'active');
+            } elseif ($newStatus === 0 && $oldStatus != 0) {
+                sendAccountStatusEmail($user, 'inactive');
+            }
+            
             if ($user->is_active !== $newStatus) {
                 $user->is_active = $newStatus;
                 $user->save();

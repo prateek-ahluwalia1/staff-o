@@ -316,7 +316,6 @@ const ManageUsers = () => {
   const [phoneChangeError, setPhoneChangeError] = useState(null);
   const [phoneChangeSuccess, setPhoneChangeSuccess] = useState(false);
 
-  const [showPassword, setShowPassword] = useState(false);
   const [showDocModal, setShowDocModal] = useState(false);
   const [selectedDoc, setSelectedDoc] = useState(null);
   const [verifyingDoc, setVerifyingDoc] = useState(false);
@@ -336,7 +335,6 @@ const ManageUsers = () => {
   const defaultFormState = useMemo(() => ({
     name: "",
     email: "",
-    password: "",
     phone: "",
     gender: "",
     staff_document_type: "",
@@ -447,7 +445,6 @@ const ManageUsers = () => {
 
   const openModal = useCallback((user = null) => {
 
-    setShowPassword(false);
     setActiveModalTab("personal");
     setShowDocModal(false);
     setSelectedDoc(null);
@@ -467,7 +464,6 @@ const ManageUsers = () => {
       setFormData({
         name: user.name || "",
         email: user.email || "",
-        password: "",
         phone: user.phone || extraInfo.phone || "",
         gender: user.gender || extraInfo.gender || "",
         staff_document_type: user.staff_document_type || extraInfo.staff_document_type || "",
@@ -922,12 +918,12 @@ const ManageUsers = () => {
     }
 
     const payload = { ...formData };
+    delete payload.password;
 
     if (Array.isArray(payload.states_allowed)) {
       payload.states_allowed = JSON.stringify(payload.states_allowed);
     }
 
-    if (editingUser && !payload.password) delete payload.password;
     if (activeTab !== "staff") delete payload.user_id;
 
     try {
@@ -939,7 +935,7 @@ const ManageUsers = () => {
             : "User created successfully!",
         );
         refetch();
-        
+
         if (editingUser && (activeTab === "staff" || activeTab === "sub_contractor")) {
           setActiveModalTab("documents");
         } else {
@@ -1715,53 +1711,7 @@ const ManageUsers = () => {
                   onChangePhone={handleOpenPhoneModal}
                   isPhoneVerified={false}
                   footer={<></>}
-                  extraFields={
-                    <>
-                      <div className="col-md-6">
-                        <label className="form-label fw-semibold">
-                          Password{" "}
-                          {editingUser && (
-                            <span className="text-muted fw-normal">
-                              (Leave blank to keep)
-                            </span>
-                          )}
-                        </label>
 
-                        <div className="custom-input bg-light">
-                          <div className="custom-input-icon">
-                            <i className="fa-solid fa-lock"></i>
-                          </div>
-
-                          <input
-                            type={showPassword ? "text" : "password"}
-                            className="custom-input-field"
-                            placeholder="Enter password"
-                            name="password"
-                            value={formData.password}
-                            minLength={8}
-                            required={!editingUser}
-                            onChange={(e) =>
-                              setFormData((prev) => ({
-                                ...prev,
-                                password: e.target.value,
-                              }))
-                            }
-                          />
-
-                          <button
-                            type="button"
-                            className="custom-input-eye"
-                            onClick={() => setShowPassword(!showPassword)}
-                          >
-                            <i
-                              className={`fa-solid ${showPassword ? "fa-eye-slash" : "fa-eye"
-                                }`}
-                            ></i>
-                          </button>
-                        </div>
-                      </div>
-                    </>
-                  }
                 />
               ) : activeModalTab === "documents" ? (
                 <div>

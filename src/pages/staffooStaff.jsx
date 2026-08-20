@@ -241,10 +241,9 @@ const StaffooStaff = () => {
         file: null, file_path: "", file_url: "", document_name: "", is_verified: false,
         working_rights_file_path: "", working_rights_file_url: "", show_working_rights: false, work_entitlement: "",
     });
-    const [showPassword, setShowPassword] = useState(false);
 
     const defaultFormState = useMemo(() => ({
-        name: "", email: "", password: "", phone: "", gender: "", staff_document_type: "",
+        name: "", email: "", phone: "", gender: "", staff_document_type: "",
         security_license_no: "", address: "", city: "", state: "", country: "", coordinates: "",
         date_of_birth: "", origin_country: "",
     }), []);
@@ -279,7 +278,6 @@ const StaffooStaff = () => {
     const getStatusBadgeClass = (isActive) => isActive ? "badge-premium badge-success" : "badge-premium badge-danger";
 
     const openModal = (user = null) => {
-        setShowPassword(false);
         setActiveModalTab("personal");
         setShowDocModal(false);
         setSelectedDoc(null);
@@ -287,7 +285,7 @@ const StaffooStaff = () => {
             const staffData = user.staff || {};
             setEditingUser(user);
             setFormData({
-                name: user.name || "", email: user.email || "", password: "",
+                name: user.name || "", email: user.email || "",
                 phone: staffData.phone || "", gender: staffData.gender || "",
                 staff_document_type: staffData.staff_document_type || "",
                 address: user.address || "", city: user.city || "", state: user.state || "", country: user.country || "",
@@ -534,7 +532,7 @@ const StaffooStaff = () => {
         const method = editingUser ? "PUT" : "POST";
         const url = editingUser ? `api/admin/update-staff/${editingUser.id}` : `api/admin/create-staff`;
         const payload = { ...formData };
-        if (editingUser && !payload.password) delete payload.password;
+        delete payload.password;
         payload.user_id = 1;
         try {
             const res = await submit(url, payload, { method });
@@ -769,15 +767,6 @@ const StaffooStaff = () => {
                                     onChangePhone={() => { }}
                                     isPhoneVerified={false}
                                     footer={<></>}
-                                    extraFields={
-                                        <div className="col-md-6">
-                                            <label className="form-label">Password {editingUser && <span className="text-muted fw-normal">(Leave blank to keep)</span>}</label>
-                                            <div className="position-relative">
-                                                <input type={showPassword ? "text" : "password"} className="form-control pe-5 bg-light" value={formData.password} minLength={8} onChange={e => setFormData(prev => ({ ...prev, password: e.target.value }))} required={!editingUser} style={{ minHeight: 44 }} />
-                                                <button type="button" className="btn btn-sm border-0 position-absolute end-0 top-50 translate-middle-y text-muted" onClick={() => setShowPassword(!showPassword)} tabIndex="-1"><i className={`fa-solid ${showPassword ? "fa-eye-slash" : "fa-eye"}`}></i></button>
-                                            </div>
-                                        </div>
-                                    }
                                 />
                             ) : activeModalTab === "documents" ? (
                                 <div>

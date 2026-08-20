@@ -27,6 +27,8 @@ import ConstructionSites from "./pages/industries/construction-sites";
 import ResidentialEstates from "./pages/industries/residential-estates";
 import WorkingStaff from "./pages/forstaff/working-staff";
 import HowToApply from "./pages/forstaff/How-to-apply";
+import Postajob from "./pages/forclients/Postajob";
+import Howitworks from "./pages/forclients/Howitworks";
 
 const Login = lazy(() => import("./auth/login"));
 const Register = lazy(() => import("./auth/register"));
@@ -588,6 +590,11 @@ function AppContent() {
                 <Route path="/industries/corporate-office" element={<ProtectedRoute public><CorporateOffice /></ProtectedRoute>} />
                 <Route path="/industries/construction-sites" element={<ProtectedRoute public><ConstructionSites /></ProtectedRoute>} />
                 <Route path="/industries/residential-estates" element={<ProtectedRoute public><ResidentialEstates /></ProtectedRoute>} />
+
+                {/* for clients */}
+                <Route path="/forclients/postajob" element={<ProtectedRoute public><Postajob /></ProtectedRoute>} />
+                <Route path="/forclients/howitworks" element={<ProtectedRoute public><Howitworks /></ProtectedRoute>} />
+
 
 
                 {/* for staff */}

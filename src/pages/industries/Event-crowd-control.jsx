@@ -13,7 +13,6 @@ import HowItWorks from "../../components/industries/coman/HowItWorks";
 import InsideDashboard from "../../components/industries/coman/InsideDashboard";
 import CaseStudySnippet from "../../components/industries/coman/CaseStudySnippet";
 import FaqSection from "../../components/industries/coman/FaqSection";
-import CoverageGrid from "../../components/industries/coman/CoverageGrid";
 import CtaBand from "../../components/industries/coman/CtaBand";
 
 import "../../components/industries/event-crowd-comp/styles.css";
@@ -154,48 +153,7 @@ export default function EventCrowdControl() {
     ];
 
     // 8. Coverage Grid Columns Data
-    const eventCoverageColumns = [
-        {
-            title: "Capital cities",
-            links: [
-                { label: "Event security Sydney", url: "#" },
-                { label: "Event security Melbourne", url: "#" },
-                { label: "Event security Brisbane", url: "#" },
-                { label: "Event security Perth", url: "#" },
-                { label: "Event security Adelaide", url: "#" },
-            ],
-        },
-        {
-            title: "Event types",
-            links: [
-                { label: "Festival security", url: "#" },
-                { label: "Private party & wedding", url: "#" },
-                { label: "Corporate event security", url: "#" },
-                { label: "Bars & nightlife", url: "#" },
-                { label: "Sporting events", url: "#" },
-            ],
-        },
-        {
-            title: "Other industries",
-            links: [
-                { label: "Corporate & office", url: "#" },
-                { label: "Retail security", url: "#" },
-                { label: "Construction sites", url: "#" },
-                { label: "Residential & estates", url: "#" },
-                { label: "Cash-in-transit", url: "#" },
-            ],
-        },
-        {
-            title: "Before you post",
-            links: [
-                { label: "How pricing works", url: "#" },
-                { label: "Licensing explained by state", url: "#" },
-                { label: "Insurance & compliance", url: "#" },
-                { label: "Hiring for a business or agency", url: "#" },
-                { label: "Talk to our team", url: "#" },
-            ],
-        },
-    ];
+
 
     // 9. CTA Band Data
     const eventCtaData = {
@@ -275,11 +233,7 @@ export default function EventCrowdControl() {
                     faqs={eventFaqs}
                 />
 
-                <CoverageGrid
-                    kicker="Coverage"
-                    title="Event security across Australia"
-                    columns={eventCoverageColumns}
-                />
+
 
                 <CtaBand
                     title={eventCtaData.title}

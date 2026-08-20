@@ -13,7 +13,6 @@ import HowItWorks from "../../components/industries/coman/HowItWorks";
 import InsideDashboard from "../../components/industries/coman/InsideDashboard";
 import CaseStudySnippet from "../../components/industries/coman/CaseStudySnippet";
 import FaqSection from "../../components/industries/coman/FaqSection";
-import CoverageGrid from "../../components/industries/coman/CoverageGrid";
 import CtaBand from "../../components/industries/coman/CtaBand";
 
 import "../../components/industries/event-crowd-comp/styles.css";
@@ -154,48 +153,7 @@ export default function CorporateOffice() {
     ];
 
     // 8. Coverage Grid Columns Data
-    const corporateCoverageColumns = [
-        {
-            title: "Capital Cities",
-            links: [
-                { label: "Corporate security Sydney", url: "#" },
-                { label: "Corporate security Melbourne", url: "#" },
-                { label: "Corporate security Brisbane", url: "#" },
-                { label: "Corporate security Perth", url: "#" },
-                { label: "Corporate security Adelaide", url: "#" },
-            ],
-        },
-        {
-            title: "Office & Workplace Types",
-            links: [
-                { label: "Reception & concierge", url: "#" },
-                { label: "Legal & professional services", url: "#" },
-                { label: "Shared workspaces", url: "#" },
-                { label: "Corporate HQ", url: "#" },
-                { label: "Government & institutional", url: "#" },
-            ],
-        },
-        {
-            title: "Other Industries",
-            links: [
-                { label: "Event & crowd control", url: "#" },
-                { label: "Retail security", url: "#" },
-                { label: "Construction sites", url: "#" },
-                { label: "Residential & estates", url: "#" },
-                { label: "Commercial security", url: "#" },
-            ],
-        },
-        {
-            title: "Before You Post",
-            links: [
-                { label: "How pricing works", url: "#" },
-                { label: "Licensing explained by state", url: "#" },
-                { label: "Insurance & compliance", url: "#" },
-                { label: "Hiring for a business or agency", url: "#" },
-                { label: "Talk to our team", url: "#" },
-            ],
-        },
-    ];
+
 
     // 9. CTA Band Data
     const corporateCtaData = {
@@ -275,11 +233,7 @@ export default function CorporateOffice() {
                     faqs={corporateFaqs}
                 />
 
-                <CoverageGrid
-                    kicker="Coverage"
-                    title="Corporate & office security across Australia"
-                    columns={corporateCoverageColumns}
-                />
+
 
                 <CtaBand
                     title={corporateCtaData.title}

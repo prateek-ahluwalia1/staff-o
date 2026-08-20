@@ -8,7 +8,7 @@ class StaffOnboardingMail extends Mailable
 {
     public function build()
     {
-        return $this->subject('Welcome to Staffoo – Onboarding Instructions')
+        return $this->subject('Onboarding Instructions')
             ->view('emails.staff_onboarding');
     }
 }

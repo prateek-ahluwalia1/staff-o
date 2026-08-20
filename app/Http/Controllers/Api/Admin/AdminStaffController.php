@@ -283,10 +283,10 @@ class AdminStaffController extends Controller
                     $user->is_active = $newStatus;
                     $user->save();
 
-                    if ($newStatus === 1 && $oldStatus != 1) {
-                        sendAccountStatusEmail($user, 'active');
+                     if ($newStatus === 1 && $oldStatus != 1) {
+                        dispatch(new \App\Jobs\SendAccountStatusEmailJob($user, 'active'));
                     } elseif ($newStatus === 0 && $oldStatus != 0) {
-                        sendAccountStatusEmail($user, 'inactive');
+                        dispatch(new \App\Jobs\SendAccountStatusEmailJob($user, 'inactive'));
                     }
                 }
             } else {
@@ -316,9 +316,9 @@ class AdminStaffController extends Controller
                     $user->save();
                     
                     if ($newStatus === 1 && $oldStatus != 1) {
-                        sendAccountStatusEmail($user, 'active');
+                        dispatch(new \App\Jobs\SendAccountStatusEmailJob($user, 'active'));
                     } elseif ($newStatus === 0 && $oldStatus != 0) {
-                        sendAccountStatusEmail($user, 'inactive');
+                        dispatch(new \App\Jobs\SendAccountStatusEmailJob($user, 'inactive'));
                     }
                 }
             }

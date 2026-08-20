@@ -107,12 +107,12 @@ private function calculateProfileCompletion(User $user): int
             $oldStatus = $user->is_active;
             $newStatus = ($baseScore >= $baseWeight && $totalDocPoints >= 100) ? 1 : 0;
 
-            if ($newStatus === 1 && $oldStatus != 1) {
-                sendAccountStatusEmail($user, 'active');
+           if ($newStatus === 1 && $oldStatus != 1) {
+                dispatch(new \App\Jobs\SendAccountStatusEmailJob($user, 'active'));
             } elseif ($newStatus === 0 && $oldStatus != 0) {
-                sendAccountStatusEmail($user, 'inactive');
+                dispatch(new \App\Jobs\SendAccountStatusEmailJob($user, 'inactive'));
             }
-            
+
             if ($user->is_active !== $newStatus) {
                 $user->is_active = $newStatus;
                 $user->save();
@@ -141,9 +141,9 @@ private function calculateProfileCompletion(User $user): int
             $newStatus = ($baseScore >= $baseWeight && $hasSecurityLicenseWithExpiry) ? 1 : 0;
 
             if ($newStatus === 1 && $oldStatus != 1) {
-                sendAccountStatusEmail($user, 'active');
+                dispatch(new \App\Jobs\SendAccountStatusEmailJob($user, 'active'));
             } elseif ($newStatus === 0 && $oldStatus != 0) {
-                sendAccountStatusEmail($user, 'inactive');
+                dispatch(new \App\Jobs\SendAccountStatusEmailJob($user, 'inactive'));
             }
 
             if ($user->is_active !== $newStatus) {

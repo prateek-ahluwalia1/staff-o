@@ -216,9 +216,9 @@ private function calculateProfileCompletion(User $user): int
     $this->updateUserStatus($user, $newStatus);
 
     if ($newStatus === 1 && $oldStatus != 1) {
-        sendAccountStatusEmail($user, 'active');
+        dispatch(new \App\Jobs\SendAccountStatusEmailJob($user, 'active'));
     } elseif ($newStatus === 0 && $oldStatus != 0) {
-        sendAccountStatusEmail($user, 'inactive');
+        dispatch(new \App\Jobs\SendAccountStatusEmailJob($user, 'inactive'));
     }
  
     // Final percentage

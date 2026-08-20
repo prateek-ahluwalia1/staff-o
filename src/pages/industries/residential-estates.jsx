@@ -13,7 +13,6 @@ import HowItWorks from "../../components/industries/coman/HowItWorks";
 import InsideDashboard from "../../components/industries/coman/InsideDashboard";
 import CaseStudySnippet from "../../components/industries/coman/CaseStudySnippet";
 import FaqSection from "../../components/industries/coman/FaqSection";
-import CoverageGrid from "../../components/industries/coman/CoverageGrid";
 import CtaBand from "../../components/industries/coman/CtaBand";
 
 import "../../components/industries/event-crowd-comp/styles.css";
@@ -154,48 +153,7 @@ export default function ResidentialEstates() {
     ];
 
     // 8. Coverage Grid Columns Data
-    const residentialCoverageColumns = [
-        {
-            title: "Capital Cities",
-            links: [
-                { label: "Residential security Sydney", url: "#" },
-                { label: "Residential security Melbourne", url: "#" },
-                { label: "Residential security Brisbane", url: "#" },
-                { label: "Residential security Perth", url: "#" },
-                { label: "Residential security Adelaide", url: "#" },
-            ],
-        },
-        {
-            title: "Property Types",
-            links: [
-                { label: "Gated communities & estates", url: "#" },
-                { label: "Private residences", url: "#" },
-                { label: "Strata & apartment complexes", url: "#" },
-                { label: "Holiday & vacant homes", url: "#" },
-                { label: "Rural & acreage properties", url: "#" },
-            ],
-        },
-        {
-            title: "Other Industries",
-            links: [
-                { label: "Corporate & office", url: "#" },
-                { label: "Event & crowd control", url: "#" },
-                { label: "Retail security", url: "#" },
-                { label: "Construction sites", url: "#" },
-                { label: "Commercial security", url: "#" },
-            ],
-        },
-        {
-            title: "Before You Post",
-            links: [
-                { label: "How pricing works", url: "#" },
-                { label: "Licensing explained by state", url: "#" },
-                { label: "Insurance & compliance", url: "#" },
-                { label: "Hiring for a business or agency", url: "#" },
-                { label: "Talk to our team", url: "#" },
-            ],
-        },
-    ];
+
 
     // 9. CTA Band Data
     const residentialCtaData = {
@@ -275,11 +233,7 @@ export default function ResidentialEstates() {
                     faqs={residentialFaqs}
                 />
 
-                <CoverageGrid
-                    kicker="Coverage"
-                    title="Residential & estate security across Australia"
-                    columns={residentialCoverageColumns}
-                />
+
 
                 <CtaBand
                     title={residentialCtaData.title}

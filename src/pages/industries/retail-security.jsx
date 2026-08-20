@@ -13,7 +13,6 @@ import HowItWorks from "../../components/industries/coman/HowItWorks";
 import InsideDashboard from "../../components/industries/coman/InsideDashboard";
 import CaseStudySnippet from "../../components/industries/coman/CaseStudySnippet";
 import FaqSection from "../../components/industries/coman/FaqSection";
-import CoverageGrid from "../../components/industries/coman/CoverageGrid";
 import CtaBand from "../../components/industries/coman/CtaBand";
 
 import "../../components/industries/event-crowd-comp/styles.css";
@@ -154,48 +153,7 @@ export default function RetailSecurity() {
     ];
 
     // 8. Coverage Grid Columns Data
-    const retailCoverageColumns = [
-        {
-            title: "Capital Cities",
-            links: [
-                { label: "Retail security Sydney", url: "#" },
-                { label: "Retail security Melbourne", url: "#" },
-                { label: "Retail security Brisbane", url: "#" },
-                { label: "Retail security Perth", url: "#" },
-                { label: "Retail security Adelaide", url: "#" },
-            ],
-        },
-        {
-            title: "Retail Security Types",
-            links: [
-                { label: "Loss prevention", url: "#" },
-                { label: "Shopping centres & malls", url: "#" },
-                { label: "Peak trading & sales events", url: "#" },
-                { label: "Store opening & closing", url: "#" },
-                { label: "Warehouse & stockroom", url: "#" },
-            ],
-        },
-        {
-            title: "Other Industries",
-            links: [
-                { label: "Corporate & office", url: "#" },
-                { label: "Event & crowd control", url: "#" },
-                { label: "Construction sites", url: "#" },
-                { label: "Residential & estates", url: "#" },
-                { label: "Commercial security", url: "#" },
-            ],
-        },
-        {
-            title: "Before You Post",
-            links: [
-                { label: "How pricing works", url: "#" },
-                { label: "Licensing explained by state", url: "#" },
-                { label: "Insurance & compliance", url: "#" },
-                { label: "Hiring for a business or agency", url: "#" },
-                { label: "Talk to our team", url: "#" },
-            ],
-        },
-    ];
+
 
     // 9. CTA Band Data
     const retailCtaData = {
@@ -275,11 +233,7 @@ export default function RetailSecurity() {
                     faqs={retailFaqs}
                 />
 
-                <CoverageGrid
-                    kicker="Coverage"
-                    title="Retail security across Australia"
-                    columns={retailCoverageColumns}
-                />
+
 
                 <CtaBand
                     title={retailCtaData.title}

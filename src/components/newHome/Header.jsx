@@ -91,11 +91,8 @@ function Header() {
             <div>
               <span className="nh-nav-item">For clients <span className="nh-caret" /></span>
               <div className="nh-dropdown">
-                <NavLink to="/register" onClick={handleLinkClick}>Post a job</NavLink>
-                <NavLink to="/login" onClick={handleLinkClick}>Browse staff</NavLink>
-                <NavLink to="/register" onClick={handleLinkClick}>Hiring for a business</NavLink>
-                <NavLink to="/" onClick={handleLinkClick}>How it works</NavLink>
-                <NavLink to="/pricing" onClick={handleLinkClick}>Pricing</NavLink>
+                <NavLink to="/forclients/postajob" onClick={handleLinkClick}>Post a job</NavLink>
+                <NavLink to="/forclients/howitworks" onClick={handleLinkClick}>How it works</NavLink>
               </div>
             </div>
 

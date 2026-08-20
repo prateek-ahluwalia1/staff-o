@@ -13,7 +13,6 @@ import NotLicensedYetSection from "../../components/forstaff/how-to-apply/NotLic
 import StatsBand from "../../components/industries/coman/StatsBand";
 import CaseStudySnippet from "../../components/industries/coman/CaseStudySnippet";
 import FaqSection from "../../components/industries/coman/FaqSection";
-import CoverageGrid from "../../components/industries/coman/CoverageGrid";
 import CtaBand from "../../components/industries/coman/CtaBand";
 
 import "../../components/industries/event-crowd-comp/styles.css";
@@ -87,48 +86,7 @@ export default function HowToApply() {
     ];
 
     // 4. Coverage Grid Data
-    const applyCoverageColumns = [
-        {
-            title: "Capital cities",
-            links: [
-                { label: "Security jobs Sydney", url: "#" },
-                { label: "Security jobs Melbourne", url: "#" },
-                { label: "Security jobs Brisbane", url: "#" },
-                { label: "Security jobs Perth", url: "#" },
-                { label: "Security jobs Adelaide", url: "#" },
-            ],
-        },
-        {
-            title: "Role types",
-            links: [
-                { label: "Crowd control shifts", url: "#" },
-                { label: "Static guard jobs", url: "#" },
-                { label: "Retail security jobs", url: "#" },
-                { label: "Corporate security roles", url: "#" },
-                { label: "Construction site cover", url: "#" },
-            ],
-        },
-        {
-            title: "Industries",
-            links: [
-                { label: "Events & festivals", url: "#" },
-                { label: "Commercial & corporate", url: "#" },
-                { label: "Retail & shopping", url: "#" },
-                { label: "Construction sites", url: "#" },
-                { label: "Residential & estates", url: "#" },
-            ],
-        },
-        {
-            title: "Resources",
-            links: [
-                { label: "Licensing requirements by state", url: "#" },
-                { label: "How getting paid works", url: "#" },
-                { label: "ABN & insurance guide", url: "#" },
-                { label: "Staff help centre", url: "#" },
-                { label: "Contact support", url: "#" },
-            ],
-        },
-    ];
+   
 
     return (
         <>
@@ -184,11 +142,7 @@ export default function HowToApply() {
                     faqs={applyFaqs}
                 />
 
-                <CoverageGrid
-                    kicker="Coverage"
-                    title="Security shifts across Australia"
-                    columns={applyCoverageColumns}
-                />
+
 
                 <CtaBand
                     title="Fifteen minutes now, shifts tonight"

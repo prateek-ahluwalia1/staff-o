@@ -13,7 +13,6 @@ import HowItWorks from "../../components/industries/coman/HowItWorks";
 import InsideDashboard from "../../components/industries/coman/InsideDashboard";
 import CaseStudySnippet from "../../components/industries/coman/CaseStudySnippet";
 import FaqSection from "../../components/industries/coman/FaqSection";
-import CoverageGrid from "../../components/industries/coman/CoverageGrid";
 import CtaBand from "../../components/industries/coman/CtaBand";
 
 import "../../components/industries/event-crowd-comp/styles.css";
@@ -154,48 +153,7 @@ export default function ConstructionSites() {
     ];
 
     // 8. Coverage Grid Columns Data
-    const constructionCoverageColumns = [
-        {
-            title: "Capital Cities",
-            links: [
-                { label: "Construction site security Sydney", url: "#" },
-                { label: "Construction site security Melbourne", url: "#" },
-                { label: "Construction site security Brisbane", url: "#" },
-                { label: "Construction site security Perth", url: "#" },
-                { label: "Construction site security Adelaide", url: "#" },
-            ],
-        },
-        {
-            title: "Construction Site Types",
-            links: [
-                { label: "Residential builds", url: "#" },
-                { label: "Commercial & civil sites", url: "#" },
-                { label: "Mobile patrol, multi site", url: "#" },
-                { label: "Overnight & weekend cover", url: "#" },
-                { label: "Demolition & vacant sites", url: "#" },
-            ],
-        },
-        {
-            title: "Other Industries",
-            links: [
-                { label: "Corporate & office", url: "#" },
-                { label: "Event & crowd control", url: "#" },
-                { label: "Retail security", url: "#" },
-                { label: "Residential & estates", url: "#" },
-                { label: "Commercial security", url: "#" },
-            ],
-        },
-        {
-            title: "Before You Post",
-            links: [
-                { label: "How pricing works", url: "#" },
-                { label: "Licensing explained by state", url: "#" },
-                { label: "Insurance & compliance", url: "#" },
-                { label: "Hiring for a business or agency", url: "#" },
-                { label: "Talk to our team", url: "#" },
-            ],
-        },
-    ];
+
 
     // 9. CTA Band Data
     const constructionCtaData = {
@@ -275,11 +233,7 @@ export default function ConstructionSites() {
                     faqs={constructionFaqs}
                 />
 
-                <CoverageGrid
-                    kicker="Coverage"
-                    title="Construction site security across Australia"
-                    columns={constructionCoverageColumns}
-                />
+
 
                 <CtaBand
                     title={constructionCtaData.title}

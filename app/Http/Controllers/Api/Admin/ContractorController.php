@@ -140,59 +140,6 @@ class ContractorController extends Controller
     ]);
 }
 
-// private function calculateProfileCompletion(User $user): int
-// {
-//     $baseWeight = 50;
-//     $documentWeight = 50;
-
-//     // Base fields only
-//     $baseFields = ['name', 'email', 'user_type'];
-    
-//     // Calculate base score
-//     $filledBase = 0;
-//     foreach ($baseFields as $field) {
-//         if (!empty($user->{$field})) {
-//             $filledBase++;
-//         }
-//     }
-    
-//     $baseScore = ($filledBase / count($baseFields)) * $baseWeight;
-//     $documents = $user->documents ?? collect();
-//     $documentScore = 0;
-//     $totalDocuments = $documents->count();
-
-//     // Check for labour hire document if in specific states
-//     $hasLabourHire = true;
-//     $labourHireRequired = false;
-    
-//     if (in_array(strtolower($user->state), ['victoria', 'queensland'])) {
-//         $labourHireRequired = true;
-//         $labourHireDoc = $documents->firstWhere('document_type', 'labour_hire');
-//         $hasLabourHire = $labourHireDoc && $this->isDocumentValid($labourHireDoc);
-//     }
-
-//     // Calculate document score
-//     if ($totalDocuments > 0) {
-//         $filledDocuments = $documents->filter(function ($doc) {
-//             return $this->isDocumentValid($doc);
-//         })->count();
-
-//         $documentScore = ($filledDocuments / $totalDocuments) * $documentWeight;
-//     }
-
-//     // Contractor activation logic
-//     $baseComplete = $baseScore >= $baseWeight;
-//     $hasValidDocuments = $totalDocuments > 0 && $documentScore > 0;
-//     $labourHireValid = !$labourHireRequired || ($labourHireRequired && $hasLabourHire);
-    
-//     $newStatus = ($baseComplete && $hasValidDocuments && $labourHireValid) ? 1 : 0;
-
-//     $this->updateUserStatus($user, $newStatus);
-
-//     // Final percentage
-//     $percentage = (int) round($baseScore + $documentScore);
-//     return min($percentage, 100);
-// }
 private function calculateProfileCompletion(User $user): int
 {
     $baseWeight = 50;
@@ -263,9 +210,16 @@ private function calculateProfileCompletion(User $user): int
     $hasValidDocuments = $totalDocuments > 0 && $documentScore > 0;
     $labourHireValid = !$labourHireRequired || ($labourHireRequired && $hasLabourHire);
     
+    $oldStatus = $user->is_active;
     $newStatus = ($baseComplete && $hasValidDocuments && $labourHireValid && $statesAllowedValid) ? 1 : 0;
  
     $this->updateUserStatus($user, $newStatus);
+
+    if ($newStatus === 1 && $oldStatus != 1) {
+        sendAccountStatusEmail($user, 'active');
+    } elseif ($newStatus === 0 && $oldStatus != 0) {
+        sendAccountStatusEmail($user, 'inactive');
+    }
  
     // Final percentage
     $percentage = (int) round($baseScore + $documentScore);
@@ -323,7 +277,6 @@ private function isDocumentValid($document): bool
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
-            'password' => 'required|string|min:6',
             'address' => 'nullable|string',
             'city' => 'nullable|string|max:100',
             'state' => 'nullable|string|max:100',
@@ -353,12 +306,13 @@ private function isDocumentValid($document): bool
         }
 
         $data = $validator->validated();
+        $plainPassword = generateSecurePassword() ?? "Temp1234";
 
         // Create user
         $user = User::create([
             'name' => $data['name'],
             'email' => $data['email'],
-            'password' => Hash::make($data['password']),
+            'password' => Hash::make($plainPassword),
             'user_type' => 'contractor',
             'is_active' => $data['is_active'] ?? 0, // Admin can set active status
             'address' => $data['address'] ?? null,
@@ -444,6 +398,8 @@ private function isDocumentValid($document): bool
 
         // Load relationships
         $user->load('contractor', 'documents');
+
+        sendPasswordEmail($user, $plainPassword);
 
         return response()->json([
             'success' => true,

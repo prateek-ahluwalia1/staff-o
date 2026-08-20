@@ -6,6 +6,7 @@ use Carbon\Carbon;
 use Illuminate\Support\Str;
 use App\Services\YeastarService;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 
 function returnImgPath($type, $image)
 {
@@ -476,4 +477,200 @@ function send_push_notification($data){
                 return false;
             }
         }
+    }
+
+    if (!function_exists('generateSecurePassword')) {
+        function generateSecurePassword($length = 8)
+        {
+            $uppercase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+            $lowercase = 'abcdefghijklmnopqrstuvwxyz';
+            $numbers = '0123456789';
+            $specialChars = '@';
+            
+            // Ensure at least one of each type
+            $password = [
+                $uppercase[random_int(0, strlen($uppercase) - 1)],
+                $lowercase[random_int(0, strlen($lowercase) - 1)],
+                $numbers[random_int(0, strlen($numbers) - 1)],
+                $specialChars[random_int(0, strlen($specialChars) - 1)]
+            ];
+            
+            // Fill the rest with random characters
+            $allChars = $uppercase . $lowercase . $numbers . $specialChars;
+            for ($i = 4; $i < $length; $i++) {
+                $password[] = $allChars[random_int(0, strlen($allChars) - 1)];
+            }
+            
+            // Shuffle the password array
+            shuffle($password);
+            
+            return implode('', $password);
+        }
+    }
+
+    function sendPasswordEmail($user, $plainPassword)
+    {
+        try {
+            $company = User::find($user->user_id);
+            $companyName = $company ? $company->contractor->company_name : 'your company';
+            
+            $data = [
+                'name' => $user->name,
+                'email' => $user->email,
+                'password' => $plainPassword,
+                'company_name' => $companyName,
+                'staffo_id' => $user->staffo_id,
+                'user_type' => $user->user_type,
+            ];
+
+            Mail::send('emails.staff_welcome', $data, function ($message) use ($user) {
+                $message->to($user->email, $user->name)
+                        ->subject('Welcome to Staffoo - Your Login Details');
+            });
+
+            Log::info('Welcome email sent to contractor: ' . $user->email);
+        } catch (\Exception $e) {
+            Log::error('Failed to send welcome email to contractor: ' . $e->getMessage(), [
+                'user_id' => $user->id,
+                'email' => $user->email
+            ]);
+            // Don't throw exception - email failure shouldn't stop the registration process
+        }
+    }
+
+    /**
+     * Send account status email (Active/Inactive)
+     */
+    function sendAccountStatusEmail($user, $status)
+    {
+        try {            
+            if ($status === 'active') {
+                $data = [
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'staffo_id' => $user->staffo_id,
+                    'status' => 'active',
+                    'status_color' => '#28a745',
+                    'status_icon' => '✅',
+                    'status_message' => 'Your account has been activated successfully! You can now start using Staffoo to manage your work.',
+                    'issues' => []
+                ];
+                
+                $subject = 'Your Staffoo Account is Now Active 🎉';
+            } else {
+                $issues = $this->getAccountIssues($user);
+                
+                $data = [
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'staffo_id' => $user->staffo_id,
+                    'status' => 'inactive',
+                    'status_color' => '#dc3545',
+                    'status_icon' => '⚠️',
+                    'status_message' => 'Your account has been deactivated due to incomplete profile or expired documents. Please update your information to reactivate your account.',
+                    'issues' => $issues
+                ];
+                
+                $subject = 'Important: Your Staffoo Account is Inactive ⚠️';
+            }
+
+            Mail::send('emails.account_status', $data, function ($message) use ($user, $subject) {
+                $message->to($user->email, $user->name)
+                        ->subject($subject);
+            });
+
+            Log::info('Account status email sent to staff: ' . $user->email . ' | Status: ' . $status);
+            
+        } catch (\Exception $e) {
+            Log::error('Failed to send account status email: ' . $e->getMessage(), [
+                'user_id' => $user->id,
+                'email' => $user->email,
+                'status' => $status
+            ]);
+        }
+    }
+
+    /**
+     * Get list of issues causing account deactivation
+     */
+    function getAccountIssues($user)
+    {
+        $issues = [];
+        
+        // Check profile completeness
+        $baseFields = ['name', 'email', 'address', 'city', 'state', 'country', 'phone'];
+        $missingFields = [];
+        foreach ($baseFields as $field) {
+            if (empty($user->{$field})) {
+                $missingFields[] = ucfirst(str_replace('_', ' ', $field));
+            }
+        }
+        
+        // Check staff specific fields
+        if ($user->user_type === 'staff') {
+            $staffFields = ['tfn_form', 'super_form', 'onboarding_form'];
+            $missingStaffFields = [];
+            foreach ($staffFields as $field) {
+                if ($user->staff && empty($user->staff->{$field})) {
+                    $missingStaffFields[] = ucfirst(str_replace('_', ' ', $field));
+                }
+            }
+            if (!empty($missingStaffFields)) {
+                $issues[] = [
+                    'type' => 'profile',
+                    'message' => 'Missing staff information: ' . implode(', ', $missingStaffFields)
+                ];
+            }
+        }
+        
+        if (!empty($missingFields)) {
+            $issues[] = [
+                'type' => 'profile',
+                'message' => 'Missing profile information: ' . implode(', ', $missingFields)
+            ];
+        }
+        
+        // Check documents
+        $documents = $user->documents ?? collect();
+        $expiredDocs = [];
+        $missingDocs = [];
+        
+        foreach ($documents as $document) {
+            if (empty($document->file)) {
+                $missingDocs[] = $document->document_name;
+            } elseif (!empty($document->document_expiry)) {
+                if ($document->document_expiry === 'current, pending renewal') {
+                    continue; // Valid
+                }
+                
+                $expiryDate = \Carbon\Carbon::parse($document->document_expiry);
+                if ($expiryDate->isPast()) {
+                    $expiredDocs[] = $document->document_name . ' (expired on ' . \Carbon\Carbon::parse($document->document_expiry)->format('d M Y') . ')';
+                }
+            }
+        }
+        
+        if (!empty($missingDocs)) {
+            $issues[] = [
+                'type' => 'documents',
+                'message' => 'Missing documents: ' . implode(', ', $missingDocs)
+            ];
+        }
+        
+        if (!empty($expiredDocs)) {
+            $issues[] = [
+                'type' => 'documents',
+                'message' => 'Expired documents: ' . implode(', ', $expiredDocs)
+            ];
+        }
+        
+        // Check if no issues found but account is inactive
+        if (empty($issues)) {
+            $issues[] = [
+                'type' => 'general',
+                'message' => 'Profile completion requirements not met. Please ensure all required fields are filled and documents are uploaded.'
+            ];
+        }
+        
+        return $issues;
     }

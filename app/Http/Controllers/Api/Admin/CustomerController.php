@@ -74,7 +74,6 @@ class CustomerController extends Controller
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
-            'password' => 'required|string|min:6',
             'phone' => 'nullable|string|max:20',
             'company_name' => 'nullable|string|max:255',
             'address' => 'nullable|string',
@@ -96,12 +95,13 @@ class CustomerController extends Controller
         }
 
         $data = $validator->validated();
+        $plainPassword = generateSecurePassword() ?? "Temp1234";
 
         // Create user
         $user = User::create([
             'name' => $data['name'],
             'email' => $data['email'],
-            'password' => Hash::make($data['password']),
+            'password' => Hash::make($plainPassword),
             'user_type' => 'customer',
             'is_active' => 1, // Admin can set active status
             'address' => $data['address'] ?? null,
@@ -126,6 +126,8 @@ class CustomerController extends Controller
 
         // Load relationships
         $user->load('customer');
+
+        sendPasswordEmail($user, $plainPassword);
 
         return response()->json([
             'success' => true,

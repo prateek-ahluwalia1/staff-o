@@ -558,7 +558,7 @@ function send_push_notification($data){
                 
                 $subject = 'Your Staffoo Account is Now Active 🎉';
             } else {
-                $issues = $this->getAccountIssues($user);
+                $issues = getAccountIssues($user);
                 
                 $data = [
                     'name' => $user->name,

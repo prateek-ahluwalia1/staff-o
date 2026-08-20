@@ -22,9 +22,6 @@
                 <div style="font-size: 28px; font-weight: 600; color: {{ $status_color }};">
                     Account {{ ucfirst($status) }}
                 </div>
-                <div style="font-size: 16px; color: #666; margin-top: 10px;">
-                    Staffoo ID: <strong>{{ $staffo_id }}</strong>
-                </div>
             </div>
 
             <!-- Greeting -->

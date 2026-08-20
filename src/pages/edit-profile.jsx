@@ -1922,7 +1922,7 @@ export default function EditProfile() {
               <div className="ms-3 pt-1">
                 <div className="d-flex align-items-center gap-2 mb-1">
                   <h6 className="fw-bold mb-0">
-                    Select Your Licensed States
+                    Select Your States Licensed
                   </h6>
                 </div>
 

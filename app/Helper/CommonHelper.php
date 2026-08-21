@@ -525,7 +525,7 @@ function send_push_notification($data){
 
             Mail::send('emails.staff_welcome', $data, function ($message) use ($user) {
                 $message->to($user->email, $user->name)
-                        ->subject('Welcome to Staffoo - Your Login Details');
+                        ->subject('Your Login Details');
             });
 
             Log::info('Welcome email sent to contractor: ' . $user->email);

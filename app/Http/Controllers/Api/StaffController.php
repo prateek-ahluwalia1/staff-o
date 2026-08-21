@@ -912,6 +912,7 @@ private function calculateProfileCompletion(User $user): int
                     'phone' => 'nullable|string|max:20',
                     'acn' => 'nullable|string',
                     'abn' => 'nullable|string',
+                    'security_license_no' => 'nullable|string',
                     // 'profile_image' => 'sometimes|nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
                 ]);
             }
@@ -1035,6 +1036,7 @@ private function calculateProfileCompletion(User $user): int
                     'phone',
                     'abn',
                     'acn',
+                    'security_license_no',
                 ])->toArray();
 
                 if ($request->hasFile('profile_image')) {

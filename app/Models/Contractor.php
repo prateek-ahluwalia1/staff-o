@@ -14,6 +14,7 @@ class Contractor extends Model
         'profile_image',
         'acn',
         'abn',
+        'security_license_no'
     ];
 
     /* ======================

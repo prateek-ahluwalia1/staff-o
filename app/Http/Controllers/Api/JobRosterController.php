@@ -5426,8 +5426,8 @@ private function generateContractorInvoiceAndPaymentLink($contractor, $updatedRo
             'name'           => $contractor->contractor->company_name ?? $contractor->name,
             'abn'            => $contractor->contractor->abn ?? 'N/A',
             // These two likely need adding to the `contractors` table if not already there.
-            'license_number' => $contractor->contractor->master_license_number ?? 'N/A',
-            'address'        => $contractor->contractor->business_address ?? '',
+            'license_number' => $contractor->contractor->security_license_no ?? 'N/A',
+            'address'        => $contractor->address ?? '',
         ],
         'client' => [
             'name'    => $client->name ?? 'Client',
